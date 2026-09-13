@@ -1,7 +1,5 @@
 import z from "zod";
 
-import { UserRole } from "@/plugins/api/interfaces";
-
 export const createPasswordSchema = (t: (key: string) => string) =>
   z
     .object({
@@ -58,7 +56,7 @@ export const createUserSchema = (t: (key: string) => string) =>
         .min(8, t("auth.password_min_length"))
         .max(128, "Password must be at most 128 characters."),
       confirmPassword: z.string(),
-      role: z.enum(UserRole),
+      role: z.string().min(1),
       playerFilter: z.array(z.string()),
     })
     .refine((data) => data.password === data.confirmPassword, {
@@ -81,7 +79,7 @@ export const editUserSchema = (t: (key: string) => string) =>
         .refine((val) => !val || z.string().url().safeParse(val).success, {
           message: "Invalid URL format.",
         }),
-      role: z.enum(UserRole),
+      role: z.string().min(1),
       password: z.string().max(128, "Password must be at most 128 characters."),
       confirmPassword: z.string(),
       playerFilter: z.array(z.string()),

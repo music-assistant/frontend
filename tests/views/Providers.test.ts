@@ -7,18 +7,25 @@ import {
   ProviderStage,
   ProviderStatus,
   ProviderType,
+  type Scope,
   type User,
   UserRole,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import Providers from "@/views/settings/Providers.vue";
 import { providerConfig } from "../fixtures/providerConfig";
+import {
+  BUILTIN_ROLE_SCOPES,
+  OWN_SOURCES_ROLE_SCOPES,
+  scopeChecker,
+} from "../fixtures/scopes";
 import { user, userSummary } from "../fixtures/user";
 
 const {
   apiMock,
   authMock,
   eventbusMock,
+  i18nMock,
   routeMock,
   routerMock,
   storeMock,
@@ -37,6 +44,7 @@ const {
         documentation: "https://example.com",
         has_setup_flow: true,
         name: "Spotify",
+        self_service: true,
         stage: "stable",
       },
     },
@@ -49,10 +57,15 @@ const {
     supportsShareCandidates: true,
   },
   authMock: {
-    isAdmin: vi.fn<() => boolean>(),
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
   },
   eventbusMock: {
     emit: vi.fn(),
+  },
+  // a spy that returns the key, so the interpolation arguments a message is
+  // given stay assertable
+  i18nMock: {
+    $t: vi.fn((key: string) => key),
   },
   routeMock: {
     query: { types: "music" },
@@ -103,9 +116,7 @@ vi.mock("@/plugins/eventbus", () => ({
   eventbus: eventbusMock,
 }));
 
-vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string) => key,
-}));
+vi.mock("@/plugins/i18n", () => i18nMock);
 
 vi.mock("@/plugins/router", () => ({
   default: routerMock,
@@ -124,12 +135,13 @@ vi.mock("@/helpers/utils", () => ({
 // rendered in place of the real dialog, exposing what it was handed
 const AddDialogStub = vi.hoisted(() => ({
   name: "AddProviderDialog",
-  props: ["show", "providerType", "multiInstanceOnly"],
+  props: ["show", "providerType", "multiInstanceOnly", "selfServiceOnly"],
   template: `
     <div
       data-testid="add-dialog"
       :data-provider-type="providerType ?? ''"
       :data-multi-instance="String(multiInstanceOnly)"
+      :data-self-service="String(selfServiceOnly)"
     />
   `,
 }));
@@ -197,11 +209,12 @@ beforeEach(() => {
   apiMock.getShareCandidates.mockResolvedValue(shareCandidates);
   apiMock.providerManifests.spotify.builtin = false;
   apiMock.providerManifests.spotify.has_setup_flow = true;
+  apiMock.providerManifests.spotify.self_service = true;
   apiMock.providerManifests.spotify.stage = ProviderStage.STABLE;
   apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
   apiMock.supportsShareCandidates = true;
-  authMock.isAdmin.mockReturnValue(true);
+  authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   routeMock.query.types = "music";
   storeMock.currentUser = owner;
 });
@@ -299,6 +312,63 @@ describe("Providers", () => {
     reloadItem.action();
 
     expect(apiMock.reloadProvider).toHaveBeenCalledWith("spotify--test");
+  });
+
+  it("asks for confirmation before removing a provider from the row menu", async () => {
+    // removing a source cannot be undone, so the row menu has to confirm it
+    // just like the provider detail page does
+    apiMock.removeProviderConfig.mockResolvedValue(undefined);
+    // a renamed source must be confirmed under the name the user gave it,
+    // so the custom name has to win over the manifest's "Spotify"
+    const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
+      name: "My Spotify",
+    });
+
+    const menuItems = await openMenu(wrapper);
+    menuItems
+      .find(
+        (item: { label: string }) => item.label === "settings.remove_provider",
+      )
+      .action();
+
+    const removeCall = eventbusMock.emit.mock.calls.find(
+      ([event]) => event === "deleteConfirmationDialog",
+    );
+    expect(removeCall?.[1].message).toBe("settings.remove_provider_confirm");
+    // the stubbed $t returns the key, so the name is checked where it is passed
+    expect(i18nMock.$t).toHaveBeenCalledWith(
+      "settings.remove_provider_confirm",
+      ["My Spotify"],
+    );
+    expect(apiMock.removeProviderConfig).not.toHaveBeenCalled();
+
+    await removeCall?.[1].onConfirm();
+    await flushPromises();
+
+    expect(apiMock.removeProviderConfig).toHaveBeenCalledWith("spotify--test");
+    expect(wrapper.findAll('[data-testid="provider-row"]')).toHaveLength(0);
+  });
+
+  it("keeps the provider listed when removing it fails", async () => {
+    // the server still has the source, so the list must not pretend otherwise
+    apiMock.removeProviderConfig.mockRejectedValue(new Error("nope"));
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    const menuItems = await openMenu(wrapper);
+    menuItems
+      .find(
+        (item: { label: string }) => item.label === "settings.remove_provider",
+      )
+      .action();
+
+    const removeCall = eventbusMock.emit.mock.calls.find(
+      ([event]) => event === "deleteConfirmationDialog",
+    );
+    await removeCall?.[1].onConfirm();
+    await flushPromises();
+
+    expect(toastMock.error).toHaveBeenCalledWith("Error: nope");
+    expect(wrapper.findAll('[data-testid="provider-row"]')).toHaveLength(1);
   });
 
   it("omits reconfigure from the menu when no setup flow exists", async () => {
@@ -527,6 +597,16 @@ describe("Providers", () => {
     const dialog = wrapper.get('[data-testid="add-dialog"]');
     expect(dialog.attributes("data-provider-type")).toBe("");
     expect(dialog.attributes("data-multi-instance")).toBe("false");
+    expect(dialog.attributes("data-self-service")).toBe("false");
+  });
+
+  it("offers reconfiguration of a provider that only an admin may set up", async () => {
+    apiMock.providerManifests.spotify.self_service = false;
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    const menuItems = await openMenu(wrapper);
+    expect(menuItems[0].label).toBe("settings.reconfigure");
   });
 
   it("keeps the filter empty state for a provider type without any provider", async () => {
@@ -552,7 +632,9 @@ describe("Providers", () => {
 
 describe("Providers for a member", () => {
   beforeEach(() => {
-    authMock.isAdmin.mockReturnValue(false);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
   });
 
   it("lists only the music sources it owns, whatever type the route asks for", async () => {
@@ -662,12 +744,39 @@ describe("Providers for a member", () => {
     ).toBe("none");
   });
 
-  it("offers only music sources that allow another account", async () => {
+  it("offers only music sources that allow another account and that members may set up", async () => {
     const wrapper = await mountWithConfigs([ownSource()]);
 
     const dialog = wrapper.get('[data-testid="add-dialog"]');
     expect(dialog.attributes("data-provider-type")).toBe("music");
     expect(dialog.attributes("data-multi-instance")).toBe("true");
+    expect(dialog.attributes("data-self-service")).toBe("true");
+  });
+
+  it("offers no reconfiguration of a provider that only an admin may set up", async () => {
+    apiMock.providerManifests.spotify.self_service = false;
+
+    const wrapper = await mountWithConfigs([
+      { ...ownSource(), status: ProviderStatus.AUTH_REQUIRED },
+    ]);
+
+    expect(wrapper.find('[data-testid="provider-action"]').exists()).toBe(
+      false,
+    );
+    const menuItems = await openMenu(wrapper);
+    expect(
+      menuItems.map((item: { label: string }) => item.label),
+    ).not.toContain("settings.reconfigure");
+
+    // the server would refuse the setup flow, so the source opens its options
+    await wrapper.get('[data-testid="provider-row"]').trigger("click");
+    expect(routerMock.push).toHaveBeenCalledWith(
+      "/settings/editprovider/spotify--own",
+    );
+    expect(eventbusMock.emit).not.toHaveBeenCalledWith(
+      "setupFlowDialog",
+      expect.anything(),
+    );
   });
 
   it("invites a member without sources to add one", async () => {
@@ -741,11 +850,23 @@ describe("Providers keyboard", () => {
 
 describe("Providers loading", () => {
   it("narrows a member's load to the music sources", async () => {
-    authMock.isAdmin.mockReturnValue(false);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
 
     await mountWithConfigs([]);
 
     expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
+  });
+
+  it("gives a role that manages only its own music sources the member view", async () => {
+    authMock.hasScope.mockImplementation(scopeChecker(OWN_SOURCES_ROLE_SCOPES));
+
+    await mountWithConfigs([]);
+
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
+    expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+    expect(apiMock.getShareCandidates).toHaveBeenCalled();
   });
 
   it("reports a failing load and shows no empty state", async () => {

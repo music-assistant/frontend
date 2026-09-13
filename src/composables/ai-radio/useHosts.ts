@@ -1,4 +1,5 @@
 import { useShows } from "@/composables/ai-radio/useShows";
+import { canUseQueueDj } from "@/helpers/ai_radio_access";
 import api from "@/plugins/api";
 import type { AIRadioHost, AIRadioSection } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -41,12 +42,13 @@ const aiRadioAvailable = computed(() =>
   ),
 );
 
-// Prefetch as soon as the provider is there, including when it already is.
+// Prefetch as soon as the provider is there, including when it already is, for
+// the roles that get the queue DJ menu.
 watch(
-  aiRadioAvailable,
-  (available) => {
+  () => aiRadioAvailable.value && canUseQueueDj(),
+  (ready) => {
     // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
-    if (available && authManager.guestSessionKind() === null)
+    if (ready && authManager.guestSessionKind() === null)
       prefetchQueueDjState();
   },
   { immediate: true },

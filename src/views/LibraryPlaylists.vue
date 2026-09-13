@@ -34,7 +34,9 @@ import {
   MediaType,
   type Playlist,
   ProviderFeature,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -97,6 +99,8 @@ const setTotals = async function (params: LoadDataParams) {
 };
 
 onMounted(() => {
+  // creating and importing playlists changes the library
+  const canEditLibrary = authManager.hasScope(Scope.LIBRARY_WRITE);
   const playListCreateItems: ToolBarMenuItem[] = [];
   for (const prov of Object.values(api.providers).filter(
     (x) =>
@@ -136,7 +140,7 @@ onMounted(() => {
       overflowAllowed: true,
     });
   }
-  if (playListCreateItems.length) {
+  if (canEditLibrary && playListCreateItems.length) {
     extraMenuItems.value.push({
       label: "create_playlist_on",
       icon: ListPlus,
@@ -145,14 +149,16 @@ onMounted(() => {
     });
   }
   // import playlist from file
-  extraMenuItems.value.push({
-    label: "import_playlist",
-    action: () => {
-      triggerFileImport();
-    },
-    icon: Import,
-    overflowAllowed: true,
-  });
+  if (canEditLibrary) {
+    extraMenuItems.value.push({
+      label: "import_playlist",
+      action: () => {
+        triggerFileImport();
+      },
+      icon: Import,
+      overflowAllowed: true,
+    });
+  }
   // signal if/when items get added/updated/removed within this library
   const unsub = api.subscribe_multi(
     [

@@ -1,6 +1,7 @@
-import { ProviderType } from "@/plugins/api/interfaces";
+import { ProviderType, type Scope } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 const { apiMock, authMock, preferenceState, providerConfigs, routerMock } =
   vi.hoisted(() => ({
@@ -13,7 +14,7 @@ const { apiMock, authMock, preferenceState, providerConfigs, routerMock } =
       sendCommand: vi.fn(),
       serverInfo: { value: { onboard_done: false } },
     },
-    authMock: { isAdmin: vi.fn(() => true) },
+    authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
     // replaced with a real ref by the userPreferences mock factory below
     preferenceState: {
       intent: { value: undefined } as { value?: string },
@@ -116,7 +117,9 @@ describe("NavGettingStarted", () => {
       ...providerConfigs.list,
     ]);
     apiMock.subscribe.mockClear();
-    authMock.isAdmin.mockReturnValue(true);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+    );
     preferenceState.intent.value = undefined;
     routerMock.push.mockReset();
   });
@@ -137,8 +140,11 @@ describe("NavGettingStarted", () => {
     wrapper.unmount();
   });
 
-  it("stays away from anyone who is not an admin", async () => {
-    authMock.isAdmin.mockReturnValue(false);
+  it.each([
+    ["a member", BUILTIN_ROLE_SCOPES.user],
+    ["a guest", BUILTIN_ROLE_SCOPES.guest],
+  ])("stays away from %s, who is not an admin", async (_role, scopes) => {
+    authMock.hasScope.mockImplementation(scopeChecker(scopes));
 
     const wrapper = await mountChecklist();
 

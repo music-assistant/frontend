@@ -1,6 +1,7 @@
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
-import { ProviderType, UserRole } from "@/plugins/api/interfaces";
+import { ProviderType, UserRole, type Scope } from "@/plugins/api/interfaces";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
 const {
@@ -24,7 +25,7 @@ const {
     sendCommand: vi.fn(),
     serverInfo: { value: undefined as { onboard_done: boolean } | undefined },
   },
-  authMock: { isAdmin: vi.fn(() => true) },
+  authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
   // replaced with a real ref by the userPreferences mock factory below, so
   // the composable's computed context follows what a test sets here
   preferenceState: { intent: { value: undefined } as { value?: string } },
@@ -131,7 +132,9 @@ describe("useOnboarding", () => {
     apiMock.sendCommand.mockReset();
     apiMock.sendCommand.mockResolvedValue(undefined);
     apiMock.serverInfo.value = { onboard_done: false };
-    authMock.isAdmin.mockReturnValue(true);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+    );
     routerMock.replace.mockReset();
     setUserPreferenceMock.mockReset();
     toastMock.error.mockReset();
@@ -175,6 +178,19 @@ describe("useOnboarding", () => {
       "invite_members",
     ]);
     expect(hasPending.value).toBe(true);
+  });
+
+  it.each([
+    ["a member", BUILTIN_ROLE_SCOPES.user],
+    ["a guest", BUILTIN_ROLE_SCOPES.guest],
+  ])("asks nothing of %s, who is not an admin", async (_role, scopes) => {
+    authMock.hasScope.mockImplementation(scopeChecker(scopes));
+    addProvider("spotify--1", "spotify", ProviderType.MUSIC);
+
+    const { steps, hasPending } = await loadOnboarding();
+
+    expect(steps.value).toEqual([]);
+    expect(hasPending.value).toBe(false);
   });
 
   it("decides nothing before the onboarding data is in", async () => {
@@ -292,8 +308,10 @@ describe("useOnboarding", () => {
     );
   });
 
-  it("never asks the server for the users on behalf of someone who is not an admin", async () => {
-    authMock.isAdmin.mockReturnValue(false);
+  it("never asks the server for the users on behalf of someone who may not list them", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
 
     const { ctx, dataLoaded } = await loadOnboarding();
 

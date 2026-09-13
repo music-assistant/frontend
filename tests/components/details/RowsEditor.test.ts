@@ -1,5 +1,6 @@
-import ArtistRowsEditor from "@/components/artist/ArtistRowsEditor.vue";
-import type { ArtistRowId } from "@/components/artist/artistRows";
+import { artistRows, type ArtistRowId } from "@/components/artist/artistRows";
+import type { RowRegistry } from "@/components/details/rowRegistry";
+import RowsEditor from "@/components/details/RowsEditor.vue";
 import {
   ProviderFeature,
   ProviderType,
@@ -12,12 +13,12 @@ import { artist } from "../../fixtures/artist";
 const {
   apiMock,
   buttonStub,
-  mockEffectiveArtistRowSource,
+  mockEffectiveSource,
   mockIsPhoneSizedScreen,
-  mockResetArtistRows,
-  mockResolveArtistRows,
-  mockSetArtistRowHidden,
-  mockSetArtistRowSource,
+  mockReset,
+  mockResolve,
+  mockSetHidden,
+  mockSetSource,
   passthrough,
 } = vi.hoisted(() => ({
   passthrough: { template: "<div><slot /></div>" },
@@ -25,12 +26,12 @@ const {
   apiMock: {
     providers: {} as Record<string, unknown>,
   },
-  mockEffectiveArtistRowSource: vi.fn(),
+  mockEffectiveSource: vi.fn(),
   mockIsPhoneSizedScreen: vi.fn(),
-  mockResetArtistRows: vi.fn(),
-  mockResolveArtistRows: vi.fn(),
-  mockSetArtistRowHidden: vi.fn(),
-  mockSetArtistRowSource: vi.fn(),
+  mockReset: vi.fn(),
+  mockResolve: vi.fn(),
+  mockSetHidden: vi.fn(),
+  mockSetSource: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock }));
@@ -40,17 +41,6 @@ vi.mock("@/plugins/api", () => ({ api: apiMock }));
 vi.mock("@/plugins/i18n", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/plugins/i18n")>()),
   $t: (key: string) => key,
-}));
-
-// the registry itself (labels, which rows get a source picker) stays real; only
-// the preference reads and writes are stubbed
-vi.mock("@/components/artist/artistRows", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/components/artist/artistRows")>()),
-  resolveArtistRows: mockResolveArtistRows,
-  effectiveArtistRowSource: mockEffectiveArtistRowSource,
-  setArtistRowHidden: mockSetArtistRowHidden,
-  setArtistRowSource: mockSetArtistRowSource,
-  resetArtistRows: mockResetArtistRows,
 }));
 
 vi.mock("@/plugins/breakpoint", async (importOriginal) => ({
@@ -128,9 +118,27 @@ const ARTIST: Artist = artist({
   ],
 });
 
+// the artist registry itself (labels, which rows get a source picker and which
+// sources they offer) stays real; only the preference reads and writes are stubbed
+const registry: RowRegistry<ArtistRowId, Artist> = {
+  ...artistRows,
+  resolve: mockResolve,
+  effectiveSource: mockEffectiveSource,
+  setHidden: mockSetHidden,
+  setSource: mockSetSource,
+  reset: mockReset,
+};
+
 function mountEditor(availableIds: ArtistRowId[], item: Artist = ARTIST) {
-  return mount(ArtistRowsEditor, {
-    props: { open: true, artist: item, availableIds },
+  return mount(RowsEditor, {
+    props: {
+      open: true,
+      item,
+      registry,
+      availableIds,
+      subtitle: "edit_rows_subtitle",
+      roundAvatar: true,
+    },
     global: { mocks: { $t: (key: string) => key } },
   });
 }
@@ -143,7 +151,7 @@ function buttonWithText(wrapper: VueWrapper, text: string) {
   return wrapper.findAll("button").find((btn) => btn.text().includes(text));
 }
 
-describe("ArtistRowsEditor", () => {
+describe("RowsEditor", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // the sources on offer come from the providers the artist is mapped to that
@@ -161,15 +169,15 @@ describe("ArtistRowsEditor", () => {
       },
     };
     mockIsPhoneSizedScreen.mockReturnValue(false);
-    mockEffectiveArtistRowSource.mockReturnValue("all");
-    mockResolveArtistRows.mockImplementation((availableIds: ArtistRowId[]) => ({
+    mockEffectiveSource.mockReturnValue("all");
+    mockResolve.mockImplementation((availableIds: ArtistRowId[]) => ({
       order: availableIds,
       hidden: new Set<ArtistRowId>(),
     }));
   });
 
   it("renders the rows in the saved order, hidden ones dimmed in place", () => {
-    mockResolveArtistRows.mockReturnValue({
+    mockResolve.mockReturnValue({
       order: ["albums", "bio", "top_tracks"],
       hidden: new Set(["bio"]),
     });
@@ -189,18 +197,25 @@ describe("ArtistRowsEditor", () => {
     );
   });
 
+  it("shows the page's subtitle and a round avatar for a portrait", () => {
+    const wrapper = mountEditor(["bio"]);
+
+    expect(wrapper.text()).toContain("edit_rows_subtitle");
+    expect(wrapper.find(".rows-editor__avatar--round").exists()).toBe(true);
+  });
+
   it("hides a row from its eye toggle and shows it again", async () => {
-    mockResolveArtistRows.mockReturnValue({
+    mockResolve.mockReturnValue({
       order: ["albums", "bio"],
       hidden: new Set(["bio"]),
     });
 
     const wrapper = mountEditor(["bio", "albums"]);
     await wrapper.get('[aria-label="hide_row"]').trigger("click");
-    expect(mockSetArtistRowHidden).toHaveBeenCalledWith("albums", true);
+    expect(mockSetHidden).toHaveBeenCalledWith("albums", true);
 
     await wrapper.get('[aria-label="show_row"]').trigger("click");
-    expect(mockSetArtistRowHidden).toHaveBeenCalledWith("bio", false);
+    expect(mockSetHidden).toHaveBeenCalledWith("bio", false);
   });
 
   it("clears both preferences from the reset button", async () => {
@@ -208,7 +223,7 @@ describe("ArtistRowsEditor", () => {
 
     await buttonWithText(wrapper, "reset_to_default")!.trigger("click");
 
-    expect(mockResetArtistRows).toHaveBeenCalled();
+    expect(mockReset).toHaveBeenCalled();
   });
 
   it("closes on done", async () => {
@@ -224,7 +239,7 @@ describe("ArtistRowsEditor", () => {
 
     await wrapper.get('[data-source="spotify--1"]').trigger("click");
 
-    expect(mockSetArtistRowSource).toHaveBeenCalledWith("albums", "spotify--1");
+    expect(mockSetSource).toHaveBeenCalledWith("albums", "spotify--1");
   });
 
   it("offers the library to a release row and every provider at once to an aggregated one", () => {
@@ -259,6 +274,6 @@ describe("ArtistRowsEditor", () => {
     const wrapper = mountEditor(["bio"]);
     await wrapper.get('[role="switch"]').trigger("click");
 
-    expect(mockSetArtistRowHidden).toHaveBeenCalledWith("bio", true);
+    expect(mockSetHidden).toHaveBeenCalledWith("bio", true);
   });
 });

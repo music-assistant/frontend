@@ -146,6 +146,7 @@ import { api } from "@/plugins/api";
 import {
   MediaType,
   ProviderMapping,
+  Scope,
   type MediaItem,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -264,7 +265,7 @@ const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
   }
   // remove mapping option (only for streaming provider mapping)
   if (
-    authManager.isAdmin() &&
+    authManager.hasScope(Scope.LIBRARY_MANAGE) &&
     api.providers[providerMapping.provider_instance]?.is_streaming_provider
   ) {
     menuItems.push({
@@ -326,7 +327,7 @@ const toolbarMenuItems = computed(() => {
       hide:
         props.itemDetails.provider != "library" ||
         !api.hasStreamingProviders.value ||
-        !authManager.isAdmin(),
+        !authManager.hasScope(Scope.LIBRARY_MANAGE),
     },
     // toggle expand
     {

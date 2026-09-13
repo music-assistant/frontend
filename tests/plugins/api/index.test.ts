@@ -7,6 +7,7 @@ import {
   type Player,
   PlaylistMatchPolicy,
   RepeatMode,
+  type Scope,
   type ServerInfoMessage,
   type SuccessResultMessage,
   TaskStatus,
@@ -15,9 +16,11 @@ import {
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../../fixtures/playlist";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
 import { userSummary } from "../../fixtures/user";
 
-const { mockToastError, mockToastInfo } = vi.hoisted(() => ({
+const { hasScope, mockToastError, mockToastInfo } = vi.hoisted(() => ({
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
   mockToastError: vi.fn(),
   mockToastInfo: vi.fn(),
 }));
@@ -40,6 +43,10 @@ vi.mock("@/plugins/i18n", () => ({
 
 vi.mock("@/plugins/store", () => ({
   store: {},
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope },
 }));
 
 import {
@@ -108,6 +115,7 @@ describe("MusicAssistantApi error handling", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     api = new MusicAssistantApi();
     transport = new TestTransport();
     const initialization = api.initialize(transport);
@@ -330,6 +338,118 @@ describe("MusicAssistantApi error handling", () => {
 
     api.serverInfo.value = { ...SERVER_INFO, schema_version: 72 };
     expect(api.supportsShareCandidates).toBe(true);
+  });
+
+  it("lists the roles from schema 74 on", () => {
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 73 };
+    expect(api.supportsRoles).toBe(false);
+
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
+    expect(api.supportsRoles).toBe(true);
+  });
+
+  it("loads the roles the server lists", async () => {
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
+    const roles = [
+      {
+        role_id: UserRole.ADMIN,
+        name: "Administrator",
+        scopes: ["*"],
+        builtin: true,
+      },
+      { role_id: "kids-id", name: "Kids", scopes: [], builtin: false },
+    ];
+    const result = api.getRoles();
+
+    expect(transport.lastCommand.command).toBe("auth/roles");
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: roles,
+      partial: false,
+    });
+    await expect(result).resolves.toEqual(roles);
+  });
+
+  it("builds the builtin roles from their scopes on an older server", async () => {
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 73 };
+    const result = api.getRoles();
+
+    expect(transport.lastCommand.command).toBe("auth/scopes");
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: { [UserRole.ADMIN]: ["*"], [UserRole.GUEST]: ["library.read"] },
+      partial: false,
+    });
+    await expect(result).resolves.toEqual([
+      {
+        role_id: UserRole.ADMIN,
+        name: UserRole.ADMIN,
+        scopes: ["*"],
+        builtin: true,
+      },
+      {
+        role_id: UserRole.GUEST,
+        name: UserRole.GUEST,
+        scopes: ["library.read"],
+        builtin: true,
+      },
+    ]);
+  });
+
+  it("sends the role commands and leaves their errors to the caller", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const kids = {
+      role_id: "kids-id",
+      name: "Teens",
+      scopes: [],
+      builtin: false,
+    };
+
+    const created = api.createRole("Kids", ["library.write"]);
+    expect(transport.lastCommand.command).toBe("auth/role/create");
+    expect(transport.lastCommand.args).toEqual({
+      name: "Kids",
+      scopes: ["library.write"],
+    });
+    const rejection = expect(created).rejects.toMatchObject({
+      message: "Taken",
+    });
+    transport.receive(createErrorResult(transport.lastCommand, "Taken"));
+    await rejection;
+
+    const updated = api.updateRole("kids-id", { name: "Teens" });
+    expect(transport.lastCommand.command).toBe("auth/role/update");
+    expect(transport.lastCommand.args).toEqual({
+      role_id: "kids-id",
+      name: "Teens",
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: kids,
+      partial: false,
+    });
+    await expect(updated).resolves.toEqual(kids);
+
+    const deleted = api.deleteRole("kids-id");
+    expect(transport.lastCommand.command).toBe("auth/role/delete");
+    expect(transport.lastCommand.args).toEqual({ role_id: "kids-id" });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: null,
+      partial: false,
+    });
+    await deleted;
+
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it("lets a role with queues.control play AI Radio from schema 75 on", () => {
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
+    expect(api.supportsAIRadioPlaybackScopes).toBe(false);
+
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 75 };
+    expect(api.supportsAIRadioPlaybackScopes).toBe(true);
   });
 
   describe("a refused ordering command", () => {
@@ -558,10 +678,49 @@ describe("MusicAssistantApi error handling", () => {
       partial: false,
     });
     await expect(result).resolves.toEqual(task);
-    expect(mockToastInfo).toHaveBeenCalledWith(
-      "background_tasks.toast.added",
-      expect.anything(),
+    await vi.waitFor(() =>
+      expect(mockToastInfo).toHaveBeenCalledWith(
+        "background_tasks.toast.added",
+        expect.anything(),
+      ),
     );
+  });
+
+  it.each([
+    { role: "an admin", scopes: BUILTIN_ROLE_SCOPES.admin },
+    { role: "a member", scopes: BUILTIN_ROLE_SCOPES.user },
+  ])("offers $role the task list with the task toast", async ({ scopes }) => {
+    hasScope.mockImplementation(scopeChecker(scopes));
+
+    const toast = await runTaskToast(api, transport);
+
+    expect(toast.action?.label).toBe("background_tasks.open");
+  });
+
+  it("leaves the task list out of the task toast for a guest", async () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
+
+    const toast = await runTaskToast(api, transport);
+
+    expect(toast.action).toBeUndefined();
+  });
+
+  describe("with the auth module gone after a server update", () => {
+    beforeEach(() => {
+      vi.doMock("@/plugins/auth", () => {
+        throw new TypeError("Failed to fetch dynamically imported module");
+      });
+    });
+
+    afterEach(() => {
+      vi.doMock("@/plugins/auth", () => ({ authManager: { hasScope } }));
+    });
+
+    it("still shows the task toast, without the task list", async () => {
+      const toast = await runTaskToast(api, transport);
+
+      expect(toast.action).toBeUndefined();
+    });
   });
 
   it("rejects a failed migration without the global error toast", async () => {
@@ -603,6 +762,24 @@ describe("MusicAssistantApi error handling", () => {
     await rejection;
   });
 });
+
+/**
+ * Run a task and hand back the options of the toast announcing it.
+ */
+async function runTaskToast(
+  api: MusicAssistantApi,
+  transport: TestTransport,
+): Promise<{ action?: { label: string } }> {
+  const result = api.runTask("task-1");
+  transport.receive({
+    message_id: transport.lastCommand.message_id!,
+    result: { id: "task-1" },
+    partial: false,
+  });
+  await result;
+  await vi.waitFor(() => expect(mockToastInfo).toHaveBeenCalled());
+  return mockToastInfo.mock.calls[0][1];
+}
 
 function createErrorResult(
   command: CommandMessage,

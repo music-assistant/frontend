@@ -1,6 +1,11 @@
-import { ConfigEntryType, ProviderType } from "@/plugins/api/interfaces";
+import {
+  ConfigEntryType,
+  ProviderType,
+  type Scope,
+} from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
 const {
@@ -26,7 +31,7 @@ const {
     sendCommand: vi.fn(),
     serverInfo: { value: { onboard_done: false } },
   },
-  authMock: { isAdmin: vi.fn(() => true) },
+  authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
   // the settings form as the server settings step drives it: what it is holding
   // on to when it comes up, whether those values validate, and what the user
   // typed, as the form hands it over
@@ -213,7 +218,9 @@ describe("Onboarding wizard", () => {
     apiMock.saveCoreConfig.mockReset();
     apiMock.saveCoreConfig.mockResolvedValue(undefined);
     apiMock.subscribe.mockClear();
-    authMock.isAdmin.mockReturnValue(true);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+    );
     coreForm.hasUnsavedChanges = false;
     coreForm.valuesValidate = true;
     preferenceState.intent.value = undefined;

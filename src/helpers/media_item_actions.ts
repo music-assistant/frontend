@@ -11,7 +11,9 @@ import {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
@@ -195,6 +197,8 @@ export const handleMenuBtnClick = function (
 const readClickSetting = async function (
   key: string,
 ): Promise<string | undefined> {
+  // the defaults apply to a role that may not read the core settings
+  if (!authManager.hasScope(Scope.CONFIG_CORE_READ)) return undefined;
   try {
     const value = await api.getCoreConfigValue("player_queues", key);
     return typeof value === "string" ? value : undefined;

@@ -15,11 +15,13 @@ import {
   ProviderFeature,
   ProviderSharing,
   ProviderType,
+  type Scope,
   type User,
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../fixtures/playlist";
 import { providerMapping } from "../fixtures/providerMapping";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
 const { apiMock, authMock, storeMock, mockEventbusEmit } = vi.hoisted(() => ({
@@ -30,7 +32,7 @@ const { apiMock, authMock, storeMock, mockEventbusEmit } = vi.hoisted(() => ({
     players: {},
   },
   authMock: {
-    hasScope: vi.fn<() => boolean>(),
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
   },
   storeMock: {
     currentUser: undefined as User | undefined,
@@ -70,7 +72,8 @@ const shareAction = (items: ContextMenuItem[]): ContextMenuItem | undefined =>
 
 beforeEach(() => {
   vi.clearAllMocks();
-  authMock.hasScope.mockReturnValue(false);
+  // a member, who may change the library but does not manage all of it
+  authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
   storeMock.currentUser = user({ user_id: "me" });
   apiMock.providers = {
     builtin: {
@@ -97,7 +100,9 @@ describe("share playlist context menu action", () => {
   });
 
   it("is offered to a library manager for another member's playlist", async () => {
-    authMock.hasScope.mockReturnValue(true);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+    );
     const items = await getContextMenuItems([maPlaylist("other")]);
 
     expect(shareAction(items)).toBeDefined();
@@ -109,8 +114,19 @@ describe("share playlist context menu action", () => {
     expect(shareAction(items)).toBeUndefined();
   });
 
+  it("is not offered to an owner whose role may not change the library", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+    const items = await getContextMenuItems([maPlaylist("me")]);
+
+    expect(shareAction(items)).toBeUndefined();
+  });
+
   it("is not offered for a playlist of a music source", async () => {
-    authMock.hasScope.mockReturnValue(true);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+    );
     const item = playlist({
       provider_mappings: [providerMapping({ provider_domain: "spotify" })],
     });
@@ -120,7 +136,9 @@ describe("share playlist context menu action", () => {
   });
 
   it("leaves a playlist mapping without provider mappings alone", async () => {
-    authMock.hasScope.mockReturnValue(true);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+    );
     const mapping = {
       item_id: "1",
       provider: "library",

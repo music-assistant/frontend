@@ -1,7 +1,8 @@
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
-import { UserRole } from "@/plugins/api/interfaces";
+import { UserRole, type Scope } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
 const { apiMock, authMock, preferenceState, users } = vi.hoisted(() => ({
@@ -15,7 +16,7 @@ const { apiMock, authMock, preferenceState, users } = vi.hoisted(() => ({
     sendCommand: vi.fn(),
     serverInfo: { value: { onboard_done: false } },
   },
-  authMock: { isAdmin: vi.fn(() => true) },
+  authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
   // replaced with a real ref by the userPreferences mock factory below
   preferenceState: { intent: { value: undefined } as { value?: string } },
   // what the server hands back as the user accounts
@@ -87,7 +88,7 @@ beforeEach(() => {
   ];
   apiMock.getAllUsers.mockReset();
   apiMock.getAllUsers.mockImplementation(async () => [...users.list]);
-  authMock.isAdmin.mockReturnValue(true);
+  authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 });
 

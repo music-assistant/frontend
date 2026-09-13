@@ -7,6 +7,7 @@ import {
   ProviderType,
   UserRole,
   type ProviderConfig,
+  type Role,
 } from "@/plugins/api/interfaces";
 import { saveDeviceSetting } from "@/helpers/device_settings";
 import type { MusicAssistantApi } from "@/plugins/api";
@@ -15,6 +16,8 @@ import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "vue-sonner";
 import { providerConfig } from "./fixtures/providerConfig";
+import { role } from "./fixtures/role";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "./fixtures/scopes";
 import { user } from "./fixtures/user";
 import { store } from "@/plugins/store";
 
@@ -59,7 +62,7 @@ const {
     getLibraryRadiosCount: vi.fn<MusicAssistantApi["getLibraryRadiosCount"]>(),
     getLibraryTracksCount: vi.fn<MusicAssistantApi["getLibraryTracksCount"]>(),
     getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
-    getRoleScopes: vi.fn<MusicAssistantApi["getRoleScopes"]>(),
+    getRoles: vi.fn<MusicAssistantApi["getRoles"]>(),
     initialize: vi.fn<MusicAssistantApi["initialize"]>(),
     isRemoteConnection: { value: false },
     requireAuthentication: vi.fn<MusicAssistantApi["requireAuthentication"]>(),
@@ -81,6 +84,7 @@ const {
     endRejectedGuestSession: vi.fn(),
     getToken: vi.fn(),
     guestSessionKind: vi.fn(),
+    hasScope: vi.fn(),
     isDashboardViewer: vi.fn(),
     isGuestAccessSession: vi.fn(),
     isMusicQuizGuest: vi.fn(),
@@ -131,6 +135,7 @@ const {
       enabledPlugins: new Set<string>(),
       forceMobileLayout: false,
       isIngressSession: false,
+      roles: [] as Role[],
       roleScopes: {} as Record<string, string[]>,
       serverInfo: undefined as unknown,
     },
@@ -350,7 +355,7 @@ describe("App initialization", () => {
     mockProxyEnsureReady.mockResolvedValue(undefined);
     mockProxySetTransport.mockResolvedValue(undefined);
     mockPruneStaleProviderFilters.mockResolvedValue(undefined);
-    apiMock.getRoleScopes.mockResolvedValue({});
+    apiMock.getRoles.mockResolvedValue([]);
     haStateMock.isSubscribed = false;
     haStateMock.kioskModeEnabled = false;
     mockGetKioskModePreference.mockReturnValue(true);
@@ -477,6 +482,9 @@ describe("App initialization", () => {
           username: "admin",
         }),
       );
+      authManagerMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+      );
     };
 
     it("opens the wizard for an admin on a server that has not been set up", async () => {
@@ -488,13 +496,20 @@ describe("App initialization", () => {
       expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
     });
 
-    it("leaves a non-admin alone on a server that has not been set up", async () => {
-      apiMock.serverInfo.value.onboard_done = false;
+    it.each([
+      ["a member", BUILTIN_ROLE_SCOPES.user],
+      ["a guest", BUILTIN_ROLE_SCOPES.guest],
+    ])(
+      "leaves %s alone on a server that has not been set up",
+      async (_role, scopes) => {
+        authManagerMock.hasScope.mockImplementation(scopeChecker(scopes));
+        apiMock.serverInfo.value.onboard_done = false;
 
-      wrapper = await mountApp();
+        wrapper = await mountApp();
 
-      expect(mockRouterPush).not.toHaveBeenCalled();
-    });
+        expect(mockRouterPush).not.toHaveBeenCalled();
+      },
+    );
 
     it("stays out of the way once the server is set up", async () => {
       asAdmin();
@@ -516,11 +531,18 @@ describe("App initialization", () => {
   });
 
   it("keeps full initialization and plugin discovery for regular users", async () => {
-    apiMock.getRoleScopes.mockResolvedValue({ user: ["library.read"] });
+    const userRole = role({
+      role_id: "user",
+      name: "User",
+      scopes: ["library.read"],
+      builtin: true,
+    });
+    apiMock.getRoles.mockResolvedValue([userRole]);
 
     wrapper = await mountApp();
 
     expect(mockSetPreference).toHaveBeenCalledWith("theme", "dark");
+    expect(storeMock.roles).toEqual([userRole]);
     expect(storeMock.roleScopes).toEqual({ user: ["library.read"] });
     expect(apiMock.fetchState).toHaveBeenCalledOnce();
     expect(apiMock.fetchProviders).not.toHaveBeenCalled();
@@ -927,6 +949,101 @@ describe("App initialization", () => {
     expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
   });
 
+  describe("reloading for changed permissions", () => {
+    const ROLE_SCOPES = {
+      admin: [...BUILTIN_ROLE_SCOPES.admin],
+      user: [...BUILTIN_ROLE_SCOPES.user],
+    };
+    // the roles as the server lists them, by the scopes each one grants
+    const listedRoles = (roleScopes: Record<string, string[]>) =>
+      Object.entries(roleScopes).map(([role_id, scopes]) =>
+        role({ role_id, scopes }),
+      );
+    let reload: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      reload = vi.spyOn(window.location, "reload").mockImplementation(() => {});
+      apiMock.getRoles.mockResolvedValue(listedRoles(ROLE_SCOPES));
+      // like the real one, which a reconnect calls before initializing again
+      authManagerMock.setCurrentUser.mockImplementation((currentUser) => {
+        storeMock.currentUser = currentUser;
+      });
+    });
+
+    afterEach(() => {
+      reload.mockRestore();
+    });
+
+    it.each([
+      {
+        change: "the user got another role",
+        role: UserRole.ADMIN,
+        roleScopes: ROLE_SCOPES,
+      },
+      {
+        change: "the role lost scopes",
+        role: UserRole.USER,
+        roleScopes: { ...ROLE_SCOPES, user: [...BUILTIN_ROLE_SCOPES.guest] },
+      },
+      {
+        change: "the user got another role with the same scopes",
+        role: "household_member",
+        roleScopes: {
+          ...ROLE_SCOPES,
+          household_member: [...BUILTIN_ROLE_SCOPES.user],
+        },
+      },
+    ])(
+      "reloads the app when a reconnect finds $change",
+      async ({ role, roleScopes }) => {
+        wrapper = await mountApp();
+        apiMock.fetchState.mockClear();
+        const changedUser = user({
+          role,
+          user_id: "user-id",
+          username: "regular-user",
+        });
+        apiMock.authenticateWithToken.mockResolvedValue({ user: changedUser });
+        apiMock.getCurrentUserInfo.mockResolvedValue(changedUser);
+        apiMock.getRoles.mockResolvedValue(listedRoles(roleScopes));
+
+        await reconnectAndInitialize();
+
+        expect(reload).toHaveBeenCalledOnce();
+        // the reloaded app does the rest of the initialization
+        expect(apiMock.fetchState).not.toHaveBeenCalled();
+      },
+    );
+
+    it("keeps the app running when a reconnect finds the same scopes", async () => {
+      wrapper = await mountApp();
+      apiMock.fetchState.mockClear();
+      // the same scopes, listed in another order
+      apiMock.getRoles.mockResolvedValue(
+        listedRoles({
+          ...ROLE_SCOPES,
+          user: [...BUILTIN_ROLE_SCOPES.user].reverse(),
+        }),
+      );
+
+      await reconnectAndInitialize();
+
+      expect(reload).not.toHaveBeenCalled();
+      expect(apiMock.fetchState).toHaveBeenCalledOnce();
+      expect(apiMock.state.value).toBe("initialized");
+    });
+
+    it("never reloads on the first initialization", async () => {
+      // what the store holds before is no earlier initialization of this app
+      storeMock.currentUser = user({ role: UserRole.ADMIN });
+      storeMock.roleScopes = ROLE_SCOPES;
+
+      wrapper = await mountApp();
+
+      expect(reload).not.toHaveBeenCalled();
+    });
+  });
+
   it("takes the safe area padding over in an ingress session", async () => {
     storeMock.isIngressSession = true;
 
@@ -1092,6 +1209,17 @@ async function reconnect() {
   await startReconnect();
   await flushPromises();
   expect(apiMock.authenticateWithToken).toHaveBeenCalled();
+}
+
+/**
+ * Drive the connection through a reconnect that accepts the token, and have the
+ * app initialize again the way the real api lets it once it authenticated.
+ */
+async function reconnectAndInitialize() {
+  authManagerMock.getToken.mockReturnValue("regular-token");
+  await reconnect();
+  apiMock.state.value = "authenticated";
+  await flushPromises();
 }
 
 /**

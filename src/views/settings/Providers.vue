@@ -296,6 +296,7 @@
     v-model:show="showAddProviderDialog"
     :provider-type="managesAllSources ? undefined : ProviderType.MUSIC"
     :multi-instance-only="!managesAllSources"
+    :self-service-only="!managesAllSources"
   />
   <ProviderAccessDialog
     v-model:open="showAccessDialog"
@@ -337,6 +338,7 @@ import {
   getProviderSharingTranslationKey,
   hasConfigurableAccess,
   isOwnMusicSource,
+  isSelfServiceProvider,
   servesNobody,
   shareCandidates,
   userDisplayName,
@@ -360,6 +362,7 @@ import {
   ProviderStage,
   ProviderStatus,
   ProviderType,
+  Scope,
   type User,
   type UserSummary,
 } from "@/plugins/api/interfaces";
@@ -389,7 +392,9 @@ const viewMode = computed(() => providersViewMode.viewMode.value);
 const MIN_PROVIDERS_FOR_SEARCH = 10;
 
 // an admin manages every source, a member only the music sources it owns
-const managesAllSources = computed(() => authManager.isAdmin());
+const managesAllSources = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+);
 
 const currentType = computed(() =>
   managesAllSources.value
@@ -522,13 +527,23 @@ const loadShareCandidates = async function () {
   }
 };
 
-const removeProvider = function (providerInstanceId: string) {
-  api
-    .removeProviderConfig(providerInstanceId)
-    .catch((err) => toast.error(String(err)));
-  providerConfigs.value = providerConfigs.value.filter(
-    (x) => x.instance_id != providerInstanceId,
-  );
+const removeProvider = function (config: ProviderConfig) {
+  const instanceId = config.instance_id;
+  eventbus.emit("deleteConfirmationDialog", {
+    title: $t("settings.remove_provider"),
+    message: $t("settings.remove_provider_confirm", [getProviderName(config)]),
+    confirmLabel: $t("settings.remove_provider"),
+    onConfirm: async () => {
+      try {
+        await api.removeProviderConfig(instanceId);
+        providerConfigs.value = providerConfigs.value.filter(
+          (x) => x.instance_id != instanceId,
+        );
+      } catch (err) {
+        toast.error(String(err));
+      }
+    },
+  });
 };
 
 const openProviderOptions = function (providerInstanceId: string) {
@@ -552,6 +567,7 @@ const reconfigureProvider = function (providerInstanceId: string) {
 
 const openProvider = function (provider: ProviderConfig) {
   if (
+    maySetUp(provider) &&
     providerRequiresReconfiguration(
       provider.status,
       api.providerManifests[provider.domain]?.has_setup_flow,
@@ -565,10 +581,22 @@ const openProvider = function (provider: ProviderConfig) {
 };
 
 const canReconfigure = function (provider: ProviderConfig) {
-  return canReconfigureProvider(
-    provider.status,
-    api.providerManifests[provider.domain]?.has_setup_flow,
-    provider.enabled,
+  return (
+    maySetUp(provider) &&
+    canReconfigureProvider(
+      provider.status,
+      api.providerManifests[provider.domain]?.has_setup_flow,
+      provider.enabled,
+    )
+  );
+};
+
+// reconfiguring a source sets it up again, which a member may only do for a
+// provider it may set up itself
+const maySetUp = function (provider: ProviderConfig) {
+  return (
+    managesAllSources.value ||
+    isSelfServiceProvider(api.providerManifests[provider.domain])
   );
 };
 
@@ -674,7 +702,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       label: "settings.remove_provider",
       labelArgs: [],
       action: () => {
-        removeProvider(item.instance_id);
+        removeProvider(item);
       },
       icon: "mdi-delete",
       hide: providerManifest.builtin,

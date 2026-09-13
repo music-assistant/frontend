@@ -1,9 +1,10 @@
 import {
   type Playlist,
+  type PlaylistAccess,
   ProviderSharing,
   type User,
 } from "@/plugins/api/interfaces";
-import { accessAllows } from "./provider_access";
+import { accessAllows, servesNobody } from "./provider_access";
 
 const PLAYLIST_SHARING_HINT_TRANSLATION_KEYS: Record<ProviderSharing, string> =
   {
@@ -13,10 +14,15 @@ const PLAYLIST_SHARING_HINT_TRANSLATION_KEYS: Record<ProviderSharing, string> =
     [ProviderSharing.EVERYONE]: "playlist_access.hints.everyone",
   };
 
-/** The translation key explaining a sharing choice for a playlist. */
+/** The translation key explaining who can see a playlist with this access. */
 export const getPlaylistSharingHintTranslationKey = (
-  sharing: ProviderSharing,
-) => PLAYLIST_SHARING_HINT_TRANSLATION_KEYS[sharing];
+  access: PlaylistAccess,
+) => {
+  if (servesNobody(access)) return "playlist_access.hints.nobody";
+  if (access.owner === null && access.sharing === ProviderSharing.SELECTED)
+    return "playlist_access.hints.selected_no_owner";
+  return PLAYLIST_SHARING_HINT_TRANSLATION_KEYS[access.sharing];
+};
 
 /** Whether the playlist is one Music Assistant keeps itself: only those carry an access record. */
 export const isMusicAssistantPlaylist = (playlist: Playlist) =>

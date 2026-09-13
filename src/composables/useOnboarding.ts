@@ -18,6 +18,7 @@ import { api } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
   EventType,
+  Scope,
   UserRole,
   type ProviderConfig,
   type ProviderType,
@@ -104,7 +105,9 @@ async function loadProviderConfigs(): Promise<void> {
 }
 
 async function fetchUsers(): Promise<void> {
-  if (!authManager.isAdmin()) {
+  // listing the accounts is what the user management screen is allowed on, so
+  // whoever may not open that is answered without a request going out
+  if (!authManager.hasScope(Scope.USERS_READ)) {
     usersAnswered.value = true;
     return;
   }
@@ -122,9 +125,9 @@ async function fetchUsers(): Promise<void> {
 }
 
 /**
- * Load the user accounts. Listing them is an admin command, and the household
- * is only ever asked about on the admin track, so nobody else fetches them: a
- * non-admin is answered without a request going out at all.
+ * Load the user accounts. The household is only ever asked about on the admin
+ * track, and listing the accounts is a permission of its own, so nobody who
+ * lacks it fetches them.
  */
 async function loadUsers(): Promise<void> {
   loadingUsers ??= fetchUsers().finally(() => {
@@ -199,7 +202,8 @@ const { getPreference } = useUserPreferences();
 const intent = getPreference<OnboardingIntent>(ONBOARDING_INTENT_PREFERENCE);
 
 const ctx = computed<OnboardingContext>(() => ({
-  isAdmin: authManager.isAdmin(),
+  // the admin track sets up every kind of provider
+  isAdmin: authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
   providers: (providerConfigs.value ?? []).map((config) => ({
     type: config.type,
     domain: config.domain,
