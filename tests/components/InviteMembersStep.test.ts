@@ -1,27 +1,33 @@
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
-import { UserRole, type Scope } from "@/plugins/api/interfaces";
+import { UserRole, type Role, type Scope } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { role } from "../fixtures/role";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
-const { apiMock, authMock, preferenceState, users } = vi.hoisted(() => ({
-  apiMock: {
-    players: {} as Record<string, unknown>,
-    providers: {} as Record<string, { name: string }>,
-    providerManifests: {} as Record<string, { builtin: boolean }>,
-    getAllUsers: vi.fn(),
-    getProviderConfigs: vi.fn(async () => []),
-    subscribe: vi.fn(() => vi.fn()),
-    sendCommand: vi.fn(),
-    serverInfo: { value: { onboard_done: false } },
-  },
-  authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
-  // replaced with a real ref by the userPreferences mock factory below
-  preferenceState: { intent: { value: undefined } as { value?: string } },
-  // what the server hands back as the user accounts
-  users: { list: [] as ReturnType<typeof user>[] },
-}));
+const { apiMock, authMock, preferenceState, storeMock, users } = vi.hoisted(
+  () => ({
+    apiMock: {
+      players: {} as Record<string, unknown>,
+      providers: {} as Record<string, { name: string }>,
+      providerManifests: {} as Record<string, { builtin: boolean }>,
+      getAllUsers: vi.fn(),
+      getProviderConfigs: vi.fn(async () => []),
+      subscribe: vi.fn(() => vi.fn()),
+      sendCommand: vi.fn(),
+      serverInfo: { value: { onboard_done: false } },
+    },
+    authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
+    // replaced with a real ref by the userPreferences mock factory below
+    preferenceState: { intent: { value: undefined } as { value?: string } },
+    // the roles the server listed: where a role that is not a builtin one gets
+    // the name it is shown by
+    storeMock: { roles: [] as Role[] },
+    // what the server hands back as the user accounts
+    users: { list: [] as ReturnType<typeof user>[] },
+  }),
+);
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 
@@ -31,9 +37,11 @@ vi.mock("@/plugins/router", () => ({
   default: { push: vi.fn(), replace: vi.fn() },
 }));
 
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
+
 vi.mock("@/plugins/i18n", () => ({
   // the real one hands back the key it was given when it knows none, which is
-  // what the role label leans on
+  // what the role name falls back on
   $t: (key: string) =>
     ({ "auth.admin_role": "Administrator", "auth.user_role": "User" })[key] ??
     key,
@@ -83,6 +91,7 @@ function members(wrapper: Awaited<ReturnType<typeof mountStep>>) {
 let warnSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
+  storeMock.roles = [];
   users.list = [
     user({ user_id: "admin-1", username: "admin", display_name: "Marcel" }),
   ];
@@ -123,6 +132,18 @@ describe("InviteMembersStep", () => {
     expect(wrapper.text()).not.toContain(HOMEASSISTANT_SYSTEM_USER);
     expect(wrapper.text()).not.toContain("guest");
     expect(wrapper.text()).not.toContain("moved-out");
+
+    wrapper.unmount();
+  });
+
+  it("names a role the server made up here", async () => {
+    storeMock.roles = [role({ role_id: "dj", name: "House DJ" })];
+    users.list = [user({ user_id: "sam-1", username: "sam", role: "dj" })];
+
+    const wrapper = await mountStep();
+
+    // a role this frontend has no name for is shown by the name it was given
+    expect(members(wrapper)[0].text()).toContain("House DJ");
 
     wrapper.unmount();
   });

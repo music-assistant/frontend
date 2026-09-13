@@ -20,7 +20,9 @@
           </ItemMedia>
           <ItemContent>
             <ItemTitle>{{ member.name }}</ItemTitle>
-            <ItemDescription>{{ roleLabel(member.role) }}</ItemDescription>
+            <ItemDescription>
+              {{ roleDisplayName(member.role, store.roles) }}
+            </ItemDescription>
           </ItemContent>
         </Item>
       </ItemGroup>
@@ -87,7 +89,8 @@ import {
 import CreateUserDialog from "@/components/users/CreateUserDialog.vue";
 import { householdMembers, useOnboarding } from "@/composables/useOnboarding";
 import type { OnboardingStepId } from "@/helpers/onboarding";
-import { roleLabel } from "@/helpers/users";
+import { roleDisplayName } from "@/helpers/roles";
+import { store } from "@/plugins/store";
 import { UserPlus, UserRound } from "@lucide/vue";
 import { computed, ref } from "vue";
 
