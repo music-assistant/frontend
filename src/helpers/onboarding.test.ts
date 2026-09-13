@@ -1,5 +1,6 @@
 import {
   ONBOARDING_STEPS,
+  PERSONA_DEFAULTS,
   applicableSteps,
   checklistPendingSteps,
   checklistSteps,
@@ -22,6 +23,8 @@ const BASE_ORDER = [
   "finish",
 ] as const;
 
+const MEMBER_ORDER = ["welcome", "whats_here", "tour", "all_set"] as const;
+
 function provider(
   type: ProviderType,
   domain: string,
@@ -36,12 +39,21 @@ function context(
 ): OnboardingContext {
   return {
     isAdmin: true,
+    isMember: false,
+    welcomed: false,
     providers: [],
     playerCount: 0,
     memberCount: null,
     answers: {},
     ...overrides,
   };
+}
+
+/** A household member: someone who lives here without running the place. */
+function memberContext(
+  overrides: Partial<OnboardingContext> = {},
+): OnboardingContext {
+  return context({ isAdmin: false, isMember: true, ...overrides });
 }
 
 function stepIds(steps: { id: string }[]): string[] {
@@ -100,13 +112,16 @@ describe("onboarding step order", () => {
     );
     expect(registered?.optional).toBeUndefined();
     expect(registered?.deferred).toBeUndefined();
-    expect(stepIds([...ONBOARDING_STEPS])).toEqual([...BASE_ORDER]);
+    expect(stepIds([...ONBOARDING_STEPS])).toEqual([
+      ...BASE_ORDER,
+      ...MEMBER_ORDER,
+    ]);
   });
 
   it("still keeps a deferred step out of the tail without the plugins", () => {
     // nothing to sit behind: the deferred music sources land ahead of the
     // review, which is no place to leave something that is still to do
-    const withoutPlugins = ONBOARDING_STEPS.filter(
+    const withoutPlugins = applicableSteps(context()).filter(
       (candidate) => candidate.id !== "plugins",
     );
 
@@ -129,7 +144,7 @@ describe("onboarding step order", () => {
     }
   });
 
-  it("offers nothing to someone who is not an admin", () => {
+  it("offers nothing to someone on neither track", () => {
     expect(applicableSteps(context({ isAdmin: false }))).toEqual([]);
   });
 });
@@ -259,7 +274,7 @@ describe("pending onboarding steps", () => {
     expect(pendingSteps(ctx)).toEqual([]);
   });
 
-  it("is empty for someone who is not an admin", () => {
+  it("is empty for someone on neither track", () => {
     expect(pendingSteps(context({ isAdmin: false }))).toEqual([]);
   });
 });
@@ -330,7 +345,7 @@ describe("the getting started checklist", () => {
     expect(checklistPendingSteps(ctx)).toEqual([]);
   });
 
-  it("lists nothing for someone who is not an admin", () => {
+  it("lists nothing for someone on neither track", () => {
     expect(checklistSteps(context({ isAdmin: false }))).toEqual([]);
     expect(checklistPendingSteps(context({ isAdmin: false }))).toEqual([]);
   });
@@ -391,5 +406,125 @@ describe("the step the wizard opens on", () => {
       memberCount: 2,
     });
     expect(firstStep(ctx)).toBe("finish");
+  });
+});
+
+describe("the member track", () => {
+  it("welcomes a household member in its own order", () => {
+    // nothing of the setup: a member sets nothing up, so none of the admin
+    // track's steps are ever put in front of them
+    expect(stepIds(applicableSteps(memberContext()))).toEqual([
+      ...MEMBER_ORDER,
+    ]);
+  });
+
+  it("keeps the two tracks apart", () => {
+    const admin = stepIds(applicableSteps(context()));
+    for (const id of MEMBER_ORDER) expect(admin).not.toContain(id);
+  });
+
+  it.each([undefined, "music_hub", "phone_apps"] as const)(
+    "runs in the same order whatever the setup answer says (%s)",
+    (intent) => {
+      // the intent question is the admin track's; an answer left on the
+      // account has nothing to reorder here
+      const ctx = memberContext({ answers: intent ? { intent } : {} });
+      expect(stepIds(applicableSteps(ctx))).toEqual([...MEMBER_ORDER]);
+    },
+  );
+
+  it("asks for the persona, and for nothing else", () => {
+    const ctx = memberContext();
+
+    expect(step(ctx, "welcome").kind).toBe("step");
+    expect(stepIds(pendingSteps(ctx))).toEqual(["welcome"]);
+    // the rest is there to be looked at: a review is never something to do,
+    // and neither is the summary that rounds the welcome off
+    for (const id of ["whats_here", "tour"]) {
+      expect(step(ctx, id).kind).toBe("review");
+      expect(step(ctx, id).isDone(ctx)).toBe(false);
+    }
+    expect(step(ctx, "all_set").kind).toBe("summary");
+    expect(step(ctx, "all_set").isDone(ctx)).toBe(false);
+  });
+
+  it("is done with the member once they have answered", () => {
+    const ctx = memberContext({ answers: { persona: "enthusiast" } });
+
+    expect(step(ctx, "welcome").isDone(ctx)).toBe(true);
+    expect(pendingSteps(ctx)).toEqual([]);
+  });
+
+  it("is done with a member who has been welcomed before", () => {
+    // having been shown the welcome is enough: nobody is asked again to answer
+    // a question they were put in front of and walked away from
+    const ctx = memberContext({ welcomed: true });
+
+    expect(step(ctx, "welcome").isDone(ctx)).toBe(true);
+    expect(pendingSteps(ctx)).toEqual([]);
+    expect(checklistPendingSteps(ctx)).toEqual([]);
+  });
+
+  it("still asks the member being welcomed right now", () => {
+    // the marker is written on the way out, so during the run itself the
+    // question is still open — and the summary still lists it
+    const ctx = memberContext();
+
+    expect(step(ctx, "welcome").isDone(ctx)).toBe(false);
+    expect(stepIds(pendingSteps(ctx))).toEqual(["welcome"]);
+  });
+
+  it("asks on the checklist for the one thing it asks for", () => {
+    const pending = memberContext();
+    expect(stepIds(checklistSteps(pending))).toEqual(["welcome"]);
+    expect(stepIds(checklistPendingSteps(pending))).toEqual(["welcome"]);
+
+    const answered = memberContext({ answers: { persona: "regular" } });
+    expect(stepIds(checklistSteps(answered))).toEqual(["welcome"]);
+    expect(checklistPendingSteps(answered)).toEqual([]);
+  });
+
+  it("opens on the welcome, and on the summary once it is answered", () => {
+    expect(firstStep(memberContext())).toBe("welcome");
+    expect(firstStep(memberContext({ answers: { persona: "regular" } }))).toBe(
+      "all_set",
+    );
+    expect(firstStep(memberContext({ welcomed: true }))).toBe("all_set");
+  });
+
+  it("never falls back onto the other track's summary", () => {
+    // the member is done: the end of their track is where the wizard lands,
+    // not the summary of a setup they were never running
+    const ctx = memberContext({ answers: { persona: "enthusiast" } });
+    expect(firstStep(ctx, "core_settings")).toBe("all_set");
+  });
+
+  it("follows a deep link to a step of its own", () => {
+    expect(firstStep(memberContext(), "tour")).toBe("tour");
+  });
+});
+
+describe("the persona defaults", () => {
+  it.each(["enthusiast", "regular"] as const)(
+    "seeds what the %s asked for",
+    (persona) => {
+      // both answers write the same settings, so choosing again always lands
+      // on a complete set rather than on half of the last one
+      expect(Object.keys(PERSONA_DEFAULTS[persona]).sort()).toEqual([
+        "show_waveform",
+        "visualizer_enabled",
+      ]);
+    },
+  );
+
+  it("shows the player off to whoever asked for the details", () => {
+    expect(PERSONA_DEFAULTS.enthusiast).toEqual({
+      show_waveform: true,
+      visualizer_enabled: true,
+    });
+    expect(PERSONA_DEFAULTS.regular).toEqual({
+      show_waveform: false,
+      visualizer_enabled: false,
+    });
   });
 });

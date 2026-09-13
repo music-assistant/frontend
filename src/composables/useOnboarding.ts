@@ -1,20 +1,33 @@
 import {
   setUserPreference,
+  setUserPreferences,
   useUserPreferences,
 } from "@/composables/userPreferences";
 import {
   applicableSteps,
   checklistPendingSteps,
   checklistSteps,
+  PERSONA_DEFAULTS,
   pendingSteps,
   type OnboardingContext,
   type OnboardingIntent,
+  type OnboardingPersona,
   type OnboardingStepId,
 } from "@/helpers/onboarding";
+import {
+  isAdminTrack,
+  isMemberTrack,
+  ONBOARDING_INTENT_PREFERENCE,
+  ONBOARDING_PERSONA_PREFERENCE,
+  ONBOARDING_WELCOME_PREFERENCE,
+} from "@/helpers/onboarding_access";
 import { userDisplayName } from "@/helpers/provider_access";
-import { providerDisplayName } from "@/helpers/provider_config";
+import {
+  isBuiltinProvider,
+  providerDisplayName,
+} from "@/helpers/provider_config";
 import { isSystemUser } from "@/helpers/users";
-import { api } from "@/plugins/api";
+import { api, type CommandOptions } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
   EventType,
@@ -27,11 +40,9 @@ import {
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
+import { store } from "@/plugins/store";
 import { computed, ref } from "vue";
 import { toast } from "vue-sonner";
-
-/** User preference holding the answer to the wizard's intent question. */
-export const ONBOARDING_INTENT_PREFERENCE = "onboarding.intent";
 
 /** A provider the wizard lists, built from its configuration. */
 export interface ConfiguredProvider {
@@ -80,6 +91,13 @@ let loadingUsers: Promise<void> | null = null;
 let unsubProvidersUpdated: (() => void) | undefined;
 
 async function fetchProviderConfigs(): Promise<void> {
+  // listing the configurations is a permission of its own, which a custom role
+  // may well not hold: whoever may not read them is answered with the empty
+  // list they can see, instead of a request that only fails at them
+  if (!authManager.hasScope(Scope.CONFIG_PROVIDERS_READ)) {
+    providerConfigs.value = [];
+    return;
+  }
   try {
     providerConfigs.value = await api.getProviderConfigs();
   } catch (error) {
@@ -146,20 +164,13 @@ async function loadOnboardingData(): Promise<void> {
   await Promise.all([loadProviderConfigs(), loadUsers()]);
 }
 
-/**
- * A provider that ships with the server rather than one the user set up. The
- * manifest owns that flag, so a provider whose manifest is missing is not
- * claimed to be builtin.
- */
-function isBuiltinProvider(domain: string): boolean {
-  return api.providerManifests[domain]?.builtin === true;
-}
-
 /** The providers of one type the user configured themselves. */
 export function configuredProviders(type: ProviderType): ConfiguredProvider[] {
   return (providerConfigs.value ?? [])
     .filter(
-      (config) => config.type === type && !isBuiltinProvider(config.domain),
+      (config) =>
+        config.type === type &&
+        !isBuiltinProvider(api.providerManifests[config.domain]),
     )
     .map((config) => ({
       instance_id: config.instance_id,
@@ -200,14 +211,20 @@ export function householdMembers(): HouseholdMember[] {
 
 const { getPreference } = useUserPreferences();
 const intent = getPreference<OnboardingIntent>(ONBOARDING_INTENT_PREFERENCE);
+const persona = getPreference<OnboardingPersona>(ONBOARDING_PERSONA_PREFERENCE);
+const welcomedAt = getPreference<string>(ONBOARDING_WELCOME_PREFERENCE);
 
 const ctx = computed<OnboardingContext>(() => ({
-  // the admin track sets up every kind of provider
-  isAdmin: authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+  // which track this session is on, which is what decides the steps below
+  isAdmin: isAdminTrack(),
+  isMember: isMemberTrack(),
+  // the welcome has been shown before, which is all the marker on the account
+  // says — and all the welcome needs it to say
+  welcomed: welcomedAt.value != null,
   providers: (providerConfigs.value ?? []).map((config) => ({
     type: config.type,
     domain: config.domain,
-    builtin: isBuiltinProvider(config.domain),
+    builtin: isBuiltinProvider(api.providerManifests[config.domain]),
     enabled: config.enabled,
   })),
   // only the summary's "2 players" label reads this; whether the players step
@@ -216,7 +233,7 @@ const ctx = computed<OnboardingContext>(() => ({
   // `null` while the users are unknown, which is not the same as an empty
   // household: the invite step is then simply not done
   memberCount: users.value == null ? null : householdMembers().length,
-  answers: { intent: intent.value },
+  answers: { intent: intent.value, persona: persona.value },
 }));
 
 const steps = computed(() => applicableSteps(ctx.value));
@@ -244,6 +261,61 @@ async function setIntent(value: OnboardingIntent): Promise<void> {
   await setUserPreference(ONBOARDING_INTENT_PREFERENCE, value);
 }
 
+/**
+ * Answer the welcome's persona question, and seed the settings that answer
+ * stands for. Both go out in one update, so the account never holds the answer
+ * without what it was given for — and answering again simply seeds them again.
+ * Nothing reads the persona itself afterwards: every one of those settings
+ * stays the member's to change. Says whether the answer landed, because a
+ * question that quietly did not save is worse than one asked again — and the
+ * step that asked it says so itself, which is one message, not two.
+ */
+async function setPersona(value: OnboardingPersona): Promise<boolean> {
+  return await setUserPreferences(
+    {
+      [ONBOARDING_PERSONA_PREFERENCE]: value,
+      ...PERSONA_DEFAULTS[value],
+    },
+    { suppressGlobalError: true },
+  );
+}
+
+// The write in flight and whose marker it is, so the two ways out of the
+// welcome — finishing it and leaving the page behind — never turn into two
+// updates, while the next account to be welcomed still gets a write of its
+// own instead of an answer about somebody else's marker.
+let writingWelcomed: {
+  userId?: string;
+  write: Promise<boolean>;
+} | null = null;
+
+/**
+ * Remember that the member has been welcomed, and say whether the account took
+ * it. Only the first time counts: the marker says the welcome has been shown,
+ * not when it was last opened, so a marker that is already there is an answer
+ * of its own. A second caller for the same account joins the write already on
+ * its way rather than sending the marker twice, which is the one the options
+ * belong to.
+ */
+async function markWelcomed(options?: CommandOptions): Promise<boolean> {
+  if (welcomedAt.value != null) return true;
+  const userId = store.currentUser?.user_id;
+  // the write on its way is only this caller's when it is this account's
+  const marking = writingWelcomed;
+  if (marking && marking.userId === userId) return await marking.write;
+
+  const write = setUserPreferences(
+    { [ONBOARDING_WELCOME_PREFERENCE]: new Date().toISOString() },
+    options,
+  ).finally(() => {
+    // unless somebody else's is on its way by now, which is not this one's to
+    // clear
+    if (writingWelcomed?.write === write) writingWelcomed = null;
+  });
+  writingWelcomed = { userId, write };
+  return await write;
+}
+
 // InvalidDataError: the server is still registering the command but has already
 // completed onboarding itself.
 const INVALID_DATA_ERROR_CODE = 3;
@@ -263,14 +335,32 @@ function isAlreadyCompletedError(error: unknown): boolean {
 }
 
 /**
- * Close onboarding off and leave the wizard, and say whether that worked. The
- * server completes onboarding by itself as soon as the first provider is added,
- * so the command is skipped once it says so and an answer that only repeats
- * that is not worth a word. Any other failure leaves onboarding open on the
- * server, so the wizard stays put with the error on screen rather than handing
- * the user back an app that will drop them in here again on the next reload.
+ * Close onboarding off and leave the wizard, and say whether that worked.
+ *
+ * On the member track there is nothing to close off: the server's onboarding is
+ * the admin's setup, and all the welcome leaves behind is the marker on the
+ * member's own account.
+ *
+ * On the admin track the server completes onboarding by itself as soon as the
+ * first provider is added, so the command is skipped once it says so and an
+ * answer that only repeats that is not worth a word. Any other failure leaves
+ * onboarding open on the server, so the wizard stays put with the error on
+ * screen rather than handing the user back an app that will drop them in here
+ * again on the next reload.
  */
 async function finish(): Promise<boolean> {
+  if (ctx.value.isMember) {
+    // the marker is the whole of what the welcome leaves behind: a member
+    // handed back to the app without it would be welcomed all over again, and
+    // the wizard saying so is the only message they need about it
+    if (!(await markWelcomed({ suppressGlobalError: true }))) {
+      toast.error($t("onboarding.finish_failed"));
+      return false;
+    }
+    dismiss();
+    await router.replace({ name: "discover" });
+    return true;
+  }
   if (api.serverInfo.value?.onboard_done === false) {
     try {
       await api.sendCommand("config/onboard_complete", undefined, {
@@ -307,6 +397,10 @@ export function useOnboarding() {
     dismiss,
     intent,
     setIntent,
+    persona,
+    setPersona,
+    // what the wizard marks the welcome with on the way out of it
+    markWelcomed,
     dataLoaded,
     loadOnboardingData,
     // the checklist's own pair: it decides off the provider configurations

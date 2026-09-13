@@ -2517,7 +2517,7 @@
         "next": "Next",
         "skip": "Skip for now",
         "finish": "Finish",
-        "finish_failed": "Could not finish the setup. Please try again.",
+        "finish_failed": "Could not finish. Please try again.",
         "getting_started": "Getting started",
         "getting_started_hint": "Finish setting up Music Assistant",
         "hide_for_now": "Hide for now",
@@ -2531,6 +2531,10 @@
         "run_again": "Run the setup wizard again",
         "add_member": "Add a household member",
         "just_you_so_far": "Just you so far.",
+        "welcome_title": "Welcome to Music Assistant",
+        "welcome_again": "Show the welcome again",
+        "welcome_hint": "Take a quick look around",
+        "what_you_picked": "What you picked",
         "steps": {
             "intent": {
                 "title": "Choose how you listen",
@@ -2569,6 +2573,62 @@
             "finish": {
                 "title": "Finish setup",
                 "description": "Here is where you got to. You can change any of this later from the settings."
+            },
+            "welcome": {
+                "title": "Make yourself at home",
+                "description": "Hi {name}, this is where your household's music lives. Pick how much you would like to see while something is playing.",
+                "enthusiast": {
+                    "label": "All the details",
+                    "description": "Waveform progress and a background visualizer while music plays."
+                },
+                "regular": {
+                    "label": "Just play music",
+                    "description": "A clean player, with nothing extra on it."
+                },
+                "defaults_hint": "This only sets a few defaults. Every setting stays yours to change.",
+                "save_failed": "Your choice could not be saved. Please try again."
+            },
+            "whats_here": {
+                "title": "What's here for you",
+                "description": "The music your household has brought together, and the players you can send it to.",
+                "more_count": "+{count} more",
+                "listen": {
+                    "title": "What you can listen to",
+                    "empty": "No music sources have been shared with you yet.",
+                    "browse": "Browse your music"
+                },
+                "players": {
+                    "title": "Your players",
+                    "empty": "No player yet. Ask your admin to add one.",
+                    "hint": "Pick a player in the bar at the bottom, press play, and open the full player to see what is coming up.",
+                    "pick": "Pick a player"
+                }
+            },
+            "tour": {
+                "title": "A quick tour",
+                "description": "The places you will use most.",
+                "open": "Open",
+                "open_named": "Open {title}",
+                "library": {
+                    "title": "Your library",
+                    "description": "Artists, albums, tracks and playlists, together in the sidebar. Everything your household added is in here."
+                },
+                "search": {
+                    "title": "Search",
+                    "description": "Open the search from the sidebar to find an artist, an album or a track across everything you can listen to."
+                },
+                "player_bar": {
+                    "title": "The player bar",
+                    "description": "The bar at the bottom picks the player and plays or pauses. Open it for the full player and the queue."
+                },
+                "profile": {
+                    "title": "Your profile and settings",
+                    "description": "Your name, avatar and password, and the theme and language this app uses."
+                }
+            },
+            "all_set": {
+                "title": "You're all set",
+                "description": "That is everything. You can change any of this later from the settings."
             }
         }
     },
