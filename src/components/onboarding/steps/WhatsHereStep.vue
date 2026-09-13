@@ -117,6 +117,18 @@
           <p class="text-muted-foreground text-sm">
             {{ $t("onboarding.steps.whats_here.players.hint") }}
           </p>
+
+          <div>
+            <!-- a member has no players settings to send them to; the picker
+                 the player bar opens is the one they will use from here on -->
+            <Button
+              variant="secondary"
+              data-testid="onboarding-pick-player"
+              @click="store.showPlayersMenu = true"
+            >
+              {{ $t("onboarding.steps.whats_here.players.pick") }}
+            </Button>
+          </div>
         </template>
 
         <Empty
@@ -160,6 +172,7 @@ import type { OnboardingStepId } from "@/helpers/onboarding";
 import { isBuiltinProvider } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
 import { ProviderType } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { Music, Speaker } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";

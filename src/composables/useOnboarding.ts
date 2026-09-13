@@ -266,13 +266,17 @@ async function setIntent(value: OnboardingIntent): Promise<void> {
  * without what it was given for — and answering again simply seeds them again.
  * Nothing reads the persona itself afterwards: every one of those settings
  * stays the member's to change. Says whether the answer landed, because a
- * question that quietly did not save is worse than one asked again.
+ * question that quietly did not save is worse than one asked again — and the
+ * step that asked it says so itself, which is one message, not two.
  */
 async function setPersona(value: OnboardingPersona): Promise<boolean> {
-  return await setUserPreferences({
-    [ONBOARDING_PERSONA_PREFERENCE]: value,
-    ...PERSONA_DEFAULTS[value],
-  });
+  return await setUserPreferences(
+    {
+      [ONBOARDING_PERSONA_PREFERENCE]: value,
+      ...PERSONA_DEFAULTS[value],
+    },
+    { suppressGlobalError: true },
+  );
 }
 
 // the write in flight, so the two ways out of the welcome — finishing it and

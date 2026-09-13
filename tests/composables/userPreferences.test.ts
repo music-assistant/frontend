@@ -71,13 +71,18 @@ describe("userPreferences - itemsListing", () => {
     );
 
     expect(readPrefs("librarygenres", "genres").hideEmptyFilter).toBe(true);
-    expect(mockUpdateUser).toHaveBeenCalledWith("u1", {
-      preferences: {
-        "itemsListing.librarygenres.genres": {
-          hideEmptyFilter: true,
+    // no options: the general case leaves the api's own error handling alone
+    expect(mockUpdateUser).toHaveBeenCalledWith(
+      "u1",
+      {
+        preferences: {
+          "itemsListing.librarygenres.genres": {
+            hideEmptyFilter: true,
+          },
         },
       },
-    });
+      undefined,
+    );
   });
 
   it("merges with sibling filter keys without clobbering them", async () => {
@@ -134,6 +139,11 @@ describe("userPreferences - itemsListing", () => {
   });
 });
 
+/** Wait for the writes in flight to have reached the server. */
+async function untilSent(calls: number) {
+  await vi.waitFor(() => expect(mockUpdateUser).toHaveBeenCalledTimes(calls));
+}
+
 describe("writing preferences", () => {
   beforeEach(() => {
     mockUpdateUser.mockReset();
@@ -144,9 +154,11 @@ describe("writing preferences", () => {
   it("keeps the preferences it was not asked about", async () => {
     await setUserPreference("language", "nl");
 
-    expect(mockUpdateUser).toHaveBeenCalledWith("u1", {
-      preferences: { theme: "dark", language: "nl" },
-    });
+    expect(mockUpdateUser).toHaveBeenCalledWith(
+      "u1",
+      { preferences: { theme: "dark", language: "nl" } },
+      undefined,
+    );
   });
 
   it("writes the keys of one answer in a single update", async () => {
@@ -159,13 +171,17 @@ describe("writing preferences", () => {
 
     // one update, so the account never holds half of an answer
     expect(mockUpdateUser).toHaveBeenCalledOnce();
-    expect(mockUpdateUser).toHaveBeenCalledWith("u1", {
-      preferences: {
-        theme: "dark",
-        show_waveform: true,
-        visualizer_enabled: true,
+    expect(mockUpdateUser).toHaveBeenCalledWith(
+      "u1",
+      {
+        preferences: {
+          theme: "dark",
+          show_waveform: true,
+          visualizer_enabled: true,
+        },
       },
-    });
+      undefined,
+    );
     expect(storeMock.currentUser?.preferences).toEqual({
       theme: "dark",
       show_waveform: true,
@@ -195,8 +211,74 @@ describe("writing preferences", () => {
       false,
     );
 
+    // and what the account had is what it still holds: a value the server
+    // refused must not sit there looking saved, nor ride along on the next write
+    expect(storeMock.currentUser?.preferences).toEqual({ theme: "dark" });
     expect(errorSpy).toHaveBeenCalledOnce();
     errorSpy.mockRestore();
+  });
+
+  it("leaves preferences that were replaced while it was in flight alone", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    let failWrite: (error: Error) => void = () => {};
+    mockUpdateUser.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          failWrite = reject;
+        }),
+    );
+
+    const write = setUserPreferences({ show_waveform: true });
+    await untilSent(1);
+    // the server handed the app a fresh user while the write was on its way
+    storeMock.currentUser = { user_id: "u1", preferences: { theme: "light" } };
+    failWrite(new Error("boom"));
+
+    await expect(write).resolves.toBe(false);
+
+    // putting the old set back would undo what has landed since
+    expect(storeMock.currentUser?.preferences).toEqual({ theme: "light" });
+    errorSpy.mockRestore();
+  });
+
+  it("sends a write that was asked for while another was in flight after it", async () => {
+    let landFirst: () => void = () => {};
+    mockUpdateUser.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          landFirst = () => resolve(user());
+        }),
+    );
+
+    const answer = setUserPreferences({ "onboarding.persona": "regular" });
+    const marker = setUserPreferences({ "onboarding.welcome": "2026-01-02" });
+    await untilSent(1);
+
+    // one at a time: every write sends the whole set, so the second reads what
+    // the first added instead of what the account held when it was asked for
+    expect(mockUpdateUser).toHaveBeenCalledOnce();
+
+    landFirst();
+    await Promise.all([answer, marker]);
+
+    expect(mockUpdateUser).toHaveBeenCalledTimes(2);
+    expect(mockUpdateUser.mock.calls[1][1].preferences).toEqual({
+      theme: "dark",
+      "onboarding.persona": "regular",
+      "onboarding.welcome": "2026-01-02",
+    });
+  });
+
+  it("hands the command options it was given to the server call", async () => {
+    // what a caller with a message of its own keeps the api's toast away with
+    await setUserPreferences(
+      { show_waveform: true },
+      { suppressGlobalError: true },
+    );
+
+    expect(mockUpdateUser).toHaveBeenCalledWith("u1", expect.anything(), {
+      suppressGlobalError: true,
+    });
   });
 });
 

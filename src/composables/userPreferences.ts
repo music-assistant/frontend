@@ -1,5 +1,5 @@
 import { computed, ComputedRef } from "vue";
-import { api } from "@/plugins/api";
+import { api, type CommandOptions } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
@@ -32,39 +32,68 @@ export async function setUserPreference(
 }
 
 /**
+ * The write in flight, whichever it is. Every write sends the whole
+ * preferences object, so two of them on their way at once would have the one
+ * that lands last overwrite whatever the other added — a member answering the
+ * welcome and walking off to another page as it saves is exactly that. Each
+ * write waits here for the one before it to settle, and only then reads the
+ * preferences it merges into.
+ */
+let pendingWrite: Promise<unknown> = Promise.resolve();
+
+/**
  * The same for several keys at once, in a single update: settings that belong
  * to one answer are written together, so the account never ends up holding half
  * of it. Says whether the server took them, for the callers that have something
- * to tell the user when it did not.
+ * to tell the user when it did not — `options` is how such a caller keeps the
+ * api's own error toast out of the way of its own.
  */
 export async function setUserPreferences(
   values: Record<string, unknown>,
+  options?: CommandOptions,
 ): Promise<boolean> {
-  if (!store.currentUser) {
+  const write = pendingWrite.then(() => writeUserPreferences(values, options));
+  // a write that went wrong is nothing for the next one to wait on forever
+  pendingWrite = write.catch(() => {});
+  return await write;
+}
+
+async function writeUserPreferences(
+  values: Record<string, unknown>,
+  options?: CommandOptions,
+): Promise<boolean> {
+  const currentUser = store.currentUser;
+  if (!currentUser) {
     console.warn("Cannot set preference: no user logged in");
     return false;
   }
 
-  if (!store.currentUser.preferences) {
-    store.currentUser.preferences = {};
-  }
-
+  const previousPreferences = currentUser.preferences ?? {};
   const plainValues = JSON.parse(JSON.stringify(values));
 
   const updatedPreferences = {
-    ...store.currentUser.preferences,
+    ...previousPreferences,
     ...plainValues,
   };
 
-  store.currentUser.preferences = updatedPreferences;
+  currentUser.preferences = updatedPreferences;
 
   try {
-    await api.updateUser(store.currentUser.user_id, {
-      preferences: updatedPreferences,
-    });
+    await api.updateUser(
+      currentUser.user_id,
+      { preferences: updatedPreferences },
+      options,
+    );
     return true;
   } catch (error) {
     console.error("Failed to update user preferences:", error);
+    // put back what the account had: a value the server would not take must
+    // not sit there looking saved, nor ride along on the next write. Unless
+    // something has been written since, which is nobody's to undo
+    const latest = store.currentUser;
+    if (latest && latest.preferences === updatedPreferences) {
+      latest.preferences = previousPreferences;
+    }
     return false;
   }
 }

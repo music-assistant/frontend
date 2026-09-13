@@ -759,13 +759,17 @@ describe("useOnboarding", () => {
       await expect(setPersona("enthusiast")).resolves.toBe(true);
 
       // one update: the account never holds the answer without the settings
-      // that answer was given for
+      // that answer was given for, and one message if it fails: the step has
+      // something of its own to say, so the api stays quiet
       expect(setUserPreferencesMock).toHaveBeenCalledOnce();
-      expect(setUserPreferencesMock).toHaveBeenCalledWith({
-        "onboarding.persona": "enthusiast",
-        show_waveform: true,
-        visualizer_enabled: true,
-      });
+      expect(setUserPreferencesMock).toHaveBeenCalledWith(
+        {
+          "onboarding.persona": "enthusiast",
+          show_waveform: true,
+          visualizer_enabled: true,
+        },
+        { suppressGlobalError: true },
+      );
     });
 
     it("seeds the settings again when the member answers again", async () => {
@@ -775,11 +779,14 @@ describe("useOnboarding", () => {
       const { setPersona } = await loadOnboarding();
       await setPersona("regular");
 
-      expect(setUserPreferencesMock).toHaveBeenCalledWith({
-        "onboarding.persona": "regular",
-        show_waveform: false,
-        visualizer_enabled: false,
-      });
+      expect(setUserPreferencesMock).toHaveBeenCalledWith(
+        {
+          "onboarding.persona": "regular",
+          show_waveform: false,
+          visualizer_enabled: false,
+        },
+        { suppressGlobalError: true },
+      );
     });
 
     it("marks the member as welcomed on the way out", async () => {

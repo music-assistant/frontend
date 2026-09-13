@@ -22,6 +22,8 @@ const { apiMock, routerMock, storeMock, webPlayerMock } = vi.hoisted(() => ({
   storeMock: {
     currentUser: undefined as User | undefined,
     companionPlayerId: undefined,
+    // the flag the player bar's own button raises to open the picker
+    showPlayersMenu: false,
   },
   // the player this browser streams to, which every picker puts up front
   webPlayerMock: { player_id: null as string | null },
@@ -106,6 +108,7 @@ describe("WhatsHereStep", () => {
     apiMock.providers = {};
     apiMock.providerManifests = {};
     storeMock.currentUser = user({ user_id: "sam-1", username: "sam" });
+    storeMock.showPlayersMenu = false;
     webPlayerMock.player_id = null;
     routerMock.push.mockReset();
   });
@@ -235,6 +238,19 @@ describe("WhatsHereStep", () => {
     wrapper.unmount();
   });
 
+  it("opens the player picker the member will keep using", async () => {
+    addPlayer("kitchen", { name: "Kitchen" });
+
+    const wrapper = mountStep();
+    await wrapper.find("[data-testid=onboarding-pick-player]").trigger("click");
+
+    // a member has no players settings page; the picker the player bar opens
+    // is where they choose what to play to
+    expect(storeMock.showPlayersMenu).toBe(true);
+
+    wrapper.unmount();
+  });
+
   it("counts the players it does not name", () => {
     for (let index = 0; index < 7; index++) {
       addPlayer(`player-${index}`, { name: `Player ${index}` });
@@ -258,6 +274,10 @@ describe("WhatsHereStep", () => {
     expect(texts(wrapper, "onboarding-player")).toEqual([]);
     expect(wrapper.text()).toContain(
       "onboarding.steps.whats_here.players.empty",
+    );
+    // nothing to pick either
+    expect(wrapper.find("[data-testid=onboarding-pick-player]").exists()).toBe(
+      false,
     );
     // nothing to control, so nothing about controlling it
     expect(wrapper.text()).not.toContain(

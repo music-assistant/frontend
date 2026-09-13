@@ -2599,13 +2599,15 @@
                 "players": {
                     "title": "Your players",
                     "empty": "No player yet. Ask your admin to add one.",
-                    "hint": "Pick a player in the bar at the bottom, press play, and open the full player to see what is coming up."
+                    "hint": "Pick a player in the bar at the bottom, press play, and open the full player to see what is coming up.",
+                    "pick": "Pick a player"
                 }
             },
             "tour": {
                 "title": "A quick tour",
                 "description": "The places you will use most.",
                 "open": "Open",
+                "open_named": "Open {title}",
                 "library": {
                     "title": "Your library",
                     "description": "Artists, albums, tracks and playlists, together in the sidebar. Everything your household added is in here."

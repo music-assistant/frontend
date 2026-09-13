@@ -153,11 +153,15 @@ describe("WelcomeStep", () => {
     await card(wrapper, "enthusiast").trigger("click");
     await flushPromises();
 
-    expect(setUserPreferencesMock).toHaveBeenCalledWith({
-      "onboarding.persona": "enthusiast",
-      show_waveform: true,
-      visualizer_enabled: true,
-    });
+    expect(setUserPreferencesMock).toHaveBeenCalledWith(
+      {
+        "onboarding.persona": "enthusiast",
+        show_waveform: true,
+        visualizer_enabled: true,
+      },
+      // the step's own message is the only one the member should get
+      { suppressGlobalError: true },
+    );
     expect(wrapper.emitted("advance")).toHaveLength(1);
 
     wrapper.unmount();

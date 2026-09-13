@@ -10,6 +10,13 @@ const { routerMock } = vi.hoisted(() => ({
 
 vi.mock("vue-router", () => ({ useRouter: () => routerMock }));
 
+// the step reaches for the same translator its template does; echo the title
+// back, so a test can tell which card a label was built for
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string, params?: Record<string, unknown>) =>
+    params?.title ? `${key}:${params.title}` : key,
+}));
+
 function mountStep() {
   return mount(TourStep, {
     global: { mocks: { $t: (key: string) => key } },
@@ -48,6 +55,23 @@ describe("TourStep", () => {
       .trigger("click");
 
     expect(routerMock.push).toHaveBeenCalledWith({ name: route });
+
+    wrapper.unmount();
+  });
+
+  it("says what each Open button opens", () => {
+    const wrapper = mountStep();
+
+    // several cards carry the same word; the label says which one it is on
+    const labels = wrapper
+      .findAll("[data-testid^=onboarding-tour-open-]")
+      .map((button) => button.attributes("aria-label"));
+
+    expect(labels).toEqual([
+      "onboarding.steps.tour.open_named:onboarding.steps.tour.library.title",
+      "onboarding.steps.tour.open_named:onboarding.steps.tour.profile.title",
+    ]);
+    expect(new Set(labels).size).toBe(labels.length);
 
     wrapper.unmount();
   });

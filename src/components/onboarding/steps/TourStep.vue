@@ -28,10 +28,13 @@
         <!-- only where there is a page to open: the search and the player bar
              are always on screen, so there is nowhere to send anyone -->
         <CardContent v-if="card.route">
+          <!-- several cards carry this button, so what each one opens is in
+               its label for whoever cannot see which card it sits on -->
           <Button
             variant="ghost"
             size="sm"
             class="-ml-3"
+            :aria-label="openLabel(card)"
             :data-testid="`onboarding-tour-open-${card.id}`"
             @click="router.push({ name: card.route })"
           >
@@ -53,6 +56,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { OnboardingStepId } from "@/helpers/onboarding";
+import { $t } from "@/plugins/i18n";
 import { Library, Play, Search, Settings } from "@lucide/vue";
 import { markRaw, type Component } from "vue";
 import { useRouter } from "vue-router";
@@ -85,4 +89,9 @@ const cards: TourCard[] = [
   { id: "player_bar", icon: markRaw(Play) },
   { id: "profile", icon: markRaw(Settings), route: "profile" },
 ];
+
+const openLabel = (card: TourCard) =>
+  $t("onboarding.steps.tour.open_named", {
+    title: $t(`onboarding.steps.tour.${card.id}.title`),
+  });
 </script>
