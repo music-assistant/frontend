@@ -96,9 +96,9 @@
         <Button
           type="submit"
           form="form-add-manual-link"
-          :disabled="loading || !isFormValid"
+          :disabled="!isFormValid"
+          :loading="loading"
         >
-          <Spinner v-if="loading" />
           {{ isEditMode ? $t("settings.save") : $t("add") }}
         </Button>
       </DialogFooter>
@@ -128,7 +128,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
 import { manualLinkSchema } from "@/lib/forms/manual-link";
 import api from "@/plugins/api";
 import type { Playlist, Radio, Track } from "@/plugins/api/interfaces";
