@@ -229,6 +229,7 @@ export async function pruneStaleProviderFilters(): Promise<void> {
   if (!store.currentUser?.preferences) return;
   // listing the configured providers takes a scope not every role holds
   if (!authManager.hasScope(Scope.CONFIG_PROVIDERS_READ)) return;
+  const userId = store.currentUser.user_id;
 
   let configuredIds: Set<string>;
   try {
@@ -238,6 +239,9 @@ export async function pruneStaleProviderFilters(): Promise<void> {
     console.error("Failed to load provider configs for filter pruning:", error);
     return;
   }
+  // the configurations were listed for the account that asked, and so was the
+  // scope check made on its behalf: whoever is signed in now may hold neither
+  if (store.currentUser?.user_id !== userId) return;
   // No configs yet (server not ready): never wipe filters.
   if (configuredIds.size === 0) return;
 

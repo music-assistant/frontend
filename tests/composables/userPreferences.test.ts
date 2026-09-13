@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { ProviderConfig } from "@/plugins/api/interfaces";
 import { user } from "../fixtures/user";
@@ -146,6 +146,22 @@ async function untilSent(calls: number) {
   await vi.waitFor(() => expect(mockUpdateUser).toHaveBeenCalledTimes(calls));
 }
 
+// What the write path says to the console when it will not write, or could
+// not: kept quiet for the whole file and handed back however a test ends, so
+// an assertion that fails cannot leave the console stubbed for the next one.
+let warnSpy: ReturnType<typeof vi.spyOn>;
+let errorSpy: ReturnType<typeof vi.spyOn>;
+
+beforeEach(() => {
+  warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  warnSpy.mockRestore();
+  errorSpy.mockRestore();
+});
+
 describe("writing preferences", () => {
   beforeEach(() => {
     mockUpdateUser.mockReset();
@@ -193,7 +209,6 @@ describe("writing preferences", () => {
 
   it("asks the server for nothing while nobody is signed in", async () => {
     storeMock.currentUser = null;
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     await expect(setUserPreferences({ show_waveform: true })).resolves.toBe(
       false,
@@ -201,12 +216,10 @@ describe("writing preferences", () => {
 
     expect(mockUpdateUser).not.toHaveBeenCalled();
     expect(warnSpy).toHaveBeenCalledOnce();
-    warnSpy.mockRestore();
   });
 
   it("says so when the server would not take them", async () => {
     mockUpdateUser.mockRejectedValue(new Error("boom"));
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     // whoever asked gets to tell the user; the write itself stays quiet
     await expect(setUserPreferences({ show_waveform: true })).resolves.toBe(
@@ -217,11 +230,9 @@ describe("writing preferences", () => {
     // refused must not sit there looking saved, nor ride along on the next write
     expect(storeMock.currentUser?.preferences).toEqual({ theme: "dark" });
     expect(errorSpy).toHaveBeenCalledOnce();
-    errorSpy.mockRestore();
   });
 
   it("leaves preferences that were replaced while it was in flight alone", async () => {
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     let failWrite: (error: Error) => void = () => {};
     mockUpdateUser.mockImplementationOnce(
       () =>
@@ -240,7 +251,6 @@ describe("writing preferences", () => {
 
     // putting the old set back would undo what has landed since
     expect(storeMock.currentUser?.preferences).toEqual({ theme: "light" });
-    errorSpy.mockRestore();
   });
 
   it("sends a write that was asked for while another was in flight after it", async () => {
@@ -272,7 +282,6 @@ describe("writing preferences", () => {
   });
 
   it("drops a write for an account that is no longer the one signed in", async () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     let landFirst: () => void = () => {};
     mockUpdateUser.mockImplementationOnce(
       () =>
@@ -296,7 +305,6 @@ describe("writing preferences", () => {
     expect(mockUpdateUser).toHaveBeenCalledOnce();
     expect(storeMock.currentUser?.preferences).toEqual({});
     expect(warnSpy).toHaveBeenCalledOnce();
-    warnSpy.mockRestore();
   });
 
   it("sends nothing when the change finds nothing to do", async () => {
@@ -454,6 +462,34 @@ describe("pruneStaleProviderFilters", () => {
       "discover.hiddenProviders.recently_played": ["spotify1"],
     });
     expect(mockUpdateUser).toHaveBeenCalledTimes(2);
+  });
+
+  it("leaves the filters of the account it started on alone", async () => {
+    storeMock.currentUser = {
+      user_id: "u1",
+      preferences: {
+        "discover.hiddenProviders.recently_played": ["removed1"],
+      },
+    };
+    let landConfigs: () => void = () => {};
+    mockGetProviderConfigs.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          landConfigs = () =>
+            resolve([{ instance_id: "spotify1" } as ProviderConfig]);
+        }),
+    );
+
+    const pruning = pruneStaleProviderFilters();
+    // somebody else is signed in before the configurations come back
+    storeMock.currentUser = { user_id: "u2", preferences: {} };
+    landConfigs();
+    await pruning;
+
+    // the configurations were listed for the account that asked, and the scope
+    // check was made on its behalf: neither says anything about this one
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+    expect(storeMock.currentUser?.preferences).toEqual({});
   });
 
   it("leaves the filters alone for a role that may not list the providers", async () => {
