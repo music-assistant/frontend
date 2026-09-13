@@ -2178,27 +2178,22 @@ const getFilteredItems = function (
 };
 
 const selectAll = async function () {
-  let confirmed = true;
   // We use the total length even when searching, since we can't know
   // how many items will be loaded after filtering
   const itemCount = props.total || allItems.value.length;
-  if (itemCount > 250) {
-    // This could be a large selection. Prevent accidental activation
-    // by asking the user for a confirmation
-    confirmed = await new Promise((resolve) => {
-      if (confirm(t("select_all_confirmation"))) {
-        resolve(true);
-      } else {
-        resolve(false);
-      }
-    });
+  if (itemCount <= 250) {
+    await selectEveryItem();
+    return;
   }
-
-  if (confirmed) {
-    await loadAllItems();
-    selectedItems.value = pagedItems.value.filter((x) => !isParentDirItem(x));
-    showCheckboxes.value = true;
-  }
+  // This could be a large selection. Prevent accidental activation
+  // by asking the user for a confirmation
+  eventbus.emit("deleteConfirmationDialog", {
+    title: t("tooltip.select_all"),
+    message: t("select_all_confirmation"),
+    confirmLabel: t("yes"),
+    destructive: false,
+    onConfirm: selectEveryItem,
+  });
 };
 
 defineExpose({
@@ -2211,6 +2206,13 @@ defineExpose({
     !hasActiveFilters.value &&
     !pagedItems.value.some((i) => i.uri === uri),
 });
+
+/** Loads the remaining pages and puts every item in the selection. */
+async function selectEveryItem() {
+  await loadAllItems();
+  selectedItems.value = pagedItems.value.filter((x) => !isParentDirItem(x));
+  showCheckboxes.value = true;
+}
 </script>
 
 <style scoped>
