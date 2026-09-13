@@ -890,7 +890,7 @@
         "show_only_default_genres": "Show only default genres",
         "show_all_genres": "Show all genres",
         "filter_hide_fully_played": "Hide fully-played episodes",
-        "select_provider": "Select provider",
+        "select_provider": "Select source",
         "genre_content_type": "Media type",
         "previous_page": "Previous page",
         "next_page": "Next page",
