@@ -240,9 +240,7 @@ const {
 // adds the source itself)
 const rowMeta = computed<Partial<Record<ArtistRowId, string>>>(() => ({
   top_tracks: libraryTracks.value?.length
-    ? $t("all_n_tracks", libraryTracks.value.length, {
-        named: { count: libraryTracks.value.length },
-      })
+    ? $t("n_in_library", { count: libraryTracks.value.length })
     : undefined,
   albums: albumsMeta.value,
   singles_eps: singleItems.value?.length
