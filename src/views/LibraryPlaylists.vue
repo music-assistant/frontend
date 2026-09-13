@@ -179,8 +179,7 @@ onMounted(() => {
       ) {
         // the server only announces a playlist to the users who may see it, so
         // a personal playlist a fully loaded, unfiltered listing lacks was just
-        // shared with the user; one the user may no longer see is not announced
-        // and stays until the next reload
+        // shared with the user (losing access arrives as a delete instead)
         listingRef.value?.reload?.();
       } else {
         updateAvailable.value = true;
