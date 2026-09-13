@@ -1,8 +1,8 @@
-import { hasOnboardingTrack } from "@/composables/useOnboarding";
 import { canOpenAIRadio } from "@/helpers/ai_radio_access";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
+import { hasOnboardingTrack } from "@/helpers/onboarding_access";
 import { $t } from "@/plugins/i18n";
 import { nextTick, watch } from "vue";
 import {

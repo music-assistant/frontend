@@ -715,12 +715,10 @@ describe("useOnboarding", () => {
     ])("runs %s through its own steps", async (_case, scopes, role, steps) => {
       signInAs({ role }, scopes);
 
-      const module = await loadModule();
-      const onboarding = module.useOnboarding();
+      const onboarding = (await loadModule()).useOnboarding();
       await onboarding.loadOnboardingData();
 
       expect(onboarding.steps.value.map((step) => step.id)).toEqual(steps);
-      expect(module.hasOnboardingTrack()).toBe(steps.length > 0);
     });
 
     it("has nothing for a session nobody is signed in on", async () => {
@@ -729,10 +727,9 @@ describe("useOnboarding", () => {
       );
       storeState.store.currentUser = undefined;
 
-      const module = await loadModule();
+      const { steps } = (await loadModule()).useOnboarding();
 
-      expect(module.hasOnboardingTrack()).toBe(false);
-      expect(module.useOnboarding().steps.value).toEqual([]);
+      expect(steps.value).toEqual([]);
     });
 
     it("never asks the server for configurations a role may not list", async () => {
@@ -808,54 +805,6 @@ describe("useOnboarding", () => {
       // when they were welcomed, not when they last looked it over again
       expect(setUserPreferenceMock).not.toHaveBeenCalled();
       expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
-    });
-
-    it("opens by itself for a member who has just been given an account", async () => {
-      signInAs({ created_at: new Date().toISOString() });
-
-      const module = await loadModule();
-
-      expect(module.shouldOpenWelcome()).toBe(true);
-    });
-
-    it.each([
-      [
-        "has already been welcomed",
-        () => {
-          signInAs({ created_at: new Date().toISOString() });
-          preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
-        },
-      ],
-      [
-        "has had the account for a while",
-        () => signInAs({ created_at: "2024-01-01T00:00:00Z" }),
-      ],
-      [
-        "is a guest",
-        () =>
-          signInAs(
-            {
-              role: UserRole.GUEST,
-              created_at: new Date().toISOString(),
-            },
-            BUILTIN_ROLE_SCOPES.guest,
-          ),
-      ],
-      [
-        "is setting the server up",
-        () => {
-          signIn({
-            role: UserRole.ADMIN,
-            created_at: new Date().toISOString(),
-          });
-        },
-      ],
-    ])("stays out of the way of someone who %s", async (_case, signInAs) => {
-      signInAs();
-
-      const module = await loadModule();
-
-      expect(module.shouldOpenWelcome()).toBe(false);
     });
   });
 });

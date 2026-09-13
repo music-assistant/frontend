@@ -187,17 +187,8 @@ vi.mock("@/helpers/connection_identity", () => ({
 
 vi.mock("@/composables/userPreferences", () => ({
   pruneStaleProviderFilters: mockPruneStaleProviderFilters,
-  setUserPreference: vi.fn(),
-  setUserPreferences: vi.fn(),
   useUserPreferences: () => ({
     setPreference: mockSetPreference,
-    // the onboarding state reads its answers off the signed-in user; a getter
-    // rather than a computed, so it follows a store the tests write directly
-    getPreference: (key: string) => ({
-      get value() {
-        return storeMock.currentUser?.preferences?.[key];
-      },
-    }),
   }),
 }));
 
@@ -272,12 +263,6 @@ vi.mock("vuetify", () => ({
       },
     },
   }),
-}));
-
-// the onboarding state leaves the wizard through the router module; the app
-// itself navigates through useRouter below
-vi.mock("@/plugins/router", () => ({
-  default: { push: vi.fn(), replace: vi.fn() },
 }));
 
 vi.mock("vue-router", async () => {

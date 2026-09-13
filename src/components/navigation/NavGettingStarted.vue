@@ -14,8 +14,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { hasOnboardingTrack, useOnboarding } from "@/composables/useOnboarding";
+import { useOnboarding } from "@/composables/useOnboarding";
 import type { OnboardingStepId } from "@/helpers/onboarding";
+import { hasOnboardingTrack } from "@/helpers/onboarding_access";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { Circle, CircleCheck, ListChecks } from "@lucide/vue";

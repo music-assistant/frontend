@@ -234,8 +234,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { hasOnboardingTrack } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
 import { availableSettingsSections } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import { requireServerVersion } from "@/plugins/api/helpers";
@@ -424,9 +424,7 @@ provide("systemViewMode", {
 // here — there is no setup for them to run again.
 const canOpenOnboarding = computed(() => hasOnboardingTrack());
 const onboardingLinkKey = computed(() =>
-  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
-    ? "onboarding.run_again"
-    : "onboarding.welcome_again",
+  isAdminTrack() ? "onboarding.run_again" : "onboarding.welcome_again",
 );
 
 const settingsSections = computed(() =>

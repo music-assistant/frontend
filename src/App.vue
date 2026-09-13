@@ -40,7 +40,6 @@
 import HomeAssistantMenuButton from "@/components/HomeAssistantMenuButton.vue";
 import { Toaster } from "@/components/ui/sonner";
 import { loadRoles } from "@/composables/roles";
-import { shouldOpenWelcome } from "@/composables/useOnboarding";
 import { useReconnectGrace } from "@/composables/useReconnectGrace";
 import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
@@ -58,6 +57,7 @@ import {
   createRemoteConnectionIdentity,
 } from "@/helpers/connection_identity";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
+import { shouldOpenWelcome } from "@/helpers/onboarding_access";
 import {
   isMediaSessionDisabled,
   resetMediaSession,

@@ -7,7 +7,6 @@ import {
   applicableSteps,
   checklistPendingSteps,
   checklistSteps,
-  isNewAccount,
   PERSONA_DEFAULTS,
   pendingSteps,
   type OnboardingContext,
@@ -15,6 +14,13 @@ import {
   type OnboardingPersona,
   type OnboardingStepId,
 } from "@/helpers/onboarding";
+import {
+  isAdminTrack,
+  isMemberTrack,
+  ONBOARDING_INTENT_PREFERENCE,
+  ONBOARDING_PERSONA_PREFERENCE,
+  ONBOARDING_WELCOME_PREFERENCE,
+} from "@/helpers/onboarding_access";
 import { userDisplayName } from "@/helpers/provider_access";
 import { providerDisplayName } from "@/helpers/provider_config";
 import { isSystemUser } from "@/helpers/users";
@@ -31,22 +37,8 @@ import {
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
-import { store } from "@/plugins/store";
 import { computed, ref } from "vue";
 import { toast } from "vue-sonner";
-
-/** User preference holding the answer to the wizard's intent question. */
-export const ONBOARDING_INTENT_PREFERENCE = "onboarding.intent";
-
-/** User preference holding the answer to the welcome's persona question. */
-export const ONBOARDING_PERSONA_PREFERENCE = "onboarding.persona";
-
-/**
- * User preference holding when the member was welcomed, as an ISO timestamp.
- * Its presence is the whole answer: a member is welcomed once, and the app
- * never opens the welcome on them again.
- */
-export const ONBOARDING_WELCOME_PREFERENCE = "onboarding.welcome";
 
 /** A provider the wizard lists, built from its configuration. */
 export interface ConfiguredProvider {
@@ -225,33 +217,8 @@ const intent = getPreference<OnboardingIntent>(ONBOARDING_INTENT_PREFERENCE);
 const persona = getPreference<OnboardingPersona>(ONBOARDING_PERSONA_PREFERENCE);
 const welcomedAt = getPreference<string>(ONBOARDING_WELCOME_PREFERENCE);
 
-/** The admin track: whoever sets up every kind of provider runs it. */
-function isAdminTrack(): boolean {
-  return authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE);
-}
-
-/**
- * The member track: someone who lives here without running the place. Their
- * account is their own, which is what tells them from a guest passing through
- * and from a service account such as the Home Assistant integration's.
- */
-function isMemberTrack(): boolean {
-  if (isAdminTrack()) return false;
-  const role = store.currentUser?.role;
-  return role != null && role !== UserRole.GUEST && role !== UserRole.SERVICE;
-}
-
-/**
- * Whether onboarding has anything for this session at all. The router asks
- * this before it opens the wizard, so it reads the signed-in user and their
- * scopes only: nothing here waits for a load.
- */
-export function hasOnboardingTrack(): boolean {
-  return isAdminTrack() || isMemberTrack();
-}
-
 const ctx = computed<OnboardingContext>(() => ({
-  // the admin track sets up every kind of provider
+  // which track this session is on, which is what decides the steps below
   isAdmin: isAdminTrack(),
   isMember: isMemberTrack(),
   providers: (providerConfigs.value ?? []).map((config) => ({
@@ -318,18 +285,6 @@ async function markWelcomed(): Promise<void> {
     ONBOARDING_WELCOME_PREFERENCE,
     new Date().toISOString(),
   );
-}
-
-/**
- * Whether the app should open the welcome by itself. It interrupts a member
- * once, right after they were given an account: anyone who has been here a
- * while is left alone, with the welcome still on the sidebar and in the
- * settings for whenever they want it.
- */
-export function shouldOpenWelcome(): boolean {
-  if (!isMemberTrack() || welcomedAt.value != null) return false;
-  const createdAt = store.currentUser?.created_at;
-  return createdAt != null && isNewAccount(createdAt);
 }
 
 // InvalidDataError: the server is still registering the command but has already
