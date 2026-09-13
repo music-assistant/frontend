@@ -28,6 +28,17 @@ export async function setUserPreference(
   key: string,
   value: unknown,
 ): Promise<void> {
+  await setUserPreferences({ [key]: value });
+}
+
+/**
+ * The same for several keys at once, in a single update: settings that belong
+ * to one answer are written together, so the account never ends up holding half
+ * of it.
+ */
+export async function setUserPreferences(
+  values: Record<string, unknown>,
+): Promise<void> {
   if (!store.currentUser) {
     console.warn("Cannot set preference: no user logged in");
     return;
@@ -37,11 +48,11 @@ export async function setUserPreference(
     store.currentUser.preferences = {};
   }
 
-  const plainValue = JSON.parse(JSON.stringify(value));
+  const plainValues = JSON.parse(JSON.stringify(values));
 
   const updatedPreferences = {
     ...store.currentUser.preferences,
-    [key]: plainValue,
+    ...plainValues,
   };
 
   store.currentUser.preferences = updatedPreferences;

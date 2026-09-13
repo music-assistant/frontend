@@ -8,6 +8,7 @@ import {
   UserRole,
   type ProviderConfig,
   type Role,
+  type User,
 } from "@/plugins/api/interfaces";
 import { saveDeviceSetting } from "@/helpers/device_settings";
 import type { MusicAssistantApi } from "@/plugins/api";
@@ -123,6 +124,7 @@ const {
     storeMock: {
       currentUser: undefined as
         | {
+            created_at?: string;
             preferences?: Record<string, unknown>;
             role: string;
             user_id: string;
@@ -185,8 +187,17 @@ vi.mock("@/helpers/connection_identity", () => ({
 
 vi.mock("@/composables/userPreferences", () => ({
   pruneStaleProviderFilters: mockPruneStaleProviderFilters,
+  setUserPreference: vi.fn(),
+  setUserPreferences: vi.fn(),
   useUserPreferences: () => ({
     setPreference: mockSetPreference,
+    // the onboarding state reads its answers off the signed-in user; a getter
+    // rather than a computed, so it follows a store the tests write directly
+    getPreference: (key: string) => ({
+      get value() {
+        return storeMock.currentUser?.preferences?.[key];
+      },
+    }),
   }),
 }));
 
@@ -261,6 +272,12 @@ vi.mock("vuetify", () => ({
       },
     },
   }),
+}));
+
+// the onboarding state leaves the wizard through the router module; the app
+// itself navigates through useRouter below
+vi.mock("@/plugins/router", () => ({
+  default: { push: vi.fn(), replace: vi.fn() },
 }));
 
 vi.mock("vue-router", async () => {
@@ -527,6 +544,61 @@ describe("App initialization", () => {
 
       expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
       expect(window.location.search).not.toContain("onboard");
+    });
+
+    /** Someone who has just been given an account of their own. */
+    const asNewMember = (overrides: Partial<User> = {}) => {
+      apiMock.getCurrentUserInfo.mockResolvedValue(
+        user({
+          role: UserRole.USER,
+          user_id: "sam-id",
+          username: "sam",
+          created_at: new Date().toISOString(),
+          ...overrides,
+        }),
+      );
+      authManagerMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      );
+    };
+
+    it("welcomes a member who has just been given an account", async () => {
+      asNewMember();
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
+    });
+
+    it("welcomes a member once, and never again", async () => {
+      asNewMember({
+        preferences: { "onboarding.welcome": "2026-01-02T03:04:05Z" },
+      });
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).not.toHaveBeenCalled();
+    });
+
+    it("leaves a member who has had the account a while to find it", async () => {
+      // the welcome is an interruption worth making for someone who just
+      // arrived; anyone else has the sidebar and the settings for it
+      asNewMember({ created_at: "2024-01-01T00:00:00Z" });
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).not.toHaveBeenCalled();
+    });
+
+    it("never welcomes a guest, who is only passing through", async () => {
+      asNewMember({ role: UserRole.GUEST });
+      authManagerMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+      );
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).not.toHaveBeenCalled();
     });
   });
 

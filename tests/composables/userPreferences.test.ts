@@ -41,6 +41,8 @@ import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 import {
   pruneStaleProviderFilters,
+  setUserPreference,
+  setUserPreferences,
   useUserPreferences,
 } from "@/composables/userPreferences";
 
@@ -129,6 +131,52 @@ describe("userPreferences - itemsListing", () => {
     );
 
     expect(readPrefs("librarygenres", "genres").favoriteFilter).toBeUndefined();
+  });
+});
+
+describe("writing preferences", () => {
+  beforeEach(() => {
+    mockUpdateUser.mockReset();
+    mockUpdateUser.mockResolvedValue(user());
+    storeMock.currentUser = { user_id: "u1", preferences: { theme: "dark" } };
+  });
+
+  it("keeps the preferences it was not asked about", async () => {
+    await setUserPreference("language", "nl");
+
+    expect(mockUpdateUser).toHaveBeenCalledWith("u1", {
+      preferences: { theme: "dark", language: "nl" },
+    });
+  });
+
+  it("writes the keys of one answer in a single update", async () => {
+    await setUserPreferences({ show_waveform: true, visualizer_enabled: true });
+
+    // one update, so the account never holds half of an answer
+    expect(mockUpdateUser).toHaveBeenCalledOnce();
+    expect(mockUpdateUser).toHaveBeenCalledWith("u1", {
+      preferences: {
+        theme: "dark",
+        show_waveform: true,
+        visualizer_enabled: true,
+      },
+    });
+    expect(storeMock.currentUser?.preferences).toEqual({
+      theme: "dark",
+      show_waveform: true,
+      visualizer_enabled: true,
+    });
+  });
+
+  it("asks the server for nothing while nobody is signed in", async () => {
+    storeMock.currentUser = null;
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await setUserPreferences({ show_waveform: true });
+
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledOnce();
+    warnSpy.mockRestore();
   });
 });
 

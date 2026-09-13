@@ -1,0 +1,196 @@
+import { UserRole, type Scope, type User } from "@/plugins/api/interfaces";
+import { flushPromises, mount } from "@vue/test-utils";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+import { user } from "../fixtures/user";
+
+const {
+  apiMock,
+  authMock,
+  preferenceState,
+  setUserPreferencesMock,
+  storeMock,
+} = vi.hoisted(() => ({
+  apiMock: {
+    players: {} as Record<string, unknown>,
+    providers: {} as Record<string, { name: string }>,
+    providerManifests: {} as Record<string, { builtin: boolean }>,
+    getAllUsers: vi.fn(async () => []),
+    getProviderConfigs: vi.fn(async () => []),
+    subscribe: vi.fn(() => vi.fn()),
+    sendCommand: vi.fn(),
+    serverInfo: { value: { onboard_done: true } },
+  },
+  authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
+  // replaced with a real ref by the userPreferences mock factory below
+  preferenceState: {
+    persona: { value: undefined } as { value?: string },
+    ready: false,
+  },
+  setUserPreferencesMock: vi.fn(),
+  storeMock: { currentUser: undefined as User | undefined },
+}));
+
+vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+
+vi.mock("@/plugins/auth", () => ({ authManager: authMock, default: authMock }));
+
+vi.mock("@/plugins/router", () => ({
+  default: { push: vi.fn(), replace: vi.fn() },
+}));
+
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
+
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+
+vi.mock("vue-sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+
+vi.mock("@/composables/userPreferences", async () => {
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  // every test loads a fresh step, which runs this factory again: hand out the
+  // same ref each time, so the answer a test gives survives the reload
+  if (!preferenceState.ready) {
+    preferenceState.persona = ref<string | undefined>(undefined);
+    preferenceState.ready = true;
+  }
+  return {
+    setUserPreference: vi.fn(),
+    setUserPreferences: setUserPreferencesMock,
+    useUserPreferences: () => ({
+      getPreference: (key: string) =>
+        key === "onboarding.persona" ? preferenceState.persona : ref(undefined),
+    }),
+  };
+});
+
+/** A fresh step per test: the onboarding state lives for a whole session. */
+async function mountStep() {
+  vi.resetModules();
+  const component =
+    await import("@/components/onboarding/steps/WelcomeStep.vue");
+  const wrapper = mount(component.default, {
+    global: {
+      mocks: {
+        // echo the name back, so a test can tell it reached the greeting
+        $t: (key: string, params?: Record<string, unknown>) =>
+          params?.name ? `${key}:${params.name}` : key,
+      },
+    },
+  });
+  await flushPromises();
+  return wrapper;
+}
+
+function card(wrapper: Awaited<ReturnType<typeof mountStep>>, persona: string) {
+  return wrapper.find(`[data-testid=onboarding-persona-${persona}]`);
+}
+
+describe("WelcomeStep", () => {
+  beforeEach(() => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+    storeMock.currentUser = user({
+      user_id: "sam-1",
+      username: "sam",
+      display_name: "Sam",
+      role: UserRole.USER,
+    });
+    preferenceState.persona.value = undefined;
+    setUserPreferencesMock.mockReset();
+  });
+
+  it("greets the member by the name they go by", async () => {
+    const wrapper = await mountStep();
+
+    expect(wrapper.find("[data-testid=onboarding-greeting]").text()).toBe(
+      "onboarding.steps.welcome.description:Sam",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("falls back on the username of a member without a display name", async () => {
+    storeMock.currentUser = user({ username: "sam", display_name: null });
+
+    const wrapper = await mountStep();
+
+    expect(wrapper.find("[data-testid=onboarding-greeting]").text()).toBe(
+      "onboarding.steps.welcome.description:sam",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("offers both ways to listen, and says what they change", async () => {
+    const wrapper = await mountStep();
+
+    expect(card(wrapper, "enthusiast").text()).toContain(
+      "onboarding.steps.welcome.enthusiast.label",
+    );
+    expect(card(wrapper, "regular").text()).toContain(
+      "onboarding.steps.welcome.regular.label",
+    );
+    // the answer is a handful of defaults, not a door closing
+    expect(wrapper.text()).toContain("onboarding.steps.welcome.defaults_hint");
+
+    wrapper.unmount();
+  });
+
+  it("persists the answer and moves the wizard on", async () => {
+    const wrapper = await mountStep();
+
+    await card(wrapper, "enthusiast").trigger("click");
+    await flushPromises();
+
+    expect(setUserPreferencesMock).toHaveBeenCalledWith({
+      "onboarding.persona": "enthusiast",
+      show_waveform: true,
+      visualizer_enabled: true,
+    });
+    expect(wrapper.emitted("advance")).toHaveLength(1);
+
+    wrapper.unmount();
+  });
+
+  it("shows the answer the member already gave", async () => {
+    preferenceState.persona.value = "regular";
+
+    const wrapper = await mountStep();
+
+    // coming back to the welcome shows what it was answered with, and lets
+    // them answer it again
+    expect(card(wrapper, "regular").attributes("aria-pressed")).toBe("true");
+    expect(card(wrapper, "enthusiast").attributes("aria-pressed")).toBe(
+      "false",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("takes one answer however often it is clicked", async () => {
+    let landAnswer: () => void = () => {};
+    setUserPreferencesMock.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          landAnswer = () => resolve();
+        }),
+    );
+
+    const wrapper = await mountStep();
+    const chosen = card(wrapper, "regular");
+    void chosen.trigger("click");
+    await chosen.trigger("click");
+
+    // the answer is on its way to the server, and the cards say so
+    expect(chosen.attributes("disabled")).toBeDefined();
+
+    landAnswer();
+    await flushPromises();
+
+    expect(setUserPreferencesMock).toHaveBeenCalledOnce();
+    expect(wrapper.emitted("advance")).toHaveLength(1);
+
+    wrapper.unmount();
+  });
+});

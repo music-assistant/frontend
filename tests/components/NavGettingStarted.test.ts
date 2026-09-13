@@ -1,29 +1,48 @@
-import { ProviderType, type Scope } from "@/plugins/api/interfaces";
+import {
+  ProviderType,
+  UserRole,
+  type Scope,
+  type User,
+} from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+import { user } from "../fixtures/user";
 
-const { apiMock, authMock, preferenceState, providerConfigs, routerMock } =
-  vi.hoisted(() => ({
-    apiMock: {
-      players: {} as Record<string, unknown>,
-      providerManifests: {} as Record<string, { builtin: boolean }>,
-      getAllUsers: vi.fn(),
-      getProviderConfigs: vi.fn(),
-      subscribe: vi.fn(() => vi.fn()),
-      sendCommand: vi.fn(),
-      serverInfo: { value: { onboard_done: false } },
-    },
-    authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
-    // replaced with a real ref by the userPreferences mock factory below
-    preferenceState: {
-      intent: { value: undefined } as { value?: string },
-      ready: false,
-    },
-    // what the server hands back as the provider configurations
-    providerConfigs: { list: [] as Record<string, unknown>[] },
-    routerMock: { push: vi.fn(), replace: vi.fn() },
-  }));
+const {
+  apiMock,
+  authMock,
+  preferenceState,
+  providerConfigs,
+  routerMock,
+  storeState,
+} = vi.hoisted(() => ({
+  apiMock: {
+    players: {} as Record<string, unknown>,
+    providerManifests: {} as Record<string, { builtin: boolean }>,
+    getAllUsers: vi.fn(),
+    getProviderConfigs: vi.fn(),
+    subscribe: vi.fn(() => vi.fn()),
+    sendCommand: vi.fn(),
+    serverInfo: { value: { onboard_done: false } },
+  },
+  authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
+  // replaced with real refs by the userPreferences mock factory below
+  preferenceState: {
+    intent: { value: undefined } as { value?: string },
+    persona: { value: undefined } as { value?: string },
+    ready: false,
+  },
+  // what the server hands back as the provider configurations
+  providerConfigs: { list: [] as Record<string, unknown>[] },
+  routerMock: { push: vi.fn(), replace: vi.fn() },
+  // replaced with a reactive store by the store mock factory below: who is
+  // signed in is what tells the two onboarding tracks apart
+  storeState: {
+    store: { currentUser: undefined } as { currentUser?: User },
+    ready: false,
+  },
+}));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 
@@ -35,18 +54,33 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 vi.mock("vue-sonner", () => ({ toast: { error: vi.fn() } }));
 
+vi.mock("@/plugins/store", async () => {
+  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
+  if (!storeState.ready) {
+    storeState.store = reactive({ currentUser: undefined as User | undefined });
+    storeState.ready = true;
+  }
+  return { store: storeState.store };
+});
+
 vi.mock("@/composables/userPreferences", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   // every test loads a fresh checklist, which runs this factory again: hand out
-  // the same ref each time, so the answer a test gives survives the reload
+  // the same refs each time, so the answer a test gives survives the reload
   if (!preferenceState.ready) {
     preferenceState.intent = ref<string | undefined>(undefined);
+    preferenceState.persona = ref<string | undefined>(undefined);
     preferenceState.ready = true;
   }
+  const preferences: Record<string, { value?: string }> = {
+    "onboarding.intent": preferenceState.intent,
+    "onboarding.persona": preferenceState.persona,
+  };
   return {
     setUserPreference: vi.fn(),
+    setUserPreferences: vi.fn(),
     useUserPreferences: () => ({
-      getPreference: () => preferenceState.intent,
+      getPreference: (key: string) => preferences[key] ?? { value: undefined },
     }),
   };
 });
@@ -120,7 +154,13 @@ describe("NavGettingStarted", () => {
     authMock.hasScope.mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.admin),
     );
+    storeState.store.currentUser = user({
+      user_id: "admin-1",
+      username: "admin",
+      role: UserRole.ADMIN,
+    });
     preferenceState.intent.value = undefined;
+    preferenceState.persona.value = undefined;
     routerMock.push.mockReset();
   });
 
@@ -140,19 +180,69 @@ describe("NavGettingStarted", () => {
     wrapper.unmount();
   });
 
-  it.each([
-    ["a member", BUILTIN_ROLE_SCOPES.user],
-    ["a guest", BUILTIN_ROLE_SCOPES.guest],
-  ])("stays away from %s, who is not an admin", async (_role, scopes) => {
-    authMock.hasScope.mockImplementation(scopeChecker(scopes));
+  it("stays away from a guest, who is only passing through", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+    storeState.store.currentUser = user({
+      user_id: "guest-1",
+      username: "guest",
+      role: UserRole.GUEST,
+    });
 
     const wrapper = await mountChecklist();
 
     expect(wrapper.find("[data-testid=nav-getting-started]").exists()).toBe(
       false,
     );
-    // and never asks the server what a non-admin cannot act on anyway
+    // and never asks the server what a guest cannot act on anyway
     expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
+  it("asks a member the one thing the welcome asks", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+    storeState.store.currentUser = user({
+      user_id: "sam-1",
+      username: "sam",
+      role: UserRole.USER,
+    });
+
+    const wrapper = await mountChecklist();
+
+    expect(
+      wrapper
+        .findAll("[data-testid=getting-started-step]")
+        .map((step) => step.text()),
+    ).toEqual(["onboarding.steps.welcome.title"]);
+    expect(wrapper.find("[data-slot=badge]").text()).toBe("1");
+    // the welcome reads none of the provider configurations, so a member never
+    // waits on them and never fetches them
+    expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("onboarding.welcome_hint");
+
+    wrapper.unmount();
+  });
+
+  it("stops asking a member who has answered the welcome", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+    storeState.store.currentUser = user({
+      user_id: "sam-1",
+      username: "sam",
+      role: UserRole.USER,
+    });
+    preferenceState.persona.value = "regular";
+
+    const wrapper = await mountChecklist();
+
+    expect(wrapper.find("[data-testid=nav-getting-started]").exists()).toBe(
+      false,
+    );
 
     wrapper.unmount();
   });

@@ -3,19 +3,24 @@
  * of the user may open.
  */
 import type { ToolbarHeadingItem } from "@/components/ToolbarHeading.vue";
-import type { Scope } from "@/plugins/api/interfaces";
+import { UserRole, type Scope } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import Settings from "@/views/settings/Settings.vue";
 import { mount } from "@vue/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+import { user } from "../fixtures/user";
 
-const { apiMock, hasScope } = vi.hoisted(() => ({
+const { apiMock, hasScope, routeState } = vi.hoisted(() => ({
   apiMock: {
     players: { kitchen: { name: "Kitchen" } },
     providerManifests: {},
     getProvider: vi.fn(),
   },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
+  // which settings page is open: the overview is the one carrying the link
+  // back into onboarding
+  routeState: { name: "editplayeroptions" },
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
@@ -38,7 +43,7 @@ vi.mock("vue-router", async (importOriginal) => ({
   useRouter: () => ({
     currentRoute: {
       value: {
-        name: "editplayeroptions",
+        name: routeState.name,
         params: { playerId: "kitchen" },
         query: {},
       },
@@ -122,4 +127,69 @@ describe("Settings breadcrumbs on the options of a player", () => {
       expect(trail.filter((item) => item.to)).toEqual([]);
     },
   );
+});
+
+/** The settings overview, which is where onboarding is reachable again from. */
+function mountOverview() {
+  routeState.name = "settings";
+  return mount(Settings, {
+    global: {
+      stubs: {
+        // the container reaches for a Vuetify theme this bare mount does not
+        // set up; what it wraps is what this is about
+        Container: { template: "<div><slot /></div>" },
+        Toolbar: { template: "<div />" },
+        ToolbarHeading: ToolbarHeadingStub,
+        RouterView: true,
+        VBtn: true,
+        VDivider: true,
+      },
+    },
+  });
+}
+
+describe("the link back into onboarding", () => {
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    store.currentUser = undefined;
+  });
+
+  it("offers an admin the setup wizard again", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    store.currentUser = user({ username: "admin", role: UserRole.ADMIN });
+
+    const wrapper = mountOverview();
+
+    expect(wrapper.find("[data-testid=run-onboarding]").text()).toBe(
+      "onboarding.run_again",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("offers a member the welcome, which is theirs to run again", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    store.currentUser = user({ username: "sam", role: UserRole.USER });
+
+    const wrapper = mountOverview();
+
+    // there is no setup for a member to run again, and the same route hands
+    // them what onboarding is for them
+    expect(wrapper.find("[data-testid=run-onboarding]").text()).toBe(
+      "onboarding.welcome_again",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("offers a guest nothing: onboarding has nothing for them", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
+    store.currentUser = user({ username: "guest", role: UserRole.GUEST });
+
+    const wrapper = mountOverview();
+
+    expect(wrapper.find("[data-testid=run-onboarding]").exists()).toBe(false);
+
+    wrapper.unmount();
+  });
 });

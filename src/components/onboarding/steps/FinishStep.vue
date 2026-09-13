@@ -1,11 +1,11 @@
 <template>
   <section class="flex flex-col gap-5">
     <p class="text-muted-foreground text-sm">
-      {{ $t("onboarding.steps.finish.description") }}
+      {{ $t(`onboarding.steps.${stepId}.description`) }}
     </p>
 
     <div v-if="done.length > 0" class="flex flex-col gap-2">
-      <h3 class="text-sm font-semibold">{{ $t("onboarding.set_up") }}</h3>
+      <h3 class="text-sm font-semibold">{{ $t(doneHeadingKey) }}</h3>
       <ItemGroup class="gap-2">
         <Item
           v-for="step in done"
@@ -25,6 +25,10 @@
                   named: { count: playerCount },
                 })
               }}
+            </ItemDescription>
+            <!-- the welcome asked one thing; the summary says what came of it -->
+            <ItemDescription v-else-if="step.id === 'welcome' && persona">
+              {{ $t(`onboarding.steps.welcome.${persona}.label`) }}
             </ItemDescription>
           </ItemContent>
         </Item>
@@ -60,7 +64,9 @@
       </ItemGroup>
     </div>
 
-    <p v-else class="text-muted-foreground text-sm">
+    <!-- the member track sets nothing up, so it has no list to be at the end
+         of and nothing to say is done -->
+    <p v-else-if="!isWelcome" class="text-muted-foreground text-sm">
       {{ $t("onboarding.all_done") }}
     </p>
 
@@ -93,8 +99,10 @@ import { isTodo, type OnboardingStepId } from "@/helpers/onboarding";
 import { Circle, CircleCheck } from "@lucide/vue";
 import { computed } from "vue";
 
-defineProps<{
+const props = defineProps<{
   busy?: boolean;
+  // which summary this is: the end of the setup, or the end of the welcome
+  stepId: OnboardingStepId;
 }>();
 
 // the wizard hands the same listeners to every step; declaring them all keeps
@@ -105,11 +113,18 @@ const emit = defineEmits<{
   (e: "finish"): void;
 }>();
 
-const { ctx, steps, pending } = useOnboarding();
+const { ctx, steps, pending, persona } = useOnboarding();
 
 // a review is nothing to set up and nothing to do, so it is on neither list
 const done = computed(() =>
   steps.value.filter((step) => isTodo(step) && step.isDone(ctx.value)),
 );
 const playerCount = computed(() => ctx.value.playerCount);
+
+const isWelcome = computed(() => props.stepId === "all_set");
+// a member set nothing up: what their summary looks back at is the answer they
+// gave, so it is not headed as a list of things that are now in place
+const doneHeadingKey = computed(() =>
+  isWelcome.value ? "onboarding.what_you_picked" : "onboarding.set_up",
+);
 </script>

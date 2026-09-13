@@ -1,7 +1,16 @@
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
-import { ProviderType, UserRole, type Scope } from "@/plugins/api/interfaces";
+import {
+  ProviderType,
+  UserRole,
+  type Scope,
+  type User,
+} from "@/plugins/api/interfaces";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+import {
+  BUILTIN_ROLE_SCOPES,
+  OWN_SOURCES_ROLE_SCOPES,
+  scopeChecker,
+} from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
 const {
@@ -11,6 +20,8 @@ const {
   providerConfigs,
   routerMock,
   setUserPreferenceMock,
+  setUserPreferencesMock,
+  storeState,
   toastMock,
   users,
 } = vi.hoisted(() => ({
@@ -26,13 +37,24 @@ const {
     serverInfo: { value: undefined as { onboard_done: boolean } | undefined },
   },
   authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
-  // replaced with a real ref by the userPreferences mock factory below, so
+  // replaced with real refs by the userPreferences mock factory below, so
   // the composable's computed context follows what a test sets here
-  preferenceState: { intent: { value: undefined } as { value?: string } },
+  preferenceState: {
+    intent: { value: undefined } as { value?: string },
+    persona: { value: undefined } as { value?: string },
+    welcomedAt: { value: undefined } as { value?: string },
+  },
   // what the server hands back as the provider configurations
   providerConfigs: { list: [] as Record<string, unknown>[] },
   routerMock: { replace: vi.fn(), push: vi.fn() },
   setUserPreferenceMock: vi.fn(),
+  setUserPreferencesMock: vi.fn(),
+  // replaced with a reactive store by the store mock factory below: who is
+  // signed in is what tells the two onboarding tracks apart
+  storeState: {
+    store: { currentUser: undefined } as { currentUser?: User },
+    ready: false,
+  },
   toastMock: { error: vi.fn() },
   // what the server hands back as the user accounts
   users: { list: [] as ReturnType<typeof user>[] },
@@ -48,13 +70,32 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
 
+vi.mock("@/plugins/store", async () => {
+  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
+  // every test loads a fresh composable, which runs this factory again: hand
+  // out the same store, so the user a test signed in survives the reload
+  if (!storeState.ready) {
+    storeState.store = reactive({ currentUser: undefined as User | undefined });
+    storeState.ready = true;
+  }
+  return { store: storeState.store };
+});
+
 vi.mock("@/composables/userPreferences", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   preferenceState.intent = ref<string | undefined>(undefined);
+  preferenceState.persona = ref<string | undefined>(undefined);
+  preferenceState.welcomedAt = ref<string | undefined>(undefined);
+  const preferences: Record<string, { value?: string }> = {
+    "onboarding.intent": preferenceState.intent,
+    "onboarding.persona": preferenceState.persona,
+    "onboarding.welcome": preferenceState.welcomedAt,
+  };
   return {
     setUserPreference: setUserPreferenceMock,
+    setUserPreferences: setUserPreferencesMock,
     useUserPreferences: () => ({
-      getPreference: () => preferenceState.intent,
+      getPreference: (key: string) => preferences[key],
     }),
   };
 });
@@ -73,6 +114,22 @@ async function loadOnboarding(): Promise<Onboarding> {
   const onboarding = (await loadModule()).useOnboarding();
   await onboarding.loadOnboardingData();
   return onboarding;
+}
+
+/** Who the session is signed in as, which is half of what decides the track. */
+function signIn(overrides: Partial<User> = {}): User {
+  const account = user(overrides);
+  storeState.store.currentUser = account;
+  return account;
+}
+
+/** Sign in with a role and the scopes it grants, member scopes by default. */
+function signInAs(
+  overrides: Partial<User> = {},
+  scopes: readonly Scope[] = BUILTIN_ROLE_SCOPES.user,
+): User {
+  authMock.hasScope.mockImplementation(scopeChecker(scopes));
+  return signIn({ user_id: "sam-1", username: "sam", ...overrides });
 }
 
 function addProvider(
@@ -135,8 +192,10 @@ describe("useOnboarding", () => {
     authMock.hasScope.mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.admin),
     );
+    signIn({ user_id: "admin-1", username: "admin", role: UserRole.ADMIN });
     routerMock.replace.mockReset();
     setUserPreferenceMock.mockReset();
+    setUserPreferencesMock.mockReset();
     toastMock.error.mockReset();
     warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
   });
@@ -144,6 +203,8 @@ describe("useOnboarding", () => {
   afterEach(() => {
     warnSpy.mockRestore();
     preferenceState.intent.value = undefined;
+    preferenceState.persona.value = undefined;
+    preferenceState.welcomedAt.value = undefined;
   });
 
   it("reads the context from the provider configurations", async () => {
@@ -180,17 +241,34 @@ describe("useOnboarding", () => {
     expect(hasPending.value).toBe(true);
   });
 
-  it.each([
-    ["a member", BUILTIN_ROLE_SCOPES.user],
-    ["a guest", BUILTIN_ROLE_SCOPES.guest],
-  ])("asks nothing of %s, who is not an admin", async (_role, scopes) => {
-    authMock.hasScope.mockImplementation(scopeChecker(scopes));
+  it("asks nothing of a guest, who is only passing through", async () => {
+    signInAs(
+      { user_id: "guest-1", username: "guest", role: UserRole.GUEST },
+      BUILTIN_ROLE_SCOPES.guest,
+    );
     addProvider("spotify--1", "spotify", ProviderType.MUSIC);
 
     const { steps, hasPending } = await loadOnboarding();
 
     expect(steps.value).toEqual([]);
     expect(hasPending.value).toBe(false);
+  });
+
+  it("asks a member nothing about the setup they are not running", async () => {
+    signInAs();
+    addProvider("spotify--1", "spotify", ProviderType.MUSIC);
+
+    const { steps, ctx } = await loadOnboarding();
+
+    // the welcome instead of the setup: none of the admin track is theirs
+    expect(steps.value.map((step) => step.id)).toEqual([
+      "welcome",
+      "whats_here",
+      "tour",
+      "all_set",
+    ]);
+    expect(ctx.value.isAdmin).toBe(false);
+    expect(ctx.value.isMember).toBe(true);
   });
 
   it("decides nothing before the onboarding data is in", async () => {
@@ -612,5 +690,172 @@ describe("useOnboarding", () => {
     await finish();
 
     expect(dismissed.value).toBe(true);
+  });
+
+  describe("the track a session is on", () => {
+    const ADMIN_STEPS = [
+      "intent",
+      "music_sources",
+      "players",
+      "plugins",
+      "core_settings",
+      "invite_members",
+      "finish",
+    ];
+    const MEMBER_STEPS = ["welcome", "whats_here", "tour", "all_set"];
+
+    it.each([
+      ["an admin", BUILTIN_ROLE_SCOPES.admin, UserRole.ADMIN, ADMIN_STEPS],
+      ["a member", BUILTIN_ROLE_SCOPES.user, UserRole.USER, MEMBER_STEPS],
+      // a role an admin made up here: not a guest, so someone who lives here
+      ["a custom role", OWN_SOURCES_ROLE_SCOPES, "dj", MEMBER_STEPS],
+      ["a guest", BUILTIN_ROLE_SCOPES.guest, UserRole.GUEST, []],
+      // the Home Assistant integration signs in as one of these
+      ["a service account", BUILTIN_ROLE_SCOPES.user, UserRole.SERVICE, []],
+    ])("runs %s through its own steps", async (_case, scopes, role, steps) => {
+      signInAs({ role }, scopes);
+
+      const module = await loadModule();
+      const onboarding = module.useOnboarding();
+      await onboarding.loadOnboardingData();
+
+      expect(onboarding.steps.value.map((step) => step.id)).toEqual(steps);
+      expect(module.hasOnboardingTrack()).toBe(steps.length > 0);
+    });
+
+    it("has nothing for a session nobody is signed in on", async () => {
+      authMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      );
+      storeState.store.currentUser = undefined;
+
+      const module = await loadModule();
+
+      expect(module.hasOnboardingTrack()).toBe(false);
+      expect(module.useOnboarding().steps.value).toEqual([]);
+    });
+
+    it("never asks the server for configurations a role may not list", async () => {
+      // a custom role that holds none of the configuration scopes: the member
+      // track reads none of this anyway, and a request that could only fail
+      // would greet them with an error toast
+      signInAs({ role: "dj" }, BUILTIN_ROLE_SCOPES.guest);
+
+      const { configsLoaded, ctx } = await loadOnboarding();
+
+      expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+      expect(configsLoaded.value).toBe(true);
+      expect(ctx.value.providers).toEqual([]);
+      expect(warnSpy).not.toHaveBeenCalled();
+      expect(toastMock.error).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("the welcome", () => {
+    it("writes the persona and the settings it stands for in one go", async () => {
+      signInAs();
+
+      const { setPersona } = await loadOnboarding();
+      await setPersona("enthusiast");
+
+      // one update: the account never holds the answer without the settings
+      // that answer was given for
+      expect(setUserPreferencesMock).toHaveBeenCalledOnce();
+      expect(setUserPreferencesMock).toHaveBeenCalledWith({
+        "onboarding.persona": "enthusiast",
+        show_waveform: true,
+        visualizer_enabled: true,
+      });
+    });
+
+    it("seeds the settings again when the member answers again", async () => {
+      signInAs();
+      preferenceState.persona.value = "enthusiast";
+
+      const { setPersona } = await loadOnboarding();
+      await setPersona("regular");
+
+      expect(setUserPreferencesMock).toHaveBeenCalledWith({
+        "onboarding.persona": "regular",
+        show_waveform: false,
+        visualizer_enabled: false,
+      });
+    });
+
+    it("marks the member as welcomed on the way out", async () => {
+      signInAs();
+
+      const { finish } = await loadOnboarding();
+      await expect(finish()).resolves.toBe(true);
+
+      // nothing is closed off on the server: the setup is the admin's, and
+      // the member's own account is all the welcome leaves a mark on
+      expect(apiMock.sendCommand).not.toHaveBeenCalled();
+      expect(setUserPreferenceMock).toHaveBeenCalledOnce();
+      const [key, value] = setUserPreferenceMock.mock.calls[0];
+      expect(key).toBe("onboarding.welcome");
+      expect(Date.parse(value as string)).not.toBeNaN();
+      expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+    });
+
+    it("leaves the mark of the first welcome where it is", async () => {
+      signInAs();
+      preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
+
+      const { finish } = await loadOnboarding();
+      await expect(finish()).resolves.toBe(true);
+
+      // when they were welcomed, not when they last looked it over again
+      expect(setUserPreferenceMock).not.toHaveBeenCalled();
+      expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+    });
+
+    it("opens by itself for a member who has just been given an account", async () => {
+      signInAs({ created_at: new Date().toISOString() });
+
+      const module = await loadModule();
+
+      expect(module.shouldOpenWelcome()).toBe(true);
+    });
+
+    it.each([
+      [
+        "has already been welcomed",
+        () => {
+          signInAs({ created_at: new Date().toISOString() });
+          preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
+        },
+      ],
+      [
+        "has had the account for a while",
+        () => signInAs({ created_at: "2024-01-01T00:00:00Z" }),
+      ],
+      [
+        "is a guest",
+        () =>
+          signInAs(
+            {
+              role: UserRole.GUEST,
+              created_at: new Date().toISOString(),
+            },
+            BUILTIN_ROLE_SCOPES.guest,
+          ),
+      ],
+      [
+        "is setting the server up",
+        () => {
+          signIn({
+            role: UserRole.ADMIN,
+            created_at: new Date().toISOString(),
+          });
+        },
+      ],
+    ])("stays out of the way of someone who %s", async (_case, signInAs) => {
+      signInAs();
+
+      const module = await loadModule();
+
+      expect(module.shouldOpenWelcome()).toBe(false);
+    });
   });
 });

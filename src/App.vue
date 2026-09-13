@@ -40,6 +40,7 @@
 import HomeAssistantMenuButton from "@/components/HomeAssistantMenuButton.vue";
 import { Toaster } from "@/components/ui/sonner";
 import { loadRoles } from "@/composables/roles";
+import { shouldOpenWelcome } from "@/composables/useOnboarding";
 import { useReconnectGrace } from "@/composables/useReconnectGrace";
 import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
@@ -440,6 +441,11 @@ const completeInitialization = async () => {
       sessionStorage.getItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY),
     );
     router.replace(pinnedPath);
+  } else if (shouldOpenWelcome()) {
+    // someone who has just been given an account of their own is welcomed into
+    // the app once; everyone else finds the welcome on the sidebar and in the
+    // settings, whenever they want it
+    router.push({ name: "onboarding" });
   }
   // Don't push to any route here - let the router handle navigation naturally
   // from the URL hash. The router config already redirects "/" to "/discover"

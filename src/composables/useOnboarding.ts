@@ -1,14 +1,18 @@
 import {
   setUserPreference,
+  setUserPreferences,
   useUserPreferences,
 } from "@/composables/userPreferences";
 import {
   applicableSteps,
   checklistPendingSteps,
   checklistSteps,
+  isNewAccount,
+  PERSONA_DEFAULTS,
   pendingSteps,
   type OnboardingContext,
   type OnboardingIntent,
+  type OnboardingPersona,
   type OnboardingStepId,
 } from "@/helpers/onboarding";
 import { userDisplayName } from "@/helpers/provider_access";
@@ -27,11 +31,22 @@ import {
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
+import { store } from "@/plugins/store";
 import { computed, ref } from "vue";
 import { toast } from "vue-sonner";
 
 /** User preference holding the answer to the wizard's intent question. */
 export const ONBOARDING_INTENT_PREFERENCE = "onboarding.intent";
+
+/** User preference holding the answer to the welcome's persona question. */
+export const ONBOARDING_PERSONA_PREFERENCE = "onboarding.persona";
+
+/**
+ * User preference holding when the member was welcomed, as an ISO timestamp.
+ * Its presence is the whole answer: a member is welcomed once, and the app
+ * never opens the welcome on them again.
+ */
+export const ONBOARDING_WELCOME_PREFERENCE = "onboarding.welcome";
 
 /** A provider the wizard lists, built from its configuration. */
 export interface ConfiguredProvider {
@@ -80,6 +95,13 @@ let loadingUsers: Promise<void> | null = null;
 let unsubProvidersUpdated: (() => void) | undefined;
 
 async function fetchProviderConfigs(): Promise<void> {
+  // listing the configurations is a permission of its own, which a custom role
+  // may well not hold: whoever may not read them is answered with the empty
+  // list they can see, instead of a request that only fails at them
+  if (!authManager.hasScope(Scope.CONFIG_PROVIDERS_READ)) {
+    providerConfigs.value = [];
+    return;
+  }
   try {
     providerConfigs.value = await api.getProviderConfigs();
   } catch (error) {
@@ -200,10 +222,38 @@ export function householdMembers(): HouseholdMember[] {
 
 const { getPreference } = useUserPreferences();
 const intent = getPreference<OnboardingIntent>(ONBOARDING_INTENT_PREFERENCE);
+const persona = getPreference<OnboardingPersona>(ONBOARDING_PERSONA_PREFERENCE);
+const welcomedAt = getPreference<string>(ONBOARDING_WELCOME_PREFERENCE);
+
+/** The admin track: whoever sets up every kind of provider runs it. */
+function isAdminTrack(): boolean {
+  return authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE);
+}
+
+/**
+ * The member track: someone who lives here without running the place. Their
+ * account is their own, which is what tells them from a guest passing through
+ * and from a service account such as the Home Assistant integration's.
+ */
+function isMemberTrack(): boolean {
+  if (isAdminTrack()) return false;
+  const role = store.currentUser?.role;
+  return role != null && role !== UserRole.GUEST && role !== UserRole.SERVICE;
+}
+
+/**
+ * Whether onboarding has anything for this session at all. The router asks
+ * this before it opens the wizard, so it reads the signed-in user and their
+ * scopes only: nothing here waits for a load.
+ */
+export function hasOnboardingTrack(): boolean {
+  return isAdminTrack() || isMemberTrack();
+}
 
 const ctx = computed<OnboardingContext>(() => ({
   // the admin track sets up every kind of provider
-  isAdmin: authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+  isAdmin: isAdminTrack(),
+  isMember: isMemberTrack(),
   providers: (providerConfigs.value ?? []).map((config) => ({
     type: config.type,
     domain: config.domain,
@@ -216,7 +266,7 @@ const ctx = computed<OnboardingContext>(() => ({
   // `null` while the users are unknown, which is not the same as an empty
   // household: the invite step is then simply not done
   memberCount: users.value == null ? null : householdMembers().length,
-  answers: { intent: intent.value },
+  answers: { intent: intent.value, persona: persona.value },
 }));
 
 const steps = computed(() => applicableSteps(ctx.value));
@@ -244,6 +294,44 @@ async function setIntent(value: OnboardingIntent): Promise<void> {
   await setUserPreference(ONBOARDING_INTENT_PREFERENCE, value);
 }
 
+/**
+ * Answer the welcome's persona question, and seed the settings that answer
+ * stands for. Both go out in one update, so the account never holds the answer
+ * without what it was given for — and answering again simply seeds them again.
+ * Nothing reads the persona itself afterwards: every one of those settings
+ * stays the member's to change.
+ */
+async function setPersona(value: OnboardingPersona): Promise<void> {
+  await setUserPreferences({
+    [ONBOARDING_PERSONA_PREFERENCE]: value,
+    ...PERSONA_DEFAULTS[value],
+  });
+}
+
+/**
+ * Remember that the member has been welcomed. Only the first time counts: the
+ * marker says the welcome has been shown, not when it was last opened.
+ */
+async function markWelcomed(): Promise<void> {
+  if (welcomedAt.value != null) return;
+  await setUserPreference(
+    ONBOARDING_WELCOME_PREFERENCE,
+    new Date().toISOString(),
+  );
+}
+
+/**
+ * Whether the app should open the welcome by itself. It interrupts a member
+ * once, right after they were given an account: anyone who has been here a
+ * while is left alone, with the welcome still on the sidebar and in the
+ * settings for whenever they want it.
+ */
+export function shouldOpenWelcome(): boolean {
+  if (!isMemberTrack() || welcomedAt.value != null) return false;
+  const createdAt = store.currentUser?.created_at;
+  return createdAt != null && isNewAccount(createdAt);
+}
+
 // InvalidDataError: the server is still registering the command but has already
 // completed onboarding itself.
 const INVALID_DATA_ERROR_CODE = 3;
@@ -263,14 +351,26 @@ function isAlreadyCompletedError(error: unknown): boolean {
 }
 
 /**
- * Close onboarding off and leave the wizard, and say whether that worked. The
- * server completes onboarding by itself as soon as the first provider is added,
- * so the command is skipped once it says so and an answer that only repeats
- * that is not worth a word. Any other failure leaves onboarding open on the
- * server, so the wizard stays put with the error on screen rather than handing
- * the user back an app that will drop them in here again on the next reload.
+ * Close onboarding off and leave the wizard, and say whether that worked.
+ *
+ * On the member track there is nothing to close off: the server's onboarding is
+ * the admin's setup, and all the welcome leaves behind is the marker on the
+ * member's own account.
+ *
+ * On the admin track the server completes onboarding by itself as soon as the
+ * first provider is added, so the command is skipped once it says so and an
+ * answer that only repeats that is not worth a word. Any other failure leaves
+ * onboarding open on the server, so the wizard stays put with the error on
+ * screen rather than handing the user back an app that will drop them in here
+ * again on the next reload.
  */
 async function finish(): Promise<boolean> {
+  if (isMemberTrack()) {
+    await markWelcomed();
+    dismiss();
+    await router.replace({ name: "discover" });
+    return true;
+  }
   if (api.serverInfo.value?.onboard_done === false) {
     try {
       await api.sendCommand("config/onboard_complete", undefined, {
@@ -307,6 +407,10 @@ export function useOnboarding() {
     dismiss,
     intent,
     setIntent,
+    persona,
+    setPersona,
+    // what the wizard marks the welcome with as it shows it
+    markWelcomed,
     dataLoaded,
     loadOnboardingData,
     // the checklist's own pair: it decides off the provider configurations

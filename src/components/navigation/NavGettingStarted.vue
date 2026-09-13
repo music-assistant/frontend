@@ -14,7 +14,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useOnboarding } from "@/composables/useOnboarding";
+import { hasOnboardingTrack, useOnboarding } from "@/composables/useOnboarding";
 import type { OnboardingStepId } from "@/helpers/onboarding";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -39,14 +39,22 @@ const {
 
 const open = ref(false);
 
-// Onboarding is an admin job; nobody else ever sees the checklist, and nothing
-// is counted before the provider configurations say what is set up.
+// Whoever onboarding has something for sees the checklist: the admin their
+// setup, everyone else who lives here their welcome. Nothing is counted before
+// the track's own data is in, which for a member is nothing to wait for.
 const visible = computed(
   () =>
-    authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE) &&
-    configsLoaded.value &&
+    hasOnboardingTrack() &&
+    (ctx.value.isMember || configsLoaded.value) &&
     hasPending.value &&
     !dismissed.value,
+);
+
+// the welcome has nothing to finish setting up, so it says what it is there for
+const hintKey = computed(() =>
+  ctx.value.isMember
+    ? "onboarding.welcome_hint"
+    : "onboarding.getting_started_hint",
 );
 
 const openStep = function (step: OnboardingStepId) {
@@ -61,7 +69,8 @@ const hideForNow = function () {
 };
 
 // the checklist is the only reason the sidebar needs the provider
-// configurations, so nobody but an admin ever fetches them
+// configurations, and only the setup is counted off them, so nobody but an
+// admin ever fetches them
 onMounted(() => {
   if (authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)) {
     void loadProviderConfigs();
@@ -99,7 +108,7 @@ onMounted(() => {
             </PopoverTrigger>
             <PopoverContent side="right" align="start" class="w-64 p-2">
               <p class="text-muted-foreground px-2 pt-1 pb-2 text-xs">
-                {{ t("onboarding.getting_started_hint") }}
+                {{ t(hintKey) }}
               </p>
               <ul class="flex flex-col gap-0.5">
                 <li v-for="step in checklist" :key="step.id">
