@@ -40,6 +40,7 @@ import {
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
+import { store } from "@/plugins/store";
 import { computed, ref } from "vue";
 import { toast } from "vue-sonner";
 
@@ -279,26 +280,40 @@ async function setPersona(value: OnboardingPersona): Promise<boolean> {
   );
 }
 
-// the write in flight, so the two ways out of the welcome — finishing it and
-// leaving the page behind — never turn into two updates
-let writingWelcomed: Promise<boolean> | null = null;
+// The write in flight and whose marker it is, so the two ways out of the
+// welcome — finishing it and leaving the page behind — never turn into two
+// updates, while the next account to be welcomed still gets a write of its
+// own instead of an answer about somebody else's marker.
+let writingWelcomed: {
+  userId?: string;
+  write: Promise<boolean>;
+} | null = null;
 
 /**
  * Remember that the member has been welcomed, and say whether the account took
  * it. Only the first time counts: the marker says the welcome has been shown,
  * not when it was last opened, so a marker that is already there is an answer
- * of its own. A second caller joins the write already on its way rather than
- * sending the marker twice, which is the one the options belong to.
+ * of its own. A second caller for the same account joins the write already on
+ * its way rather than sending the marker twice, which is the one the options
+ * belong to.
  */
 async function markWelcomed(options?: CommandOptions): Promise<boolean> {
   if (welcomedAt.value != null) return true;
-  writingWelcomed ??= setUserPreferences(
+  const userId = store.currentUser?.user_id;
+  // the write on its way is only this caller's when it is this account's
+  const marking = writingWelcomed;
+  if (marking && marking.userId === userId) return await marking.write;
+
+  const write = setUserPreferences(
     { [ONBOARDING_WELCOME_PREFERENCE]: new Date().toISOString() },
     options,
   ).finally(() => {
-    writingWelcomed = null;
+    // unless somebody else's is on its way by now, which is not this one's to
+    // clear
+    if (writingWelcomed?.write === write) writingWelcomed = null;
   });
-  return await writingWelcomed;
+  writingWelcomed = { userId, write };
+  return await write;
 }
 
 // InvalidDataError: the server is still registering the command but has already

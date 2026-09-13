@@ -826,6 +826,30 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       expect(routerMock.replace).not.toHaveBeenCalled();
     });
 
+    it("marks the account that asked, not the one before it", async () => {
+      signInAs({ user_id: "sam-1" });
+      let landFirst: () => void = () => {};
+      setUserPreferencesMock.mockImplementationOnce(
+        () =>
+          new Promise<boolean>((resolve) => {
+            landFirst = () => resolve(true);
+          }),
+      );
+
+      const { markWelcomed } = await loadOnboarding();
+      const first = markWelcomed();
+      // somebody else is signed in before the first marker has landed
+      signInAs({ user_id: "alex-1", username: "alex" });
+      const second = markWelcomed();
+      landFirst();
+
+      await expect(Promise.all([first, second])).resolves.toEqual([true, true]);
+
+      // joining the write on its way out would tell the new account its
+      // welcome had been marked when nothing of theirs was ever written
+      expect(setUserPreferencesMock).toHaveBeenCalledTimes(2);
+    });
+
     it("leaves the api to say so when the mark is made on the way out", async () => {
       signInAs();
 

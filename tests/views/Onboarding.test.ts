@@ -906,6 +906,44 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       wrapper.unmount();
     });
 
+    it("has nothing to look back at when the question was walked past", async () => {
+      preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
+
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      // the welcome has been shown, so nothing is left to do — but being done
+      // with the member is not the same as the member having picked something
+      expect(heading(wrapper)).toBe("onboarding.steps.all_set.title");
+      expect(
+        wrapper.findAll("[data-testid=onboarding-summary-done]"),
+      ).toHaveLength(0);
+      expect(wrapper.text()).not.toContain("onboarding.what_you_picked");
+      expect(wrapper.find("[data-testid=onboarding-finish]").exists()).toBe(
+        true,
+      );
+
+      wrapper.unmount();
+    });
+
+    it("looks back at the answer a member did give", async () => {
+      preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
+      preferenceState.persona.value = "regular";
+
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      const done = wrapper.findAll("[data-testid=onboarding-summary-done]");
+      expect(done).toHaveLength(1);
+      expect(done[0].text()).toContain("onboarding.steps.welcome.title");
+      expect(done[0].text()).toContain(
+        "onboarding.steps.welcome.regular.label",
+      );
+      expect(wrapper.text()).toContain("onboarding.what_you_picked");
+
+      wrapper.unmount();
+    });
+
     it("lets a member who never answered finish all the same", async () => {
       const wrapper = await mountWizard();
       await flushPromises();
