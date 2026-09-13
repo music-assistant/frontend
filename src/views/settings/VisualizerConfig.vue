@@ -163,6 +163,47 @@
         </div>
       </CardHeader>
       <CardContent class="space-y-5">
+        <p
+          v-if="favoritesPref.length === 0"
+          class="text-sm text-muted-foreground"
+        >
+          {{ $t("visualizer.no_favorites") }}
+        </p>
+        <!-- embedded on desktop; a bottom sheet on touch -->
+        <PresetCurator
+          v-if="hoverCapable"
+          :preset-names="presetNames"
+          :favorites="favoritesPref"
+          side-by-side
+          @toggle-favorite="toggleFavorite"
+          @update:previewed="(v: string | null) => (curatorPreviewed = v)"
+        />
+        <Sheet v-else>
+          <SheetTrigger as-child>
+            <Button variant="outline" class="w-full">
+              {{ $t("visualizer.browse_presets") }}
+            </Button>
+          </SheetTrigger>
+          <!-- auto-focus would land on the search input and pop the keyboard -->
+          <SheetContent
+            side="bottom"
+            class="flex h-[85dvh] flex-col"
+            @open-auto-focus="(e: Event) => e.preventDefault()"
+          >
+            <SheetHeader class="pb-0">
+              <SheetTitle>{{ $t("visualizer.favorites") }}</SheetTitle>
+            </SheetHeader>
+            <div class="flex min-h-0 flex-1 flex-col px-4 pb-4">
+              <PresetCurator
+                :preset-names="presetNames"
+                :favorites="favoritesPref"
+                @toggle-favorite="toggleFavorite"
+                @update:previewed="(v: string | null) => (curatorPreviewed = v)"
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
+
         <div
           class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
         >
@@ -209,9 +250,27 @@
             <SelectTrigger class="w-full shrink-0 sm:w-72">
               <SelectValue :placeholder="$t('visualizer.preset_random')" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="name in presetNames" :key="name" :value="name">
-                {{ name }}
+            <SelectContent class="w-[var(--reka-select-trigger-width)]">
+              <template
+                v-if="curatorPreviewed && curatorPreviewed !== presetPref"
+              >
+                <SelectItem
+                  :value="curatorPreviewed"
+                  class="[&>span:last-child]:min-w-0 [&>span:last-child]:overflow-hidden"
+                >
+                  <span class="block max-w-full break-words">
+                    {{ $t("visualizer.use_previewed", [curatorPreviewed]) }}
+                  </span>
+                </SelectItem>
+                <SelectSeparator />
+              </template>
+              <SelectItem
+                v-for="name in presetNames"
+                :key="name"
+                :value="name"
+                class="[&>span:last-child]:min-w-0 [&>span:last-child]:overflow-hidden"
+              >
+                <span class="block max-w-full break-words">{{ name }}</span>
               </SelectItem>
             </SelectContent>
           </Select>
@@ -266,37 +325,6 @@
     <Card>
       <CardHeader>
         <div class="flex items-center gap-2">
-          <Star class="size-4 text-primary" />
-          <CardTitle>{{ $t("visualizer.favorites") }}</CardTitle>
-        </div>
-        <CardDescription v-if="favoritesPref.length === 0">
-          {{ $t("visualizer.no_favorites") }}
-        </CardDescription>
-      </CardHeader>
-      <CardContent v-if="favoritesPref.length > 0">
-        <ul class="space-y-1.5">
-          <li
-            v-for="name in favoritesPref"
-            :key="name"
-            class="flex items-center justify-between gap-3 rounded-md bg-muted px-3 py-1.5 text-sm"
-          >
-            <span class="truncate">{{ name }}</span>
-            <button
-              type="button"
-              class="rounded p-1 hover:bg-background"
-              :aria-label="$t('visualizer.remove_favorite')"
-              @click="removeFavorite(name)"
-            >
-              <X :size="16" />
-            </button>
-          </li>
-        </ul>
-      </CardContent>
-    </Card>
-
-    <Card>
-      <CardHeader>
-        <div class="flex items-center gap-2">
           <Heart class="size-4 text-primary" />
           <CardTitle>{{ $t("visualizer.credits") }}</CardTitle>
         </div>
@@ -320,14 +348,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import {
-  Droplet,
-  Heart,
-  SlidersHorizontal,
-  Star,
-  SwatchBook,
-  X,
-} from "@lucide/vue";
+import { Droplet, Heart, SlidersHorizontal, SwatchBook } from "@lucide/vue";
 import {
   Card,
   CardContent,
@@ -339,12 +360,23 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import PresetCurator from "@/components/PresetCurator.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { isHoverCapablePointer } from "@/helpers/visualizer/pointer";
 import {
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
@@ -403,10 +435,17 @@ const setPref = (key: string, value: unknown) => {
   void setPreference(key, value);
 };
 
-const removeFavorite = (name: string) => {
+const hoverCapable = isHoverCapablePointer();
+
+// Last preset clicked in the curator; offered at the top of the fixed picker.
+const curatorPreviewed = ref<string | null>(null);
+
+const toggleFavorite = (name: string) => {
   setPref(
     "visualizer_favorites",
-    favoritesPref.value.filter((f) => f !== name),
+    favoritesPref.value.includes(name)
+      ? favoritesPref.value.filter((f) => f !== name)
+      : [...favoritesPref.value, name],
   );
 };
 </script>
