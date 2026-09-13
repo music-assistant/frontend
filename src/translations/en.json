@@ -633,6 +633,7 @@
         "genre_statistics_description": "Browse and filter all genres in your library. Genres can be globally excluded and restored.",
         "genre_table_rows_per_page": "Rows per page",
         "genre_table_page_of": "Page {0} of {1}",
+        "genre_table_rows_selected": "{selected} of {total} row selected. | {selected} of {total} rows selected.",
         "missing_players_hint": "Missing players? {0}",
         "add_player_providers": "Add more player providers",
         "add_audio_analysis_provider": "Add an audio analysis provider",
