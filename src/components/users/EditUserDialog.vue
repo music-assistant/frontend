@@ -108,7 +108,7 @@
                     :model-value="field.state.value"
                     :disabled="isCurrentUser || isSystemAccount"
                     @update:model-value="
-                      (value) => field.handleChange(value as UserRole)
+                      (value) => field.handleChange(value as string)
                     "
                   >
                     <SelectTrigger :id="field.name" class="w-full">
@@ -263,6 +263,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { assignableRoles, roleDisplayName } from "@/helpers/roles";
 import { isSystemUser } from "@/helpers/users";
 import { editUserSchema } from "@/lib/forms/profile";
 import { api, ApiCommandError } from "@/plugins/api";
@@ -316,19 +317,12 @@ const handleFormSubmit = async () => {
   }
 };
 
-const roleOptions = computed(() => {
-  const options = [
-    { label: t("auth.admin_role"), value: "admin" },
-    { label: t("auth.user_role"), value: "user" },
-    { label: t("auth.guest_role"), value: "guest" },
-  ];
-  // service is not offered as a choice, only listed to show it for an
-  // account that holds it
-  if (props.user?.role === UserRole.SERVICE) {
-    options.push({ label: t("auth.service_role"), value: "service" });
-  }
-  return options;
-});
+const roleOptions = computed(() =>
+  assignableRoles(store.roles, props.user?.role).map((role) => ({
+    label: roleDisplayName(role.role_id, store.roles),
+    value: role.role_id,
+  })),
+);
 
 const playerOptions = computed(() => {
   return Object.values(api.players)
@@ -354,8 +348,7 @@ const form = useForm({
     username: props.user?.username || "",
     displayName: props.user?.display_name || "",
     avatarUrl: props.user?.avatar_url || "",
-    // the picker only offers the builtin roles, which the schema enforces on submit
-    role: (props.user?.role as UserRole) || UserRole.USER,
+    role: props.user?.role || UserRole.USER,
     password: "",
     confirmPassword: "",
     playerFilter: props.user?.player_filter || [],
@@ -373,7 +366,7 @@ const form = useForm({
         username?: string;
         displayName?: string;
         avatarUrl?: string;
-        role?: UserRole;
+        role?: string;
         password?: string;
         player_filter?: string[];
       } = {};
@@ -431,7 +424,7 @@ const resetForm = () => {
     form.setFieldValue("username", props.user.username);
     form.setFieldValue("displayName", props.user.display_name || "");
     form.setFieldValue("avatarUrl", props.user.avatar_url || "");
-    form.setFieldValue("role", props.user.role as UserRole);
+    form.setFieldValue("role", props.user.role);
     form.setFieldValue("password", "");
     form.setFieldValue("confirmPassword", "");
     form.setFieldValue("playerFilter", props.user.player_filter);
