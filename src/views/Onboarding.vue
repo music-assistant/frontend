@@ -4,7 +4,7 @@
     data-testid="onboarding-view"
   >
     <header class="flex flex-col gap-3">
-      <p class="text-muted-foreground text-sm">{{ $t("onboarding.title") }}</p>
+      <p class="text-muted-foreground text-sm">{{ $t(trackTitleKey) }}</p>
       <div class="flex min-w-0 items-center gap-2">
         <Button
           v-if="canGoBack"
@@ -66,6 +66,9 @@ import FinishStep from "@/components/onboarding/steps/FinishStep.vue";
 import IntentStep from "@/components/onboarding/steps/IntentStep.vue";
 import InviteMembersStep from "@/components/onboarding/steps/InviteMembersStep.vue";
 import ProvidersStep from "@/components/onboarding/steps/ProvidersStep.vue";
+import TourStep from "@/components/onboarding/steps/TourStep.vue";
+import WelcomeStep from "@/components/onboarding/steps/WelcomeStep.vue";
+import WhatsHereStep from "@/components/onboarding/steps/WhatsHereStep.vue";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useOnboarding } from "@/composables/useOnboarding";
@@ -77,6 +80,7 @@ import {
   computed,
   markRaw,
   nextTick,
+  onBeforeUnmount,
   onMounted,
   ref,
   watch,
@@ -86,7 +90,8 @@ import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
-const { ctx, steps, loadOnboardingData, setIntent, finish } = useOnboarding();
+const { ctx, steps, loadOnboardingData, markWelcomed, setIntent, finish } =
+  useOnboarding();
 
 const STEP_VIEWS: Record<
   OnboardingStepId,
@@ -107,7 +112,12 @@ const STEP_VIEWS: Record<
   },
   core_settings: { component: markRaw(CoreSettingsStep) },
   invite_members: { component: markRaw(InviteMembersStep) },
-  finish: { component: markRaw(FinishStep) },
+  finish: { component: markRaw(FinishStep), props: { stepId: "finish" } },
+  welcome: { component: markRaw(WelcomeStep) },
+  whats_here: { component: markRaw(WhatsHereStep) },
+  tour: { component: markRaw(TourStep) },
+  // the same summary, told as the end of the welcome instead of the setup
+  all_set: { component: markRaw(FinishStep), props: { stepId: "all_set" } },
 };
 
 const requestedId = computed(() => {
@@ -155,6 +165,11 @@ const progress = computed(() =>
 const stepTitle = computed(() =>
   currentId.value ? $t(`onboarding.steps.${currentId.value}.title`) : "",
 );
+// the eyebrow above the step says which wizard this is: the server's setup, or
+// the welcome someone who lives here is being given
+const trackTitleKey = computed(() =>
+  ctx.value.isMember ? "onboarding.welcome_title" : "onboarding.title",
+);
 
 const stepView = computed(() => {
   const id = currentId.value;
@@ -162,8 +177,12 @@ const stepView = computed(() => {
   const view = STEP_VIEWS[id];
   return {
     component: view.component,
+    // the summary is the only step that finishes the wizard, so it is the only
+    // one that has to know a finish is on its way out
     props:
-      id === "finish" ? { ...view.props, busy: finishing.value } : view.props,
+      currentStep.value?.kind === "summary"
+        ? { ...view.props, busy: finishing.value }
+        : view.props,
   };
 });
 
@@ -260,16 +279,26 @@ const focusStepHeading = async function () {
   stepHeading.value?.focus();
 };
 
-// The wizard decides everything off the provider configurations and the users,
-// so it asks for them itself; a remount is worth the one call for a fresh
-// answer, and the step this visit opens on is settled from that answer rather
-// than from whatever an earlier one left behind. Focus lands on the heading as
-// the wizard opens, so arriving from the sidebar checklist puts the keyboard
-// inside it, and follows the step from there.
+// The setup decides everything off the provider configurations and the users,
+// so the wizard asks for them itself; a remount is worth the one call for a
+// fresh answer, and the step this visit opens on is settled from that answer
+// rather than from whatever an earlier one left behind. Focus lands on the
+// heading as the wizard opens, so arriving from the sidebar checklist puts the
+// keyboard inside it, and follows the step from there.
 onMounted(async () => {
   focusStepHeading();
-  await loadOnboardingData();
+  // the member track reads the providers and players that are running, neither
+  // of which it has to ask for, so the welcome waits for nothing
+  if (!ctx.value.isMember) await loadOnboardingData();
   ready.value = true;
 });
 watch(currentId, focusStepHeading);
+
+// Leaving the welcome is what counts as having been welcomed, whether the
+// member answered the question, walked past it or went somewhere else in the
+// app: nobody is welcomed into the same app twice. Finishing writes this
+// itself, and the marker is only ever written once, so the two never collide.
+onBeforeUnmount(() => {
+  if (ctx.value.isMember) void markWelcomed();
+});
 </script>

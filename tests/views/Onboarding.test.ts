@@ -1,10 +1,12 @@
 import {
   ConfigEntryType,
   ProviderType,
+  UserRole,
   type Scope,
+  type User,
 } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
@@ -17,6 +19,8 @@ const {
   routerMock,
   routeState,
   setUserPreferenceMock,
+  setUserPreferencesMock,
+  storeState,
   users,
 } = vi.hoisted(() => ({
   apiMock: {
@@ -40,9 +44,11 @@ const {
     valuesValidate: true,
     values: { server_name: "Living room" },
   },
-  // replaced with a real ref by the userPreferences mock factory below
+  // replaced with real refs by the userPreferences mock factory below
   preferenceState: {
     intent: { value: undefined } as { value?: string },
+    persona: { value: undefined } as { value?: string },
+    welcomedAt: { value: undefined } as { value?: string },
     ready: false,
   },
   // what the server hands back as the provider configurations
@@ -51,6 +57,13 @@ const {
   routeState: { route: { query: {} as Record<string, string> }, ready: false },
   routerMock: { push: vi.fn(), replace: vi.fn() },
   setUserPreferenceMock: vi.fn(),
+  setUserPreferencesMock: vi.fn(),
+  // replaced with a reactive store by the store mock factory below: who is
+  // signed in is what tells the setup wizard from the welcome
+  storeState: {
+    store: { currentUser: undefined } as { currentUser?: User },
+    ready: false,
+  },
   // what the server hands back as the user accounts
   users: { list: [] as ReturnType<typeof user>[] },
 }));
@@ -119,16 +132,46 @@ vi.mock("@/components/ProviderIcon.vue", () => ({
   },
 }));
 
+vi.mock("@/plugins/store", async () => {
+  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
+  // every test loads a fresh wizard, which runs this factory again: hand out
+  // the same store, so the user a test signed in survives the reload
+  if (!storeState.ready) {
+    storeState.store = reactive({ currentUser: undefined as User | undefined });
+    storeState.ready = true;
+  }
+  return { store: storeState.store };
+});
+
 vi.mock("@/composables/userPreferences", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   if (!preferenceState.ready) {
     preferenceState.intent = ref<string | undefined>(undefined);
+    preferenceState.persona = ref<string | undefined>(undefined);
+    preferenceState.welcomedAt = ref<string | undefined>(undefined);
     preferenceState.ready = true;
   }
+  const preferences: Record<string, { value?: string }> = {
+    "onboarding.intent": preferenceState.intent,
+    "onboarding.persona": preferenceState.persona,
+    "onboarding.welcome": preferenceState.welcomedAt,
+  };
   return {
     setUserPreference: setUserPreferenceMock,
-    useUserPreferences: () => ({ getPreference: () => preferenceState.intent }),
+    setUserPreferences: setUserPreferencesMock,
+    useUserPreferences: () => ({
+      getPreference: (key: string) => preferences[key],
+    }),
   };
+});
+
+// The wizard pulls its whole step graph in behind it: the provider listings,
+// the welcome's cards, the players of what is here and the tour. Every test
+// mounts it on a fresh module registry, so the transform of all that is paid
+// here, once and outside any test's clock, instead of by whichever test happens
+// to mount first.
+beforeAll(async () => {
+  await import("@/views/Onboarding.vue");
 });
 
 /**
@@ -175,6 +218,21 @@ function addMember(userId: string) {
   users.list.push(user({ user_id: userId, username: userId }));
 }
 
+/** Sign in as someone who lives here without running the place. */
+function signInAsMember() {
+  authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+  storeState.store.currentUser = user({
+    user_id: "sam-1",
+    username: "sam",
+    display_name: "Sam",
+    role: UserRole.USER,
+  });
+}
+
+function heading(wrapper: Awaited<ReturnType<typeof mountWizard>>) {
+  return wrapper.find("[data-testid=onboarding-heading]").text();
+}
+
 /** Tell the wizard the server reported a provider change. */
 async function reportProvidersUpdated() {
   const lastCall = apiMock.subscribe.mock.calls.at(-1) as unknown as [
@@ -185,7 +243,9 @@ async function reportProvidersUpdated() {
   await flushPromises();
 }
 
-describe("Onboarding wizard", () => {
+// every test mounts the wizard on a fresh module registry, which is its whole
+// step graph evaluated again and can take seconds under load
+describe("Onboarding wizard", { timeout: 20_000 }, () => {
   beforeEach(() => {
     apiMock.players = {};
     apiMock.providers = {};
@@ -221,17 +281,35 @@ describe("Onboarding wizard", () => {
     authMock.hasScope.mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.admin),
     );
+    storeState.store.currentUser = user({
+      user_id: "admin-1",
+      username: "admin",
+      role: UserRole.ADMIN,
+    });
     coreForm.hasUnsavedChanges = false;
     coreForm.valuesValidate = true;
     preferenceState.intent.value = undefined;
+    preferenceState.persona.value = undefined;
+    preferenceState.welcomedAt.value = undefined;
     routeState.route.query = {};
     routerMock.push.mockReset();
     routerMock.replace.mockReset();
     setUserPreferenceMock.mockReset();
-    // the real one updates the preference before it ever reaches the server
+    setUserPreferencesMock.mockReset();
+    // the real ones update the preferences before they ever reach the server
     setUserPreferenceMock.mockImplementation(
       async (key: string, value: string) => {
         if (key === "onboarding.intent") preferenceState.intent.value = value;
+      },
+    );
+    setUserPreferencesMock.mockImplementation(
+      async (values: Record<string, string>) => {
+        const answer = values["onboarding.persona"];
+        if (answer) preferenceState.persona.value = answer;
+        const welcomed = values["onboarding.welcome"];
+        if (welcomed) preferenceState.welcomedAt.value = welcomed;
+        // the real one says whether the server took it
+        return true;
       },
     );
   });
@@ -664,6 +742,243 @@ describe("Onboarding wizard", () => {
     );
 
     second.unmount();
+  });
+
+  describe("the member's welcome", () => {
+    beforeEach(() => {
+      signInAsMember();
+    });
+
+    it("opens on the welcome and says which wizard this is", async () => {
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      expect(heading(wrapper)).toBe("onboarding.steps.welcome.title");
+      // the eyebrow above it is the welcome's, not the setup's
+      expect(wrapper.text()).toContain("onboarding.welcome_title");
+      expect(wrapper.text()).not.toContain("onboarding.title");
+      expect(routerMock.replace).toHaveBeenCalledWith({
+        query: { step: "welcome" },
+      });
+
+      wrapper.unmount();
+    });
+
+    it("asks the server for nothing the welcome does not read", async () => {
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      // the setup's provider configurations and household are an admin's
+      // business; the welcome shows what is already running
+      expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+      expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+
+      wrapper.unmount();
+    });
+
+    it("remembers that the member has been welcomed on the way out", async () => {
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      // the question is still open while they are being asked it
+      expect(setUserPreferencesMock).not.toHaveBeenCalled();
+
+      wrapper.unmount();
+      await flushPromises();
+
+      // leaving is what counts: the member is never dropped in here again,
+      // whether they answered, walked past it or went somewhere else
+      expect(setUserPreferencesMock).toHaveBeenCalledOnce();
+      expect(setUserPreferencesMock.mock.calls[0][0]).toHaveProperty(
+        "onboarding.welcome",
+      );
+    });
+
+    it("leaves the mark of an earlier welcome where it is", async () => {
+      preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
+
+      const wrapper = await mountWizard();
+      await flushPromises();
+      wrapper.unmount();
+      await flushPromises();
+
+      expect(setUserPreferencesMock).not.toHaveBeenCalled();
+    });
+
+    it("walks the member from the question to the way out", async () => {
+      apiMock.providers = {};
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      await wrapper
+        .find("[data-testid=onboarding-persona-enthusiast]")
+        .trigger("click");
+      await flushPromises();
+
+      // answering moves them on, and from there it is all looking around
+      expect(heading(wrapper)).toBe("onboarding.steps.whats_here.title");
+      expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+        "onboarding.next",
+      );
+
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.tour.title");
+
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.all_set.title");
+
+      // the summary looks back at the one thing the welcome asked
+      expect(wrapper.text()).toContain("onboarding.what_you_picked");
+      expect(wrapper.text()).toContain(
+        "onboarding.steps.welcome.enthusiast.label",
+      );
+      expect(wrapper.text()).not.toContain("onboarding.set_up");
+      expect(wrapper.find("[data-testid=onboarding-next]").exists()).toBe(
+        false,
+      );
+
+      await wrapper.find("[data-testid=onboarding-finish]").trigger("click");
+      await flushPromises();
+
+      // nothing is completed on the server: the welcome simply hands them the
+      // app it was showing them
+      expect(apiMock.sendCommand).not.toHaveBeenCalled();
+      expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+
+      wrapper.unmount();
+    });
+
+    it("waits for the answer before Next moves the member on", async () => {
+      let landAnswer: (saved: boolean) => void = () => {};
+      setUserPreferencesMock.mockImplementation(
+        () =>
+          new Promise<boolean>((resolve) => {
+            landAnswer = resolve;
+          }),
+      );
+
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      await wrapper
+        .find("[data-testid=onboarding-persona-regular]")
+        .trigger("click");
+      // an impatient Next while the answer is still on its way out
+      void wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+
+      expect(heading(wrapper)).toBe("onboarding.steps.welcome.title");
+
+      landAnswer(false);
+      await flushPromises();
+
+      // the account never took the answer, so the welcome is where the member
+      // stays — and where they were told about it
+      expect(heading(wrapper)).toBe("onboarding.steps.welcome.title");
+
+      wrapper.unmount();
+    });
+
+    it("opens on the summary once the member has answered", async () => {
+      preferenceState.persona.value = "regular";
+
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      // nothing left to ask, and the setup's summary is not theirs to land on
+      expect(heading(wrapper)).toBe("onboarding.steps.all_set.title");
+
+      wrapper.unmount();
+    });
+
+    it("opens on the summary for a member who was welcomed before", async () => {
+      preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
+
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      // being shown it is enough to be done with it; the settings link opens
+      // the welcome itself again for whoever wants it
+      expect(heading(wrapper)).toBe("onboarding.steps.all_set.title");
+
+      wrapper.unmount();
+    });
+
+    it("has nothing to look back at when the question was walked past", async () => {
+      preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
+
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      // the welcome has been shown, so nothing is left to do — but being done
+      // with the member is not the same as the member having picked something
+      expect(heading(wrapper)).toBe("onboarding.steps.all_set.title");
+      expect(
+        wrapper.findAll("[data-testid=onboarding-summary-done]"),
+      ).toHaveLength(0);
+      expect(wrapper.text()).not.toContain("onboarding.what_you_picked");
+      expect(wrapper.find("[data-testid=onboarding-finish]").exists()).toBe(
+        true,
+      );
+
+      wrapper.unmount();
+    });
+
+    it("looks back at the answer a member did give", async () => {
+      preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
+      preferenceState.persona.value = "regular";
+
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      const done = wrapper.findAll("[data-testid=onboarding-summary-done]");
+      expect(done).toHaveLength(1);
+      expect(done[0].text()).toContain("onboarding.steps.welcome.title");
+      expect(done[0].text()).toContain(
+        "onboarding.steps.welcome.regular.label",
+      );
+      expect(wrapper.text()).toContain("onboarding.what_you_picked");
+
+      wrapper.unmount();
+    });
+
+    it("lets a member who never answered finish all the same", async () => {
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      // walking past the question instead of answering it
+      for (const title of [
+        "onboarding.steps.whats_here.title",
+        "onboarding.steps.tour.title",
+        "onboarding.steps.all_set.title",
+      ]) {
+        await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+        await flushPromises();
+        expect(heading(wrapper)).toBe(title);
+      }
+
+      // the question is theirs to leave: the summary keeps it in reach rather
+      // than in the way, and nothing was answered on their behalf
+      expect(wrapper.text()).toContain("onboarding.still_to_do");
+      expect(
+        wrapper.findAll("[data-testid=onboarding-summary-pending]"),
+      ).toHaveLength(1);
+      expect(wrapper.text()).toContain("onboarding.steps.welcome.title");
+      expect(setUserPreferencesMock).not.toHaveBeenCalled();
+
+      await wrapper.find("[data-testid=onboarding-finish]").trigger("click");
+      await flushPromises();
+
+      expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+      expect(setUserPreferencesMock).toHaveBeenCalledOnce();
+      expect(setUserPreferencesMock.mock.calls[0][0]).toHaveProperty(
+        "onboarding.welcome",
+      );
+
+      wrapper.unmount();
+    });
   });
 
   it("walks back through the steps it came past", async () => {

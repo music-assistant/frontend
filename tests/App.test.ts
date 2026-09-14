@@ -8,8 +8,10 @@ import {
   UserRole,
   type ProviderConfig,
   type Role,
+  type User,
 } from "@/plugins/api/interfaces";
 import { saveDeviceSetting } from "@/helpers/device_settings";
+import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
@@ -35,7 +37,9 @@ const {
   mockProxySetTransport,
   mockPruneStaleProviderFilters,
   mockRememberCurrentRemoteConnection,
+  mockRunAfterPreferenceWrites,
   mockRouterPush,
+  mockRouterReplace,
   mockSetPreference,
   proxyState,
   routeState,
@@ -114,7 +118,9 @@ const {
     mockProxySetTransport: vi.fn(),
     mockPruneStaleProviderFilters: vi.fn(),
     mockRememberCurrentRemoteConnection: vi.fn(),
+    mockRunAfterPreferenceWrites: vi.fn(),
     mockRouterPush: vi.fn(),
+    mockRouterReplace: vi.fn(),
     mockSetPreference: vi.fn(),
     proxyState: { isReady: { value: true } },
     routeState: {
@@ -123,6 +129,7 @@ const {
     storeMock: {
       currentUser: undefined as
         | {
+            created_at?: string;
             preferences?: Record<string, unknown>;
             role: string;
             user_id: string;
@@ -185,6 +192,7 @@ vi.mock("@/helpers/connection_identity", () => ({
 
 vi.mock("@/composables/userPreferences", () => ({
   pruneStaleProviderFilters: mockPruneStaleProviderFilters,
+  runAfterPreferenceWrites: mockRunAfterPreferenceWrites,
   useUserPreferences: () => ({
     setPreference: mockSetPreference,
   }),
@@ -271,6 +279,7 @@ vi.mock("vue-router", async () => {
     useRoute: () => routeState.current,
     useRouter: () => ({
       push: mockRouterPush,
+      replace: mockRouterReplace,
     }),
   };
 });
@@ -355,6 +364,11 @@ describe("App initialization", () => {
     mockProxyEnsureReady.mockResolvedValue(undefined);
     mockProxySetTransport.mockResolvedValue(undefined);
     mockPruneStaleProviderFilters.mockResolvedValue(undefined);
+    // the real one gives whatever it is handed its turn among the preference
+    // writes; here there are none to wait for
+    mockRunAfterPreferenceWrites.mockImplementation(
+      async (task: () => Promise<unknown>) => await task(),
+    );
     apiMock.getRoles.mockResolvedValue([]);
     haStateMock.isSubscribed = false;
     haStateMock.kioskModeEnabled = false;
@@ -528,6 +542,85 @@ describe("App initialization", () => {
       expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
       expect(window.location.search).not.toContain("onboard");
     });
+
+    /** Someone who has just been given an account of their own. */
+    const asNewMember = (overrides: Partial<User> = {}) => {
+      apiMock.getCurrentUserInfo.mockResolvedValue(
+        user({
+          role: UserRole.USER,
+          user_id: "sam-id",
+          username: "sam",
+          created_at: new Date().toISOString(),
+          ...overrides,
+        }),
+      );
+      authManagerMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      );
+    };
+
+    it("welcomes a member who has just been given an account", async () => {
+      asNewMember();
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
+    });
+
+    it("welcomes a member once, and never again", async () => {
+      asNewMember({
+        preferences: { "onboarding.welcome": "2026-01-02T03:04:05Z" },
+      });
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).not.toHaveBeenCalled();
+    });
+
+    it("leaves a member who has had the account a while to find it", async () => {
+      // the welcome is an interruption worth making for someone who just
+      // arrived; anyone else has the sidebar and the settings for it
+      asNewMember({ created_at: "2024-01-01T00:00:00Z" });
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).not.toHaveBeenCalled();
+    });
+
+    it("never welcomes a guest, who is only passing through", async () => {
+      asNewMember({ role: UserRole.GUEST });
+      authManagerMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+      );
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).not.toHaveBeenCalled();
+    });
+
+    it("leaves a guest session on its own screen", async () => {
+      // the account behind a party session would be welcomed on a session of
+      // its own; a guest session is not that session
+      asNewMember();
+      guestType.value = "party";
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).toHaveBeenCalledWith("/guest");
+      expect(mockRouterPush).not.toHaveBeenCalledWith({ name: "onboarding" });
+    });
+
+    it("leaves a dashboard viewer pinned to its own screen", async () => {
+      asNewMember();
+      authManagerMock.isDashboardViewer.mockReturnValue(true);
+      sessionStorage.setItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY, "/now-playing");
+
+      wrapper = await mountApp();
+
+      // a wall-mounted tablet has nobody in front of it to welcome
+      expect(mockRouterReplace).toHaveBeenCalledWith("/now-playing");
+      expect(mockRouterPush).not.toHaveBeenCalled();
+    });
   });
 
   it("keeps full initialization and plugin discovery for regular users", async () => {
@@ -603,6 +696,78 @@ describe("App initialization", () => {
     expect(store.currentUser).toBe(cleaned);
     // the refetch has to land first, or the prune writes the old shortcuts back
     expect(prunedShortcuts).toEqual(["library://album/1"]);
+  });
+
+  it("refreshes the user in its turn among the preference writes", async () => {
+    wrapper = await mountApp();
+    apiMock.getCurrentUserInfo.mockClear();
+    mockPruneStaleProviderFilters.mockClear();
+    mockRunAfterPreferenceWrites.mockClear();
+    const turn = createDeferred();
+    mockRunAfterPreferenceWrites.mockImplementationOnce(
+      async (task: () => Promise<unknown>) => {
+        await turn.promise;
+        return await task();
+      },
+    );
+
+    const updated = signalProvidersUpdated();
+    await flushPromises();
+
+    // a refresh that overtook a write on its way out would put the preferences
+    // back as they were before it, and the prune would send that on
+    expect(apiMock.getCurrentUserInfo).not.toHaveBeenCalled();
+    expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
+
+    turn.resolve();
+    await updated;
+
+    expect(mockRunAfterPreferenceWrites).toHaveBeenCalledOnce();
+    expect(apiMock.getCurrentUserInfo).toHaveBeenCalledOnce();
+    // and the prune takes a turn of its own, after the refresh is in
+    expect(mockPruneStaleProviderFilters).toHaveBeenCalledOnce();
+  });
+
+  it("leaves an account that was signed in since the event alone", async () => {
+    wrapper = await mountApp();
+    apiMock.getCurrentUserInfo.mockClear();
+    mockPruneStaleProviderFilters.mockClear();
+    const turn = createDeferred();
+    mockRunAfterPreferenceWrites.mockImplementationOnce(
+      async (task: () => Promise<unknown>) => {
+        await turn.promise;
+        return await task();
+      },
+    );
+
+    const updated = signalProvidersUpdated();
+    // somebody else is signed in before the refresh gets its turn
+    const alex = user({ user_id: "alex-id", username: "alex" });
+    storeMock.currentUser = alex;
+    turn.resolve();
+    await updated;
+
+    // the event was about an account nobody is signed in as any more
+    expect(apiMock.getCurrentUserInfo).not.toHaveBeenCalled();
+    expect(storeMock.currentUser).toBe(alex);
+    expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
+  });
+
+  it("leaves a copy of the user that came back for another account alone", async () => {
+    wrapper = await mountApp();
+    mockPruneStaleProviderFilters.mockClear();
+    authManagerMock.setCurrentUser.mockClear();
+    const signedIn = storeMock.currentUser;
+    apiMock.getCurrentUserInfo.mockResolvedValue(
+      user({ user_id: "alex-id", username: "alex" }),
+    );
+
+    await signalProvidersUpdated();
+
+    // a copy the server sent for somebody else is nobody's to be handed here
+    expect(storeMock.currentUser).toBe(signedIn);
+    expect(authManagerMock.setCurrentUser).not.toHaveBeenCalled();
+    expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
   });
 
   it("leaves preferences alone when the user cannot be fetched", async () => {

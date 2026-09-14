@@ -390,32 +390,33 @@
                 v-if="item.media_type == MediaType.TRACK"
                 :audio-metadata="(item as Track).audio_metadata"
               />
-              <!-- slot for extra action icons (e.g. smart playlist edit) -->
+              <!-- slot for extra action buttons (e.g. smart playlist edit) -->
               <slot name="append-actions"></slot>
               <!-- merge genre button (admin only) -->
-              <Merge
-                v-if="
-                  item.media_type === MediaType.GENRE &&
-                  item.provider === 'library' &&
-                  canManageLibrary
-                "
-                :size="22"
-                class="cursor-pointer"
+              <Button
+                v-if="canManageGenre"
+                type="button"
+                variant="ghost-icon"
+                size="icon-xs"
+                :aria-label="$t('merge_into')"
                 :title="$t('merge_into')"
                 @click="mergeGenre"
-              />
+              >
+                <Merge class="size-5.5" />
+              </Button>
               <!-- delete genre button (admin only) -->
-              <Trash2
-                v-if="
-                  item.media_type === MediaType.GENRE &&
-                  item.provider === 'library' &&
-                  canManageLibrary
-                "
-                :size="22"
-                class="cursor-pointer ml-2"
+              <Button
+                v-if="canManageGenre"
+                type="button"
+                variant="ghost-icon"
+                size="icon-xs"
+                class="ml-2"
+                :aria-label="$t('delete_genre')"
                 :title="$t('delete_genre')"
                 @click="deleteGenre"
-              />
+              >
+                <Trash2 class="size-5.5" />
+              </Button>
             </div>
           </div>
           <div
@@ -762,6 +763,13 @@ const canManageLibrary = computed(() =>
 );
 const canEditLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_WRITE),
+);
+// merging and deleting a genre is limited to library genres and library managers
+const canManageGenre = computed(
+  () =>
+    compProps.item?.media_type === MediaType.GENRE &&
+    compProps.item.provider === "library" &&
+    canManageLibrary.value,
 );
 const favoriteButtonLabel = computed(() =>
   compProps.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
