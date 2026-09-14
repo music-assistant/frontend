@@ -5,6 +5,7 @@
         :variant="variant"
         :size="buttonSize"
         :data-active="activeSession ? true : undefined"
+        class="data-[active=true]:[&_svg]:text-primary"
         :aria-label="$t('tooltip.show_dashboard')"
         :title="$t('tooltip.show_dashboard')"
         @click="loadDashboards"
