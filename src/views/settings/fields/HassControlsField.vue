@@ -44,7 +44,7 @@ const remove = (entityId: string) => {
 
 <template>
   <div class="flex flex-col gap-2 py-2">
-    <span class="text-muted-foreground text-sm">{{ label }}</span>
+    <span v-if="label" class="text-muted-foreground text-sm">{{ label }}</span>
     <div class="flex flex-wrap gap-1.5">
       <Badge v-for="entityId of selected" :key="entityId" variant="secondary">
         {{ entityTitle(entityId) }}

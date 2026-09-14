@@ -1,10 +1,18 @@
-import { ProviderStage, ProviderStatus } from "@/plugins/api/interfaces";
+import {
+  type ProviderInstance,
+  ProviderStage,
+  ProviderStatus,
+} from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
+import { providerConfig } from "../../tests/fixtures/providerConfig";
+import { providerManifest } from "../../tests/fixtures/providerManifest";
 import {
   canReconfigureProvider,
   getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  isBuiltinProvider,
+  providerDisplayName,
   providerRequiresReconfiguration,
   shouldShowStageBadge,
 } from "./provider_config";
@@ -119,5 +127,64 @@ describe("provider configuration state", () => {
         `is:issue state:open label:"${label}"`,
       )}`,
     );
+  });
+});
+
+describe("the name a provider goes by", () => {
+  const config = providerConfig({
+    domain: "spotify",
+    name: "The kitchen's Spotify",
+    default_name: "Spotify (kitchen)",
+  });
+  const manifest = providerManifest({ domain: "spotify", name: "Spotify" });
+  const instance = { name: "Spotify" } as ProviderInstance;
+
+  it("prefers what the running instance calls itself", () => {
+    expect(
+      providerDisplayName(
+        { ...config },
+        { ...instance, name: "Renamed" },
+        manifest,
+      ),
+    ).toBe("Renamed");
+  });
+
+  it("falls back on the configured name when nothing is loaded", () => {
+    expect(providerDisplayName(config, undefined, manifest)).toBe(
+      "The kitchen's Spotify",
+    );
+  });
+
+  it("falls back on the default name the server gave it", () => {
+    expect(
+      providerDisplayName({ ...config, name: null }, undefined, manifest),
+    ).toBe("Spotify (kitchen)");
+  });
+
+  it("falls back on the manifest name", () => {
+    expect(
+      providerDisplayName(
+        { ...config, name: null, default_name: null },
+        undefined,
+        manifest,
+      ),
+    ).toBe("Spotify");
+  });
+
+  it("is empty when nothing names the provider", () => {
+    expect(
+      providerDisplayName({ ...config, name: null, default_name: null }),
+    ).toBe("");
+  });
+});
+
+describe("a provider that ships with the server", () => {
+  it("reads the flag off the manifest", () => {
+    expect(isBuiltinProvider(providerManifest({ builtin: true }))).toBe(true);
+    expect(isBuiltinProvider(providerManifest({ builtin: false }))).toBe(false);
+  });
+
+  it("claims nothing about a provider whose manifest is missing", () => {
+    expect(isBuiltinProvider(undefined)).toBe(false);
   });
 });

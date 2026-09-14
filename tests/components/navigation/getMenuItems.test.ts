@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MicVocal } from "@lucide/vue";
 
-const { storeMock, mockSetUserPreference } = vi.hoisted(() => ({
+const { apiMock, storeMock, mockSetUserPreference } = vi.hoisted(() => ({
+  apiMock: { supportsAIRadioPlaybackScopes: true },
   storeMock: {
     currentUser: null as { preferences?: Record<string, unknown> } | null,
     enabledPlugins: new Set<string>(),
@@ -15,9 +16,25 @@ vi.mock("@/plugins/store", () => ({
   store: storeMock,
 }));
 
+vi.mock("@/plugins/api", () => ({
+  api: apiMock,
+}));
+
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: mockSetUserPreference,
 }));
+
+// signed in as a member unless a test says otherwise
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+
+import { authManager } from "@/plugins/auth";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
 
 import {
   DEFAULT_MENU_ITEMS,
@@ -68,6 +85,10 @@ describe("getMenuItems (sidebar.menu preference)", () => {
     storeMock.libraryAudiobooksCount = 1;
     storeMock.libraryPodcastsCount = 1;
     storeMock.currentUser = { preferences: {} };
+    apiMock.supportsAIRadioPlaybackScopes = true;
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
   });
 
   it("shows everything in default order for users without any customization", () => {
@@ -179,6 +200,46 @@ describe("getMenuItems (sidebar.menu preference)", () => {
     expect(getIds()).not.toContain("party");
     expect(getIds()).not.toContain("music_quiz");
   });
+
+  it("leaves out the Music Quiz for a role that may not host one", () => {
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+    storeMock.enabledPlugins = new Set(["music_quiz"]);
+
+    expect(getIds()).not.toContain("music_quiz");
+  });
+
+  it("leaves out AI Radio for a member on API schema 74, where only admins play it", () => {
+    apiMock.supportsAIRadioPlaybackScopes = false;
+    storeMock.enabledPlugins = new Set(["ai_radio"]);
+
+    expect(getIds()).not.toContain("ai_radio");
+  });
+
+  it.each([
+    {
+      role: "a member",
+      scopes: BUILTIN_ROLE_SCOPES.user,
+      schema: 75,
+      playbackScopes: true,
+    },
+    {
+      role: "an admin",
+      scopes: BUILTIN_ROLE_SCOPES.admin,
+      schema: 74,
+      playbackScopes: false,
+    },
+  ])(
+    "offers AI Radio to $role on API schema $schema",
+    ({ scopes, playbackScopes }) => {
+      vi.mocked(authManager.hasScope).mockImplementation(scopeChecker(scopes));
+      apiMock.supportsAIRadioPlaybackScopes = playbackScopes;
+      storeMock.enabledPlugins = new Set(["ai_radio"]);
+
+      expect(getIds()).toContain("ai_radio");
+    },
+  );
 
   it("hides items", async () => {
     await setMenuItemHidden("genres", true);
