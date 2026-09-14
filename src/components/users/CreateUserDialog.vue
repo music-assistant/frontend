@@ -133,7 +133,7 @@
                   <Select
                     :model-value="field.state.value"
                     @update:model-value="
-                      (value) => field.handleChange(value as UserRole)
+                      (value) => field.handleChange(value as string)
                     "
                   >
                     <SelectTrigger :id="field.name" class="w-full">
@@ -167,25 +167,6 @@
                   />
                   <FieldDescription>
                     {{ $t("auth.player_filter_hint") }}
-                  </FieldDescription>
-                </Field>
-              </template>
-            </form.Field>
-
-            <form.Field name="providerFilter">
-              <template #default="{ field }">
-                <Field>
-                  <FieldLabel>
-                    {{ $t("auth.provider_filter") }}
-                  </FieldLabel>
-                  <MultiSelect
-                    :model-value="field.state.value"
-                    :options="providerOptions"
-                    :placeholder="$t('auth.select_providers')"
-                    @update:model-value="field.handleChange"
-                  />
-                  <FieldDescription>
-                    {{ $t("auth.provider_filter_hint") }}
                   </FieldDescription>
                 </Field>
               </template>
@@ -241,9 +222,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { assignableRoles, roleDisplayName } from "@/helpers/roles";
 import { createUserSchema } from "@/lib/forms/profile";
-import { api } from "@/plugins/api";
-import { ProviderType, UserRole } from "@/plugins/api/interfaces";
+import { api, ApiCommandError } from "@/plugins/api";
+import { UserRole } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import MultiSelect from "./MultiSelect.vue";
 
 const { t } = useI18n();
@@ -290,11 +273,12 @@ const handleFormSubmit = async () => {
   }
 };
 
-const roleOptions = computed(() => [
-  { label: t("auth.admin_role"), value: "admin" },
-  { label: t("auth.user_role"), value: "user" },
-  { label: t("auth.guest_role"), value: "guest" },
-]);
+const roleOptions = computed(() =>
+  assignableRoles(store.roles).map((role) => ({
+    label: roleDisplayName(role.role_id, store.roles),
+    value: role.role_id,
+  })),
+);
 
 const playerOptions = computed(() => {
   return Object.values(api.players)
@@ -305,25 +289,14 @@ const playerOptions = computed(() => {
     .sort((a, b) => a.label.localeCompare(b.label));
 });
 
-const providerOptions = computed(() => {
-  return Object.values(api.providers)
-    .filter((provider) => provider.type === ProviderType.MUSIC)
-    .map((provider) => ({
-      label: provider.name,
-      value: provider.instance_id,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-});
-
 const form = useForm({
   defaultValues: {
     username: "",
     displayName: "",
     password: "",
     confirmPassword: "",
-    role: "user" as UserRole,
+    role: UserRole.USER as string,
     playerFilter: [] as string[],
-    providerFilter: [] as string[],
   },
   validators: {
     onSubmit: createUserSchema(t),
@@ -332,25 +305,25 @@ const form = useForm({
     loading.value = true;
 
     try {
-      const user = await api.createUser(
+      await api.createUser(
         value.username,
         value.password,
         value.role,
         value.displayName || undefined,
         value.playerFilter.length > 0 ? value.playerFilter : undefined,
-        value.providerFilter.length > 0 ? value.providerFilter : undefined,
+        { suppressGlobalError: true },
       );
 
-      if (user) {
-        toast.success(t("auth.user_created"));
-        form.reset();
-        emit("created");
-        emit("update:modelValue", false);
-      } else {
-        toast.error(t("auth.user_create_failed"));
-      }
+      toast.success(t("auth.user_created"));
+      form.reset();
+      emit("created");
+      emit("update:modelValue", false);
     } catch (error) {
-      toast.error(t("auth.user_create_failed"));
+      toast.error(
+        error instanceof ApiCommandError && error.details
+          ? error.details
+          : t("auth.user_create_failed"),
+      );
     } finally {
       loading.value = false;
     }

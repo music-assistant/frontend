@@ -1,3 +1,4 @@
+import { canUseQueueDj } from "@/helpers/ai_radio_access";
 import api from "@/plugins/api";
 import type {
   AIRadioSection,
@@ -53,13 +54,14 @@ const aiRadioAvailable = computed(() =>
 
 let showSessionStatePrefetched = false;
 
-// Prefetch as soon as the provider is there, so the queue DJ menu can
-// resolve an on-air show's host from anywhere in the app, not just this view.
+// Prefetch as soon as the provider is there, for the roles that get the queue DJ
+// menu, so it can resolve an on-air show's host from anywhere in the app, not
+// just this view.
 watch(
-  aiRadioAvailable,
-  (available) => {
+  () => aiRadioAvailable.value && canUseQueueDj(),
+  (ready) => {
     // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
-    if (available && authManager.guestSessionKind() === null)
+    if (ready && authManager.guestSessionKind() === null)
       prefetchShowSessionState();
   },
   { immediate: true },

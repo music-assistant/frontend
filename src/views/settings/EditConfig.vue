@@ -314,6 +314,16 @@ const isProtocolRelated = function (category: string): boolean {
   return category === "protocol_general" || isProtocolCategory(category);
 };
 
+/**
+ * A value as `oldValues` keeps it: an object is copied, so editing the entry
+ * afterwards does not quietly change what it is compared against.
+ */
+const snapshot = function (value: ConfigValueType): ConfigValueType {
+  return typeof value === "object" && value !== null
+    ? JSON.parse(JSON.stringify(value))
+    : value;
+};
+
 // watchers
 watch(
   () => props.configEntries,
@@ -334,10 +344,7 @@ watch(
       // Also update oldValues for immediate_apply entries on subsequent updates,
       // since their values are already saved to the backend.
       if (shouldCaptureOldValues || entry.immediate_apply) {
-        oldValues.value[entry.key] =
-          typeof entry.value === "object" && entry.value !== null
-            ? JSON.parse(JSON.stringify(entry.value))
-            : entry.value;
+        oldValues.value[entry.key] = snapshot(entry.value);
       }
       entries.value.push(entry);
     }
@@ -369,10 +376,7 @@ const onValueUpdate = function (entry: ConfigEntryUI, value: ConfigValueType) {
   // and update oldValues so the form doesn't show as "unsaved"
   if (entry.immediate_apply) {
     emit("immediateApply", { [entry.key]: value });
-    oldValues.value[entry.key] =
-      typeof value === "object" && value !== null
-        ? JSON.parse(JSON.stringify(value))
-        : value;
+    oldValues.value[entry.key] = snapshot(value);
   }
 };
 // a field can fill in another entry of the same form, e.g. the Home Assistant entity
@@ -425,6 +429,21 @@ const saveFailed = function () {
 };
 
 /**
+ * Reports a save that landed, for a form that stays on screen afterwards: the
+ * values that went to the server are what is stored now, so they stop counting
+ * as unsaved. Only those — the form stays open while a save is on its way, so
+ * anything typed in the meantime is still an edit nobody saved. Leaving guards
+ * the values again as well: `submit` let the save through, and the next edit
+ * has to be asked about like any other.
+ */
+const saveSucceeded = function (values: Record<string, ConfigValueType>) {
+  for (const [key, value] of Object.entries(values)) {
+    oldValues.value[key] = snapshot(value);
+  }
+  allowNavigation.value = false;
+};
+
+/**
  * Stops guarding the pending edits, for when what they belong to is gone and
  * there is nothing left to save them to.
  */
@@ -432,7 +451,14 @@ const discardChanges = function () {
   allowNavigation.value = true;
 };
 
-defineExpose({ resetToDefaults, saveFailed, discardChanges });
+defineExpose({
+  resetToDefaults,
+  saveFailed,
+  saveSucceeded,
+  discardChanges,
+  hasUnsavedChanges,
+  submit,
+});
 
 const confirmDiscard = function () {
   showUnsavedDialog.value = false;

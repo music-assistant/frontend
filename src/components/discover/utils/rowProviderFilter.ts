@@ -29,20 +29,14 @@ export async function setRowHiddenProviders(
 }
 
 /**
- * Music providers a user may filter recommendation rows by: configured music
- * providers, restricted to the user's own `provider_filter` when they have one
+ * Music providers a user may filter recommendation rows by: the loaded music
+ * providers, which the server already limits to the sources the user may use
  * (mirrors ItemsListing's provider selector).
  */
 export function eligibleFilterProviders(
   providers: ProviderInstance[],
-  userProviderFilter: string[],
 ): ProviderInstance[] {
-  return providers.filter(
-    (provider) =>
-      provider.type === ProviderType.MUSIC &&
-      (userProviderFilter.length === 0 ||
-        userProviderFilter.includes(provider.instance_id)),
-  );
+  return providers.filter((provider) => provider.type === ProviderType.MUSIC);
 }
 
 /**

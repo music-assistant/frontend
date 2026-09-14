@@ -116,14 +116,12 @@
         "reload": "Ricarica",
         "save": "Salva",
         "settings": "Impostazioni",
-        "setup_provider": "Impostazioni provider: {0}",
         "sync": "Sincronizza ora",
         "sync_running": "Questo provider si sta sincronizzando",
         "core_modules": "Moduli principali",
         "server_info": "Informazione server",
         "server_id": "ID server",
         "server_version": "Versione server",
-        "server_base_url": "URL di base",
         "server_as_addon": "Home Assistant add-on",
         "artists_in_library": "Artisti in libreria",
         "albums_in_library": "Album in libreria",
@@ -289,6 +287,14 @@
         "sendspin_static_delay": {
             "label": "Ritardo di riproduzione costante (ms)",
             "description": "Ritardo in millisecondi per sincronizzare questo lettore con altri lettori. Aumentare in caso di ritardo nella riproduzione dell'audio, ad esempio per compensare la latenza causata da un amplificatore, da altoparlanti attivi o dal sistema operativo."
+        },
+        "category": {
+            "audiobooks": "Audiolibri"
+        },
+        "enable_browser_controls": {
+            "options": {
+                "disabled": "Disabilitato"
+            }
         }
     },
     "show_info": "Mostra info",

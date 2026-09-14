@@ -176,7 +176,7 @@
               rowItemsMap.get(row.id) !== undefined
             "
             :title="row.folder.name"
-            :provider="row.folder.provider"
+            :provider="folderProvider(row.folder)"
             :items="rowItemsMap.get(row.id) ?? []"
             :dimmed="editMode && row.hidden"
             :tiles-per-view="tilesPerView"
@@ -250,7 +250,13 @@
                     size="icon-sm"
                     :aria-label="$t('tooltip.hide_provider')"
                   >
-                    <ListFilter />
+                    <span class="relative inline-flex">
+                      <ListFilter />
+                      <span
+                        v-if="rowHasActiveFilter(row)"
+                        :class="ACTIVE_DOT_CLASS"
+                      ></span>
+                    </span>
                   </Button>
                 </template>
               </FacetedFilter>
@@ -397,6 +403,7 @@ import { useListDragReorder } from "@/composables/useListDragReorder";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import api from "@/plugins/api";
+import { ACTIVE_DOT_CLASS } from "@/constants";
 import {
   EventType,
   PlaybackState,
@@ -504,15 +511,18 @@ watch(
   },
 );
 
-const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
+// The provider whose icon labels a row. Builtin recommendation plugins (e.g.
+// Library Recommendations) aggregate the whole library, so their plugin logo
+// says nothing about the source -- only real music providers get an icon.
+const folderProvider = (folder: RecommendationFolder): string =>
+  api.getProviderManifest(folder.provider)?.builtin
+    ? ""
+    : folder.provider || "";
 
-// Provider instances a user may filter recommendation rows by -- currently
-// loaded music providers, restricted to the user's own provider_filter when set.
+// Provider instances a user may filter recommendation rows by -- the loaded
+// music providers, which the server limits to the sources the user may use.
 const providerFilterOptions = computed(() =>
-  eligibleFilterProviders(
-    Object.values(api.providers),
-    store.currentUser?.provider_filter ?? [],
-  )
+  eligibleFilterProviders(Object.values(api.providers))
     .map((provider) => ({
       value: provider.instance_id,
       label: provider.name,
