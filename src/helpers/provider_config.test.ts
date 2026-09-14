@@ -165,6 +165,13 @@ describe("the name a provider goes by", () => {
     );
   });
 
+  it("falls back past a custom name that was cleared", () => {
+    // renaming writes an empty string rather than dropping the key
+    expect(
+      providerDisplayName({ ...config, name: "" }, instance, manifest),
+    ).toBe("Spotify");
+  });
+
   it("falls back on the default name the server gave it", () => {
     expect(
       providerDisplayName({ ...config, name: null }, undefined, manifest),

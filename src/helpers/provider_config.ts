@@ -106,7 +106,7 @@ export const isBuiltinProvider = (manifest?: ProviderManifest): boolean =>
  * The name a provider instance goes by: the custom name set on its configuration,
  * then what the running instance calls itself, the default name the server gave
  * it and finally the name from the manifest. Empty when none of those is known,
- * so a caller can fall back on the instance id.
+ * so a caller can fall back on the domain or the instance id.
  */
 export const providerDisplayName = (
   config: ProviderConfig,
