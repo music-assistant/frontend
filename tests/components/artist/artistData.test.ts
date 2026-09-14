@@ -6,6 +6,8 @@ const { apiMock } = vi.hoisted(() => ({
     getArtistTracks: vi.fn().mockResolvedValue([]),
     getArtistTopTracks: vi.fn().mockResolvedValue([]),
     getSimilarArtists: vi.fn().mockResolvedValue([]),
+    getProvider: vi.fn(),
+    getProviderManifest: vi.fn(),
   },
 }));
 
@@ -16,6 +18,7 @@ vi.mock("@/plugins/api", () => ({
 import {
   appearsOnAlbums,
   isSingleOrEp,
+  mappedServices,
   loadArtistLibraryTracks,
   loadArtistReleases,
   loadArtistTopTracks,
@@ -60,6 +63,8 @@ describe("artistData", () => {
     apiMock.getArtistTopTracks.mockClear();
     apiMock.getSimilarArtists.mockClear();
     apiMock.getArtistTracks.mockClear();
+    apiMock.getProvider.mockReset();
+    apiMock.getProviderManifest.mockReset();
   });
 
   describe("loadArtistReleases", () => {
@@ -127,6 +132,69 @@ describe("artistData", () => {
         "library",
         "spotify--abc",
       );
+    });
+  });
+
+  describe("mappedServices", () => {
+    const SPOTIFY = { name: "Spotify", domain: "spotify" };
+
+    it("lists a service once, however many accounts of it are mapped", () => {
+      apiMock.getProviderManifest.mockReturnValue(SPOTIFY);
+      const services = mappedServices(
+        artist({
+          provider_mappings: [
+            providerMapping({
+              provider_domain: "spotify",
+              provider_instance: "spotify--one",
+            }),
+            providerMapping({
+              provider_domain: "spotify",
+              provider_instance: "spotify--two",
+            }),
+          ],
+        }),
+      );
+
+      expect(services).toEqual([{ domain: "spotify", name: "Spotify" }]);
+    });
+
+    it("names the service, not the account it is configured as", () => {
+      apiMock.getProviderManifest.mockReturnValue(SPOTIFY);
+      apiMock.getProvider.mockReturnValue({ name: "Spotify [account]" });
+
+      expect(
+        mappedServices(
+          artist({
+            provider_mappings: [
+              providerMapping({ provider_domain: "spotify" }),
+            ],
+          }),
+        ),
+      ).toEqual([{ domain: "spotify", name: "Spotify" }]);
+    });
+
+    it("falls back to the instance name, then to the domain", () => {
+      apiMock.getProvider.mockReturnValue({ name: "My files" });
+      expect(
+        mappedServices(
+          artist({
+            provider_mappings: [
+              providerMapping({ provider_domain: "filesystem_smb" }),
+            ],
+          }),
+        ),
+      ).toEqual([{ domain: "filesystem_smb", name: "My files" }]);
+
+      apiMock.getProvider.mockReturnValue(undefined);
+      expect(
+        mappedServices(
+          artist({
+            provider_mappings: [
+              providerMapping({ provider_domain: "filesystem_smb" }),
+            ],
+          }),
+        ),
+      ).toEqual([{ domain: "filesystem_smb", name: "filesystem_smb" }]);
     });
   });
 

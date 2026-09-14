@@ -47,7 +47,10 @@
     <template v-if="item" #aside>
       <div v-if="chipsShown" class="artist-hero__chips">
         <span class="artist-hero__chip">
-          <template v-for="(provider, index) in providers" :key="provider.id">
+          <template
+            v-for="(provider, index) in providers"
+            :key="provider.domain"
+          >
             <span v-if="index > 0" class="artist-hero__chip-sep">·</span>
             <ProviderIcon :domain="provider.domain" :size="14" />
             {{ provider.name }}
@@ -61,6 +64,7 @@
 </template>
 
 <script setup lang="ts">
+import { mappedServices } from "@/components/artist/artistData";
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
@@ -103,24 +107,10 @@ const artistLogo = computed(() =>
   props.item ? getImageThumbForItem(props.item, ImageType.LOGO) : undefined,
 );
 
-// one entry per provider instance the artist is mapped to
-const providers = computed(() => {
-  const seen = new Set<string>();
-  const entries: Array<{ id: string; domain: string; name: string }> = [];
-  for (const mapping of props.item?.provider_mappings || []) {
-    if (seen.has(mapping.provider_instance)) continue;
-    seen.add(mapping.provider_instance);
-    entries.push({
-      id: mapping.provider_instance,
-      domain: mapping.provider_domain,
-      name:
-        api.getProvider(mapping.provider_instance)?.name ||
-        api.getProviderManifest(mapping.provider_domain)?.name ||
-        mapping.provider_instance,
-    });
-  }
-  return entries;
-});
+// one chip per music service, however many accounts of it the artist is on
+const providers = computed(() =>
+  props.item ? mappedServices(props.item) : [],
+);
 
 const chipsShown = computed(() => providers.value.length > 0);
 
