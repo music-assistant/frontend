@@ -317,6 +317,7 @@ import {
   canReconfigureProvider,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  providerDisplayName,
 } from "@/helpers/provider_config";
 import { getExternalLinkUrl, markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -383,12 +384,14 @@ const providerManifest = computed(() => {
   return api.providerManifests[config.value.domain];
 });
 
-const providerName = computed(
-  () =>
-    config.value?.name ||
-    api.providers[config.value?.instance_id ?? ""]?.name ||
-    config.value?.default_name ||
-    providerManifest.value?.name,
+const providerName = computed(() =>
+  config.value
+    ? providerDisplayName(
+        config.value,
+        api.providers[config.value.instance_id],
+        providerManifest.value,
+      )
+    : "",
 );
 
 // reconfiguring a source sets it up again, which a member may only do for a

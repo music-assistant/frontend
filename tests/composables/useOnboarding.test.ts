@@ -27,7 +27,7 @@ const {
 } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, unknown>,
-    // the instances that loaded, which name a provider before its config does
+    // the instances that loaded, which name a provider that has no custom name
     providers: {} as Record<string, { name: string }>,
     providerManifests: {} as Record<string, { builtin: boolean; name: string }>,
     getAllUsers: vi.fn(),
@@ -493,7 +493,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     expect(ctx.value.providers).toHaveLength(4);
   });
 
-  it("prefers the name the loaded instance goes by", async () => {
+  it("prefers the custom name set on the configuration", async () => {
     addProvider("spotify--1", "spotify", ProviderType.MUSIC);
     providerConfigs.list[0].name = "The kitchen's Spotify";
     apiMock.providers["spotify--1"] = { name: "Spotify in the kitchen" };
@@ -502,19 +502,19 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     await module.useOnboarding().loadOnboardingData();
 
     expect(module.configuredProviders(ProviderType.MUSIC)[0].name).toBe(
-      "Spotify in the kitchen",
+      "The kitchen's Spotify",
     );
   });
 
-  it("falls back on the name the configuration carries", async () => {
+  it("falls back on the name the loaded instance goes by", async () => {
     addProvider("spotify--1", "spotify", ProviderType.MUSIC);
-    providerConfigs.list[0].name = "The kitchen's Spotify";
+    apiMock.providers["spotify--1"] = { name: "Spotify in the kitchen" };
 
     const module = await loadModule();
     await module.useOnboarding().loadOnboardingData();
 
     expect(module.configuredProviders(ProviderType.MUSIC)[0].name).toBe(
-      "The kitchen's Spotify",
+      "Spotify in the kitchen",
     );
   });
 
