@@ -13,7 +13,7 @@
       ref="cardRef"
       data-player-panel
       class="fullscreen-player-card"
-      :style="{ background: backgroundColor }"
+      :style="[{ background: backgroundColor }, overlayVars]"
     >
       <VisualizerCanvas
         v-if="store.showFullscreenPlayer && visualizerActive"
@@ -53,13 +53,13 @@
           />
 
           <Button
-            variant="ghost-outline"
-            size="icon-xs"
-            class="ml-2 size-7"
+            variant="overlay"
+            size="icon"
+            class="ml-2"
             :aria-label="$t('tooltip.more_options')"
             @click.stop="openQueueMenu"
           >
-            <EllipsisVerticalIcon :size="16" />
+            <EllipsisVerticalIcon />
           </Button>
         </template>
       </v-toolbar>
@@ -457,15 +457,10 @@
             padding-top: 4px;
           "
         >
-          <!-- Without a competing hover:text- here, the outline variant's own
-               hover:text-accent-foreground survives the class merge and recolours
-               the label against the artwork, so the hover colour is pinned to
-               the --text-color the rest of the panel follows. -->
           <Button
             id="fullscreen-player-select-button"
-            variant="outline"
+            variant="overlay"
             size="xs"
-            class="border-transparent bg-background/40 shadow-none backdrop-blur-md hover:bg-background/60 hover:text-[var(--text-color)] dark:border-transparent dark:bg-background/40 dark:hover:bg-background/60"
             :aria-label="playerSelectLabel"
             :aria-expanded="store.showPlayersMenu"
             aria-haspopup="dialog"
@@ -1232,6 +1227,21 @@ onMounted(() => {
 
 const sliderColor = ref<string | undefined>(undefined);
 const backgroundColor = ref<string | undefined>(undefined);
+
+// The overlay buttons default to a light wash while off and a dark frosted box
+// while on. With dark text on a light palette both mirror: a dark wash and a
+// white frosted box. sliderColor carries the panel's text colour.
+const LIGHT_OVERLAY_VARS = {
+  "--overlay-bg": "rgba(255, 255, 255, 0.6)",
+  "--overlay-border": "rgba(0, 0, 0, 0.2)",
+  "--overlay-fg": "#000000",
+  "--overlay-muted-bg": "rgba(0, 0, 0, 0.08)",
+  "--overlay-muted-hover": "rgba(0, 0, 0, 0.12)",
+  "--overlay-muted-border": "rgba(0, 0, 0, 0.15)",
+};
+const overlayVars = computed(() =>
+  sliderColor.value === "#000000" ? LIGHT_OVERLAY_VARS : undefined,
+);
 
 watchEffect(() => {
   // With a dominant visualizer the view is effectively dark content: force

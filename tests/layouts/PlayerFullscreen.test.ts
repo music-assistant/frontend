@@ -110,12 +110,14 @@ vi.mock("@/composables/useActiveTrackWaveform", async () => {
   };
 });
 
+const vuetifyTheme = vi.hoisted(() => ({ dark: true }));
+
 vi.mock("@/plugins/vuetify", async () => {
   const { ref: vueRef } = await vi.importActual<typeof import("vue")>("vue");
   return {
     default: {
       display: { height: vueRef(900), mdAndUp: vueRef(true) },
-      theme: { current: vueRef({ dark: true }) },
+      theme: { current: vueRef(vuetifyTheme) },
     },
   };
 });
@@ -451,21 +453,53 @@ describe("PlayerFullscreen player select button", () => {
   });
 
   // Rendered through the real Button so the variant classes actually go through
-  // class-variance-authority and tailwind-merge; a stub would only echo back the
-  // class prop and never show which of the two hover colours survives.
-  it("keeps the label colour on hover", async () => {
+  // class-variance-authority; a stub would only echo back the class prop.
+  it("renders as an overlay button", async () => {
     const fullscreen = await mountFullscreenDialog({ Button: false });
     const classes = fullscreen
       .get("#fullscreen-player-select-button")
       .classes();
 
-    // the bare border width comes from the outline variant alone, so it pins
-    // both halves of the merge this test reads: cva ran, and it contributed
-    expect(classes).toContain("border");
-    expect(classes).toContain("hover:text-[var(--text-color)]");
-    // the outline variant also offers this one, and it resolves to the theme
-    // foreground rather than the white forced over a dominant visualizer
-    expect(classes).not.toContain("hover:text-accent-foreground");
+    expect(classes).toContain("bg-overlay-muted");
+    expect(classes).toContain("text-overlay-foreground");
+  });
+});
+
+describe("PlayerFullscreen overlay buttons", () => {
+  afterEach(() => {
+    vuetifyTheme.dark = true;
+  });
+
+  async function mountCard(): Promise<VueWrapper> {
+    const { store } = await import("@/plugins/store");
+    (store as unknown as TestStore).showFullscreenPlayer = true;
+
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+        },
+      },
+    });
+    await nextTick();
+    return wrapper;
+  }
+
+  it("keeps the dark overlay defaults in the dark theme", async () => {
+    const card = (await mountCard()).get("[data-player-panel]");
+
+    expect(card.attributes("style") ?? "").not.toContain("--overlay-fg");
+  });
+
+  it("mirrors the overlay buttons for dark text on a light palette", async () => {
+    vuetifyTheme.dark = false;
+
+    const card = (await mountCard()).get("[data-player-panel]");
+
+    expect(card.attributes("style")).toContain("--overlay-fg: #000000");
   });
 });
 

@@ -8,9 +8,9 @@
     <Tooltip>
       <TooltipTrigger as-child>
         <Button
-          :variant="pill ? 'ghost-outline' : 'outline'"
-          size="xs"
-          :class="['gap-1 tabular-nums', pill ? pillClass : '']"
+          :variant="pill ? 'overlay' : 'outline'"
+          :size="pill ? 'default' : 'xs'"
+          class="gap-1 tabular-nums"
           :aria-label="$t('sleep_timer')"
           v-bind="$attrs"
           @click.stop="openMenu"
@@ -57,10 +57,6 @@ withDefaults(
   }>(),
   { pill: false },
 );
-
-// The ghost-outline variant provides the pill look, matching the other
-// fullscreen header controls.
-const pillClass = "relative";
 
 // Reactive clock that ticks every second while a timer is active, driving the
 // countdown and the auto-hide when it reaches zero. On the server's clock, since

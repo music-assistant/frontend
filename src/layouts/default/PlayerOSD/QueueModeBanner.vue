@@ -158,7 +158,7 @@ const effectiveAutoplay = computed(
   () => autoplayEnabled.value && !repeatLocked.value,
 );
 
-// Active (primary-tinted) vs muted appearance.
+// Active (stronger border + primary icon) vs muted appearance.
 const active = computed(
   () => mode.value === "dynamic" || effectiveAutoplay.value,
 );
@@ -242,10 +242,19 @@ const gotoSource = (source: ItemMapping) => {
   );
 }
 
-/* Active (radio / autoplay-on): subtle primary wash so it reads as "on". */
+/* Active (radio / autoplay-on): reads as "on" through the stronger border and
+   the icon below, not a primary wash. */
 .queue-mode-banner--active {
-  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
-  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  border-color: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 18%,
+    transparent
+  );
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 6%,
+    transparent
+  );
 }
 
 /* Collapsed: a tight single line — shrink the padding, gap, icon and toggle so
@@ -269,6 +278,8 @@ const gotoSource = (source: ItemMapping) => {
   width: 36px;
   height: 36px;
   border-radius: 8px;
+  box-sizing: border-box;
+  border: 1px solid transparent;
   cursor: pointer;
   color: color-mix(in srgb, var(--text-color, currentColor) 65%, transparent);
   background: color-mix(
@@ -278,9 +289,12 @@ const gotoSource = (source: ItemMapping) => {
   );
 }
 
+/* The overlay button's "on" look; its theme tokens are inlined, so the raw
+   --overlay-* variables and their dark defaults are read here. */
 .queue-mode-banner--active .queue-mode-banner__icon {
-  color: var(--primary-foreground, #fff);
-  background: var(--primary);
+  color: var(--primary);
+  background: var(--overlay-bg, rgba(0, 0, 0, 0.4));
+  border-color: var(--overlay-border, rgba(255, 255, 255, 0.25));
 }
 
 .queue-mode-banner__body {
@@ -310,7 +324,6 @@ const gotoSource = (source: ItemMapping) => {
   background: none;
   padding: 0;
   font: inherit;
-  color: var(--primary);
   font-weight: 600;
   cursor: pointer;
 }
@@ -335,7 +348,6 @@ const gotoSource = (source: ItemMapping) => {
   background: none;
   padding: 0;
   font: inherit;
-  color: var(--primary);
   font-weight: 600;
   cursor: pointer;
 }

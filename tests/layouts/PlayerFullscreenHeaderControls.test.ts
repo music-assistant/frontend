@@ -1,6 +1,5 @@
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import AutoplayRepeatLockButton from "@/layouts/default/PlayerOSD/AutoplayRepeatLockButton.vue";
-import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { CrossfadeMode, type PlayerQueue } from "@/plugins/api/interfaces";
 import { shallowMount } from "@vue/test-utils";
@@ -12,6 +11,7 @@ import { ref } from "vue";
 const queue = ref<Partial<PlayerQueue> | undefined>(undefined);
 const hasActiveAudioPath = ref(false);
 const autoplayApplicable = ref(false);
+const autoplayEnabled = ref(false);
 const repeatLocked = ref(false);
 const setAutoplay = vi.fn();
 
@@ -34,7 +34,7 @@ vi.mock("@/layouts/default/PlayerOSD/useQueueModes", () => ({
     queue,
     sources: ref([]),
     dynamicModeActive: ref(false),
-    autoplayEnabled: ref(false),
+    autoplayEnabled,
     autoplayApplicable,
     repeatLocked,
     setAutoplay,
@@ -89,33 +89,9 @@ describe("PlayerFullscreenHeaderControls", () => {
     queue.value = undefined;
     hasActiveAudioPath.value = false;
     autoplayApplicable.value = false;
+    autoplayEnabled.value = false;
     repeatLocked.value = false;
     setAutoplay.mockClear();
-  });
-
-  it("does not animate a fade the source applied", () => {
-    seedQueue(CrossfadeMode.SOURCE);
-
-    const icon = mountControls().findComponent(CrossfadeIcon);
-
-    expect(icon.props("smart")).toBe(false);
-  });
-
-  it("does not animate a standard fade", () => {
-    seedQueue(CrossfadeMode.STANDARD_CROSSFADE);
-    queue.value!.smart_fades_active = false;
-
-    expect(mountControls().findComponent(CrossfadeIcon).props("smart")).toBe(
-      false,
-    );
-  });
-
-  it("animates our own smart fade", () => {
-    seedQueue(CrossfadeMode.SMART_CROSSFADE);
-
-    expect(mountControls().findComponent(CrossfadeIcon).props("smart")).toBe(
-      true,
-    );
   });
 
   it("mirrors the source fade details in the tooltip", () => {
@@ -175,5 +151,21 @@ describe("PlayerFullscreenHeaderControls", () => {
     await toggle!.trigger("click");
 
     expect(setAutoplay).toHaveBeenCalledExactlyOnceWith(true);
+  });
+
+  it("marks the autoplay pill active only while autoplay is enabled", async () => {
+    seedQueue(CrossfadeMode.SOURCE);
+    autoplayApplicable.value = true;
+
+    const wrapper = mountControls();
+
+    expect(findAutoplayToggle(wrapper)!.attributes("data-active")).toBe(
+      undefined,
+    );
+
+    autoplayEnabled.value = true;
+    await wrapper.vm.$nextTick();
+
+    expect(findAutoplayToggle(wrapper)!.attributes("data-active")).toBe("true");
   });
 });

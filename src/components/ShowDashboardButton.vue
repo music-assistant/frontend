@@ -4,7 +4,7 @@
       <Button
         :variant="variant"
         :size="buttonSize"
-        :class="activeSession ? activePillClass : ''"
+        :data-active="activeSession ? true : undefined"
         :aria-label="$t('tooltip.show_dashboard')"
         :title="$t('tooltip.show_dashboard')"
         @click="loadDashboards"
@@ -128,10 +128,6 @@ const showButton = computed(
     !authManager.isDashboardViewer?.() &&
     dashboards.value.length > 0,
 );
-
-// Solid primary pill for the active state, matching the fullscreen player header's autoplay/crossfade toggles.
-const activePillClass =
-  "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90";
 
 const sortedDashboards = computed(() =>
   [...dashboards.value].sort(compareDashboards),
