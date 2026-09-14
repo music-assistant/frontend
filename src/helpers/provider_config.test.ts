@@ -139,10 +139,20 @@ describe("the name a provider goes by", () => {
   const manifest = providerManifest({ domain: "spotify", name: "Spotify" });
   const instance = { name: "Spotify" } as ProviderInstance;
 
-  it("prefers what the running instance calls itself", () => {
+  it("prefers the custom name set on the configuration", () => {
     expect(
       providerDisplayName(
         { ...config },
+        { ...instance, name: "Renamed" },
+        manifest,
+      ),
+    ).toBe("The kitchen's Spotify");
+  });
+
+  it("falls back on what the running instance calls itself", () => {
+    expect(
+      providerDisplayName(
+        { ...config, name: null },
         { ...instance, name: "Renamed" },
         manifest,
       ),

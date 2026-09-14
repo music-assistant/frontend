@@ -103,14 +103,14 @@ export const isBuiltinProvider = (manifest?: ProviderManifest): boolean =>
   manifest?.builtin === true;
 
 /**
- * The name a provider instance goes by: what the running instance calls itself,
- * then the name its configuration carries, the default name the server gave it
- * and finally the name from the manifest. Empty when none of those is known, so
- * a caller can fall back on the domain or the instance id.
+ * The name a provider instance goes by: the custom name set on its configuration,
+ * then what the running instance calls itself, the default name the server gave
+ * it and finally the name from the manifest. Empty when none of those is known,
+ * so a caller can fall back on the instance id.
  */
 export const providerDisplayName = (
   config: ProviderConfig,
   instance?: ProviderInstance,
   manifest?: ProviderManifest,
 ): string =>
-  instance?.name || config.name || config.default_name || manifest?.name || "";
+  config.name || instance?.name || config.default_name || manifest?.name || "";
