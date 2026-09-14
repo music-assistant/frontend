@@ -31,7 +31,7 @@
     @touchstart.passive="onTouchStart"
   >
     <!-- thumbnail (with now-playing equalizer overlay) -->
-    <div class="qitem__thumb" :class="{ 'qitem__thumb--eq': showEqualizer }">
+    <div class="qitem__thumb">
       <MediaItemThumb size="48" :item="item" />
       <div v-if="showEqualizer" class="qitem__eq" aria-hidden="true">
         <MiniEqualizer
@@ -298,19 +298,14 @@ const isMobile = computed(() => store.mobileLayout);
   overflow: hidden;
 }
 
-/* Blurs and scales up the artwork underneath so the blurred edge stays clipped
-   by the thumb's own overflow, making room for the equalizer to read clearly. */
-.qitem__thumb--eq > :first-child {
-  filter: blur(3px);
-  transform: scale(1.1);
-}
-
 .qitem__eq {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  /* blurs the artwork underneath so the equalizer reads clearly */
+  backdrop-filter: blur(3px);
   background: rgba(0, 0, 0, 0.35);
 }
 
