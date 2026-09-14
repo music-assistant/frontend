@@ -35,7 +35,7 @@
         />
         <DetailHeroButton
           v-if="radioRelevant(item)"
-          :icon="Radio"
+          :icon="Orbit"
           :label="$t('artist_radio')"
           :icon-only="isPhone"
           :disabled="!radioSupported(item)"
@@ -45,6 +45,7 @@
     </template>
 
     <template v-if="item" #aside>
+      <DetailHeroGenres :item="item" />
       <div v-if="chipsShown" class="artist-hero__chips">
         <span class="artist-hero__chip">
           <template
@@ -57,8 +58,6 @@
           </template>
         </span>
       </div>
-      <DetailHeroGenres :item="item" />
-      <div v-if="artistKind" class="artist-hero__kind">{{ artistKind }}</div>
     </template>
   </DetailHero>
 </template>
@@ -74,11 +73,11 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { ArtistType, ImageType, type Artist } from "@/plugins/api/interfaces";
+import { ImageType, type Artist } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { Radio, Shuffle } from "@lucide/vue";
+import { Orbit, Shuffle } from "@lucide/vue";
 import { computed } from "vue";
 
 export interface Props {
@@ -113,18 +112,6 @@ const providers = computed(() =>
 );
 
 const chipsShown = computed(() => providers.value.length > 0);
-
-// what kind of artist this is: the MusicBrainz entity type when known, else
-// the role of an audiobook artist
-const artistKind = computed(() => {
-  const item = props.item;
-  if (!item) return "";
-  const entityType = item.metadata?.artist_entity_type;
-  if (entityType) return $t(`artist_entity_type.${entityType.toLowerCase()}`);
-  if (item.artist_type === ArtistType.AUTHOR) return $t("author");
-  if (item.artist_type === ArtistType.NARRATOR) return $t("narrator");
-  return "";
-});
 </script>
 
 <style scoped>
@@ -170,12 +157,6 @@ const artistKind = computed(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.artist-hero__kind {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
-}
-
 .artist-hero__actions {
   display: flex;
   align-items: center;
