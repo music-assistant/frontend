@@ -1,8 +1,27 @@
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import { makeSvgIcon } from "@/components/ma-icons/_make-icon";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 
 describe("PlayerIcon", () => {
+  it("renders shared SVG artwork at the root", () => {
+    const TestIcon = makeSvgIcon(
+      "test-icon",
+      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><!-- source comment --><path fill="currentColor" d="M1 1h22v22H1z" /></svg>',
+    );
+    const wrapper = mount(TestIcon, {
+      props: { size: 20 },
+      attrs: { "aria-hidden": "true", class: "size-5" },
+    });
+
+    expect(wrapper.element.tagName).toBe("svg");
+    expect(wrapper.attributes("width")).toBe("20");
+    expect(wrapper.attributes("height")).toBe("20");
+    expect(wrapper.attributes("class")).toBe("size-5");
+    expect(wrapper.attributes("aria-hidden")).toBe("true");
+    expect(wrapper.html()).not.toContain("source comment");
+  });
+
   it("renders a canonical id as its SVG icon", () => {
     const wrapper = mount(PlayerIcon, {
       props: { icon: "tv", size: 20 },

@@ -1,13 +1,24 @@
-// Internal factory helpers — import only within this directory.
+// Internal factory helper — import only within this directory.
 import { defineComponent, h } from "vue";
 import type { Component, PropType } from "vue";
 
 /** Render canonical shared SVG artwork inline while retaining its currentColor theming. */
 export function makeSvgIcon(name: string, svg: string): Component {
-  const normalizedSvg = svg
-    .replace(/\swidth="[^"]*"/g, "")
-    .replace(/\sheight="[^"]*"/g, "")
-    .replace(/^<svg/, '<svg width="100%" height="100%"');
+  const rootMatch = svg.match(/^<svg\s+([^>]*)>([\s\S]*)<\/svg>\s*$/);
+  if (!rootMatch) throw new Error(`Invalid SVG for shared icon "${name}"`);
+  const rootAttributes = Object.fromEntries(
+    [...rootMatch[1].matchAll(/([:\w-]+)="([^"]*)"/g)].map((match) => [
+      match[1],
+      match[2],
+    ]),
+  );
+  delete rootAttributes.xmlns;
+  delete rootAttributes.width;
+  delete rootAttributes.height;
+  const innerHtml = rootMatch[2]
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
   return defineComponent({
     name,
@@ -20,79 +31,13 @@ export function makeSvgIcon(name: string, svg: string): Component {
     },
     setup(props, { attrs }) {
       return () =>
-        h("span", {
+        h("svg", {
+          ...rootAttributes,
+          width: props.size,
+          height: props.size,
           ...attrs,
-          style: {
-            display: "inline-flex",
-            height:
-              typeof props.size === "number" ? `${props.size}px` : props.size,
-            width:
-              typeof props.size === "number" ? `${props.size}px` : props.size,
-            ...(typeof attrs.style === "object" ? attrs.style : {}),
-          },
-          innerHTML: normalizedSvg,
+          innerHTML: innerHtml,
         });
     },
   });
-}
-
-/** Stroke-based icon (Lucide style). viewBox defaults to 24×24; supply a custom square viewBox for other coordinate spaces. The strokeWidth prop is always in 24-unit (Lucide) terms — it is rescaled internally for larger coordinate spaces, which would otherwise render visibly thinner strokes at the same size. */
-export function makeStrokeIcon(
-  name: string,
-  viewBox = "0 0 24 24",
-  ...children: ReturnType<typeof h>[]
-): Component {
-  const strokeScale = (Number(viewBox.split(" ")[3]) || 24) / 24;
-  return {
-    name,
-    props: {
-      size: { type: [Number, String], default: 24 },
-      strokeWidth: { type: [Number, String], default: 2 },
-    },
-    setup(props: { size?: number | string; strokeWidth?: number | string }) {
-      return () =>
-        h(
-          "svg",
-          {
-            xmlns: "http://www.w3.org/2000/svg",
-            width: props.size ?? 24,
-            height: props.size ?? 24,
-            viewBox,
-            fill: "none",
-            stroke: "currentColor",
-            "stroke-width": Number(props.strokeWidth ?? 2) * strokeScale,
-            "stroke-linecap": "round",
-            "stroke-linejoin": "round",
-          },
-          children,
-        );
-    },
-  };
-}
-
-/** Fill-based icon. viewBox must be square — pad non-square artwork horizontally before passing in. */
-export function makeFillIcon(
-  name: string,
-  viewBox: string,
-  ...children: ReturnType<typeof h>[]
-): Component {
-  return {
-    name,
-    props: { size: { type: [Number, String], default: 24 } },
-    setup(props: { size?: number | string }) {
-      return () =>
-        h(
-          "svg",
-          {
-            xmlns: "http://www.w3.org/2000/svg",
-            width: props.size ?? 24,
-            height: props.size ?? 24,
-            viewBox,
-            fill: "none",
-            stroke: "none",
-          },
-          children,
-        );
-    },
-  };
 }
