@@ -63,7 +63,6 @@
 </template>
 
 <script setup lang="ts">
-import { mappedServices } from "@/components/artist/artistData";
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
@@ -73,6 +72,7 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
+import { mappedServices } from "@/plugins/api/helpers";
 import { ImageType, type Artist } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";

@@ -67,30 +67,6 @@ export async function loadSimilarArtists(
   );
 }
 
-/**
- * The music services the artist is mapped to, named after the service itself.
- *
- * Several accounts of the same service share one entry: which account holds the
- * artist is a detail of the mapping, not of the artist. A mapping nothing can
- * name is left out rather than shown as its raw domain.
- */
-export function mappedServices(
-  artist: Artist,
-): Array<{ domain: string; name: string }> {
-  const seen = new Set<string>();
-  const services: Array<{ domain: string; name: string }> = [];
-  for (const mapping of artist.provider_mappings) {
-    if (seen.has(mapping.provider_domain)) continue;
-    const name =
-      api.getProviderManifest(mapping.provider_domain)?.name ||
-      api.getProvider(mapping.provider_instance)?.name;
-    if (!name) continue;
-    seen.add(mapping.provider_domain);
-    services.push({ domain: mapping.provider_domain, name });
-  }
-  return services;
-}
-
 /** Whether the release belongs in the "Singles & EPs" shelf instead of "Albums". */
 export function isSingleOrEp(album: Album | ItemMapping): boolean {
   if (!("album_type" in album)) return false;
