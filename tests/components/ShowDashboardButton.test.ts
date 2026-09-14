@@ -368,7 +368,7 @@ describe("ShowDashboardButton", () => {
     await flushAsync();
 
     expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/sessions");
-    expect(wrapper.get("button").attributes("data-active")).toBe("true");
+    expect(wrapper.get("button").classes()).toContain("bg-primary");
   });
 
   it("does not color the icon when the active session is for a different dashboard", async () => {
@@ -385,7 +385,7 @@ describe("ShowDashboardButton", () => {
     const wrapper = mountButton();
     await flushAsync();
 
-    expect(wrapper.get("button").attributes("data-active")).toBeUndefined();
+    expect(wrapper.get("button").classes()).not.toContain("bg-primary");
   });
 
   it("colors a now_playing button only when the session targets its player", async () => {
@@ -405,14 +405,14 @@ describe("ShowDashboardButton", () => {
       playerId: "player-1",
     });
     await flushAsync();
-    expect(otherPlayer.get("button").attributes("data-active")).toBeUndefined();
+    expect(otherPlayer.get("button").classes()).not.toContain("bg-primary");
 
     const matchingPlayer = mountButton({
       dashboard: "now_playing",
       playerId: "player-2",
     });
     await flushAsync();
-    expect(matchingPlayer.get("button").attributes("data-active")).toBe("true");
+    expect(matchingPlayer.get("button").classes()).toContain("bg-primary");
   });
 
   it("updates active state when a dashboard_sessions_updated event arrives", async () => {
@@ -425,7 +425,7 @@ describe("ShowDashboardButton", () => {
       EventType.DASHBOARD_SESSIONS_UPDATED,
       expect.any(Function),
     );
-    expect(wrapper.get("button").attributes("data-active")).toBeUndefined();
+    expect(wrapper.get("button").classes()).not.toContain("bg-primary");
 
     subscriptions.emit(EventType.DASHBOARD_SESSIONS_UPDATED, [
       {
@@ -436,7 +436,7 @@ describe("ShowDashboardButton", () => {
     ]);
     await flushAsync();
 
-    expect(wrapper.get("button").attributes("data-active")).toBe("true");
+    expect(wrapper.get("button").classes()).toContain("bg-primary");
   });
 
   it("marks the active device with a check and offers a disconnect item", async () => {
@@ -501,7 +501,7 @@ describe("ShowDashboardButton", () => {
     expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/hide", {
       dashboard_id: "device-1",
     });
-    expect(wrapper.get("button").attributes("data-active")).toBeUndefined();
+    expect(wrapper.get("button").classes()).not.toContain("bg-primary");
   });
 
   it("refetches sessions when disconnect's dashboard/hide fails, rolling back the optimistic removal", async () => {
@@ -534,7 +534,7 @@ describe("ShowDashboardButton", () => {
     });
     expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/sessions");
     // the resync brought the still-active session back, so the pill stays lit
-    expect(wrapper.get("button").attributes("data-active")).toBe("true");
+    expect(wrapper.get("button").classes()).toContain("bg-primary");
   });
 
   it("calls the sessions and dashboards subscriptions' unsubscribe functions on unmount", async () => {

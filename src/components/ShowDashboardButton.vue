@@ -5,7 +5,7 @@
         :variant="variant"
         :size="buttonSize"
         :data-active="activeSession ? true : undefined"
-        class="data-[active=true]:[&_svg]:text-primary"
+        :class="activeSession ? activePillClass : ''"
         :aria-label="$t('tooltip.show_dashboard')"
         :title="$t('tooltip.show_dashboard')"
         @click="loadDashboards"
@@ -128,6 +128,14 @@ const showButton = computed(
     canShowDashboards.value &&
     !authManager.isDashboardViewer?.() &&
     dashboards.value.length > 0,
+);
+
+// The overlay variant styles its own active state; elsewhere an active session
+// shows as a solid primary pill.
+const activePillClass = computed(() =>
+  props.variant === "overlay"
+    ? ""
+    : "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90",
 );
 
 const sortedDashboards = computed(() =>
