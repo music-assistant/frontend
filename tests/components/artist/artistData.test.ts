@@ -173,8 +173,9 @@ describe("artistData", () => {
       ).toEqual([{ domain: "spotify", name: "Spotify" }]);
     });
 
-    it("falls back to the instance name, then to the domain", () => {
+    it("falls back to the instance name when the service has no manifest", () => {
       apiMock.getProvider.mockReturnValue({ name: "My files" });
+
       expect(
         mappedServices(
           artist({
@@ -184,17 +185,31 @@ describe("artistData", () => {
           }),
         ),
       ).toEqual([{ domain: "filesystem_smb", name: "My files" }]);
+    });
 
-      apiMock.getProvider.mockReturnValue(undefined);
+    // the server sends mappings whose provider fields are the string "None";
+    // there is no service to name, so the chip row is better off without them
+    it("leaves out a mapping nothing can name", () => {
+      apiMock.getProviderManifest.mockImplementation((domain: string) =>
+        domain === "spotify" ? SPOTIFY : undefined,
+      );
+
       expect(
         mappedServices(
           artist({
             provider_mappings: [
-              providerMapping({ provider_domain: "filesystem_smb" }),
+              providerMapping({
+                provider_domain: "spotify",
+                provider_instance: "spotify--one",
+              }),
+              providerMapping({
+                provider_domain: "None",
+                provider_instance: "None",
+              }),
             ],
           }),
         ),
-      ).toEqual([{ domain: "filesystem_smb", name: "filesystem_smb" }]);
+      ).toEqual([{ domain: "spotify", name: "Spotify" }]);
     });
   });
 
