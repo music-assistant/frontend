@@ -7,7 +7,7 @@
     <PopoverTrigger as-child>
       <Button
         :variant="pill ? 'overlay' : 'outline'"
-        :size="pill ? 'default' : 'xs'"
+        :size="pill ? pillSize : 'xs'"
         :class="pill ? 'px-3' : ''"
         :disabled="triggerDisabled"
         :title="$t('show_audio_chain_details')"
@@ -68,6 +68,9 @@ import { useActiveAudioPath } from "@/composables/useActiveAudioPath";
 // render the quality indicator as a rounded "pill" (matching the shadcn player
 // header controls) instead of the default square chip
 defineProps<{ pill?: boolean }>();
+
+// the pill follows the fullscreen header's control height, compact on phones
+const pillSize = computed(() => (store.mobileLayout ? "sm" : "default"));
 
 const { activeAudioPath } = useActiveAudioPath();
 

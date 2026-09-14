@@ -12,7 +12,7 @@
         <TooltipTrigger as-child>
           <Button
             variant="overlay"
-            :size="showLabel ? 'default' : 'icon'"
+            :size="showLabel ? 'default' : 'icon-sm'"
             :data-active="lyricsActive || undefined"
             :aria-pressed="lyricsActive"
             :aria-label="$t('lyrics')"
@@ -34,7 +34,7 @@
         <TooltipTrigger as-child>
           <Button
             variant="overlay"
-            :size="showLabel ? 'default' : 'icon'"
+            :size="showLabel ? 'default' : 'icon-sm'"
             class="text-overlay-foreground/50 cursor-default"
             :aria-label="$t('lyrics')"
           >
@@ -59,7 +59,7 @@
           <Button
             as="span"
             variant="overlay"
-            :size="showLabel ? 'default' : 'icon'"
+            :size="showLabel ? 'default' : 'icon-sm'"
             class="cursor-default"
             data-active="true"
             :aria-label="$t('autoplay')"
@@ -92,7 +92,7 @@
       :class="[
         buttonVariants({
           variant: 'overlay',
-          size: showLabel ? 'default' : 'icon',
+          size: showLabel ? 'default' : 'icon-sm',
         }),
         'text-overlay-foreground/50 cursor-help',
       ]"
@@ -109,7 +109,7 @@
         <TooltipTrigger as-child>
           <Button
             variant="overlay"
-            :size="showLabel ? 'default' : 'icon'"
+            :size="showLabel ? 'default' : 'icon-sm'"
             :data-active="autoplayEnabled || undefined"
             :aria-pressed="autoplayEnabled"
             :aria-label="$t('autoplay')"
@@ -138,7 +138,7 @@
         <TooltipTrigger as-child>
           <Button
             variant="overlay"
-            :size="showLabel ? 'default' : 'icon'"
+            :size="showLabel ? 'default' : 'icon-sm'"
             :data-active="crossfadeEnabled || undefined"
             :aria-pressed="crossfadeEnabled"
             :aria-label="$t('crossfade')"
@@ -159,7 +159,7 @@
       dashboard="now_playing"
       :player-id="store.activePlayerId"
       variant="overlay"
-      button-size="icon"
+      :button-size="showLabel ? 'icon' : 'icon-sm'"
       content-class="z-[10001]"
     />
 
@@ -170,7 +170,7 @@
         <TooltipTrigger as-child>
           <Button
             variant="overlay"
-            :size="showLabel ? 'default' : 'icon'"
+            :size="showLabel ? 'default' : 'icon-sm'"
             data-active="true"
             :aria-label="$t('audio_overlay')"
             @click="openOverlay"
@@ -252,6 +252,8 @@ const seedNames = computed(() =>
     .join(", "),
 );
 
+// Phones get icon-only 32px controls so the row fits; desktop matches the
+// 36px hero buttons with their labels.
 const showLabel = computed(() => !store.mobileLayout);
 
 // --- crossfade ---

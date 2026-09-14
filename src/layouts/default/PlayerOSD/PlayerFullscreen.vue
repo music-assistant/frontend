@@ -31,6 +31,7 @@
       <v-toolbar
         data-panel-drag-region
         class="v-toolbar-default"
+        :class="{ 'v-toolbar--compact': store.mobileLayout }"
         color="transparent"
       >
         <template #prepend>
@@ -54,7 +55,7 @@
 
           <Button
             variant="overlay"
-            size="icon"
+            :size="store.mobileLayout ? 'icon-sm' : 'icon'"
             class="ml-2"
             :aria-label="$t('tooltip.more_options')"
             @click.stop="openQueueMenu"
@@ -1699,10 +1700,15 @@ onBeforeUnmount(() => {
 
 /* Line the trailing menu button up with the per-row menu buttons in the queue
    list below: those sit 18px from the column's right edge (10px column + 8px
-   row padding) with a 32px button, so this 28px button needs a 20px end margin
-   for the two to share a vertical centre. */
+   row padding) with a 32px button, so this 36px button needs a 16px end margin
+   for the two to share a vertical centre; the compact 32px phone button sits
+   at the same 18px. */
 .v-toolbar :deep(.v-toolbar__append) {
-  margin-inline-end: 20px;
+  margin-inline-end: 16px;
+}
+
+.v-toolbar--compact :deep(.v-toolbar__append) {
+  margin-inline-end: 18px;
 }
 
 div,

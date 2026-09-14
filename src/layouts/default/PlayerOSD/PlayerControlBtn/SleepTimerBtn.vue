@@ -9,7 +9,7 @@
       <TooltipTrigger as-child>
         <Button
           :variant="pill ? 'overlay' : 'outline'"
-          :size="pill ? 'default' : 'xs'"
+          :size="pill ? pillSize : 'xs'"
           class="gap-1 tabular-nums"
           :aria-label="$t('sleep_timer')"
           v-bind="$attrs"
@@ -57,6 +57,9 @@ withDefaults(
   }>(),
   { pill: false },
 );
+
+// the pill follows the fullscreen header's control height, compact on phones
+const pillSize = computed(() => (store.mobileLayout ? "sm" : "default"));
 
 // Reactive clock that ticks every second while a timer is active, driving the
 // countdown and the auto-hide when it reaches zero. On the server's clock, since
