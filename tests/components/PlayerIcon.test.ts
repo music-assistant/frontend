@@ -22,6 +22,38 @@ describe("PlayerIcon", () => {
     expect(wrapper.html()).not.toContain("source comment");
   });
 
+  it("uses the default size and preserves SVG attributes", () => {
+    const TestIcon = makeSvgIcon(
+      "test-icon",
+      '<svg xmlns="http://www.w3.org/2000/svg" width="99" height="98" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 1h22v22H1z" /></svg>',
+    );
+    const wrapper = mount(TestIcon);
+
+    expect(wrapper.attributes("width")).toBe("24");
+    expect(wrapper.attributes("height")).toBe("24");
+    expect(wrapper.attributes("viewBox")).toBe("0 0 24 24");
+    expect(wrapper.attributes("fill")).toBe("none");
+    expect(wrapper.attributes("stroke")).toBe("currentColor");
+    expect(wrapper.attributes("stroke-width")).toBe("2");
+  });
+
+  it("accepts string sizes and overrides source dimensions", () => {
+    const TestIcon = makeSvgIcon(
+      "test-icon",
+      '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M1 1h22v22H1z" /></svg>',
+    );
+    const wrapper = mount(TestIcon, { props: { size: "1em" } });
+
+    expect(wrapper.attributes("width")).toBe("1em");
+    expect(wrapper.attributes("height")).toBe("1em");
+  });
+
+  it("rejects malformed SVG input", () => {
+    expect(() => makeSvgIcon("broken-icon", "not an svg")).toThrow(
+      'Invalid SVG for shared icon "broken-icon"',
+    );
+  });
+
   it("renders a canonical id as its SVG icon", () => {
     const wrapper = mount(PlayerIcon, {
       props: { icon: "tv", size: 20 },
