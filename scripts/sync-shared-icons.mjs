@@ -1,78 +1,201 @@
 #!/usr/bin/env node
-/** Sync a checked-out music-assistant/shared-icons release into the frontend. */
-import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+/** Sync a tagged music-assistant/shared-icons release into the frontend. */
+import {
+  cp,
+  mkdtemp,
+  mkdir,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { tmpdir } from "node:os";
 import prettier from "prettier";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const sourceDir = resolve(process.argv[2] ?? join(ROOT, "..", "shared-icons"));
 const vendorDir = join(ROOT, "src", "vendor", "shared-icons");
-const generatedPath = join(ROOT, "src", "components", "ma-icons", "generated.ts");
+const sourceLockPath = join(vendorDir, "source.json");
+const generatedPath = join(
+  ROOT,
+  "src",
+  "components",
+  "ma-icons",
+  "generated.ts",
+);
 const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const execFileAsync = promisify(execFile);
 
 const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
-await execFileAsync("node", [join(sourceDir, "scripts", "validate.mjs")]);
-const manifest = await readJson(join(sourceDir, "manifest.json"));
-const meta = await readJson(join(sourceDir, "meta.json"));
+const { tag, sourceDir, commit, cleanup } = await getSource();
 
-if (!/^\d+\.\d+\.\d+$/.test(manifest.version ?? "")) {
-  throw new Error(`Invalid shared-icons version: ${manifest.version}`);
-}
-if (!Array.isArray(manifest.icons) || manifest.icons.length === 0) {
-  throw new Error("Shared-icons manifest must contain at least one icon");
-}
-if (!manifest.icons.every((id) => typeof id === "string" && idPattern.test(id))) {
-  throw new Error("Shared-icons manifest contains an invalid icon id");
-}
-if (new Set(manifest.icons).size !== manifest.icons.length) {
-  throw new Error("Shared-icons manifest contains duplicate icon ids");
-}
-if (!manifest.icons.includes(manifest.fallback)) {
-  throw new Error("Shared-icons fallback is not a manifest icon id");
+try {
+  await execFileAsync("node", [join(sourceDir, "scripts", "validate.mjs")]);
+  const manifest = await readJson(join(sourceDir, "manifest.json"));
+  const meta = await readJson(join(sourceDir, "meta.json"));
+
+  if (!/^\d+\.\d+\.\d+$/.test(manifest.version ?? "")) {
+    throw new Error(`Invalid shared-icons version: ${manifest.version}`);
+  }
+  if (!Array.isArray(manifest.icons) || manifest.icons.length === 0) {
+    throw new Error("Shared-icons manifest must contain at least one icon");
+  }
+  if (
+    !manifest.icons.every((id) => typeof id === "string" && idPattern.test(id))
+  ) {
+    throw new Error("Shared-icons manifest contains an invalid icon id");
+  }
+  if (new Set(manifest.icons).size !== manifest.icons.length) {
+    throw new Error("Shared-icons manifest contains duplicate icon ids");
+  }
+  if (!manifest.icons.includes(manifest.fallback)) {
+    throw new Error("Shared-icons fallback is not a manifest icon id");
+  }
+
+  const svgDir = join(sourceDir, "icons");
+  for (const id of manifest.icons) {
+    if (!meta.icons?.[id]) throw new Error(`Missing metadata for icon: ${id}`);
+    const svgPath = join(svgDir, `${id}.svg`);
+    const svg = await readFile(svgPath, "utf8");
+    if (!svg.trimStart().startsWith("<svg") || !svg.includes("currentColor")) {
+      throw new Error(`Invalid themed SVG: ${svgPath}`);
+    }
+  }
+  const sourceSvgFiles = (await readdir(svgDir)).filter((file) =>
+    file.endsWith(".svg"),
+  );
+  if (sourceSvgFiles.length !== manifest.icons.length) {
+    throw new Error("Shared-icons SVG files do not match manifest icon ids");
+  }
+
+  await rm(join(vendorDir, "icons"), { force: true, recursive: true });
+  await mkdir(vendorDir, { recursive: true });
+  await cp(join(sourceDir, "icons"), join(vendorDir, "icons"), {
+    recursive: true,
+  });
+  await Promise.all(
+    ["manifest.json", "meta.json"].map(async (file) => {
+      const formatted = await prettier.format(
+        await readFile(join(sourceDir, file), "utf8"),
+        {
+          filepath: file,
+        },
+      );
+      await writeFile(join(vendorDir, file), formatted);
+    }),
+  );
+  await writeFile(
+    sourceLockPath,
+    await prettier.format(
+      `${JSON.stringify(
+        { repository: "music-assistant/shared-icons", tag, commit },
+        null,
+        2,
+      )}\n`,
+      { filepath: sourceLockPath },
+    ),
+  );
+
+  const svgImports = manifest.icons
+    .map(
+      (id) =>
+        `import ${toIdentifier(id)} from "@/vendor/shared-icons/icons/${id}.svg?raw";`,
+    )
+    .join("\n");
+  const registry = manifest.icons
+    .map((id) => `  "${id}": makeSvgIcon("${id}", ${toIdentifier(id)}),`)
+    .join("\n");
+
+  await writeFile(
+    generatedPath,
+    await prettier.format(
+      `// Generated by scripts/sync-shared-icons.mjs from shared-icons ${tag} (${commit}). Do not edit.\nimport { makeSvgIcon } from "./_make-icon";\nimport type { Component } from "vue";\n\n${svgImports}\n\nexport const registry: Record<string, Component> = {\n${registry}\n};\n\nexport const Speakers = registry["speakers"];\n`,
+      { filepath: generatedPath },
+    ),
+  );
+
+  console.log(
+    `Synced shared-icons ${tag} (${commit.slice(0, 7)}): ${manifest.icons.length} icons`,
+  );
+} finally {
+  await cleanup();
 }
 
-const svgDir = join(sourceDir, "icons");
-for (const id of manifest.icons) {
-  if (!meta.icons?.[id]) throw new Error(`Missing metadata for icon: ${id}`);
-  const svgPath = join(svgDir, `${id}.svg`);
-  const svg = await readFile(svgPath, "utf8");
-  if (!svg.trimStart().startsWith("<svg") || !svg.includes("currentColor")) {
-    throw new Error(`Invalid themed SVG: ${svgPath}`);
+async function getSource() {
+  const args = process.argv.slice(2);
+  const sourceFlagIndex = args.indexOf("--source");
+  const sourcePath =
+    sourceFlagIndex === -1 ? undefined : args[sourceFlagIndex + 1];
+  const tag = args.find((arg, index) => {
+    return (
+      arg !== "--source" &&
+      (sourceFlagIndex === -1 || index !== sourceFlagIndex + 1)
+    );
+  });
+
+  if (sourceFlagIndex !== -1 && !sourcePath) {
+    throw new Error("--source requires a directory path");
+  }
+  if (
+    args.length > (sourcePath ? 3 : 1) ||
+    (sourcePath && tag && sourceFlagIndex !== 1)
+  ) {
+    throw new Error(
+      "Usage: pnpm sync:shared-icons [tag] [--source <directory>]",
+    );
+  }
+  if (sourcePath) {
+    return {
+      tag: tag ?? "local",
+      sourceDir: resolve(sourcePath),
+      commit: "local",
+      cleanup: async () => {},
+    };
+  }
+
+  const lock = tag ? undefined : await readJson(sourceLockPath);
+  const resolvedTag = tag ?? lock?.tag;
+  if (typeof resolvedTag !== "string" || !resolvedTag) {
+    throw new Error("A shared-icons tag is required");
+  }
+
+  const temporaryDir = await mkdtemp(join(tmpdir(), "shared-icons-"));
+  try {
+    await execFileAsync("git", [
+      "clone",
+      "--depth",
+      "1",
+      "--branch",
+      resolvedTag,
+      "https://github.com/music-assistant/shared-icons.git",
+      temporaryDir,
+    ]);
+    const { stdout } = await execFileAsync("git", [
+      "-C",
+      temporaryDir,
+      "rev-parse",
+      "HEAD",
+    ]);
+    const commit = stdout.trim();
+    if (lock && lock.commit !== commit) {
+      throw new Error(
+        `Recorded shared-icons commit ${lock.commit} does not match ${resolvedTag} (${commit})`,
+      );
+    }
+    return {
+      tag: resolvedTag,
+      sourceDir: temporaryDir,
+      commit,
+      cleanup: () => rm(temporaryDir, { force: true, recursive: true }),
+    };
+  } catch (error) {
+    await rm(temporaryDir, { force: true, recursive: true });
+    throw error;
   }
 }
-const sourceSvgFiles = (await readdir(svgDir)).filter((file) => file.endsWith(".svg"));
-if (sourceSvgFiles.length !== manifest.icons.length) {
-  throw new Error("Shared-icons SVG files do not match manifest icon ids");
-}
-
-await rm(join(vendorDir, "icons"), { force: true, recursive: true });
-await mkdir(vendorDir, { recursive: true });
-await Promise.all([
-  cp(join(sourceDir, "manifest.json"), join(vendorDir, "manifest.json")),
-  cp(join(sourceDir, "meta.json"), join(vendorDir, "meta.json")),
-  cp(svgDir, join(vendorDir, "icons"), { recursive: true }),
-]);
-
-const svgImports = manifest.icons
-  .map((id) => `import ${toIdentifier(id)} from "@/vendor/shared-icons/icons/${id}.svg?raw";`)
-  .join("\n");
-const registry = manifest.icons
-  .map((id) => `  "${id}": makeSvgIcon("${id}", ${toIdentifier(id)}),`)
-  .join("\n");
-
-await writeFile(
-  generatedPath,
-  await prettier.format(
-    `// Generated by scripts/sync-shared-icons.mjs from shared-icons v${manifest.version}. Do not edit.\nimport { makeSvgIcon } from "./_make-icon";\nimport type { Component } from "vue";\n\n${svgImports}\n\nexport const registry: Record<string, Component> = {\n${registry}\n};\n\nexport const Speakers = registry["speakers"];\n`,
-    { filepath: generatedPath },
-  ),
-);
-
-console.log(`Synced shared-icons v${manifest.version}: ${manifest.icons.length} icons`);
 
 function toIdentifier(id) {
   return `icon_${id.replaceAll("-", "_")}`;
