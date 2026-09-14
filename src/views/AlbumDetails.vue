@@ -5,7 +5,7 @@
       :backdrop="backdrop.url"
       :blur-backdrop="backdrop.blurred"
       :track-count="albumTracks?.length"
-      :duration="albumDuration"
+      :duration="runningTime"
       @edit-rows="rowsEditorOpen = true"
     />
 
@@ -52,14 +52,11 @@
           :title="$t('other_versions')"
           :meta="versionItems?.length ? String(versionItems.length) : undefined"
           :items="versionItems"
+          show-source
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         >
           <template #subtitle="{ item }">{{ versionSubtitle(item) }}</template>
-          <template #tag="{ item }">
-            <ProviderIcon :domain="getProviderIconDomain(item)" :size="12" />
-            {{ providerName(item) }}
-          </template>
         </MediaRowList>
 
         <!-- more from the album artist -->
@@ -108,7 +105,7 @@
 <script setup lang="ts">
 import {
   albumBackdrop,
-  albumDuration as tracksDuration,
+  albumDuration,
   albumReview,
   loadAlbumTracks,
 } from "@/components/album/albumData";
@@ -126,10 +123,8 @@ import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { useAlbumRowData } from "@/composables/useAlbumRowData";
 import { api } from "@/plugins/api";
-import { getProviderIconDomain } from "@/plugins/api/helpers";
 import {
   AlbumType,
   EventMessage,
@@ -190,8 +185,8 @@ const review = computed(() =>
   itemDetails.value ? albumReview(itemDetails.value) : undefined,
 );
 
-const albumDuration = computed(() =>
-  albumTracks.value ? tracksDuration(albumTracks.value) : undefined,
+const runningTime = computed(() =>
+  albumTracks.value ? albumDuration(albumTracks.value) : undefined,
 );
 
 const albumArtist = computed(() => itemDetails.value?.artists[0]);
@@ -335,16 +330,5 @@ function versionSubtitle(item: MediaItemType | ItemMapping): string {
   }
   if ("year" in item && item.year) parts.push(String(item.year));
   return parts.join(" · ");
-}
-
-/** The name of the source a version comes from, the library included. */
-function providerName(item: MediaItemType | ItemMapping): string {
-  const domain = getProviderIconDomain(item);
-  if (domain === "library") return $t("library");
-  return (
-    api.getProvider(item.provider)?.name ??
-    api.getProviderManifest(domain)?.name ??
-    item.provider
-  );
 }
 </script>

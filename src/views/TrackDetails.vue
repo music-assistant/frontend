@@ -40,14 +40,11 @@
           :title="$t('other_versions')"
           :meta="versionItems?.length ? String(versionItems.length) : undefined"
           :items="versionItems"
+          show-source
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         >
           <template #subtitle="{ item }">{{ versionSubtitle(item) }}</template>
-          <template #tag="{ item }">
-            <ProviderIcon :domain="getProviderIconDomain(item)" :size="12" />
-            {{ providerName(item) }}
-          </template>
         </MediaRowList>
 
         <!-- similar tracks -->
@@ -88,7 +85,6 @@ import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import MediaRowList from "@/components/details/MediaRowList.vue";
 import RowsEditor from "@/components/details/RowsEditor.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
   releaseSubtitle,
   trackBackdrop,
@@ -103,7 +99,6 @@ import {
 import { useTrackRowData } from "@/composables/useTrackRowData";
 import { getArtistsString, getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { getProviderIconDomain } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
@@ -299,16 +294,5 @@ function similarSubtitle(item: MediaItemType | ItemMapping): string {
   const parts = [getArtistsString(item.artists)];
   if ("album" in item && item.album) parts.push(item.album.name);
   return parts.filter(Boolean).join(" · ");
-}
-
-/** The name of the provider a version comes from, the library included. */
-function providerName(item: MediaItemType | ItemMapping): string {
-  const domain = getProviderIconDomain(item);
-  if (domain === "library") return $t("library");
-  return (
-    api.getProvider(item.provider)?.name ??
-    api.getProviderManifest(domain)?.name ??
-    item.provider
-  );
 }
 </script>
