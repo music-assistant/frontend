@@ -366,7 +366,8 @@ const emit = defineEmits<{
 // Labels arrive display-ready: server-provided entries are resolved server-side for the
 // connection locale, and frontend-only entries are translated where they are constructed.
 // This field just surfaces them, so there is no translation lookup here.
-const displayLabel = () => props.confEntry.label || props.confEntry.key;
+// An empty label is a deliberate "no label"; only a missing one falls back to the key.
+const displayLabel = () => props.confEntry.label ?? props.confEntry.key;
 
 const displayActionLabel = () =>
   props.confEntry.action_label || props.confEntry.label || props.confEntry.key;

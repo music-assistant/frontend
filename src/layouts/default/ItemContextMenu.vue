@@ -163,9 +163,10 @@ const showPlayMenuHeader = ref<boolean>(false);
 
 const visibleItems = computed(() => items.value.filter((x) => !x.hide));
 
-const reference = computed(() => ({
-  getBoundingClientRect: () => new DOMRect(posX.value, posY.value, 0, 0),
-}));
+const reference = computed(() => {
+  const rect = new DOMRect(posX.value, posY.value, 0, 0);
+  return { getBoundingClientRect: () => rect };
+});
 
 const MenuItemIcon = (props: { icon?: string | Component; size?: number }) => {
   if (!props.icon) return null;
@@ -275,12 +276,18 @@ import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { playerVisible } from "@/helpers/players";
 import {
+  canEditPlaylistItems,
+  canManagePlaylist,
+  canSharePlaylist,
+} from "@/helpers/playlist_access";
+import {
   gotoRadio,
   radioActionLabelKey,
   radioRelevant,
   radioSupported,
 } from "@/helpers/radio";
 import {
+  getPlaylistMigrationProviders,
   isAudioSource,
   isItemInLibrary,
   itemIsAvailable,
@@ -300,6 +307,7 @@ import {
   ProviderMapping,
   QueueOption,
   Radio,
+  Scope,
   Track,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -309,6 +317,7 @@ import { toast } from "vue-sonner";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import {
   ArrowDown,
+  ArrowRightLeft,
   ArrowUp,
   Disc3,
   Download,
@@ -332,6 +341,7 @@ import {
   PlusCircle,
   RefreshCw,
   RotateCcw,
+  Share2,
   Shuffle,
   SkipForward,
   Sparkles,
@@ -490,6 +500,9 @@ export const getContextMenuItems = async function (
   }
 
   const firstItem = items[0];
+  const managesLibrary = authManager.hasScope(Scope.LIBRARY_MANAGE);
+  // favorites, library membership, playlists and played state change the library
+  const canEditLibrary = authManager.hasScope(Scope.LIBRARY_WRITE);
 
   // show info
   if (
@@ -525,10 +538,12 @@ export const getContextMenuItems = async function (
     });
   }
 
+  // creates an AI Radio show from the playlist, which takes config.providers.write
   if (
     items.length === 1 &&
     firstItem.media_type === MediaType.PLAYLIST &&
-    store.enabledPlugins.has("ai_radio")
+    store.enabledPlugins.has("ai_radio") &&
+    authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
   ) {
     contextMenuItems.push({
       label: "providers.ai_radio.context.run_with",
@@ -657,6 +672,7 @@ export const getContextMenuItems = async function (
   // add to library (genres are excluded: they are managed via the dedicated
   // add-genre dialog and delete/merge actions, not generic library membership)
   if (
+    canEditLibrary &&
     !isItemInLibrary(resolvedItem) &&
     [
       MediaType.ALBUM,
@@ -685,9 +701,17 @@ export const getContextMenuItems = async function (
       icon: LibraryBig,
     });
   }
-  // remove from library
+  // remove from library (a personal playlist only by whoever manages it)
+  const managesSelectedPlaylists = items.every(
+    (item) =>
+      item.media_type !== MediaType.PLAYLIST ||
+      !("access" in item) ||
+      canManagePlaylist(item, store.currentUser, managesLibrary),
+  );
   if (
+    canEditLibrary &&
     isItemInLibrary(resolvedItem) &&
+    managesSelectedPlaylists &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -730,7 +754,11 @@ export const getContextMenuItems = async function (
     });
   }
   // Favorites handling - supports mixed states like played/unplayed
-  if (items.length > 0 && items.every((item) => "favorite" in item)) {
+  if (
+    canEditLibrary &&
+    items.length > 0 &&
+    items.every((item) => "favorite" in item)
+  ) {
     const favoritableItems = items.filter(
       (item) =>
         [
@@ -815,14 +843,18 @@ export const getContextMenuItems = async function (
   }
 
   // remove from playlist (playlist tracks, radio, podcast, podcast episode, and audiobook items)
-  if (parentItem && parentItem.media_type === MediaType.PLAYLIST) {
+  if (
+    canEditLibrary &&
+    parentItem &&
+    parentItem.media_type === MediaType.PLAYLIST
+  ) {
     const playlist = parentItem as Playlist;
     if (
       (firstItem.media_type === MediaType.TRACK ||
         firstItem.media_type === MediaType.RADIO ||
         firstItem.media_type === MediaType.PODCAST_EPISODE ||
         firstItem.media_type === MediaType.AUDIOBOOK) &&
-      playlist.is_editable
+      canEditPlaylistItems(playlist, store.currentUser, managesLibrary)
     ) {
       contextMenuItems.push({
         label: "remove_playlist",
@@ -839,11 +871,12 @@ export const getContextMenuItems = async function (
   }
   // add to playlist action (tracks, albums, radios, podcasts, podcast episodes, and audiobooks)
   if (
-    firstItem.media_type === MediaType.TRACK ||
-    firstItem.media_type === MediaType.ALBUM ||
-    firstItem.media_type === MediaType.RADIO ||
-    firstItem.media_type === MediaType.PODCAST_EPISODE ||
-    firstItem.media_type === MediaType.AUDIOBOOK
+    canEditLibrary &&
+    (firstItem.media_type === MediaType.TRACK ||
+      firstItem.media_type === MediaType.ALBUM ||
+      firstItem.media_type === MediaType.RADIO ||
+      firstItem.media_type === MediaType.PODCAST_EPISODE ||
+      firstItem.media_type === MediaType.AUDIOBOOK)
   ) {
     contextMenuItems.push({
       label: "add_playlist",
@@ -859,7 +892,7 @@ export const getContextMenuItems = async function (
   }
 
   const playLogItem = items.length === 1 ? items[0] : undefined;
-  if (itemSupportsPlayLog(playLogItem)) {
+  if (canEditLibrary && itemSupportsPlayLog(playLogItem)) {
     const item = playLogItem;
     // mark played: anything not yet fully played, including in-progress items
     if (!item.fully_played) {
@@ -898,6 +931,7 @@ export const getContextMenuItems = async function (
 
   // update metadata
   if (
+    managesLibrary &&
     items.length === 1 &&
     items[0] == parentItem &&
     items[0].media_type !== MediaType.COLLECTION
@@ -943,10 +977,14 @@ export const getContextMenuItems = async function (
       featureMap[item.media_type],
     );
     // For playlists, also check is_editable flag (builtin special playlists are not editable)
-    const isEditablePlaylist =
-      item.media_type !== MediaType.PLAYLIST ||
-      (item as Playlist).is_editable !== false;
-    if (hasBuiltinProvider && supportsEdit && isEditablePlaylist) {
+    // and that the user manages the playlist (a personal one is only edited by its owner);
+    // radios and tracks are edited by a library manager
+    const canEditItem =
+      item.media_type === MediaType.PLAYLIST
+        ? (item as Playlist).is_editable !== false &&
+          canManagePlaylist(item as Playlist, store.currentUser, managesLibrary)
+        : managesLibrary;
+    if (hasBuiltinProvider && supportsEdit && canEditItem) {
       contextMenuItems.push({
         label: labelMap[item.media_type],
         labelArgs: [],
@@ -959,6 +997,7 @@ export const getContextMenuItems = async function (
   }
   // refresh item
   if (
+    managesLibrary &&
     items.length === 1 &&
     items[0].media_type !== MediaType.COLLECTION &&
     (items[0] == parentItem || !itemIsAvailable(items[0]))
@@ -1007,6 +1046,49 @@ export const getContextMenuItems = async function (
       icon: Download,
     });
   }
+  // migrate playlist (static library playlists only, to a provider that
+  // supports creating playlists and editing their tracks)
+  if (
+    canEditLibrary &&
+    items.length === 1 &&
+    items[0] == parentItem &&
+    items[0].media_type === MediaType.PLAYLIST &&
+    items[0].provider === "library" &&
+    !(items[0] as Playlist).is_dynamic
+  ) {
+    const playlist = items[0] as Playlist;
+    if (getPlaylistMigrationProviders(playlist).length > 0) {
+      contextMenuItems.push({
+        label: "migrate_playlist.action",
+        labelArgs: [],
+        action: () => {
+          eventbus.emit("migratePlaylistDialog", { playlist });
+        },
+        icon: ArrowRightLeft,
+      });
+    }
+  }
+  // share playlist (a Music Assistant playlist the user owns or manages)
+  if (
+    items.length === 1 &&
+    items[0].media_type === MediaType.PLAYLIST &&
+    "provider_mappings" in items[0]
+  ) {
+    const playlist = items[0] as Playlist;
+    if (
+      canEditLibrary &&
+      canSharePlaylist(playlist, store.currentUser, managesLibrary)
+    ) {
+      contextMenuItems.push({
+        label: "share_playlist",
+        labelArgs: [],
+        action: () => {
+          eventbus.emit("playlistAccessDialog", { playlist });
+        },
+        icon: Share2,
+      });
+    }
+  }
   // pin / unpin shortcut in sidebar (playlist, artist, album, track, radio, podcast, audiobook, genre)
   if (items.length === 1 && isShortcutItem(items[0]) && !!items[0].uri) {
     const shortcutItem = items[0];
@@ -1049,6 +1131,7 @@ export const getContextMenuItems = async function (
   }
   // map to main item (add provider mapping)
   if (
+    managesLibrary &&
     items.length === 1 &&
     parentItem &&
     parentItem.provider == "library" &&
@@ -1084,6 +1167,7 @@ export const getContextMenuItems = async function (
   }
   // link to genre (library items only, non-genre)
   if (
+    managesLibrary &&
     items.every(
       (i) =>
         i.media_type !== MediaType.GENRE &&
@@ -1109,7 +1193,7 @@ export const getContextMenuItems = async function (
       (i) => i.media_type === MediaType.GENRE && i.provider === "library",
     ) &&
     genresShareTaxonomy(items.map((i) => (i as Genre).content_type)) &&
-    authManager.isAdmin()
+    managesLibrary
   ) {
     contextMenuItems.push({
       label: "merge_into",
@@ -1130,7 +1214,7 @@ export const getContextMenuItems = async function (
     items.every(
       (i) => i.media_type === MediaType.GENRE && i.provider === "library",
     ) &&
-    authManager.isAdmin()
+    managesLibrary
   ) {
     contextMenuItems.push({
       label: "delete_genre",
@@ -1232,6 +1316,7 @@ export const getPlaybackContextMenuItems = async function (
   }
   // Default/configured enqueue option at the top (if play from here is not applicable)
   else if (
+    defaultEnqueueOption === undefined ||
     [QueueOption.PLAY, QueueOption.REPLACE].includes(defaultEnqueueOption)
   ) {
     playMenuItems.push({
@@ -1257,6 +1342,7 @@ export const getPlaybackContextMenuItems = async function (
   });
   // Multi-select mark as played/unplayed for podcast episodes
   if (
+    authManager.hasScope(Scope.LIBRARY_WRITE) &&
     items.length > 1 &&
     items.every((item) => item.media_type === MediaType.PODCAST_EPISODE)
   ) {
@@ -1345,14 +1431,20 @@ export const getPlaybackContextMenuItems = async function (
 const LIVE_SOURCE_MEDIA_TYPES = [MediaType.RADIO, MediaType.AUDIO_SOURCE];
 
 /**
- * The configured default enqueue option for the given item's media type.
+ * The configured default enqueue option for the given item's media type, or
+ * undefined for a role that may not read it: a play command without an option
+ * gets the same default from the server.
  *
- * Only "play" and "replace" are configurable, so the result always starts
- * playback right away.
+ * Only "play" and "replace" are configurable, so either way the item starts
+ * playing right away.
  */
 const getDefaultEnqueueOption = async function (
   item: MediaItemTypeOrItemMapping,
-): Promise<QueueOption> {
+): Promise<QueueOption | undefined> {
+  // the server's own defaults apply to a role that may not read the core settings
+  if (!authManager.hasScope(Scope.CONFIG_CORE_READ)) {
+    return undefined;
+  }
   const configKey = LIVE_SOURCE_MEDIA_TYPES.includes(item.media_type)
     ? "default_enqueue_option_live_sources"
     : `default_enqueue_option_${item.media_type}`;
@@ -1364,11 +1456,11 @@ const getDefaultEnqueueOption = async function (
 
 /**
  * Menu entries for every way the given items can be started or queued, with the
- * configured default marked as selected.
+ * configured default, when known, marked as selected.
  */
 const buildEnqueueMenuItems = function (
   items: MediaItemTypeOrItemMapping[],
-  defaultEnqueueOption: QueueOption,
+  defaultEnqueueOption: QueueOption | undefined,
 ): ContextMenuItem[] {
   return [
     QueueOption.PLAY,
@@ -1401,7 +1493,7 @@ const buildEnqueueMenuItems = function (
  */
 const startAudioSourceMenuItem = function (
   items: MediaItemTypeOrItemMapping[],
-  defaultEnqueueOption: QueueOption,
+  defaultEnqueueOption: QueueOption | undefined,
 ): ContextMenuItem {
   return {
     label: "play_now",

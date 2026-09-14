@@ -38,6 +38,15 @@ vi.mock("@/plugins/store", async () => {
   };
 });
 
+// signed in as a member
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+
 vi.mock("@/composables/useServerTime", () => ({
   // Date.now() is intentional here: the highlight test advances fake wall time.
   serverNow: () => Date.now() / 1000,

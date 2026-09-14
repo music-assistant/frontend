@@ -749,13 +749,16 @@ export class WebRTCTransport extends BaseTransport {
     this.setState(TransportState.RECONNECTING);
     this.emit("close", "Connection lost, reconnecting...");
 
-    const backoff = Math.min(
-      this.options.reconnectDelay *
-        Math.pow(this.options.reconnectDelayGrowth, this.reconnectAttempts),
-      this.options.maxReconnectDelay,
-    );
-    // Jitter so reconnects don't line up at fixed intervals.
-    const delay = Math.round(backoff * (0.5 + Math.random() * 0.5));
+    // First retry is immediate; later ones back off with jitter so reconnects don't line up.
+    let delay = 0;
+    if (this.reconnectAttempts > 0) {
+      const backoff = Math.min(
+        this.options.reconnectDelay *
+          Math.pow(this.options.reconnectDelayGrowth, this.reconnectAttempts),
+        this.options.maxReconnectDelay,
+      );
+      delay = Math.round(backoff * (0.5 + Math.random() * 0.5));
+    }
 
     console.log(
       `[WebRTCTransport] Scheduling reconnect attempt ${this.reconnectAttempts + 1} in ${delay}ms`,

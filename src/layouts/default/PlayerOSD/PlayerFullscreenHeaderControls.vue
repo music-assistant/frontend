@@ -139,7 +139,29 @@
 
     <!-- autoplay: direct toggle (primary while enabled). Hidden while dynamic
          mode is active or for infinite streams (autoplay is moot there). -->
-    <TooltipProvider v-if="autoplayApplicable && queue" :delay-duration="200">
+    <AutoplayRepeatLockButton
+      v-if="autoplayApplicable && queue && repeatLocked"
+      :aria-label="$t('autoplay')"
+      aria-checked="false"
+      aria-disabled="true"
+      role="switch"
+      :class="[
+        pillClass,
+        buttonVariants({
+          variant: 'ghost-outline',
+          size: showLabel ? 'xs' : 'icon-xs',
+        }),
+        'text-muted-foreground opacity-70 cursor-help',
+      ]"
+      :description="$t('autoplay_repeat_disabled')"
+    >
+      <AutoplayIcon :size="16" />
+      <span v-if="showLabel">{{ $t("autoplay") }}</span>
+    </AutoplayRepeatLockButton>
+    <TooltipProvider
+      v-else-if="autoplayApplicable && queue"
+      :delay-duration="200"
+    >
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
@@ -226,7 +248,7 @@
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import SleepTimerBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SleepTimerBtn.vue";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   ButtonGroup,
   ButtonGroupSeparator,
@@ -239,6 +261,7 @@ import {
 } from "@/components/ui/tooltip";
 import AutoplayIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/AutoplayIcon.vue";
 import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
+import AutoplayRepeatLockButton from "@/layouts/default/PlayerOSD/AutoplayRepeatLockButton.vue";
 import { useQueueModes } from "@/layouts/default/PlayerOSD/useQueueModes";
 import { useActiveAudioPath } from "@/composables/useActiveAudioPath";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
@@ -306,6 +329,7 @@ const {
   sources,
   dynamicModeActive,
   autoplayEnabled,
+  repeatLocked,
   autoplayApplicable,
   setAutoplay,
 } = useQueueModes();

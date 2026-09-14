@@ -29,8 +29,14 @@ const onPick = (option: ConfigValueOption) => {
 
 <template>
   <div class="flex w-full flex-col gap-2 py-1">
-    <span :id="labelId" class="text-muted-foreground text-sm">{{ label }}</span>
-    <div role="group" :aria-labelledby="labelId" class="flex flex-col gap-2">
+    <span v-if="label" :id="labelId" class="text-muted-foreground text-sm">{{
+      label
+    }}</span>
+    <div
+      role="group"
+      :aria-labelledby="label ? labelId : undefined"
+      class="flex flex-col gap-2"
+    >
       <Button
         v-for="(option, index) of options"
         :key="index"
