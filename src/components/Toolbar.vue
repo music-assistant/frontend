@@ -5,6 +5,8 @@
         :icon="typeof icon === 'string' ? icon : undefined"
         size="small"
         :disabled="iconAction == null"
+        :aria-label="toolbarIconLabel"
+        :aria-hidden="toolbarIconLabel ? undefined : true"
         style="opacity: 0.8"
         @click="iconAction?.()"
       >
@@ -34,6 +36,8 @@
         variant="ghost"
         size="icon-lg"
         :title="menuItemLabel(menuItem)"
+        :aria-label="menuItemLabel(menuItem)"
+        :aria-haspopup="menuItem.subItems?.length ? 'menu' : undefined"
         :disabled="menuItem.disabled == true"
         @click="(e: MouseEvent) => onMenuItemClick(e, menuItem)"
       >
@@ -46,7 +50,12 @@
       <!-- overflow menu with (remaining) items if on mobile -->
       <DropdownMenu v-if="overflowItems.length" v-model:open="overflowMenuOpen">
         <DropdownMenuTrigger as-child>
-          <Button variant="ghost" size="icon-lg" :title="$t('menu')">
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            :title="$t('menu')"
+            :aria-label="$t('menu')"
+          >
             <span class="relative inline-flex">
               <EllipsisVertical class="size-[22px]" />
               <span v-if="menuActive" :class="ACTIVE_DOT_CLASS"></span>
@@ -112,6 +121,8 @@
 </template>
 
 <script setup lang="ts">
+import { $t } from "@/plugins/i18n";
+import { ACTIVE_DOT_CLASS } from "@/constants";
 import MenuItemIcon from "@/components/MenuItemIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -145,6 +156,7 @@ interface Props {
   menuActive?: boolean;
   isDiscoverPage?: boolean;
   iconAction?: () => void;
+  iconLabel?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
   color: "transparent",
@@ -156,10 +168,8 @@ const props = withDefaults(defineProps<Props>(), {
   enforceOverflowMenu: false,
   menuActive: false,
   iconAction: undefined,
+  iconLabel: undefined,
 });
-
-const ACTIVE_DOT_CLASS =
-  "bg-primary absolute -top-0.5 -right-0.5 size-1.5 rounded-full";
 
 const overflowMenuOpen = ref(false);
 
@@ -224,6 +234,15 @@ const onMenuItemClick = (
     menuItem.action();
   }
 };
+
+const toolbarIconLabel = computed(() => {
+  if (props.iconAction == null && !props.iconLabel) return undefined;
+  if (props.iconLabel) return props.iconLabel;
+  // an actionable icon is a back button; name it after its action, never
+  // after the page title
+  if (props.iconAction != null) return $t("back");
+  return undefined;
+});
 
 // emitters
 const emit = defineEmits<{

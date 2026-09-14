@@ -237,9 +237,10 @@ import {
 } from "@/composables/background-tasks/useBackgroundTaskDisplay";
 import {
   type BackgroundTask,
+  Scope,
   TaskStatus,
-  UserRole,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 
@@ -291,9 +292,9 @@ const scheduleLabel = computed(() => {
   );
 });
 
-const canOpenUsers = computed(() => store.currentUser?.role === UserRole.ADMIN);
-const canEditSchedule = computed(
-  () => store.currentUser?.role === UserRole.ADMIN,
+const canOpenUsers = computed(() => authManager.hasScope(Scope.USERS_READ));
+const canEditSchedule = computed(() =>
+  authManager.hasScope(Scope.SYSTEM_MANAGE),
 );
 
 const resolveUserLabel = (

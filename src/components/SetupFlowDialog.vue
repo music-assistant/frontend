@@ -220,9 +220,9 @@
           <Button
             v-if="!autoAdvanceEntry"
             :disabled="!canSubmit"
+            :loading="busy"
             @click="submit"
           >
-            <Spinner v-if="busy" class="size-4" />
             {{
               step.last_step
                 ? $t("settings.setup_flow.finish")

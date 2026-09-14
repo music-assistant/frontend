@@ -3,6 +3,7 @@
   <ListItem
     link
     :show-menu-btn="showMenu"
+    :menu-button-label="menuButtonLabel"
     :class="{
       unavailable: !isAvailable,
       'listitem-selecting': showCheckboxes,
@@ -275,6 +276,7 @@
           getBreakpointValue('bp3') &&
           'favorite' in item &&
           showFavorite &&
+          canEditLibrary &&
           item.media_type != MediaType.COLLECTION &&
           !$vuetify.display.mobile
         "
@@ -291,6 +293,7 @@
         variant="text"
         size="small"
         class="listitem-mobile-play"
+        :aria-label="playButtonLabel"
         :disabled="disablePlayButton"
         @click.stop="onPlayClick"
       >
@@ -322,10 +325,13 @@ import {
   AlbumType,
   ContentType,
   MediaType,
+  Scope,
   type MediaCollection,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import { $t } from "@/plugins/i18n";
 import { useMediaQuery } from "@vueuse/core";
 import { Play } from "@lucide/vue";
 import { computed } from "vue";
@@ -365,6 +371,10 @@ export interface Props {
 const isTouch = useMediaQuery("(hover: none)");
 
 const displayName = computed(() => compProps.item.name);
+const playButtonLabel = computed(() => `${$t("play")} ${displayName.value}`);
+const menuButtonLabel = computed(
+  () => `${$t("more_options")}: ${displayName.value}`,
+);
 
 const compProps = withDefaults(defineProps<Props>(), {
   albumTrackView: false,
@@ -384,6 +394,10 @@ const compProps = withDefaults(defineProps<Props>(), {
 });
 
 // computed properties
+// favouring an item changes the library
+const canEditLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE),
+);
 const collabArtists = computed(() => {
   if (!("artists" in compProps.item) || !compProps.item.artists) return "";
   const albumArtists =

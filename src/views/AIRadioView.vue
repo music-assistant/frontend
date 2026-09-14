@@ -44,7 +44,7 @@
         </Button>
       </header>
 
-      <div class="space-y-3">
+      <div v-if="canEdit" class="space-y-3">
         <div class="flex items-center justify-between gap-3">
           <h2 class="text-lg font-semibold tracking-tight">
             {{ $t("providers.ai_radio.hosts.title") }}
@@ -91,6 +91,7 @@
         <AlertDescription>
           <p>{{ $t("providers.ai_radio.prereq.description") }}</p>
           <Button
+            v-if="canEdit"
             variant="outline"
             size="sm"
             class="mt-2"
@@ -115,7 +116,7 @@
           <h2 class="text-lg font-semibold tracking-tight">
             {{ $t("providers.ai_radio.gallery.title") }}
           </h2>
-          <Button @click="openCreateDialog()">
+          <Button v-if="canEdit" @click="openCreateDialog()">
             <Plus class="mr-1 h-4 w-4" />
             {{ $t("providers.ai_radio.gallery.add_show") }}
           </Button>
@@ -134,7 +135,7 @@
               {{ $t("providers.ai_radio.gallery.empty_description") }}
             </p>
           </div>
-          <Button @click="openCreateDialog()">
+          <Button v-if="canEdit" @click="openCreateDialog()">
             <Plus class="mr-1 h-4 w-4" />
             {{ $t("providers.ai_radio.gallery.create_cta") }}
           </Button>
@@ -190,6 +191,8 @@ import {
   uniqueHostName,
   type HostDraft,
 } from "@/helpers/ai_radio";
+import { Scope } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { Plus, RefreshCw, Sparkles, TriangleAlert, X } from "@lucide/vue";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
@@ -215,6 +218,12 @@ const {
   dismissNoAiProviderAlert,
 } = useShows();
 const { hosts, presets, loadingHosts, loadHosts, loadPresets } = useHosts();
+
+// everyone plays the shows; creating and changing shows and hosts takes
+// config.providers.write
+const canEdit = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+);
 
 const createDialogOpen = ref(false);
 const createDialogInitialPlaylist = ref<PlaylistSelection | undefined>();
@@ -297,6 +306,8 @@ async function closeCustomizeHost() {
 }
 
 function applyRouteQuery() {
+  // both deep links open an editor
+  if (!canEdit.value) return;
   const stationId = getQueryValue(route.query.station_id);
   if (stationId) {
     onCustomize(stationId);
@@ -319,7 +330,7 @@ function applyRouteQuery() {
 async function handleRefresh() {
   try {
     await Promise.all([
-      loadHosts(),
+      ...(canEdit.value ? [loadHosts()] : []),
       loadShows(),
       loadSections(),
       loadStatus(),
@@ -337,7 +348,7 @@ let unmounted = false;
 onMounted(async () => {
   try {
     await Promise.all([
-      loadHosts(),
+      ...(canEdit.value ? [loadHosts()] : []),
       loadShows(),
       loadSections(),
       loadPlaylists(),
@@ -349,8 +360,10 @@ onMounted(async () => {
   // so bail out rather than start a poll loop nothing will stop and rewrite the
   // query of a route this view no longer owns.
   if (unmounted) return;
-  // Best effort: the "Add host" menu still works with just "Blank host" if this fails.
-  void loadPresets().catch(() => {});
+  if (canEdit.value) {
+    // Best effort: the "Add host" menu still works with just "Blank host" if this fails.
+    void loadPresets().catch(() => {});
+  }
   startStatusPolling();
   applyRouteQuery();
 });

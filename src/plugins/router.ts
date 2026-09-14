@@ -1,8 +1,10 @@
+import { canOpenAIRadio } from "@/helpers/ai_radio_access";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
+import { hasOnboardingTrack } from "@/helpers/onboarding_access";
 import { $t } from "@/plugins/i18n";
-import { watch } from "vue";
+import { nextTick, watch } from "vue";
 import {
   createRouter,
   createWebHashHistory,
@@ -11,9 +13,21 @@ import {
 } from "vue-router";
 import { toast } from "vue-sonner";
 import { api, ConnectionState } from "./api";
+import { Scope } from "./api/interfaces";
 import { authManager } from "./auth";
 import { notifyHARouteChange } from "./homeassistant";
 import { store } from "./store";
+
+declare module "vue-router" {
+  interface RouteMeta {
+    // only a role granting this scope may open the route
+    requiresScope?: Scope;
+    // only a session this answers true for may open the route: what a route
+    // takes when no single scope decides it. Checked like a scope, after the
+    // guard has waited for the connection, so it reads a user who is in
+    requiresAccess?: () => boolean;
+  }
+}
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -179,7 +193,7 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
-          if (!store.enabledPlugins.has("ai_radio")) {
+          if (!store.enabledPlugins.has("ai_radio") || !canOpenAIRadio()) {
             toast.error($t("providers.ai_radio.toast.unavailable"));
             return { name: "discover" };
           }
@@ -244,6 +258,15 @@ export const routes: RouteRecordRaw[] = [
             component: () =>
               import(
                 /* webpackChunkName: "artist" */ "@/views/ArtistDetails.vue"
+              ),
+            props: true,
+          },
+          {
+            path: ":provider/:itemId/:listing",
+            name: "artistlisting",
+            component: () =>
+              import(
+                /* webpackChunkName: "artistlisting" */ "@/views/ArtistListing.vue"
               ),
             props: true,
           },
@@ -435,6 +458,19 @@ export const routes: RouteRecordRaw[] = [
           import(
             /* webpackChunkName: "music-quiz" */ "@/views/MusicQuizDashboardView.vue"
           ),
+        // hosting a quiz lets guests join, which is what users.invite grants
+        meta: { requiresScope: Scope.USERS_INVITE },
+      },
+      {
+        path: "/onboarding",
+        name: "onboarding",
+        component: () =>
+          import(/* webpackChunkName: "onboarding" */ "@/views/Onboarding.vue"),
+        // the wizard runs the setup for an admin and the welcome for everyone
+        // else who lives here, and no one scope covers both; requiresAccess
+        // also makes the guard wait for INITIALIZED, so the first step is never
+        // picked from an empty provider map on a hard reload
+        meta: { requiresAccess: hasOnboardingTrack },
       },
       {
         path: "/settings",
@@ -462,7 +498,8 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "providersettings" */ "@/views/settings/Providers.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            // a member manages the music sources it owns from the same page
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
           },
           {
             path: "players",
@@ -472,7 +509,8 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "playersettings" */ "@/views/settings/Players.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            // guests and members read player configs, these pages change them
+            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
           {
             path: "system",
@@ -482,7 +520,8 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "systemsettings" */ "@/views/settings/SystemConfig.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            // members read core settings, the server settings pages change them
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {
             path: "audio-analysis",
@@ -492,7 +531,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "audioanalysissettings" */ "@/views/settings/AudioAnalysis.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.SYSTEM_MANAGE },
           },
           {
             path: "remote-access",
@@ -502,7 +541,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "remoteaccesssettings" */ "@/views/settings/RemoteAccessSettings.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.SYSTEM_MANAGE },
           },
           {
             path: "frontend",
@@ -521,7 +560,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "usersettings" */ "@/views/settings/UserManagement.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.USERS_READ },
           },
           {
             path: "about",
@@ -540,7 +579,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "diagnostics" */ "@/views/settings/Diagnostics.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.SYSTEM_MANAGE },
           },
           {
             path: "tasks",
@@ -550,6 +589,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "backgroundtasks" */ "@/views/settings/BackgroundTasks.vue"
               ),
             props: true,
+            meta: { requiresScope: Scope.SYSTEM_READ },
           },
           {
             path: "genremanagement",
@@ -559,7 +599,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "genremanagement" */ "@/views/settings/GenreManagement.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.LIBRARY_MANAGE },
           },
           {
             path: "editprovider/:instanceId",
@@ -569,7 +609,8 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editprovider" */ "@/views/settings/EditProvider.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            // members reach the options of the music sources they own from here too
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
           },
           {
             path: "editplayer/:playerId",
@@ -579,7 +620,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayer.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
           {
             path: "editplayer/:playerId/options",
@@ -589,7 +630,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayerOptions.vue"
               ),
             props: true,
-            meta: { requiresAdmin: false },
+            meta: { requiresScope: Scope.PLAYERS_CONTROL },
           },
           {
             path: "editplayer/:playerId/dsp",
@@ -599,7 +640,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editdsp" */ "@/views/settings/EditPlayerDsp.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
           {
             path: "editqueue/:queueId",
@@ -609,7 +650,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editqueue" */ "@/views/settings/EditPlayerQueue.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
           {
             path: "editcore/:domain",
@@ -619,7 +660,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editcore" */ "@/views/settings/EditCoreConfig.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {
             path: "addgroup/:provider",
@@ -629,7 +670,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "addgroup" */ "@/views/settings/AddPlayerGroup.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
         ],
       },
@@ -693,7 +734,7 @@ router.afterEach((_to, _from, failure) => {
   if (!failure) sessionStorage.removeItem(CHUNK_RELOAD_STORAGE_KEY);
 });
 
-// Navigation guard for admin-only routes and guest mode restrictions
+// Navigation guard for scope-gated routes and guest mode restrictions
 router.beforeEach(async (to) => {
   const guestRedirect = getGuestNavigationRedirect(
     authManager.isGuestAccessSession(),
@@ -720,12 +761,18 @@ router.beforeEach(async (to) => {
     }
   }
 
-  // Check admin-only routes - check all matched routes for requiresAdmin meta
-  const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
+  // Check gated routes - every matched route may require a scope, a predicate,
+  // or both
+  const requiredScopes = to.matched.flatMap((record) =>
+    record.meta.requiresScope ? [record.meta.requiresScope] : [],
+  );
+  const accessChecks = to.matched.flatMap((record) =>
+    record.meta.requiresAccess ? [record.meta.requiresAccess] : [],
+  );
 
-  if (requiresAdmin) {
-    // Wait for API to be initialized before checking admin access
-    // This ensures store.currentUser is set before we check permissions
+  if (requiredScopes.length || accessChecks.length) {
+    // Wait for API to be initialized before checking access
+    // This ensures store.currentUser and store.roleScopes are set before we check permissions
     if (api.state.value !== ConnectionState.INITIALIZED) {
       // Wait for initialization to complete
       await new Promise<void>((resolve) => {
@@ -744,7 +791,7 @@ router.beforeEach(async (to) => {
 
     const currentUser = store.currentUser;
     console.debug(
-      "Admin route check:",
+      "Route access check:",
       to.path,
       "user:",
       currentUser?.username,
@@ -752,39 +799,40 @@ router.beforeEach(async (to) => {
       currentUser?.role,
     );
 
-    if (!currentUser || currentUser.role !== "admin") {
-      console.warn("Admin access required for", to.path);
+    const missingScope = requiredScopes.find(
+      (scope) => !authManager.hasScope(scope),
+    );
+    if (missingScope) {
+      console.warn(`The ${missingScope} scope is required for`, to.path);
+      return { name: "discover" };
+    }
+
+    if (accessChecks.some((mayOpen) => !mayOpen())) {
+      console.warn("This session may not open", to.path);
       return { name: "discover" };
     }
   }
 });
 
-router.afterEach((to, from) => {
+router.afterEach((to) => {
   if (store.isIngressSession) {
     notifyHARouteChange(to.fullPath);
   }
+});
 
-  // Clean up onboard parameter from URL if present
-  if (store.isOnboarding && to.path === "/settings") {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("onboard")) {
-      urlParams.delete("onboard");
-      const cleanUrl =
-        window.location.pathname +
-        (urlParams.toString() ? "?" + urlParams.toString() : "") +
-        window.location.hash;
-      window.history.replaceState({}, "", cleanUrl);
-    }
-  }
-
-  // Reset onboarding flag when navigating away from settings
-  if (
-    store.isOnboarding &&
-    from.path === "/settings" &&
-    to.path !== "/settings"
-  ) {
-    store.isOnboarding = false;
-  }
+// Most views share the .content-section scroll container which stays mounted across route changes
+// Prevent the scroll position from staying the same when changing route
+router.afterEach((to, from, failure) => {
+  if (failure) return;
+  // Don't reset on same route
+  if (to.path === from.path) return;
+  if (router.options.history.state.forward != null) return;
+  // nextTick needed because afterEach fires before Vue unmounts the page
+  // Resetting here would wipe its scroll position before it's saved
+  nextTick(() => {
+    const contentSection = document.querySelector(".content-section");
+    if (contentSection) contentSection.scrollTop = 0;
+  });
 });
 
 export default router;

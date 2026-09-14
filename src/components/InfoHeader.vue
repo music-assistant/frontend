@@ -146,7 +146,7 @@
                 color="primary"
                 icon="mdi-calendar"
               />
-              {{ new Date(item.metadata.release_date).getFullYear() }}
+              {{ new Date(item.metadata.release_date).getUTCFullYear() }}
             </v-card-subtitle>
 
             <!-- item artists -->
@@ -263,7 +263,9 @@
                 icon="mdi-account-music"
               />
               <MarqueeText :sync="marqueeSync">
-                <a style="color: primary">{{ item.owner }}</a>
+                <slot name="owner"
+                  ><a style="color: primary">{{ item.owner }}</a></slot
+                >
               </MarqueeText>
             </v-card-subtitle>
 
@@ -355,6 +357,7 @@
             <MenuButton
               id="playbutton"
               :text="playButtonText"
+              :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
               :disabled="!item"
               :loading="playActionInProgress"
               style="margin-right: 8px; margin-bottom: 4px"
@@ -367,21 +370,18 @@
               class="flex items-center gap-2"
             >
               <!-- favorite (heart) icon -->
-              <IconHeartFilled
-                v-if="item.favorite"
-                :size="24"
-                class="cursor-pointer"
-                :title="$t('tooltip.favorite')"
+              <button
+                v-if="canEditLibrary"
+                type="button"
+                class="favorite-icon-button"
+                :aria-label="$t('tooltip.favorite')"
+                :aria-pressed="item.favorite ? 'true' : 'false'"
+                :title="favoriteButtonLabel"
                 @click="api.toggleFavorite(item)"
-              />
-              <IconHeart
-                v-else
-                :stroke-width="2"
-                :size="24"
-                class="cursor-pointer"
-                :title="$t('tooltip.favorite')"
-                @click="api.toggleFavorite(item)"
-              />
+              >
+                <IconHeartFilled v-if="item.favorite" :size="24" />
+                <IconHeart v-else :stroke-width="2" :size="24" />
+              </button>
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
               <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
@@ -390,32 +390,33 @@
                 v-if="item.media_type == MediaType.TRACK"
                 :audio-metadata="(item as Track).audio_metadata"
               />
-              <!-- slot for extra action icons (e.g. smart playlist edit) -->
+              <!-- slot for extra action buttons (e.g. smart playlist edit) -->
               <slot name="append-actions"></slot>
               <!-- merge genre button (admin only) -->
-              <Merge
-                v-if="
-                  item.media_type === MediaType.GENRE &&
-                  item.provider === 'library' &&
-                  isAdmin
-                "
-                :size="22"
-                class="cursor-pointer"
+              <Button
+                v-if="canManageGenre"
+                type="button"
+                variant="ghost-icon"
+                size="icon-xs"
+                :aria-label="$t('merge_into')"
                 :title="$t('merge_into')"
                 @click="mergeGenre"
-              />
+              >
+                <Merge class="size-5.5" />
+              </Button>
               <!-- delete genre button (admin only) -->
-              <Trash2
-                v-if="
-                  item.media_type === MediaType.GENRE &&
-                  item.provider === 'library' &&
-                  isAdmin
-                "
-                :size="22"
-                class="cursor-pointer ml-2"
+              <Button
+                v-if="canManageGenre"
+                type="button"
+                variant="ghost-icon"
+                size="icon-xs"
+                class="ml-2"
+                :aria-label="$t('delete_genre')"
                 :title="$t('delete_genre')"
                 @click="deleteGenre"
-              />
+              >
+                <Trash2 class="size-5.5" />
+              </Button>
             </div>
           </div>
           <div
@@ -540,6 +541,7 @@ import {
   ImageType,
   MediaCollection,
   MediaType,
+  Scope,
   Track,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -628,7 +630,7 @@ watch(shortcutsPreference, async () => {
 const showGenreChipContextMenu = (evt: Event, genre: Genre) => {
   if (
     !compProps.item ||
-    !isAdmin.value ||
+    !canManageLibrary.value ||
     compProps.item.provider !== "library"
   )
     return;
@@ -756,7 +758,22 @@ const artistLogo = computed(() => {
   return getImageThumbForItem(compProps.item, ImageType.LOGO);
 });
 
-const isAdmin = computed(() => authManager.isAdmin());
+const canManageLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_MANAGE),
+);
+const canEditLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE),
+);
+// merging and deleting a genre is limited to library genres and library managers
+const canManageGenre = computed(
+  () =>
+    compProps.item?.media_type === MediaType.GENRE &&
+    compProps.item.provider === "library" &&
+    canManageLibrary.value,
+);
+const favoriteButtonLabel = computed(() =>
+  compProps.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
+);
 
 const mergeGenre = () => {
   if (!compProps.item) return;
@@ -821,6 +838,25 @@ const collectionNarrators = computed(() => {
 .background-image .v-img__img--cover {
   object-position: 50% 20%;
 }
+
+.favorite-icon-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: currentColor;
+  cursor: pointer;
+  display: inline-flex;
+  height: 24px;
+  justify-content: center;
+  padding: 0;
+  width: 24px;
+}
+
+.favorite-icon-button:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+}
+
 .v-card--variant-elevated {
   box-shadow: none;
   border-width: 1px;

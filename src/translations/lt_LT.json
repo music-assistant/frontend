@@ -13,7 +13,7 @@
         "single": "Vienas",
         "unknown": "Nežinomas albumo tipas",
         "audiobook": "Audioknyga",
-        "podcast": "Podcast'as",
+        "podcast": "Tinklalaidė",
         "live": "Tiesiogiai",
         "soundtrack": "Garso takelis"
     },
@@ -116,14 +116,12 @@
         "reload": "Perkrauti",
         "save": "Išsaugoti",
         "settings": "Nustatymai",
-        "setup_provider": "Sąrankos teikėjas: {0}",
         "sync": "Sinchronizuoti dabar",
         "sync_running": "Šis tiekėjas dabar sinchronizuojamas",
         "core_modules": "Pagrindiniai moduliai",
         "server_info": "Serverio informacija",
         "server_id": "Serverio ID",
         "server_version": "Serverio versija",
-        "server_base_url": "Bazinis URL",
         "server_as_addon": "Home Assistant priedas",
         "artists_in_library": "Menininkai bibliotekoje",
         "albums_in_library": "Albumai bibliotekoje",
@@ -301,7 +299,6 @@
         "about_description": "Informacija apie versiją, autoriai ir kita",
         "auto_refresh_log": "Automatinis atnaujinimas",
         "log_truncated": "Rodoma paskutinė {0} eilutės. Atsisiųskite visą žurnalo failą, kad pamatytumėte visą istoriją.",
-        "version_info": "Versijos informacija",
         "library_stats": "Bibliotekos statistika",
         "links": "Nuorodos",
         "changelog": "Pakeitimų žurnalas",
@@ -397,7 +394,7 @@
         "category": {
             "web_player": "Žiniatinklio grotuvas",
             "protocol_settings": "Išvesties protokolas(-ai)",
-            "options": "Žaidėjo parinktys"
+            "options": "Grotuvo parinktys"
         },
         "onboarding_subtitle": "Pradėkime prijungdami muzikos šaltinius ir garso įrenginius.",
         "onboarding_music_title": "Muzika",
@@ -440,7 +437,7 @@
                 "right": "Dešinė"
             }
         },
-        "add_group_player_desc_sync": "Sukurkite nuolatinę sinchronizavimo grupę su žaidėjais, kurie suderinami su sinchronizavimu. Kai žaisite šioje žaidėjų grupėje, jos nariai bus automatiškai sinchronizuoti.",
+        "add_group_player_desc_sync": "Sukurkite nuolatinę grotuvų, kuriuos galima sinchronizuoti tarpusavyje, grupę. Leidžiant muziką per šią grupę, jos grotuvai bus automatiškai sinchronizuojami.",
         "genre_management": "Žanrų valdymas",
         "genre_management_description": "Tvarkyti numatytuosius žanrus ir atkurti numatytuosius žanrų nustatymus",
         "restore_missing_defaults": "Atkurti trūkstamus numatytuosius nustatymus",
@@ -510,7 +507,10 @@
             "unavailable": "nepasiekiamas",
             "none": "—"
         },
-        "audio_analysis_description": "Stebėkite garso analizės aprėptį tarp savo paslaugų teikėjų"
+        "audio_analysis_description": "Stebėkite garso analizės aprėptį tarp savo paslaugų teikėjų",
+        "player_status": {
+            "available": "Pasiekiamas"
+        }
     },
     "show_info": "Rodyti informaciją",
     "show_select_boxes": "Rodyti pasirinkimo langelius",
@@ -641,8 +641,8 @@
     "audiobooks": "Garso knygos",
     "chapter": "Skyrius",
     "chapters": "Skyriai",
-    "podcast": "Podcast'as",
-    "podcasts": "Podcast'ai",
+    "podcast": "Tinklalaidė",
+    "podcasts": "Tinklalaidės",
     "item_fully_played": "Šis elementas buvo visiškai paleistas",
     "item_in_progress": "Šis elementas buvo iš dalies paleistas",
     "duration_in_seconds": "{0} sekundės",
@@ -853,8 +853,8 @@
     "remove_provider_mapping_confirm": "Ar tikrai norite pašalinti šį tiekėjo susiejimą? Tai atsieis elementą nuo dabartinių elemento duomenų. Jis gali vėl atsirasti, jei iš naujo nuskaitysite visus atitikmenis tiekėjams.",
     "map_provider_mapping": "Susieti šį teikėjo įrašą su dabartiniu elementu",
     "player_tip": {
-        "selected_player": "Pasirinktas žaidėjas",
-        "currently_playing": "Šiuo metu žaidžiama",
+        "selected_player": "Pasirinktas grotuvas",
+        "currently_playing": "Šiuo metu leidžiama per",
         "click_to_change": "Spustelėkite žemiau, kad pakeistumėte išvesties įrenginį"
     },
     "more_options": "Daugiau parinkčių",
@@ -921,8 +921,8 @@
     "link_to_genre_success": "Sėkmingai susieta su žanru",
     "link_to_genre_failed": "Nepavyko susieti su žanru",
     "player_options": {
-        "open": "Atidaryti žaidėjo parinktis",
-        "settable": "Nustatomos žaidėjo parinktys žaidėjui {0}",
+        "open": "Atidaryti grotuvo parinktis",
+        "settable": "Keičiamos grotuvo {0} parinktys",
         "read_only": "Žaidėjo parinktys, skirtos tik skaitymui {0}"
     },
     "select_sound_mode": "Pasirinkite garso režimą",
@@ -983,7 +983,7 @@
             "enable_in_settings": "Įjungti šalies teikėjo nustatymuose",
             "get_started": "Paleiskite muziką, kad vakarėlis prasidėtų!",
             "guest_access_disabled": "Svečio prieiga išjungta",
-            "no_player_access": "Žaidėjas nepasiekiamas",
+            "no_player_access": "Grotuvas nepasiekiamas",
             "no_player_access_detail": "Neturite prieigos prie sukonfigūruoto grotuvo. Susisiekite su administratoriumi.",
             "nothing_playing": "Šiuo metu niekas negroja",
             "qr_failed": "Nepavyko sugeneruoti QR kodo",
@@ -997,6 +997,30 @@
             "guest_access_enabled": "Svečio prieiga įjungta",
             "guest_access_toggle_failed": "Nepavyko perjungti svečio prieigos",
             "powered_by": "Sukurta naudojant"
+        },
+        "ai_radio": {
+            "fields": {
+                "voice": "Balsas",
+                "language": "Kalba"
+            },
+            "customize": {
+                "segment_templates": {
+                    "weather": "Orai",
+                    "news": "Naujienos",
+                    "sign_off": "Atsijungti"
+                }
+            },
+            "hosts": {
+                "card": {
+                    "edit": "Redaguoti"
+                },
+                "editor": {
+                    "default_voice": "Numatytasis"
+                }
+            },
+            "create": {
+                "playlist_search": "Ieškoti grojaraščių"
+            }
         }
     },
     "no_lyrics_available": "Dainų tekstai nepasiekiami",
@@ -1209,5 +1233,15 @@
     "browse_by_genre": "Naršyti pagal žanrą",
     "top_picks_for_you": "Geriausi pasirinkimai jums",
     "with_artists": "su {artists}",
-    "disc": "Diskas {number}"
+    "disc": "Diskas {number}",
+    "genre_content_type": {
+        "podcasts": "Tinklalaidės"
+    },
+    "visualizer": {
+        "fixed_preset": "Numatytas iš anksto"
+    },
+    "ai_dj_off": "Išjungta",
+    "menu": "Meniu",
+    "main_navigation": "Pagrindinis",
+    "play_announcement_message": "Žinutė"
 }
