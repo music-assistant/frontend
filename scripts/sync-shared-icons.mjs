@@ -5,7 +5,6 @@ import {
   mkdtemp,
   mkdir,
   readFile,
-  readdir,
   rm,
   writeFile,
 } from "node:fs/promises";
@@ -30,45 +29,23 @@ const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const execFileAsync = promisify(execFile);
 
 const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
-const { tag, sourceDir, commit, cleanup } = await getSource();
+const { tag, sourceDir, commit, local, cleanup } = await getSource();
 
 try {
   await execFileAsync("node", [join(sourceDir, "scripts", "validate.mjs")]);
   const manifest = await readJson(join(sourceDir, "manifest.json"));
-  const meta = await readJson(join(sourceDir, "meta.json"));
 
-  if (!/^\d+\.\d+\.\d+$/.test(manifest.version ?? "")) {
-    throw new Error(`Invalid shared-icons version: ${manifest.version}`);
-  }
+  // validate.mjs above covers the manifest, meta and the SVGs. Only what it
+  // misses belongs here.
   if (!Array.isArray(manifest.icons) || manifest.icons.length === 0) {
+    // Upstream reads `icons ?? []`, so an empty set would generate an empty registry.
     throw new Error("Shared-icons manifest must contain at least one icon");
   }
   if (
     !manifest.icons.every((id) => typeof id === "string" && idPattern.test(id))
   ) {
+    // Upstream's regex coerces, so a non-string id would reach codegen.
     throw new Error("Shared-icons manifest contains an invalid icon id");
-  }
-  if (new Set(manifest.icons).size !== manifest.icons.length) {
-    throw new Error("Shared-icons manifest contains duplicate icon ids");
-  }
-  if (!manifest.icons.includes(manifest.fallback)) {
-    throw new Error("Shared-icons fallback is not a manifest icon id");
-  }
-
-  const svgDir = join(sourceDir, "icons");
-  for (const id of manifest.icons) {
-    if (!meta.icons?.[id]) throw new Error(`Missing metadata for icon: ${id}`);
-    const svgPath = join(svgDir, `${id}.svg`);
-    const svg = await readFile(svgPath, "utf8");
-    if (!svg.trimStart().startsWith("<svg") || !svg.includes("currentColor")) {
-      throw new Error(`Invalid themed SVG: ${svgPath}`);
-    }
-  }
-  const sourceSvgFiles = (await readdir(svgDir)).filter((file) =>
-    file.endsWith(".svg"),
-  );
-  if (sourceSvgFiles.length !== manifest.icons.length) {
-    throw new Error("Shared-icons SVG files do not match manifest icon ids");
   }
 
   await rm(join(vendorDir, "icons"), { force: true, recursive: true });
@@ -87,17 +64,19 @@ try {
       await writeFile(join(vendorDir, file), formatted);
     }),
   );
-  await writeFile(
-    sourceLockPath,
-    await prettier.format(
-      `${JSON.stringify(
-        { repository: "music-assistant/shared-icons", tag, commit },
-        null,
-        2,
-      )}\n`,
-      { filepath: sourceLockPath },
-    ),
-  );
+  if (!local) {
+    await writeFile(
+      sourceLockPath,
+      await prettier.format(
+        `${JSON.stringify(
+          { repository: "music-assistant/shared-icons", tag, commit },
+          null,
+          2,
+        )}\n`,
+        { filepath: sourceLockPath },
+      ),
+    );
+  }
 
   const svgImports = manifest.icons
     .map(
@@ -118,7 +97,9 @@ try {
   );
 
   console.log(
-    `Synced shared-icons ${tag} (${commit.slice(0, 7)}): ${manifest.icons.length} icons`,
+    local
+      ? `Synced shared-icons from ${sourceDir}: ${manifest.icons.length} icons (source.json left unchanged)`
+      : `Synced shared-icons ${tag} (${commit.slice(0, 7)}): ${manifest.icons.length} icons`,
   );
 } finally {
   await cleanup();
@@ -126,32 +107,30 @@ try {
 
 async function getSource() {
   const args = process.argv.slice(2);
-  const sourceFlagIndex = args.indexOf("--source");
-  const sourcePath =
-    sourceFlagIndex === -1 ? undefined : args[sourceFlagIndex + 1];
-  const tag = args.find((arg, index) => {
-    return (
-      arg !== "--source" &&
-      (sourceFlagIndex === -1 || index !== sourceFlagIndex + 1)
-    );
-  });
+  const usage = "Usage: pnpm sync:shared-icons [tag] [--source <directory>]";
+  let sourcePath;
+  let tag;
 
-  if (sourceFlagIndex !== -1 && !sourcePath) {
-    throw new Error("--source requires a directory path");
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--source") {
+      sourcePath = args[index + 1];
+      if (!sourcePath) throw new Error("--source requires a directory path");
+      index += 1;
+    } else if (arg.startsWith("-") || tag) {
+      throw new Error(usage);
+    } else {
+      tag = arg;
+    }
   }
-  if (
-    args.length > (sourcePath ? 3 : 1) ||
-    (sourcePath && tag && sourceFlagIndex !== 1)
-  ) {
-    throw new Error(
-      "Usage: pnpm sync:shared-icons [tag] [--source <directory>]",
-    );
-  }
+
   if (sourcePath) {
+    // A local source has no tag to pin, so source.json is left alone.
     return {
       tag: tag ?? "local",
       sourceDir: resolve(sourcePath),
       commit: "local",
+      local: true,
       cleanup: async () => {},
     };
   }
