@@ -101,6 +101,19 @@ describe("InfoHeader favorite toggle", () => {
     expect(favBtn.find("svg").classes()).toContain("size-6");
   });
 
+  it("toggles the favorite state on click", async () => {
+    const item = track({ favorite: false });
+    const wrapper = mountHeader(item);
+
+    await wrapper
+      .find('button[aria-label="tooltip.favorite"]')
+      .trigger("click");
+    expect(apiMock.toggleFavorite).toHaveBeenCalledTimes(1);
+    expect(apiMock.toggleFavorite.mock.calls[0][0]).toMatchObject({
+      item_id: item.item_id,
+    });
+  });
+
   it("no longer renders the old native favorite button", () => {
     const wrapper = mountHeader(track({ favorite: false }));
 
