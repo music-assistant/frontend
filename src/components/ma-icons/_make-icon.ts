@@ -1,6 +1,40 @@
 // Internal factory helpers — import only within this directory.
-import { h } from "vue";
-import type { Component } from "vue";
+import { defineComponent, h } from "vue";
+import type { Component, PropType } from "vue";
+
+/** Render canonical shared SVG artwork inline while retaining its currentColor theming. */
+export function makeSvgIcon(name: string, svg: string): Component {
+  const normalizedSvg = svg
+    .replace(/\swidth="[^"]*"/g, "")
+    .replace(/\sheight="[^"]*"/g, "")
+    .replace(/^<svg/, '<svg width="100%" height="100%"');
+
+  return defineComponent({
+    name,
+    inheritAttrs: false,
+    props: {
+      size: {
+        type: [Number, String] as PropType<number | string>,
+        default: 24,
+      },
+    },
+    setup(props, { attrs }) {
+      return () =>
+        h("span", {
+          ...attrs,
+          style: {
+            display: "inline-flex",
+            height:
+              typeof props.size === "number" ? `${props.size}px` : props.size,
+            width:
+              typeof props.size === "number" ? `${props.size}px` : props.size,
+            ...(typeof attrs.style === "object" ? attrs.style : {}),
+          },
+          innerHTML: normalizedSvg,
+        });
+    },
+  });
+}
 
 /** Stroke-based icon (Lucide style). viewBox defaults to 24×24; supply a custom square viewBox for other coordinate spaces. The strokeWidth prop is always in 24-unit (Lucide) terms — it is rescaled internally for larger coordinate spaces, which would otherwise render visibly thinner strokes at the same size. */
 export function makeStrokeIcon(
