@@ -39,6 +39,7 @@
 <script setup lang="ts">
 import HomeAssistantMenuButton from "@/components/HomeAssistantMenuButton.vue";
 import { Toaster } from "@/components/ui/sonner";
+import { loadRoles } from "@/composables/roles";
 import { useReconnectGrace } from "@/composables/useReconnectGrace";
 import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
@@ -56,6 +57,7 @@ import {
   createRemoteConnectionIdentity,
 } from "@/helpers/connection_identity";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
+import { shouldOpenWelcome } from "@/helpers/onboarding_access";
 import {
   isMediaSessionDisabled,
   resetMediaSession,
@@ -77,7 +79,10 @@ import { useRoute, useRouter } from "vue-router";
 import "vue-sonner/style.css";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
-import { pruneStaleProviderFilters } from "./composables/userPreferences";
+import {
+  pruneStaleProviderFilters,
+  runAfterPreferenceWrites,
+} from "./composables/userPreferences";
 import { initializeCompanionIntegration } from "./plugins/companion";
 import {
   getKioskModePreference,
@@ -371,8 +376,8 @@ const completeInitialization = async () => {
   authManager.setCurrentUser(userInfo);
   store.currentUser = userInfo;
   store.serverInfo = serverInfo;
-  // the scopes the role of the user grants, for the parts of the ui gated on one
-  store.roleScopes = await api.getRoleScopes();
+  // the roles, with the scopes each grants for the parts of the ui gated on one
+  await loadRoles();
   // sharing tells a guest from a member by the role itself, so the role counts too
   const userAccess = [
     userInfo.role,
@@ -440,6 +445,11 @@ const completeInitialization = async () => {
       sessionStorage.getItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY),
     );
     router.replace(pinnedPath);
+  } else if (shouldOpenWelcome()) {
+    // someone who has just been given an account of their own is welcomed into
+    // the app once; everyone else finds the welcome on the sidebar and in the
+    // settings, whenever they want it
+    router.push({ name: "onboarding" });
   }
   // Don't push to any route here - let the router handle navigation naturally
   // from the URL hash. The router config already redirects "/" to "/discover"
@@ -661,13 +671,36 @@ onMounted(async () => {
     }
     // The server rewrites the sidebar shortcuts held on the user when a provider is removed.
     // Refresh before pruning, which saves preferences and would write the old set back.
+    // The refresh takes its turn among the preference writes: it waits for the ones on
+    // their way out and holds up the ones after it until it is in, so nothing is pruned
+    // or written from a snapshot older than the last write.
+    // It is about the account the event arrived for, as the prune below is about the one
+    // that started it: a copy fetched for a session that has since been signed out of
+    // must not land on whoever is signed in now.
     // Without a fresh user there is nothing safe to prune against, so leave it for next time.
-    const userInfo = await api.getCurrentUserInfo();
-    if (!userInfo) {
+    const userId = store.currentUser?.user_id;
+    const refreshed = await runAfterPreferenceWrites(async () => {
+      if (store.currentUser?.user_id !== userId) {
+        return false;
+      }
+      const userInfo = await api.getCurrentUserInfo();
+      if (!userInfo) {
+        return false;
+      }
+      if (
+        store.currentUser?.user_id !== userId ||
+        userInfo.user_id !== userId
+      ) {
+        return false;
+      }
+      authManager.setCurrentUser(userInfo);
+      store.currentUser = userInfo;
+      return true;
+    });
+    if (!refreshed) {
       return;
     }
-    authManager.setCurrentUser(userInfo);
-    store.currentUser = userInfo;
+    // the prune takes a turn of its own, so it is never started from inside one
     await pruneStaleProviderFilters();
   });
 });

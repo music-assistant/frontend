@@ -225,6 +225,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { runAfterPreferenceWrites } from "@/composables/userPreferences";
+import { roleDisplayName } from "@/helpers/roles";
 import { profileSettingsSchema } from "@/lib/forms/profile";
 import { api, ApiCommandError } from "@/plugins/api";
 import { store } from "@/plugins/store";
@@ -249,7 +251,7 @@ const form = useForm({
     username: user.value?.username || "",
     displayName: user.value?.display_name || "",
     avatarUrl: user.value?.avatar_url || "",
-    role: user.value ? t(`auth.${user.value.role}_role`) : "",
+    role: user.value ? roleDisplayName(user.value.role, store.roles) : "",
   },
   validators: {
     onSubmit: profileSettingsSchema(t),
@@ -280,13 +282,25 @@ const form = useForm({
         return;
       }
 
-      const updatedUser = await api.updateUser(user.value.user_id, updates, {
-        suppressGlobalError: true,
+      // The reply carries the whole account, preferences and all, and it is
+      // what the store is handed: a save that overtook a preference write on
+      // its way out would put the set back as it was before it, and one that
+      // handed the store its reply after the next write had started would take
+      // that write off again. So both the request and the replacement happen
+      // in the one turn — and on the account that asked for them, which is not
+      // always the one signed in by the time the reply is in.
+      const userId = user.value.user_id;
+      const updatedUser = await runAfterPreferenceWrites(async () => {
+        const saved = await api.updateUser(userId, updates, {
+          suppressGlobalError: true,
+        });
+        if (saved && store.currentUser?.user_id === userId) {
+          store.currentUser = saved;
+        }
+        return saved;
       });
 
       if (updatedUser) {
-        store.currentUser = updatedUser;
-
         if (updates.username) {
           currentUsername.value = updatedUser.username || "";
         }
@@ -354,7 +368,7 @@ const handleReset = () => {
     form.setFieldValue("username", user.value.username);
     form.setFieldValue("displayName", user.value.display_name || "");
     form.setFieldValue("avatarUrl", originalAvatar);
-    form.setFieldValue("role", t(`auth.${user.value.role}_role`));
+    form.setFieldValue("role", roleDisplayName(user.value.role, store.roles));
   }
 };
 
@@ -418,7 +432,7 @@ watch(
 
       form.setFieldValue("username", username);
       form.setFieldValue("displayName", displayName);
-      form.setFieldValue("role", t(`auth.${newUser.role}_role`));
+      form.setFieldValue("role", roleDisplayName(newUser.role, store.roles));
     }
   },
   { immediate: true },

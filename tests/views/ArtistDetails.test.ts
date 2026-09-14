@@ -52,9 +52,12 @@ vi.mock("@/plugins/i18n", async (importOriginal) => ({
 
 vi.mock("@/components/artist/artistRows", () => ({
   availableArtistRowIds: mockAvailableArtistRowIds,
-  resolveArtistRows: mockResolveArtistRows,
-  effectiveArtistRowSource: () => "all",
-  artistRowSources: () => ["library", "all"],
+  artistRows: {
+    resolve: mockResolveArtistRows,
+    definition: (id: string) => ({ id, labelKey: id }),
+    effectiveSource: () => "all",
+    sources: () => ["library", "all"],
+  },
 }));
 
 // the loaders are mocked, the pure helpers (sorting, single/EP and library

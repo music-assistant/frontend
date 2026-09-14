@@ -1,20 +1,28 @@
 <template>
   <InfoHeader :item="itemDetails" :sort-by="listingRef?.sortBy">
     <template v-if="(smartRules && canEditLibrary) || canShare" #append-actions>
-      <Settings2
+      <Button
         v-if="smartRules && canEditLibrary"
-        :size="22"
-        class="cursor-pointer"
+        type="button"
+        variant="ghost-icon"
+        size="icon-xs"
+        :aria-label="$t('smart_playlist.edit_rules')"
         :title="$t('smart_playlist.edit_rules')"
         @click="showEditDialog = true"
-      />
-      <Share2
+      >
+        <Settings2 class="size-5.5" />
+      </Button>
+      <Button
         v-if="canShare"
-        :size="22"
-        class="cursor-pointer"
+        type="button"
+        variant="ghost-icon"
+        size="icon-xs"
+        :aria-label="$t('share_playlist')"
         :title="$t('share_playlist')"
         @click="openAccessDialog"
-      />
+      >
+        <Share2 class="size-5.5" />
+      </Button>
     </template>
     <template
       v-if="itemDetails && isMusicAssistantPlaylist(itemDetails)"
@@ -92,6 +100,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import PlaylistAccessSummary from "@/components/PlaylistAccessSummary.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import SmartPlaylistRulesView from "@/components/smart_playlist/SmartPlaylistRulesView.vue";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,

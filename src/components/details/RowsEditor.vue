@@ -11,7 +11,7 @@
             {{ $t("edit_rows") }}
           </DialogTitle>
           <DialogDescription class="rows-editor__subtitle text-[13px]">
-            {{ $t("edit_rows_subtitle") }}
+            {{ subtitle }}
           </DialogDescription>
         </div>
         <Button
@@ -34,11 +34,14 @@
       </div>
 
       <div v-if="!isPhone" class="rows-editor__preview">
-        <div class="rows-editor__avatar">
-          <MediaItemThumb :item="artist" size="56" :rounded="false" />
+        <div
+          class="rows-editor__avatar"
+          :class="{ 'rows-editor__avatar--round': roundAvatar }"
+        >
+          <MediaItemThumb :item="item" size="56" :rounded="false" />
         </div>
         <div class="rows-editor__heading">
-          <span class="rows-editor__title">{{ artist.name }}</span>
+          <span class="rows-editor__title">{{ item.name }}</span>
           <span class="rows-editor__subtitle">
             {{ $t("rows_shown", { shown: shownCount, total: rows.length }) }}
           </span>
@@ -170,19 +173,8 @@
   </Dialog>
 </template>
 
-<script setup lang="ts">
-import {
-  artistRowDefinition,
-  artistRowSources,
-  effectiveArtistRowSource,
-  resolveArtistRows,
-  setArtistRowHidden,
-  setArtistRowSource,
-  setArtistRowsOrder,
-  resetArtistRows,
-  type ArtistRowId,
-  type ArtistRowSource,
-} from "@/components/artist/artistRows";
+<script setup lang="ts" generic="Id extends string, Item extends MediaItemType">
+import type { RowRegistry, RowSource } from "@/components/details/rowRegistry";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
@@ -205,7 +197,7 @@ import { SheetContent } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { api } from "@/plugins/api";
-import type { Artist } from "@/plugins/api/interfaces";
+import type { MediaItemType } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import {
@@ -219,31 +211,39 @@ import {
 } from "@lucide/vue";
 import { computed, ref } from "vue";
 
-export interface Props {
-  artist: Artist;
-  // the rows that apply to this artist, in default order
-  availableIds: ArtistRowId[];
-  // per-row "what feeds it" text supplied by the page, e.g. "11 · newest first"
-  rowMeta?: Partial<Record<ArtistRowId, string>>;
-}
-const props = withDefaults(defineProps<Props>(), { rowMeta: undefined });
+const props = withDefaults(
+  defineProps<{
+    // shown in the desktop preview, and what the rows' sources are computed from
+    item: Item;
+    registry: RowRegistry<Id, Item>;
+    // the rows that apply to this item, in default order
+    availableIds: Id[];
+    // per-row "what feeds it" text supplied by the page, e.g. "11 · newest first"
+    rowMeta?: Partial<Record<Id, string>>;
+    // what the customization applies to, already translated by the page
+    subtitle: string;
+    // artists are portraits, so their preview avatar is a circle
+    roundAvatar?: boolean;
+  }>(),
+  { rowMeta: undefined, roundAvatar: false },
+);
 
 const open = defineModel<boolean>("open", { default: false });
 
 interface SourceOption {
-  value: ArtistRowSource;
+  value: RowSource;
   label: string;
   // provider domain, for the icon beside a provider option
   domain?: string;
 }
 
 interface EditorRow {
-  id: ArtistRowId;
+  id: Id;
   title: string;
   meta: string;
   hidden: boolean;
   // the source feeding the row, undefined when it has no source picker
-  source?: ArtistRowSource;
+  source?: RowSource;
 }
 
 const listEl = ref<HTMLElement | null>(null);
@@ -270,14 +270,15 @@ const chrome = computed(() =>
 // reads the user's preferences from the store, so a toggle, a drop or a reset
 // re-renders the list from what was just saved
 const rows = computed<EditorRow[]>(() => {
-  const { order, hidden } = resolveArtistRows(props.availableIds);
+  const { order, hidden } = props.registry.resolve(props.availableIds);
   return order.map((id) => {
-    const source = artistRowDefinition(id).supportsSource
-      ? effectiveArtistRowSource(id, props.artist)
+    const definition = props.registry.definition(id);
+    const source = definition.supportsSource
+      ? props.registry.effectiveSource(id, props.item)
       : undefined;
     return {
       id,
-      title: $t(artistRowDefinition(id).labelKey),
+      title: $t(definition.labelKey),
       meta: rowMetaText(id, source),
       hidden: hidden.has(id),
       source,
@@ -317,31 +318,31 @@ const dropGapOffset = computed(() => {
 });
 
 /** The label of a source: the library, every provider, or one of them. */
-function sourceLabel(source: ArtistRowSource): string {
+function sourceLabel(source: RowSource): string {
   if (source === "library") return $t("source_library");
   if (source === "all") return $t("source_all");
   return api.providers[source]?.name ?? source;
 }
 
 /** The sources offered for a row, in the order the picker lists them. */
-function sourceOptions(id: ArtistRowId): SourceOption[] {
-  return artistRowSources(id, props.artist).map((source) => ({
+function sourceOptions(id: Id): SourceOption[] {
+  return props.registry.sources(id, props.item).map((source) => ({
     value: source,
     label: sourceLabel(source),
     domain: api.providers[source]?.domain,
   }));
 }
 
-function selectSource(id: ArtistRowId, source: unknown) {
-  if (typeof source === "string") setArtistRowSource(id, source);
+function selectSource(id: Id, source: unknown) {
+  if (typeof source === "string") props.registry.setSource(id, source);
 }
 
-function setHidden(id: ArtistRowId, hidden: boolean) {
-  setArtistRowHidden(id, hidden);
+function setHidden(id: Id, hidden: boolean) {
+  props.registry.setHidden(id, hidden);
 }
 
 function reset() {
-  resetArtistRows();
+  props.registry.reset();
 }
 
 /** Moves the row at `from` to position `to`, by drop or by arrow key. */
@@ -350,7 +351,7 @@ function moveRow(from: number, to: number) {
   const ids = rows.value.map((row) => row.id);
   const [moved] = ids.splice(from, 1);
   ids.splice(to, 0, moved);
-  setArtistRowsOrder(ids, props.availableIds);
+  props.registry.setOrder(ids, props.availableIds);
 }
 
 function slotStyle(index: number) {
@@ -364,8 +365,8 @@ function slotStyle(index: number) {
 }
 
 /** What feeds a row, below its title. */
-function rowMetaText(id: ArtistRowId, source?: ArtistRowSource): string {
-  if (artistRowDefinition(id).adminOnly) return $t("admin_only");
+function rowMetaText(id: Id, source?: RowSource): string {
+  if (props.registry.definition(id).adminOnly) return $t("admin_only");
   const parts = source ? [sourceLabel(source)] : [];
   const meta = props.rowMeta?.[id];
   if (meta) parts.push(meta);
@@ -411,6 +412,8 @@ function rowMetaText(id: ArtistRowId, source?: ArtistRowSource): string {
   height: 56px;
   flex: none;
   overflow: hidden;
+}
+.rows-editor__avatar--round {
   border-radius: 999px;
 }
 

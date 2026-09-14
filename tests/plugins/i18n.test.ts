@@ -101,6 +101,28 @@ describe("pluralized settings messages", () => {
       }),
     ).toBe("2 total players");
   });
+
+  // The genre table's selection count carries two numbers, so the plural form
+  // is chosen by the selected count rather than by a single `count` argument.
+  it("pluralizes the genre table selection on the selected count", () => {
+    expect(
+      i18n.global.t("settings.genre_table_rows_selected", 1, {
+        named: { selected: 1, total: 57 },
+      }),
+    ).toBe("1 of 57 row selected.");
+    expect(
+      i18n.global.t("settings.genre_table_rows_selected", 3, {
+        named: { selected: 3, total: 57 },
+      }),
+    ).toBe("3 of 57 rows selected.");
+    // A single row out of a single row: still singular, so the form cannot be
+    // coming from the total.
+    expect(
+      i18n.global.t("settings.genre_table_rows_selected", 1, {
+        named: { selected: 1, total: 1 },
+      }),
+    ).toBe("1 of 1 row selected.");
+  });
 });
 
 describe("locale presentation", () => {

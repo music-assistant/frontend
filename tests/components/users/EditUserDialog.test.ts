@@ -7,7 +7,24 @@ import { user } from "../../fixtures/user";
 
 const { apiMock, storeMock } = vi.hoisted(() => ({
   apiMock: { players: {}, updateUser: vi.fn() },
-  storeMock: { currentUser: { user_id: "admin-1" } },
+  storeMock: {
+    currentUser: { user_id: "admin-1" },
+    // the roles as the server lists them: the builtin ones and a custom one
+    roles: [
+      ...["admin", "user", "guest", "service"].map((role_id) => ({
+        role_id,
+        name: role_id,
+        scopes: [],
+        builtin: true,
+      })),
+      {
+        role_id: "household_member",
+        name: "Household member",
+        scopes: [],
+        builtin: false,
+      },
+    ],
+  },
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -16,6 +33,12 @@ vi.mock("@/plugins/api", () => ({
 }));
 
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
+
+// role names come translated through the app's i18n, keep them as their keys
+vi.mock("@/plugins/i18n", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/plugins/i18n")>()),
+  $t: (key: string) => key,
+}));
 
 vi.mock("vue-sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
@@ -95,5 +118,15 @@ describe("EditUserDialog", () => {
       { displayName: "Home Assistant" },
       { suppressGlobalError: true },
     );
+  });
+
+  it("shows a custom role by the name the server lists for it", async () => {
+    const wrapper = mountDialog(
+      user({ username: "sam", role: "household_member" }),
+    );
+    // the select shows the chosen option's label once its items are registered
+    await flushPromises();
+
+    expect(wrapper.get("#role").text()).toContain("Household member");
   });
 });
