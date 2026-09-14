@@ -9,19 +9,7 @@
     @edit-rows="emit('edit-rows')"
   >
     <template #toolbar-append>
-      <button
-        v-if="item && canEditLibrary"
-        type="button"
-        class="artist-hero__fav"
-        :class="{ 'artist-hero__fav--on': item.favorite }"
-        :aria-label="favoriteButtonLabel"
-        :aria-pressed="item.favorite ? 'true' : 'false'"
-        :title="favoriteButtonLabel"
-        @click="api.toggleFavorite(item)"
-      >
-        <IconHeartFilled v-if="item.favorite" :size="20" />
-        <IconHeart v-else :stroke-width="2" :size="20" />
-      </button>
+      <DetailHeroFavorite v-if="item" :item="item" />
     </template>
 
     <template v-if="item" #main>
@@ -75,24 +63,18 @@
 <script setup lang="ts">
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
+import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import {
-  ArtistType,
-  ImageType,
-  Scope,
-  type Artist,
-} from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
+import { ArtistType, ImageType, type Artist } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { Radio, Shuffle } from "@lucide/vue";
-import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
 import { computed } from "vue";
 
 export interface Props {
@@ -153,39 +135,9 @@ const artistKind = computed(() => {
   if (item.artist_type === ArtistType.NARRATOR) return $t("narrator");
   return "";
 });
-
-const favoriteButtonLabel = computed(() =>
-  props.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
-);
-// favouring an item changes the library
-const canEditLibrary = computed(() =>
-  authManager.hasScope(Scope.LIBRARY_WRITE),
-);
 </script>
 
 <style scoped>
-.artist-hero__fav {
-  margin-right: 8px;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.35);
-  border: 0;
-  border-radius: 8px;
-  color: currentColor;
-  cursor: pointer;
-  display: inline-flex;
-  height: 40px;
-  justify-content: center;
-  padding: 0;
-  width: 40px;
-}
-.artist-hero__fav--on {
-  color: rgb(var(--v-theme-primary));
-}
-.artist-hero__fav:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
-}
-
 .artist-hero__chips {
   display: flex;
   align-items: center;

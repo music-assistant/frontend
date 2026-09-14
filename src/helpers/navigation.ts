@@ -45,4 +45,5 @@ const LISTING_ROUTES: Record<string, string | undefined> = {
   podcast: "podcasts",
   radio: "radios",
   track: "tracks",
+  tracklisting: "tracks",
 };

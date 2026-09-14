@@ -4,6 +4,7 @@
     class="detail-hero-button"
     :class="{
       'detail-hero-button--phone': isPhone,
+      'detail-hero-button--icon-only': iconOnly,
       'detail-hero-button--pressed': pressed,
     }"
     :disabled="disabled"
@@ -71,6 +72,10 @@ const isPhone = computed(() => isPhoneSizedScreen());
 }
 .detail-hero-button--pressed svg {
   color: rgb(var(--v-theme-primary));
+}
+.detail-hero-button--icon-only {
+  width: 36px;
+  padding: 0;
 }
 .detail-hero-button--phone {
   width: 44px;

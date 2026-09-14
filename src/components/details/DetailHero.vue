@@ -7,11 +7,15 @@
       '--detail-hero-phone-height': `${phoneHeight}px`,
     }"
   >
-    <div
-      v-if="backdropStyle"
-      class="detail-hero__backdrop"
-      :style="backdropStyle"
-    ></div>
+    <Transition name="detail-hero-backdrop">
+      <div
+        v-if="backdropStyle"
+        :key="backdrop"
+        class="detail-hero__backdrop"
+        :class="{ 'detail-hero__backdrop--blurred': blurBackdrop }"
+        :style="backdropStyle"
+      ></div>
+    </Transition>
     <div class="detail-hero__scrim"></div>
     <Toolbar
       class="detail-hero__toolbar"
@@ -57,12 +61,16 @@ export interface Props {
   item?: MediaItemType;
   // the artwork painted behind the text, as an image url
   backdrop?: string;
+  // for a backdrop that only stands in for missing wide art, so it reads as
+  // colour rather than a picture
+  blurBackdrop?: boolean;
   height?: number;
   phoneHeight?: number;
 }
 const props = withDefaults(defineProps<Props>(), {
   item: undefined,
   backdrop: undefined,
+  blurBackdrop: false,
   height: 440,
   phoneHeight: 340,
 });
@@ -110,7 +118,10 @@ async function buildMenu(item?: MediaItemType) {
 <style scoped>
 .detail-hero {
   position: relative;
-  height: var(--detail-hero-height);
+  display: flex;
+  flex-direction: column;
+  /* the design height; taller content grows the hero */
+  min-height: var(--detail-hero-height);
   overflow: hidden;
   background-color: rgb(var(--v-theme-background));
   /* the artwork is darkened, so the hero keeps its light-on-dark text in both
@@ -118,7 +129,7 @@ async function buildMenu(item?: MediaItemType) {
   color: #fff;
 }
 .detail-hero--phone {
-  height: var(--detail-hero-phone-height);
+  min-height: var(--detail-hero-phone-height);
 }
 .detail-hero__backdrop {
   position: absolute;
@@ -126,6 +137,22 @@ async function buildMenu(item?: MediaItemType) {
   background-position: center 30%;
   background-repeat: no-repeat;
   background-size: cover;
+}
+/* scaled up so the blur has artwork to bleed from instead of the page behind it */
+.detail-hero__backdrop--blurred {
+  filter: blur(44px) saturate(1.35);
+  transform: scale(1.2);
+}
+
+/* a new backdrop fades in over the one it replaces; both layers are
+   absolutely positioned, so they crossfade */
+.detail-hero-backdrop-enter-active,
+.detail-hero-backdrop-leave-active {
+  transition: opacity 400ms ease;
+}
+.detail-hero-backdrop-enter-from,
+.detail-hero-backdrop-leave-to {
+  opacity: 0;
 }
 /* two layers: the artwork is darkened so the hero's light-on-dark text reads in
    both themes, and only its very bottom blends into the page */
@@ -174,11 +201,10 @@ async function buildMenu(item?: MediaItemType) {
   opacity: 1;
 }
 
+/* sits at the bottom of the hero, above the artwork layers */
 .detail-hero__body {
-  position: absolute;
-  left: 28px;
-  right: 28px;
-  bottom: 24px;
+  position: relative;
+  margin: auto 28px 24px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -202,7 +228,6 @@ async function buildMenu(item?: MediaItemType) {
   min-width: 0;
   text-align: right;
 }
-
 /* an aside whose only child rendered nothing (Vue leaves a comment node there,
    which :empty ignores) takes no gap of the body's either */
 .detail-hero__aside:empty {
@@ -210,9 +235,7 @@ async function buildMenu(item?: MediaItemType) {
 }
 
 .detail-hero--phone .detail-hero__body {
-  left: 16px;
-  right: 16px;
-  bottom: 16px;
+  margin: auto 16px 16px;
   flex-direction: column;
   align-items: stretch;
   gap: 12px;
