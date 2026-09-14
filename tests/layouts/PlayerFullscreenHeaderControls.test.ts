@@ -1,5 +1,6 @@
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import AutoplayRepeatLockButton from "@/layouts/default/PlayerOSD/AutoplayRepeatLockButton.vue";
+import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { CrossfadeMode, type PlayerQueue } from "@/plugins/api/interfaces";
 import { shallowMount } from "@vue/test-utils";
@@ -92,6 +93,31 @@ describe("PlayerFullscreenHeaderControls", () => {
     autoplayEnabled.value = false;
     repeatLocked.value = false;
     setAutoplay.mockClear();
+  });
+
+  it("does not animate a fade the source applied", () => {
+    seedQueue(CrossfadeMode.SOURCE);
+
+    const icon = mountControls().findComponent(CrossfadeIcon);
+
+    expect(icon.props("smart")).toBe(false);
+  });
+
+  it("does not animate a standard fade", () => {
+    seedQueue(CrossfadeMode.STANDARD_CROSSFADE);
+    queue.value!.smart_fades_active = false;
+
+    expect(mountControls().findComponent(CrossfadeIcon).props("smart")).toBe(
+      false,
+    );
+  });
+
+  it("animates our own smart fade", () => {
+    seedQueue(CrossfadeMode.SMART_CROSSFADE);
+
+    expect(mountControls().findComponent(CrossfadeIcon).props("smart")).toBe(
+      true,
+    );
   });
 
   it("mirrors the source fade details in the tooltip", () => {

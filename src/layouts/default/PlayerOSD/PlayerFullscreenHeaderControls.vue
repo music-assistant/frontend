@@ -64,7 +64,7 @@
             data-active="true"
             :aria-label="$t('autoplay')"
           >
-            <AutoplayIcon />
+            <AutoplayIcon active />
             <span v-if="showLabel">{{ $t("autoplay") }}</span>
           </Button>
         </TooltipTrigger>
@@ -115,7 +115,7 @@
             :aria-label="$t('autoplay')"
             @click="setAutoplay(!autoplayEnabled)"
           >
-            <AutoplayIcon />
+            <AutoplayIcon :active="autoplayEnabled" />
             <span v-if="showLabel">{{ $t("autoplay") }}</span>
           </Button>
         </TooltipTrigger>
@@ -144,7 +144,7 @@
             :aria-label="$t('crossfade')"
             @click="toggleCrossfade"
           >
-            <CrossfadeIcon />
+            <CrossfadeIcon :smart="smartCrossfadeActive" />
             <span v-if="showLabel">{{ $t("crossfade") }}</span>
           </Button>
         </TooltipTrigger>
@@ -268,6 +268,12 @@ const sourceCrossfadeName = computed(() => {
   const provider = queueSourceCrossfadeProvider(queue.value);
   return provider ? api.getProviderName(provider) : undefined;
 });
+const smartCrossfadeActive = computed(
+  () =>
+    crossfadeEnabled.value &&
+    smartFadesActive.value &&
+    !sourceCrossfadeName.value,
+);
 const crossfadeDescription = computed(() => {
   if (!crossfadeEnabled.value) return $t("crossfade_explanation");
   if (sourceCrossfadeName.value) {

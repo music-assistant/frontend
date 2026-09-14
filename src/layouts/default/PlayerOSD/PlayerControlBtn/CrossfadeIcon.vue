@@ -1,6 +1,7 @@
 <template>
   <svg
     class="crossfade-icon"
+    :class="{ 'is-smart': smart }"
     :width="size"
     :height="size"
     viewBox="0 0 24 24"
@@ -11,8 +12,17 @@
     stroke-linejoin="round"
     aria-hidden="true"
   >
-    <circle cx="9" cy="9" r="7" />
-    <circle cx="15" cy="15" r="7" />
+    <circle class="crossfade-ring crossfade-ring--a" cx="9" cy="9" r="7" />
+    <circle class="crossfade-ring crossfade-ring--b" cx="15" cy="15" r="7" />
+    <template v-if="smart">
+      <circle class="crossfade-spark" cx="9" cy="9" r="7" />
+      <circle
+        class="crossfade-spark crossfade-spark--delayed"
+        cx="15"
+        cy="15"
+        r="7"
+      />
+    </template>
   </svg>
 </template>
 
@@ -20,9 +30,11 @@
 withDefaults(
   defineProps<{
     size?: number | string;
+    smart?: boolean;
   }>(),
   {
     size: 24,
+    smart: false,
   },
 );
 </script>
@@ -32,5 +44,63 @@ withDefaults(
   display: inline-block;
   vertical-align: middle;
   overflow: visible;
+}
+
+.crossfade-icon.is-smart {
+  animation: crossfade-smart-pulse 2.4s ease-in-out infinite;
+}
+
+.crossfade-icon.is-smart .crossfade-ring {
+  opacity: 0.4;
+}
+
+.crossfade-spark {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-dasharray: 4 39.98;
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 3px currentColor);
+  animation: crossfade-spark-travel 2.4s linear infinite;
+}
+
+.crossfade-spark--delayed {
+  animation-delay: -1.2s;
+}
+
+@keyframes crossfade-spark-travel {
+  0% {
+    stroke-dashoffset: 0;
+    opacity: 0.15;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -43.98;
+    opacity: 0.15;
+  }
+}
+
+@keyframes crossfade-smart-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    filter: drop-shadow(0 0 3px currentColor);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crossfade-icon.is-smart {
+    animation: none;
+  }
+  .crossfade-spark {
+    animation: none;
+    opacity: 0.85;
+  }
 }
 </style>
