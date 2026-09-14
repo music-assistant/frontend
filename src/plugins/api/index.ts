@@ -76,6 +76,8 @@ import {
   SearchResults,
   SmartPlaylistRules,
   SoundEffect,
+  TranscriptCue,
+  UserRole,
   MediaCollection,
   ArtistType,
 } from "./interfaces";
@@ -1439,6 +1441,17 @@ export class MusicAssistantApi {
     return this.sendCommand("metadata/update_metadata", {
       item,
       force_refresh,
+    });
+  }
+
+  public getPodcastEpisodeTranscript(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<[string | null, TranscriptCue[] | null]> {
+    // Get a podcast episode's transcript as plain text plus timed lines.
+    return this.sendCommand("music/podcasts/podcast_episode_transcript", {
+      item_id,
+      provider_instance_id_or_domain,
     });
   }
 
