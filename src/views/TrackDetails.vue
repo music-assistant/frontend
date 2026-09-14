@@ -10,10 +10,12 @@
     <template v-if="itemDetails">
       <template v-for="rowId in visibleRows" :key="rowId">
         <!-- lyrics -->
-        <TrackLyricsRow
+        <DetailTextRow
           v-if="rowId === 'lyrics' && lyrics !== null"
-          :item="itemDetails"
-          :lyrics="lyrics ?? undefined"
+          :title="$t('lyrics')"
+          :text="lyrics ?? undefined"
+          :dialog-title="itemDetails.name"
+          :lines="4"
           @edit-rows="rowsEditorOpen = true"
         />
 
@@ -82,6 +84,7 @@
 
 <script setup lang="ts">
 import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
+import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import MediaRowList from "@/components/details/MediaRowList.vue";
 import RowsEditor from "@/components/details/RowsEditor.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
@@ -92,7 +95,6 @@ import {
   trackReleaseYear,
 } from "@/components/track/trackData";
 import TrackHero from "@/components/track/TrackHero.vue";
-import TrackLyricsRow from "@/components/track/TrackLyricsRow.vue";
 import {
   availableTrackRowIds,
   trackRows,
