@@ -1,9 +1,14 @@
-import type { MusicAssistantApi } from "@/plugins/api";
-import type { Artist } from "@/plugins/api/interfaces";
+import { api, type MusicAssistantApi } from "@/plugins/api";
+import {
+  ProviderFeature,
+  type Artist,
+  type ProviderInstance,
+} from "@/plugins/api/interfaces";
 import ArtistListing, { type Props } from "@/views/ArtistListing.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { artist } from "../fixtures/artist";
+import { providerMapping } from "../fixtures/providerMapping";
 
 const { mockGetArtist } = vi.hoisted(() => ({
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
@@ -41,6 +46,8 @@ vi.mock("@/components/ItemsListing.vue", () => ({
       "requireProviderSelection",
       "libraryFilterOption",
       "defaultProvider",
+      "providerFilterOptions",
+      "showProviderFilter",
     ],
     template:
       '<div class="items-listing-stub" :data-path="path" :data-itemtype="itemtype" />',
@@ -77,6 +84,7 @@ function listingAttributes(wrapper: VueWrapper) {
 describe("ArtistListing", () => {
   beforeEach(() => {
     mockGetArtist.mockReset();
+    for (const key of Object.keys(api.providers)) delete api.providers[key];
   });
 
   it.each([
@@ -115,6 +123,36 @@ describe("ArtistListing", () => {
 
     expect(props.requireProviderSelection).toBeUndefined();
     expect(props.libraryFilterOption).toBeUndefined();
+    expect(props.showProviderFilter).toBe(false);
+  });
+
+  // the row's picker on the artist page leaves out providers that cannot list
+  // an artist's albums, and so does the listing
+  it("offers the sources the row itself can be fed from", async () => {
+    api.providers["spotify--abc"] = {
+      instance_id: "spotify--abc",
+      name: "Spotify",
+      supported_features: [ProviderFeature.ARTIST_ALBUMS],
+    } as ProviderInstance;
+    api.providers["lyrics--1"] = {
+      instance_id: "lyrics--1",
+      name: "Lyrics",
+      supported_features: [],
+    } as unknown as ProviderInstance;
+
+    const props = listing(
+      await mountListing(
+        "albums",
+        artist({
+          provider_mappings: [
+            providerMapping({ provider_instance: "spotify--abc" }),
+            providerMapping({ provider_instance: "lyrics--1" }),
+          ],
+        }),
+      ),
+    ).props();
+
+    expect(props.providerFilterOptions).toEqual(["spotify--abc"]);
   });
 
   it("names the source the releases were loaded from", async () => {

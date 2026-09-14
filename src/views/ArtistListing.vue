@@ -2,6 +2,7 @@
   <section>
     <ItemsListing
       v-if="itemDetails && config"
+      :key="config.path"
       :icon="ArrowLeft"
       :icon-action="backToArtist"
       :title="$t(config.labelKey)"
@@ -13,7 +14,7 @@
       :show-favorites-only-filter="config.showFavoritesOnlyFilter"
       :show-provider-filter="config.showProviderFilter"
       :single-provider-filter="true"
-      :provider-filter-options="mappingProviderIds"
+      :provider-filter-options="config.providerFilterOptions"
       :require-provider-selection="config.requireProviderSelection"
       :library-filter-option="config.libraryFilterOption"
       :default-provider="config.defaultProvider"
@@ -67,6 +68,7 @@ interface ListingConfig {
   showFavoritesOnlyFilter: boolean;
   showProviderFilter: boolean;
   showTrackNumber: boolean;
+  providerFilterOptions: string[];
   // what the listing says when the artist has nothing to show there
   emptyMessage?: string;
   // a required single source selection: the library or one of the providers
@@ -114,6 +116,12 @@ watch(
     itemDetails.value = artist;
   },
   { immediate: true },
+);
+
+// each shelf has its own source, so the one on screen is never another's
+watch(
+  () => props.listing,
+  () => (activeSource.value = undefined),
 );
 
 // the listing can be filtered to the providers the artist is actually mapped to
@@ -215,20 +223,24 @@ function listingDefaults(): Omit<
     showFavoritesOnlyFilter: true,
     showProviderFilter: true,
     showTrackNumber: true,
+    providerFilterOptions: mappingProviderIds.value,
   };
 }
 
 /**
- * The source selector of a release listing: the library and every provider the
- * artist is mapped to, starting on the one that feeds the row on the artist
- * page. A provider artist has only its own catalog, so it gets no selector.
+ * The source selector of a release listing: the same sources the row's picker
+ * on the artist page offers, starting on the one feeding it there. A provider
+ * artist has only its own catalog, so it gets no selector at all.
  */
 function sourceSelection(rowId: "albums" | "singles_eps") {
   const artist = itemDetails.value;
-  if (artist?.provider !== "library") return {};
+  if (artist?.provider !== "library") return { showProviderFilter: false };
   return {
     requireProviderSelection: true,
     libraryFilterOption: true,
+    providerFilterOptions: artistRows
+      .sources(rowId, artist)
+      .filter((source) => source !== "library"),
     defaultProvider: artistRows.effectiveSource(rowId, artist),
   };
 }
