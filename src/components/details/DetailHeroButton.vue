@@ -61,6 +61,13 @@ const isPhone = computed(() => isPhoneSizedScreen());
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.detail-hero-button:hover:not(:disabled) {
+  border-color: rgb(var(--v-theme-primary));
+  background: rgba(var(--v-theme-primary), 0.3);
 }
 .detail-hero-button:disabled {
   cursor: default;

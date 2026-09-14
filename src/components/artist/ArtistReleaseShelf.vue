@@ -69,15 +69,12 @@ export interface Props {
   // undefined while the row is still loading
   items?: Array<Album | ItemMapping>;
   viewAllTo?: RouteLocationRaw;
-  // "lg" is the albums shelf, "md" the smaller singles / appearances ones
-  size?: "lg" | "md";
   parentItem?: MediaItemType;
 }
 const props = withDefaults(defineProps<Props>(), {
   meta: undefined,
   items: undefined,
   viewAllTo: undefined,
-  size: "md",
   parentItem: undefined,
 });
 
@@ -87,7 +84,7 @@ const emit = defineEmits<{
 
 const SKELETONS = 6;
 
-const tilesPerView = computed(() => shelfTilesPerView(props.size));
+const tilesPerView = computed(() => shelfTilesPerView());
 
 const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
   emit("edit-rows"),
@@ -105,11 +102,11 @@ const subtitle = function (item: Album | ItemMapping): string {
 /**
  * Tiles per viewport width, following the same curve as the Discover shelves
  * but one step tighter so the cards land on the artist page's smaller sizes.
+ * Every release row uses it, so a single and an album are the same size.
  */
-function shelfTilesPerView(size: "lg" | "md"): number {
+function shelfTilesPerView(): number {
   const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
-  if (size === "lg") return isPhone ? 2.4 : panelViewItemResponsive(0) + 1.5;
-  return isPhone ? 3.2 : panelViewItemResponsive(0) + 2.5;
+  return isPhone ? 2.4 : panelViewItemResponsive(0) + 1.5;
 }
 </script>
 

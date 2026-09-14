@@ -86,7 +86,7 @@
             <DetailHeroPlayButton class="track-hero__play" :item="item" />
             <DetailHeroButton
               v-if="radioRelevant(item)"
-              :icon="Radio"
+              :icon="Orbit"
               :label="$t('track_radio')"
               :icon-only="isPhone"
               :disabled="!radioSupported(item)"
@@ -138,7 +138,7 @@ import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type { Track } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
-import { Disc, Music, Radio } from "@lucide/vue";
+import { Disc, Music, Orbit } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 

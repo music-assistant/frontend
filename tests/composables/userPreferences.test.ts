@@ -408,6 +408,26 @@ describe("pruneStaleProviderFilters", () => {
     expect(mockUpdateUser).toHaveBeenCalledTimes(1);
   });
 
+  // a listing whose source selector offers "your library" saves that choice
+  // under the same key, and it belongs to no provider config
+  it("keeps a listing's library selection", async () => {
+    storeMock.currentUser = {
+      user_id: "u1",
+      preferences: {
+        "itemsListing.artistalbums.artistalbums": {
+          providerFilter: ["library"],
+        },
+      },
+    };
+
+    await pruneStaleProviderFilters();
+
+    expect(storeMock.currentUser.preferences).toEqual({
+      "itemsListing.artistalbums.artistalbums": { providerFilter: ["library"] },
+    });
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+  });
+
   it("does nothing when no ids reference a deconfigured provider", async () => {
     storeMock.currentUser = {
       user_id: "u1",

@@ -73,7 +73,6 @@ const onTextClick = (event: MouseEvent) => {
 <style scoped>
 .artist-bio {
   padding: 20px 28px 8px;
-  max-width: 900px;
 }
 .artist-bio__text {
   font-size: 15px;
