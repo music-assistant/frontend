@@ -312,6 +312,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useConfigAction } from "@/composables/useConfigAction";
+import { useEditedProviderName } from "@/composables/useEditedProviderName";
 import {
   hasAdvancedEntries,
   mergeConfigEntries,
@@ -371,6 +372,7 @@ const editName = ref<string | null>(null);
 const saveErrorOpen = ref(false);
 const saveErrorMessage = ref("");
 const lastSubmitValues = ref<Record<string, ConfigValueType>>();
+const editedProviderName = useEditedProviderName();
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
 let toggleRequestId = 0;
@@ -451,6 +453,17 @@ watch(
   { immediate: true },
 );
 
+// the breadcrumb above this page shows whatever name this heading shows, so
+// the two cannot disagree for a provider that is not loaded but has a custom
+// name of its own
+watch(
+  providerName,
+  (name) => {
+    editedProviderName.value = name;
+  },
+  { immediate: true },
+);
+
 watch(showRenameDialog, (val) => {
   if (val && config.value) {
     editName.value = config.value.name || null;
@@ -465,6 +478,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   unsubProvidersUpdated?.();
+  // a later visit to another provider should fall back to the manifest name
+  // rather than linger on this one
+  editedProviderName.value = "";
 });
 
 // methods
