@@ -420,6 +420,12 @@ export interface Props {
   // when set, it replaces the itemtype-derived list (and is not limited to
   // music providers).
   providerFilterOptions?: string[];
+  // when set, the explicit provider list above also offers the library, as its
+  // first option: loadItems is handed "library" while it is the selected one
+  libraryFilterOption?: boolean;
+  // the option a required selection starts on, when nothing valid is stored
+  // (default: the first one offered)
+  defaultProvider?: string;
   updateAvailable?: boolean;
   title?: string;
   subtitle?: string;
@@ -470,6 +476,8 @@ const props = withDefaults(defineProps<Props>(), {
   singleProviderFilter: false,
   requireProviderSelection: false,
   providerFilterOptions: undefined,
+  libraryFilterOption: false,
+  defaultProvider: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
   limit: 50,
@@ -1125,7 +1133,7 @@ const musicProviders = computed(() => {
   // explicit provider list supplied by the parent: resolve the given
   // instance_ids to labels as-is, without any itemtype/type filtering.
   if (props.providerFilterOptions) {
-    return props.providerFilterOptions
+    const providers = props.providerFilterOptions
       .map((instanceId) => api.providers[instanceId])
       .filter((provider) => provider !== undefined)
       .map((provider) => ({
@@ -1133,6 +1141,9 @@ const musicProviders = computed(() => {
         value: provider.instance_id,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
+    if (!props.libraryFilterOption) return providers;
+    // the library is not a provider instance: loadItems is handed "library"
+    return [{ label: t("source_library"), value: "library" }, ...providers];
   }
 
   // Map itemtype to the ProviderFeatures that mark a provider as a possible
@@ -1718,7 +1729,11 @@ const restoreSettings = async function () {
     musicProviders.value.length > 0 &&
     !params.value.provider?.length
   ) {
-    params.value.provider = [musicProviders.value[0].value];
+    const offered = musicProviders.value.map((provider) => provider.value);
+    const preferred = props.defaultProvider;
+    params.value.provider = [
+      preferred && offered.includes(preferred) ? preferred : offered[0],
+    ];
   }
 
   // get stored searchquery (but only if we're allowed to store the state)

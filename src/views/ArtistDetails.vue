@@ -30,7 +30,6 @@
           :meta="albumsMeta"
           :items="albumItems"
           :view-all-to="listingRoute('albums')"
-          size="lg"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         />
@@ -50,7 +49,7 @@
         <ArtistReleaseShelf
           v-else-if="rowId === 'appears_on' && showRow(appearsOnItems)"
           :title="$t('appears_on')"
-          :meta="$t('appears_on_hint')"
+          :meta="isPhone ? undefined : $t('appears_on_hint')"
           :items="appearsOnItems"
           :view-all-to="listingRoute('appears_on')"
           :parent-item="itemDetails"
@@ -190,6 +189,7 @@ import {
   type Artist,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
@@ -203,6 +203,8 @@ const props = defineProps<Props>();
 const itemDetails = ref<Artist>();
 const loading = ref(false);
 const rowsEditorOpen = ref(false);
+
+const isPhone = computed(() => isPhoneSizedScreen());
 
 const isAudiobookArtist = computed(() => {
   const artistType = itemDetails.value?.artist_type;
