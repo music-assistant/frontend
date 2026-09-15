@@ -24,6 +24,7 @@ export type OnboardingStepId =
   // the member track: being welcomed into a server someone else set up
   | "welcome"
   | "whats_here"
+  | "own_sources"
   | "tour"
   | "all_set";
 
@@ -68,6 +69,12 @@ export interface OnboardingContext {
   isMember: boolean;
   // the welcome has been shown to this member before, whatever they made of it
   welcomed: boolean;
+  // whether this member's role lets them add music sources of their own; the
+  // own-sources step is only ever offered to someone who can act on it
+  canOwnSources: boolean;
+  // how many music sources this member already owns; the invitation is done
+  // once they own one, and needs no marker to remember it
+  ownedMusicSourceCount: number;
   providers: OnboardingProvider[];
   playerCount: number;
   // the household members: everyone with an account of their own, so neither
@@ -190,6 +197,13 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     kind: "review",
     appliesTo: onMemberTrack,
     isDone: () => false,
+  },
+  {
+    id: "own_sources",
+    kind: "step",
+    // a member-track step, but only for a role that may add its own sources
+    appliesTo: (ctx) => ctx.isMember && ctx.canOwnSources,
+    isDone: (ctx) => ctx.ownedMusicSourceCount > 0,
   },
   {
     id: "tour",
