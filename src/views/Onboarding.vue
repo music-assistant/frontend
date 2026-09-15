@@ -65,6 +65,7 @@ import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue
 import FinishStep from "@/components/onboarding/steps/FinishStep.vue";
 import IntentStep from "@/components/onboarding/steps/IntentStep.vue";
 import InviteMembersStep from "@/components/onboarding/steps/InviteMembersStep.vue";
+import OwnSourcesStep from "@/components/onboarding/steps/OwnSourcesStep.vue";
 import ProvidersStep from "@/components/onboarding/steps/ProvidersStep.vue";
 import TourStep from "@/components/onboarding/steps/TourStep.vue";
 import WelcomeStep from "@/components/onboarding/steps/WelcomeStep.vue";
@@ -90,8 +91,15 @@ import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
-const { ctx, steps, loadOnboardingData, markWelcomed, setIntent, finish } =
-  useOnboarding();
+const {
+  ctx,
+  steps,
+  loadOnboardingData,
+  loadProviderConfigs,
+  markWelcomed,
+  setIntent,
+  finish,
+} = useOnboarding();
 
 const STEP_VIEWS: Record<
   OnboardingStepId,
@@ -115,6 +123,7 @@ const STEP_VIEWS: Record<
   finish: { component: markRaw(FinishStep), props: { stepId: "finish" } },
   welcome: { component: markRaw(WelcomeStep) },
   whats_here: { component: markRaw(WhatsHereStep) },
+  own_sources: { component: markRaw(OwnSourcesStep) },
   tour: { component: markRaw(TourStep) },
   // the same summary, told as the end of the welcome instead of the setup
   all_set: { component: markRaw(FinishStep), props: { stepId: "all_set" } },
@@ -288,8 +297,11 @@ const focusStepHeading = async function () {
 onMounted(async () => {
   focusStepHeading();
   // the member track reads the providers and players that are running, neither
-  // of which it has to ask for, so the welcome waits for nothing
+  // of which it has to ask for, so the welcome waits for nothing — bar a member
+  // who can own sources, whose own-sources step needs the provider configs to
+  // tell which sources they own
   if (!ctx.value.isMember) await loadOnboardingData();
+  else if (ctx.value.canOwnSources) await loadProviderConfigs();
   ready.value = true;
 });
 watch(currentId, focusStepHeading);

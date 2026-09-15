@@ -2612,6 +2612,13 @@
                     "pick": "Pick a player"
                 }
             },
+            "own_sources": {
+                "title": "Connect your own accounts",
+                "description": "Add your own music services so your playlists and library turn up alongside everyone else's. You can always do this later from your settings.",
+                "add": "Add a music source",
+                "empty": "You have not connected any music sources of your own yet.",
+                "connected": "Your music sources"
+            },
             "tour": {
                 "title": "A quick tour",
                 "description": "The places you will use most.",

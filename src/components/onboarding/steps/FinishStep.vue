@@ -124,6 +124,9 @@ const done = computed(() =>
     (step) =>
       isTodo(step) &&
       step.isDone(ctx.value) &&
+      // own_sources is an invitation, surfaced under "still to do" while it is
+      // open, not a choice to look back on once it is done
+      step.id !== "own_sources" &&
       (step.id !== "welcome" || persona.value != null),
   ),
 );

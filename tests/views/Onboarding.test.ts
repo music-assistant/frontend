@@ -7,7 +7,11 @@ import {
 } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+import {
+  BUILTIN_ROLE_SCOPES,
+  MEMBER_WITHOUT_OWN_SCOPES,
+  scopeChecker,
+} from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
 const {
@@ -218,9 +222,12 @@ function addMember(userId: string) {
   users.list.push(user({ user_id: userId, username: userId }));
 }
 
-/** Sign in as someone who lives here without running the place. */
-function signInAsMember() {
-  authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+/**
+ * Sign in as someone who lives here without running the place. Defaults to a
+ * member who may not add sources of their own; pass scopes for a role that can.
+ */
+function signInAsMember(scopes: readonly Scope[] = MEMBER_WITHOUT_OWN_SCOPES) {
+  authMock.hasScope.mockImplementation(scopeChecker(scopes));
   storeState.store.currentUser = user({
     user_id: "sam-1",
     username: "sam",
@@ -765,13 +772,46 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     });
 
     it("asks the server for nothing the welcome does not read", async () => {
+      // a member whose role may not add its own sources: the welcome reads none
+      // of the provider configurations, and the household is an admin's business
+      signInAsMember(MEMBER_WITHOUT_OWN_SCOPES);
+
       const wrapper = await mountWizard();
       await flushPromises();
 
-      // the setup's provider configurations and household are an admin's
-      // business; the welcome shows what is already running
       expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
       expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+
+      wrapper.unmount();
+    });
+
+    it("reads the provider configurations for a member who can add sources", async () => {
+      // a builtin member holds the own-sources scope, so its own-sources step
+      // needs the provider configs to tell which sources they already own
+      signInAsMember(BUILTIN_ROLE_SCOPES.user);
+
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      expect(apiMock.getProviderConfigs).toHaveBeenCalled();
+      // listing the household stays an admin's call, gated on USERS_READ
+      expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+
+      wrapper.unmount();
+    });
+
+    it("renders the own-sources step for a member who can add sources", async () => {
+      signInAsMember(BUILTIN_ROLE_SCOPES.user);
+      routeState.route.query = { step: "own_sources" };
+
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      expect(heading(wrapper)).toBe("onboarding.steps.own_sources.title");
+      // the step carries its own add-a-source button, wired to the dialog
+      expect(
+        wrapper.find("[data-testid=onboarding-add-provider]").exists(),
+      ).toBe(true);
 
       wrapper.unmount();
     });
