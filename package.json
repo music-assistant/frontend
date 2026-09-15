@@ -61,7 +61,7 @@
         "zod": "^4.6.2"
     },
     "devDependencies": {
-        "@fontsource/roboto": "5.2.10",
+        "@fontsource/roboto": "5.3.0",
         "@types/canvas-confetti": "^1.9.0",
         "@types/color": "4.2.1",
         "@types/node": "26.2.0",
