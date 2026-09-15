@@ -21,7 +21,11 @@ import {
   ONBOARDING_PERSONA_PREFERENCE,
   ONBOARDING_WELCOME_PREFERENCE,
 } from "@/helpers/onboarding_access";
-import { isOwnMusicSource, userDisplayName } from "@/helpers/provider_access";
+import {
+  isOwnMusicSource,
+  ownedMusicSourceCount,
+  userDisplayName,
+} from "@/helpers/provider_access";
 import {
   isBuiltinProvider,
   providerDisplayName,
@@ -230,7 +234,10 @@ const ctx = computed<OnboardingContext>(() => ({
   // says — and all the welcome needs it to say
   welcomed: welcomedAt.value != null,
   canOwnSources: authManager.hasScope(Scope.CONFIG_PROVIDERS_OWN),
-  ownedMusicSourceCount: ownedMusicSources.value.length,
+  ownedMusicSourceCount: ownedMusicSourceCount(
+    providerConfigs.value ?? [],
+    store.currentUser?.user_id,
+  ),
   providers: (providerConfigs.value ?? []).map((config) => ({
     type: config.type,
     domain: config.domain,

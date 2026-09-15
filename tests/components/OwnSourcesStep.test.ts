@@ -122,6 +122,12 @@ describe("OwnSourcesStep", () => {
   it("opens the add-a-source dialog in self-service music mode", async () => {
     const wrapper = mountStep();
 
+    // the dialog stays unmounted until opened, so it never fetches the
+    // provider configs the wizard has already loaded
+    expect(wrapper.findComponent({ name: "AddProviderDialog" }).exists()).toBe(
+      false,
+    );
+
     await wrapper
       .find("[data-testid=onboarding-add-provider]")
       .trigger("click");

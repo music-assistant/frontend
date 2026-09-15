@@ -51,7 +51,10 @@
       </Button>
     </div>
 
+    <!-- mounted only while open: the wizard has already loaded the provider
+         configs, and a hidden dialog would fetch them again on mount -->
     <AddProviderDialog
+      v-if="showAddProviderDialog"
       v-model:show="showAddProviderDialog"
       :provider-type="ProviderType.MUSIC"
       :multi-instance-only="true"
