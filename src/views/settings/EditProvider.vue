@@ -261,7 +261,12 @@
           <v-btn variant="text" @click="showRenameDialog = false">
             {{ $t("close") }}
           </v-btn>
-          <v-btn color="primary" variant="flat" @click="saveRename">
+          <v-btn
+            data-testid="provider-rename-save"
+            color="primary"
+            variant="flat"
+            @click="saveRename"
+          >
             {{ $t("settings.save") }}
           </v-btn>
         </v-card-actions>
@@ -625,23 +630,26 @@ const getCreditsMarkdown = function (credits: string[]) {
   return `**${t("settings.provider_credits")}**: ` + credits.join(" / ");
 };
 
-const saveRename = function () {
-  if (config.value) {
-    config.value.name = editName.value || "";
+const saveRename = async function () {
+  if (!config.value) return;
+  // the name is applied right away so the page shows it at once, which means a
+  // rejected save has to put the previous one back
+  const renamedConfig = config.value;
+  const previousName = renamedConfig.name;
+  renamedConfig.name = editName.value || "";
+  try {
+    await api.saveProviderConfig(
+      renamedConfig.domain,
+      { name: renamedConfig.name || null },
+      renamedConfig.instance_id,
+    );
+    toast.success(t("settings.provider_saved"));
+  } catch (err) {
+    renamedConfig.name = previousName;
+    toast.error(String(err));
+  } finally {
+    showRenameDialog.value = false;
   }
-  api
-    .saveProviderConfig(
-      config.value!.domain,
-      { name: config.value!.name || null },
-      config.value!.instance_id,
-    )
-    .then(() => {
-      loading.value = true;
-    })
-    .finally(() => {
-      loading.value = false;
-      showRenameDialog.value = false;
-    });
 };
 
 async function loadConfig(instanceId: string) {
