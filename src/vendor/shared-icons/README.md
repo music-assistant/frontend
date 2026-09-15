@@ -12,19 +12,17 @@ the provenance of everything else.
 ## How a sync happens
 
 Normally you do not run anything by hand. When shared-icons publishes a release,
-its release workflow (the sender) triggers this repo's
-[`sync-shared-icons`](../../../.github/workflows/sync-shared-icons.yml) workflow
-(the receiver) via `gh workflow run`, passing the new tag. Both sides use the
-`musicassistant-bot` GitHub App, so the receiver runs the sync and opens a signed
-PR labelled `dependencies`. If the tag is already vendored the sync is a no-op and
-no PR is opened.
+its release workflow checks out this repo, runs `pnpm sync:shared-icons <tag>` and
+opens a signed PR as `musicassistant-bot`, labelled `dependencies`. This mirrors how
+a frontend release opens the version bump PR on the server. If the tag is already
+vendored there is no diff and no PR.
 
-The same workflow can be run by hand from the Actions tab with a tag, which is
-the way to sync a release before the sender is wired up on the shared-icons side.
+To sync a release by hand, for example after a tag was replaced, run the script
+locally with the tag and open a PR from the result.
 
 ## Updating locally
 
-You rarely need this, but the same tool the workflow uses runs locally too.
+The same tool the release workflow runs works locally too.
 
 Bump to a new release tag:
 
