@@ -1,14 +1,13 @@
 import { useHosts } from "@/composables/ai-radio/useHosts";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import api from "@/plugins/api";
 import {
   PLAYER_CONTROL_NONE,
   PlayerType,
   type AIRadioHost,
   type Player,
   type PlayerQueue,
-  type ProviderInstance,
 } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { flushPromises } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -16,18 +15,12 @@ const { sendCommand } = vi.hoisted(() => ({
   sendCommand: vi.fn(),
 }));
 
-// api.providers must be reactive here: the prefetch hangs off a watch on the
-// provider list, which is exactly what this test exercises.
-vi.mock("@/plugins/api", async () => {
-  const { reactive } = await import("vue");
-  return {
-    default: {
-      players: {},
-      providers: reactive<Record<string, ProviderInstance>>({}),
-      sendCommand,
-    },
-  };
-});
+vi.mock("@/plugins/api", () => ({
+  default: {
+    players: {},
+    sendCommand,
+  },
+}));
 
 // signed in as a member
 vi.mock("@/plugins/auth", async () => {
@@ -49,9 +42,12 @@ vi.mock("@/plugins/eventbus", () => ({
   eventbus: { emit: vi.fn() },
 }));
 
-vi.mock("@/plugins/store", () => ({
-  store: {},
-}));
+// the store must be reactive here: the prefetch hangs off a watch on the
+// enabled plugins, which is exactly what this test exercises.
+vi.mock("@/plugins/store", async () => {
+  const { reactive } = await import("vue");
+  return { store: reactive({ enabledPlugins: new Set<string>() }) };
+});
 
 vi.mock("@/helpers/sleep_timer", () => ({
   getSleepTimerMenuItem: vi.fn(),
@@ -110,10 +106,7 @@ describe("useHosts queue dj prefetch", () => {
     expect(useHosts().hosts.value).toEqual([]);
     expect(sendCommand).not.toHaveBeenCalled();
 
-    api.providers["ai_radio--1"] = {
-      domain: "ai_radio",
-      available: true,
-    } as ProviderInstance;
+    store.enabledPlugins = new Set(["ai_radio"]);
     await flushPromises();
 
     expect(sendCommand).toHaveBeenCalledWith("ai_radio/hosts/list");

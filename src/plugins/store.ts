@@ -2,6 +2,7 @@ import { computed, reactive } from "vue";
 import {
   Player,
   PlayerQueue,
+  ProviderType,
   QueueItem,
   Role,
   ServerInfoMessage,
@@ -106,7 +107,19 @@ export const store: Store = reactive({
   isIngressSession: computed(() =>
     isHomeAssistantIngressSession(api.serverInfo.value),
   ),
-  enabledPlugins: new Set(),
+  // the loaded plugins, which every role may list; their configs would take
+  // config.providers.read, and a plugin that isn't loaded can't serve its page
+  enabledPlugins: computed(
+    () =>
+      new Set(
+        Object.values(api.providers)
+          .filter(
+            (provider) =>
+              provider.type === ProviderType.PLUGIN && provider.available,
+          )
+          .map((provider) => provider.domain),
+      ),
+  ),
   isPartyGuest: false,
   navMenuEditMode: false,
 });

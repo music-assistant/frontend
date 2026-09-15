@@ -33,7 +33,11 @@ vi.mock("@vueuse/core", async () => {
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   return {
-    store: reactive({ mobileLayout: false, showPlayersMenu: false }),
+    store: reactive({
+      mobileLayout: false,
+      showPlayersMenu: false,
+      enabledPlugins: new Set<string>(),
+    }),
   };
 });
 

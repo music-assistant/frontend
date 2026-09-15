@@ -63,12 +63,7 @@ import {
   resetMediaSession,
 } from "@/helpers/mediaSession";
 import { api, ConnectionState } from "@/plugins/api";
-import {
-  CoreState,
-  EventType,
-  ProviderType,
-  Scope,
-} from "@/plugins/api/interfaces";
+import { CoreState, EventType, Scope } from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
@@ -272,19 +267,6 @@ let initializationCompleted = false;
 // the user's role and its sorted scopes at the last completed initialization
 let initializedAccess: string | undefined;
 
-// the loaded plugins, which every role may list; their configs would take
-// config.providers.read, and a plugin that isn't loaded can't serve its page
-const refreshEnabledPlugins = () => {
-  store.enabledPlugins = new Set(
-    Object.values(api.providers)
-      .filter(
-        (provider) =>
-          provider.type === ProviderType.PLUGIN && provider.available,
-      )
-      .map((provider) => provider.domain),
-  );
-};
-
 // TODO: Remove this migration code in v2.9 release
 // Added in: current version
 // Can be removed: v2.9
@@ -409,9 +391,6 @@ const completeInitialization = async () => {
     store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
     store.libraryGenresCount = await api.getLibraryGenresCount();
-
-    // Keep plugin-backed UI entries in sync with the loaded plugins.
-    refreshEnabledPlugins();
   } else if (isDashboardViewer) {
     console.debug("[App] Dashboard viewer - fetching player/queue state only");
     // Dashboards render live player/queue state, which regular guests don't need
@@ -644,15 +623,6 @@ onMounted(async () => {
   ) {
     await completeInitialization();
   }
-
-  // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync.
-  api.subscribe(EventType.PROVIDERS_UPDATED, () => {
-    if (authManager.isGuestAccessSession() || authManager.isDashboardViewer())
-      return;
-
-    // api.providers already holds the list this event carries
-    refreshEnabledPlugins();
-  });
 
   // Re-prune when the provider set changes at runtime.
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {

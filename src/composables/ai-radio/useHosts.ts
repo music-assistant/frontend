@@ -4,6 +4,7 @@ import api from "@/plugins/api";
 import type { AIRadioHost, AIRadioSection } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
@@ -34,13 +35,8 @@ const deletingHostId = ref("");
 
 let queueDjStatePrefetched = false;
 
-// Submenu only shown when the ai_radio provider is loaded; reactive on
-// api.providers so no network call is needed to decide.
-const aiRadioAvailable = computed(() =>
-  Object.values(api.providers).some(
-    (provider) => provider.domain === "ai_radio" && provider.available,
-  ),
-);
+// Submenu only shown when the ai_radio provider is loaded.
+const aiRadioAvailable = computed(() => store.enabledPlugins.has("ai_radio"));
 
 // Prefetch as soon as the provider is there, including when it already is, for
 // the roles that get the queue DJ menu.

@@ -9,7 +9,8 @@ import type {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { computed, ref, watch } from "vue";
+import { store } from "@/plugins/store";
+import { ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
 const STATUS_POLL_ACTIVE_MS = 5000;
@@ -44,21 +45,13 @@ let statusLoadedOnce = false;
 let statusPollTimer: ReturnType<typeof setTimeout> | null = null;
 let statusPollingEnabled = false;
 
-// Reactive on api.providers, mirroring useHosts' check, so callers that only
-// need the show/session caches don't have to depend on useHosts for this.
-const aiRadioAvailable = computed(() =>
-  Object.values(api.providers ?? {}).some(
-    (provider) => provider.domain === "ai_radio" && provider.available,
-  ),
-);
-
 let showSessionStatePrefetched = false;
 
 // Prefetch as soon as the provider is there, for the roles that get the queue DJ
 // menu, so it can resolve an on-air show's host from anywhere in the app, not
 // just this view.
 watch(
-  () => aiRadioAvailable.value && canUseQueueDj(),
+  () => store.enabledPlugins.has("ai_radio") && canUseQueueDj(),
   (ready) => {
     // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
     if (ready && authManager.guestSessionKind() === null)
