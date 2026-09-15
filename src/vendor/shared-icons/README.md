@@ -12,7 +12,8 @@ the provenance of everything else.
 ## How a sync happens
 
 Normally you do not run anything by hand. When shared-icons publishes a release,
-its release workflow checks out this repo, runs `pnpm sync:shared-icons <tag>` and
+its [release workflow](https://github.com/music-assistant/shared-icons/blob/main/.github/workflows/frontend-sync.yml)
+checks out this repo, runs `pnpm sync:shared-icons <tag>` and
 opens a signed PR as `musicassistant-bot`, labelled `dependencies`. This mirrors how
 a frontend release opens the version bump PR on the server. If the tag is already
 vendored there is no diff and no PR.

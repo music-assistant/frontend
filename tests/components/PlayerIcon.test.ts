@@ -1,4 +1,5 @@
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import { registry } from "@/components/ma-icons";
 import { makeSvgIcon } from "@/components/ma-icons/_make-icon";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
@@ -98,8 +99,11 @@ describe("PlayerIcon", () => {
     const wrapper = mount(PlayerIcon, {
       props: { icon: "tv", grouped: true, size: 20 },
     });
-    // the custom Speakers icon draws two cabinets (2 rects + 2 circles)
-    expect(wrapper.findAll("rect").length).toBe(2);
-    expect(wrapper.findAll("circle").length).toBe(2);
+    // Compare with the registry so a redraw upstream does not break this.
+    const speakers = mount(registry.speakers, {
+      props: { size: 20 },
+      attrs: { "aria-hidden": "true" },
+    });
+    expect(wrapper.html()).toBe(speakers.html());
   });
 });
