@@ -644,11 +644,14 @@ const saveRename = async function () {
   renamedConfig.name = editName.value || "";
   renameLoading.value = true;
   try {
-    await api.saveProviderConfig(
+    const savedConfig = await api.saveProviderConfig(
       renamedConfig.domain,
       { name: renamedConfig.name || null },
       renamedConfig.instance_id,
     );
+    // the stored name is the server's to decide, so its answer replaces what
+    // was typed
+    renamedConfig.name = savedConfig.name;
     toast.success(t("settings.provider_saved"));
   } catch (err) {
     renamedConfig.name = previousName;

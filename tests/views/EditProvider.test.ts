@@ -893,9 +893,11 @@ describe("EditProvider", () => {
     apiMock.getProviderConfig.mockResolvedValue(
       spotifyConfig(ProviderStatus.LOADED),
     );
-    apiMock.saveProviderConfig.mockResolvedValue(
-      spotifyConfig(ProviderStatus.LOADED),
-    );
+    // the server decides the stored name - here it deduplicates the one that
+    // was typed - so the header has to show its answer, not what was sent
+    const savedConfig = spotifyConfig(ProviderStatus.LOADED);
+    savedConfig.name = "Kitchen Spotify (2)";
+    apiMock.saveProviderConfig.mockResolvedValue(savedConfig);
 
     const wrapper = shallowMount(EditProvider, {
       props: {
@@ -923,7 +925,7 @@ describe("EditProvider", () => {
       { name: "Kitchen Spotify" },
       "spotify--test",
     );
-    expect(wrapper.get("h2").text()).toBe("Kitchen Spotify");
+    expect(wrapper.get("h2").text()).toBe("Kitchen Spotify (2)");
     expect(toastMock.success).toHaveBeenCalledWith("settings.provider_saved");
   });
 
@@ -995,12 +997,52 @@ describe("EditProvider", () => {
 
     expect(apiMock.saveProviderConfig).toHaveBeenCalledTimes(1);
 
-    resolveSave(spotifyConfig(ProviderStatus.LOADED));
+    const savedConfig = spotifyConfig(ProviderStatus.LOADED);
+    savedConfig.name = "Kitchen Spotify";
+    resolveSave(savedConfig);
     await flushPromises();
 
     expect(wrapper.get("h2").text()).toBe("Kitchen Spotify");
     expect(toastMock.success).toHaveBeenCalledTimes(1);
     expect(toastMock.success).toHaveBeenCalledWith("settings.provider_saved");
+  });
+
+  it("saves a rename from the enter key on the name field", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+    const savedConfig = spotifyConfig(ProviderStatus.LOADED);
+    savedConfig.name = "Kitchen Spotify";
+    apiMock.saveProviderConfig.mockResolvedValue(savedConfig);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: { ...providerDetailsStubs, ...renameDialogStubs },
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .get('[aria-label="settings.set_custom_name"]')
+      .trigger("click");
+    await wrapper.get("input").setValue("Kitchen Spotify");
+    // no save in flight, so the key press is the only thing that can submit
+    await wrapper.get("input").trigger("keyup.enter");
+    await flushPromises();
+
+    expect(apiMock.saveProviderConfig).toHaveBeenCalledTimes(1);
+    expect(apiMock.saveProviderConfig).toHaveBeenCalledWith(
+      "spotify",
+      { name: "Kitchen Spotify" },
+      "spotify--test",
+    );
+    expect(wrapper.get("h2").text()).toBe("Kitchen Spotify");
   });
 
   it("keeps a pending local edit and shows a toast when an action returns no entries", async () => {
