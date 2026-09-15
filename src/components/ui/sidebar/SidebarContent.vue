@@ -23,6 +23,10 @@ const props = defineProps<{
 </template>
 
 <style>
+[data-sidebar="content"] {
+  --scrollbar-track-color: transparent;
+}
+
 /* Collapsed sidebar: remove group padding so icons/images are not clipped */
 [data-collapsible="icon"] [data-sidebar="group"][data-slot="sidebar-group"] {
   padding-right: 0 !important;
