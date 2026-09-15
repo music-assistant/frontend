@@ -605,21 +605,21 @@
             "household": "Shared (no owner)",
             "sharing": "Sharing",
             "shared_users": "Shared with",
-            "select_members": "Select members",
-            "shared_with_count": "Shared with {count} member | Shared with {count} members",
+            "select_members": "Select users",
+            "shared_with_count": "Shared with {count} user | Shared with {count} users",
             "options": {
                 "private": "Only me",
-                "selected": "Selected members",
-                "members": "All members",
+                "selected": "Selected users",
+                "members": "All users except guests",
                 "everyone": "Everyone, including guests",
                 "not_shared": "Not shared"
             },
             "hints": {
                 "private": "Only the owner can use this source.",
-                "selected": "The owner and the members selected below.",
-                "members": "Every signed-in member, guests excluded.",
+                "selected": "The owner and the users selected below.",
+                "members": "Every signed-in user, guests excluded.",
                 "everyone": "Any user can use this source.",
-                "selected_no_owner": "Only the members selected below.",
+                "selected_no_owner": "Only the users selected below.",
                 "nobody": "Nobody can use this source until it has an owner or is shared with someone."
             },
             "updated": "Access updated",
@@ -2116,10 +2116,10 @@
         "collaborative_hint": "Everyone the playlist is shared with may also add and remove items.",
         "hints": {
             "private": "Only the owner can see this playlist.",
-            "selected": "The owner and the members selected below.",
-            "members": "Every signed-in member, guests excluded.",
+            "selected": "The owner and the users selected below.",
+            "members": "Every signed-in user, guests excluded.",
             "everyone": "Any user can see this playlist.",
-            "selected_no_owner": "Only the members selected below.",
+            "selected_no_owner": "Only the users selected below.",
             "nobody": "Nobody can see this playlist until it has an owner or is shared with someone."
         },
         "updated": "Sharing updated"
