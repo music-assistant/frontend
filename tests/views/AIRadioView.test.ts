@@ -29,7 +29,7 @@ const { sendCommand, getLibraryPlaylists, hasScope, routeMock, routerMock } =
 
 vi.mock("@/plugins/api", () => {
   const mockApi = {
-    // useOrderedPlayers reads players directly.
+    // useOrderedPlayers reads the players.
     players: {},
     sendCommand,
     getLibraryPlaylists,
