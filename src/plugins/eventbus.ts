@@ -47,6 +47,9 @@ export type DeleteConfirmationDialogEvent = {
   message: string;
   title?: string;
   confirmLabel?: string;
+  // false for a confirmation that does not destroy anything: the confirm button
+  // is then the regular one instead of the red destructive one
+  destructive?: boolean;
   onConfirm: () => void | Promise<void>;
 };
 
@@ -65,6 +68,10 @@ export type ImportPlaylistEvent = {
 };
 
 export type MigratePlaylistDialogEvent = {
+  playlist: Playlist;
+};
+
+export type PlaylistAccessDialogEvent = {
   playlist: Playlist;
 };
 
@@ -113,6 +120,7 @@ export type Events = {
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
   migratePlaylistDialog: MigratePlaylistDialogEvent;
+  playlistAccessDialog: PlaylistAccessDialogEvent;
   createSmartPlaylist: CreateSmartPlaylistEvent;
   audioOverlayDialog: AudioOverlayDialogEvent;
   playAnnouncementDialog: PlayAnnouncementDialogEvent;

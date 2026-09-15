@@ -18,7 +18,7 @@
             :loading="toggleLoading"
             @click="toggleEnabled"
           >
-            {{ $t("settings.enable_provider") }}
+            {{ $t("settings.enable") }}
           </v-btn>
         </div>
       </v-alert>
@@ -81,7 +81,7 @@
                 @click="onReload"
               >
                 <RefreshCw class="size-4" />
-                {{ $t("settings.reload_provider") }}
+                {{ $t("settings.reload") }}
               </Button>
             </template>
           </div>
@@ -100,12 +100,14 @@
               <Button
                 variant="ghost"
                 size="icon-sm"
-                :aria-label="$t('settings.provider_name')"
-                :title="$t('settings.provider_name')"
+                :aria-label="$t('settings.set_custom_name')"
+                :title="$t('settings.set_custom_name')"
                 @click="showRenameDialog = true"
               >
                 <Pencil class="size-4" />
-                <span class="sr-only">{{ $t("settings.provider_name") }}</span>
+                <span class="sr-only">{{
+                  $t("settings.set_custom_name")
+                }}</span>
               </Button>
               <Badge
                 data-testid="provider-status"
@@ -307,11 +309,15 @@ import {
   hasAdvancedEntries,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
-import { isOwnMusicSource } from "@/helpers/provider_access";
+import {
+  isOwnMusicSource,
+  isSelfServiceProvider,
+} from "@/helpers/provider_access";
 import {
   canReconfigureProvider,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  providerDisplayName,
 } from "@/helpers/provider_config";
 import { getExternalLinkUrl, markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -320,6 +326,7 @@ import {
   EventType,
   ProviderConfig,
   ProviderStatus,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
@@ -377,19 +384,27 @@ const providerManifest = computed(() => {
   return api.providerManifests[config.value.domain];
 });
 
-const providerName = computed(
-  () =>
-    config.value?.name ||
-    api.providers[config.value?.instance_id ?? ""]?.name ||
-    providerManifest.value?.name,
+const providerName = computed(() =>
+  config.value
+    ? providerDisplayName(
+        config.value,
+        api.providers[config.value.instance_id],
+        providerManifest.value,
+      )
+    : "",
 );
 
-const canReconfigure = computed(() =>
-  canReconfigureProvider(
-    config.value?.status,
-    providerManifest.value?.has_setup_flow,
-    config.value?.enabled,
-  ),
+// reconfiguring a source sets it up again, which a member may only do for a
+// provider it may set up itself
+const canReconfigure = computed(
+  () =>
+    (authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE) ||
+      isSelfServiceProvider(providerManifest.value)) &&
+    canReconfigureProvider(
+      config.value?.status,
+      providerManifest.value?.has_setup_flow,
+      config.value?.enabled,
+    ),
 );
 
 const canToggleEnabled = computed(
@@ -517,12 +532,12 @@ const onRemove = function () {
   const instanceId = config.value.instance_id;
   eventbus.emit("deleteConfirmationDialog", {
     title: t("settings.remove_provider"),
-    message: t("settings.remove_provider_confirm"),
+    message: t("settings.remove_provider_confirm", [providerName.value]),
     confirmLabel: t("settings.remove_provider"),
     onConfirm: async () => {
       try {
         await api.removeProviderConfig(instanceId);
-        toast.success(t("settings.provider_removed"));
+        toast.success(t("settings.provider_removed", [providerName.value]));
         backToProviders();
       } catch (err) {
         toast.error(String(err));
@@ -700,7 +715,7 @@ function isCurrentProvider(instanceId: string) {
 
 function mayManage(providerConfig: ProviderConfig) {
   return (
-    authManager.isAdmin() ||
+    authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE) ||
     isOwnMusicSource(providerConfig, store.currentUser?.user_id)
   );
 }

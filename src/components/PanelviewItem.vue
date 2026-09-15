@@ -47,7 +47,9 @@
           {{ item.position }}
         </span>
         <FavouriteButton
-          v-if="getBreakpointValue('bp3') && 'favorite' in item"
+          v-if="
+            getBreakpointValue('bp3') && 'favorite' in item && canEditLibrary
+          "
           :item="item"
         />
         <v-spacer />
@@ -68,7 +70,12 @@ import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
-import { ContentType, type MediaItemType } from "@/plugins/api/interfaces";
+import {
+  ContentType,
+  Scope,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
@@ -99,6 +106,11 @@ const compProps = withDefaults(defineProps<Props>(), {
   parentItem: undefined,
   sortBy: undefined,
 });
+
+// favouring an item changes the library
+const canEditLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE),
+);
 
 const emit = defineEmits<{
   (e: "select", item: MediaItemType, selected: boolean): void;

@@ -16,11 +16,11 @@ import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { emitEvent, getPreference, isAdmin, preferenceState, setPreference } =
+const { emitEvent, getPreference, hasScope, preferenceState, setPreference } =
   vi.hoisted(() => ({
     emitEvent: vi.fn(),
     getPreference: vi.fn(),
-    isAdmin: vi.fn(() => true),
+    hasScope: vi.fn(() => true),
     preferenceState: {
       values: {} as Record<string, unknown>,
       reactiveValues: undefined as Record<string, unknown> | undefined,
@@ -77,7 +77,7 @@ vi.mock("@/plugins/eventbus", () => ({
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
-    isAdmin,
+    hasScope,
   },
 }));
 

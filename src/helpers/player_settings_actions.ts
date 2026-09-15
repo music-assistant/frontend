@@ -11,7 +11,9 @@ import {
   PlayerConfig,
   PlayerType,
   ProviderFeature,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
@@ -119,7 +121,8 @@ export const getPlayerSettingsMenuItems = (
           `/settings/editprovider/${provider?.instance_id ?? config.provider}`,
         ),
       icon: markRaw(Cog),
-      hide: !provider,
+      // a player provider's settings take config.providers.write
+      hide: !provider || !authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
     },
     {
       label: "settings.documentation",

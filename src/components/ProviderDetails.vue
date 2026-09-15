@@ -146,6 +146,7 @@ import { api } from "@/plugins/api";
 import {
   MediaType,
   ProviderMapping,
+  Scope,
   type MediaItem,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -264,18 +265,23 @@ const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
   }
   // remove mapping option (only for streaming provider mapping)
   if (
-    authManager.isAdmin() &&
+    authManager.hasScope(Scope.LIBRARY_MANAGE) &&
     api.providers[providerMapping.provider_instance]?.is_streaming_provider
   ) {
     menuItems.push({
       label: t("remove_provider_mapping"),
       icon: "mdi-delete",
-      action: async () => {
-        if (!confirm(t("remove_provider_mapping_confirm"))) return;
-        await api.sendCommand("music/remove_provider_mapping", {
-          media_type: props.itemDetails.media_type,
-          db_id: props.itemDetails.item_id,
-          mapping: providerMapping,
+      action: () => {
+        eventbus.emit("deleteConfirmationDialog", {
+          title: t("remove_provider_mapping"),
+          message: t("remove_provider_mapping_confirm"),
+          confirmLabel: t("remove_provider_mapping"),
+          onConfirm: () =>
+            api.sendCommand("music/remove_provider_mapping", {
+              media_type: props.itemDetails.media_type,
+              db_id: props.itemDetails.item_id,
+              mapping: providerMapping,
+            }),
         });
       },
     });
@@ -290,16 +296,23 @@ const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
 };
 
 const searchAllProviders = function () {
-  if (!confirm(t("search_all_providers_confirm"))) return;
-  mappingSearchInProgress.value = true;
-  api
-    .sendCommand("music/match_providers", {
-      media_type: props.itemDetails.media_type,
-      db_id: props.itemDetails.item_id,
-    })
-    .finally(() => {
-      mappingSearchInProgress.value = false;
-    });
+  eventbus.emit("deleteConfirmationDialog", {
+    title: t("search_all_providers"),
+    message: t("search_all_providers_confirm"),
+    confirmLabel: t("search"),
+    destructive: false,
+    onConfirm: () => {
+      mappingSearchInProgress.value = true;
+      api
+        .sendCommand("music/match_providers", {
+          media_type: props.itemDetails.media_type,
+          db_id: props.itemDetails.item_id,
+        })
+        .finally(() => {
+          mappingSearchInProgress.value = false;
+        });
+    },
+  });
 };
 
 const toolbarMenuItems = computed(() => {
@@ -314,7 +327,7 @@ const toolbarMenuItems = computed(() => {
       hide:
         props.itemDetails.provider != "library" ||
         !api.hasStreamingProviders.value ||
-        !authManager.isAdmin(),
+        !authManager.hasScope(Scope.LIBRARY_MANAGE),
     },
     // toggle expand
     {

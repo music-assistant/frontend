@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import NavGettingStarted from "@/components/navigation/NavGettingStarted.vue";
 import NavMain from "@/components/navigation/NavMain.vue";
 import NavShortcuts from "@/components/navigation/NavShortcuts.vue";
 import { Button } from "@/components/ui/button";
@@ -159,6 +160,7 @@ onUnmounted(() => {
       </SidebarMenu>
     </SidebarHeader>
     <SidebarContent>
+      <NavGettingStarted class="mt-1" />
       <NavMain
         :items="discoverItems"
         :label="sections.explore.label"

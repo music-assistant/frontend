@@ -18,6 +18,7 @@
                     :name="field.name"
                     :model-value="field.state.value"
                     :aria-invalid="isInvalid(field)"
+                    :disabled="isSystemAccount"
                     autocomplete="username"
                     @blur="field.handleBlur"
                     @input="
@@ -28,6 +29,9 @@
                       }
                     "
                   />
+                  <FieldDescription v-if="isSystemAccount">
+                    {{ $t("auth.system_user_hint") }}
+                  </FieldDescription>
                   <FieldError
                     v-if="isInvalid(field)"
                     :errors="field.state.meta.errors"
@@ -102,9 +106,9 @@
                   </FieldLabel>
                   <Select
                     :model-value="field.state.value"
-                    :disabled="isCurrentUser"
+                    :disabled="isCurrentUser || isSystemAccount"
                     @update:model-value="
-                      (value) => field.handleChange(value as UserRole)
+                      (value) => field.handleChange(value as string)
                     "
                   >
                     <SelectTrigger :id="field.name" class="w-full">
@@ -124,7 +128,7 @@
               </template>
             </form.Field>
 
-            <form.Field name="password">
+            <form.Field v-if="!isSystemAccount" name="password">
               <template #default="{ field }">
                 <Field :data-invalid="isInvalid(field)">
                   <FieldLabel :for="field.name">
@@ -157,7 +161,10 @@
               </template>
             </form.Field>
 
-            <form.Field v-if="passwordValue" name="confirmPassword">
+            <form.Field
+              v-if="!isSystemAccount && passwordValue"
+              name="confirmPassword"
+            >
               <template #default="{ field }">
                 <Field :data-invalid="isInvalid(field)">
                   <FieldLabel :for="field.name">
@@ -256,8 +263,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { assignableRoles, roleDisplayName } from "@/helpers/roles";
+import { isSystemUser } from "@/helpers/users";
 import { editUserSchema } from "@/lib/forms/profile";
-import { api } from "@/plugins/api";
+import { api, ApiCommandError } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
 import { UserRole } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -308,11 +317,12 @@ const handleFormSubmit = async () => {
   }
 };
 
-const roleOptions = computed(() => [
-  { label: t("auth.admin_role"), value: "admin" },
-  { label: t("auth.user_role"), value: "user" },
-  { label: t("auth.guest_role"), value: "guest" },
-]);
+const roleOptions = computed(() =>
+  assignableRoles(store.roles, props.user?.role).map((role) => ({
+    label: roleDisplayName(role.role_id, store.roles),
+    value: role.role_id,
+  })),
+);
 
 const playerOptions = computed(() => {
   return Object.values(api.players)
@@ -328,13 +338,17 @@ const isCurrentUser = computed(() => {
   return props.user.user_id === store.currentUser.user_id;
 });
 
+const isSystemAccount = computed(() => {
+  if (!props.user) return false;
+  return isSystemUser(props.user);
+});
+
 const form = useForm({
   defaultValues: {
     username: props.user?.username || "",
     displayName: props.user?.display_name || "",
     avatarUrl: props.user?.avatar_url || "",
-    // the picker only offers the builtin roles, which the schema enforces on submit
-    role: (props.user?.role as UserRole) || UserRole.USER,
+    role: props.user?.role || UserRole.USER,
     password: "",
     confirmPassword: "",
     playerFilter: props.user?.player_filter || [],
@@ -352,7 +366,7 @@ const form = useForm({
         username?: string;
         displayName?: string;
         avatarUrl?: string;
-        role?: UserRole;
+        role?: string;
         password?: string;
         player_filter?: string[];
       } = {};
@@ -381,12 +395,18 @@ const form = useForm({
         updates.player_filter = value.playerFilter;
       }
 
-      await api.updateUser(props.user.user_id, updates);
+      await api.updateUser(props.user.user_id, updates, {
+        suppressGlobalError: true,
+      });
       toast.success(t("auth.user_updated"));
       emit("updated");
       emit("update:modelValue", false);
     } catch (error) {
-      toast.error(t("auth.user_update_failed"));
+      toast.error(
+        error instanceof ApiCommandError && error.details
+          ? error.details
+          : t("auth.user_update_failed"),
+      );
     } finally {
       loading.value = false;
     }
@@ -404,7 +424,7 @@ const resetForm = () => {
     form.setFieldValue("username", props.user.username);
     form.setFieldValue("displayName", props.user.display_name || "");
     form.setFieldValue("avatarUrl", props.user.avatar_url || "");
-    form.setFieldValue("role", props.user.role as UserRole);
+    form.setFieldValue("role", props.user.role);
     form.setFieldValue("password", "");
     form.setFieldValue("confirmPassword", "");
     form.setFieldValue("playerFilter", props.user.player_filter);

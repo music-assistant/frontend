@@ -851,6 +851,13 @@ export interface ProviderAccess {
   shared_users: string[];
 }
 
+export interface PlaylistAccess extends ProviderAccess {
+  // Who a Music Assistant playlist serves: its owner, who may see it and who may edit it.
+  // collaborative: everyone the playlist is shared with may also add and remove its
+  // items; otherwise only the owner may
+  collaborative: boolean;
+}
+
 export interface ProviderConfig extends Config {
   // Provider(instance) Configuration.
   type: ProviderType;
@@ -1038,6 +1045,11 @@ export interface Playlist extends MediaItem {
   is_editable: boolean;
   supported_mediatypes: MediaType[];
   is_dynamic: boolean;
+  // access: only Music Assistant's own (builtin) playlists carry a record. null
+  // means everyone: a playlist without a record, or a playlist of a music
+  // source, which follows the access of that source. Its owner is a user id,
+  // unrelated to the display name in owner
+  access: PlaylistAccess | null;
 }
 
 // track matching tier accepted when matching playlist tracks against a
@@ -1562,6 +1574,10 @@ export interface ProviderManifest {
   allow_disable: boolean;
   // has_setup_flow: whether setup can be run again to reconfigure the provider
   has_setup_flow: boolean;
+  // self_service: whether a member may set up (and reconfigure) a music source of
+  // this provider itself, instead of only a user who manages every music source;
+  // an older server does not send it and lets a member set up any provider
+  self_service?: boolean;
   stage: ProviderStage;
   // icon: material design icon
   icon: string | null;
@@ -1715,7 +1731,8 @@ export interface ButtonProps {
 // Authentication interfaces
 
 export enum UserRole {
-  // The role ids of the builtin user roles; User.role is not limited to these.
+  // The ids of the builtin user roles; User.role may also hold the id of a
+  // custom role (see Role).
   ADMIN = "admin",
   USER = "user",
   GUEST = "guest",
@@ -1770,6 +1787,25 @@ export interface User {
   provider_filter: string[];
   player_filter: string[];
   // Use authManager.isPartyGuest() to check for party sessions.
+}
+
+export interface UserSummary {
+  // The public face of a user account, safe to serve to every member.
+  user_id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
+export interface Role {
+  // A user role: a named set of scopes.
+  role_id: string;
+  // name: the English name of a builtin role (shown translated by its id), or
+  // the name an admin gave a custom role
+  name: string;
+  scopes: string[];
+  // builtin: a role that ships with Music Assistant and can not be changed or removed
+  builtin: boolean;
 }
 
 export interface AuthToken {
