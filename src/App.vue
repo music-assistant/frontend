@@ -272,27 +272,17 @@ let initializationCompleted = false;
 // the user's role and its sorted scopes at the last completed initialization
 let initializedAccess: string | undefined;
 
-const refreshPluginEnabledState = async (domain: string) => {
-  try {
-    const providers = await api.getProviderConfigs(ProviderType.PLUGIN, domain);
-    if (providers.length > 0 && providers[0].enabled) {
-      store.enabledPlugins.add(domain);
-    } else {
-      store.enabledPlugins.delete(domain);
-    }
-  } catch (error) {
-    console.error("[App] Failed to check " + domain + " status:", error);
-    store.enabledPlugins.delete(domain);
-  }
-};
-
-const refreshPluginEnabledStates = async () => {
-  await Promise.all([
-    refreshPluginEnabledState("party"),
-    refreshPluginEnabledState("music_quiz"),
-    refreshPluginEnabledState("ai_radio"),
-    refreshPluginEnabledState("milkdrop_visualizer"),
-  ]);
+// the loaded plugins, which every role may list; their configs would take
+// config.providers.read, and a plugin that isn't loaded can't serve its page
+const refreshPluginEnabledStates = () => {
+  store.enabledPlugins = new Set(
+    Object.values(api.providers)
+      .filter(
+        (provider) =>
+          provider.type === ProviderType.PLUGIN && provider.available,
+      )
+      .map((provider) => provider.domain),
+  );
 };
 
 // TODO: Remove this migration code in v2.9 release
@@ -420,8 +410,8 @@ const completeInitialization = async () => {
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
     store.libraryGenresCount = await api.getLibraryGenresCount();
 
-    // Keep plugin-backed UI entries in sync with enabled providers.
-    await refreshPluginEnabledStates();
+    // Keep plugin-backed UI entries in sync with the loaded plugins.
+    refreshPluginEnabledStates();
   } else if (isDashboardViewer) {
     console.debug("[App] Dashboard viewer - fetching player/queue state only");
     // Dashboards render live player/queue state, which regular guests don't need
@@ -656,11 +646,12 @@ onMounted(async () => {
   }
 
   // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync.
-  api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+  api.subscribe(EventType.PROVIDERS_UPDATED, () => {
     if (authManager.isGuestAccessSession() || authManager.isDashboardViewer())
       return;
 
-    await refreshPluginEnabledStates();
+    // api.providers already holds the list this event carries
+    refreshPluginEnabledStates();
   });
 
   // Re-prune when the provider set changes at runtime.

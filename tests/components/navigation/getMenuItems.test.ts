@@ -210,6 +210,26 @@ describe("getMenuItems (sidebar.menu preference)", () => {
     expect(getIds()).not.toContain("music_quiz");
   });
 
+  it("offers a guest the Party, AI Radio and visualizer pages", () => {
+    // what these pages send fits the guest scopes, and their host controls
+    // sit behind scopes of their own
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+    storeMock.enabledPlugins = new Set([
+      "party",
+      "music_quiz",
+      "ai_radio",
+      "milkdrop_visualizer",
+    ]);
+
+    const pluginIds = getMenuItems()
+      .filter((item) => item.group === "plugins")
+      .map((item) => item.id);
+
+    expect(pluginIds).toEqual(["party", "ai_radio", "milkdrop_visualizer"]);
+  });
+
   it("leaves out AI Radio for a member on API schema 74, where only admins play it", () => {
     apiMock.supportsAIRadioPlaybackScopes = false;
     storeMock.enabledPlugins = new Set(["ai_radio"]);
