@@ -66,6 +66,7 @@
               <MediaItemThumb
                 size="50"
                 :item="isAvailable ? item : undefined"
+                alt=""
               />
             </div>
           </div>
@@ -118,6 +119,7 @@
                 <MediaItemThumb
                   size="50"
                   :item="isAvailable ? item : undefined"
+                  alt=""
                 />
               </div>
               <span v-if="item.is_playable" class="listitem-play-blue">
