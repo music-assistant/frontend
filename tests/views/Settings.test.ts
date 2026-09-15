@@ -175,7 +175,9 @@ async function providerTrail(
   // the page publishes its name as it mounts, which the trail picks up on the
   // render after
   await nextTick();
-  return wrapper.getComponent(ToolbarHeadingStub).props("items");
+  const items = wrapper.getComponent(ToolbarHeadingStub).props("items");
+  wrapper.unmount();
+  return items;
 }
 
 describe("Settings breadcrumbs on the settings of a provider", () => {
