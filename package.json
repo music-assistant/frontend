@@ -24,7 +24,7 @@
         "@intlify/unplugin-vue-i18n": "11.2.5",
         "@lucide/vue": "^1.33.0",
         "@mdi/font": "7.4.47",
-        "@scure/base": "^2.2.0",
+        "@scure/base": "^2.4.0",
         "@sendspin/sendspin-js": "5.0.0",
         "@tabler/icons-vue": "^3.46.0",
         "@tailwindcss/vite": "^4.3.3",
