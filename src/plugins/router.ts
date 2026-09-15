@@ -107,7 +107,9 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
-          // App doesn't track enabledPlugins for dashboard viewers; trust the server, since the session only exists via an already-enabled dashboard.
+          // A redirect would loop with the global guard, which sends a
+          // dashboard viewer back to its pinned route; trust the server, since
+          // the session only exists via an already-enabled dashboard.
           if (authManager.isDashboardViewer()) return;
 
           // Only allow access if party plugin is enabled

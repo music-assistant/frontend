@@ -29,9 +29,7 @@ const { sendCommand, getLibraryPlaylists, hasScope, routeMock, routerMock } =
 
 vi.mock("@/plugins/api", () => {
   const mockApi = {
-    // useShows/useHosts derive ai_radio availability from the provider list;
     // useOrderedPlayers reads players directly.
-    providers: {},
     players: {},
     sendCommand,
     getLibraryPlaylists,
@@ -40,7 +38,7 @@ vi.mock("@/plugins/api", () => {
 });
 
 vi.mock("@/plugins/store", () => ({
-  store: { activePlayerId: undefined },
+  store: { activePlayerId: undefined, enabledPlugins: new Set<string>() },
 }));
 
 vi.mock("@/plugins/auth", () => ({
