@@ -290,11 +290,11 @@ const gotoSource = (source: ItemMapping) => {
 }
 
 /* The overlay button's "on" look; its theme tokens are inlined, so the raw
-   --overlay-* variables and their dark defaults are read here. */
+   --overlay-* variables the fullscreen card sets are read here. */
 .queue-mode-banner--active .queue-mode-banner__icon {
   color: var(--primary);
-  background: var(--overlay-bg, rgba(0, 0, 0, 0.4));
-  border-color: var(--overlay-border, rgba(255, 255, 255, 0.25));
+  background: var(--overlay-bg);
+  border-color: var(--overlay-border);
 }
 
 .queue-mode-banner__body {

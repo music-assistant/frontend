@@ -41,20 +41,15 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   /* Hero-style overlay buttons: a faint text-colour wash while off, a solid
-     frosted box while on. Dark defaults; a panel mirrors them for a light
-     background through the --overlay-* variables. */
-  --color-overlay: var(--overlay-bg, rgba(0, 0, 0, 0.4));
-  --color-overlay-border: var(--overlay-border, rgba(255, 255, 255, 0.25));
-  --color-overlay-foreground: var(--overlay-fg, #ffffff);
-  --color-overlay-muted: var(--overlay-muted-bg, rgba(255, 255, 255, 0.1));
-  --color-overlay-muted-hover: var(
-    --overlay-muted-hover,
-    rgba(255, 255, 255, 0.16)
-  );
-  --color-overlay-muted-border: var(
-    --overlay-muted-border,
-    rgba(255, 255, 255, 0.2)
-  );
+     frosted box while on. The --overlay-* variables carry no defaults: the
+     overlay variant only works inside a panel that sets them (the fullscreen
+     player card does, per palette). */
+  --color-overlay: var(--overlay-bg);
+  --color-overlay-border: var(--overlay-border);
+  --color-overlay-foreground: var(--overlay-fg);
+  --color-overlay-muted: var(--overlay-muted-bg);
+  --color-overlay-muted-hover: var(--overlay-muted-hover);
+  --color-overlay-muted-border: var(--overlay-muted-border);
 }
 
 :root {

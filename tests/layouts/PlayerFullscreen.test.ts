@@ -488,10 +488,10 @@ describe("PlayerFullscreen overlay buttons", () => {
     return wrapper;
   }
 
-  it("keeps the dark overlay defaults in the dark theme", async () => {
+  it("sets the dark overlay values in the dark theme", async () => {
     const card = (await mountCard()).get("[data-player-panel]");
 
-    expect(card.attributes("style") ?? "").not.toContain("--overlay-fg");
+    expect(card.attributes("style")).toContain("--overlay-fg: #ffffff");
   });
 
   it("mirrors the overlay buttons for dark text on a light palette", async () => {

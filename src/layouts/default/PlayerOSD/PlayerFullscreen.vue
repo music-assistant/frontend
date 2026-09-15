@@ -1229,9 +1229,19 @@ onMounted(() => {
 const sliderColor = ref<string | undefined>(undefined);
 const backgroundColor = ref<string | undefined>(undefined);
 
-// The overlay buttons default to a light wash while off and a dark frosted box
-// while on. With dark text on a light palette both mirror: a dark wash and a
-// white frosted box. sliderColor carries the panel's text colour.
+// The overlay buttons show a light wash while off and a dark frosted box while
+// on. With dark text on a light palette both mirror: a dark wash and a white
+// frosted box. sliderColor carries the panel's text colour. This is the single
+// source of the --overlay-* values; everything overlay-styled reads them from
+// the card.
+const DARK_OVERLAY_VARS = {
+  "--overlay-bg": "rgba(0, 0, 0, 0.4)",
+  "--overlay-border": "rgba(255, 255, 255, 0.25)",
+  "--overlay-fg": "#ffffff",
+  "--overlay-muted-bg": "rgba(255, 255, 255, 0.1)",
+  "--overlay-muted-hover": "rgba(255, 255, 255, 0.16)",
+  "--overlay-muted-border": "rgba(255, 255, 255, 0.2)",
+};
 const LIGHT_OVERLAY_VARS = {
   "--overlay-bg": "rgba(255, 255, 255, 0.6)",
   "--overlay-border": "rgba(0, 0, 0, 0.2)",
@@ -1241,7 +1251,7 @@ const LIGHT_OVERLAY_VARS = {
   "--overlay-muted-border": "rgba(0, 0, 0, 0.15)",
 };
 const overlayVars = computed(() =>
-  sliderColor.value === "#000000" ? LIGHT_OVERLAY_VARS : undefined,
+  sliderColor.value === "#000000" ? LIGHT_OVERLAY_VARS : DARK_OVERLAY_VARS,
 );
 
 watchEffect(() => {
