@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
+    serverInfo: { value: null },
     getAlbumTracks: vi.fn().mockResolvedValue([]),
     getAlbumVersions: vi.fn().mockResolvedValue([]),
     getArtistAlbums: vi.fn().mockResolvedValue([]),
