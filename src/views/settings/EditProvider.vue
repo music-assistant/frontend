@@ -265,6 +265,8 @@
             data-testid="provider-rename-save"
             color="primary"
             variant="flat"
+            :loading="renameLoading"
+            :disabled="renameLoading"
             @click="saveRename"
           >
             {{ $t("settings.save") }}
@@ -364,6 +366,7 @@ const loading = ref(false);
 const showAdvancedSettings = ref(false);
 const toggleLoading = ref(false);
 const showRenameDialog = ref(false);
+const renameLoading = ref(false);
 const editName = ref<string | null>(null);
 const saveErrorOpen = ref(false);
 const saveErrorMessage = ref("");
@@ -631,12 +634,15 @@ const getCreditsMarkdown = function (credits: string[]) {
 };
 
 const saveRename = async function () {
-  if (!config.value) return;
+  // both the save button and the enter key submit, so a rename already on its
+  // way is left to finish rather than racing a second one
+  if (!config.value || renameLoading.value) return;
   // the name is applied right away so the page shows it at once, which means a
   // rejected save has to put the previous one back
   const renamedConfig = config.value;
   const previousName = renamedConfig.name;
   renamedConfig.name = editName.value || "";
+  renameLoading.value = true;
   try {
     await api.saveProviderConfig(
       renamedConfig.domain,
@@ -648,6 +654,7 @@ const saveRename = async function () {
     renamedConfig.name = previousName;
     toast.error(String(err));
   } finally {
+    renameLoading.value = false;
     showRenameDialog.value = false;
   }
 };

@@ -957,6 +957,52 @@ describe("EditProvider", () => {
     expect(toastMock.error).toHaveBeenCalledWith("Error: Rename failed");
   });
 
+  it("ignores a second submission while a rename is still saving", async () => {
+    let resolveSave: (config: ProviderConfig) => void = () => {};
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+    // held open so the dialog is still on screen, and submittable, while the
+    // first rename is in flight
+    apiMock.saveProviderConfig.mockImplementation(
+      () =>
+        new Promise<ProviderConfig>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: { ...providerDetailsStubs, ...renameDialogStubs },
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .get('[aria-label="settings.set_custom_name"]')
+      .trigger("click");
+    await wrapper.get("input").setValue("Kitchen Spotify");
+    // the button first and the enter key second: the pending save disables the
+    // button, so the key press is the entry point a second save could get in by
+    await wrapper.get('[data-testid="provider-rename-save"]').trigger("click");
+    await wrapper.get("input").trigger("keyup.enter");
+
+    expect(apiMock.saveProviderConfig).toHaveBeenCalledTimes(1);
+
+    resolveSave(spotifyConfig(ProviderStatus.LOADED));
+    await flushPromises();
+
+    expect(wrapper.get("h2").text()).toBe("Kitchen Spotify");
+    expect(toastMock.success).toHaveBeenCalledTimes(1);
+    expect(toastMock.success).toHaveBeenCalledWith("settings.provider_saved");
+  });
+
   it("keeps a pending local edit and shows a toast when an action returns no entries", async () => {
     apiMock.getProviderConfig.mockResolvedValueOnce(
       spotifyConfig(ProviderStatus.LOADED),
