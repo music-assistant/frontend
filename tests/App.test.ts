@@ -3,10 +3,9 @@
 import App from "@/App.vue";
 import {
   EventType,
-  ProviderStatus,
   ProviderType,
   UserRole,
-  type ProviderConfig,
+  type ProviderInstance,
   type Role,
   type User,
 } from "@/plugins/api/interfaces";
@@ -17,7 +16,7 @@ import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "vue-sonner";
-import { providerConfig } from "./fixtures/providerConfig";
+import { providerInstance } from "./fixtures/providerInstance";
 import { role } from "./fixtures/role";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "./fixtures/scopes";
 import { user } from "./fixtures/user";
@@ -69,6 +68,7 @@ const {
     getRoles: vi.fn<MusicAssistantApi["getRoles"]>(),
     initialize: vi.fn<MusicAssistantApi["initialize"]>(),
     isRemoteConnection: { value: false },
+    providers: {} as Record<string, ProviderInstance>,
     requireAuthentication: vi.fn<MusicAssistantApi["requireAuthentication"]>(),
     serverInfo: {
       value: {
@@ -347,7 +347,7 @@ describe("App initialization", () => {
     apiMock.fetchProviders.mockResolvedValue(undefined);
     apiMock.initialize.mockResolvedValue(undefined);
     apiMock.setLocale.mockResolvedValue(undefined);
-    apiMock.getProviderConfigs.mockResolvedValue([partyPluginConfig()]);
+    apiMock.providers = {};
     for (const method of [
       apiMock.getLibraryAlbumsCount,
       apiMock.getLibraryArtistsCount,
@@ -631,6 +631,12 @@ describe("App initialization", () => {
       builtin: true,
     });
     apiMock.getRoles.mockResolvedValue([userRole]);
+    apiMock.providers = loadedProviders(
+      pluginInstance("party"),
+      pluginInstance("music_quiz"),
+      pluginInstance("ai_radio"),
+      pluginInstance("milkdrop_visualizer"),
+    );
 
     wrapper = await mountApp();
 
@@ -641,26 +647,6 @@ describe("App initialization", () => {
     expect(apiMock.fetchProviders).not.toHaveBeenCalled();
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledOnce();
     expectLibraryCountsCalled();
-    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
-      1,
-      ProviderType.PLUGIN,
-      "party",
-    );
-    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
-      2,
-      ProviderType.PLUGIN,
-      "music_quiz",
-    );
-    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
-      3,
-      ProviderType.PLUGIN,
-      "ai_radio",
-    );
-    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
-      4,
-      ProviderType.PLUGIN,
-      "milkdrop_visualizer",
-    );
     expect(storeMock.enabledPlugins).toEqual(
       new Set<string>([
         "party",
@@ -672,9 +658,42 @@ describe("App initialization", () => {
     expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
     expectStartupDataRequestedBeforeReveal();
 
+    // the api takes the new list in before it signals the change
+    apiMock.providers = loadedProviders(pluginInstance("ai_radio"));
     await signalProvidersUpdated();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(8);
+    expect(storeMock.enabledPlugins).toEqual(new Set<string>(["ai_radio"]));
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledTimes(2);
+  });
+
+  it("finds the plugins for a guest without reading their configs", async () => {
+    apiMock.getCurrentUserInfo.mockResolvedValue(
+      user({ role: UserRole.GUEST, user_id: "guest-id", username: "guest" }),
+    );
+    authManagerMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+    apiMock.providers = loadedProviders(
+      pluginInstance("party"),
+      pluginInstance("ai_radio"),
+    );
+
+    wrapper = await mountApp();
+
+    // config/providers takes config.providers.read, which a guest lacks
+    expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+    expect(storeMock.enabledPlugins).toEqual(new Set(["party", "ai_radio"]));
+  });
+
+  it("counts only the plugins that are available", async () => {
+    apiMock.providers = loadedProviders(
+      pluginInstance("party", { available: false }),
+      pluginInstance("ai_radio"),
+      providerInstance({ domain: "test_music" }),
+    );
+
+    wrapper = await mountApp();
+
+    expect(storeMock.enabledPlugins).toEqual(new Set(["ai_radio"]));
   });
 
   it("takes the server's copy of the user when the provider set changes", async () => {
@@ -785,31 +804,30 @@ describe("App initialization", () => {
 
   it("waits for the startup data before revealing the main app", async () => {
     const serverState = createDeferred<void>();
-    const pluginConfigs = createDeferred<ProviderConfig[]>();
     apiMock.fetchState.mockReturnValue(serverState.promise);
-    apiMock.getProviderConfigs.mockReturnValue(pluginConfigs.promise);
+    // what the app holds for the plugins at the moment it reveals itself
+    let pluginsAtReveal: Set<string> | undefined;
+    mockInitializeWebPlayerModeSync.mockImplementation(async () => {
+      pluginsAtReveal = new Set(storeMock.enabledPlugins);
+    });
     wrapper = mountAppWithoutSettling();
 
     await flushPromises();
     expect(apiMock.fetchState).toHaveBeenCalledOnce();
     expectLibraryCountsNotCalled();
-    expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
-    expect(apiMock.state.value).not.toBe("initialized");
-
-    serverState.resolve();
-    await flushPromises();
-    expectLibraryCountsCalled();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(4);
-    // The plugin lookups are still in flight: revealing the app here would
+    // The server state is still in flight: revealing the app here would
     // render it with an unknown set of enabled plugins.
     expect(apiMock.state.value).not.toBe("initialized");
     expect(mockInitializeWebPlayerModeSync).not.toHaveBeenCalled();
     expect(wrapper.find("router-view-stub").exists()).toBe(false);
 
-    pluginConfigs.resolve([partyPluginConfig()]);
+    // the server state brings the loaded providers along
+    apiMock.providers = loadedProviders(pluginInstance("party"));
+    serverState.resolve();
     await flushPromises();
     expect(apiMock.state.value).toBe("initialized");
     expect(wrapper.find("router-view-stub").exists()).toBe(true);
+    expect(pluginsAtReveal).toEqual(new Set(["party"]));
     expectStartupDataRequestedBeforeReveal();
   });
 
@@ -1491,7 +1509,6 @@ function expectStartupDataRequestedBeforeReveal() {
     apiMock.getLibraryPodcastsCount,
     apiMock.getLibraryRadiosCount,
     apiMock.getLibraryTracksCount,
-    apiMock.getProviderConfigs,
   ]) {
     expect(method).toHaveBeenCalled();
     expect(Math.max(...method.mock.invocationCallOrder)).toBeLessThan(revealed);
@@ -1551,13 +1568,22 @@ function createStorage(): Storage {
 }
 
 /**
- * The party plugin config, as returned for the plugin lookups App runs on init.
+ * A loaded plugin, as the server lists it among the providers.
  */
-function partyPluginConfig(): ProviderConfig {
-  return providerConfig({
-    type: ProviderType.PLUGIN,
-    domain: "party",
-    name: "Party",
-    status: ProviderStatus.LOADED,
-  });
+function pluginInstance(
+  domain: string,
+  overrides: Partial<ProviderInstance> = {},
+): ProviderInstance {
+  return providerInstance({ type: ProviderType.PLUGIN, domain, ...overrides });
+}
+
+/**
+ * The given providers keyed by instance id, the way api.providers holds them.
+ */
+function loadedProviders(
+  ...providers: ProviderInstance[]
+): Record<string, ProviderInstance> {
+  return Object.fromEntries(
+    providers.map((provider) => [provider.instance_id, provider]),
+  );
 }

@@ -107,7 +107,7 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
-          // Dashboard viewers can't populate enabledPlugins (scoped like guests); trust the server, since the session only exists via an already-enabled dashboard.
+          // App doesn't track enabledPlugins for dashboard viewers; trust the server, since the session only exists via an already-enabled dashboard.
           if (authManager.isDashboardViewer()) return;
 
           // Only allow access if party plugin is enabled
