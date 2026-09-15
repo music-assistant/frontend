@@ -1,13 +1,6 @@
 #!/usr/bin/env node
 /** Sync a tagged music-assistant/shared-icons release into the frontend. */
-import {
-  cp,
-  mkdtemp,
-  mkdir,
-  readFile,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { cp, mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { dirname, join, resolve } from "node:path";
@@ -32,11 +25,9 @@ const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
 const { tag, sourceDir, commit, local, cleanup } = await getSource();
 
 try {
-  await execFileAsync("node", [join(sourceDir, "scripts", "validate.mjs")]);
   const manifest = await readJson(join(sourceDir, "manifest.json"));
 
-  // validate.mjs above covers the manifest, meta and the SVGs. Only what it
-  // misses belongs here.
+  // Upstream CI validates every commit with its own scripts/validate.mjs
   if (!Array.isArray(manifest.icons) || manifest.icons.length === 0) {
     // Upstream reads `icons ?? []`, so an empty set would generate an empty registry.
     throw new Error("Shared-icons manifest must contain at least one icon");

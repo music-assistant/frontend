@@ -30,7 +30,7 @@ Bump to a new release tag:
 pnpm sync:shared-icons 1.2.3
 ```
 
-This clones that tag, validates it, vendors the files, regenerates the Vue
+This clones that tag, vendors the files, regenerates the Vue
 component registry, and records the tag and commit in `source.json`.
 
 Re-vendor the currently pinned tag (no argument):
