@@ -55,8 +55,11 @@
               <slot name="subtitle" :item="item">{{ subtitle(item) }}</slot>
             </span>
           </span>
-          <span v-if="$slots.tag" class="media-rows__tag">
-            <slot name="tag" :item="item"></slot>
+          <span v-if="showSource || $slots.tag" class="media-rows__tag">
+            <slot name="tag" :item="item">
+              <ProviderIcon :domain="getProviderIconDomain(item)" :size="12" />
+              {{ sourceName(item) }}
+            </slot>
           </span>
           <span v-if="itemDuration(item)" class="media-rows__duration">{{
             formatDuration(itemDuration(item)!)
@@ -100,6 +103,7 @@
 
 <script setup lang="ts">
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getEventPosition,
@@ -111,7 +115,7 @@ import {
 } from "@/helpers/media_item_actions";
 import { formatDuration, getArtistsString } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { getProviderIconDomain, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   AlbumType,
   PlaybackState,
@@ -141,6 +145,8 @@ export interface Props {
   parentItem?: MediaItemType;
   // a heart button per row, for the items that can be favorites
   showFavorite?: boolean;
+  // where each item comes from, as a pill after its text
+  showSource?: boolean;
   skeletonCount?: number;
 }
 const props = withDefaults(defineProps<Props>(), {
@@ -150,13 +156,14 @@ const props = withDefaults(defineProps<Props>(), {
   viewAllTo: undefined,
   parentItem: undefined,
   showFavorite: false,
+  showSource: false,
   skeletonCount: 3,
 });
 
 defineSlots<{
   // the second line of a row; defaults to the artists, else the release info
   subtitle?: (props: { item: RowItem }) => unknown;
-  // an optional pill after the text
+  // the pill after the text, in place of the source `showSource` renders
   tag?: (props: { item: RowItem }) => unknown;
 }>();
 
@@ -172,6 +179,17 @@ const canEditLibrary = computed(() =>
 const shownItems = computed(() =>
   props.limit ? props.items?.slice(0, props.limit) : props.items,
 );
+
+/** The name of the source an item comes from, the library included. */
+function sourceName(item: RowItem): string {
+  const domain = getProviderIconDomain(item);
+  if (domain === "library") return $t("library");
+  return (
+    api.getProvider(item.provider)?.name ??
+    api.getProviderManifest(domain)?.name ??
+    item.provider
+  );
+}
 
 const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
   emit("edit-rows"),

@@ -89,10 +89,10 @@ vi.mock("@/components/track/TrackHero.vue", () => ({
     template: "<div data-hero />",
   },
 }));
-vi.mock("@/components/track/TrackLyricsRow.vue", () => ({
+vi.mock("@/components/details/DetailTextRow.vue", () => ({
   default: {
-    name: "TrackLyricsRow",
-    props: ["lyrics"],
+    name: "DetailTextRow",
+    props: ["text"],
     template: '<div data-row="lyrics" />',
   },
 }));
@@ -218,8 +218,8 @@ describe("TrackDetails", () => {
   it("hands the lyrics row the text once it is loaded", async () => {
     const wrapper = await mountDetails(track());
 
-    const lyricsRow = wrapper.findComponent({ name: "TrackLyricsRow" });
-    expect(lyricsRow.props("lyrics")).toBe("La la");
+    const lyricsRow = wrapper.findComponent({ name: "DetailTextRow" });
+    expect(lyricsRow.props("text")).toBe("La la");
   });
 
   it('offers "View all" once the similar tracks outgrow the row', async () => {
