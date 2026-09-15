@@ -35,6 +35,12 @@ export const OWN_SOURCES_ROLE_SCOPES: readonly Scope[] = [
   Scope.CONFIG_PROVIDERS_READ,
 ];
 
+// A member role that cannot add music sources of its own: the member scopes
+// without the own-sources one.
+export const MEMBER_WITHOUT_OWN_SCOPES: readonly Scope[] = MEMBER_SCOPES.filter(
+  (scope) => scope !== Scope.CONFIG_PROVIDERS_OWN,
+);
+
 /** A scope check for a role granting the given scopes, like AuthManager.hasScope. */
 export const scopeChecker =
   (scopes: readonly Scope[]) =>
