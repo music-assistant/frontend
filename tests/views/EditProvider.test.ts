@@ -1,5 +1,7 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { defineComponent, h, type Ref } from "vue";
+import { provideEditedProviderName } from "@/composables/useEditedProviderName";
 import {
   ConfigEntryType,
   EventType,
@@ -226,6 +228,30 @@ describe("EditProvider", () => {
       rel: "noopener noreferrer",
       target: "_blank",
     });
+  });
+
+  it("shows the custom name of a source that is not loaded, and hands the settings frame the same one", async () => {
+    // not in api.providers: nothing is running to ask for a name, so only the
+    // configuration knows this instance is not just "Spotify"
+    const config = spotifyConfig(
+      ProviderStatus.DISABLED,
+      "current value",
+      undefined,
+      false,
+    );
+    config.name = "The kitchen's Spotify";
+    apiMock.getProviderConfig.mockResolvedValue(config);
+
+    const { wrapper, publishedName } = mountFramedProvider();
+    await flushPromises();
+
+    expect(wrapper.get("h2").text()).toBe("The kitchen's Spotify");
+    expect(publishedName.value).toBe("The kitchen's Spotify");
+
+    wrapper.unmount();
+
+    // opening another provider next should fall back to that one's own name
+    expect(publishedName.value).toBe("");
   });
 
   it("hides reconfiguration when the provider has no setup flow", async () => {
@@ -1342,4 +1368,30 @@ async function mountSavedProvider(
   wrapper.findComponent({ name: "EditConfig" }).vm.$emit("submit", {});
   await flushPromises();
   return wrapper;
+}
+
+/**
+ * Mounts the provider page the way the settings layout does, and hands back the
+ * name it publishes for the breadcrumb above it.
+ */
+function mountFramedProvider(instanceId: string = "spotify--test") {
+  let publishedName: Ref<string> | undefined;
+  const SettingsFrame = defineComponent({
+    setup() {
+      publishedName = provideEditedProviderName();
+      return () => h(EditProvider, { instanceId });
+    },
+  });
+
+  const wrapper = shallowMount(SettingsFrame, {
+    global: {
+      mocks: {
+        $t: (key: string) => key,
+      },
+      // the page itself is what this frame is here to mount; everything below
+      // it stays stubbed
+      stubs: { ...providerDetailsStubs, EditProvider: false },
+    },
+  });
+  return { wrapper, publishedName: publishedName! };
 }

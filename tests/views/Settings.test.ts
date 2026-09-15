@@ -3,26 +3,46 @@
  * of the user may open.
  */
 import type { ToolbarHeadingItem } from "@/components/ToolbarHeading.vue";
-import { UserRole, type Scope } from "@/plugins/api/interfaces";
+import { useEditedProviderName } from "@/composables/useEditedProviderName";
+import {
+  ProviderType,
+  UserRole,
+  type ProviderManifest,
+  type Scope,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import Settings from "@/views/settings/Settings.vue";
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick, type Component } from "vue";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
 const { apiMock, hasScope, routerPush, routeState } = vi.hoisted(() => ({
   apiMock: {
     players: { kitchen: { name: "Kitchen" } },
-    providerManifests: {},
+    providerManifests: {} as Record<
+      string,
+      Pick<ProviderManifest, "name" | "type">
+    >,
     getProvider: vi.fn(),
   },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
   routerPush: vi.fn(),
-  // which settings page is open: the overview is the one carrying the link
-  // back into onboarding
-  routeState: { name: "editplayeroptions" },
+  // which settings page is open, and on what: the overview is the one carrying
+  // the link back into onboarding
+  routeState: {
+    name: "editplayeroptions",
+    params: { playerId: "kitchen" } as Record<string, string>,
+  },
 }));
+
+// the source behind the instance id in the route, whose generic name the crumb
+// shows until the page below it resolves the name of this instance
+apiMock.providerManifests.spotify = {
+  name: "Spotify",
+  type: ProviderType.MUSIC,
+};
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
@@ -45,7 +65,7 @@ vi.mock("vue-router", async (importOriginal) => ({
     currentRoute: {
       value: {
         name: routeState.name,
-        params: { playerId: "kitchen" },
+        params: routeState.params,
         query: {},
       },
     },
@@ -128,6 +148,65 @@ describe("Settings breadcrumbs on the options of a player", () => {
       expect(trail.filter((item) => item.to)).toEqual([]);
     },
   );
+});
+
+/**
+ * The trail the settings page hands its heading on the settings of a provider,
+ * with the page below it stubbed by `providerPage`.
+ */
+async function providerTrail(
+  providerPage: Component | boolean,
+): Promise<ToolbarHeadingItem[]> {
+  routeState.name = "editprovider";
+  routeState.params = { instanceId: "spotify--kitchen" };
+  const wrapper = mount(Settings, {
+    global: {
+      stubs: {
+        Toolbar: {
+          template: '<div><slot name="title" /><slot name="append" /></div>',
+        },
+        ToolbarHeading: ToolbarHeadingStub,
+        RouterView: providerPage,
+        VBtn: true,
+        VDivider: true,
+      },
+    },
+  });
+  // the page publishes its name as it mounts, which the trail picks up on the
+  // render after
+  await nextTick();
+  return wrapper.getComponent(ToolbarHeadingStub).props("items");
+}
+
+describe("Settings breadcrumbs on the settings of a provider", () => {
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it("name the provider the way the page below them does", async () => {
+    const trail = await providerTrail({
+      setup() {
+        useEditedProviderName().value = "The kitchen's Spotify";
+      },
+      template: "<div />",
+    });
+
+    expect(trail.at(-1)).toEqual({
+      title: "The kitchen's Spotify",
+      disabled: true,
+    });
+  });
+
+  it("fall back on the name of the source until the page names the instance", async () => {
+    const trail = await providerTrail(true);
+
+    expect(trail.at(-1)).toEqual({ title: "Spotify", disabled: true });
+  });
 });
 
 /** The settings overview, which is where onboarding is reachable again from. */
