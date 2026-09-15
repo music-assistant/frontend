@@ -267,7 +267,10 @@ function pruneProviderFilters(
     if (key.startsWith("itemsListing.")) {
       const value = preferences[key] as ItemsListingPreferences | undefined;
       if (!value || !Array.isArray(value.providerFilter)) continue;
-      const pruned = value.providerFilter.filter((id) => configuredIds.has(id));
+      // "library" is a listing's own library option, not a provider instance
+      const pruned = value.providerFilter.filter(
+        (id) => id === "library" || configuredIds.has(id),
+      );
       if (pruned.length === value.providerFilter.length) continue;
       changed = true;
       const next: ItemsListingPreferences = { ...value };

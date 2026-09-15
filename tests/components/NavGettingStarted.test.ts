@@ -6,7 +6,11 @@ import {
 } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+import {
+  BUILTIN_ROLE_SCOPES,
+  MEMBER_WITHOUT_OWN_SCOPES,
+  scopeChecker,
+} from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
 const {
@@ -217,7 +221,7 @@ describe("NavGettingStarted", { timeout: 20_000 }, () => {
 
   it("asks a member the one thing the welcome asks", async () => {
     authMock.hasScope.mockImplementation(
-      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      scopeChecker(MEMBER_WITHOUT_OWN_SCOPES),
     );
     storeState.store.currentUser = user({
       user_id: "sam-1",
@@ -243,7 +247,7 @@ describe("NavGettingStarted", { timeout: 20_000 }, () => {
 
   it("stops asking a member who has already been welcomed", async () => {
     authMock.hasScope.mockImplementation(
-      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      scopeChecker(MEMBER_WITHOUT_OWN_SCOPES),
     );
     storeState.store.currentUser = user({
       user_id: "sam-1",
@@ -265,7 +269,7 @@ describe("NavGettingStarted", { timeout: 20_000 }, () => {
 
   it("stops asking a member who has answered the welcome", async () => {
     authMock.hasScope.mockImplementation(
-      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      scopeChecker(MEMBER_WITHOUT_OWN_SCOPES),
     );
     storeState.store.currentUser = user({
       user_id: "sam-1",
@@ -279,6 +283,73 @@ describe("NavGettingStarted", { timeout: 20_000 }, () => {
     expect(wrapper.find("[data-testid=nav-getting-started]").exists()).toBe(
       false,
     );
+
+    wrapper.unmount();
+  });
+
+  it("asks a member who can add their own sources to connect one", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+    storeState.store.currentUser = user({
+      user_id: "sam-1",
+      username: "sam",
+      role: UserRole.USER,
+    });
+    // already welcomed, so the own-sources invitation is what is left to do
+    preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
+
+    const wrapper = await mountChecklist();
+
+    // the checklist reads the provider configs to tell whether they own a source
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledOnce();
+    expect(
+      wrapper
+        .findAll("[data-testid=getting-started-step]")
+        .map((step) => step.text()),
+    ).toEqual([
+      "onboarding.steps.welcome.title",
+      "onboarding.steps.own_sources.title",
+    ]);
+    // the welcome is done, so only the own-sources invitation is still counted
+    expect(wrapper.find("[data-slot=badge]").text()).toBe("1");
+
+    wrapper.unmount();
+  });
+
+  it("waits for the provider configs before it counts an own-sources member", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+    storeState.store.currentUser = user({
+      user_id: "sam-1",
+      username: "sam",
+      role: UserRole.USER,
+    });
+    preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
+    let handOverConfigs: (configs: unknown[]) => void = () => {};
+    apiMock.getProviderConfigs.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          handOverConfigs = resolve;
+        }),
+    );
+
+    const wrapper = await mountChecklist();
+
+    // an empty list is not the same as owning none: the invitation waits for
+    // the configs, exactly as the admin's checklist does
+    expect(wrapper.find("[data-testid=nav-getting-started]").exists()).toBe(
+      false,
+    );
+
+    handOverConfigs([]);
+    await flushPromises();
+
+    expect(wrapper.find("[data-testid=nav-getting-started]").exists()).toBe(
+      true,
+    );
+    expect(wrapper.find("[data-slot=badge]").text()).toBe("1");
 
     wrapper.unmount();
   });

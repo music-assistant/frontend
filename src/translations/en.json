@@ -2275,6 +2275,11 @@
     "latest_release": "Latest release",
     "view_all": "View all",
     "n_in_library": "{count} in library",
+    "album_radio": "Album endless mix",
+    "n_tracks": "{count} track | {count} tracks",
+    "more_from_artist": "More from this artist",
+    "more_from_artist_name": "More from {name}",
+    "artist_view_library_tracks": "View {count} library track | View {count} library tracks",
     "play_on_player": "Play on {player}",
     "artist_radio": "Artist endless mix",
     "newest_first": "newest first",
@@ -2292,6 +2297,10 @@
     "hide_row": "Hide row",
     "show_row": "Show row",
     "edit_rows_hint": "Drag to reorder, hide what you don't want. \"Source\" picks what feeds a row (your library, one source, or all of them).",
+    "track_radio": "Track endless mix",
+    "edit_rows_subtitle_album": "Applies to every album page",
+    "edit_rows_subtitle_track": "Applies to every track page",
+    "n_releases": "{count} release | {count} releases",
     "admin_only": "Admin only",
     "done": "Done",
     "on_provider": "On {0}",
@@ -2602,6 +2611,13 @@
                     "hint": "Pick a player in the bar at the bottom, press play, and open the full player to see what is coming up.",
                     "pick": "Pick a player"
                 }
+            },
+            "own_sources": {
+                "title": "Connect your own accounts",
+                "description": "Add your own music services so your playlists and library turn up alongside everyone else's. You can always do this later from your settings.",
+                "add": "Add a music source",
+                "empty": "You have not connected any music sources of your own yet.",
+                "connected": "Your music sources"
             },
             "tour": {
                 "title": "A quick tour",

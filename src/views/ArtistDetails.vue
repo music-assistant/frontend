@@ -5,9 +5,11 @@
     <template v-if="itemDetails">
       <template v-for="rowId in visibleRows" :key="rowId">
         <!-- biography -->
-        <ArtistBioRow
+        <DetailTextRow
           v-if="rowId === 'bio' && !!itemDetails.metadata?.description"
-          :item="itemDetails"
+          :text="itemDetails.metadata.description!"
+          :dialog-title="itemDetails.name"
+          markdown
           @edit-rows="rowsEditorOpen = true"
         />
 
@@ -24,19 +26,18 @@
         />
 
         <!-- albums -->
-        <ArtistReleaseShelf
+        <ReleaseShelf
           v-else-if="rowId === 'albums' && showRow(albumItems)"
           :title="$t('albums')"
           :meta="albumsMeta"
           :items="albumItems"
           :view-all-to="listingRoute('albums')"
-          size="lg"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         />
 
         <!-- singles & EPs -->
-        <ArtistReleaseShelf
+        <ReleaseShelf
           v-else-if="rowId === 'singles_eps' && showRow(singleItems)"
           :title="$t('singles_eps')"
           :meta="singleItems?.length ? String(singleItems.length) : undefined"
@@ -47,10 +48,10 @@
         />
 
         <!-- appears on -->
-        <ArtistReleaseShelf
+        <ReleaseShelf
           v-else-if="rowId === 'appears_on' && showRow(appearsOnItems)"
           :title="$t('appears_on')"
-          :meta="$t('appears_on_hint')"
+          :meta="isPhone ? undefined : $t('appears_on_hint')"
           :items="appearsOnItems"
           :view-all-to="listingRoute('appears_on')"
           :parent-item="itemDetails"
@@ -163,9 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import ArtistBioRow from "@/components/artist/ArtistBioRow.vue";
 import ArtistHero from "@/components/artist/ArtistHero.vue";
-import ArtistReleaseShelf from "@/components/artist/ArtistReleaseShelf.vue";
 import {
   artistRows,
   availableArtistRowIds,
@@ -174,6 +173,8 @@ import {
 import ArtistSimilarShelf from "@/components/artist/ArtistSimilarShelf.vue";
 import ArtistTopTracksRow from "@/components/artist/ArtistTopTracksRow.vue";
 import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
+import DetailTextRow from "@/components/details/DetailTextRow.vue";
+import ReleaseShelf from "@/components/details/ReleaseShelf.vue";
 import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
@@ -190,6 +191,7 @@ import {
   type Artist,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
@@ -203,6 +205,8 @@ const props = defineProps<Props>();
 const itemDetails = ref<Artist>();
 const loading = ref(false);
 const rowsEditorOpen = ref(false);
+
+const isPhone = computed(() => isPhoneSizedScreen());
 
 const isAudiobookArtist = computed(() => {
   const artistType = itemDetails.value?.artist_type;

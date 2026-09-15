@@ -78,8 +78,8 @@ vi.mock("@/components/artist/ArtistHero.vue", () => ({
     template: "<div data-hero />",
   },
 }));
-vi.mock("@/components/artist/ArtistBioRow.vue", () => ({
-  default: { name: "ArtistBioRow", template: '<div data-row="bio" />' },
+vi.mock("@/components/details/DetailTextRow.vue", () => ({
+  default: { name: "DetailTextRow", template: '<div data-row="bio" />' },
 }));
 vi.mock("@/components/artist/ArtistTopTracksRow.vue", () => ({
   default: {
@@ -88,9 +88,9 @@ vi.mock("@/components/artist/ArtistTopTracksRow.vue", () => ({
   },
 }));
 // one component backs three rows, so it reports which title it was given
-vi.mock("@/components/artist/ArtistReleaseShelf.vue", () => ({
+vi.mock("@/components/details/ReleaseShelf.vue", () => ({
   default: {
-    name: "ArtistReleaseShelf",
+    name: "ReleaseShelf",
     props: ["title"],
     template: '<div :data-row="title" />',
   },

@@ -7,6 +7,7 @@ import {
   writeRowsConfig,
 } from "@/helpers/rowsConfig";
 import { api } from "@/plugins/api";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 
 // "library" = in-library items, "all" = every provider at once, else a provider instance id
@@ -151,6 +152,13 @@ export function createRowRegistry<Id extends string, Item>(
       return defaultSource(id, item, candidates);
     },
   };
+}
+
+/** The label of a source: the library, every provider, or one of them. */
+export function rowSourceLabel(source: RowSource): string {
+  if (source === "library") return $t("source_library");
+  if (source === "all") return $t("source_all");
+  return api.providers[source]?.name ?? source;
 }
 
 /** The provider behind a row's source, when a single one feeds it (undefined for "library"/"all"). */
