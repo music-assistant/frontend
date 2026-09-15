@@ -49,7 +49,7 @@ withDefaults(
 }
 
 .autoplay-spark {
-  stroke: color-mix(in srgb, currentColor 20%, #ffffff);
+  stroke: currentColor;
   stroke-linecap: round;
   stroke-dasharray: 10 90;
   stroke-dashoffset: 0;

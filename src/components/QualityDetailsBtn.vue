@@ -1,13 +1,14 @@
 <template>
   <!-- streaming quality details -->
   <Popover v-if="activeAudioPath">
-    <!-- quality pill/chip trigger; pill = ghost-outline to match the fullscreen
+    <!-- quality pill/chip trigger; pill = overlay to match the fullscreen
          header controls. A single clean PopoverTrigger so it opens reliably
          inside the fullscreen v-dialog (a Tooltip wrapper here blocked it). -->
     <PopoverTrigger as-child>
       <Button
-        :variant="pill ? 'ghost-outline' : 'outline'"
-        size="xs"
+        :variant="pill ? 'overlay' : 'outline'"
+        :size="pill ? pillSize : 'xs'"
+        :class="pill ? 'px-3' : ''"
         :disabled="triggerDisabled"
         :title="$t('show_audio_chain_details')"
         :aria-label="qualityDetailsLabel"
@@ -67,6 +68,9 @@ import { useActiveAudioPath } from "@/composables/useActiveAudioPath";
 // render the quality indicator as a rounded "pill" (matching the shadcn player
 // header controls) instead of the default square chip
 defineProps<{ pill?: boolean }>();
+
+// the pill follows the fullscreen header's control height, compact on phones
+const pillSize = computed(() => (store.mobileLayout ? "sm" : "default"));
 
 const { activeAudioPath } = useActiveAudioPath();
 
