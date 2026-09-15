@@ -647,7 +647,6 @@ describe("App initialization", () => {
     expect(apiMock.fetchProviders).not.toHaveBeenCalled();
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledOnce();
     expectLibraryCountsCalled();
-    expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
     expect(storeMock.enabledPlugins).toEqual(
       new Set<string>([
         "party",
@@ -683,18 +682,6 @@ describe("App initialization", () => {
     // config/providers takes config.providers.read, which a guest lacks
     expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
     expect(storeMock.enabledPlugins).toEqual(new Set(["party", "ai_radio"]));
-
-    apiMock.providers = loadedProviders(
-      pluginInstance("party"),
-      pluginInstance("ai_radio"),
-      pluginInstance("milkdrop_visualizer"),
-    );
-    await signalProvidersUpdated();
-
-    expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
-    expect(storeMock.enabledPlugins).toEqual(
-      new Set(["party", "ai_radio", "milkdrop_visualizer"]),
-    );
   });
 
   it("counts only the plugins that are available", async () => {

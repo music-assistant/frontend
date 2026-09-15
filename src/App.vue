@@ -274,7 +274,7 @@ let initializedAccess: string | undefined;
 
 // the loaded plugins, which every role may list; their configs would take
 // config.providers.read, and a plugin that isn't loaded can't serve its page
-const refreshPluginEnabledStates = () => {
+const refreshEnabledPlugins = () => {
   store.enabledPlugins = new Set(
     Object.values(api.providers)
       .filter(
@@ -411,7 +411,7 @@ const completeInitialization = async () => {
     store.libraryGenresCount = await api.getLibraryGenresCount();
 
     // Keep plugin-backed UI entries in sync with the loaded plugins.
-    refreshPluginEnabledStates();
+    refreshEnabledPlugins();
   } else if (isDashboardViewer) {
     console.debug("[App] Dashboard viewer - fetching player/queue state only");
     // Dashboards render live player/queue state, which regular guests don't need
@@ -651,7 +651,7 @@ onMounted(async () => {
       return;
 
     // api.providers already holds the list this event carries
-    refreshPluginEnabledStates();
+    refreshEnabledPlugins();
   });
 
   // Re-prune when the provider set changes at runtime.
