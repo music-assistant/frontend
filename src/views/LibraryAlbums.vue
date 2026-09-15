@@ -38,6 +38,7 @@ const total = ref(store.libraryAlbumsCount);
 const sortKeys = [
   "name",
   "name_desc",
+  "random",
   "sort_name",
   "sort_name_desc",
   "year",
