@@ -350,6 +350,7 @@ function itemDuration(item: RowItem): number | undefined {
   flex: none;
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   height: 22px;
   padding: 0 8px;
   border-radius: 999px;
