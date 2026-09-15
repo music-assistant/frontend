@@ -208,8 +208,8 @@ importers:
         specifier: 2.1.3
         version: 2.1.3(vite@8.3.0(@types/node@26.2.0)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.104.0)(terser@5.48.0)(yaml@2.9.0))(vue@3.5.41(typescript@6.0.3))(vuetify@3.12.0)
       vite-plugin-webfont-dl:
-        specifier: 3.12.0
-        version: 3.12.0(vite@8.3.0(@types/node@26.2.0)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.104.0)(terser@5.48.0)(yaml@2.9.0))
+        specifier: 3.13.1
+        version: 3.13.1(vite@8.3.0(@types/node@26.2.0)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.104.0)(terser@5.48.0)(yaml@2.9.0))
       vitest:
         specifier: ^4.1.11
         version: 4.1.11(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.11.6)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.3.0(@types/node@26.2.0)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.104.0)(terser@5.48.0)(yaml@2.9.0))
@@ -784,11 +784,11 @@ packages:
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
     hasBin: true
 
-  '@cacheable/memory@2.0.9':
-    resolution: {integrity: sha512-HdMx6DoGywB30vacDbBsITbIX4pgFqj1zsrV58jZBUw3klzkNoXhj7qOqAgledhxG7YZI5rBSJg7Zp8/VG0DuA==}
+  '@cacheable/memory@2.2.0':
+    resolution: {integrity: sha512-CTLKqLItRCEixEAewD3/j9DB3/o96gpTPD4eJ1v+DGOlxZRZncRQkGYqqnAGCscYd6RNeXfGeiuCphsPtqyIfQ==}
 
-  '@cacheable/utils@2.4.1':
-    resolution: {integrity: sha512-eiFgzCbIneyMlLOmNG4g9xzF7Hv3Mga4LjxjcSC/ues6VYq2+gUbQI8JqNuw/ZM8tJIeIaBGpswAsqV2V7ApgA==}
+  '@cacheable/utils@2.5.0':
+    resolution: {integrity: sha512-buipgOVDkkPXNR5+xBpDw7Zk2n1EvU7qBJCNUcL7rhQ//kfpOXPAvQ511Os0vpLYJ1pZnvudNytkQt2hst3wqA==}
 
   '@csstools/color-helpers@6.1.0':
     resolution: {integrity: sha512-064IFJdjTfUqnjpCVpMOdbr8FLQBhinbZj6yRv2An2E41O/pLEXqfFRWqGq/SxlE5PEUYTlvWsG2r8MswAVvkg==}
@@ -2462,8 +2462,8 @@ packages:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
     engines: {node: '>= 0.4'}
 
-  axios@1.18.0:
-    resolution: {integrity: sha512-E32NzpYKp++W7XRe52rHiXV2ehxmh3wbdgO7MHeFM+vqxLBYHzt0ElkiImtOBxtOmyp0yoC8C6uESVV84Y2/hw==}
+  axios@1.20.0:
+    resolution: {integrity: sha512-r8aOh8j9cGKpgQAqpzrUHnSIc6a59Y3Xf/cv8sy1DrHCkZHzQGEuoq1tARk6qSyDdtQGSDgpb9kFlruzPvrgwg==}
 
   babel-plugin-polyfill-corejs2@0.4.17:
     resolution: {integrity: sha512-aTyf30K/rqAsNwN76zYrdtx8obu0E4KoUME29B1xj+B3WxgvWkp943vYQ+z8Mv3lw9xHXMHpvSPOBxzAkIa94w==}
@@ -2537,8 +2537,8 @@ packages:
     resolution: {integrity: sha512-NPOYkwmT3x8sz5UYGFiVEo0fLMcVdkxh9Dojog9LMeOx8nz0XVDIAqALy2BdIwHONQANdfuZer1nBv0YZ5UvLw==, tarball: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz}
     version: 3.0.0-beta.5.ma.2
 
-  cacheable@2.3.5:
-    resolution: {integrity: sha512-EQfaKe09tl615iNvq/TBRWTFf1AKJNXYQSsMx0Z3EI0nA+pVsVPS8wJhnRlkbdacKPh1d0qVIhwTc2zsQNFEEg==}
+  cacheable@2.5.0:
+    resolution: {integrity: sha512-60cyAOytib/OzBw1JNSoSV/boK1AtHryDIjvVBk7XbN4ugfkM3+Sry7fEjNgPMGgOjuaZPAp8ruZ0Cxafwyq9g==}
 
   call-bind-apply-helpers@1.0.2:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
@@ -2964,8 +2964,8 @@ packages:
     resolution: {integrity: sha512-f7ccFPK3SXFHpx15UIGyRJ/FJQctuKZ0zVuN3frBo4HnK3cay9VEW0R6yPYFHC0AgqhukPzKjq22t5DmAyqGyw==}
     engines: {node: '>=16'}
 
-  flat-cache@6.1.22:
-    resolution: {integrity: sha512-N2dnzVJIphnNsjHcrxGW7DePckJ6haPrSFqpsBUhHYgwtKGVq4JrBGielEGD2fCVnsGm1zlBVZ8wGhkyuetgug==}
+  flat-cache@6.1.23:
+    resolution: {integrity: sha512-f++BY9pTk+983xK1FLzlLpmM0i0z+jHmx3QESGkURMXujQZz1k5wzwX6hjnQ8goaD0B+sYnDK1yZ6MTyZfUaqA==}
 
   flatted@3.4.2:
     resolution: {integrity: sha512-PjDse7RzhcPkIJwy5t7KPWQSZ9cAbzQXcafsetQoD7sOJRQlGikNbx7yZp2OotDnJyrDcbyRq3Ttb18iYOqkxA==}
@@ -4324,8 +4324,8 @@ packages:
       vue: ^3.0.0
       vuetify: '>=3'
 
-  vite-plugin-webfont-dl@3.12.0:
-    resolution: {integrity: sha512-0jxsr8ycuoK/uV5Y3ytttTRhgvfZo8v3O4JZBlVc4C7QWIws/vCLVR4B3ag+TGVkLNQya6hXfY3UnZge3M8vmA==}
+  vite-plugin-webfont-dl@3.13.1:
+    resolution: {integrity: sha512-fTDsrRGgCTm8x/TBt8WchDruCQz1osFY82z7SrXjtgDIQh+ka3trdH6UBcp6TX7IVE4JFpFTQbe4IQneADKUyA==}
     peerDependencies:
       vite: ^2 || ^3 || ^4 || ^5 || ^6 || ^7 || ^8
 
@@ -5407,14 +5407,14 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
-  '@cacheable/memory@2.0.9':
+  '@cacheable/memory@2.2.0':
     dependencies:
-      '@cacheable/utils': 2.4.1
+      '@cacheable/utils': 2.5.0
       '@keyv/bigmap': 1.3.1(keyv@5.6.0)
       hookified: 1.15.1
       keyv: 5.6.0
 
-  '@cacheable/utils@2.4.1':
+  '@cacheable/utils@2.5.0':
     dependencies:
       hashery: 1.5.1
       keyv: 5.6.0
@@ -6801,7 +6801,7 @@ snapshots:
     dependencies:
       possible-typed-array-names: 1.1.0
 
-  axios@1.18.0:
+  axios@1.20.0:
     dependencies:
       follow-redirects: 1.16.0
       form-data: 4.0.6
@@ -6897,10 +6897,10 @@ snapshots:
       ecma-proposal-math-extensions: 0.0.2
       eel-wasm: 0.0.16
 
-  cacheable@2.3.5:
+  cacheable@2.5.0:
     dependencies:
-      '@cacheable/memory': 2.0.9
-      '@cacheable/utils': 2.4.1
+      '@cacheable/memory': 2.2.0
+      '@cacheable/utils': 2.5.0
       hookified: 1.15.1
       keyv: 5.6.0
       qified: 0.10.1
@@ -7431,10 +7431,10 @@ snapshots:
       flatted: 3.4.4
       keyv: 4.5.4
 
-  flat-cache@6.1.22:
+  flat-cache@6.1.23:
     dependencies:
-      cacheable: 2.3.5
-      flatted: 3.4.2
+      cacheable: 2.5.0
+      flatted: 3.4.4
       hookified: 1.15.1
 
   flatted@3.4.2: {}
@@ -8793,11 +8793,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  vite-plugin-webfont-dl@3.12.0(vite@8.3.0(@types/node@26.2.0)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.104.0)(terser@5.48.0)(yaml@2.9.0)):
+  vite-plugin-webfont-dl@3.13.1(vite@8.3.0(@types/node@26.2.0)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.104.0)(terser@5.48.0)(yaml@2.9.0)):
     dependencies:
-      axios: 1.18.0
+      axios: 1.20.0
       clean-css: 5.3.3
-      flat-cache: 6.1.22
+      flat-cache: 6.1.23
       picocolors: 1.1.1
       vite: 8.3.0(@types/node@26.2.0)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.104.0)(terser@5.48.0)(yaml@2.9.0)
     transitivePeerDependencies:
