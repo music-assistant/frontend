@@ -292,6 +292,7 @@ const refreshPluginEnabledStates = async () => {
     refreshPluginEnabledState("music_quiz"),
     refreshPluginEnabledState("ai_radio"),
     refreshPluginEnabledState("milkdrop_visualizer"),
+    refreshPluginEnabledState("library_automations"),
   ]);
 };
 
