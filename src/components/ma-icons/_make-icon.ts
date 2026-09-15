@@ -4,7 +4,7 @@ import type { Component, PropType } from "vue";
 
 /** Render canonical shared SVG artwork inline while retaining its currentColor theming. */
 export function makeSvgIcon(name: string, svg: string): Component {
-  const rootMatch = svg.match(/^<svg\s+([^>]*)>([\s\S]*)<\/svg>\s*$/);
+  const rootMatch = svg.trim().match(/^<svg\s+([^>]*)>([\s\S]*)<\/svg>$/);
   if (!rootMatch) throw new Error(`Invalid SVG for shared icon "${name}"`);
   const rootAttributes = Object.fromEntries(
     [...rootMatch[1].matchAll(/([:\w-]+)="([^"]*)"/g)].map((match) => [
@@ -15,10 +15,13 @@ export function makeSvgIcon(name: string, svg: string): Component {
   delete rootAttributes.xmlns;
   delete rootAttributes.width;
   delete rootAttributes.height;
-  const innerHtml = rootMatch[2]
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  // Strip again until nothing changes, so a split comment cannot survive.
+  let innerHtml = rootMatch[2];
+  for (let previous = ""; previous !== innerHtml; ) {
+    previous = innerHtml;
+    innerHtml = innerHtml.replace(/<!--[\s\S]*?-->/g, "");
+  }
+  innerHtml = innerHtml.replace(/\s+/g, " ").trim();
 
   return defineComponent({
     name,

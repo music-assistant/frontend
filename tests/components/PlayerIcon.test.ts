@@ -20,6 +20,18 @@ describe("PlayerIcon", () => {
     expect(wrapper.attributes("class")).toBe("size-5");
     expect(wrapper.attributes("aria-hidden")).toBe("true");
     expect(wrapper.html()).not.toContain("source comment");
+    expect(wrapper.find("path").exists()).toBe(true);
+  });
+
+  it("accepts leading whitespace like the upstream validator", () => {
+    const TestIcon = makeSvgIcon(
+      "test-icon",
+      '\n  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M1 1h22v22H1z" /></svg>\n',
+    );
+    const wrapper = mount(TestIcon);
+
+    expect(wrapper.element.tagName).toBe("svg");
+    expect(wrapper.find("path").exists()).toBe(true);
   });
 
   it("uses the default size and preserves SVG attributes", () => {
