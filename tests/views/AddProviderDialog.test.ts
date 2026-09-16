@@ -74,11 +74,32 @@ describe("AddProviderDialog", () => {
   it("keeps the search field above the scrolling list", async () => {
     await openDialog();
 
-    const list = document.querySelector("[data-testid='provider-list']");
+    const list = document.querySelector("[data-testid='provider-list']")!;
 
     // the list scrolls on its own, so the search stays in view above it
-    expect(list?.querySelector(".provider-item")).not.toBeNull();
-    expect(list?.contains(searchField())).toBe(false);
+    expect(list.classList.contains("overflow-y-auto")).toBe(true);
+    expect(list.querySelector("[data-testid='provider-row']")).not.toBeNull();
+    expect(
+      searchField()!.compareDocumentPosition(list) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("starts the setup flow once when the provider name is activated", async () => {
+    const emit = vi.spyOn(eventbus, "emit");
+    const wrapper = await openDialog();
+
+    document
+      .querySelector<HTMLElement>("[data-testid='provider-open']")
+      ?.click();
+    await flushPromises();
+
+    // the name button is nested in the row, which opens the flow on its own click
+    expect(
+      emit.mock.calls.filter(([name]) => name === "setupFlowDialog"),
+    ).toEqual([["setupFlowDialog", { kind: "provider", domain: "spotify" }]]);
+    expect(wrapper.emitted("update:show")?.at(-1)).toEqual([false]);
+    emit.mockRestore();
   });
 
   it("labels the stage badge from the translated stage key", async () => {
@@ -220,7 +241,9 @@ describe("AddProviderDialog provider dependencies", () => {
   it("offers the setup flow of the provider this one needs", async () => {
     const wrapper = await openDialog();
 
-    document.querySelector<HTMLElement>(".provider-item")?.click();
+    document
+      .querySelector<HTMLElement>("[data-testid='provider-row']")
+      ?.click();
     await flushPromises();
     const request = emitted("deleteConfirmationDialog") as
       | DeleteConfirmationDialogEvent
@@ -247,7 +270,7 @@ function searchField() {
 }
 
 function providerNames() {
-  return [...document.querySelectorAll(".provider-name")].map(
+  return [...document.querySelectorAll("[data-testid='provider-open']")].map(
     (el) => el.textContent,
   );
 }

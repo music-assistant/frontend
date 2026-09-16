@@ -1,15 +1,18 @@
 <template>
   <Dialog :open="props.show" @update:open="handleOpenChange">
+    <!-- a fixed height keeps the dialog still while the search narrows the list;
+         the sm: max width has to be restated or the 512px default of
+         DialogContent caps it -->
     <DialogContent
       class="flex h-[calc(100dvh-2rem)] flex-col gap-0 p-0 sm:h-[85dvh] sm:max-w-[calc(100%-2rem)] lg:max-w-[900px]"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
-      <DialogHeader class="border-b px-4 py-4 pr-12 text-left sm:px-6">
+      <DialogHeader class="border-b px-5 py-4 pr-12 text-left">
         <DialogTitle>{{ dialogTitle }}</DialogTitle>
       </DialogHeader>
 
       <!-- the search and the filter stay put; only the list below scrolls -->
-      <div class="flex flex-wrap items-center gap-2 px-4 py-3 sm:px-6">
+      <div class="flex flex-wrap items-center gap-2 px-5 py-4">
         <SearchInput
           v-model="searchQuery"
           :placeholder="$t('search')"
@@ -24,7 +27,7 @@
       </div>
 
       <div
-        class="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-6"
+        class="min-h-0 flex-1 overflow-y-auto px-5 pb-4"
         data-testid="provider-list"
       >
         <ItemGroup v-if="filteredProviders.length > 0" class="gap-2">
@@ -33,33 +36,35 @@
             :key="provider.domain"
             variant="outline"
             size="sm"
-            class="provider-item hover:bg-accent/50 cursor-pointer"
+            class="hover:bg-accent/50 cursor-pointer"
+            data-testid="provider-row"
             @click="addProvider(provider)"
           >
             <ItemMedia>
               <ProviderIcon :domain="provider.domain" :size="40" />
             </ItemMedia>
             <ItemContent>
-              <ItemTitle class="provider-name">
+              <ItemTitle class="flex-wrap">
                 <!-- the name is the focusable control; the row itself only follows the pointer -->
                 <button
                   type="button"
                   class="cursor-pointer text-left"
+                  data-testid="provider-open"
                   @click.stop="addProvider(provider)"
                 >
                   {{ provider.name }}
                 </button>
+                <Badge
+                  v-if="shouldShowStageBadge(provider.stage)"
+                  :variant="getStageVariant(provider.stage)"
+                  class="uppercase"
+                >
+                  {{ getStageLabel(provider.stage) }}
+                </Badge>
               </ItemTitle>
               <ItemDescription>{{ provider.description }}</ItemDescription>
             </ItemContent>
             <ItemActions>
-              <Badge
-                v-if="shouldShowStageBadge(provider.stage)"
-                :variant="getStageVariant(provider.stage)"
-                class="uppercase"
-              >
-                {{ getStageLabel(provider.stage) }}
-              </Badge>
               <ChevronRight class="text-muted-foreground size-4" />
             </ItemActions>
           </Item>
