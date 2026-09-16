@@ -13,6 +13,7 @@ const { apiMock, authMock, preferenceState, storeMock, users } = vi.hoisted(
       providers: {} as Record<string, { name: string }>,
       providerManifests: {} as Record<string, { builtin: boolean }>,
       getAllUsers: vi.fn(),
+      getPlayerConfigs: vi.fn(async () => []),
       getProviderConfigs: vi.fn(async () => []),
       subscribe: vi.fn(() => vi.fn()),
       sendCommand: vi.fn(),

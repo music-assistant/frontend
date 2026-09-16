@@ -2564,8 +2564,9 @@
             "players": {
                 "title": "Add your players",
                 "description": "The players Music Assistant already found. Switch off any you do not want to use, and rename them as you like.",
+                "description_empty": "Music Assistant finds your speakers through player providers, such as Sonos, Chromecast or AirPlay.",
                 "empty": "No players found yet",
-                "no_provider_hint": "Music Assistant finds your speakers through player providers, such as Sonos, Chromecast or AirPlay. Add one and its players show up here.",
+                "no_provider_hint": "Add a player provider and its players show up here.",
                 "discovering_hint": "Finding players can take a moment. Make sure your speakers are switched on and on the same network as Music Assistant.",
                 "rename": "Rename {name}",
                 "enable": "Enable {name}"

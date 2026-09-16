@@ -8,12 +8,18 @@
     <ItemMedia variant="icon">
       <PlayerIcon :icon="player.icon" aria-hidden="true" />
     </ItemMedia>
-    <ItemContent>
+    <!-- the rename field sits over the name and label rather than in their
+         place, so the row keeps its height while the name is being edited -->
+    <ItemContent class="relative">
+      <ItemTitle :class="{ invisible: renaming }">{{ player.name }}</ItemTitle>
+      <ItemDescription :class="{ invisible: renaming }">
+        {{ player.providerLabel }}
+      </ItemDescription>
       <Input
         v-if="renaming"
         ref="renameInput"
         v-model="draftName"
-        class="h-8"
+        class="absolute inset-0 h-full"
         :disabled="saving"
         :aria-label="$t('settings.player_name')"
         autocomplete="off"
@@ -22,15 +28,13 @@
         @keydown.esc="cancelRename"
         @blur="commitRename"
       />
-      <ItemTitle v-else>{{ player.name }}</ItemTitle>
-      <ItemDescription>{{ player.providerLabel }}</ItemDescription>
     </ItemContent>
     <ItemActions>
       <!-- a player that is switched on but not reachable says so; one that
            still has to be set up says that instead, as its setup is why -->
       <CircleAlert
         v-if="player.enabled && player.needsSetup"
-        class="text-muted-foreground size-4"
+        class="size-4 text-amber-500"
         :aria-label="$t('settings.player_needs_setup')"
         :title="$t('settings.player_needs_setup')"
       />
@@ -40,10 +44,13 @@
         :aria-label="$t('settings.player_not_available')"
         :title="$t('settings.player_not_available')"
       />
+      <!-- the pencil keeps its place while the field is open, so the switch
+           next to it stays put -->
       <Button
-        v-if="canEdit && !renaming"
+        v-if="canEdit"
         variant="ghost"
         size="icon-xs"
+        :class="{ invisible: renaming }"
         :aria-label="renameLabel"
         :title="renameLabel"
         data-testid="onboarding-player-rename"
@@ -96,8 +103,8 @@ const renaming = ref(false);
 const draftName = ref("");
 const renameInput = ref<InstanceType<typeof Input> | null>(null);
 const saving = ref(false);
-// the state the switch was just set to, shown while the save is on its way
-// and until the list catches up
+// the state the switch was just set to, shown while the save is on its way;
+// by the time it lands, the list has taken the change from the server's event
 const pendingEnabled = ref<boolean | null>(null);
 
 const enabled = computed(() => pendingEnabled.value ?? props.player.enabled);

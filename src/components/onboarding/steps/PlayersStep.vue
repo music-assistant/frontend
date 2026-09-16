@@ -1,7 +1,13 @@
 <template>
   <section class="flex flex-col gap-4">
+    <!-- with players to act on, the description says what can be done to
+         them; without, it says what finds them -->
     <p class="text-muted-foreground text-sm">
-      {{ $t("onboarding.steps.players.description") }}
+      {{
+        players.length > 0
+          ? $t("onboarding.steps.players.description")
+          : $t("onboarding.steps.players.description_empty")
+      }}
     </p>
 
     <!-- the player providers that are set up, so what "add more" adds to is in
@@ -40,12 +46,19 @@
 
       <Empty v-else class="border-border rounded-md border border-dashed py-6">
         <EmptyHeader>
+          <!-- a provider that is set up is still looking, and the step shows
+               that rather than an empty list that reads as final -->
           <EmptyMedia variant="icon">
-            <Speaker />
+            <Spinner
+              v-if="providers.length > 0"
+              class="size-5"
+              data-testid="onboarding-players-discovering"
+            />
+            <Speaker v-else />
           </EmptyMedia>
           <EmptyTitle>{{ $t("onboarding.steps.players.empty") }}</EmptyTitle>
-          <!-- with nothing set up, what finds players is the thing to explain;
-               with a provider in place, all there is to do is wait for it -->
+          <!-- with nothing set up, adding a provider is the way to players;
+               with one in place, all there is to do is wait for it -->
           <EmptyDescription>
             {{
               providers.length > 0
@@ -95,6 +108,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { ItemGroup } from "@/components/ui/item";
+import { Spinner } from "@/components/ui/spinner";
 import {
   configuredProviders,
   discoveredPlayers,
