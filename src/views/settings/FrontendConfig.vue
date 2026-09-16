@@ -51,6 +51,7 @@ import {
   readDeviceSetting,
   saveDeviceSetting,
 } from "@/helpers/device_settings";
+import { expertMode, expertModeSetting } from "@/helpers/expert_mode";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -190,12 +191,12 @@ onMounted(() => {
       key: "show_waveform",
       type: ConfigEntryType.BOOLEAN,
       label: "show_waveform",
-      default_value: true,
+      default_value: expertMode(),
       required: false,
       options: [],
       multi_value: false,
       category: "display_settings",
-      value: (store.currentUser?.preferences?.show_waveform as boolean) ?? true,
+      value: expertModeSetting("show_waveform"),
     },
     {
       key: "audiobook_chapter_progress",

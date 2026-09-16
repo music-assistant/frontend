@@ -62,7 +62,7 @@ const {
   // replaced with real refs by the userPreferences mock factory below
   preferenceState: {
     intent: { value: undefined } as { value?: string },
-    persona: { value: undefined } as { value?: string },
+    expertMode: { value: undefined } as { value?: boolean },
     welcomedAt: { value: undefined } as { value?: string },
     ready: false,
   },
@@ -163,13 +163,13 @@ vi.mock("@/composables/userPreferences", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   if (!preferenceState.ready) {
     preferenceState.intent = ref<string | undefined>(undefined);
-    preferenceState.persona = ref<string | undefined>(undefined);
+    preferenceState.expertMode = ref<boolean | undefined>(undefined);
     preferenceState.welcomedAt = ref<string | undefined>(undefined);
     preferenceState.ready = true;
   }
-  const preferences: Record<string, { value?: string }> = {
+  const preferences: Record<string, { value?: string | boolean }> = {
     "onboarding.intent": preferenceState.intent,
-    "onboarding.persona": preferenceState.persona,
+    expert_mode: preferenceState.expertMode,
     "onboarding.welcome": preferenceState.welcomedAt,
   };
   return {
@@ -263,9 +263,9 @@ function heading(wrapper: Awaited<ReturnType<typeof mountWizard>>) {
 }
 
 /** The welcome answers written to the account, in the order they went out. */
-function personaAnswers(): string[] {
+function expertAnswers(): boolean[] {
   return setUserPreferencesMock.mock.calls
-    .map(([values]) => values["onboarding.persona"])
+    .map(([values]) => values["expert_mode"])
     .filter((answer) => answer != null);
 }
 
@@ -347,7 +347,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     coreForm.hasUnsavedChanges = false;
     coreForm.valuesValidate = true;
     preferenceState.intent.value = undefined;
-    preferenceState.persona.value = undefined;
+    preferenceState.expertMode.value = undefined;
     preferenceState.welcomedAt.value = undefined;
     routerMock.push.mockReset();
     routerMock.replace.mockReset();
@@ -362,11 +362,13 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       },
     );
     setUserPreferencesMock.mockImplementation(
-      async (values: Record<string, string>) => {
-        const answer = values["onboarding.persona"];
-        if (answer) preferenceState.persona.value = answer;
+      async (values: Record<string, string | boolean>) => {
+        const answer = values["expert_mode"];
+        if (typeof answer === "boolean")
+          preferenceState.expertMode.value = answer;
         const welcomed = values["onboarding.welcome"];
-        if (welcomed) preferenceState.welcomedAt.value = welcomed;
+        if (typeof welcomed === "string")
+          preferenceState.welcomedAt.value = welcomed;
         // the real one says whether the server took it
         return true;
       },
@@ -970,7 +972,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
 
       await wrapper
-        .find("[data-testid=onboarding-persona-enthusiast]")
+        .find("[data-testid=onboarding-experience-expert]")
         .trigger("click");
       await flushPromises();
 
@@ -997,10 +999,8 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       // answer they gave is the only one written: moving on never waved the
       // recommended one in over it
       expect(wrapper.text()).toContain("onboarding.what_you_picked");
-      expect(wrapper.text()).toContain(
-        "onboarding.steps.welcome.enthusiast.label",
-      );
-      expect(personaAnswers()).toEqual(["enthusiast"]);
+      expect(wrapper.text()).toContain("onboarding.steps.welcome.expert.label");
+      expect(expertAnswers()).toEqual([true]);
       expect(wrapper.find("[data-testid=onboarding-next]").exists()).toBe(
         false,
       );
@@ -1016,14 +1016,14 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     });
 
     it("keeps Next from advancing while the welcome answer is saving", async () => {
-      // hold the persona answer mid-flight so the chosen card stays busy; the
+      // hold the welcome answer mid-flight so the chosen card stays busy; the
       // real write has the answer on the account by the time it says it landed
-      let landPersona: () => void = () => {};
+      let landAnswer: () => void = () => {};
       setUserPreferencesMock.mockImplementationOnce(
-        (values: Record<string, string>) =>
+        (values: Record<string, boolean>) =>
           new Promise<boolean>((resolve) => {
-            landPersona = () => {
-              preferenceState.persona.value = values["onboarding.persona"];
+            landAnswer = () => {
+              preferenceState.expertMode.value = values["expert_mode"];
               resolve(true);
             };
           }),
@@ -1033,7 +1033,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
 
       await wrapper
-        .find("[data-testid=onboarding-persona-enthusiast]")
+        .find("[data-testid=onboarding-experience-expert]")
         .trigger("click");
       await flushPromises();
 
@@ -1045,13 +1045,13 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await next.trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.welcome.title");
-      expect(personaAnswers()).toEqual(["enthusiast"]);
+      expect(expertAnswers()).toEqual([true]);
 
       // once it lands, the choice moves them on one step
-      landPersona();
+      landAnswer();
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.your_players.title");
-      expect(personaAnswers()).toEqual(["enthusiast"]);
+      expect(expertAnswers()).toEqual([true]);
 
       wrapper.unmount();
     });
@@ -1063,14 +1063,10 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
 
-      // the recommended answer is persisted with the defaults it stands for, so
-      // a second run starts past the question, and it moves exactly one step
+      // the recommended answer is persisted, so a second run starts past the
+      // question, and it moves exactly one step
       expect(setUserPreferencesMock).toHaveBeenCalledWith(
-        {
-          "onboarding.persona": "regular",
-          show_waveform: false,
-          visualizer_enabled: false,
-        },
+        { expert_mode: false },
         { suppressGlobalError: true },
       );
       expect(heading(wrapper)).toBe("onboarding.steps.your_players.title");
@@ -1083,14 +1079,14 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       }
       expect(wrapper.text()).toContain("onboarding.what_you_picked");
       expect(wrapper.text()).toContain(
-        "onboarding.steps.welcome.regular.label",
+        "onboarding.steps.welcome.standard.label",
       );
 
       wrapper.unmount();
     });
 
     it("opens on the summary once the member has answered", async () => {
-      preferenceState.persona.value = "regular";
+      preferenceState.expertMode.value = false;
 
       const wrapper = await mountWizard();
       await flushPromises();
@@ -1103,7 +1099,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
     it("looks back at the answer a member did give", async () => {
       preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
-      preferenceState.persona.value = "regular";
+      preferenceState.expertMode.value = false;
 
       const wrapper = await mountWizard();
       await flushPromises();
@@ -1112,7 +1108,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       expect(done).toHaveLength(1);
       expect(done[0].text()).toContain("onboarding.steps.welcome.title");
       expect(done[0].text()).toContain(
-        "onboarding.steps.welcome.regular.label",
+        "onboarding.steps.welcome.standard.label",
       );
       expect(wrapper.text()).toContain("onboarding.what_you_picked");
 

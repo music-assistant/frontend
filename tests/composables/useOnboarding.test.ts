@@ -44,7 +44,7 @@ const {
   // the composable's computed context follows what a test sets here
   preferenceState: {
     intent: { value: undefined } as { value?: string },
-    persona: { value: undefined } as { value?: string },
+    expertMode: { value: undefined } as { value?: boolean },
     welcomedAt: { value: undefined } as { value?: string },
   },
   // what the server hands back as the provider configurations
@@ -87,11 +87,11 @@ vi.mock("@/plugins/store", async () => {
 vi.mock("@/composables/userPreferences", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   preferenceState.intent = ref<string | undefined>(undefined);
-  preferenceState.persona = ref<string | undefined>(undefined);
+  preferenceState.expertMode = ref<boolean | undefined>(undefined);
   preferenceState.welcomedAt = ref<string | undefined>(undefined);
-  const preferences: Record<string, { value?: string }> = {
+  const preferences: Record<string, { value?: string | boolean }> = {
     "onboarding.intent": preferenceState.intent,
-    "onboarding.persona": preferenceState.persona,
+    expert_mode: preferenceState.expertMode,
     "onboarding.welcome": preferenceState.welcomedAt,
   };
   return {
@@ -230,7 +230,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
   afterEach(() => {
     warnSpy.mockRestore();
     preferenceState.intent.value = undefined;
-    preferenceState.persona.value = undefined;
+    preferenceState.expertMode.value = undefined;
     preferenceState.welcomedAt.value = undefined;
   });
 
@@ -793,39 +793,31 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
   });
 
   describe("the welcome", () => {
-    it("writes the persona and the settings it stands for in one go", async () => {
+    it("writes the answer as the expert mode flag, and nothing else", async () => {
       signInAs();
 
-      const { setPersona } = await loadOnboarding();
-      await expect(setPersona("enthusiast")).resolves.toBe(true);
+      const { setExpertMode } = await loadOnboarding();
+      await expect(setExpertMode(true)).resolves.toBe(true);
 
-      // one update: the account never holds the answer without the settings
-      // that answer was given for, and one message if it fails: the step has
-      // something of its own to say, so the api stays quiet
+      // one flag: what it changes is read from it wherever it applies, and
+      // one message if it fails: the step has something of its own to say, so
+      // the api stays quiet
       expect(setUserPreferencesMock).toHaveBeenCalledOnce();
       expect(setUserPreferencesMock).toHaveBeenCalledWith(
-        {
-          "onboarding.persona": "enthusiast",
-          show_waveform: true,
-          visualizer_enabled: true,
-        },
+        { expert_mode: true },
         { suppressGlobalError: true },
       );
     });
 
-    it("seeds the settings again when the member answers again", async () => {
+    it("moves the flag when the member answers again", async () => {
       signInAs();
-      preferenceState.persona.value = "enthusiast";
+      preferenceState.expertMode.value = true;
 
-      const { setPersona } = await loadOnboarding();
-      await setPersona("regular");
+      const { setExpertMode } = await loadOnboarding();
+      await setExpertMode(false);
 
       expect(setUserPreferencesMock).toHaveBeenCalledWith(
-        {
-          "onboarding.persona": "regular",
-          show_waveform: false,
-          visualizer_enabled: false,
-        },
+        { expert_mode: false },
         { suppressGlobalError: true },
       );
     });
@@ -921,10 +913,10 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       signInAs();
       setUserPreferencesMock.mockResolvedValue(false);
 
-      const { setPersona } = await loadOnboarding();
+      const { setExpertMode } = await loadOnboarding();
 
       // the step has something to tell the user; this only says what happened
-      await expect(setPersona("regular")).resolves.toBe(false);
+      await expect(setExpertMode(false)).resolves.toBe(false);
     });
 
     it("marks the welcome once, however often it is asked to", async () => {

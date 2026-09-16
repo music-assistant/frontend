@@ -27,8 +27,12 @@
               }}
             </ItemDescription>
             <!-- the welcome asked one thing; the summary says what came of it -->
-            <ItemDescription v-else-if="step.id === 'welcome' && persona">
-              {{ $t(`onboarding.steps.welcome.${persona}.label`) }}
+            <ItemDescription
+              v-else-if="step.id === 'welcome' && expertMode != null"
+            >
+              {{
+                $t(`onboarding.steps.welcome.${experienceOf(expertMode)}.label`)
+              }}
             </ItemDescription>
           </ItemContent>
         </Item>
@@ -95,7 +99,11 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { useOnboarding } from "@/composables/useOnboarding";
-import { isTodo, type OnboardingStepId } from "@/helpers/onboarding";
+import {
+  experienceOf,
+  isTodo,
+  type OnboardingStepId,
+} from "@/helpers/onboarding";
 import { Circle, CircleCheck } from "@lucide/vue";
 import { computed } from "vue";
 
@@ -113,7 +121,7 @@ const emit = defineEmits<{
   (e: "finish"): void;
 }>();
 
-const { ctx, steps, pending, persona } = useOnboarding();
+const { ctx, steps, pending, expertMode } = useOnboarding();
 
 // A review is nothing to set up and nothing to do, so it is on neither list.
 // Neither is a welcome the member only closed: being done with them is not the
@@ -127,7 +135,7 @@ const done = computed(() =>
       // own_sources is an invitation, surfaced under "still to do" while it is
       // open, not a choice to look back on once it is done
       step.id !== "own_sources" &&
-      (step.id !== "welcome" || persona.value != null),
+      (step.id !== "welcome" || expertMode.value != null),
   ),
 );
 const playerCount = computed(() => ctx.value.playerCount);

@@ -1,4 +1,5 @@
 import {
+  computed,
   effectScope,
   getCurrentScope,
   onScopeDispose,
@@ -9,7 +10,7 @@ import {
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { MediaType } from "@/plugins/api/interfaces";
-import { useUserPreferences } from "@/composables/userPreferences";
+import { expertModeSetting } from "@/helpers/expert_mode";
 
 // Module-level shared state: waveform bins and track duration for the
 // currently playing track. Any component can read this without triggering
@@ -17,8 +18,14 @@ import { useUserPreferences } from "@/composables/userPreferences";
 const waveformBins = ref<number[] | null>(null);
 const trackDurationSecs = ref<number>(0);
 
-const { getPreference } = useUserPreferences();
-const showWaveformPref = getPreference("show_waveform", true);
+const showWaveformPref = computed(() => expertModeSetting("show_waveform"));
+
+// Consumers that asked for the waveform regardless of the setting; while one
+// of them is alive the bins are fetched anyway.
+const forcedConsumerCount = ref(0);
+const wanted = computed(
+  () => forcedConsumerCount.value > 0 || showWaveformPref.value,
+);
 
 // Survives a watcher restart so that a consumer remounting on an unchanged
 // track keeps the cached bins instead of refetching them.
@@ -35,15 +42,21 @@ const watcherScope = effectScope(true);
  * Waveform bins and duration of the currently playing track.
  *
  * The data is shared between all callers and fetched once per track. Fetching
- * only runs while at least one caller is alive.
+ * only runs while at least one caller is alive, and follows the user's waveform
+ * setting unless a caller passes `ignorePreference` to get it regardless.
  */
-export function useActiveTrackWaveform() {
+export function useActiveTrackWaveform(options?: {
+  ignorePreference?: boolean;
+}) {
+  const ignorePreference = options?.ignorePreference === true;
+  if (ignorePreference) forcedConsumerCount.value++;
   if (++consumerCount === 1) startWatcher();
 
   // A caller outside an effect scope cannot signal teardown, so it keeps the
   // watcher alive for the lifetime of the module.
   if (getCurrentScope()) {
     onScopeDispose(() => {
+      if (ignorePreference) forcedConsumerCount.value--;
       if (--consumerCount === 0) {
         stopWatcher?.();
         stopWatcher = undefined;
@@ -67,7 +80,7 @@ function startWatcher() {
 function currentFetchKey() {
   const streamDetails = store.curQueueItem?.streamdetails;
   return [
-    showWaveformPref.value,
+    wanted.value,
     store.curQueueItem?.queue_item_id,
     streamDetails?.item_id,
     streamDetails?.provider,
@@ -83,7 +96,7 @@ async function loadWaveform(fetchKey: string) {
 
   const mediaItem = store.curQueueItem?.media_item;
   if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) return;
-  if (!showWaveformPref.value) return;
+  if (!wanted.value) return;
 
   // Without streamdetails there is nothing to analyse yet; this refires once
   // they arrive, because the key covers them.

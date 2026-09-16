@@ -13,7 +13,7 @@
       :selected="shown"
       :busy="busy"
       :labelled-by="DESCRIPTION_ID"
-      test-id-prefix="onboarding-persona"
+      test-id-prefix="onboarding-experience"
       @select="select"
     />
 
@@ -28,11 +28,15 @@ import ChoiceCards, {
   type ChoiceCardOption,
 } from "@/components/onboarding/ChoiceCards.vue";
 import { useOnboarding } from "@/composables/useOnboarding";
-import type { OnboardingPersona, OnboardingStepId } from "@/helpers/onboarding";
+import {
+  experienceOf,
+  type OnboardingExperience,
+  type OnboardingStepId,
+} from "@/helpers/onboarding";
 import { userDisplayName } from "@/helpers/provider_access";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { AudioLines, Play } from "@lucide/vue";
+import { Play, SlidersHorizontal } from "@lucide/vue";
 import { computed, markRaw, ref } from "vue";
 import { toast } from "vue-sonner";
 
@@ -47,7 +51,7 @@ const emit = defineEmits<{
   (e: "finish"): void;
 }>();
 
-const { persona, setPersona } = useOnboarding();
+const { expertMode, setExpertMode } = useOnboarding();
 
 // the welcome only ever opens on someone who is signed in, so the empty name
 // is there for the type rather than for a greeting anyone will read
@@ -55,19 +59,19 @@ const name = computed(() =>
   store.currentUser ? userDisplayName(store.currentUser) : "",
 );
 
-const options: ChoiceCardOption<OnboardingPersona>[] = [
+const options: ChoiceCardOption<OnboardingExperience>[] = [
   {
-    value: "enthusiast",
-    icon: markRaw(AudioLines),
-    labelKey: "onboarding.steps.welcome.enthusiast.label",
-    descriptionKey: "onboarding.steps.welcome.enthusiast.description",
+    value: "standard",
+    icon: markRaw(Play),
+    labelKey: "onboarding.steps.welcome.standard.label",
+    descriptionKey: "onboarding.steps.welcome.standard.description",
+    recommended: true,
   },
   {
-    value: "regular",
-    icon: markRaw(Play),
-    labelKey: "onboarding.steps.welcome.regular.label",
-    descriptionKey: "onboarding.steps.welcome.regular.description",
-    recommended: true,
+    value: "expert",
+    icon: markRaw(SlidersHorizontal),
+    labelKey: "onboarding.steps.welcome.expert.label",
+    descriptionKey: "onboarding.steps.welcome.expert.description",
   },
 ];
 
@@ -76,11 +80,16 @@ const recommended = options.find((option) => option.recommended)!.value;
 
 // the answer the member gave here, kept even when the account did not take
 // it: the card stays chosen, and moving on tries it again
-const chosen = ref<OnboardingPersona | null>(null);
+const chosen = ref<OnboardingExperience | null>(null);
+
+// the answer the account holds, as the cards know it
+const stored = computed(() =>
+  expertMode.value == null ? undefined : experienceOf(expertMode.value),
+);
 
 // what the cards show as chosen, and what moving on writes: the answer given
 // here, else the one on the account, else the recommended one
-const shown = computed(() => chosen.value ?? persona.value ?? recommended);
+const shown = computed(() => chosen.value ?? stored.value ?? recommended);
 
 // the answer is persisted on the server, so the cards stay inert until it lands
 const busy = ref(false);
@@ -88,10 +97,10 @@ const busy = ref(false);
 // moves off this step
 let pendingSave: Promise<boolean> | null = null;
 
-const save = async function (value: OnboardingPersona): Promise<boolean> {
+const save = async function (value: OnboardingExperience): Promise<boolean> {
   busy.value = true;
   try {
-    const saved = await setPersona(value);
+    const saved = await setExpertMode(value === "expert");
     // an answer that did not reach the server is not an answer: say so here,
     // where it was given, rather than wherever the member has got to by then
     if (!saved) toast.error($t("onboarding.steps.welcome.save_failed"));
@@ -102,7 +111,7 @@ const save = async function (value: OnboardingPersona): Promise<boolean> {
   }
 };
 
-const select = async function (value: OnboardingPersona) {
+const select = async function (value: OnboardingExperience) {
   if (busy.value) return;
   chosen.value = value;
   pendingSave = save(value);
@@ -119,7 +128,7 @@ const select = async function (value: OnboardingPersona) {
  */
 const beforeLeave = async function (): Promise<boolean> {
   if (pendingSave) return await pendingSave;
-  if (shown.value === persona.value) return true;
+  if (shown.value === stored.value) return true;
   pendingSave = save(shown.value);
   return await pendingSave;
 };

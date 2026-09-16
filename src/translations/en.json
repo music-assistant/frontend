@@ -2616,14 +2616,14 @@
             },
             "welcome": {
                 "title": "Make yourself at home",
-                "description": "Hi {name}, this is where the music in your home lives. How much detail would you like to see while something is playing?",
-                "enthusiast": {
-                    "label": "Show me everything",
-                    "description": "The full player, with every detail it can show."
+                "description": "Hi {name}, this is where the music in your home lives. Pick how much of it you would like to see.",
+                "standard": {
+                    "label": "Standard",
+                    "description": "A clean player with just the essentials."
                 },
-                "regular": {
-                    "label": "Keep it simple",
-                    "description": "A clean player, with nothing extra on it."
+                "expert": {
+                    "label": "Expert",
+                    "description": "Shows advanced options and extra details, for whoever wants to see everything."
                 },
                 "defaults_hint": "This only sets a few defaults. Every setting stays yours to change.",
                 "save_failed": "Your choice could not be saved. Please try again."

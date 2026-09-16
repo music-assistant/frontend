@@ -16,9 +16,6 @@ import { store } from "@/plugins/store";
 /** User preference holding the answer to the wizard's intent question. */
 export const ONBOARDING_INTENT_PREFERENCE = "onboarding.intent";
 
-/** User preference holding the answer to the welcome's persona question. */
-export const ONBOARDING_PERSONA_PREFERENCE = "onboarding.persona";
-
 /**
  * User preference holding when the member was welcomed, as an ISO timestamp.
  * Its presence is the whole answer: a member is welcomed once, and the app

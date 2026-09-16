@@ -497,6 +497,7 @@ import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { playbackSpeedSupported } from "@/helpers/elapsed";
+import { expertModeSetting } from "@/helpers/expert_mode";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
@@ -570,7 +571,7 @@ const showAlbumSubtitle = computed(
 
 const { albumSubtitle } = useNowPlayingSource();
 const { getPreference, setPreference } = useUserPreferences();
-const showWaveformPref = getPreference("show_waveform", true);
+const showWaveformPref = computed(() => expertModeSetting("show_waveform"));
 const showChapterProgress = getPreference("audiobook_chapter_progress", true);
 const nowTick = ref(0);
 let chapterTimer: ReturnType<typeof setInterval> | null = null;

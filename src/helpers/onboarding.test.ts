@@ -1,11 +1,10 @@
 import {
-  DETAIL_SETTINGS,
   ONBOARDING_STEPS,
   applicableSteps,
+  experienceOf,
   firstStep,
   orderSteps,
   pendingSteps,
-  personaDefaults,
   type OnboardingContext,
   type OnboardingProvider,
 } from "@/helpers/onboarding";
@@ -375,7 +374,7 @@ describe("the member track", () => {
     },
   );
 
-  it("asks for the persona, and for nothing else", () => {
+  it("asks for the experience, and for nothing else", () => {
     const ctx = memberContext();
 
     expect(step(ctx, "welcome").kind).toBe("step");
@@ -391,7 +390,7 @@ describe("the member track", () => {
   });
 
   it("is done with the member once they have answered", () => {
-    const ctx = memberContext({ answers: { persona: "enthusiast" } });
+    const ctx = memberContext({ answers: { expert: true } });
 
     expect(step(ctx, "welcome").isDone(ctx)).toBe(true);
     expect(pendingSteps(ctx)).toEqual([]);
@@ -419,13 +418,14 @@ describe("the member track", () => {
     const pending = memberContext();
     expect(stepIds(pendingSteps(pending))).toEqual(["welcome"]);
 
-    const answered = memberContext({ answers: { persona: "regular" } });
+    // the standard experience is an answer too, not the question left open
+    const answered = memberContext({ answers: { expert: false } });
     expect(pendingSteps(answered)).toEqual([]);
   });
 
   it("opens on the welcome, and on the summary once it is answered", () => {
     expect(firstStep(memberContext())).toBe("welcome");
-    expect(firstStep(memberContext({ answers: { persona: "regular" } }))).toBe(
+    expect(firstStep(memberContext({ answers: { expert: false } }))).toBe(
       "all_set",
     );
     expect(firstStep(memberContext({ welcomed: true }))).toBe("all_set");
@@ -434,7 +434,7 @@ describe("the member track", () => {
   it("never falls back onto the other track's summary", () => {
     // the member is done: the end of their track is where the wizard lands,
     // not the summary of a setup they were never running
-    const ctx = memberContext({ answers: { persona: "enthusiast" } });
+    const ctx = memberContext({ answers: { expert: true } });
     expect(firstStep(ctx, "core_settings")).toBe("all_set");
   });
 
@@ -498,26 +498,9 @@ describe("the own-sources invitation", () => {
   });
 });
 
-describe("the persona defaults", () => {
-  it.each(["enthusiast", "regular"] as const)(
-    "seeds every detail setting for the %s",
-    (persona) => {
-      // both answers write the same settings, so choosing again always lands
-      // on a complete set rather than on half of the last one
-      expect(Object.keys(personaDefaults(persona)).sort()).toEqual(
-        [...DETAIL_SETTINGS].sort(),
-      );
-    },
-  );
-
-  it("switches the details on for whoever asked to see everything", () => {
-    expect(personaDefaults("enthusiast")).toEqual({
-      show_waveform: true,
-      visualizer_enabled: true,
-    });
-    expect(personaDefaults("regular")).toEqual({
-      show_waveform: false,
-      visualizer_enabled: false,
-    });
+describe("the welcome's answer", () => {
+  it("names the experience the expert mode flag stands for", () => {
+    expect(experienceOf(true)).toBe("expert");
+    expect(experienceOf(false)).toBe("standard");
   });
 });

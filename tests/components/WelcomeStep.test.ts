@@ -25,7 +25,7 @@ const {
   authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
   // replaced with a real ref by the userPreferences mock factory below
   preferenceState: {
-    persona: { value: undefined } as { value?: string },
+    expertMode: { value: undefined } as { value?: boolean },
     ready: false,
   },
   setUserPreferencesMock: vi.fn(),
@@ -57,7 +57,7 @@ vi.mock("@/composables/userPreferences", async () => {
   // every test loads a fresh step, which runs this factory again: hand out the
   // same ref each time, so the answer a test gives survives the reload
   if (!preferenceState.ready) {
-    preferenceState.persona = ref<string | undefined>(undefined);
+    preferenceState.expertMode = ref<boolean | undefined>(undefined);
     preferenceState.ready = true;
   }
   return {
@@ -65,7 +65,7 @@ vi.mock("@/composables/userPreferences", async () => {
     setUserPreferences: setUserPreferencesMock,
     useUserPreferences: () => ({
       getPreference: (key: string) =>
-        key === "onboarding.persona" ? preferenceState.persona : ref(undefined),
+        key === "expert_mode" ? preferenceState.expertMode : ref(undefined),
     }),
   };
 });
@@ -93,8 +93,11 @@ async function mountStep() {
   return wrapper;
 }
 
-function card(wrapper: Awaited<ReturnType<typeof mountStep>>, persona: string) {
-  return wrapper.find(`[data-testid=onboarding-persona-${persona}]`);
+function card(
+  wrapper: Awaited<ReturnType<typeof mountStep>>,
+  experience: string,
+) {
+  return wrapper.find(`[data-testid=onboarding-experience-${experience}]`);
 }
 
 describe("WelcomeStep", () => {
@@ -108,7 +111,7 @@ describe("WelcomeStep", () => {
       display_name: "Sam",
       role: UserRole.USER,
     });
-    preferenceState.persona.value = undefined;
+    preferenceState.expertMode.value = undefined;
     setUserPreferencesMock.mockReset();
     // the real one says whether the server took the answer
     setUserPreferencesMock.mockResolvedValue(true);
@@ -137,14 +140,14 @@ describe("WelcomeStep", () => {
     wrapper.unmount();
   });
 
-  it("offers both ways to listen, and says what they change", async () => {
+  it("offers both experiences, and says what they change", async () => {
     const wrapper = await mountStep();
 
-    expect(card(wrapper, "enthusiast").text()).toContain(
-      "onboarding.steps.welcome.enthusiast.label",
+    expect(card(wrapper, "expert").text()).toContain(
+      "onboarding.steps.welcome.expert.label",
     );
-    expect(card(wrapper, "regular").text()).toContain(
-      "onboarding.steps.welcome.regular.label",
+    expect(card(wrapper, "standard").text()).toContain(
+      "onboarding.steps.welcome.standard.label",
     );
     // the answer is a handful of defaults, not a door closing
     expect(wrapper.text()).toContain("onboarding.steps.welcome.defaults_hint");
@@ -155,15 +158,11 @@ describe("WelcomeStep", () => {
   it("persists the answer and moves the wizard on", async () => {
     const wrapper = await mountStep();
 
-    await card(wrapper, "enthusiast").trigger("click");
+    await card(wrapper, "expert").trigger("click");
     await flushPromises();
 
     expect(setUserPreferencesMock).toHaveBeenCalledWith(
-      {
-        "onboarding.persona": "enthusiast",
-        show_waveform: true,
-        visualizer_enabled: true,
-      },
+      { expert_mode: true },
       // the step's own message is the only one the member should get
       { suppressGlobalError: true },
     );
@@ -176,16 +175,16 @@ describe("WelcomeStep", () => {
     setUserPreferencesMock.mockResolvedValue(false);
 
     const wrapper = await mountStep();
-    await card(wrapper, "enthusiast").trigger("click");
+    await card(wrapper, "expert").trigger("click");
     await flushPromises();
 
-    // walking on would leave them with a player the account never agreed to
+    // walking on would leave them with an experience the account never agreed to
     expect(toastMock.error).toHaveBeenCalledWith(
       "onboarding.steps.welcome.save_failed",
     );
     expect(wrapper.emitted("advance")).toBeUndefined();
     // and the cards are theirs to try again with
-    expect(card(wrapper, "enthusiast").attributes("disabled")).toBeUndefined();
+    expect(card(wrapper, "expert").attributes("disabled")).toBeUndefined();
 
     wrapper.unmount();
   });
@@ -202,16 +201,14 @@ describe("WelcomeStep", () => {
   });
 
   it("shows the answer the member already gave", async () => {
-    preferenceState.persona.value = "regular";
+    preferenceState.expertMode.value = false;
 
     const wrapper = await mountStep();
 
     // coming back to the welcome shows what it was answered with, and lets
     // them answer it again
-    expect(card(wrapper, "regular").attributes("aria-pressed")).toBe("true");
-    expect(card(wrapper, "enthusiast").attributes("aria-pressed")).toBe(
-      "false",
-    );
+    expect(card(wrapper, "standard").attributes("aria-pressed")).toBe("true");
+    expect(card(wrapper, "expert").attributes("aria-pressed")).toBe("false");
 
     wrapper.unmount();
   });
@@ -226,7 +223,7 @@ describe("WelcomeStep", () => {
     );
 
     const wrapper = await mountStep();
-    await card(wrapper, "regular").trigger("click");
+    await card(wrapper, "standard").trigger("click");
 
     // Next while the answer is still on its way waits for it here, instead of
     // walking the member on and telling them about it from the next step
@@ -249,7 +246,7 @@ describe("WelcomeStep", () => {
     );
 
     const wrapper = await mountStep();
-    await card(wrapper, "regular").trigger("click");
+    await card(wrapper, "standard").trigger("click");
 
     const leaving = wrapper.vm.beforeLeave();
     landAnswer(false);
@@ -267,12 +264,10 @@ describe("WelcomeStep", () => {
 
     // the recommended option reads as chosen, and is the only one badged, while
     // nothing is written until the member picks or moves on
-    expect(card(wrapper, "regular").attributes("aria-pressed")).toBe("true");
-    expect(card(wrapper, "enthusiast").attributes("aria-pressed")).toBe(
-      "false",
-    );
-    expect(card(wrapper, "regular").text()).toContain("recommended");
-    expect(card(wrapper, "enthusiast").text()).not.toContain("recommended");
+    expect(card(wrapper, "standard").attributes("aria-pressed")).toBe("true");
+    expect(card(wrapper, "expert").attributes("aria-pressed")).toBe("false");
+    expect(card(wrapper, "standard").text()).toContain("recommended");
+    expect(card(wrapper, "expert").text()).not.toContain("recommended");
     expect(setUserPreferencesMock).not.toHaveBeenCalled();
 
     wrapper.unmount();
@@ -282,14 +277,10 @@ describe("WelcomeStep", () => {
     const wrapper = await mountStep();
 
     // the card that was showing as chosen is what moving on answers with, so
-    // the account holds the defaults it stands for, like any other answer
+    // the account holds it like any other answer
     await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
     expect(setUserPreferencesMock).toHaveBeenCalledWith(
-      {
-        "onboarding.persona": "regular",
-        show_waveform: false,
-        visualizer_enabled: false,
-      },
+      { expert_mode: false },
       { suppressGlobalError: true },
     );
 
@@ -314,22 +305,18 @@ describe("WelcomeStep", () => {
     setUserPreferencesMock.mockResolvedValueOnce(false);
 
     const wrapper = await mountStep();
-    await card(wrapper, "enthusiast").trigger("click");
+    await card(wrapper, "expert").trigger("click");
     await flushPromises();
 
     // their pick stays the chosen card, not the recommended one
-    expect(card(wrapper, "enthusiast").attributes("aria-pressed")).toBe("true");
-    expect(card(wrapper, "regular").attributes("aria-pressed")).toBe("false");
+    expect(card(wrapper, "expert").attributes("aria-pressed")).toBe("true");
+    expect(card(wrapper, "standard").attributes("aria-pressed")).toBe("false");
 
     // and moving on tries their pick again, never the recommended answer
     setUserPreferencesMock.mockClear();
     await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
     expect(setUserPreferencesMock).toHaveBeenCalledWith(
-      {
-        "onboarding.persona": "enthusiast",
-        show_waveform: true,
-        visualizer_enabled: true,
-      },
+      { expert_mode: true },
       { suppressGlobalError: true },
     );
 
@@ -337,7 +324,7 @@ describe("WelcomeStep", () => {
   });
 
   it("leaves an answer already on the account alone", async () => {
-    preferenceState.persona.value = "enthusiast";
+    preferenceState.expertMode.value = true;
 
     const wrapper = await mountStep();
 
@@ -358,7 +345,7 @@ describe("WelcomeStep", () => {
     );
 
     const wrapper = await mountStep();
-    const chosen = card(wrapper, "regular");
+    const chosen = card(wrapper, "standard");
     void chosen.trigger("click");
     await chosen.trigger("click");
 
