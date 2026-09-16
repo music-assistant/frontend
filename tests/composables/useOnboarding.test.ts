@@ -11,6 +11,7 @@ import {
   type PlayerConfig,
   type User,
 } from "@/plugins/api/interfaces";
+import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { outputProtocol } from "../fixtures/outputProtocol";
 import { playerConfig } from "../fixtures/playerConfig";
@@ -1073,6 +1074,22 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       // the user just read stays
       delete apiMock.players["everywhere"];
       expect(playerLabels(module)).toEqual({ everywhere: "AirPlay" });
+
+      // back, but playing through nothing: its provider names it again
+      registerPlayer("everywhere", { output_protocols: [] });
+      expect(playerLabels(module)).toEqual({ everywhere: "Universal player" });
+    });
+
+    it("keeps the name a provider was given even without a manifest for it", async () => {
+      addProvider("sonos--1", "sonos", ProviderType.PLAYER, {
+        name: "Downstairs Sonos",
+      });
+      delete apiMock.providerManifests["sonos"];
+      addPlayerConfig({ player_id: "living", provider: "sonos--1" });
+
+      const module = await loadOnboardingModule();
+
+      expect(playerLabels(module)).toEqual({ living: "Downstairs Sonos" });
     });
 
     it("falls back on the provider itself when a player plays through nothing", async () => {
@@ -1236,6 +1253,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
         playerConfig({ player_id: "office", default_name: "Office" }),
       );
 
+      registerPlayer("office");
       playerEventHandler()({
         event: EventType.PLAYER_ADDED,
         object_id: "office",
@@ -1248,6 +1266,36 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
           ["Office"],
         ),
       );
+    });
+
+    it("drops the configuration of a player that left before it came in", async () => {
+      const module = await loadOnboardingModule();
+      module.useOnboarding().followPlayers();
+      let handOverConfig: (config: PlayerConfig) => void = () => {};
+      apiMock.getPlayerConfig.mockImplementation(
+        () =>
+          new Promise<PlayerConfig>((resolve) => {
+            handOverConfig = resolve;
+          }),
+      );
+
+      registerPlayer("office");
+      playerEventHandler()({
+        event: EventType.PLAYER_ADDED,
+        object_id: "office",
+        data: { player_id: "office", type: PlayerType.PLAYER },
+      });
+      // gone again before its configuration came in
+      delete apiMock.players["office"];
+      playerEventHandler()({
+        event: EventType.PLAYER_REMOVED,
+        object_id: "office",
+      });
+      handOverConfig(playerConfig({ player_id: "office" }));
+      await flushPromises();
+
+      expect(apiMock.getPlayerConfig).toHaveBeenCalledOnce();
+      expect(module.discoveredPlayers()).toEqual([]);
     });
 
     it("fetches nothing for a player it lists or one that is another's output", async () => {

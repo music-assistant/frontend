@@ -252,8 +252,11 @@ function removePlayerConfig(playerId: string): void {
 async function fetchPlayerConfig(playerId: string): Promise<void> {
   try {
     const config = await api.getPlayerConfig(playerId);
-    // unless it turned up by another route in the meantime
-    if (!findPlayerConfig(playerId)) upsertPlayerConfig(config);
+    // unless it turned up by another route in the meantime, or was gone again
+    // before its configuration came in
+    if (!findPlayerConfig(playerId) && playerId in api.players) {
+      upsertPlayerConfig(config);
+    }
   } catch (error) {
     // the api already told the user
     console.warn("Failed to load the player configuration:", error);
@@ -342,11 +345,11 @@ function playerProviderLabel(config: PlayerConfig, player?: Player): string {
     providerConfig?.domain ??
     config.provider.split("--")[0];
   const manifest = api.providerManifests[domain];
-  if (manifest && !isBuiltinProvider(manifest)) {
+  if (!isBuiltinProvider(manifest)) {
     // the configuration knows the name of a provider that is not running
     return providerConfig
-      ? providerDisplayName(providerConfig, instance, manifest)
-      : instance?.name || manifest.name;
+      ? providerDisplayName(providerConfig, instance, manifest) || domain
+      : instance?.name || manifest?.name || domain;
   }
   const protocols = new Set(
     (player?.output_protocols ?? [])
@@ -362,8 +365,10 @@ function playerProviderLabel(config: PlayerConfig, player?: Player): string {
     lastPlayerLabels.set(config.player_id, label);
     return label;
   }
+  // the last label stands in only while the player is unregistered: one that
+  // is around and plays through nothing is labelled by its provider
   return (
-    lastPlayerLabels.get(config.player_id) ??
+    (player ? undefined : lastPlayerLabels.get(config.player_id)) ??
     (instance?.name || manifest?.name || domain)
   );
 }

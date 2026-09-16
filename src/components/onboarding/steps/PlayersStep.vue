@@ -47,22 +47,22 @@
 
       <Empty v-else class="border-border rounded-md border border-dashed py-6">
         <EmptyHeader>
-          <!-- a provider that is set up is still looking, and the step shows
+          <!-- a provider that is running is still looking, and the step shows
                that rather than an empty list that reads as final -->
           <EmptyMedia variant="icon">
             <Spinner
-              v-if="providers.length > 0"
+              v-if="discovering"
               class="size-5"
               data-testid="onboarding-players-discovering"
             />
             <Speaker v-else />
           </EmptyMedia>
           <EmptyTitle>{{ $t("onboarding.steps.players.empty") }}</EmptyTitle>
-          <!-- with nothing set up, adding a provider is the way to players;
-               with one in place, all there is to do is wait for it -->
+          <!-- with nothing looking, adding a provider is the way to players;
+               with one at work, all there is to do is wait for it -->
           <EmptyDescription>
             {{
-              providers.length > 0
+              discovering
                 ? $t("onboarding.steps.players.discovering_hint")
                 : $t("onboarding.steps.players.no_provider_hint")
             }}
@@ -132,6 +132,11 @@ defineEmits<{
 // nothing to save on the way out and needs no beforeLeave
 const providers = computed(() => configuredProviders(ProviderType.PLAYER));
 const players = computed(() => discoveredPlayers());
+// whether anything is looking for players: a provider that is switched off
+// or failed to load finds nothing
+const discovering = computed(() =>
+  providers.value.some((provider) => !provider.needsAttention),
+);
 // switching a player on or off and renaming it are player configuration
 // writes, which the admin track does not imply
 const canEdit = computed(() =>

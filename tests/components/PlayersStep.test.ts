@@ -192,6 +192,23 @@ describe("PlayersStep", () => {
     wrapper.unmount();
   });
 
+  it("does not wait on a provider that is not doing anything", () => {
+    addProvider({ needsAttention: true });
+
+    const wrapper = mountStep();
+
+    // a provider that is switched off or failed to load finds nothing, so
+    // there is nothing to wait for and adding one is still the way to players
+    expect(
+      wrapper.find("[data-testid=onboarding-players-discovering]").exists(),
+    ).toBe(false);
+    expect(wrapper.text()).toContain(
+      "onboarding.steps.players.no_provider_hint",
+    );
+
+    wrapper.unmount();
+  });
+
   it("lists the players with what they came from", () => {
     addPlayer({ player_id: "kitchen", name: "Kitchen" });
     addPlayer({
