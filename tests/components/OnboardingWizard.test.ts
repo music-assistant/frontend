@@ -7,7 +7,15 @@ import {
 } from "@/plugins/api/interfaces";
 import type { OnboardingStepId } from "@/helpers/onboarding";
 import { flushPromises, mount } from "@vue/test-utils";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import {
   BUILTIN_ROLE_SCOPES,
   MEMBER_WITHOUT_OWN_SCOPES,
@@ -33,12 +41,22 @@ const {
     providers: {} as Record<string, { name: string }>,
     providerManifests: {} as Record<string, { builtin: boolean }>,
     getAllUsers: vi.fn(),
+    configureRemoteAccess: vi.fn(),
     getCoreConfig: vi.fn(),
     getProviderConfigs: vi.fn(),
+    getRemoteAccessInfo: vi.fn(),
+    getStreamServerInfo: vi.fn(),
     saveCoreConfig: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
     sendCommand: vi.fn(),
-    serverInfo: { value: { onboard_done: false } },
+    serverInfo: {
+      value: {
+        onboard_done: false,
+        server_id: "server-1",
+        internal_url: "http://192.168.1.10:8095",
+        has_remote_access: false,
+      },
+    },
   },
   authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
   // the settings form as the server settings step drives it: what it is holding
@@ -266,6 +284,11 @@ async function reportProvidersUpdated() {
 
 // every test mounts the wizard on a fresh module registry, which is its whole
 // step graph evaluated again and can take seconds under load
+// hand the network guard back after every test
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe("Onboarding wizard", { timeout: 20_000 }, () => {
   beforeEach(() => {
     apiMock.players = {};
@@ -298,6 +321,22 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     });
     apiMock.saveCoreConfig.mockReset();
     apiMock.saveCoreConfig.mockResolvedValue(undefined);
+    apiMock.getStreamServerInfo.mockReset();
+    apiMock.getStreamServerInfo.mockResolvedValue({
+      base_url: "http://192.168.1.10:8097",
+    });
+    apiMock.getRemoteAccessInfo.mockReset();
+    apiMock.configureRemoteAccess.mockReset();
+    // the server settings step probes the addresses from the browser
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ server_id: "server-1" }), {
+            status: 200,
+          }),
+      ),
+    );
     apiMock.sendCommand.mockReset();
     apiMock.subscribe.mockClear();
     authMock.hasScope.mockImplementation(
@@ -675,9 +714,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     // a review is nothing to set up, so it is shown rather than skipped, and
     // moving on from it is all the footer offers
     expect(heading(wrapper)).toBe("onboarding.steps.core_settings.title");
-    expect(wrapper.find("[data-testid=onboarding-core-config]").exists()).toBe(
-      true,
-    );
+    expect(
+      wrapper.find("[data-testid=onboarding-address-internal]").exists(),
+    ).toBe(true);
     expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
       "onboarding.next",
     );

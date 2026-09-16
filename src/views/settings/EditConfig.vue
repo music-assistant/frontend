@@ -84,19 +84,23 @@
 
     <div
       v-if="!disabled"
-      :class="[
-        'floating-save',
-        {
-          'floating-save--mobile': store.mobileLayout,
-          'floating-save--frameless': store.frameless,
-        },
-      ]"
+      :class="
+        inlineSave
+          ? 'mt-4 flex justify-end'
+          : [
+              'floating-save',
+              {
+                'floating-save--mobile': store.mobileLayout,
+                'floating-save--frameless': store.frameless,
+              },
+            ]
+      "
     >
       <Button
         data-testid="config-save"
         type="button"
         size="lg"
-        class="shadow-lg"
+        :class="{ 'shadow-lg': !inlineSave }"
         :disabled="!requiredValuesPresent || !hasUnsavedChanges"
         @click="submit"
       >
@@ -218,6 +222,9 @@ export interface Props {
   // Domain of the provider being configured; lets a field recognise the entries of the
   // provider it belongs to. Omitted for player/core configs.
   providerDomain?: string;
+  // Keep the Save button in the flow of the form instead of floating over the page:
+  // inside a dialog, a fixed position is measured from the dialog rather than the screen.
+  inlineSave?: boolean;
 }
 
 const emit = defineEmits<{
