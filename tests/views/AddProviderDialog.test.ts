@@ -71,6 +71,16 @@ describe("AddProviderDialog", () => {
     );
   });
 
+  it("keeps the search field above the scrolling list", async () => {
+    await openDialog();
+
+    const list = document.querySelector("[data-testid='provider-list']");
+
+    // the list scrolls on its own, so the search stays in view above it
+    expect(list?.querySelector(".provider-item")).not.toBeNull();
+    expect(list?.contains(searchField())).toBe(false);
+  });
+
   it("labels the stage badge from the translated stage key", async () => {
     apiMock.providerManifests = {
       soundcloud: providerManifest({

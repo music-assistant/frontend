@@ -1,73 +1,79 @@
 <template>
   <Dialog :open="props.show" @update:open="handleOpenChange">
     <DialogContent
-      class="h-[85dvh] max-h-[85dvh] sm:h-[60vh] sm:max-h-[60vh] flex flex-col p-0"
+      class="flex h-[calc(100dvh-2rem)] flex-col gap-0 p-0 sm:h-[85dvh] sm:max-w-[calc(100%-2rem)] lg:max-w-[900px]"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
-      <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
+      <DialogHeader class="border-b px-4 py-4 pr-12 text-left sm:px-6">
         <DialogTitle>{{ dialogTitle }}</DialogTitle>
       </DialogHeader>
 
-      <div class="px-6 pb-2 flex-shrink-0">
-        <InputGroup class="search-field">
-          <InputGroupInput v-model="searchQuery" :placeholder="$t('search')" />
-          <InputGroupAddon>
-            <Search />
-          </InputGroupAddon>
-        </InputGroup>
-      </div>
-
-      <div class="px-6 flex-shrink-0">
-        <div class="filter-buttons">
-          <FacetedFilter
-            v-model="selectedProviderStages"
-            :title="$t('settings.stage.label')"
-            :options="providerStageOptions"
-          />
-        </div>
+      <!-- the search and the filter stay put; only the list below scrolls -->
+      <div class="flex flex-wrap items-center gap-2 px-4 py-3 sm:px-6">
+        <SearchInput
+          v-model="searchQuery"
+          :placeholder="$t('search')"
+          clearable
+          class="min-w-48 flex-1"
+        />
+        <FacetedFilter
+          v-model="selectedProviderStages"
+          :title="$t('settings.stage.label')"
+          :options="providerStageOptions"
+        />
       </div>
 
       <div
-        class="provider-list-container px-6 pt-2 pb-6 flex-1 min-h-0 overflow-y-auto"
+        class="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-6"
+        data-testid="provider-list"
       >
-        <div v-if="filteredProviders.length > 0" class="provider-list">
-          <div
+        <ItemGroup v-if="filteredProviders.length > 0" class="gap-2">
+          <Item
             v-for="provider in filteredProviders"
             :key="provider.domain"
-            class="provider-item"
+            variant="outline"
+            size="sm"
+            class="provider-item hover:bg-accent/50 cursor-pointer"
             @click="addProvider(provider)"
           >
-            <provider-icon
-              :domain="provider.domain"
-              :size="40"
-              class="provider-icon"
-            />
-            <div class="provider-content">
-              <div class="provider-name">{{ provider.name }}</div>
-              <div class="provider-description">
-                {{ provider.description }}
-              </div>
-            </div>
-            <div class="provider-actions">
+            <ItemMedia>
+              <ProviderIcon :domain="provider.domain" :size="40" />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle class="provider-name">
+                <!-- the name is the focusable control; the row itself only follows the pointer -->
+                <button
+                  type="button"
+                  class="cursor-pointer text-left"
+                  @click.stop="addProvider(provider)"
+                >
+                  {{ provider.name }}
+                </button>
+              </ItemTitle>
+              <ItemDescription>{{ provider.description }}</ItemDescription>
+            </ItemContent>
+            <ItemActions>
               <Badge
                 v-if="shouldShowStageBadge(provider.stage)"
                 :variant="getStageVariant(provider.stage)"
-                class="text-uppercase"
+                class="uppercase"
               >
                 {{ getStageLabel(provider.stage) }}
               </Badge>
-              <ChevronRight class="h-4 w-4" />
-            </div>
-          </div>
-        </div>
+              <ChevronRight class="text-muted-foreground size-4" />
+            </ItemActions>
+          </Item>
+        </ItemGroup>
 
-        <div v-else class="empty-state">
-          <Search class="empty-icon" />
-          <div class="empty-title">{{ $t("no_content") }}</div>
-          <div class="empty-message">
-            {{ $t("no_content_filter") }}
-          </div>
-        </div>
+        <Empty v-else class="h-full">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Search />
+            </EmptyMedia>
+            <EmptyTitle>{{ $t("no_content") }}</EmptyTitle>
+            <EmptyDescription>{{ $t("no_content_filter") }}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       </div>
     </DialogContent>
   </Dialog>
@@ -84,10 +90,22 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
+import { SearchInput } from "@/components/ui/search-input";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { isSelfServiceProvider } from "@/helpers/provider_access";
 import {
@@ -336,104 +354,3 @@ watch(
   },
 );
 </script>
-
-<style scoped>
-.search-field {
-  width: 100%;
-}
-
-.filter-buttons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.provider-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.provider-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 8px;
-  transition:
-    background-color 0.2s ease,
-    transform 0.2s ease;
-  cursor: pointer;
-}
-
-.provider-item:hover {
-  background-color: rgba(var(--v-theme-primary), 0.04);
-  transform: translateY(-1px);
-}
-
-.provider-icon {
-  flex-shrink: 0;
-}
-
-.provider-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.provider-name {
-  font-weight: 500;
-  font-size: 16px;
-  line-height: 1.2;
-  margin-bottom: 4px;
-}
-
-.provider-description {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-height: 2.6em;
-}
-
-.provider-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  text-align: center;
-  padding: 40px 20px;
-}
-
-.empty-icon {
-  width: 48px;
-  height: 48px;
-  color: rgba(var(--v-theme-on-surface), 0.3);
-  margin-bottom: 16px;
-}
-
-.empty-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-bottom: 8px;
-}
-
-.empty-message {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  line-height: 1.4;
-}
-</style>
