@@ -45,6 +45,9 @@ const {
   preferenceState: {
     intent: { value: undefined } as { value?: string },
     expertMode: { value: undefined } as { value?: boolean },
+    // the welcome's answer as an account holds it that answered before the
+    // expert mode flag existed
+    legacyPersona: { value: undefined } as { value?: string },
     welcomedAt: { value: undefined } as { value?: string },
   },
   // what the server hands back as the provider configurations
@@ -88,10 +91,12 @@ vi.mock("@/composables/userPreferences", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   preferenceState.intent = ref<string | undefined>(undefined);
   preferenceState.expertMode = ref<boolean | undefined>(undefined);
+  preferenceState.legacyPersona = ref<string | undefined>(undefined);
   preferenceState.welcomedAt = ref<string | undefined>(undefined);
   const preferences: Record<string, { value?: string | boolean }> = {
     "onboarding.intent": preferenceState.intent,
     expert_mode: preferenceState.expertMode,
+    "onboarding.persona": preferenceState.legacyPersona,
     "onboarding.welcome": preferenceState.welcomedAt,
   };
   return {
@@ -231,6 +236,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     warnSpy.mockRestore();
     preferenceState.intent.value = undefined;
     preferenceState.expertMode.value = undefined;
+    preferenceState.legacyPersona.value = undefined;
     preferenceState.welcomedAt.value = undefined;
   });
 
@@ -820,6 +826,18 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
         { expert_mode: false },
         { suppressGlobalError: true },
       );
+    });
+
+    it("reads an answer an earlier welcome wrote as a persona", async () => {
+      signInAs();
+      preferenceState.legacyPersona.value = "enthusiast";
+
+      const { ctx, pending } = await loadOnboarding();
+
+      // the old answer still counts as the expert experience, so nothing is
+      // asked again and the summary can look back at it
+      expect(ctx.value.answers.expert).toBe(true);
+      expect(pending.value).toEqual([]);
     });
 
     it("marks the member as welcomed on the way out", async () => {

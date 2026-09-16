@@ -176,7 +176,8 @@ vi.mock("@/composables/userPreferences", async () => {
     setUserPreference: setUserPreferenceMock,
     setUserPreferences: setUserPreferencesMock,
     useUserPreferences: () => ({
-      getPreference: (key: string) => preferences[key],
+      // a preference nothing here sets reads as unset, like on a fresh account
+      getPreference: (key: string) => preferences[key] ?? ref(undefined),
     }),
   };
 });

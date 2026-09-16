@@ -12,13 +12,35 @@ import { store } from "@/plugins/store";
 /** User preference holding whether this user asked for the expert experience. */
 export const EXPERT_MODE_PREFERENCE = "expert_mode";
 
+// the welcome's answer as an account holds it that answered before the flag
+// existed: "enthusiast" for the expert experience, "regular" otherwise
+const LEGACY_PERSONA_PREFERENCE = "onboarding.persona";
+
+/**
+ * The expert mode an account's answers amount to: the flag when it is set,
+ * else the persona an earlier welcome wrote, else `undefined` for an account
+ * that was never asked.
+ */
+export function expertModeOf(
+  flag: unknown,
+  legacyPersona: unknown,
+): boolean | undefined {
+  if (flag != null) return Boolean(flag);
+  if (legacyPersona == null) return undefined;
+  return legacyPersona === "enthusiast";
+}
+
 /**
  * Whether the signed-in user asked for the expert experience; off until they
  * did. Reads reactive store state, so it stays reactive inside a computed.
  */
 export function expertMode(): boolean {
-  return Boolean(
-    store.currentUser?.preferences?.[EXPERT_MODE_PREFERENCE] ?? false,
+  const preferences = store.currentUser?.preferences;
+  return (
+    expertModeOf(
+      preferences?.[EXPERT_MODE_PREFERENCE],
+      preferences?.[LEGACY_PERSONA_PREFERENCE],
+    ) ?? false
   );
 }
 

@@ -3,7 +3,7 @@ import {
   setUserPreferences,
   useUserPreferences,
 } from "@/composables/userPreferences";
-import { EXPERT_MODE_PREFERENCE } from "@/helpers/expert_mode";
+import { EXPERT_MODE_PREFERENCE, expertModeOf } from "@/helpers/expert_mode";
 import {
   applicableSteps,
   pendingSteps,
@@ -209,8 +209,13 @@ export function householdMembers(): HouseholdMember[] {
 
 const { getPreference } = useUserPreferences();
 const intent = getPreference<OnboardingIntent>(ONBOARDING_INTENT_PREFERENCE);
+const expertModeFlag = getPreference<boolean>(EXPERT_MODE_PREFERENCE);
+// what an account holds that answered the welcome before the flag existed
+const legacyPersona = getPreference<string>("onboarding.persona");
 // the welcome's answer, undefined until it was given
-const expertMode = getPreference<boolean>(EXPERT_MODE_PREFERENCE);
+const expertMode = computed(() =>
+  expertModeOf(expertModeFlag.value, legacyPersona.value),
+);
 const welcomedAt = getPreference<string>(ONBOARDING_WELCOME_PREFERENCE);
 
 // the music sources this member owns, for the own-sources step to list and
