@@ -7,15 +7,7 @@ import {
 } from "@/plugins/api/interfaces";
 import type { OnboardingStepId } from "@/helpers/onboarding";
 import { flushPromises, mount } from "@vue/test-utils";
-import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   BUILTIN_ROLE_SCOPES,
   MEMBER_WITHOUT_OWN_SCOPES,
@@ -192,11 +184,9 @@ vi.mock("@/composables/userPreferences", async () => {
 // The wizard pulls its whole step graph in behind it: the provider listings,
 // the welcome's cards, the players of what is here and the tour. Every test
 // mounts it on a fresh module registry, so the transform of all that is paid
-// here, once and outside any test's clock, instead of by whichever test happens
-// to mount first.
-beforeAll(async () => {
-  await import("@/components/onboarding/OnboardingWizard.vue");
-});
+// at module scope, where no test or hook clock runs, instead of by whichever
+// test happens to mount first.
+await import("@/components/onboarding/OnboardingWizard.vue");
 
 /**
  * A fresh wizard per test: the onboarding state lives for a whole session.
