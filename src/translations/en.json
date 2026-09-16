@@ -2588,7 +2588,7 @@
                     "title": "Listen from outside your home",
                     "description": "Two ways to reach Music Assistant when you are away. Both can also be set up later.",
                     "builtin": {
-                        "title": "Music Assistant remote access",
+                        "title": "Built-in remote access",
                         "easiest": "Easiest",
                         "description": "Secure and encrypted, with no port forwarding or VPN. Turn it on and connect from anywhere with your remote access ID.",
                         "switch": "Remote access",
