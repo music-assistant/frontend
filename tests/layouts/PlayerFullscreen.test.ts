@@ -18,6 +18,9 @@ vi.mock("@/plugins/api", async () => {
     providers: {},
     subscribe: vi.fn(() => vi.fn()),
     getTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
+    getPodcastEpisodeTranscript:
+      vi.fn<MusicAssistantApi["getPodcastEpisodeTranscript"]>(),
+    supportsPodcastTranscripts: true,
     playerCommandSeek: vi.fn<MusicAssistantApi["playerCommandSeek"]>(),
     playMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
   });
@@ -179,8 +182,10 @@ interface TestStore {
     queue_item_id?: string;
     name?: string;
     media_item?: {
+      item_id?: string;
+      provider?: string;
       media_type: MediaType;
-      metadata?: { chapters?: Chapter[] };
+      metadata?: { chapters?: Chapter[]; has_transcript?: boolean | null };
     };
   };
   showFullscreenPlayer: boolean;
@@ -189,6 +194,8 @@ interface TestStore {
 }
 
 interface TestApi {
+  supportsPodcastTranscripts: boolean;
+  getPodcastEpisodeTranscript: ReturnType<typeof vi.fn>;
   queues: Record<
     string,
     { queue_id: string; state: PlaybackState; active: boolean }
@@ -286,6 +293,8 @@ afterEach(async () => {
   testStore.curQueueItem = undefined;
   testApi.queues = {};
   testApi.queueElapsedTime = {};
+  testApi.supportsPodcastTranscripts = true;
+  testApi.getPodcastEpisodeTranscript.mockReset();
 });
 
 describe("PlayerFullscreen chapter queue", () => {
@@ -382,6 +391,63 @@ describe("PlayerFullscreen lyrics clock", () => {
     testStore.showFullscreenPlayer = false;
     await nextTick();
     expect(pendingFrames.size).toBe(0);
+  });
+});
+
+describe("PlayerFullscreen transcript", () => {
+  /** Open the fullscreen player on a podcast episode and let its lookups settle. */
+  async function openEpisode(hasTranscript: boolean | null): Promise<void> {
+    await seedPlayingQueue();
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.curQueueItem = {
+      queue_item_id: "item-1",
+      media_item: {
+        item_id: "podcast-1:episode-1",
+        provider: "pocketcasts--abc",
+        media_type: MediaType.PODCAST_EPISODE,
+        metadata: { has_transcript: hasTranscript },
+      },
+    };
+    testStore.showFullscreenPlayer = true;
+
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+    });
+    await nextTick();
+    await nextTick();
+  }
+
+  it("asks a current server for the transcript", async () => {
+    const api = (await import("@/plugins/api")).default;
+    const testApi = api as unknown as TestApi;
+    testApi.getPodcastEpisodeTranscript.mockResolvedValue([null, null]);
+
+    await openEpisode(null);
+
+    expect(testApi.getPodcastEpisodeTranscript).toHaveBeenCalledWith(
+      "podcast-1:episode-1",
+      "pocketcasts--abc",
+    );
+  });
+
+  it("never asks a server too old to know about transcripts", async () => {
+    const api = (await import("@/plugins/api")).default;
+    const testApi = api as unknown as TestApi;
+    testApi.supportsPodcastTranscripts = false;
+
+    await openEpisode(null);
+
+    expect(testApi.getPodcastEpisodeTranscript).not.toHaveBeenCalled();
+  });
+
+  it("skips an episode the provider says has no transcript", async () => {
+    const api = (await import("@/plugins/api")).default;
+    const testApi = api as unknown as TestApi;
+
+    await openEpisode(false);
+
+    expect(testApi.getPodcastEpisodeTranscript).not.toHaveBeenCalled();
   });
 });
 
