@@ -2,27 +2,25 @@ import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
   ConfigEntryType,
+  Scope,
   type ConfigEntry,
   type CoreConfig,
-  type RemoteAccessInfo,
   type ServerInfoMessage,
 } from "@/plugins/api/interfaces";
-import { flushPromises, mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ref, type Ref } from "vue";
 
-const { apiMock, copyMock, toastMock } = vi.hoisted(() => ({
+const { apiMock, authMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
-    configureRemoteAccess: vi.fn<MusicAssistantApi["configureRemoteAccess"]>(),
     getCoreConfig: vi.fn<MusicAssistantApi["getCoreConfig"]>(),
-    getRemoteAccessInfo: vi.fn<MusicAssistantApi["getRemoteAccessInfo"]>(),
     getStreamServerInfo: vi.fn<MusicAssistantApi["getStreamServerInfo"]>(),
     saveCoreConfig: vi.fn<MusicAssistantApi["saveCoreConfig"]>(),
     // replaced with a real ref by the api mock factory below, so the step
     // follows a server info update the way it follows the real one
     serverInfo: { value: undefined } as Ref<ServerInfoMessage | undefined>,
   },
-  copyMock: vi.fn<(text: string) => Promise<boolean>>(),
+  authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
   toastMock: { error: vi.fn(), success: vi.fn() },
 }));
 
@@ -32,20 +30,20 @@ vi.mock("@/plugins/api", async () => {
   return { api: apiMock, default: apiMock };
 });
 
+vi.mock("@/plugins/auth", () => ({ authManager: authMock, default: authMock }));
+
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
 
-vi.mock("@/helpers/utils", () => ({ copyToClipboard: copyMock }));
+enableAutoUnmount(afterEach);
 
 let warnSpy: ReturnType<typeof vi.spyOn>;
 
 const SERVER_ID = "server-1";
 const INTERNAL_URL = "http://192.168.1.10:8095";
 const STREAM_URL = "http://192.168.1.10:8097";
-// a remote access id as the server hands it over, and as it is read out
-const REMOTE_ID = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const REMOTE_ID_GROUPED = "ABCDEFGH-IJKLM-NOPQR-STUVWXYZ";
+const MOVED_STREAM_URL = "http://10.0.0.5:8097";
 
 /** What the user typed, as the form hands it over. */
 const EDITED_VALUES = { server_name: "Living room" };
@@ -99,20 +97,6 @@ function serverInfo(
   } as ServerInfoMessage;
 }
 
-function remoteAccessInfo(
-  overrides: Partial<RemoteAccessInfo> = {},
-): RemoteAccessInfo {
-  return {
-    enabled: true,
-    running: true,
-    connected: true,
-    remote_id: REMOTE_ID,
-    using_ha_cloud: false,
-    signaling_url: "wss://signaling.example",
-    ...overrides,
-  };
-}
-
 function entry(key: string, overrides: Partial<ConfigEntry> = {}): ConfigEntry {
   return {
     category: "generic",
@@ -162,9 +146,17 @@ function answeringAsThisServer() {
   );
 }
 
+/** The scopes this admin holds; everything, unless a test takes one away. */
+function grantAllBut(...withheld: Scope[]) {
+  authMock.hasScope.mockImplementation((scope) => !withheld.includes(scope));
+}
+
 function mountStep() {
   return mount(CoreSettingsStep, {
-    global: { stubs: { EditConfig: editConfigStub } },
+    global: {
+      // the card is covered where it lives; here it only has to be reachable
+      stubs: { EditConfig: editConfigStub, RemoteAccessCard: true },
+    },
   });
 }
 
@@ -192,6 +184,10 @@ function addressCheck(wrapper: Wrapper, id: "internal" | "stream") {
   return addressRow(wrapper, id).find("[data-testid=onboarding-address-check]");
 }
 
+function unreachableHint(wrapper: Wrapper) {
+  return wrapper.find("[data-testid=onboarding-address-unreachable-hint]");
+}
+
 function advancedSection(wrapper: Wrapper) {
   return wrapper.find("[data-testid=onboarding-advanced-section]");
 }
@@ -204,14 +200,6 @@ function advancedFolded(wrapper: Wrapper): boolean {
   );
 }
 
-function remoteSwitch(wrapper: Wrapper) {
-  return wrapper.find("[data-testid=onboarding-remote-access-switch]");
-}
-
-function remoteId(wrapper: Wrapper) {
-  return wrapper.find("[data-testid=onboarding-remote-access-id]");
-}
-
 function probedUrls(): string[] {
   return (fetch as ReturnType<typeof vi.fn>).mock.calls.map(
     ([url]: unknown[]) => String(url),
@@ -222,23 +210,20 @@ beforeEach(() => {
   vi.clearAllMocks();
   hasUnsavedChanges.value = false;
   valuesValidate.value = true;
+  grantAllBut();
   apiMock.serverInfo.value = serverInfo();
   apiMock.getCoreConfig.mockImplementation(async (domain) =>
     domain === "webserver" ? webserverConfig() : streamsConfig(),
   );
   apiMock.saveCoreConfig.mockResolvedValue(webserverConfig());
   apiMock.getStreamServerInfo.mockResolvedValue({ base_url: STREAM_URL });
-  apiMock.getRemoteAccessInfo.mockResolvedValue(remoteAccessInfo());
-  apiMock.configureRemoteAccess.mockImplementation(async (enabled) =>
-    remoteAccessInfo({ enabled }),
-  );
-  copyMock.mockResolvedValue(true);
   vi.stubGlobal("fetch", answeringAsThisServer());
   warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
   warnSpy.mockRestore();
 });
 
@@ -250,8 +235,26 @@ describe("CoreSettingsStep", () => {
       expect(addressUrl(wrapper, "internal").text()).toBe(INTERNAL_URL);
       expect(addressUrl(wrapper, "stream").text()).toBe(STREAM_URL);
       expect(apiMock.getStreamServerInfo).toHaveBeenCalledOnce();
+      // best effort: a row saying so is enough, not an error on top
+      expect(apiMock.getStreamServerInfo).toHaveBeenCalledWith({
+        suppressGlobalError: true,
+      });
+    });
 
-      wrapper.unmount();
+    it("shows no stream server address until the server has answered", async () => {
+      apiMock.getStreamServerInfo.mockImplementation(
+        () => new Promise(() => {}),
+      );
+
+      const wrapper = await mountLoadedStep();
+
+      // an address still being asked for is not one that is missing
+      const row = addressRow(wrapper, "stream");
+      expect(addressUrl(wrapper, "stream").exists()).toBe(false);
+      expect(
+        row.find("[data-testid=onboarding-address-unknown]").exists(),
+      ).toBe(false);
+      expect(addressCheck(wrapper, "stream").exists()).toBe(false);
     });
 
     it("says so when the stream server address is not available", async () => {
@@ -259,18 +262,29 @@ describe("CoreSettingsStep", () => {
 
       const wrapper = await mountLoadedStep();
 
-      // the api toasts its own failures; the row shows no address it cannot
-      // stand behind, and nothing is checked that is not there
+      // the row shows no address it cannot stand behind, and nothing is
+      // checked that is not there
       const row = addressRow(wrapper, "stream");
       expect(addressUrl(wrapper, "stream").exists()).toBe(false);
-      expect(row.text()).toContain(
-        "onboarding.steps.core_settings.address_unknown",
-      );
+      expect(
+        row.find("[data-testid=onboarding-address-unknown]").exists(),
+      ).toBe(true);
       expect(addressCheck(wrapper, "stream").exists()).toBe(false);
       expect(probedUrls()).toEqual([`${INTERNAL_URL}/info`]);
       expect(warnSpy).toHaveBeenCalledOnce();
+    });
 
-      wrapper.unmount();
+    it("does not ask for the stream server address without leave to read settings", async () => {
+      grantAllBut(Scope.CONFIG_CORE_READ);
+
+      const wrapper = await mountLoadedStep();
+
+      expect(apiMock.getStreamServerInfo).not.toHaveBeenCalled();
+      expect(
+        addressRow(wrapper, "stream")
+          .find("[data-testid=onboarding-address-unknown]")
+          .exists(),
+      ).toBe(true);
     });
 
     it("checks each address from this browser", async () => {
@@ -286,16 +300,10 @@ describe("CoreSettingsStep", () => {
       expect(addressCheck(wrapper, "stream").attributes("data-check")).toBe(
         "reachable",
       );
-      expect(
-        wrapper
-          .find("[data-testid=onboarding-address-unreachable-hint]")
-          .exists(),
-      ).toBe(false);
-
-      wrapper.unmount();
+      expect(unreachableHint(wrapper).exists()).toBe(false);
     });
 
-    it("flags an address this browser could not reach, with a word of advice", async () => {
+    it("flags an address this browser could not reach, with one word of advice", async () => {
       vi.stubGlobal(
         "fetch",
         vi.fn(async () => {
@@ -311,11 +319,10 @@ describe("CoreSettingsStep", () => {
       expect(addressCheck(wrapper, "stream").attributes("data-check")).toBe(
         "unreachable",
       );
+      // the advice is the same for both, so it is given once
       expect(
         wrapper.findAll("[data-testid=onboarding-address-unreachable-hint]"),
-      ).toHaveLength(2);
-
-      wrapper.unmount();
+      ).toHaveLength(1);
     });
 
     it("says when an address could not be checked from this page", async () => {
@@ -328,13 +335,7 @@ describe("CoreSettingsStep", () => {
         "unchecked",
       );
       expect(probedUrls()).toEqual([]);
-      expect(
-        wrapper
-          .find("[data-testid=onboarding-address-unreachable-hint]")
-          .exists(),
-      ).toBe(false);
-
-      wrapper.unmount();
+      expect(unreachableHint(wrapper).exists()).toBe(false);
     });
 
     it("checks the internal address again once the server advertises another", async () => {
@@ -353,118 +354,33 @@ describe("CoreSettingsStep", () => {
       expect(addressCheck(wrapper, "internal").attributes("data-check")).toBe(
         "reachable",
       );
-
-      wrapper.unmount();
     });
   });
 
-  describe("remote access", () => {
-    it("shows remote access as off, and asks for no details", async () => {
+  describe("reaching the server from outside", () => {
+    it("offers Music Assistant's own remote access to whoever may switch it", async () => {
       const wrapper = await mountLoadedStep();
 
-      expect(remoteSwitch(wrapper).attributes("data-state")).toBe("unchecked");
-      expect(remoteId(wrapper).exists()).toBe(false);
-      // the id is only worth asking for once remote access is on
-      expect(apiMock.getRemoteAccessInfo).not.toHaveBeenCalled();
-
-      wrapper.unmount();
-    });
-
-    it("shows the id when remote access is already on", async () => {
-      apiMock.serverInfo.value = serverInfo({ has_remote_access: true });
-
-      const wrapper = await mountLoadedStep();
-
-      expect(remoteSwitch(wrapper).attributes("data-state")).toBe("checked");
-      expect(remoteId(wrapper).text()).toContain(REMOTE_ID_GROUPED);
-
-      wrapper.unmount();
-    });
-
-    it("turns remote access on from here", async () => {
-      const wrapper = await mountLoadedStep();
-
-      await remoteSwitch(wrapper).trigger("click");
-      await flushPromises();
-
-      expect(apiMock.configureRemoteAccess).toHaveBeenCalledWith(true);
-      expect(remoteSwitch(wrapper).attributes("data-state")).toBe("checked");
-      expect(remoteId(wrapper).text()).toContain(REMOTE_ID_GROUPED);
-      expect(toastMock.success).toHaveBeenCalledWith(
-        "settings.remote_access_enabled_success",
+      expect(wrapper.findComponent({ name: "RemoteAccessCard" }).exists()).toBe(
+        true,
       );
-
-      wrapper.unmount();
+      expect(
+        wrapper.find("[data-testid=onboarding-reverse-proxy]").exists(),
+      ).toBe(true);
     });
 
-    it("turns remote access off again", async () => {
-      apiMock.serverInfo.value = serverInfo({ has_remote_access: true });
+    it("keeps remote access from whoever may not switch it", async () => {
+      grantAllBut(Scope.SYSTEM_MANAGE);
 
       const wrapper = await mountLoadedStep();
 
-      await remoteSwitch(wrapper).trigger("click");
-      await flushPromises();
-
-      expect(apiMock.configureRemoteAccess).toHaveBeenCalledWith(false);
-      expect(remoteSwitch(wrapper).attributes("data-state")).toBe("unchecked");
-      expect(remoteId(wrapper).exists()).toBe(false);
-      expect(toastMock.success).toHaveBeenCalledWith(
-        "settings.remote_access_disabled_success",
+      // the request would only fail at them; the reverse proxy is still theirs
+      expect(wrapper.findComponent({ name: "RemoteAccessCard" }).exists()).toBe(
+        false,
       );
-
-      wrapper.unmount();
-    });
-
-    it("leaves the switch where it was when the server refuses", async () => {
-      apiMock.configureRemoteAccess.mockRejectedValue(new Error("no"));
-
-      const wrapper = await mountLoadedStep();
-
-      await remoteSwitch(wrapper).trigger("click");
-      await flushPromises();
-
-      // the api tells the user itself; the switch says what is still true
-      expect(remoteSwitch(wrapper).attributes("data-state")).toBe("unchecked");
-      expect(toastMock.success).not.toHaveBeenCalled();
-      expect(warnSpy).toHaveBeenCalledOnce();
-
-      wrapper.unmount();
-    });
-
-    it("copies the id as it is read out", async () => {
-      apiMock.serverInfo.value = serverInfo({ has_remote_access: true });
-
-      const wrapper = await mountLoadedStep();
-
-      await wrapper
-        .find("[data-testid=onboarding-remote-access-copy]")
-        .trigger("click");
-      await flushPromises();
-
-      expect(copyMock).toHaveBeenCalledWith(REMOTE_ID_GROUPED);
-      expect(toastMock.success).toHaveBeenCalledWith(
-        "settings.remote_access_id_copied",
-      );
-
-      wrapper.unmount();
-    });
-
-    it("says so when the id could not be copied", async () => {
-      apiMock.serverInfo.value = serverInfo({ has_remote_access: true });
-      copyMock.mockResolvedValue(false);
-
-      const wrapper = await mountLoadedStep();
-
-      await wrapper
-        .find("[data-testid=onboarding-remote-access-copy]")
-        .trigger("click");
-      await flushPromises();
-
-      expect(toastMock.error).toHaveBeenCalledWith(
-        "settings.remote_access_error_copy",
-      );
-
-      wrapper.unmount();
+      expect(
+        wrapper.find("[data-testid=onboarding-reverse-proxy]").exists(),
+      ).toBe(true);
     });
   });
 
@@ -484,8 +400,6 @@ describe("CoreSettingsStep", () => {
       // the switch above the form is what hides the entries, not the form's
       // own advanced toggle, which it does not offer
       expect(form(wrapper).props("showAdvancedSettings")).toBe(true);
-
-      wrapper.unmount();
     });
 
     it("unfolds them on request", async () => {
@@ -496,8 +410,6 @@ describe("CoreSettingsStep", () => {
         .trigger("click");
 
       expect(advancedFolded(wrapper)).toBe(false);
-
-      wrapper.unmount();
     });
 
     it("unfolds them for the external address", async () => {
@@ -509,8 +421,20 @@ describe("CoreSettingsStep", () => {
       await flushPromises();
 
       expect(advancedFolded(wrapper)).toBe(false);
+    });
 
-      wrapper.unmount();
+    it("keeps them from whoever may not change the settings", async () => {
+      grantAllBut(Scope.CONFIG_CORE_WRITE);
+
+      const wrapper = await mountLoadedStep();
+
+      // nothing to unfold, nothing to fetch for it, and nothing to point at
+      expect(advancedSection(wrapper).exists()).toBe(false);
+      expect(
+        wrapper.find("[data-testid=onboarding-set-external-address]").exists(),
+      ).toBe(false);
+      expect(apiMock.getCoreConfig).not.toHaveBeenCalled();
+      await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
     });
 
     it("leaves out a setting this server does not carry", async () => {
@@ -527,8 +451,6 @@ describe("CoreSettingsStep", () => {
           .props("configEntries")
           .map((configEntry: ConfigEntry) => configEntry.key),
       ).toEqual(["server_name"]);
-
-      wrapper.unmount();
     });
 
     it("keeps the room and says it is busy while the settings load", async () => {
@@ -543,8 +465,6 @@ describe("CoreSettingsStep", () => {
       expect(wrapper.text()).not.toContain(
         "onboarding.steps.core_settings.load_failed",
       );
-
-      wrapper.unmount();
     });
 
     it("says so when the settings cannot be loaded", async () => {
@@ -562,8 +482,6 @@ describe("CoreSettingsStep", () => {
         "onboarding.steps.core_settings.load_failed",
       );
       expect(warnSpy).toHaveBeenCalledOnce();
-
-      wrapper.unmount();
     });
   });
 
@@ -590,8 +508,6 @@ describe("CoreSettingsStep", () => {
       // the step stays on screen, so the form is told which values the server
       // now has — and only those
       expect(saveSucceeded).toHaveBeenCalledWith(values);
-
-      wrapper.unmount();
     });
 
     it("hands a module nothing when none of its settings changed", async () => {
@@ -605,28 +521,54 @@ describe("CoreSettingsStep", () => {
         "webserver",
         EDITED_VALUES,
       );
-      // nothing moved, so nothing is asked again
-      expect(apiMock.getStreamServerInfo).toHaveBeenCalledOnce();
-
-      wrapper.unmount();
     });
 
-    it("shows and checks the stream server's new address after it moved", async () => {
+    it("shows and checks the stream server's new address once it has moved", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout"] });
       const wrapper = await mountLoadedStep();
-      apiMock.getStreamServerInfo.mockResolvedValue({
-        base_url: "http://10.0.0.5:8097",
-      });
 
       await form(wrapper).vm.$emit("submit", { publish_ip: "10.0.0.5" });
       await flushPromises();
 
-      // the stream server is back on its new address by the time the save
-      // answers, so the row is asked again rather than left showing the old one
+      // the save has answered, but the stream server restarts only a moment
+      // later and says nothing once it is back, so the address is asked again
+      expect(apiMock.getStreamServerInfo).toHaveBeenCalledOnce();
+      await vi.advanceTimersByTimeAsync(1500);
+      await flushPromises();
       expect(apiMock.getStreamServerInfo).toHaveBeenCalledTimes(2);
-      expect(addressUrl(wrapper, "stream").text()).toBe("http://10.0.0.5:8097");
-      expect(probedUrls()).toContain("http://10.0.0.5:8097/info");
+      // still the old address: not moved yet, so it is asked once more
+      expect(addressUrl(wrapper, "stream").text()).toBe(STREAM_URL);
 
-      wrapper.unmount();
+      apiMock.getStreamServerInfo.mockResolvedValue({
+        base_url: MOVED_STREAM_URL,
+      });
+      await vi.advanceTimersByTimeAsync(3000);
+      await flushPromises();
+
+      expect(apiMock.getStreamServerInfo).toHaveBeenCalledTimes(3);
+      expect(addressUrl(wrapper, "stream").text()).toBe(MOVED_STREAM_URL);
+      expect(probedUrls()).toContain(`${MOVED_STREAM_URL}/info`);
+
+      // moved, so it is left alone from here on
+      await vi.advanceTimersByTimeAsync(10_000);
+      await flushPromises();
+      expect(apiMock.getStreamServerInfo).toHaveBeenCalledTimes(3);
+    });
+
+    it("stops asking for the stream server's address after a while", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout"] });
+      const wrapper = await mountLoadedStep();
+
+      await form(wrapper).vm.$emit("submit", { publish_ip: "10.0.0.5" });
+      await flushPromises();
+
+      // an address that never moves — the same one saved again, say — is not
+      // asked for forever
+      await vi.advanceTimersByTimeAsync(30_000);
+      await flushPromises();
+
+      expect(apiMock.getStreamServerInfo).toHaveBeenCalledTimes(4);
+      expect(addressUrl(wrapper, "stream").text()).toBe(STREAM_URL);
     });
 
     it("has nothing left to save once the form was saved", async () => {
@@ -642,8 +584,6 @@ describe("CoreSettingsStep", () => {
       // moving on after a Save does not send the same settings a second time
       expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
       expect(toastMock.success).toHaveBeenCalledOnce();
-
-      wrapper.unmount();
     });
 
     it("waits for the save the form's own button started", async () => {
@@ -665,8 +605,6 @@ describe("CoreSettingsStep", () => {
       await expect(leaving).resolves.toBe(true);
       // one save, whichever of the two asked for it
       expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
-
-      wrapper.unmount();
     });
 
     it("leaves the edits guarded when a save did not land, and says it once", async () => {
@@ -681,14 +619,12 @@ describe("CoreSettingsStep", () => {
       expect(toastMock.error).not.toHaveBeenCalled();
       expect(toastMock.success).not.toHaveBeenCalled();
       expect(saveFailed).toHaveBeenCalledOnce();
-
-      wrapper.unmount();
     });
   });
 
   describe("leaving the step", () => {
     it("waits for the settings before it answers the wizard", async () => {
-      const handOverConfigs: ((config: CoreConfig) => void)[] = [];
+      const handOverConfigs: (() => void)[] = [];
       apiMock.getCoreConfig.mockImplementation(
         (domain) =>
           new Promise((resolve) => {
@@ -711,10 +647,8 @@ describe("CoreSettingsStep", () => {
       // settings the user never saw are not settings they left alone
       expect(answered).toBe(false);
 
-      for (const handOver of handOverConfigs) handOver(webserverConfig());
+      for (const handOver of handOverConfigs) handOver();
       await expect(leaving).resolves.toBe(true);
-
-      wrapper.unmount();
     });
 
     it("lets the wizard move on when there is nothing to save", async () => {
@@ -723,8 +657,6 @@ describe("CoreSettingsStep", () => {
       await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
 
       expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
-
-      wrapper.unmount();
     });
 
     it("saves the pending edits before the wizard moves on", async () => {
@@ -739,8 +671,6 @@ describe("CoreSettingsStep", () => {
         EDITED_VALUES,
       );
       expect(toastMock.success).toHaveBeenCalledWith("settings.settings_saved");
-
-      wrapper.unmount();
     });
 
     it("keeps the wizard here when the save does not land", async () => {
@@ -752,8 +682,6 @@ describe("CoreSettingsStep", () => {
       await expect(wrapper.vm.beforeLeave()).resolves.toBe(false);
 
       expect(saveFailed).toHaveBeenCalledOnce();
-
-      wrapper.unmount();
     });
 
     it("keeps the wizard here when the form has something to say", async () => {
@@ -767,8 +695,6 @@ describe("CoreSettingsStep", () => {
       await expect(wrapper.vm.beforeLeave()).resolves.toBe(false);
 
       expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
-
-      wrapper.unmount();
     });
 
     it("lets the wizard move on when there is no form at all", async () => {
@@ -778,8 +704,6 @@ describe("CoreSettingsStep", () => {
 
       // settings that could not be loaded are nothing to hold anyone up over
       await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
-
-      wrapper.unmount();
     });
   });
 });

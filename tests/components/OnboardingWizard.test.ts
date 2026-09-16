@@ -7,7 +7,15 @@ import {
 } from "@/plugins/api/interfaces";
 import type { OnboardingStepId } from "@/helpers/onboarding";
 import { flushPromises, mount } from "@vue/test-utils";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import {
   BUILTIN_ROLE_SCOPES,
   MEMBER_WITHOUT_OWN_SCOPES,
@@ -276,6 +284,11 @@ async function reportProvidersUpdated() {
 
 // every test mounts the wizard on a fresh module registry, which is its whole
 // step graph evaluated again and can take seconds under load
+// hand the network guard back after every test
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe("Onboarding wizard", { timeout: 20_000 }, () => {
   beforeEach(() => {
     apiMock.players = {};
@@ -314,6 +327,16 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     });
     apiMock.getRemoteAccessInfo.mockReset();
     apiMock.configureRemoteAccess.mockReset();
+    // the server settings step probes the addresses from the browser
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ server_id: "server-1" }), {
+            status: 200,
+          }),
+      ),
+    );
     apiMock.sendCommand.mockReset();
     apiMock.subscribe.mockClear();
     authMock.hasScope.mockImplementation(
@@ -691,9 +714,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     // a review is nothing to set up, so it is shown rather than skipped, and
     // moving on from it is all the footer offers
     expect(heading(wrapper)).toBe("onboarding.steps.core_settings.title");
-    expect(wrapper.find("[data-testid=onboarding-core-config]").exists()).toBe(
-      true,
-    );
+    expect(
+      wrapper.find("[data-testid=onboarding-address-internal]").exists(),
+    ).toBe(true);
     expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
       "onboarding.next",
     );

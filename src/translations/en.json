@@ -2570,7 +2570,7 @@
             },
             "core_settings": {
                 "title": "Check your server settings",
-                "description": "The addresses Music Assistant is using right now. They are worked out automatically and are normally right, so you can simply move on.",
+                "intro": "The addresses Music Assistant is using right now. They are worked out automatically and are normally right, so you can simply move on.",
                 "internal_address": "Internal address",
                 "internal_address_hint": "Where the apps and devices in your home reach Music Assistant.",
                 "stream_address": "Stream server address",
@@ -2580,10 +2580,10 @@
                     "checking": "Checking...",
                     "reachable": "Reachable from this device",
                     "unreachable": "Not reachable from this device",
-                    "unchecked": "Could not check from this page"
+                    "unchecked": "Could not check from this device"
                 },
-                "unreachable_hint": "Other devices in your home may not reach it either. If playback fails, set the address under the advanced settings.",
-                "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {webserver} and Settings › {streams}.",
+                "unreachable_hint": "An address that does not answer here may not answer for your players either. If playback fails, set it under the advanced settings.",
+                "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {system}, in {webserver} and {streams}.",
                 "remote": {
                     "title": "Listen from outside your home",
                     "description": "Two ways to reach Music Assistant when you are away. Both can also be set up later.",

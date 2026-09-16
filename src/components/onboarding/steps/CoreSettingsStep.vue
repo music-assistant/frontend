@@ -1,7 +1,7 @@
 <template>
   <section class="flex flex-col gap-5">
     <p class="text-muted-foreground text-sm">
-      {{ $t("onboarding.steps.core_settings.description") }}
+      {{ $t("onboarding.steps.core_settings.intro") }}
     </p>
 
     <!-- the addresses in use, each with what this browser found out about it -->
@@ -32,23 +32,22 @@
           >
             {{ address.url }}
           </code>
-          <span v-else class="text-muted-foreground text-sm">
+          <!-- an address still being asked for is not one that is missing -->
+          <span
+            v-else-if="!address.pending"
+            class="text-muted-foreground text-sm"
+            data-testid="onboarding-address-unknown"
+          >
             {{ $t("onboarding.steps.core_settings.address_unknown") }}
           </span>
-          <!-- players are on the same network as this browser, so an address
-               it could not reach is the one thing here worth a word of advice -->
-          <p
-            v-if="address.check === 'unreachable'"
-            class="text-muted-foreground text-xs"
-            data-testid="onboarding-address-unreachable-hint"
-          >
-            {{ $t("onboarding.steps.core_settings.unreachable_hint") }}
-          </p>
         </ItemContent>
         <ItemActions v-if="address.url">
           <Badge
             :variant="CHECK_BADGES[address.check].variant"
             :data-check="address.check"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
             data-testid="onboarding-address-check"
           >
             <component
@@ -62,9 +61,20 @@
       </Item>
     </ItemGroup>
 
+    <!-- players are on the same network as this browser, so an address it
+         could not reach is the one thing here worth a word of advice -->
+    <p
+      v-if="anyUnreachable"
+      class="text-muted-foreground text-sm"
+      data-testid="onboarding-address-unreachable-hint"
+    >
+      {{ $t("onboarding.steps.core_settings.unreachable_hint") }}
+    </p>
+
     <p class="text-muted-foreground text-sm">
       {{
         $t("onboarding.steps.core_settings.override_hint", {
+          system: $t("settings.system"),
           webserver: $t("settings.core_module.webserver.name"),
           streams: $t("settings.core_module.streams.name"),
         })
@@ -82,72 +92,7 @@
       </div>
 
       <div class="grid gap-3 sm:grid-cols-2">
-        <Card data-testid="onboarding-remote-access">
-          <CardHeader>
-            <CardTitle class="flex flex-wrap items-center gap-2">
-              <Cloud class="size-4 shrink-0" aria-hidden="true" />
-              {{ $t("onboarding.steps.core_settings.remote.builtin.title") }}
-              <Badge variant="secondary" as="span">
-                {{
-                  $t("onboarding.steps.core_settings.remote.builtin.easiest")
-                }}
-              </Badge>
-            </CardTitle>
-            <CardDescription>
-              {{
-                $t("onboarding.steps.core_settings.remote.builtin.description")
-              }}
-            </CardDescription>
-          </CardHeader>
-          <CardContent class="flex flex-col gap-3">
-            <div class="flex items-center gap-2">
-              <Switch
-                :id="remoteSwitchId"
-                :model-value="remoteEnabled"
-                :disabled="switchingRemote"
-                data-testid="onboarding-remote-access-switch"
-                @update:model-value="setRemoteAccess"
-              />
-              <Label :for="remoteSwitchId" class="cursor-pointer">
-                {{ $t("onboarding.steps.core_settings.remote.builtin.switch") }}
-              </Label>
-            </div>
-            <div
-              v-if="remoteEnabled && remoteId"
-              class="flex flex-col gap-1"
-              data-testid="onboarding-remote-access-id"
-            >
-              <span class="text-muted-foreground text-xs">
-                {{ $t("onboarding.steps.core_settings.remote.builtin.id") }}
-              </span>
-              <div class="flex items-center gap-1">
-                <code class="text-sm break-all">{{ remoteId }}</code>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="size-7 shrink-0"
-                  :aria-label="
-                    $t('onboarding.steps.core_settings.remote.builtin.copy')
-                  "
-                  :title="
-                    $t('onboarding.steps.core_settings.remote.builtin.copy')
-                  "
-                  data-testid="onboarding-remote-access-copy"
-                  @click="copyRemoteId"
-                >
-                  <Copy class="size-4" />
-                </Button>
-              </div>
-              <p class="text-muted-foreground text-xs">
-                {{
-                  $t("onboarding.steps.core_settings.remote.builtin.hint", {
-                    remote_access: $t("settings.remote_access"),
-                  })
-                }}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <RemoteAccessCard v-if="canManageRemoteAccess" />
 
         <Card data-testid="onboarding-reverse-proxy">
           <CardHeader>
@@ -161,7 +106,7 @@
               }}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent v-if="canEditSettings">
             <Button
               variant="secondary"
               data-testid="onboarding-set-external-address"
@@ -176,7 +121,11 @@
       </div>
     </div>
 
-    <div ref="advancedSection" class="flex flex-col gap-3">
+    <div
+      v-if="canEditSettings"
+      ref="advancedSection"
+      class="flex flex-col gap-3"
+    >
       <div class="flex items-center gap-2">
         <Switch
           :id="advancedSwitchId"
@@ -232,6 +181,7 @@
 </template>
 
 <script setup lang="ts">
+import RemoteAccessCard from "@/components/onboarding/RemoteAccessCard.vue";
 import { Badge, type BadgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -261,19 +211,18 @@ import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import type { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import type { OnboardingStepId } from "@/helpers/onboarding";
-import { splitCode } from "@/helpers/segmented_code";
 import {
   probeServerAddress,
   type AddressCheck,
 } from "@/helpers/server_address";
-import { copyToClipboard } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import type {
-  ConfigValueType,
-  CoreConfig,
-  RemoteAccessInfo,
-  StreamServerInfo,
+import {
+  Scope,
+  type ConfigValueType,
+  type CoreConfig,
+  type StreamServerInfo,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import EditConfig from "@/views/settings/EditConfig.vue";
 import {
@@ -281,8 +230,6 @@ import {
   CircleAlert,
   CircleCheck,
   CircleHelp,
-  Cloud,
-  Copy,
   Globe,
   LoaderCircle,
   Waypoints,
@@ -291,6 +238,7 @@ import {
   computed,
   markRaw,
   nextTick,
+  onBeforeUnmount,
   ref,
   useId,
   watch,
@@ -313,12 +261,17 @@ const ADVANCED_SETTINGS = {
 type CoreDomain = keyof typeof ADVANCED_SETTINGS;
 const DOMAINS = Object.keys(ADVANCED_SETTINGS) as CoreDomain[];
 
-// the remote access id in groups, the way the remote access settings show it
-const REMOTE_ID_GROUPS = [8, 5, 5, 8];
+// The stream server only restarts on its new address a moment after a save
+// has answered, and says nothing once it is up again, so the address is asked
+// for again a few times until it has moved.
+const STREAM_REFRESH_DELAYS_MS = [1500, 3000, 5000];
 
-/** How each outcome of checking an address is shown. */
+/** What an address row shows about its check: the outcome, or that it is under way. */
+type CheckState = AddressCheck | "checking";
+
+/** How each state of an address check is shown. */
 const CHECK_BADGES: Record<
-  AddressCheck,
+  CheckState,
   { variant: BadgeVariants["variant"]; icon: Component; iconClass?: string }
 > = {
   checking: {
@@ -339,8 +292,13 @@ defineEmits<{
   (e: "finish"): void;
 }>();
 
+// what this admin may do here: a custom role can run the setup without being
+// allowed to switch remote access, or to read or change the server's settings
+const canManageRemoteAccess = authManager.hasScope(Scope.SYSTEM_MANAGE);
+const canReadSettings = authManager.hasScope(Scope.CONFIG_CORE_READ);
+const canEditSettings = authManager.hasScope(Scope.CONFIG_CORE_WRITE);
+
 const advancedSwitchId = useId();
-const remoteSwitchId = useId();
 
 // The internal address as the server advertises it right now, which server
 // info reports; the stream server's is asked for, as nothing else carries it.
@@ -351,7 +309,15 @@ const internalUrl = computed(
     undefined,
 );
 const streamInfo = ref<StreamServerInfo>();
+// whether the stream server has answered, however that turned out: until then
+// the row shows no address rather than claiming there is none
+const streamAnswered = ref(false);
 const streamUrl = computed(() => streamInfo.value?.base_url);
+// which request the latest answer belongs to, so a slow first answer cannot
+// overwrite the address the server has moved to since
+let streamRequest = 0;
+// whether the step is gone: a refresh under way then has nothing to update
+let unmounted = false;
 
 /**
  * What this browser finds out about an address, kept current: every change of
@@ -360,8 +326,8 @@ const streamUrl = computed(() => streamInfo.value?.base_url);
  */
 const checkedFromHere = function (
   url: Ref<string | undefined>,
-): Ref<AddressCheck> {
-  const check = ref<AddressCheck>("checking");
+): Ref<CheckState> {
+  const check = ref<CheckState>("checking");
   watch(
     url,
     async (current) => {
@@ -386,29 +352,20 @@ const addresses = computed(() => [
     id: "internal",
     icon: markRaw(Globe),
     url: internalUrl.value,
+    pending: false,
     check: internalCheck.value,
   },
   {
     id: "stream",
     icon: markRaw(AudioLines),
     url: streamUrl.value,
+    pending: !streamAnswered.value,
     check: streamCheck.value,
   },
 ]);
-
-const remoteAccess = ref<RemoteAccessInfo>();
-const switchingRemote = ref(false);
-// what the last answer about remote access said, else what server info says
-const remoteEnabled = computed(
-  () =>
-    remoteAccess.value?.enabled ??
-    api.serverInfo.value?.has_remote_access ??
-    false,
+const anyUnreachable = computed(() =>
+  addresses.value.some((address) => address.check === "unreachable"),
 );
-const remoteId = computed(() => {
-  const id = remoteAccess.value?.remote_id;
-  return id ? splitCode(id, REMOTE_ID_GROUPS).join("-") : undefined;
-});
 
 const showAdvanced = ref(false);
 const advancedSection = ref<HTMLElement | null>(null);
@@ -433,51 +390,27 @@ const entries = computed<ConfigEntryUI[]>(() =>
 let pendingSave: Promise<boolean> | undefined;
 
 const loadStreamServerInfo = async function (): Promise<void> {
+  const current = ++streamRequest;
   try {
-    streamInfo.value = await api.getStreamServerInfo();
+    // best effort: the row says the address is not available rather than the
+    // app raising an error over it
+    const answer = await api.getStreamServerInfo({ suppressGlobalError: true });
+    if (current === streamRequest) streamInfo.value = answer;
   } catch (error) {
-    // the api already told the user; the row then says the address is not
-    // available rather than showing one nobody stands behind
-    streamInfo.value = undefined;
+    if (current === streamRequest) streamInfo.value = undefined;
     console.warn("Failed to load the stream server address:", error);
-  }
-};
-
-const loadRemoteAccess = async function (): Promise<void> {
-  try {
-    remoteAccess.value = await api.getRemoteAccessInfo();
-  } catch (error) {
-    // the api already told the user; the switch still follows server info
-    console.warn("Failed to load the remote access details:", error);
-  }
-};
-
-const setRemoteAccess = async function (enabled: boolean): Promise<void> {
-  if (switchingRemote.value) return;
-  switchingRemote.value = true;
-  try {
-    remoteAccess.value = await api.configureRemoteAccess(enabled);
-    toast.success(
-      $t(
-        enabled
-          ? "settings.remote_access_enabled_success"
-          : "settings.remote_access_disabled_success",
-      ),
-    );
-  } catch (error) {
-    // the api already told the user; the switch stays where the server left it
-    console.warn("Failed to switch remote access:", error);
   } finally {
-    switchingRemote.value = false;
+    streamAnswered.value = true;
   }
 };
 
-const copyRemoteId = async function (): Promise<void> {
-  if (!remoteId.value) return;
-  if (await copyToClipboard(remoteId.value)) {
-    toast.success($t("settings.remote_access_id_copied"));
-  } else {
-    toast.error($t("settings.remote_access_error_copy"));
+const refreshStreamServerInfo = async function (): Promise<void> {
+  const previous = streamInfo.value?.base_url;
+  for (const delay of STREAM_REFRESH_DELAYS_MS) {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    if (unmounted) return;
+    await loadStreamServerInfo();
+    if (streamInfo.value?.base_url !== previous) return;
   }
 };
 
@@ -487,7 +420,9 @@ const openAdvanced = async function (): Promise<void> {
   await nextTick();
   advancedSection.value?.scrollIntoView?.({
     block: "nearest",
-    behavior: "smooth",
+    behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      ? "auto"
+      : "smooth",
   });
 };
 
@@ -510,10 +445,9 @@ const onSubmit = function (values: Record<string, ConfigValueType>) {
       const own = valuesOf(domain, values);
       if (Object.keys(own).length === 0) return;
       await api.saveCoreConfig(domain, own);
-      // the stream server comes back on its new address before the save
-      // answers, so its row is asked again; the internal address follows
-      // server info by itself
-      if (domain === "streams") await loadStreamServerInfo();
+      // the internal address follows server info by itself; the stream
+      // server's has to be asked for once it is back on its new address
+      if (domain === "streams") void refreshStreamServerInfo();
     }),
   )
     .then(() => {
@@ -536,6 +470,7 @@ const onSubmit = function (values: Record<string, ConfigValueType>) {
 };
 
 const loadConfigs = async function (): Promise<void> {
+  if (!canEditSettings) return;
   try {
     const [webserver, streams] = await Promise.all([
       api.getCoreConfig("webserver"),
@@ -554,9 +489,12 @@ const loadConfigs = async function (): Promise<void> {
 // the load in flight: the wizard waits for it before it moves on, so a Next
 // that lands while the settings are still coming in does not walk past them
 const loading = loadConfigs();
-void loadStreamServerInfo();
-// the id is only worth asking for once remote access is on
-if (api.serverInfo.value?.has_remote_access) void loadRemoteAccess();
+if (canReadSettings) void loadStreamServerInfo();
+else streamAnswered.value = true;
+
+onBeforeUnmount(() => {
+  unmounted = true;
+});
 
 /**
  * The wizard asking whether it may move on. Anything the user typed is saved

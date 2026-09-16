@@ -3583,9 +3583,15 @@ export class MusicAssistantApi {
 
   // Stream server methods
 
-  public async getStreamServerInfo(): Promise<StreamServerInfo> {
+  public async getStreamServerInfo(
+    options?: CommandOptions,
+  ): Promise<StreamServerInfo> {
     // Get the address the stream server hands to players
-    return this.sendCommand<StreamServerInfo>("streams/info");
+    return this.sendCommand<StreamServerInfo>(
+      "streams/info",
+      undefined,
+      options,
+    );
   }
 
   public sendCommand<Result>(

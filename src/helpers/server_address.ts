@@ -6,11 +6,7 @@
  */
 
 /** What checking an address from this browser found out. */
-export type AddressCheck =
-  | "checking"
-  | "reachable"
-  | "unreachable"
-  | "unchecked";
+export type AddressCheck = "reachable" | "unreachable" | "unchecked";
 
 // how long an address gets to answer before it counts as not answering
 const PROBE_TIMEOUT_MS = 5000;
