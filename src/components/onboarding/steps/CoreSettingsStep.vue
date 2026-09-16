@@ -449,8 +449,10 @@ const changedValuesOf = function (
 
 const onSubmit = function (values: Record<string, ConfigValueType>) {
   // each module is handed the settings of its own that changed and merges
-  // them into what it has stored, so everything else keeps its value
-  const save = Promise.all(
+  // them into what it has stored, so everything else keeps its value. The
+  // save is only over once every module has answered, so a retry never
+  // overlaps a request still on its way.
+  const save = Promise.allSettled(
     DOMAINS.map(async (domain) => {
       const own = changedValuesOf(domain, values);
       if (Object.keys(own).length === 0) return;
@@ -461,18 +463,18 @@ const onSubmit = function (values: Record<string, ConfigValueType>) {
       if (domain === "streams") void refreshStreamServerInfo();
     }),
   )
-    .then(() => {
+    .then((outcomes) => {
+      if (outcomes.some((outcome) => outcome.status === "rejected")) {
+        // the api tells the user what went wrong itself; the form takes its
+        // pending edits back under guard, so nothing typed here is lost
+        editConfig.value?.saveFailed();
+        return false;
+      }
       // the form stays on screen here, so it is told which values are stored
       // now: otherwise it keeps offering to save what it already saved
       editConfig.value?.saveSucceeded(values);
       toast.success($t("settings.settings_saved"));
       return true;
-    })
-    .catch(() => {
-      // the api tells the user what went wrong itself; the form takes its
-      // pending edits back under guard, so nothing typed here is lost
-      editConfig.value?.saveFailed();
-      return false;
     })
     .finally(() => {
       if (pendingSave === save) pendingSave = undefined;

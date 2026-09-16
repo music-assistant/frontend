@@ -682,6 +682,41 @@ describe("CoreSettingsStep", () => {
       expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
     });
 
+    it("answers only once every module has, whichever failed first", async () => {
+      let landStreams: (config: CoreConfig) => void = () => {};
+      apiMock.saveCoreConfig.mockImplementation((domain) =>
+        domain === "webserver"
+          ? Promise.reject(new Error("no such address"))
+          : new Promise((resolve) => {
+              landStreams = resolve;
+            }),
+      );
+      const wrapper = await mountLoadedStep();
+
+      await form(wrapper).vm.$emit(
+        "submit",
+        formValues({ server_name: "Living room", publish_ip: "10.0.0.5" }),
+      );
+      await flushPromises();
+
+      // one module refused, the other has not answered yet: nothing is settled,
+      // so the form is not handed its edits back while a save is still out
+      expect(saveFailed).not.toHaveBeenCalled();
+      hasUnsavedChanges.value = true;
+      let answered = false;
+      const leaving = wrapper.vm.beforeLeave().then((mayLeave) => {
+        answered = true;
+        return mayLeave;
+      });
+      await flushPromises();
+      expect(answered).toBe(false);
+
+      landStreams(streamsConfig());
+      await expect(leaving).resolves.toBe(false);
+      expect(saveFailed).toHaveBeenCalledOnce();
+      expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
+    });
+
     it("leaves the edits guarded when a save did not land, and says it once", async () => {
       apiMock.saveCoreConfig.mockRejectedValue(new Error("no such address"));
 
