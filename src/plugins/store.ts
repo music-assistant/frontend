@@ -32,9 +32,9 @@ interface Store {
   apiInitialized: boolean;
   apiBaseUrl: string;
   dialogActive: boolean;
-  activePlayer?: Player;
-  activePlayerQueue?: PlayerQueue;
-  curQueueItem?: QueueItem;
+  readonly activePlayer?: Player;
+  readonly activePlayerQueue?: PlayerQueue;
+  readonly curQueueItem?: QueueItem;
   prevState?: StoredState;
   libraryArtistsCount?: number;
   libraryAlbumsCount?: number;
@@ -47,15 +47,15 @@ interface Store {
   isTouchscreen: boolean;
   deviceType: DeviceType;
   forceMobileLayout?: boolean;
-  mobileLayout: boolean;
+  readonly mobileLayout: boolean;
   currentUser?: User;
   // the user roles, the builtin ones first (see loadRoles)
   roles: Role[];
   // the scopes granted to each user role, keyed by role id
   roleScopes: Record<string, string[]>;
   serverInfo?: ServerInfoMessage;
-  isIngressSession: boolean;
-  enabledPlugins: Set<string>;
+  readonly isIngressSession: boolean;
+  readonly enabledPlugins: ReadonlySet<string>;
   isPartyGuest: boolean;
   companionPlayerId?: string;
   navMenuEditMode: boolean;

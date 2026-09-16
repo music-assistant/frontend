@@ -1,5 +1,5 @@
 import Footer from "@/layouts/default/Footer.vue";
-import { store } from "@/plugins/store";
+import { store as storeModule } from "@/plugins/store";
 import { type VueWrapper, mount } from "@vue/test-utils";
 import { unrefElement } from "@vueuse/core";
 import { h, nextTick } from "vue";
@@ -40,6 +40,9 @@ vi.mock("@/plugins/store", async () => {
     }),
   };
 });
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & { mobileLayout: boolean };
 
 const vuetify = createVuetify({ components, directives });
 
