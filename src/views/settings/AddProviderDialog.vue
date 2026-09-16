@@ -349,6 +349,12 @@ watch(
   { immediate: true, deep: true },
 );
 
+// a stage picked before the screen turned phone-sized would keep filtering
+// the list without its control, so it goes along with the filter
+watch(isPhone, (phone) => {
+  if (phone) selectedProviderStages.value = [];
+});
+
 watch(
   () => props.show,
   (isOpen) => {

@@ -13,16 +13,13 @@ import {
 } from "@/plugins/eventbus";
 import { providerManifest } from "../fixtures/providerManifest";
 
-const { apiMock, breakpointMock, routeMock, storeMock } = vi.hoisted(() => ({
+const { apiMock, routeMock, storeMock } = vi.hoisted(() => ({
   apiMock: {
     providerManifests: {} as Record<string, unknown>,
     providers: {},
     getProviderConfigs: vi.fn(),
     getProvider: vi.fn(),
     getProviderName: vi.fn(),
-  },
-  breakpointMock: {
-    phone: false,
   },
   routeMock: {
     query: {} as Record<string, string>,
@@ -35,9 +32,6 @@ const { apiMock, breakpointMock, routeMock, storeMock } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
-vi.mock("@/plugins/breakpoint", () => ({
-  isPhoneSizedScreen: () => breakpointMock.phone,
-}));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("vue-router", () => ({ useRoute: () => routeMock }));
 
@@ -45,9 +39,22 @@ vi.mock("vue-router", () => ({ useRoute: () => routeMock }));
 // even when an assertion fails
 enableAutoUnmount(afterEach);
 
+const originalInnerWidth = Object.getOwnPropertyDescriptor(
+  window,
+  "innerWidth",
+);
+
+afterEach(() => {
+  if (originalInnerWidth) {
+    Object.defineProperty(window, "innerWidth", originalInnerWidth);
+  } else {
+    Reflect.deleteProperty(window, "innerWidth");
+  }
+  window.dispatchEvent(new Event("resize"));
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
-  breakpointMock.phone = false;
   routeMock.query = {};
   storeMock.isTouchscreen = false;
   storeMock.dialogActive = false;
@@ -99,12 +106,36 @@ describe("AddProviderDialog", () => {
   });
 
   it("leaves the stage filter out on a phone-sized screen", async () => {
-    breakpointMock.phone = true;
+    setScreenWidth(390);
 
     await openDialog();
 
     // the search takes the whole row there; the filter would only crowd it
     expect(document.querySelector("faceted-filter-stub")).toBeNull();
+  });
+
+  it("drops a chosen stage along with the filter when the screen turns phone-sized", async () => {
+    apiMock.providerManifests = {
+      soundcloud: providerManifest({
+        domain: "soundcloud",
+        name: "SoundCloud",
+        stage: ProviderStage.BETA,
+      }),
+      spotify: providerManifest({ domain: "spotify", name: "Spotify" }),
+    };
+    const wrapper = await openDialog();
+    wrapper
+      .findComponent({ name: "FacetedFilter" })
+      .vm.$emit("update:modelValue", [ProviderStage.BETA]);
+    await flushPromises();
+    expect(providerNames()).toEqual(["SoundCloud"]);
+
+    setScreenWidth(390);
+    await flushPromises();
+
+    // nothing on screen would explain a list that stays filtered
+    expect(document.querySelector("faceted-filter-stub")).toBeNull();
+    expect(providerNames()).toEqual(["Spotify", "SoundCloud"]);
   });
 
   it("starts the setup flow once when the provider name is activated", async () => {
@@ -286,6 +317,15 @@ describe("AddProviderDialog provider dependencies", () => {
     expect(wrapper.emitted("update:show")?.at(-1)).toEqual([false]);
   });
 });
+
+function setScreenWidth(width: number) {
+  Object.defineProperty(window, "innerWidth", {
+    value: width,
+    writable: true,
+    configurable: true,
+  });
+  window.dispatchEvent(new Event("resize"));
+}
 
 function searchField() {
   return document.querySelector("[data-slot='input-group-control']");
