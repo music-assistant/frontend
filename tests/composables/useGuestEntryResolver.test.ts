@@ -39,6 +39,7 @@ const {
     }),
     storeMock: {
       currentUser: undefined as { user_id: string } | undefined,
+      enabledPlugins: new Set<string>(),
     },
   };
 });
@@ -80,6 +81,7 @@ describe("guest entry decisions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     apiMock.providers = {};
+    storeMock.enabledPlugins = new Set();
     apiMock.sendCommand.mockResolvedValue(null);
     apiMock.subscribe.mockImplementation(() => () => {});
     authManagerMock.getClaim.mockImplementation(() => guestIdentity.value);
@@ -158,6 +160,17 @@ describe("guest entry decisions", () => {
     expect(apiMock.sendCommand).not.toHaveBeenCalled();
   });
 
+  it("ignores providers that are listed but not among the loaded plugins", async () => {
+    // listed among the providers, but neither of them is loaded
+    apiMock.providers = {
+      party: { domain: "party" },
+      music_quiz: { domain: "music_quiz" },
+    };
+
+    await expect(resolveGuestEntry()).resolves.toBe("inactive");
+    expect(apiMock.sendCommand).not.toHaveBeenCalled();
+  });
+
   it("does not restore Quiz affinity for a different guest identity", async () => {
     setProviders("party", "music_quiz");
     apiMock.sendCommand.mockResolvedValueOnce({ game_id: "active" });
@@ -190,6 +203,7 @@ describe("guest entry transitions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     apiMock.providers = {};
+    storeMock.enabledPlugins = new Set();
     apiMock.state.value = "initialized";
     apiMock.sendCommand.mockResolvedValue(null);
     apiMock.subscribe.mockImplementation(() => () => {});
@@ -617,6 +631,7 @@ function setProviders(...domains: string[]) {
   apiMock.providers = Object.fromEntries(
     domains.map((domain) => [domain, { domain }]),
   );
+  storeMock.enabledPlugins = new Set(domains);
 }
 
 function signalProviderEvent(data: unknown, objectId = "quiz-instance-1") {
