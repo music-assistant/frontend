@@ -19,7 +19,9 @@
           clearable
           class="min-w-48 flex-1"
         />
+        <!-- on a phone the filter only crowds the search row -->
         <FacetedFilter
+          v-if="!isPhone"
           v-model="selectedProviderStages"
           :title="$t('settings.stage.label')"
           :options="providerStageOptions"
@@ -124,6 +126,7 @@ import {
   ProviderStage,
   ProviderType,
 } from "@/plugins/api/interfaces";
+import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -161,6 +164,8 @@ const route = useRoute();
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref("");
 const selectedProviderStages = ref<string[]>([]);
+
+const isPhone = computed(() => isPhoneSizedScreen());
 
 const activeTypeFilter = computed(
   () => props.providerType ?? ((route.query.types as string) || null),

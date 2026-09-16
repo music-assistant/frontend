@@ -13,13 +13,16 @@ import {
 } from "@/plugins/eventbus";
 import { providerManifest } from "../fixtures/providerManifest";
 
-const { apiMock, routeMock, storeMock } = vi.hoisted(() => ({
+const { apiMock, breakpointMock, routeMock, storeMock } = vi.hoisted(() => ({
   apiMock: {
     providerManifests: {} as Record<string, unknown>,
     providers: {},
     getProviderConfigs: vi.fn(),
     getProvider: vi.fn(),
     getProviderName: vi.fn(),
+  },
+  breakpointMock: {
+    phone: false,
   },
   routeMock: {
     query: {} as Record<string, string>,
@@ -32,6 +35,9 @@ const { apiMock, routeMock, storeMock } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
+vi.mock("@/plugins/breakpoint", () => ({
+  isPhoneSizedScreen: () => breakpointMock.phone,
+}));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("vue-router", () => ({ useRoute: () => routeMock }));
 
@@ -41,6 +47,7 @@ enableAutoUnmount(afterEach);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  breakpointMock.phone = false;
   routeMock.query = {};
   storeMock.isTouchscreen = false;
   storeMock.dialogActive = false;
@@ -83,6 +90,21 @@ describe("AddProviderDialog", () => {
       searchField()!.compareDocumentPosition(list) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it("offers the stage filter on a wide screen", async () => {
+    await openDialog();
+
+    expect(document.querySelector("faceted-filter-stub")).not.toBeNull();
+  });
+
+  it("leaves the stage filter out on a phone-sized screen", async () => {
+    breakpointMock.phone = true;
+
+    await openDialog();
+
+    // the search takes the whole row there; the filter would only crowd it
+    expect(document.querySelector("faceted-filter-stub")).toBeNull();
   });
 
   it("starts the setup flow once when the provider name is activated", async () => {
