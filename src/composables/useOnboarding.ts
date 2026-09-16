@@ -5,8 +5,6 @@ import {
 } from "@/composables/userPreferences";
 import {
   applicableSteps,
-  checklistPendingSteps,
-  checklistSteps,
   PERSONA_DEFAULTS,
   pendingSteps,
   type OnboardingContext,
@@ -43,7 +41,6 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { computed, ref } from "vue";
 import { toast } from "vue-sonner";
@@ -86,7 +83,7 @@ const usersAnswered = ref(false);
 /** Whether everything the steps decide from has answered. */
 const dataLoaded = computed(() => configsLoaded.value && usersAnswered.value);
 
-// the load in flight, so a wizard and a checklist coming up together ask once
+// the load in flight, so overlapping callers share the one request
 let loadingConfigs: Promise<void> | null = null;
 // the same for the users, which only the wizard ever asks for
 let loadingUsers: Promise<void> | null = null;
@@ -159,10 +156,9 @@ async function loadUsers(): Promise<void> {
 }
 
 /**
- * Load everything the wizard decides from. The sidebar checklist asks for the
- * provider configurations on their own: it lists neither the household nor the
- * server settings, so it has no reason to make every admin session wait on the
- * users as well.
+ * Load everything the admin wizard decides from: the provider configurations
+ * and the household. The member welcome asks for the provider configurations on
+ * its own when it needs them, so it never waits on the users.
  */
 async function loadOnboardingData(): Promise<void> {
   await Promise.all([loadProviderConfigs(), loadUsers()]);
@@ -255,23 +251,22 @@ const ctx = computed<OnboardingContext>(() => ({
 
 const steps = computed(() => applicableSteps(ctx.value));
 const pending = computed(() => pendingSteps(ctx.value));
-// what the getting started checklist shows, and the steps of it its badge
-// counts: the same list, so the count always matches what the popover lists
-const checklist = computed(() => checklistSteps(ctx.value));
-const checklistPending = computed(() => checklistPendingSteps(ctx.value));
-const hasPending = computed(() => checklistPending.value.length > 0);
 
-// The counted steps as they were when the checklist was last dismissed; the
-// checklist stays hidden for the session until a step it did not list shows up.
-const dismissedPending = ref<OnboardingStepId[] | null>(null);
-const dismissed = computed(() => {
-  const snapshot = dismissedPending.value;
-  if (!snapshot) return false;
-  return checklistPending.value.every((step) => snapshot.includes(step.id));
-});
+// Whether the onboarding modal is open, and the step it should open on when it
+// is (`null` falls back to the first step still to do). Module-level so the
+// same modal is driven from the app shell, the settings page and the sign-in
+// flow, and stays open across the routes it sits over.
+const active = ref(false);
+const requestedStep = ref<OnboardingStepId | null>(null);
 
-function dismiss(): void {
-  dismissedPending.value = checklistPending.value.map((step) => step.id);
+function open(step?: OnboardingStepId): void {
+  requestedStep.value = step ?? null;
+  active.value = true;
+}
+
+function close(): void {
+  active.value = false;
+  requestedStep.value = null;
 }
 
 async function setIntent(value: OnboardingIntent): Promise<void> {
@@ -374,8 +369,7 @@ async function finish(): Promise<boolean> {
       toast.error($t("onboarding.finish_failed"));
       return false;
     }
-    dismiss();
-    await router.replace({ name: "discover" });
+    close();
     return true;
   }
   if (api.serverInfo.value?.onboard_done === false) {
@@ -391,27 +385,25 @@ async function finish(): Promise<boolean> {
       }
     }
   }
-  // the wizard has had its say; keep the checklist out of the way afterwards
-  dismiss();
-  await router.replace({ name: "discover" });
+  close();
   return true;
 }
 
 /**
- * Live onboarding state, shared by the wizard page and the sidebar checklist.
- * Module-level on purpose: dismissing the checklist has to hold for the
- * session, whichever component is mounted.
+ * Live onboarding state, shared by the modal, the app shell and the settings
+ * page. Module-level on purpose: the open state has to hold across the routes
+ * the modal sits over, whichever component asked for it.
  */
 export function useOnboarding() {
   return {
     ctx,
     steps,
     pending,
-    checklist,
-    checklistPending,
-    hasPending,
-    dismissed,
-    dismiss,
+    // the modal's open state, and the pair that drives it from anywhere
+    active,
+    requestedStep,
+    open,
+    close,
     intent,
     setIntent,
     persona,
@@ -420,8 +412,6 @@ export function useOnboarding() {
     markWelcomed,
     dataLoaded,
     loadOnboardingData,
-    // the checklist's own pair: it decides off the provider configurations
-    // alone, so it waits for nothing else
     configsLoaded,
     loadProviderConfigs,
     // the music sources the member owns, for the own-sources step to list

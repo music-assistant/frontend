@@ -34,6 +34,7 @@ const {
   mockPruneStaleProviderFilters,
   mockRememberCurrentRemoteConnection,
   mockRunAfterPreferenceWrites,
+  mockOnboardingOpen,
   mockRouterPush,
   mockRouterReplace,
   mockSetPreference,
@@ -115,6 +116,7 @@ const {
     mockPruneStaleProviderFilters: vi.fn(),
     mockRememberCurrentRemoteConnection: vi.fn(),
     mockRunAfterPreferenceWrites: vi.fn(),
+    mockOnboardingOpen: vi.fn(),
     mockRouterPush: vi.fn(),
     mockRouterReplace: vi.fn(),
     mockSetPreference: vi.fn(),
@@ -195,6 +197,10 @@ vi.mock("@/composables/userPreferences", () => ({
 
 vi.mock("@/composables/useShortcuts", () => ({
   initGlobalShortcutsSync: vi.fn(),
+}));
+
+vi.mock("@/composables/useOnboarding", () => ({
+  useOnboarding: () => ({ open: mockOnboardingOpen }),
 }));
 
 vi.mock("@/plugins/web_player", () => ({
@@ -500,7 +506,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
+      expect(mockOnboardingOpen).toHaveBeenCalled();
     });
 
     it.each([
@@ -514,7 +520,7 @@ describe("App initialization", () => {
 
         wrapper = await mountApp();
 
-        expect(mockRouterPush).not.toHaveBeenCalled();
+        expect(mockOnboardingOpen).not.toHaveBeenCalled();
       },
     );
 
@@ -523,7 +529,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).not.toHaveBeenCalled();
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
     });
 
     it("opens the wizard when the server's setup flow asks for it, and drops the parameter", async () => {
@@ -532,7 +538,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
+      expect(mockOnboardingOpen).toHaveBeenCalled();
       expect(window.location.search).not.toContain("onboard");
     });
 
@@ -557,7 +563,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
+      expect(mockOnboardingOpen).toHaveBeenCalled();
     });
 
     it("welcomes a member once, and never again", async () => {
@@ -567,7 +573,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).not.toHaveBeenCalled();
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
     });
 
     it("leaves a member who has had the account a while to find it", async () => {
@@ -577,7 +583,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).not.toHaveBeenCalled();
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
     });
 
     it("never welcomes a guest, who is only passing through", async () => {
@@ -588,7 +594,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).not.toHaveBeenCalled();
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
     });
 
     it("leaves a guest session on its own screen", async () => {
@@ -600,7 +606,7 @@ describe("App initialization", () => {
       wrapper = await mountApp();
 
       expect(mockRouterPush).toHaveBeenCalledWith("/guest");
-      expect(mockRouterPush).not.toHaveBeenCalledWith({ name: "onboarding" });
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
     });
 
     it("leaves a dashboard viewer pinned to its own screen", async () => {

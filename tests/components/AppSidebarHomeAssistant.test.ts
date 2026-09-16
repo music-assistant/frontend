@@ -43,9 +43,6 @@ vi.mock("@/components/ui/sidebar", () => {
 });
 
 // These reach for the router plugin on import, which the vue-router mock cannot serve.
-vi.mock("@/components/navigation/NavGettingStarted.vue", () => ({
-  default: { template: "<div />" },
-}));
 vi.mock("@/components/navigation/NavShortcuts.vue", () => ({
   default: { template: "<div />" },
 }));
