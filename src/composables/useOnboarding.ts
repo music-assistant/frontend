@@ -17,12 +17,12 @@ import {
   ONBOARDING_INTENT_PREFERENCE,
   ONBOARDING_WELCOME_PREFERENCE,
 } from "@/helpers/onboarding_access";
+import { getPlayerName } from "@/helpers/player_config";
 import {
   isOwnMusicSource,
   ownedMusicSourceCount,
   userDisplayName,
 } from "@/helpers/provider_access";
-import { getPlayerName } from "@/helpers/player_config";
 import {
   isBuiltinProvider,
   providerDisplayName,
@@ -195,15 +195,17 @@ async function fetchPlayerConfigs(): Promise<void> {
     playerConfigs.value = [];
     return;
   }
+  // the list is empty rather than unknown while the request is out, so a
+  // player that turns up in the meantime is taken in and kept: the answer is
+  // merged in over it instead of replacing it
+  playerConfigs.value = [];
   try {
     // every player that registered, and the switched-off ones on top: those
-    // are unregistered, and this is where they are switched back on
-    playerConfigs.value = await api.getPlayerConfigs(
-      undefined,
-      false,
-      false,
-      true,
-    );
+    // are unregistered, and this is where they are switched back on. One that
+    // is switched on but not around is left out, as on the players settings
+    // page.
+    const configs = await api.getPlayerConfigs(undefined, false, false, true);
+    for (const config of configs) upsertPlayerConfig(config);
   } catch (error) {
     // the api already told the user
     console.warn("Failed to load the player configurations:", error);
@@ -232,8 +234,7 @@ function findPlayerConfig(playerId: string): PlayerConfig | undefined {
 }
 
 function upsertPlayerConfig(config: PlayerConfig): void {
-  // nothing to keep up to date before the first load lands, which is the
-  // latest state anyway
+  // nothing to keep up to date before the first load is asked for
   if (playerConfigs.value === null) return;
   const index = playerConfigs.value.findIndex(
     (known) => known.player_id === config.player_id,
@@ -242,9 +243,10 @@ function upsertPlayerConfig(config: PlayerConfig): void {
   else playerConfigs.value[index] = config;
 }
 
-function removePlayerConfig(config: PlayerConfig): void {
+function removePlayerConfig(playerId: string): void {
   playerConfigs.value =
-    playerConfigs.value?.filter((known) => known !== config) ?? null;
+    playerConfigs.value?.filter((known) => known.player_id !== playerId) ??
+    null;
 }
 
 async function fetchPlayerConfig(playerId: string): Promise<void> {
@@ -277,7 +279,7 @@ function onPlayerEvent(evt: EventMessage): void {
     // a switched-off player is unregistered but keeps its configuration, which
     // is what the wizard lists it by; one that was switched on is gone
     const config = evt.object_id ? findPlayerConfig(evt.object_id) : undefined;
-    if (config?.enabled) removePlayerConfig(config);
+    if (config?.enabled) removePlayerConfig(config.player_id);
   }
 }
 
@@ -319,18 +321,32 @@ export function configuredProviders(type: ProviderType): ConfiguredProvider[] {
     }));
 }
 
+// what a player of a builtin provider was last labelled with while it was
+// registered: switching it off unregisters it, and its outputs with it
+const lastPlayerLabels = new Map<string, string>();
+
 /**
- * Where a player came from, as the user would say it. A builtin provider is
- * the server's own machinery rather than a place a player came from: a player
- * of one plays through protocols such as AirPlay or Chromecast, and those are
- * what it is labelled with.
+ * Where a player came from, as the user would say it: its provider, by the
+ * same name the provider badges use. A builtin provider is the server's own
+ * machinery rather than a place a player came from: a player of one plays
+ * through protocols such as AirPlay or Chromecast, and those are what it is
+ * labelled with, for as long as the wizard knows them.
  */
 function playerProviderLabel(config: PlayerConfig, player?: Player): string {
   const instance = api.providers[config.provider];
-  const domain = instance?.domain ?? config.provider.split("--")[0];
+  const providerConfig = providerConfigs.value?.find(
+    (known) => known.instance_id === config.provider,
+  );
+  const domain =
+    instance?.domain ??
+    providerConfig?.domain ??
+    config.provider.split("--")[0];
   const manifest = api.providerManifests[domain];
   if (manifest && !isBuiltinProvider(manifest)) {
-    return instance?.name || manifest.name;
+    // the configuration knows the name of a provider that is not running
+    return providerConfig
+      ? providerDisplayName(providerConfig, instance, manifest)
+      : instance?.name || manifest.name;
   }
   const protocols = new Set(
     (player?.output_protocols ?? [])
@@ -341,23 +357,34 @@ function playerProviderLabel(config: PlayerConfig, player?: Player): string {
           protocol.name,
       ),
   );
-  if (protocols.size > 0) return [...protocols].join(", ");
-  return instance?.name || manifest?.name || domain;
+  if (protocols.size > 0) {
+    const label = [...protocols].join(", ");
+    lastPlayerLabels.set(config.player_id, label);
+    return label;
+  }
+  return (
+    lastPlayerLabels.get(config.player_id) ??
+    (instance?.name || manifest?.name || domain)
+  );
 }
 
 /**
- * The players found so far, switched-off ones included, by name. A protocol
- * player is one output of another player and is set up as part of it, so it
- * is not listed on its own; and the web players this app spawns come and go
- * with every browser tab, so one that is not around is nothing anyone set up.
+ * The configurations the wizard lists. A protocol player is one output of
+ * another player and is set up as part of it, so it is not listed on its own;
+ * and the web players this app spawns come and go with every browser tab, so
+ * one that is not around is nothing anyone set up.
  */
+function listedPlayerConfigs(): PlayerConfig[] {
+  return (playerConfigs.value ?? []).filter(
+    (config) =>
+      config.player_type !== PlayerType.PROTOCOL &&
+      !isHiddenSendspinWebPlayer(config),
+  );
+}
+
+/** The players found so far, switched-off ones included, by name. */
 export function discoveredPlayers(): DiscoveredPlayer[] {
-  return (playerConfigs.value ?? [])
-    .filter(
-      (config) =>
-        config.player_type !== PlayerType.PROTOCOL &&
-        !isHiddenSendspinWebPlayer(config),
-    )
+  return listedPlayerConfigs()
     .map((config) => {
       const player = api.players[config.player_id];
       return {
@@ -439,7 +466,7 @@ const ctx = computed<OnboardingContext>(() => ({
   // the players switched on, as the players step lists them; only the
   // summary's "2 players" label reads this, as whether the step is done keys
   // off a configured PLAYER provider, not off players turning up
-  playerCount: discoveredPlayers().filter((player) => player.enabled).length,
+  playerCount: listedPlayerConfigs().filter((config) => config.enabled).length,
   // `null` while the users are unknown, which is not the same as an empty
   // household: the invite step is then simply not done
   memberCount: users.value == null ? null : householdMembers().length,

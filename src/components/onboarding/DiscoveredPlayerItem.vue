@@ -20,7 +20,7 @@
         ref="renameInput"
         v-model="draftName"
         class="absolute inset-0 h-full"
-        :disabled="saving"
+        :disabled="savingName"
         :aria-label="$t('settings.player_name')"
         autocomplete="off"
         data-testid="onboarding-player-name-input"
@@ -58,12 +58,11 @@
       >
         <Pencil class="size-3.5" />
       </Button>
+      <!-- named after the player alone: the switch itself says on or off -->
       <Switch
         :model-value="enabled"
-        :disabled="!canEdit || !player.canToggle || saving"
-        :aria-label="
-          $t('onboarding.steps.players.enable', { name: player.name })
-        "
+        :disabled="!canEdit || !player.canToggle || savingEnabled"
+        :aria-label="player.name"
         data-testid="onboarding-player-enabled"
         @update:model-value="setEnabled"
       />
@@ -102,7 +101,10 @@ const props = defineProps<{
 const renaming = ref(false);
 const draftName = ref("");
 const renameInput = ref<InstanceType<typeof Input> | null>(null);
-const saving = ref(false);
+// the two saves are separate, so leaving the field by clicking the switch
+// commits the name and still flips the switch
+const savingName = ref(false);
+const savingEnabled = ref(false);
 // the state the switch was just set to, shown while the save is on its way;
 // by the time it lands, the list has taken the change from the server's event
 const pendingEnabled = ref<boolean | null>(null);
@@ -117,6 +119,8 @@ const startRename = async function () {
   renaming.value = true;
   await nextTick();
   renameInput.value?.focus();
+  // the whole name is selected, so typing replaces it and an arrow key edits it
+  (renameInput.value?.$el as HTMLInputElement | undefined)?.select();
 };
 
 const cancelRename = function () {
@@ -127,7 +131,7 @@ const cancelRename = function () {
 // the player back to the name its provider reports. Leaving the name as it is,
 // custom or not, is nothing to save.
 const commitRename = async function () {
-  if (!renaming.value || saving.value) return;
+  if (!renaming.value || savingName.value) return;
   const name = draftName.value.trim() || null;
   const unchanged =
     name === props.player.customName ||
@@ -136,25 +140,25 @@ const commitRename = async function () {
     renaming.value = false;
     return;
   }
-  saving.value = true;
+  savingName.value = true;
   try {
     // a save that did not land keeps the field open to try again or cancel
     if (await renamePlayer(props.player.player_id, name)) {
       renaming.value = false;
     }
   } finally {
-    saving.value = false;
+    savingName.value = false;
   }
 };
 
 const setEnabled = async function (value: boolean) {
-  if (saving.value) return;
-  saving.value = true;
+  if (savingEnabled.value) return;
+  savingEnabled.value = true;
   pendingEnabled.value = value;
   try {
     await setPlayerEnabled(props.player.player_id, value);
   } finally {
-    saving.value = false;
+    savingEnabled.value = false;
     pendingEnabled.value = null;
   }
 };

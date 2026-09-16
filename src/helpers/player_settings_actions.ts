@@ -144,9 +144,7 @@ export const getPlayerSettingsMenuItems = (
           ]),
           message: $t("player_select.disable_player_confirmation"),
           confirmLabel: $t("settings.disable"),
-          onConfirm: async () => {
-            await setPlayerEnabled(playerId, false);
-          },
+          onConfirm: () => void setPlayerEnabled(playerId, false),
         });
       },
       icon: markRaw(config.enabled ? CircleOff : Power),
@@ -185,7 +183,7 @@ export const playerCanBeDeleted = (playerId: string): boolean => {
 
 /**
  * Switch a player on or off, and say whether the change landed. Switching off
- * the player the player bar points at hands the bar to another player first.
+ * the player the player bar points at hands the bar to another player.
  */
 export const setPlayerEnabled = async (
   playerId: string,

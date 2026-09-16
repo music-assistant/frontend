@@ -32,9 +32,10 @@
       </Badge>
     </div>
 
-    <!-- fixed minimum height so the step does not jump as players turn up, and
-         a live region so a player that was just found is announced -->
-    <div class="min-h-24" aria-live="polite">
+    <!-- a minimum height the empty state fits in, so the step does not jump
+         as the first players turn up, and a live region so a player that was
+         just found is announced -->
+    <div class="min-h-40" aria-live="polite">
       <ItemGroup v-if="players.length > 0" class="gap-2">
         <DiscoveredPlayerItem
           v-for="player in players"
@@ -70,6 +71,8 @@
       </Empty>
     </div>
 
+    <!-- the picker adds a provider either way; only where nothing is set up
+         yet, and the hint above has just said what a provider is, is it named -->
     <div>
       <Button
         :variant="providers.length > 0 ? 'secondary' : 'default'"
@@ -79,16 +82,13 @@
         <Plus class="size-4" />
         {{
           providers.length > 0
-            ? $t("settings.add_player_providers")
+            ? $t("onboarding.steps.players.add_more")
             : $t("settings.add_player_provider")
         }}
       </Button>
     </div>
 
-    <!-- mounted only while open: the wizard has already loaded the provider
-         configs, and a hidden dialog would fetch them again on mount -->
     <AddProviderDialog
-      v-if="showAddProviderDialog"
       v-model:show="showAddProviderDialog"
       :provider-type="ProviderType.PLAYER"
     />

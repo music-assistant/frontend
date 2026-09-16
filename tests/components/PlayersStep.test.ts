@@ -167,7 +167,7 @@ describe("PlayersStep", () => {
     );
     expect(providers).toHaveLength(1);
     expect(providers[0].text()).toContain("Sonos");
-    expect(addButton(wrapper).text()).toBe("settings.add_player_providers");
+    expect(addButton(wrapper).text()).toBe("onboarding.steps.players.add_more");
     expect(addButton(wrapper).classes()).toContain("bg-accent");
 
     wrapper.unmount();
@@ -219,15 +219,11 @@ describe("PlayersStep", () => {
   it("opens the add-a-provider dialog on the player providers", async () => {
     const wrapper = mountStep();
 
-    // the dialog stays unmounted until opened, so it never fetches the
-    // provider configs the wizard has already loaded
-    expect(wrapper.findComponent({ name: "AddProviderDialog" }).exists()).toBe(
-      false,
-    );
+    const dialog = wrapper.findComponent({ name: "AddProviderDialog" });
+    expect(dialog.props("show")).toBe(false);
 
     await addButton(wrapper).trigger("click");
 
-    const dialog = wrapper.findComponent({ name: "AddProviderDialog" });
     expect(dialog.props("show")).toBe(true);
     expect(dialog.props("providerType")).toBe(ProviderType.PLAYER);
 
@@ -244,6 +240,32 @@ describe("PlayersStep", () => {
         .trigger("click");
 
       expect(setPlayerEnabled).toHaveBeenCalledWith("kitchen", false);
+
+      wrapper.unmount();
+    });
+
+    it("shows the state the user asked for while it saves, and lets go of it after", async () => {
+      addPlayer({ player_id: "kitchen", enabled: true });
+      let landSave: (saved: boolean) => void = () => {};
+      setPlayerEnabled.mockImplementation(
+        () => new Promise<boolean>((resolve) => (landSave = resolve)),
+      );
+
+      const wrapper = mountStep();
+      const toggle = () =>
+        wrapper.find("[data-testid=onboarding-player-enabled]");
+      await toggle().trigger("click");
+
+      // off at once, and out of reach until the save answers
+      expect(toggle().attributes("aria-checked")).toBe("false");
+      expect(toggle().attributes("disabled")).toBeDefined();
+
+      landSave(false);
+      await flushPromises();
+
+      // a save that did not land shows the state the list still holds
+      expect(toggle().attributes("aria-checked")).toBe("true");
+      expect(toggle().attributes("disabled")).toBeUndefined();
 
       wrapper.unmount();
     });

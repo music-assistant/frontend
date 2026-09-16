@@ -175,13 +175,18 @@ function addProvider(
   instanceId: string,
   domain: string,
   type: ProviderType,
-  options: { builtin?: boolean; enabled?: boolean; lastError?: unknown } = {},
+  options: {
+    builtin?: boolean;
+    enabled?: boolean;
+    lastError?: unknown;
+    name?: string;
+  } = {},
 ) {
   providerConfigs.list.push({
     instance_id: instanceId,
     domain,
     type,
-    name: null,
+    name: options.name ?? null,
     enabled: options.enabled ?? true,
     last_error: options.lastError ?? null,
   });
@@ -985,6 +990,23 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       });
     });
 
+    it("labels a player with the name its provider was given, running or not", async () => {
+      addProvider("sonos--1", "sonos", ProviderType.PLAYER, {
+        name: "Downstairs Sonos",
+      });
+      addPlayerConfig({ player_id: "living", provider: "sonos--1" });
+      apiMock.providerManifests["sonos"] = {
+        builtin: false,
+        name: "Sonos manifest",
+      };
+
+      const module = await loadOnboardingModule();
+
+      // the same name the provider badge shows, which only the configuration
+      // knows while the provider is switched off or failed to load
+      expect(playerLabels(module)).toEqual({ living: "Downstairs Sonos" });
+    });
+
     it("labels a player of the server's own machinery with what it plays through", async () => {
       addPlayerConfig({
         player_id: "everywhere",
@@ -1025,6 +1047,32 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       expect(playerLabels(await loadOnboardingModule())).toEqual({
         everywhere: "AirPlay, DLNA",
       });
+    });
+
+    it("keeps what a player was last labelled with once it is switched off", async () => {
+      addPlayerConfig({
+        player_id: "everywhere",
+        provider: "universal_player",
+      });
+      apiMock.providerManifests["universal_player"] = {
+        builtin: true,
+        name: "Universal player",
+      };
+      apiMock.providerManifests["airplay"] = {
+        builtin: false,
+        name: "AirPlay",
+      };
+      registerPlayer("everywhere", {
+        output_protocols: [outputProtocol({ name: "AirPlay (Kitchen)" })],
+      });
+
+      const module = await loadOnboardingModule();
+      expect(playerLabels(module)).toEqual({ everywhere: "AirPlay" });
+
+      // switching it off unregisters it, and its outputs with it; the label
+      // the user just read stays
+      delete apiMock.players["everywhere"];
+      expect(playerLabels(module)).toEqual({ everywhere: "AirPlay" });
     });
 
     it("falls back on the provider itself when a player plays through nothing", async () => {
@@ -1132,7 +1180,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       ]);
     });
 
-    it("ignores a player reported before the list is in", async () => {
+    it("ignores a player reported before the list is asked for", async () => {
       addPlayerConfig({ player_id: "office", default_name: "Office" });
       const module = await loadModule();
       module.useOnboarding().followPlayers();
@@ -1144,12 +1192,41 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       });
       expect(module.discoveredPlayers()).toEqual([]);
 
-      // nothing to keep up to date before the first load, which is the latest
-      // state anyway
       await module.useOnboarding().loadOnboardingData();
       expect(module.discoveredPlayers().map((player) => player.name)).toEqual([
         "Office",
       ]);
+    });
+
+    it("keeps a player that turns up while the list is loading", async () => {
+      addPlayerConfig({ player_id: "office", default_name: "Office" });
+      let handOverConfigs: (configs: PlayerConfig[]) => void = () => {};
+      apiMock.getPlayerConfigs.mockImplementation(
+        () =>
+          new Promise<PlayerConfig[]>((resolve) => {
+            handOverConfigs = resolve;
+          }),
+      );
+      const module = await loadModule();
+      module.useOnboarding().followPlayers();
+      const loading = module.useOnboarding().loadOnboardingData();
+
+      playerEventHandler()({
+        event: EventType.PLAYER_CONFIG_UPDATED,
+        object_id: "kitchen",
+        data: playerConfig({ player_id: "kitchen", default_name: "Kitchen" }),
+      });
+      handOverConfigs([...playerConfigs.list]);
+      await loading;
+
+      // the answer was worked out before the player turned up, so it is
+      // merged in over the list rather than replacing it
+      expect(
+        module
+          .discoveredPlayers()
+          .map((player) => player.name)
+          .sort(),
+      ).toEqual(["Kitchen", "Office"]);
     });
 
     it("fetches the configuration of a player it has not seen", async () => {
