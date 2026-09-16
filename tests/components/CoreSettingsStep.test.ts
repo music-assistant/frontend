@@ -61,7 +61,7 @@ function formValues(edits: Record<string, string> = {}) {
 
 /** What the user typed, as the form hands it over. */
 const EDITED_VALUES = formValues({ server_name: "Living room" });
-/** The one setting of that the server does not have yet. */
+/** The one setting of those the server does not have yet. */
 const EDITED_CHANGE = { server_name: "Living room" };
 // what the form hands over on its next submit: a test that types on after a
 // save changes this
