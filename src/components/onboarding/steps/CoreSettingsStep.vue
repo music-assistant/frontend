@@ -393,11 +393,11 @@ const loadStreamServerInfo = async function (): Promise<void> {
   const current = ++streamRequest;
   try {
     // best effort: the row says the address is not available rather than the
-    // app raising an error over it
+    // app raising an error over it, and a lookup that fails later on keeps
+    // the last address known rather than taking it away
     const answer = await api.getStreamServerInfo({ suppressGlobalError: true });
     if (current === streamRequest) streamInfo.value = answer;
   } catch (error) {
-    if (current === streamRequest) streamInfo.value = undefined;
     console.warn("Failed to load the stream server address:", error);
   } finally {
     streamAnswered.value = true;
@@ -410,7 +410,9 @@ const refreshStreamServerInfo = async function (): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, delay));
     if (unmounted) return;
     await loadStreamServerInfo();
-    if (streamInfo.value?.base_url !== previous) return;
+    // a lookup that failed while the server was restarting says nothing yet
+    const moved = streamInfo.value?.base_url;
+    if (moved && moved !== previous) return;
   }
 };
 

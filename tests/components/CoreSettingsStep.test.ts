@@ -555,6 +555,33 @@ describe("CoreSettingsStep", () => {
       expect(apiMock.getStreamServerInfo).toHaveBeenCalledTimes(3);
     });
 
+    it("keeps asking when a lookup fails while the server restarts", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout"] });
+      const wrapper = await mountLoadedStep();
+
+      await form(wrapper).vm.$emit("submit", { publish_ip: "10.0.0.5" });
+      await flushPromises();
+
+      // the first lookup lands while the stream server is down: the address
+      // shown stays, and the lookup is not the last word
+      apiMock.getStreamServerInfo.mockRejectedValueOnce(
+        new Error("restarting"),
+      );
+      await vi.advanceTimersByTimeAsync(1500);
+      await flushPromises();
+      expect(addressUrl(wrapper, "stream").text()).toBe(STREAM_URL);
+
+      apiMock.getStreamServerInfo.mockResolvedValue({
+        base_url: MOVED_STREAM_URL,
+      });
+      await vi.advanceTimersByTimeAsync(3000);
+      await flushPromises();
+
+      expect(apiMock.getStreamServerInfo).toHaveBeenCalledTimes(3);
+      expect(addressUrl(wrapper, "stream").text()).toBe(MOVED_STREAM_URL);
+      expect(warnSpy).toHaveBeenCalledOnce();
+    });
+
     it("stops asking for the stream server's address after a while", async () => {
       vi.useFakeTimers({ toFake: ["setTimeout"] });
       const wrapper = await mountLoadedStep();
