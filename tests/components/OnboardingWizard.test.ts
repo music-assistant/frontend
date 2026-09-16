@@ -182,10 +182,10 @@ vi.mock("@/composables/userPreferences", async () => {
 });
 
 // The wizard pulls its whole step graph in behind it: the provider listings,
-// the welcome's cards, the players and music that are here and the tour. Every test
-// mounts it on a fresh module registry, so the transform of all that is paid
-// at module scope, where no test or hook clock runs, instead of by whichever
-// test happens to mount first.
+// the welcome's cards, the players and music that are here and the tour. Every
+// test mounts it on a fresh module registry, so the transform of all that is
+// paid at module scope, where no test or hook clock runs, instead of by
+// whichever test happens to mount first.
 await import("@/components/onboarding/OnboardingWizard.vue");
 
 /**
@@ -353,10 +353,12 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     routerMock.replace.mockReset();
     setUserPreferenceMock.mockReset();
     setUserPreferencesMock.mockReset();
-    // the real ones update the preferences before they ever reach the server
+    // the real ones update the preferences before they ever reach the server,
+    // and say whether the server took them
     setUserPreferenceMock.mockImplementation(
       async (key: string, value: string) => {
         if (key === "onboarding.intent") preferenceState.intent.value = value;
+        return true;
       },
     );
     setUserPreferencesMock.mockImplementation(
@@ -484,6 +486,67 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
+  it("keeps the cards inert while the recommended intent is on its way", async () => {
+    let landIntent: () => void = () => {};
+    setUserPreferenceMock.mockImplementationOnce(
+      (key: string, value: string) =>
+        new Promise<boolean>((resolve) => {
+          landIntent = () => {
+            if (key === "onboarding.intent")
+              preferenceState.intent.value = value;
+            resolve(true);
+          };
+        }),
+    );
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+
+    // a card clicked now would land behind the recommended answer, on a
+    // wizard that has already moved on, so none can be while it is on its way
+    expect(
+      wrapper
+        .find("[data-testid=onboarding-intent-phone_apps]")
+        .attributes("disabled"),
+    ).toBeDefined();
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+
+    landIntent();
+    await flushPromises();
+    expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
+
+    wrapper.unmount();
+  });
+
+  it("stays on the intent question when the answer did not land", async () => {
+    // the write is rolled back, so nothing is on the account
+    setUserPreferenceMock.mockResolvedValue(false);
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    await wrapper
+      .find("[data-testid=onboarding-intent-phone_apps]")
+      .trigger("click");
+    await flushPromises();
+
+    // the api has told the user; walking on would leave the question behind
+    // with no answer on the account
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+
+    // the same for the recommended answer Next waves in
+    expect(setUserPreferenceMock).toHaveBeenCalledTimes(2);
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+
+    wrapper.unmount();
+  });
+
   it("leaves an answer the user gave alone", async () => {
     const wrapper = await mountWizard();
     await flushPromises();
@@ -558,11 +621,11 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     let landIntent: () => void = () => {};
     setUserPreferenceMock.mockImplementationOnce(
       (key: string, value: string) =>
-        new Promise<void>((resolve) => {
+        new Promise<boolean>((resolve) => {
           landIntent = () => {
             if (key === "onboarding.intent")
               preferenceState.intent.value = value;
-            resolve();
+            resolve(true);
           };
         }),
     );
@@ -575,8 +638,11 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       .trigger("click");
     await flushPromises();
 
-    // a Next while the choice is saving neither advances nor waves the default in
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    // a Next while the choice is saving neither advances nor waves the default
+    // in: the footer is greyed out, and a click on it does nothing
+    const next = wrapper.find("[data-testid=onboarding-next]");
+    expect(next.attributes("disabled")).toBeDefined();
+    await next.trigger("click");
     await flushPromises();
     expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
     expect(setUserPreferenceMock).not.toHaveBeenCalledWith(
@@ -972,8 +1038,11 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
 
       // a Next while the answer is saving neither moves the member on nor
-      // waves the recommended answer in over the one on its way
-      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      // waves the recommended answer in over the one on its way: the footer is
+      // greyed out, and a click on it does nothing
+      const next = wrapper.find("[data-testid=onboarding-next]");
+      expect(next.attributes("disabled")).toBeDefined();
+      await next.trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.welcome.title");
       expect(personaAnswers()).toEqual(["enthusiast"]);

@@ -23,12 +23,13 @@ export interface ItemsListingPreferences {
 /**
  * Standalone helper — usable outside Vue component setup (e.g. composables).
  * Sets a single user preference key, deep-clones the value, and persists to the server.
+ * Says whether the server took it.
  */
 export async function setUserPreference(
   key: string,
   value: unknown,
-): Promise<void> {
-  await setUserPreferences({ [key]: value });
+): Promise<boolean> {
+  return await setUserPreferences({ [key]: value });
 }
 
 /**

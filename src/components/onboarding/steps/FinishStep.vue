@@ -116,9 +116,9 @@ const emit = defineEmits<{
 const { ctx, steps, pending, persona } = useOnboarding();
 
 // A review is nothing to set up and nothing to do, so it is on neither list.
-// Neither is a welcome that was only ever shown: being done with the member is
-// not the same as the member having picked something, and there is nothing to
-// look back at when they walked past the question.
+// Neither is a welcome the member only closed: being done with them is not the
+// same as an answer on the account, and there is nothing to look back at when
+// none was ever written.
 const done = computed(() =>
   steps.value.filter(
     (step) =>

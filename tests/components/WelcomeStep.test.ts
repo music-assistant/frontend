@@ -310,6 +310,32 @@ describe("WelcomeStep", () => {
     wrapper.unmount();
   });
 
+  it("keeps the answer the member gave when the account did not take it", async () => {
+    setUserPreferencesMock.mockResolvedValueOnce(false);
+
+    const wrapper = await mountStep();
+    await card(wrapper, "enthusiast").trigger("click");
+    await flushPromises();
+
+    // their pick stays the chosen card, not the recommended one
+    expect(card(wrapper, "enthusiast").attributes("aria-pressed")).toBe("true");
+    expect(card(wrapper, "regular").attributes("aria-pressed")).toBe("false");
+
+    // and moving on tries their pick again, never the recommended answer
+    setUserPreferencesMock.mockClear();
+    await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
+    expect(setUserPreferencesMock).toHaveBeenCalledWith(
+      {
+        "onboarding.persona": "enthusiast",
+        show_waveform: true,
+        visualizer_enabled: true,
+      },
+      { suppressGlobalError: true },
+    );
+
+    wrapper.unmount();
+  });
+
   it("leaves an answer already on the account alone", async () => {
     preferenceState.persona.value = "enthusiast";
 

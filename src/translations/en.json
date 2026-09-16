@@ -2631,7 +2631,7 @@
             "your_players": {
                 "title": "Your players",
                 "description": "The players you can send music to.",
-                "empty": "No player yet. Ask your admin to add one."
+                "empty": "No players yet. Ask your admin to add one."
             },
             "your_music": {
                 "title": "What you can listen to",

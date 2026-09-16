@@ -10,7 +10,7 @@
 
     <ChoiceCards
       :options="options"
-      :selected="persona"
+      :selected="shown"
       :busy="busy"
       :labelled-by="DESCRIPTION_ID"
       test-id-prefix="onboarding-persona"
@@ -71,8 +71,16 @@ const options: ChoiceCardOption<OnboardingPersona>[] = [
   },
 ];
 
-// what moving on unanswered answers with: the option shown as chosen all along
+// the answer shown as chosen until the member picks one
 const recommended = options.find((option) => option.recommended)!.value;
+
+// the answer the member gave here, kept even when the account did not take
+// it: the card stays chosen, and moving on tries it again
+const chosen = ref<OnboardingPersona | null>(null);
+
+// what the cards show as chosen, and what moving on writes: the answer given
+// here, else the one on the account, else the recommended one
+const shown = computed(() => chosen.value ?? persona.value ?? recommended);
 
 // the answer is persisted on the server, so the cards stay inert until it lands
 const busy = ref(false);
@@ -96,22 +104,24 @@ const save = async function (value: OnboardingPersona): Promise<boolean> {
 
 const select = async function (value: OnboardingPersona) {
   if (busy.value) return;
+  chosen.value = value;
   pendingSave = save(value);
   if (await pendingSave) emit("advance");
 };
 
 /**
- * The wizard asking whether it may move on. Next while an answer is still on
- * its way waits for it here, so the member is not walked onto the next step by
- * an answer the account never took, and is told about it on the step that
- * asked. Moving on without an answer takes the recommended one, which the
- * cards were showing as chosen, and holds the wizard the same way when that
- * did not land. An answer already on the account is left alone.
+ * The wizard asking whether it may move on. An answer still on its way is
+ * waited for here, so the member is not walked onto the next step by an
+ * answer the account never took, and is told about it on the step that asked.
+ * Otherwise moving on writes the answer the cards show as chosen, unless the
+ * account already holds it: the recommended one for a member who picked
+ * nothing, or their own pick again when the account did not take it before.
  */
 const beforeLeave = async function (): Promise<boolean> {
   if (pendingSave) return await pendingSave;
-  if (persona.value == null) return await save(recommended);
-  return true;
+  if (shown.value === persona.value) return true;
+  pendingSave = save(shown.value);
+  return await pendingSave;
 };
 
 defineExpose({ beforeLeave, busy });

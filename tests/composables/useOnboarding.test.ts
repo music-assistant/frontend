@@ -220,7 +220,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     signIn({ user_id: "admin-1", username: "admin", role: UserRole.ADMIN });
     // both answer as the real ones do: a promise, and whether it landed
     setUserPreferenceMock.mockReset();
-    setUserPreferenceMock.mockResolvedValue(undefined);
+    setUserPreferenceMock.mockResolvedValue(true);
     setUserPreferencesMock.mockReset();
     setUserPreferencesMock.mockResolvedValue(true);
     toastMock.error.mockReset();

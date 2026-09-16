@@ -63,26 +63,32 @@ const recommended = options.find((option) => option.recommended)!.value;
 // the answer is persisted on the server, so the cards stay inert until it lands
 const busy = ref(false);
 
-const select = async function (value: OnboardingIntent) {
-  if (busy.value) return;
+// whether the answer landed; the api already tells the user when it did not,
+// so the step only has to stay where it is
+const save = async function (value: OnboardingIntent): Promise<boolean> {
   busy.value = true;
   try {
-    await setIntent(value);
+    return await setIntent(value);
   } finally {
     busy.value = false;
   }
-  emit("advance");
+};
+
+const select = async function (value: OnboardingIntent) {
+  if (busy.value) return;
+  if (await save(value)) emit("advance");
 };
 
 /**
  * The wizard asking whether it may move on. Moving on from the question
  * unanswered is an answer of its own: the recommended option, which the cards
  * were showing as chosen, is what the wizard runs as from here, instead of
- * leaving the question to be asked again.
+ * leaving the question to be asked again. An answer that did not land keeps
+ * the wizard here, so the question is never left behind unanswered.
  */
 const beforeLeave = async function (): Promise<boolean> {
-  if (intent.value == null) await setIntent(recommended);
-  return true;
+  if (intent.value != null) return true;
+  return await save(recommended);
 };
 
 // the wizard reads `busy` to keep its Next from advancing while a card is saving

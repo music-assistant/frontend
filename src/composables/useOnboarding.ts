@@ -269,8 +269,9 @@ function close(): void {
   requestedStep.value = null;
 }
 
-async function setIntent(value: OnboardingIntent): Promise<void> {
-  await setUserPreference(ONBOARDING_INTENT_PREFERENCE, value);
+/** Answer the setup's intent question, and say whether the answer landed. */
+async function setIntent(value: OnboardingIntent): Promise<boolean> {
+  return await setUserPreference(ONBOARDING_INTENT_PREFERENCE, value);
 }
 
 /**

@@ -77,7 +77,7 @@ describe("YourPlayersStep", () => {
   it("lists the players the member may play to", () => {
     addPlayer("kitchen", { name: "Kitchen" });
     addPlayer("study", { name: "Study" });
-    // the pickers leave these out, and so does the welcome
+    // the pickers leave these out, and so does this step
     addPlayer("hidden", { name: "Hidden", hide_in_ui: true });
     addPlayer("off", { name: "Switched off", enabled: false });
     addPlayer("gone", { name: "Unavailable", available: false });
@@ -102,7 +102,7 @@ describe("YourPlayersStep", () => {
     const wrapper = mountStep();
 
     // the player this browser streams to comes first wherever players are
-    // listed, and the rest by name: the welcome is no exception
+    // listed, and the rest by name: this step is no exception
     expect(names(wrapper)).toEqual(["This browser", "Alpha", "Zebra"]);
 
     wrapper.unmount();
