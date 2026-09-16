@@ -206,7 +206,7 @@
           variant="link"
           class="text-muted-foreground"
           data-testid="run-onboarding"
-          @click="router.push(onboardingRoute)"
+          @click="launchOnboarding"
         >
           {{ t(onboardingLinkKey) }}
         </Button>
@@ -235,6 +235,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { provideEditedProviderName } from "@/composables/useEditedProviderName";
+import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
 import { availableSettingsSections } from "@/helpers/settings_sections";
@@ -431,15 +432,13 @@ const canOpenOnboarding = computed(() => hasOnboardingTrack());
 const onboardingLinkKey = computed(() =>
   isAdminTrack() ? "onboarding.run_again" : "onboarding.welcome_again",
 );
+const { open: openOnboarding } = useOnboarding();
 // The setup wizard opens on whatever is left to set up. The welcome has been
 // shown by the time this link is any use, so nothing is left to do on it and
 // it would otherwise open on its own summary: showing it again means showing
 // it from the top.
-const onboardingRoute = computed(() =>
-  isAdminTrack()
-    ? { name: "onboarding" }
-    : { name: "onboarding", query: { step: "welcome" } },
-);
+const launchOnboarding = () =>
+  openOnboarding(isAdminTrack() ? undefined : "welcome");
 
 const settingsSections = computed(() =>
   availableSettingsSections(

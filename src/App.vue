@@ -98,8 +98,13 @@ import {
 } from "./plugins/web_player";
 import Login from "./views/Login.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { useOnboarding } from "@/composables/useOnboarding";
 
 const router = useRouter();
+// the wizard for a fresh install and the welcome for a new member both open as
+// a modal over the app; opened here, before the app is shown, so a fresh
+// sign-in never flashes the app behind them first
+const { open: openOnboarding } = useOnboarding();
 const route = useRoute();
 const { applyThemePreference: setTheme } = useThemePreference();
 const mediaSessionDisabled = computed(() =>
@@ -405,7 +410,7 @@ const completeInitialization = async () => {
     // the wizard sets up every kind of provider
     authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
   ) {
-    router.push({ name: "onboarding" });
+    openOnboarding();
   } else if (isGuestAccessSession) {
     router.push("/guest");
   } else if (isDashboardViewer) {
@@ -415,9 +420,9 @@ const completeInitialization = async () => {
     router.replace(pinnedPath);
   } else if (shouldOpenWelcome()) {
     // someone who has just been given an account of their own is welcomed into
-    // the app once; everyone else finds the welcome on the sidebar and in the
-    // settings, whenever they want it
-    router.push({ name: "onboarding" });
+    // the app once; everyone else finds the welcome again in the settings,
+    // whenever they want it
+    openOnboarding();
   }
   // Don't push to any route here - let the router handle navigation naturally
   // from the URL hash. The router config already redirects "/" to "/discover"

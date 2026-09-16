@@ -95,11 +95,10 @@ export type OnboardingStepKind = "step" | "review" | "summary";
 export interface OnboardingStep {
   id: OnboardingStepId;
   kind: OnboardingStepKind;
-  // optional by nature: the wizard offers it, the checklist never asks for it
+  // optional by nature: the wizard offers a skip instead of a Next
   optional?: boolean;
-  // a core step the answers pushed to the back: it stops blocking the wizard,
-  // but it stays on the checklist, which is the whole point of deferring it
-  // rather than dropping it
+  // a core step the answers pushed to the back: it no longer leads the wizard
+  // and offers a skip, but stays listed as still to do rather than dropped
   deferred?: boolean;
   appliesTo(ctx: OnboardingContext): boolean;
   isDone(ctx: OnboardingContext): boolean;
@@ -268,24 +267,6 @@ export function pendingSteps(ctx: OnboardingContext): OnboardingStep[] {
   return applicableSteps(ctx).filter(
     (step) => isTodo(step) && !step.isDone(ctx),
   );
-}
-
-/**
- * What the getting started checklist lists, done or not: every step that
- * applies bar the ones that are nothing to do (a review, the summary) and the
- * steps that are optional by nature, so leaving one of those alone stops the
- * checklist from asking for it forever. A deferred step stays on the list,
- * still waiting to be picked up.
- */
-export function checklistSteps(ctx: OnboardingContext): OnboardingStep[] {
-  return applicableSteps(ctx).filter((step) => isTodo(step) && !step.optional);
-}
-
-/** The checklist steps still to do — what its badge counts. */
-export function checklistPendingSteps(
-  ctx: OnboardingContext,
-): OnboardingStep[] {
-  return checklistSteps(ctx).filter((step) => !step.isDone(ctx));
 }
 
 /**

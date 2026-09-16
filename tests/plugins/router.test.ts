@@ -618,7 +618,6 @@ describe("scope-gated routes", () => {
     ["/settings/users", ["admin"]],
     ["/settings/tasks", ["admin", "user"]],
     ["/music-quiz", ["admin", "user"]],
-    ["/onboarding", ["admin", "user", "own_sources"]],
     ["/settings/frontend", ["admin", "user", "guest", "own_sources"]],
   ];
 
@@ -641,32 +640,21 @@ describe("scope-gated routes", () => {
   );
 });
 
-describe("routes gated on a predicate", () => {
-  // the wizard takes two kinds of session — the admin setting the server up and
-  // the household member being welcomed into it — and no single scope says so
-  it("turns away a session that is on neither onboarding track", async () => {
-    mocks.store.currentUser = { role: "guest", username: "guest" };
-    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
-
-    await expect(
-      invokeGuard(globalGuard, resolveRoute("/onboarding")),
-    ).resolves.toEqual({ name: "discover" });
-  });
-
+describe("a gated route waits for the connection", () => {
   it("reads the current user only once the server connection is ready", async () => {
     vi.useFakeTimers();
     mocks.apiState.value = ConnectionState.AUTHENTICATED;
     const pending = trackGuard(
-      invokeGuard(globalGuard, resolveRoute("/onboarding")),
+      invokeGuard(globalGuard, resolveRoute("/settings/users")),
     );
 
-    // the predicate reads the signed-in user, who is not in yet: a guard that
-    // checked it now would send a member straight back to discover
+    // a scope-gated route reads the signed-in user, who is not in yet: a guard
+    // that checked it now would send an admin straight back to discover
     await vi.advanceTimersByTimeAsync(10_000);
     expect(pending.isSettled()).toBe(false);
 
-    mocks.store.currentUser = { role: "user", username: "sam" };
-    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    mocks.store.currentUser = { role: "admin", username: "admin" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     mocks.apiState.value = ConnectionState.INITIALIZED;
 
     await expect(pending.result).resolves.toBeUndefined();

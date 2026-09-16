@@ -6,12 +6,14 @@
     <Footer v-if="!store.frameless" />
   </v-app>
   <reload-prompt />
+  <OnboardingDialog />
 </template>
 
 <script lang="ts" setup>
 import MainView from "./View.vue";
 import Footer from "./Footer.vue";
 import ReloadPrompt from "./ReloadPrompt.vue";
+import OnboardingDialog from "@/components/onboarding/OnboardingDialog.vue";
 import { store } from "@/plugins/store";
 import { watch } from "vue";
 import api from "@/plugins/api";
