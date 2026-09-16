@@ -33,12 +33,22 @@ const {
     providers: {} as Record<string, { name: string }>,
     providerManifests: {} as Record<string, { builtin: boolean }>,
     getAllUsers: vi.fn(),
+    configureRemoteAccess: vi.fn(),
     getCoreConfig: vi.fn(),
     getProviderConfigs: vi.fn(),
+    getRemoteAccessInfo: vi.fn(),
+    getStreamServerInfo: vi.fn(),
     saveCoreConfig: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
     sendCommand: vi.fn(),
-    serverInfo: { value: { onboard_done: false } },
+    serverInfo: {
+      value: {
+        onboard_done: false,
+        server_id: "server-1",
+        internal_url: "http://192.168.1.10:8095",
+        has_remote_access: false,
+      },
+    },
   },
   authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
   // the settings form as the server settings step drives it: what it is holding
@@ -298,6 +308,12 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     });
     apiMock.saveCoreConfig.mockReset();
     apiMock.saveCoreConfig.mockResolvedValue(undefined);
+    apiMock.getStreamServerInfo.mockReset();
+    apiMock.getStreamServerInfo.mockResolvedValue({
+      base_url: "http://192.168.1.10:8097",
+    });
+    apiMock.getRemoteAccessInfo.mockReset();
+    apiMock.configureRemoteAccess.mockReset();
     apiMock.sendCommand.mockReset();
     apiMock.subscribe.mockClear();
     authMock.hasScope.mockImplementation(

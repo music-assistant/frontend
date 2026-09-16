@@ -2570,7 +2570,38 @@
             },
             "core_settings": {
                 "title": "Check your server settings",
-                "description": "The name this server goes by, the address it is reached on at home, and the address to use from outside your home.",
+                "description": "The addresses Music Assistant is using right now. They are worked out automatically and are normally right, so you can simply move on.",
+                "internal_address": "Internal address",
+                "internal_address_hint": "Where the apps and devices in your home reach Music Assistant.",
+                "stream_address": "Stream server address",
+                "stream_address_hint": "Where your players fetch the audio from.",
+                "address_unknown": "Not available",
+                "check": {
+                    "checking": "Checking...",
+                    "reachable": "Reachable from this device",
+                    "unreachable": "Not reachable from this device",
+                    "unchecked": "Could not check from this page"
+                },
+                "unreachable_hint": "Other devices in your home may not reach it either. If playback fails, set the address under the advanced settings.",
+                "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {webserver} and Settings › {streams}.",
+                "remote": {
+                    "title": "Listen from outside your home",
+                    "description": "Two ways to reach Music Assistant when you are away. Both can also be set up later.",
+                    "builtin": {
+                        "title": "Music Assistant remote access",
+                        "easiest": "Easiest",
+                        "description": "Secure and encrypted, with no port forwarding or VPN. Turn it on and connect from anywhere with your remote access ID.",
+                        "switch": "Remote access",
+                        "id": "Your remote access ID",
+                        "copy": "Copy the remote access ID",
+                        "hint": "Use it in the Music Assistant app or at app.music-assistant.io. The QR code is under Settings › {remote_access}."
+                    },
+                    "proxy": {
+                        "title": "Your own reverse proxy",
+                        "description": "Run a reverse proxy in front of the server and enter the address it is reached on from outside as the external address.",
+                        "set_external": "Set the external address"
+                    }
+                },
                 "load_failed": "The server settings could not be loaded. You can change them later from the settings."
             },
             "invite_members": {
