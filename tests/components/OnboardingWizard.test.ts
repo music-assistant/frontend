@@ -69,7 +69,7 @@ const {
   // what the server hands back as the provider configurations
   providerConfigs: { list: [] as Record<string, unknown>[] },
   // replaced with a reactive route by the vue-router mock factory below; the
-  // wizard no longer reads it, but the tour and what's-here steps use the router
+  // wizard no longer reads it, but the tour step uses the router
   routeState: { route: { query: {} as Record<string, string> }, ready: false },
   routerMock: { push: vi.fn(), replace: vi.fn() },
   setUserPreferenceMock: vi.fn(),
@@ -95,9 +95,9 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("vue-sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 vi.mock("vue-router", async () => {
-  // the wizard does not sync the route, but the tour and what's-here steps ask
-  // for the router; every test loads a fresh wizard, which runs this factory
-  // again, so hand out the same route
+  // the wizard does not sync the route, but the tour step asks for the router;
+  // every test loads a fresh wizard, which runs this factory again, so hand out
+  // the same route
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   if (!routeState.ready) {
     routeState.route = reactive({ query: {} as Record<string, string> });
@@ -182,7 +182,7 @@ vi.mock("@/composables/userPreferences", async () => {
 });
 
 // The wizard pulls its whole step graph in behind it: the provider listings,
-// the welcome's cards, the players of what is here and the tour. Every test
+// the welcome's cards, the players and music that are here and the tour. Every test
 // mounts it on a fresh module registry, so the transform of all that is paid
 // at module scope, where no test or hook clock runs, instead of by whichever
 // test happens to mount first.
@@ -260,6 +260,13 @@ function signInAsMember(scopes: readonly Scope[] = MEMBER_WITHOUT_OWN_SCOPES) {
 
 function heading(wrapper: Awaited<ReturnType<typeof mountWizard>>) {
   return wrapper.find("[data-testid=onboarding-heading]").text();
+}
+
+/** The welcome answers written to the account, in the order they went out. */
+function personaAnswers(): string[] {
+  return setUserPreferencesMock.mock.calls
+    .map(([values]) => values["onboarding.persona"])
+    .filter((answer) => answer != null);
 }
 
 /** Tell the wizard the server reported a provider change. */
@@ -901,11 +908,16 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         .trigger("click");
       await flushPromises();
 
-      // answering moves them on, and from there it is all looking around
-      expect(heading(wrapper)).toBe("onboarding.steps.whats_here.title");
+      // answering moves them on, and from there it is all looking around: the
+      // players, the music, then the tour, one short step at a time
+      expect(heading(wrapper)).toBe("onboarding.steps.your_players.title");
       expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
         "onboarding.next",
       );
+
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.your_music.title");
 
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
@@ -915,11 +927,14 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.all_set.title");
 
-      // the summary looks back at the one thing the welcome asked
+      // the summary looks back at the one thing the welcome asked, and the
+      // answer they gave is the only one written: moving on never waved the
+      // recommended one in over it
       expect(wrapper.text()).toContain("onboarding.what_you_picked");
       expect(wrapper.text()).toContain(
         "onboarding.steps.welcome.enthusiast.label",
       );
+      expect(personaAnswers()).toEqual(["enthusiast"]);
       expect(wrapper.find("[data-testid=onboarding-next]").exists()).toBe(
         false,
       );
@@ -935,12 +950,16 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     });
 
     it("keeps Next from advancing while the welcome answer is saving", async () => {
-      // hold the persona answer mid-flight so the chosen card stays busy
+      // hold the persona answer mid-flight so the chosen card stays busy; the
+      // real write has the answer on the account by the time it says it landed
       let landPersona: () => void = () => {};
       setUserPreferencesMock.mockImplementationOnce(
-        () =>
+        (values: Record<string, string>) =>
           new Promise<boolean>((resolve) => {
-            landPersona = () => resolve(true);
+            landPersona = () => {
+              preferenceState.persona.value = values["onboarding.persona"];
+              resolve(true);
+            };
           }),
       );
 
@@ -952,15 +971,51 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         .trigger("click");
       await flushPromises();
 
-      // a Next while the answer is saving does not move the member on
+      // a Next while the answer is saving neither moves the member on nor
+      // waves the recommended answer in over the one on its way
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.welcome.title");
+      expect(personaAnswers()).toEqual(["enthusiast"]);
 
       // once it lands, the choice moves them on one step
       landPersona();
       await flushPromises();
-      expect(heading(wrapper)).toBe("onboarding.steps.whats_here.title");
+      expect(heading(wrapper)).toBe("onboarding.steps.your_players.title");
+      expect(personaAnswers()).toEqual(["enthusiast"]);
+
+      wrapper.unmount();
+    });
+
+    it("answers the welcome with the recommended choice when it is waved through", async () => {
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+
+      // the recommended answer is persisted with the defaults it stands for, so
+      // a second run starts past the question, and it moves exactly one step
+      expect(setUserPreferencesMock).toHaveBeenCalledWith(
+        {
+          "onboarding.persona": "regular",
+          show_waveform: false,
+          visualizer_enabled: false,
+        },
+        { suppressGlobalError: true },
+      );
+      expect(heading(wrapper)).toBe("onboarding.steps.your_players.title");
+
+      // and the summary looks back at it like any answer the member gave
+      for (const title of ["your_music", "tour", "all_set"]) {
+        await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+        await flushPromises();
+        expect(heading(wrapper)).toBe(`onboarding.steps.${title}.title`);
+      }
+      expect(wrapper.text()).toContain("onboarding.what_you_picked");
+      expect(wrapper.text()).toContain(
+        "onboarding.steps.welcome.regular.label",
+      );
 
       wrapper.unmount();
     });

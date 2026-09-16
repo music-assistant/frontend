@@ -23,7 +23,8 @@ export type OnboardingStepId =
   | "finish"
   // the member track: being welcomed into a server someone else set up
   | "welcome"
-  | "whats_here"
+  | "your_players"
+  | "your_music"
   | "own_sources"
   | "tour"
   | "all_set";
@@ -34,17 +35,28 @@ export type OnboardingIntent = "phone_apps" | "music_hub";
 export type OnboardingPersona = "enthusiast" | "regular";
 
 /**
- * The preferences a persona seeds. Nothing reads the persona itself: the
- * answer only decides what these are set to, once, and every one of them stays
- * a setting the member can change afterwards.
+ * The settings that make up the detailed experience: everything the player
+ * can show on top of playing the music. A short list for now, with room to
+ * grow; a setting added here is seeded by the welcome from then on.
  */
-export const PERSONA_DEFAULTS: Readonly<
-  Record<OnboardingPersona, Readonly<Record<string, boolean>>>
-> = {
+export const DETAIL_SETTINGS: readonly string[] = [
   // the waveform progress bar and the background visualizer of the full player
-  enthusiast: { show_waveform: true, visualizer_enabled: true },
-  regular: { show_waveform: false, visualizer_enabled: false },
-};
+  "show_waveform",
+  "visualizer_enabled",
+];
+
+/**
+ * The preferences a persona seeds: every detail setting on for whoever asked
+ * to see everything, off for whoever asked to keep it simple. Nothing reads the
+ * persona itself: the answer only decides what these are set to, once, and
+ * every one of them stays a setting the member can change afterwards.
+ */
+export function personaDefaults(
+  persona: OnboardingPersona,
+): Record<string, boolean> {
+  const enabled = persona === "enthusiast";
+  return Object.fromEntries(DETAIL_SETTINGS.map((key) => [key, enabled]));
+}
 
 /** A configured provider, reduced to what the steps need. */
 export interface OnboardingProvider {
@@ -191,8 +203,16 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     // they have already been put in front of and walked away from.
     isDone: (ctx) => ctx.answers.persona != null || ctx.welcomed,
   },
+  // what is here for them, one short look at a time: the players first, then
+  // the music, so the invitation to add music of their own follows straight on
   {
-    id: "whats_here",
+    id: "your_players",
+    kind: "review",
+    appliesTo: onMemberTrack,
+    isDone: () => false,
+  },
+  {
+    id: "your_music",
     kind: "review",
     appliesTo: onMemberTrack,
     isDone: () => false,

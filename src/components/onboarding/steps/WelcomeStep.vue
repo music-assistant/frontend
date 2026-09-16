@@ -55,7 +55,7 @@ const name = computed(() =>
   store.currentUser ? userDisplayName(store.currentUser) : "",
 );
 
-const options = [
+const options: ChoiceCardOption<OnboardingPersona>[] = [
   {
     value: "enthusiast",
     icon: markRaw(AudioLines),
@@ -67,8 +67,12 @@ const options = [
     icon: markRaw(Play),
     labelKey: "onboarding.steps.welcome.regular.label",
     descriptionKey: "onboarding.steps.welcome.regular.description",
+    recommended: true,
   },
-] satisfies ChoiceCardOption<OnboardingPersona>[];
+];
+
+// what moving on unanswered answers with: the option shown as chosen all along
+const recommended = options.find((option) => option.recommended)!.value;
 
 // the answer is persisted on the server, so the cards stay inert until it lands
 const busy = ref(false);
@@ -97,13 +101,17 @@ const select = async function (value: OnboardingPersona) {
 };
 
 /**
- * The wizard asking whether it may move on. Next while the answer is still on
+ * The wizard asking whether it may move on. Next while an answer is still on
  * its way waits for it here, so the member is not walked onto the next step by
- * an answer the account never took — and is told about it on the step that
- * asked. Nothing on its way is nothing to hold the wizard up.
+ * an answer the account never took, and is told about it on the step that
+ * asked. Moving on without an answer takes the recommended one, which the
+ * cards were showing as chosen, and holds the wizard the same way when that
+ * did not land. An answer already on the account is left alone.
  */
 const beforeLeave = async function (): Promise<boolean> {
-  return (await pendingSave) ?? true;
+  if (pendingSave) return await pendingSave;
+  if (persona.value == null) return await save(recommended);
+  return true;
 };
 
 defineExpose({ beforeLeave, busy });

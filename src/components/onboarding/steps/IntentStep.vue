@@ -41,7 +41,7 @@ const emit = defineEmits<{
 
 const { intent, setIntent } = useOnboarding();
 
-const options = [
+const options: ChoiceCardOption<OnboardingIntent>[] = [
   {
     value: "music_hub",
     icon: markRaw(Library),
@@ -55,7 +55,10 @@ const options = [
     labelKey: "onboarding.steps.intent.phone_apps.label",
     descriptionKey: "onboarding.steps.intent.phone_apps.description",
   },
-] satisfies ChoiceCardOption<OnboardingIntent>[];
+];
+
+// what moving on unanswered answers with: the option shown as chosen all along
+const recommended = options.find((option) => option.recommended)!.value;
 
 // the answer is persisted on the server, so the cards stay inert until it lands
 const busy = ref(false);
@@ -71,6 +74,17 @@ const select = async function (value: OnboardingIntent) {
   emit("advance");
 };
 
-// the wizard reads this to keep its Next from advancing while a card is saving
-defineExpose({ busy });
+/**
+ * The wizard asking whether it may move on. Moving on from the question
+ * unanswered is an answer of its own: the recommended option, which the cards
+ * were showing as chosen, is what the wizard runs as from here, instead of
+ * leaving the question to be asked again.
+ */
+const beforeLeave = async function (): Promise<boolean> {
+  if (intent.value == null) await setIntent(recommended);
+  return true;
+};
+
+// the wizard reads `busy` to keep its Next from advancing while a card is saving
+defineExpose({ beforeLeave, busy });
 </script>

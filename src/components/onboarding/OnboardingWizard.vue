@@ -86,7 +86,8 @@ import OwnSourcesStep from "@/components/onboarding/steps/OwnSourcesStep.vue";
 import ProvidersStep from "@/components/onboarding/steps/ProvidersStep.vue";
 import TourStep from "@/components/onboarding/steps/TourStep.vue";
 import WelcomeStep from "@/components/onboarding/steps/WelcomeStep.vue";
-import WhatsHereStep from "@/components/onboarding/steps/WhatsHereStep.vue";
+import YourMusicStep from "@/components/onboarding/steps/YourMusicStep.vue";
+import YourPlayersStep from "@/components/onboarding/steps/YourPlayersStep.vue";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useOnboarding } from "@/composables/useOnboarding";
@@ -112,7 +113,6 @@ const {
   loadOnboardingData,
   loadProviderConfigs,
   markWelcomed,
-  setIntent,
   finish,
 } = useOnboarding();
 
@@ -137,7 +137,8 @@ const STEP_VIEWS: Record<
   invite_members: { component: markRaw(InviteMembersStep) },
   finish: { component: markRaw(FinishStep), props: { stepId: "finish" } },
   welcome: { component: markRaw(WelcomeStep) },
-  whats_here: { component: markRaw(WhatsHereStep) },
+  your_players: { component: markRaw(YourPlayersStep) },
+  your_music: { component: markRaw(YourMusicStep) },
   own_sources: { component: markRaw(OwnSourcesStep) },
   tour: { component: markRaw(TourStep) },
   // the same summary, told as the end of the welcome instead of the setup
@@ -251,9 +252,8 @@ const jumpTo = async function (id: OnboardingStepId) {
 
 // Next moves one step along the visible order and no further: a step that is
 // already done is walked through, not skipped over, so the running order the
-// user sees is the order they move through. Moving on from the intent question
-// unanswered is an answer of its own — the music hub is what the wizard then
-// runs as, instead of leaving the question to be asked again.
+// user sees is the order they move through. A question walked past answers
+// itself with its recommended option, which the step does on its way out.
 const next = async function () {
   // a choice being saved on the step owns the move: standing aside keeps Next
   // from advancing a second step or waving a default over the answer
@@ -261,12 +261,6 @@ const next = async function () {
   moving.value = true;
   try {
     if (!(await leaveStep())) return;
-    if (
-      currentStep.value?.id === "intent" &&
-      ctx.value.answers.intent == null
-    ) {
-      await setIntent("music_hub");
-    }
     const following = steps.value[currentIndex.value + 1];
     if (following) goTo(following.id);
   } finally {

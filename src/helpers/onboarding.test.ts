@@ -1,10 +1,11 @@
 import {
+  DETAIL_SETTINGS,
   ONBOARDING_STEPS,
-  PERSONA_DEFAULTS,
   applicableSteps,
   firstStep,
   orderSteps,
   pendingSteps,
+  personaDefaults,
   type OnboardingContext,
   type OnboardingProvider,
 } from "@/helpers/onboarding";
@@ -21,7 +22,13 @@ const BASE_ORDER = [
   "finish",
 ] as const;
 
-const MEMBER_ORDER = ["welcome", "whats_here", "tour", "all_set"] as const;
+const MEMBER_ORDER = [
+  "welcome",
+  "your_players",
+  "your_music",
+  "tour",
+  "all_set",
+] as const;
 
 function provider(
   type: ProviderType,
@@ -112,12 +119,13 @@ describe("onboarding step order", () => {
     );
     expect(registered?.optional).toBeUndefined();
     expect(registered?.deferred).toBeUndefined();
-    // the registry carries the own-sources step between what's here and the
+    // the registry carries the own-sources step between the music and the
     // tour, whether or not a given member is offered it
     expect(stepIds([...ONBOARDING_STEPS])).toEqual([
       ...BASE_ORDER,
       "welcome",
-      "whats_here",
+      "your_players",
+      "your_music",
       "own_sources",
       "tour",
       "all_set",
@@ -374,7 +382,7 @@ describe("the member track", () => {
     expect(stepIds(pendingSteps(ctx))).toEqual(["welcome"]);
     // the rest is there to be looked at: a review is never something to do,
     // and neither is the summary that rounds the welcome off
-    for (const id of ["whats_here", "tour"]) {
+    for (const id of ["your_players", "your_music", "tour"]) {
       expect(step(ctx, id).kind).toBe("review");
       expect(step(ctx, id).isDone(ctx)).toBe(false);
     }
@@ -469,10 +477,11 @@ describe("the own-sources invitation", () => {
     ).toBe(true);
   });
 
-  it("runs after what's here and before the tour", () => {
+  it("runs after the music that is here and before the tour", () => {
     expect(stepIds(applicableSteps(ownMemberContext()))).toEqual([
       "welcome",
-      "whats_here",
+      "your_players",
+      "your_music",
       "own_sources",
       "tour",
       "all_set",
@@ -491,23 +500,22 @@ describe("the own-sources invitation", () => {
 
 describe("the persona defaults", () => {
   it.each(["enthusiast", "regular"] as const)(
-    "seeds what the %s asked for",
+    "seeds every detail setting for the %s",
     (persona) => {
       // both answers write the same settings, so choosing again always lands
       // on a complete set rather than on half of the last one
-      expect(Object.keys(PERSONA_DEFAULTS[persona]).sort()).toEqual([
-        "show_waveform",
-        "visualizer_enabled",
-      ]);
+      expect(Object.keys(personaDefaults(persona)).sort()).toEqual(
+        [...DETAIL_SETTINGS].sort(),
+      );
     },
   );
 
-  it("shows the player off to whoever asked for the details", () => {
-    expect(PERSONA_DEFAULTS.enthusiast).toEqual({
+  it("switches the details on for whoever asked to see everything", () => {
+    expect(personaDefaults("enthusiast")).toEqual({
       show_waveform: true,
       visualizer_enabled: true,
     });
-    expect(PERSONA_DEFAULTS.regular).toEqual({
+    expect(personaDefaults("regular")).toEqual({
       show_waveform: false,
       visualizer_enabled: false,
     });

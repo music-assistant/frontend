@@ -288,7 +288,8 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     // the welcome instead of the setup: none of the admin track is theirs
     expect(steps.value.map((step) => step.id)).toEqual([
       "welcome",
-      "whats_here",
+      "your_players",
+      "your_music",
       "tour",
       "all_set",
     ]);
@@ -672,7 +673,8 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     ];
     const MEMBER_STEPS = [
       "welcome",
-      "whats_here",
+      "your_players",
+      "your_music",
       "own_sources",
       "tour",
       "all_set",
@@ -680,7 +682,8 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     // a member whose role may not add its own sources skips the own-sources step
     const MEMBER_STEPS_WITHOUT_OWN = [
       "welcome",
-      "whats_here",
+      "your_players",
+      "your_music",
       "tour",
       "all_set",
     ];

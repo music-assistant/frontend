@@ -5,8 +5,8 @@ import {
 } from "@/composables/userPreferences";
 import {
   applicableSteps,
-  PERSONA_DEFAULTS,
   pendingSteps,
+  personaDefaults,
   type OnboardingContext,
   type OnboardingIntent,
   type OnboardingPersona,
@@ -286,7 +286,7 @@ async function setPersona(value: OnboardingPersona): Promise<boolean> {
   return await setUserPreferences(
     {
       [ONBOARDING_PERSONA_PREFERENCE]: value,
-      ...PERSONA_DEFAULTS[value],
+      ...personaDefaults(value),
     },
     { suppressGlobalError: true },
   );

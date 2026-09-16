@@ -262,11 +262,62 @@ describe("WelcomeStep", () => {
     wrapper.unmount();
   });
 
-  it("holds the wizard up over nothing", async () => {
+  it("shows the recommended answer as chosen before the member picks", async () => {
     const wrapper = await mountStep();
 
-    // the question is theirs to walk past
+    // the recommended option reads as chosen, and is the only one badged, while
+    // nothing is written until the member picks or moves on
+    expect(card(wrapper, "regular").attributes("aria-pressed")).toBe("true");
+    expect(card(wrapper, "enthusiast").attributes("aria-pressed")).toBe(
+      "false",
+    );
+    expect(card(wrapper, "regular").text()).toContain("recommended");
+    expect(card(wrapper, "enthusiast").text()).not.toContain("recommended");
+    expect(setUserPreferencesMock).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
+  it("walks on with the recommended answer when none was given", async () => {
+    const wrapper = await mountStep();
+
+    // the card that was showing as chosen is what moving on answers with, so
+    // the account holds the defaults it stands for, like any other answer
     await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
+    expect(setUserPreferencesMock).toHaveBeenCalledWith(
+      {
+        "onboarding.persona": "regular",
+        show_waveform: false,
+        visualizer_enabled: false,
+      },
+      { suppressGlobalError: true },
+    );
+
+    wrapper.unmount();
+  });
+
+  it("stays put when the recommended answer could not be saved", async () => {
+    setUserPreferencesMock.mockResolvedValue(false);
+
+    const wrapper = await mountStep();
+
+    // told on the step that asked, the same as for an answer they clicked
+    await expect(wrapper.vm.beforeLeave()).resolves.toBe(false);
+    expect(toastMock.error).toHaveBeenCalledWith(
+      "onboarding.steps.welcome.save_failed",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("leaves an answer already on the account alone", async () => {
+    preferenceState.persona.value = "enthusiast";
+
+    const wrapper = await mountStep();
+
+    // coming back through the welcome is not answering it again
+    await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
+    expect(setUserPreferencesMock).not.toHaveBeenCalled();
 
     wrapper.unmount();
   });
