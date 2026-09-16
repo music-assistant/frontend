@@ -35,11 +35,14 @@ const {
     getAllUsers: vi.fn(),
     configureRemoteAccess: vi.fn(),
     getCoreConfig: vi.fn(),
+    getPlayerConfig: vi.fn(),
+    getPlayerConfigs: vi.fn(),
     getProviderConfigs: vi.fn(),
     getRemoteAccessInfo: vi.fn(),
     getStreamServerInfo: vi.fn(),
     saveCoreConfig: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
+    subscribe_multi: vi.fn(() => vi.fn()),
     sendCommand: vi.fn(),
     serverInfo: {
       value: {
@@ -110,6 +113,13 @@ vi.mock("vue-router", async () => {
 // have to be reachable
 vi.mock("@/views/settings/AddProviderDialog.vue", () => ({
   default: { template: "<div />" },
+}));
+
+// the player actions are covered where they live, and pulling them in would
+// drag the player menus and everything behind them into this mount
+vi.mock("@/helpers/player_settings_actions", () => ({
+  renamePlayer: vi.fn(),
+  setPlayerEnabled: vi.fn(),
 }));
 
 vi.mock("@/components/users/CreateUserDialog.vue", () => ({
@@ -298,6 +308,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     apiMock.getProviderConfigs.mockImplementation(async () => [
       ...providerConfigs.list,
     ]);
+    apiMock.getPlayerConfigs.mockReset();
+    apiMock.getPlayerConfigs.mockResolvedValue([]);
+    apiMock.getPlayerConfig.mockReset();
     apiMock.getAllUsers.mockReset();
     apiMock.getAllUsers.mockImplementation(async () => [...users.list]);
     apiMock.getCoreConfig.mockReset();

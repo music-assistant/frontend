@@ -100,9 +100,13 @@ vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
 
+vi.mock("@/helpers/player_config", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/player_config")>()),
+  getPlayerName: (config: PlayerConfig) => config.name ?? config.default_name,
+}));
+
 // the shared menu is covered where it is built
 vi.mock("@/helpers/player_settings_actions", () => ({
-  getPlayerName: (config: PlayerConfig) => config.name ?? config.default_name,
   getPlayerSettingsMenuItems,
 }));
 
@@ -463,6 +467,7 @@ function playerConfig({
     enabled,
     name: "Kitchen",
     default_name: "Chromecast",
+    player_type: PlayerType.PLAYER,
     values: {
       volume_normalization: {
         key: "volume_normalization",

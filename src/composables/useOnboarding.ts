@@ -22,17 +22,23 @@ import {
   ownedMusicSourceCount,
   userDisplayName,
 } from "@/helpers/provider_access";
+import { getPlayerName } from "@/helpers/player_config";
 import {
   isBuiltinProvider,
   providerDisplayName,
 } from "@/helpers/provider_config";
 import { isSystemUser } from "@/helpers/users";
+import { isHiddenSendspinWebPlayer } from "@/helpers/utils";
 import { api, type CommandOptions } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
   EventType,
+  PlayerType,
   Scope,
   UserRole,
+  type EventMessage,
+  type Player,
+  type PlayerConfig,
   type ProviderConfig,
   type ProviderType,
   type User,
@@ -50,6 +56,25 @@ export interface ConfiguredProvider {
   domain: string;
   // set up, but not doing anything: switched off or failed to load
   needsAttention: boolean;
+}
+
+/** A player the wizard lists, built from its configuration and live state. */
+export interface DiscoveredPlayer {
+  player_id: string;
+  // the name the player goes by, custom or as its provider reports it
+  name: string;
+  // the name the user gave it, if any
+  customName: string | null;
+  // where it came from, as the user would say it: its provider, or the
+  // protocols a player of a builtin provider plays through
+  providerLabel: string;
+  enabled: boolean;
+  // reachable right now; a player that is switched off never is
+  available: boolean;
+  needsSetup: boolean;
+  icon: string | null;
+  // switching it on or off takes its provider, which has to be running
+  canToggle: boolean;
 }
 
 /** A household member the wizard lists, built from their user account. */
@@ -81,10 +106,20 @@ const usersAnswered = ref(false);
 /** Whether everything the steps decide from has answered. */
 const dataLoaded = computed(() => configsLoaded.value && usersAnswered.value);
 
+/**
+ * The player configurations, the same list the players settings page works
+ * from: a player that is switched off is unregistered and so nowhere to be
+ * seen in `api.players`, yet it is the wizard's to switch back on. `null`
+ * until the first load lands.
+ */
+const playerConfigs = ref<PlayerConfig[] | null>(null);
+
 // the load in flight, so overlapping callers share the one request
 let loadingConfigs: Promise<void> | null = null;
 // the same for the users, which only the wizard ever asks for
 let loadingUsers: Promise<void> | null = null;
+// and for the players
+let loadingPlayers: Promise<void> | null = null;
 // the session's subscription: this state has no component to outlive, so it is
 // taken out once, on the first call, and kept for as long as the app runs
 let unsubProvidersUpdated: (() => void) | undefined;
@@ -153,13 +188,114 @@ async function loadUsers(): Promise<void> {
   await loadingUsers;
 }
 
+async function fetchPlayerConfigs(): Promise<void> {
+  // whoever may not read the player configurations is answered with the empty
+  // list they can see, instead of a request that only fails at them
+  if (!authManager.hasScope(Scope.CONFIG_PLAYERS_READ)) {
+    playerConfigs.value = [];
+    return;
+  }
+  try {
+    // every player that registered, and the switched-off ones on top: those
+    // are unregistered, and this is where they are switched back on
+    playerConfigs.value = await api.getPlayerConfigs(
+      undefined,
+      false,
+      false,
+      true,
+    );
+  } catch (error) {
+    // the api already told the user
+    console.warn("Failed to load the player configurations:", error);
+  }
+}
+
+/** Load the player configurations, sharing the request between callers. */
+async function loadPlayerConfigs(): Promise<void> {
+  loadingPlayers ??= fetchPlayerConfigs().finally(() => {
+    loadingPlayers = null;
+  });
+  await loadingPlayers;
+}
+
 /**
- * Load everything the admin wizard decides from: the provider configurations
- * and the household. The member welcome asks for the provider configurations on
- * its own when it needs them, so it never waits on the users.
+ * Load everything the admin wizard decides from: the provider configurations,
+ * the players and the household. The member welcome asks for the provider
+ * configurations on its own when it needs them, so it never waits on the rest.
  */
 async function loadOnboardingData(): Promise<void> {
-  await Promise.all([loadProviderConfigs(), loadUsers()]);
+  await Promise.all([loadProviderConfigs(), loadPlayerConfigs(), loadUsers()]);
+}
+
+function findPlayerConfig(playerId: string): PlayerConfig | undefined {
+  return playerConfigs.value?.find((config) => config.player_id === playerId);
+}
+
+function upsertPlayerConfig(config: PlayerConfig): void {
+  // nothing to keep up to date before the first load lands, which is the
+  // latest state anyway
+  if (playerConfigs.value === null) return;
+  const index = playerConfigs.value.findIndex(
+    (known) => known.player_id === config.player_id,
+  );
+  if (index === -1) playerConfigs.value.push(config);
+  else playerConfigs.value[index] = config;
+}
+
+function removePlayerConfig(config: PlayerConfig): void {
+  playerConfigs.value =
+    playerConfigs.value?.filter((known) => known !== config) ?? null;
+}
+
+async function fetchPlayerConfig(playerId: string): Promise<void> {
+  try {
+    const config = await api.getPlayerConfig(playerId);
+    // unless it turned up by another route in the meantime
+    if (!findPlayerConfig(playerId)) upsertPlayerConfig(config);
+  } catch (error) {
+    // the api already told the user
+    console.warn("Failed to load the player configuration:", error);
+  }
+}
+
+function onPlayerEvent(evt: EventMessage): void {
+  if (evt.event === EventType.PLAYER_CONFIG_UPDATED) {
+    upsertPlayerConfig(evt.data as PlayerConfig);
+  } else if (evt.event === EventType.PLAYER_ADDED) {
+    // a player seen before only came back, and what it is listed by has not
+    // changed; a new one has a configuration of its own to fetch, unless it is
+    // one output of another player, which is configured as part of that one
+    const player = evt.data as Player;
+    if (
+      playerConfigs.value !== null &&
+      player.type !== PlayerType.PROTOCOL &&
+      !findPlayerConfig(player.player_id)
+    ) {
+      void fetchPlayerConfig(player.player_id);
+    }
+  } else if (evt.event === EventType.PLAYER_REMOVED) {
+    // a switched-off player is unregistered but keeps its configuration, which
+    // is what the wizard lists it by; one that was switched on is gone
+    const config = evt.object_id ? findPlayerConfig(evt.object_id) : undefined;
+    if (config?.enabled) removePlayerConfig(config);
+  }
+}
+
+/**
+ * Keep the players up to date while the wizard is open, and hand back what
+ * stops it. Only the wizard follows them: a session that is done onboarding
+ * has no business fetching a configuration for every player that turns up.
+ */
+function followPlayers(): () => void {
+  if (!authManager.hasScope(Scope.CONFIG_PLAYERS_READ)) return () => {};
+  return api.subscribe_multi(
+    [
+      EventType.PLAYER_CONFIG_UPDATED,
+      EventType.PLAYER_ADDED,
+      EventType.PLAYER_REMOVED,
+    ],
+    onPlayerEvent,
+  );
 }
 
 /** The providers of one type the user configured themselves. */
@@ -181,6 +317,62 @@ export function configuredProviders(type: ProviderType): ConfiguredProvider[] {
       domain: config.domain,
       needsAttention: config.enabled === false || config.last_error != null,
     }));
+}
+
+/**
+ * Where a player came from, as the user would say it. A builtin provider is
+ * the server's own machinery rather than a place a player came from: a player
+ * of one plays through protocols such as AirPlay or Chromecast, and those are
+ * what it is labelled with.
+ */
+function playerProviderLabel(config: PlayerConfig, player?: Player): string {
+  const instance = api.providers[config.provider];
+  const domain = instance?.domain ?? config.provider.split("--")[0];
+  const manifest = api.providerManifests[domain];
+  if (manifest && !isBuiltinProvider(manifest)) {
+    return instance?.name || manifest.name;
+  }
+  const protocols = new Set(
+    (player?.output_protocols ?? [])
+      .filter((protocol) => !protocol.is_native)
+      .map(
+        (protocol) =>
+          api.providerManifests[protocol.protocol_domain]?.name ||
+          protocol.name,
+      ),
+  );
+  if (protocols.size > 0) return [...protocols].join(", ");
+  return instance?.name || manifest?.name || domain;
+}
+
+/**
+ * The players found so far, switched-off ones included, by name. A protocol
+ * player is one output of another player and is set up as part of it, so it
+ * is not listed on its own; and the web players this app spawns come and go
+ * with every browser tab, so one that is not around is nothing anyone set up.
+ */
+export function discoveredPlayers(): DiscoveredPlayer[] {
+  return (playerConfigs.value ?? [])
+    .filter(
+      (config) =>
+        config.player_type !== PlayerType.PROTOCOL &&
+        !isHiddenSendspinWebPlayer(config),
+    )
+    .map((config) => {
+      const player = api.players[config.player_id];
+      return {
+        player_id: config.player_id,
+        name: getPlayerName(config),
+        customName: config.name,
+        providerLabel: playerProviderLabel(config, player),
+        enabled: config.enabled,
+        available: player?.available ?? false,
+        needsSetup: player?.needs_setup ?? false,
+        icon: player?.icon ?? null,
+        canToggle: config.provider in api.providers,
+      };
+    })
+    .sort((one, other) => one.name.localeCompare(other.name));
 }
 
 /**
@@ -244,9 +436,10 @@ const ctx = computed<OnboardingContext>(() => ({
     builtin: isBuiltinProvider(api.providerManifests[config.domain]),
     enabled: config.enabled,
   })),
-  // only the summary's "2 players" label reads this; whether the players step
-  // is done keys off a configured PLAYER provider, not off players turning up
-  playerCount: Object.keys(api.players).length,
+  // the players switched on, as the players step lists them; only the
+  // summary's "2 players" label reads this, as whether the step is done keys
+  // off a configured PLAYER provider, not off players turning up
+  playerCount: discoveredPlayers().filter((player) => player.enabled).length,
   // `null` while the users are unknown, which is not the same as an empty
   // household: the invite step is then simply not done
   memberCount: users.value == null ? null : householdMembers().length,
@@ -419,6 +612,8 @@ export function useOnboarding() {
     ownedMusicSources,
     // what a step that has just added a member asks for the users again with
     loadUsers,
+    // what the wizard keeps the players up to date with while it is open
+    followPlayers,
     finish,
   };
 }

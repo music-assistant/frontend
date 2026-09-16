@@ -6,11 +6,11 @@ import {
   ProviderType,
   Scope,
   type Player,
-  type PlayerConfig,
   type PlayerOption,
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { playerConfig } from "../fixtures/playerConfig";
 import { providerManifest } from "../fixtures/providerManifest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
@@ -393,18 +393,6 @@ function player(overrides: Partial<Player> = {}): Player {
     options: [{ key: "eq", name: "EQ" } as PlayerOption],
     ...overrides,
   } as Player;
-}
-
-function playerConfig(overrides: Partial<PlayerConfig> = {}): PlayerConfig {
-  return {
-    player_id: "kitchen",
-    provider: "chromecast--1",
-    enabled: true,
-    name: null,
-    default_name: "Chromecast",
-    values: {},
-    ...overrides,
-  };
 }
 
 function providerInstance(

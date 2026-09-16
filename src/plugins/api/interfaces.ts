@@ -887,6 +887,9 @@ export interface PlayerConfig extends Config {
   name: string | null;
   // default_name: default name to use when there is name available
   default_name: string | null;
+  // player_type: what the player is; a protocol player is one output of
+  // another player, configured as part of it
+  player_type: PlayerType;
 }
 
 export interface CoreConfig extends Config {
