@@ -5,7 +5,7 @@ import {
   eventbus,
   type DeleteConfirmationDialogEvent,
 } from "@/plugins/eventbus";
-import { store } from "@/plugins/store";
+import { store as storeModule } from "@/plugins/store";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { genre } from "../fixtures/genre";
@@ -121,6 +121,9 @@ vi.mock("@/components/PanelviewItem.vue", () => stubComponent("PanelviewItem"));
 vi.mock("@/components/PanelviewItemCompact.vue", () =>
   stubComponent("PanelviewItemCompact"),
 );
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & { mobileLayout: boolean };
 
 /**
  * Number of handlers the real eventbus currently holds for the listing's
