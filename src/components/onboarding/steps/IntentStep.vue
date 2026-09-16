@@ -70,6 +70,9 @@ const shown = computed(() => chosen.value ?? intent.value ?? recommended);
 
 // the answer is persisted on the server, so the cards stay inert until it lands
 const busy = ref(false);
+// the answer on its way to the server, which the wizard waits for before it
+// moves off this step
+let pendingSave: Promise<boolean> | null = null;
 
 // whether the answer landed; the api already tells the user when it did not,
 // so the step only has to stay where it is
@@ -79,25 +82,31 @@ const save = async function (value: OnboardingIntent): Promise<boolean> {
     return await setIntent(value);
   } finally {
     busy.value = false;
+    pendingSave = null;
   }
 };
 
 const select = async function (value: OnboardingIntent) {
   if (busy.value) return;
   chosen.value = value;
-  if (await save(value)) emit("advance");
+  pendingSave = save(value);
+  if (await pendingSave) emit("advance");
 };
 
 /**
- * The wizard asking whether it may move on. Moving on writes the answer the
- * cards show as chosen, unless the account already holds it: the recommended
+ * The wizard asking whether it may move on. An answer still on its way is
+ * waited for here, so the wizard never leaves the question on an answer the
+ * account has not taken yet. Otherwise moving on writes the answer the cards
+ * show as chosen, unless the account already holds it: the recommended
  * option for a question walked past, which is an answer of its own, or the
  * pick the account did not take before. An answer that did not land keeps the
  * wizard here, so the question is never left behind unanswered.
  */
 const beforeLeave = async function (): Promise<boolean> {
+  if (pendingSave) return await pendingSave;
   if (shown.value === intent.value) return true;
-  return await save(shown.value);
+  pendingSave = save(shown.value);
+  return await pendingSave;
 };
 
 // the wizard reads `busy` to keep its Next from advancing while a card is saving
