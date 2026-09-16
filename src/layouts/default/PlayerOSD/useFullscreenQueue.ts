@@ -326,7 +326,7 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
 
   onMounted(async () => {
     // Only fetch badge colors if party provider is loaded.
-    if (Object.values(api.providers).some((p) => p.domain === "party")) {
+    if (store.enabledPlugins.has("party")) {
       await fetchPartyConfig();
     }
   });
