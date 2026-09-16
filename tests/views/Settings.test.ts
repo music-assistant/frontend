@@ -18,24 +18,26 @@ import { nextTick, type Component } from "vue";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
-const { apiMock, hasScope, routerPush, routeState } = vi.hoisted(() => ({
-  apiMock: {
-    players: { kitchen: { name: "Kitchen" } },
-    providerManifests: {} as Record<
-      string,
-      Pick<ProviderManifest, "name" | "type">
-    >,
-    getProvider: vi.fn(),
-  },
-  hasScope: vi.fn<(scope: Scope) => boolean>(),
-  routerPush: vi.fn(),
-  // which settings page is open, and on what: the overview is the one carrying
-  // the link back into onboarding
-  routeState: {
-    name: "editplayeroptions",
-    params: { playerId: "kitchen" } as Record<string, string>,
-  },
-}));
+const { apiMock, hasScope, onboardingOpen, routerPush, routeState } =
+  vi.hoisted(() => ({
+    apiMock: {
+      players: { kitchen: { name: "Kitchen" } },
+      providerManifests: {} as Record<
+        string,
+        Pick<ProviderManifest, "name" | "type">
+      >,
+      getProvider: vi.fn(),
+    },
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
+    onboardingOpen: vi.fn(),
+    routerPush: vi.fn(),
+    // which settings page is open, and on what: the overview is the one carrying
+    // the link back into onboarding
+    routeState: {
+      name: "editplayeroptions",
+      params: { playerId: "kitchen" } as Record<string, string>,
+    },
+  }));
 
 // the source behind the instance id in the route, whose generic name the crumb
 // shows until the page below it resolves the name of this instance
@@ -46,6 +48,9 @@ apiMock.providerManifests.spotify = {
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
+vi.mock("@/composables/useOnboarding", () => ({
+  useOnboarding: () => ({ open: onboardingOpen }),
+}));
 // the sections are covered where they are decided
 vi.mock("@/helpers/settings_sections", () => ({
   availableSettingsSections: () => [],
@@ -233,6 +238,7 @@ function mountOverview() {
 describe("the link back into onboarding", () => {
   beforeEach(() => {
     routerPush.mockReset();
+    onboardingOpen.mockReset();
   });
 
   afterEach(() => {
@@ -251,7 +257,7 @@ describe("the link back into onboarding", () => {
     await link.trigger("click");
 
     // the setup opens on whatever is left to set up
-    expect(routerPush).toHaveBeenCalledWith({ name: "onboarding" });
+    expect(onboardingOpen).toHaveBeenCalledWith(undefined);
 
     wrapper.unmount();
   });
@@ -271,10 +277,7 @@ describe("the link back into onboarding", () => {
 
     // showing the welcome again means showing it from the top: by the time
     // this link is any use, nothing on it is left to do
-    expect(routerPush).toHaveBeenCalledWith({
-      name: "onboarding",
-      query: { step: "welcome" },
-    });
+    expect(onboardingOpen).toHaveBeenCalledWith("welcome");
 
     wrapper.unmount();
   });

@@ -106,7 +106,7 @@ vi.mock("@/composables/userPreferences", async () => {
 type OnboardingModule = typeof import("@/composables/useOnboarding");
 type Onboarding = ReturnType<OnboardingModule["useOnboarding"]>;
 
-/** A fresh singleton per test: the dismissed flag lives for a whole session. */
+/** A fresh singleton per test: the modal open state lives for a whole session. */
 async function loadModule(): Promise<OnboardingModule> {
   vi.resetModules();
   return await import("@/composables/useOnboarding");
@@ -218,7 +218,6 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       scopeChecker(BUILTIN_ROLE_SCOPES.admin),
     );
     signIn({ user_id: "admin-1", username: "admin", role: UserRole.ADMIN });
-    routerMock.replace.mockReset();
     // both answer as the real ones do: a promise, and whether it landed
     setUserPreferenceMock.mockReset();
     setUserPreferenceMock.mockResolvedValue(undefined);
@@ -242,7 +241,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     });
     apiMock.players = { player_1: {}, player_2: {} };
 
-    const { ctx, pending, hasPending } = await loadOnboarding();
+    const { ctx, pending } = await loadOnboarding();
 
     expect(ctx.value.playerCount).toBe(2);
     expect(ctx.value.providers).toEqual([
@@ -266,7 +265,6 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       "plugins",
       "invite_members",
     ]);
-    expect(hasPending.value).toBe(true);
   });
 
   it("asks nothing of a guest, who is only passing through", async () => {
@@ -276,10 +274,9 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     );
     addProvider("spotify--1", "spotify", ProviderType.MUSIC);
 
-    const { steps, hasPending } = await loadOnboarding();
+    const { steps } = await loadOnboarding();
 
     expect(steps.value).toEqual([]);
-    expect(hasPending.value).toBe(false);
   });
 
   it("asks a member nothing about the setup they are not running", async () => {
@@ -319,15 +316,15 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     expect(ctx.value.memberCount).toBe(1);
   });
 
-  it("leaves the users alone for a checklist that never lists them", async () => {
+  it("loads the provider configurations without the users", async () => {
     const { configsLoaded, dataLoaded, loadProviderConfigs } = (
       await loadModule()
     ).useOnboarding();
 
     await loadProviderConfigs();
 
-    // the sidebar checklist decides off the provider configurations alone, so
-    // an admin session pays for those and nothing else
+    // the member welcome decides off the provider configurations alone, so a
+    // session that only needs those pays for those and nothing else
     expect(apiMock.getProviderConfigs).toHaveBeenCalledOnce();
     expect(apiMock.getAllUsers).not.toHaveBeenCalled();
     expect(configsLoaded.value).toBe(true);
@@ -552,85 +549,33 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     );
   });
 
-  it("hides the checklist for the session until a new step turns up", async () => {
-    addProvider("spotify--1", "spotify", ProviderType.MUSIC);
-
-    const { dismiss, dismissed, pending } = await loadOnboarding();
-    preferenceState.intent.value = "music_hub";
-    expect(pending.value.map((step) => step.id)).toEqual([
-      "players",
-      "plugins",
-      "invite_members",
-    ]);
-
-    dismiss();
-    expect(dismissed.value).toBe(true);
-
-    // the same steps in another order are not new ones
-    preferenceState.intent.value = "phone_apps";
-    expect(dismissed.value).toBe(true);
-
-    // the intent question coming back is a step the dismissal never covered
-    preferenceState.intent.value = undefined;
-    expect(dismissed.value).toBe(false);
-  });
-
-  it("keeps asking for a music source that was only deferred", async () => {
+  it("keeps a deferred music source in what is pending", async () => {
     addProvider("sonos--1", "sonos", ProviderType.PLAYER);
 
-    const { pending, checklist, checklistPending, hasPending } =
-      await loadOnboarding();
+    const { pending } = await loadOnboarding();
     preferenceState.intent.value = "phone_apps";
 
-    // the plugins are optional and never asked for; the deferred music sources
-    // stay on the checklist, which is the point of deferring them
+    // the music sources moved behind the plugins for this answer, but stay in
+    // what is pending rather than dropped
     expect(pending.value.map((step) => step.id)).toEqual([
       "plugins",
       "music_sources",
       "invite_members",
     ]);
-    expect(checklist.value.map((step) => step.id)).toEqual([
-      "intent",
-      "players",
-      "music_sources",
-    ]);
-    expect(checklistPending.value.map((step) => step.id)).toEqual([
-      "music_sources",
-    ]);
-    expect(hasPending.value).toBe(true);
   });
 
-  it("counts the steps of its list that are still to do", async () => {
-    addProvider("spotify--1", "spotify", ProviderType.MUSIC);
-
-    const { checklist, checklistPending, hasPending } = await loadOnboarding();
-    preferenceState.intent.value = "music_hub";
-
-    // the music sources are done, so they are listed but not counted
-    expect(checklist.value.map((step) => step.id)).toEqual([
-      "intent",
-      "music_sources",
-      "players",
-    ]);
-    expect(checklistPending.value.map((step) => step.id)).toEqual(["players"]);
-    expect(hasPending.value).toBe(true);
-  });
-
-  it("stops asking once everything it lists is done", async () => {
+  it("leaves only the optional steps pending once the core is set up", async () => {
     addProvider("spotify--1", "spotify", ProviderType.MUSIC);
     addProvider("sonos--1", "sonos", ProviderType.PLAYER);
 
-    const { pending, checklistPending, hasPending } = await loadOnboarding();
+    const { pending } = await loadOnboarding();
     preferenceState.intent.value = "music_hub";
 
-    // the plugins and the household are still to do, and still nothing to ask
-    // about
+    // the plugins and the household are optional, but still pending until done
     expect(pending.value.map((step) => step.id)).toEqual([
       "plugins",
       "invite_members",
     ]);
-    expect(checklistPending.value).toEqual([]);
-    expect(hasPending.value).toBe(false);
   });
 
   it("asks the server to complete onboarding without a global error toast", async () => {
@@ -650,20 +595,23 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     async (_case, serverInfo) => {
       apiMock.serverInfo.value = serverInfo;
 
-      const { finish } = await loadOnboarding();
+      const { active, open, finish } = await loadOnboarding();
+      open();
       await expect(finish()).resolves.toBe(true);
 
       expect(apiMock.sendCommand).not.toHaveBeenCalled();
       expect(warnSpy).not.toHaveBeenCalled();
       expect(toastMock.error).not.toHaveBeenCalled();
-      expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+      // finishing closes the modal rather than sending the user anywhere
+      expect(active.value).toBe(false);
     },
   );
 
   // 12 is InvalidCommand (the server dropped the command when it completed
   // onboarding itself), 3 an InvalidDataError ("Onboarding already completed")
   it.each([12, 3])("swallows error code %i without a word", async (code) => {
-    const { finish } = await loadOnboarding();
+    const { active, open, finish } = await loadOnboarding();
+    open();
     apiMock.sendCommand.mockRejectedValue(
       await apiCommandError(code, "Onboarding already completed"),
     );
@@ -672,53 +620,45 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
 
     expect(warnSpy).not.toHaveBeenCalled();
     expect(toastMock.error).not.toHaveBeenCalled();
-    expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+    expect(active.value).toBe(false);
   });
 
   it("keeps the wizard open on another error code", async () => {
-    const { dismissed, finish } = await loadOnboarding();
+    const { active, open, finish } = await loadOnboarding();
+    open();
     apiMock.sendCommand.mockRejectedValue(await apiCommandError(5));
 
     await expect(finish()).resolves.toBe(false);
 
     expect(toastMock.error).toHaveBeenCalledOnce();
     expect(toastMock.error).toHaveBeenCalledWith("onboarding.finish_failed");
-    // onboarding is still open on the server, so neither is it here
-    expect(dismissed.value).toBe(false);
-    expect(routerMock.replace).not.toHaveBeenCalled();
+    // onboarding is still open on the server, so the modal stays open too
+    expect(active.value).toBe(true);
   });
 
   it("keeps the wizard open on a failure that is not an api error", async () => {
     apiMock.sendCommand.mockRejectedValue(new Error("boom"));
 
-    const { dismissed, finish } = await loadOnboarding();
+    const { active, open, finish } = await loadOnboarding();
+    open();
     await expect(finish()).resolves.toBe(false);
 
     expect(toastMock.error).toHaveBeenCalledOnce();
-    expect(dismissed.value).toBe(false);
-    expect(routerMock.replace).not.toHaveBeenCalled();
+    expect(active.value).toBe(true);
   });
 
   it.each(["phone_apps", "music_hub"] as const)(
-    "hands someone who came for %s back to the app",
+    "closes the modal for someone who came for %s",
     async (intent) => {
-      const { finish } = await loadOnboarding();
+      const { active, open, finish } = await loadOnboarding();
       preferenceState.intent.value = intent;
+      open();
 
       await finish();
 
-      expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+      expect(active.value).toBe(false);
     },
   );
-
-  it("hides the checklist once the wizard is done with", async () => {
-    const { dismissed, finish } = await loadOnboarding();
-    expect(dismissed.value).toBe(false);
-
-    await finish();
-
-    expect(dismissed.value).toBe(true);
-  });
 
   describe("the track a session is on", () => {
     const ADMIN_STEPS = [
@@ -890,7 +830,8 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     it("marks the member as welcomed on the way out", async () => {
       signInAs();
 
-      const { finish } = await loadOnboarding();
+      const { active, open, finish } = await loadOnboarding();
+      open();
       await expect(finish()).resolves.toBe(true);
 
       // nothing is closed off on the server: the setup is the admin's, and
@@ -900,14 +841,15 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       const [values] = setUserPreferencesMock.mock.calls[0];
       const marker = (values as Record<string, string>)["onboarding.welcome"];
       expect(Date.parse(marker)).not.toBeNaN();
-      expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+      expect(active.value).toBe(false);
     });
 
     it("keeps the member here when the mark could not be made", async () => {
       signInAs();
       setUserPreferencesMock.mockResolvedValue(false);
 
-      const { dismissed, finish } = await loadOnboarding();
+      const { active, open, finish } = await loadOnboarding();
+      open();
       await expect(finish()).resolves.toBe(false);
 
       // handing them back to the app now would only welcome them again on the
@@ -918,8 +860,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       });
       expect(toastMock.error).toHaveBeenCalledOnce();
       expect(toastMock.error).toHaveBeenCalledWith("onboarding.finish_failed");
-      expect(dismissed.value).toBe(false);
-      expect(routerMock.replace).not.toHaveBeenCalled();
+      expect(active.value).toBe(true);
     });
 
     it("marks the account that asked, not the one before it", async () => {
@@ -964,12 +905,13 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       signInAs();
       preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
 
-      const { finish } = await loadOnboarding();
+      const { active, open, finish } = await loadOnboarding();
+      open();
       await expect(finish()).resolves.toBe(true);
 
       // when they were welcomed, not when they last looked it over again
       expect(setUserPreferencesMock).not.toHaveBeenCalled();
-      expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+      expect(active.value).toBe(false);
     });
 
     it("hands a failed answer back to whoever asked the question", async () => {
@@ -1007,26 +949,22 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       signInAs();
       preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
 
-      const { ctx, checklistPending, hasPending } = await loadOnboarding();
+      const { ctx, pending } = await loadOnboarding();
 
-      // the checklist stops asking: they have seen it, whatever they made of it
+      // they have seen it, whatever they made of it: nothing left to ask
       expect(ctx.value.welcomed).toBe(true);
-      expect(checklistPending.value).toEqual([]);
-      expect(hasPending.value).toBe(false);
+      expect(pending.value).toEqual([]);
     });
 
     it("keeps asking the member who is being welcomed right now", async () => {
       signInAs();
 
-      const { ctx, pending, checklistPending } = await loadOnboarding();
+      const { ctx, pending } = await loadOnboarding();
 
       // the marker is written on the way out, so the question is open for the
       // whole of this run — and the summary says so
       expect(ctx.value.welcomed).toBe(false);
       expect(pending.value.map((step) => step.id)).toEqual(["welcome"]);
-      expect(checklistPending.value.map((step) => step.id)).toEqual([
-        "welcome",
-      ]);
     });
   });
 });

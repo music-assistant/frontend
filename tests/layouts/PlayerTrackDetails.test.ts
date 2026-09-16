@@ -1,7 +1,8 @@
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import PlayerTrackDetails from "@/layouts/default/PlayerOSD/PlayerTrackDetails.vue";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
-import { store } from "@/plugins/store";
+import type { Player, PlayerQueue, QueueItem } from "@/plugins/api/interfaces";
+import { store as storeModule } from "@/plugins/store";
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
 import { mount, type VueWrapper } from "@vue/test-utils";
 import { playerSource } from "../fixtures/playerSource";
@@ -73,6 +74,13 @@ vi.mock("@/plugins/store", async () => {
     }),
   };
 });
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & {
+  activePlayer?: Player;
+  activePlayerQueue?: PlayerQueue;
+  curQueueItem?: QueueItem;
+};
 
 const vuetify = createVuetify({ components, directives });
 

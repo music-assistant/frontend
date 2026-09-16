@@ -375,6 +375,18 @@ describe("EditConfig", () => {
       expect(wrapper.get(".floating-save").classes()).toContain(cssClass);
     },
   );
+
+  it("keeps the save action in the flow of the form when asked", () => {
+    const wrapper = mountEntries(
+      [entry({ key: "server", type: ConfigEntryType.STRING })],
+      false,
+      true,
+    );
+
+    // a form inside a dialog: nothing floats, the button follows the fields
+    expect(wrapper.find(".floating-save").exists()).toBe(false);
+    expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(true);
+  });
 });
 
 describe("EditConfig unsaved changes", () => {
@@ -544,9 +556,13 @@ function dependentEntry(
   });
 }
 
-function mountEntries(configEntries: ConfigEntry[], disabled = false) {
+function mountEntries(
+  configEntries: ConfigEntry[],
+  disabled = false,
+  inlineSave = false,
+) {
   return shallowMount(EditConfig, {
-    props: { configEntries, disabled },
+    props: { configEntries, disabled, inlineSave },
     global: { renderStubDefaultSlot: true },
   });
 }

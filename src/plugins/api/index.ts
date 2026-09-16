@@ -78,6 +78,7 @@ import {
   SoundEffect,
   TranscriptCue,
   UserRole,
+  StreamServerInfo,
   MediaCollection,
   ArtistType,
 } from "./interfaces";
@@ -2805,6 +2806,12 @@ export class MusicAssistantApi {
     if (provider_domain_or_instance_id in this.providerManifests) {
       return this.providerManifests[provider_domain_or_instance_id].name;
     }
+    // instance not loaded (e.g. a source not shared with this user): fall back
+    // to the generic provider name derived from the domain in the instance id
+    const domain = provider_domain_or_instance_id.split("--")[0];
+    if (domain in this.providerManifests) {
+      return this.providerManifests[domain].name;
+    }
     return provider_domain_or_instance_id;
   }
 
@@ -3596,6 +3603,19 @@ export class MusicAssistantApi {
     return this.sendCommand<RemoteAccessInfo>("remote_access/configure", {
       enabled,
     });
+  }
+
+  // Stream server methods
+
+  public async getStreamServerInfo(
+    options?: CommandOptions,
+  ): Promise<StreamServerInfo> {
+    // Get the address the stream server hands to players
+    return this.sendCommand<StreamServerInfo>(
+      "streams/info",
+      undefined,
+      options,
+    );
   }
 
   public sendCommand<Result>(

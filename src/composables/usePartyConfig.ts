@@ -7,6 +7,7 @@
 import { ref } from "vue";
 import api from "@/plugins/api";
 import { EventType, type PartyConfig } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 
 const config = ref<PartyConfig | null>(null);
 const loading = ref(false);
@@ -69,10 +70,7 @@ function ensureSubscribed() {
   subscribed = true;
 
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    const hasParty = Object.values(api.providers).some(
-      (p) => p.domain === "party",
-    );
-    if (hasParty) {
+    if (store.enabledPlugins.has("party")) {
       invalidate();
       await fetchConfig(true);
     } else {
@@ -84,10 +82,7 @@ function ensureSubscribed() {
   // Remote access toggle fires CORE_STATE_UPDATED; refresh config so the
   // join URL switches between local and remote.
   api.subscribe(EventType.CORE_STATE_UPDATED, async () => {
-    const hasParty = Object.values(api.providers).some(
-      (p) => p.domain === "party",
-    );
-    if (hasParty) {
+    if (store.enabledPlugins.has("party")) {
       invalidate();
       await fetchConfig(true);
     }

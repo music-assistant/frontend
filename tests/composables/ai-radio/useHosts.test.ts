@@ -7,7 +7,7 @@ import {
   type Player,
   type PlayerQueue,
 } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
+import { store as storeModule } from "@/plugins/store";
 import { flushPromises } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -64,6 +64,11 @@ vi.mock("@/composables/useAudioOverlay", () => ({
 vi.mock("vue-sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & {
+  enabledPlugins: ReadonlySet<string>;
+};
 
 const host: AIRadioHost = {
   id: "host-1",
