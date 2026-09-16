@@ -109,6 +109,7 @@ const busy = ref(false);
 const loadingId = ref(false);
 // which request the latest answer belongs to: the read started on mount may
 // land after the switch has been answered, and must not undo that answer
+// (while a switch the server refused leaves that read as good as it was)
 let request = 0;
 
 // what the last answer about remote access said, else what server info says
@@ -137,9 +138,11 @@ const load = async function (): Promise<void> {
 const setEnabled = async function (value: boolean): Promise<void> {
   if (busy.value) return;
   busy.value = true;
-  request += 1;
   try {
-    info.value = await api.configureRemoteAccess(value);
+    const answer = await api.configureRemoteAccess(value);
+    // answered: a read still on its way is about the state before this
+    request += 1;
+    info.value = answer;
     toast.success(
       $t(
         value

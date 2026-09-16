@@ -405,7 +405,8 @@ const loadStreamServerInfo = async function (): Promise<void> {
   } catch (error) {
     console.warn("Failed to load the stream server address:", error);
   } finally {
-    streamAnswered.value = true;
+    // only the latest request says whether the server has answered
+    if (current === streamRequest) streamAnswered.value = true;
   }
 };
 

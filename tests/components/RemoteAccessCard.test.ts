@@ -205,6 +205,29 @@ describe("RemoteAccessCard", () => {
     expect(shownId(wrapper).exists()).toBe(false);
   });
 
+  it("keeps a read still on its way when the server refuses to switch", async () => {
+    apiMock.serverInfo.value = serverInfo(true);
+    let answerFirstRead: (info: RemoteAccessInfo) => void = () => {};
+    apiMock.getRemoteAccessInfo.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answerFirstRead = resolve;
+        }),
+    );
+    apiMock.configureRemoteAccess.mockRejectedValue(new Error("no"));
+
+    const wrapper = await mountCard();
+    await toggle(wrapper).trigger("click");
+    await flushPromises();
+
+    // remote access stayed on, so the id that read brings is still the truth
+    answerFirstRead(remoteAccessInfo());
+    await flushPromises();
+
+    expect(toggle(wrapper).attributes("data-state")).toBe("checked");
+    expect(shownId(wrapper).text()).toContain(REMOTE_ID_GROUPED);
+  });
+
   it("copies the id as it is read out", async () => {
     apiMock.serverInfo.value = serverInfo(true);
 
