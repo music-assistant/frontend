@@ -1139,6 +1139,7 @@
     "homescreen_edit_disable": "Leave edit mode",
     "lyrics_will_appear_soon": "Lyrics will appear when the song begins...",
     "optional": "Optional",
+    "recommended": "Recommended",
     "created": "Created",
     "last_used": "Last used",
     "create": "Create",
@@ -2531,13 +2532,13 @@
         "hide_for_now": "Hide for now",
         "nothing_configured": "Nothing set up yet",
         "needs_attention": "Needs attention",
-        "set_up": "Set up",
+        "set_up": "Done",
         "still_to_do": "Still to do",
         "all_done": "Everything on the list is set up.",
         "players_count": "{count} player | {count} players",
         "steps_to_go": "{count} step to go | {count} steps to go",
         "run_again": "Run the setup wizard again",
-        "add_member": "Add a household member",
+        "add_member": "Add a user",
         "just_you_so_far": "Just you so far.",
         "welcome_title": "Welcome to Music Assistant",
         "welcome_again": "Show the welcome again",
@@ -2545,8 +2546,8 @@
         "what_you_picked": "What you picked",
         "steps": {
             "intent": {
-                "title": "Choose how you listen",
-                "description": "This only decides what we suggest first. Everything stays available, whichever you pick.",
+                "title": "Choose how you want to use Music Assistant",
+                "description": "This sets what Music Assistant does first. Everything stays available, whichever you pick.",
                 "phone_apps": {
                     "label": "From the apps on my phone",
                     "description": "Stream from Spotify, AirPlay and other apps to the speakers in your home."
@@ -2554,7 +2555,8 @@
                 "music_hub": {
                     "label": "As my music hub",
                     "description": "Bring your streaming services and local music together in one library."
-                }
+                },
+                "settings_note": "You can change this later from the settings."
             },
             "music_sources": {
                 "title": "Add your music sources",
@@ -2566,7 +2568,7 @@
             },
             "plugins": {
                 "title": "Add plugins",
-                "description": "Plugins add extras on top of Music Assistant. You can always add them later."
+                "description": "Plugins add extra features on top of Music Assistant, such as Party, Spotify Connect and an AirPlay receiver. You can always add them later."
             },
             "core_settings": {
                 "title": "Check your server settings",
@@ -2574,17 +2576,17 @@
                 "load_failed": "The server settings could not be loaded. You can change them later from the settings."
             },
             "invite_members": {
-                "title": "Add your household",
-                "description": "Everyone you live with gets an account of their own, with the players and music sources you give them access to.",
-                "load_failed": "Your household could not be loaded. You can add members later from the settings."
+                "title": "Add users",
+                "description": "Everyone in your home gets an account of their own, with the players and music sources you give them access to.",
+                "load_failed": "The users could not be loaded. You can add them later from the settings."
             },
             "finish": {
                 "title": "Finish setup",
-                "description": "Here is where you got to. You can change any of this later from the settings."
+                "description": "Nice work setting things up. Here's a quick recap, and you can change any of this later from the settings."
             },
             "welcome": {
                 "title": "Make yourself at home",
-                "description": "Hi {name}, this is where your household's music lives. Pick how much you would like to see while something is playing.",
+                "description": "Hi {name}, this is where your home's music lives. Pick how much you would like to see while something is playing.",
                 "enthusiast": {
                     "label": "All the details",
                     "description": "Waveform progress and a background visualizer while music plays."
@@ -2598,7 +2600,7 @@
             },
             "whats_here": {
                 "title": "What's here for you",
-                "description": "The music your household has brought together, and the players you can send it to.",
+                "description": "The music everyone here has brought together, and the players you can send it to.",
                 "more_count": "+{count} more",
                 "listen": {
                     "title": "What you can listen to",
@@ -2626,7 +2628,7 @@
                 "open_named": "Open {title}",
                 "library": {
                     "title": "Your library",
-                    "description": "Artists, albums, tracks and playlists, together in the sidebar. Everything your household added is in here."
+                    "description": "Artists, albums, tracks and playlists, together in the sidebar. It holds everything that has been added."
                 },
                 "search": {
                     "title": "Search",
