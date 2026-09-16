@@ -12,6 +12,10 @@
       test-id-prefix="onboarding-intent"
       @select="select"
     />
+
+    <p class="text-muted-foreground text-sm">
+      {{ $t("onboarding.steps.intent.settings_note") }}
+    </p>
   </section>
 </template>
 
@@ -39,16 +43,17 @@ const { intent, setIntent } = useOnboarding();
 
 const options = [
   {
-    value: "phone_apps",
-    icon: markRaw(Smartphone),
-    labelKey: "onboarding.steps.intent.phone_apps.label",
-    descriptionKey: "onboarding.steps.intent.phone_apps.description",
-  },
-  {
     value: "music_hub",
     icon: markRaw(Library),
     labelKey: "onboarding.steps.intent.music_hub.label",
     descriptionKey: "onboarding.steps.intent.music_hub.description",
+    recommended: true,
+  },
+  {
+    value: "phone_apps",
+    icon: markRaw(Smartphone),
+    labelKey: "onboarding.steps.intent.phone_apps.label",
+    descriptionKey: "onboarding.steps.intent.phone_apps.description",
   },
 ] satisfies ChoiceCardOption<OnboardingIntent>[];
 

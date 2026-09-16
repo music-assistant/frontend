@@ -11,8 +11,8 @@
       :key="option.value"
       type="button"
       class="hover:border-primary focus-visible:ring-ring bg-card flex items-start gap-3 rounded-xl border p-4 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
-      :class="{ 'border-primary': selected === option.value }"
-      :aria-pressed="selected === option.value"
+      :class="{ 'border-primary': active === option.value }"
+      :aria-pressed="active === option.value"
       :disabled="busy"
       :data-testid="`${testIdPrefix}-${option.value}`"
       @click="emit('select', option.value)"
@@ -23,7 +23,12 @@
         <component :is="option.icon" class="size-6" aria-hidden="true" />
       </span>
       <span class="flex min-w-0 flex-col gap-1">
-        <span class="font-semibold">{{ $t(option.labelKey) }}</span>
+        <span class="flex items-center gap-2">
+          <span class="font-semibold">{{ $t(option.labelKey) }}</span>
+          <Badge v-if="option.recommended" variant="secondary">
+            {{ $t("recommended") }}
+          </Badge>
+        </span>
         <span class="text-muted-foreground text-sm">
           {{ $t(option.descriptionKey) }}
         </span>
@@ -33,7 +38,8 @@
 </template>
 
 <script setup lang="ts" generic="T extends string">
-import type { Component } from "vue";
+import { Badge } from "@/components/ui/badge";
+import { computed, type Component } from "vue";
 
 /** One card: the answer it stands for, and how it is put to the user. */
 export interface ChoiceCardOption<T extends string> {
@@ -41,9 +47,11 @@ export interface ChoiceCardOption<T extends string> {
   icon: Component;
   labelKey: string;
   descriptionKey: string;
+  // shown with a "Recommended" badge, and preselected until the user picks
+  recommended?: boolean;
 }
 
-defineProps<{
+const props = defineProps<{
   options: ChoiceCardOption<T>[];
   // the answer already on the account, so coming back to the step shows it
   selected?: T;
@@ -57,4 +65,11 @@ defineProps<{
 const emit = defineEmits<{
   (e: "select", value: T): void;
 }>();
+
+// which card reads as chosen: the saved answer, or the recommended option
+// until one is saved, so the option the step defaults to shows preselected
+const active = computed(
+  () =>
+    props.selected ?? props.options.find((option) => option.recommended)?.value,
+);
 </script>

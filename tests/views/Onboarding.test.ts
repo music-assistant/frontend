@@ -399,6 +399,26 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
+  it("preselects the recommended music hub before the user picks", async () => {
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    const musicHub = wrapper.find("[data-testid=onboarding-intent-music_hub]");
+    const phoneApps = wrapper.find(
+      "[data-testid=onboarding-intent-phone_apps]",
+    );
+
+    // the recommended option reads as chosen, and is the only one badged, while
+    // nothing is committed until the user acts
+    expect(musicHub.attributes("aria-pressed")).toBe("true");
+    expect(phoneApps.attributes("aria-pressed")).toBe("false");
+    expect(musicHub.text()).toContain("recommended");
+    expect(phoneApps.text()).not.toContain("recommended");
+    expect(setUserPreferenceMock).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
   it("answers the intent question with the music hub when it is waved through", async () => {
     const wrapper = await mountWizard();
     await flushPromises();
