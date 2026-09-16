@@ -2789,6 +2789,12 @@ export class MusicAssistantApi {
     if (provider_domain_or_instance_id in this.providerManifests) {
       return this.providerManifests[provider_domain_or_instance_id].name;
     }
+    // instance not loaded (e.g. a source not shared with this user): fall back
+    // to the generic provider name derived from the domain in the instance id
+    const domain = provider_domain_or_instance_id.split("--")[0];
+    if (domain in this.providerManifests) {
+      return this.providerManifests[domain].name;
+    }
     return provider_domain_or_instance_id;
   }
 
