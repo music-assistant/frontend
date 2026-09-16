@@ -6,12 +6,11 @@ import { store } from "@/plugins/store";
 /**
  * Who onboarding has something for, and what it remembers on their account.
  *
- * This lives outside `@/composables/useOnboarding` on purpose: the router and
- * the app shell ask these questions before anything has been loaded — the
- * router while it decides whether /onboarding may even be opened — and
- * answering them must not pull in the wizard's own state, which asks the api
- * for provider configurations and leaves through the router itself. Everything
- * here reads the signed-in user and the scopes their role grants, nothing else.
+ * This lives outside `@/composables/useOnboarding` on purpose: the app shell
+ * asks these questions before anything has been loaded, and answering them must
+ * not pull in the wizard's own state, which asks the api for provider
+ * configurations. Everything here reads the signed-in user and the scopes their
+ * role grants, nothing else.
  */
 
 /** User preference holding the answer to the wizard's intent question. */
@@ -50,8 +49,8 @@ export const hasOnboardingTrack = (): boolean =>
 /**
  * Whether the app should open the welcome by itself. It interrupts a member
  * once, right after they were given an account: anyone who has been here a
- * while is left alone, with the welcome still on the sidebar and in the
- * settings for whenever they want it.
+ * while is left alone, with the welcome in the settings for whenever they want
+ * it.
  */
 export const shouldOpenWelcome = (): boolean => {
   if (!isMemberTrack()) return false;

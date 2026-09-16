@@ -70,4 +70,7 @@ const select = async function (value: OnboardingIntent) {
   }
   emit("advance");
 };
+
+// the wizard reads this to keep its Next from advancing while a card is saving
+defineExpose({ busy });
 </script>

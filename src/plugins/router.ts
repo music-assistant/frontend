@@ -2,7 +2,6 @@ import { canOpenAIRadio } from "@/helpers/ai_radio_access";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
-import { hasOnboardingTrack } from "@/helpers/onboarding_access";
 import { $t } from "@/plugins/i18n";
 import { nextTick, watch } from "vue";
 import {
@@ -22,10 +21,6 @@ declare module "vue-router" {
   interface RouteMeta {
     // only a role granting this scope may open the route
     requiresScope?: Scope;
-    // only a session this answers true for may open the route: what a route
-    // takes when no single scope decides it. Checked like a scope, after the
-    // guard has waited for the connection, so it reads a user who is in
-    requiresAccess?: () => boolean;
   }
 }
 
@@ -471,17 +466,6 @@ export const routes: RouteRecordRaw[] = [
         meta: { requiresScope: Scope.USERS_INVITE },
       },
       {
-        path: "/onboarding",
-        name: "onboarding",
-        component: () =>
-          import(/* webpackChunkName: "onboarding" */ "@/views/Onboarding.vue"),
-        // the wizard runs the setup for an admin and the welcome for everyone
-        // else who lives here, and no one scope covers both; requiresAccess
-        // also makes the guard wait for INITIALIZED, so the first step is never
-        // picked from an empty provider map on a hard reload
-        meta: { requiresAccess: hasOnboardingTrack },
-      },
-      {
         path: "/settings",
         name: "settings",
         component: () =>
@@ -770,16 +754,12 @@ router.beforeEach(async (to) => {
     }
   }
 
-  // Check gated routes - every matched route may require a scope, a predicate,
-  // or both
+  // Check gated routes - every matched route may require a scope
   const requiredScopes = to.matched.flatMap((record) =>
     record.meta.requiresScope ? [record.meta.requiresScope] : [],
   );
-  const accessChecks = to.matched.flatMap((record) =>
-    record.meta.requiresAccess ? [record.meta.requiresAccess] : [],
-  );
 
-  if (requiredScopes.length || accessChecks.length) {
+  if (requiredScopes.length) {
     // Wait for API to be initialized before checking access
     // This ensures store.currentUser and store.roleScopes are set before we check permissions
     if (api.state.value !== ConnectionState.INITIALIZED) {
@@ -813,11 +793,6 @@ router.beforeEach(async (to) => {
     );
     if (missingScope) {
       console.warn(`The ${missingScope} scope is required for`, to.path);
-      return { name: "discover" };
-    }
-
-    if (accessChecks.some((mayOpen) => !mayOpen())) {
-      console.warn("This session may not open", to.path);
       return { name: "discover" };
     }
   }

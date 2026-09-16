@@ -106,5 +106,5 @@ const beforeLeave = async function (): Promise<boolean> {
   return (await pendingSave) ?? true;
 };
 
-defineExpose({ beforeLeave });
+defineExpose({ beforeLeave, busy });
 </script>

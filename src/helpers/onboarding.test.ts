@@ -2,8 +2,6 @@ import {
   ONBOARDING_STEPS,
   PERSONA_DEFAULTS,
   applicableSteps,
-  checklistPendingSteps,
-  checklistSteps,
   firstStep,
   orderSteps,
   pendingSteps,
@@ -287,78 +285,6 @@ describe("pending onboarding steps", () => {
   });
 });
 
-describe("the getting started checklist", () => {
-  it("lists the core steps, done or not, and counts the ones still to do", () => {
-    const ctx = context({
-      answers: { intent: "music_hub" },
-      providers: [provider(ProviderType.PLAYER, "sonos")],
-    });
-
-    // what is listed and what is counted are the same steps, so the badge can
-    // never say something the list does not show
-    expect(stepIds(checklistSteps(ctx))).toEqual([
-      "intent",
-      "music_sources",
-      "players",
-    ]);
-    expect(stepIds(checklistPendingSteps(ctx))).toEqual(["music_sources"]);
-  });
-
-  it.each([undefined, "music_hub", "phone_apps"] as const)(
-    "never asks for what it is not there to ask for, whatever the answer (%s)",
-    (intent) => {
-      const ctx = context({ answers: intent ? { intent } : {} });
-      const listed = stepIds(checklistSteps(ctx));
-      // the plugins and the household are optional by nature, the server
-      // settings are only there to be looked over
-      expect(listed).not.toContain("plugins");
-      expect(listed).not.toContain("invite_members");
-      expect(listed).not.toContain("core_settings");
-    },
-  );
-
-  it("keeps asking for a music source that was only deferred", () => {
-    const ctx = context({
-      answers: { intent: "phone_apps" },
-      providers: [provider(ProviderType.PLAYER, "sonos")],
-    });
-
-    // the music sources moved behind the plugins for this answer; the plugins
-    // and the household are what the checklist stays quiet about
-    expect(stepIds(pendingSteps(ctx))).toEqual([
-      "plugins",
-      "music_sources",
-      "invite_members",
-    ]);
-    expect(stepIds(checklistSteps(ctx))).toEqual([
-      "intent",
-      "players",
-      "music_sources",
-    ]);
-    expect(stepIds(checklistPendingSteps(ctx))).toEqual(["music_sources"]);
-  });
-
-  it("is empty once every step it lists is done", () => {
-    const ctx = context({
-      answers: { intent: "phone_apps" },
-      providers: [
-        provider(ProviderType.MUSIC, "spotify"),
-        provider(ProviderType.PLAYER, "sonos"),
-      ],
-    });
-
-    // the plugins and the household are still to do, and still nothing the
-    // checklist asks for
-    expect(stepIds(pendingSteps(ctx))).toEqual(["plugins", "invite_members"]);
-    expect(checklistPendingSteps(ctx)).toEqual([]);
-  });
-
-  it("lists nothing for someone on neither track", () => {
-    expect(checklistSteps(context({ isAdmin: false }))).toEqual([]);
-    expect(checklistPendingSteps(context({ isAdmin: false }))).toEqual([]);
-  });
-});
-
 describe("the step the wizard opens on", () => {
   it("opens on the first step still to do", () => {
     const ctx = context({ answers: { intent: "music_hub" } });
@@ -470,7 +396,6 @@ describe("the member track", () => {
 
     expect(step(ctx, "welcome").isDone(ctx)).toBe(true);
     expect(pendingSteps(ctx)).toEqual([]);
-    expect(checklistPendingSteps(ctx)).toEqual([]);
   });
 
   it("still asks the member being welcomed right now", () => {
@@ -482,14 +407,12 @@ describe("the member track", () => {
     expect(stepIds(pendingSteps(ctx))).toEqual(["welcome"]);
   });
 
-  it("asks on the checklist for the one thing it asks for", () => {
+  it("drops the welcome from what is pending once it is answered", () => {
     const pending = memberContext();
-    expect(stepIds(checklistSteps(pending))).toEqual(["welcome"]);
-    expect(stepIds(checklistPendingSteps(pending))).toEqual(["welcome"]);
+    expect(stepIds(pendingSteps(pending))).toEqual(["welcome"]);
 
     const answered = memberContext({ answers: { persona: "regular" } });
-    expect(stepIds(checklistSteps(answered))).toEqual(["welcome"]);
-    expect(checklistPendingSteps(answered)).toEqual([]);
+    expect(pendingSteps(answered)).toEqual([]);
   });
 
   it("opens on the welcome, and on the summary once it is answered", () => {
@@ -556,15 +479,13 @@ describe("the own-sources invitation", () => {
     ]);
   });
 
-  it("stays on the checklist until it is done, since it is never optional", () => {
+  it("is pending until it is done, since it is never optional", () => {
     const open = ownMemberContext();
-    expect(stepIds(checklistSteps(open))).toContain("own_sources");
-    expect(stepIds(checklistPendingSteps(open))).toContain("own_sources");
+    expect(stepIds(pendingSteps(open))).toContain("own_sources");
 
-    // still listed once done — it is non-optional — but no longer counted
+    // no longer pending once a source of their own is connected
     const done = ownMemberContext({ ownedMusicSourceCount: 1 });
-    expect(stepIds(checklistSteps(done))).toContain("own_sources");
-    expect(stepIds(checklistPendingSteps(done))).not.toContain("own_sources");
+    expect(stepIds(pendingSteps(done))).not.toContain("own_sources");
   });
 });
 

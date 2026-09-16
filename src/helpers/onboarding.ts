@@ -9,7 +9,7 @@ import { ProviderType } from "@/plugins/api/interfaces";
  * Everything in here is pure: a step decides whether it applies and whether it
  * is done from the context it is handed, never from the api or the router. The
  * composable (`@/composables/useOnboarding`) builds that context from live
- * state and the wizard page renders whatever this module returns.
+ * state and the wizard renders whatever this module returns.
  */
 
 export type OnboardingStepId =
@@ -95,11 +95,10 @@ export type OnboardingStepKind = "step" | "review" | "summary";
 export interface OnboardingStep {
   id: OnboardingStepId;
   kind: OnboardingStepKind;
-  // optional by nature: the wizard offers it, the checklist never asks for it
+  // optional by nature: the wizard offers a skip instead of a Next
   optional?: boolean;
-  // a core step the answers pushed to the back: it stops blocking the wizard,
-  // but it stays on the checklist, which is the whole point of deferring it
-  // rather than dropping it
+  // a core step the answers pushed to the back: it no longer leads the wizard
+  // and offers a skip, but stays listed as still to do rather than dropped
   deferred?: boolean;
   appliesTo(ctx: OnboardingContext): boolean;
   isDone(ctx: OnboardingContext): boolean;
@@ -271,26 +270,8 @@ export function pendingSteps(ctx: OnboardingContext): OnboardingStep[] {
 }
 
 /**
- * What the getting started checklist lists, done or not: every step that
- * applies bar the ones that are nothing to do (a review, the summary) and the
- * steps that are optional by nature, so leaving one of those alone stops the
- * checklist from asking for it forever. A deferred step stays on the list,
- * still waiting to be picked up.
- */
-export function checklistSteps(ctx: OnboardingContext): OnboardingStep[] {
-  return applicableSteps(ctx).filter((step) => isTodo(step) && !step.optional);
-}
-
-/** The checklist steps still to do — what its badge counts. */
-export function checklistPendingSteps(
-  ctx: OnboardingContext,
-): OnboardingStep[] {
-  return checklistSteps(ctx).filter((step) => !step.isDone(ctx));
-}
-
-/**
- * The step the wizard opens on. A requested id (`?step=`) wins as long as it
- * applies, an already done step included, and anything else falls back to the
+ * The step the wizard opens on. A requested step wins as long as it applies,
+ * an already done step included, and anything else falls back to the
  * first step still to do, which a review never is: the wizard walks the user
  * into one, it does not drop them in it. With nothing left to do it opens on
  * the last step of the track, which is that track's summary.
