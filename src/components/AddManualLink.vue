@@ -297,14 +297,20 @@ const save = async function (value: {
           images: [],
         };
       }
-      await api.sendCommand(updateEndpoint.value, {
-        item_id: parseInt(compProps.editItem.item_id, 10),
-        update: updatedItem,
-        overwrite: true,
-      });
+      await api.sendCommand(
+        updateEndpoint.value,
+        {
+          item_id: parseInt(compProps.editItem.item_id, 10),
+          update: updatedItem,
+          overwrite: true,
+        },
+        // this dialog reports a failed edit itself, so opt out of the global toast
+        { suppressGlobalError: true },
+      );
       model.value = false;
     } catch (e) {
       console.error("Failed to edit item:", e);
+      toast.error(String(e));
     } finally {
       loading.value = false;
     }

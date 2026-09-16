@@ -261,7 +261,14 @@
           <v-btn variant="text" @click="showRenameDialog = false">
             {{ $t("close") }}
           </v-btn>
-          <v-btn color="primary" variant="flat" @click="saveRename">
+          <v-btn
+            data-testid="provider-rename-save"
+            color="primary"
+            variant="flat"
+            :loading="renameLoading"
+            :disabled="renameLoading"
+            @click="saveRename"
+          >
             {{ $t("settings.save") }}
           </v-btn>
         </v-card-actions>
@@ -305,6 +312,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useConfigAction } from "@/composables/useConfigAction";
+import { useEditedProviderName } from "@/composables/useEditedProviderName";
 import {
   hasAdvancedEntries,
   mergeConfigEntries,
@@ -317,6 +325,7 @@ import {
   canReconfigureProvider,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  providerDisplayName,
 } from "@/helpers/provider_config";
 import { getExternalLinkUrl, markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -358,10 +367,12 @@ const loading = ref(false);
 const showAdvancedSettings = ref(false);
 const toggleLoading = ref(false);
 const showRenameDialog = ref(false);
+const renameLoading = ref(false);
 const editName = ref<string | null>(null);
 const saveErrorOpen = ref(false);
 const saveErrorMessage = ref("");
 const lastSubmitValues = ref<Record<string, ConfigValueType>>();
+const editedProviderName = useEditedProviderName();
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
 let toggleRequestId = 0;
@@ -383,12 +394,14 @@ const providerManifest = computed(() => {
   return api.providerManifests[config.value.domain];
 });
 
-const providerName = computed(
-  () =>
-    config.value?.name ||
-    api.providers[config.value?.instance_id ?? ""]?.name ||
-    config.value?.default_name ||
-    providerManifest.value?.name,
+const providerName = computed(() =>
+  config.value
+    ? providerDisplayName(
+        config.value,
+        api.providers[config.value.instance_id],
+        providerManifest.value,
+      )
+    : "",
 );
 
 // reconfiguring a source sets it up again, which a member may only do for a
@@ -440,6 +453,17 @@ watch(
   { immediate: true },
 );
 
+// the breadcrumb above this page shows whatever name this heading shows, so
+// the two cannot disagree for a provider that is not loaded but has a custom
+// name of its own
+watch(
+  providerName,
+  (name) => {
+    editedProviderName.value = name;
+  },
+  { immediate: true },
+);
+
 watch(showRenameDialog, (val) => {
   if (val && config.value) {
     editName.value = config.value.name || null;
@@ -454,6 +478,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   unsubProvidersUpdated?.();
+  // a later visit to another provider should fall back to the manifest name
+  // rather than linger on this one
+  editedProviderName.value = "";
 });
 
 // methods
@@ -622,23 +649,33 @@ const getCreditsMarkdown = function (credits: string[]) {
   return `**${t("settings.provider_credits")}**: ` + credits.join(" / ");
 };
 
-const saveRename = function () {
-  if (config.value) {
-    config.value.name = editName.value || "";
+const saveRename = async function () {
+  // both the save button and the enter key submit, so a rename already on its
+  // way is left to finish rather than racing a second one
+  if (!config.value || renameLoading.value) return;
+  // the name is applied right away so the page shows it at once, which means a
+  // rejected save has to put the previous one back
+  const renamedConfig = config.value;
+  const previousName = renamedConfig.name;
+  renamedConfig.name = editName.value || "";
+  renameLoading.value = true;
+  try {
+    const savedConfig = await api.saveProviderConfig(
+      renamedConfig.domain,
+      { name: renamedConfig.name || null },
+      renamedConfig.instance_id,
+    );
+    // the stored name is the server's to decide, so its answer replaces what
+    // was typed
+    renamedConfig.name = savedConfig.name;
+    toast.success(t("settings.provider_saved"));
+  } catch (err) {
+    renamedConfig.name = previousName;
+    toast.error(String(err));
+  } finally {
+    renameLoading.value = false;
+    showRenameDialog.value = false;
   }
-  api
-    .saveProviderConfig(
-      config.value!.domain,
-      { name: config.value!.name || null },
-      config.value!.instance_id,
-    )
-    .then(() => {
-      loading.value = true;
-    })
-    .finally(() => {
-      loading.value = false;
-      showRenameDialog.value = false;
-    });
 };
 
 async function loadConfig(instanceId: string) {

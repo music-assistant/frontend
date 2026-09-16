@@ -3,6 +3,8 @@ import { nextTick } from "vue";
 
 const mocks = vi.hoisted(() => ({
   apiState: { value: "connected" as string },
+  getProvider: vi.fn(),
+  getProviderManifest: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", async () => {
@@ -16,6 +18,8 @@ vi.mock("@/plugins/api", async () => {
       providers: {},
       queues: {},
       state: mocks.apiState,
+      getProvider: mocks.getProvider,
+      getProviderManifest: mocks.getProviderManifest,
     },
     ConnectionState: { INITIALIZED: "initialized" },
   };
@@ -25,6 +29,7 @@ import api from "@/plugins/api";
 import {
   getPlaylistMigrationProviders,
   getProviderRootDomain,
+  mappedServices,
   isAudioSource,
   isQueueInfiniteStream,
   queueSourceCrossfadeProvider,
@@ -42,6 +47,7 @@ import type {
   PlayableMediaItemType,
   Player,
   ProviderInstance,
+  ProviderMapping,
   QueueItem,
 } from "@/plugins/api/interfaces";
 import { playerQueue } from "../../fixtures/playerQueue";
@@ -381,5 +387,68 @@ describe("getPlaylistMigrationProviders", () => {
         .map((p) => p.instance_id)
         .sort(),
     ).toEqual(["builtin", "spotify--1"]);
+  });
+});
+
+describe("mappedServices", () => {
+  const SPOTIFY = { name: "Spotify", domain: "spotify" };
+
+  const item = (...mappings: Array<{ domain: string; instance: string }>) => ({
+    provider_mappings: mappings.map(({ domain, instance }) => ({
+      provider_domain: domain,
+      provider_instance: instance,
+    })) as ProviderMapping[],
+  });
+
+  beforeEach(() => {
+    mocks.getProvider.mockReset();
+    mocks.getProviderManifest.mockReset();
+  });
+
+  it("lists a service once, however many accounts of it are mapped", () => {
+    mocks.getProviderManifest.mockReturnValue(SPOTIFY);
+
+    expect(
+      mappedServices(
+        item(
+          { domain: "spotify", instance: "spotify--one" },
+          { domain: "spotify", instance: "spotify--two" },
+        ),
+      ),
+    ).toEqual([{ domain: "spotify", name: "Spotify" }]);
+  });
+
+  it("names the service, not the account it is configured as", () => {
+    mocks.getProviderManifest.mockReturnValue(SPOTIFY);
+    mocks.getProvider.mockReturnValue({ name: "Spotify [account]" });
+
+    expect(
+      mappedServices(item({ domain: "spotify", instance: "spotify--one" })),
+    ).toEqual([{ domain: "spotify", name: "Spotify" }]);
+  });
+
+  it("falls back to the instance name when the service has no manifest", () => {
+    mocks.getProvider.mockReturnValue({ name: "My files" });
+
+    expect(
+      mappedServices(item({ domain: "filesystem_smb", instance: "smb--one" })),
+    ).toEqual([{ domain: "filesystem_smb", name: "My files" }]);
+  });
+
+  // the server sends mappings whose provider fields are the string "None";
+  // there is no service to name, so the chip row is better off without them
+  it("leaves out a mapping nothing can name", () => {
+    mocks.getProviderManifest.mockImplementation((domain: string) =>
+      domain === "spotify" ? SPOTIFY : undefined,
+    );
+
+    expect(
+      mappedServices(
+        item(
+          { domain: "spotify", instance: "spotify--one" },
+          { domain: "None", instance: "None" },
+        ),
+      ),
+    ).toEqual([{ domain: "spotify", name: "Spotify" }]);
   });
 });

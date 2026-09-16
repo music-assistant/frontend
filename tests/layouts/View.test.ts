@@ -10,7 +10,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
-  return { store: reactive({ mobileLayout: false, frameless: false }) };
+  return {
+    store: reactive({
+      mobileLayout: false,
+      frameless: false,
+      enabledPlugins: new Set<string>(),
+    }),
+  };
 });
 
 vi.mock("@/plugins/eventbus", () => ({

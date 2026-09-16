@@ -792,7 +792,7 @@ watch(
 const getProviderName = function (config: ProviderConfig) {
   return providerDisplayName(
     config,
-    api.getProvider(config.instance_id),
+    api.providers[config.instance_id],
     api.providerManifests[config.domain],
   );
 };

@@ -56,6 +56,7 @@ vi.mock("@/plugins/store", async () => {
       mobileLayout: false,
       showFullscreenPlayer: false,
       showPlayersMenu: true,
+      enabledPlugins: new Set<string>(),
     }),
   };
 });

@@ -1,6 +1,6 @@
 import ItemsListing from "@/components/ItemsListing.vue";
-import type { MusicAssistantApi } from "@/plugins/api";
-import type { Track } from "@/plugins/api/interfaces";
+import { api, type MusicAssistantApi } from "@/plugins/api";
+import type { ProviderInstance, Track } from "@/plugins/api/interfaces";
 import {
   eventbus,
   type DeleteConfirmationDialogEvent,
@@ -526,6 +526,111 @@ describe("ItemsListing select all", () => {
     await flushPromises();
 
     expect(selection(listing)).toHaveLength(1);
+  });
+});
+
+describe("ItemsListing source selector", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    store.prevState = undefined;
+    for (const key of Object.keys(api.providers)) delete api.providers[key];
+    api.providers["spotify--1"] = {
+      instance_id: "spotify--1",
+      name: "Spotify",
+      domain: "spotify",
+    } as ProviderInstance;
+  });
+
+  /** Mounts a listing whose items come from the library or from one provider. */
+  function mountSourceListing(
+    props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+  ) {
+    const loadItems = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "artistalbums",
+      path: "artistalbums",
+      loadPagedData: undefined,
+      loadItems,
+      providerFilterOptions: ["spotify--1"],
+      requireProviderSelection: true,
+      libraryFilterOption: true,
+      ...props,
+    });
+    return { listing, loadItems };
+  }
+
+  function sourceOptions(listing: ReturnType<typeof mountListingRaw>) {
+    const items = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as {
+      label?: string;
+      subItems?: { label?: string; selected?: boolean; action?: () => void }[];
+    }[];
+    return items.find((item) => item.label === "tooltip.select_provider")
+      ?.subItems;
+  }
+
+  it("offers the library beside the providers, and starts there", async () => {
+    const { listing, loadItems } = mountSourceListing();
+    await flushPromises();
+
+    expect(sourceOptions(listing)?.map((option) => option.label)).toEqual([
+      "source_library",
+      "Spotify",
+    ]);
+    expect(sourceOptions(listing)?.[0].selected).toBe(true);
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: ["library"] }),
+    );
+  });
+
+  it("starts on the source the page asked for", async () => {
+    const { listing, loadItems } = mountSourceListing({
+      defaultProvider: "spotify--1",
+    });
+    await flushPromises();
+
+    expect(sourceOptions(listing)?.[1].selected).toBe(true);
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: ["spotify--1"] }),
+    );
+  });
+
+  it("reloads from the source that is picked", async () => {
+    const { listing, loadItems } = mountSourceListing();
+    await flushPromises();
+    loadItems.mockClear();
+
+    sourceOptions(listing)?.[1].action?.();
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: ["spotify--1"] }),
+    );
+    expect(sourceOptions(listing)?.[1].selected).toBe(true);
+  });
+
+  it("leaves the library out when the page does not offer it", async () => {
+    api.providers["tidal--1"] = {
+      instance_id: "tidal--1",
+      name: "Tidal",
+      domain: "tidal",
+    } as ProviderInstance;
+    const { listing } = mountSourceListing({
+      libraryFilterOption: false,
+      providerFilterOptions: ["spotify--1", "tidal--1"],
+    });
+    await flushPromises();
+
+    expect(sourceOptions(listing)?.map((option) => option.label)).toEqual([
+      "Spotify",
+      "Tidal",
+    ]);
   });
 });
 

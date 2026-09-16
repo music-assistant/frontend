@@ -13,13 +13,14 @@
           <Tooltip>
             <TooltipTrigger as-child>
               <Button
-                variant="ghost-outline"
-                :size="showLabel ? 'xs' : 'icon-xs'"
-                :class="[pillClass, lyricsActive ? activePillClass : '']"
+                variant="overlay"
+                :size="showLabel ? 'default' : 'icon-sm'"
+                :data-active="lyricsActive || undefined"
+                :aria-pressed="lyricsActive"
                 :aria-label="panelLabel"
                 @click="emit('toggle-lyrics')"
               >
-                <Captions :size="16" />
+                <Captions />
                 <span v-if="showLabel">{{ panelLabel }}</span>
               </Button>
             </TooltipTrigger>
@@ -33,17 +34,15 @@
           <Tooltip>
             <TooltipTrigger as-child>
               <Button
-                variant="ghost-outline"
-                :size="showLabel ? 'xs' : 'icon-xs'"
-                :class="[
-                  pillClass,
-                  props.transcriptSyncEnabled ? activePillClass : '',
-                ]"
+                variant="overlay"
+                :size="showLabel ? 'default' : 'icon-sm'"
+                :data-active="props.transcriptSyncEnabled || undefined"
+                :aria-pressed="props.transcriptSyncEnabled"
                 :aria-label="transcriptSyncToggleLabel"
                 @click="emit('toggle-transcript-sync')"
               >
-                <Unlink2 v-if="!props.transcriptSyncEnabled" :size="14" />
-                <Link2 v-else :size="14" />
+                <Unlink2 v-if="!props.transcriptSyncEnabled" />
+                <Link2 v-else />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
@@ -54,7 +53,7 @@
       </ButtonGroup>
     </template>
 
-    <!-- lyrics: available -> clickable toggle (fully primary while the panel is open) -->
+    <!-- lyrics: available -> clickable toggle (icon turns primary while the panel is open) -->
     <TooltipProvider
       v-else-if="lyricsState === 'available'"
       :delay-duration="200"
@@ -62,13 +61,14 @@
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
-            variant="ghost-outline"
-            :size="showLabel ? 'xs' : 'icon-xs'"
-            :class="[pillClass, lyricsActive ? activePillClass : '']"
+            variant="overlay"
+            :size="showLabel ? 'default' : 'icon-sm'"
+            :data-active="lyricsActive || undefined"
+            :aria-pressed="lyricsActive"
             :aria-label="panelLabel"
             @click="emit('toggle-lyrics')"
           >
-            <MicVocal :size="16" :class="{ 'mic-singing': lyricsActive }" />
+            <MicVocal :class="{ 'mic-singing': lyricsActive }" />
             <span v-if="showLabel">{{ panelLabel }}</span>
           </Button>
         </TooltipTrigger>
@@ -83,19 +83,17 @@
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
-            variant="ghost-outline"
-            :size="showLabel ? 'xs' : 'icon-xs'"
-            :class="['text-muted-foreground cursor-default', pillClass]"
+            variant="overlay"
+            :size="showLabel ? 'default' : 'icon-sm'"
+            class="text-overlay-foreground/50 cursor-default"
             :aria-label="panelLabel"
           >
             <Captions
               v-if="showsTranscript"
-              :size="16"
               :class="lyricsState === 'loading' ? 'animate-pulse' : ''"
             />
             <MicVocal
               v-else
-              :size="16"
               :class="lyricsState === 'loading' ? 'animate-pulse' : ''"
             />
             <span v-if="showLabel">{{ panelLabel }}</span>
@@ -115,12 +113,13 @@
         <TooltipTrigger as-child>
           <Button
             as="span"
-            variant="ghost-outline"
-            :size="showLabel ? 'xs' : 'icon-xs'"
-            :class="[pillClass, activePillClass, 'cursor-default']"
+            variant="overlay"
+            :size="showLabel ? 'default' : 'icon-sm'"
+            class="cursor-default"
+            data-active="true"
             :aria-label="$t('autoplay')"
           >
-            <AutoplayIcon :size="16" active />
+            <AutoplayIcon active />
             <span v-if="showLabel">{{ $t("autoplay") }}</span>
           </Button>
         </TooltipTrigger>
@@ -137,8 +136,8 @@
       </Tooltip>
     </TooltipProvider>
 
-    <!-- autoplay: direct toggle (primary while enabled). Hidden while dynamic
-         mode is active or for infinite streams (autoplay is moot there). -->
+    <!-- autoplay: direct toggle (icon turns primary while enabled). Hidden while
+         dynamic mode is active or for infinite streams (autoplay is moot there). -->
     <AutoplayRepeatLockButton
       v-if="autoplayApplicable && queue && repeatLocked"
       :aria-label="$t('autoplay')"
@@ -146,16 +145,15 @@
       aria-disabled="true"
       role="switch"
       :class="[
-        pillClass,
         buttonVariants({
-          variant: 'ghost-outline',
-          size: showLabel ? 'xs' : 'icon-xs',
+          variant: 'overlay',
+          size: showLabel ? 'default' : 'icon-sm',
         }),
-        'text-muted-foreground opacity-70 cursor-help',
+        'text-overlay-foreground/50 cursor-help',
       ]"
       :description="$t('autoplay_repeat_disabled')"
     >
-      <AutoplayIcon :size="16" />
+      <AutoplayIcon />
       <span v-if="showLabel">{{ $t("autoplay") }}</span>
     </AutoplayRepeatLockButton>
     <TooltipProvider
@@ -165,13 +163,14 @@
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
-            variant="ghost-outline"
-            :size="showLabel ? 'xs' : 'icon-xs'"
-            :class="[pillClass, autoplayEnabled ? activePillClass : '']"
+            variant="overlay"
+            :size="showLabel ? 'default' : 'icon-sm'"
+            :data-active="autoplayEnabled || undefined"
+            :aria-pressed="autoplayEnabled"
             :aria-label="$t('autoplay')"
             @click="setAutoplay(!autoplayEnabled)"
           >
-            <AutoplayIcon :size="16" :active="autoplayEnabled" />
+            <AutoplayIcon :active="autoplayEnabled" />
             <span v-if="showLabel">{{ $t("autoplay") }}</span>
           </Button>
         </TooltipTrigger>
@@ -188,18 +187,19 @@
       </Tooltip>
     </TooltipProvider>
 
-    <!-- crossfade: direct toggle (primary while enabled) -->
+    <!-- crossfade: direct toggle (icon turns primary while enabled) -->
     <TooltipProvider v-if="showCrossfade && queue" :delay-duration="200">
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
-            variant="ghost-outline"
-            :size="showLabel ? 'xs' : 'icon-xs'"
-            :class="[pillClass, crossfadeEnabled ? activePillClass : '']"
+            variant="overlay"
+            :size="showLabel ? 'default' : 'icon-sm'"
+            :data-active="crossfadeEnabled || undefined"
+            :aria-pressed="crossfadeEnabled"
             :aria-label="$t('crossfade')"
             @click="toggleCrossfade"
           >
-            <CrossfadeIcon :size="16" :smart="smartCrossfadeActive" />
+            <CrossfadeIcon :smart="smartCrossfadeActive" />
             <span v-if="showLabel">{{ $t("crossfade") }}</span>
           </Button>
         </TooltipTrigger>
@@ -213,9 +213,8 @@
     <ShowDashboardButton
       dashboard="now_playing"
       :player-id="store.activePlayerId"
-      variant="ghost-outline"
-      :button-size="showLabel ? 'xs' : 'icon-xs'"
-      :icon-size="16"
+      variant="overlay"
+      :button-size="showLabel ? 'icon' : 'icon-sm'"
       content-class="z-[10001]"
     />
 
@@ -225,13 +224,13 @@
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
-            variant="ghost-outline"
-            :size="showLabel ? 'xs' : 'icon-xs'"
-            :class="[pillClass, activePillClass]"
+            variant="overlay"
+            :size="showLabel ? 'default' : 'icon-sm'"
+            data-active="true"
             :aria-label="$t('audio_overlay')"
             @click="openOverlay"
           >
-            <AudioLines :size="16" />
+            <AudioLines />
             <span v-if="showLabel">{{ $t("audio_overlay") }}</span>
           </Button>
         </TooltipTrigger>
@@ -343,15 +342,9 @@ const seedNames = computed(() =>
     .join(", "),
 );
 
+// Phones get icon-only 32px controls so the row fits; desktop matches the
+// 36px hero buttons with their labels.
 const showLabel = computed(() => !store.mobileLayout);
-
-// The ghost-outline variant provides the pill look (transparent with a subtle
-// border, frosted background on hover only).
-const pillClass = "relative";
-
-// Solid primary pill for the "enabled" state of the toggles.
-const activePillClass =
-  "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90";
 
 // --- crossfade ---
 const crossfadeEnabled = computed(

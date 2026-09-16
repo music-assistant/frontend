@@ -97,7 +97,7 @@
                   <Button
                     variant="outline"
                     size="xs"
-                    :aria-label="`${$t('row_source')}: ${sourceLabel(row.source)}`"
+                    :aria-label="`${$t('row_source')}: ${rowSourceLabel(row.source)}`"
                   >
                     {{ $t("row_source") }}
                     <ChevronDown :size="13" />
@@ -174,7 +174,11 @@
 </template>
 
 <script setup lang="ts" generic="Id extends string, Item extends MediaItemType">
-import type { RowRegistry, RowSource } from "@/components/details/rowRegistry";
+import {
+  rowSourceLabel,
+  type RowRegistry,
+  type RowSource,
+} from "@/components/details/rowRegistry";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
@@ -317,18 +321,11 @@ const dropGapOffset = computed(() => {
   return ((drop > source ? drop - 1 : drop) - source) * dragRowHeight.value;
 });
 
-/** The label of a source: the library, every provider, or one of them. */
-function sourceLabel(source: RowSource): string {
-  if (source === "library") return $t("source_library");
-  if (source === "all") return $t("source_all");
-  return api.providers[source]?.name ?? source;
-}
-
 /** The sources offered for a row, in the order the picker lists them. */
 function sourceOptions(id: Id): SourceOption[] {
   return props.registry.sources(id, props.item).map((source) => ({
     value: source,
-    label: sourceLabel(source),
+    label: rowSourceLabel(source),
     domain: api.providers[source]?.domain,
   }));
 }
@@ -367,7 +364,7 @@ function slotStyle(index: number) {
 /** What feeds a row, below its title. */
 function rowMetaText(id: Id, source?: RowSource): string {
   if (props.registry.definition(id).adminOnly) return $t("admin_only");
-  const parts = source ? [sourceLabel(source)] : [];
+  const parts = source ? [rowSourceLabel(source)] : [];
   const meta = props.rowMeta?.[id];
   if (meta) parts.push(meta);
   return parts.join(" · ");

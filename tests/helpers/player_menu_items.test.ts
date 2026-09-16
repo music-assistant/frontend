@@ -57,6 +57,7 @@ const {
   setQueueDj: vi.fn(),
   showsRef: { value: [] as AIRadioStation[] },
   storeMock: {
+    enabledPlugins: new Set(["milkdrop_visualizer"]),
     showFullscreenPlayer: true,
     showPlayersMenu: true,
   },
@@ -65,9 +66,6 @@ const {
 vi.mock("@/plugins/api", () => ({
   default: {
     players: {},
-    providers: {
-      milkdrop_visualizer: { domain: "milkdrop_visualizer", available: true },
-    },
     playerCommandShuffle: vi.fn(),
     playerCommandRepeat: vi.fn(),
   },

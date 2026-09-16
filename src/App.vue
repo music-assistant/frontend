@@ -63,12 +63,7 @@ import {
   resetMediaSession,
 } from "@/helpers/mediaSession";
 import { api, ConnectionState } from "@/plugins/api";
-import {
-  CoreState,
-  EventType,
-  ProviderType,
-  Scope,
-} from "@/plugins/api/interfaces";
+import { CoreState, EventType, Scope } from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
@@ -272,29 +267,6 @@ let initializationCompleted = false;
 // the user's role and its sorted scopes at the last completed initialization
 let initializedAccess: string | undefined;
 
-const refreshPluginEnabledState = async (domain: string) => {
-  try {
-    const providers = await api.getProviderConfigs(ProviderType.PLUGIN, domain);
-    if (providers.length > 0 && providers[0].enabled) {
-      store.enabledPlugins.add(domain);
-    } else {
-      store.enabledPlugins.delete(domain);
-    }
-  } catch (error) {
-    console.error("[App] Failed to check " + domain + " status:", error);
-    store.enabledPlugins.delete(domain);
-  }
-};
-
-const refreshPluginEnabledStates = async () => {
-  await Promise.all([
-    refreshPluginEnabledState("party"),
-    refreshPluginEnabledState("music_quiz"),
-    refreshPluginEnabledState("ai_radio"),
-    refreshPluginEnabledState("milkdrop_visualizer"),
-  ]);
-};
-
 // TODO: Remove this migration code in v2.9 release
 // Added in: current version
 // Can be removed: v2.9
@@ -419,9 +391,6 @@ const completeInitialization = async () => {
     store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
     store.libraryGenresCount = await api.getLibraryGenresCount();
-
-    // Keep plugin-backed UI entries in sync with enabled providers.
-    await refreshPluginEnabledStates();
   } else if (isDashboardViewer) {
     console.debug("[App] Dashboard viewer - fetching player/queue state only");
     // Dashboards render live player/queue state, which regular guests don't need
@@ -654,14 +623,6 @@ onMounted(async () => {
   ) {
     await completeInitialization();
   }
-
-  // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync.
-  api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    if (authManager.isGuestAccessSession() || authManager.isDashboardViewer())
-      return;
-
-    await refreshPluginEnabledStates();
-  });
 
   // Re-prune when the provider set changes at runtime.
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {

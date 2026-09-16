@@ -1,20 +1,24 @@
 <template>
-  <EditorialShelf class="artist-shelf" :gap="14" :tiles-per-view="tilesPerView">
+  <EditorialShelf
+    class="release-shelf"
+    :gap="14"
+    :tiles-per-view="tilesPerView"
+  >
     <template #header>
       <div
         v-hold="onHold"
-        class="artist-shelf__titles"
+        class="release-shelf__titles"
         @touchstart.passive="onTouchStart"
         @click.capture="swallowClickAfterHold"
       >
-        <h2 class="artist-shelf__title">{{ title }}</h2>
-        <span v-if="meta" class="artist-shelf__meta">{{ meta }}</span>
+        <h2 class="release-shelf__title">{{ title }}</h2>
+        <span v-if="meta" class="release-shelf__meta">{{ meta }}</span>
       </div>
     </template>
     <template v-if="viewAllTo" #actions>
       <RouterLink
         :to="viewAllTo"
-        class="artist-shelf__more"
+        class="release-shelf__more"
         :aria-label="$t('tooltip.view_all', { name: title })"
       >
         {{ $t("view_all") }}
@@ -30,8 +34,8 @@
         :is-available="itemIsAvailable(item)"
       >
         <template #art-overlay>
-          <span class="artist-shelf__art-scrim"></span>
-          <span v-if="item.year" class="artist-shelf__year">{{
+          <span class="release-shelf__art-scrim"></span>
+          <span v-if="item.year" class="release-shelf__year">{{
             item.year
           }}</span>
         </template>
@@ -69,15 +73,12 @@ export interface Props {
   // undefined while the row is still loading
   items?: Array<Album | ItemMapping>;
   viewAllTo?: RouteLocationRaw;
-  // "lg" is the albums shelf, "md" the smaller singles / appearances ones
-  size?: "lg" | "md";
   parentItem?: MediaItemType;
 }
 const props = withDefaults(defineProps<Props>(), {
   meta: undefined,
   items: undefined,
   viewAllTo: undefined,
-  size: "md",
   parentItem: undefined,
 });
 
@@ -87,7 +88,7 @@ const emit = defineEmits<{
 
 const SKELETONS = 6;
 
-const tilesPerView = computed(() => shelfTilesPerView(props.size));
+const tilesPerView = computed(() => shelfTilesPerView());
 
 const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
   emit("edit-rows"),
@@ -104,23 +105,23 @@ const subtitle = function (item: Album | ItemMapping): string {
 
 /**
  * Tiles per viewport width, following the same curve as the Discover shelves
- * but one step tighter so the cards land on the artist page's smaller sizes.
+ * but one step tighter so the cards land on the detail pages' smaller sizes.
+ * Every release row uses it, so a single and an album are the same size.
  */
-function shelfTilesPerView(size: "lg" | "md"): number {
+function shelfTilesPerView(): number {
   const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
-  if (size === "lg") return isPhone ? 2.4 : panelViewItemResponsive(0) + 1.5;
-  return isPhone ? 3.2 : panelViewItemResponsive(0) + 2.5;
+  return isPhone ? 2.4 : panelViewItemResponsive(0) + 1.5;
 }
 </script>
 
 <style scoped>
-.artist-shelf__titles {
+.release-shelf__titles {
   display: flex;
   align-items: baseline;
   gap: 10px;
   min-width: 0;
 }
-.artist-shelf__title {
+.release-shelf__title {
   margin: 0;
   font-size: 22px;
   font-weight: 700;
@@ -130,12 +131,12 @@ function shelfTilesPerView(size: "lg" | "md"): number {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.artist-shelf__meta {
+.release-shelf__meta {
   font-size: 13px;
   color: rgba(var(--v-theme-on-surface), 0.6);
   white-space: nowrap;
 }
-.artist-shelf__more {
+.release-shelf__more {
   flex: none;
   font-size: 13px;
   font-weight: 500;
@@ -143,11 +144,11 @@ function shelfTilesPerView(size: "lg" | "md"): number {
   text-decoration: none;
   white-space: nowrap;
 }
-.artist-shelf__more:hover,
-.artist-shelf__more:focus-visible {
+.release-shelf__more:hover,
+.release-shelf__more:focus-visible {
   text-decoration: underline;
 }
-.artist-shelf__art-scrim {
+.release-shelf__art-scrim {
   position: absolute;
   inset: 0;
   background: linear-gradient(
@@ -157,7 +158,7 @@ function shelfTilesPerView(size: "lg" | "md"): number {
     rgba(0, 0, 0, 0.7) 100%
   );
 }
-.artist-shelf__year {
+.release-shelf__year {
   position: absolute;
   left: 10px;
   bottom: 8px;
@@ -167,7 +168,7 @@ function shelfTilesPerView(size: "lg" | "md"): number {
 }
 
 @media (max-width: 768px) {
-  .artist-shelf__title {
+  .release-shelf__title {
     font-size: 19px;
   }
 }

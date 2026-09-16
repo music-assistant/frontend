@@ -44,7 +44,11 @@
           :to="allTracksRoute"
           class="artist-top-tracks__more"
         >
-          {{ $t("n_in_library", { count: libraryTrackCount }) }}
+          {{
+            $t("artist_view_library_tracks", libraryTrackCount, {
+              named: { count: libraryTrackCount },
+            })
+          }}
         </RouterLink>
       </div>
 

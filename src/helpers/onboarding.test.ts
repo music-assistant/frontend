@@ -41,6 +41,8 @@ function context(
     isAdmin: true,
     isMember: false,
     welcomed: false,
+    canOwnSources: false,
+    ownedMusicSourceCount: 0,
     providers: [],
     playerCount: 0,
     memberCount: null,
@@ -112,9 +114,15 @@ describe("onboarding step order", () => {
     );
     expect(registered?.optional).toBeUndefined();
     expect(registered?.deferred).toBeUndefined();
+    // the registry carries the own-sources step between what's here and the
+    // tour, whether or not a given member is offered it
     expect(stepIds([...ONBOARDING_STEPS])).toEqual([
       ...BASE_ORDER,
-      ...MEMBER_ORDER,
+      "welcome",
+      "whats_here",
+      "own_sources",
+      "tour",
+      "all_set",
     ]);
   });
 
@@ -501,6 +509,62 @@ describe("the member track", () => {
 
   it("follows a deep link to a step of its own", () => {
     expect(firstStep(memberContext(), "tour")).toBe("tour");
+  });
+});
+
+describe("the own-sources invitation", () => {
+  /** A member whose role may add music sources of their own. */
+  function ownMemberContext(
+    overrides: Partial<OnboardingContext> = {},
+  ): OnboardingContext {
+    return memberContext({ canOwnSources: true, ...overrides });
+  }
+
+  const ownSources = ONBOARDING_STEPS.find(
+    (candidate) => candidate.id === "own_sources",
+  )!;
+
+  it("offers the step to a member whose role may add its own sources", () => {
+    expect(ownSources.appliesTo(ownMemberContext())).toBe(true);
+  });
+
+  it("keeps it from a member whose role may not", () => {
+    expect(ownSources.appliesTo(memberContext())).toBe(false);
+  });
+
+  it("keeps it off the admin track", () => {
+    // canOwnSources says nothing on the admin track: the step is a member's
+    expect(ownSources.appliesTo(context({ canOwnSources: true }))).toBe(false);
+  });
+
+  it("is done once the member owns a music source", () => {
+    expect(
+      ownSources.isDone(ownMemberContext({ ownedMusicSourceCount: 0 })),
+    ).toBe(false);
+    expect(
+      ownSources.isDone(ownMemberContext({ ownedMusicSourceCount: 1 })),
+    ).toBe(true);
+  });
+
+  it("runs after what's here and before the tour", () => {
+    expect(stepIds(applicableSteps(ownMemberContext()))).toEqual([
+      "welcome",
+      "whats_here",
+      "own_sources",
+      "tour",
+      "all_set",
+    ]);
+  });
+
+  it("stays on the checklist until it is done, since it is never optional", () => {
+    const open = ownMemberContext();
+    expect(stepIds(checklistSteps(open))).toContain("own_sources");
+    expect(stepIds(checklistPendingSteps(open))).toContain("own_sources");
+
+    // still listed once done — it is non-optional — but no longer counted
+    const done = ownMemberContext({ ownedMusicSourceCount: 1 });
+    expect(stepIds(checklistSteps(done))).toContain("own_sources");
+    expect(stepIds(checklistPendingSteps(done))).not.toContain("own_sources");
   });
 });
 

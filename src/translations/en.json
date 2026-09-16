@@ -605,21 +605,21 @@
             "household": "Shared (no owner)",
             "sharing": "Sharing",
             "shared_users": "Shared with",
-            "select_members": "Select members",
-            "shared_with_count": "Shared with {count} member | Shared with {count} members",
+            "select_members": "Select users",
+            "shared_with_count": "Shared with {count} user | Shared with {count} users",
             "options": {
                 "private": "Only me",
-                "selected": "Selected members",
-                "members": "All members",
+                "selected": "Selected users",
+                "members": "All users except guests",
                 "everyone": "Everyone, including guests",
                 "not_shared": "Not shared"
             },
             "hints": {
                 "private": "Only the owner can use this source.",
-                "selected": "The owner and the members selected below.",
-                "members": "Every signed-in member, guests excluded.",
+                "selected": "The owner and the users selected below.",
+                "members": "Every signed-in user, guests excluded.",
                 "everyone": "Any user can use this source.",
-                "selected_no_owner": "Only the members selected below.",
+                "selected_no_owner": "Only the users selected below.",
                 "nobody": "Nobody can use this source until it has an owner or is shared with someone."
             },
             "updated": "Access updated",
@@ -2116,10 +2116,10 @@
         "collaborative_hint": "Everyone the playlist is shared with may also add and remove items.",
         "hints": {
             "private": "Only the owner can see this playlist.",
-            "selected": "The owner and the members selected below.",
-            "members": "Every signed-in member, guests excluded.",
+            "selected": "The owner and the users selected below.",
+            "members": "Every signed-in user, guests excluded.",
             "everyone": "Any user can see this playlist.",
-            "selected_no_owner": "Only the members selected below.",
+            "selected_no_owner": "Only the users selected below.",
             "nobody": "Nobody can see this playlist until it has an owner or is shared with someone."
         },
         "updated": "Sharing updated"
@@ -2276,6 +2276,11 @@
     "latest_release": "Latest release",
     "view_all": "View all",
     "n_in_library": "{count} in library",
+    "album_radio": "Album endless mix",
+    "n_tracks": "{count} track | {count} tracks",
+    "more_from_artist": "More from this artist",
+    "more_from_artist_name": "More from {name}",
+    "artist_view_library_tracks": "View {count} library track | View {count} library tracks",
     "play_on_player": "Play on {player}",
     "artist_radio": "Artist endless mix",
     "newest_first": "newest first",
@@ -2293,6 +2298,10 @@
     "hide_row": "Hide row",
     "show_row": "Show row",
     "edit_rows_hint": "Drag to reorder, hide what you don't want. \"Source\" picks what feeds a row (your library, one source, or all of them).",
+    "track_radio": "Track endless mix",
+    "edit_rows_subtitle_album": "Applies to every album page",
+    "edit_rows_subtitle_track": "Applies to every track page",
+    "n_releases": "{count} release | {count} releases",
     "admin_only": "Admin only",
     "done": "Done",
     "on_provider": "On {0}",
@@ -2610,6 +2619,13 @@
                     "hint": "Pick a player in the bar at the bottom, press play, and open the full player to see what is coming up.",
                     "pick": "Pick a player"
                 }
+            },
+            "own_sources": {
+                "title": "Connect your own accounts",
+                "description": "Add your own music services so your playlists and library turn up alongside everyone else's. You can always do this later from your settings.",
+                "add": "Add a music source",
+                "empty": "You have not connected any music sources of your own yet.",
+                "connected": "Your music sources"
             },
             "tour": {
                 "title": "A quick tour",

@@ -230,7 +230,9 @@ describe("party dashboard guard", () => {
     ).resolves.toBeUndefined();
   });
 
-  it("lets a dashboard viewer through without a plugin list of its own", async () => {
+  // the global guard sends a viewer back to its pinned route, so a redirect
+  // would loop
+  it("lets a dashboard viewer through even without the plugin", async () => {
     mocks.isDashboardViewer.mockReturnValue(true);
 
     await expect(
