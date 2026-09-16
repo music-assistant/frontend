@@ -47,20 +47,12 @@
     "search": "搜尋",
     "settings": {
         "add_new": "新增",
-        "add_provider": "新增提供來源",
-        "advanced_settings": "進階設定",
-        "check_docs": "查看文件",
-        "config_player": "設定撥放器: {0}",
         "configure": "設定",
         "delete": "刪除",
         "disable": "停用",
         "documentation": "文件",
         "enable": "啟用",
         "enable_player": "啟用此播放器",
-        "enabled": "啟用",
-        "musicproviders": "音樂提供來源",
-        "no_providers": "未設定任何音樂提供來源",
-        "providers": "提供來源",
         "save": "儲存",
         "artists_in_library": "專輯庫裡的歌手",
         "albums_in_library": "專輯庫",
@@ -78,15 +70,8 @@
                 "auto": "自動 (依預設值)"
             }
         },
-        "no_music_providers": "未設定任何音樂提供來源",
-        "edit_provider": "編輯提供者: {0}",
-        "metadataprovider": "Matadata 提供來源",
-        "music": "音樂",
-        "musicprovider": "音樂提供來源",
         "playerprovider": "播放器提供來源",
-        "pluginprovider": "外掛提供者",
         "frontend_description": "自訂使用者介面主題及外觀",
-        "onboarding_title": "歡迎使用 Music Assistant！",
         "system": "系統",
         "library_stats": "音樂庫統計",
         "core_module": {
@@ -108,8 +93,6 @@
         "remote_access_step_3": "隨時隨地連線並享受您的音樂！",
         "frontend": "使用者介面",
         "view_players": "檢視播放器",
-        "onboarding_music_title": "音樂",
-        "onboarding_add_music": "新增音樂",
         "reset_to_defaults": "恢復預設設定",
         "enable_browser_controls": {
             "label": "啟用瀏覽器媒體控制"
@@ -117,14 +100,11 @@
         "show_advanced_settings": "顯示進階設定",
         "restore_all_present": "所有預設類型均已存在。",
         "full_restore_success": "還原工作已完成。 {0} 已還原成預設類型。",
-        "view_all_genres": "檢視所有類型",
-        "background_scanner_description": "自動將歌曲、專輯和歌手配對到類型。",
         "restore_defaults_failed": "還原類型預設失敗",
         "add_music_provider": "新增音樂來源",
         "add_player_provider": "新增播放器提供來源",
         "add_metadata_provider": "新增 Matadata 提供來源",
         "music_sources": "音樂來源",
-        "excluded_genres": "排除的類型",
         "genre_table_rows_per_page": "每頁顯示數量",
         "missing_players_hint": "找不到播放器? {0}",
         "add_player_providers": "增加更多音樂提供來源",
@@ -133,10 +113,7 @@
         "audio_analysis": "音訊分析",
         "audio_analysis_coverage": {
             "title": "音訊分析覆蓋範圍",
-            "col_provider": "提供來源",
-            "col_coverage": "涵蓋範圍",
             "col_pending": "待處理",
-            "col_version": "版本",
             "unavailable": "不可用",
             "none": "—"
         },
@@ -160,7 +137,6 @@
         "provider_reloading": "重新載入提供來源...",
         "provider_removed": "提供來源已移除",
         "queue_settings": "佇列設定",
-        "protocol_enable_label": "啟用輸出協定",
         "dsp": {
             "parameter": {
                 "balance": "平衡"
@@ -237,7 +213,6 @@
         "role": "角色",
         "password_optional_hint": "留空則不會修改密碼",
         "ingress_password_note": "在 Home Assistant 以外存取 Music Assistant 時才需要使用此密碼登入。",
-        "provider_filter": "音樂提供來源篩選",
         "save_changes": "儲存變更",
         "update_password": "更新密碼"
     },

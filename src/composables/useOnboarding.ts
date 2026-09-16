@@ -21,7 +21,11 @@ import {
   ONBOARDING_PERSONA_PREFERENCE,
   ONBOARDING_WELCOME_PREFERENCE,
 } from "@/helpers/onboarding_access";
-import { userDisplayName } from "@/helpers/provider_access";
+import {
+  isOwnMusicSource,
+  ownedMusicSourceCount,
+  userDisplayName,
+} from "@/helpers/provider_access";
 import {
   isBuiltinProvider,
   providerDisplayName,
@@ -214,6 +218,14 @@ const intent = getPreference<OnboardingIntent>(ONBOARDING_INTENT_PREFERENCE);
 const persona = getPreference<OnboardingPersona>(ONBOARDING_PERSONA_PREFERENCE);
 const welcomedAt = getPreference<string>(ONBOARDING_WELCOME_PREFERENCE);
 
+// the music sources this member owns, for the own-sources step to list and
+// for the context to count; only ever non-empty once configs are loaded
+const ownedMusicSources = computed(() =>
+  (providerConfigs.value ?? []).filter((config) =>
+    isOwnMusicSource(config, store.currentUser?.user_id),
+  ),
+);
+
 const ctx = computed<OnboardingContext>(() => ({
   // which track this session is on, which is what decides the steps below
   isAdmin: isAdminTrack(),
@@ -221,6 +233,11 @@ const ctx = computed<OnboardingContext>(() => ({
   // the welcome has been shown before, which is all the marker on the account
   // says — and all the welcome needs it to say
   welcomed: welcomedAt.value != null,
+  canOwnSources: authManager.hasScope(Scope.CONFIG_PROVIDERS_OWN),
+  ownedMusicSourceCount: ownedMusicSourceCount(
+    providerConfigs.value ?? [],
+    store.currentUser?.user_id,
+  ),
   providers: (providerConfigs.value ?? []).map((config) => ({
     type: config.type,
     domain: config.domain,
@@ -407,6 +424,8 @@ export function useOnboarding() {
     // alone, so it waits for nothing else
     configsLoaded,
     loadProviderConfigs,
+    // the music sources the member owns, for the own-sources step to list
+    ownedMusicSources,
     // what a step that has just added a member asks for the users again with
     loadUsers,
     finish,

@@ -234,6 +234,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { provideEditedProviderName } from "@/composables/useEditedProviderName";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
 import { availableSettingsSections } from "@/helpers/settings_sections";
@@ -253,6 +254,10 @@ const router = useRouter();
 const { t } = useI18n();
 const { getPreference, setPreference } = useUserPreferences();
 const { mobile } = useDisplay();
+
+// the provider settings page publishes the name it shows, so the crumb above
+// it cannot disagree with its heading
+const editedProviderName = provideEditedProviderName();
 
 const settingsViewMode = ref<"list" | "card">("card");
 const settingsListPrependGap = computed(() => (mobile.value ? 4 : 24));
@@ -568,6 +573,7 @@ const activeTab = computed(() => {
   return "music_providers";
 });
 
+// the fallback for as long as the page below has not resolved a name yet
 const getProviderName = (instanceId: string) => {
   const providerInstance = api.getProvider(instanceId);
   if (providerInstance) {
@@ -675,7 +681,9 @@ const breadcrumbItems = computed(() => {
   match(name)
     .with("editprovider", () => {
       items.push({
-        title: getProviderName(route.params.instanceId as string),
+        title:
+          editedProviderName.value ||
+          getProviderName(route.params.instanceId as string),
         disabled: true,
       });
     })

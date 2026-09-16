@@ -39,13 +39,15 @@ const open = ref(false);
 
 // Whoever onboarding has something for sees the checklist: the admin their
 // setup, everyone else who lives here their welcome. Nothing is counted before
-// the track's own data is in, which for a member is nothing to wait for.
-const visible = computed(
-  () =>
-    (ctx.value.isMember || (ctx.value.isAdmin && configsLoaded.value)) &&
-    hasPending.value &&
-    !dismissed.value,
-);
+// the track's own data is in — the provider configs for the admin and for a
+// member who can own sources, and nothing at all for an ordinary member.
+const visible = computed(() => {
+  if (dismissed.value || !hasPending.value) return false;
+  if (ctx.value.isAdmin) return configsLoaded.value;
+  if (ctx.value.isMember)
+    return !ctx.value.canOwnSources || configsLoaded.value;
+  return false;
+});
 
 // the welcome has nothing to finish setting up, so it says what it is there for
 const hintKey = computed(() =>
@@ -66,10 +68,12 @@ const hideForNow = function () {
 };
 
 // the checklist is the only reason the sidebar needs the provider
-// configurations, and only the setup is counted off them, so nobody but an
-// admin ever fetches them
+// configurations: the admin's setup is counted off them, and so is the
+// own-sources step of a member who can add sources, so those two fetch them
+// and nobody else does
 onMounted(() => {
-  if (ctx.value.isAdmin) void loadProviderConfigs();
+  if (ctx.value.isAdmin || (ctx.value.isMember && ctx.value.canOwnSources))
+    void loadProviderConfigs();
 });
 </script>
 

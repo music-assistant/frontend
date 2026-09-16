@@ -415,20 +415,21 @@
             >
               <!-- favorite (heart) icon; podcast episodes are never stored
               in the library, so they cannot be favorited -->
-              <button
+              <Button
                 v-if="
                   canEditLibrary && item.media_type != MediaType.PODCAST_EPISODE
                 "
                 type="button"
-                class="favorite-icon-button"
+                variant="ghost-icon"
+                size="icon-xs"
                 :aria-label="$t('tooltip.favorite')"
                 :aria-pressed="item.favorite ? 'true' : 'false'"
                 :title="favoriteButtonLabel"
                 @click="api.toggleFavorite(item)"
               >
-                <IconHeartFilled v-if="item.favorite" :size="24" />
-                <IconHeart v-else :stroke-width="2" :size="24" />
-              </button>
+                <IconHeartFilled v-if="item.favorite" class="size-6" />
+                <IconHeart v-else :stroke-width="2" class="size-6" />
+              </Button>
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
               <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
@@ -934,24 +935,6 @@ const collectionNarrators = computed(() => {
 
 .background-image .v-img__img--cover {
   object-position: 50% 20%;
-}
-
-.favorite-icon-button {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  color: currentColor;
-  cursor: pointer;
-  display: inline-flex;
-  height: 24px;
-  justify-content: center;
-  padding: 0;
-  width: 24px;
-}
-
-.favorite-icon-button:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
 }
 
 .v-card--variant-elevated {

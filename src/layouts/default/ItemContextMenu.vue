@@ -989,12 +989,14 @@ export const getContextMenuItems = async function (
     const supportsEdit = builtinProvider?.supported_features.includes(
       featureMap[item.media_type],
     );
-    // For playlists, also check is_editable flag (builtin special playlists are not editable)
-    // and that the user manages the playlist (a personal one is only edited by its owner);
+    // For playlists, require library.write and check the is_editable flag
+    // (builtin special playlists are not editable) plus that the user manages
+    // the playlist (a personal one is only edited by its owner);
     // radios and tracks are edited by a library manager
     const canEditItem =
       item.media_type === MediaType.PLAYLIST
-        ? (item as Playlist).is_editable !== false &&
+        ? canEditLibrary &&
+          (item as Playlist).is_editable !== false &&
           canManagePlaylist(item as Playlist, store.currentUser, managesLibrary)
         : managesLibrary;
     if (hasBuiltinProvider && supportsEdit && canEditItem) {

@@ -78,6 +78,12 @@ export const isOwnMusicSource = (
   userId: string | undefined,
 ) => userId !== undefined && config.access?.owner === userId;
 
+/** How many music sources the given user owns. */
+export const ownedMusicSourceCount = (
+  configs: ProviderConfig[],
+  userId: string | undefined,
+) => configs.filter((config) => isOwnMusicSource(config, userId)).length;
+
 /**
  * Whether nobody can use what this access record guards: it has no owner and
  * is private, or is shared with selected members while nobody is picked.

@@ -1,13 +1,16 @@
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import {
+  ProviderSharing,
   ProviderType,
   UserRole,
   type Scope,
   type User,
 } from "@/plugins/api/interfaces";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { providerConfig } from "../fixtures/providerConfig";
 import {
   BUILTIN_ROLE_SCOPES,
+  MEMBER_WITHOUT_OWN_SCOPES,
   OWN_SOURCES_ROLE_SCOPES,
   scopeChecker,
 } from "../fixtures/scopes";
@@ -27,7 +30,7 @@ const {
 } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, unknown>,
-    // the instances that loaded, which name a provider before its config does
+    // the instances that loaded, which name a provider that has no custom name
     providers: {} as Record<string, { name: string }>,
     providerManifests: {} as Record<string, { builtin: boolean; name: string }>,
     getAllUsers: vi.fn(),
@@ -123,10 +126,14 @@ function signIn(overrides: Partial<User> = {}): User {
   return account;
 }
 
-/** Sign in with a role and the scopes it grants, member scopes by default. */
+/**
+ * Sign in with a role and the scopes it grants. Defaults to a member who may
+ * not add sources of their own, so the welcome runs on its own; pass scopes for
+ * a role that can.
+ */
 function signInAs(
   overrides: Partial<User> = {},
-  scopes: readonly Scope[] = BUILTIN_ROLE_SCOPES.user,
+  scopes: readonly Scope[] = MEMBER_WITHOUT_OWN_SCOPES,
 ): User {
   authMock.hasScope.mockImplementation(scopeChecker(scopes));
   return signIn({ user_id: "sam-1", username: "sam", ...overrides });
@@ -148,6 +155,22 @@ function addProvider(
   });
   apiMock.providerManifests[domain] = {
     builtin: options.builtin ?? false,
+    name: `${domain} manifest`,
+  };
+}
+
+/** A music source that carries an owner, as a member's own source does. */
+function addOwnedSource(instanceId: string, domain: string, owner: string) {
+  providerConfigs.list.push({
+    ...providerConfig({
+      instance_id: instanceId,
+      domain,
+      type: ProviderType.MUSIC,
+      access: { owner, sharing: ProviderSharing.PRIVATE, shared_users: [] },
+    }),
+  });
+  apiMock.providerManifests[domain] = {
+    builtin: false,
     name: `${domain} manifest`,
   };
 }
@@ -493,7 +516,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     expect(ctx.value.providers).toHaveLength(4);
   });
 
-  it("prefers the name the loaded instance goes by", async () => {
+  it("prefers the custom name set on the configuration", async () => {
     addProvider("spotify--1", "spotify", ProviderType.MUSIC);
     providerConfigs.list[0].name = "The kitchen's Spotify";
     apiMock.providers["spotify--1"] = { name: "Spotify in the kitchen" };
@@ -502,19 +525,19 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     await module.useOnboarding().loadOnboardingData();
 
     expect(module.configuredProviders(ProviderType.MUSIC)[0].name).toBe(
-      "Spotify in the kitchen",
+      "The kitchen's Spotify",
     );
   });
 
-  it("falls back on the name the configuration carries", async () => {
+  it("falls back on the name the loaded instance goes by", async () => {
     addProvider("spotify--1", "spotify", ProviderType.MUSIC);
-    providerConfigs.list[0].name = "The kitchen's Spotify";
+    apiMock.providers["spotify--1"] = { name: "Spotify in the kitchen" };
 
     const module = await loadModule();
     await module.useOnboarding().loadOnboardingData();
 
     expect(module.configuredProviders(ProviderType.MUSIC)[0].name).toBe(
-      "The kitchen's Spotify",
+      "Spotify in the kitchen",
     );
   });
 
@@ -707,13 +730,33 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       "invite_members",
       "finish",
     ];
-    const MEMBER_STEPS = ["welcome", "whats_here", "tour", "all_set"];
+    const MEMBER_STEPS = [
+      "welcome",
+      "whats_here",
+      "own_sources",
+      "tour",
+      "all_set",
+    ];
+    // a member whose role may not add its own sources skips the own-sources step
+    const MEMBER_STEPS_WITHOUT_OWN = [
+      "welcome",
+      "whats_here",
+      "tour",
+      "all_set",
+    ];
 
     it.each([
       ["an admin", BUILTIN_ROLE_SCOPES.admin, UserRole.ADMIN, ADMIN_STEPS],
       ["a member", BUILTIN_ROLE_SCOPES.user, UserRole.USER, MEMBER_STEPS],
       // a role an admin made up here: not a guest, so someone who lives here
       ["a custom role", OWN_SOURCES_ROLE_SCOPES, "dj", MEMBER_STEPS],
+      // a member whose role may not add its own sources
+      [
+        "a member who may not add sources",
+        MEMBER_WITHOUT_OWN_SCOPES,
+        UserRole.USER,
+        MEMBER_STEPS_WITHOUT_OWN,
+      ],
       ["a guest", BUILTIN_ROLE_SCOPES.guest, UserRole.GUEST, []],
       // the Home Assistant integration signs in as one of these
       ["a service account", BUILTIN_ROLE_SCOPES.user, UserRole.SERVICE, []],
@@ -750,6 +793,59 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       expect(ctx.value.providers).toEqual([]);
       expect(warnSpy).not.toHaveBeenCalled();
       expect(toastMock.error).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("the own-sources invitation", () => {
+    it("can add its own sources when the role holds the scope", async () => {
+      signInAs({}, BUILTIN_ROLE_SCOPES.user);
+
+      const { ctx } = await loadOnboarding();
+
+      expect(ctx.value.canOwnSources).toBe(true);
+    });
+
+    it("cannot when the role does not hold the scope", async () => {
+      signInAs({}, MEMBER_WITHOUT_OWN_SCOPES);
+
+      const { ctx } = await loadOnboarding();
+
+      expect(ctx.value.canOwnSources).toBe(false);
+    });
+
+    it("counts and lists only the sources this member owns", async () => {
+      signInAs({ user_id: "sam-1" }, BUILTIN_ROLE_SCOPES.user);
+      addOwnedSource("spotify--1", "spotify", "sam-1");
+      addOwnedSource("tidal--1", "tidal", "sam-1");
+      // owned by someone else in the household: not this member's to count
+      addOwnedSource("qobuz--1", "qobuz", "alex-1");
+
+      const { ctx, ownedMusicSources } = await loadOnboarding();
+
+      expect(ctx.value.ownedMusicSourceCount).toBe(2);
+      expect(
+        ownedMusicSources.value.map((config) => config.instance_id),
+      ).toEqual(["spotify--1", "tidal--1"]);
+    });
+
+    it("counts none while every source belongs to someone else", async () => {
+      signInAs({ user_id: "sam-1" }, BUILTIN_ROLE_SCOPES.user);
+      addOwnedSource("qobuz--1", "qobuz", "alex-1");
+
+      const { ctx, ownedMusicSources } = await loadOnboarding();
+
+      expect(ctx.value.ownedMusicSourceCount).toBe(0);
+      expect(ownedMusicSources.value).toEqual([]);
+    });
+
+    it("ticks the step off once the member owns a source", async () => {
+      signInAs({ user_id: "sam-1" }, BUILTIN_ROLE_SCOPES.user);
+      addOwnedSource("spotify--1", "spotify", "sam-1");
+
+      const { steps, ctx } = await loadOnboarding();
+
+      const ownSources = steps.value.find((step) => step.id === "own_sources")!;
+      expect(ownSources.isDone(ctx.value)).toBe(true);
     });
   });
 

@@ -4,6 +4,7 @@
     class="detail-hero-button"
     :class="{
       'detail-hero-button--phone': isPhone,
+      'detail-hero-button--icon-only': iconOnly,
       'detail-hero-button--pressed': pressed,
     }"
     :disabled="disabled"
@@ -60,6 +61,13 @@ const isPhone = computed(() => isPhoneSizedScreen());
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.detail-hero-button:hover:not(:disabled) {
+  border-color: rgb(var(--v-theme-primary));
+  background: rgba(var(--v-theme-primary), 0.3);
 }
 .detail-hero-button:disabled {
   cursor: default;
@@ -71,6 +79,10 @@ const isPhone = computed(() => isPhoneSizedScreen());
 }
 .detail-hero-button--pressed svg {
   color: rgb(var(--v-theme-primary));
+}
+.detail-hero-button--icon-only {
+  width: 36px;
+  padding: 0;
 }
 .detail-hero-button--phone {
   width: 44px;

@@ -29,6 +29,13 @@ declare module "vue-router" {
   }
 }
 
+// the url's params and query together as the view's props, e.g. the album a
+// track was opened from
+const paramsAndQueryProps = (route: {
+  params: Record<string, string | string[]>;
+  query: Record<string, string | (string | null)[] | null | undefined>;
+}) => ({ ...route.params, ...route.query });
+
 export const routes: RouteRecordRaw[] = [
   {
     path: "/guest",
@@ -100,7 +107,9 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
-          // Dashboard viewers can't populate enabledPlugins (scoped like guests); trust the server, since the session only exists via an already-enabled dashboard.
+          // A redirect would loop with the global guard, which sends a
+          // dashboard viewer back to its pinned route; trust the server, since
+          // the session only exists via an already-enabled dashboard.
           if (authManager.isDashboardViewer()) return;
 
           // Only allow access if party plugin is enabled
@@ -314,16 +323,16 @@ export const routes: RouteRecordRaw[] = [
               import(
                 /* webpackChunkName: "track" */ "@/views/TrackDetails.vue"
               ),
-            props: (route: {
-              params: Record<string, string | string[]>;
-              query: Record<
-                string,
-                string | (string | null)[] | null | undefined
-              >;
-            }) => ({
-              ...route.params,
-              ...route.query,
-            }),
+            props: paramsAndQueryProps,
+          },
+          {
+            path: ":provider/:itemId/:listing",
+            name: "tracklisting",
+            component: () =>
+              import(
+                /* webpackChunkName: "tracklisting" */ "@/views/TrackListing.vue"
+              ),
+            props: paramsAndQueryProps,
           },
         ],
       },
