@@ -434,7 +434,7 @@ const openAdvanced = async function (): Promise<void> {
   });
 };
 
-/** The settings of one module that differ from what the server has. */
+/** The settings of one module the server carries that differ from what it has. */
 const changedValuesOf = function (
   domain: CoreDomain,
   values: Record<string, ConfigValueType>,
@@ -442,17 +442,21 @@ const changedValuesOf = function (
   const keys: readonly string[] = ADVANCED_SETTINGS[domain];
   return Object.fromEntries(
     Object.entries(values).filter(
-      ([key, value]) => keys.includes(key) && value !== saved[key],
+      ([key, value]) =>
+        keys.includes(key) && key in saved && value !== saved[key],
     ),
   );
 };
 
-const onSubmit = function (values: Record<string, ConfigValueType>) {
-  // each module is handed the settings of its own that changed and merges
-  // them into what it has stored, so everything else keeps its value. The
-  // save is only over once every module has answered, so a retry never
-  // overlaps a request still on its way.
-  const save = Promise.allSettled(
+/**
+ * Hand each module the settings of its own that changed; it merges them into
+ * what it has stored, so everything else keeps its value. Over only once every
+ * module has answered, so nothing can overlap a request still on its way.
+ */
+const saveChanges = async function (
+  values: Record<string, ConfigValueType>,
+): Promise<boolean> {
+  const outcomes = await Promise.allSettled(
     DOMAINS.map(async (domain) => {
       const own = changedValuesOf(domain, values);
       if (Object.keys(own).length === 0) return;
@@ -462,9 +466,17 @@ const onSubmit = function (values: Record<string, ConfigValueType>) {
       // server's has to be asked for once it is back on its new address
       if (domain === "streams") void refreshStreamServerInfo();
     }),
-  )
-    .then((outcomes) => {
-      if (outcomes.some((outcome) => outcome.status === "rejected")) {
+  );
+  return outcomes.every((outcome) => outcome.status === "fulfilled");
+};
+
+const onSubmit = function (values: Record<string, ConfigValueType>) {
+  // one save at a time: the form's button stays live while a save is out,
+  // and a second one sent behind the first is what the server ends up with
+  const save = (pendingSave ?? Promise.resolve(true))
+    .then(() => saveChanges(values))
+    .then((succeeded) => {
+      if (!succeeded) {
         // the api tells the user what went wrong itself; the form takes its
         // pending edits back under guard, so nothing typed here is lost
         editConfig.value?.saveFailed();
@@ -490,9 +502,13 @@ const loadConfigs = async function (): Promise<void> {
       api.getCoreConfig("streams"),
     ]);
     configs.value = { webserver, streams };
-    // the form hands an entry without a value over as null
+    // the form fills an entry without a value in with its default, and hands
+    // one without either over as null
     saved = Object.fromEntries(
-      entries.value.map((entry) => [entry.key, entry.value ?? null]),
+      entries.value.map((entry) => [
+        entry.key,
+        entry.value ?? entry.default_value ?? null,
+      ]),
     );
   } catch (error) {
     // the api already told the user; the section then says so rather than
@@ -520,8 +536,9 @@ onBeforeUnmount(() => {
  */
 const beforeLeave = async function (): Promise<boolean> {
   await loading;
-  // the Save button got there first: its answer is this one too
-  if (pendingSave) return await pendingSave;
+  // the Save button got there first: a save that did not land is the answer,
+  // one that did still leaves whatever was typed since to be saved below
+  if (pendingSave && !(await pendingSave)) return false;
   const form = editConfig.value;
   if (!form?.hasUnsavedChanges) return true;
   await form.submit();

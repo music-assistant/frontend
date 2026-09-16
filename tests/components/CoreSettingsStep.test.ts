@@ -63,6 +63,9 @@ function formValues(edits: Record<string, string> = {}) {
 const EDITED_VALUES = formValues({ server_name: "Living room" });
 /** The one setting of that the server does not have yet. */
 const EDITED_CHANGE = { server_name: "Living room" };
+// what the form hands over on its next submit: a test that types on after a
+// save changes this
+const formPayload = ref<Record<string, string>>(EDITED_VALUES);
 
 // the edits the form is holding on to, and whether they validate: a form that
 // does not hand its values over is one showing the user what is wrong with them
@@ -87,14 +90,16 @@ const editConfigStub = {
   emits: ["submit"],
   setup(
     _props: unknown,
-    { emit }: { emit: (event: "submit", values: typeof EDITED_VALUES) => void },
+    {
+      emit,
+    }: { emit: (event: "submit", values: Record<string, string>) => void },
   ) {
     return {
       hasUnsavedChanges,
       saveFailed,
       saveSucceeded,
       submit: async () => {
-        if (valuesValidate.value) emit("submit", EDITED_VALUES);
+        if (valuesValidate.value) emit("submit", formPayload.value);
       },
     };
   },
@@ -226,6 +231,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   hasUnsavedChanges.value = false;
   valuesValidate.value = true;
+  formPayload.value = EDITED_VALUES;
   grantAllBut();
   apiMock.serverInfo.value = serverInfo();
   apiMock.getCoreConfig.mockImplementation(async (domain) =>
@@ -550,6 +556,65 @@ describe("CoreSettingsStep", () => {
       expect(apiMock.getStreamServerInfo).toHaveBeenCalledOnce();
     });
 
+    it("does not take an untouched default for a change", async () => {
+      apiMock.getCoreConfig.mockImplementation(async (domain) =>
+        domain === "webserver"
+          ? webserverConfig({
+              server_name: entry("server_name"),
+              // never set: the form fills it in with the default and hands
+              // that over, which is no change
+              base_url: entry("base_url", {
+                value: undefined,
+                default_value: "auto",
+              }),
+            })
+          : streamsConfig(),
+      );
+      const wrapper = await mountLoadedStep();
+
+      // the form only hands over what it shows
+      await form(wrapper).vm.$emit("submit", {
+        server_name: "Living room",
+        base_url: "auto",
+        publish_ip: "publish_ip value",
+      });
+      await flushPromises();
+
+      expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
+      expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+        "webserver",
+        EDITED_CHANGE,
+      );
+    });
+
+    it("runs quick saves one after the other, the last one winning", async () => {
+      let landFirst: (config: CoreConfig) => void = () => {};
+      apiMock.saveCoreConfig.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            landFirst = resolve;
+          }),
+      );
+      const wrapper = await mountLoadedStep();
+
+      await form(wrapper).vm.$emit("submit", EDITED_VALUES);
+      await form(wrapper).vm.$emit(
+        "submit",
+        formValues({ server_name: "Kitchen" }),
+      );
+      await flushPromises();
+
+      // the second waits for the first, so the server is told in this order
+      expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
+      landFirst(webserverConfig());
+      await flushPromises();
+
+      expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
+      expect(apiMock.saveCoreConfig).toHaveBeenLastCalledWith("webserver", {
+        server_name: "Kitchen",
+      });
+    });
+
     it("saves a setting changed back and forth only when it differs from the server's", async () => {
       const wrapper = await mountLoadedStep();
 
@@ -715,6 +780,34 @@ describe("CoreSettingsStep", () => {
       await expect(leaving).resolves.toBe(false);
       expect(saveFailed).toHaveBeenCalledOnce();
       expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
+    });
+
+    it("saves what was typed while a save was out before the wizard moves on", async () => {
+      let landSave: (config: CoreConfig) => void = () => {};
+      apiMock.saveCoreConfig.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            landSave = resolve;
+          }),
+      );
+      hasUnsavedChanges.value = true;
+      const wrapper = await mountLoadedStep();
+      await form(wrapper).vm.$emit("submit", EDITED_VALUES);
+      // the user kept typing while the first save was out, so the form is
+      // still holding edits once that save has been taken over
+      formPayload.value = formValues({ server_name: "Kitchen" });
+      saveSucceeded.mockImplementationOnce(() => {
+        hasUnsavedChanges.value = true;
+      });
+
+      const leaving = wrapper.vm.beforeLeave();
+      landSave(webserverConfig());
+
+      await expect(leaving).resolves.toBe(true);
+      expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
+      expect(apiMock.saveCoreConfig).toHaveBeenLastCalledWith("webserver", {
+        server_name: "Kitchen",
+      });
     });
 
     it("leaves the edits guarded when a save did not land, and says it once", async () => {
