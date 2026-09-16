@@ -91,7 +91,7 @@
         </p>
       </div>
 
-      <div class="grid gap-3 sm:grid-cols-2">
+      <div class="grid items-start gap-3 sm:grid-cols-2">
         <RemoteAccessCard v-if="canManageRemoteAccess" />
 
         <Card data-testid="onboarding-reverse-proxy">
@@ -152,6 +152,7 @@
           :config-entries="entries"
           :disabled="false"
           :show-advanced-settings="true"
+          :inline-save="true"
           @submit="onSubmit"
         />
 
@@ -388,6 +389,10 @@ const entries = computed<ConfigEntryUI[]>(() =>
 // one path: whichever started it, both wait on the same answer and neither
 // sends the same settings a second time
 let pendingSave: Promise<boolean> | undefined;
+// the settings as the server has them, so a save only carries what changed:
+// the form hands every entry over, and the entries themselves change as the
+// user types, so neither says what the server was last told
+let saved: Record<string, ConfigValueType> = {};
 
 const loadStreamServerInfo = async function (): Promise<void> {
   const current = ++streamRequest;
@@ -428,25 +433,28 @@ const openAdvanced = async function (): Promise<void> {
   });
 };
 
-/** The settings of one module out of everything the form hands over. */
-const valuesOf = function (
+/** The settings of one module that differ from what the server has. */
+const changedValuesOf = function (
   domain: CoreDomain,
   values: Record<string, ConfigValueType>,
 ): Record<string, ConfigValueType> {
   const keys: readonly string[] = ADVANCED_SETTINGS[domain];
   return Object.fromEntries(
-    Object.entries(values).filter(([key]) => keys.includes(key)),
+    Object.entries(values).filter(
+      ([key, value]) => keys.includes(key) && value !== saved[key],
+    ),
   );
 };
 
 const onSubmit = function (values: Record<string, ConfigValueType>) {
-  // each module is handed its own settings and merges them into what it has
-  // stored, so the settings this form leaves out keep the values they had
+  // each module is handed the settings of its own that changed and merges
+  // them into what it has stored, so everything else keeps its value
   const save = Promise.all(
     DOMAINS.map(async (domain) => {
-      const own = valuesOf(domain, values);
+      const own = changedValuesOf(domain, values);
       if (Object.keys(own).length === 0) return;
       await api.saveCoreConfig(domain, own);
+      saved = { ...saved, ...own };
       // the internal address follows server info by itself; the stream
       // server's has to be asked for once it is back on its new address
       if (domain === "streams") void refreshStreamServerInfo();
@@ -479,6 +487,10 @@ const loadConfigs = async function (): Promise<void> {
       api.getCoreConfig("streams"),
     ]);
     configs.value = { webserver, streams };
+    // the form hands an entry without a value over as null
+    saved = Object.fromEntries(
+      entries.value.map((entry) => [entry.key, entry.value ?? null]),
+    );
   } catch (error) {
     // the api already told the user; the section then says so rather than
     // showing a form filled in with values nobody stands behind

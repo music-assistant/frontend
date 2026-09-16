@@ -1,16 +1,18 @@
 <template>
   <Card data-testid="onboarding-remote-access">
     <CardHeader>
-      <CardTitle class="flex flex-wrap items-center gap-2">
+      <CardTitle class="flex items-center gap-2">
         <Cloud class="size-4 shrink-0" aria-hidden="true" />
         {{ $t("onboarding.steps.core_settings.remote.builtin.title") }}
-        <Badge variant="secondary" as="span">
-          {{ $t("onboarding.steps.core_settings.remote.builtin.easiest") }}
-        </Badge>
       </CardTitle>
       <CardDescription>
         {{ $t("onboarding.steps.core_settings.remote.builtin.description") }}
       </CardDescription>
+      <CardAction>
+        <Badge variant="secondary">
+          {{ $t("onboarding.steps.core_settings.remote.builtin.easiest") }}
+        </Badge>
+      </CardAction>
     </CardHeader>
     <CardContent class="flex flex-col gap-3">
       <div class="flex items-center gap-2">
@@ -26,16 +28,24 @@
         </Label>
       </div>
       <div
-        v-if="enabled && remoteId"
+        v-if="enabled && (remoteId || loadingId)"
         class="flex flex-col gap-1"
         data-testid="onboarding-remote-access-id"
       >
         <span class="text-muted-foreground text-xs">
           {{ $t("onboarding.steps.core_settings.remote.builtin.id") }}
         </span>
-        <div class="flex items-center gap-1">
-          <code class="text-sm break-all">{{ remoteId }}</code>
+        <div class="flex min-h-7 items-center gap-1">
+          <!-- the room is kept while the id is on its way, so the step does
+               not shift once it lands -->
+          <Skeleton
+            v-if="!remoteId"
+            class="h-5 w-64 max-w-full"
+            data-testid="onboarding-remote-access-id-loading"
+          />
+          <code v-else class="text-sm break-all">{{ remoteId }}</code>
           <Button
+            v-if="remoteId"
             variant="ghost"
             size="icon"
             class="size-7 shrink-0"
@@ -66,12 +76,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { splitCode } from "@/helpers/segmented_code";
 import { copyToClipboard } from "@/helpers/utils";
@@ -93,6 +105,8 @@ const REMOTE_ID_GROUPS = [8, 5, 5, 8];
 const switchId = useId();
 const info = ref<RemoteAccessInfo>();
 const busy = ref(false);
+// whether the details of remote access that is already on are still coming in
+const loadingId = ref(false);
 // which request the latest answer belongs to: the read started on mount may
 // land after the switch has been answered, and must not undo that answer
 let request = 0;
@@ -108,12 +122,15 @@ const remoteId = computed(() => {
 
 const load = async function (): Promise<void> {
   const current = ++request;
+  loadingId.value = true;
   try {
     const answer = await api.getRemoteAccessInfo();
     if (current === request) info.value = answer;
   } catch (error) {
     // the api already told the user; the switch still follows server info
     console.warn("Failed to load the remote access details:", error);
+  } finally {
+    loadingId.value = false;
   }
 };
 

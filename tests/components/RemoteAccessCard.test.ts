@@ -107,6 +107,38 @@ describe("RemoteAccessCard", () => {
     expect(shownId(wrapper).text()).toContain(REMOTE_ID_GROUPED);
   });
 
+  it("keeps the room for the id while it is being read", async () => {
+    apiMock.serverInfo.value = serverInfo(true);
+    let answer: (info: RemoteAccessInfo) => void = () => {};
+    apiMock.getRemoteAccessInfo.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+    );
+
+    const wrapper = await mountCard();
+
+    // the block is there from the start, so nothing below it moves later
+    expect(shownId(wrapper).exists()).toBe(true);
+    expect(
+      wrapper
+        .find("[data-testid=onboarding-remote-access-id-loading]")
+        .exists(),
+    ).toBe(true);
+    expect(shownId(wrapper).text()).not.toContain(REMOTE_ID_GROUPED);
+
+    answer(remoteAccessInfo());
+    await flushPromises();
+
+    expect(
+      wrapper
+        .find("[data-testid=onboarding-remote-access-id-loading]")
+        .exists(),
+    ).toBe(false);
+    expect(shownId(wrapper).text()).toContain(REMOTE_ID_GROUPED);
+  });
+
   it("turns remote access on", async () => {
     const wrapper = await mountCard();
 

@@ -45,8 +45,24 @@ const INTERNAL_URL = "http://192.168.1.10:8095";
 const STREAM_URL = "http://192.168.1.10:8097";
 const MOVED_STREAM_URL = "http://10.0.0.5:8097";
 
+/**
+ * What the form hands over on a save: every entry it shows, the ones the user
+ * typed in and the ones they left alone alike.
+ */
+function formValues(edits: Record<string, string> = {}) {
+  return {
+    server_name: "server_name value",
+    base_url: "base_url value",
+    external_url: "external_url value",
+    publish_ip: "publish_ip value",
+    ...edits,
+  };
+}
+
 /** What the user typed, as the form hands it over. */
-const EDITED_VALUES = { server_name: "Living room" };
+const EDITED_VALUES = formValues({ server_name: "Living room" });
+/** The one setting of that the server does not have yet. */
+const EDITED_CHANGE = { server_name: "Living room" };
 
 // the edits the form is holding on to, and whether they validate: a form that
 // does not hand its values over is one showing the user what is wrong with them
@@ -67,7 +83,7 @@ const saveSucceeded = vi.fn((_values: Record<string, unknown>) => {
  */
 const editConfigStub = {
   name: "EditConfig",
-  props: ["configEntries", "disabled", "showAdvancedSettings"],
+  props: ["configEntries", "disabled", "inlineSave", "showAdvancedSettings"],
   emits: ["submit"],
   setup(
     _props: unknown,
@@ -400,6 +416,8 @@ describe("CoreSettingsStep", () => {
       // the switch above the form is what hides the entries, not the form's
       // own advanced toggle, which it does not offer
       expect(form(wrapper).props("showAdvancedSettings")).toBe(true);
+      // inside the wizard's dialog the form's save button stays with the form
+      expect(form(wrapper).props("inlineSave")).toBe(true);
     });
 
     it("unfolds them on request", async () => {
@@ -486,14 +504,18 @@ describe("CoreSettingsStep", () => {
   });
 
   describe("saving", () => {
-    it("saves each setting to its own module, and says so once", async () => {
-      const values = { server_name: "Living room", publish_ip: "10.0.0.5" };
+    it("saves what changed to its own module, and says so once", async () => {
+      const values = formValues({
+        server_name: "Living room",
+        publish_ip: "10.0.0.5",
+      });
       const wrapper = await mountLoadedStep();
 
       await form(wrapper).vm.$emit("submit", values);
       await flushPromises();
 
-      // each module merges what it is handed in, so a subset is safe to send
+      // the form hands everything over; each module gets what changed of its
+      // own and merges that in, so the rest keeps its value
       expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
       expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("webserver", {
         server_name: "Living room",
@@ -511,6 +533,7 @@ describe("CoreSettingsStep", () => {
     });
 
     it("hands a module nothing when none of its settings changed", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout"] });
       const wrapper = await mountLoadedStep();
 
       await form(wrapper).vm.$emit("submit", EDITED_VALUES);
@@ -519,15 +542,34 @@ describe("CoreSettingsStep", () => {
       expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
       expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
         "webserver",
-        EDITED_VALUES,
+        EDITED_CHANGE,
       );
+      // nothing moved, so nothing is asked again either
+      await vi.advanceTimersByTimeAsync(30_000);
+      await flushPromises();
+      expect(apiMock.getStreamServerInfo).toHaveBeenCalledOnce();
+    });
+
+    it("saves a setting changed back and forth only when it differs from the server's", async () => {
+      const wrapper = await mountLoadedStep();
+
+      await form(wrapper).vm.$emit("submit", EDITED_VALUES);
+      await flushPromises();
+      await form(wrapper).vm.$emit("submit", EDITED_VALUES);
+      await flushPromises();
+
+      // the second save carries nothing the server does not have already
+      expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
     });
 
     it("shows and checks the stream server's new address once it has moved", async () => {
       vi.useFakeTimers({ toFake: ["setTimeout"] });
       const wrapper = await mountLoadedStep();
 
-      await form(wrapper).vm.$emit("submit", { publish_ip: "10.0.0.5" });
+      await form(wrapper).vm.$emit(
+        "submit",
+        formValues({ publish_ip: "10.0.0.5" }),
+      );
       await flushPromises();
 
       // the save has answered, but the stream server restarts only a moment
@@ -559,7 +601,10 @@ describe("CoreSettingsStep", () => {
       vi.useFakeTimers({ toFake: ["setTimeout"] });
       const wrapper = await mountLoadedStep();
 
-      await form(wrapper).vm.$emit("submit", { publish_ip: "10.0.0.5" });
+      await form(wrapper).vm.$emit(
+        "submit",
+        formValues({ publish_ip: "10.0.0.5" }),
+      );
       await flushPromises();
 
       // the first lookup lands while the stream server is down: the address
@@ -586,7 +631,10 @@ describe("CoreSettingsStep", () => {
       vi.useFakeTimers({ toFake: ["setTimeout"] });
       const wrapper = await mountLoadedStep();
 
-      await form(wrapper).vm.$emit("submit", { publish_ip: "10.0.0.5" });
+      await form(wrapper).vm.$emit(
+        "submit",
+        formValues({ publish_ip: "10.0.0.5" }),
+      );
       await flushPromises();
 
       // an address that never moves — the same one saved again, say — is not
@@ -695,7 +743,7 @@ describe("CoreSettingsStep", () => {
 
       expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
         "webserver",
-        EDITED_VALUES,
+        EDITED_CHANGE,
       );
       expect(toastMock.success).toHaveBeenCalledWith("settings.settings_saved");
     });
