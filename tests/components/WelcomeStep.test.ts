@@ -70,6 +70,11 @@ vi.mock("@/composables/userPreferences", async () => {
   };
 });
 
+// Every test mounts the step on a fresh module registry, so the transform of
+// its module graph is paid at module scope, where no test or hook clock runs,
+// instead of by whichever test happens to mount first.
+await import("@/components/onboarding/steps/WelcomeStep.vue");
+
 /** A fresh step per test: the onboarding state lives for a whole session. */
 async function mountStep() {
   vi.resetModules();
