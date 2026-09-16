@@ -25,6 +25,10 @@ export function useProviderIcon(
     // handle case where provider domain is provided as instance id.
     if (value in api.providers) return api.providers[value].domain;
     if (value in api.providerManifests) return value;
+    // instance not loaded (e.g. a source not shared with this user): fall back
+    // to the domain embedded in the instance id
+    const embeddedDomain = value.split("--")[0];
+    if (embeddedDomain in api.providerManifests) return embeddedDomain;
     return undefined;
   });
 
