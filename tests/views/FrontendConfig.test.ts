@@ -103,12 +103,12 @@ describe("FrontendConfig save", () => {
     reload.mockRestore();
   });
 
-  it("does not reload the page when a save changes nothing", async () => {
+  it("writes nothing and does not reload when a save changes nothing", async () => {
     const wrapper = await mountPage();
     await submitAll(wrapper);
 
-    // every preference is still written; only the reload is conditional
-    expect(setPreference).toHaveBeenCalled();
+    // an entry left as it was stays as it was on the account
+    expect(setPreference).not.toHaveBeenCalled();
     expect(reload).not.toHaveBeenCalled();
   });
 
@@ -118,6 +118,19 @@ describe("FrontendConfig save", () => {
 
     expect(setPreference).toHaveBeenCalledWith("theme", "dark");
     expect(reload).toHaveBeenCalled();
+  });
+
+  it("leaves a derived default off the account when another setting is saved", async () => {
+    const wrapper = await mountPage();
+    await submitAll(wrapper, { theme: "dark" });
+
+    // the waveform setting follows the expert mode until it is set; saving
+    // the theme must not write it down as a choice
+    expect(setPreference).toHaveBeenCalledTimes(1);
+    expect(setPreference).not.toHaveBeenCalledWith(
+      "show_waveform",
+      expect.anything(),
+    );
   });
 
   it("defaults browser media controls to the built-in web player", async () => {

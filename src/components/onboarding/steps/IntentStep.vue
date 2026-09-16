@@ -6,7 +6,7 @@
 
     <ChoiceCards
       :options="options"
-      :selected="intent"
+      :selected="shown"
       :busy="busy"
       :labelled-by="DESCRIPTION_ID"
       test-id-prefix="onboarding-intent"
@@ -26,7 +26,7 @@ import ChoiceCards, {
 import type { OnboardingIntent, OnboardingStepId } from "@/helpers/onboarding";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { Library, Smartphone } from "@lucide/vue";
-import { markRaw, ref } from "vue";
+import { computed, markRaw, ref } from "vue";
 
 // what the cards answer, for the screen readers that read it out first
 const DESCRIPTION_ID = "onboarding-intent-description";
@@ -57,8 +57,16 @@ const options: ChoiceCardOption<OnboardingIntent>[] = [
   },
 ];
 
-// what moving on unanswered answers with: the option shown as chosen all along
+// the answer shown as chosen until the admin picks one
 const recommended = options.find((option) => option.recommended)!.value;
+
+// the answer given here, kept even when the account did not take it: the
+// card stays chosen, and moving on tries it again
+const chosen = ref<OnboardingIntent | null>(null);
+
+// what the cards show as chosen, and what moving on writes: the answer given
+// here, else the one on the account, else the recommended one
+const shown = computed(() => chosen.value ?? intent.value ?? recommended);
 
 // the answer is persisted on the server, so the cards stay inert until it lands
 const busy = ref(false);
@@ -76,19 +84,20 @@ const save = async function (value: OnboardingIntent): Promise<boolean> {
 
 const select = async function (value: OnboardingIntent) {
   if (busy.value) return;
+  chosen.value = value;
   if (await save(value)) emit("advance");
 };
 
 /**
- * The wizard asking whether it may move on. Moving on from the question
- * unanswered is an answer of its own: the recommended option, which the cards
- * were showing as chosen, is what the wizard runs as from here, instead of
- * leaving the question to be asked again. An answer that did not land keeps
- * the wizard here, so the question is never left behind unanswered.
+ * The wizard asking whether it may move on. Moving on writes the answer the
+ * cards show as chosen, unless the account already holds it: the recommended
+ * option for a question walked past, which is an answer of its own, or the
+ * pick the account did not take before. An answer that did not land keeps the
+ * wizard here, so the question is never left behind unanswered.
  */
 const beforeLeave = async function (): Promise<boolean> {
-  if (intent.value != null) return true;
-  return await save(recommended);
+  if (shown.value === intent.value) return true;
+  return await save(shown.value);
 };
 
 // the wizard reads `busy` to keep its Next from advancing while a card is saving

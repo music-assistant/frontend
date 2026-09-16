@@ -42,8 +42,10 @@ const watcherScope = effectScope(true);
  * Waveform bins and duration of the currently playing track.
  *
  * The data is shared between all callers and fetched once per track. Fetching
- * only runs while at least one caller is alive, and follows the user's waveform
- * setting unless a caller passes `ignorePreference` to get it regardless.
+ * only runs while at least one caller is alive. A caller sees the bins only
+ * while the user's waveform setting is on, unless it passes `ignorePreference`
+ * to get them regardless; a fetch made for such a caller stays hidden from the
+ * ones that follow the setting.
  */
 export function useActiveTrackWaveform(options?: {
   ignorePreference?: boolean;
@@ -64,7 +66,13 @@ export function useActiveTrackWaveform(options?: {
     });
   }
 
-  return { waveformBins, trackDurationSecs };
+  // the shared bins, unless they were only fetched for a caller that ignores
+  // the setting while this one follows it
+  const visibleBins = computed(() =>
+    ignorePreference || showWaveformPref.value ? waveformBins.value : null,
+  );
+
+  return { waveformBins: visibleBins, trackDurationSecs };
 }
 
 function startWatcher() {

@@ -542,9 +542,46 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     await wrapper.find("[data-testid=onboarding-next]").trigger("click");
     await flushPromises();
 
-    // the same for the recommended answer Next waves in
+    // Next tries their pick again rather than the recommended answer, and it
+    // does not land either
     expect(setUserPreferenceMock).toHaveBeenCalledTimes(2);
+    expect(setUserPreferenceMock).toHaveBeenLastCalledWith(
+      "onboarding.intent",
+      "phone_apps",
+    );
     expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+
+    wrapper.unmount();
+  });
+
+  it("keeps a failed change of a stored intent chosen and tries it again on Next", async () => {
+    preferenceState.intent.value = "music_hub";
+    // the account does not take the new answer, so the old one stays on it
+    setUserPreferenceMock.mockResolvedValueOnce(false);
+
+    const wrapper = await mountWizard({ step: "intent" });
+    await flushPromises();
+
+    const phoneApps = wrapper.find(
+      "[data-testid=onboarding-intent-phone_apps]",
+    );
+    await phoneApps.trigger("click");
+    await flushPromises();
+
+    // the pick stays the chosen card, and the wizard stays on the question
+    expect(phoneApps.attributes("aria-pressed")).toBe("true");
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+
+    // Next tries the pick again instead of walking on with the old answer;
+    // phone_apps defers the music sources, so one step on is the players
+    expect(setUserPreferenceMock).toHaveBeenLastCalledWith(
+      "onboarding.intent",
+      "phone_apps",
+    );
+    expect(heading(wrapper)).toBe("onboarding.steps.players.title");
 
     wrapper.unmount();
   });

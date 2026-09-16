@@ -274,8 +274,9 @@ describe("useActiveTrackWaveform", () => {
     await nextTick();
     await nextTick();
 
+    // one fetch serves both, and both see what it brought in
     expect(mockGetWaveForm).toHaveBeenCalledTimes(1);
-    expect(first.waveformBins).toBe(second.waveformBins);
+    expect(first.waveformBins.value).toEqual([0.5]);
     expect(second.waveformBins.value).toEqual([0.5]);
   });
 
@@ -425,6 +426,27 @@ describe("useActiveTrackWaveform", () => {
 
     expect(mockGetWaveForm).toHaveBeenCalledTimes(1);
     expect(waveformBins.value).toBeNull();
+  });
+
+  it("keeps a forced fetch away from a consumer that follows the setting", async () => {
+    mockGetWaveForm.mockResolvedValue([0.5]);
+    storeMock.currentUser = { preferences: { expert_mode: false } };
+
+    const useActiveTrackWaveform = await importComposable();
+    const forced = addConsumer(useActiveTrackWaveform, {
+      ignorePreference: true,
+    });
+    const following = addConsumer(useActiveTrackWaveform);
+
+    storeMock.curQueueItem = makeQueueItem();
+    await nextTick();
+    await nextTick();
+
+    // one fetch, made for the caller that asked regardless; the other keeps
+    // showing nothing, as its setting says
+    expect(mockGetWaveForm).toHaveBeenCalledTimes(1);
+    expect(forced.waveformBins.value).toEqual([0.5]);
+    expect(following.waveformBins.value).toBeNull();
   });
 
   it("refetches when the track changed while no consumer was alive", async () => {
