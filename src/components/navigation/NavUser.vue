@@ -25,7 +25,7 @@ const isMenuEditMode = computed(() => store.navMenuEditMode);
 
 const router = useRouter();
 const { isMobile, setOpenMobile } = useSidebar();
-const { start: startTour } = useTour();
+const { active: tourActive, start: startTour } = useTour();
 
 const displayName =
   store.currentUser?.display_name || store.currentUser?.username || "";
@@ -46,6 +46,12 @@ const handleTour = () => {
   // the tour points at the app itself, which the sheet would be covering
   setOpenMobile(false);
   startTour();
+};
+
+// the menu closes behind a tour that has taken focus by then, and handing it
+// back to the trigger would take it off the tour's card
+const onCloseAutoFocus = (event: Event) => {
+  if (tourActive.value) event.preventDefault();
 };
 
 const handleLogout = () => {
@@ -98,6 +104,7 @@ const handleLogout = () => {
           :side="isMobile ? 'bottom' : 'right'"
           :side-offset="isMobile ? 4 : 15"
           align="end"
+          @close-auto-focus="onCloseAutoFocus"
         >
           <DropdownMenuLabel class="p-0 font-normal">
             <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">

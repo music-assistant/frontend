@@ -31,7 +31,7 @@
       update-position-strategy="always"
       :aria-labelledby="titleId"
       :aria-describedby="descriptionId"
-      class="z-[10002] flex w-80 max-w-[calc(100vw-1.5rem)] flex-col gap-3"
+      class="z-[100003] flex w-80 max-w-[calc(100vw-1.5rem)] flex-col gap-3"
       data-testid="tour-card"
       @interact-outside.prevent
       @open-auto-focus="focusNext"
@@ -279,9 +279,11 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* above the sheet and the menu the tour is started from, which are still
+   sliding shut as the first stop appears */
 .tour-spotlight {
   position: fixed;
-  z-index: 10001;
+  z-index: 100002;
   border-radius: 10px;
   /* the shadow is the scrim: it reaches past every edge of the screen, so the
      stop is the one thing left undimmed */
