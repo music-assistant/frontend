@@ -3,7 +3,7 @@
     <ProviderFilters v-if="showSearch" @update:search="searchQuery = $event" />
     <!-- the empty state below carries the add button while there is nothing to list -->
     <Button
-      v-if="canAddSources && !showMusicEmptyState"
+      v-if="canOwnSources && !showMusicEmptyState"
       class="add-provider-btn"
       data-testid="add-provider"
       @click="showAddProviderDialog = true"
@@ -44,7 +44,7 @@
             :key="item.instance_id"
             variant="outline"
             :class="{
-              'cursor-pointer': canManage(item),
+              'cursor-pointer': canManageSource(item),
               'opacity-60': !item.enabled,
             }"
             data-testid="provider-row"
@@ -57,7 +57,7 @@
               <ItemTitle class="flex flex-wrap items-center gap-2">
                 <!-- the name is the focusable control; the row itself only follows the pointer -->
                 <button
-                  v-if="canManage(item)"
+                  v-if="canManageSource(item)"
                   type="button"
                   class="cursor-pointer text-left"
                   data-testid="provider-open"
@@ -119,7 +119,7 @@
                 {{ $t("settings.reconfigure") }}
               </Button>
               <Button
-                v-if="canManage(item)"
+                v-if="canManageSource(item)"
                 variant="ghost"
                 size="icon-sm"
                 data-testid="provider-menu"
@@ -204,7 +204,7 @@
                 </v-chip>
 
                 <v-btn
-                  v-if="canManage(item)"
+                  v-if="canManageSource(item)"
                   icon="mdi-dots-vertical"
                   size="small"
                   variant="text"
@@ -284,9 +284,15 @@
       </EmptyMedia>
       <EmptyTitle>{{ $t("settings.music_sources_empty_title") }}</EmptyTitle>
       <EmptyDescription>
-        {{ $t("settings.music_sources_empty") }}
+        {{
+          $t(
+            canOwnSources
+              ? "settings.music_sources_empty"
+              : "settings.music_sources_shared_empty",
+          )
+        }}
       </EmptyDescription>
-      <EmptyContent>
+      <EmptyContent v-if="canOwnSources">
         <Button
           data-testid="add-provider-empty"
           @click="showAddProviderDialog = true"
@@ -429,9 +435,9 @@ const managesAllSources = computed(() =>
   authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
 );
 
-// adding a music source takes the own-sources scope; a role without it only
-// reads the sources it may use
-const canAddSources = computed(
+// owning (and so adding) a music source takes the own-sources scope; a role
+// without it only reads the sources it may use
+const canOwnSources = computed(
   () =>
     managesAllSources.value || authManager.hasScope(Scope.CONFIG_PROVIDERS_OWN),
 );
@@ -525,33 +531,33 @@ watch(showSearch, (shown) => {
 // a member's own sources come first, then the ones shared with it; an admin
 // gets a single untitled section with everything
 const sections = computed(
-  (): { key: string; label: string; items: ProviderConfig[] }[] => {
+  (): { key: string; label?: string; items: ProviderConfig[] }[] => {
     const listed = getAllFilteredProviders();
-    if (managesAllSources.value)
-      return [{ key: "all", label: "", items: listed }];
-
     const userId = store.currentUser?.user_id;
-    return [
-      {
-        key: "own",
-        label: "settings.music_sources_own",
-        items: listed.filter((item) => isOwnMusicSource(item, userId)),
-      },
-      {
-        key: "shared",
-        label: "settings.music_sources_shared",
-        items: listed.filter((item) => !isOwnMusicSource(item, userId)),
-      },
-    ].filter((section) => section.items.length > 0);
+    const split = managesAllSources.value
+      ? [{ key: "all", items: listed }]
+      : [
+          {
+            key: "own",
+            label: "settings.music_sources_own",
+            items: listed.filter((item) => isOwnMusicSource(item, userId)),
+          },
+          {
+            key: "shared",
+            label: "settings.music_sources_shared",
+            items: listed.filter((item) => !isOwnMusicSource(item, userId)),
+          },
+        ];
+    return split.filter((section) => section.items.length > 0);
   },
 );
 
-// an empty music list invites a first source of one's own; any other empty
-// list is the result of the active search or type filter
+// an empty music list invites a first source of one's own, or tells a viewer
+// who cannot add any that nothing has been shared yet; any other empty list is
+// the result of the active search or type filter
 const showMusicEmptyState = computed(
   () =>
     loaded.value &&
-    canAddSources.value &&
     getAllFilteredProviders().length === 0 &&
     !searchQuery.value &&
     (currentType.value || ProviderType.MUSIC) === ProviderType.MUSIC,
@@ -631,9 +637,13 @@ const reconfigureProvider = function (providerInstanceId: string) {
   });
 };
 
-// a row of a source the viewer cannot manage opens nothing, so it stays inert
+// a row of a source the viewer cannot manage gets no click listener at all:
+// Vuetify only styles a card as a link when one is bound, and the hover lift
+// below keys on that
 const rowHandlers = function (provider: ProviderConfig) {
-  return canManage(provider) ? { click: () => openProvider(provider) } : {};
+  return canManageSource(provider)
+    ? { click: () => openProvider(provider) }
+    : {};
 };
 
 const openProvider = function (provider: ProviderConfig) {
@@ -666,17 +676,19 @@ const canReconfigure = function (provider: ProviderConfig) {
 // source it owns of a provider it may set up itself
 const maySetUp = function (provider: ProviderConfig) {
   return (
-    managesAllSources.value ||
-    (canManage(provider) &&
+    canManageSource(provider) &&
+    (managesAllSources.value ||
       isSelfServiceProvider(api.providerManifests[provider.domain]))
   );
 };
 
-// a member manages the sources it owns; the ones shared with it are read-only
-const canManage = function (provider: ProviderConfig) {
+// a member manages the sources it owns while its role may own sources; the
+// ones shared with it are read-only
+const canManageSource = function (provider: ProviderConfig) {
   return (
     managesAllSources.value ||
-    isOwnMusicSource(provider, store.currentUser?.user_id)
+    (canOwnSources.value &&
+      isOwnMusicSource(provider, store.currentUser?.user_id))
   );
 };
 
@@ -693,7 +705,7 @@ onMounted(() => {
   // candidates; the server lists them to whoever may own a source, older
   // servers not at all
   if (managesAllSources.value) loadUsers();
-  else if (canAddSources.value && api.supportsShareCandidates)
+  else if (canOwnSources.value && api.supportsShareCandidates)
     loadShareCandidates();
 });
 
@@ -951,7 +963,7 @@ const getErrorText = function (item: ProviderConfig) {
 // the source may change them
 const canConfigureAccess = function (item: ProviderConfig) {
   return (
-    canManage(item) &&
+    canManageSource(item) &&
     hasConfigurableAccess(item, api.providerManifests[item.domain])
   );
 };

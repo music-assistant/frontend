@@ -785,7 +785,8 @@
         "dsp_description": "Filters and gain applied to everything this player plays",
         "player_options_description": "Options and readings the player itself offers",
         "music_sources_own": "Your sources",
-        "music_sources_shared": "Shared with you"
+        "music_sources_shared": "Shared with you",
+        "music_sources_shared_empty": "No music sources have been shared with you yet."
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",

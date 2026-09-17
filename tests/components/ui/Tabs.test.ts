@@ -32,12 +32,25 @@ describe("TabsList", () => {
     expect(list.classes()).toEqual(
       expect.arrayContaining(["gap-6", "bg-transparent"]),
     );
-    // the list hugs its tabs instead of filling the row with a centred pair
+    // no pill sizing, and no width that would stretch the list across the row
     expect(list.classes()).toEqual(
       expect.not.arrayContaining(["bg-muted", "h-9", "p-[3px]", "w-auto"]),
     );
     // reka has no variant prop, so it must not reach the element
     expect(list.attributes("variant")).toBeUndefined();
+  });
+
+  it("underlines the active tab of a line list at the inherited line height", () => {
+    const trigger = mountTabs({ variant: "line" }).get(
+      '[data-slot="tabs-trigger"]',
+    );
+
+    expect(trigger.classes()).toEqual(
+      expect.arrayContaining([
+        "group-data-[variant=line]/tabs-list:leading-normal",
+        "group-data-[variant=line]/tabs-list:data-[state=active]:shadow-[inset_0_-2px_0_0_currentColor]",
+      ]),
+    );
   });
 
   it("keeps a caller's own classes next to the variant", () => {

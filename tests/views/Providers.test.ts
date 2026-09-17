@@ -213,6 +213,16 @@ const ButtonStub = {
   template: `<button @click="$emit('click', $event)"><slot /></button>`,
 };
 
+// the card view's Vuetify card, with the slots its icon and actions live in
+const CardStub = {
+  emits: ["click"],
+  template: `
+    <div @click="$emit('click')">
+      <slot name="prepend" /><slot /><slot name="append" />
+    </div>
+  `,
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getAllUsers.mockResolvedValue([owner, member]);
@@ -713,6 +723,7 @@ describe("Providers for a member", () => {
     const own = wrapper.get(
       '[data-section="own"] [data-testid="provider-row"]',
     );
+    expect(own.classes()).toContain("cursor-pointer");
     expect(own.find('[data-testid="provider-open"]').exists()).toBe(true);
     expect(own.find('[data-testid="provider-menu"]').exists()).toBe(true);
     expect(own.find('[data-testid="provider-access"]').exists()).toBe(true);
@@ -730,6 +741,30 @@ describe("Providers for a member", () => {
     expect(eventbusMock.emit).not.toHaveBeenCalledWith(
       "setupFlowDialog",
       expect.anything(),
+    );
+  });
+
+  it("keeps the sources shared with it read-only in the card view too", async () => {
+    const wrapper = await mountWithConfigs(
+      [ownSource(), { ...otherSource(), status: ProviderStatus.AUTH_REQUIRED }],
+      "card",
+    );
+
+    const own = wrapper.get('[data-section="own"] .provider-card');
+    expect(own.find('[aria-label^="more_options"]').exists()).toBe(true);
+    expect(own.find('[data-testid="provider-access"]').exists()).toBe(true);
+
+    const shared = wrapper.get('[data-section="shared"] .provider-card');
+    expect(shared.find('[aria-label^="more_options"]').exists()).toBe(false);
+    expect(shared.find('[data-testid="provider-access"]').exists()).toBe(false);
+    expect(shared.text()).toContain("settings.provider_status_auth_required");
+    expect(shared.text()).not.toContain("settings.reconfigure");
+
+    await shared.trigger("click");
+    expect(routerMock.push).not.toHaveBeenCalled();
+    await own.trigger("click");
+    expect(routerMock.push).toHaveBeenCalledWith(
+      "/settings/editprovider/spotify--own",
     );
   });
 
@@ -934,14 +969,30 @@ describe("Providers for a member that may not add sources", () => {
     expect(apiMock.getAllUsers).not.toHaveBeenCalled();
   });
 
-  it("leaves an empty list without an invitation to add a source", async () => {
+  it("shows the sources it owns read-only once its role may no longer own sources", async () => {
+    const wrapper = await mountWithConfigs([ownSource()]);
+
+    const row = wrapper.get(
+      '[data-section="own"] [data-testid="provider-row"]',
+    );
+    expect(row.find('[data-testid="provider-open"]').exists()).toBe(false);
+    expect(row.find('[data-testid="provider-menu"]').exists()).toBe(false);
+    expect(row.find('[data-testid="provider-access"]').exists()).toBe(false);
+  });
+
+  it("tells it nothing has been shared yet, without an invitation to add a source", async () => {
     const wrapper = await mountWithConfigs([]);
 
-    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
+    const empty = wrapper.get('[data-testid="music-sources-empty"]');
+    expect(empty.text()).toContain("settings.music_sources_empty_title");
+    expect(empty.text()).toContain("settings.music_sources_shared_empty");
+    // the invitation to connect an account is for whoever may add a source
+    expect(empty.text()).not.toMatch(/music_sources_empty(?!_title)/);
+    expect(empty.find('[data-testid="add-provider-empty"]').exists()).toBe(
       false,
     );
     expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(false);
-    expect(wrapper.get(".empty-state").text()).toContain("no_content");
+    expect(wrapper.find(".empty-state").exists()).toBe(false);
   });
 });
 
@@ -1167,6 +1218,7 @@ async function mountProviders(
 // a pending promise keeps the page in its loading state
 async function mountWithConfigs(
   configs: ProviderConfig[] | Promise<ProviderConfig[]>,
+  viewMode: "list" | "card" = "list",
 ) {
   apiMock.getProviderConfigs.mockReturnValue(Promise.resolve(configs));
 
@@ -1178,7 +1230,7 @@ async function mountWithConfigs(
       provide: {
         providersViewMode: {
           toggleViewMode: vi.fn(),
-          viewMode: ref<"list" | "card">("list"),
+          viewMode: ref<"list" | "card">(viewMode),
         },
       },
       stubs: {
@@ -1199,6 +1251,14 @@ async function mountWithConfigs(
         ItemTitle: SlotStub,
         ProviderAccessDialog: AccessDialogStub,
         Button: ButtonStub,
+        "v-btn": ButtonStub,
+        "v-card": CardStub,
+        "v-card-text": SlotStub,
+        "v-card-title": SlotStub,
+        "v-chip": SlotStub,
+        "v-col": SlotStub,
+        "v-icon": true,
+        "v-row": SlotStub,
       },
     },
   });
