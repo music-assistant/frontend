@@ -5,10 +5,18 @@ import {
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
 import ArtistListing, { type Props } from "@/views/ArtistListing.vue";
-import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  enableAutoUnmount,
+  flushPromises,
+  mount,
+  VueWrapper,
+} from "@vue/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { artist } from "../fixtures/artist";
 import { providerMapping } from "../fixtures/providerMapping";
+
+enableAutoUnmount(afterEach);
 
 const { mockGetArtist } = vi.hoisted(() => ({
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
@@ -29,9 +37,14 @@ vi.mock("@/plugins/i18n", async (importOriginal) => ({
   $t: (key: string) => key,
 }));
 
-vi.mock("vue-router", () => ({
-  useRouter: () => ({}),
+const { routerMock } = vi.hoisted(() => ({
+  routerMock: {
+    options: { history: { state: { back: null as string | null } } },
+    back: vi.fn(),
+    push: vi.fn(),
+  },
 }));
+vi.mock("vue-router", () => ({ useRouter: () => routerMock }));
 
 // the stub renders path/itemtype so tests can read which preference key
 // (see userPreferences.ts's getItemsListingPreferences) the listing was given
@@ -84,6 +97,9 @@ function listingAttributes(wrapper: VueWrapper) {
 describe("ArtistListing", () => {
   beforeEach(() => {
     mockGetArtist.mockReset();
+    routerMock.back.mockClear();
+    routerMock.push.mockClear();
+    routerMock.options.history.state.back = null;
     for (const key of Object.keys(api.providers)) delete api.providers[key];
   });
 
@@ -96,6 +112,37 @@ describe("ArtistListing", () => {
     const wrapper = await mountListing(listing);
     expect(listingAttributes(wrapper)).toEqual({ path, itemtype });
   });
+
+  it.each([null, "/artists"])(
+    "Escape preserves back semantics with history %s",
+    async (back) => {
+      routerMock.options.history.state.back = back;
+      const item = artist({ item_id: "artist-a", provider: "spotify--abc" });
+      const wrapper = await mountListing("albums", item);
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Escape",
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      if (back) {
+        expect(routerMock.back).toHaveBeenCalledTimes(1);
+        expect(routerMock.push).not.toHaveBeenCalled();
+      } else {
+        expect(routerMock.push).toHaveBeenCalledExactlyOnceWith({
+          name: "artist",
+          params: { provider: item.provider, itemId: item.item_id },
+        });
+        expect(routerMock.back).not.toHaveBeenCalled();
+      }
+      wrapper.unmount();
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      expect(
+        routerMock.back.mock.calls.length + routerMock.push.mock.calls.length,
+      ).toBe(1);
+    },
+  );
 
   it("renders nothing for an unknown listing", async () => {
     const wrapper = await mountListing("bogus");

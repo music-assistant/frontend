@@ -12,7 +12,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import Settings from "@/views/settings/Settings.vue";
-import { mount } from "@vue/test-utils";
+import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick, type Component } from "vue";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
@@ -75,6 +75,7 @@ vi.mock("vue-router", async (importOriginal) => ({
       },
     },
     push: routerPush,
+    options: { history: { state: { back: null } } },
   }),
 }));
 vi.mock("vue-i18n", async (importOriginal) => ({
@@ -88,6 +89,8 @@ vi.mock("vuetify", async (importOriginal) => {
     useDisplay: () => ({ mobile: ref(false) }),
   };
 });
+
+enableAutoUnmount(afterEach);
 
 const ToolbarHeadingStub = {
   props: ["title", "to", "items"],
@@ -234,6 +237,48 @@ function mountOverview() {
     },
   });
 }
+
+describe("Settings Escape navigation", () => {
+  beforeEach(() => {
+    routerPush.mockClear();
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+  });
+
+  it("does nothing on the overview", () => {
+    mountOverview();
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", cancelable: true }),
+    );
+    expect(routerPush).not.toHaveBeenCalled();
+  });
+
+  it("returns from a subpage, but leaves Escape in an editable field alone", async () => {
+    routeState.name = "editplayeroptions";
+    const wrapper = mount(Settings, {
+      attachTo: document.body,
+      global: {
+        stubs: {
+          Toolbar: { template: "<div />" },
+          RouterView: { template: '<input aria-label="Player name" />' },
+          VDivider: true,
+        },
+      },
+    });
+    const input = wrapper.get("input");
+    (input.element as HTMLInputElement).focus();
+    await input.trigger("keydown", { key: "Escape" });
+    expect(routerPush).not.toHaveBeenCalled();
+    (input.element as HTMLInputElement).blur();
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", cancelable: true }),
+    );
+    expect(routerPush).toHaveBeenCalledExactlyOnceWith({ name: "settings" });
+  });
+});
 
 describe("the link back into onboarding", () => {
   beforeEach(() => {

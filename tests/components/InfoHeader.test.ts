@@ -1,7 +1,7 @@
 import InfoHeader from "@/components/InfoHeader.vue";
 import type { Scope, Track } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
@@ -24,9 +24,14 @@ vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/eventbus", () => ({ eventbus: eventbusMock }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
+const { routerPush } = vi.hoisted(() => ({ routerPush: vi.fn() }));
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({
+    push: routerPush,
+    currentRoute: { value: { name: "track" } },
+    options: { history: { state: { back: null } } },
+  }),
 }));
 
 // the context menu builder pulls in the whole action layer, unrelated to the
@@ -61,11 +66,14 @@ vi.mock("@/components/MenuButton.vue", () => ({
   default: { name: "MenuButton", template: "<div />" },
 }));
 
+enableAutoUnmount(afterEach);
+
 const vuetify = createVuetify({ components, directives });
 
 function mountHeader(item: Track) {
   return mount(InfoHeader, {
     props: { item },
+    attachTo: document.body,
     global: {
       plugins: [vuetify],
       mocks: { $t: (key: string) => key },
@@ -112,6 +120,34 @@ describe("InfoHeader favorite toggle", () => {
     expect(apiMock.toggleFavorite.mock.calls[0][0]).toMatchObject({
       item_id: item.item_id,
     });
+  });
+
+  it("dismisses full info on the first Escape and navigates only on the next", async () => {
+    const item = track();
+    item.metadata.description = "A description that opens the full info dialog";
+    const wrapper = mountHeader(item);
+    await wrapper.get(".description-text").trigger("click");
+    await flushPromises();
+    const dialog = document.querySelector('[role="dialog"]');
+    expect(dialog).not.toBeNull();
+    dialog!.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    await flushPromises();
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(routerPush).not.toHaveBeenCalled();
+    document.body.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    expect(routerPush).toHaveBeenCalledExactlyOnceWith({ name: "tracks" });
   });
 
   it("no longer renders the old native favorite button", () => {

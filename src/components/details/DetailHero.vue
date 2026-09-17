@@ -47,6 +47,7 @@
 import Toolbar from "@/components/Toolbar.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { useEscapeBack } from "@/composables/useEscapeBack";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
@@ -98,6 +99,8 @@ watch(shortcutsPreference, () => buildMenu(props.item));
 const backButtonClick = function () {
   backFromMediaDetails(router);
 };
+
+useEscapeBack(backButtonClick);
 
 /** The item's overflow menu, with the page's own "Edit rows" entry last. */
 async function buildMenu(item?: MediaItemType) {
