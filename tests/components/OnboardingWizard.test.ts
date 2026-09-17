@@ -1,13 +1,16 @@
 import {
   ConfigEntryType,
+  EventType,
   ProviderType,
   UserRole,
+  type EventMessage,
   type Scope,
   type User,
 } from "@/plugins/api/interfaces";
 import type { OnboardingStepId } from "@/helpers/onboarding";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { playerConfig } from "../fixtures/playerConfig";
 import {
   BUILTIN_ROLE_SCOPES,
   MEMBER_WITHOUT_OWN_SCOPES,
@@ -31,15 +34,27 @@ const {
   apiMock: {
     players: {} as Record<string, unknown>,
     providers: {} as Record<string, { name: string }>,
-    providerManifests: {} as Record<string, { builtin: boolean }>,
+    providerManifests: {} as Record<
+      string,
+      { builtin: boolean; name?: string }
+    >,
     getAllUsers: vi.fn(),
     configureRemoteAccess: vi.fn(),
     getCoreConfig: vi.fn(),
+    getPlayerConfig: vi.fn(),
+    getPlayerConfigs: vi.fn(),
     getProviderConfigs: vi.fn(),
     getRemoteAccessInfo: vi.fn(),
     getStreamServerInfo: vi.fn(),
     saveCoreConfig: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
+    subscribe_multi:
+      vi.fn<
+        (
+          events: EventType[],
+          handler: (evt: EventMessage) => void,
+        ) => () => void
+      >(),
     sendCommand: vi.fn(),
     serverInfo: {
       value: {
@@ -110,6 +125,13 @@ vi.mock("vue-router", async () => {
 // have to be reachable
 vi.mock("@/views/settings/AddProviderDialog.vue", () => ({
   default: { template: "<div />" },
+}));
+
+// the player actions are covered where they live, and pulling them in would
+// drag the player menus and everything behind them into this mount
+vi.mock("@/helpers/player_settings_actions", () => ({
+  renamePlayer: vi.fn(),
+  setPlayerEnabled: vi.fn(),
 }));
 
 vi.mock("@/components/users/CreateUserDialog.vue", () => ({
@@ -298,6 +320,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     apiMock.getProviderConfigs.mockImplementation(async () => [
       ...providerConfigs.list,
     ]);
+    apiMock.getPlayerConfigs.mockReset();
+    apiMock.getPlayerConfigs.mockResolvedValue([]);
+    apiMock.getPlayerConfig.mockReset();
     apiMock.getAllUsers.mockReset();
     apiMock.getAllUsers.mockImplementation(async () => [...users.list]);
     apiMock.getCoreConfig.mockReset();
@@ -337,6 +362,8 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     );
     apiMock.sendCommand.mockReset();
     apiMock.subscribe.mockClear();
+    apiMock.subscribe_multi.mockReset();
+    apiMock.subscribe_multi.mockImplementation(() => vi.fn());
     authMock.hasScope.mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.admin),
     );
@@ -806,6 +833,48 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
+  it("lists the players the server already found", async () => {
+    apiMock.getPlayerConfigs.mockResolvedValue([
+      playerConfig({ player_id: "kitchen", default_name: "Kitchen speaker" }),
+    ]);
+    apiMock.providerManifests["chromecast"] = {
+      builtin: false,
+      name: "Chromecast",
+    };
+
+    const wrapper = await mountWizard({ step: "players" });
+    await flushPromises();
+
+    const players = wrapper.findAll("[data-testid=onboarding-player]");
+    expect(players).toHaveLength(1);
+    expect(players[0].text()).toContain("Kitchen speaker");
+    expect(players[0].text()).toContain("Chromecast");
+
+    wrapper.unmount();
+  });
+
+  it("follows the players for as long as it is open", async () => {
+    const stopFollowing = vi.fn();
+    apiMock.subscribe_multi.mockReturnValue(stopFollowing);
+
+    const wrapper = await mountWizard({ step: "players" });
+    await flushPromises();
+
+    // the players keep turning up while the setup runs, so they are followed
+    // from before the load until the wizard is gone
+    expect(apiMock.subscribe_multi).toHaveBeenCalledOnce();
+    expect(apiMock.subscribe_multi.mock.calls[0][0]).toEqual([
+      EventType.PLAYER_CONFIG_UPDATED,
+      EventType.PLAYER_ADDED,
+      EventType.PLAYER_REMOVED,
+    ]);
+    expect(stopFollowing).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+
+    expect(stopFollowing).toHaveBeenCalledOnce();
+  });
+
   it("walks past the server settings on its way to the summary", async () => {
     addEveryProvider();
     addMember("sam-1");
@@ -1191,6 +1260,18 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       // has to fetch, so it waits on nothing
       expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
       expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+
+      wrapper.unmount();
+    });
+
+    it("follows no players on behalf of a member", async () => {
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      // the players are the admin's to set up, and a session that is done
+      // onboarding has no business fetching a configuration for every one
+      expect(apiMock.getPlayerConfigs).not.toHaveBeenCalled();
+      expect(apiMock.subscribe_multi).not.toHaveBeenCalled();
 
       wrapper.unmount();
     });

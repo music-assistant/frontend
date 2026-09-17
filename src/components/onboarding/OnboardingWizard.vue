@@ -83,6 +83,7 @@ import FinishStep from "@/components/onboarding/steps/FinishStep.vue";
 import IntentStep from "@/components/onboarding/steps/IntentStep.vue";
 import InviteMembersStep from "@/components/onboarding/steps/InviteMembersStep.vue";
 import OwnSourcesStep from "@/components/onboarding/steps/OwnSourcesStep.vue";
+import PlayersStep from "@/components/onboarding/steps/PlayersStep.vue";
 import ProvidersStep from "@/components/onboarding/steps/ProvidersStep.vue";
 import TourStep from "@/components/onboarding/steps/TourStep.vue";
 import WelcomeStep from "@/components/onboarding/steps/WelcomeStep.vue";
@@ -112,6 +113,7 @@ const {
   requestedStep,
   loadOnboardingData,
   loadProviderConfigs,
+  followPlayers,
   markWelcomed,
   finish,
 } = useOnboarding();
@@ -125,10 +127,7 @@ const STEP_VIEWS: Record<
     component: markRaw(ProvidersStep),
     props: { providerType: ProviderType.MUSIC },
   },
-  players: {
-    component: markRaw(ProvidersStep),
-    props: { providerType: ProviderType.PLAYER },
-  },
+  players: { component: markRaw(PlayersStep) },
   plugins: {
     component: markRaw(ProvidersStep),
     props: { providerType: ProviderType.PLUGIN },
@@ -158,6 +157,8 @@ const ready = ref(false);
 // their way out — and a second click must not set off from where the first one
 // has already arrived
 const moving = ref(false);
+// what stops the players being followed once the wizard is gone
+let stopFollowingPlayers: (() => void) | undefined;
 
 /** What a step exposes to the wizard, which every step may leave to default. */
 interface StepInstance {
@@ -283,15 +284,19 @@ const focusStepHeading = async function () {
   stepHeading.value?.focus();
 };
 
-// The setup decides everything off the provider configurations and the users,
-// so the wizard asks for them itself as it opens; the step it opens on is
-// settled from that answer rather than from whatever a previous open left
-// behind. The member track reads the providers and players that are running,
-// neither of which it has to ask for — bar a member who can own sources, whose
-// own-sources step needs the provider configs to tell which sources they own.
+// The setup decides everything off the provider configurations, the players
+// and the users, so the wizard asks for them itself as it opens; the step it
+// opens on is settled from that answer rather than from whatever a previous
+// open left behind. The players keep turning up while the setup runs, so they
+// are followed from before the load until the wizard is gone. The member track
+// reads the providers and players that are running, neither of which it has to
+// ask for — bar a member who can own sources, whose own-sources step needs the
+// provider configs to tell which sources they own.
 onMounted(async () => {
-  if (!ctx.value.isMember) await loadOnboardingData();
-  else if (ctx.value.canOwnSources) await loadProviderConfigs();
+  if (!ctx.value.isMember) {
+    stopFollowingPlayers = followPlayers();
+    await loadOnboardingData();
+  } else if (ctx.value.canOwnSources) await loadProviderConfigs();
   currentId.value = firstStep(ctx.value, requestedStep.value);
   ready.value = true;
 });
@@ -305,6 +310,7 @@ watch(currentId, focusStepHeading);
 // welcomed into the same app twice. Finishing writes this itself, and the
 // marker is only ever written once, so the two never collide.
 onBeforeUnmount(() => {
+  stopFollowingPlayers?.();
   if (ctx.value.isMember) void markWelcomed();
 });
 </script>

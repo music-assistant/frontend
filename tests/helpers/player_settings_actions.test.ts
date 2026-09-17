@@ -1,16 +1,20 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
-import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import {
+  getPlayerSettingsMenuItems,
+  renamePlayer,
+  setPlayerEnabled,
+} from "@/helpers/player_settings_actions";
 import {
   PlayerType,
   ProviderFeature,
   ProviderType,
   Scope,
   type Player,
-  type PlayerConfig,
   type PlayerOption,
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { playerConfig } from "../fixtures/playerConfig";
 import { providerManifest } from "../fixtures/providerManifest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
@@ -338,6 +342,89 @@ describe("getPlayerSettingsMenuItems provider settings", () => {
   );
 });
 
+describe("setPlayerEnabled", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer();
+    apiMock.savePlayerConfig.mockResolvedValue({});
+    storeMock.activePlayerId = undefined;
+  });
+
+  it("saves the state and says the change landed", async () => {
+    await expect(setPlayerEnabled("kitchen", false)).resolves.toBe(true);
+
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      enabled: false,
+    });
+    expect(toastMock.success).toHaveBeenCalledWith("settings.player_saved");
+  });
+
+  it("hands the player bar on when the player it points at is switched off", async () => {
+    apiMock.players = {
+      ...apiMock.players,
+      office: player({ player_id: "office" }),
+    };
+    storeMock.activePlayerId = "kitchen";
+
+    await setPlayerEnabled("kitchen", false);
+
+    expect(storeMock.activePlayerId).toBe("office");
+    expect(setPreference).toHaveBeenCalledWith("activePlayerId", null);
+  });
+
+  it("leaves the player bar where it is when a player is switched on", async () => {
+    storeMock.activePlayerId = "kitchen";
+
+    await setPlayerEnabled("kitchen", true);
+
+    // the player is coming back, not leaving: nothing about the selection changes
+    expect(storeMock.activePlayerId).toBe("kitchen");
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+
+  it("says a save that did not land, and leaves the message to the api", async () => {
+    apiMock.savePlayerConfig.mockRejectedValueOnce(new Error("Save failed"));
+
+    await expect(setPlayerEnabled("kitchen", false)).resolves.toBe(false);
+
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+});
+
+describe("renamePlayer", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMock.savePlayerConfig.mockResolvedValue({});
+  });
+
+  it("saves the name and says the change landed", async () => {
+    await expect(renamePlayer("kitchen", "Attic")).resolves.toBe(true);
+
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      name: "Attic",
+    });
+    expect(toastMock.success).toHaveBeenCalledWith("settings.player_saved");
+  });
+
+  it("hands the player back to the name its provider reports", async () => {
+    await renamePlayer("kitchen", null);
+
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      name: null,
+    });
+  });
+
+  it("says a save that did not land, and leaves the message to the api", async () => {
+    apiMock.savePlayerConfig.mockRejectedValueOnce(new Error("Save failed"));
+
+    await expect(renamePlayer("kitchen", "Attic")).resolves.toBe(false);
+
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+});
+
 /**
  * The labels a user actually sees, so an entry the menu hides counts as absent.
  */
@@ -393,18 +480,6 @@ function player(overrides: Partial<Player> = {}): Player {
     options: [{ key: "eq", name: "EQ" } as PlayerOption],
     ...overrides,
   } as Player;
-}
-
-function playerConfig(overrides: Partial<PlayerConfig> = {}): PlayerConfig {
-  return {
-    player_id: "kitchen",
-    provider: "chromecast--1",
-    enabled: true,
-    name: null,
-    default_name: "Chromecast",
-    values: {},
-    ...overrides,
-  };
 }
 
 function providerInstance(
