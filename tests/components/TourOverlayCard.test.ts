@@ -119,6 +119,8 @@ describe("TourOverlay on the real popover", () => {
     expect(document.getElementById(describedBy)?.textContent?.trim()).toBe(
       "tour.stops.menu.description",
     );
+    // and it points at the stop
+    expect(card()!.querySelector("[data-slot=popover-arrow]")).not.toBeNull();
   });
 
   it("leaves focus on the profile menu once the tour is done", async () => {

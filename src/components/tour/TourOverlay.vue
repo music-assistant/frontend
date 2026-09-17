@@ -28,6 +28,7 @@
       align="center"
       :side-offset="CARD_GAP"
       :collision-padding="CARD_COLLISION_PADDING"
+      :arrow-padding="ARROW_PADDING"
       update-position-strategy="always"
       :aria-label="$t(`tour.stops.${current}.title`)"
       :aria-describedby="descriptionId"
@@ -90,13 +91,16 @@
           {{ isLast ? $t("done") : $t("tour.next") }}
         </Button>
       </div>
+
+      <!-- points at the stop, which the card cannot always sit centred on -->
+      <PopoverArrow />
     </PopoverContent>
   </Popover>
 </template>
 
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent } from "@/components/ui/popover";
+import { Popover, PopoverArrow, PopoverContent } from "@/components/ui/popover";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import { useTour } from "@/composables/useTour";
@@ -128,6 +132,8 @@ const SPOTLIGHT_MARGIN = 6;
 const CARD_GAP = SPOTLIGHT_MARGIN + 8;
 // room the card keeps from the edges of the screen
 const CARD_COLLISION_PADDING = 12;
+// how far the arrow stays from the card's rounded corners
+const ARROW_PADDING = 12;
 
 const { active, end } = useTour();
 const { isMobile, state, setOpen, setOpenMobile } = useSidebar();

@@ -2693,7 +2693,11 @@
             },
             "player_select": {
                 "title": "Pick a player",
-                "description": "Choose where the music plays. Pick a player and press play. You can also group players to play the same music in several rooms at once."
+                "description": "Choose where the music plays. Pick a player and press play."
+            },
+            "player_group": {
+                "title": "Group players",
+                "description": "Add other players to the one you picked, so they play the same music together in several rooms. Players that cannot join are not offered."
             }
         }
     }

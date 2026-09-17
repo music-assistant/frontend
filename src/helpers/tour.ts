@@ -14,7 +14,8 @@ export type TourStopId =
   | "settings"
   | "profile"
   | "player_bar"
-  | "player_select";
+  | "player_select"
+  | "player_group";
 
 /** The stops in the order the tour walks them. */
 export const TOUR_STOPS: readonly TourStopId[] = [
@@ -24,6 +25,7 @@ export const TOUR_STOPS: readonly TourStopId[] = [
   "profile",
   "player_bar",
   "player_select",
+  "player_group",
 ];
 
 /** A box on the screen, in viewport pixels. */
