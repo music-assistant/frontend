@@ -245,7 +245,9 @@ import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
-import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from "vue";
+import { useEscapeBack } from "@/composables/useEscapeBack";
+import { goBack } from "@/helpers/navigation";
+import { computed, provide, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
@@ -509,39 +511,10 @@ const isOverview = computed(() => {
   return router.currentRoute.value.name === "settings";
 });
 
-const hasActiveOverlay = function () {
-  return Boolean(
-    document.querySelector(
-      ".v-overlay--active, [role='dialog']:not([aria-hidden='true'])",
-    ),
-  );
-};
-
-const returnFromSettingsSubpage = function () {
-  if (isOverview.value) return;
-
-  if (window.history.state?.back) {
-    router.back();
-  } else {
-    router.push({ name: "settings" });
-  }
-};
-
-const handleSettingsEscape = function (event: KeyboardEvent) {
-  if (event.defaultPrevented || event.key !== "Escape") return;
-  if (isOverview.value || store.dialogActive || hasActiveOverlay()) return;
-
-  event.preventDefault();
-  returnFromSettingsSubpage();
-};
-
-onMounted(() => {
-  document.addEventListener("keydown", handleSettingsEscape);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener("keydown", handleSettingsEscape);
-});
+useEscapeBack(
+  () => goBack(router, { name: "settings" }),
+  () => !isOverview.value,
+);
 
 const activeTab = computed(() => {
   const name = router.currentRoute.value.name?.toString() || "";

@@ -1744,8 +1744,32 @@ const restoreSettings = async function () {
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive || store.showPlayersMenu) return;
-  if (loading.value) return;
-  if (e.key === "Escape") closeSearch();
+  if (e.key === "Escape") {
+    if (
+      e.defaultPrevented ||
+      e.isComposing ||
+      e.repeat ||
+      e.altKey ||
+      e.ctrlKey ||
+      e.metaKey ||
+      e.shiftKey
+    )
+      return;
+    // A focused search belongs to its own listing, not the first listener.
+    const target = e.target;
+    if (
+      target instanceof Element &&
+      target.closest(".listing-search") &&
+      !searchInputRef.value?.$el.contains(target)
+    )
+      return;
+    if (showSearchInput.value) {
+      e.preventDefault();
+      closeSearch();
+    }
+    return;
+  }
+  if (!props.allowKeyHooks || loading.value) return;
   // Let searchInput handle this.
   if (searchHasFocus.value) return;
 
@@ -1777,12 +1801,12 @@ const keyListener = function (e: KeyboardEvent) {
   }
 };
 
-if (props.allowKeyHooks) {
-  document.addEventListener("keydown", keyListener);
-  onBeforeUnmount(() => {
-    document.removeEventListener("keydown", keyListener);
-  });
-}
+// Visible search consumes Escape even when general listing shortcuts are off.
+// Document bubbling runs before the window-level back-navigation fallback.
+document.addEventListener("keydown", keyListener);
+onBeforeUnmount(() => {
+  document.removeEventListener("keydown", keyListener);
+});
 
 if (props.restoreState) {
   // handle restore state
