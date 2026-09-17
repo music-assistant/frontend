@@ -135,5 +135,9 @@ describe("UserManagement", () => {
       "auth.users",
       "auth.roles",
     ]);
+    // the underlined page tabs the rest of the app uses, not the pill list
+    expect(
+      wrapper.get('[data-slot="tabs-list"]').attributes("data-variant"),
+    ).toBe("line");
   });
 });

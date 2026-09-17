@@ -44,12 +44,11 @@
         class="items-start"
         @update:model-value="(v) => onTabChange(v as string)"
       >
-        <TabsList class="h-auto w-auto gap-6 bg-transparent p-0">
+        <TabsList variant="line">
           <TabsTrigger
             v-for="tab in props.toolBarTabs"
             :key="tab.id"
             :value="tab.id"
-            class="flex-none rounded-none border-0 bg-transparent px-1 pt-1 pb-2 text-[15px] text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_0_currentColor] dark:data-[state=active]:bg-transparent"
           >
             {{ tab.label }}
           </TabsTrigger>

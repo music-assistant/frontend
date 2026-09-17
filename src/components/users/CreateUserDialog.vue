@@ -64,6 +64,35 @@
               </template>
             </form.Field>
 
+            <form.Field name="role">
+              <template #default="{ field }">
+                <Field>
+                  <FieldLabel :for="field.name">
+                    {{ $t("auth.role") }}
+                  </FieldLabel>
+                  <Select
+                    :model-value="field.state.value"
+                    @update:model-value="
+                      (value) => field.handleChange(value as string)
+                    "
+                  >
+                    <SelectTrigger :id="field.name" class="w-full">
+                      <SelectValue :placeholder="$t('auth.role')" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem
+                        v-for="option in roleOptions"
+                        :key="option.value"
+                        :value="option.value"
+                      >
+                        {{ option.label }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </template>
+            </form.Field>
+
             <form.Field name="password">
               <template #default="{ field }">
                 <Field :data-invalid="isInvalid(field)">
@@ -120,35 +149,6 @@
                     v-if="isInvalid(field)"
                     :errors="field.state.meta.errors"
                   />
-                </Field>
-              </template>
-            </form.Field>
-
-            <form.Field name="role">
-              <template #default="{ field }">
-                <Field>
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.role") }}
-                  </FieldLabel>
-                  <Select
-                    :model-value="field.state.value"
-                    @update:model-value="
-                      (value) => field.handleChange(value as string)
-                    "
-                  >
-                    <SelectTrigger :id="field.name" class="w-full">
-                      <SelectValue :placeholder="$t('auth.role')" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem
-                        v-for="option in roleOptions"
-                        :key="option.value"
-                        :value="option.value"
-                      >
-                        {{ option.label }}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
                 </Field>
               </template>
             </form.Field>

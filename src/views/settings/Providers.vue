@@ -3,7 +3,7 @@
     <ProviderFilters v-if="showSearch" @update:search="searchQuery = $event" />
     <!-- the empty state below carries the add button while there is nothing to list -->
     <Button
-      v-if="!showMusicEmptyState"
+      v-if="canOwnSources && !showMusicEmptyState"
       class="add-provider-btn"
       data-testid="add-provider"
       @click="showAddProviderDialog = true"
@@ -24,223 +24,255 @@
     :variant="viewMode === 'list' ? 'default' : 'panel'"
     class="mt-4 px-5"
   >
-    <ItemGroup v-if="viewMode === 'list'" class="gap-2">
-      <Item
-        v-for="item in getAllFilteredProviders()"
-        :key="item.instance_id"
-        variant="outline"
-        class="cursor-pointer"
-        :class="{ 'opacity-60': !item.enabled }"
-        data-testid="provider-row"
-        @click="openProvider(item)"
+    <div class="space-y-6">
+      <section
+        v-for="section in sections"
+        :key="section.key"
+        class="space-y-3"
+        data-testid="provider-section"
+        :data-section="section.key"
       >
-        <ItemMedia>
-          <ProviderIcon :domain="item.domain" :size="40" />
-        </ItemMedia>
-        <ItemContent>
-          <ItemTitle class="flex flex-wrap items-center gap-2">
-            <!-- the name is the focusable control; the row itself only follows the pointer -->
-            <button
-              type="button"
-              class="cursor-pointer text-left"
-              data-testid="provider-open"
-              @click.stop="openProvider(item)"
-            >
-              {{ getProviderName(item) }}
-            </button>
-            <Badge
-              v-if="statusVariant(item.status)"
-              :variant="statusVariant(item.status)"
-              data-testid="provider-status"
-            >
-              {{ statusLabel(item) }}
-            </Badge>
-            <Badge
-              v-if="
-                shouldShowStageBadge(api.providerManifests[item.domain]?.stage)
-              "
-              variant="outline"
-              class="uppercase"
-              data-testid="stage-badge"
-            >
-              {{ getStageLabel(api.providerManifests[item.domain]?.stage) }}
-            </Badge>
-          </ItemTitle>
-          <ItemDescription
-            v-if="isErrorStatus(item.status)"
-            class="text-destructive"
-          >
-            {{ getErrorText(item) }}
-          </ItemDescription>
-          <ItemDescription v-else-if="api.providerManifests[item.domain]">
-            {{ api.providerManifests[item.domain].description }}
-          </ItemDescription>
-          <ItemDescription
-            v-if="canConfigureAccess(item)"
-            data-testid="provider-access"
-          >
-            {{ accessSummary(item) }}
-          </ItemDescription>
-        </ItemContent>
-        <ItemActions>
-          <span
-            v-if="isProviderSyncing(item.instance_id)"
-            :title="$t('settings.sync_running')"
-          >
-            <RefreshCw class="text-muted-foreground size-4 animate-spin" />
-          </span>
-          <Button
-            v-if="isErrorStatus(item.status) && canReconfigure(item)"
-            size="sm"
-            variant="destructive"
-            data-testid="provider-action"
-            @click.stop="reconfigureProvider(item.instance_id)"
-          >
-            {{ $t("settings.reconfigure") }}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            data-testid="provider-menu"
-            :aria-label="`${$t('more_options')}: ${getProviderName(item)}`"
-            @click.stop="onMenu($event, item)"
-          >
-            <MoreVertical class="size-4" />
-          </Button>
-        </ItemActions>
-      </Item>
-    </ItemGroup>
-
-    <v-row v-else>
-      <v-col
-        v-for="item in getAllFilteredProviders()"
-        :key="item.instance_id"
-        cols="12"
-        md="6"
-        lg="4"
-        class="d-flex"
-      >
-        <v-card
-          class="flex-fill rounded-lg provider-card d-flex flex-column"
-          :class="{ 'player-provider-card': item.type === ProviderType.PLAYER }"
-          min-height="200px"
-          @click="openProvider(item)"
+        <h2
+          v-if="section.label"
+          class="text-muted-foreground text-sm font-medium"
         >
-          <template #prepend>
-            <provider-icon
-              :domain="item.domain"
-              :size="50"
-              class="listitem-media-thumb"
-              style="margin-top: 5px; margin-bottom: 5px"
-            />
-          </template>
-
-          <template #append>
-            <v-btn
-              v-if="isProviderSyncing(item.instance_id)"
-              variant="text"
-              size="small"
-              icon
-              :title="$t('settings.sync_running')"
-            >
-              <v-icon color="grey"> mdi-sync </v-icon>
-            </v-btn>
-
-            <!-- provider status (disabled / loading / error / etc) -->
-            <v-btn
-              v-if="statusIcon(item.status)"
-              variant="text"
-              size="small"
-              icon
-              :title="
-                isErrorStatus(item.status)
-                  ? getErrorText(item)
-                  : statusLabel(item)
-              "
-            >
-              <v-icon
-                :icon="statusIcon(item.status)"
-                :color="statusColor(item.status)"
-              />
-            </v-btn>
-
-            <v-chip
-              v-if="
-                shouldShowStageBadge(api.providerManifests[item.domain]?.stage)
-              "
-              size="x-small"
-              variant="flat"
-              class="mx-1 text-uppercase"
-              :color="getStageColor(api.providerManifests[item.domain]?.stage)"
-            >
-              {{ getStageLabel(api.providerManifests[item.domain]?.stage) }}
-            </v-chip>
-
-            <v-btn
-              icon="mdi-dots-vertical"
-              size="small"
-              variant="text"
-              :aria-label="`${$t('more_options')}: ${getProviderName(item)}`"
-              :title="`${$t('more_options')}: ${getProviderName(item)}`"
-              @click.stop="onMenu($event, item)"
-            />
-          </template>
-
-          <v-card-title>
-            {{ getProviderName(item) }}
-          </v-card-title>
-
-          <!-- Provider error warning for card view -->
-          <v-card-text
-            v-if="isErrorStatus(item.status)"
-            class="provider-error-card py-2"
-          >
-            <div class="provider-error-inline">
-              <v-icon
-                :icon="statusIcon(item.status)"
-                size="16"
-                :color="statusColor(item.status)"
-              />
-              <span class="provider-error-text">{{ statusLabel(item) }}</span>
-            </div>
-            <div class="provider-error-detail mt-1">
-              {{ getErrorText(item) }}
-            </div>
-            <v-btn
-              v-if="canReconfigure(item)"
-              size="small"
-              color="error"
-              variant="tonal"
-              class="mt-2"
-              block
-              @click.stop="reconfigureProvider(item.instance_id)"
-            >
-              {{ $t("settings.reconfigure") }}
-            </v-btn>
-          </v-card-text>
-
-          <v-card-text
-            v-else-if="api.providerManifests[item.domain]"
-            class="provider-description flex-grow-1"
+          {{ $t(section.label) }}
+        </h2>
+        <ItemGroup v-if="viewMode === 'list'" class="gap-2">
+          <Item
+            v-for="item in section.items"
+            :key="item.instance_id"
+            variant="outline"
             :class="{
-              'truncated-text': isTextTruncated(
-                api.providerManifests[item.domain].description,
-              ),
+              'cursor-pointer': canManageSource(item),
+              'opacity-60': !item.enabled,
             }"
+            data-testid="provider-row"
+            v-on="rowHandlers(item)"
           >
-            {{ api.providerManifests[item.domain].description }}
-          </v-card-text>
+            <ItemMedia>
+              <ProviderIcon :domain="item.domain" :size="40" />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle class="flex flex-wrap items-center gap-2">
+                <!-- the name is the focusable control; the row itself only follows the pointer -->
+                <button
+                  v-if="canManageSource(item)"
+                  type="button"
+                  class="cursor-pointer text-left"
+                  data-testid="provider-open"
+                  @click.stop="openProvider(item)"
+                >
+                  {{ getProviderName(item) }}
+                </button>
+                <span v-else>{{ getProviderName(item) }}</span>
+                <Badge
+                  v-if="statusVariant(item.status)"
+                  :variant="statusVariant(item.status)"
+                  data-testid="provider-status"
+                >
+                  {{ statusLabel(item) }}
+                </Badge>
+                <Badge
+                  v-if="
+                    shouldShowStageBadge(
+                      api.providerManifests[item.domain]?.stage,
+                    )
+                  "
+                  variant="outline"
+                  class="uppercase"
+                  data-testid="stage-badge"
+                >
+                  {{ getStageLabel(api.providerManifests[item.domain]?.stage) }}
+                </Badge>
+              </ItemTitle>
+              <ItemDescription
+                v-if="isErrorStatus(item.status)"
+                class="text-destructive"
+              >
+                {{ getErrorText(item) }}
+              </ItemDescription>
+              <ItemDescription v-else-if="api.providerManifests[item.domain]">
+                {{ api.providerManifests[item.domain].description }}
+              </ItemDescription>
+              <ItemDescription
+                v-if="canConfigureAccess(item)"
+                data-testid="provider-access"
+              >
+                {{ accessSummary(item) }}
+              </ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <span
+                v-if="isProviderSyncing(item.instance_id)"
+                :title="$t('settings.sync_running')"
+              >
+                <RefreshCw class="text-muted-foreground size-4 animate-spin" />
+              </span>
+              <Button
+                v-if="isErrorStatus(item.status) && canReconfigure(item)"
+                size="sm"
+                variant="destructive"
+                data-testid="provider-action"
+                @click.stop="reconfigureProvider(item.instance_id)"
+              >
+                {{ $t("settings.reconfigure") }}
+              </Button>
+              <Button
+                v-if="canManageSource(item)"
+                variant="ghost"
+                size="icon-sm"
+                data-testid="provider-menu"
+                :aria-label="`${$t('more_options')}: ${getProviderName(item)}`"
+                @click.stop="onMenu($event, item)"
+              >
+                <MoreVertical class="size-4" />
+              </Button>
+            </ItemActions>
+          </Item>
+        </ItemGroup>
 
-          <div
-            v-if="canConfigureAccess(item)"
-            class="provider-access-text px-4 pb-4"
-            data-testid="provider-access"
+        <v-row v-else>
+          <v-col
+            v-for="item in section.items"
+            :key="item.instance_id"
+            cols="12"
+            md="6"
+            lg="4"
+            class="d-flex"
           >
-            {{ accessSummary(item) }}
-          </div>
-        </v-card>
-      </v-col>
-    </v-row>
+            <v-card
+              class="flex-fill rounded-lg provider-card d-flex flex-column"
+              :class="{
+                'player-provider-card': item.type === ProviderType.PLAYER,
+              }"
+              min-height="200px"
+              v-on="rowHandlers(item)"
+            >
+              <template #prepend>
+                <provider-icon
+                  :domain="item.domain"
+                  :size="50"
+                  class="listitem-media-thumb"
+                  style="margin-top: 5px; margin-bottom: 5px"
+                />
+              </template>
+
+              <template #append>
+                <v-btn
+                  v-if="isProviderSyncing(item.instance_id)"
+                  variant="text"
+                  size="small"
+                  icon
+                  :title="$t('settings.sync_running')"
+                >
+                  <v-icon color="grey"> mdi-sync </v-icon>
+                </v-btn>
+
+                <!-- provider status (disabled / loading / error / etc) -->
+                <v-btn
+                  v-if="statusIcon(item.status)"
+                  variant="text"
+                  size="small"
+                  icon
+                  :title="
+                    isErrorStatus(item.status)
+                      ? getErrorText(item)
+                      : statusLabel(item)
+                  "
+                >
+                  <v-icon
+                    :icon="statusIcon(item.status)"
+                    :color="statusColor(item.status)"
+                  />
+                </v-btn>
+
+                <v-chip
+                  v-if="
+                    shouldShowStageBadge(
+                      api.providerManifests[item.domain]?.stage,
+                    )
+                  "
+                  size="x-small"
+                  variant="flat"
+                  class="mx-1 text-uppercase"
+                  :color="
+                    getStageColor(api.providerManifests[item.domain]?.stage)
+                  "
+                >
+                  {{ getStageLabel(api.providerManifests[item.domain]?.stage) }}
+                </v-chip>
+
+                <v-btn
+                  v-if="canManageSource(item)"
+                  icon="mdi-dots-vertical"
+                  size="small"
+                  variant="text"
+                  :aria-label="`${$t('more_options')}: ${getProviderName(item)}`"
+                  :title="`${$t('more_options')}: ${getProviderName(item)}`"
+                  @click.stop="onMenu($event, item)"
+                />
+              </template>
+
+              <v-card-title>
+                {{ getProviderName(item) }}
+              </v-card-title>
+
+              <!-- Provider error warning for card view -->
+              <v-card-text
+                v-if="isErrorStatus(item.status)"
+                class="provider-error-card py-2"
+              >
+                <div class="provider-error-inline">
+                  <v-icon
+                    :icon="statusIcon(item.status)"
+                    size="16"
+                    :color="statusColor(item.status)"
+                  />
+                  <span class="provider-error-text">{{
+                    statusLabel(item)
+                  }}</span>
+                </div>
+                <div class="provider-error-detail mt-1">
+                  {{ getErrorText(item) }}
+                </div>
+                <v-btn
+                  v-if="canReconfigure(item)"
+                  size="small"
+                  color="error"
+                  variant="tonal"
+                  class="mt-2"
+                  block
+                  @click.stop="reconfigureProvider(item.instance_id)"
+                >
+                  {{ $t("settings.reconfigure") }}
+                </v-btn>
+              </v-card-text>
+
+              <v-card-text
+                v-else-if="api.providerManifests[item.domain]"
+                class="provider-description flex-grow-1"
+                :class="{
+                  'truncated-text': isTextTruncated(
+                    api.providerManifests[item.domain].description,
+                  ),
+                }"
+              >
+                {{ api.providerManifests[item.domain].description }}
+              </v-card-text>
+
+              <div
+                v-if="canConfigureAccess(item)"
+                class="provider-access-text px-4 pb-4"
+                data-testid="provider-access"
+              >
+                {{ accessSummary(item) }}
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+      </section>
+    </div>
 
     <Empty
       v-if="showMusicEmptyState"
@@ -252,9 +284,15 @@
       </EmptyMedia>
       <EmptyTitle>{{ $t("settings.music_sources_empty_title") }}</EmptyTitle>
       <EmptyDescription>
-        {{ $t("settings.music_sources_empty") }}
+        {{
+          $t(
+            canOwnSources
+              ? "settings.music_sources_empty"
+              : "settings.music_sources_shared_empty",
+          )
+        }}
       </EmptyDescription>
-      <EmptyContent>
+      <EmptyContent v-if="canOwnSources">
         <Button
           data-testid="add-provider-empty"
           @click="showAddProviderDialog = true"
@@ -347,6 +385,7 @@ import {
   canReconfigureProvider,
   getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
+  isBuiltinProvider,
   providerDisplayName,
   providerRequiresReconfiguration,
   shouldShowStageBadge,
@@ -394,6 +433,13 @@ const MIN_PROVIDERS_FOR_SEARCH = 10;
 // an admin manages every source, a member only the music sources it owns
 const managesAllSources = computed(() =>
   authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+);
+
+// owning (and so adding) a music source takes the own-sources scope; a role
+// without it only reads the sources it may use
+const canOwnSources = computed(
+  () =>
+    managesAllSources.value || authManager.hasScope(Scope.CONFIG_PROVIDERS_OWN),
 );
 
 const currentType = computed(() =>
@@ -448,8 +494,8 @@ const accessShareCandidates = computed(() =>
     : memberShareCandidates.value,
 );
 
-// the providers of the current type (a member's own ones only), before the
-// search narrows them down
+// the providers of the current type (the music sources for a member), before
+// the search narrows them down
 const listedProviders = computed(() => {
   let listed = providerConfigs.value;
 
@@ -462,10 +508,11 @@ const listedProviders = computed(() => {
     listed = listed.filter((item) => item.type === ProviderType.MUSIC);
   }
 
-  // ownership is enforced server-side as well; this keeps the page honest
+  // a provider that ships with the server is not a source anyone chose, so a
+  // member is not shown it among the sources it may use
   if (!managesAllSources.value) {
-    listed = listed.filter((item) =>
-      isOwnMusicSource(item, store.currentUser?.user_id),
+    listed = listed.filter(
+      (item) => !isBuiltinProvider(api.providerManifests[item.domain]),
     );
   }
   return listed;
@@ -481,8 +528,33 @@ watch(showSearch, (shown) => {
   if (!shown) searchQuery.value = "";
 });
 
-// an empty music list invites a first source; any other empty list is the
-// result of the active search or type filter
+// a member's own sources come first, then the ones shared with it; an admin
+// gets a single untitled section with everything
+const sections = computed(
+  (): { key: string; label?: string; items: ProviderConfig[] }[] => {
+    const listed = getAllFilteredProviders();
+    const userId = store.currentUser?.user_id;
+    const split = managesAllSources.value
+      ? [{ key: "all", items: listed }]
+      : [
+          {
+            key: "own",
+            label: "settings.music_sources_own",
+            items: listed.filter((item) => isOwnMusicSource(item, userId)),
+          },
+          {
+            key: "shared",
+            label: "settings.music_sources_shared",
+            items: listed.filter((item) => !isOwnMusicSource(item, userId)),
+          },
+        ];
+    return split.filter((section) => section.items.length > 0);
+  },
+);
+
+// an empty music list invites a first source of one's own, or tells a viewer
+// who cannot add any that nothing has been shared yet; any other empty list is
+// the result of the active search or type filter
 const showMusicEmptyState = computed(
   () =>
     loaded.value &&
@@ -565,6 +637,15 @@ const reconfigureProvider = function (providerInstanceId: string) {
   });
 };
 
+// a row of a source the viewer cannot manage gets no click listener at all:
+// Vuetify only styles a card as a link when one is bound, and the hover lift
+// below keys on that
+const rowHandlers = function (provider: ProviderConfig) {
+  return canManageSource(provider)
+    ? { click: () => openProvider(provider) }
+    : {};
+};
+
 const openProvider = function (provider: ProviderConfig) {
   if (
     maySetUp(provider) &&
@@ -592,11 +673,22 @@ const canReconfigure = function (provider: ProviderConfig) {
 };
 
 // reconfiguring a source sets it up again, which a member may only do for a
-// provider it may set up itself
+// source it owns of a provider it may set up itself
 const maySetUp = function (provider: ProviderConfig) {
   return (
+    canManageSource(provider) &&
+    (managesAllSources.value ||
+      isSelfServiceProvider(api.providerManifests[provider.domain]))
+  );
+};
+
+// a member manages the sources it owns while its role may own sources; the
+// ones shared with it are read-only
+const canManageSource = function (provider: ProviderConfig) {
+  return (
     managesAllSources.value ||
-    isSelfServiceProvider(api.providerManifests[provider.domain])
+    (canOwnSources.value &&
+      isOwnMusicSource(provider, store.currentUser?.user_id))
   );
 };
 
@@ -610,9 +702,11 @@ onMounted(() => {
     loadItems();
   });
   // listing the users is an admin call, so a member picks from the share
-  // candidates, which older servers do not list
+  // candidates; the server lists them to whoever may own a source, older
+  // servers not at all
   if (managesAllSources.value) loadUsers();
-  else if (api.supportsShareCandidates) loadShareCandidates();
+  else if (canOwnSources.value && api.supportsShareCandidates)
+    loadShareCandidates();
 });
 
 onBeforeUnmount(() => {
@@ -865,13 +959,17 @@ const getErrorText = function (item: ProviderConfig) {
   return item.last_error?.message ?? "";
 };
 
-// only a music source carries an owner and sharing
+// only a music source carries an owner and sharing, and only whoever manages
+// the source may change them
 const canConfigureAccess = function (item: ProviderConfig) {
-  return hasConfigurableAccess(item, api.providerManifests[item.domain]);
+  return (
+    canManageSource(item) &&
+    hasConfigurableAccess(item, api.providerManifests[item.domain])
+  );
 };
 
 // the access record in its compact form: "<owner> · <who it is shared with>",
-// without the owner for a member, which only ever sees its own sources; a
+// without the owner for a member, which only summarizes its own sources; a
 // source nobody can use says so instead
 const accessSummary = function (item: ProviderConfig) {
   const access = effectiveProviderAccess(item.access);
@@ -975,7 +1073,8 @@ const getAllFilteredProviders = function () {
     box-shadow 0.2s ease;
 }
 
-.provider-card:hover {
+/* only a card that opens something lifts on hover */
+.provider-card.v-card--link:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
