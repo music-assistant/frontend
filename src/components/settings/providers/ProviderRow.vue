@@ -50,7 +50,12 @@
       </ItemDescription>
     </ItemContent>
     <ItemActions>
-      <span v-if="syncing" :title="t('settings.sync_running')">
+      <span
+        v-if="syncing"
+        role="status"
+        :aria-label="t('settings.sync_running')"
+        :title="t('settings.sync_running')"
+      >
         <RefreshCw class="text-muted-foreground size-4 animate-spin" />
       </span>
       <Button
@@ -119,7 +124,12 @@
         </div>
       </div>
       <div class="flex shrink-0 items-center gap-1">
-        <span v-if="syncing" :title="t('settings.sync_running')">
+        <span
+          v-if="syncing"
+          role="status"
+          :aria-label="t('settings.sync_running')"
+          :title="t('settings.sync_running')"
+        >
           <RefreshCw class="text-muted-foreground size-4 animate-spin" />
         </span>
         <Button

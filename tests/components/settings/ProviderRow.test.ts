@@ -213,11 +213,16 @@ describe("ProviderRow", () => {
     },
   );
 
-  it.each(VARIANTS)("shows the sync spinner while syncing (%s)", (variant) => {
-    const wrapper = mountRow({ variant, syncing: true });
+  it.each(VARIANTS)(
+    "announces the running sync as an accessible status (%s)",
+    (variant) => {
+      const wrapper = mountRow({ variant, syncing: true });
 
-    expect(wrapper.find('[title="settings.sync_running"]').exists()).toBe(true);
-  });
+      const indicator = wrapper.get('[title="settings.sync_running"]');
+      expect(indicator.attributes("role")).toBe("status");
+      expect(indicator.attributes("aria-label")).toBe("settings.sync_running");
+    },
+  );
 
   it.each(VARIANTS)(
     "hides the sync spinner when not syncing (%s)",
