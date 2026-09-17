@@ -306,6 +306,22 @@ describe("ProviderRow", () => {
     expect(root.attributes("role")).toBeUndefined();
   });
 
+  it("shows the status once and only the reason in the card error panel", () => {
+    const wrapper = mountRow({
+      variant: "card",
+      isError: true,
+      statusVariant: "destructive",
+      statusLabel: "Authentication required",
+      errorText: "Sign in again to keep using this account",
+    });
+
+    // the status belongs to the badge by the name, not repeated in the panel
+    const panel = wrapper.get('[data-testid="provider-error"]');
+    expect(panel.text()).toContain("Sign in again to keep using this account");
+    expect(panel.text()).not.toContain("Authentication required");
+    expect(wrapper.text().split("Authentication required")).toHaveLength(2);
+  });
+
   it("adds interactive hover styling to the card root when manageable", () => {
     const wrapper = mountRow({ variant: "card", manageable: true });
 

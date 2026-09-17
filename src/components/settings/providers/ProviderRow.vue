@@ -142,14 +142,10 @@
         class="bg-destructive/8 rounded-lg px-3 py-2"
         data-testid="provider-error"
       >
-        <div
-          class="text-destructive flex items-center gap-1.5 text-sm font-medium"
-        >
-          <TriangleAlert class="size-4 shrink-0" />
-          <span>{{ statusLabel }}</span>
-        </div>
-        <div class="text-muted-foreground mt-1 line-clamp-2 text-xs">
-          {{ errorText }}
+        <!-- the status shows in the badge by the name; the panel adds the reason -->
+        <div class="text-destructive flex items-start gap-1.5 text-sm">
+          <TriangleAlert class="mt-0.5 size-4 shrink-0" />
+          <span class="line-clamp-2">{{ errorText }}</span>
         </div>
         <Button
           v-if="reconfigurable"
