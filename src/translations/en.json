@@ -2619,7 +2619,7 @@
                 "description": "Hi {name}, this is where the music in your home lives. Pick how much of it you would like to see.",
                 "standard": {
                     "label": "Standard",
-                    "description": "A clean player with just the essentials."
+                    "description": "A clean interface with just the essentials."
                 },
                 "expert": {
                     "label": "Expert",
