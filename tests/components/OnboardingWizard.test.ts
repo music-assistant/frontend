@@ -25,9 +25,9 @@ const {
   preferenceState,
   providerConfigs,
   routerMock,
-  routeState,
   setUserPreferenceMock,
   setUserPreferencesMock,
+  startTourMock,
   storeState,
   users,
 } = vi.hoisted(() => ({
@@ -83,12 +83,10 @@ const {
   },
   // what the server hands back as the provider configurations
   providerConfigs: { list: [] as Record<string, unknown>[] },
-  // replaced with a reactive route by the vue-router mock factory below; the
-  // wizard no longer reads it, but the tour step uses the router
-  routeState: { route: { query: {} as Record<string, string> }, ready: false },
   routerMock: { push: vi.fn(), replace: vi.fn() },
   setUserPreferenceMock: vi.fn(),
   setUserPreferencesMock: vi.fn(),
+  startTourMock: vi.fn(),
   // replaced with a reactive store by the store mock factory below: who is
   // signed in is what tells the setup wizard from the welcome
   storeState: {
@@ -109,16 +107,12 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 vi.mock("vue-sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
-vi.mock("vue-router", async () => {
-  // the wizard does not sync the route, but the tour step asks for the router;
-  // every test loads a fresh wizard, which runs this factory again, so hand out
-  // the same route
-  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
-  if (!routeState.ready) {
-    routeState.route = reactive({ query: {} as Record<string, string> });
-    routeState.ready = true;
-  }
-  return { useRoute: () => routeState.route, useRouter: () => routerMock };
+// the tour is the layout's to run; here it only has to be asked for
+vi.mock("@/composables/useTour", async () => {
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  return {
+    useTour: () => ({ active: ref(false), start: startTourMock, end: vi.fn() }),
+  };
 });
 
 // the dialogs and the config form are covered where they live; here they only
@@ -205,7 +199,7 @@ vi.mock("@/composables/userPreferences", async () => {
 });
 
 // The wizard pulls its whole step graph in behind it: the provider listings,
-// the welcome's cards, the players and music that are here and the tour. Every
+// the welcome's cards and the players and music that are here. Every
 // test mounts it on a fresh module registry, so the transform of all that is
 // paid at module scope, where no test or hook clock runs, instead of by
 // whichever test happens to mount first.
@@ -381,6 +375,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     routerMock.replace.mockReset();
     setUserPreferenceMock.mockReset();
     setUserPreferencesMock.mockReset();
+    startTourMock.mockReset();
     // the real ones update the preferences before they ever reach the server,
     // and say whether the server took them
     setUserPreferenceMock.mockImplementation(
@@ -808,6 +803,65 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
+  it("offers the tour on the summary and starts it once onboarding has closed", async () => {
+    addMusicProvider();
+
+    const wrapper = await mountWizard({ step: "finish" });
+    await flushPromises();
+    expect(wrapper.find("[data-testid=onboarding-tour-offer]").exists()).toBe(
+      true,
+    );
+
+    await wrapper.find("[data-testid=onboarding-tour]").trigger("click");
+    await flushPromises();
+
+    // taking the tour is a way out of the wizard too: the server is told the
+    // setup is done, and the tour follows on from that
+    expect(apiMock.sendCommand).toHaveBeenCalledWith(
+      "config/onboard_complete",
+      undefined,
+      { suppressGlobalError: true },
+    );
+    expect(startTourMock).toHaveBeenCalledTimes(1);
+    expect(startTourMock.mock.invocationCallOrder[0]).toBeGreaterThan(
+      apiMock.sendCommand.mock.invocationCallOrder[0],
+    );
+
+    wrapper.unmount();
+  });
+
+  it("holds the tour back when onboarding could not be closed", async () => {
+    addMusicProvider();
+    apiMock.sendCommand.mockRejectedValueOnce(new Error("server away"));
+
+    const wrapper = await mountWizard({ step: "finish" });
+    await flushPromises();
+
+    await wrapper.find("[data-testid=onboarding-tour]").trigger("click");
+    await flushPromises();
+
+    // the wizard stays up with its error, and the tour waits with it
+    expect(startTourMock).not.toHaveBeenCalled();
+    expect(heading(wrapper)).toBe("onboarding.steps.finish.title");
+
+    wrapper.unmount();
+  });
+
+  it("finishes without the tour from the plain finish", async () => {
+    addMusicProvider();
+
+    const wrapper = await mountWizard({ step: "finish" });
+    await flushPromises();
+
+    await wrapper.find("[data-testid=onboarding-finish]").trigger("click");
+    await flushPromises();
+
+    expect(apiMock.sendCommand).toHaveBeenCalledTimes(1);
+    expect(startTourMock).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
   it("falls back to the first step still to do for a step it does not know", async () => {
     const wrapper = await mountWizard({ step: "nope" as OnboardingStepId });
     await flushPromises();
@@ -1084,7 +1138,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
 
       // answering moves them on, and from there it is all looking around: the
-      // players, the music, then the tour, one short step at a time
+      // players, then the music, one short step at a time
       expect(heading(wrapper)).toBe("onboarding.steps.your_players.title");
       expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
         "onboarding.next",
@@ -1093,10 +1147,6 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.your_music.title");
-
-      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
-      await flushPromises();
-      expect(heading(wrapper)).toBe("onboarding.steps.tour.title");
 
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
@@ -1116,8 +1166,30 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
 
       // the welcome completes nothing on the server; it simply closes and hands
-      // the member the app it was showing them
+      // the member the app it was showing them, without the tour they passed on
       expect(apiMock.sendCommand).not.toHaveBeenCalled();
+      expect(startTourMock).not.toHaveBeenCalled();
+
+      wrapper.unmount();
+    });
+
+    it("starts the tour from the summary once the welcome has closed", async () => {
+      preferenceState.expertMode.value = false;
+
+      const wrapper = await mountWizard();
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.all_set.title");
+
+      await wrapper.find("[data-testid=onboarding-tour]").trigger("click");
+      await flushPromises();
+
+      // the marker goes on the account first, and only a welcome that closed
+      // hands over to the tour
+      expect(setUserPreferencesMock).toHaveBeenCalledWith(
+        expect.objectContaining({ "onboarding.welcome": expect.any(String) }),
+        { suppressGlobalError: true },
+      );
+      expect(startTourMock).toHaveBeenCalledTimes(1);
 
       wrapper.unmount();
     });
@@ -1179,7 +1251,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       expect(heading(wrapper)).toBe("onboarding.steps.your_players.title");
 
       // and the summary looks back at it like any answer the member gave
-      for (const title of ["your_music", "tour", "all_set"]) {
+      for (const title of ["your_music", "all_set"]) {
         await wrapper.find("[data-testid=onboarding-next]").trigger("click");
         await flushPromises();
         expect(heading(wrapper)).toBe(`onboarding.steps.${title}.title`);

@@ -377,7 +377,6 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       "welcome",
       "your_players",
       "your_music",
-      "tour",
       "all_set",
     ]);
     expect(ctx.value.isAdmin).toBe(false);
@@ -805,7 +804,6 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       "your_players",
       "your_music",
       "own_sources",
-      "tour",
       "all_set",
     ];
     // a member whose role may not add its own sources skips the own-sources step
@@ -813,7 +811,6 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       "welcome",
       "your_players",
       "your_music",
-      "tour",
       "all_set",
     ];
 

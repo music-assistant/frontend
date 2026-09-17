@@ -25,7 +25,6 @@ const MEMBER_ORDER = [
   "welcome",
   "your_players",
   "your_music",
-  "tour",
   "all_set",
 ] as const;
 
@@ -119,14 +118,13 @@ describe("onboarding step order", () => {
     expect(registered?.optional).toBeUndefined();
     expect(registered?.deferred).toBeUndefined();
     // the registry carries the own-sources step between the music and the
-    // tour, whether or not a given member is offered it
+    // summary, whether or not a given member is offered it
     expect(stepIds([...ONBOARDING_STEPS])).toEqual([
       ...BASE_ORDER,
       "welcome",
       "your_players",
       "your_music",
       "own_sources",
-      "tour",
       "all_set",
     ]);
   });
@@ -381,7 +379,7 @@ describe("the member track", () => {
     expect(stepIds(pendingSteps(ctx))).toEqual(["welcome"]);
     // the rest is there to be looked at: a review is never something to do,
     // and neither is the summary that rounds the welcome off
-    for (const id of ["your_players", "your_music", "tour"]) {
+    for (const id of ["your_players", "your_music"]) {
       expect(step(ctx, id).kind).toBe("review");
       expect(step(ctx, id).isDone(ctx)).toBe(false);
     }
@@ -439,7 +437,7 @@ describe("the member track", () => {
   });
 
   it("follows a deep link to a step of its own", () => {
-    expect(firstStep(memberContext(), "tour")).toBe("tour");
+    expect(firstStep(memberContext(), "your_music")).toBe("your_music");
   });
 });
 
@@ -477,13 +475,12 @@ describe("the own-sources invitation", () => {
     ).toBe(true);
   });
 
-  it("runs after the music that is here and before the tour", () => {
+  it("runs after the music that is here and before the summary", () => {
     expect(stepIds(applicableSteps(ownMemberContext()))).toEqual([
       "welcome",
       "your_players",
       "your_music",
       "own_sources",
-      "tour",
       "all_set",
     ]);
   });

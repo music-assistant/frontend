@@ -26,7 +26,6 @@ export type OnboardingStepId =
   | "your_players"
   | "your_music"
   | "own_sources"
-  | "tour"
   | "all_set";
 
 export type OnboardingIntent = "phone_apps" | "music_hub";
@@ -209,12 +208,6 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     // a member-track step, but only for a role that may add its own sources
     appliesTo: (ctx) => ctx.isMember && ctx.canOwnSources,
     isDone: (ctx) => ctx.ownedMusicSourceCount > 0,
-  },
-  {
-    id: "tour",
-    kind: "review",
-    appliesTo: onMemberTrack,
-    isDone: () => false,
   },
   {
     id: "all_set",
