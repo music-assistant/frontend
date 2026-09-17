@@ -256,12 +256,21 @@ describe("TourOverlay", () => {
   });
 
   it("moves between stops on the arrow keys", async () => {
-    const overlay = await startTour();
+    await startTour();
 
     await card().trigger("keydown", { key: "ArrowRight" });
     expect(title()).toBe("tour.stops.search.title");
 
     await card().trigger("keydown", { key: "ArrowLeft" });
+    expect(title()).toBe("tour.stops.menu.title");
+  });
+
+  it("leaves a modified arrow to the browser", async () => {
+    await startTour();
+
+    // Alt+Left goes back a page; the tour has no business moving as well
+    await card().trigger("keydown", { key: "ArrowRight", altKey: true });
+    await card().trigger("keydown", { key: "ArrowRight", metaKey: true });
     expect(title()).toBe("tour.stops.menu.title");
   });
 
@@ -392,6 +401,37 @@ describe("TourOverlay", () => {
     await flushPromises();
 
     expect(useTour().active.value).toBe(false);
+  });
+
+  it("follows a stop whose element the layout swaps out", async () => {
+    await startTour();
+    expect(card().props("reference")).toBe(document.getElementById("menu"));
+
+    // the window shrinks to a phone's width: the sidebar goes, and the menu
+    // is a button in the bottom bar from then on
+    document.getElementById("menu")!.remove();
+    const button = document.createElement("button");
+    button.id = "menu-button";
+    button.setAttribute("data-tour", "menu");
+    document.body.append(button);
+    placeAt(button, { top: 800, left: 12, width: 60, height: 44 });
+    runFrame();
+    await nextTick();
+
+    expect(card().props("reference")).toBe(button);
+    expect(card().props("side")).toBe("top");
+    expect(spotlight()?.style.top).toBe("794px");
+  });
+
+  it("ends when the stop's element goes without a stand-in", async () => {
+    await startTour();
+
+    document.getElementById("menu")!.remove();
+    runFrame();
+    await flushPromises();
+
+    expect(useTour().active.value).toBe(false);
+    expect(frames.size).toBe(0);
   });
 
   it("clears the screen for the stops as it starts", async () => {

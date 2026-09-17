@@ -172,9 +172,14 @@ const back = function (): void {
   if (index.value === 0) focusNext();
 };
 
+// the plain arrows walk the stops; a modified one is the browser's, going
+// back a page on Alt+Left say, and is left alone
 const onKeydown = function (event: KeyboardEvent): void {
+  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
   if (event.key === "ArrowRight") next();
   else if (event.key === "ArrowLeft") back();
+  else return;
+  event.preventDefault();
 };
 
 // reka closes the card on Escape, which ends the tour rather than leaving the
@@ -236,8 +241,6 @@ const finishRun = function (): void {
 
 const show = function (): void {
   const element = findTourTarget(current.value);
-  // the layout can change under a running tour, a window shrunk to a phone's
-  // width say; a stop that is no longer there ends it
   if (!element) {
     end();
     return;
@@ -251,23 +254,34 @@ const show = function (): void {
   if (!frameRequest) track();
 };
 
-// the frame is only written when it moves, so a still screen renders nothing
-const measure = function (): void {
-  const element = target.value;
-  if (!element) return;
+/**
+ * Measure the stop, and say whether there still is one. The stop is looked up
+ * again every time: the layout can change under a running tour, a window
+ * shrunk to a phone's width say, which swaps the stop's element for another
+ * or takes it away. The spotlight follows the swap, and the tour ends when
+ * nothing is left to point at. The frame is only written when it moves, so a
+ * still screen renders nothing.
+ */
+const measure = function (): boolean {
+  const element = findTourTarget(current.value);
+  if (!element) {
+    end();
+    return false;
+  }
+  if (element !== target.value) target.value = element;
   const measured = spotlightFrame(
     element.getBoundingClientRect(),
     SPOTLIGHT_MARGIN,
   );
   if (!frame.value || !sameFrame(frame.value, measured)) frame.value = measured;
+  return true;
 };
 
 // The spotlight follows the stop frame by frame while a stop is shown: that
 // keeps it on a sidebar sliding open, a sheet sliding shut or a bar moving with
 // the window, without listening for each of those.
 const track = function (): void {
-  measure();
-  frameRequest = requestAnimationFrame(track);
+  if (measure()) frameRequest = requestAnimationFrame(track);
 };
 
 watch(
