@@ -292,6 +292,9 @@ describe("ProviderRow", () => {
     const root = wrapper.get('[data-testid="provider-row"]');
     expect(root.attributes("data-slot")).toBe("item");
     expect(root.classes()).toContain("border-border");
+    // the row only follows the pointer, so it must not read as a control that
+    // wraps the name button
+    expect(root.attributes("role")).toBeUndefined();
   });
 
   it("renders a card as the card root", () => {
@@ -300,6 +303,7 @@ describe("ProviderRow", () => {
     const root = wrapper.get('[data-testid="provider-row"]');
     expect(root.attributes("data-slot")).toBe("card");
     expect(root.classes()).toContain("provider-card");
+    expect(root.attributes("role")).toBeUndefined();
   });
 
   it("adds interactive styling to the card root when manageable", () => {

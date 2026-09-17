@@ -51,7 +51,7 @@ describe("provider icon gutters", () => {
     // the card lays the icon and details out in a gap-bearing flex row, so the
     // icon is spaced by the layout rather than a margin of its own
     expect(providerRowSource).toMatch(
-      /<div class="flex [^"]*gap-3[^"]*">\s*<ProviderIcon/,
+      /<div class="(?=[^"]*\bflex\b)(?=[^"]*\bgap-3\b)[^"]*">\s*<ProviderIcon/,
     );
   });
 });
