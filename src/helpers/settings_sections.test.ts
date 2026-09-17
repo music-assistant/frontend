@@ -63,6 +63,12 @@ describe("availableSettingsSections", () => {
     ]);
   });
 
+  it("lists the music sources to a role that may only read them", () => {
+    expect(
+      sectionNames([...BUILTIN_ROLE_SCOPES.guest, Scope.CONFIG_PROVIDERS_READ]),
+    ).toContain("music_providers");
+  });
+
   it("lists the users to a role that may read them", () => {
     expect(
       sectionNames([...BUILTIN_ROLE_SCOPES.guest, Scope.USERS_READ]),

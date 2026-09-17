@@ -783,7 +783,9 @@
         "delete_player_confirmation": "This player will be removed from Music Assistant. Its settings are lost and it can only come back by setting it up again.",
         "queue_settings_description": "Playback settings for the queue this player plays from",
         "dsp_description": "Filters and gain applied to everything this player plays",
-        "player_options_description": "Options and readings the player itself offers"
+        "player_options_description": "Options and readings the player itself offers",
+        "music_sources_own": "Your sources",
+        "music_sources_shared": "Shared with you"
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",

@@ -18,6 +18,7 @@ import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   BUILTIN_ROLE_SCOPES,
+  MEMBER_WITHOUT_OWN_SCOPES,
   OWN_SOURCES_ROLE_SCOPES,
   scopeChecker,
 } from "../fixtures/scopes";
@@ -523,7 +524,7 @@ describe("global navigation guard", () => {
     await expect(
       invokeGuard(globalGuard, resolveRoute("/settings/providers?types=music")),
     ).resolves.toBeUndefined();
-    expect(mocks.hasScope).toHaveBeenCalledWith("config.providers.own");
+    expect(mocks.hasScope).toHaveBeenCalledWith("config.providers.read");
   });
 
   it("redirects a member without the scope away from the music sources", async () => {
@@ -534,7 +535,7 @@ describe("global navigation guard", () => {
     ).resolves.toEqual({ name: "discover" });
   });
 
-  it("gates the provider options on the same scope", async () => {
+  it("gates the provider options on the own-sources scope", async () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
 
     await expect(
@@ -589,16 +590,20 @@ describe("global navigation guard", () => {
 });
 
 describe("scope-gated routes", () => {
-  // the builtin roles, and a custom role that manages its own music sources
-  // on top of the guest scopes
+  // the builtin roles, a custom role that manages its own music sources on top
+  // of the guest scopes, and a member role that only reads the source settings
   const ROLE_SCOPES = {
     ...BUILTIN_ROLE_SCOPES,
     own_sources: OWN_SOURCES_ROLE_SCOPES,
+    reads_sources: MEMBER_WITHOUT_OWN_SCOPES,
   };
   type Role = keyof typeof ROLE_SCOPES;
 
   const ROUTE_ACCESS: [path: string, roles: Role[]][] = [
-    ["/settings/providers?types=music", ["admin", "user", "own_sources"]],
+    [
+      "/settings/providers?types=music",
+      ["admin", "user", "own_sources", "reads_sources"],
+    ],
     ["/settings/editprovider/spotify--abc", ["admin", "user", "own_sources"]],
     ["/settings/players", ["admin"]],
     ["/settings/editplayer/player-1", ["admin"]],
@@ -607,7 +612,7 @@ describe("scope-gated routes", () => {
     ["/settings/addgroup/sonos--abc", ["admin"]],
     [
       "/settings/editplayer/player-1/options",
-      ["admin", "user", "guest", "own_sources"],
+      ["admin", "user", "guest", "own_sources", "reads_sources"],
     ],
     ["/settings/system", ["admin"]],
     ["/settings/editcore/webserver", ["admin"]],
@@ -616,9 +621,12 @@ describe("scope-gated routes", () => {
     ["/settings/diagnostics", ["admin"]],
     ["/settings/genremanagement", ["admin"]],
     ["/settings/users", ["admin"]],
-    ["/settings/tasks", ["admin", "user"]],
-    ["/music-quiz", ["admin", "user"]],
-    ["/settings/frontend", ["admin", "user", "guest", "own_sources"]],
+    ["/settings/tasks", ["admin", "user", "reads_sources"]],
+    ["/music-quiz", ["admin", "user", "reads_sources"]],
+    [
+      "/settings/frontend",
+      ["admin", "user", "guest", "own_sources", "reads_sources"],
+    ],
   ];
 
   describe.each(Object.keys(ROLE_SCOPES) as Role[])(

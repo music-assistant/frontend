@@ -16,6 +16,7 @@ import Providers from "@/views/settings/Providers.vue";
 import { providerConfig } from "../fixtures/providerConfig";
 import {
   BUILTIN_ROLE_SCOPES,
+  MEMBER_WITHOUT_OWN_SCOPES,
   OWN_SOURCES_ROLE_SCOPES,
   scopeChecker,
 } from "../fixtures/scopes";
@@ -45,6 +46,16 @@ const {
         has_setup_flow: true,
         name: "Spotify",
         self_service: true,
+        stage: "stable",
+      },
+      builtin: {
+        allow_disable: false,
+        builtin: true,
+        description: "Music Assistant's builtin library",
+        documentation: "https://example.com",
+        has_setup_flow: false,
+        name: "Music Assistant",
+        self_service: false,
         stage: "stable",
       },
     },
@@ -621,6 +632,21 @@ describe("Providers", () => {
     expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(true);
   });
 
+  it("keeps the provider that ships with the server listed", async () => {
+    const wrapper = await mountWithConfigs([builtinSource()]);
+
+    expect(wrapper.findAll('[data-testid="provider-row"]')).toHaveLength(1);
+  });
+
+  it("lists every source in a single untitled section", async () => {
+    const wrapper = await mountWithConfigs([ownSource(), otherSource()]);
+
+    const sections = wrapper.findAll('[data-testid="provider-section"]');
+    expect(sections).toHaveLength(1);
+    expect(sections[0].find("h2").exists()).toBe(false);
+    expect(sections[0].findAll('[data-testid="provider-row"]')).toHaveLength(2);
+  });
+
   it("reports a failing user lookup", async () => {
     apiMock.getAllUsers.mockRejectedValue(new Error("no users"));
 
@@ -637,7 +663,7 @@ describe("Providers for a member", () => {
     );
   });
 
-  it("lists only the music sources it owns, whatever type the route asks for", async () => {
+  it("lists the music sources it may use, whatever type the route asks for", async () => {
     routeMock.query.types = "player";
 
     const wrapper = await mountWithConfigs([
@@ -647,8 +673,91 @@ describe("Providers for a member", () => {
     ]);
 
     const rows = wrapper.findAll('[data-testid="provider-row"]');
+    expect(rows).toHaveLength(2);
+    expect(rows[0].text()).toContain("Own Spotify");
+    expect(rows[1].text()).toContain("Shared Spotify");
+  });
+
+  it("splits its own sources from the ones shared with it", async () => {
+    const wrapper = await mountWithConfigs([
+      ownSource(),
+      otherSource(),
+      householdSource(),
+    ]);
+
+    const sections = wrapper.findAll('[data-testid="provider-section"]');
+    expect(
+      sections.map((section) => section.attributes("data-section")),
+    ).toEqual(["own", "shared"]);
+    expect(sections[0].get("h2").text()).toBe("settings.music_sources_own");
+    expect(sections[1].get("h2").text()).toBe("settings.music_sources_shared");
+
+    expect(
+      sections[0]
+        .findAll('[data-testid="provider-row"]')
+        .map((row) => row.text()),
+    ).toEqual([expect.stringContaining("Own Spotify")]);
+    expect(
+      sections[1]
+        .findAll('[data-testid="provider-row"]')
+        .map((row) => row.text()),
+    ).toEqual([
+      expect.stringContaining("Household Spotify"),
+      expect.stringContaining("Shared Spotify"),
+    ]);
+  });
+
+  it("keeps the sources shared with it read-only", async () => {
+    const wrapper = await mountWithConfigs([ownSource(), otherSource()]);
+
+    const own = wrapper.get(
+      '[data-section="own"] [data-testid="provider-row"]',
+    );
+    expect(own.find('[data-testid="provider-open"]').exists()).toBe(true);
+    expect(own.find('[data-testid="provider-menu"]').exists()).toBe(true);
+    expect(own.find('[data-testid="provider-access"]').exists()).toBe(true);
+
+    const shared = wrapper.get(
+      '[data-section="shared"] [data-testid="provider-row"]',
+    );
+    expect(shared.classes()).not.toContain("cursor-pointer");
+    expect(shared.find('[data-testid="provider-open"]').exists()).toBe(false);
+    expect(shared.find('[data-testid="provider-menu"]').exists()).toBe(false);
+    expect(shared.find('[data-testid="provider-access"]').exists()).toBe(false);
+
+    await shared.trigger("click");
+    expect(routerMock.push).not.toHaveBeenCalled();
+    expect(eventbusMock.emit).not.toHaveBeenCalledWith(
+      "setupFlowDialog",
+      expect.anything(),
+    );
+  });
+
+  it("offers no reconfiguration of a source shared with it", async () => {
+    // the server refuses to set up a source the member does not own
+    const wrapper = await mountWithConfigs([
+      { ...otherSource(), status: ProviderStatus.AUTH_REQUIRED },
+    ]);
+
+    const row = wrapper.get('[data-testid="provider-row"]');
+    expect(row.find('[data-testid="provider-action"]').exists()).toBe(false);
+
+    await row.trigger("click");
+    expect(eventbusMock.emit).not.toHaveBeenCalledWith(
+      "setupFlowDialog",
+      expect.anything(),
+    );
+    expect(routerMock.push).not.toHaveBeenCalled();
+  });
+
+  it("leaves out the provider that ships with the server", async () => {
+    // the server serves it to everyone, but it is not a source anyone shared
+    const wrapper = await mountWithConfigs([ownSource(), builtinSource()]);
+
+    const rows = wrapper.findAll('[data-testid="provider-row"]');
     expect(rows).toHaveLength(1);
     expect(rows[0].text()).toContain("Own Spotify");
+    expect(wrapper.find('[data-section="shared"]').exists()).toBe(false);
   });
 
   it("summarizes its own source by the sharing alone", async () => {
@@ -779,8 +888,8 @@ describe("Providers for a member", () => {
     );
   });
 
-  it("invites a member without sources to add one", async () => {
-    const wrapper = await mountWithConfigs([otherSource()]);
+  it("invites a member without any source to add one", async () => {
+    const wrapper = await mountWithConfigs([]);
 
     expect(wrapper.get('[data-testid="music-sources-empty"]').text()).toContain(
       "settings.music_sources_empty_title",
@@ -789,6 +898,50 @@ describe("Providers for a member", () => {
     expect(wrapper.find('[data-testid="add-provider-empty"]').exists()).toBe(
       true,
     );
+  });
+
+  it("shows a member without sources of its own what it may use", async () => {
+    const wrapper = await mountWithConfigs([otherSource()]);
+
+    expect(wrapper.get('[data-section="shared"]').get("h2").text()).toBe(
+      "settings.music_sources_shared",
+    );
+    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(true);
+  });
+});
+
+describe("Providers for a member that may not add sources", () => {
+  beforeEach(() => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(MEMBER_WITHOUT_OWN_SCOPES),
+    );
+  });
+
+  it("lists what is shared with it without offering to add a source", async () => {
+    const wrapper = await mountWithConfigs([otherSource()]);
+
+    const rows = wrapper
+      .get('[data-section="shared"]')
+      .findAll('[data-testid="provider-row"]');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].text()).toContain("Shared Spotify");
+    expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(false);
+    // the server refuses both lookups to a role that owns no sources
+    expect(apiMock.getShareCandidates).not.toHaveBeenCalled();
+    expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+  });
+
+  it("leaves an empty list without an invitation to add a source", async () => {
+    const wrapper = await mountWithConfigs([]);
+
+    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(false);
+    expect(wrapper.get(".empty-state").text()).toContain("no_content");
   });
 });
 
@@ -816,6 +969,31 @@ function otherSource() {
     domain: "spotify",
     instance_id: "spotify--other",
     name: "Shared Spotify",
+    status: ProviderStatus.LOADED,
+  });
+}
+
+// a source nobody owns, which the server serves to every user
+function householdSource() {
+  return providerConfig({
+    access: {
+      owner: null,
+      shared_users: [],
+      sharing: ProviderSharing.EVERYONE,
+    },
+    domain: "spotify",
+    instance_id: "spotify--household",
+    name: "Household Spotify",
+    status: ProviderStatus.LOADED,
+  });
+}
+
+// the library provider every server ships with, which nobody owns
+function builtinSource() {
+  return providerConfig({
+    domain: "builtin",
+    instance_id: "builtin--builtin",
+    name: "Music Assistant",
     status: ProviderStatus.LOADED,
   });
 }

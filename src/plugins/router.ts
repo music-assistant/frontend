@@ -491,8 +491,9 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "providersettings" */ "@/views/settings/Providers.vue"
               ),
             props: true,
-            // a member manages the music sources it owns from the same page
-            meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
+            // whoever may read the source settings opens the page; a member
+            // manages the sources it owns from it
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_READ },
           },
           {
             path: "players",
