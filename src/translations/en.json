@@ -2654,33 +2654,47 @@
                 "empty": "You have not connected any music sources of your own yet.",
                 "connected": "Your music sources"
             },
-            "tour": {
-                "title": "A quick tour",
-                "description": "The places you will use most.",
-                "open": "Open",
-                "open_named": "Open {title}",
-                "library": {
-                    "title": "Your library",
-                    "description": "Artists, albums, tracks and playlists, together in the sidebar. It holds everything that has been added."
-                },
-                "search": {
-                    "title": "Search",
-                    "description": "Open the search from the sidebar to find an artist, an album or a track across everything you can listen to."
-                },
-                "player_bar": {
-                    "title": "The player bar",
-                    "description": "The bar at the bottom picks the player and plays or pauses. Open it for the full player and the queue."
-                },
-                "profile": {
-                    "title": "Your profile and settings",
-                    "description": "Your name, avatar and password, and the theme and language this app uses."
-                }
-            },
             "all_set": {
                 "title": "You're all set",
                 "description": "That is everything. You can change any of this later from the settings."
             }
         }
     },
-    "screens": "Screens"
+    "screens": "Screens",
+    "tour": {
+        "start": "Take a tour",
+        "end": "End the tour",
+        "next": "Next",
+        "step_counter": "{current} of {total}",
+        "offer": {
+            "title": "Want a quick look around?",
+            "description": "A short tour points out the main parts of the app. You can take it again any time from your profile menu."
+        },
+        "stops": {
+            "menu": {
+                "title": "The menu",
+                "description": "Everything starts here: Discover and Browse to find something to play, your library of artists, albums, tracks and playlists, and the settings and your profile at the bottom."
+            },
+            "search": {
+                "title": "Search",
+                "description": "Find an artist, album, track or playlist across everything you can listen to."
+            },
+            "settings": {
+                "title": "Settings",
+                "description": "Where Music Assistant is set up: the music sources and players, and how the app looks and behaves."
+            },
+            "profile": {
+                "title": "Your profile",
+                "description": "Your name, avatar and password live here. This menu is also where you rearrange the menu, sign out, or take this tour again."
+            },
+            "player_bar": {
+                "title": "The player bar",
+                "description": "What is playing right now and the controls for it. Open it for the full player and what is coming up next."
+            },
+            "player_select": {
+                "title": "Pick a player",
+                "description": "Choose where the music plays. Pick a player and press play. You can also group players to play the same music in several rooms at once."
+            }
+        }
+    }
 }

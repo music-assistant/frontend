@@ -14,9 +14,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useTour } from "@/composables/useTour";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { LogOut, MoreVertical, Settings, SquarePen } from "@lucide/vue";
+import { LogOut, MoreVertical, Route, Settings, SquarePen } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
@@ -24,6 +25,7 @@ const isMenuEditMode = computed(() => store.navMenuEditMode);
 
 const router = useRouter();
 const { isMobile, setOpenMobile } = useSidebar();
+const { start: startTour } = useTour();
 
 const displayName =
   store.currentUser?.display_name || store.currentUser?.username || "";
@@ -40,6 +42,12 @@ const handleEditMenu = () => {
   store.navMenuEditMode = !store.navMenuEditMode;
 };
 
+const handleTour = () => {
+  // the tour points at the app itself, which the sheet would be covering
+  setOpenMobile(false);
+  startTour();
+};
+
 const handleLogout = () => {
   setOpenMobile(false);
   authManager.logout();
@@ -54,6 +62,7 @@ const handleLogout = () => {
           <SidebarMenuButton
             size="lg"
             class="w-full data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            data-tour="profile"
           >
             <Avatar class="h-8 w-8 shrink-0 rounded-lg">
               <AvatarImage
@@ -120,6 +129,10 @@ const handleLogout = () => {
           <DropdownMenuItem @click="handleEditMenu">
             <SquarePen class="size-4" />
             {{ $t(isMenuEditMode ? "menu_edit_disable" : "menu_edit_enable") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem data-testid="nav-user-tour" @click="handleTour">
+            <Route class="size-4" />
+            {{ $t("tour.start") }}
           </DropdownMenuItem>
           <DropdownMenuItem
             v-if="!store.isIngressSession"

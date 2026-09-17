@@ -79,19 +79,21 @@
 <script setup lang="ts">
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress.vue";
 import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue";
-import FinishStep from "@/components/onboarding/steps/FinishStep.vue";
+import FinishStep, {
+  type FinishOptions,
+} from "@/components/onboarding/steps/FinishStep.vue";
 import IntentStep from "@/components/onboarding/steps/IntentStep.vue";
 import InviteMembersStep from "@/components/onboarding/steps/InviteMembersStep.vue";
 import OwnSourcesStep from "@/components/onboarding/steps/OwnSourcesStep.vue";
 import PlayersStep from "@/components/onboarding/steps/PlayersStep.vue";
 import ProvidersStep from "@/components/onboarding/steps/ProvidersStep.vue";
-import TourStep from "@/components/onboarding/steps/TourStep.vue";
 import WelcomeStep from "@/components/onboarding/steps/WelcomeStep.vue";
 import YourMusicStep from "@/components/onboarding/steps/YourMusicStep.vue";
 import YourPlayersStep from "@/components/onboarding/steps/YourPlayersStep.vue";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useOnboarding } from "@/composables/useOnboarding";
+import { useTour } from "@/composables/useTour";
 import { firstStep, type OnboardingStepId } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -117,6 +119,7 @@ const {
   markWelcomed,
   finish,
 } = useOnboarding();
+const { start: startTour } = useTour();
 
 const STEP_VIEWS: Record<
   OnboardingStepId,
@@ -139,7 +142,6 @@ const STEP_VIEWS: Record<
   your_players: { component: markRaw(YourPlayersStep) },
   your_music: { component: markRaw(YourMusicStep) },
   own_sources: { component: markRaw(OwnSourcesStep) },
-  tour: { component: markRaw(TourStep) },
   // the same summary, told as the end of the welcome instead of the setup
   all_set: { component: markRaw(FinishStep), props: { stepId: "all_set" } },
 };
@@ -269,11 +271,13 @@ const next = async function () {
   }
 };
 
-const finishOnboarding = async function () {
+// The tour is only given once onboarding has let go: a finish that did not
+// land keeps the wizard up, and the tour waits with it.
+const finishOnboarding = async function (options?: FinishOptions) {
   if (finishing.value) return;
   finishing.value = true;
   try {
-    await finish();
+    if ((await finish()) && options?.tour) startTour();
   } finally {
     finishing.value = false;
   }

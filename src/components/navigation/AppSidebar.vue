@@ -158,7 +158,8 @@ onUnmounted(() => {
         </div>
       </SidebarMenu>
     </SidebarHeader>
-    <SidebarContent>
+    <!-- the tour's stop for the menu as a whole -->
+    <SidebarContent data-tour="menu">
       <NavMain
         :items="discoverItems"
         :label="sections.explore.label"

@@ -74,6 +74,27 @@
       {{ $t("onboarding.all_done") }}
     </p>
 
+    <Item variant="muted" data-testid="onboarding-tour-offer">
+      <ItemMedia variant="icon">
+        <Route aria-hidden="true" />
+      </ItemMedia>
+      <ItemContent>
+        <ItemTitle>{{ $t("tour.offer.title") }}</ItemTitle>
+        <ItemDescription>{{ $t("tour.offer.description") }}</ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        <Button
+          variant="outline"
+          size="sm"
+          :disabled="busy"
+          data-testid="onboarding-tour"
+          @click="emit('finish', { tour: true })"
+        >
+          {{ $t("tour.start") }}
+        </Button>
+      </ItemActions>
+    </Item>
+
     <div>
       <Button
         :disabled="busy"
@@ -104,8 +125,14 @@ import {
   isTodo,
   type OnboardingStepId,
 } from "@/helpers/onboarding";
-import { Circle, CircleCheck } from "@lucide/vue";
+import { Circle, CircleCheck, Route } from "@lucide/vue";
 import { computed } from "vue";
+
+/** What the summary asks for on the way out. */
+export interface FinishOptions {
+  // walk the user through the app once onboarding has closed
+  tour?: boolean;
+}
 
 const props = defineProps<{
   busy?: boolean;
@@ -118,7 +145,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "advance"): void;
   (e: "navigate", step: OnboardingStepId): void;
-  (e: "finish"): void;
+  (e: "finish", options?: FinishOptions): void;
 }>();
 
 const { ctx, steps, pending, expertMode } = useOnboarding();

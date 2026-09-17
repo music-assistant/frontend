@@ -197,6 +197,7 @@ const draggedItem = computed(() =>
           :key="item.title"
           class="mr-1.5 group-data-[collapsible=icon]:mr-0"
         >
+          <!-- the tour finds the items it stops at by their id -->
           <SidebarMenuButton
             :as="
               item.disabled || item.openInNewTab || item.action
@@ -211,6 +212,7 @@ const draggedItem = computed(() =>
             :is-active="itemActive(item)"
             :tooltip="item.title"
             :disabled="item.disabled"
+            :data-tour="item.id"
             :class="[
               itemActive(item)
                 ? 'no-underline font-bold text-sm'
