@@ -8,6 +8,7 @@ import navMainSource from "@/components/navigation/NavMain.vue?raw";
 import navShortcutsSource from "@/components/navigation/NavShortcuts.vue?raw";
 import navUserSource from "@/components/navigation/NavUser.vue?raw";
 import sidebarFooterSource from "@/components/ui/sidebar/SidebarFooter.vue?raw";
+import sidebarContentSource from "@/components/ui/sidebar/SidebarContent.vue?raw";
 import sidebarTriggerSource from "@/components/ui/sidebar/SidebarTrigger.vue?raw";
 import utilities from "@/styles/style.css?inline";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -94,6 +95,15 @@ describe("collapsed sidebar alignment", () => {
   afterEach(() => {
     triggerStyles.remove();
     document.body.innerHTML = "";
+  });
+
+  it("keeps the navigation scrollbar track transparent", () => {
+    const contentRule = cssRule(
+      styleBlocks(sidebarContentSource)[0],
+      '[data-sidebar="content"]',
+    );
+
+    expect(contentRule.body).toContain("--scrollbar-track-color: transparent");
   });
 
   it("anchors the menu buttons only while the rail is collapsed", () => {
