@@ -44,6 +44,26 @@ You can either connect to a locally launched dev server or an existing running s
 pnpm build
 ```
 
+### Type checking without a production build
+
+```sh
+pnpm typecheck
+```
+
+Both `pnpm typecheck` and `pnpm build` check application source and all tests in
+three sequential compiler processes to reduce peak memory during builds on
+constrained systems. Compiler options remain shared in `tsconfig.json`:
+
+- `tsconfig.app.json` checks all source files, including colocated tests.
+- `tsconfig.tests-ui.json` checks component, view, and layout tests.
+- `tsconfig.tests-rest.json` checks the remaining test directories.
+
+Keep the UI test includes and remaining-test exclusions complementary when
+changing these partitions. New test directories are included by the remaining-test
+catch-all. Run the checks sequentially, not in parallel, to retain the memory
+benefit. This trades some build time for lower peak memory without increasing
+Node's heap limit or dropping test type checking.
+
 ### Lint with [ESLint](https://eslint.org/)
 
 ```sh
