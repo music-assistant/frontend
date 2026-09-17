@@ -1,6 +1,7 @@
 import {
   availableTourStops,
   findTourTarget,
+  isTourStop,
   sameFrame,
   spotlightFrame,
   TOUR_STOPS,
@@ -102,6 +103,16 @@ describe("findTourTarget", () => {
     placeAt(root.firstElementChild!, SOME_BOX);
 
     expect(findTourTarget("player_bar", root)).toBe(root.firstElementChild);
+  });
+});
+
+describe("isTourStop", () => {
+  it("knows the menu items the tour stops at", () => {
+    expect(isTourStop("search")).toBe(true);
+    expect(isTourStop("settings")).toBe(true);
+    // menu items the tour walks past carry no marker
+    expect(isTourStop("discover")).toBe(false);
+    expect(isTourStop("artists")).toBe(false);
   });
 });
 

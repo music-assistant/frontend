@@ -66,7 +66,7 @@ vi.mock("@/components/ui/popover", () => ({
   PopoverContent: {
     name: "PopoverContent",
     props: ["reference", "side", "align", "sideOffset", "collisionPadding"],
-    emits: ["interactOutside", "openAutoFocus"],
+    emits: ["interactOutside", "openAutoFocus", "closeAutoFocus"],
     template: "<div><slot /></div>",
   },
 }));
@@ -108,27 +108,35 @@ const BOXES: Record<string, Box> = {
   player_select: { top: 620, left: 1100, width: 96, height: 80 },
 };
 
-/** Lay a desktop out: the sidebar's stops in the sidebar, the rest along the bottom. */
+/**
+ * Lay a desktop out: the sidebar's stops in the sidebar, the rest along the
+ * bottom, every one of them a button so focus can land on it.
+ */
 function layOutDesktop(stops: readonly string[] = TOUR_STOPS) {
   const inSidebar = ["menu", "search", "settings", "profile"];
+  const stop = (id: string) => `<button id="${id}" data-tour="${id}"></button>`;
   document.body.innerHTML =
     '<div data-slot="sidebar">' +
     stops
       .filter((id) => inSidebar.includes(id))
-      .map((id) => `<div id="${id}" data-tour="${id}"></div>`)
+      .map(stop)
       .join("") +
     "</div>" +
     stops
       .filter((id) => !inSidebar.includes(id))
-      .map((id) => `<div id="${id}" data-tour="${id}"></div>`)
+      .map(stop)
       .join("");
   for (const id of stops) placeAt(document.getElementById(id)!, BOXES[id]);
 }
 
-// the spotlight is measured on animation frames, which the tests run by hand
-const frames: FrameRequestCallback[] = [];
+// the spotlight is measured on animation frames, which the tests run by hand;
+// a cancelled frame is taken off the list like the browser would
+const frames = new Map<number, FrameRequestCallback>();
+let lastFrameId = 0;
 function runFrame() {
-  const callback = frames.shift();
+  const [id, callback] = frames.entries().next().value ?? [];
+  if (id === undefined) return;
+  frames.delete(id);
   callback?.(performance.now());
 }
 
@@ -171,11 +179,13 @@ function title() {
 enableAutoUnmount(afterEach);
 
 beforeEach(() => {
-  frames.length = 0;
-  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) =>
-    frames.push(callback),
-  );
-  vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  frames.clear();
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    lastFrameId += 1;
+    frames.set(lastFrameId, callback);
+    return lastFrameId;
+  });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
   sidebar.isMobile.value = false;
   sidebar.collapsed.value = false;
   sidebar.setOpen.mockReset();
@@ -225,6 +235,8 @@ describe("TourOverlay", () => {
     expect(useTour().active.value).toBe(false);
     expect(card().exists()).toBe(false);
     expect(spotlight()).toBeNull();
+    // and nothing is left measuring a stop that is no longer shown
+    expect(frames.size).toBe(0);
   });
 
   it("goes back a stop, and moves focus off Back on the first stop", async () => {
@@ -292,6 +304,29 @@ describe("TourOverlay", () => {
     expect(document.activeElement).toBe(
       overlay.find("[data-testid=tour-next]").element,
     );
+  });
+
+  it("hands focus to the profile menu as the card closes", async () => {
+    await startTour();
+
+    const closing = new Event("closeAutoFocus", { cancelable: true });
+    card().vm.$emit("closeAutoFocus", closing);
+
+    // reka would hand it to a trigger the card does not have
+    expect(closing.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(document.getElementById("profile"));
+  });
+
+  it("hands focus to the menu button on a phone, where the profile is put away", async () => {
+    layOutDesktop(["menu", "search", "player_bar", "player_select"]);
+    await startTour();
+
+    card().vm.$emit(
+      "closeAutoFocus",
+      new Event("closeAutoFocus", { cancelable: true }),
+    );
+
+    expect(document.activeElement).toBe(document.getElementById("menu"));
   });
 
   it("ends when the card is dismissed", async () => {

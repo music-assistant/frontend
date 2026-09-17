@@ -29,12 +29,13 @@
       :side-offset="CARD_GAP"
       :collision-padding="CARD_COLLISION_PADDING"
       update-position-strategy="always"
-      :aria-labelledby="titleId"
+      :aria-label="$t(`tour.stops.${current}.title`)"
       :aria-describedby="descriptionId"
       class="z-[100003] flex w-80 max-w-[calc(100vw-1.5rem)] flex-col gap-3"
       data-testid="tour-card"
       @interact-outside.prevent
       @open-auto-focus="focusNext"
+      @close-auto-focus="returnFocus"
       @keydown="onKeydown"
     >
       <div class="flex items-center justify-between gap-2">
@@ -62,7 +63,7 @@
       <!-- read out as the stops change, since focus stays on the button that
            moves between them -->
       <div class="flex flex-col gap-1" aria-live="polite">
-        <h2 :id="titleId" class="font-semibold" data-testid="tour-title">
+        <h2 class="font-semibold" data-testid="tour-title">
           {{ $t(`tour.stops.${current}.title`) }}
         </h2>
         <p :id="descriptionId" class="text-muted-foreground text-sm">
@@ -132,7 +133,6 @@ const { active, end } = useTour();
 const { isMobile, state, setOpen, setOpenMobile } = useSidebar();
 const { close: closeCommandCenter } = useCommandCenter();
 
-const titleId = useId();
 const descriptionId = useId();
 
 // the stops this run walks, settled once as it starts from what is on screen
@@ -187,7 +187,15 @@ const onOpenChange = function (open: boolean): void {
 // first in it
 const focusNext = function (event?: Event): void {
   event?.preventDefault();
-  nextButton.value?.$el?.focus();
+  (nextButton.value?.$el as HTMLElement | undefined)?.focus();
+};
+
+// A closing card would leave focus on nothing: reka hands it to a trigger,
+// which the card has none of. It goes to where the tour can be started again
+// instead, the profile menu, or the menu button that leads to it on a phone.
+const returnFocus = function (event: Event): void {
+  event.preventDefault();
+  (findTourTarget("profile") ?? findTourTarget("menu"))?.focus();
 };
 
 /**

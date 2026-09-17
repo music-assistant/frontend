@@ -7,7 +7,6 @@
       @escape-key-down="onDismissAttempt"
       @pointer-down-outside="onDismissAttempt"
       @interact-outside="onDismissAttempt"
-      @close-auto-focus="onCloseAutoFocus"
     >
       <DialogHeader class="sr-only">
         <DialogTitle>{{ $t(titleKey) }}</DialogTitle>
@@ -28,7 +27,6 @@ import {
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { useOnboarding } from "@/composables/useOnboarding";
-import { useTour } from "@/composables/useTour";
 import { $t } from "@/plugins/i18n";
 import { computed, defineAsyncComponent, h, onBeforeUnmount } from "vue";
 
@@ -48,7 +46,6 @@ const OnboardingWizard = defineAsyncComponent({
 });
 
 const { active, ctx, close, markWelcomed } = useOnboarding();
-const { active: tourActive } = useTour();
 
 // the admin sets the server up; the member is welcomed into it
 const titleKey = computed(() =>
@@ -66,12 +63,6 @@ const descriptionKey = computed(() =>
 // marker as it unmounts).
 const onDismissAttempt = function (event: Event): void {
   if (!ctx.value.isMember) event.preventDefault();
-};
-
-// A tour started from the summary has taken focus by the time the modal has
-// closed, and handing it back to the page would take it off the tour's card.
-const onCloseAutoFocus = function (event: Event): void {
-  if (tourActive.value) event.preventDefault();
 };
 
 const onOpenChange = function (value: boolean): void {

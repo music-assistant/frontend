@@ -127,7 +127,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Sidebar collapsible="icon">
+  <!-- the tour's stop for the menu as a whole -->
+  <Sidebar collapsible="icon" data-tour="menu">
     <SidebarHeader>
       <SidebarMenu>
         <div class="sidebar-header-row">
@@ -158,8 +159,7 @@ onUnmounted(() => {
         </div>
       </SidebarMenu>
     </SidebarHeader>
-    <!-- the tour's stop for the menu as a whole -->
-    <SidebarContent data-tour="menu">
+    <SidebarContent>
       <NavMain
         :items="discoverItems"
         :label="sections.explore.label"

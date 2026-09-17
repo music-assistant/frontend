@@ -26,18 +26,17 @@ export const TOUR_STOPS: readonly TourStopId[] = [
   "player_select",
 ];
 
-/** The attribute an element carries to be a stop's target. */
-export const TOUR_TARGET_ATTRIBUTE = "data-tour";
-
-/** Where the tour's card sits relative to the stop it describes. */
-export type TourCardSide = "right" | "top";
-
 /** A box on the screen, in viewport pixels. */
 export interface TourFrame {
   top: number;
   left: number;
   width: number;
   height: number;
+}
+
+/** Whether a menu item's id is one of the stops, for the items to mark. */
+export function isTourStop(id: string): id is TourStopId {
+  return (TOUR_STOPS as readonly string[]).includes(id);
 }
 
 /**
@@ -50,7 +49,7 @@ export function findTourTarget(
   root: ParentNode = document,
 ): HTMLElement | null {
   const candidates = root.querySelectorAll<HTMLElement>(
-    `[${TOUR_TARGET_ATTRIBUTE}="${id}"]`,
+    `[${TARGET_ATTRIBUTE}="${id}"]`,
   );
   for (const candidate of candidates) {
     if (isOnScreen(candidate)) return candidate;
@@ -67,7 +66,7 @@ export function availableTourStops(root: ParentNode = document): TourStopId[] {
  * Where the card goes: beside a stop in the sidebar, and above anything else,
  * which is all along the bottom of the screen.
  */
-export function tourCardSide(target: Element): TourCardSide {
+export function tourCardSide(target: Element): "right" | "top" {
   return target.closest(SIDEBAR_SELECTOR) ? "right" : "top";
 }
 
@@ -94,6 +93,8 @@ export function sameFrame(one: TourFrame, other: TourFrame): boolean {
   );
 }
 
+// the attribute an element carries to be a stop's target
+const TARGET_ATTRIBUTE = "data-tour";
 // the sidebar's root on a desktop; the mobile sheet carries the same slot
 const SIDEBAR_SELECTOR = '[data-slot="sidebar"]';
 // the sidebar as a phone shows it: a sheet that is closed while the tour runs,
