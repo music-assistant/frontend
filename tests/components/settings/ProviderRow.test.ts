@@ -306,20 +306,20 @@ describe("ProviderRow", () => {
     expect(root.attributes("role")).toBeUndefined();
   });
 
-  it("adds interactive styling to the card root when manageable", () => {
+  it("adds interactive hover styling to the card root when manageable", () => {
     const wrapper = mountRow({ variant: "card", manageable: true });
 
     const root = wrapper.get('[data-testid="provider-row"]');
-    expect(root.classes()).toContain("provider-card--interactive");
     expect(root.classes()).toContain("cursor-pointer");
+    expect(root.classes()).toContain("hover:-translate-y-0.5");
   });
 
   it("leaves the card root static when not manageable", () => {
     const wrapper = mountRow({ variant: "card", manageable: false });
 
     const root = wrapper.get('[data-testid="provider-row"]');
-    expect(root.classes()).not.toContain("provider-card--interactive");
     expect(root.classes()).not.toContain("cursor-pointer");
+    expect(root.classes()).not.toContain("hover:-translate-y-0.5");
   });
 });
 

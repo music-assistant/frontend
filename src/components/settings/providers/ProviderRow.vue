@@ -80,7 +80,8 @@
     v-else
     class="provider-card flex h-full min-h-[200px] flex-col gap-3 py-4"
     :class="{
-      'provider-card--interactive cursor-pointer': manageable,
+      'cursor-pointer transition duration-200 hover:-translate-y-0.5 hover:shadow-lg':
+        manageable,
       'opacity-60': !config.enabled,
     }"
     data-testid="provider-row"
@@ -240,17 +241,3 @@ const onRootClick = function () {
   if (props.manageable) emit("open");
 };
 </script>
-
-<style scoped>
-.provider-card {
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-/* only a card that opens something lifts on hover */
-.provider-card--interactive:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-</style>
