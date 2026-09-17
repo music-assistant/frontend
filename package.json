@@ -5,7 +5,8 @@
     "description": "The Music Assistant frontend developed in Vue.",
     "scripts": {
         "dev": "vite",
-        "build": "vue-tsc --noEmit && vite build",
+        "build": "pnpm typecheck && vite build",
+        "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && vue-tsc --noEmit -p tsconfig.tests-ui.json && vue-tsc --noEmit -p tsconfig.tests-rest.json",
         "preview": "vite preview",
         "lint": "oxlint --deny-warnings && eslint . --fix --max-warnings=0 && pnpm format",
         "lint:check": "oxlint --deny-warnings && pnpm lint:eslint && pnpm format:check",
