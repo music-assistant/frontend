@@ -62,14 +62,14 @@ const {
   // replaced with real refs by the userPreferences mock factory below
   preferenceState: {
     intent: { value: undefined } as { value?: string },
-    persona: { value: undefined } as { value?: string },
+    expertMode: { value: undefined } as { value?: boolean },
     welcomedAt: { value: undefined } as { value?: string },
     ready: false,
   },
   // what the server hands back as the provider configurations
   providerConfigs: { list: [] as Record<string, unknown>[] },
   // replaced with a reactive route by the vue-router mock factory below; the
-  // wizard no longer reads it, but the tour and what's-here steps use the router
+  // wizard no longer reads it, but the tour step uses the router
   routeState: { route: { query: {} as Record<string, string> }, ready: false },
   routerMock: { push: vi.fn(), replace: vi.fn() },
   setUserPreferenceMock: vi.fn(),
@@ -95,9 +95,9 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("vue-sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 vi.mock("vue-router", async () => {
-  // the wizard does not sync the route, but the tour and what's-here steps ask
-  // for the router; every test loads a fresh wizard, which runs this factory
-  // again, so hand out the same route
+  // the wizard does not sync the route, but the tour step asks for the router;
+  // every test loads a fresh wizard, which runs this factory again, so hand out
+  // the same route
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   if (!routeState.ready) {
     routeState.route = reactive({ query: {} as Record<string, string> });
@@ -163,29 +163,30 @@ vi.mock("@/composables/userPreferences", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   if (!preferenceState.ready) {
     preferenceState.intent = ref<string | undefined>(undefined);
-    preferenceState.persona = ref<string | undefined>(undefined);
+    preferenceState.expertMode = ref<boolean | undefined>(undefined);
     preferenceState.welcomedAt = ref<string | undefined>(undefined);
     preferenceState.ready = true;
   }
-  const preferences: Record<string, { value?: string }> = {
+  const preferences: Record<string, { value?: string | boolean }> = {
     "onboarding.intent": preferenceState.intent,
-    "onboarding.persona": preferenceState.persona,
+    expert_mode: preferenceState.expertMode,
     "onboarding.welcome": preferenceState.welcomedAt,
   };
   return {
     setUserPreference: setUserPreferenceMock,
     setUserPreferences: setUserPreferencesMock,
     useUserPreferences: () => ({
-      getPreference: (key: string) => preferences[key],
+      // a preference nothing here sets reads as unset, like on a fresh account
+      getPreference: (key: string) => preferences[key] ?? ref(undefined),
     }),
   };
 });
 
 // The wizard pulls its whole step graph in behind it: the provider listings,
-// the welcome's cards, the players of what is here and the tour. Every test
-// mounts it on a fresh module registry, so the transform of all that is paid
-// at module scope, where no test or hook clock runs, instead of by whichever
-// test happens to mount first.
+// the welcome's cards, the players and music that are here and the tour. Every
+// test mounts it on a fresh module registry, so the transform of all that is
+// paid at module scope, where no test or hook clock runs, instead of by
+// whichever test happens to mount first.
 await import("@/components/onboarding/OnboardingWizard.vue");
 
 /**
@@ -260,6 +261,13 @@ function signInAsMember(scopes: readonly Scope[] = MEMBER_WITHOUT_OWN_SCOPES) {
 
 function heading(wrapper: Awaited<ReturnType<typeof mountWizard>>) {
   return wrapper.find("[data-testid=onboarding-heading]").text();
+}
+
+/** The welcome answers written to the account, in the order they went out. */
+function expertAnswers(): boolean[] {
+  return setUserPreferencesMock.mock.calls
+    .map(([values]) => values["expert_mode"])
+    .filter((answer) => answer != null);
 }
 
 /** Tell the wizard the server reported a provider change. */
@@ -340,24 +348,28 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     coreForm.hasUnsavedChanges = false;
     coreForm.valuesValidate = true;
     preferenceState.intent.value = undefined;
-    preferenceState.persona.value = undefined;
+    preferenceState.expertMode.value = undefined;
     preferenceState.welcomedAt.value = undefined;
     routerMock.push.mockReset();
     routerMock.replace.mockReset();
     setUserPreferenceMock.mockReset();
     setUserPreferencesMock.mockReset();
-    // the real ones update the preferences before they ever reach the server
+    // the real ones update the preferences before they ever reach the server,
+    // and say whether the server took them
     setUserPreferenceMock.mockImplementation(
       async (key: string, value: string) => {
         if (key === "onboarding.intent") preferenceState.intent.value = value;
+        return true;
       },
     );
     setUserPreferencesMock.mockImplementation(
-      async (values: Record<string, string>) => {
-        const answer = values["onboarding.persona"];
-        if (answer) preferenceState.persona.value = answer;
+      async (values: Record<string, string | boolean>) => {
+        const answer = values["expert_mode"];
+        if (typeof answer === "boolean")
+          preferenceState.expertMode.value = answer;
         const welcomed = values["onboarding.welcome"];
-        if (welcomed) preferenceState.welcomedAt.value = welcomed;
+        if (typeof welcomed === "string")
+          preferenceState.welcomedAt.value = welcomed;
         // the real one says whether the server took it
         return true;
       },
@@ -477,6 +489,104 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
+  it("keeps the cards inert while the recommended intent is on its way", async () => {
+    let landIntent: () => void = () => {};
+    setUserPreferenceMock.mockImplementationOnce(
+      (key: string, value: string) =>
+        new Promise<boolean>((resolve) => {
+          landIntent = () => {
+            if (key === "onboarding.intent")
+              preferenceState.intent.value = value;
+            resolve(true);
+          };
+        }),
+    );
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+
+    // a card clicked now would land behind the recommended answer, on a
+    // wizard that has already moved on, so none can be while it is on its way
+    expect(
+      wrapper
+        .find("[data-testid=onboarding-intent-phone_apps]")
+        .attributes("disabled"),
+    ).toBeDefined();
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+
+    landIntent();
+    await flushPromises();
+    expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
+
+    wrapper.unmount();
+  });
+
+  it("stays on the intent question when the answer did not land", async () => {
+    // the write is rolled back, so nothing is on the account
+    setUserPreferenceMock.mockResolvedValue(false);
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    await wrapper
+      .find("[data-testid=onboarding-intent-phone_apps]")
+      .trigger("click");
+    await flushPromises();
+
+    // the api has told the user; walking on would leave the question behind
+    // with no answer on the account
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+
+    // Next tries their pick again rather than the recommended answer, and it
+    // does not land either
+    expect(setUserPreferenceMock).toHaveBeenCalledTimes(2);
+    expect(setUserPreferenceMock).toHaveBeenLastCalledWith(
+      "onboarding.intent",
+      "phone_apps",
+    );
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+
+    wrapper.unmount();
+  });
+
+  it("keeps a failed change of a stored intent chosen and tries it again on Next", async () => {
+    preferenceState.intent.value = "music_hub";
+    // the account does not take the new answer, so the old one stays on it
+    setUserPreferenceMock.mockResolvedValueOnce(false);
+
+    const wrapper = await mountWizard({ step: "intent" });
+    await flushPromises();
+
+    const phoneApps = wrapper.find(
+      "[data-testid=onboarding-intent-phone_apps]",
+    );
+    await phoneApps.trigger("click");
+    await flushPromises();
+
+    // the pick stays the chosen card, and the wizard stays on the question
+    expect(phoneApps.attributes("aria-pressed")).toBe("true");
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+
+    // Next tries the pick again instead of walking on with the old answer;
+    // phone_apps defers the music sources, so one step on is the players
+    expect(setUserPreferenceMock).toHaveBeenLastCalledWith(
+      "onboarding.intent",
+      "phone_apps",
+    );
+    expect(heading(wrapper)).toBe("onboarding.steps.players.title");
+
+    wrapper.unmount();
+  });
+
   it("leaves an answer the user gave alone", async () => {
     const wrapper = await mountWizard();
     await flushPromises();
@@ -551,11 +661,11 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     let landIntent: () => void = () => {};
     setUserPreferenceMock.mockImplementationOnce(
       (key: string, value: string) =>
-        new Promise<void>((resolve) => {
+        new Promise<boolean>((resolve) => {
           landIntent = () => {
             if (key === "onboarding.intent")
               preferenceState.intent.value = value;
-            resolve();
+            resolve(true);
           };
         }),
     );
@@ -568,8 +678,11 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       .trigger("click");
     await flushPromises();
 
-    // a Next while the choice is saving neither advances nor waves the default in
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    // a Next while the choice is saving neither advances nor waves the default
+    // in: the footer is greyed out, and a click on it does nothing
+    const next = wrapper.find("[data-testid=onboarding-next]");
+    expect(next.attributes("disabled")).toBeDefined();
+    await next.trigger("click");
     await flushPromises();
     expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
     expect(setUserPreferenceMock).not.toHaveBeenCalledWith(
@@ -897,15 +1010,20 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
 
       await wrapper
-        .find("[data-testid=onboarding-persona-enthusiast]")
+        .find("[data-testid=onboarding-experience-expert]")
         .trigger("click");
       await flushPromises();
 
-      // answering moves them on, and from there it is all looking around
-      expect(heading(wrapper)).toBe("onboarding.steps.whats_here.title");
+      // answering moves them on, and from there it is all looking around: the
+      // players, the music, then the tour, one short step at a time
+      expect(heading(wrapper)).toBe("onboarding.steps.your_players.title");
       expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
         "onboarding.next",
       );
+
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.your_music.title");
 
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
@@ -915,11 +1033,12 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.all_set.title");
 
-      // the summary looks back at the one thing the welcome asked
+      // the summary looks back at the one thing the welcome asked, and the
+      // answer they gave is the only one written: moving on never waved the
+      // recommended one in over it
       expect(wrapper.text()).toContain("onboarding.what_you_picked");
-      expect(wrapper.text()).toContain(
-        "onboarding.steps.welcome.enthusiast.label",
-      );
+      expect(wrapper.text()).toContain("onboarding.steps.welcome.expert.label");
+      expect(expertAnswers()).toEqual([true]);
       expect(wrapper.find("[data-testid=onboarding-next]").exists()).toBe(
         false,
       );
@@ -935,12 +1054,16 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     });
 
     it("keeps Next from advancing while the welcome answer is saving", async () => {
-      // hold the persona answer mid-flight so the chosen card stays busy
-      let landPersona: () => void = () => {};
+      // hold the welcome answer mid-flight so the chosen card stays busy; the
+      // real write has the answer on the account by the time it says it landed
+      let landAnswer: () => void = () => {};
       setUserPreferencesMock.mockImplementationOnce(
-        () =>
+        (values: Record<string, boolean>) =>
           new Promise<boolean>((resolve) => {
-            landPersona = () => resolve(true);
+            landAnswer = () => {
+              preferenceState.expertMode.value = values["expert_mode"];
+              resolve(true);
+            };
           }),
       );
 
@@ -948,25 +1071,60 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
 
       await wrapper
-        .find("[data-testid=onboarding-persona-enthusiast]")
+        .find("[data-testid=onboarding-experience-expert]")
         .trigger("click");
       await flushPromises();
 
-      // a Next while the answer is saving does not move the member on
-      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      // a Next while the answer is saving neither moves the member on nor
+      // waves the recommended answer in over the one on its way: the footer is
+      // greyed out, and a click on it does nothing
+      const next = wrapper.find("[data-testid=onboarding-next]");
+      expect(next.attributes("disabled")).toBeDefined();
+      await next.trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.welcome.title");
+      expect(expertAnswers()).toEqual([true]);
 
       // once it lands, the choice moves them on one step
-      landPersona();
+      landAnswer();
       await flushPromises();
-      expect(heading(wrapper)).toBe("onboarding.steps.whats_here.title");
+      expect(heading(wrapper)).toBe("onboarding.steps.your_players.title");
+      expect(expertAnswers()).toEqual([true]);
+
+      wrapper.unmount();
+    });
+
+    it("answers the welcome with the recommended choice when it is waved through", async () => {
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+
+      // the recommended answer is persisted, so a second run starts past the
+      // question, and it moves exactly one step
+      expect(setUserPreferencesMock).toHaveBeenCalledWith(
+        { expert_mode: false },
+        { suppressGlobalError: true },
+      );
+      expect(heading(wrapper)).toBe("onboarding.steps.your_players.title");
+
+      // and the summary looks back at it like any answer the member gave
+      for (const title of ["your_music", "tour", "all_set"]) {
+        await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+        await flushPromises();
+        expect(heading(wrapper)).toBe(`onboarding.steps.${title}.title`);
+      }
+      expect(wrapper.text()).toContain("onboarding.what_you_picked");
+      expect(wrapper.text()).toContain(
+        "onboarding.steps.welcome.standard.label",
+      );
 
       wrapper.unmount();
     });
 
     it("opens on the summary once the member has answered", async () => {
-      preferenceState.persona.value = "regular";
+      preferenceState.expertMode.value = false;
 
       const wrapper = await mountWizard();
       await flushPromises();
@@ -979,7 +1137,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
     it("looks back at the answer a member did give", async () => {
       preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
-      preferenceState.persona.value = "regular";
+      preferenceState.expertMode.value = false;
 
       const wrapper = await mountWizard();
       await flushPromises();
@@ -988,7 +1146,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       expect(done).toHaveLength(1);
       expect(done[0].text()).toContain("onboarding.steps.welcome.title");
       expect(done[0].text()).toContain(
-        "onboarding.steps.welcome.regular.label",
+        "onboarding.steps.welcome.standard.label",
       );
       expect(wrapper.text()).toContain("onboarding.what_you_picked");
 

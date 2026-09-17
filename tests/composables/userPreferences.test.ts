@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { reactive } from "vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { ProviderConfig } from "@/plugins/api/interfaces";
 import { user } from "../fixtures/user";
@@ -230,6 +231,22 @@ describe("writing preferences", () => {
     // refused must not sit there looking saved, nor ride along on the next write
     expect(storeMock.currentUser?.preferences).toEqual({ theme: "dark" });
     expect(errorSpy).toHaveBeenCalledOnce();
+  });
+
+  it("puts them back on the reactive store the app runs on", async () => {
+    // the app's store hands the preferences back as a reactive proxy, so the
+    // write has to recognise its own set by the object underneath
+    storeMock.currentUser = reactive({
+      user_id: "u1",
+      preferences: { theme: "dark" } as Record<string, unknown>,
+    });
+    mockUpdateUser.mockRejectedValue(new Error("boom"));
+
+    await expect(setUserPreferences({ show_waveform: true })).resolves.toBe(
+      false,
+    );
+
+    expect(storeMock.currentUser?.preferences).toEqual({ theme: "dark" });
   });
 
   it("leaves preferences that were replaced while it was in flight alone", async () => {

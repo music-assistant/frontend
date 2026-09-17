@@ -3,20 +3,18 @@ import {
   setUserPreferences,
   useUserPreferences,
 } from "@/composables/userPreferences";
+import { EXPERT_MODE_PREFERENCE, expertModeOf } from "@/helpers/expert_mode";
 import {
   applicableSteps,
-  PERSONA_DEFAULTS,
   pendingSteps,
   type OnboardingContext,
   type OnboardingIntent,
-  type OnboardingPersona,
   type OnboardingStepId,
 } from "@/helpers/onboarding";
 import {
   isAdminTrack,
   isMemberTrack,
   ONBOARDING_INTENT_PREFERENCE,
-  ONBOARDING_PERSONA_PREFERENCE,
   ONBOARDING_WELCOME_PREFERENCE,
 } from "@/helpers/onboarding_access";
 import {
@@ -211,7 +209,13 @@ export function householdMembers(): HouseholdMember[] {
 
 const { getPreference } = useUserPreferences();
 const intent = getPreference<OnboardingIntent>(ONBOARDING_INTENT_PREFERENCE);
-const persona = getPreference<OnboardingPersona>(ONBOARDING_PERSONA_PREFERENCE);
+const expertModeFlag = getPreference<boolean>(EXPERT_MODE_PREFERENCE);
+// what an account holds that answered the welcome before the flag existed
+const legacyPersona = getPreference<string>("onboarding.persona");
+// the welcome's answer, undefined until it was given
+const expertMode = computed(() =>
+  expertModeOf(expertModeFlag.value, legacyPersona.value),
+);
 const welcomedAt = getPreference<string>(ONBOARDING_WELCOME_PREFERENCE);
 
 // the music sources this member owns, for the own-sources step to list and
@@ -246,7 +250,7 @@ const ctx = computed<OnboardingContext>(() => ({
   // `null` while the users are unknown, which is not the same as an empty
   // household: the invite step is then simply not done
   memberCount: users.value == null ? null : householdMembers().length,
-  answers: { intent: intent.value, persona: persona.value },
+  answers: { intent: intent.value, expert: expertMode.value },
 }));
 
 const steps = computed(() => applicableSteps(ctx.value));
@@ -269,25 +273,22 @@ function close(): void {
   requestedStep.value = null;
 }
 
-async function setIntent(value: OnboardingIntent): Promise<void> {
-  await setUserPreference(ONBOARDING_INTENT_PREFERENCE, value);
+/** Answer the setup's intent question, and say whether the answer landed. */
+async function setIntent(value: OnboardingIntent): Promise<boolean> {
+  return await setUserPreference(ONBOARDING_INTENT_PREFERENCE, value);
 }
 
 /**
- * Answer the welcome's persona question, and seed the settings that answer
- * stands for. Both go out in one update, so the account never holds the answer
- * without what it was given for — and answering again simply seeds them again.
- * Nothing reads the persona itself afterwards: every one of those settings
- * stays the member's to change. Says whether the answer landed, because a
- * question that quietly did not save is worse than one asked again — and the
- * step that asked it says so itself, which is one message, not two.
+ * Answer the welcome's question with whether the member wants the expert
+ * experience. The flag is all that is written: the display settings that come
+ * with it read the flag wherever they apply, and every one of them stays the
+ * member's to change. Says whether the answer landed, because a question that
+ * quietly did not save is worse than one asked again, and the step that asked
+ * it says so itself, which is one message, not two.
  */
-async function setPersona(value: OnboardingPersona): Promise<boolean> {
+async function setExpertMode(value: boolean): Promise<boolean> {
   return await setUserPreferences(
-    {
-      [ONBOARDING_PERSONA_PREFERENCE]: value,
-      ...PERSONA_DEFAULTS[value],
-    },
+    { [EXPERT_MODE_PREFERENCE]: value },
     { suppressGlobalError: true },
   );
 }
@@ -406,8 +407,8 @@ export function useOnboarding() {
     close,
     intent,
     setIntent,
-    persona,
-    setPersona,
+    expertMode,
+    setExpertMode,
     // what the wizard marks the welcome with on the way out of it
     markWelcomed,
     dataLoaded,

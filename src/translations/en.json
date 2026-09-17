@@ -2542,6 +2542,7 @@
         "welcome_description": "A quick look around Music Assistant.",
         "welcome_again": "Show the welcome again",
         "what_you_picked": "What you picked",
+        "more_count": "+{count} more",
         "steps": {
             "intent": {
                 "title": "Choose how you want to use Music Assistant",
@@ -2615,33 +2616,27 @@
             },
             "welcome": {
                 "title": "Make yourself at home",
-                "description": "Hi {name}, this is where your home's music lives. Pick how much you would like to see while something is playing.",
-                "enthusiast": {
-                    "label": "All the details",
-                    "description": "Waveform progress and a background visualizer while music plays."
+                "description": "Hi {name}, this is where the music in your home lives. Pick how much of it you would like to see.",
+                "standard": {
+                    "label": "Standard",
+                    "description": "A clean interface with just the essentials."
                 },
-                "regular": {
-                    "label": "Just play music",
-                    "description": "A clean player, with nothing extra on it."
+                "expert": {
+                    "label": "Expert",
+                    "description": "Shows advanced options and extra details, for whoever wants to see everything."
                 },
                 "defaults_hint": "This only sets a few defaults. Every setting stays yours to change.",
                 "save_failed": "Your choice could not be saved. Please try again."
             },
-            "whats_here": {
-                "title": "What's here for you",
-                "description": "The music everyone here has brought together, and the players you can send it to.",
-                "more_count": "+{count} more",
-                "listen": {
-                    "title": "What you can listen to",
-                    "empty": "No music sources have been shared with you yet.",
-                    "browse": "Browse your music"
-                },
-                "players": {
-                    "title": "Your players",
-                    "empty": "No player yet. Ask your admin to add one.",
-                    "hint": "Pick a player in the bar at the bottom, press play, and open the full player to see what is coming up.",
-                    "pick": "Pick a player"
-                }
+            "your_players": {
+                "title": "Your players",
+                "description": "The players you can send music to.",
+                "empty": "No players yet. Ask your admin to add one."
+            },
+            "your_music": {
+                "title": "What you can listen to",
+                "description": "The music sources everyone here has brought together.",
+                "empty": "No music sources have been shared with you yet."
             },
             "own_sources": {
                 "title": "Connect your own accounts",

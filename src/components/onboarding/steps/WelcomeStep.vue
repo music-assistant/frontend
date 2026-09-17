@@ -10,10 +10,10 @@
 
     <ChoiceCards
       :options="options"
-      :selected="persona"
+      :selected="shown"
       :busy="busy"
       :labelled-by="DESCRIPTION_ID"
-      test-id-prefix="onboarding-persona"
+      test-id-prefix="onboarding-experience"
       @select="select"
     />
 
@@ -28,11 +28,15 @@ import ChoiceCards, {
   type ChoiceCardOption,
 } from "@/components/onboarding/ChoiceCards.vue";
 import { useOnboarding } from "@/composables/useOnboarding";
-import type { OnboardingPersona, OnboardingStepId } from "@/helpers/onboarding";
+import {
+  experienceOf,
+  type OnboardingExperience,
+  type OnboardingStepId,
+} from "@/helpers/onboarding";
 import { userDisplayName } from "@/helpers/provider_access";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { AudioLines, Play } from "@lucide/vue";
+import { Play, SlidersHorizontal } from "@lucide/vue";
 import { computed, markRaw, ref } from "vue";
 import { toast } from "vue-sonner";
 
@@ -47,7 +51,7 @@ const emit = defineEmits<{
   (e: "finish"): void;
 }>();
 
-const { persona, setPersona } = useOnboarding();
+const { expertMode, setExpertMode } = useOnboarding();
 
 // the welcome only ever opens on someone who is signed in, so the empty name
 // is there for the type rather than for a greeting anyone will read
@@ -55,20 +59,37 @@ const name = computed(() =>
   store.currentUser ? userDisplayName(store.currentUser) : "",
 );
 
-const options = [
+const options: ChoiceCardOption<OnboardingExperience>[] = [
   {
-    value: "enthusiast",
-    icon: markRaw(AudioLines),
-    labelKey: "onboarding.steps.welcome.enthusiast.label",
-    descriptionKey: "onboarding.steps.welcome.enthusiast.description",
-  },
-  {
-    value: "regular",
+    value: "standard",
     icon: markRaw(Play),
-    labelKey: "onboarding.steps.welcome.regular.label",
-    descriptionKey: "onboarding.steps.welcome.regular.description",
+    labelKey: "onboarding.steps.welcome.standard.label",
+    descriptionKey: "onboarding.steps.welcome.standard.description",
+    recommended: true,
   },
-] satisfies ChoiceCardOption<OnboardingPersona>[];
+  {
+    value: "expert",
+    icon: markRaw(SlidersHorizontal),
+    labelKey: "onboarding.steps.welcome.expert.label",
+    descriptionKey: "onboarding.steps.welcome.expert.description",
+  },
+];
+
+// the answer shown as chosen until the member picks one
+const recommended = options.find((option) => option.recommended)!.value;
+
+// the answer the member gave here, kept even when the account did not take
+// it: the card stays chosen, and moving on tries it again
+const chosen = ref<OnboardingExperience | null>(null);
+
+// the answer the account holds, as the cards know it
+const stored = computed(() =>
+  expertMode.value == null ? undefined : experienceOf(expertMode.value),
+);
+
+// what the cards show as chosen, and what moving on writes: the answer given
+// here, else the one on the account, else the recommended one
+const shown = computed(() => chosen.value ?? stored.value ?? recommended);
 
 // the answer is persisted on the server, so the cards stay inert until it lands
 const busy = ref(false);
@@ -76,10 +97,10 @@ const busy = ref(false);
 // moves off this step
 let pendingSave: Promise<boolean> | null = null;
 
-const save = async function (value: OnboardingPersona): Promise<boolean> {
+const save = async function (value: OnboardingExperience): Promise<boolean> {
   busy.value = true;
   try {
-    const saved = await setPersona(value);
+    const saved = await setExpertMode(value === "expert");
     // an answer that did not reach the server is not an answer: say so here,
     // where it was given, rather than wherever the member has got to by then
     if (!saved) toast.error($t("onboarding.steps.welcome.save_failed"));
@@ -90,20 +111,26 @@ const save = async function (value: OnboardingPersona): Promise<boolean> {
   }
 };
 
-const select = async function (value: OnboardingPersona) {
+const select = async function (value: OnboardingExperience) {
   if (busy.value) return;
+  chosen.value = value;
   pendingSave = save(value);
   if (await pendingSave) emit("advance");
 };
 
 /**
- * The wizard asking whether it may move on. Next while the answer is still on
- * its way waits for it here, so the member is not walked onto the next step by
- * an answer the account never took — and is told about it on the step that
- * asked. Nothing on its way is nothing to hold the wizard up.
+ * The wizard asking whether it may move on. An answer still on its way is
+ * waited for here, so the member is not walked onto the next step by an
+ * answer the account never took, and is told about it on the step that asked.
+ * Otherwise moving on writes the answer the cards show as chosen, unless the
+ * account already holds it: the recommended one for a member who picked
+ * nothing, or their own pick again when the account did not take it before.
  */
 const beforeLeave = async function (): Promise<boolean> {
-  return (await pendingSave) ?? true;
+  if (pendingSave) return await pendingSave;
+  if (shown.value === stored.value) return true;
+  pendingSave = save(shown.value);
+  return await pendingSave;
 };
 
 defineExpose({ beforeLeave, busy });

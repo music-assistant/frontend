@@ -51,6 +51,7 @@ import {
   readDeviceSetting,
   saveDeviceSetting,
 } from "@/helpers/device_settings";
+import { expertMode, expertModeSetting } from "@/helpers/expert_mode";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -190,12 +191,12 @@ onMounted(() => {
       key: "show_waveform",
       type: ConfigEntryType.BOOLEAN,
       label: "show_waveform",
-      default_value: true,
+      default_value: expertMode(),
       required: false,
       options: [],
       multi_value: false,
       category: "display_settings",
-      value: (store.currentUser?.preferences?.show_waveform as boolean) ?? true,
+      value: expertModeSetting("show_waveform"),
     },
     {
       key: "audiobook_chapter_progress",
@@ -344,14 +345,13 @@ const saveValues = async function (values: Record<string, ConfigValueType>) {
         const value = values[key];
         saveDeviceSetting(key, value != null ? value.toString() : null);
       } else {
+        // an entry left as it was is not written: a default that is only
+        // derived, like the waveform's from the expert mode, must not turn
+        // into a choice on the account by way of an unrelated save
+        if (!valueChanged(key, values[key])) continue;
         // Save to backend via user preferences
         await setPreference(key, values[key]);
-        if (
-          !RELOAD_EXEMPT_PREFERENCE_KEYS.has(key) &&
-          valueChanged(key, values[key])
-        ) {
-          hasPerUserChanges = true;
-        }
+        if (!RELOAD_EXEMPT_PREFERENCE_KEYS.has(key)) hasPerUserChanges = true;
       }
     }
 

@@ -23,28 +23,25 @@ export type OnboardingStepId =
   | "finish"
   // the member track: being welcomed into a server someone else set up
   | "welcome"
-  | "whats_here"
+  | "your_players"
+  | "your_music"
   | "own_sources"
   | "tour"
   | "all_set";
 
 export type OnboardingIntent = "phone_apps" | "music_hub";
 
-/** How much of the player a member wants to see, as the welcome asks it. */
-export type OnboardingPersona = "enthusiast" | "regular";
+/** How much of the app a member wants to see, as the welcome asks it. */
+export type OnboardingExperience = "standard" | "expert";
 
 /**
- * The preferences a persona seeds. Nothing reads the persona itself: the
- * answer only decides what these are set to, once, and every one of them stays
- * a setting the member can change afterwards.
+ * The welcome's answer as the account holds it: expert mode on or off. What
+ * the answer changes is read from that flag wherever it applies, so nothing is
+ * seeded and answering again simply moves the flag.
  */
-export const PERSONA_DEFAULTS: Readonly<
-  Record<OnboardingPersona, Readonly<Record<string, boolean>>>
-> = {
-  // the waveform progress bar and the background visualizer of the full player
-  enthusiast: { show_waveform: true, visualizer_enabled: true },
-  regular: { show_waveform: false, visualizer_enabled: false },
-};
+export function experienceOf(expert: boolean): OnboardingExperience {
+  return expert ? "expert" : "standard";
+}
 
 /** A configured provider, reduced to what the steps need. */
 export interface OnboardingProvider {
@@ -58,7 +55,8 @@ export interface OnboardingProvider {
 
 export interface OnboardingAnswers {
   intent?: OnboardingIntent;
-  persona?: OnboardingPersona;
+  // the welcome's answer: whether they asked for the expert experience
+  expert?: boolean;
 }
 
 export interface OnboardingContext {
@@ -185,14 +183,22 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     id: "welcome",
     kind: "step",
     appliesTo: onMemberTrack,
-    // the one thing the welcome asks for: how much of the player they want to
+    // the one thing the welcome asks for: how much of the app they want to
     // see. Everything after it is there to be looked at, not filled in.
     // Having been shown it is enough: nobody is asked to answer a question
     // they have already been put in front of and walked away from.
-    isDone: (ctx) => ctx.answers.persona != null || ctx.welcomed,
+    isDone: (ctx) => ctx.answers.expert != null || ctx.welcomed,
+  },
+  // what is here for them, one short look at a time: the players first, then
+  // the music, so the invitation to add music of their own follows straight on
+  {
+    id: "your_players",
+    kind: "review",
+    appliesTo: onMemberTrack,
+    isDone: () => false,
   },
   {
-    id: "whats_here",
+    id: "your_music",
     kind: "review",
     appliesTo: onMemberTrack,
     isDone: () => false,

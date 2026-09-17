@@ -44,7 +44,10 @@ const {
   // the composable's computed context follows what a test sets here
   preferenceState: {
     intent: { value: undefined } as { value?: string },
-    persona: { value: undefined } as { value?: string },
+    expertMode: { value: undefined } as { value?: boolean },
+    // the welcome's answer as an account holds it that answered before the
+    // expert mode flag existed
+    legacyPersona: { value: undefined } as { value?: string },
     welcomedAt: { value: undefined } as { value?: string },
   },
   // what the server hands back as the provider configurations
@@ -87,11 +90,13 @@ vi.mock("@/plugins/store", async () => {
 vi.mock("@/composables/userPreferences", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   preferenceState.intent = ref<string | undefined>(undefined);
-  preferenceState.persona = ref<string | undefined>(undefined);
+  preferenceState.expertMode = ref<boolean | undefined>(undefined);
+  preferenceState.legacyPersona = ref<string | undefined>(undefined);
   preferenceState.welcomedAt = ref<string | undefined>(undefined);
-  const preferences: Record<string, { value?: string }> = {
+  const preferences: Record<string, { value?: string | boolean }> = {
     "onboarding.intent": preferenceState.intent,
-    "onboarding.persona": preferenceState.persona,
+    expert_mode: preferenceState.expertMode,
+    "onboarding.persona": preferenceState.legacyPersona,
     "onboarding.welcome": preferenceState.welcomedAt,
   };
   return {
@@ -220,7 +225,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     signIn({ user_id: "admin-1", username: "admin", role: UserRole.ADMIN });
     // both answer as the real ones do: a promise, and whether it landed
     setUserPreferenceMock.mockReset();
-    setUserPreferenceMock.mockResolvedValue(undefined);
+    setUserPreferenceMock.mockResolvedValue(true);
     setUserPreferencesMock.mockReset();
     setUserPreferencesMock.mockResolvedValue(true);
     toastMock.error.mockReset();
@@ -230,7 +235,8 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
   afterEach(() => {
     warnSpy.mockRestore();
     preferenceState.intent.value = undefined;
-    preferenceState.persona.value = undefined;
+    preferenceState.expertMode.value = undefined;
+    preferenceState.legacyPersona.value = undefined;
     preferenceState.welcomedAt.value = undefined;
   });
 
@@ -288,7 +294,8 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     // the welcome instead of the setup: none of the admin track is theirs
     expect(steps.value.map((step) => step.id)).toEqual([
       "welcome",
-      "whats_here",
+      "your_players",
+      "your_music",
       "tour",
       "all_set",
     ]);
@@ -672,7 +679,8 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     ];
     const MEMBER_STEPS = [
       "welcome",
-      "whats_here",
+      "your_players",
+      "your_music",
       "own_sources",
       "tour",
       "all_set",
@@ -680,7 +688,8 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     // a member whose role may not add its own sources skips the own-sources step
     const MEMBER_STEPS_WITHOUT_OWN = [
       "welcome",
-      "whats_here",
+      "your_players",
+      "your_music",
       "tour",
       "all_set",
     ];
@@ -790,41 +799,45 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
   });
 
   describe("the welcome", () => {
-    it("writes the persona and the settings it stands for in one go", async () => {
+    it("writes the answer as the expert mode flag, and nothing else", async () => {
       signInAs();
 
-      const { setPersona } = await loadOnboarding();
-      await expect(setPersona("enthusiast")).resolves.toBe(true);
+      const { setExpertMode } = await loadOnboarding();
+      await expect(setExpertMode(true)).resolves.toBe(true);
 
-      // one update: the account never holds the answer without the settings
-      // that answer was given for, and one message if it fails: the step has
-      // something of its own to say, so the api stays quiet
+      // one flag: what it changes is read from it wherever it applies, and
+      // one message if it fails: the step has something of its own to say, so
+      // the api stays quiet
       expect(setUserPreferencesMock).toHaveBeenCalledOnce();
       expect(setUserPreferencesMock).toHaveBeenCalledWith(
-        {
-          "onboarding.persona": "enthusiast",
-          show_waveform: true,
-          visualizer_enabled: true,
-        },
+        { expert_mode: true },
         { suppressGlobalError: true },
       );
     });
 
-    it("seeds the settings again when the member answers again", async () => {
+    it("moves the flag when the member answers again", async () => {
       signInAs();
-      preferenceState.persona.value = "enthusiast";
+      preferenceState.expertMode.value = true;
 
-      const { setPersona } = await loadOnboarding();
-      await setPersona("regular");
+      const { setExpertMode } = await loadOnboarding();
+      await setExpertMode(false);
 
       expect(setUserPreferencesMock).toHaveBeenCalledWith(
-        {
-          "onboarding.persona": "regular",
-          show_waveform: false,
-          visualizer_enabled: false,
-        },
+        { expert_mode: false },
         { suppressGlobalError: true },
       );
+    });
+
+    it("reads an answer an earlier welcome wrote as a persona", async () => {
+      signInAs();
+      preferenceState.legacyPersona.value = "enthusiast";
+
+      const { ctx, pending } = await loadOnboarding();
+
+      // the old answer still counts as the expert experience, so nothing is
+      // asked again and the summary can look back at it
+      expect(ctx.value.answers.expert).toBe(true);
+      expect(pending.value).toEqual([]);
     });
 
     it("marks the member as welcomed on the way out", async () => {
@@ -918,10 +931,10 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       signInAs();
       setUserPreferencesMock.mockResolvedValue(false);
 
-      const { setPersona } = await loadOnboarding();
+      const { setExpertMode } = await loadOnboarding();
 
       // the step has something to tell the user; this only says what happened
-      await expect(setPersona("regular")).resolves.toBe(false);
+      await expect(setExpertMode(false)).resolves.toBe(false);
     });
 
     it("marks the welcome once, however often it is asked to", async () => {
