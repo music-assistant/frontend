@@ -38,239 +38,37 @@
         >
           {{ $t(section.label) }}
         </h2>
-        <ItemGroup v-if="viewMode === 'list'" class="gap-2">
-          <Item
+        <component
+          :is="viewMode === 'list' ? ItemGroup : 'div'"
+          :class="
+            viewMode === 'list'
+              ? 'gap-2'
+              : 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'
+          "
+        >
+          <ProviderRow
             v-for="item in section.items"
             :key="item.instance_id"
-            variant="outline"
-            :class="{
-              'cursor-pointer': canManageSource(item),
-              'opacity-60': !item.enabled,
-            }"
-            data-testid="provider-row"
-            v-on="rowHandlers(item)"
-          >
-            <ItemMedia>
-              <ProviderIcon :domain="item.domain" :size="40" />
-            </ItemMedia>
-            <ItemContent>
-              <ItemTitle class="flex flex-wrap items-center gap-2">
-                <!-- the name is the focusable control; the row itself only follows the pointer -->
-                <button
-                  v-if="canManageSource(item)"
-                  type="button"
-                  class="cursor-pointer text-left"
-                  data-testid="provider-open"
-                  @click.stop="openProvider(item)"
-                >
-                  {{ getProviderName(item) }}
-                </button>
-                <span v-else>{{ getProviderName(item) }}</span>
-                <Badge
-                  v-if="statusVariant(item.status)"
-                  :variant="statusVariant(item.status)"
-                  data-testid="provider-status"
-                >
-                  {{ statusLabel(item) }}
-                </Badge>
-                <Badge
-                  v-if="
-                    shouldShowStageBadge(
-                      api.providerManifests[item.domain]?.stage,
-                    )
-                  "
-                  variant="outline"
-                  class="uppercase"
-                  data-testid="stage-badge"
-                >
-                  {{ getStageLabel(api.providerManifests[item.domain]?.stage) }}
-                </Badge>
-              </ItemTitle>
-              <ItemDescription
-                v-if="isErrorStatus(item.status)"
-                class="text-destructive"
-              >
-                {{ getErrorText(item) }}
-              </ItemDescription>
-              <ItemDescription v-else-if="api.providerManifests[item.domain]">
-                {{ api.providerManifests[item.domain].description }}
-              </ItemDescription>
-              <ItemDescription
-                v-if="canConfigureAccess(item)"
-                data-testid="provider-access"
-              >
-                {{ accessSummary(item) }}
-              </ItemDescription>
-            </ItemContent>
-            <ItemActions>
-              <span
-                v-if="isProviderSyncing(item.instance_id)"
-                :title="$t('settings.sync_running')"
-              >
-                <RefreshCw class="text-muted-foreground size-4 animate-spin" />
-              </span>
-              <Button
-                v-if="isErrorStatus(item.status) && canReconfigure(item)"
-                size="sm"
-                variant="destructive"
-                data-testid="provider-action"
-                @click.stop="reconfigureProvider(item.instance_id)"
-              >
-                {{ $t("settings.reconfigure") }}
-              </Button>
-              <Button
-                v-if="canManageSource(item)"
-                variant="ghost"
-                size="icon-sm"
-                data-testid="provider-menu"
-                :aria-label="`${$t('more_options')}: ${getProviderName(item)}`"
-                @click.stop="onMenu($event, item)"
-              >
-                <MoreVertical class="size-4" />
-              </Button>
-            </ItemActions>
-          </Item>
-        </ItemGroup>
-
-        <v-row v-else>
-          <v-col
-            v-for="item in section.items"
-            :key="item.instance_id"
-            cols="12"
-            md="6"
-            lg="4"
-            class="d-flex"
-          >
-            <v-card
-              class="flex-fill rounded-lg provider-card d-flex flex-column"
-              :class="{
-                'player-provider-card': item.type === ProviderType.PLAYER,
-              }"
-              min-height="200px"
-              v-on="rowHandlers(item)"
-            >
-              <template #prepend>
-                <provider-icon
-                  :domain="item.domain"
-                  :size="50"
-                  class="listitem-media-thumb"
-                  style="margin-top: 5px; margin-bottom: 5px"
-                />
-              </template>
-
-              <template #append>
-                <v-btn
-                  v-if="isProviderSyncing(item.instance_id)"
-                  variant="text"
-                  size="small"
-                  icon
-                  :title="$t('settings.sync_running')"
-                >
-                  <v-icon color="grey"> mdi-sync </v-icon>
-                </v-btn>
-
-                <!-- provider status (disabled / loading / error / etc) -->
-                <v-btn
-                  v-if="statusIcon(item.status)"
-                  variant="text"
-                  size="small"
-                  icon
-                  :title="
-                    isErrorStatus(item.status)
-                      ? getErrorText(item)
-                      : statusLabel(item)
-                  "
-                >
-                  <v-icon
-                    :icon="statusIcon(item.status)"
-                    :color="statusColor(item.status)"
-                  />
-                </v-btn>
-
-                <v-chip
-                  v-if="
-                    shouldShowStageBadge(
-                      api.providerManifests[item.domain]?.stage,
-                    )
-                  "
-                  size="x-small"
-                  variant="flat"
-                  class="mx-1 text-uppercase"
-                  :color="
-                    getStageColor(api.providerManifests[item.domain]?.stage)
-                  "
-                >
-                  {{ getStageLabel(api.providerManifests[item.domain]?.stage) }}
-                </v-chip>
-
-                <v-btn
-                  v-if="canManageSource(item)"
-                  icon="mdi-dots-vertical"
-                  size="small"
-                  variant="text"
-                  :aria-label="`${$t('more_options')}: ${getProviderName(item)}`"
-                  :title="`${$t('more_options')}: ${getProviderName(item)}`"
-                  @click.stop="onMenu($event, item)"
-                />
-              </template>
-
-              <v-card-title>
-                {{ getProviderName(item) }}
-              </v-card-title>
-
-              <!-- Provider error warning for card view -->
-              <v-card-text
-                v-if="isErrorStatus(item.status)"
-                class="provider-error-card py-2"
-              >
-                <div class="provider-error-inline">
-                  <v-icon
-                    :icon="statusIcon(item.status)"
-                    size="16"
-                    :color="statusColor(item.status)"
-                  />
-                  <span class="provider-error-text">{{
-                    statusLabel(item)
-                  }}</span>
-                </div>
-                <div class="provider-error-detail mt-1">
-                  {{ getErrorText(item) }}
-                </div>
-                <v-btn
-                  v-if="canReconfigure(item)"
-                  size="small"
-                  color="error"
-                  variant="tonal"
-                  class="mt-2"
-                  block
-                  @click.stop="reconfigureProvider(item.instance_id)"
-                >
-                  {{ $t("settings.reconfigure") }}
-                </v-btn>
-              </v-card-text>
-
-              <v-card-text
-                v-else-if="api.providerManifests[item.domain]"
-                class="provider-description flex-grow-1"
-                :class="{
-                  'truncated-text': isTextTruncated(
-                    api.providerManifests[item.domain].description,
-                  ),
-                }"
-              >
-                {{ api.providerManifests[item.domain].description }}
-              </v-card-text>
-
-              <div
-                v-if="canConfigureAccess(item)"
-                class="provider-access-text px-4 pb-4"
-                data-testid="provider-access"
-              >
-                {{ accessSummary(item) }}
-              </div>
-            </v-card>
-          </v-col>
-        </v-row>
+            :variant="viewMode"
+            :config="item"
+            :manageable="canManageSource(item)"
+            :reconfigurable="canReconfigure(item)"
+            :syncing="isProviderSyncing(item.instance_id)"
+            :name="getProviderName(item)"
+            :description="api.providerManifests[item.domain]?.description"
+            :access-summary="
+              canConfigureAccess(item) ? accessSummary(item) : null
+            "
+            :status-variant="statusVariant(item.status)"
+            :status-label="statusLabel(item)"
+            :is-error="isErrorStatus(item.status)"
+            :error-text="getErrorText(item)"
+            :stage-label="stageLabelFor(item)"
+            @open="openProvider(item)"
+            @menu="onMenu($event, item)"
+            @reconfigure="reconfigureProvider(item.instance_id)"
+          />
+        </component>
       </section>
     </div>
 
@@ -349,9 +147,8 @@
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
-import { Badge } from "@/components/ui/badge";
+import ProviderRow from "@/components/settings/providers/ProviderRow.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -360,15 +157,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemGroup,
-  ItemMedia,
-  ItemTitle,
-} from "@/components/ui/item";
+import { ItemGroup } from "@/components/ui/item";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
@@ -409,7 +198,7 @@ import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { Info, MoreVertical, Music, Plus, RefreshCw } from "@lucide/vue";
+import { Info, Music, Plus } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
@@ -637,15 +426,6 @@ const reconfigureProvider = function (providerInstanceId: string) {
   });
 };
 
-// a row of a source the viewer cannot manage gets no click listener at all:
-// Vuetify only styles a card as a link when one is bound, and the hover lift
-// below keys on that
-const rowHandlers = function (provider: ProviderConfig) {
-  return canManageSource(provider)
-    ? { click: () => openProvider(provider) }
-    : {};
-};
-
 const openProvider = function (provider: ProviderConfig) {
   if (
     maySetUp(provider) &&
@@ -695,6 +475,13 @@ const canManageSource = function (provider: ProviderConfig) {
 const getStageLabel = function (stage?: ProviderStage) {
   const key = getProviderStageTranslationKey(stage);
   return key ? $t(key) : "";
+};
+
+// a stage badge only shows for the stages worth flagging; a healthy stable
+// provider carries none
+const stageLabelFor = function (item: ProviderConfig) {
+  const stage = api.providerManifests[item.domain]?.stage;
+  return shouldShowStageBadge(stage) ? getStageLabel(stage) : "";
 };
 
 onMounted(() => {
@@ -891,43 +678,6 @@ const getProviderName = function (config: ProviderConfig) {
   );
 };
 
-const isTextTruncated = function (text: string) {
-  return text && text.length > 150;
-};
-
-const getStageColor = function (stage?: string) {
-  return match(stage)
-    .with("stable", () => "green")
-    .with("beta", () => "blue")
-    .with("alpha", () => "purple")
-    .with("experimental", () => "orange")
-    .with("unmaintained", () => "grey")
-    .with("deprecated", () => "red")
-    .otherwise(() => "green");
-};
-
-// status indicator helpers: a loaded (healthy) provider shows no indicator
-const statusIcon = function (status?: ProviderStatus | null) {
-  return match(status)
-    .with(ProviderStatus.DISABLED, () => "mdi-cancel")
-    .with(ProviderStatus.LOADING, () => "mdi-timer-sand")
-    .with(ProviderStatus.AUTH_REQUIRED, () => "mdi-key-alert")
-    .with(ProviderStatus.INCOMPATIBLE, () => "mdi-alert-octagon-outline")
-    .with(ProviderStatus.ERROR, () => "mdi-alert-circle")
-    .otherwise(() => "");
-};
-
-const statusColor = function (status?: ProviderStatus | null) {
-  return match(status)
-    .with(
-      ProviderStatus.AUTH_REQUIRED,
-      ProviderStatus.INCOMPATIBLE,
-      () => "warning",
-    )
-    .with(ProviderStatus.ERROR, () => "error")
-    .otherwise(() => "grey");
-};
-
 // a healthy provider carries no badge, so only the states worth flagging map to one
 const statusVariant = function (status?: ProviderStatus | null) {
   if (isErrorStatus(status)) return "destructive" as const;
@@ -1050,72 +800,6 @@ const getAllFilteredProviders = function () {
     width: 100%;
     align-self: stretch;
   }
-}
-
-.provider-description {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.4em;
-  max-height: 4.2em;
-}
-
-.provider-description.truncated-text {
-  margin-bottom: 16px !important;
-}
-
-.provider-card {
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-/* only a card that opens something lifts on hover */
-.provider-card.v-card--link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.player-provider-card {
-  cursor: pointer;
-}
-
-.provider-access-text {
-  font-size: 12px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  line-height: 1.4;
-}
-
-.provider-error-inline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: rgb(var(--v-theme-error));
-}
-
-.provider-error-text {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.provider-error-card {
-  background: rgba(var(--v-theme-error), 0.08);
-  border-radius: 8px;
-  margin: 0 12px 12px 12px;
-}
-
-.provider-error-detail {
-  font-size: 12px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .empty-state {

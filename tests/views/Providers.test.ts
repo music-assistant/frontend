@@ -198,12 +198,6 @@ vi.mock("vue-router", async (importOriginal) => {
   };
 });
 
-const ItemStub = {
-  name: "Item",
-  emits: ["click"],
-  template: `<div @click="$emit('click')"><slot /></div>`,
-};
-
 const SlotStub = {
   template: "<div><slot /></div>",
 };
@@ -213,14 +207,27 @@ const ButtonStub = {
   template: `<button @click="$emit('click', $event)"><slot /></button>`,
 };
 
-// the card view's Vuetify card, with the slots its icon and actions live in
-const CardStub = {
-  emits: ["click"],
-  template: `
-    <div @click="$emit('click')">
-      <slot name="prepend" /><slot /><slot name="append" />
-    </div>
-  `,
+// stands in for the extracted row so the view's tests can read the flags it is
+// handed and drive the events it emits, without depending on how it renders
+const ProviderRowStub = {
+  name: "ProviderRow",
+  props: [
+    "config",
+    "variant",
+    "manageable",
+    "reconfigurable",
+    "syncing",
+    "name",
+    "description",
+    "accessSummary",
+    "statusVariant",
+    "statusLabel",
+    "isError",
+    "errorText",
+    "stageLabel",
+  ],
+  emits: ["open", "menu", "reconfigure"],
+  template: `<div data-testid="provider-row">{{ name }}</div>`,
 };
 
 beforeEach(() => {
@@ -241,10 +248,10 @@ beforeEach(() => {
 });
 
 describe("Providers", () => {
-  it("opens reconfiguration when an authentication-required provider is clicked", async () => {
+  it("opens reconfiguration when an authentication-required provider is activated", async () => {
     const wrapper = await mountProviders(ProviderStatus.AUTH_REQUIRED);
 
-    await wrapper.get('[data-testid="provider-row"]').trigger("click");
+    onlyRow(wrapper).vm.$emit("open");
 
     expect(eventbusMock.emit).toHaveBeenCalledWith("setupFlowDialog", {
       kind: "reconfigure",
@@ -254,10 +261,10 @@ describe("Providers", () => {
     expect(routerMock.push).not.toHaveBeenCalled();
   });
 
-  it("opens options when a provider with a generic error is clicked", async () => {
+  it("opens options when a provider with a generic error is activated", async () => {
     const wrapper = await mountProviders(ProviderStatus.ERROR);
 
-    await wrapper.get('[data-testid="provider-row"]').trigger("click");
+    onlyRow(wrapper).vm.$emit("open");
 
     expect(routerMock.push).toHaveBeenCalledWith(
       "/settings/editprovider/spotify--test",
@@ -268,23 +275,21 @@ describe("Providers", () => {
     );
   });
 
-  it("opens options when an authentication-required provider has no setup flow", async () => {
+  it("hands the row no reconfigure action when there is no setup flow", async () => {
     const wrapper = await mountProviders(ProviderStatus.AUTH_REQUIRED, false);
 
-    await wrapper.get('[data-testid="provider-row"]').trigger("click");
+    onlyRow(wrapper).vm.$emit("open");
 
     expect(routerMock.push).toHaveBeenCalledWith(
       "/settings/editprovider/spotify--test",
     );
-    expect(wrapper.find('[data-testid="provider-action"]').exists()).toBe(
-      false,
-    );
+    expect(onlyRow(wrapper).props("reconfigurable")).toBe(false);
   });
 
   it("starts reconfiguration from the provider warning action", async () => {
     const wrapper = await mountProviders(ProviderStatus.ERROR);
 
-    await wrapper.get('[data-testid="provider-action"]').trigger("click");
+    onlyRow(wrapper).vm.$emit("reconfigure");
 
     expect(eventbusMock.emit).toHaveBeenCalledWith("setupFlowDialog", {
       kind: "reconfigure",
@@ -367,7 +372,7 @@ describe("Providers", () => {
     await flushPromises();
 
     expect(apiMock.removeProviderConfig).toHaveBeenCalledWith("spotify--test");
-    expect(wrapper.findAll('[data-testid="provider-row"]')).toHaveLength(0);
+    expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(0);
   });
 
   it("keeps the provider listed when removing it fails", async () => {
@@ -389,7 +394,7 @@ describe("Providers", () => {
     await flushPromises();
 
     expect(toastMock.error).toHaveBeenCalledWith("Error: nope");
-    expect(wrapper.findAll('[data-testid="provider-row"]')).toHaveLength(1);
+    expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(1);
   });
 
   it("omits reconfigure from the menu when no setup flow exists", async () => {
@@ -429,7 +434,7 @@ describe("Providers", () => {
 
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    expect(wrapper.get('[data-testid="stage-badge"]').text()).toBe(
+    expect(onlyRow(wrapper).props("stageLabel")).toBe(
       "settings.stage.options.deprecated",
     );
   });
@@ -437,13 +442,13 @@ describe("Providers", () => {
   it("hides the stage badge for a stable provider", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    expect(wrapper.find('[data-testid="stage-badge"]').exists()).toBe(false);
+    expect(onlyRow(wrapper).props("stageLabel")).toBe("");
   });
 
   it("summarizes a music source without an access record as a household one", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
+    expect(onlyRow(wrapper).props("accessSummary")).toBe(
       "settings.source_access.household · settings.source_access.options.everyone",
     );
   });
@@ -457,7 +462,7 @@ describe("Providers", () => {
       },
     });
 
-    expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
+    expect(onlyRow(wrapper).props("accessSummary")).toBe(
       "Marcel · settings.source_access.shared_with_count",
     );
   });
@@ -471,7 +476,7 @@ describe("Providers", () => {
       },
     });
 
-    expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
+    expect(onlyRow(wrapper).props("accessSummary")).toBe(
       "settings.source_access.household · settings.source_access.shared_with_count",
     );
   });
@@ -486,7 +491,7 @@ describe("Providers", () => {
         access: { owner: null, shared_users: [], sharing },
       });
 
-      expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
+      expect(onlyRow(wrapper).props("accessSummary")).toBe(
         "settings.source_access.nobody",
       );
     },
@@ -501,7 +506,7 @@ describe("Providers", () => {
       },
     });
 
-    expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
+    expect(onlyRow(wrapper).props("accessSummary")).toBe(
       "user-gone · settings.source_access.options.not_shared",
     );
   });
@@ -515,7 +520,7 @@ describe("Providers", () => {
       },
     });
 
-    expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
+    expect(onlyRow(wrapper).props("accessSummary")).toBe(
       "Marcel · settings.source_access.options.private",
     );
   });
@@ -529,7 +534,7 @@ describe("Providers", () => {
       },
     });
 
-    expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
+    expect(onlyRow(wrapper).props("accessSummary")).toBe(
       "sam · settings.source_access.options.not_shared",
     );
   });
@@ -589,9 +594,7 @@ describe("Providers", () => {
         item.label === "settings.source_access.action",
     );
     expect(accessItem.hide).toBe(true);
-    expect(wrapper.find('[data-testid="provider-access"]').exists()).toBe(
-      false,
-    );
+    expect(onlyRow(wrapper).props("accessSummary")).toBeNull();
   });
 
   it("hides the access action for a player provider", async () => {
@@ -607,9 +610,7 @@ describe("Providers", () => {
         item.label === "settings.source_access.action",
     );
     expect(accessItem.hide).toBe(true);
-    expect(wrapper.find('[data-testid="provider-access"]').exists()).toBe(
-      false,
-    );
+    expect(onlyRow(wrapper).props("accessSummary")).toBeNull();
   });
 
   it("leaves the offered provider types to the route for an admin", async () => {
@@ -645,7 +646,7 @@ describe("Providers", () => {
   it("keeps the provider that ships with the server listed", async () => {
     const wrapper = await mountWithConfigs([builtinSource()]);
 
-    expect(wrapper.findAll('[data-testid="provider-row"]')).toHaveLength(1);
+    expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(1);
   });
 
   it("lists every source in a single untitled section", async () => {
@@ -717,31 +718,16 @@ describe("Providers for a member", () => {
     ]);
   });
 
-  it("keeps the sources shared with it read-only", async () => {
+  it("hands its own sources the manage flags and the ones shared with it none", async () => {
     const wrapper = await mountWithConfigs([ownSource(), otherSource()]);
 
-    const own = wrapper.get(
-      '[data-section="own"] [data-testid="provider-row"]',
-    );
-    expect(own.classes()).toContain("cursor-pointer");
-    expect(own.find('[data-testid="provider-open"]').exists()).toBe(true);
-    expect(own.find('[data-testid="provider-menu"]').exists()).toBe(true);
-    expect(own.find('[data-testid="provider-access"]').exists()).toBe(true);
+    const own = rowFor(wrapper, "spotify--own");
+    expect(own.props("manageable")).toBe(true);
+    expect(own.props("accessSummary")).not.toBeNull();
 
-    const shared = wrapper.get(
-      '[data-section="shared"] [data-testid="provider-row"]',
-    );
-    expect(shared.classes()).not.toContain("cursor-pointer");
-    expect(shared.find('[data-testid="provider-open"]').exists()).toBe(false);
-    expect(shared.find('[data-testid="provider-menu"]').exists()).toBe(false);
-    expect(shared.find('[data-testid="provider-access"]').exists()).toBe(false);
-
-    await shared.trigger("click");
-    expect(routerMock.push).not.toHaveBeenCalled();
-    expect(eventbusMock.emit).not.toHaveBeenCalledWith(
-      "setupFlowDialog",
-      expect.anything(),
-    );
+    const shared = rowFor(wrapper, "spotify--other");
+    expect(shared.props("manageable")).toBe(false);
+    expect(shared.props("accessSummary")).toBeNull();
   });
 
   it("keeps the sources shared with it read-only in the card view too", async () => {
@@ -750,21 +736,19 @@ describe("Providers for a member", () => {
       "card",
     );
 
-    const own = wrapper.get('[data-section="own"] .provider-card');
-    expect(own.find('[aria-label^="more_options"]').exists()).toBe(true);
-    expect(own.find('[data-testid="provider-access"]').exists()).toBe(true);
+    const own = rowFor(wrapper, "spotify--own");
+    expect(own.props("variant")).toBe("card");
+    expect(own.props("manageable")).toBe(true);
+    expect(own.props("accessSummary")).not.toBeNull();
 
-    const shared = wrapper.get('[data-section="shared"] .provider-card');
-    expect(shared.find('[aria-label^="more_options"]').exists()).toBe(false);
-    expect(shared.find('[data-testid="provider-access"]').exists()).toBe(false);
-    expect(shared.text()).toContain("settings.provider_status_auth_required");
-    expect(shared.text()).not.toContain("settings.reconfigure");
-
-    await shared.trigger("click");
-    expect(routerMock.push).not.toHaveBeenCalled();
-    await own.trigger("click");
-    expect(routerMock.push).toHaveBeenCalledWith(
-      "/settings/editprovider/spotify--own",
+    const shared = rowFor(wrapper, "spotify--other");
+    expect(shared.props("variant")).toBe("card");
+    expect(shared.props("manageable")).toBe(false);
+    expect(shared.props("accessSummary")).toBeNull();
+    // the server refuses to set up a source the member does not own
+    expect(shared.props("reconfigurable")).toBe(false);
+    expect(shared.props("statusLabel")).toBe(
+      "settings.provider_status_auth_required",
     );
   });
 
@@ -774,15 +758,9 @@ describe("Providers for a member", () => {
       { ...otherSource(), status: ProviderStatus.AUTH_REQUIRED },
     ]);
 
-    const row = wrapper.get('[data-testid="provider-row"]');
-    expect(row.find('[data-testid="provider-action"]').exists()).toBe(false);
-
-    await row.trigger("click");
-    expect(eventbusMock.emit).not.toHaveBeenCalledWith(
-      "setupFlowDialog",
-      expect.anything(),
-    );
-    expect(routerMock.push).not.toHaveBeenCalled();
+    const row = onlyRow(wrapper);
+    expect(row.props("manageable")).toBe(false);
+    expect(row.props("reconfigurable")).toBe(false);
   });
 
   it("leaves out the provider that ships with the server", async () => {
@@ -798,7 +776,7 @@ describe("Providers for a member", () => {
   it("summarizes its own source by the sharing alone", async () => {
     const wrapper = await mountWithConfigs([ownSource()]);
 
-    expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
+    expect(onlyRow(wrapper).props("accessSummary")).toBe(
       "settings.source_access.options.private",
     );
   });
@@ -904,16 +882,14 @@ describe("Providers for a member", () => {
       { ...ownSource(), status: ProviderStatus.AUTH_REQUIRED },
     ]);
 
-    expect(wrapper.find('[data-testid="provider-action"]').exists()).toBe(
-      false,
-    );
+    expect(onlyRow(wrapper).props("reconfigurable")).toBe(false);
     const menuItems = await openMenu(wrapper);
     expect(
       menuItems.map((item: { label: string }) => item.label),
     ).not.toContain("settings.reconfigure");
 
     // the server would refuse the setup flow, so the source opens its options
-    await wrapper.get('[data-testid="provider-row"]').trigger("click");
+    onlyRow(wrapper).vm.$emit("open");
     expect(routerMock.push).toHaveBeenCalledWith(
       "/settings/editprovider/spotify--own",
     );
@@ -972,12 +948,9 @@ describe("Providers for a member that may not add sources", () => {
   it("shows the sources it owns read-only once its role may no longer own sources", async () => {
     const wrapper = await mountWithConfigs([ownSource()]);
 
-    const row = wrapper.get(
-      '[data-section="own"] [data-testid="provider-row"]',
-    );
-    expect(row.find('[data-testid="provider-open"]').exists()).toBe(false);
-    expect(row.find('[data-testid="provider-menu"]').exists()).toBe(false);
-    expect(row.find('[data-testid="provider-access"]').exists()).toBe(false);
+    const row = rowFor(wrapper, "spotify--own");
+    expect(row.props("manageable")).toBe(false);
+    expect(row.props("accessSummary")).toBeNull();
   });
 
   it("tells it nothing has been shared yet, without an invitation to add a source", async () => {
@@ -993,6 +966,110 @@ describe("Providers for a member that may not add sources", () => {
     );
     expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(false);
     expect(wrapper.find(".empty-state").exists()).toBe(false);
+  });
+});
+
+describe("Providers loading", () => {
+  it("narrows a member's load to the music sources", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+
+    await mountWithConfigs([]);
+
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
+  });
+
+  it("gives a role that manages only its own music sources the member view", async () => {
+    authMock.hasScope.mockImplementation(scopeChecker(OWN_SOURCES_ROLE_SCOPES));
+
+    await mountWithConfigs([]);
+
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
+    expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+    expect(apiMock.getShareCandidates).toHaveBeenCalled();
+  });
+
+  it("reports a failing load and shows no empty state", async () => {
+    const wrapper = await mountWithConfigs(
+      Promise.reject(new Error("offline")),
+    );
+
+    expect(toastMock.error).toHaveBeenCalledWith("Error: offline");
+    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("flags a source that needs attention with its status", async () => {
+    const wrapper = await mountProviders(ProviderStatus.AUTH_REQUIRED);
+
+    expect(onlyRow(wrapper).props("statusVariant")).toBe("destructive");
+    expect(onlyRow(wrapper).props("statusLabel")).toBe(
+      "settings.provider_status_auth_required",
+    );
+  });
+
+  it("shows no empty state until the providers are loaded", async () => {
+    const wrapper = await mountWithConfigs(new Promise(() => {}));
+
+    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find(".empty-state").exists()).toBe(false);
+    expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(true);
+  });
+});
+
+describe("Providers search", () => {
+  it("offers the search from ten listed providers on", async () => {
+    const wrapper = await mountWithConfigs(spotifyConfigs(10));
+
+    expect(wrapper.findComponent({ name: "ProviderFilters" }).exists()).toBe(
+      true,
+    );
+  });
+
+  it("hides the search below ten listed providers", async () => {
+    const wrapper = await mountWithConfigs(spotifyConfigs(9));
+
+    expect(wrapper.findComponent({ name: "ProviderFilters" }).exists()).toBe(
+      false,
+    );
+  });
+
+  it("counts only the providers of the listed type", async () => {
+    const wrapper = await mountWithConfigs([
+      ...spotifyConfigs(9),
+      providerConfig({
+        domain: "sonos",
+        instance_id: "sonos--1",
+        type: ProviderType.PLAYER,
+      }),
+    ]);
+
+    expect(wrapper.findComponent({ name: "ProviderFilters" }).exists()).toBe(
+      false,
+    );
+  });
+
+  it("keeps the search while a query narrows the list down", async () => {
+    const wrapper = await mountWithConfigs(spotifyConfigs(10));
+
+    wrapper
+      .findComponent({ name: "ProviderFilters" })
+      .vm.$emit("update:search", "nothing matches this");
+    await flushPromises();
+
+    expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(0);
+    expect(wrapper.findComponent({ name: "ProviderFilters" }).exists()).toBe(
+      true,
+    );
+    // an empty search result is not an invitation to add a first source
+    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find(".empty-state").exists()).toBe(true);
   });
 });
 
@@ -1059,127 +1136,6 @@ function playerProvider() {
   });
 }
 
-describe("Providers keyboard", () => {
-  it("opens a provider from its name, the row's focusable control", async () => {
-    const wrapper = await mountProviders(ProviderStatus.LOADED);
-
-    const name = wrapper.get('[data-testid="provider-open"]');
-    expect(name.element.tagName).toBe("BUTTON");
-    await name.trigger("click");
-
-    expect(routerMock.push).toHaveBeenCalledWith(
-      "/settings/editprovider/spotify--test",
-    );
-    // the row only follows the pointer, so its buttons are not nested in a control
-    expect(wrapper.get('[data-testid="provider-row"]').attributes("role")).toBe(
-      undefined,
-    );
-  });
-});
-
-describe("Providers loading", () => {
-  it("narrows a member's load to the music sources", async () => {
-    authMock.hasScope.mockImplementation(
-      scopeChecker(BUILTIN_ROLE_SCOPES.user),
-    );
-
-    await mountWithConfigs([]);
-
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
-  });
-
-  it("gives a role that manages only its own music sources the member view", async () => {
-    authMock.hasScope.mockImplementation(scopeChecker(OWN_SOURCES_ROLE_SCOPES));
-
-    await mountWithConfigs([]);
-
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
-    expect(apiMock.getAllUsers).not.toHaveBeenCalled();
-    expect(apiMock.getShareCandidates).toHaveBeenCalled();
-  });
-
-  it("reports a failing load and shows no empty state", async () => {
-    const wrapper = await mountWithConfigs(
-      Promise.reject(new Error("offline")),
-    );
-
-    expect(toastMock.error).toHaveBeenCalledWith("Error: offline");
-    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
-      false,
-    );
-  });
-
-  it("flags a source that needs attention with its status", async () => {
-    const wrapper = await mountProviders(ProviderStatus.AUTH_REQUIRED);
-
-    expect(wrapper.get('[data-testid="provider-status"]').text()).toBe(
-      "settings.provider_status_auth_required",
-    );
-  });
-
-  it("shows no empty state until the providers are loaded", async () => {
-    const wrapper = await mountWithConfigs(new Promise(() => {}));
-
-    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
-      false,
-    );
-    expect(wrapper.find(".empty-state").exists()).toBe(false);
-    expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(true);
-  });
-});
-
-describe("Providers search", () => {
-  it("offers the search from ten listed providers on", async () => {
-    const wrapper = await mountWithConfigs(spotifyConfigs(10));
-
-    expect(wrapper.findComponent({ name: "ProviderFilters" }).exists()).toBe(
-      true,
-    );
-  });
-
-  it("hides the search below ten listed providers", async () => {
-    const wrapper = await mountWithConfigs(spotifyConfigs(9));
-
-    expect(wrapper.findComponent({ name: "ProviderFilters" }).exists()).toBe(
-      false,
-    );
-  });
-
-  it("counts only the providers of the listed type", async () => {
-    const wrapper = await mountWithConfigs([
-      ...spotifyConfigs(9),
-      providerConfig({
-        domain: "sonos",
-        instance_id: "sonos--1",
-        type: ProviderType.PLAYER,
-      }),
-    ]);
-
-    expect(wrapper.findComponent({ name: "ProviderFilters" }).exists()).toBe(
-      false,
-    );
-  });
-
-  it("keeps the search while a query narrows the list down", async () => {
-    const wrapper = await mountWithConfigs(spotifyConfigs(10));
-
-    wrapper
-      .findComponent({ name: "ProviderFilters" })
-      .vm.$emit("update:search", "nothing matches this");
-    await flushPromises();
-
-    expect(wrapper.findAll('[data-testid="provider-row"]')).toHaveLength(0);
-    expect(wrapper.findComponent({ name: "ProviderFilters" }).exists()).toBe(
-      true,
-    );
-    // an empty search result is not an invitation to add a first source
-    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
-      false,
-    );
-    expect(wrapper.find(".empty-state").exists()).toBe(true);
-  });
-});
-
 /** The given number of loaded spotify sources, each with its own name. */
 function spotifyConfigs(count: number): ProviderConfig[] {
   return Array.from({ length: count }, (_, index) =>
@@ -1235,30 +1191,17 @@ async function mountWithConfigs(
       },
       stubs: {
         AddProviderDialog: AddDialogStub,
-        Badge: SlotStub,
+        Button: ButtonStub,
         Container: SlotStub,
         Empty: SlotStub,
         EmptyContent: SlotStub,
         EmptyDescription: SlotStub,
         EmptyMedia: SlotStub,
         EmptyTitle: SlotStub,
-        Item: ItemStub,
-        ItemActions: SlotStub,
-        ItemContent: SlotStub,
-        ItemDescription: SlotStub,
         ItemGroup: SlotStub,
-        ItemMedia: SlotStub,
-        ItemTitle: SlotStub,
         ProviderAccessDialog: AccessDialogStub,
-        Button: ButtonStub,
-        "v-btn": ButtonStub,
-        "v-card": CardStub,
-        "v-card-text": SlotStub,
-        "v-card-title": SlotStub,
-        "v-chip": SlotStub,
-        "v-col": SlotStub,
+        ProviderRow: ProviderRowStub,
         "v-icon": true,
-        "v-row": SlotStub,
       },
     },
   });
@@ -1266,9 +1209,27 @@ async function mountWithConfigs(
   return wrapper;
 }
 
+// the only row on a page that lists a single source
+function onlyRow(wrapper: Awaited<ReturnType<typeof mountWithConfigs>>) {
+  return wrapper.getComponent(ProviderRowStub);
+}
+
+// the row rendering a specific source, found by its instance id
+function rowFor(
+  wrapper: Awaited<ReturnType<typeof mountWithConfigs>>,
+  instanceId: string,
+) {
+  const row = wrapper
+    .findAllComponents(ProviderRowStub)
+    .find((candidate) => candidate.props("config").instance_id === instanceId);
+  if (!row) throw new Error(`no provider row for ${instanceId}`);
+  return row;
+}
+
 // the menu button emits on the app-wide eventbus, which is what carries the items
 async function openMenu(wrapper: Awaited<ReturnType<typeof mountWithConfigs>>) {
-  await wrapper.get('[data-testid="provider-menu"]').trigger("click");
+  onlyRow(wrapper).vm.$emit("menu", { clientX: 0, clientY: 0 });
+  await flushPromises();
   const contextMenuCall = eventbusMock.emit.mock.calls.find(
     ([event]) => event === "contextmenu",
   );
