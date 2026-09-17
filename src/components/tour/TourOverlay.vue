@@ -19,8 +19,8 @@
   </Teleport>
 
   <Popover :open="shown" modal @update:open="onOpenChange">
-    <!-- anchored to the stop itself rather than to a trigger, and repositioned
-         every frame so the card keeps up with a sidebar sliding open -->
+    <!-- anchored to the stop itself rather than to a trigger; floating-ui's
+         observers keep the card on it as the sidebar slides open -->
     <PopoverContent
       v-if="current"
       :reference="target ?? undefined"
@@ -29,7 +29,6 @@
       :side-offset="CARD_GAP"
       :collision-padding="CARD_COLLISION_PADDING"
       :arrow-padding="ARROW_PADDING"
-      update-position-strategy="always"
       :aria-label="$t(`tour.stops.${current}.title`)"
       :aria-describedby="descriptionId"
       class="z-[100003] flex w-80 max-w-[calc(100vw-1.5rem)] flex-col gap-3"
@@ -115,6 +114,7 @@ import {
 } from "@/helpers/tour";
 import { store } from "@/plugins/store";
 import { X } from "@lucide/vue";
+import { useResizeObserver } from "@vueuse/core";
 import {
   computed,
   nextTick,
@@ -134,6 +134,17 @@ const CARD_GAP = SPOTLIGHT_MARGIN + 8;
 const CARD_COLLISION_PADDING = 12;
 // how far the arrow stays from the card's rounded corners
 const ARROW_PADDING = 12;
+// how long the spotlight keeps measuring after something moved its stop
+const SETTLE_MS = 500;
+// what can move a stop while the tour is open: the window changing or
+// scrolling, and a transition or animation anywhere on the page, such as the
+// sidebar sliding open or the sheet sliding shut
+const MOVE_EVENTS = [
+  "scroll",
+  "transitionrun",
+  "transitionend",
+  "animationend",
+];
 
 const { active, end } = useTour();
 const { isMobile, state, setOpen, setOpenMobile } = useSidebar();
@@ -151,8 +162,10 @@ const nextButton = ref<ComponentPublicInstance | null>(null);
 
 // the sidebar was collapsed when the tour opened it, so it goes back that way
 let collapseAfter = false;
-// the animation frame the spotlight is measured on, while a stop is shown
+// the animation frame the spotlight is measured on, while something moves
 let frameRequest = 0;
+// when the measuring stops again, unless something else moves first
+let trackUntil = 0;
 
 const current = computed(() => stops.value[index.value]);
 const isLast = computed(() => index.value === stops.value.length - 1);
@@ -233,12 +246,15 @@ const begin = async function (): Promise<void> {
     end();
     return;
   }
+  listen();
   show();
 };
 
 const finishRun = function (): void {
+  unlisten();
   cancelAnimationFrame(frameRequest);
   frameRequest = 0;
+  trackUntil = 0;
   shown.value = false;
   frame.value = null;
   if (collapseAfter) setOpen(false);
@@ -255,9 +271,9 @@ const show = function (): void {
   target.value = element;
   shown.value = true;
   // measured right away, so the spotlight sets off for the stop with the card
-  // rather than a frame behind it
+  // rather than a frame behind it, then followed while the page settles on it
   measure();
-  if (!frameRequest) track();
+  nudge();
 };
 
 /**
@@ -283,11 +299,37 @@ const measure = function (): boolean {
   return true;
 };
 
-// The spotlight follows the stop frame by frame while a stop is shown: that
-// keeps it on a sidebar sliding open, a sheet sliding shut or a bar moving with
-// the window, without listening for each of those.
+// The spotlight is measured frame by frame, but only for a moment after
+// something moved its stop: it follows a sidebar sliding open or a sheet
+// sliding shut, and a stop left open costs nothing once things have settled.
+const nudge = function (): void {
+  if (!shown.value) return;
+  trackUntil = Date.now() + SETTLE_MS;
+  if (!frameRequest) track();
+};
+
 const track = function (): void {
-  if (measure()) frameRequest = requestAnimationFrame(track);
+  frameRequest = 0;
+  if (!measure() || Date.now() >= trackUntil) return;
+  frameRequest = requestAnimationFrame(track);
+};
+
+// a stop's own element resizing, the player name growing in the bar say, has
+// no transition to announce it
+useResizeObserver(target, nudge);
+
+const listen = function (): void {
+  window.addEventListener("resize", nudge);
+  for (const type of MOVE_EVENTS) {
+    document.addEventListener(type, nudge, { capture: true, passive: true });
+  }
+};
+
+const unlisten = function (): void {
+  window.removeEventListener("resize", nudge);
+  for (const type of MOVE_EVENTS) {
+    document.removeEventListener(type, nudge, { capture: true });
+  }
 };
 
 watch(

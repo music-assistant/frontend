@@ -201,6 +201,7 @@ beforeEach(() => {
 
 afterEach(() => {
   useTour().end();
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   document.body.innerHTML = "";
 });
@@ -373,8 +374,11 @@ describe("TourOverlay", () => {
     expect(spotlight()?.style.width).toBe("268px");
     expect(spotlight()?.style.height).toBe("512px");
 
-    // the sidebar slides open under it: the next frame picks the move up
+    // the sidebar slides open under it: its transition sets the measuring off
     placeAt(document.getElementById("menu")!, { ...BOXES.menu, width: 300 });
+    document
+      .getElementById("menu")!
+      .dispatchEvent(new Event("transitionend", { bubbles: true }));
     runFrame();
     await nextTick();
     expect(spotlight()?.style.width).toBe("312px");
@@ -423,6 +427,7 @@ describe("TourOverlay", () => {
     button.setAttribute("data-tour", "menu");
     document.body.append(button);
     placeAt(button, { top: 800, left: 12, width: 60, height: 44 });
+    window.dispatchEvent(new Event("resize"));
     runFrame();
     await nextTick();
 
@@ -435,10 +440,36 @@ describe("TourOverlay", () => {
     await startTour();
 
     document.getElementById("menu")!.remove();
+    window.dispatchEvent(new Event("resize"));
     runFrame();
     await flushPromises();
 
     expect(useTour().active.value).toBe(false);
+    expect(frames.size).toBe(0);
+  });
+
+  it("stops measuring once things have settled, until something moves", async () => {
+    await startTour();
+    expect(frames.size).toBe(1);
+
+    // nothing has moved for a while: the frame that fires then is the last
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() + 1000);
+    runFrame();
+    expect(frames.size).toBe(0);
+
+    // the window changing sets it off again
+    window.dispatchEvent(new Event("resize"));
+    expect(frames.size).toBe(1);
+  });
+
+  it("listens for nothing once it has ended", async () => {
+    await startTour();
+    useTour().end();
+    await flushPromises();
+
+    window.dispatchEvent(new Event("resize"));
+    document.dispatchEvent(new Event("transitionend"));
     expect(frames.size).toBe(0);
   });
 
