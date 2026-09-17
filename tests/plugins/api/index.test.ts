@@ -340,11 +340,11 @@ describe("MusicAssistantApi error handling", () => {
     expect(api.supportsShareCandidates).toBe(true);
   });
 
-  it("hands out podcast transcripts from schema 77 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 76 };
+  it("hands out podcast transcripts from schema 78 on", () => {
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 77 };
     expect(api.supportsPodcastTranscripts).toBe(false);
 
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 77 };
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 78 };
     expect(api.supportsPodcastTranscripts).toBe(true);
   });
 

@@ -106,8 +106,8 @@ const ROLES_SCHEMA_VERSION = 74;
 // Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
 const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
 
-// The music/podcasts/podcast_episode_transcript command and has_transcript flag landed in API schema 77.
-const PODCAST_TRANSCRIPTS_SCHEMA_VERSION = 77;
+// The music/podcasts/podcast_episode_transcript command and has_transcript flag landed in API schema 78.
+const PODCAST_TRANSCRIPTS_SCHEMA_VERSION = 78;
 
 export interface CommandOptions {
   /**
@@ -3126,7 +3126,7 @@ export class MusicAssistantApi {
     );
   }
 
-  /** Whether the connected server can hand out podcast episode transcripts (schema >= 77). */
+  /** Whether the connected server can hand out podcast episode transcripts (schema >= 78). */
   public get supportsPodcastTranscripts(): boolean {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
