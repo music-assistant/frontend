@@ -42,6 +42,7 @@ import {
   type RowSource,
 } from "@/components/details/rowRegistry";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import { useEscapeBack } from "@/composables/useEscapeBack";
 import { goBack } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
 import { type Artist, type MediaItemType } from "@/plugins/api/interfaces";
@@ -214,6 +215,8 @@ const backToArtist = function () {
     params: { provider: props.provider, itemId: props.itemId },
   });
 };
+
+useEscapeBack(backToArtist);
 
 /** Shared shape of the listings; every case overrides what differs. */
 function listingDefaults(): Omit<
