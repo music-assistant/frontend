@@ -93,6 +93,7 @@ const sidebarToggleLabel = computed(() =>
 .trigger-container--collapsed .navuser-trigger :deep(ul[data-sidebar="menu"]) {
   padding-left: 6px !important;
   padding-right: 6px !important;
+  padding-bottom: 6px !important;
 }
 
 .trigger-container--collapsed
