@@ -1,75 +1,105 @@
 <template>
-  <ListItem
+  <Item
     v-if="variant === 'list'"
-    link
-    :show-menu-btn="true"
-    :menu-button-label="`${t('more_options')}: ${displayName}`"
+    v-hold="(event: Event) => emit('menu', event, task)"
+    variant="outline"
+    class="cursor-pointer"
     @click="emit('click', task)"
-    @menu="(event) => emit('menu', event, task)"
+    @click.right.prevent="(event: Event) => emit('menu', event, task)"
   >
-    <template #prepend>
+    <ItemMedia class="self-start">
       <div :class="statusIndicatorClass" class="task-status-indicator">
         <component :is="statusIcon" :class="statusIconClass" />
       </div>
-    </template>
+    </ItemMedia>
 
-    <template #title>
-      <div class="task-name">
-        {{ displayName }}
-      </div>
-    </template>
-
-    <template #subtitle>
-      <div class="task-meta">
-        <div v-if="taskSummary" class="task-summary">
-          {{ taskSummary }}
-        </div>
-
-        <div v-if="showProgressText" class="task-progress-text">
-          {{ task.progress_text }}
-        </div>
-
-        <div v-if="showProgressBar" class="task-progress">
-          <div class="task-progress-header">
-            <span class="truncate">
-              {{ task.progress_text || t("background_tasks.progress") }}
-            </span>
-            <span class="task-progress-value">{{ task.progress }}%</span>
-          </div>
-          <Progress :model-value="task.progress ?? 0" class="h-2" />
-        </div>
-
-        <div v-if="task.last_error" class="task-error">
-          {{ task.last_error }}
-        </div>
-        <div v-else-if="failureSummary" class="task-failure">
-          {{ failureSummary }}
-        </div>
-      </div>
-    </template>
-
-    <template #append>
-      <div class="task-status-chips">
-        <Badge variant="outline" :class="statusBadgeClass">
-          {{ formattedStatus }}
-        </Badge>
-        <Badge
-          v-if="isScheduled"
-          variant="outline"
-          class="border-slate-300 bg-slate-500/10 text-slate-700 dark:border-slate-700 dark:bg-slate-500/10 dark:text-slate-300"
+    <ItemContent>
+      <ItemTitle>
+        <!-- the name is the focusable control; the row itself only follows the pointer -->
+        <button
+          type="button"
+          class="cursor-pointer text-left text-base font-medium leading-snug"
+          @click.stop="emit('click', task)"
         >
-          {{ t("background_tasks.scheduled") }}
-        </Badge>
-        <Badge
-          v-if="isScheduled && !task.schedule?.enabled"
-          variant="outline"
-          class="border-amber-300 bg-amber-500/10 text-amber-700 dark:border-amber-800 dark:bg-amber-500/10 dark:text-amber-300"
-        >
-          {{ t("background_tasks.disabled") }}
-        </Badge>
+          {{ displayName }}
+        </button>
+      </ItemTitle>
+
+      <div
+        v-if="taskSummary"
+        class="text-muted-foreground text-sm leading-normal"
+      >
+        {{ taskSummary }}
       </div>
-    </template>
-  </ListItem>
+
+      <div
+        v-if="showProgressText"
+        class="text-muted-foreground text-sm leading-normal"
+      >
+        {{ task.progress_text }}
+      </div>
+
+      <div
+        v-if="showProgressBar"
+        class="flex max-w-[520px] flex-col gap-2 pt-0.5"
+      >
+        <div
+          class="text-muted-foreground flex items-center justify-between gap-4 text-xs"
+        >
+          <span class="truncate">
+            {{ task.progress_text || t("background_tasks.progress") }}
+          </span>
+          <span class="text-foreground shrink-0 font-medium">
+            {{ task.progress }}%
+          </span>
+        </div>
+        <Progress :model-value="task.progress ?? 0" class="h-2" />
+      </div>
+
+      <div
+        v-if="task.last_error"
+        class="text-destructive text-sm leading-normal"
+      >
+        {{ task.last_error }}
+      </div>
+      <div
+        v-else-if="failureSummary"
+        class="text-sm leading-normal text-amber-600 dark:text-amber-400"
+      >
+        {{ failureSummary }}
+      </div>
+    </ItemContent>
+
+    <ItemActions class="flex-wrap justify-end self-start">
+      <Badge variant="outline" :class="statusBadgeClass">
+        {{ formattedStatus }}
+      </Badge>
+      <Badge
+        v-if="isScheduled"
+        variant="outline"
+        class="border-slate-300 bg-slate-500/10 text-slate-700 dark:border-slate-700 dark:bg-slate-500/10 dark:text-slate-300"
+      >
+        {{ t("background_tasks.scheduled") }}
+      </Badge>
+      <Badge
+        v-if="isScheduled && !task.schedule?.enabled"
+        variant="outline"
+        class="border-amber-300 bg-amber-500/10 text-amber-700 dark:border-amber-800 dark:bg-amber-500/10 dark:text-amber-300"
+      >
+        {{ t("background_tasks.disabled") }}
+      </Badge>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        class="shrink-0"
+        :aria-label="`${t('more_options')}: ${displayName}`"
+        :title="`${t('more_options')}: ${displayName}`"
+        @click.stop="emit('menu', $event, task)"
+      >
+        <MoreVertical class="size-4" />
+      </Button>
+    </ItemActions>
+  </Item>
 
   <Card
     v-else
@@ -158,8 +188,14 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 import { Progress } from "@/components/ui/progress";
-import ListItem from "@/components/ListItem.vue";
 import { useBackgroundTaskDisplay } from "@/composables/background-tasks/useBackgroundTaskDisplay";
 import type { BackgroundTask } from "@/plugins/api/interfaces";
 import { MoreVertical } from "@lucide/vue";
@@ -196,48 +232,14 @@ const {
 </script>
 
 <style scoped>
-.task-name {
-  font-weight: 500;
-  font-size: 16px;
-}
-
 .task-status-indicator {
   margin-inline-end: 2px;
-}
-
-.task-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 2px;
-}
-
-.task-status-chips {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.task-summary {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  line-height: 1.45;
 }
 
 .task-progress-text {
   font-size: 13px;
   color: rgba(var(--v-theme-on-surface), 0.7);
   line-height: 1.45;
-}
-
-.task-progress {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: 520px;
-  padding-top: 2px;
 }
 
 .task-progress-header {
