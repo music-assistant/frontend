@@ -42,6 +42,7 @@ const total = ref<number | undefined>(undefined);
 const sortKeys = [
   "name",
   "name_desc",
+  "random",
   "sort_name",
   "sort_name_desc",
   "timestamp_added",
