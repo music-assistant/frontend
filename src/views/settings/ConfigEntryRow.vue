@@ -28,14 +28,47 @@
     >
       {{ $t("settings.advanced") }}
     </v-chip>
+    <!-- a description shows in a popover beside the field; a lone docs link has
+         nothing to show inline, so it just opens -->
+    <Popover v-if="hasDescription">
+      <PopoverTrigger as-child>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          class="help-btn"
+          :aria-label="$t('tooltip.help')"
+        >
+          <HelpCircle :size="20" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        :collision-padding="8"
+        class="flex max-h-[60vh] flex-col gap-2 overflow-y-auto text-sm"
+      >
+        <MarkdownText :text="confEntry.description" />
+        <a
+          v-if="hasHelpLink"
+          :href="helpLink"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-primary self-start underline underline-offset-2"
+        >
+          {{ $t("read_more") }}
+        </a>
+      </PopoverContent>
+    </Popover>
     <Button
-      v-if="hasDescriptionOrHelpLink"
-      type="button"
+      v-else-if="hasHelpLink"
+      as="a"
+      :href="helpLink"
+      target="_blank"
+      rel="noopener noreferrer"
       variant="ghost"
       size="icon"
       class="help-btn"
       :aria-label="$t('tooltip.help')"
-      @click="emit('help')"
     >
       <HelpCircle :size="20" />
     </Button>
@@ -44,12 +77,19 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import MarkdownText from "@/components/MarkdownText.vue";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { HelpCircle } from "@lucide/vue";
 import {
   ConfigEntryUI,
   isHassControlPickerEntry,
 } from "@/helpers/config_entry_ui";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import { ConfigValueType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import ConfigEntryField from "./ConfigEntryField.vue";
@@ -65,7 +105,6 @@ const emit = defineEmits<{
   (e: "update:value", value: ConfigValueType): void;
   (e: "toggle-password"): void;
   (e: "action"): void;
-  (e: "help"): void;
   (
     e: "set-entry-value",
     key: string,
@@ -74,12 +113,13 @@ const emit = defineEmits<{
   ): void;
 }>();
 
-const hasDescriptionOrHelpLink = computed(() => {
-  const entry = props.confEntry;
-  // description is resolved server-side (or set by the frontend for its own settings); the entry
-  // either has one, or a help link
-  return ((entry.description || entry.help_link || " ")?.length ?? 0) > 1;
-});
+// description is resolved server-side, or set by the frontend for its own
+// settings; an entry carries a description, a docs link, or neither
+const hasDescription = computed(() => !!props.confEntry.description?.trim());
+// only ever a web URL: getExternalLinkUrl drops other schemes and rewrites the
+// docs host on beta builds, matching how provider doc links are opened
+const helpLink = computed(() => getExternalLinkUrl(props.confEntry.help_link));
+const hasHelpLink = computed(() => !!helpLink.value);
 </script>
 
 <style scoped>
