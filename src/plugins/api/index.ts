@@ -76,6 +76,8 @@ import {
   SearchResults,
   SmartPlaylistRules,
   SoundEffect,
+  TranscriptCue,
+  UserRole,
   StreamServerInfo,
   MediaCollection,
   ArtistType,
@@ -103,6 +105,9 @@ const ROLES_SCHEMA_VERSION = 74;
 
 // Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
 const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
+
+// The music/podcasts/podcast_episode_transcript command and has_transcript flag landed in API schema 78.
+const PODCAST_TRANSCRIPTS_SCHEMA_VERSION = 78;
 
 export interface CommandOptions {
   /**
@@ -1440,6 +1445,17 @@ export class MusicAssistantApi {
     return this.sendCommand("metadata/update_metadata", {
       item,
       force_refresh,
+    });
+  }
+
+  public getPodcastEpisodeTranscript(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<[string | null, TranscriptCue[] | null]> {
+    // Get a podcast episode's transcript as plain text plus timed lines.
+    return this.sendCommand("music/podcasts/podcast_episode_transcript", {
+      item_id,
+      provider_instance_id_or_domain,
     });
   }
 
@@ -3107,6 +3123,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server can hand out podcast episode transcripts (schema >= 78). */
+  public get supportsPodcastTranscripts(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      PODCAST_TRANSCRIPTS_SCHEMA_VERSION
     );
   }
 
