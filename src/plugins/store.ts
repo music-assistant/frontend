@@ -90,7 +90,6 @@ export const store: Store = reactive({
   libraryRadiosCount: undefined,
   libraryGenresCount: undefined,
   isTouchscreen: isTouchscreenDevice(),
-  playMenuShown: false,
   deviceType: DEVICE_TYPE,
   // a tablet has the screen for a desktop layout and is laid out for touch all
   // the same, so it is taken at its word rather than measured
