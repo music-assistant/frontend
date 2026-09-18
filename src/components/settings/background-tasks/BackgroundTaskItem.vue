@@ -83,9 +83,14 @@
       </div>
 
       <div class="min-w-0 flex-1">
-        <div class="text-base font-medium leading-snug">
+        <!-- the title is the focusable control; the card itself only follows the pointer -->
+        <button
+          type="button"
+          class="cursor-pointer text-left text-base font-medium leading-snug"
+          @click.stop="emit('click', task)"
+        >
           {{ displayName }}
-        </div>
+        </button>
         <div
           v-if="taskSummary"
           class="text-muted-foreground mt-1 text-sm leading-normal"
