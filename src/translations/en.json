@@ -928,6 +928,8 @@
         "musical_key": "Musical key",
         "show_dashboard": "Cast dashboard to a device",
         "collapse_collections": "Collapse collections",
+        "mute": "Mute",
+        "unmute": "Unmute",
         "volume_down": "Volume down",
         "volume_up": "Volume up",
         "playing_from": "Playing from {0}"

@@ -117,6 +117,7 @@ function mountVolume(
   const wrapper = mount(PlayerVolume, {
     props: { player, ...props },
     global: {
+      mocks: { $t: (key: string) => key },
       stubs: {
         Slider: {
           emits: ["update:modelValue"],
