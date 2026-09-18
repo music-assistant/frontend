@@ -71,91 +71,98 @@
     </template>
   </ListItem>
 
-  <v-card
+  <Card
     v-else
-    class="flex-fill rounded-lg task-card"
-    :class="{ 'task-card--disabled': isScheduled && !task.schedule?.enabled }"
-    min-height="170px"
+    class="flex h-full min-h-[170px] cursor-pointer flex-col gap-3 py-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+    :class="{ 'opacity-75': isScheduled && !task.schedule?.enabled }"
     @click="emit('click', task)"
   >
-    <div class="task-card-content">
-      <div class="task-card-header">
-        <div :class="statusIndicatorClass" class="task-status-indicator">
-          <component :is="statusIcon" :class="statusIconClass" />
-        </div>
-
-        <div class="task-card-info">
-          <div class="task-card-title">
-            {{ displayName }}
-          </div>
-          <div v-if="taskSummary" class="task-card-summary">
-            {{ taskSummary }}
-          </div>
-        </div>
-
-        <v-btn
-          icon="mdi-dots-vertical"
-          size="small"
-          variant="text"
-          class="task-card-menu"
-          :aria-label="`${t('more_options')}: ${displayName}`"
-          :title="`${t('more_options')}: ${displayName}`"
-          @click.stop="emit('menu', $event, task)"
-        />
+    <div class="flex items-start gap-3 px-4">
+      <div :class="statusIndicatorClass" class="task-status-indicator">
+        <component :is="statusIcon" :class="statusIconClass" />
       </div>
 
-      <div v-if="showProgressText" class="task-card-progress-text">
-        {{ task.progress_text }}
-      </div>
-
-      <div v-if="showProgressBar" class="task-card-progress">
-        <div class="task-progress-header">
-          <span class="truncate">
-            {{ task.progress_text || t("background_tasks.progress") }}
-          </span>
-          <span class="task-progress-value">{{ task.progress }}%</span>
-        </div>
-        <Progress :model-value="task.progress ?? 0" class="h-2" />
-      </div>
-
-      <div v-if="task.last_error" class="task-error">
-        {{ task.last_error }}
-      </div>
-      <div v-else-if="failureSummary" class="task-failure">
-        {{ failureSummary }}
-      </div>
-
-      <div class="task-card-footer">
-        <div class="task-status-chips">
-          <Badge variant="outline" :class="statusBadgeClass">
-            {{ formattedStatus }}
-          </Badge>
-          <Badge
-            v-if="isScheduled"
-            variant="outline"
-            class="border-slate-300 bg-slate-500/10 text-slate-700 dark:border-slate-700 dark:bg-slate-500/10 dark:text-slate-300"
-          >
-            {{ t("background_tasks.scheduled") }}
-          </Badge>
-          <Badge
-            v-if="isScheduled && !task.schedule?.enabled"
-            variant="outline"
-            class="border-amber-300 bg-amber-500/10 text-amber-700 dark:border-amber-800 dark:bg-amber-500/10 dark:text-amber-300"
-          >
-            {{ t("background_tasks.disabled") }}
-          </Badge>
+      <div class="min-w-0 flex-1">
+        <!-- the title is the focusable control; the card itself only follows the pointer -->
+        <button
+          type="button"
+          class="cursor-pointer text-left text-base font-medium leading-snug"
+          @click.stop="emit('click', task)"
+        >
+          {{ displayName }}
+        </button>
+        <div
+          v-if="taskSummary"
+          class="text-muted-foreground mt-1 text-sm leading-normal"
+        >
+          {{ taskSummary }}
         </div>
       </div>
+
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        class="-mt-1 -mr-2 shrink-0"
+        :aria-label="`${t('more_options')}: ${displayName}`"
+        :title="`${t('more_options')}: ${displayName}`"
+        @click.stop="emit('menu', $event, task)"
+      >
+        <MoreVertical class="size-4" />
+      </Button>
     </div>
-  </v-card>
+
+    <div v-if="showProgressText" class="task-progress-text px-4">
+      {{ task.progress_text }}
+    </div>
+
+    <div v-if="showProgressBar" class="flex flex-col gap-2 px-4">
+      <div class="task-progress-header">
+        <span class="truncate">
+          {{ task.progress_text || t("background_tasks.progress") }}
+        </span>
+        <span class="task-progress-value">{{ task.progress }}%</span>
+      </div>
+      <Progress :model-value="task.progress ?? 0" class="h-2" />
+    </div>
+
+    <div v-if="task.last_error" class="task-error px-4">
+      {{ task.last_error }}
+    </div>
+    <div v-else-if="failureSummary" class="task-failure px-4">
+      {{ failureSummary }}
+    </div>
+
+    <div class="mt-auto flex flex-wrap items-center gap-2 px-4">
+      <Badge variant="outline" :class="statusBadgeClass">
+        {{ formattedStatus }}
+      </Badge>
+      <Badge
+        v-if="isScheduled"
+        variant="outline"
+        class="border-slate-300 bg-slate-500/10 text-slate-700 dark:border-slate-700 dark:bg-slate-500/10 dark:text-slate-300"
+      >
+        {{ t("background_tasks.scheduled") }}
+      </Badge>
+      <Badge
+        v-if="isScheduled && !task.schedule?.enabled"
+        variant="outline"
+        class="border-amber-300 bg-amber-500/10 text-amber-700 dark:border-amber-800 dark:bg-amber-500/10 dark:text-amber-300"
+      >
+        {{ t("background_tasks.disabled") }}
+      </Badge>
+    </div>
+  </Card>
 </template>
 
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import ListItem from "@/components/ListItem.vue";
 import { useBackgroundTaskDisplay } from "@/composables/background-tasks/useBackgroundTaskDisplay";
 import type { BackgroundTask } from "@/plugins/api/interfaces";
+import { MoreVertical } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 
 interface Props {
@@ -258,84 +265,5 @@ const {
   font-size: 13px;
   color: rgb(var(--v-theme-warning));
   line-height: 1.45;
-}
-
-.task-card {
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-  cursor: pointer;
-}
-
-.task-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.task-card--disabled {
-  opacity: 0.75;
-}
-
-.task-card-content {
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  height: 100%;
-  min-height: 170px;
-  gap: 10px;
-}
-
-.task-card-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.task-card-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.task-card-title {
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 1.35;
-}
-
-.task-card-summary {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  line-height: 1.45;
-  margin-top: 4px;
-}
-
-.task-card-menu {
-  flex-shrink: 0;
-  align-self: flex-start;
-  margin: -4px -8px 0 0;
-}
-
-.task-card-progress-text {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  line-height: 1.45;
-}
-
-.task-card-progress {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.task-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: auto;
-  padding-top: 4px;
-}
-
-.task-card-footer .task-status-chips {
-  justify-content: flex-start;
 }
 </style>

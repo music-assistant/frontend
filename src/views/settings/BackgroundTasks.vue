@@ -44,23 +44,19 @@
         />
       </v-list>
 
-      <v-row v-else-if="filteredTasks.length">
-        <v-col
+      <div
+        v-else-if="filteredTasks.length"
+        class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+      >
+        <BackgroundTaskItem
           v-for="task in filteredTasks"
           :key="task.id"
-          cols="12"
-          md="6"
-          lg="4"
-          class="d-flex"
-        >
-          <BackgroundTaskItem
-            :task="task"
-            variant="card"
-            @click="showTaskDetails"
-            @menu="onMenu"
-          />
-        </v-col>
-      </v-row>
+          :task="task"
+          variant="card"
+          @click="showTaskDetails"
+          @menu="onMenu"
+        />
+      </div>
 
       <div v-else class="empty-state">
         <v-icon icon="mdi-list-status" size="64" class="empty-icon" />
