@@ -49,6 +49,26 @@
             <AlertDescription>{{ step.errors.base }}</AlertDescription>
           </Alert>
 
+          <div
+            v-if="step.copy_text"
+            class="mb-4 flex w-full max-w-full items-center gap-2 rounded-md border px-3 py-2"
+          >
+            <code class="min-w-0 flex-1 break-all font-mono text-sm">{{
+              step.copy_text
+            }}</code>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="shrink-0"
+              :aria-label="$t('settings.setup_flow.copy')"
+              :title="$t('settings.setup_flow.copy')"
+              @click="copyExternalText"
+            >
+              <Copy :size="16" />
+            </Button>
+          </div>
+
           <form ref="formRef" @submit.prevent="submit">
             <div
               v-for="entry in visibleFormEntries"
@@ -92,6 +112,24 @@
           <div
             class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
           >
+            <div
+              v-if="step.copy_text"
+              class="flex w-full max-w-full items-center gap-2 rounded-md border px-3 py-2"
+            >
+              <code class="min-w-0 flex-1 break-all font-mono text-sm">{{
+                step.copy_text
+              }}</code>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="shrink-0"
+                :aria-label="$t('settings.setup_flow.copy')"
+                :title="$t('settings.setup_flow.copy')"
+                @click="copyExternalText"
+              >
+                <Copy :size="16" />
+              </Button>
+            </div>
             <Button size="lg" @click="openExternal">
               <ExternalLink :size="18" />
               {{ $t("settings.setup_flow.open_external") }}
@@ -306,6 +344,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { serverNow } from "@/composables/useServerTime";
+import { copyToClipboard } from "@/helpers/utils";
 import {
   allRequiredValuesPresent,
   isEntryDisabled,
@@ -328,6 +367,7 @@ import { store } from "@/plugins/store";
 import {
   CircleCheck,
   Clock,
+  Copy,
   ExternalLink,
   Info,
   Settings2,
@@ -703,6 +743,16 @@ function openExternal() {
   a.setAttribute("target", "_blank");
   a.setAttribute("rel", "noopener");
   a.click();
+}
+
+async function copyExternalText() {
+  const copyText = step.value?.copy_text;
+  if (!copyText) return;
+  if (await copyToClipboard(copyText)) {
+    toast.success($t("settings.setup_flow.copy_success"));
+  } else {
+    toast.error($t("settings.setup_flow.copy_failed"));
+  }
 }
 
 function openLink(url: string) {
