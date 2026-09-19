@@ -218,7 +218,11 @@ describe("AccountStep", () => {
 
     expect(
       wrapper.get("[data-testid=onboarding-account-handed-back]").text(),
-    ).toBe("onboarding.steps.account.handed_back");
+    ).toContain("onboarding.steps.account.handed_back");
+    // whoever stays on this page is offered the usual sign-in
+    expect(
+      wrapper.find("[data-testid=onboarding-account-sign-in-here]").exists(),
+    ).toBe(true);
     expect(wrapper.find("form").exists()).toBe(false);
     expect(wrapper.vm.busy).toBe(false);
     expect(wrapper.emitted("advance")).toBeUndefined();
@@ -238,8 +242,13 @@ describe("AccountStep", () => {
 
     expect(errorText(wrapper)).toBe("onboarding.steps.account.sign_in_failed");
     expect(wrapper.vm.busy).toBe(false);
-    // there is no second account to make
-    expect(createButton(wrapper).attributes("disabled")).toBeDefined();
+    // there is no second account to make: a reload is the way on
+    expect(
+      wrapper.find("[data-testid=onboarding-account-create]").exists(),
+    ).toBe(false);
+    expect(
+      wrapper.find("[data-testid=onboarding-account-reload]").exists(),
+    ).toBe(true);
     expect(wrapper.emitted("advance")).toBeUndefined();
 
     wrapper.unmount();

@@ -1,4 +1,9 @@
-import { appUrlOf, readSetupEntry, type SetupEntry } from "@/helpers/first_run";
+import {
+  appUrlOf,
+  isHandBackUrl,
+  readSetupEntry,
+  type SetupEntry,
+} from "@/helpers/first_run";
 import { getDeviceName } from "@/plugins/api/helpers";
 import { authManager } from "@/plugins/auth";
 import { computed, ref } from "vue";
@@ -96,9 +101,15 @@ async function createAccount(details: AccountDetails): Promise<AccountOutcome> {
   if (!response.ok || !answer.success || !answer.token) {
     throw new AccountSetupError(answer.error || null);
   }
-  if (answer.redirect_to) {
+  // the server only hands back to a destination it trusts, and the scheme is
+  // checked here all the same: a navigation from script would run a
+  // javascript: url where a redirect header never does
+  if (answer.redirect_to && isHandBackUrl(answer.redirect_to)) {
     window.location.assign(answer.redirect_to);
     return "handed_back";
+  }
+  if (answer.redirect_to) {
+    console.warn("[FirstRunSetup] Ignoring hand-back to", answer.redirect_to);
   }
   authManager.setToken(answer.token);
   accountCreated.value = true;

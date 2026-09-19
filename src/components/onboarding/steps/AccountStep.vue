@@ -15,14 +15,23 @@
     </p>
 
     <!-- the browser is on its way to the client that started the setup, and
-         the app on this page will not be signed in -->
-    <p
+         the app on this page will not be signed in; whoever stays here can
+         sign in the usual way, which a reload leads to now that there is an
+         account -->
+    <div
       v-else-if="phase === 'handed_back'"
-      class="text-sm"
+      class="flex flex-col items-start gap-4"
       data-testid="onboarding-account-handed-back"
     >
-      {{ $t("onboarding.steps.account.handed_back") }}
-    </p>
+      <p class="text-sm">{{ $t("onboarding.steps.account.handed_back") }}</p>
+      <Button
+        variant="outline"
+        data-testid="onboarding-account-sign-in-here"
+        @click="reload"
+      >
+        {{ $t("onboarding.steps.account.sign_in_here") }}
+      </Button>
+    </div>
 
     <form
       v-else
@@ -44,7 +53,6 @@
                 :model-value="field.state.value"
                 :aria-invalid="isInvalid(field)"
                 :disabled="locked"
-                autofocus
                 autocomplete="username"
                 @blur="field.handleBlur"
                 @input="
@@ -161,7 +169,19 @@
       </Alert>
 
       <div class="mt-4 flex items-center gap-3">
+        <!-- once the sign-in has been given up on, a reload is the way on:
+             the account is there, and the page signs in with it -->
         <Button
+          v-if="phase === 'sign_in_failed'"
+          type="button"
+          variant="outline"
+          data-testid="onboarding-account-reload"
+          @click="reload"
+        >
+          {{ $t("onboarding.steps.account.reload") }}
+        </Button>
+        <Button
+          v-else
           type="submit"
           :disabled="locked"
           :loading="busy"
@@ -169,13 +189,13 @@
         >
           {{ $t("onboarding.steps.account.create") }}
         </Button>
+        <!-- always in the page, so what is announced is a change to it -->
         <span
-          v-if="busy"
           class="text-muted-foreground text-sm"
           aria-live="polite"
           data-testid="onboarding-account-progress"
         >
-          {{ $t(`onboarding.steps.account.${phase}`) }}
+          {{ busy ? $t(`onboarding.steps.account.${phase}`) : "" }}
         </span>
       </div>
     </form>
@@ -281,6 +301,10 @@ const form = useForm({
 });
 
 const submit = () => form.handleSubmit();
+
+// the account is there by then, so the page signs in with it, or offers the
+// usual sign-in to whoever the hand-back left behind
+const reload = () => window.location.reload();
 
 // The app signs in with the new account behind the wizard, which moves on the
 // moment it has. One that does not get there in time is told so rather than

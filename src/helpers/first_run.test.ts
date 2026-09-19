@@ -1,4 +1,4 @@
-import { appUrlOf, readSetupEntry } from "@/helpers/first_run";
+import { appUrlOf, isHandBackUrl, readSetupEntry } from "@/helpers/first_run";
 import { describe, expect, it } from "vitest";
 
 describe("readSetupEntry", () => {
@@ -33,6 +33,26 @@ describe("readSetupEntry", () => {
     "http://ma.local:8095/setup-notes",
   ])("is nothing on any other page: %s", (href) => {
     expect(readSetupEntry(new URL(href))).toBeNull();
+  });
+});
+
+describe("isHandBackUrl", () => {
+  it.each([
+    "musicassistant://auth?code=token",
+    "https://companion.test/auth?code=token",
+    "http://192.168.1.10:8123/auth",
+  ])("lets the browser go to %s", (url) => {
+    expect(isHandBackUrl(url)).toBe(true);
+  });
+
+  it.each([
+    "javascript:alert(document.cookie)",
+    "data:text/html,hi",
+    "file:///etc/passwd",
+    "not a url",
+    "",
+  ])("keeps the browser away from %s", (url) => {
+    expect(isHandBackUrl(url)).toBe(false);
   });
 });
 

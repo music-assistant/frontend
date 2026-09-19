@@ -125,6 +125,20 @@ describe("creating the account", () => {
     expect(module.useFirstRunSetup().awaitingAccount.value).toBe(false);
   });
 
+  it("asks the server behind a path prefix on that path", async () => {
+    const module = await enterAt("/ma/setup");
+    const fetchMock = stubSetupEndpoint(
+      answer({ success: true, token: "admin-token", user: {} }),
+    );
+
+    await module.useFirstRunSetup().createAccount(details);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${window.location.origin}/ma/setup`,
+      expect.anything(),
+    );
+  });
+
   it("leaves out a display name that was not given", async () => {
     const module = await enterAt("/setup");
     const fetchMock = stubSetupEndpoint(
@@ -175,6 +189,28 @@ describe("creating the account", () => {
     // the token is the client's, not this page's
     expect(authMock.setToken).not.toHaveBeenCalled();
     expect(module.useFirstRunSetup().awaitingAccount.value).toBe(true);
+  });
+
+  it("signs in here rather than follow a hand-back the browser must not be sent to", async () => {
+    const module = await enterAt("/setup");
+    stubSetupEndpoint(
+      answer({
+        success: true,
+        token: "admin-token",
+        user: {},
+        redirect_to: "javascript:alert(1)",
+      }),
+    );
+    const assign = vi
+      .spyOn(window.location, "assign")
+      .mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const outcome = await module.useFirstRunSetup().createAccount(details);
+
+    expect(outcome).toBe("signing_in");
+    expect(assign).not.toHaveBeenCalled();
+    expect(authMock.setToken).toHaveBeenCalledWith("admin-token");
   });
 
   it("passes the server's reason on when it refuses", async () => {

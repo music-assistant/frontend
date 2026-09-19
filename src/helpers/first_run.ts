@@ -32,3 +32,15 @@ export function readSetupEntry(url: URL | Location): SetupEntry | null {
 export function appUrlOf(url: URL | Location): string {
   return url.pathname.replace(SETUP_PATH, "/") + url.search + url.hash;
 }
+
+// the schemes a hand-back may use: the web, and the companion app's own
+const HAND_BACK_SCHEMES = new Set(["http:", "https:", "musicassistant:"]);
+
+/** Whether a hand-back url is one the browser may be sent to. */
+export function isHandBackUrl(url: string): boolean {
+  try {
+    return HAND_BACK_SCHEMES.has(new URL(url).protocol);
+  } catch {
+    return false;
+  }
+}
