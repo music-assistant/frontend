@@ -160,6 +160,28 @@ describe("AccountStep", () => {
     wrapper.unmount();
   });
 
+  it("says so when the display name is too long, like the other fields", async () => {
+    const wrapper = mountStep();
+
+    await wrapper.get('input[name="username"]').setValue("marcel");
+    await wrapper.get('input[name="displayName"]').setValue("M".repeat(101));
+    await wrapper
+      .get('input[name="password"]')
+      .setValue("correct horse battery");
+    await wrapper
+      .get('input[name="confirmPassword"]')
+      .setValue("correct horse battery");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(createAccountMock).not.toHaveBeenCalled();
+    const displayName = wrapper.get('input[name="displayName"]');
+    expect(displayName.attributes("aria-invalid")).toBe("true");
+    expect(wrapper.text()).toContain("auth.display_name_max_length");
+
+    wrapper.unmount();
+  });
+
   it("keeps the details here with the server's reason when it refuses", async () => {
     createAccountMock.mockRejectedValue(
       new AccountSetupError("Username must be at least 2 characters"),

@@ -55,10 +55,12 @@ beforeEach(() => {
   authMock.setToken.mockReset();
 });
 
-// the setup rewrites the address bar, so hand it back as it was found
+// the setup rewrites the address bar, so hand it back as it was found, along
+// with the globals and spies a test put in place
 afterEach(() => {
   window.history.replaceState({}, "", originalUrl);
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe("entering the first-run setup", () => {

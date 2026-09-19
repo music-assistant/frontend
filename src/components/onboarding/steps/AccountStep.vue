@@ -63,7 +63,7 @@
 
         <form.Field name="displayName">
           <template #default="{ field }">
-            <Field>
+            <Field :data-invalid="isInvalid(field)">
               <FieldLabel :for="field.name">
                 {{ $t("auth.display_name") }}
               </FieldLabel>
@@ -71,6 +71,7 @@
                 :id="field.name"
                 :name="field.name"
                 :model-value="field.state.value"
+                :aria-invalid="isInvalid(field)"
                 :disabled="locked"
                 autocomplete="name"
                 @blur="field.handleBlur"
@@ -80,7 +81,11 @@
                   }
                 "
               />
-              <FieldDescription>
+              <FieldError
+                v-if="isInvalid(field)"
+                :errors="field.state.meta.errors"
+              />
+              <FieldDescription v-else>
                 {{ $t("optional") }}
               </FieldDescription>
             </Field>
