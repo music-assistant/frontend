@@ -2776,12 +2776,16 @@ export class MusicAssistantApi {
     await router.push({ name: "backgroundtasks" });
   }
 
+  /**
+   * Resolve a provider domain or instance id to a display name.
+   *
+   * Prefers the name of a loaded instance, then the manifest name, and finally
+   * the generic manifest name for the domain. Falls back to the given id when
+   * nothing matches. It never reads a provider's saved configuration, so an
+   * instance that is not loaded shows the generic service name.
+   * @param provider_domain_or_instance_id - A provider domain or instance id, e.g. from a media item or provider mapping.
+   */
   public getProviderName(provider_domain_or_instance_id: string): string {
-    // try to get the name of the provider from the instance_id or domain
-    if (provider_domain_or_instance_id in this.providers) {
-      provider_domain_or_instance_id =
-        this.providers[provider_domain_or_instance_id].instance_id;
-    }
     // prefer the user configured name
     if (provider_domain_or_instance_id in this.providers) {
       return this.providers[provider_domain_or_instance_id].name;
