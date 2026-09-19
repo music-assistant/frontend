@@ -149,9 +149,13 @@
         <CommandItem
           v-for="item in section.items"
           :key="item.uri"
+          v-hold="(evt: Event) => onHold(evt, item)"
           :value="item.uri"
           class="gap-3 py-2"
           @select="onMediaSelect(item)"
+          @contextmenu.prevent="onMediaMenu($event, item)"
+          @click.capture="swallowClickAfterHold"
+          @touchstart.passive="onTouchStart"
         >
           <div class="relative size-10 shrink-0 overflow-hidden rounded-md">
             <MediaItemThumb :item="item" :size="40" />
@@ -172,6 +176,16 @@
               @click.stop="onPlayClick(item, $event)"
             >
               <Play :size="14" fill="currentColor" :stroke-width="0" />
+            </button>
+            <button
+              type="button"
+              tabindex="-1"
+              class="command-center-menu"
+              :aria-label="`${$t('more_options')}: ${item.name}`"
+              @mousedown.prevent
+              @click.stop="onMediaMenu($event, item)"
+            >
+              <EllipsisVertical :size="16" />
             </button>
             <ProviderIcon
               :domain="getListItemProviderIconDomain(item)"
@@ -289,6 +303,10 @@ import {
   commandCenterHotkeyLabel,
   useCommandCenter,
 } from "@/composables/useCommandCenter";
+import {
+  getEventPosition,
+  useHoldToOpenMenu,
+} from "@/composables/useHoldToOpenMenu";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import {
   LIBRARY_SEARCH_TARGET,
@@ -296,7 +314,10 @@ import {
   useProgressiveSearch,
 } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
-import { handlePlayBtnClick } from "@/helpers/media_item_actions";
+import {
+  handleMenuBtnClick,
+  handlePlayBtnClick,
+} from "@/helpers/media_item_actions";
 import { getArtistsString, getPlayerName } from "@/helpers/utils";
 import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
@@ -306,11 +327,18 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { Check, History, Play, Search, SlidersHorizontal } from "@lucide/vue";
+import {
+  Check,
+  EllipsisVertical,
+  History,
+  Play,
+  Search,
+  SlidersHorizontal,
+} from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
 import { ListboxFilter } from "reka-ui";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { getMenuItems, type MenuItem } from "./navigation/utils/getMenuItems";
 
 const MIN_QUERY_LENGTH = 2;
@@ -324,6 +352,7 @@ const RECENT_SEARCHES_PREF_KEY = "search.recent";
 const SOURCES_PREF_KEY = "search.sources";
 
 const router = useRouter();
+const route = useRoute();
 const { isOpen, initialQuery, initialMediaTypes, open, close } =
   useCommandCenter();
 const { getPreference, setPreference } = useUserPreferences();
@@ -549,6 +578,15 @@ const onPlayClick = function (
   handlePlayBtnClick(item, event.clientX, event.clientY);
 };
 
+const onMediaMenu = function (event: Event, item: MediaItemTypeOrItemMapping) {
+  recordRecentSearch();
+  const { x, y } = getEventPosition(event);
+  handleMenuBtnClick(item, x, y);
+};
+
+const { onHold, onTouchStart, swallowClickAfterHold } =
+  useHoldToOpenMenu(onMediaMenu);
+
 const recentSearches = getPreference<string[]>(RECENT_SEARCHES_PREF_KEY, []);
 
 const recentResults = computed(() => {
@@ -662,6 +700,15 @@ onUnmounted(() => {
     close();
   }
 });
+
+// menu actions such as "go to artist" navigate away, so the popup must not
+// linger on top of the page we land on
+watch(
+  () => route.fullPath,
+  () => {
+    if (isOpen.value) close();
+  },
+);
 
 watch(isOpen, (opened) => {
   store.dialogActive = opened;
@@ -821,6 +868,22 @@ watch(
 
 [data-highlighted] .command-center-play {
   opacity: 1;
+}
+
+.command-center-menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.command-center-menu:hover {
+  color: var(--foreground);
 }
 
 @media (hover: none) {
