@@ -232,6 +232,22 @@ describe("creating the account", () => {
     expect(module.useFirstRunSetup().awaitingAccount.value).toBe(true);
   });
 
+  it("says the admin already exists when the server answers with a conflict", async () => {
+    const module = await enterAt("/setup");
+    stubSetupEndpoint(
+      answer({ success: false, error: "Setup already completed" }, 409),
+    );
+
+    await expect(
+      module.useFirstRunSetup().createAccount(details),
+    ).rejects.toMatchObject({
+      name: "AccountSetupError",
+      reason: "Setup already completed",
+      accountExists: true,
+    });
+    expect(authMock.setToken).not.toHaveBeenCalled();
+  });
+
   it("has no reason to give when the server could not be reached", async () => {
     const module = await enterAt("/setup");
     stubSetupEndpoint(new TypeError("Failed to fetch"));

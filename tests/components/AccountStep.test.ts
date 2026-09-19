@@ -217,7 +217,7 @@ describe("AccountStep", () => {
     await submitDetails(wrapper);
 
     expect(
-      wrapper.get("[data-testid=onboarding-account-handed-back]").text(),
+      wrapper.get("[data-testid=onboarding-account-recovery]").text(),
     ).toContain("onboarding.steps.account.handed_back");
     // whoever stays on this page is offered the usual sign-in
     expect(
@@ -225,6 +225,28 @@ describe("AccountStep", () => {
     ).toBe(true);
     expect(wrapper.find("form").exists()).toBe(false);
     expect(wrapper.vm.busy).toBe(false);
+    expect(wrapper.emitted("advance")).toBeUndefined();
+
+    wrapper.unmount();
+  });
+
+  it("offers the sign-in when the server already has its admin", async () => {
+    createAccountMock.mockRejectedValue(
+      new AccountSetupError("Setup already completed", true),
+    );
+    const wrapper = mountStep();
+
+    await submitDetails(wrapper);
+
+    // nothing to try again: the way on is the usual sign-in
+    expect(
+      wrapper.get("[data-testid=onboarding-account-recovery]").text(),
+    ).toContain("onboarding.steps.account.account_exists");
+    expect(
+      wrapper.find("[data-testid=onboarding-account-sign-in-here]").exists(),
+    ).toBe(true);
+    expect(wrapper.find("form").exists()).toBe(false);
+    expect(errorText(wrapper)).toBeNull();
     expect(wrapper.emitted("advance")).toBeUndefined();
 
     wrapper.unmount();

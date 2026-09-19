@@ -14,16 +14,16 @@
       {{ $t("onboarding.steps.account.ready", { name }) }}
     </p>
 
-    <!-- the browser is on its way to the client that started the setup, and
-         the app on this page will not be signed in; whoever stays here can
-         sign in the usual way, which a reload leads to now that there is an
-         account -->
+    <!-- there is an account, but this page is not signed in with it: the
+         browser is on its way to the client that started the setup, or the
+         server already had its admin. Whoever stays here signs in the usual
+         way, which a reload leads to now that there is an account -->
     <div
-      v-else-if="phase === 'handed_back'"
+      v-else-if="recovering"
       class="flex flex-col items-start gap-4"
-      data-testid="onboarding-account-handed-back"
+      data-testid="onboarding-account-recovery"
     >
-      <p class="text-sm">{{ $t("onboarding.steps.account.handed_back") }}</p>
+      <p class="text-sm">{{ $t(`onboarding.steps.account.${phase}`) }}</p>
       <Button
         variant="outline"
         data-testid="onboarding-account-sign-in-here"
@@ -246,12 +246,14 @@ const { createAccount } = useFirstRunSetup();
 
 // where the step is at: taking the details, making the account, waiting for
 // the app to sign in with it, having handed the browser to the client that
-// started the setup, or having given up waiting for the sign-in
+// started the setup, having found the server already has its admin, or having
+// given up waiting for the sign-in
 type Phase =
   | "idle"
   | "creating"
   | "signing_in"
   | "handed_back"
+  | "account_exists"
   | "sign_in_failed";
 
 const phase = ref<Phase>("idle");
@@ -261,6 +263,10 @@ const busy = computed(
 // the form is submitted once: from then on the account is there, whatever
 // the app makes of it, and a second one could not be made anyway
 const locked = computed(() => phase.value !== "idle");
+// an account this page is not signed in with: the usual sign-in is the way on
+const recovering = computed(
+  () => phase.value === "handed_back" || phase.value === "account_exists",
+);
 const failure = ref<string | null>(null);
 
 // the done state only ever shows once someone is signed in, so the empty name
@@ -291,6 +297,11 @@ const form = useForm({
         displayName: value.displayName.trim(),
       });
     } catch (error) {
+      // an admin that already exists is not something to try again
+      if (error instanceof AccountSetupError && error.accountExists) {
+        phase.value = "account_exists";
+        return;
+      }
       failure.value =
         error instanceof AccountSetupError && error.reason
           ? error.reason

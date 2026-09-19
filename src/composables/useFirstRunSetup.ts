@@ -21,9 +21,17 @@ export interface AccountDetails {
  */
 export type AccountOutcome = "signing_in" | "handed_back";
 
-/** The account could not be created, for the reason the server gave, if any. */
+/**
+ * The account could not be created, for the reason the server gave, if any.
+ * When the server already has its admin (the account was made in another tab,
+ * or its answer never arrived), `accountExists` says so: there is nothing to
+ * try again, and whoever is here signs in instead.
+ */
 export class AccountSetupError extends Error {
-  constructor(public readonly reason: string | null) {
+  constructor(
+    public readonly reason: string | null,
+    public readonly accountExists = false,
+  ) {
     super(reason ?? "Account setup failed");
     this.name = "AccountSetupError";
   }
@@ -99,7 +107,8 @@ async function createAccount(details: AccountDetails): Promise<AccountOutcome> {
     redirect_to?: string;
   };
   if (!response.ok || !answer.success || !answer.token) {
-    throw new AccountSetupError(answer.error || null);
+    // a conflict is the server saying its admin already exists
+    throw new AccountSetupError(answer.error || null, response.status === 409);
   }
   // the server only hands back to a destination it trusts, and the scheme is
   // checked here all the same: a navigation from script would run a
