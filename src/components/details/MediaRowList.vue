@@ -248,6 +248,9 @@ function itemDuration(item: RowItem): number | undefined {
 .media-rows {
   padding: 26px 28px 0;
 }
+.media-rows--other-versions {
+  padding-bottom: 26px;
+}
 .media-rows__head {
   display: flex;
   align-items: baseline;
@@ -394,6 +397,9 @@ function itemDuration(item: RowItem): number | undefined {
 @media (max-width: 768px) {
   .media-rows {
     padding: 20px 16px 0;
+  }
+  .media-rows--other-versions {
+    padding-bottom: 20px;
   }
   .media-rows__title {
     font-size: 19px;
