@@ -177,6 +177,16 @@
             >
               <Play :size="14" fill="currentColor" :stroke-width="0" />
             </button>
+            <button
+              type="button"
+              tabindex="-1"
+              class="command-center-menu"
+              :aria-label="`${$t('more_options')}: ${item.name}`"
+              @mousedown.prevent
+              @click.stop="onMediaMenu($event, item)"
+            >
+              <EllipsisVertical :size="16" />
+            </button>
             <ProviderIcon
               :domain="getListItemProviderIconDomain(item)"
               :size="18"
@@ -317,7 +327,14 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { Check, History, Play, Search, SlidersHorizontal } from "@lucide/vue";
+import {
+  Check,
+  EllipsisVertical,
+  History,
+  Play,
+  Search,
+  SlidersHorizontal,
+} from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
 import { ListboxFilter } from "reka-ui";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
@@ -851,6 +868,22 @@ watch(
 
 [data-highlighted] .command-center-play {
   opacity: 1;
+}
+
+.command-center-menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.command-center-menu:hover {
+  color: var(--foreground);
 }
 
 @media (hover: none) {
