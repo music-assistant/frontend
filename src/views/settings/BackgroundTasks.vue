@@ -26,13 +26,13 @@
       :variant="viewMode === 'list' ? 'default' : 'panel'"
       class="mt-4 px-5"
     >
-      <div v-if="showInitialLoading" class="empty-state">
-        <v-progress-circular indeterminate color="primary" size="48" />
+      <div v-if="showInitialLoading" class="flex justify-center py-16">
+        <Spinner class="size-12" />
       </div>
 
-      <v-list
+      <ItemGroup
         v-else-if="viewMode === 'list' && filteredTasks.length"
-        class="tasks-list"
+        class="gap-2"
       >
         <BackgroundTaskItem
           v-for="task in filteredTasks"
@@ -42,7 +42,7 @@
           @click="showTaskDetails"
           @menu="onMenu"
         />
-      </v-list>
+      </ItemGroup>
 
       <div
         v-else-if="filteredTasks.length"
@@ -58,13 +58,13 @@
         />
       </div>
 
-      <div v-else class="empty-state">
-        <v-icon icon="mdi-list-status" size="64" class="empty-icon" />
-        <div class="empty-title">{{ emptyTitle }}</div>
-        <div class="empty-message">
-          {{ emptyDescription }}
-        </div>
-      </div>
+      <Empty v-else class="border">
+        <EmptyMedia variant="icon">
+          <ListChecks />
+        </EmptyMedia>
+        <EmptyTitle>{{ emptyTitle }}</EmptyTitle>
+        <EmptyDescription>{{ emptyDescription }}</EmptyDescription>
+      </Empty>
     </Container>
 
     <BackgroundTaskDetailsDialog
@@ -94,6 +94,14 @@ import BackgroundTaskItem from "@/components/settings/background-tasks/Backgroun
 import BackgroundTaskScheduleDialog from "@/components/settings/background-tasks/BackgroundTaskScheduleDialog.vue";
 import { Button } from "@/components/ui/button";
 import {
+  Empty,
+  EmptyDescription,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { ItemGroup } from "@/components/ui/item";
+import { Spinner } from "@/components/ui/spinner";
+import {
   canEditTaskSchedule,
   canRemoveTask,
   canRunTaskManually,
@@ -114,7 +122,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { Trash2 } from "@lucide/vue";
+import { ListChecks, Trash2 } from "@lucide/vue";
 import { computed, inject, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -570,38 +578,6 @@ const getPriority = (task: BackgroundTask) => {
 
 .tasks-header :deep(.filters-container) {
   align-items: flex-start;
-}
-
-.tasks-list {
-  background: transparent;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-  width: 100%;
-}
-
-.empty-icon {
-  color: rgba(var(--v-theme-on-surface), 0.3);
-  margin-bottom: 16px;
-}
-
-.empty-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-bottom: 8px;
-}
-
-.empty-message {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  line-height: 1.4;
 }
 
 @media (max-width: 960px) {
