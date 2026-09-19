@@ -14,6 +14,7 @@ import { ProviderType } from "@/plugins/api/interfaces";
 
 export type OnboardingStepId =
   // the admin track: setting the server up
+  | "account"
   | "intent"
   | "music_sources"
   | "players"
@@ -64,6 +65,11 @@ export interface OnboardingContext {
   // member who is not on the admin track. Never both, so the two tracks never
   // run into each other
   isMember: boolean;
+  // the server's first-run setup: nobody can sign in until this session has
+  // made the admin account, and it is on the admin track from before it has
+  firstRun: boolean;
+  // whether anyone is signed in, which on a first run says the account is made
+  signedIn: boolean;
   // the welcome has been shown to this member before, whatever they made of it
   welcomed: boolean;
   // whether this member's role lets them add music sources of their own; the
@@ -115,8 +121,10 @@ function hasConfiguredProvider(
 }
 
 // Which track a step belongs to. Every step is on exactly one of them, and a
-// context is only ever on one, so the two never mix in a single run.
-const onAdminTrack = (ctx: OnboardingContext) => ctx.isAdmin;
+// context is only ever on one, so the two never mix in a single run. The admin
+// a first run is about to make is on the admin track from before they can
+// sign in, so the setup reads as one list from its first step.
+const onAdminTrack = (ctx: OnboardingContext) => ctx.isAdmin || ctx.firstRun;
 const onMemberTrack = (ctx: OnboardingContext) => ctx.isMember;
 
 /**
@@ -128,6 +136,14 @@ export const isTodo = (step: OnboardingStep): boolean => step.kind === "step";
 
 /** Both tracks, each in its base order. */
 export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
+  {
+    id: "account",
+    kind: "step",
+    // only a fresh server asks for this: the account is made once, before
+    // anything else, and a setup run again later has nothing to make
+    appliesTo: (ctx) => ctx.firstRun,
+    isDone: (ctx) => ctx.signedIn,
+  },
   {
     id: "intent",
     kind: "step",

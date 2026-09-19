@@ -1,4 +1,8 @@
 import {
+  leaveFirstRunSetup,
+  useFirstRunSetup,
+} from "@/composables/useFirstRunSetup";
+import {
   setUserPreference,
   setUserPreferences,
   useUserPreferences,
@@ -441,6 +445,7 @@ const expertMode = computed(() =>
   expertModeOf(expertModeFlag.value, legacyPersona.value),
 );
 const welcomedAt = getPreference<string>(ONBOARDING_WELCOME_PREFERENCE);
+const { firstRun } = useFirstRunSetup();
 
 // the music sources this member owns, for the own-sources step to list and
 // for the context to count; only ever non-empty once configs are loaded
@@ -453,7 +458,13 @@ const ownedMusicSources = computed(() =>
 const ctx = computed<OnboardingContext>(() => ({
   // which track this session is on, which is what decides the steps below
   isAdmin: isAdminTrack(),
-  isMember: isMemberTrack(),
+  // a first run is the admin's: the account it makes is theirs from the moment
+  // it is signed in, before the permissions that would say so are in
+  isMember: !firstRun.value && isMemberTrack(),
+  // a fresh server's first run: the account step comes first, and the admin
+  // track is this session's from before there is an account to sign in with
+  firstRun: firstRun.value,
+  signedIn: store.currentUser != null,
   // the welcome has been shown before, which is all the marker on the account
   // says — and all the welcome needs it to say
   welcomed: welcomedAt.value != null,
@@ -612,6 +623,9 @@ async function finish(): Promise<boolean> {
     }
   }
   close();
+  // a first run ends with the wizard that hosted it: run again from the
+  // settings, the setup is the one every other session gets
+  leaveFirstRunSetup();
   return true;
 }
 

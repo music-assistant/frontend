@@ -7,6 +7,10 @@ import {
   type Role,
   type User,
 } from "@/plugins/api/interfaces";
+import {
+  leaveFirstRunSetup,
+  useFirstRunSetup,
+} from "@/composables/useFirstRunSetup";
 import { saveDeviceSetting } from "@/helpers/device_settings";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import type { MusicAssistantApi } from "@/plugins/api";
@@ -619,6 +623,68 @@ describe("App initialization", () => {
       // a wall-mounted tablet has nobody in front of it to welcome
       expect(mockRouterReplace).toHaveBeenCalledWith("/now-playing");
       expect(mockRouterPush).not.toHaveBeenCalled();
+    });
+
+    describe("on a fresh server's first run", () => {
+      // the first run is a page load's; hand the next test a plain one
+      afterEach(() => leaveFirstRunSetup());
+
+      /** The app as the server's setup page loads it, nothing connected. */
+      function mountFirstRun(search = "") {
+        window.history.replaceState({}, "", `/setup${search}`);
+        apiMock.state.value = "disconnected";
+        return mountAppWithoutSettling();
+      }
+
+      it("opens the setup wizard before anything can sign in", async () => {
+        wrapper = mountFirstRun("?return_url=musicassistant%3A%2F%2Fauth");
+        await flushPromises();
+
+        expect(mockOnboardingOpen).toHaveBeenCalled();
+        expect(
+          wrapper.findComponent({ name: "OnboardingDialog" }).exists(),
+        ).toBe(true);
+        // the sign-in waits for the account the wizard makes
+        expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(false);
+        expect(apiMock.initialize).not.toHaveBeenCalled();
+        // the app runs from the server's own path from here on, the client's
+        // hand-back still in the query for a reload to find
+        expect(window.location.pathname).toBe("/");
+        expect(window.location.search).toBe(
+          "?return_url=musicassistant%3A%2F%2Fauth",
+        );
+      });
+
+      it("starts the sign-in once the account is there, out of sight", async () => {
+        wrapper = mountFirstRun();
+        await flushPromises();
+        vi.stubGlobal(
+          "fetch",
+          vi.fn(
+            async () =>
+              new Response(
+                JSON.stringify({ success: true, token: "admin-token" }),
+                { status: 200 },
+              ),
+          ),
+        );
+
+        await useFirstRunSetup().createAccount({
+          username: "admin",
+          password: "correct horse battery",
+          displayName: "",
+        });
+        await flushPromises();
+
+        expect(authManagerMock.setToken).toHaveBeenCalledWith("admin-token");
+        // the sign-in runs behind the wizard, which stays where it is
+        const login = wrapper.findComponent({ name: "Login" });
+        expect(login.exists()).toBe(true);
+        expect((login.element as HTMLElement).style.display).toBe("none");
+        expect(
+          wrapper.findComponent({ name: "OnboardingDialog" }).exists(),
+        ).toBe(true);
+      });
     });
   });
 

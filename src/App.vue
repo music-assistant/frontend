@@ -1,9 +1,13 @@
 <template>
   <Toaster rich-colors close-button />
 
-  <!-- Login screen (when not authenticated) -->
+  <!-- Login screen (when not authenticated). On a fresh server's first run
+       there is no account to sign in with until the setup wizard has made
+       one, so the sign-in waits for that account and stays out of sight
+       behind the wizard while it runs. -->
   <Login
-    v-if="showLogin"
+    v-if="showLogin && !awaitingAccount"
+    v-show="!firstRun"
     ref="loginComponent"
     @connected="handleRemoteConnected"
     @authenticated="handleRemoteAuthenticated"
@@ -15,7 +19,7 @@
 
   <!-- Onboarding opens as a modal over whichever layout is showing, so a fresh
        admin or a new member is met by it wherever the app lands them -->
-  <OnboardingDialog v-if="showMainApp" />
+  <OnboardingDialog v-if="showMainApp || firstRun" />
 
   <!-- Kiosk mode leaves Home Assistant no chrome of its own, and this screen
        carries none of ours: a server that is away or restarting would strand
@@ -103,6 +107,10 @@ import {
 import Login from "./views/Login.vue";
 import OnboardingDialog from "@/components/onboarding/OnboardingDialog.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
+import {
+  enterFirstRunSetup,
+  useFirstRunSetup,
+} from "@/composables/useFirstRunSetup";
 import { useOnboarding } from "@/composables/useOnboarding";
 
 const router = useRouter();
@@ -110,6 +118,13 @@ const router = useRouter();
 // a modal over the app; opened here, before the app is shown, so a fresh
 // sign-in never flashes the app behind them first
 const { open: openOnboarding } = useOnboarding();
+const { firstRun, awaitingAccount } = useFirstRunSetup();
+
+// A fresh server without Home Assistant sends the browser to its setup page,
+// where the first admin account is made: the setup wizard opens on that step
+// straight away, before anything can sign in, and carries on from there once
+// the account is there.
+if (enterFirstRunSetup()) openOnboarding();
 const route = useRoute();
 const { applyThemePreference: setTheme } = useThemePreference();
 const mediaSessionDisabled = computed(() =>

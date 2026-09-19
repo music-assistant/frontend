@@ -1162,6 +1162,9 @@
         "username_already_exists": "Username already exists. Please choose a different username.",
         "invalid_username": "Invalid username. Please choose a different username.",
         "password_min_length": "Password must be at least 8 characters",
+        "username_max_length": "Username must be at most 50 characters",
+        "display_name_max_length": "Display name must be at most 100 characters",
+        "password_max_length": "Password must be at most 128 characters",
         "passwords_must_match": "Passwords must match",
         "login_failed": "Login failed. Please check your credentials.",
         "login_error": "An error occurred during login",
@@ -2547,6 +2550,20 @@
         "what_you_picked": "What you picked",
         "more_count": "+{count} more",
         "steps": {
+            "account": {
+                "title": "Create your account",
+                "description": "This is the administrator account for this Music Assistant server. Accounts for the other users in your home can be added later.",
+                "create": "Create account",
+                "creating": "Creating your account...",
+                "signing_in": "Signing you in...",
+                "failed": "The account could not be created. Please try again.",
+                "sign_in_failed": "Your account was created, but signing in did not work. Reload the page to continue.",
+                "handed_back": "Your account is ready. You can go back to the app you came from.",
+                "account_exists": "This server already has an account, so there is nothing to create here.",
+                "sign_in_here": "Sign in here instead",
+                "reload": "Reload the page",
+                "ready": "Signed in as {name}."
+            },
             "intent": {
                 "title": "Choose how you want to use Music Assistant",
                 "description": "This sets what Music Assistant does first. Everything stays available, whichever you pick.",
