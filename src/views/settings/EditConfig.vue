@@ -27,7 +27,6 @@
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
-          @help="onEntryHelp(conf_entry)"
           @set-entry-value="onEntryValueSet"
         />
       </div>
@@ -45,7 +44,6 @@
       :output-protocols="outputProtocols"
       @update:value="onValueUpdate"
       @action="onEntryAction"
-      @help="onEntryHelp"
       @toggle-password="showPasswordValues = !showPasswordValues"
     />
 
@@ -76,7 +74,6 @@
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
-          @help="onEntryHelp(conf_entry)"
           @set-entry-value="onEntryValueSet"
         />
       </div>
@@ -109,34 +106,6 @@
       </Button>
     </div>
   </v-form>
-  <v-dialog
-    :model-value="showHelpInfo !== undefined"
-    width="auto"
-    @update:model-value="showHelpInfo = undefined"
-  >
-    <v-card>
-      <v-card-text>
-        <h2>
-          {{ showHelpInfo?.label || "" }}
-        </h2>
-      </v-card-text>
-      <v-card-text>
-        <MarkdownText :text="showHelpInfo?.description" />
-      </v-card-text>
-      <v-card-actions>
-        <v-btn
-          v-if="showHelpInfo?.help_link"
-          @click="openLink(showHelpInfo!.help_link!)"
-        >
-          {{ $t("read_more") }}
-        </v-btn>
-        <v-spacer />
-        <v-btn color="primary" @click="showHelpInfo = undefined">
-          {{ $t("close") }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
   <!-- Unsaved changes confirmation dialog -->
   <!-- any way out of this dialog has to answer the navigation it is holding -->
   <v-dialog
@@ -175,7 +144,6 @@ import {
   NON_INTERACTIVE_ENTRY_TYPES,
   VALUELESS_ENTRY_TYPES,
 } from "@/helpers/config_entry_ui";
-import MarkdownText from "@/components/MarkdownText.vue";
 import { Button } from "@/components/ui/button";
 import {
   ConfigEntryType,
@@ -243,7 +211,6 @@ const entries = ref<ConfigEntryUI[]>();
 const valid = ref(false);
 const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
 const showPasswordValues = ref(false);
-const showHelpInfo = ref<ConfigEntryUI>();
 const oldValues = ref<Record<string, ConfigValueType>>({});
 const oldValuesInitialized = ref(false);
 
@@ -403,21 +370,8 @@ const onEntryValueSet = function (
   onValueUpdate(entry, value);
 };
 
-const openLink = function (url: string) {
-  // window.open(url, "_blank");
-  const a = document.createElement("a");
-  a.setAttribute("href", url);
-  a.setAttribute("target", "_blank");
-  a.click();
-};
-
 const onEntryAction = function (entry: ConfigEntryUI) {
   action(entry.action || entry.key, !!entry.immediate_apply);
-};
-
-const onEntryHelp = function (entry: ConfigEntryUI) {
-  if (entry.description) showHelpInfo.value = entry;
-  else openLink(entry.help_link!);
 };
 
 const resetToDefaults = function () {

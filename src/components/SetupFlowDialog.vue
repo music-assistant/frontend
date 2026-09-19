@@ -61,7 +61,6 @@
                 :disabled="busy || isDisabled(entry)"
                 @update:value="onValueUpdate(entry, $event)"
                 @toggle-password="showPasswordValues = !showPasswordValues"
-                @help="onEntryHelp(entry)"
               />
               <div
                 v-if="step.errors && step.errors[entry.key]"
@@ -265,29 +264,6 @@
       </DialogFooter>
     </DialogContent>
   </Dialog>
-
-  <!-- Per-field help dialog -->
-  <Dialog :open="helpEntry !== undefined" @update:open="onHelpOpenChange">
-    <DialogContent class="sm:max-w-[480px]">
-      <DialogHeader>
-        <DialogTitle>{{ helpEntry?.label }}</DialogTitle>
-      </DialogHeader>
-      <MarkdownText
-        :text="helpEntry?.description"
-        class="text-muted-foreground text-sm"
-      />
-      <DialogFooter>
-        <Button
-          v-if="helpEntry?.help_link"
-          variant="outline"
-          @click="openLink(helpEntry!.help_link!)"
-        >
-          {{ $t("read_more") }}
-        </Button>
-        <Button @click="helpEntry = undefined">{{ $t("close") }}</Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -354,7 +330,6 @@ const step = ref<SetupFlowStep | null>(null);
 const launch = ref<SetupFlowDialogEvent | null>(null);
 const formEntries = ref<ConfigEntry[]>([]);
 const showPasswordValues = ref(false);
-const helpEntry = ref<ConfigEntry | undefined>(undefined);
 // on the server's clock, since the step's `expires_at` is a server timestamp
 const now = ref(serverNow());
 
@@ -705,14 +680,6 @@ function openExternal() {
   a.click();
 }
 
-function openLink(url: string) {
-  const a = document.createElement("a");
-  a.setAttribute("href", url);
-  a.setAttribute("target", "_blank");
-  a.setAttribute("rel", "noopener");
-  a.click();
-}
-
 function openInstanceSettings() {
   const instanceId = step.value?.result?.instance_id;
   if (!instanceId) return;
@@ -769,10 +736,6 @@ function onGuardedClose(event: Event) {
   }
 }
 
-function onHelpOpenChange(value: boolean) {
-  if (!value) helpEntry.value = undefined;
-}
-
 function close(sendAbort = true) {
   if (sendAbort && step.value && !isTerminal.value && step.value.flow_id) {
     // fire-and-forget: cancel the running flow server-side
@@ -788,7 +751,6 @@ function close(sendAbort = true) {
   formEntries.value = [];
   busy.value = false;
   showPasswordValues.value = false;
-  helpEntry.value = undefined;
 }
 
 function cleanupFlow() {
@@ -796,11 +758,6 @@ function cleanupFlow() {
     unsubscribeFlow();
     unsubscribeFlow = null;
   }
-}
-
-function onEntryHelp(entry: ConfigEntry) {
-  if (entry.description) helpEntry.value = entry;
-  else if (entry.help_link) openLink(entry.help_link);
 }
 
 function isDisabled(entry: ConfigEntry): boolean {
