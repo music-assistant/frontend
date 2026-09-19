@@ -29,7 +29,7 @@
           v-if="api.supportsPlayMediaShuffle"
           :icon="Shuffle"
           :label="$t('shuffle')"
-          :icon-only="isPhone"
+          :icon-only="isPhone && !isTablet"
           :disabled="!store.activePlayer"
           @click="api.playMedia(item, undefined, { shuffle: true })"
         />
@@ -37,7 +37,7 @@
           v-if="radioRelevant(item)"
           :icon="Orbit"
           :label="$t('artist_radio')"
-          :icon-only="isPhone"
+          :icon-only="isPhone && !isTablet"
           :disabled="!radioSupported(item)"
           @click="gotoRadio(item)"
         />
@@ -74,7 +74,7 @@ import { getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { mappedServices } from "@/plugins/api/helpers";
 import { ImageType, type Artist } from "@/plugins/api/interfaces";
-import { isPhoneSizedScreen } from "@/plugins/breakpoint";
+import { isPhoneSizedScreen, isTabletSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { Orbit, Shuffle } from "@lucide/vue";
@@ -90,6 +90,7 @@ const emit = defineEmits<{
 }>();
 
 const isPhone = computed(() => isPhoneSizedScreen());
+const isTablet = computed(() => isTabletSizedScreen());
 
 // wide art (fanart, then landscape) suits the hero; a square thumb is the
 // last resort. No size is passed, so the server serves the original image.
@@ -175,6 +176,55 @@ const chipsShown = computed(() => providers.value.length > 0);
   height: 56px;
 }
 .artist-hero--phone .artist-hero__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 300px) repeat(2, max-content);
+  align-items: center;
+  align-self: stretch;
   gap: 10px;
+  max-width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+}
+.artist-hero--phone .artist-hero__actions > * {
+  justify-self: start;
+}
+.artist-hero--phone .artist-hero__actions > :not(:first-child) {
+  min-width: max-content;
+}
+.artist-hero--phone .artist-hero__actions > :first-child {
+  justify-self: start;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.artist-hero--phone .artist-hero__actions :deep([data-slot="button-group"]) {
+  display: flex;
+  width: 100% !important;
+  max-width: 300px;
+  min-width: 0;
+  overflow: hidden;
+}
+.artist-hero--phone
+  .artist-hero__actions
+  :deep([data-slot="button-group"] > [data-slot="button"]:first-child) {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.artist-hero--phone
+  .artist-hero__actions
+  :deep([data-slot="button-group"] > [data-slot="button"]:last-child) {
+  flex: 0 0 auto;
+}
+.artist-hero--phone .artist-hero__actions :deep(.detail-hero-button > span) {
+  display: block;
+  flex: 1 1 0;
+  min-width: 0;
+  width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

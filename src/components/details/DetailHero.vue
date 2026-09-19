@@ -1,7 +1,10 @@
 <template>
   <header
     class="detail-hero"
-    :class="{ 'detail-hero--phone': isPhone }"
+    :class="{
+      'detail-hero--phone': isPhone,
+      'detail-hero--tablet': isTablet,
+    }"
     :style="{
       '--detail-hero-height': `${height}px`,
       '--detail-hero-phone-height': `${phoneHeight}px`,
@@ -51,7 +54,7 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import type { MediaItemType } from "@/plugins/api/interfaces";
-import { isPhoneSizedScreen } from "@/plugins/breakpoint";
+import { isPhoneSizedScreen, isTabletSizedScreen } from "@/plugins/breakpoint";
 import { ArrowLeft, Rows3 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -83,6 +86,7 @@ const router = useRouter();
 const menuItems = ref<ContextMenuItem[]>([]);
 
 const isPhone = computed(() => isPhoneSizedScreen());
+const isTablet = computed(() => isTabletSizedScreen());
 
 const backdropStyle = computed(() =>
   props.backdrop ? { backgroundImage: `url("${props.backdrop}")` } : undefined,
@@ -241,6 +245,16 @@ async function buildMenu(item?: MediaItemType) {
   gap: 12px;
 }
 .detail-hero--phone .detail-hero__aside {
+  align-items: flex-start;
+  text-align: left;
+}
+.detail-hero--tablet .detail-hero__body {
+  margin: auto 16px 16px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+.detail-hero--tablet .detail-hero__aside {
   align-items: flex-start;
   text-align: left;
 }
