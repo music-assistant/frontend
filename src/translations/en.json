@@ -2547,6 +2547,17 @@
         "what_you_picked": "What you picked",
         "more_count": "+{count} more",
         "steps": {
+            "account": {
+                "title": "Create your account",
+                "description": "This is the administrator account for this Music Assistant server. Accounts for the other users in your home can be added later.",
+                "create": "Create account",
+                "creating": "Creating your account...",
+                "signing_in": "Signing you in...",
+                "failed": "The account could not be created. Please try again.",
+                "sign_in_failed": "Your account was created, but signing in did not work. Reload the page to continue.",
+                "handed_back": "Your account is ready. You can go back to the app you came from.",
+                "ready": "Signed in as {name}."
+            },
             "intent": {
                 "title": "Choose how you want to use Music Assistant",
                 "description": "This sets what Music Assistant does first. Everything stays available, whichever you pick.",

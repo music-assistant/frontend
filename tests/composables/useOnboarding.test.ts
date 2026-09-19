@@ -152,6 +152,27 @@ async function loadOnboardingModule(): Promise<OnboardingModule> {
   return module;
 }
 
+/**
+ * The composable as a fresh server's first run loads it: sent to the setup
+ * page, before there is an account to sign in with. The first-run state is
+ * loaded from the same registry, which is the one the composable reads.
+ */
+async function loadFirstRun(): Promise<
+  Onboarding & { firstRunState: ReturnType<FirstRunModule["useFirstRunSetup"]> }
+> {
+  window.history.replaceState({}, "", "/setup");
+  const module = await loadModule();
+  const firstRun = await import("@/composables/useFirstRunSetup");
+  expect(firstRun.enterFirstRunSetup()).toBe(true);
+  authMock.hasScope.mockReturnValue(false);
+  storeState.store.currentUser = undefined;
+  const onboarding = module.useOnboarding();
+  await onboarding.loadOnboardingData();
+  return { ...onboarding, firstRunState: firstRun.useFirstRunSetup() };
+}
+
+type FirstRunModule = typeof import("@/composables/useFirstRunSetup");
+
 /** Who the session is signed in as, which is half of what decides the track. */
 function signIn(overrides: Partial<User> = {}): User {
   const account = user(overrides);
@@ -271,6 +292,7 @@ const NO_PLAYER_CONFIG_SCOPES: readonly Scope[] =
   );
 
 let warnSpy: ReturnType<typeof vi.spyOn>;
+let originalUrl: string;
 
 // every test loads the composable anew after resetting the module registry,
 // which can take seconds under load
@@ -310,10 +332,13 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     setUserPreferencesMock.mockResolvedValue(true);
     toastMock.error.mockReset();
     warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    originalUrl = window.location.href;
   });
 
   afterEach(() => {
     warnSpy.mockRestore();
+    // a first run rewrites the address bar; hand it back as it was found
+    window.history.replaceState({}, "", originalUrl);
     preferenceState.intent.value = undefined;
     preferenceState.expertMode.value = undefined;
     preferenceState.legacyPersona.value = undefined;
@@ -788,6 +813,64 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       expect(active.value).toBe(false);
     },
   );
+
+  describe("a fresh server's first run", () => {
+    it("is the admin track's from before anyone can sign in", async () => {
+      const { ctx, steps, pending } = await loadFirstRun();
+
+      expect(ctx.value.firstRun).toBe(true);
+      expect(ctx.value.signedIn).toBe(false);
+      // no account, so no permissions and no member either
+      expect(ctx.value.isAdmin).toBe(false);
+      expect(ctx.value.isMember).toBe(false);
+      expect(steps.value[0]?.id).toBe("account");
+      expect(pending.value[0]?.id).toBe("account");
+      // nothing was asked of a server nobody is signed in to
+      expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+      expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+    });
+
+    it("ticks the account off once the app is signed in with it", async () => {
+      const { ctx, pending } = await loadFirstRun();
+
+      authMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+      );
+      signIn({ user_id: "admin-1", username: "admin", role: UserRole.ADMIN });
+
+      expect(ctx.value.signedIn).toBe(true);
+      expect(ctx.value.isAdmin).toBe(true);
+      expect(pending.value.map((step) => step.id)).not.toContain("account");
+    });
+
+    it("stays the admin's while their permissions are still on their way", async () => {
+      const { ctx, steps } = await loadFirstRun();
+
+      // the app holds the account before it has loaded what its role grants
+      signIn({ user_id: "admin-1", username: "admin", role: UserRole.ADMIN });
+
+      expect(ctx.value.signedIn).toBe(true);
+      expect(ctx.value.isAdmin).toBe(false);
+      // an admin without permissions in yet is no member being welcomed
+      expect(ctx.value.isMember).toBe(false);
+      expect(steps.value.map((step) => step.id)).toContain("account");
+      expect(steps.value.map((step) => step.id)).not.toContain("welcome");
+    });
+
+    it("ends with the setup it hosted", async () => {
+      const { finish, firstRunState } = await loadFirstRun();
+      authMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+      );
+      signIn({ user_id: "admin-1", username: "admin", role: UserRole.ADMIN });
+
+      await expect(finish()).resolves.toBe(true);
+
+      // run again from the settings, the setup is the one every other
+      // session gets
+      expect(firstRunState.firstRun.value).toBe(false);
+    });
+  });
 
   describe("the track a session is on", () => {
     const ADMIN_STEPS = [

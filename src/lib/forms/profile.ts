@@ -91,3 +91,25 @@ export const editUserSchema = (t: (key: string) => string) =>
         path: ["confirmPassword"],
       },
     );
+
+export const firstRunAccountSchema = (t: (key: string) => string) =>
+  z
+    .object({
+      username: z
+        .string()
+        .trim()
+        .min(2, t("auth.username_min_length"))
+        .max(50, "Username must be at most 50 characters."),
+      displayName: z
+        .string()
+        .max(100, "Display name must be at most 100 characters."),
+      password: z
+        .string()
+        .min(8, t("auth.password_min_length"))
+        .max(128, "Password must be at most 128 characters."),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("auth.passwords_must_match"),
+      path: ["confirmPassword"],
+    });

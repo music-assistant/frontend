@@ -43,6 +43,8 @@ function context(
   return {
     isAdmin: true,
     isMember: false,
+    firstRun: false,
+    signedIn: true,
     welcomed: false,
     canOwnSources: false,
     ownedMusicSourceCount: 0,
@@ -74,6 +76,43 @@ function step(ctx: OnboardingContext, id: string) {
 describe("onboarding step order", () => {
   it("runs the admin track in its base order without an answer", () => {
     expect(stepIds(applicableSteps(context()))).toEqual([...BASE_ORDER]);
+  });
+
+  it("starts a first run with the account, before anyone can sign in", () => {
+    // no account yet, so no permissions either: the track is the first run's
+    const ctx = context({ isAdmin: false, firstRun: true, signedIn: false });
+
+    expect(stepIds(applicableSteps(ctx))).toEqual(["account", ...BASE_ORDER]);
+    expect(firstStep(ctx)).toBe("account");
+    expect(step(ctx, "account").isDone(ctx)).toBe(false);
+    // nothing is a member either: the two tracks never mix
+    expect(pendingSteps(ctx)[0]?.id).toBe("account");
+  });
+
+  it("ticks the account off once the first run is signed in, and moves on", () => {
+    const ctx = context({ firstRun: true, signedIn: true });
+
+    expect(step(ctx, "account").isDone(ctx)).toBe(true);
+    expect(firstStep(ctx)).toBe("intent");
+  });
+
+  it("keeps the account ahead of a deferred music sources step", () => {
+    const ctx = context({
+      firstRun: true,
+      signedIn: false,
+      answers: { intent: "phone_apps" },
+    });
+
+    expect(stepIds(applicableSteps(ctx)).slice(0, 2)).toEqual([
+      "account",
+      "intent",
+    ]);
+  });
+
+  it("never asks a setup run again for an account", () => {
+    expect(stepIds(applicableSteps(context({ signedIn: true })))).not.toContain(
+      "account",
+    );
   });
 
   it("keeps the base order for someone building a music hub", () => {
@@ -117,9 +156,11 @@ describe("onboarding step order", () => {
     );
     expect(registered?.optional).toBeUndefined();
     expect(registered?.deferred).toBeUndefined();
-    // the registry carries the own-sources step between the music and the
-    // summary, whether or not a given member is offered it
+    // the registry carries the account step ahead of the admin track, which
+    // only a first run is offered, and the own-sources step between the music
+    // and the summary, whether or not a given member is offered it
     expect(stepIds([...ONBOARDING_STEPS])).toEqual([
+      "account",
       ...BASE_ORDER,
       "welcome",
       "your_players",

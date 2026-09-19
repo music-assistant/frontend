@@ -65,7 +65,7 @@ const {
       },
     },
   },
-  authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
+  authMock: { hasScope: vi.fn<(scope: Scope) => boolean>(), setToken: vi.fn() },
   // the settings form as the server settings step drives it: what it is holding
   // on to when it comes up, whether those values validate, and what the user
   // typed, as the form hands it over
@@ -279,6 +279,30 @@ function heading(wrapper: Awaited<ReturnType<typeof mountWizard>>) {
   return wrapper.find("[data-testid=onboarding-heading]").text();
 }
 
+/**
+ * The wizard as a fresh server opens it: sent to the server's setup page,
+ * before there is an account to sign in with, let alone permissions.
+ */
+async function mountFirstRunWizard() {
+  vi.resetModules();
+  window.history.replaceState({}, "", "/setup");
+  const { enterFirstRunSetup } = await import("@/composables/useFirstRunSetup");
+  expect(enterFirstRunSetup()).toBe(true);
+  storeState.store.currentUser = undefined;
+  authMock.hasScope.mockReturnValue(false);
+  return await mountWizard({ fresh: false });
+}
+
+/** The app signing in with the admin account the first run made. */
+function signInAsNewAdmin() {
+  authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  storeState.store.currentUser = user({
+    user_id: "admin-1",
+    username: "admin",
+    role: UserRole.ADMIN,
+  });
+}
+
 /** The welcome answers written to the account, in the order they went out. */
 function expertAnswers(): boolean[] {
   return setUserPreferencesMock.mock.calls
@@ -296,11 +320,19 @@ async function reportProvidersUpdated() {
   await flushPromises();
 }
 
+let originalUrl: string;
+
+beforeEach(() => {
+  originalUrl = window.location.href;
+});
+
 // every test mounts the wizard on a fresh module registry, which is its whole
 // step graph evaluated again and can take seconds under load
-// hand the network guard back after every test
+// hand the network guard back after every test, and the address bar a first
+// run rewrote
 afterEach(() => {
   vi.unstubAllGlobals();
+  window.history.replaceState({}, "", originalUrl);
 });
 
 describe("Onboarding wizard", { timeout: 20_000 }, () => {
@@ -407,6 +439,59 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     expect(wrapper.find("[data-testid=onboarding-back]").exists()).toBe(false);
 
     wrapper.unmount();
+  });
+
+  describe("on a fresh server's first run", () => {
+    it("opens on the account step, as the first of the whole setup", async () => {
+      const wrapper = await mountFirstRunWizard();
+      await flushPromises();
+
+      expect(heading(wrapper)).toBe("onboarding.steps.account.title");
+      expect(wrapper.find("form#form-onboarding-account").exists()).toBe(true);
+      // the form submits itself, so the wizard's own Next stands down
+      expect(wrapper.find("[data-testid=onboarding-next]").exists()).toBe(
+        false,
+      );
+      // the account leads the admin track, which is this session's from
+      // before it can sign in: the setup reads as one list
+      expect(
+        wrapper.findAll("[data-testid=onboarding-progress-step]"),
+      ).toHaveLength(8);
+      // nothing was asked of a server nobody is signed in to
+      expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+      expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+      expect(apiMock.subscribe_multi).not.toHaveBeenCalled();
+
+      wrapper.unmount();
+    });
+
+    it("loads the setup for the admin once they are signed in, and moves on", async () => {
+      addMusicProvider();
+      const wrapper = await mountFirstRunWizard();
+      await flushPromises();
+
+      signInAsNewAdmin();
+      await flushPromises();
+
+      // the admin is in: what is configured is loaded for them, the players
+      // are followed, and the account step is behind them
+      expect(apiMock.getProviderConfigs).toHaveBeenCalledOnce();
+      expect(apiMock.getAllUsers).toHaveBeenCalledOnce();
+      expect(apiMock.subscribe_multi).toHaveBeenCalledOnce();
+      expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+      // the music source that is set up counts, now that it can be seen
+      const progress = wrapper.findAll(
+        "[data-testid=onboarding-progress-step]",
+      );
+      expect(progress[0].attributes("aria-label")).toBe(
+        "onboarding.step_completed",
+      );
+      expect(progress[2].attributes("aria-label")).toBe(
+        "onboarding.step_completed",
+      );
+
+      wrapper.unmount();
+    });
   });
 
   it("shows a loading state until the provider configurations are in", async () => {

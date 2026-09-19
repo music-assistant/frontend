@@ -78,6 +78,7 @@
 
 <script setup lang="ts">
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress.vue";
+import AccountStep from "@/components/onboarding/steps/AccountStep.vue";
 import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue";
 import FinishStep, {
   type FinishOptions,
@@ -125,6 +126,7 @@ const STEP_VIEWS: Record<
   OnboardingStepId,
   { component: Component; props?: Record<string, unknown> }
 > = {
+  account: { component: markRaw(AccountStep) },
   intent: { component: markRaw(IntentStep) },
   music_sources: {
     component: markRaw(ProvidersStep),
@@ -167,6 +169,8 @@ interface StepInstance {
   beforeLeave?: () => Promise<boolean>;
   // a choice step raises this while its answer is on its way to the server
   busy?: boolean;
+  // a step with a submit of its own, which the wizard's Next stands down for
+  ownsForwardAction?: boolean;
 }
 
 const stepRef = ref<StepInstance | null>(null);
@@ -214,9 +218,13 @@ const stepView = computed(() => {
   };
 });
 
-// The summary owns its own finish button, so the footer is for the steps only.
+// The summary owns its own finish button, and a form step its own submit, so
+// the footer is for the other steps only.
 const showForwardAction = computed(
-  () => currentStep.value != null && currentStep.value.kind !== "summary",
+  () =>
+    currentStep.value != null &&
+    currentStep.value.kind !== "summary" &&
+    !stepRef.value?.ownsForwardAction,
 );
 // a step that does not hold the wizard up is skipped rather than moved on from,
 // whether it is optional by nature or one the answers deferred
@@ -292,18 +300,32 @@ const focusStepHeading = async function () {
 // and the users, so the wizard asks for them itself as it opens; the step it
 // opens on is settled from that answer rather than from whatever a previous
 // open left behind. The players keep turning up while the setup runs, so they
-// are followed from before the load until the wizard is gone. The member track
-// reads the providers and players that are running, neither of which it has to
-// ask for — bar a member who can own sources, whose own-sources step needs the
-// provider configs to tell which sources they own.
+// are followed from before the load until the wizard is gone.
+const loadAdminTrack = async () => {
+  stopFollowingPlayers?.();
+  stopFollowingPlayers = followPlayers();
+  await loadOnboardingData();
+};
+
+// The member track reads the providers and players that are running, neither
+// of which it has to ask for — bar a member who can own sources, whose
+// own-sources step needs the provider configs to tell which sources they own.
 onMounted(async () => {
-  if (!ctx.value.isMember) {
-    stopFollowingPlayers = followPlayers();
-    await loadOnboardingData();
-  } else if (ctx.value.canOwnSources) await loadProviderConfigs();
+  if (!ctx.value.isMember) await loadAdminTrack();
+  else if (ctx.value.canOwnSources) await loadProviderConfigs();
   currentId.value = firstStep(ctx.value, requestedStep.value);
   ready.value = true;
 });
+
+// On a fresh server the wizard opens before there is an admin to load the
+// setup for: the server only tells one what is configured. The account step
+// makes them, and the load runs again once they are in.
+watch(
+  () => ctx.value.isAdmin,
+  async (isAdmin, wasAdmin) => {
+    if (isAdmin && !wasAdmin && ctx.value.firstRun) await loadAdminTrack();
+  },
+);
 
 // Focus lands on the heading as the wizard opens and follows the step from
 // there, so the keyboard stays inside the wizard as it moves.
