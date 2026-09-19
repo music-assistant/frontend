@@ -7,7 +7,7 @@
     <div
       data-slot="command-input-wrapper"
       class="flex h-14 shrink-0 items-center gap-3 border-b px-4"
-      @keydown.enter.capture="dismissKeyboardOnTouch"
+      @keydown.enter.capture="onEnterKey"
     >
       <Search class="size-5 shrink-0 opacity-50" />
       <ListboxFilter
@@ -15,11 +15,11 @@
         v-model="query"
         data-slot="command-input"
         auto-focus
-        enterkeyhint="done"
+        enterkeyhint="search"
         :placeholder="$t('type_to_search')"
         class="placeholder:text-muted-foreground flex h-12 w-full rounded-md bg-transparent py-3 text-base outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
       />
-      <Spinner v-if="loading && queryActive" class="size-4 shrink-0" />
+      <Spinner v-if="isSearching" class="size-4 shrink-0" />
       <button
         v-if="query"
         type="button"
@@ -71,6 +71,17 @@
           </DropdownMenuCheckboxItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <Button
+        v-if="!pagesOnly"
+        variant="default"
+        size="sm"
+        :disabled="!queryActive"
+        :aria-label="$t('search')"
+        @mousedown.prevent
+        @click="runSearch"
+      >
+        {{ $t("search") }}
+      </Button>
     </div>
 
     <div
@@ -115,7 +126,7 @@
       :class="
         mobileLayout
           ? 'min-h-0 max-h-none flex-1'
-          : 'h-[min(480px,60vh)] max-h-none'
+          : 'h-[min(660px,70vh)] max-h-none'
       "
     >
       <CommandGroup
@@ -127,7 +138,7 @@
           :key="`recent:${term}`"
           :value="`recent:${term}`"
           class="py-2"
-          @select="query = term"
+          @select="applyRecent(term)"
         >
           <History class="size-4" />
           <span class="truncate">{{ term }}</span>
@@ -265,7 +276,7 @@
       </span>
       <span class="flex items-center gap-1.5">
         <Kbd>↵</Kbd>
-        {{ $t("command_center_open") }}
+        {{ enterHintLabel }}
       </span>
       <span class="flex items-center gap-1.5">
         <Kbd>esc</Kbd>
@@ -342,7 +353,6 @@ import { useRoute, useRouter } from "vue-router";
 import { getMenuItems, type MenuItem } from "./navigation/utils/getMenuItems";
 
 const MIN_QUERY_LENGTH = 2;
-const DEBOUNCE_MS = 250;
 const RESULTS_PER_TYPE = 5;
 const RESULTS_SINGLE_PAGE = 20;
 const FETCH_PER_TYPE = 15;
@@ -353,7 +363,7 @@ const SOURCES_PREF_KEY = "search.sources";
 
 const router = useRouter();
 const route = useRoute();
-const { isOpen, initialQuery, initialMediaTypes, open, close } =
+const { isOpen, initialQuery, initialMediaTypes, initialSeeded, open, close } =
   useCommandCenter();
 const { getPreference, setPreference } = useUserPreferences();
 
@@ -365,31 +375,50 @@ const pagesOnly = ref(false);
 const filterRef = ref<InstanceType<typeof ListboxFilter>>();
 const listRef = ref<InstanceType<typeof CommandList>>();
 const revealSentinel = ref<HTMLElement>();
-const debouncePending = ref(false);
 const revealedPerType = ref<Partial<Record<MediaType, number>>>({});
 const revealedSingle = ref(RESULTS_SINGLE_PAGE);
-
-let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
 // the sources to search, remembered per user; empty = the library and every
 // provider (the composable drops ids of providers that no longer exist)
 const savedSources = getPreference<string[]>(SOURCES_PREF_KEY, []);
 
-const { loading, search, filteredItems, providerTargets, selectedProviders } =
-  useProgressiveSearch({
-    mediaTypes: selectedMediaTypes,
-    providers: computed(() =>
-      Array.isArray(savedSources.value) ? savedSources.value : [],
-    ),
-    limits: { single: FETCH_SINGLE_TYPE, multi: FETCH_PER_TYPE },
-  });
+const {
+  loading,
+  search,
+  filteredItems,
+  activeSearchTerm,
+  providerTargets,
+  selectedProviders,
+} = useProgressiveSearch({
+  mediaTypes: selectedMediaTypes,
+  providers: computed(() =>
+    Array.isArray(savedSources.value) ? savedSources.value : [],
+  ),
+  limits: { single: FETCH_SINGLE_TYPE, multi: FETCH_PER_TYPE },
+});
 
 const queryActive = computed(
   () => query.value.trim().length >= MIN_QUERY_LENGTH,
 );
 
-const isSearching = computed(
-  () => queryActive.value && (debouncePending.value || loading.value),
+// the fetched results belong to the last submitted term; while the box holds a
+// different term (typed but not searched yet) those results stay hidden
+const resultsMatchQuery = computed(
+  () =>
+    activeSearchTerm.value.length >= MIN_QUERY_LENGTH &&
+    query.value.trim().toLowerCase() === activeSearchTerm.value.toLowerCase(),
+);
+
+// only the submitted term drives the loading UI; a term typed over a still
+// pending search shows the submit prompt, not the old search's spinner
+const isSearching = computed(() => resultsMatchQuery.value && loading.value);
+
+// the footer's return-key hint reflects what enter does now: submit a typed
+// term, or open the highlighted result once one is up
+const enterHintLabel = computed(() =>
+  queryActive.value && !resultsMatchQuery.value
+    ? $t("command_center_search")
+    : $t("command_center_open"),
 );
 
 const singleType = computed(() =>
@@ -412,6 +441,16 @@ const selectAllScope = function () {
 const togglePagesOnly = function () {
   pagesOnly.value = !pagesOnly.value;
   if (pagesOnly.value) selectedMediaTypes.value = [];
+};
+
+// search runs on demand (the button or the return key), not while typing
+const runSearch = function () {
+  const trimmed = query.value.trim();
+  if (pagesOnly.value || trimmed.length < MIN_QUERY_LENGTH) {
+    search("");
+    return;
+  }
+  search(trimmed);
 };
 
 // the sources on offer, the library first
@@ -468,17 +507,37 @@ const focusInputOnClose = function (event: Event) {
   focusInput();
 };
 
-// on the mobile sheet on a touch screen the on-screen keyboard drives the
-// interaction, and the return key's job is to put it away — the results are
-// already live — while reka would click the highlighted row, so the enter is
-// settled here on the wrapper before it can reach the input
-const dismissKeyboardOnTouch = function (event: KeyboardEvent) {
+// The return key submits the search. When results are already up for the box,
+// or a row is highlighted (a page or player reached with the arrow keys), it
+// falls through to reka so it opens that row instead of searching again. On the
+// mobile sheet on a touch screen it also puts the on-screen keyboard away, and
+// never lets reka click a row nobody meant to select. The enter is settled here
+// on the wrapper before it can reach the input.
+const onEnterKey = function (event: KeyboardEvent) {
   // the enter that commits an IME conversion belongs to the composition, not
   // to us; keyCode 229 covers webkit reporting that keydown as not composing
   if (event.isComposing || event.keyCode === 229) return;
-  if (!store.isTouchscreen || !store.mobileLayout) return;
+  // the wrapper also hears enter from the toolbar buttons (search sources, the
+  // search button); only the input's own enter drives a search
+  const inputEl = filterRef.value?.$el as HTMLElement | undefined;
+  if (!inputEl || !inputEl.contains(event.target as Node)) return;
+
+  const touchSheet = store.isTouchscreen && store.mobileLayout;
+  const listEl = listRef.value?.$el as HTMLElement | undefined;
+  const rowHighlighted = !!listEl?.querySelector("[data-highlighted]");
+
+  if (resultsMatchQuery.value || rowHighlighted) {
+    if (!touchSheet) return;
+    event.stopPropagation();
+    event.preventDefault();
+    inputEl.blur();
+    return;
+  }
+
   event.stopPropagation();
-  (filterRef.value?.$el as HTMLElement | undefined)?.blur();
+  event.preventDefault();
+  if (touchSheet) inputEl.blur();
+  runSearch();
 };
 
 const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
@@ -489,7 +548,7 @@ const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
 };
 
 const mediaSections = computed(() => {
-  if (pagesOnly.value || !queryActive.value) return [];
+  if (pagesOnly.value || !resultsMatchQuery.value) return [];
 
   const single = singleType.value;
   const mediaTypes = single ? [single] : SEARCHABLE_MEDIA_TYPES;
@@ -614,6 +673,11 @@ const recordRecentSearch = function () {
   setPreference(RECENT_SEARCHES_PREF_KEY, next);
 };
 
+const applyRecent = function (term: string) {
+  query.value = term;
+  runSearch();
+};
+
 const pageResults = computed(() => {
   if (!pagesOnly.value && selectedMediaTypes.value.length) return [];
 
@@ -656,7 +720,15 @@ const statusNote = computed(() => {
   }
   if (!term) return "";
   if (queryActive.value) {
-    if (hasMediaResults.value || isSearching.value) return "";
+    if (isSearching.value) return "";
+    // typed but not submitted: prompt to run the search, unless the live page
+    // and player matches already give something to show
+    if (!resultsMatchQuery.value) {
+      if (!pageResults.value.length && !playerResults.value.length)
+        return $t("command_center_press_enter");
+      return "";
+    }
+    if (hasMediaResults.value) return "";
     if (!pageResults.value.length && !playerResults.value.length)
       return $t("no_content");
     return "";
@@ -694,7 +766,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("keydown", onKeydown);
-  clearTimeout(debounceTimer);
   if (isOpen.value) {
     store.dialogActive = false;
     close();
@@ -712,17 +783,19 @@ watch(
 
 watch(isOpen, (opened) => {
   store.dialogActive = opened;
-  if (opened) {
+  // the query, tab and results are kept on close so a later open restores them
+  if (!opened) return;
+  // a seeded open (a caller passed a query/type) starts that search; a bare
+  // open keeps the previous search so reopening returns to those results
+  if (initialSeeded.value) {
     pagesOnly.value = false;
-    selectedMediaTypes.value = [...initialMediaTypes.value];
+    // reset the active term first so the composable's media-type watcher runs a
+    // no-op search; the real fan-out then goes out once, after the flush
+    search("");
     query.value = initialQuery.value;
-    return;
+    selectedMediaTypes.value = [...initialMediaTypes.value];
+    nextTick(runSearch);
   }
-  clearTimeout(debounceTimer);
-  query.value = "";
-  selectedMediaTypes.value = [];
-  pagesOnly.value = false;
-  search("");
 });
 
 watch(
@@ -739,29 +812,16 @@ watch(
   },
 );
 
-watch([query, pagesOnly], () => {
-  clearTimeout(debounceTimer);
-  const trimmed = query.value.trim();
-
-  if (pagesOnly.value || trimmed.length < MIN_QUERY_LENGTH) {
-    debouncePending.value = false;
-    search("");
-    return;
-  }
-  debouncePending.value = true;
-  debounceTimer = setTimeout(() => {
-    debouncePending.value = false;
-    search(trimmed);
-  }, DEBOUNCE_MS);
-});
-
-// highlight the first row as results land so a desktop enter opens the top
-// hit; on the mobile sheet on a touch screen the on-screen keyboard drives
-// the interaction — there is no enter contract there and the phantom
-// highlight would read as a selection nobody made
+// highlight the first row as results land, and again when the palette reopens
+// on a remembered search, so a desktop enter opens the top hit; on the mobile
+// sheet on a touch screen the on-screen keyboard drives the interaction — there
+// is no enter contract there and the phantom highlight would read as a
+// selection nobody made
 watch(
   () =>
-    mediaSections.value.map((section) => section.items[0]?.uri ?? "").join("|"),
+    `${isOpen.value}|${mediaSections.value
+      .map((section) => section.items[0]?.uri ?? "")
+      .join("|")}`,
   async () => {
     if (store.isTouchscreen && store.mobileLayout) return;
     if (!isOpen.value || !queryActive.value) return;
