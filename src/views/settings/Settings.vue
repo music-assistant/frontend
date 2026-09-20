@@ -572,17 +572,6 @@ const activeTab = computed(() => {
   return "music_providers";
 });
 
-// the fallback for as long as the page below has not resolved a name yet
-const getProviderName = (instanceId: string) => {
-  const providerInstance = api.getProvider(instanceId);
-  if (providerInstance) {
-    return providerInstance.name;
-  }
-  const providerDomain = instanceId.split("--")[0];
-  const manifest = api.providerManifests[providerDomain];
-  return manifest?.name || instanceId;
-};
-
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
   const name = route.name?.toString() || "";
@@ -682,7 +671,7 @@ const breadcrumbItems = computed(() => {
       items.push({
         title:
           editedProviderName.value ||
-          getProviderName(route.params.instanceId as string),
+          api.getProviderName(route.params.instanceId as string),
         disabled: true,
       });
     })
