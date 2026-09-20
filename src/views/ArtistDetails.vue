@@ -34,7 +34,7 @@
           :source-domain="albumsSourceDisplay?.domain"
           :items="albumItems"
           :view-all-to="listingRoute('albums')"
-          :empty-message="$t('artist_no_library_albums')"
+          :empty-message="$t('artist_row_empty')"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         />
@@ -50,7 +50,7 @@
           :source-domain="singlesSourceDisplay?.domain"
           :items="singleItems"
           :view-all-to="listingRoute('singles')"
-          :empty-message="$t('artist_no_library_singles')"
+          :empty-message="$t('artist_row_empty')"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         />
@@ -70,7 +70,8 @@
         <ArtistSimilarShelf
           v-else-if="rowId === 'similar_artists' && showRow(similarArtistItems)"
           :items="similarArtistItems"
-          :source-label="similarArtistsProvider?.name"
+          :source-label="similarArtistsSourceDisplay?.label"
+          :source-domain="similarArtistsSourceDisplay?.domain"
           @edit-rows="rowsEditorOpen = true"
         />
 
@@ -246,7 +247,7 @@ const {
   albumsSourceDisplay,
   singlesSourceDisplay,
   topTracksSourceDisplay,
-  similarArtistsProvider,
+  similarArtistsSourceDisplay,
 } = useArtistRowData(itemDetails, visibleRows);
 
 // how much each row currently holds, for the editor's per-row meta line (it

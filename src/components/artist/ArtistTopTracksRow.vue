@@ -66,12 +66,9 @@
                 albumLine(track)
               }}</span>
             </span>
-            <v-icon
+            <ExplicitBadge
               v-if="isExplicit(track)"
               class="artist-top-tracks__explicit"
-              icon="mdi-alpha-e-box"
-              size="16"
-              :aria-label="$t('tooltip.explicit')"
             />
             <span v-if="track.duration" class="artist-top-tracks__duration">{{
               formatDuration(track.duration)
@@ -103,6 +100,7 @@
 </template>
 
 <script setup lang="ts">
+import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -337,7 +335,6 @@ function releaseYear(album?: Album | ItemMapping | null): number | undefined {
 }
 .artist-top-tracks__explicit {
   flex: none;
-  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 .artist-top-tracks__duration {
   font-size: 12px;
@@ -364,7 +361,6 @@ function releaseYear(album?: Album | ItemMapping | null): number | undefined {
 @media (max-width: 768px) {
   .artist-top-tracks {
     padding: 22px 16px 20px;
-    grid-template-columns: minmax(0, 1fr);
   }
   .artist-top-tracks__head {
     margin-bottom: 8px;

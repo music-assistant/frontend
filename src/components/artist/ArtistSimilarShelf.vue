@@ -12,9 +12,11 @@
         @click.capture="swallowClickAfterHold"
       >
         <h2 class="artist-similar__title">{{ $t("similar_artists") }}</h2>
-        <span v-if="sourceLabel" class="artist-similar__meta">{{
-          $t("via_provider", { provider: sourceLabel })
-        }}</span>
+        <RowSourceBadge
+          v-if="sourceLabel"
+          :label="sourceLabel"
+          :domain="sourceDomain"
+        />
       </div>
     </template>
 
@@ -36,6 +38,7 @@
 </template>
 
 <script setup lang="ts">
+import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
@@ -49,8 +52,10 @@ import { computed } from "vue";
 export interface Props {
   // undefined while the row is still loading
   items?: Artist[];
-  // provider name when a single provider feeds the row
+  // source label for the row's badge, e.g. "All sources" or "On Spotify"
   sourceLabel?: string;
+  // provider domain behind `sourceLabel`, for its icon
+  sourceDomain?: string;
 }
 defineProps<Props>();
 
@@ -74,7 +79,7 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
 <style scoped>
 .artist-similar__titles {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
   min-width: 0;
 }
@@ -87,11 +92,6 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.artist-similar__meta {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  white-space: nowrap;
 }
 /* the round cards read as portraits, so their captions are centred */
 .artist-similar :deep(.ed-card--round .ed-card__meta) {

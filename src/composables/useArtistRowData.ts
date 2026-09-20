@@ -10,7 +10,6 @@ import {
 import { artistRows, type ArtistRowId } from "@/components/artist/artistRows";
 import {
   rowSourceDisplay,
-  rowSourceProvider,
   type RowSource,
 } from "@/components/details/rowRegistry";
 import { mappingsIdentity, useRowRequests } from "@/composables/useRowRequests";
@@ -130,8 +129,8 @@ export function useArtistRowData(
     );
   });
 
-  const similarArtistsProvider = computed(() =>
-    rowSourceProvider(similarArtistsSource.value),
+  const similarArtistsSourceDisplay = computed(() =>
+    rowSourceDisplay(similarArtistsSource.value),
   );
 
   // unhiding a row or switching its source in the editor loads what it needs,
@@ -222,7 +221,7 @@ export function useArtistRowData(
     albumsSourceDisplay,
     singlesSourceDisplay,
     topTracksSourceDisplay,
-    similarArtistsProvider,
+    similarArtistsSourceDisplay,
   };
 }
 

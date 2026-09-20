@@ -40,13 +40,11 @@
       >
         <template #art-overlay>
           <span class="release-shelf__art-scrim"></span>
-          <span
+          <ExplicitBadge
             v-if="isExplicit(item)"
+            overlay
             class="release-shelf__explicit"
-            :aria-label="$t('tooltip.explicit')"
-          >
-            <v-icon icon="mdi-alpha-e-box" size="20" />
-          </span>
+          />
           <span v-if="item.year" class="release-shelf__year">{{
             item.year
           }}</span>
@@ -67,10 +65,11 @@
 </template>
 
 <script setup lang="ts">
+import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
+import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
-import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { parseBool } from "@/helpers/parse";
 import { panelViewItemResponsive } from "@/helpers/utils";
@@ -205,11 +204,8 @@ function shelfTilesPerView(): number {
 }
 .release-shelf__explicit {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  display: inline-flex;
-  color: #fff;
-  opacity: 0.9;
+  top: 6px;
+  right: 6px;
 }
 .release-shelf__empty {
   align-self: center;
