@@ -24,6 +24,7 @@ vi.mock("@/composables/userPreferences", () => ({
 
 import {
   createRowRegistry,
+  rowSourceDisplay,
   rowSourceProvider,
   type RowSource,
 } from "@/components/details/rowRegistry";
@@ -186,6 +187,33 @@ describe("rowRegistry", () => {
       expect(rowSourceProvider("all")).toBeUndefined();
       expect(rowSourceProvider(undefined)).toBeUndefined();
       expect(rowSourceProvider("spotify--gone")).toBeUndefined();
+    });
+  });
+
+  describe("rowSourceDisplay", () => {
+    it("reads the library and every-provider sources", () => {
+      expect(rowSourceDisplay("library")).toEqual({ label: "In your library" });
+      expect(rowSourceDisplay("all")).toEqual({ label: "All sources" });
+    });
+
+    it("names a provider and carries its domain for the icon", () => {
+      mockGetProvider.mockReturnValue({ name: "Spotify", domain: "spotify" });
+      expect(rowSourceDisplay("spotify--abc")).toEqual({
+        label: "On Spotify",
+        domain: "spotify",
+      });
+    });
+
+    it("falls back to the raw id when the provider is unknown", () => {
+      mockGetProvider.mockReturnValue(undefined);
+      expect(rowSourceDisplay("spotify--gone")).toEqual({
+        label: "On spotify--gone",
+        domain: undefined,
+      });
+    });
+
+    it("has nothing without a source", () => {
+      expect(rowSourceDisplay(undefined)).toBeUndefined();
     });
   });
 });

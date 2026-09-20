@@ -181,7 +181,10 @@ const config = computed<ListingConfig | undefined>(() => {
         sortKeys: TRACK_SORT_KEYS,
         showProviderFilter: mappingProviderIds.value.length > 1,
         showTrackNumber: false,
-        emptyMessage: $t("artist_no_library_tracks"),
+        emptyMessage:
+          itemDetails.value?.provider === "library"
+            ? $t("artist_no_library_tracks")
+            : $t("artist_no_tracks"),
         loadItems: async (params: LoadDataParams) => {
           if (!itemDetails.value) return [];
           return await loadArtistLibraryTracks(
