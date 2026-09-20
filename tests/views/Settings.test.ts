@@ -27,6 +27,12 @@ const { apiMock, hasScope, onboardingOpen, routerPush, routeState } =
         Pick<ProviderManifest, "name" | "type">
       >,
       getProvider: vi.fn(),
+      // resolves an instance id to a name, falling back to the manifest name
+      // for the domain, the way the real client does
+      getProviderName: vi.fn(
+        (id: string) =>
+          apiMock.providerManifests[id.split("--")[0]]?.name ?? id,
+      ),
     },
     hasScope: vi.fn<(scope: Scope) => boolean>(),
     onboardingOpen: vi.fn(),
