@@ -156,6 +156,15 @@
         </div>
       </div>
 
+      <div class="flex items-center gap-3">
+        <FieldLabel
+          :html-for="`allow-post-${segment.id}`"
+          :label="$t('providers.ai_radio.fields.allow_post')"
+          :description="$t('providers.ai_radio.field_descriptions.allow_post')"
+        />
+        <Switch :id="`allow-post-${segment.id}`" v-model="allowPost" />
+      </div>
+
       <div class="flex justify-end">
         <Button
           variant="outline"
@@ -172,6 +181,7 @@
 </template>
 
 <script setup lang="ts">
+import FieldLabel from "@/components/ai-radio/FieldLabel.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -190,6 +200,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   playsRuleLabel,
@@ -316,6 +327,12 @@ const maxChars = computed({
   get: () => props.segment.maxChars,
   set: (value: number) =>
     emit("update", { ...props.segment, maxChars: Math.max(0, value) }),
+});
+
+const allowPost = computed({
+  get: () => props.segment.allowPost ?? false,
+  set: (value: boolean) =>
+    emit("update", { ...props.segment, allowPost: value }),
 });
 
 const playsKind = computed({

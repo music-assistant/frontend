@@ -1795,6 +1795,7 @@
                 "default_playback_device": "Default Playback Device (optional)",
                 "web_search_mode": "Web Search Mode",
                 "character_limit": "Character Limit",
+                "allow_post": "Allow Post",
                 "prompt": "Prompt",
                 "instructions": "Host and Program Instructions",
                 "shuffle_playlist_tracks": "Shuffle Playlist Tracks",
@@ -1805,7 +1806,8 @@
             "field_descriptions": {
                 "source_playtime_cap": "Maximum total playing time of the source music, in minutes. Tracks are taken in the order the show plays them until the cap is reached. Leave at 0 for no limit.",
                 "instructions": "Describes the host's personality and how segments should be written. This is sent to the AI with every segment.",
-                "shuffle_playlist_tracks": "Play the source playlist in random order. Turn this off to follow the playlist's own order."
+                "shuffle_playlist_tracks": "Play the source playlist in random order. Turn this off to follow the playlist's own order.",
+                "allow_post": "Let this segment carry on over the start of the next song, finishing as the vocal comes in. Only happens when the song has an intro long enough and its lyrics are known."
             },
             "web_search": {
                 "disabled": "disabled (no web tool)",

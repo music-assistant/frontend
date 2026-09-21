@@ -1947,6 +1947,8 @@ export interface AIRadioSection {
   web_search?: AIRadioWebSearchMode;
   constraints?: AIRadioSectionConstraints;
   cover_image?: string;
+  /** Whether this segment may carry over the next track's intro. */
+  allow_post?: boolean;
 }
 
 export interface AIRadioOptionalGuards {
