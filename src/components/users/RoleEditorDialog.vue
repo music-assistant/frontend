@@ -71,12 +71,7 @@
         <Button variant="outline" @click="emit('update:open', false)">
           {{ $t("cancel") }}
         </Button>
-        <Button
-          type="submit"
-          form="form-role-editor"
-          :disabled="saving"
-          :loading="saving"
-        >
+        <Button type="submit" form="form-role-editor" :loading="saving">
           {{ role ? $t("settings.save") : $t("create") }}
         </Button>
       </DialogFooter>

@@ -219,12 +219,7 @@
         <Button variant="outline" @click="handleClose">
           {{ $t("cancel") }}
         </Button>
-        <Button
-          type="submit"
-          form="form-edit-user"
-          :disabled="loading"
-          :loading="loading"
-        >
+        <Button type="submit" form="form-edit-user" :loading="loading">
           {{ $t("settings.save") }}
         </Button>
       </DialogFooter>

@@ -138,7 +138,7 @@
         <Button
           type="submit"
           form="form-profile-settings"
-          :disabled="!hasChanges || updating"
+          :disabled="!hasChanges"
           :loading="updating"
         >
           {{ $t("auth.save_changes") || "Save changes" }}

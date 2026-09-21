@@ -111,7 +111,7 @@
         <Button
           type="submit"
           form="form-playlist-access"
-          :disabled="saving || servesNobody(formAccess)"
+          :disabled="servesNobody(formAccess)"
           :loading="saving"
         >
           {{ $t("settings.save") }}
