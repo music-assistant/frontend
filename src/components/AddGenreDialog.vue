@@ -121,12 +121,7 @@
         <Button type="button" variant="outline" @click="handleClose">
           {{ $t("cancel") }}
         </Button>
-        <Button
-          type="submit"
-          form="form-add-genre"
-          :disabled="loading"
-          :loading="loading"
-        >
+        <Button type="submit" form="form-add-genre" :loading="loading">
           {{ $t("add") }}
         </Button>
       </DialogFooter>
