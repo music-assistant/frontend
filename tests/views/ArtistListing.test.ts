@@ -48,6 +48,7 @@ vi.mock("@/components/ItemsListing.vue", () => ({
       "defaultProvider",
       "providerFilterOptions",
       "showProviderFilter",
+      "showPlayAll",
     ],
     template:
       '<div class="items-listing-stub" :data-path="path" :data-itemtype="itemtype" />',
@@ -184,6 +185,17 @@ describe("ArtistListing", () => {
     expect(listingAttributes(wrapperA).path).not.toContain("artist-a");
     expect(listingAttributes(wrapperA).path).toBe(
       listingAttributes(wrapperB).path,
+    );
+  });
+
+  it.each([
+    ["albums", true],
+    ["singles", false],
+    ["tracks", false],
+    ["appears_on", false],
+  ])("offers play all on %s: %s", async (which, offered) => {
+    expect(listing(await mountListing(which)).props("showPlayAll")).toBe(
+      offered,
     );
   });
 });
