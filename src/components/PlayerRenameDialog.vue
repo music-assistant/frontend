@@ -88,12 +88,16 @@ async function save() {
   const nextName = name.value.trim() || null;
 
   saving.value = true;
-  if (await renamePlayer(playerId.value, nextName)) {
-    const player = api.players[playerId.value];
-    if (player) player.name = nextName ?? defaultName.value ?? player.name;
-    close();
+  try {
+    // a save that did not land keeps the dialog open to try again or cancel
+    if (await renamePlayer(playerId.value, nextName)) {
+      const player = api.players[playerId.value];
+      if (player) player.name = nextName ?? defaultName.value ?? player.name;
+      close();
+    }
+  } finally {
+    saving.value = false;
   }
-  saving.value = false;
 }
 
 function setOpen(value: boolean) {
