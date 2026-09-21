@@ -135,7 +135,7 @@
                   :disabled="
                     (isRemoteOnlyMode &&
                       !remoteIdParts.every(
-                        (p, i) => p.length === remoteIdLengths[i],
+                        (p, i) => p.length === REMOTE_ID_GROUPS[i],
                       )) ||
                     (showServerAddressInput && !serverAddress.trim())
                   "
@@ -467,7 +467,7 @@ import type { ITransport } from "@/plugins/remote/transport";
 import { authManager } from "@/plugins/auth";
 import { remoteConnectionManager } from "@/plugins/remote";
 import SegmentedCodeInput from "@/components/SegmentedCodeInput.vue";
-import { splitCode } from "@/helpers/segmented_code";
+import { REMOTE_ID_GROUPS, splitCode } from "@/helpers/segmented_code";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { QrcodeStream } from "vue-qrcode-reader";
@@ -578,10 +578,8 @@ const showLoginUI = ref(false);
 
 // Connection state
 const serverAddress = ref("");
-// Remote ID split into 4 parts: 8-5-5-8 characters
 const remoteIdParts = ref(["", "", "", ""]);
-const remoteIdLengths = [8, 5, 5, 8];
-const remoteIdLayout = remoteIdLengths.map((length) => ({ length }));
+const remoteIdLayout = REMOTE_ID_GROUPS.map((length) => ({ length }));
 const remoteId = computed(() => remoteIdParts.value.join(""));
 
 // QR Scanner state
@@ -1670,7 +1668,7 @@ const waitForApiConnection = async (
  * Set remote ID from a full string (e.g., from localStorage)
  */
 const setRemoteIdFromString = (value: string) => {
-  remoteIdParts.value = splitCode(value, remoteIdLengths);
+  remoteIdParts.value = splitCode(value, REMOTE_ID_GROUPS);
 };
 
 /**
@@ -1753,7 +1751,7 @@ const connectToLocal = async () => {
  * Connect to remote server
  */
 const connectToRemote = async () => {
-  if (!remoteIdParts.value.every((p, i) => p.length === remoteIdLengths[i]))
+  if (!remoteIdParts.value.every((p, i) => p.length === REMOTE_ID_GROUPS[i]))
     return;
 
   isConnecting.value = true;
