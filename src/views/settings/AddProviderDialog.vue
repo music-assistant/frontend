@@ -340,11 +340,12 @@ const close = function () {
   emit("update:show", false);
 };
 
-// Load items initially and when providers change
+// keep the configs in step with the providers, but only while the dialog is
+// open; a hidden dialog must not fetch
 watch(
   () => api.providers,
   () => {
-    loadItems();
+    if (props.show) loadItems();
   },
   { immediate: true, deep: true },
 );
