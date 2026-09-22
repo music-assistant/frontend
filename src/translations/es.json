@@ -743,21 +743,21 @@
             "household": "Compartida (sin propietario)",
             "sharing": "Compartición",
             "shared_users": "Compartido con",
-            "select_members": "Seleccionar miembros",
-            "shared_with_count": "Compartido con {count} miembro | Compartido con {count} miembros",
+            "select_members": "Seleccionar usuarios",
+            "shared_with_count": "Compartido con {count} usuario | Compartido con {count} usuarios",
             "options": {
                 "private": "Solo yo",
-                "selected": "Miembros seleccionados",
-                "members": "Todos los miembros",
+                "selected": "Usuarios seleccionados",
+                "members": "Todos los usuarios excepto los invitados",
                 "everyone": "Todos, incluidos los invitados.",
                 "not_shared": "No compartida"
             },
             "hints": {
                 "private": "Solo el propietario puede utilizar esta fuente.",
-                "selected": "El propietario y los miembros seleccionados a continuación.",
-                "members": "Todos los miembros con sesión iniciada, excepto los invitados.",
+                "selected": "El propietario y los usuarios seleccionados a continuación.",
+                "members": "Todos los usuarios que hayan iniciado sesión, excepto los invitados.",
                 "everyone": "Cualquier usuario puede utilizar esta fuente.",
-                "selected_no_owner": "Solo los miembros seleccionados a continuación.",
+                "selected_no_owner": "Solo los usuarios seleccionados a continuación.",
                 "nobody": "Nadie puede usar esta fuente hasta que tenga un propietario o se comparta con alguien."
             },
             "updated": "Acceso actualizado",
@@ -766,7 +766,10 @@
         },
         "set_custom_name": "Establecer un nombre personalizado",
         "genre_table_page_of": "Página {0} de {1}",
-        "genre_table_rows_selected": "{selected} de {total} fila seleccionada. | {selected} de {total} filas seleccionadas."
+        "genre_table_rows_selected": "{selected} de {total} fila seleccionada. | {selected} de {total} filas seleccionadas.",
+        "music_sources_own": "Tus fuentes",
+        "music_sources_shared": "Compartido contigo",
+        "music_sources_shared_empty": "Aún no se ha compartido ninguna fuente de música contigo."
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
@@ -1247,7 +1250,10 @@
             "server": "Servidor",
             "config_core_read": "Consulta la configuración del servidor",
             "system_read": "Consulta las tareas en segundo plano y sus registros"
-        }
+        },
+        "username_max_length": "El nombre de usuario debe tener como máximo 50 caracteres",
+        "display_name_max_length": "El nombre para mostrar debe tener como máximo 100 caracteres",
+        "password_max_length": "La contraseña debe tener como máximo 128 caracteres"
     },
     "login": {
         "subtitle": "Conéctate a tu servidor de música",
@@ -1816,7 +1822,9 @@
                 "new_show": "Nuevo programa",
                 "refresh": "Actualizar",
                 "title": "Programas",
-                "add_show": "Añadir programa"
+                "add_show": "Añadir programa",
+                "empty_title_listener": "Todavía no hay programas",
+                "empty_description_listener": "Todavía no se ha configurado ningún programa de radio. Vuelve a consultar cuando alguien cree uno."
             },
             "card": {
                 "play": "Play",
@@ -2471,7 +2479,7 @@
     "latest_release": "Último lanzamiento",
     "view_all": "Ver todo",
     "play_on_player": "Reproducir en {player}",
-    "artist_radio": "Mezcla continua del artista",
+    "artist_radio": "Reproducción continua del artista",
     "newest_first": "Primero los más recientes",
     "via_provider": "vía {provider}",
     "appears_on_hint": "Acreditado en una canción, no como artista del álbum",
@@ -2496,21 +2504,17 @@
         "skip": "Omitir por ahora.",
         "finish": "Finalizar",
         "finish_failed": "No se pudo completar. Por favor, inténtelo de nuevo.",
-        "getting_started": "Primeros pasos",
-        "getting_started_hint": "Terminar de configurar Music Assistant.",
-        "hide_for_now": "Ocultar por ahora.",
         "nothing_configured": "Aún no hay nada configurado.",
         "needs_attention": "Requiere atención.",
-        "set_up": "Configurado.",
+        "set_up": "Listo",
         "still_to_do": "Pendiente",
         "all_done": "Todo lo de la lista está configurado.",
         "players_count": "{count} reproductor | {count} reproductores",
-        "steps_to_go": "Queda {count} paso | Quedan {count} pasos",
         "run_again": "Volver a ejecutar el asistente de configuración.",
         "steps": {
             "intent": {
-                "title": "Elige cómo escuchar.",
-                "description": "Esto solo determina qué te sugerimos primero. Todo seguirá disponible, elijas lo que elijas.",
+                "title": "Elige cómo quieres usar Music Assistant",
+                "description": "Esto establece qué hace primero Music Assistant. Todo seguirá estando disponible, elijas lo que elijas.",
                 "phone_apps": {
                     "label": "Desde las aplicaciones de mi teléfono.",
                     "description": "Transmite contenido desde Spotify, AirPlay y otras aplicaciones a los altavoces de tu hogar."
@@ -2518,97 +2522,131 @@
                 "music_hub": {
                     "label": "Como mi centro de música.",
                     "description": "Reúne tus servicios de streaming y tu música local en una sola biblioteca."
-                }
+                },
+                "settings_note": "Puedes cambiar esto más adelante desde los ajustes."
             },
             "music_sources": {
                 "title": "Añadir fuentes de música",
                 "description": "Conecta un servicio de streaming o tus archivos de música locales para que Music Assistant tenga algo que reproducir."
             },
             "players": {
-                "title": "Añadir proveedores de reproductores",
-                "description": "Un proveedor de reproductores incorpora tus altavoces a Music Assistant, como Sonos, Chromecast o AirPlay."
+                "title": "Añade tus reproductores",
+                "description": "Los reproductores que Music Assistant ya ha encontrado. Desactiva los que no quieras utilizar y cambia su nombre como prefieras.",
+                "description_empty": "Music Assistant encuentra tus altavoces mediante proveedores de reproductores, como Sonos, Chromecast o AirPlay.",
+                "empty": "Todavía no se han encontrado reproductores",
+                "no_provider_hint": "Añade un proveedor de reproductores y sus reproductores aparecerán aquí.",
+                "discovering_hint": "Encontrar reproductores puede tardar un momento. Asegúrate de que los altavoces estén encendidos y en la misma red que Music Assistant.",
+                "add_more": "Añadir más reproductores",
+                "rename": "Cambiar el nombre de {name}"
             },
             "plugins": {
                 "title": "Añadir complementos",
-                "description": "Los complementos añaden funciones adicionales a Music Assistant. Siempre puedes añadirlos más adelante."
+                "description": "Los complementos añaden funciones adicionales a Music Assistant, como Party, Spotify Connect y un receptor AirPlay. Siempre puedes añadirlos más adelante."
             },
             "finish": {
                 "title": "Finalizar configuración",
-                "description": "Aquí es donde te has quedado. Puedes cambiar cualquiera de estas opciones más adelante desde los ajustes."
+                "description": "Buen trabajo configurándolo todo. Aquí tienes un breve resumen, y puedes cambiar cualquiera de estas opciones más adelante desde los ajustes."
             },
             "core_settings": {
                 "title": "Comprueba la configuración de tu servidor",
-                "description": "El nombre con el que se conoce este servidor, la dirección desde la que se accede a él en casa y la dirección que se debe usar desde fuera de casa",
-                "load_failed": "No se pudieron cargar los ajustes del servidor. Puedes cambiarlos más tarde desde los ajustes."
+                "load_failed": "No se pudieron cargar los ajustes del servidor. Puedes cambiarlos más tarde desde los ajustes.",
+                "intro": "Las direcciones que Music Assistant está utilizando ahora mismo. Se calculan automáticamente y normalmente son correctas, así que puedes continuar sin más.",
+                "internal_address": "Dirección interna",
+                "internal_address_hint": "Desde dónde acceden a Music Assistant las aplicaciones y dispositivos de tu casa.",
+                "stream_address": "Dirección del servidor de streaming",
+                "stream_address_hint": "De dónde obtienen el audio tus reproductores.",
+                "address_unknown": "No disponible",
+                "check": {
+                    "checking": "Comprobando...",
+                    "reachable": "Se puede acceder desde este dispositivo",
+                    "unreachable": "No se puede acceder desde este dispositivo",
+                    "unchecked": "No se ha podido comprobar desde este dispositivo"
+                },
+                "unreachable_hint": "Una dirección que no responde aquí puede que tampoco responda para tus reproductores. Si la reproducción falla, establécela en los ajustes avanzados.",
+                "override_hint": "Solo necesitas cambiar estos ajustes en una red más compleja, por ejemplo detrás de un proxy inverso o entre VLAN. Más adelante puedes encontrarlos en Ajustes › {system}, en {webserver} y {streams}.",
+                "remote": {
+                    "title": "Escucha desde fuera de casa",
+                    "description": "Dos formas de acceder a Music Assistant cuando estás fuera de casa. Ambas también se pueden configurar más adelante.",
+                    "builtin": {
+                        "title": "Acceso remoto integrado",
+                        "easiest": "La opción más sencilla",
+                        "description": "Seguro y cifrado, sin redirección de puertos ni VPN. Actívalo y conéctate desde cualquier lugar con tu ID de acceso remoto.",
+                        "switch": "Acceso remoto",
+                        "id": "Tu ID de acceso remoto",
+                        "copy": "Copiar el ID de acceso remoto",
+                        "hint": "Úsala en la aplicación Music Assistant o en app.music-assistant.io. El código QR está en Ajustes › {remote_access}."
+                    },
+                    "proxy": {
+                        "title": "Tu propio proxy inverso",
+                        "description": "Ejecuta un proxy inverso delante del servidor e introduce como dirección externa la dirección desde la que se puede acceder a él desde fuera.",
+                        "set_external": "Establecer la dirección externa"
+                    }
+                }
             },
             "invite_members": {
-                "title": "Añade tu hogar",
-                "description": "Cada persona con la que vives tiene su propia cuenta, con acceso a los reproductores y fuentes de música que tú elijas.",
-                "load_failed": "No se pudo cargar tu hogar. Puedes agregar miembros más tarde desde la configuración."
+                "title": "Añadir usuarios",
+                "description": "Cada persona de tu hogar tiene su propia cuenta, con acceso a los reproductores y las fuentes de música que le proporciones.",
+                "load_failed": "No se han podido cargar los usuarios. Puedes añadirlos más adelante desde los ajustes."
             },
             "welcome": {
                 "title": "Siéntete como en casa",
-                "description": "Hola, {name}, aquí es donde vive la música de tu hogar. Elige cuánto quieres ver mientras se reproduce algo",
-                "enthusiast": {
-                    "label": "Todos los detalles",
-                    "description": "Progreso en forma de onda y un visualizador de fondo mientras se reproduce música"
-                },
-                "regular": {
-                    "label": "Solo reproducir música",
-                    "description": "Un reproductor limpio, sin nada adicional"
-                },
+                "description": "Hola {name}, aquí es donde se encuentra la música de tu casa. Elige cuánta quieres ver.",
                 "defaults_hint": "Esto solo establece algunos valores predeterminados. Puedes cambiar todos los ajustes",
-                "save_failed": "No se ha podido guardar tu selección. Inténtalo de nuevo"
-            },
-            "whats_here": {
-                "title": "Lo que tienes aquí",
-                "description": "La música que ha reunido tu hogar y los reproductores a los que puedes enviarla",
-                "more_count": "+{count} más",
-                "listen": {
-                    "title": "Lo que puedes escuchar",
-                    "empty": "Todavía no se ha compartido ninguna fuente de música contigo",
-                    "browse": "Explora tu música"
+                "save_failed": "No se ha podido guardar tu selección. Inténtalo de nuevo",
+                "standard": {
+                    "label": "Estándar",
+                    "description": "Una interfaz limpia con solo lo esencial."
                 },
-                "players": {
-                    "title": "Tus reproductores",
-                    "empty": "Todavía no hay ningún reproductor. Pide a tu administrador que añada uno",
-                    "hint": "Selecciona un reproductor en la barra de la parte inferior, pulsa reproducir y abre el reproductor completo para ver lo que viene a continuación",
-                    "pick": "Selecciona un reproductor"
-                }
-            },
-            "tour": {
-                "title": "Un recorrido rápido",
-                "description": "Los lugares que más utilizarás",
-                "open": "Abrir",
-                "open_named": "Abrir {title}",
-                "library": {
-                    "title": "Tu biblioteca",
-                    "description": "Artistas, álbumes, canciones y listas de reproducción, todo junto en la barra lateral. Aquí encontrarás todo lo que haya añadido tu hogar"
-                },
-                "search": {
-                    "title": "Buscar",
-                    "description": "Abre la búsqueda desde la barra lateral para buscar un artista, un álbum o una canción entre todo lo que puedes escuchar"
-                },
-                "player_bar": {
-                    "title": "La barra del reproductor",
-                    "description": "La barra de la parte inferior permite seleccionar el reproductor y reproducir o pausar. Ábrela para acceder al reproductor completo y a la cola de reproducción"
-                },
-                "profile": {
-                    "title": "Tu perfil y configuración",
-                    "description": "Tu nombre, avatar y contraseña, y el tema y el idioma que utiliza esta aplicación"
+                "expert": {
+                    "label": "Experto",
+                    "description": "Muestra opciones avanzadas y detalles adicionales para quienes quieran verlo todo."
                 }
             },
             "all_set": {
                 "title": "Todo listo",
                 "description": "Eso es todo. Puedes cambiar cualquiera de estos ajustes más adelante desde la configuración"
+            },
+            "own_sources": {
+                "title": "Conecta tus propias cuentas",
+                "description": "Añade tus propios servicios de música para que tus listas de reproducción y tu biblioteca aparezcan junto a las de los demás. Siempre puedes hacerlo más tarde desde los ajustes.",
+                "add": "Añadir una fuente de música",
+                "empty": "Todavía no has conectado ninguna fuente de música propia.",
+                "connected": "Tus fuentes de música"
+            },
+            "your_players": {
+                "title": "Tus reproductores",
+                "description": "Los reproductores a los que puedes enviar música.",
+                "empty": "Todavía no hay reproductores. Pide a tu administrador que añada uno."
+            },
+            "your_music": {
+                "title": "Lo que puedes escuchar",
+                "description": "Las fuentes de música que todos han reunido aquí.",
+                "empty": "Aún no se ha compartido ninguna fuente de música contigo."
+            },
+            "account": {
+                "title": "Crea tu cuenta",
+                "description": "Esta es la cuenta de administrador de este servidor de Music Assistant. \nLas cuentas de los demás usuarios de tu hogar se pueden añadir más adelante.",
+                "create": "Crear cuenta",
+                "creating": "Creando tu cuenta...",
+                "signing_in": "Iniciando sesión...",
+                "failed": "No se ha podido crear la cuenta. Inténtalo de nuevo.",
+                "sign_in_failed": "Tu cuenta se ha creado, pero no se ha podido iniciar sesión. Recarga la página para continuar.",
+                "handed_back": "Tu cuenta está lista. Puedes volver a la aplicación de la que procedías.",
+                "account_exists": "Este servidor ya tiene una cuenta, por lo que no hay nada que crear aquí.",
+                "sign_in_here": "Inicia sesión aquí en su lugar",
+                "reload": "Recargar la página",
+                "ready": "Has iniciado sesión como {name}."
             }
         },
-        "add_member": "Añadir un miembro del hogar",
+        "add_member": "Añadir un usuario",
         "just_you_so_far": "De momento, solo tú.",
         "welcome_title": "Te damos la bienvenida a Music Assistant",
         "welcome_again": "Mostrar de nuevo la bienvenida",
-        "welcome_hint": "Echa un vistazo rápido",
-        "what_you_picked": "Lo que has elegido"
+        "what_you_picked": "Lo que has elegido",
+        "description": "Configura Music Assistant paso a paso.",
+        "step_completed": "{step}, completado",
+        "welcome_description": "Un breve recorrido por Music Assistant",
+        "more_count": "+{count} más"
     },
     "share_playlist": "Compartir lista de reproducción.",
     "playlist_access": {
@@ -2621,15 +2659,65 @@
         "collaborative_hint": "Todos aquellos con quienes se haya compartido la lista de reproducción también pueden añadir y eliminar elementos.",
         "hints": {
             "private": "Solo el propietario puede ver esta lista de reproducción.",
-            "selected": "El propietario y los miembros seleccionados a continuación.",
-            "members": "Todos los miembros que hayan iniciado sesión, excepto los invitados.",
+            "selected": "El propietario y los usuarios seleccionados a continuación.",
+            "members": "Todos los usuarios que hayan iniciado sesión, excepto los invitados.",
             "everyone": "Cualquier usuario puede ver esta lista de reproducción.",
-            "selected_no_owner": "Solo los miembros seleccionados a continuación.",
+            "selected_no_owner": "Solo los usuarios seleccionados a continuación.",
             "nobody": "Nadie podrá ver esta lista de reproducción hasta que tenga un propietario o se comparta con alguien."
         },
         "updated": "Compartición actualizada."
     },
     "n_in_library": "{count} en la biblioteca",
     "search_sources": "Fuentes",
-    "all_sources": "Todas las fuentes"
+    "all_sources": "Todas las fuentes",
+    "track_radio": "Reproducción continua de canciones",
+    "edit_rows_subtitle_track": "Se aplica a todas las páginas de canciones",
+    "n_releases": "{count} lanzamiento | {count} lanzamientos",
+    "artist_view_library_tracks": "Ver {count} canción de la biblioteca | Ver {count} canciones de la biblioteca",
+    "album_radio": "Reproducción continua de canciones del álbum",
+    "n_tracks": "{count} canción | {count} canciones",
+    "more_from_artist": "Más de este artista",
+    "more_from_artist_name": "Más de {name}",
+    "edit_rows_subtitle_album": "Se aplica a todas las páginas de álbumes",
+    "recommended": "Recomendado",
+    "tour": {
+        "start": "Hacer un recorrido",
+        "end": "Finalizar el recorrido",
+        "next": "Siguiente",
+        "step_counter": "{current} de {total}",
+        "offer": {
+            "title": "¿Quieres echar un vistazo rápido?",
+            "description": "Un breve recorrido señala las partes principales de la aplicación. Puedes volver a hacerlo en cualquier momento desde el menú de tu perfil."
+        },
+        "stops": {
+            "menu": {
+                "title": "El menú",
+                "description": "Todo empieza aquí: Descubre y Explora para encontrar algo que reproducir, tu biblioteca de artistas, álbumes, canciones y listas de reproducción, y los ajustes y tu perfil en la parte inferior."
+            },
+            "search": {
+                "title": "Buscar",
+                "description": "Busca un artista, álbum, canción o lista de reproducción entre todo lo que puedes escuchar."
+            },
+            "settings": {
+                "title": "Ajustes",
+                "description": "Donde está configurado Music Assistant: las fuentes de música y los reproductores, y cómo se ve y se comporta la aplicación."
+            },
+            "profile": {
+                "title": "Tu perfil",
+                "description": "Aquí se encuentran tu nombre, avatar y contraseña. En este menú también puedes reorganizar el menú, cerrar sesión o volver a hacer este recorrido."
+            },
+            "player_bar": {
+                "title": "La barra del reproductor",
+                "description": "Lo que se está reproduciendo ahora y los controles disponibles. Ábrelo para ver el reproductor completo y lo que viene a continuación."
+            },
+            "player_select": {
+                "title": "Selecciona un reproductor",
+                "description": "Elige dónde se reproduce la música. Selecciona un reproductor y pulsa reproducir."
+            },
+            "player_group": {
+                "title": "Grupo de reproductores",
+                "description": "Añade otros reproductores al que has seleccionado para que reproduzcan juntos la misma música en varias habitaciones. Los reproductores que no pueden unirse no se ofrecen."
+            }
+        }
+    }
 }
