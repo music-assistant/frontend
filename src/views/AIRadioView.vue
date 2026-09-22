@@ -129,10 +129,22 @@
           <Sparkles class="h-10 w-10 text-muted-foreground" />
           <div>
             <h2 class="text-lg font-semibold">
-              {{ $t("providers.ai_radio.gallery.empty_title") }}
+              {{
+                $t(
+                  canEdit
+                    ? "providers.ai_radio.gallery.empty_title"
+                    : "providers.ai_radio.gallery.empty_title_listener",
+                )
+              }}
             </h2>
             <p class="mt-1 max-w-md text-sm text-muted-foreground">
-              {{ $t("providers.ai_radio.gallery.empty_description") }}
+              {{
+                $t(
+                  canEdit
+                    ? "providers.ai_radio.gallery.empty_description"
+                    : "providers.ai_radio.gallery.empty_description_listener",
+                )
+              }}
             </p>
           </div>
           <Button v-if="canEdit" @click="openCreateDialog()">
