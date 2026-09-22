@@ -33,7 +33,19 @@ describe("Item", () => {
     );
   });
 
-  it("keeps native link semantics for an as-child row instead of listitem", () => {
+  it("wraps an interactive row in a listitem while keeping its button role", () => {
+    const group = mount(ItemGroup, {
+      slots: { default: () => h(Item, { as: "button" }, () => "go") },
+    });
+    const button = group.get("button");
+    const wrapper = group.get('[role="listitem"]');
+
+    expect(button.attributes("role")).toBeUndefined();
+    expect(wrapper.classes()).toContain("contents");
+    expect(wrapper.element.contains(button.element)).toBe(true);
+  });
+
+  it("wraps an as-child row in a listitem while keeping its link role", () => {
     const group = mount(ItemGroup, {
       slots: {
         default: () =>
@@ -41,16 +53,9 @@ describe("Item", () => {
       },
     });
     const link = group.get("a");
+    const wrapper = group.get('[role="listitem"]');
 
     expect(link.attributes("role")).toBeUndefined();
-  });
-
-  it("keeps native button semantics for an interactive row instead of listitem", () => {
-    const group = mount(ItemGroup, {
-      slots: { default: () => h(Item, { as: "button" }, () => "go") },
-    });
-    const button = group.get("button");
-
-    expect(button.attributes("role")).toBeUndefined();
+    expect(wrapper.element.contains(link.element)).toBe(true);
   });
 });
