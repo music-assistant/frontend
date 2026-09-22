@@ -424,6 +424,7 @@ describe("AIRadioView editing rights", () => {
     const wrapper = await openView();
 
     expect(wrapper.text()).toContain("Create your first show");
+    expect(wrapper.text()).toContain("AI Radio turns one of your playlists");
     expect(findButtonByText(wrapper, "Create show")).toBeTruthy();
   });
 
@@ -436,7 +437,11 @@ describe("AIRadioView editing rights", () => {
       const wrapper = await openView();
 
       expect(wrapper.text()).toContain("No shows yet");
+      expect(wrapper.text()).toContain("No radio shows have been set up yet");
       expect(wrapper.text()).not.toContain("Create your first show");
+      expect(wrapper.text()).not.toContain(
+        "AI Radio turns one of your playlists",
+      );
       expect(findButtonByText(wrapper, "Create show")).toBeUndefined();
     },
   );
