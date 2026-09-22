@@ -33,7 +33,7 @@ describe("Item", () => {
     );
   });
 
-  it("passes the listitem role to the child with as-child", () => {
+  it("keeps native link semantics for an as-child row instead of listitem", () => {
     const group = mount(ItemGroup, {
       slots: {
         default: () =>
@@ -42,6 +42,15 @@ describe("Item", () => {
     });
     const link = group.get("a");
 
-    expect(link.attributes("role")).toBe("listitem");
+    expect(link.attributes("role")).toBeUndefined();
+  });
+
+  it("keeps native button semantics for an interactive row instead of listitem", () => {
+    const group = mount(ItemGroup, {
+      slots: { default: () => h(Item, { as: "button" }, () => "go") },
+    });
+    const button = group.get("button");
+
+    expect(button.attributes("role")).toBeUndefined();
   });
 });

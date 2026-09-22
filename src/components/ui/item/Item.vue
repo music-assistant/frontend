@@ -26,11 +26,15 @@ const props = withDefaults(
 const attrs = useAttrs();
 const inItemGroup = inject(itemGroupInjectionKey, false);
 
-// Rows inside an ItemGroup (role="list") need role="listitem" for valid list
-// semantics; a caller-provided role always wins and standalone Items stay bare.
-const role = computed(() =>
-  attrs.role === undefined && inItemGroup ? "listitem" : undefined,
-);
+// Plain rows inside an ItemGroup (role="list") take role="listitem" for valid
+// list semantics. An interactive `as` (button/link) or `as-child` keeps its
+// native role, and a caller-provided role always wins.
+const role = computed(() => {
+  if (attrs.role !== undefined || props.asChild || props.as !== "div") {
+    return undefined;
+  }
+  return inItemGroup ? "listitem" : undefined;
+});
 </script>
 
 <template>
