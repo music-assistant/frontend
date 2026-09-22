@@ -29,28 +29,21 @@ const props = withDefaults(
 
 const inItemGroup = inject(itemGroupInjectionKey, false);
 
-// A caller-provided role owns the row's semantics; otherwise rows inside an
-// ItemGroup (role="list") need role="listitem" for valid list semantics.
-const hasCallerRole = computed(() => props.role != null);
-const listRow = computed(() => inItemGroup && !hasCallerRole.value);
+// A caller-provided role owns the element's semantics; null means absent.
+const role = computed(() => props.role ?? undefined);
 
-// A plain row carries the role directly. An interactive row (button/link, via
-// `as` or `as-child`) instead gets a display:contents listitem wrapper so it
-// keeps its native role while still counting as an item in the list.
-const isInteractive = computed(() => props.asChild || props.as !== "div");
-const wrap = computed(() => listRow.value && isInteractive.value);
-const role = computed(() => {
-  if (hasCallerRole.value) return props.role;
-  return listRow.value && !isInteractive.value ? "listitem" : undefined;
-});
+// Inside an ItemGroup (role="list") each row is wrapped in a display:contents
+// listitem, so the list has valid item children while the row element keeps its
+// own role: a native interactive one, a caller role, or none.
 </script>
 
 <template>
-  <div v-if="wrap" role="listitem" class="contents">
+  <div v-if="inItemGroup" role="listitem" class="contents">
     <Primitive
       data-slot="item"
       :as="as"
       :as-child="asChild"
+      :role="role"
       :class="cn(itemVariants({ variant, size }), props.class)"
       v-bind="$attrs"
     >
