@@ -32,13 +32,14 @@ const inItemGroup = inject(itemGroupInjectionKey, false);
 // A caller-provided role owns the element's semantics; null means absent.
 const role = computed(() => props.role ?? undefined);
 
-// Inside an ItemGroup (role="list") each row is wrapped in a display:contents
-// listitem, so the list has valid item children while the row element keeps its
-// own role: a native interactive one, a caller role, or none.
+// Inside an ItemGroup (role="list") each row is wrapped in a listitem element,
+// so the list has valid item children while the row element keeps its own role:
+// a native interactive one, a caller role, or none. The row fills the wrapper
+// (it is always display:flex), so the wrapper stays layout-neutral.
 </script>
 
 <template>
-  <div v-if="inItemGroup" role="listitem" class="contents">
+  <div v-if="inItemGroup" role="listitem">
     <Primitive
       data-slot="item"
       :as="as"

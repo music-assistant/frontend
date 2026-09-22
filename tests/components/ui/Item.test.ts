@@ -16,7 +16,6 @@ describe("Item", () => {
     expect(rows).toHaveLength(2);
     for (const row of rows) {
       expect(row.element.getAttribute("role")).toBe("listitem");
-      expect(row.element.classList).toContain("contents");
       expect(row.get('[data-slot="item"]').attributes("role")).toBeUndefined();
     }
   });
@@ -69,7 +68,6 @@ describe("Item", () => {
     const wrapper = group.get('[role="listitem"]');
     const button = group.get("button");
 
-    expect(wrapper.classes()).toContain("contents");
     expect(button.attributes("role")).toBeUndefined();
     expect(wrapper.element.contains(button.element)).toBe(true);
   });
