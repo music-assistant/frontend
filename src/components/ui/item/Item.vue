@@ -3,7 +3,7 @@ import type { PrimitiveProps } from "reka-ui";
 import type { HTMLAttributes } from "vue";
 import type { ItemVariants } from ".";
 import { Primitive } from "reka-ui";
-import { computed, inject, useAttrs } from "vue";
+import { computed, inject } from "vue";
 import { cn } from "@/lib/utils";
 import { itemGroupInjectionKey, itemVariants } from ".";
 
@@ -15,6 +15,7 @@ const props = withDefaults(
       class?: HTMLAttributes["class"];
       variant?: ItemVariants["variant"];
       size?: ItemVariants["size"];
+      role?: string | null;
     }
   >(),
   {
@@ -22,24 +23,26 @@ const props = withDefaults(
     class: undefined,
     variant: "default",
     size: "default",
+    role: undefined,
   },
 );
 
-const attrs = useAttrs();
 const inItemGroup = inject(itemGroupInjectionKey, false);
 
 // A caller-provided role owns the row's semantics; otherwise rows inside an
 // ItemGroup (role="list") need role="listitem" for valid list semantics.
-const listRow = computed(() => inItemGroup && attrs.role === undefined);
+const hasCallerRole = computed(() => props.role != null);
+const listRow = computed(() => inItemGroup && !hasCallerRole.value);
 
 // A plain row carries the role directly. An interactive row (button/link, via
 // `as` or `as-child`) instead gets a display:contents listitem wrapper so it
 // keeps its native role while still counting as an item in the list.
 const isInteractive = computed(() => props.asChild || props.as !== "div");
-const role = computed(() =>
-  listRow.value && !isInteractive.value ? "listitem" : undefined,
-);
 const wrap = computed(() => listRow.value && isInteractive.value);
+const role = computed(() => {
+  if (hasCallerRole.value) return props.role;
+  return listRow.value && !isInteractive.value ? "listitem" : undefined;
+});
 </script>
 
 <template>
@@ -49,7 +52,7 @@ const wrap = computed(() => listRow.value && isInteractive.value);
       :as="as"
       :as-child="asChild"
       :class="cn(itemVariants({ variant, size }), props.class)"
-      v-bind="attrs"
+      v-bind="$attrs"
     >
       <slot></slot>
     </Primitive>
@@ -61,7 +64,7 @@ const wrap = computed(() => listRow.value && isInteractive.value);
     :as-child="asChild"
     :role="role"
     :class="cn(itemVariants({ variant, size }), props.class)"
-    v-bind="attrs"
+    v-bind="$attrs"
   >
     <slot></slot>
   </Primitive>

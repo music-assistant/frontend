@@ -1,7 +1,9 @@
-import { Item, ItemGroup } from "@/components/ui/item";
+import { Item, ItemGroup, itemGroupInjectionKey } from "@/components/ui/item";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 import { h } from "vue";
+
+const inGroup = { global: { provide: { [itemGroupInjectionKey]: true } } };
 
 describe("Item", () => {
   it("exposes role=listitem for rows inside an ItemGroup", () => {
@@ -31,6 +33,28 @@ describe("Item", () => {
     expect(group.findComponent(Item).element.getAttribute("role")).toBe(
       "option",
     );
+  });
+
+  it("restores the listitem role when a caller role is removed", async () => {
+    const item = mount(Item, {
+      props: { role: "option" },
+      slots: { default: "choice" },
+      ...inGroup,
+    });
+    expect(item.element.getAttribute("role")).toBe("option");
+
+    await item.setProps({ role: undefined });
+    expect(item.element.getAttribute("role")).toBe("listitem");
+  });
+
+  it("treats a null caller role as absent", () => {
+    const item = mount(Item, {
+      props: { role: null },
+      slots: { default: "row" },
+      ...inGroup,
+    });
+
+    expect(item.element.getAttribute("role")).toBe("listitem");
   });
 
   it("wraps an interactive row in a listitem while keeping its button role", () => {
