@@ -344,7 +344,7 @@
 import remoteAccessDiagram from "@/assets/remote-access-diagram.svg";
 import Container from "@/components/Container.vue";
 import SegmentedCodeInput from "@/components/SegmentedCodeInput.vue";
-import { splitCode } from "@/helpers/segmented_code";
+import { REMOTE_ID_GROUPS, splitCode } from "@/helpers/segmented_code";
 import { copyToClipboard } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import type { RemoteAccessInfo } from "@/plugins/api/interfaces";
@@ -364,11 +364,9 @@ let pollInterval: ReturnType<typeof setInterval> | null = null;
 // setting things up for is already gone.
 let unmounted = false;
 
-// Split remote ID into 4 parts: 8-5-5-8 characters
-const remoteIdLengths = [8, 5, 5, 8];
-const remoteIdLayout = remoteIdLengths.map((length) => ({ length }));
+const remoteIdLayout = REMOTE_ID_GROUPS.map((length) => ({ length }));
 const remoteIdParts = computed(() =>
-  splitCode(remoteAccessInfo.value?.remote_id || "", remoteIdLengths),
+  splitCode(remoteAccessInfo.value?.remote_id || "", REMOTE_ID_GROUPS),
 );
 
 onMounted(async () => {

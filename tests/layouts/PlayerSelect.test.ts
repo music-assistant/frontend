@@ -10,17 +10,17 @@ import {
   type Player,
   PlayerType,
 } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
+import { store as storeModule } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { emitEvent, getPreference, isAdmin, preferenceState, setPreference } =
+const { emitEvent, getPreference, hasScope, preferenceState, setPreference } =
   vi.hoisted(() => ({
     emitEvent: vi.fn(),
     getPreference: vi.fn(),
-    isAdmin: vi.fn(() => true),
+    hasScope: vi.fn(() => true),
     preferenceState: {
       values: {} as Record<string, unknown>,
       reactiveValues: undefined as Record<string, unknown> | undefined,
@@ -47,7 +47,9 @@ vi.mock("@/plugins/store", async () => {
       // resolved from the player list like the real store, so the guard against
       // overriding an existing selection behaves the same
       activePlayer: computed(() =>
-        store.activePlayerId ? api.players[store.activePlayerId] : undefined,
+        storeModule.activePlayerId
+          ? api.players[storeModule.activePlayerId]
+          : undefined,
       ),
       activePlayerId: undefined as string | undefined,
       companionPlayerId: undefined as string | undefined,
@@ -56,6 +58,7 @@ vi.mock("@/plugins/store", async () => {
       mobileLayout: false,
       showFullscreenPlayer: false,
       showPlayersMenu: true,
+      enabledPlugins: new Set<string>(),
     }),
   };
 });
@@ -77,7 +80,7 @@ vi.mock("@/plugins/eventbus", () => ({
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
-    isAdmin,
+    hasScope,
   },
 }));
 
@@ -128,6 +131,9 @@ vi.mock("@/helpers/players", () => ({
     ),
   playerVisible: () => true,
 }));
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & { mobileLayout: boolean };
 
 const PlayerCardStub = {
   props: [

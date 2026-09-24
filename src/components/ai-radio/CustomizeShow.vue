@@ -27,7 +27,7 @@
     </header>
 
     <div v-if="loading" class="flex justify-center py-16">
-      <Loader2 class="h-8 w-8 animate-spin text-muted-foreground" />
+      <Spinner class="size-8 text-muted-foreground" />
     </div>
 
     <div
@@ -196,6 +196,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { useHosts } from "@/composables/ai-radio/useHosts";
@@ -209,7 +210,7 @@ import {
 } from "@/helpers/ai_radio";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { ArrowLeft, Loader2 } from "@lucide/vue";
+import { ArrowLeft } from "@lucide/vue";
 import { computed, onMounted, ref } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import { toast } from "vue-sonner";

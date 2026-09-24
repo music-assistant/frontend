@@ -68,11 +68,7 @@ function relayUrl(playerQuery?: string): string {
  * Whether the MilkDrop Visualizer server plugin is loaded and available.
  */
 export function visualizerProviderAvailable(): boolean {
-  // may run before the providers map has loaded (e.g. a cast display booting)
-  return Object.values(api.providers ?? {}).some(
-    (provider) =>
-      provider.domain === "milkdrop_visualizer" && provider.available,
-  );
+  return store.enabledPlugins.has("milkdrop_visualizer");
 }
 
 /**

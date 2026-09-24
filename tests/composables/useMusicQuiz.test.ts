@@ -1,15 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockSendCommand, mockProviders } = vi.hoisted(() => ({
-  mockSendCommand: vi.fn(),
-  mockProviders: {} as Record<string, { domain: string }>,
-}));
+const { mockSendCommand, mockProviders, mockEnabledPlugins } = vi.hoisted(
+  () => ({
+    mockSendCommand: vi.fn(),
+    mockProviders: {} as Record<string, { domain: string }>,
+    mockEnabledPlugins: new Set<string>(),
+  }),
+);
 
 vi.mock("@/plugins/api", () => ({
   default: {
     sendCommand: mockSendCommand,
     providers: mockProviders,
   },
+}));
+
+vi.mock("@/plugins/store", () => ({
+  store: { enabledPlugins: mockEnabledPlugins },
 }));
 
 import {
@@ -59,16 +66,20 @@ describe("useMusicQuiz commands", () => {
     mockSendCommand.mockReset();
     mockSendCommand.mockResolvedValue(undefined);
     Object.keys(mockProviders).forEach((key) => delete mockProviders[key]);
+    mockEnabledPlugins.clear();
   });
 
   describe("getMusicQuizInfo", () => {
-    it("resolves null without a server round-trip when the provider is absent", async () => {
+    it("resolves null without a server round-trip when the plugin is not loaded", async () => {
+      // listed among the providers, but not among the loaded plugins
+      mockProviders.music_quiz = { domain: "music_quiz" };
+
       await expect(getMusicQuizInfo()).resolves.toBeNull();
       expect(mockSendCommand).not.toHaveBeenCalled();
     });
 
     it("queries the server as a best-effort command when the provider is loaded", async () => {
-      mockProviders.music_quiz = { domain: "music_quiz" };
+      mockEnabledPlugins.add("music_quiz");
       const info = { game_id: "game-1" };
       mockSendCommand.mockResolvedValue(info);
 
@@ -82,13 +93,16 @@ describe("useMusicQuiz commands", () => {
   });
 
   describe("getMusicQuizPublicState", () => {
-    it("resolves null without a server round-trip when the provider is absent", async () => {
+    it("resolves null without a server round-trip when the plugin is not loaded", async () => {
+      // listed among the providers, but not among the loaded plugins
+      mockProviders.music_quiz = { domain: "music_quiz" };
+
       await expect(getMusicQuizPublicState()).resolves.toBeNull();
       expect(mockSendCommand).not.toHaveBeenCalled();
     });
 
     it("fetches the guest-safe state as a best-effort command", async () => {
-      mockProviders.music_quiz = { domain: "music_quiz" };
+      mockEnabledPlugins.add("music_quiz");
       const state = { phase: "lobby", join_url: "http://ma/join" };
       mockSendCommand.mockResolvedValue(state);
 

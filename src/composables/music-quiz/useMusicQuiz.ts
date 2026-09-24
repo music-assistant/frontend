@@ -1,4 +1,5 @@
 import api from "@/plugins/api";
+import { store } from "@/plugins/store";
 
 export type MusicQuizPhase = "lobby" | "answering" | "reveal" | "finished";
 export type MusicQuizMode = "venue" | "remote";
@@ -732,10 +733,7 @@ export function getMusicQuizInfo(): Promise<MusicQuizInfo | null> {
   // Without the music_quiz provider loaded on the server, the command isn't
   // even registered ("Invalid or unsupported command") — and there can be no
   // active quiz, so don't bother the server.
-  const hasMusicQuiz = Object.values(api.providers).some(
-    (provider) => provider.domain === "music_quiz",
-  );
-  if (!hasMusicQuiz) return Promise.resolve(null);
+  if (!store.enabledPlugins.has("music_quiz")) return Promise.resolve(null);
   // Callers handle failures locally, so skip the global error toast.
   return api.sendCommand<MusicQuizInfo | null>("music_quiz/info", undefined, {
     suppressGlobalError: true,
@@ -745,10 +743,7 @@ export function getMusicQuizInfo(): Promise<MusicQuizInfo | null> {
 export function getMusicQuizPublicState(): Promise<MusicQuizPublicState | null> {
   // Without the music_quiz provider loaded the command isn't registered, and there
   // can be no active quiz either — so don't bother the server.
-  const hasMusicQuiz = Object.values(api.providers).some(
-    (provider) => provider.domain === "music_quiz",
-  );
-  if (!hasMusicQuiz) return Promise.resolve(null);
+  if (!store.enabledPlugins.has("music_quiz")) return Promise.resolve(null);
   // A kiosk display has nowhere to show a toast; callers handle failures locally.
   return api.sendCommand<MusicQuizPublicState | null>(
     "music_quiz/public_state",

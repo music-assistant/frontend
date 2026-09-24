@@ -3,6 +3,8 @@
   <Icon
     v-bind="{ ...icon, ...$attrs }"
     :disabled="!player || !canNext || isLoading"
+    :aria-label="nextChapter ? $t('next_chapter') : $t('next_track')"
+    :title="nextChapter ? $t('next_chapter') : $t('next_track')"
     variant="button"
     @click="
       nextChapter

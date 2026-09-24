@@ -4,6 +4,7 @@
     <!-- eslint-disable vue/no-template-shadow -->
     <Toolbar
       :icon="icon"
+      :icon-action="iconAction"
       :title="title"
       :subtitle="subtitle"
       :count="params.search ? pagedItems.length : total || allItems.length"
@@ -43,12 +44,11 @@
         class="items-start"
         @update:model-value="(v) => onTabChange(v as string)"
       >
-        <TabsList class="h-auto w-auto gap-6 bg-transparent p-0">
+        <TabsList variant="line">
           <TabsTrigger
             v-for="tab in props.toolBarTabs"
             :key="tab.id"
             :value="tab.id"
-            class="flex-none rounded-none border-0 bg-transparent px-1 pt-1 pb-2 text-[15px] text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_0_currentColor] dark:data-[state=active]:bg-transparent"
           >
             {{ tab.label }}
           </TabsTrigger>
@@ -419,6 +419,12 @@ export interface Props {
   // when set, it replaces the itemtype-derived list (and is not limited to
   // music providers).
   providerFilterOptions?: string[];
+  // when set, the explicit provider list above also offers the library, as its
+  // first option: loadItems is handed "library" while it is the selected one
+  libraryFilterOption?: boolean;
+  // the option a required selection starts on, when nothing valid is stored
+  // (default: the first one offered)
+  defaultProvider?: string;
   updateAvailable?: boolean;
   title?: string;
   subtitle?: string;
@@ -441,6 +447,8 @@ export interface Props {
   infiniteScroll?: boolean;
   path?: string;
   icon?: string | Component;
+  // makes the toolbar icon a button, e.g. a back arrow for a full-page listing
+  iconAction?: () => void;
   restoreState?: boolean;
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
@@ -467,6 +475,8 @@ const props = withDefaults(defineProps<Props>(), {
   singleProviderFilter: false,
   requireProviderSelection: false,
   providerFilterOptions: undefined,
+  libraryFilterOption: false,
+  defaultProvider: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
   limit: 50,
@@ -483,6 +493,7 @@ const props = withDefaults(defineProps<Props>(), {
   loadItems: undefined,
   path: undefined,
   icon: undefined,
+  iconAction: undefined,
   restoreState: false,
   onTitleClick: undefined,
   refreshOnParentUpdate: false,
@@ -707,6 +718,10 @@ const selectViewMode = function (newMode: string) {
       newMode,
     );
   }
+};
+
+const getViewModeLabel = function (mode: string) {
+  return t(`view.${mode}`);
 };
 
 watch(
@@ -1117,25 +1132,17 @@ const musicProviders = computed(() => {
   // explicit provider list supplied by the parent: resolve the given
   // instance_ids to labels as-is, without any itemtype/type filtering.
   if (props.providerFilterOptions) {
-    return props.providerFilterOptions
+    const providers = props.providerFilterOptions
       .map((instanceId) => api.providers[instanceId])
       .filter((provider) => provider !== undefined)
-      .filter(
-        // honour an admin's personal provider filter, like the default branch
-        // (but without the music-only type guard: these options are
-        // intentionally allowed to include any provider type).
-        (provider) =>
-          !(
-            store.currentUser &&
-            store.currentUser.provider_filter.length &&
-            !store.currentUser.provider_filter.includes(provider.instance_id)
-          ),
-      )
       .map((provider) => ({
         label: provider.name,
         value: provider.instance_id,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
+    if (!props.libraryFilterOption) return providers;
+    // the library is not a provider instance: loadItems is handed "library"
+    return [{ label: t("source_library"), value: "library" }, ...providers];
   }
 
   // Map itemtype to the ProviderFeatures that mark a provider as a possible
@@ -1185,15 +1192,6 @@ const musicProviders = computed(() => {
         return provider.available;
       }
       if (provider.type !== ProviderType.MUSIC) return false;
-      if (
-        store.currentUser &&
-        store.currentUser.provider_filter.length &&
-        !store.currentUser.provider_filter.includes(provider.instance_id)
-      ) {
-        // for non-admin users, the providerfilter is applied in the backend
-        // but for admin users we need to filter here as well
-        return false;
-      }
       // If we have required feature(s) for this itemtype, filter by them
       if (requiredFeatures) {
         return requiredFeatures.some((feature) =>
@@ -1479,7 +1477,8 @@ const menuItems = computed(() => {
   // toggle view mode (hidden when view mode is controlled externally)
   if (!props.forcedViewMode)
     items.push({
-      label: "tooltip.toggle_view_mode",
+      label: "tooltip.view_mode_current",
+      labelArgs: [getViewModeLabel(viewMode.value)],
       icon: viewMode.value == "list" ? LayoutList : LayoutGrid,
       overflowAllowed: true,
       subItems: [
@@ -1729,7 +1728,11 @@ const restoreSettings = async function () {
     musicProviders.value.length > 0 &&
     !params.value.provider?.length
   ) {
-    params.value.provider = [musicProviders.value[0].value];
+    const offered = musicProviders.value.map((provider) => provider.value);
+    const preferred = props.defaultProvider;
+    params.value.provider = [
+      preferred && offered.includes(preferred) ? preferred : offered[0],
+    ];
   }
 
   // get stored searchquery (but only if we're allowed to store the state)
@@ -2189,33 +2192,41 @@ const getFilteredItems = function (
 };
 
 const selectAll = async function () {
-  let confirmed = true;
   // We use the total length even when searching, since we can't know
   // how many items will be loaded after filtering
   const itemCount = props.total || allItems.value.length;
-  if (itemCount > 250) {
-    // This could be a large selection. Prevent accidental activation
-    // by asking the user for a confirmation
-    confirmed = await new Promise((resolve) => {
-      if (confirm(t("select_all_confirmation"))) {
-        resolve(true);
-      } else {
-        resolve(false);
-      }
-    });
+  if (itemCount <= 250) {
+    await selectEveryItem();
+    return;
   }
-
-  if (confirmed) {
-    await loadAllItems();
-    selectedItems.value = pagedItems.value.filter((x) => !isParentDirItem(x));
-    showCheckboxes.value = true;
-  }
+  // This could be a large selection. Prevent accidental activation
+  // by asking the user for a confirmation
+  eventbus.emit("deleteConfirmationDialog", {
+    title: t("tooltip.select_all"),
+    message: t("select_all_confirmation"),
+    confirmLabel: t("yes"),
+    destructive: false,
+    onConfirm: selectEveryItem,
+  });
 };
 
 defineExpose({
   sortBy: computed(() => params.value.sortBy),
   reload: () => loadData(true, true),
+  // whether the item is absent while every item of the unfiltered listing is
+  // loaded; a filter leaves items out on purpose
+  isMissing: (uri: string) =>
+    allItemsReceived.value &&
+    !hasActiveFilters.value &&
+    !pagedItems.value.some((i) => i.uri === uri),
 });
+
+/** Loads the remaining pages and puts every item in the selection. */
+async function selectEveryItem() {
+  await loadAllItems();
+  selectedItems.value = pagedItems.value.filter((x) => !isParentDirItem(x));
+  showCheckboxes.value = true;
+}
 </script>
 
 <style scoped>

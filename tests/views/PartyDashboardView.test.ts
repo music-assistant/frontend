@@ -1,9 +1,18 @@
+import { AlertDialog } from "@/components/ui/alert-dialog";
 import api from "@/plugins/api";
-import { EventType, PlaybackState } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
+import {
+  EventType,
+  ImageType,
+  PlaybackState,
+  type PlayerQueue,
+  type QueueItem,
+  type Scope,
+} from "@/plugins/api/interfaces";
+import { store as storeModule } from "@/plugins/store";
 import PartyDashboardView from "@/views/PartyDashboardView.vue";
 import { type VueWrapper, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 // Reactive, so the view's own chrome follows the flag the way it does in the app.
 vi.mock("@/plugins/store", async () => {
@@ -42,22 +51,31 @@ const events = vi.hoisted(() => {
   };
 });
 
-vi.mock("@/plugins/api", () => ({
-  default: {
+vi.mock("@/plugins/api", () => {
+  const api = {
     baseUrl: "",
     players: {},
     providers: {},
     queues: {},
+    // schema 31 and up address images by opaque id, which decides how the
+    // background's artwork url gets built
+    serverInfo: { value: { schema_version: 31 } },
     sendCommand: vi.fn().mockResolvedValue(null),
     subscribe: vi.fn(events.subscribe),
     getPlayerQueueItems: vi.fn().mockResolvedValue([]),
     getTrackLyrics: vi.fn().mockResolvedValue([null, null]),
-  },
+  };
+  // the view imports the default export, @/helpers/utils the named one
+  return { default: api, api };
+});
+
+const { hasScope } = vi.hoisted(() => ({
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
 }));
 
 // Pulled in transitively via @/helpers/utils; mocked so their module-load side effects (AuthManager reading localStorage) don't leak into this test.
 vi.mock("@/plugins/router", () => ({ default: {} }));
-vi.mock("@/plugins/auth", () => ({ authManager: {}, default: {} }));
+vi.mock("@/plugins/auth", () => ({ authManager: { hasScope }, default: {} }));
 
 vi.mock("vue-router", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
@@ -75,21 +93,30 @@ vi.mock("@/composables/usePartyConfig", () => ({
   }),
 }));
 
-vi.mock("@/composables/visualizer/useVisualizer", () => ({
-  useVisualizer: () => ({
-    visualizerEnabledPref: { value: false },
-    visualizerPresetPref: { value: "" },
-    visualizerBlurPref: { value: 0 },
-    visualizerOpacityPref: { value: 1 },
-    visualizerAvailable: { value: false },
-    visualizerActive: { value: false },
-    toggleVisualizer: vi.fn(),
-  }),
-}));
+vi.mock("@/composables/visualizer/useVisualizer", async () => {
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  return {
+    useVisualizer: () => ({
+      visualizerEnabledPref: ref(false),
+      visualizerPresetPref: ref(""),
+      visualizerBlurPref: ref(0),
+      visualizerOpacityPref: ref(1),
+      visualizerAvailable: ref(false),
+      visualizerActive: ref(false),
+      toggleVisualizer: vi.fn(),
+    }),
+  };
+});
 
 vi.mock("@/composables/lyrics/useLyricsElapsedTime", () => ({
   useLyricsElapsedTime: () => ({ elapsedTime: { value: 0 } }),
 }));
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & {
+  activePlayerQueue?: PlayerQueue;
+  curQueueItem?: QueueItem;
+};
 
 // The view drives the real Fullscreen API, which happy-dom does not implement,
 // so it is stood up here as a small state machine that fires the same event the
@@ -115,7 +142,7 @@ function mountViewRaw() {
     global: {
       mocks: { $t: (key: string) => key },
       stubs: {
-        Badge: { template: "<span><slot /></span>" },
+        Badge: { template: '<span data-testid="badge"><slot /></span>' },
         Button: ButtonStub,
         LyricsViewer: true,
         PartyQR: true,
@@ -471,5 +498,86 @@ describe("PartyDashboardView active player", () => {
     await flushPromises();
 
     expect(store.activePlayerId).toBe("the_users_own_pick");
+  });
+});
+
+describe("PartyDashboardView background artwork", () => {
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    store.curQueueItem = undefined;
+  });
+
+  it("blurs a radio stream's live artwork, not the station logo", async () => {
+    // the station's own logo sits on the queue item, while the artwork for the
+    // track actually on air arrives as live stream metadata
+    store.curQueueItem = {
+      queue_item_id: "item_1",
+      image: {
+        type: ImageType.THUMB,
+        path: "https://station.example/logo.png",
+        provider: "builtin",
+        remotely_accessible: true,
+        proxy_id: "abc123",
+      },
+      media_item: { name: "The Station", metadata: { images: [] } },
+      streamdetails: {
+        stream_metadata: { image_url: "https://stream.example/cover.jpg" },
+      },
+    } as never;
+
+    const view = await mountView();
+
+    expect(view.get(".background-image").attributes("style")).toContain(
+      "https://stream.example/cover.jpg",
+    );
+  });
+});
+
+describe("PartyDashboardView party settings", () => {
+  const GUEST_ACCESS = '[data-testid="badge"]';
+  const PARTY_SETTINGS = '[aria-label="tooltip.party_settings"]';
+  const guestAccessDialogOpen = (view: VueWrapper) =>
+    view.getComponent(AlertDialog).props("open");
+
+  beforeEach(() => {
+    store.frameless = false;
+    api.providers = {
+      "party--1": { domain: "party", instance_id: "party--1" },
+    } as unknown as typeof api.providers;
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    api.providers = {};
+  });
+
+  it("lets an admin switch guest access and open the party settings", async () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    const view = await mountView();
+
+    const badge = view.get(GUEST_ACCESS);
+    expect(badge.classes()).toContain("cursor-pointer");
+    await badge.trigger("click");
+
+    expect(guestAccessDialogOpen(view)).toBe(true);
+    expect(view.find(PARTY_SETTINGS).exists()).toBe(true);
+  });
+
+  it.each([
+    ["a member", BUILTIN_ROLE_SCOPES.user],
+    ["a guest", BUILTIN_ROLE_SCOPES.guest],
+  ])("only shows %s whether guest access is on", async (_role, scopes) => {
+    hasScope.mockImplementation(scopeChecker(scopes));
+    const view = await mountView();
+
+    const badge = view.get(GUEST_ACCESS);
+    expect(badge.text()).toBe("providers.party.guest_access_enabled");
+    expect(badge.classes()).not.toContain("cursor-pointer");
+    await badge.trigger("click");
+
+    expect(guestAccessDialogOpen(view)).toBe(false);
+    expect(view.find(PARTY_SETTINGS).exists()).toBe(false);
   });
 });

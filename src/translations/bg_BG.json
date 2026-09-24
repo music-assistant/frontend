@@ -50,7 +50,8 @@
     "play_playlist_from": "Възпроизвеждане на плейлиста от тук",
     "player_type": {
         "group": "Група",
-        "player": "Плейър"
+        "player": "Плейър",
+        "source": "Аудио вход"
     },
     "players": "Плейъри",
     "playlist": "Плейлист",
@@ -73,44 +74,27 @@
     "search": "Търсене",
     "settings": {
         "add_new": "Добавяне на нов",
-        "add_provider": "Добавяне на нов доставчик",
-        "advanced_settings": "Разширени настройки",
-        "check_docs": "Разгледайте документацията",
-        "config_player": "Конфигуриране на плейъра: {0}",
         "configure": "Конфигуриране",
         "delete": "Изтриване",
         "disable": "Дезактивиране",
         "documentation": "Документация",
         "enable": "Активиране",
         "enable_player": "Активиране на този плейър",
-        "enabled": "Активиране",
         "invalid_input": "Входът е невалиден",
         "metadataproviders": "Доставчици на метаданни",
-        "musicproviders": "Доставчици на музика",
-        "need_help_setup_provider": "Нуждаете се от помощ при настройването на този доставчик?",
-        "no_providers": "Няма конфигурирани доставчици на музика",
-        "no_providers_detail": "Започнете своето изживяване с Music Assistant, като добавите доставчиците си на музика по-долу.",
-        "not_loaded": "Доставчикът (все още) не е зареден",
-        "player_address": "Адрес",
         "player_disabled": "Този плейър е дезактивиран",
-        "player_id": "ID на плейъра",
-        "player_model": "Модел",
         "player_not_available": "Този плейър (все още) не е наличен",
         "player_provider": "Доставчик",
         "player_settings": "Настройки на плейъра",
         "player_type_label": "Тип плейър",
         "playerproviders": "Доставчици на плейъри",
         "players": "Плейъри",
-        "pluginproviders": "Доставчици на добавки",
-        "providers": "Доставчици",
         "reload": "Презареждане",
         "save": "Запазване",
         "settings": "Настройки",
         "sync": "Синхронизиране сега",
         "sync_running": "Този доставчик сега се синхронизира",
-        "core_modules": "Основни модули",
         "server_info": "Информация за сървъра",
-        "server_id": "ID на сървъра",
         "server_version": "Версия на сървъра",
         "server_as_addon": "Добавка за Home Assistant",
         "artists_in_library": "Изпълнители в библиотеката",
@@ -119,7 +103,6 @@
         "playlists_in_library": "Плейлисти в библиотеката",
         "radio_in_library": "Радиа в библиотеката",
         "download_log": "Изтегляне на журнал",
-        "add_new_provider_button": "Добавяне на {0} доставчик",
         "default": "по подразбиране",
         "provider_depends_on_confirm": "Преди да можете да настроите {0}, трябва да конфигурирате доставчика {1}. Искате ли да го направите сега?",
         "theme": {
@@ -163,17 +146,13 @@
                 "bg_BG": "Български"
             }
         },
-        "no_music_providers": "Няма конфигурирани доставчици на музика",
-        "no_music_providers_detail": "Започнете вашето изживяване с Music Assistant, като добавите вашите музикални доставчици.",
-        "no_player_providers": "Няма конфигурирани доставчици на плейъри",
         "dsp": {
             "disabled_message": "В момента DSP е изключен. Включете го с помощта на превключвателя по-горе",
             "input": "Вход",
             "output": "Изход",
             "filter": {
                 "add": "Добавяне на филтър",
-                "type": "Тип филтър",
-                "new": "Нов {type}"
+                "type": "Тип филтър"
             },
             "move_up": "Преместване нагоре",
             "move_down": "Преместване надолу",
@@ -236,14 +215,7 @@
         "dsp_note_multi_device_group": {
             "label": "Можете да конфигурирате DSP за всеки плейър поотделно."
         },
-        "edit_provider": "Редактиране на доставчика: {0}",
-        "metadata": "Метаданни",
-        "metadataprovider": "Доставчик на метаданни",
-        "music": "Музика",
-        "musicprovider": "Доставчик на музика",
-        "player": "Плейър",
         "playerprovider": "Доставчик на плейъри",
-        "plugin": "Добавка",
         "providers_total": "Общо {0} доставчик{1}",
         "stage": {
             "label": "Етап",
@@ -260,11 +232,8 @@
             "label": "Принудително мобилно оформление",
             "description": "Принудително мобилното оформление (с менюто за навигация в долната част), дори на по-големи екрани."
         },
-        "providers_description": "Управлявайте вашите музикални източници, доставчици на плейъри и добавки",
         "players_description": "Конфигуриране и управление на изходните аудио устройства",
         "frontend_description": "Персонализиране на темата и външния вид на потребителския интерфейс",
-        "provider_type": "Тип",
-        "onboarding_title": "Добре дошли в Music Assistant!",
         "profile_description": "Управление на настройките и предпочитанията на личния ви акаунт",
         "users": "Потребители",
         "users_description": "Управление на потребителски акаунти, роли и разрешения",
@@ -274,7 +243,6 @@
         "about_description": "Информация за версията, кредити и още",
         "auto_refresh_log": "Автоматично опресняване",
         "log_truncated": "Показване на последните {0} реда. Изтеглете пълния журнал за цялостната история.",
-        "version_info": "Информация за версията",
         "library_stats": "Статистика на библиотеката",
         "links": "Връзки",
         "changelog": "Списък с промени",
@@ -282,7 +250,6 @@
         "bug_reports": "Доклади за грешки",
         "discussion_forums": "Дискусионни форуми",
         "license": "Лиценз",
-        "open_home_foundation": "Open Home Foundation",
         "proud_part_of": "Горда част от",
         "core_module": {
             "cache": {
@@ -320,7 +287,6 @@
         "remote_access_feature_no_port_forwarding": "Не се изисква пренасочване на портове или VPN",
         "remote_access_mode_optimized": "Оптимизиран режим (HA Cloud)",
         "remote_access_mode_basic": "Работи в основен режим",
-        "remote_access_mode_optimized_description": "Използване на STUN\/TURN сървъри от Home Assistant Cloud за оптимална производителност. Работи надеждно във всички мрежови конфигурации.",
         "remote_access_mode_basic_description": "Използване на публични STUN сървъри. Това може да не работи в сложни мрежови конфигурации. Надстройте до Home Assistant Cloud за най-добро изживяване.",
         "remote_access_upgrade_to_optimized": "Надграждане до Home Assistant Cloud",
         "remote_access_status": "Състояние на отдалеченият достъп",
@@ -344,8 +310,6 @@
         "remote_access_protocol_optimized": "WebRTC с оптимизирани STUN\/TURN сървъри от Home Assistant Cloud (работи във всички мрежови конфигурации).",
         "remote_access_encryption_description": "Шифроването от край до край, използващо DTLS-SRTP, гарантира, че вашите данни остават поверителни и защитени.",
         "frontend": "Потребителски интерфейс",
-        "players_count": "{0} плейър{1}",
-        "one_player": "1 плейър",
         "view_players": "Вижте плейърите",
         "players_total": "Общо {0} плейър{1}",
         "api_docs": "Документация за API",
@@ -357,16 +321,9 @@
             "options": "Опции на плейъра",
             "preferences": "Предпочитания",
             "dsp": "DSP",
+            "volume_control": "Контрол на силата на звука",
             "audiobooks": "Аудиокниги"
         },
-        "onboarding_subtitle": "Нека започнем, като свържете вашите музикални източници и аудио устройства.",
-        "onboarding_music_title": "Музика",
-        "onboarding_music_desc": "Свържете стрийминг услугите си като Spotify, Tidal или локалната си музикална библиотека.",
-        "onboarding_add_music": "Добавяне на музика",
-        "onboarding_player_title": "Плейъри",
-        "onboarding_player_desc": "Свържете вашите високоговорители и устройства като Sonos, Chromecast или AirPlay.",
-        "onboarding_add_player": "Добавяне на плейъри",
-        "onboarding_footer": "Винаги можете да добавите още доставчици по-късно от тази страница с настройки.",
         "remote_access_qr_code": "QR код",
         "remote_access_qr_code_description": "Сканирайте с камерата на телефона си, за да се свържете незабавно.",
         "reset_to_defaults": "Възстановяване на настройките по подразбиране",
@@ -381,7 +338,6 @@
             "label": "Активиране на медийните контроли на браузъра"
         },
         "settings_saved": "Настройките са запазени успешно",
-        "protocol_disabled_message": "Активирайте този протокол, за да конфигурирате настройките му",
         "protocol_no_settings_with_advanced": "Не се виждат настройки. Активирайте разширените настройки, за да видите повече опции за конфигурация.",
         "show_advanced_settings": "Показване на разширени настройки",
         "advanced": "Разширени",
@@ -398,14 +354,6 @@
         "confirm_full_restore_2": "Абсолютно сигурен ли сте? Това действие не може да бъде отменено.",
         "restore_success": "Възстановен(и) {0} липсващ(и) жанр(а).",
         "genre_statistics": "Администрация на библиотеката с жанрове",
-        "total_genres": "Общо жанрове",
-        "view_all_genres": "Преглед на всички жанрове",
-        "scanner_status": "Състояние на скенера",
-        "scanner_running": "Изпълнява се...",
-        "scanner_idle": "Бездействие",
-        "last_scan": "Последно сканиране",
-        "scan_now": "Сканиране сега",
-        "scan_never": "Никога",
         "error_loading_genres": "Грешка при зареждане на жанровете",
         "player_needs_setup": "Този плейър изисква настройка",
         "add_music_provider": "Добавяне на музикален източник",
@@ -418,12 +366,8 @@
         "player_providers_description": "Конфигуриране на доставчиците за вашите аудио изходни устройства",
         "metadata_providers_description": "Управление на доставчици на метаданни за произведения на изкуството и допълнителна информация",
         "plugin_providers_description": "Управление на добавки, които разширяват функционалността на Music Assistant",
-        "scan_ago": "{0} преди",
         "genre_statistics_description": "Разглеждайте и филтрирайте всички жанрове във вашата библиотека. Жанровете могат да бъдат глобално изключвани и възстановявани.",
-        "excluded_genres": "Изключени жанрове",
-        "excluded_genres_description": "Жанровете, изброени тук, са глобално изключени от вашата библиотека и няма да се показват в никакви изгледи.",
         "genre_table_rows_per_page": "Редове на страница",
-        "genre_table_page_info": "{0}–{1} от {2}",
         "missing_players_hint": "Липсват плейъри? {0}",
         "add_player_providers": "Добавяне на повече доставчици на плейъри",
         "add_audio_analysis_provider": "Добавяне на доставчик на аудио анализ",
@@ -431,8 +375,6 @@
         "audio_analysis_providers_description": "Управлявайте доставчици, които анализират аудиото ви",
         "audio_analysis": "Аудио анализ",
         "audio_analysis_coverage": {
-            "col_provider": "Доставчик",
-            "col_version": "Версия",
             "unavailable": "не е налично",
             "none": "—"
         },
@@ -459,21 +401,73 @@
         "diagnostics": "Диагностика",
         "setup_flow": {
             "setup_player_title": "Настройка на плейъра",
-            "external_default_title": "Продължете във вашия браузър"
+            "external_default_title": "Продължете във вашия браузър",
+            "setup_title": "Настройване на {0}",
+            "reconfigure_title": "Преконфигуриране на {0}"
         },
         "options": "Опции",
         "server_clock_offset": "Разлика във времето (между сървъра и това устройство)",
         "hass_controls": {
             "add_entity": "Добавяне на обект...",
+            "title": {
+                "volume_controls": "Изберете управление на силата на звука"
+            },
             "search_placeholder": "Търсене по обект, устройство или област...",
             "no_results": "Няма съответстващи обекти",
             "no_device": "Няма устройство",
-            "no_area": "Няма област"
+            "no_area": "Няма област",
+            "role": {
+                "volume": "Сила на звука",
+                "mute": "Без звук"
+            }
         },
         "known_issues": "Известни проблеми",
+        "provider_status_loading": "Зареждане",
         "provider_status_disabled": "Деактивиран",
         "provider_status_unknown": "Неизвестен",
-        "delete_player_title": "Да се изтрие ли {0}?"
+        "ha_kiosk_mode": {
+            "label": "Използване на целия екран в Home Assistant"
+        },
+        "delete_player_title": "Да се изтрие ли {0}?",
+        "server_logs_load_failed": "Зареждането на сървърните журнали е неуспешно",
+        "player_status": {
+            "available": "Наличен",
+            "needs_setup": "Изисква настройка",
+            "unavailable": "Не е наличен",
+            "disabled": "Деактивиран"
+        },
+        "player_status_label": "Статус",
+        "server_name": "Име на сървъра",
+        "server_internal_url": "Вътрешен URL",
+        "server_external_url": "Външен URL",
+        "server_remote_access": "Отдалечен достъп",
+        "music_sources_empty_title": "Все още няма музикални източници",
+        "music_sources_empty": "Свържете акаунт за музикална услуга или добавете локална библиотека, за да започнете да слушате.",
+        "source_access": {
+            "action": "Достъп",
+            "share_action": "Споделяне",
+            "title": "Достъп до {name}",
+            "description": "На кого принадлежи този музикален източник и кой друг може да го използва.",
+            "owner": "Собственик",
+            "household": "Домакинство",
+            "sharing": "Споделяне",
+            "shared_users": "Споделено с",
+            "select_members": "Изберете членове",
+            "shared_with_count": "Споделено с {count} член | Споделено с {count} членове",
+            "options": {
+                "private": "Частен",
+                "selected": "Избрани членове",
+                "members": "Всички членове",
+                "everyone": "Всеки"
+            },
+            "hints": {
+                "private": "Само собственикът може да използва този източник.",
+                "selected": "Собственикът и избраните по-долу членове.",
+                "members": "Всеки вписан член на домакинството, с изключение на гостите.",
+                "everyone": "Всеки потребител, включително гостите."
+            },
+            "updated": "Достъпът е актуализиран"
+        }
     },
     "show_info": "Показване на информация",
     "show_select_boxes": "Показване на полета за избор",
@@ -538,6 +532,8 @@
         "help": "Помощ",
         "import_file": "Импортиране на файл",
         "musical_key": "Музикален ключ",
+        "volume_down": "Намаляване на силата на звука",
+        "volume_up": "Увеличаване на силата на звука",
         "show_full_path": "Показване на пълния път",
         "show_menu": "Показване\/скриване на менюто",
         "show_context_menu": "Показване на контекстното меню"
@@ -769,17 +765,14 @@
         "token_copied": "Токенът е копиран в клипборда",
         "token_copy_failed": "Копирането на токена в клипборда не е успешно",
         "player_filter_hint": "Ограничете достъпа на този потребител само до избраните плейъри. Оставете празно за пълен достъп до всички плейъри.",
-        "provider_filter": "Филтър за доставчици на музика",
-        "provider_filter_hint": "Ограничете достъпа на този потребител само до избраните музикални доставчици. Оставете празно за пълен достъп до всички музикални доставчици.",
         "no_players_selected": "Всички плейъри (без ограничения)",
-        "no_providers_selected": "Всички доставчици (без ограничения)",
         "select_players": "Изберете плейъри",
-        "select_providers": "Изберете доставчици",
         "save_changes": "Запазване на промените",
         "update_password": "Актуализиране на паролата",
         "guest_role": "Гост",
         "tokens_load_failed": "Зареждането на токените за достъп не е успешно",
-        "users_load_failed": "Зареждането на потребителите не е успешно"
+        "users_load_failed": "Зареждането на потребителите не е успешно",
+        "service_role": "Услуга"
     },
     "login": {
         "subtitle": "Свържете се с вашия музикален сървър",
@@ -1039,7 +1032,8 @@
             "timeline_place_after_year": "След {0}",
             "timeline_place_between_years": "Между {0} и {1}",
             "player": "Плейър",
-            "choose_player": "Изберете плейър"
+            "choose_player": "Изберете плейър",
+            "landing_continue": "Продължете"
         },
         "ai_radio": {
             "actions": {
@@ -1105,6 +1099,8 @@
                 },
                 "host_placeholder": "Изберете хост",
                 "create_host_cta": "Създаване на хост",
+                "prompt_placeholder_copy_failed": "Копирането на {0} в буферната памет не е успешно",
+                "prompt_placeholder_copy_aria": "Копиране на {0}",
                 "option_key_placeholder": "напр. глас",
                 "option_value_placeholder": "напр. en_US-lessac-medium",
                 "add_option": "Добавяне на опция",
@@ -1130,7 +1126,8 @@
                     "default_voice": "По подразбиране",
                     "validation": {
                         "name_required": "Името на хоста е задължително"
-                    }
+                    },
+                    "default_language": "Следване на езика на сървъра"
                 }
             }
         }
@@ -1369,6 +1366,7 @@
     "musical_key": "Ключ",
     "audio_overlay_sound": "Звук",
     "audio_overlay_select_sound": "Изберете звук",
+    "audio_overlay_volume": "Сила на звука",
     "menu_edit_disable": "Изход от режим на редактиране",
     "media_type": "Тип на медията",
     "guest": {
@@ -1388,13 +1386,35 @@
     "error_generic": "Нещо се обърка. Моля, опитайте отново.",
     "artist_all_audiobooks": "Всички аудиокниги",
     "lights": "Светлини",
+    "volume": "Сила на звука",
     "player_select": {
-        "and_more": "...и още {0}"
+        "active_player_volume_only": "Показване на плъзгачите за силата на звука само за активните плейъри",
+        "and_more": "...и още {0}",
+        "disable_player_title": "Деактивиране на {0}?",
+        "rename_player": "Преименуване на плейъра",
+        "rename_player_description": "Въведете ново име за този плейър."
+    },
+    "visualizer": {
+        "title": "MilkDrop",
+        "quality_options": {
+            "low": "Ниско (таблети \/ телевизори)",
+            "medium": "Средно",
+            "high": "Високо"
+        }
     },
     "ai_dj_off": "Изкл.",
     "ai_dj_show_on_air": "В ефир: {0}",
     "menu": "Меню",
     "play_announcement_message": "Съобщение",
+    "play_announcement_message_placeholder": "Вечерята е готова!",
+    "play_announcement_playing": "Възпроизвеждане...",
+    "play_announcement_volume": "Сила на звука",
+    "play_announcement_hold_to_speak": "Задръжте бутона и говорете",
+    "play_announcement_connecting": "Свързване...",
+    "play_announcement_speaking": "Говорене",
+    "play_announcement_finishing": "Завършване...",
+    "play_announcement_mic_denied": "Music Assistant няма право да използва микрофона.",
+    "play_announcement_mic_failed": "Микрофонът не можа да бъде стартиран.",
     "home_assistant_menu": "Home Assistant",
     "playback_speed_value": "{0}x",
     "offline_ready": "Приложението е готово за работа офлайн",
@@ -1418,9 +1438,24 @@
     },
     "sidebar": {
         "title": "Странична лента",
+        "description": "Показва страничната лента за мобилни устройства.",
         "toggle": "Превключване на страничната лента",
         "expand": "Разгъване на страничната лента",
         "collapse": "Свиване на страничната лента"
     },
-    "loading_short": "Зареждане"
+    "loading_short": "Зареждане",
+    "audio_overlay_custom_sounds": "Персонализирани звуци",
+    "audio_overlay_add_custom": "Добавяне на персонализиран звук",
+    "audio_overlay_no_custom_sounds": "Все още не са добавени персонализирани звуци.",
+    "search_in": "Търсене в {0}...",
+    "pages": "Страници",
+    "migrate_playlist": {
+        "destination_label": "Дестинация",
+        "destination_placeholder": "Изберете дестинация",
+        "name_label": "Име на плейлиста",
+        "submit": "Мигриране"
+    },
+    "previous_track": "Предишна песен",
+    "next_track": "Следваща песен",
+    "autoplay_repeat_disabled": "Автоматичното възпроизвеждане е изключено автоматично, защото е включено повторение"
 }

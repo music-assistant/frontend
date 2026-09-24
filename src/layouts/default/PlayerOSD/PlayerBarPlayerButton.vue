@@ -12,6 +12,7 @@
     :aria-label="playerSelectLabel"
     :aria-expanded="store.showPlayersMenu"
     aria-haspopup="dialog"
+    data-tour="player_select"
     @click="togglePlayersMenu"
     @pointerenter="onPointerEnter"
   >

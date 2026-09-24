@@ -2,8 +2,7 @@
 import listviewItemSource from "@/components/ListviewItem.vue?raw";
 import providerDetailsSource from "@/components/ProviderDetails.vue?raw";
 import providerIconSource from "@/components/ProviderIcon.vue?raw";
-import providersSource from "@/views/settings/Providers.vue?raw";
-import globalStyles from "@/styles/global.css?raw";
+import providerRowSource from "@/components/settings/providers/ProviderRow.vue?raw";
 import utilities from "@/styles/style.css?inline";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { selectorsSetting, styleBlocks } from "./cascade";
@@ -17,20 +16,9 @@ function providerIcon(className = "") {
   return icon;
 }
 
-function rule(source: string, selector: string) {
-  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = source.match(new RegExp(`${escaped}\\s*\\{[^}]*\\}`));
-  if (!match) throw new Error(`${selector} no longer has a style rule`);
-  return match[0];
-}
-
 describe("provider icon gutters", () => {
   beforeEach(() => {
-    styles = [
-      utilities,
-      ...styleBlocks(providerIconSource),
-      rule(globalStyles, ".listitem-media-thumb"),
-    ].map((text) => {
+    styles = [utilities, ...styleBlocks(providerIconSource)].map((text) => {
       const element = document.createElement("style");
       element.textContent = text;
       document.head.appendChild(element);
@@ -59,12 +47,11 @@ describe("provider icon gutters", () => {
     expect(selectorsSetting(styles[0], icon, "margin-inline")).toHaveLength(1);
   });
 
-  it("takes the provider card spacing from its thumbnail class", () => {
-    expect(providersSource).toContain('class="listitem-media-thumb"');
-
-    const icon = providerIcon("listitem-media-thumb");
-    expect(selectorsSetting(styles[2], icon, "margin-left")).toHaveLength(0);
-    expect(selectorsSetting(styles[2], icon, "margin-right")).toHaveLength(1);
-    expect(getComputedStyle(icon).marginRight).toBe("10px");
+  it("spaces the provider card icon through its row layout", () => {
+    // the card lays the icon and details out in a gap-bearing flex row, so the
+    // icon is spaced by the layout rather than a margin of its own
+    expect(providerRowSource).toMatch(
+      /<div class="(?=[^"]*\bflex\b)(?=[^"]*\bgap-3\b)[^"]*">\s*<ProviderIcon/,
+    );
   });
 });

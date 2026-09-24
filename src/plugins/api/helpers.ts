@@ -11,7 +11,12 @@ import {
   MediaType,
   Player,
   PlayerQueue,
+  Playlist,
   PodcastEpisode,
+  ProviderFeature,
+  ProviderInstance,
+  ProviderMapping,
+  ProviderType,
   QueueItem,
 } from "./interfaces";
 
@@ -166,6 +171,30 @@ export const getProviderIconDomain = function (
 };
 
 /**
+ * The music services an item is mapped to, named after the service itself.
+ *
+ * Several accounts of the same service share one entry: which account holds the
+ * item is a detail of the mapping, not of the item. A mapping nothing can
+ * name is left out rather than shown as its raw domain.
+ */
+export function mappedServices(item: {
+  provider_mappings: ProviderMapping[];
+}): Array<{ domain: string; name: string }> {
+  const seen = new Set<string>();
+  const services: Array<{ domain: string; name: string }> = [];
+  for (const mapping of item.provider_mappings) {
+    if (seen.has(mapping.provider_domain)) continue;
+    const name =
+      api.getProviderManifest(mapping.provider_domain)?.name ||
+      api.getProvider(mapping.provider_instance)?.name;
+    if (!name) continue;
+    seen.add(mapping.provider_domain);
+    services.push({ domain: mapping.provider_domain, name });
+  }
+  return services;
+}
+
+/**
  * Provider icon domain for media listing tiles. Playlists always surface their
  * source provider icon: a playlist listing is library-only by definition, so a
  * bookshelf icon would be redundant and the source is the useful signal. Every
@@ -266,6 +295,42 @@ export const getCollectionMediaTypeFromItemId = function (itemId: string) {
   return Object.values(MediaType).includes(itemIdType as MediaType)
     ? (itemIdType as MediaType)
     : MediaType.UNKNOWN;
+};
+
+/**
+ * Providers that a static library playlist can be migrated to: the builtin
+ * provider and streaming providers that can create playlists and edit
+ * their tracks. Returns an empty list for dynamic, non-library, or
+ * non-track playlists (migration only moves tracks). A provider the
+ * playlist is already mapped to is still included, so same-provider-instance
+ * copies are allowed.
+ */
+export const getPlaylistMigrationProviders = function (
+  playlist: Playlist,
+): ProviderInstance[] {
+  if (
+    playlist.is_dynamic ||
+    playlist.provider !== "library" ||
+    !playlist.supported_mediatypes.includes(MediaType.TRACK)
+  )
+    return [];
+  return Object.values(api.providers)
+    .filter(
+      (provider) =>
+        provider.available &&
+        provider.type === ProviderType.MUSIC &&
+        (provider.domain === "builtin" || provider.is_streaming_provider) &&
+        (provider.supported_features.includes(
+          ProviderFeature.PLAYLIST_CREATE,
+        ) ||
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_TRACKS,
+          )) &&
+        provider.supported_features.includes(
+          ProviderFeature.PLAYLIST_TRACKS_EDIT,
+        ),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 };
 
 /**

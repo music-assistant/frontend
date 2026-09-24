@@ -406,6 +406,7 @@ import {
   VISUALIZER_PALETTE_RAMP_DEFAULT,
   VISUALIZER_PALETTE_RAMP_STEP,
 } from "@/composables/visualizer/state";
+import { expertModeSetting } from "@/helpers/expert_mode";
 import { listPresetNames } from "@/helpers/visualizer/presetLibrary";
 import {
   DEFAULT_QUALITY,
@@ -418,7 +419,7 @@ const QUALITY_TIERS = Object.keys(QUALITY_PROFILES);
 const PRESET_MODES = ["random", "random_favorites", "fixed"];
 
 const { getPreference, setPreference } = useUserPreferences();
-const enabledPref = getPreference("visualizer_enabled", false);
+const enabledPref = computed(() => expertModeSetting("visualizer_enabled"));
 const qualityPref = getPreference<string>(
   "visualizer_quality",
   DEFAULT_QUALITY,

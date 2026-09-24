@@ -77,6 +77,18 @@ describe("visualizerEnabledForPlayer", () => {
     storeMock.store.currentUser = { preferences: {} };
   });
 
+  it("follows the expert mode until the preference is set", () => {
+    storeMock.store.currentUser.preferences["expert_mode"] = true;
+    expect(visualizerEnabledForPlayer("kitchen")).toBe(true);
+
+    storeMock.store.currentUser.preferences["expert_mode"] = false;
+    expect(visualizerEnabledForPlayer("kitchen")).toBe(false);
+
+    storeMock.store.currentUser.preferences["expert_mode"] = true;
+    storeMock.store.currentUser.preferences["visualizer_enabled"] = false;
+    expect(visualizerEnabledForPlayer("kitchen")).toBe(false);
+  });
+
   it("honours the preference, with the per-player one winning", () => {
     storeMock.store.currentUser.preferences["visualizer_enabled"] = true;
     expect(visualizerEnabledForPlayer("kitchen")).toBe(true);

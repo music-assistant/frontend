@@ -22,6 +22,8 @@
           <create-playlist-dialog />
           <create-smart-playlist-dialog />
           <import-playlist-dialog />
+          <migrate-playlist-dialog />
+          <playlist-access-dialog />
           <play-announcement-dialog />
           <merge-genre-dialog />
           <delete-genre-dialog />
@@ -40,6 +42,7 @@
         </div>
       </SidebarInset>
       <PlayerSelect />
+      <TourOverlay />
     </SidebarProvider>
   </v-main>
 </template>
@@ -55,6 +58,7 @@ import AppSidebar from "@/components/navigation/AppSidebar.vue";
 import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
 import PlayerGroupPlaybackDialog from "@/components/PlayerGroupPlaybackDialog.vue";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
+import TourOverlay from "@/components/tour/TourOverlay.vue";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   MediaType,
@@ -72,8 +76,10 @@ import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
 import CreateSmartPlaylistDialog from "./CreateSmartPlaylistDialog.vue";
 import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
+import MigratePlaylistDialog from "./MigratePlaylistDialog.vue";
 import PlayAnnouncementDialog from "./PlayAnnouncementDialog.vue";
 import PlayerSelect from "./PlayerSelect.vue";
+import PlaylistAccessDialog from "./PlaylistAccessDialog.vue";
 
 const route = useRoute();
 

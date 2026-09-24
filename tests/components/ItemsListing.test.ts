@@ -1,8 +1,11 @@
 import ItemsListing from "@/components/ItemsListing.vue";
-import type { MusicAssistantApi } from "@/plugins/api";
-import type { Track } from "@/plugins/api/interfaces";
-import { eventbus } from "@/plugins/eventbus";
-import { store } from "@/plugins/store";
+import { api, type MusicAssistantApi } from "@/plugins/api";
+import type { ProviderInstance, Track } from "@/plugins/api/interfaces";
+import {
+  eventbus,
+  type DeleteConfirmationDialogEvent,
+} from "@/plugins/eventbus";
+import { store as storeModule } from "@/plugins/store";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { genre } from "../fixtures/genre";
@@ -118,6 +121,9 @@ vi.mock("@/components/PanelviewItem.vue", () => stubComponent("PanelviewItem"));
 vi.mock("@/components/PanelviewItemCompact.vue", () =>
   stubComponent("PanelviewItemCompact"),
 );
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & { mobileLayout: boolean };
 
 /**
  * Number of handlers the real eventbus currently holds for the listing's
@@ -476,3 +482,186 @@ describe("ItemsListing per-page search", () => {
     ).toBe("");
   });
 });
+
+describe("ItemsListing select all", () => {
+  const nativeConfirm = vi.fn();
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    store.prevState = undefined;
+    store.mobileLayout = false;
+    nativeConfirm.mockReset();
+    // the test environment has no window.confirm, so a native popup would throw
+    // here; the stub turns that into a readable assertion instead
+    vi.stubGlobal("confirm", nativeConfirm);
+    vi.spyOn(eventbus, "emit");
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.mocked(eventbus.emit).mockRestore();
+  });
+
+  it("selects a small listing without asking", async () => {
+    const listing = await selectAll(3);
+
+    expect(nativeConfirm).not.toHaveBeenCalled();
+    expect(confirmationRequest()).toBeUndefined();
+    expect(selection(listing)).toHaveLength(1);
+  });
+
+  it("asks first when the listing is large enough to be a misclick", async () => {
+    const listing = await selectAll(500);
+    const request = confirmationRequest();
+
+    expect(nativeConfirm).not.toHaveBeenCalled();
+    expect(request?.message).toBe("select_all_confirmation");
+    // selecting items destroys nothing, so the red button would be a lie
+    expect(request?.destructive).toBe(false);
+    expect(selection(listing)).toHaveLength(0);
+
+    await request?.onConfirm();
+    await flushPromises();
+
+    expect(selection(listing)).toHaveLength(1);
+  });
+});
+
+describe("ItemsListing source selector", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    store.prevState = undefined;
+    for (const key of Object.keys(api.providers)) delete api.providers[key];
+    api.providers["spotify--1"] = {
+      instance_id: "spotify--1",
+      name: "Spotify",
+      domain: "spotify",
+    } as ProviderInstance;
+  });
+
+  /** Mounts a listing whose items come from the library or from one provider. */
+  function mountSourceListing(
+    props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+  ) {
+    const loadItems = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "artistalbums",
+      path: "artistalbums",
+      loadPagedData: undefined,
+      loadItems,
+      providerFilterOptions: ["spotify--1"],
+      requireProviderSelection: true,
+      libraryFilterOption: true,
+      ...props,
+    });
+    return { listing, loadItems };
+  }
+
+  function sourceOptions(listing: ReturnType<typeof mountListingRaw>) {
+    const items = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as {
+      label?: string;
+      subItems?: { label?: string; selected?: boolean; action?: () => void }[];
+    }[];
+    return items.find((item) => item.label === "tooltip.select_provider")
+      ?.subItems;
+  }
+
+  it("offers the library beside the providers, and starts there", async () => {
+    const { listing, loadItems } = mountSourceListing();
+    await flushPromises();
+
+    expect(sourceOptions(listing)?.map((option) => option.label)).toEqual([
+      "source_library",
+      "Spotify",
+    ]);
+    expect(sourceOptions(listing)?.[0].selected).toBe(true);
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: ["library"] }),
+    );
+  });
+
+  it("starts on the source the page asked for", async () => {
+    const { listing, loadItems } = mountSourceListing({
+      defaultProvider: "spotify--1",
+    });
+    await flushPromises();
+
+    expect(sourceOptions(listing)?.[1].selected).toBe(true);
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: ["spotify--1"] }),
+    );
+  });
+
+  it("reloads from the source that is picked", async () => {
+    const { listing, loadItems } = mountSourceListing();
+    await flushPromises();
+    loadItems.mockClear();
+
+    sourceOptions(listing)?.[1].action?.();
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: ["spotify--1"] }),
+    );
+    expect(sourceOptions(listing)?.[1].selected).toBe(true);
+  });
+
+  it("leaves the library out when the page does not offer it", async () => {
+    api.providers["tidal--1"] = {
+      instance_id: "tidal--1",
+      name: "Tidal",
+      domain: "tidal",
+    } as ProviderInstance;
+    const { listing } = mountSourceListing({
+      libraryFilterOption: false,
+      providerFilterOptions: ["spotify--1", "tidal--1"],
+    });
+    await flushPromises();
+
+    expect(sourceOptions(listing)?.map((option) => option.label)).toEqual([
+      "Spotify",
+      "Tidal",
+    ]);
+  });
+});
+
+/** Mounts a listing of `total` items and asks it to select them all. */
+async function selectAll(total: number) {
+  const listing = mountListingRaw({
+    allowKeyHooks: true,
+    total,
+    loadPagedData: vi.fn().mockResolvedValue([track({ item_id: "1" })]),
+  });
+  await flushPromises();
+
+  document.dispatchEvent(
+    new KeyboardEvent("keydown", { key: "a", ctrlKey: true }),
+  );
+  await flushPromises();
+  return listing;
+}
+
+function selection(listing: ReturnType<typeof mountListingRaw>) {
+  return (listing.vm as unknown as { selectedItems: Track[] }).selectedItems;
+}
+
+function confirmationRequest() {
+  // the emitter types its payload per event, which a call list cannot express
+  const calls = vi.mocked(eventbus.emit).mock.calls as unknown as [
+    string,
+    DeleteConfirmationDialogEvent,
+  ][];
+  return calls.find(([event]) => event === "deleteConfirmationDialog")?.[1];
+}

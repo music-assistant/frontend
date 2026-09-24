@@ -6,6 +6,7 @@
 // duplicated per component.
 import api from "@/plugins/api";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
+import { RepeatMode } from "@/plugins/api/interfaces";
 import type { ItemMapping } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { computed } from "vue";
@@ -25,6 +26,16 @@ export function useQueueModes() {
     () => queue.value?.autoplay_enabled === true,
   );
 
+  // Repeat one/all temporarily suppresses autoplay without changing the saved
+  // preference the server keeps for the queue. Older servers keep autoplay
+  // running during repeat, so the lock UI only shows when the server actually
+  // enforces it.
+  const repeatLocked = computed(() => {
+    if (!api.supportsRepeatAutoplayLock) return false;
+    const repeatMode = queue.value?.repeat_mode;
+    return repeatMode === RepeatMode.ONE || repeatMode === RepeatMode.ALL;
+  });
+
   // Autoplay only applies to an active queue playing regular tracks, and is
   // moot while dynamic mode is active (the queue already refills itself) or for
   // infinite streams.
@@ -39,6 +50,7 @@ export function useQueueModes() {
   const setAutoplay = (enabled: boolean) => {
     const q = queue.value;
     if (!q) return;
+    if (enabled && repeatLocked.value) return;
     api.queueCommandAutoplay(q.queue_id, enabled);
   };
 
@@ -47,6 +59,7 @@ export function useQueueModes() {
     sources,
     dynamicModeActive,
     autoplayEnabled,
+    repeatLocked,
     autoplayApplicable,
     setAutoplay,
   };
