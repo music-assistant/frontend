@@ -129,14 +129,13 @@ describe("visualizer dashboard default", () => {
   });
 
   // show_on_dashboards describes cast displays, not the user's own screens, so
-  // it must not reach a regular session that has never picked.
+  // a regular session neither reads it nor follows it.
   it("leaves a regular session off when no preference is stored", async () => {
     const { useVisualizer, visualizerEnabledForPlayer } =
       await importComposable();
-    // Hosting a view starts the module-level watch that fetches the setting.
     const { visualizerEnabledPref } = useVisualizer();
     await flushPromises();
-    expect(relayMocks.visualizerShownOnDashboards).toHaveBeenCalled();
+    expect(relayMocks.visualizerShownOnDashboards).not.toHaveBeenCalled();
     expect(visualizerEnabledPref.value).toBe(false);
     expect(visualizerEnabledForPlayer()).toBe(false);
   });

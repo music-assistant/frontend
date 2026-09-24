@@ -88,10 +88,14 @@ describe("visualizer capability reporting", () => {
 
   it("swallows a failed report rather than rejecting into the caller", async () => {
     apiMock.sendCommand.mockRejectedValueOnce(new Error("plugin exploded"));
-    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    await expect(
-      reportVisualizerCapability("butterchurn"),
-    ).resolves.toBeUndefined();
+    try {
+      await expect(
+        reportVisualizerCapability("butterchurn"),
+      ).resolves.toBeUndefined();
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

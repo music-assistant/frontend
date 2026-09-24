@@ -14,7 +14,15 @@ import {
 } from "@/helpers/visualizer/quality";
 import { TV_TARGET_FPS } from "@/helpers/visualizer/adaptiveQuality";
 import { flushPromises, mount } from "@vue/test-utils";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 type ColorCallback = (palette: Record<string, unknown>) => void;
 type StateCallback = (state: string) => void;
@@ -135,8 +143,13 @@ const mountCanvas = async () => {
 };
 
 describe("VisualizerCanvas on a cast dashboard", () => {
+  const canvasDimensions = ["clientWidth", "clientHeight"] as const;
+  const originalDimensions = canvasDimensions.map((dimension) =>
+    Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype, dimension),
+  );
+
   beforeAll(() => {
-    for (const dimension of ["clientWidth", "clientHeight"]) {
+    for (const dimension of canvasDimensions) {
       Object.defineProperty(HTMLCanvasElement.prototype, dimension, {
         configurable: true,
         value: 640,
@@ -149,6 +162,18 @@ describe("VisualizerCanvas on a cast dashboard", () => {
         disconnect() {}
       },
     );
+  });
+
+  afterAll(() => {
+    canvasDimensions.forEach((dimension, index) => {
+      const original = originalDimensions[index];
+      if (original) {
+        Object.defineProperty(HTMLCanvasElement.prototype, dimension, original);
+      } else {
+        Reflect.deleteProperty(HTMLCanvasElement.prototype, dimension);
+      }
+    });
+    vi.unstubAllGlobals();
   });
 
   beforeEach(() => {

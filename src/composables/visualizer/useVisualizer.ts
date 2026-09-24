@@ -63,11 +63,13 @@ function startDashboardDefaultWatch(): void {
     watch(
       () => visualizerProviderAvailable(),
       async (available) => {
-        if (!available) return;
+        // only a dashboard viewer reads the plugin setting; other sessions have
+        // their own preference
+        if (!available || !authManager.isDashboardViewer()) return;
         // A cast/TV display that cannot render MilkDrop never mounts the
         // canvas (which reports the capable case), so its probe result would
         // stay invisible; report the negative from here instead.
-        if (authManager.isDashboardViewer() && !isVisualizerSupported()) {
+        if (!isVisualizerSupported()) {
           void reportVisualizerCapability("none");
         }
         dashboardDefaultEnabled.value = await visualizerShownOnDashboards();
