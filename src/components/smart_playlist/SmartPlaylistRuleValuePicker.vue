@@ -26,7 +26,7 @@
       />
       <div class="max-h-56 overflow-y-auto flex flex-col min-h-[80px]">
         <div v-if="isSearching" class="flex justify-center py-6">
-          <Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />
+          <Spinner class="text-muted-foreground" />
         </div>
         <template v-else-if="displayedOptions.length > 0">
           <button
@@ -67,11 +67,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import api from "@/plugins/api";
 import type { Album, Artist, Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Loader2, Plus } from "@lucide/vue";
+import { Plus } from "@lucide/vue";
 import { useDebounceFn } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
 

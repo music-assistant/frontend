@@ -5,9 +5,10 @@
       :variant="variant"
       data-testid="invitation-share-primary"
       :disabled="sharing || !joinLink"
+      :aria-busy="sharing || undefined"
       @click="nativeShareAvailable ? shareInvitation() : copyLink()"
     >
-      <LoaderCircle v-if="sharing" class="size-4 animate-spin" />
+      <Spinner v-if="sharing" />
       <Share2 v-else-if="nativeShareAvailable" class="size-4" />
       <Check v-else-if="copied" class="size-4" />
       <Copy v-else class="size-4" />
@@ -45,9 +46,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Spinner } from "@/components/ui/spinner";
 import { createInvitationFile } from "@/helpers/invitation_share";
 import { copyToClipboard } from "@/helpers/utils";
-import { Check, ChevronDown, Copy, LoaderCircle, Share2 } from "@lucide/vue";
+import { Check, ChevronDown, Copy, Share2 } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import { toast } from "vue-sonner";
 
