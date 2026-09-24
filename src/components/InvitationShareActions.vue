@@ -5,6 +5,7 @@
       :variant="variant"
       data-testid="invitation-share-primary"
       :disabled="sharing || !joinLink"
+      :aria-busy="sharing || undefined"
       @click="nativeShareAvailable ? shareInvitation() : copyLink()"
     >
       <Spinner v-if="sharing" />

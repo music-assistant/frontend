@@ -114,6 +114,7 @@
         type="button"
         class="show-card__action"
         :disabled="isStopping"
+        :aria-busy="isStopping || undefined"
         :aria-label="$t('providers.ai_radio.card.stop')"
         @click.stop="onStop"
       >
@@ -125,6 +126,7 @@
         type="button"
         class="show-card__action show-card__action--reveal"
         :disabled="isStarting"
+        :aria-busy="isStarting || undefined"
         :aria-label="$t('providers.ai_radio.card.play')"
         @click.stop="onPlay"
       >

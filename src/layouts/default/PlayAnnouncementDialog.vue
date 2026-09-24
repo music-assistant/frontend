@@ -127,6 +127,7 @@
           type="submit"
           form="play-announcement-form"
           :disabled="sending || sent || !message.trim()"
+          :aria-busy="sending || undefined"
         >
           <Spinner v-if="sending" />
           <Check v-else-if="sent" class="size-4" />
