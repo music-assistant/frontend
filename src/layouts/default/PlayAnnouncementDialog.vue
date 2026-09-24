@@ -128,7 +128,7 @@
           form="play-announcement-form"
           :disabled="sending || sent || !message.trim()"
         >
-          <LoaderCircle v-if="sending" class="size-4 animate-spin" />
+          <Spinner v-if="sending" />
           <Check v-else-if="sent" class="size-4" />
           {{
             sending
@@ -142,11 +142,12 @@
 </template>
 
 <script setup lang="ts">
-import { Check, LoaderCircle, Mic } from "@lucide/vue";
+import { Check, Mic } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
