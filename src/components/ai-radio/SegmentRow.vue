@@ -330,7 +330,7 @@ const maxChars = computed({
 });
 
 const allowPost = computed({
-  get: () => props.segment.allowPost ?? false,
+  get: () => props.segment.allowPost,
   set: (value: boolean) =>
     emit("update", { ...props.segment, allowPost: value }),
 });
