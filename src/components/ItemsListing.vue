@@ -2375,12 +2375,6 @@ async function selectEveryItem() {
   flex-basis: 8.33%;
   padding: 8px;
 }
-.col-10 {
-  width: 10%;
-  max-width: 10%;
-  flex-basis: 10%;
-  padding: 8px;
-}
 .content-tabs {
   padding: 10px 16px 0;
   max-width: 100%;

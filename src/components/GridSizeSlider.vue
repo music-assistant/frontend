@@ -2,18 +2,25 @@
   Inline cover-size slider for a listing's view-mode menu.
 
   Rendered as a non-selectable row so dragging adjusts the grid in place
-  without closing the menu. Keeps its own value: the menu hands it a snapshot
-  of its items, so the size it was opened with is only where it starts.
+  without closing the menu. The menu's arrow keys reach the slider's thumb
+  like any other row; once there, the slider keeps its keys to itself, so
+  they change the size rather than move through the menu (Escape still
+  closes it). Keeps its own value: the menu hands it a snapshot of its items,
+  so the size it was opened with is only where it starts.
 -->
 <template>
   <div
     class="grid-size-row"
     @pointerdown.stop
     @click.stop
+    @keydown.up.stop
+    @keydown.down.stop
     @keydown.left.stop
     @keydown.right.stop
     @keydown.home.stop
     @keydown.end.stop
+    @keydown.page-up.stop
+    @keydown.page-down.stop
   >
     <Grid3x3 :size="18" class="grid-size-row__icon" aria-hidden="true" />
     <Slider
