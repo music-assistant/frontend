@@ -83,19 +83,32 @@
                 :side-offset="6"
                 class="max-h-[70vh] overflow-y-auto"
               >
-                <DropdownMenuItem
+                <template
                   v-for="subItem of menuItem.subItems.filter((x) => !x.hide)"
                   :key="subItem.label"
-                  :disabled="subItem.disabled === true"
-                  class="gap-3"
-                  @select="(e: Event) => onSubItemSelect(e, menuItem, subItem)"
                 >
-                  <MenuItemIcon :icon="subItem.icon" />
-                  <span class="min-w-0 flex-1 truncate">{{
-                    menuItemLabel(subItem)
-                  }}</span>
-                  <Check v-if="subItem.selected" class="ml-auto size-4" />
-                </DropdownMenuItem>
+                  <!-- custom inline control; renders its own row and manages
+                       its own interaction without closing the menu -->
+                  <component
+                    :is="subItem.component"
+                    v-if="subItem.component"
+                    v-bind="subItem.componentProps"
+                  />
+                  <DropdownMenuItem
+                    v-else
+                    :disabled="subItem.disabled === true"
+                    class="gap-3"
+                    @select="
+                      (e: Event) => onSubItemSelect(e, menuItem, subItem)
+                    "
+                  >
+                    <MenuItemIcon :icon="subItem.icon" />
+                    <span class="min-w-0 flex-1 truncate">{{
+                      menuItemLabel(subItem)
+                    }}</span>
+                    <Check v-if="subItem.selected" class="ml-auto size-4" />
+                  </DropdownMenuItem>
+                </template>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
             <DropdownMenuItem
