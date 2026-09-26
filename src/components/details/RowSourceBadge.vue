@@ -11,7 +11,6 @@
       >
         <ProviderIcon v-if="domain" :domain="domain" :size="12" />
         {{ label }}
-        <ChevronDown class="opacity-60" />
       </Badge>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="start">
@@ -60,7 +59,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { $t } from "@/plugins/i18n";
-import { ChevronDown } from "@lucide/vue";
 import { computed } from "vue";
 
 export interface Props {
