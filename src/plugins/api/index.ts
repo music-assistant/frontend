@@ -92,6 +92,10 @@ const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
 // The player_id argument on music/browse landed in API schema 61.
 const BROWSE_PLAYER_ID_SCHEMA_VERSION = 61;
 
+// dashboard/viewer_preferences and the milkdrop_visualizer config/report_capability
+// commands landed in API schema 78.
+const DASHBOARD_VISUALIZER_SCHEMA_VERSION = 78;
+
 // Repeat one/all masking the effective autoplay flag landed in API schema 69.
 const REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION = 69;
 
@@ -3111,6 +3115,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server implements the dashboard visualizer commands (schema >= 78). */
+  public get supportsDashboardVisualizer(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      DASHBOARD_VISUALIZER_SCHEMA_VERSION
     );
   }
 
