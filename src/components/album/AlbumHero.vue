@@ -37,7 +37,7 @@
 
           <div class="album-hero__meta">
             <div v-if="item.artists.length" class="album-hero__line">
-              <Music :size="16" class="album-hero__icon" />
+              <ArtistIcon class="album-hero__icon" />
               <span class="album-hero__line-text">
                 <template
                   v-for="(artist, index) in item.artists"
@@ -71,7 +71,7 @@
               v-if="api.supportsPlayMediaShuffle"
               :icon="Shuffle"
               :label="$t('shuffle')"
-              :icon-only="isPhone"
+              :icon-only="isPhone && !isTablet"
               :disabled="!store.activePlayer"
               @click="api.playMedia(item, undefined, { shuffle: true })"
             />
@@ -79,7 +79,7 @@
               v-if="radioRelevant(item)"
               :icon="Orbit"
               :label="$t('album_radio')"
-              :icon-only="isPhone"
+              :icon-only="isPhone && !isTablet"
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />
@@ -112,6 +112,7 @@ import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
@@ -124,10 +125,10 @@ import {
   type Artist,
   type ItemMapping,
 } from "@/plugins/api/interfaces";
-import { isPhoneSizedScreen } from "@/plugins/breakpoint";
+import { isPhoneSizedScreen, isTabletSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { Disc, Music, Orbit, Shuffle } from "@lucide/vue";
+import { Disc, Orbit, Shuffle } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
@@ -151,6 +152,7 @@ const emit = defineEmits<{
 const router = useRouter();
 
 const isPhone = computed(() => isPhoneSizedScreen());
+const isTablet = computed(() => isTabletSizedScreen());
 
 const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
@@ -193,6 +195,7 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   width: 100%;
   min-width: 0;
 }
+
 .album-hero__cover {
   width: 200px;
   height: 200px;
@@ -201,6 +204,7 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
+
 .album-hero__text {
   display: flex;
   flex: 1;
@@ -223,11 +227,13 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
 .album-hero__version {
   font-size: 0.6em;
   letter-spacing: 0;
   color: rgba(255, 255, 255, 0.7);
 }
+
 .album-hero__explicit {
   display: inline-flex;
   align-items: center;
@@ -253,21 +259,25 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   color: rgba(255, 255, 255, 0.85);
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
+
 .album-hero__line {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
 }
+
 .album-hero__icon {
   flex: none;
 }
+
 .album-hero__line-text {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 /* the artists read as links in the line of text, so the button chrome goes */
 .album-hero__link {
   display: inline;
@@ -279,14 +289,17 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   vertical-align: baseline;
   cursor: pointer;
 }
+
 .album-hero__link:hover {
   text-decoration: underline;
 }
+
 .album-hero__link:focus-visible {
   outline: 2px solid rgb(var(--v-theme-primary));
   outline-offset: 2px;
   border-radius: 4px;
 }
+
 .album-hero__sep {
   margin: 0 4px;
   opacity: 0.5;
@@ -306,6 +319,7 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   flex-wrap: wrap;
   gap: 8px;
 }
+
 .album-hero__chip {
   display: inline-flex;
   align-items: center;
@@ -318,6 +332,7 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   font-weight: 500;
   white-space: nowrap;
 }
+
 .album-hero__chip-sep {
   opacity: 0.4;
 }
@@ -328,26 +343,62 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
     align-items: stretch;
     gap: 12px;
   }
+
   .album-hero__cover {
     width: 132px;
     height: 132px;
   }
+
   .album-hero__name {
     font-size: 30px;
     letter-spacing: -0.7px;
     line-height: 1.1;
   }
+
   .album-hero__meta {
     font-size: 14px;
   }
+
   .album-hero__actions {
+    display: grid;
+    grid-template-columns: minmax(0, 300px) repeat(2, max-content);
+    align-items: center;
     gap: 10px;
+    max-width: 100%;
+    min-width: 0;
   }
+
+  .album-hero__actions > * {
+    justify-self: start;
+  }
+
+  .album-hero__actions > :not(:first-child) {
+    min-width: max-content;
+  }
+
   .album-hero__actions .album-hero__play {
-    flex: 1;
+    justify-self: start;
+    width: 100%;
+    min-width: 0;
   }
-  .album-hero--phone .album-hero__chips {
-    justify-content: flex-start;
+
+  .album-hero__actions :deep([data-slot="button-group"]) {
+    display: flex;
+    width: 100% !important;
+    max-width: 300px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .album-hero__actions
+    :deep([data-slot="button-group"] > [data-slot="button"]:first-child) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .album-hero__actions
+    :deep([data-slot="button-group"] > [data-slot="button"]:last-child) {
+    flex: 0 0 auto;
   }
 }
 </style>

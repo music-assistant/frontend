@@ -37,7 +37,7 @@
 
           <div class="track-hero__meta">
             <div v-if="item.artists.length" class="track-hero__line">
-              <Music :size="16" class="track-hero__icon" />
+              <ArtistIcon class="track-hero__icon" />
               <span class="track-hero__line-text">
                 <template
                   v-for="(artist, index) in item.artists"
@@ -88,7 +88,7 @@
               v-if="radioRelevant(item)"
               :icon="Orbit"
               :label="$t('track_radio')"
-              :icon-only="isPhone"
+              :icon-only="isPhone && !isTablet"
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />
@@ -124,6 +124,7 @@ import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
@@ -136,9 +137,9 @@ import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type { Track } from "@/plugins/api/interfaces";
-import { isPhoneSizedScreen } from "@/plugins/breakpoint";
+import { isPhoneSizedScreen, isTabletSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
-import { Disc, Music, Orbit } from "@lucide/vue";
+import { Disc, Orbit } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
@@ -158,6 +159,7 @@ const emit = defineEmits<{
 const router = useRouter();
 
 const isPhone = computed(() => isPhoneSizedScreen());
+const isTablet = computed(() => isTabletSizedScreen());
 
 const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
@@ -348,10 +350,43 @@ const gotoItem = function (
     font-size: 14px;
   }
   .track-hero__actions {
+    display: grid;
+    grid-template-columns: minmax(0, 300px) repeat(4, max-content);
+    align-items: center;
     gap: 10px;
+    max-width: 100%;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  .track-hero__actions > * {
+    justify-self: start;
+  }
+  .track-hero__actions > :not(:first-child) {
+    min-width: max-content;
   }
   .track-hero__actions .track-hero__play {
-    flex: 1;
+    justify-self: start;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .track-hero__actions :deep([data-slot="button-group"]) {
+    display: flex;
+    width: 100% !important;
+    max-width: 300px;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .track-hero__actions
+    :deep([data-slot="button-group"] > [data-slot="button"]:first-child) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .track-hero__actions :deep(.detail-hero-button > span) {
+    display: block;
+    flex: 1 1 0;
+    min-width: 0;
+    width: 0;
   }
   .track-hero__badge {
     width: 44px;

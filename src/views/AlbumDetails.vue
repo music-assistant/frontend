@@ -49,6 +49,7 @@
         <!-- other versions -->
         <MediaRowList
           v-else-if="rowId === 'other_versions' && showRow(versionItems)"
+          class="media-rows--other-versions"
           :title="$t('other_versions')"
           :meta="versionItems?.length ? String(versionItems.length) : undefined"
           :items="versionItems"

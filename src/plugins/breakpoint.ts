@@ -52,6 +52,7 @@ window.addEventListener("resize", () => {
 
 /** Width up to which the screen is laid out for a phone. */
 const PHONE_LAYOUT_WIDTH = 769;
+const TABLET_LAYOUT_WIDTH = 1100;
 
 /**
  * The screen a phone on its side presents: too short to lay out for a desktop,
@@ -77,6 +78,11 @@ export const isPhoneSizedScreen = () =>
   state.width < PHONE_LAYOUT_WIDTH ||
   (state.height < PHONE_LANDSCAPE_HEIGHT &&
     state.width < PHONE_LANDSCAPE_WIDTH);
+
+/** Whether the screen should use the tablet detail layout. */
+export const isTabletSizedScreen = () =>
+  DEVICE_TYPE === "tablet" ||
+  (!isPhoneSizedScreen() && state.width < TABLET_LAYOUT_WIDTH);
 
 type Condition = "lt" | "gt";
 type Key =
