@@ -218,6 +218,8 @@ export function useArtistRowData(
     appearsOnItems,
     similarArtistItems,
     albumsMeta,
+    albumsSource,
+    singlesSource,
     albumsSourceDisplay,
     singlesSourceDisplay,
     topTracksSourceDisplay,

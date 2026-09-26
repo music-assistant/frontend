@@ -2266,6 +2266,7 @@
     "artist_topalbums": "Top albums",
     "in_library": "In your library",
     "artist_no_library_albums": "You don't have any albums in your library for this artist.",
+    "artist_no_library_singles": "You don't have any singles or EPs in your library for this artist.",
     "artist_no_library_tracks": "You don't have any tracks in your library for this artist.",
     "artist_all_albums": "All albums",
     "artist_all_tracks": "All tracks",

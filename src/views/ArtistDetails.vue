@@ -34,7 +34,7 @@
           :source-domain="albumsSourceDisplay?.domain"
           :items="albumItems"
           :view-all-to="listingRoute('albums')"
-          :empty-message="$t('artist_row_empty')"
+          :empty-message="albumsEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         />
@@ -50,7 +50,7 @@
           :source-domain="singlesSourceDisplay?.domain"
           :items="singleItems"
           :view-all-to="listingRoute('singles')"
-          :empty-message="$t('artist_row_empty')"
+          :empty-message="singlesEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         />
@@ -244,11 +244,26 @@ const {
   appearsOnItems,
   similarArtistItems,
   albumsMeta,
+  albumsSource,
+  singlesSource,
   albumsSourceDisplay,
   singlesSourceDisplay,
   topTracksSourceDisplay,
   similarArtistsSourceDisplay,
 } = useArtistRowData(itemDetails, visibleRows);
+
+// an empty release row explains the library case; from a provider source the
+// badge already names it, so a neutral line is enough
+const albumsEmptyMessage = computed(() =>
+  albumsSource.value === "library"
+    ? $t("artist_no_library_albums")
+    : $t("artist_row_empty"),
+);
+const singlesEmptyMessage = computed(() =>
+  singlesSource.value === "library"
+    ? $t("artist_no_library_singles")
+    : $t("artist_row_empty"),
+);
 
 // how much each row currently holds, for the editor's per-row meta line (it
 // adds the source itself)
