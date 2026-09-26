@@ -19,6 +19,7 @@
       :library-filter-option="config.libraryFilterOption"
       :default-provider="config.defaultProvider"
       :show-album-type-filter="config.showAlbumTypeFilter"
+      :show-play-all="config.showPlayAll"
       :show-track-number="config.showTrackNumber"
       :show-refresh-button="false"
       :sort-keys="config.sortKeys"
@@ -65,6 +66,7 @@ interface ListingConfig {
   sortKeys: string[];
   loadItems: (params: LoadDataParams) => Promise<MediaItemType[]>;
   showAlbumTypeFilter: boolean;
+  showPlayAll: boolean;
   showFavoritesOnlyFilter: boolean;
   showProviderFilter: boolean;
   showTrackNumber: boolean;
@@ -153,6 +155,7 @@ const config = computed<ListingConfig | undefined>(() => {
         labelKey: artistRows.definition("albums").labelKey,
         path: "artistalbums",
         showAlbumTypeFilter: true,
+        showPlayAll: true,
         emptyMessage: showsLibrary.value
           ? $t("artist_no_library_albums")
           : undefined,
@@ -220,6 +223,7 @@ function listingDefaults(): Omit<
     itemtype: "artistalbums",
     sortKeys: ALBUM_SORT_KEYS,
     showAlbumTypeFilter: false,
+    showPlayAll: false,
     showFavoritesOnlyFilter: true,
     showProviderFilter: true,
     showTrackNumber: true,

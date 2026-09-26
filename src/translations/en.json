@@ -883,6 +883,7 @@
         "primary_image": "This is the primary image for this image type",
         "copy_uri": "Copy URI to clipboard",
         "select_all": "Select all items",
+        "play_all": "Play all",
         "filter_provider": "Filter by source",
         "hide_provider": "Hide music source",
         "in_provider_library": "This item is in the provider's library",
