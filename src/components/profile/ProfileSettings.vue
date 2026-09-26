@@ -46,7 +46,7 @@
                   :aria-label="$t('tooltip.change_avatar')"
                   @click="showAvatarDialog = true"
                 >
-                  <Camera :size="14" />
+                  <Camera class="size-3.5" />
                 </Button>
               </div>
             </div>

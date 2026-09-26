@@ -100,7 +100,7 @@
                     :aria-label="`${$t('row_source')}: ${rowSourceLabel(row.source)}`"
                   >
                     {{ $t("row_source") }}
-                    <ChevronDown :size="13" />
+                    <ChevronDown class="size-[13px]" />
                   </Button>
                 </DropdownMenuTrigger>
                 <!-- above the dialog (9999) and the phone sheet (100000) it opens from -->

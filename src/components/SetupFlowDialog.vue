@@ -92,7 +92,7 @@
             class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
           >
             <Button size="lg" @click="openExternal">
-              <ExternalLink :size="18" />
+              <ExternalLink class="size-4.5" />
               {{ $t("settings.setup_flow.open_external") }}
             </Button>
             <div
