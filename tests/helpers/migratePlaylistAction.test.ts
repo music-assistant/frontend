@@ -69,6 +69,8 @@ const migrateAction = (items: ContextMenuItem[]): ContextMenuItem | undefined =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // the menu resolves the library counterpart before building its items
+  apiMock.getLibraryItem.mockResolvedValue(null);
   apiMock.providers = { builtin: builtinProvider() };
   apiMock.getProvider.mockImplementation((id: string) => apiMock.providers[id]);
   storeMock.enabledPlugins = new Set();
