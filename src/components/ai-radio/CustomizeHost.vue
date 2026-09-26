@@ -382,6 +382,7 @@ function addBlankSegment() {
     name: $t("providers.ai_radio.customize.blank_segment_name"),
     prompt: "",
     webSearch: "disabled",
+    allowPost: false,
     maxChars: 500,
     plays: { kind: "every_song" },
   });
