@@ -470,7 +470,7 @@
             <PlayerIcon
               :icon="store.activePlayer?.icon"
               :size="20"
-              class="mr-1"
+              class="mr-1 size-5"
             />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
           </Button>

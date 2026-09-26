@@ -90,7 +90,7 @@
             @click="toggleVisualizer"
           >
             <Droplet
-              :size="13"
+              class="size-[13px]"
               :fill="visualizerEnabledPref ? 'currentColor' : 'none'"
             />
           </Button>
@@ -103,7 +103,7 @@
             :aria-label="$t('tooltip.exit_fullscreen')"
             @click="goFullscreen(false)"
           >
-            <Minimize2 :size="13" />
+            <Minimize2 class="size-[13px]" />
           </Button>
 
           <!-- Non-fullscreen: actions -->
@@ -116,7 +116,7 @@
               :title="$t('tooltip.party_settings')"
               @click="goToSettings"
             >
-              <Settings :size="13" />
+              <Settings class="size-[13px]" />
             </Button>
             <ShowDashboardButton dashboard="party" />
             <Button
@@ -126,7 +126,7 @@
               :title="$t('tooltip.enter_fullscreen')"
               @click="goFullscreen(true)"
             >
-              <Maximize2 :size="13" />
+              <Maximize2 class="size-[13px]" />
             </Button>
           </template>
         </div>
