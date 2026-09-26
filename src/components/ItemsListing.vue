@@ -238,6 +238,20 @@
             {{ $t("try_global_search") }}
           </Button>
         </EmptyContent>
+        <EmptyContent
+          v-if="emptyStateProviderActions.length"
+          class="flex-row flex-wrap justify-center gap-2"
+        >
+          <Button
+            v-for="provider in emptyStateProviderActions"
+            :key="provider.value"
+            variant="outline"
+            size="sm"
+            @click="changeProviderFilter(provider.value)"
+          >
+            {{ $t("show_results_on", [provider.label]) }}
+          </Button>
+        </EmptyContent>
       </Empty>
 
       <!-- box shown when item(s) selected; vuetify writes the overlay z-index inline
@@ -988,6 +1002,19 @@ const changeProviderFilter = function (providerId: string) {
   );
   loadData(true, undefined, true);
 };
+
+// a listing scoped to the library (its own "library" option selected) that comes
+// up empty gives no hint that a provider's catalog is one filter switch away —
+// the artist album/singles "See all" is the case. Offer those sources as
+// one-tap buttons in the empty state; other listings never select "library" so
+// they never show them.
+const emptyStateProviderActions = computed(() => {
+  if (!props.libraryFilterOption) return [];
+  if (params.value.provider?.[0] !== "library") return [];
+  return musicProviders.value.filter(
+    (provider) => provider.value !== "library",
+  );
+});
 
 // the provider list shown by both the provider filter and the provider selector
 const providerFilterSubItems = () =>

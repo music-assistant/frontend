@@ -20,8 +20,11 @@
           :tracks="topTracksItems"
           :source-label="topTracksSourceDisplay?.label"
           :source-domain="topTracksSourceDisplay?.domain"
+          :source-options="sourceOptions('top_tracks')"
+          :source-value="topTracksSource"
           :library-track-count="libraryTracks?.length"
           @edit-rows="rowsEditorOpen = true"
+          @select-source="(source) => selectRowSource('top_tracks', source)"
         />
 
         <!-- albums -->
@@ -32,11 +35,14 @@
           :title="$t('albums')"
           :source-label="albumsSourceDisplay?.label"
           :source-domain="albumsSourceDisplay?.domain"
+          :source-options="sourceOptions('albums')"
+          :source-value="albumsSource"
           :items="albumItems"
           :view-all-to="listingRoute('albums')"
           :empty-message="albumsEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
+          @select-source="(source) => selectRowSource('albums', source)"
         />
 
         <!-- singles & EPs -->
@@ -48,11 +54,14 @@
           :title="$t('singles_eps')"
           :source-label="singlesSourceDisplay?.label"
           :source-domain="singlesSourceDisplay?.domain"
+          :source-options="sourceOptions('singles_eps')"
+          :source-value="singlesSource"
           :items="singleItems"
           :view-all-to="listingRoute('singles')"
           :empty-message="singlesEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
+          @select-source="(source) => selectRowSource('singles_eps', source)"
         />
 
         <!-- appears on -->
@@ -72,7 +81,12 @@
           :items="similarArtistItems"
           :source-label="similarArtistsSourceDisplay?.label"
           :source-domain="similarArtistsSourceDisplay?.domain"
+          :source-options="sourceOptions('similar_artists')"
+          :source-value="similarArtistsSource"
           @edit-rows="rowsEditorOpen = true"
+          @select-source="
+            (source) => selectRowSource('similar_artists', source)
+          "
         />
 
         <!-- audiobooks in library (library authors/narrators only) -->
@@ -184,6 +198,11 @@ import ArtistTopTracksRow from "@/components/artist/ArtistTopTracksRow.vue";
 import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
 import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import ReleaseShelf from "@/components/details/ReleaseShelf.vue";
+import {
+  rowSourceOptions,
+  type RowSource,
+  type SourceOption,
+} from "@/components/details/rowRegistry";
 import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
@@ -246,11 +265,25 @@ const {
   albumsMeta,
   albumsSource,
   singlesSource,
+  topTracksSource,
+  similarArtistsSource,
   albumsSourceDisplay,
   singlesSourceDisplay,
   topTracksSourceDisplay,
   similarArtistsSourceDisplay,
 } = useArtistRowData(itemDetails, visibleRows);
+
+// the sources a row's badge can switch between, so the picker matches the rows
+// editor without opening it
+const sourceOptions = (rowId: ArtistRowId): SourceOption[] =>
+  itemDetails.value
+    ? rowSourceOptions(artistRows, rowId, itemDetails.value)
+    : [];
+
+/** Switch a row's source from its badge; the page reloads that row's data. */
+function selectRowSource(rowId: ArtistRowId, source: RowSource) {
+  artistRows.setSource(rowId, source);
+}
 
 // an empty release row explains the library case; from a provider source the
 // badge already names it, so a neutral line is enough
