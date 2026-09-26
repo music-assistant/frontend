@@ -17,6 +17,7 @@ const {
   mockSubscribe,
   mockAvailableArtistRowIds,
   mockResolveArtistRows,
+  mockArtistRowSources,
   mockLoadArtistReleases,
   mockLoadArtistLibraryTracks,
   mockLoadArtistTopTracks,
@@ -27,6 +28,7 @@ const {
   mockSubscribe: vi.fn(() => () => {}),
   mockAvailableArtistRowIds: vi.fn(),
   mockResolveArtistRows: vi.fn(),
+  mockArtistRowSources: vi.fn(),
   mockLoadArtistReleases: vi.fn(),
   mockLoadArtistLibraryTracks: vi.fn(),
   mockLoadArtistTopTracks: vi.fn(),
@@ -56,7 +58,7 @@ vi.mock("@/components/artist/artistRows", () => ({
     resolve: mockResolveArtistRows,
     definition: (id: string) => ({ id, labelKey: id }),
     effectiveSource: () => "all",
-    sources: () => ["library", "all"],
+    sources: mockArtistRowSources,
   },
 }));
 
@@ -177,6 +179,8 @@ describe("ArtistDetails", () => {
         order: availableIds,
         hidden: new Set<string>(),
       }));
+    // a library artist mapped to a provider that can supply the row
+    mockArtistRowSources.mockReset().mockReturnValue(["library", "all"]);
     mockLoadArtistReleases.mockReset().mockResolvedValue(RELEASES);
     mockLoadArtistLibraryTracks.mockReset().mockResolvedValue([track()]);
     mockLoadArtistTopTracks.mockReset().mockResolvedValue([track()]);
@@ -204,6 +208,28 @@ describe("ArtistDetails", () => {
 
     expect(renderedRows(wrapper)).not.toContain("albums");
     expect(renderedRows(wrapper)).toContain("singles_eps");
+  });
+
+  it("keeps an empty release row visible when a provider can still supply it", async () => {
+    // no in-library releases, but the artist is mapped to a provider that can
+    mockLoadArtistReleases.mockResolvedValue([]);
+
+    const wrapper = await mountDetails(artist());
+
+    // the row stays so its "See all" reaches the provider's catalog
+    expect(renderedRows(wrapper)).toContain("albums");
+    expect(renderedRows(wrapper)).toContain("singles_eps");
+  });
+
+  it("hides an empty release row with no other source to browse", async () => {
+    mockLoadArtistReleases.mockResolvedValue([]);
+    // only the library feeds the row, so an empty one has nowhere else to go
+    mockArtistRowSources.mockReturnValue(["library"]);
+
+    const wrapper = await mountDetails(artist());
+
+    expect(renderedRows(wrapper)).not.toContain("albums");
+    expect(renderedRows(wrapper)).not.toContain("singles_eps");
   });
 
   it("uses the same audiobooks listing path for every library author/narrator artist", async () => {
