@@ -9,7 +9,7 @@ import {
 } from "@/components/artist/artistData";
 import { artistRows, type ArtistRowId } from "@/components/artist/artistRows";
 import {
-  rowSourceProvider,
+  rowSourceDisplay,
   type RowSource,
 } from "@/components/details/rowRegistry";
 import { mappingsIdentity, useRowRequests } from "@/composables/useRowRequests";
@@ -81,7 +81,6 @@ export function useArtistRowData(
   const singleItems = computed(() =>
     singlesSourceReleases.value?.filter((album) => isSingleOrEp(album)),
   );
-  const latestRelease = computed(() => albumSourceReleases.value?.[0]);
 
   const albumsMeta = computed(() =>
     albumItems.value?.length
@@ -112,11 +111,26 @@ export function useArtistRowData(
     sourceItems(similarArtists.value, similarArtistsSource.value),
   );
 
-  const topTracksProvider = computed(() =>
-    rowSourceProvider(topTracksSource.value),
+  const albumsSourceDisplay = computed(() =>
+    rowSourceDisplay(albumsSource.value),
   );
-  const similarArtistsProvider = computed(() =>
-    rowSourceProvider(similarArtistsSource.value),
+  const singlesSourceDisplay = computed(() =>
+    rowSourceDisplay(singlesSource.value),
+  );
+
+  // the row falls back to the newest library tracks when no provider supplies
+  // top tracks, so its badge then names the library rather than the source
+  const topTracksSourceDisplay = computed(() => {
+    const provided = sourceItems(topTracks.value, topTracksSource.value);
+    const usesLibraryFallback =
+      provided?.length === 0 && !!libraryTracks.value?.length;
+    return rowSourceDisplay(
+      usesLibraryFallback ? "library" : topTracksSource.value,
+    );
+  });
+
+  const similarArtistsSourceDisplay = computed(() =>
+    rowSourceDisplay(similarArtistsSource.value),
   );
 
   // unhiding a row or switching its source in the editor loads what it needs,
@@ -137,10 +151,7 @@ export function useArtistRowData(
   function loadRowData() {
     if (!artist.value) return;
     const rows = visibleRows.value;
-    // the top tracks row shows the latest release from the albums source
-    if (rows.includes("albums") || rows.includes("top_tracks")) {
-      fetchReleases(albumsSource.value!);
-    }
+    if (rows.includes("albums")) fetchReleases(albumsSource.value!);
     if (rows.includes("singles_eps")) fetchReleases(singlesSource.value!);
     if (rows.includes("appears_on")) {
       fetchReleases(appearsOnSource.value!);
@@ -206,10 +217,13 @@ export function useArtistRowData(
     singleItems,
     appearsOnItems,
     similarArtistItems,
-    latestRelease,
     albumsMeta,
-    topTracksProvider,
-    similarArtistsProvider,
+    albumsSource,
+    singlesSource,
+    albumsSourceDisplay,
+    singlesSourceDisplay,
+    topTracksSourceDisplay,
+    similarArtistsSourceDisplay,
   };
 }
 

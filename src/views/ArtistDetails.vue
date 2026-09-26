@@ -13,36 +13,44 @@
           @edit-rows="rowsEditorOpen = true"
         />
 
-        <!-- top tracks, beside the latest release -->
+        <!-- top tracks -->
         <ArtistTopTracksRow
           v-else-if="rowId === 'top_tracks' && showRow(topTracksItems)"
           :artist="itemDetails"
           :tracks="topTracksItems"
-          :source-label="topTracksProvider?.name"
-          :source-domain="topTracksProvider?.domain"
+          :source-label="topTracksSourceDisplay?.label"
+          :source-domain="topTracksSourceDisplay?.domain"
           :library-track-count="libraryTracks?.length"
-          :latest-release="latestRelease"
           @edit-rows="rowsEditorOpen = true"
         />
 
         <!-- albums -->
         <ReleaseShelf
-          v-else-if="rowId === 'albums' && showRow(albumItems)"
+          v-else-if="
+            rowId === 'albums' && releaseRowVisible('albums', albumItems)
+          "
           :title="$t('albums')"
-          :meta="albumsMeta"
+          :source-label="albumsSourceDisplay?.label"
+          :source-domain="albumsSourceDisplay?.domain"
           :items="albumItems"
           :view-all-to="listingRoute('albums')"
+          :empty-message="albumsEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         />
 
         <!-- singles & EPs -->
         <ReleaseShelf
-          v-else-if="rowId === 'singles_eps' && showRow(singleItems)"
+          v-else-if="
+            rowId === 'singles_eps' &&
+            releaseRowVisible('singles_eps', singleItems)
+          "
           :title="$t('singles_eps')"
-          :meta="singleItems?.length ? String(singleItems.length) : undefined"
+          :source-label="singlesSourceDisplay?.label"
+          :source-domain="singlesSourceDisplay?.domain"
           :items="singleItems"
           :view-all-to="listingRoute('singles')"
+          :empty-message="singlesEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         />
@@ -62,7 +70,8 @@
         <ArtistSimilarShelf
           v-else-if="rowId === 'similar_artists' && showRow(similarArtistItems)"
           :items="similarArtistItems"
-          :source-label="similarArtistsProvider?.name"
+          :source-label="similarArtistsSourceDisplay?.label"
+          :source-domain="similarArtistsSourceDisplay?.domain"
           @edit-rows="rowsEditorOpen = true"
         />
 
@@ -234,11 +243,27 @@ const {
   singleItems,
   appearsOnItems,
   similarArtistItems,
-  latestRelease,
   albumsMeta,
-  topTracksProvider,
-  similarArtistsProvider,
+  albumsSource,
+  singlesSource,
+  albumsSourceDisplay,
+  singlesSourceDisplay,
+  topTracksSourceDisplay,
+  similarArtistsSourceDisplay,
 } = useArtistRowData(itemDetails, visibleRows);
+
+// an empty release row explains the library case; from a provider source the
+// badge already names it, so a neutral line is enough
+const albumsEmptyMessage = computed(() =>
+  albumsSource.value === "library"
+    ? $t("artist_no_library_albums")
+    : $t("artist_row_empty"),
+);
+const singlesEmptyMessage = computed(() =>
+  singlesSource.value === "library"
+    ? $t("artist_no_library_singles")
+    : $t("artist_row_empty"),
+);
 
 // how much each row currently holds, for the editor's per-row meta line (it
 // adds the source itself)
@@ -412,6 +437,22 @@ function rowApplies(rowId: ArtistRowId): boolean {
 /** A row is rendered while it loads and once it has something to show. */
 function showRow(items?: unknown[]): boolean {
   return items === undefined || items.length > 0;
+}
+
+/**
+ * A release row is shown while loading, when it has items, or when it is empty
+ * but the artist has provider sources reachable through its "See all".
+ */
+function releaseRowVisible(rowId: ArtistRowId, items?: unknown[]): boolean {
+  return showRow(items) || hasBrowsableSources(rowId);
+}
+
+/** Whether the row could show more from a provider than its current source holds. */
+function hasBrowsableSources(rowId: ArtistRowId): boolean {
+  if (!itemDetails.value) return false;
+  return artistRows
+    .sources(rowId, itemDetails.value)
+    .some((source) => source !== "library");
 }
 
 /** The "View all" target of a shelf. */

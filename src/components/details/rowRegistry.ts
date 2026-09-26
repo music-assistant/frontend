@@ -169,3 +169,21 @@ export function rowSourceProvider(
   const provider = api.getProvider(source);
   return provider && { name: provider.name, domain: provider.domain };
 }
+
+/**
+ * A row's source as a reader-facing badge: "In your library", "All sources", or
+ * "On <Provider>", with the provider's domain for its icon. Undefined when the
+ * source is unknown.
+ */
+export function rowSourceDisplay(
+  source?: RowSource,
+): { label: string; domain?: string } | undefined {
+  if (!source) return undefined;
+  if (source === "library") return { label: $t("in_library") };
+  if (source === "all") return { label: $t("source_all") };
+  const provider = api.getProvider(source);
+  return {
+    label: $t("on_provider", [provider?.name ?? source]),
+    domain: provider?.domain,
+  };
+}
