@@ -1005,6 +1005,7 @@ export interface MediaItem extends _MediaItemBase {
   metadata: MediaItemMetadata;
   favorite: boolean;
   position?: number | null; //required for playlist tracks, optional for all other
+  date_added?: string | null;
 }
 
 export interface ItemMapping extends _MediaItemBase {

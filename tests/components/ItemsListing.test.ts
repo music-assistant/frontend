@@ -637,6 +637,67 @@ describe("ItemsListing source selector", () => {
   });
 });
 
+describe("ItemsListing date added sort", () => {
+  // added together (one edit), then a later addition, a very old one, and
+  // undated items (none, or unparsable), which sort as the oldest of all
+  const batch = "2024-03-01T12:00:00+00:00";
+  const playlistTracks = [
+    track({ item_id: "1", name: "Batch 1", position: 1, date_added: batch }),
+    track({ item_id: "2", name: "Undated", position: 2 }),
+    track({ item_id: "3", name: "Batch 2", position: 3, date_added: batch }),
+    track({
+      item_id: "4",
+      name: "Newer",
+      position: 4,
+      date_added: "2024-05-10T08:30:00+00:00",
+    }),
+    track({
+      item_id: "5",
+      name: "Old",
+      position: 5,
+      date_added: "1999-06-01T00:00:00+00:00",
+    }),
+    track({ item_id: "6", name: "Unparsable", position: 6, date_added: "?" }),
+  ];
+
+  async function sortedNames(sortKey: string) {
+    const listing = mountListingRaw({
+      itemtype: "playlisttracks",
+      path: "playlist.1.library",
+      // a flat listing: every item at once, sorted in the browser
+      loadPagedData: undefined,
+      loadItems: vi.fn().mockResolvedValue(playlistTracks),
+      sortKeys: [sortKey, "position"],
+    });
+    await flushPromises();
+    return (listing.vm as unknown as { pagedItems: Track[] }).pagedItems.map(
+      (item) => item.name,
+    );
+  }
+
+  it("lists the most recently added first, keeping additions made together in order", async () => {
+    expect(await sortedNames("timestamp_added_desc")).toEqual([
+      "Newer",
+      "Batch 1",
+      "Batch 2",
+      "Old",
+      "Undated",
+      "Unparsable",
+    ]);
+  });
+
+  it("lists the earliest added first", async () => {
+    expect(await sortedNames("timestamp_added")).toEqual([
+      "Undated",
+      "Unparsable",
+      "Old",
+      "Batch 1",
+      "Batch 2",
+      "Newer",
+    ]);
+  });
+});
+
 /** Mounts a listing of `total` items and asks it to select them all. */
 async function selectAll(total: number) {
   const listing = mountListingRaw({
