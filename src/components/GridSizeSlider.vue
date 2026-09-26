@@ -28,7 +28,8 @@
       :min="GRID_SIZE_MIN"
       :max="GRID_SIZE_MAX"
       :step="1"
-      :aria-label="$t('grid_size')"
+      :thumb-label="$t('grid_size')"
+      :thumb-value-text="valueText"
       class="grid-size-row__slider"
       @update:model-value="onUpdate"
       @value-commit="onCommit"
@@ -42,7 +43,7 @@ import { Slider } from "@/components/ui/slider";
 import { GRID_SIZE_MAX, GRID_SIZE_MIN } from "@/helpers/grid_size";
 import { $t } from "@/plugins/i18n";
 import { Grid2x2, Grid3x3 } from "@lucide/vue";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 const props = defineProps<{ size: number }>();
 
@@ -54,6 +55,20 @@ const emit = defineEmits<{
 }>();
 
 const value = ref(props.size);
+
+// the value itself is only an offset from the window's own column count, so
+// say which way it goes
+const valueText = computed(() => {
+  if (value.value < 0) {
+    const count = -value.value;
+    return $t("grid_size_smaller", count, { named: { count } });
+  }
+  if (value.value > 0) {
+    const count = value.value;
+    return $t("grid_size_larger", count, { named: { count } });
+  }
+  return $t("grid_size_default");
+});
 
 const onUpdate = (values: number[] | undefined) => {
   if (!values?.length) return;

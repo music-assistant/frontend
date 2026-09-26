@@ -9,7 +9,11 @@ import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h } from "vue";
 
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+// shows which count a plural message was asked for with
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string, count?: number) =>
+    count === undefined ? key : `${key}:${count}`,
+}));
 
 enableAutoUnmount(afterEach);
 
@@ -90,5 +94,25 @@ describe("GridSizeSlider", () => {
     expect(onChange).toHaveBeenLastCalledWith(0);
     expect(onCommit).toHaveBeenLastCalledWith(0);
     expect(thumb.getAttribute("aria-valuenow")).toBe("0");
+  });
+
+  it("names the slider, and reads its size out as smaller or larger", async () => {
+    const { thumb } = await mountInMenu(-2);
+
+    expect(thumb.getAttribute("aria-label")).toBe("grid_size");
+    expect(thumb.getAttribute("aria-valuetext")).toBe("grid_size_smaller:2");
+
+    thumb.focus();
+    for (const expected of [
+      "grid_size_smaller:1",
+      "grid_size_default",
+      "grid_size_larger:1",
+    ]) {
+      thumb.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+      );
+      await flushPromises();
+      expect(thumb.getAttribute("aria-valuetext")).toBe(expected);
+    }
   });
 });
