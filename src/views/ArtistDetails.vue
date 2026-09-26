@@ -15,7 +15,10 @@
 
         <!-- top tracks -->
         <ArtistTopTracksRow
-          v-else-if="rowId === 'top_tracks' && showRow(topTracksItems)"
+          v-else-if="
+            rowId === 'top_tracks' &&
+            sourceRowVisible('top_tracks', topTracksItems)
+          "
           :artist="itemDetails"
           :tracks="topTracksItems"
           :source-label="topTracksSourceDisplay?.label"
@@ -30,7 +33,7 @@
         <!-- albums -->
         <ReleaseShelf
           v-else-if="
-            rowId === 'albums' && releaseRowVisible('albums', albumItems)
+            rowId === 'albums' && sourceRowVisible('albums', albumItems)
           "
           :title="$t('albums')"
           :source-label="albumsSourceDisplay?.label"
@@ -49,7 +52,7 @@
         <ReleaseShelf
           v-else-if="
             rowId === 'singles_eps' &&
-            releaseRowVisible('singles_eps', singleItems)
+            sourceRowVisible('singles_eps', singleItems)
           "
           :title="$t('singles_eps')"
           :source-label="singlesSourceDisplay?.label"
@@ -77,7 +80,10 @@
 
         <!-- similar artists -->
         <ArtistSimilarShelf
-          v-else-if="rowId === 'similar_artists' && showRow(similarArtistItems)"
+          v-else-if="
+            rowId === 'similar_artists' &&
+            sourceRowVisible('similar_artists', similarArtistItems)
+          "
           :items="similarArtistItems"
           :source-label="similarArtistsSourceDisplay?.label"
           :source-domain="similarArtistsSourceDisplay?.domain"
@@ -473,19 +479,18 @@ function showRow(items?: unknown[]): boolean {
 }
 
 /**
- * A release row is shown while loading, when it has items, or when it is empty
- * but the artist has provider sources reachable through its "See all".
+ * A source-backed row stays rendered while it loads, when it has items, or when
+ * it is empty but offers more than one source: its picker (and a release row's
+ * "See all") must not vanish and strand the user on a source that came up empty.
  */
-function releaseRowVisible(rowId: ArtistRowId, items?: unknown[]): boolean {
-  return showRow(items) || hasBrowsableSources(rowId);
+function sourceRowVisible(rowId: ArtistRowId, items?: unknown[]): boolean {
+  return showRow(items) || hasSourcePicker(rowId);
 }
 
-/** Whether the row could show more from a provider than its current source holds. */
-function hasBrowsableSources(rowId: ArtistRowId): boolean {
+/** Whether the row offers more than one source, i.e. an inline source picker. */
+function hasSourcePicker(rowId: ArtistRowId): boolean {
   if (!itemDetails.value) return false;
-  return artistRows
-    .sources(rowId, itemDetails.value)
-    .some((source) => source !== "library");
+  return artistRows.sources(rowId, itemDetails.value).length > 1;
 }
 
 /** The "View all" target of a shelf. */
