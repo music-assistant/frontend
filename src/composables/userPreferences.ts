@@ -6,6 +6,7 @@ import { store } from "@/plugins/store";
 
 export interface ItemsListingPreferences {
   viewMode?: string;
+  gridSize?: number;
   sortBy?: string;
   favoriteFilter?: boolean;
   libraryFilter?: boolean;
