@@ -68,13 +68,22 @@ vi.mock("@/composables/useProgressiveSearch", async (importOriginal) => {
   };
   const providerTargets = ref<SearchTarget[]>([]);
   state.providerTargets = providerTargets;
+  // a reactive stand-in so a test can flip the loading state mid-search
+  state.loading = ref(false);
   return {
     ...actual,
     useProgressiveSearch: (options: { providers?: Ref<string[]> }) => {
       state.providersRef = options.providers;
+      // the real composable records the submitted term here; the palette shows
+      // the fetched results only while the box still holds that same term
+      const activeSearchTerm = ref("");
       return {
         loading: computed(() => state.loading.value),
-        search: state.searchSpy,
+        activeSearchTerm,
+        search: (term?: string) => {
+          activeSearchTerm.value = term?.trim() ?? "";
+          return state.searchSpy(term);
+        },
         providerTargets,
         // the real composable drops the ids of providers that are no target
         selectedProviders: computed(() =>
@@ -251,7 +260,9 @@ function mountPalette(attachTo?: Element) {
       directives: { hold: {} },
       stubs: {
         CommandCenterShell: CommandCenterShellStub,
-        CommandList: { template: "<div><slot /></div>" },
+        CommandList: {
+          template: '<div data-testid="command-list"><slot /></div>',
+        },
         CommandGroup: {
           props: ["heading"],
           template: "<section><h3>{{ heading }}</h3><slot /></section>",
@@ -276,13 +287,20 @@ function mountPalette(attachTo?: Element) {
   });
 }
 
+/** Submit the current query the way the search button does. */
+async function submitSearch(wrapper: ReturnType<typeof mountPalette>) {
+  // the button is hidden while scoped to pages, where results filter live
+  const button = wrapper.find('button[aria-label="search"]');
+  if (button.exists()) await button.trigger("click");
+  await flushPromises();
+}
+
 async function typeQuery(
   wrapper: ReturnType<typeof mountPalette>,
   text: string,
 ) {
   await wrapper.get('[data-testid="palette-input"]').setValue(text);
-  vi.advanceTimersByTime(300);
-  await flushPromises();
+  await submitSearch(wrapper);
 }
 
 /** The chip that narrows the palette to the app's own pages. */
@@ -486,7 +504,7 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
-  it("plays a media result from its play button and shows the provider", async () => {
+  it("plays a media result from its thumbnail and shows the provider", async () => {
     state.resultsByType[MediaType.TRACK] = [
       makeTrack("t1", "Bohemian Rhapsody"),
     ];
@@ -497,7 +515,8 @@ describe("CommandCenter", () => {
     await typeQuery(wrapper, "bohemian");
     expect(wrapper.find('[data-testid="provider-icon"]').exists()).toBe(true);
 
-    await wrapper.get("button.command-center-play").trigger("click");
+    // clicking the artwork plays the item, like the regular list rows
+    await wrapper.get(".command-center-thumb").trigger("click");
     // plays directly instead of navigating to the details page
     expect(state.playBtnSpy).toHaveBeenCalledWith(
       state.resultsByType[MediaType.TRACK][0],
@@ -511,6 +530,40 @@ describe("CommandCenter", () => {
     expect(wrapper.find('[data-testid="command-center"]').exists()).toBe(false);
 
     wrapper.unmount();
+  });
+
+  it("plays from a right-side button on touch instead of the artwork", async () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("hover: none"),
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    try {
+      state.resultsByType[MediaType.TRACK] = [
+        makeTrack("t1", "Bohemian Rhapsody"),
+      ];
+      const wrapper = mountPalette();
+      useCommandCenter().open();
+      await flushPromises();
+      await typeQuery(wrapper, "bohemian");
+
+      // touch: no hover overlay on the art, an explicit play disc on the right
+      expect(wrapper.find("span.command-center-play").exists()).toBe(false);
+      await wrapper.get("button.command-center-play-mobile").trigger("click");
+      expect(state.playBtnSpy).toHaveBeenCalledWith(
+        state.resultsByType[MediaType.TRACK][0],
+        expect.any(Number),
+        expect.any(Number),
+      );
+      expect(state.routerPush).not.toHaveBeenCalled();
+
+      wrapper.unmount();
+    } finally {
+      window.matchMedia = original;
+    }
   });
 
   it("opens the item menu on right click and keeps the palette up", async () => {
@@ -534,6 +587,29 @@ describe("CommandCenter", () => {
     expect(state.setPreferenceSpy).toHaveBeenCalledWith("search.recent", [
       "bohemian",
     ]);
+
+    wrapper.unmount();
+  });
+
+  it("opens the item menu from the visible menu button", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    await typeQuery(wrapper, "bohemian");
+
+    await wrapper.get('button[aria-label^="more_options"]').trigger("click");
+
+    expect(state.menuBtnSpy).toHaveBeenCalledWith(
+      state.resultsByType[MediaType.TRACK][0],
+      expect.any(Number),
+      expect.any(Number),
+    );
+    // the row itself is not selected, so the palette stays up
+    expect(state.routerPush).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid="command-center"]').exists()).toBe(true);
 
     wrapper.unmount();
   });
@@ -630,31 +706,233 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
-  it("spins while searching and keeps the results up on the next keystroke", async () => {
+  it("shows a spinner while a submitted search is loading", async () => {
     const wrapper = mountPalette();
     useCommandCenter().open();
     await flushPromises();
 
-    // keystroke landed but the debounced search hasn't fired yet and no
-    // results are in: spinner only
-    await wrapper.get('[data-testid="palette-input"]').setValue("bo");
+    // a search is out and no results are in yet: spinner only
+    state.loading.value = true;
+    await typeQuery(wrapper, "bohemian");
     expect(wrapper.find('[data-testid="palette-spinner"]').exists()).toBe(true);
 
-    // results land; the next keystroke keeps them visible (no spinner)
+    // results land and the search settles: the spinner gives way to the rows
     state.resultsByType[MediaType.TRACK] = [
       makeTrack("t1", "Bohemian Rhapsody"),
     ];
+    state.loading.value = false;
     state.bumpResults();
-    vi.advanceTimersByTime(300);
-    await wrapper.get('[data-testid="palette-input"]').setValue("boh");
+    await flushPromises();
     expect(wrapper.find('[data-testid="palette-spinner"]').exists()).toBe(
       false,
     );
     expect(wrapper.text()).toContain("Bohemian Rhapsody");
 
-    vi.advanceTimersByTime(300);
+    wrapper.unmount();
+  });
+
+  it("shows the submit prompt, not a stale spinner, over a pending search", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
     await flushPromises();
-    expect(state.searchSpy).toHaveBeenLastCalledWith("boh");
+
+    // submit one term and leave its search pending
+    state.loading.value = true;
+    await typeQuery(wrapper, "aaa");
+    expect(wrapper.find('[data-testid="palette-spinner"]').exists()).toBe(true);
+
+    // typing a new term over it drops the old spinner and asks to submit again
+    await wrapper.get('[data-testid="palette-input"]').setValue("bbb");
+    expect(wrapper.find('[data-testid="palette-spinner"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.text()).toContain("command_center_press_enter");
+
+    wrapper.unmount();
+  });
+
+  it("searches only when submitted, not while typing", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    // typing alone leaves the results hidden behind a prompt to submit
+    await wrapper.get('[data-testid="palette-input"]').setValue("bohemian");
+    expect(state.searchSpy).not.toHaveBeenCalledWith("bohemian");
+    expect(wrapper.text()).not.toContain("Bohemian Rhapsody");
+    expect(wrapper.text()).toContain("command_center_press_enter");
+
+    await wrapper.get('button[aria-label="search"]').trigger("click");
+    await flushPromises();
+    expect(state.searchSpy).toHaveBeenCalledWith("bohemian");
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    wrapper.unmount();
+  });
+
+  it("runs the search on the return key while the results are stale", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="palette-input"]').setValue("bohemian");
+    const input = wrapper.get('[data-testid="palette-input"]')
+      .element as HTMLInputElement;
+    const reachedInput: string[] = [];
+    input.addEventListener("keydown", (event) => reachedInput.push(event.key));
+
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+    await flushPromises();
+
+    expect(state.searchSpy).toHaveBeenCalledWith("bohemian");
+    // the enter runs the search instead of opening a stale highlighted row
+    expect(reachedInput).not.toContain("Enter");
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    wrapper.unmount();
+  });
+
+  it("labels the return key as search or open by state", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    // empty box: the return key opens the highlighted entry
+    expect(wrapper.text()).toContain("command_center_open");
+    expect(wrapper.text()).not.toContain("command_center_search");
+
+    // typed but not submitted: the return key runs the search
+    await wrapper.get('[data-testid="palette-input"]').setValue("bohemian");
+    expect(wrapper.text()).toContain("command_center_search");
+
+    // submitted: back to opening the top hit
+    await submitSearch(wrapper);
+    expect(wrapper.text()).not.toContain("command_center_search");
+    expect(wrapper.text()).toContain("command_center_open");
+
+    wrapper.unmount();
+  });
+
+  it("does not hijack enter from the search button", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    await wrapper.get('[data-testid="palette-input"]').setValue("bohemian");
+
+    // enter on the search button itself must reach it, not be swallowed by the
+    // input's own submit handler on the surrounding row
+    const button = wrapper.get('button[aria-label="search"]').element;
+    const event = new KeyboardEvent("keydown", {
+      key: "Enter",
+      bubbles: true,
+      cancelable: true,
+    });
+    button.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(state.searchSpy).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
+  it("opens the highlighted page on enter in the pages scope", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    // pages scope has no search button and no media search, so the return key
+    // opens the highlighted page
+    await pagesChip(wrapper).trigger("click");
+    await wrapper.get('[data-testid="palette-input"]').setValue("settings");
+
+    // reka marks the arrow-highlighted row; stand that in on the rendered item
+    wrapper
+      .get('[data-testid="palette-item"]')
+      .element.setAttribute("data-highlighted", "");
+
+    const input = wrapper.get('[data-testid="palette-input"]')
+      .element as HTMLInputElement;
+    const reachedInput: string[] = [];
+    input.addEventListener("keydown", (event) => reachedInput.push(event.key));
+
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+    await flushPromises();
+
+    // the enter reaches reka to open the row rather than starting a search
+    expect(reachedInput).toContain("Enter");
+    expect(state.searchSpy).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
+  it("searches on enter even when reka auto-highlights a matching page", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    // default scope: a query that matches a nav page shows it, and reka
+    // auto-highlights the first row on every keystroke — which must NOT be
+    // treated as a deliberate pick that hijacks enter away from searching
+    await wrapper.get('[data-testid="palette-input"]').setValue("discover");
+    wrapper
+      .get('[data-testid="palette-item"]')
+      .element.setAttribute("data-highlighted", "");
+
+    const input = wrapper.get('[data-testid="palette-input"]')
+      .element as HTMLInputElement;
+    const reachedInput: string[] = [];
+    input.addEventListener("keydown", (event) => reachedInput.push(event.key));
+
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+    await flushPromises();
+
+    // it runs the search instead of navigating to the auto-highlighted page
+    expect(state.searchSpy).toHaveBeenCalledWith("discover");
+    expect(reachedInput).not.toContain("Enter");
+    expect(state.routerPush).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
+  it("leaves enter to reka when the query is too short to search", async () => {
+    state.prefs["search.recent"] = ["queen"];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    // empty query: recent searches show and reka highlights the first row; enter
+    // must open it, not be swallowed into a no-op search
+    wrapper
+      .get('[data-testid="palette-item"]')
+      .element.setAttribute("data-highlighted", "");
+
+    const input = wrapper.get('[data-testid="palette-input"]')
+      .element as HTMLInputElement;
+    const reachedInput: string[] = [];
+    input.addEventListener("keydown", (event) => reachedInput.push(event.key));
+
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+    await flushPromises();
+
+    expect(reachedInput).toContain("Enter");
+    expect(state.searchSpy).not.toHaveBeenCalled();
 
     wrapper.unmount();
   });
@@ -698,7 +976,6 @@ describe("CommandCenter", () => {
       wrapper.get('[data-testid="palette-input"]').attributes("value"),
     ).toBe("bohemian");
 
-    vi.advanceTimersByTime(300);
     await flushPromises();
     expect(state.searchSpy).toHaveBeenLastCalledWith("bohemian");
     expect(wrapper.text()).toContain("Bohemian Rhapsody");
@@ -706,18 +983,52 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
-  it("clears the handed-over term when it is reopened bare", async () => {
+  it("restores the previous search when it is reopened bare", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
     const wrapper = mountPalette();
     useCommandCenter().open({ query: "bohemian" });
     await flushPromises();
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
     useCommandCenter().close();
     await flushPromises();
 
+    // a bare reopen keeps the last term and its results instead of clearing
     useCommandCenter().open();
     await flushPromises();
     expect(
       wrapper.get('[data-testid="palette-input"]').attributes("value"),
-    ).toBe("");
+    ).toBe("bohemian");
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    wrapper.unmount();
+  });
+
+  it("restores the results scroll offset on reopen and resets it on a new search", async () => {
+    state.resultsByType[MediaType.TRACK] = Array.from({ length: 20 }, (_, i) =>
+      makeTrack(`t${i}`, `Track ${i}`),
+    );
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    await typeQuery(wrapper, "track");
+
+    const list = () =>
+      wrapper.get('[data-testid="command-list"]').element as HTMLElement;
+    // scroll the results, then close and reopen
+    list().scrollTop = 120;
+    await wrapper.get('[data-testid="command-list"]').trigger("scroll");
+    useCommandCenter().close();
+    await flushPromises();
+    useCommandCenter().open();
+    await flushPromises();
+    expect(list().scrollTop).toBe(120);
+
+    // a new search lands back at the top
+    await typeQuery(wrapper, "queen");
+    expect(list().scrollTop).toBe(0);
 
     wrapper.unmount();
   });
@@ -1149,7 +1460,7 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
-  it("clears the query when the palette closes", async () => {
+  it("keeps the search when the palette closes", async () => {
     const wrapper = mountPalette();
     useCommandCenter().open();
     await flushPromises();
@@ -1158,7 +1469,8 @@ describe("CommandCenter", () => {
     useCommandCenter().close();
     await flushPromises();
 
-    expect(state.searchSpy).toHaveBeenLastCalledWith("");
+    // the search is not reset on close, so it is there on the next open
+    expect(state.searchSpy).not.toHaveBeenCalledWith("");
     expect(state.storeMock.dialogActive).toBe(false);
 
     wrapper.unmount();

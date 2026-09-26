@@ -2528,6 +2528,8 @@
     "command_center_navigate": "navigate",
     "command_center_open": "open",
     "command_center_keep_typing": "Keep typing to search...",
+    "command_center_press_enter": "Press Enter to search",
+    "command_center_search": "search",
     "onboarding": {
         "title": "Set up Music Assistant",
         "description": "Set up Music Assistant, one step at a time.",
