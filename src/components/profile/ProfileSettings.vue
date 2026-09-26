@@ -54,52 +54,26 @@
             <div class="flex-1 space-y-4">
               <form.Field name="username">
                 <template #default="{ field }">
-                  <Field :data-invalid="isInvalid(field)">
-                    <FieldLabel :for="field.name">
-                      {{ $t("auth.username") }}
-                    </FieldLabel>
-                    <Input
-                      :id="field.name"
-                      :name="field.name"
-                      :model-value="field.state.value"
-                      :aria-invalid="isInvalid(field)"
-                      :disabled="isIngressSession"
-                      autocomplete="username"
-                      @blur="field.handleBlur"
-                      @input="handleUsernameInput($event, field)"
-                    />
-                    <FieldError
-                      v-if="isInvalid(field)"
-                      :errors="field.state.meta.errors"
-                    />
-                  </Field>
+                  <FormTextField
+                    :field="field"
+                    :label="$t('auth.username')"
+                    :disabled="isIngressSession"
+                    autocomplete="username"
+                    @change="currentUsername = $event"
+                  />
                 </template>
               </form.Field>
 
               <form.Field name="displayName">
                 <template #default="{ field }">
-                  <Field :data-invalid="isInvalid(field)">
-                    <FieldLabel :for="field.name">
-                      {{ $t("auth.display_name") }}
-                    </FieldLabel>
-                    <Input
-                      :id="field.name"
-                      :name="field.name"
-                      :model-value="field.state.value"
-                      :aria-invalid="isInvalid(field)"
-                      :disabled="isIngressSession"
-                      autocomplete="name"
-                      @blur="field.handleBlur"
-                      @input="handleDisplayNameInput($event, field)"
-                    />
-                    <FieldDescription>
-                      {{ $t("optional") }}
-                    </FieldDescription>
-                    <FieldError
-                      v-if="isInvalid(field)"
-                      :errors="field.state.meta.errors"
-                    />
-                  </Field>
+                  <FormTextField
+                    :field="field"
+                    :label="$t('auth.display_name')"
+                    :disabled="isIngressSession"
+                    autocomplete="name"
+                    :description="$t('optional')"
+                    @change="currentDisplayName = $event"
+                  />
                 </template>
               </form.Field>
 
@@ -193,12 +167,12 @@
 
 <script setup lang="ts">
 import { Camera, User } from "@lucide/vue";
-import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
+import FormTextField from "@/components/forms/FormTextField.vue";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -220,7 +194,6 @@ import {
 import {
   Field,
   FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
@@ -341,22 +314,6 @@ const hasChanges = computed(() => {
     avatarUrl !== originalAvatarUrl
   );
 });
-
-function isInvalid(field: AnyFieldApi) {
-  return field.state.meta.isTouched && !field.state.meta.isValid;
-}
-
-const handleUsernameInput = (e: Event, field: AnyFieldApi) => {
-  const value = (e.target as HTMLInputElement).value;
-  currentUsername.value = value;
-  field.handleChange(value);
-};
-
-const handleDisplayNameInput = (e: Event, field: AnyFieldApi) => {
-  const value = (e.target as HTMLInputElement).value;
-  currentDisplayName.value = value;
-  field.handleChange(value);
-};
 
 const handleReset = () => {
   if (user.value) {
