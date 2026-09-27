@@ -88,6 +88,40 @@ describe("useAlbumRowData", () => {
     expect(page.artistReleaseItems.value).toHaveLength(1);
   });
 
+  it("loads a new source on switch and reuses the first on return", async () => {
+    // a reactive source, so the composable's watcher fires when it changes
+    const source = ref("library");
+    mockEffectiveSource.mockImplementation(() => source.value);
+    mockLoadArtistReleases.mockImplementation(async (_album, from) => [
+      album({ item_id: from as string }),
+    ]);
+
+    const page = setupRowData();
+    await showAlbum(page);
+    expect(page.artistReleaseItems.value).toEqual([
+      album({ item_id: "library" }),
+    ]);
+
+    source.value = "spotify--abc";
+    await flushPromises();
+    expect(mockLoadArtistReleases).toHaveBeenLastCalledWith(
+      expect.anything(),
+      "spotify--abc",
+    );
+    expect(page.artistReleaseItems.value).toEqual([
+      album({ item_id: "spotify--abc" }),
+    ]);
+
+    // switching back serves the first load from the cache, without re-fetching
+    const calls = mockLoadArtistReleases.mock.calls.length;
+    source.value = "library";
+    await flushPromises();
+    expect(mockLoadArtistReleases).toHaveBeenCalledTimes(calls);
+    expect(page.artistReleaseItems.value).toEqual([
+      album({ item_id: "library" }),
+    ]);
+  });
+
   it("asks for each row once, however often the rows are resolved again", async () => {
     const page = setupRowData();
     await showAlbum(page);

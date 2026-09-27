@@ -68,6 +68,7 @@
           :source-value="moreFromArtistSource"
           :items="artistReleaseItems"
           :view-all-to="artistAlbumsRoute"
+          :empty-message="$t('artist_row_empty')"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
           @select-source="selectMoreFromArtistSource"
@@ -288,13 +289,30 @@ watch(
   { immediate: true },
 );
 
-// a new album starts at the top of the page and looks up its backdrop;
-// anything else (a favorite toggle, a metadata update) leaves both alone
+// the full artist is loaded only when something needs it: the "more from this
+// artist" picker needs its provider mappings, and the hero falls back to its
+// wide art. Browsing albums whose row is hidden and that carry their own wide
+// art then makes no extra request.
+const needsFullArtist = computed(
+  () =>
+    !!itemDetails.value &&
+    (visibleRows.value.includes("more_from_artist") ||
+      albumBackdrop(itemDetails.value).blurred),
+);
+
+// a new album starts at the top of the page and drops the previous artist;
+// the artist is (re)loaded once whatever needs it is in play, so unhiding the
+// row later still fetches it. A favorite toggle or metadata update keeps both.
 watch(
-  () => itemDetails.value?.uri,
-  () => {
-    document.querySelector(".content-section")?.scrollTo({ top: 0 });
-    loadFullArtist();
+  [() => itemDetails.value?.uri, needsFullArtist],
+  ([uri], [previousUri]) => {
+    if (uri !== previousUri) {
+      document.querySelector(".content-section")?.scrollTo({ top: 0 });
+      fullArtist.value = undefined;
+    }
+    if (needsFullArtist.value && fullArtist.value === undefined) {
+      loadFullArtist();
+    }
   },
 );
 
@@ -355,10 +373,8 @@ function selectMoreFromArtistSource(source: RowSource) {
  */
 async function loadFullArtist() {
   const album = itemDetails.value;
-  fullArtist.value = undefined;
-  if (!album) return;
-  const artist = album.artists[0];
-  if (!artist) {
+  const artist = album?.artists[0];
+  if (!album || !artist) {
     fullArtist.value = null;
     return;
   }

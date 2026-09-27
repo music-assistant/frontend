@@ -12,6 +12,8 @@ const {
   mockSubscribe,
   mockAvailableAlbumRowIds,
   mockResolveAlbumRows,
+  mockAlbumRowsSources,
+  mockAlbumRowsSetSource,
   mockLoadAlbumTracks,
   mockLoadAlbumVersions,
   mockLoadArtistReleases,
@@ -21,6 +23,8 @@ const {
   mockSubscribe: vi.fn(() => () => {}),
   mockAvailableAlbumRowIds: vi.fn(),
   mockResolveAlbumRows: vi.fn(),
+  mockAlbumRowsSources: vi.fn(() => [] as string[]),
+  mockAlbumRowsSetSource: vi.fn(),
   mockLoadAlbumTracks: vi.fn(),
   mockLoadAlbumVersions: vi.fn(),
   mockLoadArtistReleases: vi.fn(),
@@ -50,8 +54,8 @@ vi.mock("@/components/album/albumRows", () => ({
     resolve: mockResolveAlbumRows,
     definition: (id: string) => ({ id, labelKey: id }),
     effectiveSource: () => "library",
-    sources: () => [],
-    setSource: vi.fn(),
+    sources: mockAlbumRowsSources,
+    setSource: mockAlbumRowsSetSource,
   },
 }));
 
@@ -83,7 +87,15 @@ vi.mock("@/components/details/MediaRowList.vue", () => ({
 vi.mock("@/components/details/ReleaseShelf.vue", () => ({
   default: {
     name: "ReleaseShelf",
-    props: ["title", "viewAllTo", "sourceLabel", "sourceDomain"],
+    props: [
+      "title",
+      "viewAllTo",
+      "sourceLabel",
+      "sourceDomain",
+      "sourceOptions",
+      "sourceValue",
+    ],
+    emits: ["select-source", "edit-rows"],
     template: '<div data-row="more_from_artist" />',
   },
 }));
@@ -153,6 +165,8 @@ describe("AlbumDetails", () => {
     mockGetArtist.mockReset().mockResolvedValue(undefined);
     mockSubscribe.mockReset().mockReturnValue(() => {});
     mockAvailableAlbumRowIds.mockReset().mockReturnValue(ALL_ROWS);
+    mockAlbumRowsSources.mockReset().mockReturnValue([]);
+    mockAlbumRowsSetSource.mockReset();
     mockResolveAlbumRows
       .mockReset()
       .mockImplementation((availableIds: string[]) => ({
@@ -258,5 +272,32 @@ describe("AlbumDetails", () => {
 
     const shelf = wrapper.findComponent({ name: "ReleaseShelf" });
     expect(shelf.props("sourceLabel")).toBe("in_library");
+  });
+
+  it("wires the source picker to the shelf and persists a selection", async () => {
+    mockAlbumRowsSources.mockReturnValue(["library", "spotify--x"]);
+
+    const wrapper = await mountDetails(
+      album({
+        item_id: "1",
+        artists: [
+          {
+            item_id: "a1",
+            provider: "library",
+            name: "Adele",
+          } as Album["artists"][number],
+        ],
+      }),
+    );
+
+    const shelf = wrapper.findComponent({ name: "ReleaseShelf" });
+    expect(shelf.props("sourceOptions")).toHaveLength(2);
+    expect(shelf.props("sourceValue")).toBe("library");
+
+    shelf.vm.$emit("select-source", "spotify--x");
+    expect(mockAlbumRowsSetSource).toHaveBeenCalledWith(
+      "more_from_artist",
+      "spotify--x",
+    );
   });
 });
