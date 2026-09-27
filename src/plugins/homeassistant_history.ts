@@ -11,27 +11,6 @@ interface HistoryEntry {
 }
 
 /**
- * The path of the app's panel in Home Assistant.
- *
- * The app panel opens an app at `/app/<slug>` and its own sidebar entry at
- * `/<slug>`. Worked out from the full path rather than taken from the route
- * Home Assistant reports, which older releases split one segment too far for
- * the sidebar entry.
- */
-function panelPathOf(haPath: string): string {
-  const [, panel, slug] = haPath.split("/");
-  return panel === "app" ? `/app/${slug}` : `/${panel}`;
-}
-
-/**
- * The path of a location as Home Assistant reports it: without query or hash,
- * and encoded the way the browser keeps it.
- */
-function pathOf(location: string): string {
-  return new URL(location, window.location.origin).pathname;
-}
-
-/**
  * Router history for the app embedded in the Home Assistant panel.
  *
  * Home Assistant keeps the history: every navigation becomes an entry in its
@@ -266,4 +245,25 @@ export function createHAHistory(): RouterHistory {
   };
 
   return history;
+}
+
+/**
+ * The path of the app's panel in Home Assistant.
+ *
+ * The app panel opens an app at `/app/<slug>` and its own sidebar entry at
+ * `/<slug>`. Worked out from the full path rather than taken from the route
+ * Home Assistant reports, which older releases split one segment too far for
+ * the sidebar entry.
+ */
+function panelPathOf(haPath: string): string {
+  const [, panel, slug] = haPath.split("/");
+  return panel === "app" ? `/app/${slug}` : `/${panel}`;
+}
+
+/**
+ * The path of a location as Home Assistant reports it: without query or hash,
+ * and encoded the way the browser keeps it.
+ */
+function pathOf(location: string): string {
+  return new URL(location, window.location.origin).pathname;
 }
