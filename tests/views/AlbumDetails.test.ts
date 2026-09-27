@@ -49,6 +49,9 @@ vi.mock("@/components/album/albumRows", () => ({
   albumRows: {
     resolve: mockResolveAlbumRows,
     definition: (id: string) => ({ id, labelKey: id }),
+    effectiveSource: () => "library",
+    sources: () => [],
+    setSource: vi.fn(),
   },
 }));
 

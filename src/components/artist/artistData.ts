@@ -2,6 +2,7 @@ import type { RowSource } from "@/components/details/rowRegistry";
 import { api } from "@/plugins/api";
 import {
   AlbumType,
+  ProviderFeature,
   type Album,
   type Artist,
   type ItemMapping,
@@ -10,25 +11,63 @@ import {
 
 /**
  * The artist's releases, from the library or from a single provider's own
- * catalog.
- *
- * `source` follows artistRows.effectiveSource: "library" returns the in-library
- * albums, a provider instance id queries that provider with the artist's id
- * there, so an artist not mapped to it has no releases to show. A provider
- * (non-library) artist always comes from its own provider.
+ * catalog. See artistAlbumsBySource for how `source` selects the provider.
  */
 export async function loadArtistReleases(
   artist: Artist,
   source: RowSource,
 ): Promise<Album[]> {
+  return await artistAlbumsBySource(artist, source);
+}
+
+/**
+ * The releases of an artist from one source: the library, or a single
+ * provider's own catalog.
+ *
+ * `source` follows a row registry's effectiveSource: "library" returns the
+ * in-library albums, a provider instance id queries that provider with the
+ * artist's id there, so an artist not mapped to it has no releases to show. A
+ * provider (non-library) artist always comes from its own provider. A slim
+ * mapping carries no provider mappings, so a provider source yields nothing.
+ */
+export async function artistAlbumsBySource(
+  artist: ItemMapping | Artist,
+  source: RowSource,
+): Promise<Album[]> {
   if (source === "library" || artist.provider !== "library") {
     return await api.getArtistAlbums(artist.item_id, artist.provider);
   }
-  const mapping = artist.provider_mappings.find(
+  const mappings =
+    "provider_mappings" in artist ? artist.provider_mappings : [];
+  const mapping = mappings.find(
     (candidate) => candidate.provider_instance === source,
   );
   if (!mapping) return [];
   return await api.getArtistAlbums(mapping.item_id, mapping.provider_instance);
+}
+
+/**
+ * The provider instances the artist is mapped to that support `feature`, sorted
+ * by provider name: the candidate sources for a row fed by the artist's own
+ * provider catalogs.
+ */
+export function artistProvidersForFeature(
+  artist: Artist,
+  feature: ProviderFeature,
+): string[] {
+  const ids = new Set<string>();
+  for (const mapping of artist.provider_mappings) {
+    if (
+      api.providers[mapping.provider_instance]?.supported_features.includes(
+        feature,
+      )
+    ) {
+      ids.add(mapping.provider_instance);
+    }
+  }
+  return [...ids].sort((a, b) =>
+    (api.providers[a]?.name ?? a).localeCompare(api.providers[b]?.name ?? b),
+  );
 }
 
 /** The artist's in-library tracks, optionally limited to a single provider. */
