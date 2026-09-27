@@ -1241,6 +1241,7 @@ describe("App initialization", () => {
     expect(mockSubscribeToHAProperties).toHaveBeenCalledWith({
       handleSafeArea: true,
       kioskMode: true,
+      router: expect.objectContaining({ push: mockRouterPush }),
     });
   });
 
@@ -1253,6 +1254,7 @@ describe("App initialization", () => {
     expect(mockSubscribeToHAProperties).toHaveBeenCalledWith({
       handleSafeArea: true,
       kioskMode: false,
+      router: expect.objectContaining({ push: mockRouterPush }),
     });
   });
 

@@ -69,6 +69,7 @@ vi.mock("@/plugins/auth", () => ({
 
 vi.mock("@/plugins/homeassistant", () => ({
   notifyHARouteChange: vi.fn(),
+  withHAHistory: <T>(history: T) => history,
 }));
 
 vi.mock("@/plugins/i18n", () => ({

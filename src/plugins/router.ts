@@ -14,7 +14,7 @@ import { toast } from "vue-sonner";
 import { api, ConnectionState } from "./api";
 import { Scope } from "./api/interfaces";
 import { authManager } from "./auth";
-import { notifyHARouteChange } from "./homeassistant";
+import { notifyHARouteChange, withHAHistory } from "./homeassistant";
 import { store } from "./store";
 
 declare module "vue-router" {
@@ -679,7 +679,7 @@ export const routes: RouteRecordRaw[] = [
 ];
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: withHAHistory(createWebHashHistory()),
   routes,
 });
 

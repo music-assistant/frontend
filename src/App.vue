@@ -361,6 +361,7 @@ const completeInitialization = async () => {
     subscribeToHAProperties({
       handleSafeArea: true,
       kioskMode: getKioskModePreference(),
+      router,
     });
   }
 

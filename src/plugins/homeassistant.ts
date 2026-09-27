@@ -4,7 +4,7 @@ import {
   subscribeToDeviceSetting,
 } from "@/helpers/device_settings";
 import { reactive, readonly } from "vue";
-import type { Router } from "vue-router";
+import type { HistoryState, Router, RouterHistory } from "vue-router";
 
 export interface HARoute {
   path: string;
@@ -48,6 +48,95 @@ let messageHandler: ((event: MessageEvent) => void) | null = null;
 let routerInstance: Router | null = null;
 let isNavigatingFromHA = false;
 let reportedInsets: Partial<HASafeAreaInsets> | null = null;
+
+// The views behind the history entries Home Assistant keeps for us while it
+// owns the history, and the one it is showing now.
+let haEntries: string[] = [];
+let haIndex = -1;
+let haPushPending = false;
+
+/**
+ * Whether Home Assistant keeps the history entries for our views.
+ *
+ * With the full screen the app looks like part of Home Assistant, so its views
+ * have to be steps back in Home Assistant too. Otherwise the entries our own
+ * frame adds stay the steps back, and Home Assistant only follows our URL.
+ */
+function haOwnsHistory(): boolean {
+  return (
+    state.routeSyncEnabled &&
+    state.kioskModeEnabled &&
+    !!state.properties.route?.prefix
+  );
+}
+
+/**
+ * Hand the history entries to Home Assistant while it owns the history.
+ *
+ * Our frame then moves in place, and Home Assistant adds the entry. The
+ * Android app only steps back through entries of the Home Assistant page, and
+ * an entry in both places would take two steps back for every view. The
+ * router still reads which views are back and forward from the state of its
+ * own history, so that state comes from the entries Home Assistant keeps.
+ */
+export function withHAHistory(history: RouterHistory): RouterHistory {
+  const { push, replace } = history;
+
+  function replaceWithEntries(to: string, data?: HistoryState) {
+    replace(to, {
+      ...data,
+      back: haEntries[haIndex - 1] ?? null,
+      forward: haEntries[haIndex + 1] ?? null,
+    });
+  }
+
+  history.push = (to, data) => {
+    if (!haOwnsHistory()) {
+      push(to, data);
+      return;
+    }
+    if (haIndex < 0) {
+      haEntries = [history.location];
+      haIndex = 0;
+    }
+
+    if (isNavigatingFromHA && haEntries[haIndex - 1] === to) {
+      haIndex--;
+    } else if (isNavigatingFromHA && haEntries[haIndex + 1] === to) {
+      haIndex++;
+    } else if (isNavigatingFromHA) {
+      // An entry we did not add, such as one from before a reload.
+      haEntries[haIndex] = to;
+    } else {
+      haEntries.splice(haIndex + 1, Infinity, to);
+      haIndex++;
+      haPushPending = true;
+    }
+    replaceWithEntries(to, data);
+  };
+
+  history.replace = (to, data) => {
+    if (!haOwnsHistory() || haIndex < 0) {
+      replace(to, data);
+      return;
+    }
+    haEntries[haIndex] = to;
+    replaceWithEntries(to, data);
+  };
+
+  return history;
+}
+
+/**
+ * The view to show for a route Home Assistant moved to.
+ *
+ * Home Assistant leaves the query out of the route it reports, so a step back
+ * or forward takes the view it had from the entry we keep.
+ */
+function viewForHARoute(path: string): string {
+  const neighbours = [haEntries[haIndex - 1], haEntries[haIndex + 1]];
+  return neighbours.find((entry) => entry?.split("?")[0] === path) ?? path;
+}
 
 /**
  * The part of the reported safe area Music Assistant is left to cover.
@@ -95,6 +184,7 @@ function handleMessage(event: MessageEvent) {
   }
 
   if (event.data?.type === "home-assistant/properties") {
+    const isFirstReport = state.properties.route === null;
     const oldRoute = state.properties.route?.path;
     state.properties.narrow = event.data.narrow ?? false;
     state.properties.route = event.data.route ?? null;
@@ -107,13 +197,17 @@ function handleMessage(event: MessageEvent) {
     }
     applySafeAreaInsets();
 
-    if (
+    if (state.routeSyncEnabled && routerInstance && isFirstReport) {
+      // Home Assistant opens the frame on the panel itself, so its URL starts
+      // out without the view we show.
+      notifyHARouteChange(routerInstance.currentRoute.value.fullPath);
+    } else if (
       state.routeSyncEnabled &&
       routerInstance &&
       state.properties.route?.path
     ) {
       const haRoutePath = state.properties.route.path;
-      const currentMARoute = routerInstance.currentRoute.value.fullPath;
+      const currentMARoute = routerInstance.currentRoute.value.path;
 
       if (
         oldRoute &&
@@ -121,7 +215,7 @@ function handleMessage(event: MessageEvent) {
         oldRoute !== haRoutePath
       ) {
         isNavigatingFromHA = true;
-        routerInstance.push(haRoutePath).finally(() => {
+        routerInstance.push(viewForHARoute(haRoutePath)).finally(() => {
           isNavigatingFromHA = false;
         });
       }
@@ -204,6 +298,9 @@ export function unsubscribeFromHAProperties(): void {
   state.safeAreaEnabled = false;
   routerInstance = null;
   reportedInsets = null;
+  haEntries = [];
+  haIndex = -1;
+  haPushPending = false;
 
   // Home Assistant pads the iframe again the moment we unsubscribe, so hand the
   // safe area back rather than reserving it twice.
@@ -251,11 +348,15 @@ subscribeToDeviceSetting(HA_KIOSK_MODE, applyKioskModePreference);
 
 /**
  * Notify Home Assistant of a route change in Music Assistant.
- * This keeps the HA URL in sync with the MA route.
+ * This keeps the HA URL in sync with the MA route, and adds the history entry
+ * for a new view while Home Assistant owns the history.
  *
  * @param path - The MA route path (e.g., "/home", "/artists/spotify/123")
  */
 export function notifyHARouteChange(path: string): void {
+  const replace = !haPushPending;
+  haPushPending = false;
+
   if (!state.isSubscribed || !state.routeSyncEnabled) {
     return;
   }
@@ -270,7 +371,7 @@ export function notifyHARouteChange(path: string): void {
   }
 
   const fullPath = prefix + path;
-  navigateInHA(fullPath, { replace: true });
+  navigateInHA(fullPath, { replace });
 }
 
 /**
