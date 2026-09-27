@@ -175,7 +175,7 @@ export function createHAHistory(): RouterHistory {
       if (!triggerListeners) {
         move(delta, false);
       }
-      window.history.go(delta);
+      haWindow.history.go(delta);
     },
     listen(callback) {
       listeners.push(callback);

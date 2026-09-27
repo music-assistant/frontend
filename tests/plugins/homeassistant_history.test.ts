@@ -4,7 +4,7 @@ import {
 } from "@/plugins/homeassistant_history";
 import { defineComponent } from "vue";
 import { createRouter, type Router, type RouterHistory } from "vue-router";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const PANEL = "/d5369777_music_assistant";
 
@@ -31,6 +31,12 @@ function fakeHomeAssistant(initialPath: string, earlierPaths: string[] = []) {
   const url = () => new URL(entries[index], "http://homeassistant.local");
 
   const haWindow = Object.assign(new EventTarget(), {
+    history: {
+      go(delta = 0) {
+        index = Math.max(0, Math.min(index + delta, entries.length - 1));
+        setTimeout(() => haWindow.dispatchEvent(new Event("popstate")));
+      },
+    },
     location: {
       get pathname() {
         return url().pathname;
@@ -58,19 +64,13 @@ function fakeHomeAssistant(initialPath: string, earlierPaths: string[] = []) {
     configurable: true,
   });
 
-  const go = vi.spyOn(window.history, "go").mockImplementation((delta = 0) => {
-    index = Math.max(0, Math.min(index + delta, entries.length - 1));
-    setTimeout(() => haWindow.dispatchEvent(new Event("popstate")));
-  });
-
   return {
     entries: () => [...entries],
     get path() {
       return entries[index];
     },
-    back: () => window.history.go(-1),
+    back: () => haWindow.history.go(-1),
     restore() {
-      go.mockRestore();
       Object.defineProperty(window, "parent", {
         value: window,
         configurable: true,
