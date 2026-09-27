@@ -63,6 +63,8 @@
         <ReleaseShelf
           v-else-if="rowId === 'more_from_artist' && showRow(artistReleases)"
           :title="moreFromArtistTitle"
+          :source-label="moreFromArtistSource?.label"
+          :source-domain="moreFromArtistSource?.domain"
           :items="artistReleases"
           :view-all-to="artistAlbumsRoute"
           :parent-item="itemDetails"
@@ -119,6 +121,7 @@ import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
 import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import MediaRowList from "@/components/details/MediaRowList.vue";
 import ReleaseShelf from "@/components/details/ReleaseShelf.vue";
+import { rowSourceDisplay } from "@/components/details/rowRegistry";
 import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
@@ -195,6 +198,12 @@ const moreFromArtistTitle = computed(() =>
   albumArtist.value
     ? $t("more_from_artist_name", { name: albumArtist.value.name })
     : $t("more_from_artist"),
+);
+
+// the shelf lists the album artist's own releases, from whatever source holds
+// that artist, so its badge names that source (the library, or a provider)
+const moreFromArtistSource = computed(() =>
+  rowSourceDisplay(albumArtist.value?.provider),
 );
 
 // the shelf shows the newest releases; the rest are on the artist's own page
@@ -332,3 +341,12 @@ function versionSubtitle(item: MediaItemType | ItemMapping): string {
   return parts.join(" · ");
 }
 </script>
+
+<style scoped>
+/* the shelf carries only bottom spacing, the rows above it only top; on this
+   page it can follow the versions list, so give it a matching top gap to keep
+   the row rhythm instead of sitting flush against the row above */
+.album-details :deep(.ed-shelf) {
+  margin-top: 26px;
+}
+</style>

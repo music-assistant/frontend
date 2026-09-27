@@ -55,6 +55,7 @@
               <slot name="subtitle" :item="item">{{ subtitle(item) }}</slot>
             </span>
           </span>
+          <ExplicitBadge v-if="isExplicit(item)" class="media-rows__explicit" />
           <span v-if="showSource || $slots.tag" class="media-rows__tag">
             <slot name="tag" :item="item">
               <ProviderIcon :domain="getProviderIconDomain(item)" :size="12" />
@@ -102,6 +103,7 @@
 </template>
 
 <script setup lang="ts">
+import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -113,6 +115,7 @@ import {
   handleMediaItemClick,
   handleMenuBtnClick,
 } from "@/helpers/media_item_actions";
+import { parseBool } from "@/helpers/parse";
 import { formatDuration, getArtistsString } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { getProviderIconDomain, itemIsAvailable } from "@/plugins/api/helpers";
@@ -221,6 +224,14 @@ const subtitle = function (item: RowItem): string {
   }
   if ("year" in item && item.year) parts.push(String(item.year));
   return parts.join(" · ");
+};
+
+const isExplicit = function (item: RowItem): boolean {
+  return (
+    "metadata" in item &&
+    !!item.metadata &&
+    parseBool(item.metadata.explicit || false)
+  );
 };
 
 const onItemClick = function (
@@ -345,6 +356,9 @@ function itemDuration(item: RowItem): number | undefined {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.media-rows__explicit {
+  flex: none;
 }
 .media-rows__tag {
   flex: none;
