@@ -716,7 +716,7 @@ describe("ItemsListing favorite updates", () => {
     expect(rows(listing).map((item) => item.favorite)).toEqual([
       true,
       true,
-      false,
+      null,
     ]);
   });
 });

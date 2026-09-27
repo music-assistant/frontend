@@ -19,7 +19,7 @@ export function podcastEpisode(
     media_type: MediaType.PODCAST_EPISODE,
     provider_mappings: [],
     metadata: {},
-    favorite: false,
+    favorite: null,
     position: 1,
     podcast: podcast(),
     duration: 200,
