@@ -104,6 +104,9 @@ const ROLES_SCHEMA_VERSION = 74;
 // Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
 const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
 
+// Per-user favorites with a dislike (music/favorites/set_item) landed in API schema 78.
+const PERSONAL_FAVORITES_SCHEMA_VERSION = 78;
+
 export interface CommandOptions {
   /**
    * Skip the global console.error + error toast for an error result. Use for a
@@ -1538,12 +1541,32 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * Set the signed-in user's state on a media item.
+   *
+   * :param item: The item (uri or media item) to set the state on.
+   * :param favorite: true to like, false to dislike, null to clear the state.
+   */
+  public async setFavorite(
+    item: string | MediaItemType | ItemMapping,
+    favorite: boolean | null,
+  ): Promise<void> {
+    // optimistically set the value
+    if (typeof item !== "string" && "favorite" in item) {
+      item.favorite = favorite;
+    }
+    return this.sendCommand("music/favorites/set_item", {
+      item,
+      favorite,
+    });
+  }
+
   public toggleFavorite(item: MediaItem) {
-    // Toggle favorite for a media item
-    if (item.favorite) {
+    // Toggle the like: a disliked item is liked too, clearing the dislike
+    if (item.favorite === true) {
       this.removeItemFromFavorites(item.media_type, item.item_id);
       // optimistically set the value
-      item.favorite = false;
+      item.favorite = null;
     } else {
       this.addItemToFavorites(item);
       // optimistically set the value
@@ -3111,6 +3134,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server keeps favorites per user, with a dislike (schema >= 78). */
+  public get supportsPersonalFavorites(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      PERSONAL_FAVORITES_SCHEMA_VERSION
     );
   }
 

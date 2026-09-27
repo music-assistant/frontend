@@ -23,6 +23,16 @@
         <Heart class="size-4" :fill="isFavorite ? 'currentColor' : 'none'" />
         {{ isFavorite ? $t("favorites_remove") : $t("favorites_add") }}
       </DropdownMenuItem>
+      <!-- the heart only ever says "liked", so the dislike gets its own entry -->
+      <DropdownMenuItem
+        v-if="api.supportsPersonalFavorites"
+        @click="setFavorite(isDisliked ? null : false)"
+      >
+        <ThumbsDown class="size-4" />
+        {{
+          isDisliked ? $t("favorites_dislike_remove") : $t("favorites_dislike")
+        }}
+      </DropdownMenuItem>
       <DropdownMenuItem @click="addToPlaylist">
         <PlusCircle class="size-4" />
         {{ $t("add_playlist") }}
@@ -42,9 +52,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCurrentItemFavorite } from "@/composables/useCurrentItemFavorite";
 import { usePopoutTriggerHover } from "@/composables/usePopoutTriggerHover";
+import api from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
-import { Heart, PlusCircle } from "@lucide/vue";
+import { Heart, PlusCircle, ThumbsDown } from "@lucide/vue";
 import { computed, ref } from "vue";
 
 export interface Props {
@@ -56,8 +67,14 @@ withDefaults(defineProps<Props>(), {
   size: 20,
 });
 
-const { currentItem, isFavorite, toggleFavorite, addToPlaylist } =
-  useCurrentItemFavorite();
+const {
+  currentItem,
+  isFavorite,
+  isDisliked,
+  toggleFavorite,
+  setFavorite,
+  addToPlaylist,
+} = useCurrentItemFavorite();
 // favouring and adding to a playlist both change the library
 const canEditLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_WRITE),

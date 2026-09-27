@@ -65,16 +65,29 @@
           <span v-if="itemDuration(item)" class="media-rows__duration">{{
             formatDuration(itemDuration(item)!)
           }}</span>
+          <!-- the heart only tells likes apart, so a dislike gets a badge of
+               its own -->
+          <span
+            v-if="'favorite' in item && item.favorite === false"
+            class="media-rows__disliked"
+            role="img"
+            :aria-label="$t('favorites_disliked')"
+            :title="$t('favorites_disliked')"
+          >
+            <IconThumbDown :stroke-width="2" :size="16" />
+          </span>
           <button
             v-if="showFavorite && 'favorite' in item && canEditLibrary"
             type="button"
             class="media-rows__button"
-            :class="{ 'media-rows__button--favorite': item.favorite }"
+            :class="{
+              'media-rows__button--favorite': item.favorite === true,
+            }"
             :aria-label="$t('tooltip.favorite')"
-            :aria-pressed="item.favorite ? 'true' : 'false'"
+            :aria-pressed="item.favorite === true ? 'true' : 'false'"
             @click.stop="api.toggleFavorite(item)"
           >
-            <IconHeartFilled v-if="item.favorite" :size="18" />
+            <IconHeartFilled v-if="item.favorite === true" :size="18" />
             <IconHeart v-else :stroke-width="2" :size="18" />
           </button>
           <button
@@ -130,7 +143,7 @@ import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { EllipsisVertical } from "@lucide/vue";
-import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
+import { IconHeart, IconHeartFilled, IconThumbDown } from "@tabler/icons-vue";
 import { computed } from "vue";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 
@@ -399,6 +412,12 @@ function itemDuration(item: RowItem): number | undefined {
 }
 .media-rows__button--favorite {
   color: rgb(var(--v-theme-primary));
+}
+.media-rows__disliked {
+  align-items: center;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  display: flex;
+  flex: none;
 }
 .media-rows__skeleton-text {
   height: 16px;

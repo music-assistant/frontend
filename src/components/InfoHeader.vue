@@ -376,13 +376,24 @@
                 variant="ghost-icon"
                 size="icon-xs"
                 :aria-label="$t('tooltip.favorite')"
-                :aria-pressed="item.favorite ? 'true' : 'false'"
+                :aria-pressed="isFavorite ? 'true' : 'false'"
                 :title="favoriteButtonLabel"
                 @click="api.toggleFavorite(item)"
               >
-                <IconHeartFilled v-if="item.favorite" class="size-6" />
+                <IconHeartFilled v-if="isFavorite" class="size-6" />
                 <IconHeart v-else :stroke-width="2" class="size-6" />
               </Button>
+              <!-- the heart only tells likes apart, so a dislike gets a badge
+                   of its own -->
+              <span
+                v-if="isDisliked"
+                class="opacity-70"
+                role="img"
+                :aria-label="$t('favorites_disliked')"
+                :title="$t('favorites_disliked')"
+              >
+                <IconThumbDown :stroke-width="2" class="size-5" />
+              </span>
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
               <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
@@ -550,7 +561,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
-import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
+import { IconHeart, IconHeartFilled, IconThumbDown } from "@tabler/icons-vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
@@ -772,8 +783,11 @@ const canManageGenre = computed(
     compProps.item.provider === "library" &&
     canManageLibrary.value,
 );
+const isFavorite = computed(() => compProps.item?.favorite === true);
+const isDisliked = computed(() => compProps.item?.favorite === false);
+
 const favoriteButtonLabel = computed(() =>
-  compProps.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
+  isFavorite.value ? $t("favorites_remove") : $t("favorites_add"),
 );
 
 const mergeGenre = () => {

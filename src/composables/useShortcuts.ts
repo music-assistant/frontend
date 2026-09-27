@@ -1,4 +1,5 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { keepOwnFavorite } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import type {
   Album,
@@ -457,7 +458,10 @@ export function useShortcuts() {
           evt.data &&
           SUPPORTED_TYPES.has((evt.data as ShortcutItem).media_type)
         ) {
-          resolvedItems.value[idx] = evt.data as ShortcutItem;
+          resolvedItems.value[idx] = keepOwnFavorite(
+            evt.data as ShortcutItem,
+            resolvedItems.value[idx],
+          );
         }
       },
     );

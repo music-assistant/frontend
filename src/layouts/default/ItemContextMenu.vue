@@ -357,6 +357,7 @@ import {
   Shuffle,
   SkipForward,
   Sparkles,
+  ThumbsDown,
   Trash2,
 } from "@lucide/vue";
 import type { Component } from "vue";
@@ -773,7 +774,7 @@ export const getContextMenuItems = async function (
             for (const item of items) {
               // optimistically clear membership so the derived state re-evaluates;
               // favorite implies membership, so it must clear too
-              if ("favorite" in item) item.favorite = false;
+              if ("favorite" in item) item.favorite = null;
               if ("provider_mappings" in item)
                 item.provider_mappings.forEach((pm) => (pm.in_library = false));
             }
@@ -817,10 +818,14 @@ export const getContextMenuItems = async function (
       "favorite" in item &&
       item.favorite === true &&
       (items.length > 1 || inLibrary);
+    const isDisliked = (item: MediaItemTypeOrItemMapping) =>
+      "favorite" in item &&
+      item.favorite === false &&
+      (items.length > 1 || inLibrary);
 
     // the actions run on the library copy while the next menu is built from
-    // the item the caller holds, so its flag has to follow
-    const markFavorite = (favorite: boolean) => {
+    // the item the caller holds, so its state has to follow
+    const markFavorite = (favorite: boolean | null) => {
       for (const item of items) {
         if ("favorite" in item) item.favorite = favorite;
       }
@@ -839,7 +844,7 @@ export const getContextMenuItems = async function (
             for (const item of favoritableItems) {
               api.removeItemFromFavorites(item.media_type, item.item_id);
             }
-            markFavorite(false);
+            markFavorite(null);
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
           },
@@ -886,13 +891,78 @@ export const getContextMenuItems = async function (
           action: () => {
             for (const item of favoritableItems.filter(isFavorite)) {
               api.removeItemFromFavorites(item.media_type, item.item_id);
-              if ("favorite" in item) item.favorite = false;
+              if ("favorite" in item) item.favorite = null;
             }
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
           },
           icon: Heart,
         });
+      }
+
+      // A dislike is a state of its own, so it gets its own pair of entries:
+      // the heart only ever says "liked", and clearing a dislike is not the
+      // same action as removing a favorite. Older servers have no dislike.
+      if (api.supportsPersonalFavorites) {
+        const allDisliked = favoritableItems.every(isDisliked);
+        const noneDisliked = !favoritableItems.some(isDisliked);
+
+        if (allDisliked) {
+          contextMenuItems.push({
+            label: "favorites_dislike_remove",
+            labelArgs: [],
+            action: () => {
+              for (const item of favoritableItems) {
+                api.removeItemFromFavorites(item.media_type, item.item_id);
+              }
+              markFavorite(null);
+              eventbus.emit("clearSelection");
+            },
+            icon: ThumbsDown,
+          });
+        } else if (noneDisliked) {
+          contextMenuItems.push({
+            label: "favorites_dislike",
+            labelArgs: [],
+            action: () => {
+              for (const item of favoritableItems) {
+                api.setFavorite(addableItem(item), false);
+              }
+              markFavorite(false);
+              eventbus.emit("clearSelection");
+            },
+            icon: ThumbsDown,
+          });
+        } else {
+          // mixed selection: both, each acting on the items it applies to
+          contextMenuItems.push({
+            label: "favorites_dislike",
+            labelArgs: [],
+            action: () => {
+              for (const item of favoritableItems.filter(
+                (item) => !isDisliked(item),
+              )) {
+                api.setFavorite(addableItem(item), false);
+                if ("favorite" in item) item.favorite = false;
+              }
+              eventbus.emit("clearSelection");
+            },
+            icon: ThumbsDown,
+          });
+
+          contextMenuItems.push({
+            label: "favorites_dislike_remove",
+            labelArgs: [],
+            action: () => {
+              for (const item of favoritableItems.filter(isDisliked)) {
+                api.removeItemFromFavorites(item.media_type, item.item_id);
+                if ("favorite" in item) item.favorite = null;
+              }
+              eventbus.emit("clearSelection");
+            },
+            icon: ThumbsDown,
+          });
+        }
       }
     }
   }

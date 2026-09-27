@@ -27,8 +27,10 @@ vi.mock("@/plugins/api", () => {
   const api = {
     addItemToFavorites: vi.fn(),
     removeItemFromFavorites: vi.fn(),
+    setFavorite: vi.fn(),
     getLibraryItem: vi.fn(),
     subscribe: vi.fn(() => () => {}),
+    supportsPersonalFavorites: true,
     providers: {},
     players: {},
   };
@@ -48,6 +50,7 @@ vi.mock("@/plugins/auth", async () => {
 
 const addItemToFavorites = vi.mocked(api.addItemToFavorites);
 const removeItemFromFavorites = vi.mocked(api.removeItemFromFavorites);
+const setFavorite = vi.mocked(api.setFavorite);
 const getLibraryItem = vi.mocked(api.getLibraryItem);
 
 vi.mock("@/plugins/store", async () => {
@@ -173,6 +176,37 @@ describe("FavoriteMenuBtn", () => {
     },
   );
 
+  // the heart only ever says "liked", so the dislike is an entry of its own
+  it.each([
+    { favorite: null, entry: "favorites_dislike" },
+    { favorite: false, entry: "favorites_dislike_remove" },
+  ])("offers $entry for favorite $favorite", async ({ favorite, entry }) => {
+    await setPlaying(track({ favorite }));
+
+    expect(mountButton().findAll(".dropdown-item")[1].text()).toBe(entry);
+  });
+
+  it("dislikes the playing item", async () => {
+    const item = track({ favorite: null });
+    await setPlaying(item);
+    const wrapper = mountButton();
+
+    await wrapper.findAll(".dropdown-item")[1].trigger("click");
+
+    expect(setFavorite).toHaveBeenCalledWith(item, false);
+  });
+
+  it("clears the dislike of the playing item", async () => {
+    await setPlaying(track({ favorite: false }));
+    const wrapper = mountButton();
+
+    await wrapper.findAll(".dropdown-item")[1].trigger("click");
+    await flushPromises();
+
+    expect(removeItemFromFavorites).toHaveBeenCalledWith(MediaType.TRACK, "1");
+    expect(setFavorite).not.toHaveBeenCalled();
+  });
+
   it("is not offered to a role that may not change the library", () => {
     vi.mocked(authManager.hasScope).mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.guest),
@@ -247,7 +281,7 @@ describe("FavoriteMenuBtn", () => {
     await setPlaying(item);
     const wrapper = mountButton();
 
-    await wrapper.findAll(".dropdown-item")[1].trigger("click");
+    await wrapper.findAll(".dropdown-item")[2].trigger("click");
 
     expect(eventbus.emit).toHaveBeenCalledWith("playlistdialog", {
       items: [item],

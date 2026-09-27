@@ -427,6 +427,8 @@ export enum EventType {
   MEDIA_ITEM_PLAYED = "media_item_played",
   // an item's playlog entry changed; object_id is the item uri
   PLAYLOG_UPDATED = "playlog_updated",
+  // a user's like, dislike or unset on an item changed; object_id is the item uri
+  FAVORITE_UPDATED = "favorite_updated",
   PROVIDERS_UPDATED = "providers_updated",
   TASKS_UPDATED = "tasks_updated",
   MUSIC_SYNC_COMPLETED = "music_sync_completed",
@@ -637,6 +639,19 @@ export interface PlaylogUpdate {
   seconds_played: number;
   // the user the change applies to, null when it applies to all users
   userid?: string | null;
+}
+
+// data of the FAVORITE_UPDATED event
+export interface FavoriteUpdate {
+  uri: string;
+  media_type: MediaType;
+  // the library (database) id of the item
+  item_id: string;
+  // true is a like, false a dislike, null nothing at all
+  favorite: boolean | null;
+  // the user the change applies to; the server only sends the event to that
+  // user, but it is checked anyway
+  user_id: string;
 }
 
 export interface ServerInfoMessage {
@@ -1003,7 +1018,9 @@ interface _MediaItemBase {
 export interface MediaItem extends _MediaItemBase {
   provider_mappings: ProviderMapping[];
   metadata: MediaItemMetadata;
-  favorite: boolean;
+  // the signed-in user's own state: true is a like, false a dislike, null/absent
+  // nothing at all. Every user has their own.
+  favorite: boolean | null;
   position?: number | null; //required for playlist tracks, optional for all other
 }
 

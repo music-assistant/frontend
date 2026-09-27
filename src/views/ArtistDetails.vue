@@ -214,6 +214,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import { useArtistRowData } from "@/composables/useArtistRowData";
+import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import {
   ArtistType,
@@ -402,7 +403,10 @@ onMounted(() => {
       if (itemDetails.value?.uri == updatedItem.uri) {
         // update UI with the updated item
         loading.value = true;
-        itemDetails.value = updatedItem as Artist;
+        itemDetails.value = keepOwnFavorite(
+          updatedItem,
+          itemDetails.value,
+        ) as Artist;
         loading.value = false;
       } else if ("provider_mappings" in updatedItem) {
         for (const provMap of updatedItem.provider_mappings) {
@@ -413,7 +417,10 @@ onMounted(() => {
             )
           ) {
             loading.value = true;
-            itemDetails.value = updatedItem as Artist;
+            itemDetails.value = keepOwnFavorite(
+              updatedItem,
+              itemDetails.value,
+            ) as Artist;
             loading.value = false;
             break;
           }
@@ -422,6 +429,13 @@ onMounted(() => {
     },
   );
   onBeforeUnmount(unsub);
+
+  // the user's own like or dislike, wherever they made it
+  const unsubFavorite = subscribeOwnFavorites((update) => {
+    const item = itemDetails.value;
+    if (item?.uri == update.uri) item.favorite = update.favorite;
+  });
+  onBeforeUnmount(unsubFavorite);
 });
 
 const loadArtistAudiobooks = async function (params: LoadDataParams) {

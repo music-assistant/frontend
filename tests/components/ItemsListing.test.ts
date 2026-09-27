@@ -17,15 +17,17 @@ import { track } from "../fixtures/track";
 // listing stays listed here.
 const events = vi.hoisted(() => {
   const listeners: unknown[] = [];
+  const listen = (handler: unknown) => {
+    listeners.push(handler);
+    return () => {
+      const index = listeners.indexOf(handler);
+      if (index !== -1) listeners.splice(index, 1);
+    };
+  };
   return {
     listeners,
-    subscribeMulti: (_types: unknown, handler: unknown) => {
-      listeners.push(handler);
-      return () => {
-        const index = listeners.indexOf(handler);
-        if (index !== -1) listeners.splice(index, 1);
-      };
-    },
+    subscribe: (_type: unknown, handler: unknown) => listen(handler),
+    subscribeMulti: (_types: unknown, handler: unknown) => listen(handler),
   };
 });
 
@@ -33,6 +35,7 @@ const mockGetLibraryGenres = vi.hoisted(() =>
   vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
 );
 const mockSubscribeMulti = vi.hoisted(() => vi.fn());
+const mockSubscribe = vi.hoisted(() => vi.fn());
 
 vi.mock("@/plugins/api", () => {
   const api = {
@@ -40,6 +43,7 @@ vi.mock("@/plugins/api", () => {
     providerManifests: {},
     getLibraryGenres: mockGetLibraryGenres,
     subscribe_multi: mockSubscribeMulti,
+    subscribe: mockSubscribe,
   };
   return { api, default: api };
 });
@@ -177,6 +181,8 @@ describe("ItemsListing unmount cleanup", () => {
     mockGetLibraryGenres.mockResolvedValue([]);
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
     store.prevState = undefined;
   });
 
@@ -185,7 +191,8 @@ describe("ItemsListing unmount cleanup", () => {
     await flushPromises();
 
     expect(clearSelectionHandlers()).toBe(1);
-    expect(events.listeners).toHaveLength(1);
+    // the media item events and the user's own favorite changes
+    expect(events.listeners).toHaveLength(2);
 
     listing.unmount();
 
@@ -318,6 +325,8 @@ describe("ItemsListing per-page search", () => {
     mockGetLibraryGenres.mockResolvedValue([]);
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
     store.prevState = undefined;
     store.mobileLayout = false;
   });
@@ -495,6 +504,8 @@ describe("ItemsListing select all", () => {
     mockGetLibraryGenres.mockResolvedValue([]);
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
     store.prevState = undefined;
     store.mobileLayout = false;
     nativeConfirm.mockReset();
@@ -542,6 +553,8 @@ describe("ItemsListing source selector", () => {
     mockGetLibraryGenres.mockResolvedValue([]);
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
     store.prevState = undefined;
     for (const key of Object.keys(api.providers)) delete api.providers[key];
     api.providers["spotify--1"] = {
