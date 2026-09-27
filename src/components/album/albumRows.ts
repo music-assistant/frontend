@@ -19,7 +19,7 @@ export const ALBUM_ROWS: readonly RowDefinition<AlbumRowId>[] = [
   { id: "review", labelKey: "review" },
   { id: "other_versions", labelKey: "other_versions" },
   { id: "more_from_artist", labelKey: "more_from_artist" },
-  { id: "provider_mappings", labelKey: "mapped_providers" },
+  { id: "provider_mappings", labelKey: "source_details" },
   { id: "artwork", labelKey: "images", adminOnly: true },
 ];
 
