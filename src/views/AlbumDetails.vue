@@ -349,4 +349,10 @@ function versionSubtitle(item: MediaItemType | ItemMapping): string {
 .album-details :deep(.ed-shelf) {
   margin-top: 26px;
 }
+@media (max-width: 768px) {
+  /* the list tightens its row rhythm to 20px on phones; follow it here */
+  .album-details :deep(.ed-shelf) {
+    margin-top: 20px;
+  }
+}
 </style>
