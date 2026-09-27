@@ -60,14 +60,18 @@
 
         <!-- more from the album artist -->
         <ReleaseShelf
-          v-else-if="rowId === 'more_from_artist' && showRow(artistReleases)"
+          v-else-if="rowId === 'more_from_artist' && moreFromArtistVisible"
           :title="moreFromArtistTitle"
-          :source-label="moreFromArtistSource?.label"
-          :source-domain="moreFromArtistSource?.domain"
-          :items="artistReleases"
+          :source-label="moreFromArtistSourceDisplay?.label"
+          :source-domain="moreFromArtistSourceDisplay?.domain"
+          :source-options="moreFromArtistOptions"
+          :source-value="moreFromArtistSource"
+          :items="artistReleaseItems"
           :view-all-to="artistAlbumsRoute"
+          :empty-message="$t('artist_row_empty')"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
+          @select-source="selectMoreFromArtistSource"
         />
 
         <!-- provider mapping details -->
@@ -91,9 +95,9 @@
       </template>
     </template>
     <RowsEditor
-      v-if="itemDetails"
+      v-if="albumForRows"
       v-model:open="rowsEditorOpen"
-      :item="itemDetails"
+      :item="albumForRows"
       :registry="albumRows"
       :available-ids="availableRows"
       :row-meta="rowMeta"
@@ -120,7 +124,11 @@ import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
 import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import MediaRowList from "@/components/details/MediaRowList.vue";
 import ReleaseShelf from "@/components/details/ReleaseShelf.vue";
-import { rowSourceDisplay } from "@/components/details/rowRegistry";
+import {
+  rowSourceOptions,
+  type RowSource,
+  type SourceOption,
+} from "@/components/details/rowRegistry";
 import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
@@ -156,9 +164,11 @@ const rowsEditorOpen = ref(false);
 // what the hero counts and times
 const albumTracks = ref<Track[]>();
 
-// the album artist's own images, for an album without wide art of its own;
-// undefined while that lookup is still pending, null when there is none
-const backdropArtist = ref<Artist | null>();
+// the full album artist, loaded once the album is shown: its provider mappings
+// feed the "more from this artist" source picker, and its wide art backs the
+// hero when the album has none of its own. Pending while unresolved, null when
+// there is none.
+const fullArtist = ref<Artist | null>();
 
 // the rows the page can render for this album; the editor lists the same set
 const availableRows = computed(() =>
@@ -171,15 +181,27 @@ const visibleRows = computed(() => {
   return order.filter((rowId) => !hidden.has(rowId));
 });
 
-const { versionItems, artistReleases } = useAlbumRowData(
-  itemDetails,
-  visibleRows,
-);
+// the album with its full artist grafted into artists[0], once loaded: the row
+// registry reads the artist's provider mappings from there to build the source
+// picker, while itemDetails stays as the server sent it
+const albumForRows = computed<Album | undefined>(() => {
+  const album = itemDetails.value;
+  if (!album) return undefined;
+  if (!fullArtist.value) return album;
+  return { ...album, artists: [fullArtist.value, ...album.artists.slice(1)] };
+});
+
+const {
+  versionItems,
+  artistReleaseItems,
+  moreFromArtistSource,
+  moreFromArtistSourceDisplay,
+} = useAlbumRowData(albumForRows, visibleRows);
 
 // the cover at first; the artist's fanart takes over once that lookup is done
 const backdrop = computed(() =>
   itemDetails.value
-    ? albumBackdrop(itemDetails.value, backdropArtist.value ?? undefined)
+    ? albumBackdrop(itemDetails.value, fullArtist.value ?? undefined)
     : { blurred: false },
 );
 
@@ -191,7 +213,11 @@ const runningTime = computed(() =>
   albumTracks.value ? albumDuration(albumTracks.value) : undefined,
 );
 
-const albumArtist = computed(() => itemDetails.value?.artists[0]);
+// the resolved album artist once loaded, else the slim mapping the album came
+// with; both carry the name, and the resolved one the library id for "View all"
+const albumArtist = computed(
+  () => fullArtist.value ?? itemDetails.value?.artists[0],
+);
 
 const moreFromArtistTitle = computed(() =>
   albumArtist.value
@@ -199,13 +225,24 @@ const moreFromArtistTitle = computed(() =>
     : $t("more_from_artist"),
 );
 
-// the shelf lists the album artist's own releases, from whatever source holds
-// that artist, so its badge names that source (the library, or a provider)
-const moreFromArtistSource = computed(() =>
-  rowSourceDisplay(albumArtist.value?.provider),
+// the sources the artist's releases can be switched between, so the shelf badge
+// becomes a picker matching the rows editor
+const moreFromArtistOptions = computed<SourceOption[]>(() =>
+  albumForRows.value
+    ? rowSourceOptions(albumRows, "more_from_artist", albumForRows.value)
+    : [],
 );
 
-// the shelf shows the newest releases; the rest are on the artist's own page
+// the shelf stays rendered while it loads, when it has releases, or when it is
+// empty but offers a picker, so switching to a source that came up empty leaves
+// a way back
+const moreFromArtistVisible = computed(
+  () =>
+    showRow(artistReleaseItems.value) || moreFromArtistOptions.value.length > 1,
+);
+
+// the shelf shows the newest releases; the rest are on the artist's own page,
+// opened on the same source the shelf is showing
 const artistAlbumsRoute = computed<RouteLocationRaw | undefined>(() => {
   const artist = albumArtist.value;
   if (!artist) return undefined;
@@ -216,6 +253,9 @@ const artistAlbumsRoute = computed<RouteLocationRaw | undefined>(() => {
       itemId: artist.item_id,
       listing: "albums",
     },
+    query: moreFromArtistSource.value
+      ? { source: moreFromArtistSource.value }
+      : undefined,
   };
 });
 
@@ -229,8 +269,8 @@ const rowMeta = computed<Partial<Record<AlbumRowId, string>>>(() => ({
   other_versions: versionItems.value?.length
     ? String(versionItems.value.length)
     : undefined,
-  more_from_artist: artistReleases.value?.length
-    ? String(artistReleases.value.length)
+  more_from_artist: artistReleaseItems.value?.length
+    ? String(artistReleaseItems.value.length)
     : undefined,
 }));
 
@@ -253,13 +293,31 @@ watch(
   { immediate: true },
 );
 
-// a new album starts at the top of the page and looks up its backdrop;
-// anything else (a favorite toggle, a metadata update) leaves both alone
+// the full artist is loaded only when something needs it: the "more from this
+// artist" picker needs its provider mappings (both on the shelf and in the rows
+// editor), and the hero falls back to its wide art. Browsing albums whose row is
+// hidden and that carry their own wide art then makes no extra request.
+const needsFullArtist = computed(
+  () =>
+    !!itemDetails.value &&
+    (rowsEditorOpen.value ||
+      visibleRows.value.includes("more_from_artist") ||
+      albumBackdrop(itemDetails.value).blurred),
+);
+
+// a new album starts at the top of the page and drops the previous artist;
+// the artist is (re)loaded once whatever needs it is in play, so unhiding the
+// row later still fetches it. A favorite toggle or metadata update keeps both.
 watch(
-  () => itemDetails.value?.uri,
-  () => {
-    document.querySelector(".content-section")?.scrollTo({ top: 0 });
-    loadBackdropArtist();
+  [() => itemDetails.value?.uri, needsFullArtist],
+  ([uri], [previousUri]) => {
+    if (uri !== previousUri) {
+      document.querySelector(".content-section")?.scrollTo({ top: 0 });
+      fullArtist.value = undefined;
+    }
+    if (needsFullArtist.value && fullArtist.value === undefined) {
+      loadFullArtist();
+    }
   },
 );
 
@@ -307,14 +365,22 @@ const UpdateItemInDb = async function () {
   });
 };
 
-/** Loads the album artist when the album has no wide art of its own. */
-async function loadBackdropArtist() {
+/** Switch the artist source from the shelf badge; the shelf reloads that source. */
+function selectMoreFromArtistSource(source: RowSource) {
+  albumRows.setSource("more_from_artist", source);
+}
+
+/**
+ * Loads the full album artist: its provider mappings feed the source picker and
+ * its wide art backs the hero when the album has none. get_artist resolves a
+ * provider id to the library artist when the artist is in the library, so the
+ * picker offers the library and its mapped providers there too.
+ */
+async function loadFullArtist() {
   const album = itemDetails.value;
-  backdropArtist.value = undefined;
-  if (!album) return;
-  const artist = album.artists[0];
-  if (!artist || !backdrop.value.blurred) {
-    backdropArtist.value = null;
+  const artist = album?.artists[0];
+  if (!album || !artist) {
+    fullArtist.value = null;
     return;
   }
   const loaded = await api
@@ -322,7 +388,7 @@ async function loadBackdropArtist() {
     .catch(() => undefined);
   // a slower response for a previous album must not replace the current one
   if (itemDetails.value?.uri !== album.uri) return;
-  backdropArtist.value = loaded ?? null;
+  fullArtist.value = loaded ?? null;
 }
 
 /** A row is rendered while it loads and once it has something to show. */
