@@ -88,7 +88,6 @@
               v-if="radioRelevant(item)"
               :icon="Orbit"
               :label="$t('track_radio')"
-              :icon-only="isPhone"
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />

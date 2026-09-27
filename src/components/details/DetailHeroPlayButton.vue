@@ -2,6 +2,7 @@
   <MenuButton
     ref="playButton"
     :text="playButtonText"
+    :truncate="shrinkLabel"
     :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
     :loading="playActionInProgress"
     @click="playButtonClick()"
@@ -16,19 +17,30 @@ import { getPlayerName } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import type { MediaItemType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import { computed, useTemplateRef, type ComponentPublicInstance } from "vue";
 
 export interface Props {
   item: MediaItemType;
+  // let the button shrink and ellipsis its label to fit; for a row that cannot
+  // wrap, so its other buttons keep their place as the header narrows
+  shrinkLabel?: boolean;
 }
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  shrinkLabel: false,
+});
 
 const playButton = useTemplateRef<ComponentPublicInstance>("playButton");
 
+const isPhone = computed(() => isPhoneSizedScreen());
+
+// a phone has little room, so the player name is trimmed harder there
 const playButtonText = computed(() =>
   store.activePlayer
-    ? $t("play_on_player", { player: getPlayerName(store.activePlayer, 20) })
+    ? $t("play_on_player", {
+        player: getPlayerName(store.activePlayer, isPhone.value ? 12 : 20),
+      })
     : $t("play"),
 );
 
