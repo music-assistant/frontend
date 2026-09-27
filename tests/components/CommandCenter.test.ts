@@ -199,6 +199,10 @@ function makeTrack(id: string, name: string) {
   };
 }
 
+function makeUnplayableTrack(id: string, name: string) {
+  return { ...makeTrack(id, name), is_playable: false };
+}
+
 // the shell picks a sheet or a dialog by layout; the palette under test only
 // hands it the open flag and a slot, so one stub covers both
 const CommandCenterShellStub = {
@@ -559,6 +563,55 @@ describe("CommandCenter", () => {
         expect.any(Number),
       );
       expect(state.routerPush).not.toHaveBeenCalled();
+
+      wrapper.unmount();
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
+  it("navigates instead of playing a non-playable result from its thumbnail", async () => {
+    state.resultsByType[MediaType.TRACK] = [makeUnplayableTrack("t1", "Rock")];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    await typeQuery(wrapper, "rock");
+
+    // no play-over-artwork affordance for a non-playable item
+    expect(wrapper.find("span.command-center-play").exists()).toBe(false);
+
+    // clicking its artwork falls through to the row, navigating to the item
+    await wrapper.get(".command-center-thumb").trigger("click");
+    expect(state.playBtnSpy).not.toHaveBeenCalled();
+    expect(state.routerPush).toHaveBeenCalledWith({
+      name: MediaType.TRACK,
+      params: { itemId: "t1", provider: "library" },
+    });
+
+    wrapper.unmount();
+  });
+
+  it("hides the touch play button for a non-playable result", async () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("hover: none"),
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    try {
+      state.resultsByType[MediaType.TRACK] = [
+        makeUnplayableTrack("t1", "Rock"),
+      ];
+      const wrapper = mountPalette();
+      useCommandCenter().open();
+      await flushPromises();
+      await typeQuery(wrapper, "rock");
+
+      expect(wrapper.find("button.command-center-play-mobile").exists()).toBe(
+        false,
+      );
 
       wrapper.unmount();
     } finally {
