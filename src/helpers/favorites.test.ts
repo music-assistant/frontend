@@ -6,6 +6,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { artist } from "../../tests/fixtures/artist";
+import { audioSource } from "../../tests/fixtures/audioSource";
 import { withoutFavorite } from "../../tests/fixtures/mediaItem";
 import { track } from "../../tests/fixtures/track";
 import {
@@ -153,6 +154,12 @@ describe("canHoldFavorite", () => {
     expect(canHoldFavorite(withoutFavorite(track()))).toBe(true);
     expect(canHoldFavorite(artist({ favorite: true }))).toBe(true);
     expect(canHoldFavorite(itemMapping)).toBe(false);
+  });
+
+  // an audio source carries provider mappings like any media item, but the
+  // server keeps no favorite for one
+  it("turns down a media type that holds no favorite", () => {
+    expect(canHoldFavorite(audioSource())).toBe(false);
   });
 });
 

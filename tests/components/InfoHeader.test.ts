@@ -9,7 +9,6 @@ import { track } from "../fixtures/track";
 
 const { apiMock, authMock, storeMock, eventbusMock } = vi.hoisted(() => ({
   apiMock: {
-    supportsPersonalFavorites: true,
     subscribe: vi.fn(() => () => {}),
     getGenresForMediaItem: vi.fn(() => Promise.resolve([])),
   },

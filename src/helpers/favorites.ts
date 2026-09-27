@@ -1,6 +1,7 @@
 import { api } from "@/plugins/api";
 import {
   EventType,
+  MediaType,
   type EventMessage,
   type FavoriteUpdate,
   type MediaItem,
@@ -14,6 +15,18 @@ interface FavoriteHolder {
 
 /** An item that can hold the signed-in user's favorite state. */
 export type FavoritableItem = Extract<MediaItemTypeOrItemMapping, MediaItem>;
+
+/** The media types the server keeps a favorite state for. */
+export const FAVORITABLE_MEDIA_TYPES: ReadonlySet<MediaType> = new Set([
+  MediaType.ALBUM,
+  MediaType.ARTIST,
+  MediaType.AUDIOBOOK,
+  MediaType.GENRE,
+  MediaType.PLAYLIST,
+  MediaType.PODCAST,
+  MediaType.RADIO,
+  MediaType.TRACK,
+]);
 
 /**
  * Copy of an item from a media item event that keeps the favorite state the
@@ -64,14 +77,18 @@ export function favoriteState(item: unknown): boolean | null {
 /**
  * Whether an item can hold a favorite state of its own.
  *
- * :param item: The item to check; an item mapping or browse folder holds none.
+ * :param item: The item to check; a type the server keeps no state for, an item
+ *   mapping or a browse folder holds none.
  */
 export function canHoldFavorite(
   item: MediaItemTypeOrItemMapping,
 ): item is FavoritableItem {
-  // the provider mappings are what an item mapping or a browse folder lacks;
-  // the favorite key itself is absent whenever there is no state
-  return "provider_mappings" in item;
+  // the media type decides whether there is a state to hold at all, and the
+  // provider mappings are what an item mapping or a browse folder lacks; the
+  // favorite key itself is absent whenever there is no state
+  return (
+    FAVORITABLE_MEDIA_TYPES.has(item.media_type) && "provider_mappings" in item
+  );
 }
 
 /**

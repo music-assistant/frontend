@@ -2055,12 +2055,13 @@ onMounted(async () => {
     },
   );
 
-  // the user's own like or dislike, wherever they made it
+  // the user's own like or dislike, wherever they made it. A listing can hold
+  // the same item on more than one row (a playlist listing a track twice), and
+  // every one of them shows the state.
   _unsubscribeFavorites = subscribeOwnFavorites((update) => {
-    setFavoriteState(
-      pagedItems.value.find((i) => i.uri == update.uri),
-      update.favorite,
-    );
+    for (const item of pagedItems.value) {
+      if (item.uri == update.uri) setFavoriteState(item, update.favorite);
+    }
   });
 });
 

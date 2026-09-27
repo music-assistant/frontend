@@ -1,5 +1,9 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { keepOwnFavorite } from "@/helpers/favorites";
+import {
+  keepOwnFavorite,
+  setFavoriteState,
+  subscribeOwnFavorites,
+} from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import type {
   Album,
@@ -436,6 +440,7 @@ export function useShortcuts() {
   });
 
   let _unsubscribeUpdated: (() => void) | undefined;
+  let _unsubscribeFavorites: (() => void) | undefined;
   let unmounted = false;
 
   onMounted(async () => {
@@ -465,11 +470,20 @@ export function useShortcuts() {
         }
       },
     );
+
+    // the user's own like or dislike, wherever they made it
+    _unsubscribeFavorites = subscribeOwnFavorites((update) => {
+      setFavoriteState(
+        resolvedItems.value.find((item) => isUriMatchingItem(update.uri, item)),
+        update.favorite,
+      );
+    });
   });
 
   onUnmounted(() => {
     unmounted = true;
     _unsubscribeUpdated?.();
+    _unsubscribeFavorites?.();
   });
 
   return {

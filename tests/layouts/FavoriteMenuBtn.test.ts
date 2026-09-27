@@ -28,7 +28,6 @@ vi.mock("@/plugins/api", () => {
     setFavorite: vi.fn(),
     getLibraryItem: vi.fn(),
     subscribe: vi.fn(() => () => {}),
-    supportsPersonalFavorites: true,
     providers: {},
     players: {},
   };

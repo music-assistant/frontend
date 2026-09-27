@@ -284,7 +284,11 @@ import {
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
 import { runWithConcurrency } from "@/helpers/concurrency";
-import { favoriteState, setFavoriteState } from "@/helpers/favorites";
+import {
+  FAVORITABLE_MEDIA_TYPES,
+  favoriteState,
+  setFavoriteState,
+} from "@/helpers/favorites";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { playerVisible } from "@/helpers/players";
@@ -798,16 +802,7 @@ export const getContextMenuItems = async function (
   if (canEditLibrary && actionTargets.length > 0) {
     const favoritableItems = actionTargets.filter(
       (item) =>
-        [
-          MediaType.ALBUM,
-          MediaType.ARTIST,
-          MediaType.AUDIOBOOK,
-          MediaType.GENRE,
-          MediaType.PLAYLIST,
-          MediaType.PODCAST,
-          MediaType.RADIO,
-          MediaType.TRACK,
-        ].includes(item.media_type) && itemIsAvailable(item),
+        FAVORITABLE_MEDIA_TYPES.has(item.media_type) && itemIsAvailable(item),
     );
 
     // a favorite belongs to the library item, so a single item follows its
@@ -894,67 +889,65 @@ export const getContextMenuItems = async function (
 
       // A dislike is a state of its own, so it gets its own pair of entries:
       // the heart only ever says "liked", and clearing a dislike is not the
-      // same action as removing a favorite. Older servers have no dislike.
-      if (api.supportsPersonalFavorites) {
-        const allDisliked = favoritableItems.every(isDisliked);
-        const noneDisliked = !favoritableItems.some(isDisliked);
+      // same action as removing a favorite.
+      const allDisliked = favoritableItems.every(isDisliked);
+      const noneDisliked = !favoritableItems.some(isDisliked);
 
-        if (allDisliked) {
-          contextMenuItems.push({
-            label: "favorites_dislike_remove",
-            labelArgs: [],
-            action: () => {
-              for (const item of favoritableItems) {
-                api.removeItemFromFavorites(item.media_type, item.item_id);
-              }
-              markFavorite(null);
-              eventbus.emit("clearSelection");
-            },
-            icon: ThumbsDown,
-          });
-        } else if (noneDisliked) {
-          contextMenuItems.push({
-            label: "favorites_dislike",
-            labelArgs: [],
-            action: () => {
-              for (const item of favoritableItems) {
-                api.setFavorite(addableItem(item), false);
-              }
-              markFavorite(false);
-              eventbus.emit("clearSelection");
-            },
-            icon: ThumbsDown,
-          });
-        } else {
-          // mixed selection: both, each acting on the items it applies to
-          contextMenuItems.push({
-            label: "favorites_dislike",
-            labelArgs: [],
-            action: () => {
-              for (const item of favoritableItems.filter(
-                (item) => !isDisliked(item),
-              )) {
-                api.setFavorite(addableItem(item), false);
-                setFavoriteState(item, false);
-              }
-              eventbus.emit("clearSelection");
-            },
-            icon: ThumbsDown,
-          });
+      if (allDisliked) {
+        contextMenuItems.push({
+          label: "favorites_dislike_remove",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems) {
+              api.removeItemFromFavorites(item.media_type, item.item_id);
+            }
+            markFavorite(null);
+            eventbus.emit("clearSelection");
+          },
+          icon: ThumbsDown,
+        });
+      } else if (noneDisliked) {
+        contextMenuItems.push({
+          label: "favorites_dislike",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems) {
+              api.setFavorite(addableItem(item), false);
+            }
+            markFavorite(false);
+            eventbus.emit("clearSelection");
+          },
+          icon: ThumbsDown,
+        });
+      } else {
+        // mixed selection: both, each acting on the items it applies to
+        contextMenuItems.push({
+          label: "favorites_dislike",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems.filter(
+              (item) => !isDisliked(item),
+            )) {
+              api.setFavorite(addableItem(item), false);
+              setFavoriteState(item, false);
+            }
+            eventbus.emit("clearSelection");
+          },
+          icon: ThumbsDown,
+        });
 
-          contextMenuItems.push({
-            label: "favorites_dislike_remove",
-            labelArgs: [],
-            action: () => {
-              for (const item of favoritableItems.filter(isDisliked)) {
-                api.removeItemFromFavorites(item.media_type, item.item_id);
-                setFavoriteState(item, null);
-              }
-              eventbus.emit("clearSelection");
-            },
-            icon: ThumbsDown,
-          });
-        }
+        contextMenuItems.push({
+          label: "favorites_dislike_remove",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems.filter(isDisliked)) {
+              api.removeItemFromFavorites(item.media_type, item.item_id);
+              setFavoriteState(item, null);
+            }
+            eventbus.emit("clearSelection");
+          },
+          icon: ThumbsDown,
+        });
       }
     }
   }

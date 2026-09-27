@@ -3,7 +3,11 @@
  * which must not cost those rows their favorite actions.
  */
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
-import type { MediaItemTypeOrItemMapping } from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  type MediaItemTypeOrItemMapping,
+  type Track,
+} from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { withoutFavorite } from "../fixtures/mediaItem";
 import { providerMapping } from "../fixtures/providerMapping";
@@ -19,8 +23,6 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
     addItemToFavorites: vi.fn(),
     removeItemFromFavorites: vi.fn(),
     setFavorite: vi.fn(),
-    // the connected server knows dislikes
-    supportsPersonalFavorites: true,
     players: {},
   },
   storeMock: {
@@ -45,14 +47,27 @@ vi.mock("@/plugins/eventbus", () => ({
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
-// a library row as a listing sends it: in the library, with no favorite key
+// a library row as a listing sends it: in the library, with no favorite key.
+// The mapping carries the row's own id, so an api call names the row it acted on.
 const listedTrack = (item_id: string) =>
   withoutFavorite(
     track({
       item_id,
-      provider_mappings: [providerMapping({ in_library: true })],
+      provider_mappings: [
+        providerMapping({ item_id: `item-${item_id}`, in_library: true }),
+      ],
     }),
   );
+
+// the same row, with a state of its own
+const listedTrackWithState = (item_id: string, favorite: boolean): Track => ({
+  ...listedTrack(item_id),
+  favorite,
+});
+
+/** The identity an add or dislike command gets for a library row. */
+const commandUri = (item_id: string) =>
+  `test_provider--1://track/item-${item_id}`;
 
 async function offeredLabels(
   items: MediaItemTypeOrItemMapping[],
@@ -97,5 +112,72 @@ describe("favorites in the item context menu", () => {
 
     expect(apiMock.setFavorite).toHaveBeenCalledTimes(2);
     expect(items.map((item) => item.favorite)).toEqual([false, false]);
+  });
+
+  // a like is still a state to replace, so the dislike stays on offer
+  it("offers the dislike on a selection that is all liked", async () => {
+    const items = [
+      listedTrackWithState("1", true),
+      listedTrackWithState("2", true),
+    ];
+
+    const menu = await getContextMenuItems(items);
+    expect(menu.map((entry) => entry.label)).not.toContain(
+      "favorites_dislike_remove",
+    );
+    await menu.find((entry) => entry.label === "favorites_dislike")?.action?.();
+
+    expect(apiMock.setFavorite).toHaveBeenCalledTimes(2);
+    expect(items.map((item) => item.favorite)).toEqual([false, false]);
+  });
+
+  it("only clears the dislike on a selection that is all disliked", async () => {
+    const items = [
+      listedTrackWithState("1", false),
+      listedTrackWithState("2", false),
+    ];
+
+    const menu = await getContextMenuItems(items);
+    expect(menu.map((entry) => entry.label)).not.toContain("favorites_dislike");
+    await menu
+      .find((entry) => entry.label === "favorites_dislike_remove")
+      ?.action?.();
+
+    expect(apiMock.removeItemFromFavorites).toHaveBeenCalledTimes(2);
+    expect(items.map((item) => item.favorite)).toEqual([null, null]);
+  });
+
+  // a mixed selection offers both, each acting only on the rows it applies to
+  it("dislikes only the rows that are not disliked yet", async () => {
+    const items = [
+      listedTrackWithState("1", false),
+      listedTrackWithState("2", true),
+    ];
+
+    const menu = await getContextMenuItems(items);
+    await menu.find((entry) => entry.label === "favorites_dislike")?.action?.();
+
+    expect(apiMock.setFavorite).toHaveBeenCalledTimes(1);
+    expect(apiMock.setFavorite).toHaveBeenCalledWith(commandUri("2"), false);
+    expect(items.map((item) => item.favorite)).toEqual([false, false]);
+  });
+
+  it("clears the dislike only on the rows that hold one", async () => {
+    const items = [
+      listedTrackWithState("1", false),
+      listedTrackWithState("2", true),
+    ];
+
+    const menu = await getContextMenuItems(items);
+    await menu
+      .find((entry) => entry.label === "favorites_dislike_remove")
+      ?.action?.();
+
+    expect(apiMock.removeItemFromFavorites).toHaveBeenCalledTimes(1);
+    expect(apiMock.removeItemFromFavorites).toHaveBeenCalledWith(
+      MediaType.TRACK,
+      "1",
+    );
+    expect(items.map((item) => item.favorite)).toEqual([null, true]);
   });
 });

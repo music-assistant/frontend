@@ -16,7 +16,6 @@ const { apiMock } = vi.hoisted(() => ({
     removeItemFromFavorites: vi.fn(),
     setFavorite: vi.fn(),
     getLibraryItem: vi.fn(),
-    supportsPersonalFavorites: true,
   },
 }));
 
@@ -52,7 +51,6 @@ async function pickEntry(wrapper: VueWrapper, label: string) {
 describe("FavoriteMenu", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiMock.supportsPersonalFavorites = true;
     vi.mocked(authManager.hasScope).mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.user),
     );
@@ -199,16 +197,6 @@ describe("FavoriteMenu", () => {
     expect(entryLabels(mountMenu(artist({ favorite: null })))).toEqual([
       "favorites_add",
       "favorites_dislike",
-    ]);
-  });
-
-  // older servers keep one favorite flag for the whole household
-  it("leaves the dislike out when the server has none", () => {
-    apiMock.supportsPersonalFavorites = false;
-
-    expect(entryLabels(mountMenu(track({ favorite: null })))).toEqual([
-      "favorites_add",
-      "add_playlist",
     ]);
   });
 

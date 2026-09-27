@@ -36,18 +36,15 @@
         <Heart class="size-4" fill="none" />
         {{ $t("favorites_add") }}
       </DropdownMenuItem>
-      <!-- the heart only ever says "liked", so the dislike gets its own entry.
-           Older servers have no dislike. -->
-      <template v-if="api.supportsPersonalFavorites">
-        <DropdownMenuItem v-if="state === false" @click="clear">
-          <ThumbsDown class="size-4" />
-          {{ $t("favorites_dislike_remove") }}
-        </DropdownMenuItem>
-        <DropdownMenuItem v-else @click="dislike">
-          <ThumbsDown class="size-4" />
-          {{ $t("favorites_dislike") }}
-        </DropdownMenuItem>
-      </template>
+      <!-- the heart only ever says "liked", so the dislike gets its own entry -->
+      <DropdownMenuItem v-if="state === false" @click="clear">
+        <ThumbsDown class="size-4" />
+        {{ $t("favorites_dislike_remove") }}
+      </DropdownMenuItem>
+      <DropdownMenuItem v-else @click="dislike">
+        <ThumbsDown class="size-4" />
+        {{ $t("favorites_dislike") }}
+      </DropdownMenuItem>
       <DropdownMenuItem v-if="offersPlaylist" @click="addToPlaylist">
         <PlusCircle class="size-4" />
         {{ $t("add_playlist") }}

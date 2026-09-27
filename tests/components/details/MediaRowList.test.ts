@@ -29,7 +29,7 @@ const {
 }));
 
 vi.mock("@/plugins/api", () => {
-  const api = { supportsPersonalFavorites: true, providers: {} };
+  const api = { providers: {} };
   return { api, default: api };
 });
 

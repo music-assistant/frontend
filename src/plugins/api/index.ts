@@ -103,9 +103,6 @@ const ROLES_SCHEMA_VERSION = 74;
 // Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
 const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
 
-// Per-user favorites with a dislike (music/favorites/set_item) landed in API schema 78.
-const PERSONAL_FAVORITES_SCHEMA_VERSION = 78;
-
 export interface CommandOptions {
   /**
    * Skip the global console.error + error toast for an error result. Use for a
@@ -3123,14 +3120,6 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server keeps favorites per user, with a dislike (schema >= 78). */
-  public get supportsPersonalFavorites(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      PERSONAL_FAVORITES_SCHEMA_VERSION
     );
   }
 

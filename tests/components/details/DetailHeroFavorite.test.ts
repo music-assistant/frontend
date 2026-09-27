@@ -8,7 +8,7 @@ import { track } from "../../fixtures/track";
 // the menu only reaches the api once an entry is picked, which needs the menu
 // open; these tests stay on the trigger the hero shows
 vi.mock("@/plugins/api", () => {
-  const api = { supportsPersonalFavorites: true };
+  const api = {};
   return { api, default: api };
 });
 
