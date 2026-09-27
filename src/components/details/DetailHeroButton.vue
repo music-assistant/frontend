@@ -87,7 +87,8 @@ const isPhone = computed(() => isPhoneSizedScreen());
 
 /* below a wide hero the labels go, leaving icon-only buttons; the play button
    is a separate component and keeps its label as the primary action. Phone
-   buttons already carry their own square, larger touch target. */
+   buttons already carry their own square, larger touch target.
+   Keep the 1100px width in sync with DetailHeroProviders' pill breakpoint. */
 @container detail-hero (max-width: 1100px) {
   .detail-hero-button__label {
     display: none;
