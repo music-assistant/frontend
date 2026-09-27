@@ -1,6 +1,13 @@
 import ItemsListing from "@/components/ItemsListing.vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
-import type { Album, ProviderInstance, Track } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  MediaType,
+  type Album,
+  type EventMessage,
+  type ProviderInstance,
+  type Track,
+} from "@/plugins/api/interfaces";
 import {
   eventbus,
   type DeleteConfirmationDialogEvent,
@@ -12,20 +19,23 @@ import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
 import { genre } from "../fixtures/genre";
 import { track } from "../fixtures/track";
+import { user } from "../fixtures/user";
 
 // Tracks live subscriptions the way the api does, so one that outlives the
 // listing stays listed here.
 const events = vi.hoisted(() => {
   const listeners: unknown[] = [];
+  const listen = (handler: unknown) => {
+    listeners.push(handler);
+    return () => {
+      const index = listeners.indexOf(handler);
+      if (index !== -1) listeners.splice(index, 1);
+    };
+  };
   return {
     listeners,
-    subscribeMulti: (_types: unknown, handler: unknown) => {
-      listeners.push(handler);
-      return () => {
-        const index = listeners.indexOf(handler);
-        if (index !== -1) listeners.splice(index, 1);
-      };
-    },
+    subscribe: (_type: unknown, handler: unknown) => listen(handler),
+    subscribeMulti: (_types: unknown, handler: unknown) => listen(handler),
   };
 });
 
@@ -33,6 +43,7 @@ const mockGetLibraryGenres = vi.hoisted(() =>
   vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
 );
 const mockSubscribeMulti = vi.hoisted(() => vi.fn());
+const mockSubscribe = vi.hoisted(() => vi.fn());
 
 vi.mock("@/plugins/api", () => {
   const api = {
@@ -40,6 +51,7 @@ vi.mock("@/plugins/api", () => {
     providerManifests: {},
     getLibraryGenres: mockGetLibraryGenres,
     subscribe_multi: mockSubscribeMulti,
+    subscribe: mockSubscribe,
   };
   return { api, default: api };
 });
@@ -177,6 +189,8 @@ describe("ItemsListing unmount cleanup", () => {
     mockGetLibraryGenres.mockResolvedValue([]);
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
     store.prevState = undefined;
   });
 
@@ -185,7 +199,8 @@ describe("ItemsListing unmount cleanup", () => {
     await flushPromises();
 
     expect(clearSelectionHandlers()).toBe(1);
-    expect(events.listeners).toHaveLength(1);
+    // the media item events and the user's own favorite changes
+    expect(events.listeners).toHaveLength(2);
 
     listing.unmount();
 
@@ -318,6 +333,8 @@ describe("ItemsListing per-page search", () => {
     mockGetLibraryGenres.mockResolvedValue([]);
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
     store.prevState = undefined;
     store.mobileLayout = false;
   });
@@ -495,6 +512,8 @@ describe("ItemsListing select all", () => {
     mockGetLibraryGenres.mockResolvedValue([]);
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
     store.prevState = undefined;
     store.mobileLayout = false;
     nativeConfirm.mockReset();
@@ -542,6 +561,8 @@ describe("ItemsListing source selector", () => {
     mockGetLibraryGenres.mockResolvedValue([]);
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
     store.prevState = undefined;
     for (const key of Object.keys(api.providers)) delete api.providers[key];
     api.providers["spotify--1"] = {
@@ -635,6 +656,67 @@ describe("ItemsListing source selector", () => {
     expect(sourceOptions(listing)?.map((option) => option.label)).toEqual([
       "Spotify",
       "Tidal",
+    ]);
+  });
+});
+
+describe("ItemsListing favorite updates", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
+    store.prevState = undefined;
+    // the event only reaches the screen when it belongs to the signed-in user
+    store.currentUser = user();
+  });
+
+  afterEach(() => {
+    store.currentUser = undefined;
+  });
+
+  /** The handler the listing registered for the user's own favorite changes. */
+  function favoriteUpdateHandler() {
+    const call = mockSubscribe.mock.calls.find(
+      ([type]) => type === EventType.FAVORITE_UPDATED,
+    );
+    expect(call, "the listing listens for the favorite updates").toBeDefined();
+    return call![1] as (evt: EventMessage) => void;
+  }
+
+  // a playlist can list the same track twice, and both rows show the state
+  it("shows the state on every row that holds the item", async () => {
+    const listing = mountListingRaw({
+      loadPagedData: vi
+        .fn()
+        .mockResolvedValue([
+          track({ item_id: "1", position: 0 }),
+          track({ item_id: "1", position: 1 }),
+          track({ item_id: "2" }),
+        ]),
+    });
+    await flushPromises();
+
+    favoriteUpdateHandler()({
+      event: EventType.FAVORITE_UPDATED,
+      object_id: "library://track/1",
+      data: {
+        uri: "library://track/1",
+        media_type: MediaType.TRACK,
+        item_id: "1",
+        favorite: true,
+        user_id: user().user_id,
+      },
+    } as EventMessage);
+
+    expect(rows(listing).map((item) => item.favorite)).toEqual([
+      true,
+      true,
+      false,
     ]);
   });
 });
@@ -850,6 +932,10 @@ async function selectAll(total: number) {
 
 function selection(listing: ReturnType<typeof mountListingRaw>) {
   return (listing.vm as unknown as { selectedItems: Track[] }).selectedItems;
+}
+
+function rows(listing: ReturnType<typeof mountListingRaw>) {
+  return (listing.vm as unknown as { pagedItems: Track[] }).pagedItems;
 }
 
 function confirmationRequest() {
