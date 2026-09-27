@@ -294,13 +294,14 @@ watch(
 );
 
 // the full artist is loaded only when something needs it: the "more from this
-// artist" picker needs its provider mappings, and the hero falls back to its
-// wide art. Browsing albums whose row is hidden and that carry their own wide
-// art then makes no extra request.
+// artist" picker needs its provider mappings (both on the shelf and in the rows
+// editor), and the hero falls back to its wide art. Browsing albums whose row is
+// hidden and that carry their own wide art then makes no extra request.
 const needsFullArtist = computed(
   () =>
     !!itemDetails.value &&
-    (visibleRows.value.includes("more_from_artist") ||
+    (rowsEditorOpen.value ||
+      visibleRows.value.includes("more_from_artist") ||
       albumBackdrop(itemDetails.value).blurred),
 );
 

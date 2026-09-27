@@ -1,5 +1,5 @@
 import type { MusicAssistantApi } from "@/plugins/api";
-import type { Album } from "@/plugins/api/interfaces";
+import { ImageType, type Album } from "@/plugins/api/interfaces";
 import AlbumDetails from "@/views/AlbumDetails.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -38,6 +38,7 @@ vi.mock("@/plugins/api", () => ({
     providers: {},
     getProvider: () => undefined,
     hasStreamingProviders: { value: false },
+    serverInfo: { value: null },
   },
 }));
 
@@ -107,6 +108,14 @@ vi.mock("@/components/ProviderDetails.vue", () => ({
 }));
 vi.mock("@/components/MediaItemImages.vue", () => ({
   default: { name: "MediaItemImages", template: '<div data-row="artwork" />' },
+}));
+vi.mock("@/components/details/RowsEditor.vue", () => ({
+  default: {
+    name: "RowsEditor",
+    props: ["open", "item", "registry", "availableIds", "rowMeta", "subtitle"],
+    emits: ["update:open"],
+    template: "<div data-rows-editor />",
+  },
 }));
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
@@ -301,5 +310,43 @@ describe("AlbumDetails", () => {
       "more_from_artist",
       "spotify--x",
     );
+  });
+
+  // a hidden row on an album with its own wide art needs nothing from the
+  // artist, but opening Edit rows must load it so its source picker can appear
+  it("loads the full artist when Edit rows opens, even for a hidden wide-art album", async () => {
+    mockResolveAlbumRows.mockImplementation((availableIds: string[]) => ({
+      order: availableIds,
+      hidden: new Set(["more_from_artist"]),
+    }));
+    const wrapper = await mountDetails(
+      album({
+        item_id: "1",
+        metadata: {
+          images: [
+            {
+              type: ImageType.FANART,
+              path: "wide.jpg",
+              provider: "builtin",
+              remotely_accessible: true,
+            },
+          ],
+        },
+        artists: [
+          {
+            item_id: "a1",
+            provider: "library",
+            name: "Adele",
+          } as Album["artists"][number],
+        ],
+      }),
+    );
+
+    expect(mockGetArtist).not.toHaveBeenCalled();
+
+    wrapper.findComponent({ name: "AlbumHero" }).vm.$emit("edit-rows");
+    await flushPromises();
+
+    expect(mockGetArtist).toHaveBeenCalledWith("a1", "library");
   });
 });
