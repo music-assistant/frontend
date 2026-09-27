@@ -518,6 +518,10 @@ describe("CommandCenter", () => {
 
     await typeQuery(wrapper, "bohemian");
     expect(wrapper.find('[data-testid="provider-icon"]').exists()).toBe(true);
+    // the hover dimming/play overlay only shows on playable rows
+    expect(wrapper.get(".command-center-thumb").classes()).toContain(
+      "is-playable",
+    );
 
     // clicking the artwork plays the item, like the regular list rows
     await wrapper.get(".command-center-thumb").trigger("click");
@@ -577,8 +581,12 @@ describe("CommandCenter", () => {
     await flushPromises();
     await typeQuery(wrapper, "rock");
 
-    // no play-over-artwork affordance for a non-playable item
+    // no play-over-artwork affordance for a non-playable item, and the
+    // thumbnail keeps no hover dimming/play overlay
     expect(wrapper.find("span.command-center-play").exists()).toBe(false);
+    expect(wrapper.get(".command-center-thumb").classes()).not.toContain(
+      "is-playable",
+    );
 
     // clicking its artwork falls through to the row, navigating to the item
     await wrapper.get(".command-center-thumb").trigger("click");

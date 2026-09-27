@@ -172,6 +172,7 @@
         >
           <div
             class="command-center-thumb relative size-10 shrink-0 overflow-hidden rounded-md"
+            :class="{ 'is-playable': isPlayable(item) }"
             @click="onThumbClick(item, $event)"
           >
             <MediaItemThumb :item="item" :size="40" />
@@ -974,11 +975,11 @@ watch(
 /* hover-capable devices: play over the dimmed artwork on the active row,
    matching the blue play-over-artwork of the regular list rows */
 @media (hover: hover) {
-  .command-center-thumb {
+  .command-center-thumb.is-playable {
     cursor: pointer;
   }
 
-  .command-center-thumb::after {
+  .command-center-thumb.is-playable::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -1005,7 +1006,7 @@ watch(
     transition: opacity 0.15s ease;
   }
 
-  [data-highlighted] .command-center-thumb::after,
+  [data-highlighted] .command-center-thumb.is-playable::after,
   [data-highlighted] .command-center-play {
     opacity: 1;
   }
