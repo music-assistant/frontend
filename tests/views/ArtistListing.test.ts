@@ -10,8 +10,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { artist } from "../fixtures/artist";
 import { providerMapping } from "../fixtures/providerMapping";
 
-const { mockGetArtist } = vi.hoisted(() => ({
+const { mockGetArtist, routeQuery } = vi.hoisted(() => ({
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
+  routeQuery: {} as Record<string, string>,
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -31,6 +32,7 @@ vi.mock("@/plugins/i18n", async (importOriginal) => ({
 
 vi.mock("vue-router", () => ({
   useRouter: () => ({}),
+  useRoute: () => ({ query: routeQuery }),
 }));
 
 // the stub renders path/itemtype so tests can read which preference key
@@ -85,6 +87,7 @@ describe("ArtistListing", () => {
   beforeEach(() => {
     mockGetArtist.mockReset();
     for (const key of Object.keys(api.providers)) delete api.providers[key];
+    for (const key of Object.keys(routeQuery)) delete routeQuery[key];
   });
 
   it.each([
@@ -153,6 +156,38 @@ describe("ArtistListing", () => {
     ).props();
 
     expect(props.providerFilterOptions).toEqual(["spotify--abc"]);
+  });
+
+  // the album page's "view all" can hand the albums listing the source its
+  // shelf was showing, so the two line up
+  it("opens on a source carried in by the route", async () => {
+    api.providers["spotify--abc"] = {
+      instance_id: "spotify--abc",
+      name: "Spotify",
+      supported_features: [ProviderFeature.ARTIST_ALBUMS],
+    } as ProviderInstance;
+    routeQuery.source = "spotify--abc";
+
+    const props = listing(
+      await mountListing(
+        "albums",
+        artist({
+          provider_mappings: [
+            providerMapping({ provider_instance: "spotify--abc" }),
+          ],
+        }),
+      ),
+    ).props();
+
+    expect(props.defaultProvider).toBe("spotify--abc");
+  });
+
+  it("ignores a carried source the listing does not offer", async () => {
+    routeQuery.source = "tidal--gone";
+
+    const props = listing(await mountListing("albums")).props();
+
+    expect(props.defaultProvider).toBe("library");
   });
 
   it("names the source the releases were loaded from", async () => {

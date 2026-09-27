@@ -253,6 +253,8 @@ describe("AlbumDetails", () => {
     expect(shelf.props("viewAllTo")).toMatchObject({
       name: "artistlisting",
       params: { itemId: "a1", provider: "library", listing: "albums" },
+      // the shelf's source rides along so the full listing opens on it
+      query: { source: "library" },
     });
   });
 

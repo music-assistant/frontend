@@ -241,7 +241,8 @@ const moreFromArtistVisible = computed(
     showRow(artistReleaseItems.value) || moreFromArtistOptions.value.length > 1,
 );
 
-// the shelf shows the newest releases; the rest are on the artist's own page
+// the shelf shows the newest releases; the rest are on the artist's own page,
+// opened on the same source the shelf is showing
 const artistAlbumsRoute = computed<RouteLocationRaw | undefined>(() => {
   const artist = albumArtist.value;
   if (!artist) return undefined;
@@ -252,6 +253,9 @@ const artistAlbumsRoute = computed<RouteLocationRaw | undefined>(() => {
       itemId: artist.item_id,
       listing: "albums",
     },
+    query: moreFromArtistSource.value
+      ? { source: moreFromArtistSource.value }
+      : undefined,
   };
 });
 
