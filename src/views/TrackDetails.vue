@@ -38,7 +38,6 @@
         <MediaRowList
           v-else-if="rowId === 'other_versions' && showRow(versionItems)"
           :title="$t('other_versions')"
-          :meta="versionItems?.length ? String(versionItems.length) : undefined"
           :items="versionItems"
           show-source
           :parent-item="itemDetails"
