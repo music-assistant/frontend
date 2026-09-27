@@ -5,8 +5,17 @@ type NavigationCallback = Parameters<RouterHistory["listen"]>[0];
 type NavigationInformation = Parameters<NavigationCallback>[2];
 
 interface HistoryEntry {
+  id: string;
+  // The entry this one was opened from.
+  from?: string;
   location: string;
   state: HistoryState;
+}
+
+// What each of Home Assistant's own history entries carries of the app's.
+interface HAEntryMark {
+  id: string;
+  from?: string;
 }
 
 /**
@@ -33,7 +42,10 @@ export function createHAHistory(): RouterHistory {
   const initialLocation =
     window.location.hash.slice(1) || readHALocation() || "/";
   let listeners: NavigationCallback[] = [];
-  const entries = [entryOf(initialLocation)];
+  const initialMark = readHAMark();
+  const entries: HistoryEntry[] = [
+    entryOf(initialLocation, initialMark?.id, initialMark?.from),
+  ];
   let position = 0;
 
   const currentLocation = () => entries[position].location;
@@ -45,6 +57,17 @@ export function createHAHistory(): RouterHistory {
       return null;
     }
     return (pathname.slice(panelPath.length) || "/") + search;
+  }
+
+  function readHAMark(): HAEntryMark | undefined {
+    return haWindow.history.state?.musicAssistant;
+  }
+
+  function navigateHA(replace: boolean): void {
+    const { id, from, location } = entries[position];
+    // Marks Home Assistant's entry, to tell it apart from one of the same page.
+    const musicAssistant: HAEntryMark = { id, from };
+    navigateInHA(panelPath + location, { replace, data: { musicAssistant } });
   }
 
   function syncFrameUrl(): void {
@@ -81,45 +104,47 @@ export function createHAHistory(): RouterHistory {
   // added here, or lands on one from before a reload.
   function handleHAPop(): void {
     const location = readHALocation();
-    if (location === null || isSameLocation(location, currentLocation())) {
+    if (location === null) {
       return;
     }
-    const isAt = (index: number) =>
-      !!entries[index] && isSameLocation(entries[index].location, location);
-    const isBack = isAt(position - 1);
-    const isForward = isAt(position + 1);
-    if (isBack || isForward) {
-      // The same page on both sides, as after going somewhere and back again.
-      move(isForward && (!isBack || steppedForward()) ? 1 : -1, true);
+    const mark = readHAMark();
+    const current = entries[position];
+    // The first entry of a tab is Home Assistant's own, and keeps no mark.
+    if (
+      mark ? mark.id === current.id : isSameLocation(location, current.location)
+    ) {
+      return;
+    }
+    const index = mark
+      ? entries.findIndex((entry) => entry.id === mark.id)
+      : entries.findLastIndex(
+          (entry, i) =>
+            i < position && isSameLocation(entry.location, location),
+        );
+    if (index !== -1) {
+      move(index - position, true);
       return;
     }
 
     // A page from before a reload. It goes next to the one it left, so the
     // router can return there when it turns the step down.
-    const current = entries[position];
-    if (steppedForward()) {
+    const entry = entryOf(location, mark?.id, mark?.from);
+    if (mark?.from === current.id) {
+      entry.state.back = current.location;
       current.state = { ...current.state, forward: location };
-      entries.splice(
-        position + 1,
-        Infinity,
-        entryOf(location, current.location),
-      );
+      entries.splice(position + 1, Infinity, entry);
       position++;
       syncFrameUrl();
       notifyListeners(current.location, 1);
     } else {
+      entry.state.forward = current.location;
       current.state = { ...current.state, back: location };
-      entries.splice(0, position, entryOf(location, null, current.location));
+      current.from = entry.id;
+      entries.splice(0, position, entry);
       position = 0;
       syncFrameUrl();
       notifyListeners(current.location, -1);
     }
-  }
-
-  function steppedForward(): boolean {
-    // Home Assistant stamps each entry with the path it was opened from.
-    const { pathname } = new URL(currentLocation(), window.location.origin);
-    return haWindow.history.state?.from === panelPath + pathname;
   }
 
   function stopFollowingHA(): void {
@@ -140,33 +165,27 @@ export function createHAHistory(): RouterHistory {
     },
     createHref: (location) => `#${location}`,
     push(to, data) {
-      const from = currentLocation();
-      entries[position].state = { ...entries[position].state, forward: to };
-      entries.splice(position + 1);
-      entries.push({
-        location: to,
-        state: {
-          back: from,
-          current: to,
-          forward: null,
-          position: position + 1,
-          replaced: false,
-          scroll: null,
-          ...data,
-        },
-      });
+      const current = entries[position];
+      current.state = { ...current.state, forward: to };
+      const entry = entryOf(to, undefined, current.id);
+      entry.state = {
+        ...entry.state,
+        back: current.location,
+        position: position + 1,
+        replaced: false,
+        ...data,
+      };
+      entries.splice(position + 1, Infinity, entry);
       position++;
       syncFrameUrl();
-      navigateInHA(panelPath + to);
+      navigateHA(false);
     },
     replace(to, data) {
-      const { state } = entries[position];
-      entries[position] = {
-        location: to,
-        state: { ...state, current: to, replaced: true, ...data },
-      };
+      const entry = entries[position];
+      entry.location = to;
+      entry.state = { ...entry.state, current: to, replaced: true, ...data };
       syncFrameUrl();
-      navigateInHA(panelPath + to, { replace: true });
+      navigateHA(true);
     },
     go(delta, triggerListeners = true) {
       // Home Assistant's history is the one to walk, and the pop it makes moves
@@ -214,22 +233,31 @@ function isSameLocation(a: string, b: string): boolean {
 }
 
 /**
- * A history entry opened from outside the app's own navigation.
+ * A history entry with nothing known around it.
+ *
+ * @param id - The mark of its entry in Home Assistant's history, if known
+ * @param from - The mark of the entry it was opened from, if known
  */
 function entryOf(
   location: string,
-  back: string | null = null,
-  forward: string | null = null,
+  id = newEntryId(),
+  from?: string,
 ): HistoryEntry {
   return {
+    id,
+    from,
     location,
     state: {
-      back,
+      back: null,
       current: location,
-      forward,
+      forward: null,
       position: 0,
       replaced: true,
       scroll: null,
     },
   };
+}
+
+function newEntryId(): string {
+  return Math.random().toString(36).slice(2);
 }

@@ -22,22 +22,28 @@ const settle = () => new Promise((resolve) => setTimeout(resolve));
 
 /**
  * The Home Assistant window around the frame: it keeps a history of its own
- * URLs, each stamped with the path it was opened from, navigates when asked to
- * and pops when the history is walked. `earlierPaths` are entries from before
- * the app was opened.
+ * URLs and their state the way Home Assistant's `navigate` does, and pops when
+ * the history is walked. `earlierPaths` are entries from before the app was
+ * opened, the first of them the tab's own.
  */
 function fakeHomeAssistant(initialPath: string, earlierPaths: string[] = []) {
-  const entries = [...earlierPaths, initialPath].map((path, i, paths) => ({
-    path,
-    from: i ? pathnameOf(paths[i - 1]) : undefined,
-  }));
+  interface Entry {
+    path: string;
+    state: Record<string, unknown>;
+  }
+  const entries: Entry[] = [...earlierPaths, initialPath].map(
+    (path, i, paths) =>
+      i
+        ? { path, state: { from: pathnameOf(paths[i - 1]) } }
+        : { path, state: { root: true } },
+  );
   let index = earlierPaths.length;
   const url = () => new URL(entries[index].path, "http://homeassistant.local");
 
   const haWindow = Object.assign(new EventTarget(), {
     history: {
       get state() {
-        return { from: entries[index].from };
+        return entries[index].state;
       },
       go(delta = 0) {
         const target = Math.max(0, Math.min(index + delta, entries.length - 1));
@@ -57,14 +63,22 @@ function fakeHomeAssistant(initialPath: string, earlierPaths: string[] = []) {
     postMessage(message: {
       type: string;
       path: string;
-      options: { replace?: boolean };
+      options: { replace?: boolean; data?: Record<string, unknown> };
     }) {
       if (message.type !== "home-assistant/navigate") return;
-      if (message.options.replace) {
-        entries[index] = { ...entries[index], path: message.path };
+      const { replace, data } = message.options;
+      if (replace) {
+        // A replaced entry keeps where it came from, and the tab's first entry
+        // stays marked as such instead of taking the data.
+        const { root, from } = entries[index].state;
+        const state = root ? { root } : data;
+        entries[index] = { path: message.path, state: { ...state, from } };
       } else {
         const from = pathnameOf(entries[index].path);
-        entries.splice(index + 1, entries.length, { path: message.path, from });
+        entries.splice(index + 1, entries.length, {
+          path: message.path,
+          state: { ...data, from },
+        });
         index++;
       }
     },
@@ -101,9 +115,20 @@ describe("Home Assistant router history", () => {
 
   async function start(haPath: string, earlierPaths: string[] = []) {
     ha = fakeHomeAssistant(haPath, earlierPaths);
+    await openApp();
+  }
+
+  async function openApp() {
     history = createHAHistory();
     router = createRouter({ history, routes });
     await router.push(history.location);
+  }
+
+  // Home Assistant reloads, and opens the app afresh in a new frame.
+  async function reloadHA() {
+    history.destroy();
+    window.history.replaceState(null, "", "#");
+    await openApp();
   }
 
   beforeEach(() => {
@@ -210,6 +235,37 @@ describe("Home Assistant router history", () => {
 
     expect(router.currentRoute.value.fullPath).toBe("/artists/1");
     expect(history.state.back).toBeNull();
+  });
+
+  it("goes back through browsed folders from before a reload", async () => {
+    await start(`${PANEL}/home`);
+    await router.push("/browse?path=music");
+    await router.push("/browse?path=music%2Fabba");
+    await router.push("/browse?path=music%2Fabba%2Fgold");
+    await reloadHA();
+
+    ha.back();
+    await settle();
+
+    expect(router.currentRoute.value.fullPath).toBe(
+      "/browse?path=music%2Fabba",
+    );
+    expect(history.state.forward).toBe("/browse?path=music%2Fabba%2Fgold");
+  });
+
+  it("goes forward again to a page from before a reload", async () => {
+    await start(`${PANEL}/home`);
+    await router.push("/artists");
+    await router.push("/artists/1");
+    ha.back();
+    await settle();
+    await reloadHA();
+
+    ha.forward();
+    await settle();
+
+    expect(router.currentRoute.value.fullPath).toBe("/artists/1");
+    expect(history.state.back).toBe("/artists");
   });
 
   it("stays on the page when a guard turns down one from before a reload", async () => {

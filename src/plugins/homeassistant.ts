@@ -232,11 +232,12 @@ export function toggleHAMenu(): void {
  * Navigate to a path within Home Assistant.
  *
  * @param path - The HA path to navigate to (e.g., "/lovelace", "/config")
- * @param options - Navigation options (replace history, etc.)
+ * @param options - Navigation options: whether to replace the current history
+ *   entry, and data for Home Assistant to keep with the entry
  */
 export function navigateInHA(
   path: string,
-  options: { replace?: boolean } = {},
+  options: { replace?: boolean; data?: Record<string, unknown> } = {},
 ): void {
   window.parent.postMessage(
     {
