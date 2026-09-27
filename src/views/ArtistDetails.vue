@@ -26,6 +26,7 @@
           :source-options="sourceOptions('top_tracks')"
           :source-value="topTracksSource"
           :library-track-count="libraryTracks?.length"
+          :empty-message="$t('artist_row_empty')"
           @edit-rows="rowsEditorOpen = true"
           @select-source="(source) => selectRowSource('top_tracks', source)"
         />
@@ -89,6 +90,7 @@
           :source-domain="similarArtistsSourceDisplay?.domain"
           :source-options="sourceOptions('similar_artists')"
           :source-value="similarArtistsSource"
+          :empty-message="$t('artist_row_empty')"
           @edit-rows="rowsEditorOpen = true"
           @select-source="
             (source) => selectRowSource('similar_artists', source)
