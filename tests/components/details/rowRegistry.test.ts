@@ -1,21 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { storeMock, mockSetUserPreference, mockGetProvider } = vi.hoisted(
-  () => ({
+const { storeMock, mockSetUserPreference, mockGetProvider, providersMock } =
+  vi.hoisted(() => ({
     storeMock: {
       currentUser: null as { preferences?: Record<string, unknown> } | null,
     },
     mockSetUserPreference: vi.fn(),
     mockGetProvider: vi.fn(),
-  }),
-);
+    providersMock: {} as Record<string, { name: string; domain: string }>,
+  }));
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
 }));
 
 vi.mock("@/plugins/api", () => ({
-  api: { getProvider: mockGetProvider },
+  api: { getProvider: mockGetProvider, providers: providersMock },
 }));
 
 vi.mock("@/composables/userPreferences", () => ({
@@ -25,6 +25,7 @@ vi.mock("@/composables/userPreferences", () => ({
 import {
   createRowRegistry,
   rowSourceDisplay,
+  rowSourceOptions,
   rowSourceProvider,
   type RowSource,
 } from "@/components/details/rowRegistry";
@@ -60,6 +61,7 @@ describe("rowRegistry", () => {
   beforeEach(() => {
     mockSetUserPreference.mockReset();
     mockGetProvider.mockReset();
+    for (const key of Object.keys(providersMock)) delete providersMock[key];
     setPreferences({});
   });
 
@@ -169,6 +171,20 @@ describe("rowRegistry", () => {
       hidden: [],
       shown: [],
       order: [],
+    });
+  });
+
+  describe("rowSourceOptions", () => {
+    it("maps a row's sources to picker options with labels and provider domains", () => {
+      providersMock["spotify--abc"] = { name: "Spotify", domain: "spotify" };
+      expect(rowSourceOptions(registry, "with_picker", ITEM)).toEqual([
+        { value: "all", label: "All sources", domain: undefined },
+        { value: "spotify--abc", label: "Spotify", domain: "spotify" },
+      ]);
+    });
+
+    it("is empty for a row without a source picker", () => {
+      expect(rowSourceOptions(registry, "plain", ITEM)).toEqual([]);
     });
   });
 

@@ -13,6 +13,9 @@
             v-if="sourceLabel"
             :label="sourceLabel"
             :domain="sourceDomain"
+            :options="sourceOptions"
+            :selected="sourceValue"
+            @select="(source) => emit('select-source', source)"
           />
         </div>
         <RouterLink
@@ -101,6 +104,7 @@
 
 <script setup lang="ts">
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
+import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
 import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -136,12 +140,17 @@ export interface Props {
   sourceLabel?: string;
   // provider domain behind `sourceLabel`, for its icon
   sourceDomain?: string;
+  // the sources the row can switch to; makes the badge a picker when >1 offered
+  sourceOptions?: SourceOption[];
+  // the source currently feeding the row, highlighted in the picker
+  sourceValue?: RowSource;
   libraryTrackCount?: number;
 }
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: "edit-rows"): void;
+  (e: "select-source", source: RowSource): void;
 }>();
 
 const DESKTOP_TRACKS = 9;

@@ -637,6 +637,107 @@ describe("ItemsListing source selector", () => {
   });
 });
 
+describe("ItemsListing empty-state source shortcuts", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    store.prevState = undefined;
+    for (const key of Object.keys(api.providers)) delete api.providers[key];
+    api.providers["spotify--1"] = {
+      instance_id: "spotify--1",
+      name: "Spotify",
+      domain: "spotify",
+    } as ProviderInstance;
+  });
+
+  /** Mounts an empty library-scoped listing with its empty state rendered. */
+  function mountEmptyListing(
+    props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+  ) {
+    const loadItems = vi.fn().mockResolvedValue([]);
+    const listing = mount(ItemsListing, {
+      props: {
+        itemtype: "artistalbums",
+        path: "artistalbums",
+        loadItems,
+        providerFilterOptions: ["spotify--1"],
+        requireProviderSelection: true,
+        libraryFilterOption: true,
+        ...props,
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+          $vuetify: { display: { width: 1280 } },
+        },
+        stubs: {
+          // the shared Container stub drops its slot; render it so the empty
+          // state inside it shows, while the list/snackbar chrome stays stubbed
+          Container: { template: "<div><slot /></div>" },
+          "v-infinite-scroll": true,
+          "v-virtual-scroll": true,
+          "v-snackbar": true,
+          Tabs: true,
+          TabsList: true,
+          TabsTrigger: true,
+          "v-divider": true,
+        },
+      },
+    });
+    return { listing, loadItems };
+  }
+
+  function shortcut(listing: ReturnType<typeof mountEmptyListing>["listing"]) {
+    return listing
+      .findAll("button")
+      .find((button) => button.text().includes("show_results_on"));
+  }
+
+  it("offers a provider shortcut when the empty listing is on the library", async () => {
+    const { listing } = mountEmptyListing();
+    await flushPromises();
+
+    expect(shortcut(listing)).toBeDefined();
+  });
+
+  it("switches the filter to that provider when the shortcut is used", async () => {
+    const { listing, loadItems } = mountEmptyListing();
+    await flushPromises();
+    loadItems.mockClear();
+
+    await shortcut(listing)!.trigger("click");
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: ["spotify--1"] }),
+    );
+  });
+
+  it("offers no shortcut once a provider source is selected", async () => {
+    const { listing } = mountEmptyListing({ defaultProvider: "spotify--1" });
+    await flushPromises();
+
+    expect(shortcut(listing)).toBeUndefined();
+  });
+
+  it("offers no shortcut for a listing that does not offer the library", async () => {
+    const { listing } = mountEmptyListing({
+      itemtype: "tracks",
+      path: "librarytracks",
+      libraryFilterOption: false,
+      requireProviderSelection: false,
+      providerFilterOptions: undefined,
+    });
+    await flushPromises();
+
+    expect(shortcut(listing)).toBeUndefined();
+  });
+});
+
 /** Mounts a listing of `total` items and asks it to select them all. */
 async function selectAll(total: number) {
   const listing = mountListingRaw({

@@ -938,6 +938,7 @@
     "tracks": "Tracks",
     "search_in": "Search in {0}...",
     "try_global_search": "Try global search",
+    "show_results_on": "Show results on {0}",
     "type_to_search": "Type here to search...",
     "volume_normalization": "Volume normalization",
     "play_now_replace": "Play Now (clear queue)",

@@ -16,6 +16,9 @@
           v-if="sourceLabel"
           :label="sourceLabel"
           :domain="sourceDomain"
+          :options="sourceOptions"
+          :selected="sourceValue"
+          @select="(source) => emit('select-source', source)"
         />
       </div>
     </template>
@@ -38,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
 import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
@@ -56,11 +60,16 @@ export interface Props {
   sourceLabel?: string;
   // provider domain behind `sourceLabel`, for its icon
   sourceDomain?: string;
+  // the sources the row can switch to; makes the badge a picker when >1 offered
+  sourceOptions?: SourceOption[];
+  // the source currently feeding the row, highlighted in the picker
+  sourceValue?: RowSource;
 }
 defineProps<Props>();
 
 const emit = defineEmits<{
   (e: "edit-rows"): void;
+  (e: "select-source", source: RowSource): void;
 }>();
 
 const SKELETONS = 6;

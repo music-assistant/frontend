@@ -220,6 +220,8 @@ export function useArtistRowData(
     albumsMeta,
     albumsSource,
     singlesSource,
+    topTracksSource,
+    similarArtistsSource,
     albumsSourceDisplay,
     singlesSourceDisplay,
     topTracksSourceDisplay,

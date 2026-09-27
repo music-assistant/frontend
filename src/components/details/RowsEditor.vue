@@ -176,6 +176,7 @@
 <script setup lang="ts" generic="Id extends string, Item extends MediaItemType">
 import {
   rowSourceLabel,
+  rowSourceOptions,
   type RowRegistry,
   type RowSource,
 } from "@/components/details/rowRegistry";
@@ -200,7 +201,6 @@ import {
 import { SheetContent } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { useListDragReorder } from "@/composables/useListDragReorder";
-import { api } from "@/plugins/api";
 import type { MediaItemType } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
@@ -233,13 +233,6 @@ const props = withDefaults(
 );
 
 const open = defineModel<boolean>("open", { default: false });
-
-interface SourceOption {
-  value: RowSource;
-  label: string;
-  // provider domain, for the icon beside a provider option
-  domain?: string;
-}
 
 interface EditorRow {
   id: Id;
@@ -322,12 +315,8 @@ const dropGapOffset = computed(() => {
 });
 
 /** The sources offered for a row, in the order the picker lists them. */
-function sourceOptions(id: Id): SourceOption[] {
-  return props.registry.sources(id, props.item).map((source) => ({
-    value: source,
-    label: rowSourceLabel(source),
-    domain: api.providers[source]?.domain,
-  }));
+function sourceOptions(id: Id) {
+  return rowSourceOptions(props.registry, id, props.item);
 }
 
 function selectSource(id: Id, source: unknown) {

@@ -154,6 +154,27 @@ export function createRowRegistry<Id extends string, Item>(
   };
 }
 
+/** A source as a picker option: its value, label and (for a provider) icon domain. */
+export interface SourceOption {
+  value: RowSource;
+  label: string;
+  // provider domain, for the icon beside a provider option
+  domain?: string;
+}
+
+/** The sources offered for a row of this item, as picker options in list order. */
+export function rowSourceOptions<Id extends string, Item>(
+  registry: RowRegistry<Id, Item>,
+  id: Id,
+  item: Item,
+): SourceOption[] {
+  return registry.sources(id, item).map((source) => ({
+    value: source,
+    label: rowSourceLabel(source),
+    domain: api.providers[source]?.domain,
+  }));
+}
+
 /** The label of a source: the library, every provider, or one of them. */
 export function rowSourceLabel(source: RowSource): string {
   if (source === "library") return $t("source_library");
