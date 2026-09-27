@@ -946,7 +946,6 @@
     "favorites_remove": "Remove from favorites",
     "favorites_dislike": "Dislike",
     "favorites_dislike_remove": "Remove dislike",
-    "favorites_disliked": "Disliked",
     "confirm_library_remove": "Are you sure you want to delete this item from the library? Any items depending on this item will also be recursively removed. Note that this will only remove this item from the library. If this is a music file on disk, it may return on the next sync.",
     "check_item_on_provider": "Check {0} on {1}",
     "check_item_in_library": "Check {0} in the library",

@@ -83,9 +83,9 @@ describe("InfoHeader favorite toggle", () => {
   });
 
   it("renders the favorite toggle as a labelled shadcn button", () => {
-    const wrapper = mountHeader(track({ favorite: false }));
+    const wrapper = mountHeader(track({ favorite: null }));
 
-    const favBtn = wrapper.find('button[aria-label="tooltip.favorite"]');
+    const favBtn = wrapper.find('button[aria-label="favorites_add"]');
     expect(favBtn.exists()).toBe(true);
     expect(favBtn.attributes("type")).toBe("button");
     expect(favBtn.attributes("aria-pressed")).toBe("false");
@@ -96,18 +96,27 @@ describe("InfoHeader favorite toggle", () => {
   it("reflects the favorite state through aria-pressed", () => {
     const wrapper = mountHeader(track({ favorite: true }));
 
-    const favBtn = wrapper.find('button[aria-label="tooltip.favorite"]');
+    const favBtn = wrapper.find('button[aria-label="favorites_remove"]');
     expect(favBtn.attributes("aria-pressed")).toBe("true");
     expect(favBtn.find("svg").classes()).toContain("size-6");
   });
 
+  // one slot, three looks: a dislike takes the heart's place in the same button
+  it("shows a dislike in the heart's own slot", () => {
+    const favBtn = mountHeader(track({ favorite: false })).get(
+      'button[aria-label="favorites_dislike_remove"]',
+    );
+
+    expect(favBtn.findAll("svg")).toHaveLength(1);
+    expect(favBtn.get("svg").classes()).toContain("tabler-icon-thumb-down");
+    expect(favBtn.get("svg").classes()).toContain("size-6");
+  });
+
   it("toggles the favorite state on click", async () => {
-    const item = track({ favorite: false });
+    const item = track({ favorite: null });
     const wrapper = mountHeader(item);
 
-    await wrapper
-      .find('button[aria-label="tooltip.favorite"]')
-      .trigger("click");
+    await wrapper.find('button[aria-label="favorites_add"]').trigger("click");
     expect(apiMock.toggleFavorite).toHaveBeenCalledTimes(1);
     expect(apiMock.toggleFavorite.mock.calls[0][0]).toMatchObject({
       item_id: item.item_id,
@@ -115,7 +124,7 @@ describe("InfoHeader favorite toggle", () => {
   });
 
   it("no longer renders the old native favorite button", () => {
-    const wrapper = mountHeader(track({ favorite: false }));
+    const wrapper = mountHeader(track({ favorite: null }));
 
     expect(wrapper.find(".favorite-icon-button").exists()).toBe(false);
   });

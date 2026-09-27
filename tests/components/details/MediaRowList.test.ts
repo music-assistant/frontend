@@ -77,10 +77,20 @@ const TRACKS = [
     name: "One",
     artists: [artist({ name: "Vera Lund" })],
     duration: 125,
+    favorite: null,
   }),
-  track({ item_id: "2", name: "Two", version: "Live", duration: 61 }),
+  track({
+    item_id: "2",
+    name: "Two",
+    version: "Live",
+    duration: 61,
+    favorite: false,
+  }),
   track({ item_id: "3", name: "Three", favorite: true }),
 ];
+
+// the label says what a tap does next, so it differs per row state
+const FAVORITE_BUTTONS = "button[aria-label^='favorites_']";
 
 function mountList(props: Partial<Props> = {}, slots = {}) {
   return mount(MediaRowList, {
@@ -156,7 +166,7 @@ describe("MediaRowList", () => {
 
   it("toggles the favorite through the api", async () => {
     const wrapper = mountList({ items: TRACKS, showFavorite: true });
-    const hearts = wrapper.findAll("button[aria-label='tooltip.favorite']");
+    const hearts = wrapper.findAll(FAVORITE_BUTTONS);
     expect(hearts).toHaveLength(3);
     expect(hearts[2].classes()).toContain("media-rows__button--favorite");
     expect(hearts[0].classes()).not.toContain("media-rows__button--favorite");
@@ -167,19 +177,35 @@ describe("MediaRowList", () => {
     expect(mockHandleMediaItemClick).not.toHaveBeenCalled();
   });
 
+  // one slot, three looks: a dislike takes the heart's place in the same button
+  it.each([
+    { row: 0, label: "favorites_add", icon: "tabler-icon-heart" },
+    {
+      row: 1,
+      label: "favorites_dislike_remove",
+      icon: "tabler-icon-thumb-down",
+    },
+    { row: 2, label: "favorites_remove", icon: "tabler-icon-heart-filled" },
+  ])("shows $icon labelled $label on row $row", ({ row, label, icon }) => {
+    const heart = mountList({ items: TRACKS, showFavorite: true }).findAll(
+      FAVORITE_BUTTONS,
+    )[row];
+
+    expect(heart.findAll("svg")).toHaveLength(1);
+    expect(heart.get("svg").classes()).toContain(icon);
+    expect(heart.attributes("aria-label")).toBe(label);
+    expect(heart.attributes("title")).toBe(label);
+  });
+
   it("has no heart buttons unless asked for", () => {
     const wrapper = mountList({ items: TRACKS });
-    expect(wrapper.findAll("button[aria-label='tooltip.favorite']")).toEqual(
-      [],
-    );
+    expect(wrapper.findAll(FAVORITE_BUTTONS)).toEqual([]);
   });
 
   it("hides the hearts from a role that cannot change the library", () => {
     mockHasScope.mockReturnValue(false);
     const wrapper = mountList({ items: TRACKS, showFavorite: true });
-    expect(wrapper.findAll("button[aria-label='tooltip.favorite']")).toEqual(
-      [],
-    );
+    expect(wrapper.findAll(FAVORITE_BUTTONS)).toEqual([]);
     mockHasScope.mockReturnValue(true);
   });
 

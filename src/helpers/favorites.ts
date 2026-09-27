@@ -44,6 +44,19 @@ export function subscribeOwnFavorites(
   });
 }
 
+/**
+ * Translation key naming what a tap on the favorite control does next.
+ *
+ * :param favorite: The signed-in user's state on the item.
+ */
+export function favoriteActionKey(
+  favorite: boolean | null | undefined,
+): string {
+  if (favorite === true) return "favorites_remove";
+  if (favorite === false) return "favorites_dislike_remove";
+  return "favorites_add";
+}
+
 function holdsFavorite(value: unknown): value is FavoriteHolder {
   return typeof value === "object" && value !== null && "favorite" in value;
 }

@@ -17,6 +17,7 @@ import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../../fixtures/playlist";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
+import { track } from "../../fixtures/track";
 import { userSummary } from "../../fixtures/user";
 
 const { hasScope, mockToastError, mockToastInfo } = vi.hoisted(() => ({
@@ -740,6 +741,24 @@ describe("MusicAssistantApi error handling", () => {
     await rejection;
     expect(mockToastError).not.toHaveBeenCalled();
   });
+
+  // the favorite control is one slot with one tap: it likes an item that has no
+  // state and clears whichever state it does have
+  it.each([
+    { favorite: null, command: "music/favorites/add_item", cleared: true },
+    { favorite: true, command: "music/favorites/remove_item", cleared: null },
+    { favorite: false, command: "music/favorites/remove_item", cleared: null },
+  ])(
+    "toggles favorite $favorite through $command",
+    ({ favorite, command, cleared }) => {
+      const item = track({ favorite });
+
+      api.toggleFavorite(item);
+
+      expect(transport.lastCommand.command).toBe(command);
+      expect(item.favorite).toBe(cleared);
+    },
+  );
 
   it("rejects in-flight commands when the connection closes", async () => {
     const command = api.sendCommand("test/pending");

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { favoriteActionKey } from "@/helpers/favorites";
 import { $t } from "@/plugins/i18n";
 import api from "@/plugins/api";
 import { type MediaItem } from "@/plugins/api/interfaces";
@@ -12,10 +13,13 @@ interface Props {
 const props = defineProps<Props>();
 
 const isFavorite = computed(() => props.item?.favorite === true);
-const isDisliked = computed(() => props.item?.favorite === false);
+// one slot, one tap: a dislike takes the heart's place instead of sitting beside it
+const icon = computed(() =>
+  props.item?.favorite === false ? ThumbsDown : Heart,
+);
 
 const favoriteButtonLabel = computed(() =>
-  isFavorite.value ? $t("favorites_remove") : $t("favorites_add"),
+  $t(favoriteActionKey(props.item?.favorite)),
 );
 
 const toggle = (e: Event) => {
@@ -26,31 +30,20 @@ const toggle = (e: Event) => {
 </script>
 
 <template>
-  <span class="flex items-center gap-1">
-    <!-- the heart only tells likes apart, so a dislike gets a badge of its own -->
-    <span
-      v-if="isDisliked"
-      class="opacity-70"
-      role="img"
-      :aria-label="$t('favorites_disliked')"
-      :title="$t('favorites_disliked')"
-    >
-      <ThumbsDown :size="16" />
-    </span>
-    <Heart
-      class="favorite-icon"
-      :class="{ 'favorite-icon--on': isFavorite }"
-      :size="22"
-      :fill="isFavorite ? 'currentColor' : 'none'"
-      role="button"
-      tabindex="0"
-      :aria-label="$t('tooltip.favorite')"
-      :aria-pressed="isFavorite ? 'true' : 'false'"
-      :title="favoriteButtonLabel"
-      @click="toggle"
-      @keydown.enter.space.prevent="toggle"
-    />
-  </span>
+  <component
+    :is="icon"
+    class="favorite-icon"
+    :class="{ 'favorite-icon--on': isFavorite }"
+    :size="22"
+    :fill="isFavorite ? 'currentColor' : 'none'"
+    role="button"
+    tabindex="0"
+    :aria-label="favoriteButtonLabel"
+    :aria-pressed="isFavorite ? 'true' : 'false'"
+    :title="favoriteButtonLabel"
+    @click="toggle"
+    @keydown.enter.space.prevent="toggle"
+  />
 </template>
 
 <style scoped>

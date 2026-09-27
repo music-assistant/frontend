@@ -375,25 +375,20 @@
                 type="button"
                 variant="ghost-icon"
                 size="icon-xs"
-                :aria-label="$t('tooltip.favorite')"
+                :aria-label="favoriteButtonLabel"
                 :aria-pressed="isFavorite ? 'true' : 'false'"
                 :title="favoriteButtonLabel"
                 @click="api.toggleFavorite(item)"
               >
-                <IconHeartFilled v-if="isFavorite" class="size-6" />
+                <!-- one slot, one tap: a dislike takes the heart's place -->
+                <IconThumbDown
+                  v-if="isDisliked"
+                  :stroke-width="2"
+                  class="size-6"
+                />
+                <IconHeartFilled v-else-if="isFavorite" class="size-6" />
                 <IconHeart v-else :stroke-width="2" class="size-6" />
               </Button>
-              <!-- the heart only tells likes apart, so a dislike gets a badge
-                   of its own -->
-              <span
-                v-if="isDisliked"
-                class="opacity-70"
-                role="img"
-                :aria-label="$t('favorites_disliked')"
-                :title="$t('favorites_disliked')"
-              >
-                <IconThumbDown :stroke-width="2" class="size-5" />
-              </span>
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
               <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
@@ -521,6 +516,7 @@ import {
 } from "@/composables/useHoldToOpenMenu";
 import { useUserPreferences } from "@/composables/userPreferences";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import { favoriteActionKey } from "@/helpers/favorites";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import {
@@ -787,7 +783,7 @@ const isFavorite = computed(() => compProps.item?.favorite === true);
 const isDisliked = computed(() => compProps.item?.favorite === false);
 
 const favoriteButtonLabel = computed(() =>
-  isFavorite.value ? $t("favorites_remove") : $t("favorites_add"),
+  $t(favoriteActionKey(compProps.item?.favorite)),
 );
 
 const mergeGenre = () => {

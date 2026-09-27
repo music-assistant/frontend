@@ -13,7 +13,13 @@
         :aria-label="$t('tooltip.favorite')"
         @pointerenter="onPointerEnter"
       >
-        <Heart :size="size" :fill="isFavorite ? 'currentColor' : 'none'" />
+        <!-- one slot, three looks: a dislike takes the heart's place -->
+        <ThumbsDown v-if="isDisliked" :size="size" />
+        <Heart
+          v-else
+          :size="size"
+          :fill="isFavorite ? 'currentColor' : 'none'"
+        />
       </Button>
     </DropdownMenuTrigger>
     <!-- the button sits low on both surfaces it is used on, so the menu hangs

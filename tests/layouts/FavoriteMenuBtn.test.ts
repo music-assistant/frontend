@@ -186,6 +186,24 @@ describe("FavoriteMenuBtn", () => {
     expect(mountButton().findAll(".dropdown-item")[1].text()).toBe(entry);
   });
 
+  // one slot, three looks: the trigger carries the state, the menu the actions
+  it.each([
+    { favorite: true, icon: "lucide-heart", fill: "currentColor" },
+    { favorite: null, icon: "lucide-heart", fill: "none" },
+    { favorite: false, icon: "lucide-thumbs-down", fill: "none" },
+  ])(
+    "shows $icon on the trigger for favorite $favorite",
+    async ({ favorite, icon, fill }) => {
+      await setPlaying(track({ favorite }));
+
+      const trigger = mountButton().get("button[aria-label]");
+
+      expect(trigger.findAll("svg")).toHaveLength(1);
+      expect(trigger.get("svg").classes()).toContain(icon);
+      expect(trigger.get("svg").attributes("fill")).toBe(fill);
+    },
+  );
+
   it("dislikes the playing item", async () => {
     const item = track({ favorite: null });
     await setPlaying(item);

@@ -1562,15 +1562,15 @@ export class MusicAssistantApi {
   }
 
   public toggleFavorite(item: MediaItem) {
-    // Toggle the like: a disliked item is liked too, clearing the dislike
-    if (item.favorite === true) {
-      this.removeItemFromFavorites(item.media_type, item.item_id);
-      // optimistically set the value
-      item.favorite = null;
-    } else {
+    // one tap clears whichever state is set, so only an item without one is liked
+    if (item.favorite == null) {
       this.addItemToFavorites(item);
       // optimistically set the value
       item.favorite = true;
+    } else {
+      this.removeItemFromFavorites(item.media_type, item.item_id);
+      // optimistically set the value
+      item.favorite = null;
     }
   }
 

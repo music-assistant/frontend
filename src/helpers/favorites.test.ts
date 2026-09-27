@@ -1,6 +1,10 @@
 import { EventType, type EventMessage } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { keepOwnFavorite, subscribeOwnFavorites } from "./favorites";
+import {
+  favoriteActionKey,
+  keepOwnFavorite,
+  subscribeOwnFavorites,
+} from "./favorites";
 
 const { apiMock, storeMock } = vi.hoisted(() => ({
   apiMock: { subscribe: vi.fn() },
@@ -96,5 +100,15 @@ describe("subscribeOwnFavorites", () => {
     emit({ event: EventType.FAVORITE_UPDATED, data: update });
 
     expect(onUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe("favoriteActionKey", () => {
+  // one slot, one tap: the label has to say what that tap does
+  it("names the action a tap performs on every state", () => {
+    expect(favoriteActionKey(true)).toBe("favorites_remove");
+    expect(favoriteActionKey(false)).toBe("favorites_dislike_remove");
+    expect(favoriteActionKey(null)).toBe("favorites_add");
+    expect(favoriteActionKey(undefined)).toBe("favorites_add");
   });
 });
