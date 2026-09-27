@@ -319,7 +319,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import { SEARCHABLE_MEDIA_TYPES } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
-import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
+import {
+  favoriteState,
+  keepOwnFavorite,
+  setFavoriteState,
+  subscribeOwnFavorites,
+} from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -2052,8 +2057,10 @@ onMounted(async () => {
 
   // the user's own like or dislike, wherever they made it
   _unsubscribeFavorites = subscribeOwnFavorites((update) => {
-    const item = pagedItems.value.find((i) => i.uri == update.uri);
-    if (item && "favorite" in item) item.favorite = update.favorite;
+    setFavoriteState(
+      pagedItems.value.find((i) => i.uri == update.uri),
+      update.favorite,
+    );
   });
 });
 
@@ -2224,7 +2231,7 @@ const getFilteredItems = function (
   }
 
   if (params.favoritesOnly) {
-    result = result.filter((x) => "favorite" in x && x.favorite);
+    result = result.filter((x) => favoriteState(x) === true);
   }
 
   if (params.hideFullyPlayed) {

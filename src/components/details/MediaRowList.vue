@@ -66,7 +66,7 @@
             formatDuration(itemDuration(item)!)
           }}</span>
           <button
-            v-if="showFavorite && 'favorite' in item && canEditLibrary"
+            v-if="showFavorite && canHoldFavorite(item) && canEditLibrary"
             type="button"
             class="media-rows__button"
             :class="{
@@ -120,7 +120,11 @@ import {
   getEventPosition,
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
-import { favoriteActionKey } from "@/helpers/favorites";
+import {
+  canHoldFavorite,
+  favoriteActionKey,
+  favoriteState,
+} from "@/helpers/favorites";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
@@ -266,7 +270,7 @@ function itemDuration(item: RowItem): number | undefined {
 
 /** What a tap on the item's favorite button does next. */
 function favoriteLabel(item: RowItem): string {
-  return $t(favoriteActionKey("favorite" in item ? item.favorite : null));
+  return $t(favoriteActionKey(favoriteState(item)));
 }
 </script>
 

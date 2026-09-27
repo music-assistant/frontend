@@ -1018,9 +1018,10 @@ interface _MediaItemBase {
 export interface MediaItem extends _MediaItemBase {
   provider_mappings: ProviderMapping[];
   metadata: MediaItemMetadata;
-  // the signed-in user's own state: true is a like, false a dislike, null/absent
-  // nothing at all. Every user has their own.
-  favorite: boolean | null;
+  // the signed-in user's own state: true is a like, false a dislike, null
+  // nothing at all. Every user has their own. A summary listing leaves the key
+  // out of the items it returns when there is no state, so absent reads as null.
+  favorite?: boolean | null;
   position?: number | null; //required for playlist tracks, optional for all other
 }
 

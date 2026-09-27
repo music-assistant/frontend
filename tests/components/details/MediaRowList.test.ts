@@ -6,6 +6,7 @@ import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../../fixtures/album";
 import { artist } from "../../fixtures/artist";
+import { withoutFavorite } from "../../fixtures/mediaItem";
 import { track } from "../../fixtures/track";
 
 const {
@@ -195,6 +196,18 @@ describe("MediaRowList", () => {
     expect(heart.get("svg").classes()).toContain(icon);
     expect(heart.attributes("aria-label")).toBe(label);
     expect(heart.attributes("title")).toBe(label);
+  });
+
+  // a listing leaves the key out of a row the user has no state on
+  it("shows the outline heart on a row without the favorite key", () => {
+    const heart = mountList({
+      items: [withoutFavorite(track({ item_id: "4", name: "Four" }))],
+      showFavorite: true,
+    }).get(FAVORITE_BUTTONS);
+
+    expect(heart.get("svg").classes()).toContain("tabler-icon-heart");
+    expect(heart.attributes("aria-label")).toBe("favorites_add");
+    expect(heart.attributes("aria-pressed")).toBe("false");
   });
 
   it("has no heart buttons unless asked for", () => {

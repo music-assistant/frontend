@@ -284,6 +284,7 @@ import {
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
 import { runWithConcurrency } from "@/helpers/concurrency";
+import { favoriteState, setFavoriteState } from "@/helpers/favorites";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { playerVisible } from "@/helpers/players";
@@ -774,7 +775,7 @@ export const getContextMenuItems = async function (
             for (const item of items) {
               // optimistically clear membership so the derived state re-evaluates;
               // favorite implies membership, so it must clear too
-              if ("favorite" in item) item.favorite = null;
+              setFavoriteState(item, null);
               if ("provider_mappings" in item)
                 item.provider_mappings.forEach((pm) => (pm.in_library = false));
             }
@@ -793,11 +794,7 @@ export const getContextMenuItems = async function (
     });
   }
   // Favorites handling - supports mixed states like played/unplayed
-  if (
-    canEditLibrary &&
-    actionTargets.length > 0 &&
-    actionTargets.every((item) => "favorite" in item)
-  ) {
+  if (canEditLibrary && actionTargets.length > 0) {
     const favoritableItems = actionTargets.filter(
       (item) =>
         [
@@ -815,20 +812,14 @@ export const getContextMenuItems = async function (
     // a favorite belongs to the library item, so a single item follows its
     // resolved membership while a multi selection reads each item's own flag
     const isFavorite = (item: MediaItemTypeOrItemMapping) =>
-      "favorite" in item &&
-      item.favorite === true &&
-      (items.length > 1 || inLibrary);
+      favoriteState(item) === true && (items.length > 1 || inLibrary);
     const isDisliked = (item: MediaItemTypeOrItemMapping) =>
-      "favorite" in item &&
-      item.favorite === false &&
-      (items.length > 1 || inLibrary);
+      favoriteState(item) === false && (items.length > 1 || inLibrary);
 
     // the actions run on the library copy while the next menu is built from
     // the item the caller holds, so its state has to follow
     const markFavorite = (favorite: boolean | null) => {
-      for (const item of items) {
-        if ("favorite" in item) item.favorite = favorite;
-      }
+      for (const item of items) setFavoriteState(item, favorite);
     };
 
     if (favoritableItems.length > 0) {
@@ -877,7 +868,7 @@ export const getContextMenuItems = async function (
               (item) => !isFavorite(item),
             )) {
               api.addItemToFavorites(addableItem(item));
-              if ("favorite" in item) item.favorite = true;
+              setFavoriteState(item, true);
             }
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
@@ -891,7 +882,7 @@ export const getContextMenuItems = async function (
           action: () => {
             for (const item of favoritableItems.filter(isFavorite)) {
               api.removeItemFromFavorites(item.media_type, item.item_id);
-              if ("favorite" in item) item.favorite = null;
+              setFavoriteState(item, null);
             }
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
@@ -943,7 +934,7 @@ export const getContextMenuItems = async function (
                 (item) => !isDisliked(item),
               )) {
                 api.setFavorite(addableItem(item), false);
-                if ("favorite" in item) item.favorite = false;
+                setFavoriteState(item, false);
               }
               eventbus.emit("clearSelection");
             },
@@ -956,7 +947,7 @@ export const getContextMenuItems = async function (
             action: () => {
               for (const item of favoritableItems.filter(isDisliked)) {
                 api.removeItemFromFavorites(item.media_type, item.item_id);
-                if ("favorite" in item) item.favorite = null;
+                setFavoriteState(item, null);
               }
               eventbus.emit("clearSelection");
             },

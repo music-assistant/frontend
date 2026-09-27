@@ -2,6 +2,7 @@ import FavoriteButton from "@/components/FavoriteButton.vue";
 import api from "@/plugins/api";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { withoutFavorite } from "../fixtures/mediaItem";
 import { track } from "../fixtures/track";
 
 vi.mock("@/plugins/api", () => {
@@ -57,6 +58,18 @@ describe("FavoriteButton", () => {
       expect(glyph.attributes("title")).toBe(label);
     },
   );
+
+  // a listing leaves the key out of an item the user has no state on
+  it("shows the outline heart for an item without the favorite key", () => {
+    const glyph = mount(FavoriteButton, {
+      props: { item: withoutFavorite(track()) },
+    }).get("svg");
+
+    expect(glyph.classes()).toContain("lucide-heart");
+    expect(glyph.attributes("fill")).toBe("none");
+    expect(glyph.attributes("aria-label")).toBe("favorites_add");
+    expect(glyph.attributes("aria-pressed")).toBe("false");
+  });
 
   it.each([{ favorite: true }, { favorite: null }, { favorite: false }])(
     "hands a tap on favorite $favorite to the api",

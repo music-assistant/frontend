@@ -1,8 +1,19 @@
-import { EventType, type EventMessage } from "@/plugins/api/interfaces";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  EventType,
+  MediaType,
+  type EventMessage,
+  type ItemMapping,
+} from "@/plugins/api/interfaces";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { artist } from "../../tests/fixtures/artist";
+import { withoutFavorite } from "../../tests/fixtures/mediaItem";
+import { track } from "../../tests/fixtures/track";
+import {
+  canHoldFavorite,
   favoriteActionKey,
+  favoriteState,
   keepOwnFavorite,
+  setFavoriteState,
   subscribeOwnFavorites,
 } from "./favorites";
 
@@ -13,6 +24,20 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({ api: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
+
+// the lightweight reference a row card holds: no provider mappings, so no
+// favorite state of its own
+const itemMapping: ItemMapping = {
+  item_id: "1",
+  provider: "spotify--1",
+  name: "Track",
+  version: "",
+  uri: "spotify--1://track/1",
+  external_ids: [],
+  is_playable: true,
+  media_type: MediaType.TRACK,
+  available: true,
+};
 
 describe("keepOwnFavorite", () => {
   it("keeps the favorite state of the item the caller holds", () => {
@@ -36,16 +61,21 @@ describe("keepOwnFavorite", () => {
     expect(incoming.favorite).toBe(true);
   });
 
-  it("returns the incoming item when either side has no favorite state", () => {
+  it("returns the incoming item when there is no state to keep", () => {
     const incoming = { favorite: true };
 
-    expect(keepOwnFavorite(incoming, { uri: "library://track/1" })).toBe(
-      incoming,
-    );
     expect(keepOwnFavorite(incoming, undefined)).toBe(incoming);
     expect(keepOwnFavorite("library://track/1", { favorite: false })).toBe(
       "library://track/1",
     );
+  });
+
+  // a listing leaves the key out when the user has no state on the item, so the
+  // state of whoever triggered the event must not stick to the caller's copy
+  it("clears the state when the item the caller holds carries none", () => {
+    expect(
+      keepOwnFavorite({ favorite: true }, { uri: "library://track/1" }),
+    ).toEqual({ favorite: null });
   });
 });
 
@@ -110,5 +140,41 @@ describe("favoriteActionKey", () => {
     expect(favoriteActionKey(false)).toBe("favorites_dislike_remove");
     expect(favoriteActionKey(null)).toBe("favorites_add");
     expect(favoriteActionKey(undefined)).toBe("favorites_add");
+  });
+});
+
+describe("favoriteState", () => {
+  // a summary item from a listing carries no key at all without a state
+  it("reads a missing key as no state", () => {
+    expect(favoriteState(withoutFavorite(track()))).toBeNull();
+    expect(favoriteState(track({ favorite: null }))).toBeNull();
+    expect(favoriteState(track({ favorite: true }))).toBe(true);
+    expect(favoriteState(track({ favorite: false }))).toBe(false);
+    expect(favoriteState(undefined)).toBeNull();
+  });
+});
+
+describe("canHoldFavorite", () => {
+  it("tells a media item apart from an item mapping", () => {
+    expect(canHoldFavorite(withoutFavorite(track()))).toBe(true);
+    expect(canHoldFavorite(artist({ favorite: true }))).toBe(true);
+    expect(canHoldFavorite(itemMapping)).toBe(false);
+  });
+});
+
+describe("setFavoriteState", () => {
+  it("shows the state on an item that holds one", () => {
+    const item = withoutFavorite(track());
+
+    setFavoriteState(item, false);
+
+    expect(item.favorite).toBe(false);
+  });
+
+  it("leaves an item that holds none alone", () => {
+    setFavoriteState(itemMapping, true);
+    setFavoriteState(undefined, true);
+
+    expect("favorite" in itemMapping).toBe(false);
   });
 });

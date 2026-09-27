@@ -140,13 +140,14 @@ export function requireServerVersion(minVersion: string): boolean {
 export const isItemInLibrary = function (
   item: MediaItemType | ItemMapping | null | undefined,
 ): boolean {
-  if (!item) return false;
+  // an item mapping or a browse folder carries no membership of its own
+  if (!item || !("provider_mappings" in item)) return false;
   // favoriting forces an item into the library, so favorite implies membership
-  if ("favorite" in item && item.favorite === true) return true;
-  if ("provider_mappings" in item && Array.isArray(item.provider_mappings)) {
-    return item.provider_mappings.some((pm) => !!pm.in_library);
-  }
-  return false;
+  if (item.favorite === true) return true;
+  return (
+    Array.isArray(item.provider_mappings) &&
+    item.provider_mappings.some((pm) => !!pm.in_library)
+  );
 };
 
 /**
