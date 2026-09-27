@@ -34,10 +34,11 @@
 
         <!-- FORM step -->
         <template v-else-if="step.type === FlowStepType.FORM">
+          <!-- step text often carries a URL or key to copy; global.css disables selection -->
           <MarkdownText
             v-if="step.description"
             :text="step.description"
-            class="text-muted-foreground mb-4 text-sm leading-relaxed"
+            class="text-muted-foreground mb-4 text-sm leading-relaxed select-text [&_*]:select-text"
           />
 
           <!-- base (non-field) error -->
@@ -86,7 +87,7 @@
               step.description ??
               $t('settings.setup_flow.external_default_text')
             "
-            class="text-muted-foreground mb-4 text-sm leading-relaxed"
+            class="text-muted-foreground mb-4 text-sm leading-relaxed select-text [&_*]:select-text"
           />
           <div
             class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
@@ -142,7 +143,7 @@
             <MarkdownText
               v-if="step.progress_text"
               :text="step.progress_text"
-              class="text-muted-foreground w-full text-sm leading-relaxed"
+              class="text-muted-foreground w-full text-sm leading-relaxed select-text [&_*]:select-text"
             />
           </div>
         </template>
@@ -163,7 +164,7 @@
             <MarkdownText
               v-if="step.description"
               :text="step.description"
-              class="text-muted-foreground w-full text-sm leading-relaxed"
+              class="text-muted-foreground w-full text-sm leading-relaxed select-text [&_*]:select-text"
             />
           </div>
         </template>
@@ -195,7 +196,7 @@
             </h3>
             <MarkdownText
               :text="step.reason || $t('settings.setup_flow.aborted_text')"
-              class="text-muted-foreground w-full text-sm leading-relaxed"
+              class="text-muted-foreground w-full text-sm leading-relaxed select-text [&_*]:select-text"
             />
           </div>
         </template>
