@@ -289,6 +289,7 @@ import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { playerVisible } from "@/helpers/players";
 import {
+  canAddToPlaylist,
   canEditPlaylistItems,
   canManagePlaylist,
   canSharePlaylist,
@@ -985,15 +986,8 @@ export const getContextMenuItems = async function (
       });
     }
   }
-  // add to playlist action (tracks, albums, radios, podcasts, podcast episodes, and audiobooks)
-  if (
-    canEditLibrary &&
-    (firstItem.media_type === MediaType.TRACK ||
-      firstItem.media_type === MediaType.ALBUM ||
-      firstItem.media_type === MediaType.RADIO ||
-      firstItem.media_type === MediaType.PODCAST_EPISODE ||
-      firstItem.media_type === MediaType.AUDIOBOOK)
-  ) {
+  // add to playlist action
+  if (canEditLibrary && canAddToPlaylist(firstItem)) {
     contextMenuItems.push({
       label: "add_playlist",
       labelArgs: [],

@@ -65,27 +65,14 @@
           <span v-if="itemDuration(item)" class="media-rows__duration">{{
             formatDuration(itemDuration(item)!)
           }}</span>
-          <button
-            v-if="showFavorite && canHoldFavorite(item) && canEditLibrary"
-            type="button"
-            class="media-rows__button"
-            :class="{
-              'media-rows__button--favorite': item.favorite === true,
-            }"
-            :aria-label="favoriteLabel(item)"
-            :aria-pressed="item.favorite === true ? 'true' : 'false'"
-            :title="favoriteLabel(item)"
-            @click.stop="api.toggleFavorite(item)"
-          >
-            <!-- one slot, one tap: a dislike takes the heart's place -->
-            <IconThumbDown
-              v-if="item.favorite === false"
-              :stroke-width="2"
-              :size="18"
-            />
-            <IconHeartFilled v-else-if="item.favorite === true" :size="18" />
-            <IconHeart v-else :stroke-width="2" :size="18" />
-          </button>
+          <FavoriteMenu
+            v-if="showFavorite && canHoldFavorite(item)"
+            :item="item"
+            variant="ghost"
+            size="icon-sm"
+            icon-class="size-4.5"
+            class="size-7 rounded-full text-muted-foreground data-[active=true]:text-primary"
+          />
           <button
             type="button"
             class="media-rows__button"
@@ -113,6 +100,7 @@
 
 <script setup lang="ts">
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
+import FavoriteMenu from "@/components/FavoriteMenu.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -120,11 +108,7 @@ import {
   getEventPosition,
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
-import {
-  canHoldFavorite,
-  favoriteActionKey,
-  favoriteState,
-} from "@/helpers/favorites";
+import { canHoldFavorite } from "@/helpers/favorites";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
@@ -136,15 +120,12 @@ import { getProviderIconDomain, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   AlbumType,
   PlaybackState,
-  Scope,
   type ItemMapping,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { EllipsisVertical } from "@lucide/vue";
-import { IconHeart, IconHeartFilled, IconThumbDown } from "@tabler/icons-vue";
 import { computed } from "vue";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 
@@ -187,11 +168,6 @@ defineSlots<{
 const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
-
-// favouring an item changes the library
-const canEditLibrary = computed(() =>
-  authManager.hasScope(Scope.LIBRARY_WRITE),
-);
 
 const shownItems = computed(() =>
   props.limit ? props.items?.slice(0, props.limit) : props.items,
@@ -266,11 +242,6 @@ const onItemMenu = function (event: Event, item: RowItem) {
 /** The item's duration in seconds, for the media types that carry one. */
 function itemDuration(item: RowItem): number | undefined {
   return "duration" in item && item.duration ? item.duration : undefined;
-}
-
-/** What a tap on the item's favorite button does next. */
-function favoriteLabel(item: RowItem): string {
-  return $t(favoriteActionKey(favoriteState(item)));
 }
 </script>
 
@@ -415,9 +386,6 @@ function favoriteLabel(item: RowItem): string {
 }
 .media-rows__button:hover {
   background: rgba(var(--v-theme-on-surface), 0.08);
-}
-.media-rows__button--favorite {
-  color: rgb(var(--v-theme-primary));
 }
 .media-rows__skeleton-text {
   height: 16px;

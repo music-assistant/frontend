@@ -10,7 +10,7 @@ import { withoutFavorite } from "../../tests/fixtures/mediaItem";
 import { track } from "../../tests/fixtures/track";
 import {
   canHoldFavorite,
-  favoriteActionKey,
+  clearFavorite,
   favoriteState,
   keepOwnFavorite,
   setFavoriteState,
@@ -18,7 +18,11 @@ import {
 } from "./favorites";
 
 const { apiMock, storeMock } = vi.hoisted(() => ({
-  apiMock: { subscribe: vi.fn() },
+  apiMock: {
+    subscribe: vi.fn(),
+    getLibraryItem: vi.fn(),
+    removeItemFromFavorites: vi.fn(),
+  },
   storeMock: { currentUser: undefined as { user_id: string } | undefined },
 }));
 
@@ -133,16 +137,6 @@ describe("subscribeOwnFavorites", () => {
   });
 });
 
-describe("favoriteActionKey", () => {
-  // one slot, one tap: the label has to say what that tap does
-  it("names the action a tap performs on every state", () => {
-    expect(favoriteActionKey(true)).toBe("favorites_remove");
-    expect(favoriteActionKey(false)).toBe("favorites_dislike_remove");
-    expect(favoriteActionKey(null)).toBe("favorites_add");
-    expect(favoriteActionKey(undefined)).toBe("favorites_add");
-  });
-});
-
 describe("favoriteState", () => {
   // a summary item from a listing carries no key at all without a state
   it("reads a missing key as no state", () => {
@@ -176,5 +170,51 @@ describe("setFavoriteState", () => {
     setFavoriteState(undefined, true);
 
     expect("favorite" in itemMapping).toBe(false);
+  });
+});
+
+describe("clearFavorite", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("clears the state of a library item without looking it up", async () => {
+    await expect(clearFavorite(track({ favorite: true }))).resolves.toBe(true);
+
+    expect(apiMock.getLibraryItem).not.toHaveBeenCalled();
+    expect(apiMock.removeItemFromFavorites).toHaveBeenCalledWith(
+      MediaType.TRACK,
+      "1",
+    );
+  });
+
+  // the state belongs to the library item, whose id a provider item does not
+  // carry
+  it("clears it on the library item behind a provider item", async () => {
+    apiMock.getLibraryItem.mockResolvedValue(track({ item_id: "42" }));
+
+    await expect(
+      clearFavorite(track({ provider: "spotify", item_id: "sp1" })),
+    ).resolves.toBe(true);
+
+    expect(apiMock.getLibraryItem).toHaveBeenCalledWith(
+      MediaType.TRACK,
+      "sp1",
+      "spotify",
+    );
+    expect(apiMock.removeItemFromFavorites).toHaveBeenCalledWith(
+      MediaType.TRACK,
+      "42",
+    );
+  });
+
+  it("clears nothing when the library holds no counterpart", async () => {
+    apiMock.getLibraryItem.mockResolvedValue(null);
+
+    await expect(
+      clearFavorite(track({ provider: "spotify", item_id: "sp1" })),
+    ).resolves.toBe(false);
+
+    expect(apiMock.removeItemFromFavorites).not.toHaveBeenCalled();
   });
 });

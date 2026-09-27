@@ -25,7 +25,6 @@ import {
   type EventMessage,
   type Genre,
   type MassEvent,
-  type MediaItem,
   type MediaItemType,
   type Player,
   type PlayerOptionValueType,
@@ -1562,19 +1561,6 @@ export class MusicAssistantApi {
       item,
       favorite,
     });
-  }
-
-  public toggleFavorite(item: MediaItem) {
-    // one tap clears whichever state is set, so only an item without one is liked
-    if (item.favorite == null) {
-      this.addItemToFavorites(item);
-      // optimistically set the value
-      item.favorite = true;
-    } else {
-      this.removeItemFromFavorites(item.media_type, item.item_id);
-      // optimistically set the value
-      item.favorite = null;
-    }
   }
 
   public browse(path?: string, player_id?: string): Promise<MediaItemType[]> {

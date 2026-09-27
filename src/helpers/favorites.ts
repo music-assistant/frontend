@@ -52,19 +52,6 @@ export function subscribeOwnFavorites(
 }
 
 /**
- * Translation key naming what a tap on the favorite control does next.
- *
- * :param favorite: The signed-in user's state on the item.
- */
-export function favoriteActionKey(
-  favorite: boolean | null | undefined,
-): string {
-  if (favorite === true) return "favorites_remove";
-  if (favorite === false) return "favorites_dislike_remove";
-  return "favorites_add";
-}
-
-/**
  * The signed-in user's state on an item: true is a like, false a dislike, null
  * nothing at all.
  *
@@ -99,6 +86,28 @@ export function setFavoriteState(
   favorite: boolean | null,
 ): void {
   if (item && canHoldFavorite(item)) item.favorite = favorite;
+}
+
+/**
+ * Remove the signed-in user's like or dislike of an item.
+ *
+ * :param item: The item to clear the state on.
+ * :return: Whether the state was cleared; false when the library holds no
+ *   counterpart to clear it on.
+ */
+export async function clearFavorite(item: FavoritableItem): Promise<boolean> {
+  // the state belongs to the library item, whose id a provider item does not
+  // carry
+  const libraryItem =
+    item.provider === "library"
+      ? item
+      : await api.getLibraryItem(item.media_type, item.item_id, item.provider);
+  if (!libraryItem) return false;
+  await api.removeItemFromFavorites(
+    libraryItem.media_type,
+    libraryItem.item_id,
+  );
+  return true;
 }
 
 function carriesFavorite(value: unknown): value is FavoriteHolder {

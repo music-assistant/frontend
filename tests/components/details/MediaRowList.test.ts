@@ -2,7 +2,7 @@ import MediaRowList, {
   type Props,
 } from "@/components/details/MediaRowList.vue";
 import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../../fixtures/album";
 import { artist } from "../../fixtures/artist";
@@ -10,14 +10,12 @@ import { withoutFavorite } from "../../fixtures/mediaItem";
 import { track } from "../../fixtures/track";
 
 const {
-  mockToggleFavorite,
   mockHandleMediaItemClick,
   mockHandleMenuBtnClick,
   mockItemIsAvailable,
   mockHasScope,
   storeMock,
 } = vi.hoisted(() => ({
-  mockToggleFavorite: vi.fn(),
   mockHasScope: vi.fn(() => true),
   mockHandleMediaItemClick: vi.fn(),
   mockHandleMenuBtnClick: vi.fn(),
@@ -31,7 +29,7 @@ const {
 }));
 
 vi.mock("@/plugins/api", () => {
-  const api = { toggleFavorite: mockToggleFavorite, providers: {} };
+  const api = { supportsPersonalFavorites: true, providers: {} };
   return { api, default: api };
 });
 
@@ -90,8 +88,8 @@ const TRACKS = [
   track({ item_id: "3", name: "Three", favorite: true }),
 ];
 
-// the label says what a tap does next, so it differs per row state
-const FAVORITE_BUTTONS = "button[aria-label^='favorites_']";
+// every row's heart opens the same menu, so they share one label
+const FAVORITE_BUTTONS = "button[aria-label='favorites_menu']";
 
 function mountList(props: Partial<Props> = {}, slots = {}) {
   return mount(MediaRowList, {
@@ -107,7 +105,6 @@ function mountList(props: Partial<Props> = {}, slots = {}) {
 
 describe("MediaRowList", () => {
   beforeEach(() => {
-    mockToggleFavorite.mockClear();
     mockHandleMediaItemClick.mockClear();
     mockHandleMenuBtnClick.mockClear();
     mockItemIsAvailable.mockReset().mockReturnValue(true);
@@ -165,37 +162,32 @@ describe("MediaRowList", () => {
     expect(wrapper.findAll(".thumb")).toHaveLength(0);
   });
 
-  it("toggles the favorite through the api", async () => {
+  it("opens the favorite menu without opening the row", async () => {
     const wrapper = mountList({ items: TRACKS, showFavorite: true });
     const hearts = wrapper.findAll(FAVORITE_BUTTONS);
     expect(hearts).toHaveLength(3);
-    expect(hearts[2].classes()).toContain("media-rows__button--favorite");
-    expect(hearts[0].classes()).not.toContain("media-rows__button--favorite");
 
-    await hearts[0].trigger("click");
-    expect(mockToggleFavorite).toHaveBeenCalledWith(TRACKS[0]);
-    // the heart must not also open the row
+    await hearts[0].trigger("click", { button: 0, ctrlKey: false });
+    await flushPromises();
+
+    expect(hearts[0].attributes("data-state")).toBe("open");
     expect(mockHandleMediaItemClick).not.toHaveBeenCalled();
   });
 
   // one slot, three looks: a dislike takes the heart's place in the same button
   it.each([
-    { row: 0, label: "favorites_add", icon: "tabler-icon-heart" },
-    {
-      row: 1,
-      label: "favorites_dislike_remove",
-      icon: "tabler-icon-thumb-down",
-    },
-    { row: 2, label: "favorites_remove", icon: "tabler-icon-heart-filled" },
-  ])("shows $icon labelled $label on row $row", ({ row, label, icon }) => {
+    { row: 0, icon: "lucide-heart", fill: "none", active: undefined },
+    { row: 1, icon: "lucide-thumbs-down", fill: "none", active: undefined },
+    { row: 2, icon: "lucide-heart", fill: "currentColor", active: "true" },
+  ])("shows $icon on row $row", ({ row, icon, fill, active }) => {
     const heart = mountList({ items: TRACKS, showFavorite: true }).findAll(
       FAVORITE_BUTTONS,
     )[row];
 
     expect(heart.findAll("svg")).toHaveLength(1);
     expect(heart.get("svg").classes()).toContain(icon);
-    expect(heart.attributes("aria-label")).toBe(label);
-    expect(heart.attributes("title")).toBe(label);
+    expect(heart.get("svg").attributes("fill")).toBe(fill);
+    expect(heart.attributes("data-active")).toBe(active);
   });
 
   // a listing leaves the key out of a row the user has no state on
@@ -205,9 +197,9 @@ describe("MediaRowList", () => {
       showFavorite: true,
     }).get(FAVORITE_BUTTONS);
 
-    expect(heart.get("svg").classes()).toContain("tabler-icon-heart");
-    expect(heart.attributes("aria-label")).toBe("favorites_add");
-    expect(heart.attributes("aria-pressed")).toBe("false");
+    expect(heart.get("svg").classes()).toContain("lucide-heart");
+    expect(heart.get("svg").attributes("fill")).toBe("none");
+    expect(heart.attributes("data-active")).toBeUndefined();
   });
 
   it("has no heart buttons unless asked for", () => {

@@ -1,24 +1,26 @@
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
-import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
 import { track } from "../../fixtures/track";
 
+// the menu only reaches the api once an entry is picked, which needs the menu
+// open; these tests stay on the trigger the hero shows
 vi.mock("@/plugins/api", () => {
-  const api = { toggleFavorite: vi.fn() };
+  const api = { supportsPersonalFavorites: true };
   return { api, default: api };
 });
 
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope: vi.fn() } }));
 
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
-
-const toggleFavorite = vi.mocked(api.toggleFavorite);
+const TRIGGER = "button[aria-label='favorites_menu']";
 
 function mountButton(favorite: boolean | null) {
-  return mount(DetailHeroFavorite, { props: { item: track({ favorite }) } });
+  return mount(DetailHeroFavorite, {
+    props: { item: track({ favorite }) },
+    global: { mocks: { $t: (key: string) => key } },
+  });
 }
 
 describe("DetailHeroFavorite", () => {
@@ -29,41 +31,23 @@ describe("DetailHeroFavorite", () => {
     );
   });
 
-  // one slot, three looks: the glyph carries the state and the label says what
-  // a tap does with it
+  // one slot, three looks; the menu component covers them all, this covers the
+  // hero handing it the item
   it.each([
-    {
-      favorite: true,
-      icon: "tabler-icon-heart-filled",
-      label: "favorites_remove",
-    },
-    { favorite: null, icon: "tabler-icon-heart", label: "favorites_add" },
-    {
-      favorite: false,
-      icon: "tabler-icon-thumb-down",
-      label: "favorites_dislike_remove",
-    },
-  ])(
-    "shows $icon labelled $label for favorite $favorite",
-    ({ favorite, icon, label }) => {
-      const button = mountButton(favorite).get("button");
+    { favorite: true, icon: "lucide-heart", fill: "currentColor" },
+    { favorite: null, icon: "lucide-heart", fill: "none" },
+    { favorite: false, icon: "lucide-thumbs-down", fill: "none" },
+  ])("shows $icon for favorite $favorite", ({ favorite, icon, fill }) => {
+    const trigger = mountButton(favorite).get(TRIGGER);
 
-      // one slot, so the dislike replaces the heart rather than joining it
-      expect(button.findAll("svg")).toHaveLength(1);
-      expect(button.get("svg").classes()).toContain(icon);
-      expect(button.attributes("aria-label")).toBe(label);
-      expect(button.attributes("title")).toBe(label);
-    },
-  );
+    expect(trigger.findAll("svg")).toHaveLength(1);
+    expect(trigger.get("svg").classes()).toContain(icon);
+    expect(trigger.get("svg").attributes("fill")).toBe(fill);
+  });
 
-  it("hands a tap on a dislike to the api", async () => {
-    const item = track({ favorite: false });
-
-    await mount(DetailHeroFavorite, { props: { item } })
-      .get("button")
-      .trigger("click");
-
-    expect(toggleFavorite).toHaveBeenCalledWith(item);
+  // it sits on the artwork, so it carries a backdrop of its own
+  it("gives the trigger a backdrop", () => {
+    expect(mountButton(null).get(TRIGGER).classes()).toContain("bg-black/35");
   });
 
   it("is not offered to a role that may not change the library", () => {
@@ -71,6 +55,6 @@ describe("DetailHeroFavorite", () => {
       scopeChecker(BUILTIN_ROLE_SCOPES.guest),
     );
 
-    expect(mountButton(null).find("button").exists()).toBe(false);
+    expect(mountButton(null).find(TRIGGER).exists()).toBe(false);
   });
 });

@@ -369,26 +369,13 @@
               v-if="item.media_type != MediaType.COLLECTION"
               class="flex items-center gap-2"
             >
-              <!-- favorite (heart) icon -->
-              <Button
-                v-if="canEditLibrary"
-                type="button"
+              <!-- favorite (heart) menu -->
+              <FavoriteMenu
+                :item="item"
                 variant="ghost-icon"
                 size="icon-xs"
-                :aria-label="favoriteButtonLabel"
-                :aria-pressed="isFavorite ? 'true' : 'false'"
-                :title="favoriteButtonLabel"
-                @click="api.toggleFavorite(item)"
-              >
-                <!-- one slot, one tap: a dislike takes the heart's place -->
-                <IconThumbDown
-                  v-if="isDisliked"
-                  :stroke-width="2"
-                  class="size-6"
-                />
-                <IconHeartFilled v-else-if="isFavorite" class="size-6" />
-                <IconHeart v-else :stroke-width="2" class="size-6" />
-              </Button>
+                icon-class="size-6"
+              />
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
               <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
@@ -500,6 +487,7 @@
 
 <script setup lang="ts">
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
+import FavoriteMenu from "@/components/FavoriteMenu.vue";
 import MarkdownText from "@/components/MarkdownText.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
@@ -516,7 +504,6 @@ import {
 } from "@/composables/useHoldToOpenMenu";
 import { useUserPreferences } from "@/composables/userPreferences";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
-import { favoriteActionKey } from "@/helpers/favorites";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import {
@@ -557,7 +544,6 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
-import { IconHeart, IconHeartFilled, IconThumbDown } from "@tabler/icons-vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
@@ -769,21 +755,12 @@ const artistLogo = computed(() => {
 const canManageLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_MANAGE),
 );
-const canEditLibrary = computed(() =>
-  authManager.hasScope(Scope.LIBRARY_WRITE),
-);
 // merging and deleting a genre is limited to library genres and library managers
 const canManageGenre = computed(
   () =>
     compProps.item?.media_type === MediaType.GENRE &&
     compProps.item.provider === "library" &&
     canManageLibrary.value,
-);
-const isFavorite = computed(() => compProps.item?.favorite === true);
-const isDisliked = computed(() => compProps.item?.favorite === false);
-
-const favoriteButtonLabel = computed(() =>
-  $t(favoriteActionKey(compProps.item?.favorite)),
 );
 
 const mergeGenre = () => {
