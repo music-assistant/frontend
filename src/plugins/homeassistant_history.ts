@@ -1,4 +1,3 @@
-import type { HARoute } from "@/plugins/homeassistant";
 import { navigateInHA } from "@/plugins/homeassistant";
 import type { HistoryState, RouterHistory } from "vue-router";
 
@@ -11,16 +10,29 @@ interface HistoryEntry {
 }
 
 /**
- * Router history for the app embedded in the Home Assistant panel.
+ * Whether the app runs in the Home Assistant app panel, whose history
+ * `createHAHistory` keeps it in.
+ */
+export function isInHAAppPanel(): boolean {
+  // The frame is served from Home Assistant's own origin, which the app panel
+  // relies on as well, so the element framing it can be looked at.
+  const root = window.frameElement?.getRootNode();
+  return (root as ShadowRoot | undefined)?.host?.localName === "ha-panel-app";
+}
+
+/**
+ * Router history kept by the Home Assistant app panel around the app.
  *
- * Home Assistant keeps the history: every navigation becomes an entry in its
- * URL, so its back button, and the one of the companion apps, walks back
- * through the app, and reloading Home Assistant opens the page the user was
- * on. Until Home Assistant reports its route, navigations stay in memory.
+ * Every navigation becomes an entry in Home Assistant's URL, so its back
+ * button, and the one of the companion apps, walks back through the app, and
+ * reloading Home Assistant opens the page the user was on.
  */
 export function createHAHistory(): RouterHistory {
+  const haWindow = window.parent;
+  const panelPath = panelPathOf(haWindow.location.pathname);
+  const initialLocation =
+    window.location.hash.slice(1) || readHALocation() || "/";
   let listeners: NavigationCallback[] = [];
-  const initialLocation = window.location.hash.slice(1) || "/";
   const entries: HistoryEntry[] = [
     {
       location: initialLocation,
@@ -35,17 +47,17 @@ export function createHAHistory(): RouterHistory {
     },
   ];
   let position = 0;
-  // Known from the first route Home Assistant reports.
-  let panelPath: string | null = null;
-  let reportedPath: string | null = null;
-  // Paths asked of Home Assistant that it has yet to report back.
-  const pendingReports: string[] = [];
-  // Where Home Assistant is, or is about to be.
-  let haPath: string | null = null;
-  // A page Home Assistant opened before the router listens for it.
-  let restorePath: string | null = null;
 
   const currentLocation = () => entries[position].location;
+
+  function readHALocation(): string | null {
+    const { pathname, search } = haWindow.location;
+    // Anything else is a page of Home Assistant itself, left for another panel.
+    if (pathname !== panelPath && !pathname.startsWith(`${panelPath}/`)) {
+      return null;
+    }
+    return (pathname.slice(panelPath.length) || "/") + search;
+  }
 
   function syncFrameUrl(): void {
     // Keeps the page across a reload of the frame alone, without adding an
@@ -57,20 +69,7 @@ export function createHAHistory(): RouterHistory {
     );
   }
 
-  function syncToHA(location: string, replace: boolean): void {
-    if (panelPath === null || restorePath !== null) {
-      return;
-    }
-    const path = pathOf(location);
-    // Home Assistant reports only a change of path, not one of the query alone.
-    if (path !== haPath) {
-      pendingReports.push(path);
-      haPath = path;
-    }
-    navigateInHA(panelPath + location, { replace });
-  }
-
-  function triggerListeners(from: string, delta: number): void {
+  function notifyListeners(from: string, delta: number): void {
     const info = {
       type: "pop",
       direction: delta < 0 ? "back" : delta > 0 ? "forward" : "",
@@ -81,20 +80,30 @@ export function createHAHistory(): RouterHistory {
     }
   }
 
-  function move(delta: number, trigger: boolean): void {
+  function move(delta: number, notify: boolean): void {
     const from = currentLocation();
     position = Math.max(0, Math.min(position + delta, entries.length - 1));
     syncFrameUrl();
-    if (trigger) {
-      triggerListeners(from, delta);
+    if (notify) {
+      notifyListeners(from, delta);
     }
   }
 
-  // Opens a page Home Assistant went to that is not next to the current one,
-  // such as one from before a reload.
-  function open(location: string): void {
-    if (!listeners.length) {
-      restorePath = location;
+  // Follows Home Assistant through its history, which steps through entries
+  // added here, or lands on one from before a reload.
+  function handleHAPop(): void {
+    const location = readHALocation();
+    if (location === null || isSameLocation(location, currentLocation())) {
+      return;
+    }
+    const isAt = (index: number) =>
+      !!entries[index] && isSameLocation(entries[index].location, location);
+    if (isAt(position - 1)) {
+      move(-1, true);
+      return;
+    }
+    if (isAt(position + 1)) {
+      move(1, true);
       return;
     }
     const from = currentLocation();
@@ -111,71 +120,18 @@ export function createHAHistory(): RouterHistory {
     });
     position = 0;
     syncFrameUrl();
-    triggerListeners(from, 0);
+    notifyListeners(from, 0);
   }
 
-  function followHA(route: HARoute): void {
-    const fullPath = route.prefix + route.path;
-    const firstReport = panelPath === null;
-    panelPath ??= panelPathOf(fullPath);
-    const path = pathOf(fullPath.slice(panelPath.length) || "/");
-    // Home Assistant also reports when anything but the route changes.
-    if (path === reportedPath) {
-      return;
-    }
-    reportedPath = path;
-
-    const pending = pendingReports.indexOf(path);
-    if (pending !== -1) {
-      pendingReports.splice(0, pending + 1);
-      return;
-    }
-    haPath = path;
-
-    if (firstReport) {
-      // What was navigated before is not in Home Assistant's history, so there
-      // is no going back to it through there.
-      const current = entries[position];
-      entries.splice(0, entries.length, current);
-      position = 0;
-      current.state = { ...current.state, back: null, forward: null };
-      if (path === "/") {
-        syncToHA(currentLocation(), true);
-        return;
-      }
-    }
-
-    if (path === pathOf(currentLocation())) {
-      return;
-    }
-    if (
-      entries[position - 1] &&
-      pathOf(entries[position - 1].location) === path
-    ) {
-      move(-1, true);
-    } else if (
-      entries[position + 1] &&
-      pathOf(entries[position + 1].location) === path
-    ) {
-      move(1, true);
-    } else {
-      open(path);
-    }
+  function stopFollowingHA(): void {
+    haWindow.removeEventListener("popstate", handleHAPop);
   }
 
-  function handleMessage(event: MessageEvent): void {
-    if (
-      event.source === window.parent &&
-      event.data?.type === "home-assistant/properties" &&
-      event.data.route
-    ) {
-      followHA(event.data.route);
-    }
-  }
+  haWindow.addEventListener("popstate", handleHAPop);
+  // Home Assistant outlives the frame, and would keep this document around.
+  window.addEventListener("pagehide", stopFollowingHA);
 
-  window.addEventListener("message", handleMessage);
-
-  const history: RouterHistory = {
+  return {
     base: "",
     get location() {
       return currentLocation();
@@ -202,7 +158,7 @@ export function createHAHistory(): RouterHistory {
       });
       position++;
       syncFrameUrl();
-      syncToHA(to, false);
+      navigateInHA(panelPath + to);
     },
     replace(to, data) {
       const { state } = entries[position];
@@ -211,49 +167,35 @@ export function createHAHistory(): RouterHistory {
         state: { ...state, current: to, replaced: true, ...data },
       };
       syncFrameUrl();
-      syncToHA(to, true);
+      navigateInHA(panelPath + to, { replace: true });
     },
     go(delta, triggerListeners = true) {
-      if (panelPath === null) {
-        move(delta, triggerListeners);
-        return;
-      }
-      // Home Assistant's history is the one to walk: the route it reports
-      // back moves the app along, unless the router moved already.
+      // Home Assistant's history is the one to walk, and the pop it makes moves
+      // the app along, unless the router moved already.
       if (!triggerListeners) {
         move(delta, false);
-        haPath = pathOf(currentLocation());
       }
       window.history.go(delta);
     },
     listen(callback) {
       listeners.push(callback);
-      if (restorePath !== null) {
-        const location = restorePath;
-        restorePath = null;
-        // Lets the router finish the navigation it is listening from first.
-        queueMicrotask(() => open(location));
-      }
       return () => {
         listeners = listeners.filter((listener) => listener !== callback);
       };
     },
     destroy() {
       listeners = [];
-      window.removeEventListener("message", handleMessage);
+      stopFollowingHA();
+      window.removeEventListener("pagehide", stopFollowingHA);
     },
   };
-
-  return history;
 }
 
 /**
  * The path of the app's panel in Home Assistant.
  *
  * The app panel opens an app at `/app/<slug>` and its own sidebar entry at
- * `/<slug>`. Worked out from the full path rather than taken from the route
- * Home Assistant reports, which older releases split one segment too far for
- * the sidebar entry.
+ * `/<slug>`.
  */
 function panelPathOf(haPath: string): string {
   const [, panel, slug] = haPath.split("/");
@@ -261,9 +203,13 @@ function panelPathOf(haPath: string): string {
 }
 
 /**
- * The path of a location as Home Assistant reports it: without query or hash,
- * and encoded the way the browser keeps it.
+ * Whether two locations are the same page, whichever way their URLs are
+ * encoded.
  */
-function pathOf(location: string): string {
-  return new URL(location, window.location.origin).pathname;
+function isSameLocation(a: string, b: string): boolean {
+  const url = (location: string) => {
+    const { pathname, search } = new URL(location, window.location.origin);
+    return pathname + search;
+  };
+  return url(a) === url(b);
 }
