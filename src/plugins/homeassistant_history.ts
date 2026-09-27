@@ -8,6 +8,8 @@ interface HistoryEntry {
   id: string;
   // The entry this one was opened from.
   from?: string;
+  // Whether it is the first entry of the tab, with nothing behind it.
+  first?: boolean;
   location: string;
   state: HistoryState;
 }
@@ -44,7 +46,10 @@ export function createHAHistory(): RouterHistory {
   let listeners: NavigationCallback[] = [];
   const initialMark = readHAMark();
   const entries: HistoryEntry[] = [
-    entryOf(initialLocation, initialMark?.id, initialMark?.from),
+    {
+      ...entryOf(initialLocation, initialMark?.id, initialMark?.from),
+      first: isFirstHAEntry(),
+    },
   ];
   let position = 0;
 
@@ -61,6 +66,12 @@ export function createHAHistory(): RouterHistory {
 
   function readHAMark(): HAEntryMark | undefined {
     return haWindow.history.state?.musicAssistant;
+  }
+
+  function isFirstHAEntry(): boolean {
+    // Home Assistant marks the first entry of a tab as its root, in place of
+    // the app's own mark.
+    return haWindow.history.state?.root === true;
   }
 
   function navigateHA(replace: boolean): void {
@@ -128,8 +139,11 @@ export function createHAHistory(): RouterHistory {
 
     // A page from before a reload. It goes next to the one it left, so the
     // router can return there when it turns the step down.
-    const entry = entryOf(location, mark?.id, mark?.from);
-    if (mark?.from === current.id) {
+    const entry = {
+      ...entryOf(location, mark?.id, mark?.from),
+      first: isFirstHAEntry(),
+    };
+    if (current.first || mark?.from === current.id) {
       entry.state.back = current.location;
       current.state = { ...current.state, forward: location };
       entries.splice(position + 1, Infinity, entry);
