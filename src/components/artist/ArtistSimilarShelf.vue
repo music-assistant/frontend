@@ -33,6 +33,12 @@
       >
         <template #subtitle>{{ $t("artist") }}</template>
       </EditorialMediaCard>
+      <div
+        v-if="items.length === 0 && emptyMessage"
+        class="artist-similar__empty"
+      >
+        {{ emptyMessage }}
+      </div>
     </template>
     <template v-else>
       <EditorialCardSkeleton v-for="index in SKELETONS" :key="index" />
@@ -64,6 +70,8 @@ export interface Props {
   sourceOptions?: SourceOption[];
   // the source currently feeding the row, highlighted in the picker
   sourceValue?: RowSource;
+  // shown when the row has no artists but stays mounted for its source picker
+  emptyMessage?: string;
 }
 defineProps<Props>();
 
@@ -101,6 +109,12 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.artist-similar__empty {
+  align-self: center;
+  padding: 8px 4px;
+  font-size: 14px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 /* the round cards read as portraits, so their captions are centred */
 .artist-similar :deep(.ed-card--round .ed-card__meta) {

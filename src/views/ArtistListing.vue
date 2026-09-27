@@ -48,7 +48,7 @@ import { type Artist, type MediaItemType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 export interface Props {
   itemId: string;
@@ -99,6 +99,7 @@ const TRACK_SORT_KEYS = [
 ];
 
 const router = useRouter();
+const route = useRoute();
 const itemDetails = ref<Artist>();
 // the source the releases were last loaded from, so the header names what is
 // on screen
@@ -244,8 +245,25 @@ function sourceSelection(rowId: "albums" | "singles_eps") {
     providerFilterOptions: artistRows
       .sources(rowId, artist)
       .filter((source) => source !== "library"),
-    defaultProvider: artistRows.effectiveSource(rowId, artist),
+    defaultProvider:
+      carriedSource(rowId) ?? artistRows.effectiveSource(rowId, artist),
   };
+}
+
+/**
+ * A source carried in by another page's "view all" link, honoured once as the
+ * albums listing's initial source when it is one this listing offers. It is not
+ * saved, so the user's own preference stays as it was.
+ */
+function carriedSource(rowId: "albums" | "singles_eps"): RowSource | undefined {
+  const artist = itemDetails.value;
+  const source = route.query.source;
+  if (rowId !== "albums" || !artist || typeof source !== "string") {
+    return undefined;
+  }
+  return artistRows.sources("albums", artist).includes(source)
+    ? source
+    : undefined;
 }
 
 /** The artist's releases, from the source the user picked or the row's default one. */
@@ -256,6 +274,7 @@ async function loadReleases(
   if (!itemDetails.value) return [];
   const source =
     params.provider?.[0] ??
+    carriedSource(rowId) ??
     artistRows.effectiveSource(rowId, itemDetails.value);
   activeSource.value = source;
   return await loadArtistReleases(itemDetails.value, source);
