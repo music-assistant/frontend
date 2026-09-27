@@ -2,6 +2,7 @@ import { canOpenAIRadio } from "@/helpers/ai_radio_access";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
+import { hasHomeAssistantIngressPath } from "@/helpers/ingress";
 import { returnedByHistory } from "@/helpers/navigation";
 import { $t } from "@/plugins/i18n";
 import { nextTick, watch } from "vue";
@@ -15,7 +16,7 @@ import { toast } from "vue-sonner";
 import { api, ConnectionState } from "./api";
 import { Scope } from "./api/interfaces";
 import { authManager } from "./auth";
-import { notifyHARouteChange } from "./homeassistant";
+import { createHAHistory } from "./homeassistant_history";
 import { store } from "./store";
 
 declare module "vue-router" {
@@ -691,7 +692,11 @@ export const routes: RouteRecordRaw[] = [
 ];
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  // Inside the Home Assistant panel, Home Assistant keeps the history.
+  history:
+    hasHomeAssistantIngressPath() && window.parent !== window
+      ? createHAHistory()
+      : createWebHashHistory(),
   routes,
 });
 
@@ -808,12 +813,6 @@ router.beforeEach(async (to) => {
       console.warn(`The ${missingScope} scope is required for`, to.path);
       return { name: "discover" };
     }
-  }
-});
-
-router.afterEach((to) => {
-  if (store.isIngressSession) {
-    notifyHARouteChange(to.fullPath);
   }
 });
 
