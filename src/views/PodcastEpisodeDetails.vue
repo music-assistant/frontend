@@ -1,98 +1,87 @@
 <template>
-  <InfoHeader :item="itemDetails" :parent-item="parentPodcast">
-    <template v-if="siblings.length > 1" #title-prepend>
-      <ChevronLeft
-        :size="26"
-        :class="previousEpisode ? 'cursor-pointer' : 'opacity-30'"
-        :title="$t('previous_episode')"
-        @click="openEpisode(previousEpisode)"
-      />
-    </template>
-    <template v-if="siblings.length > 1" #title-append>
-      <ChevronRight
-        :size="26"
-        :class="nextEpisode ? 'cursor-pointer' : 'opacity-30'"
-        :title="$t('next_episode')"
-        @click="openEpisode(nextEpisode)"
-      />
-    </template>
-    <template #append-actions>
-      <!-- fixed width so the icons beside it keep their place while unplayed -->
-      <div class="played-state">
-        <v-icon
-          v-if="itemDetails?.fully_played"
-          icon="mdi-check"
-          :title="$t('item_fully_played')"
-        />
-        <v-icon
-          v-else-if="itemDetails?.resume_position_ms"
-          icon="mdi-clock-fast"
-          :title="$t('item_in_progress')"
-        />
-      </div>
-      <Captions
-        v-if="showTranscriptButton"
-        :size="33"
-        class="cursor-pointer"
-        :title="$t('transcript_show')"
-        @click="openTranscript"
-      />
-    </template>
-  </InfoHeader>
+  <section class="podcast-episode-details">
+    <PodcastEpisodeHero
+      :item="itemDetails"
+      :parent-podcast="episodePodcast"
+      :backdrop="backdrop.url"
+      :blur-backdrop="backdrop.blurred"
+      :show-steppers="siblings.length > 1"
+      :has-previous="!!previousEpisode"
+      :has-next="!!nextEpisode"
+      :show-transcript="showTranscriptButton"
+      @previous="openEpisode(previousEpisode)"
+      @next="openEpisode(nextEpisode)"
+      @transcript="openTranscript"
+    />
 
-  <!-- keyed per episode: a listing already loading drops a reload request, so
-  clicking through episodes quickly would leave the previous episode's list -->
-  <ItemsListing
-    v-if="itemDetails"
-    :key="episodeKey"
-    itemtype="podcastepisodes"
-    :parent-item="parentPodcast"
-    :refresh-on-parent-update="true"
-    :show-provider="false"
-    :show-favorites-only-filter="false"
-    :show-hide-fully-played-filter="true"
-    :show-track-number="true"
-    :show-refresh-button="false"
-    :load-items="loadOtherEpisodes"
-    :sort-keys="[
-      'position_desc',
-      'position',
-      'name',
-      'duration',
-      'duration_desc',
-    ]"
-    :title="$t('other_episodes')"
-    :hide-on-empty="true"
-    :allow-collapse="true"
-    :path="`podcast_episodes.${podcastKey}`"
-  />
+    <DetailTextRow
+      v-if="itemDetails?.metadata.description"
+      :title="$t('about_episode')"
+      :text="itemDetails.metadata.description"
+      :dialog-title="itemDetails.name"
+      markdown
+      :lines="4"
+    />
 
-  <Dialog v-model:open="showTranscript">
-    <DialogContent class="sm:max-w-[640px]">
-      <DialogHeader>
-        <DialogTitle>{{ $t("transcript") }}</DialogTitle>
-        <DialogDescription>{{ itemDetails?.name }}</DialogDescription>
-      </DialogHeader>
-      <div class="transcript-body">
-        <div v-if="transcriptLoading" class="transcript-status">
-          <Spinner class="size-6" />
-          <div>{{ $t("transcript_loading") }}</div>
+    <!-- keyed per episode: a listing already loading drops a reload request, so
+    clicking through episodes quickly would leave the previous episode's list -->
+    <ItemsListing
+      v-if="itemDetails"
+      :key="episodeKey"
+      itemtype="podcastepisodes"
+      :parent-item="parentPodcast"
+      :refresh-on-parent-update="true"
+      :show-provider="false"
+      :show-favorites-only-filter="false"
+      :show-hide-fully-played-filter="true"
+      :show-track-number="true"
+      :show-refresh-button="false"
+      :load-items="loadOtherEpisodes"
+      :sort-keys="[
+        'position_desc',
+        'position',
+        'name',
+        'duration',
+        'duration_desc',
+      ]"
+      :title="$t('other_episodes')"
+      :hide-on-empty="true"
+      :allow-collapse="true"
+      :path="`podcast_episodes.${podcastKey}`"
+    />
+
+    <Dialog v-model:open="showTranscript">
+      <DialogContent class="sm:max-w-[640px]">
+        <DialogHeader>
+          <DialogTitle>{{ $t("transcript") }}</DialogTitle>
+          <DialogDescription>{{ itemDetails?.name }}</DialogDescription>
+        </DialogHeader>
+        <div class="transcript-body">
+          <div v-if="transcriptLoading" class="transcript-status">
+            <Spinner class="size-6" />
+            <div>{{ $t("transcript_loading") }}</div>
+          </div>
+          <div v-else-if="!transcript" class="transcript-status">
+            {{ $t("transcript_unavailable") }}
+          </div>
+          <div v-else class="transcript-text">{{ transcript }}</div>
         </div>
-        <div v-else-if="!transcript" class="transcript-status">
-          {{ $t("transcript_unavailable") }}
-        </div>
-        <div v-else class="transcript-text">{{ transcript }}</div>
-      </div>
-      <DialogFooter>
-        <Button @click="showTranscript = false">{{ $t("close") }}</Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+        <DialogFooter>
+          <Button @click="showTranscript = false">{{ $t("close") }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </section>
 </template>
 
 <script setup lang="ts">
-import InfoHeader from "@/components/InfoHeader.vue";
+import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import {
+  podcastEpisodeBackdrop,
+  type PodcastEpisodeBackdrop,
+} from "@/components/podcast/podcastEpisodeData";
+import PodcastEpisodeHero from "@/components/podcast/PodcastEpisodeHero.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -105,7 +94,6 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/plugins/api";
 import type { Podcast, PodcastEpisode } from "@/plugins/api/interfaces";
-import { Captions, ChevronLeft, ChevronRight } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -172,6 +160,26 @@ const nextEpisode = computed(() =>
     : undefined,
 );
 
+// the loaded podcast, only while it is the one the shown episode belongs to
+const episodePodcast = computed(() => {
+  const episode = itemDetails.value;
+  const podcast = parentPodcast.value;
+  return episode && podcast && isPodcastOf(podcast, episode)
+    ? podcast
+    : undefined;
+});
+
+// the podcast's own artwork once it is loaded for this episode, else what the
+// episode carries of it
+const backdrop = computed<PodcastEpisodeBackdrop>(() => {
+  const episode = itemDetails.value;
+  if (!episode) return { blurred: false };
+  return podcastEpisodeBackdrop(
+    episode,
+    episodePodcast.value ?? episode.podcast,
+  );
+});
+
 const openEpisode = function (episode?: PodcastEpisode) {
   if (!episode) return;
   router.push({
@@ -237,7 +245,8 @@ watch(
     const siblingEpisodes = await episodes;
     if (episodes !== episodesRequest) return;
     siblings.value = siblingEpisodes;
-    if (parentPodcast.value?.uri === episode.podcast.uri) return;
+    if (parentPodcast.value && isPodcastOf(parentPodcast.value, episode))
+      return;
     // only fetched when the podcast itself changes, so stepping through the
     // episodes of one podcast does not keep asking for it
     const podcast = await api
@@ -248,15 +257,31 @@ watch(
   },
   { immediate: true },
 );
+
+// stepping to another episode navigates in place, so it starts at the top
+watch(
+  () => itemDetails.value?.uri,
+  () => document.querySelector(".content-section")?.scrollTo({ top: 0 }),
+);
+
+/**
+ * Whether the podcast is the one the episode belongs to, also when it is the
+ * library copy of the provider podcast the episode points at.
+ */
+function isPodcastOf(podcast: Podcast, episode: PodcastEpisode): boolean {
+  const { item_id, provider } = episode.podcast;
+  return (
+    podcast.uri === episode.podcast.uri ||
+    podcast.provider_mappings.some(
+      (mapping) =>
+        mapping.item_id === item_id &&
+        [mapping.provider_instance, mapping.provider_domain].includes(provider),
+    )
+  );
+}
 </script>
 
 <style scoped>
-.played-state {
-  display: flex;
-  justify-content: center;
-  width: 26px;
-}
-
 .transcript-body {
   max-height: 60vh;
   overflow-y: auto;
