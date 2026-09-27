@@ -1,6 +1,6 @@
 import ItemsListing from "@/components/ItemsListing.vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
-import type { ProviderInstance, Track } from "@/plugins/api/interfaces";
+import type { Album, ProviderInstance, Track } from "@/plugins/api/interfaces";
 import {
   eventbus,
   type DeleteConfirmationDialogEvent,
@@ -8,6 +8,8 @@ import {
 import { store as storeModule } from "@/plugins/store";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { album } from "../fixtures/album";
+import { artist } from "../fixtures/artist";
 import { genre } from "../fixtures/genre";
 import { track } from "../fixtures/track";
 
@@ -735,6 +737,85 @@ describe("ItemsListing empty-state source shortcuts", () => {
     await flushPromises();
 
     expect(shortcut(listing)).toBeUndefined();
+  });
+});
+
+describe("ItemsListing restore state", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    store.prevState = undefined;
+  });
+
+  type Props = InstanceType<typeof ItemsListing>["$props"];
+  type LoadItemsFn = NonNullable<Props["loadItems"]>;
+
+  /** Mounts an artist-albums listing whose items come from `loadItems`. */
+  function mountArtistAlbums(
+    parentItem: Props["parentItem"],
+    loadItems: LoadItemsFn,
+  ) {
+    return mountListingRaw({
+      itemtype: "artistalbums",
+      path: "artistalbums",
+      restoreState: true,
+      parentItem,
+      loadPagedData: undefined,
+      loadItems,
+    });
+  }
+
+  function shownItems(listing: ReturnType<typeof mountListingRaw>) {
+    return (listing.vm as unknown as { pagedItems: { uri: string }[] })
+      .pagedItems;
+  }
+
+  /** Loads and closes a listing so its items land in the restore cache. */
+  async function cacheArtistAlbums(
+    parentItem: Props["parentItem"],
+    cached: Album[],
+  ) {
+    const first = mountArtistAlbums(
+      parentItem,
+      vi.fn<LoadItemsFn>().mockResolvedValue(cached),
+    );
+    await flushPromises();
+    first.unmount();
+  }
+
+  it("restores the cached items when the same parent is reopened", async () => {
+    const parent = artist({ item_id: "1" });
+    const cached = album({ item_id: "a1" });
+    await cacheArtistAlbums(parent, [cached]);
+
+    const loadItems = vi.fn<LoadItemsFn>().mockResolvedValue([]);
+    const listing = mountArtistAlbums(parent, loadItems);
+    await flushPromises();
+
+    // the previous albums are restored without hitting the loader again
+    expect(loadItems).not.toHaveBeenCalled();
+    expect(shownItems(listing).map((item) => item.uri)).toEqual([cached.uri]);
+  });
+
+  it("reloads instead of showing another artist's cached albums", async () => {
+    await cacheArtistAlbums(artist({ item_id: "1" }), [
+      album({ item_id: "a1" }),
+    ]);
+
+    const nextAlbum = album({ item_id: "a2" });
+    const loadItems = vi.fn<LoadItemsFn>().mockResolvedValue([nextAlbum]);
+    const listing = mountArtistAlbums(artist({ item_id: "2" }), loadItems);
+    await flushPromises();
+
+    // the shared "artistalbums" path must not carry the first artist's albums over
+    expect(loadItems).toHaveBeenCalled();
+    expect(shownItems(listing).map((item) => item.uri)).toEqual([
+      nextAlbum.uri,
+    ]);
   });
 });
 
