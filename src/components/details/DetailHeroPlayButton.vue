@@ -2,7 +2,7 @@
   <MenuButton
     ref="playButton"
     :text="playButtonText"
-    :truncate="truncateOnPhone && isPhone"
+    :truncate="shrinkLabel"
     :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
     :loading="playActionInProgress"
     @click="playButtonClick()"
@@ -23,12 +23,12 @@ import { computed, useTemplateRef, type ComponentPublicInstance } from "vue";
 
 export interface Props {
   item: MediaItemType;
-  // let the button shrink and ellipsis its label on a phone; for a row that
-  // cannot wrap, so its other buttons keep their place
-  truncateOnPhone?: boolean;
+  // let the button shrink and ellipsis its label to fit; for a row that cannot
+  // wrap, so its other buttons keep their place as the header narrows
+  shrinkLabel?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
-  truncateOnPhone: false,
+  shrinkLabel: false,
 });
 
 const playButton = useTemplateRef<ComponentPublicInstance>("playButton");

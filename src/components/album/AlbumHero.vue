@@ -68,7 +68,7 @@
           <div class="album-hero__actions">
             <DetailHeroPlayButton
               class="album-hero__play"
-              truncate-on-phone
+              shrink-label
               :item="item"
             />
             <DetailHeroButton

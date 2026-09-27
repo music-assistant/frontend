@@ -2,12 +2,12 @@
   <ButtonGroup>
     <Button
       :disabled="disabled || loading"
-      :class="['justify-start', truncate ? 'min-w-0' : 'min-w-40']"
+      :class="['min-w-40 justify-start', truncate && 'shrink']"
       @click="emit('click')"
     >
-      <Spinner v-if="loading" class="size-5 shrink-0" />
-      <Play v-else fill="currentColor" class="size-5 shrink-0" />
-      <span v-if="truncate" class="truncate">{{ text }}</span>
+      <Spinner v-if="loading" class="size-5" />
+      <Play v-else fill="currentColor" class="size-5" />
+      <span v-if="truncate" class="min-w-0 truncate">{{ text }}</span>
       <template v-else>{{ text }}</template>
     </Button>
     <ButtonGroupSeparator />
