@@ -10,8 +10,8 @@ interface HistoryEntry {
 }
 
 /**
- * Whether the app runs in the Home Assistant app panel, whose history
- * `createHAHistory` keeps it in.
+ * Whether Home Assistant's app panel frames the app, so the router should let
+ * Home Assistant keep its history.
  */
 export function isInHAAppPanel(): boolean {
   // The frame is served from Home Assistant's own origin, which the app panel
@@ -33,19 +33,7 @@ export function createHAHistory(): RouterHistory {
   const initialLocation =
     window.location.hash.slice(1) || readHALocation() || "/";
   let listeners: NavigationCallback[] = [];
-  const entries: HistoryEntry[] = [
-    {
-      location: initialLocation,
-      state: {
-        back: null,
-        current: initialLocation,
-        forward: null,
-        position: 0,
-        replaced: true,
-        scroll: null,
-      },
-    },
-  ];
+  const entries = [entryOf(initialLocation)];
   let position = 0;
 
   const currentLocation = () => entries[position].location;
@@ -98,29 +86,40 @@ export function createHAHistory(): RouterHistory {
     }
     const isAt = (index: number) =>
       !!entries[index] && isSameLocation(entries[index].location, location);
-    if (isAt(position - 1)) {
-      move(-1, true);
+    const isBack = isAt(position - 1);
+    const isForward = isAt(position + 1);
+    if (isBack || isForward) {
+      // The same page on both sides, as after going somewhere and back again.
+      move(isForward && (!isBack || steppedForward()) ? 1 : -1, true);
       return;
     }
-    if (isAt(position + 1)) {
-      move(1, true);
-      return;
+
+    // A page from before a reload. It goes next to the one it left, so the
+    // router can return there when it turns the step down.
+    const current = entries[position];
+    if (steppedForward()) {
+      current.state = { ...current.state, forward: location };
+      entries.splice(
+        position + 1,
+        Infinity,
+        entryOf(location, current.location),
+      );
+      position++;
+      syncFrameUrl();
+      notifyListeners(current.location, 1);
+    } else {
+      current.state = { ...current.state, back: location };
+      entries.splice(0, position, entryOf(location, null, current.location));
+      position = 0;
+      syncFrameUrl();
+      notifyListeners(current.location, -1);
     }
-    const from = currentLocation();
-    entries.splice(0, entries.length, {
-      location,
-      state: {
-        back: null,
-        current: location,
-        forward: null,
-        position: 0,
-        replaced: true,
-        scroll: null,
-      },
-    });
-    position = 0;
-    syncFrameUrl();
-    notifyListeners(from, 0);
+  }
+
+  function steppedForward(): boolean {
+    // Home Assistant stamps each entry with the path it was opened from.
+    const { pathname } = new URL(currentLocation(), window.location.origin);
+    return haWindow.history.state?.from === panelPath + pathname;
   }
 
   function stopFollowingHA(): void {
@@ -212,4 +211,25 @@ function isSameLocation(a: string, b: string): boolean {
     return pathname + search;
   };
   return url(a) === url(b);
+}
+
+/**
+ * A history entry opened from outside the app's own navigation.
+ */
+function entryOf(
+  location: string,
+  back: string | null = null,
+  forward: string | null = null,
+): HistoryEntry {
+  return {
+    location,
+    state: {
+      back,
+      current: location,
+      forward,
+      position: 0,
+      replaced: true,
+      scroll: null,
+    },
+  };
 }

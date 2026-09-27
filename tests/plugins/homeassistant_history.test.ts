@@ -22,18 +22,27 @@ const settle = () => new Promise((resolve) => setTimeout(resolve));
 
 /**
  * The Home Assistant window around the frame: it keeps a history of its own
- * URLs, navigates when asked to and pops when the history is walked.
- * `earlierPaths` are entries from before the app was opened.
+ * URLs, each stamped with the path it was opened from, navigates when asked to
+ * and pops when the history is walked. `earlierPaths` are entries from before
+ * the app was opened.
  */
 function fakeHomeAssistant(initialPath: string, earlierPaths: string[] = []) {
-  const entries = [...earlierPaths, initialPath];
+  const entries = [...earlierPaths, initialPath].map((path, i, paths) => ({
+    path,
+    from: i ? pathnameOf(paths[i - 1]) : undefined,
+  }));
   let index = earlierPaths.length;
-  const url = () => new URL(entries[index], "http://homeassistant.local");
+  const url = () => new URL(entries[index].path, "http://homeassistant.local");
 
   const haWindow = Object.assign(new EventTarget(), {
     history: {
+      get state() {
+        return { from: entries[index].from };
+      },
       go(delta = 0) {
-        index = Math.max(0, Math.min(index + delta, entries.length - 1));
+        const target = Math.max(0, Math.min(index + delta, entries.length - 1));
+        if (target === index) return;
+        index = target;
         setTimeout(() => haWindow.dispatchEvent(new Event("popstate")));
       },
     },
@@ -52,9 +61,10 @@ function fakeHomeAssistant(initialPath: string, earlierPaths: string[] = []) {
     }) {
       if (message.type !== "home-assistant/navigate") return;
       if (message.options.replace) {
-        entries[index] = message.path;
+        entries[index] = { ...entries[index], path: message.path };
       } else {
-        entries.splice(index + 1, entries.length, message.path);
+        const from = pathnameOf(entries[index].path);
+        entries.splice(index + 1, entries.length, { path: message.path, from });
         index++;
       }
     },
@@ -65,11 +75,12 @@ function fakeHomeAssistant(initialPath: string, earlierPaths: string[] = []) {
   });
 
   return {
-    entries: () => [...entries],
+    entries: () => entries.map((entry) => entry.path),
     get path() {
-      return entries[index];
+      return entries[index].path;
     },
     back: () => haWindow.history.go(-1),
+    forward: () => haWindow.history.go(1),
     restore() {
       Object.defineProperty(window, "parent", {
         value: window,
@@ -77,6 +88,10 @@ function fakeHomeAssistant(initialPath: string, earlierPaths: string[] = []) {
       });
     },
   };
+}
+
+function pathnameOf(path: string): string {
+  return new URL(path, "http://homeassistant.local").pathname;
 }
 
 describe("Home Assistant router history", () => {
@@ -180,10 +195,7 @@ describe("Home Assistant router history", () => {
   it("opens the page the frame was on when only the frame reloads", async () => {
     window.history.replaceState(null, "", "#/artists/1");
 
-    ha = fakeHomeAssistant(`${PANEL}/home`);
-    history = createHAHistory();
-    router = createRouter({ history, routes });
-    await router.push(history.location);
+    await start(`${PANEL}/home`);
 
     expect(router.currentRoute.value.fullPath).toBe("/artists/1");
     expect(ha.path).toBe(`${PANEL}/artists/1`);
@@ -198,6 +210,52 @@ describe("Home Assistant router history", () => {
 
     expect(router.currentRoute.value.fullPath).toBe("/artists/1");
     expect(history.state.back).toBeNull();
+  });
+
+  it("stays on the page when a guard turns down one from before a reload", async () => {
+    await start(`${PANEL}/home`, [`${PANEL}/artists/1`]);
+    router.beforeEach((to) => to.path !== "/artists/1");
+
+    ha.back();
+    await settle();
+    await settle();
+
+    expect(router.currentRoute.value.fullPath).toBe("/home");
+    expect(ha.path).toBe(`${PANEL}/home`);
+  });
+
+  it("steps forward onto a page that is also the one behind", async () => {
+    await start(`${PANEL}/home`);
+    await router.push("/artists");
+    await router.push("/home");
+    ha.back();
+    await settle();
+
+    ha.forward();
+    await settle();
+
+    expect(router.currentRoute.value.fullPath).toBe("/home");
+    expect(history.state.back).toBe("/artists");
+  });
+
+  it("leaves the router alone when Home Assistant goes to another panel", async () => {
+    await start(`${PANEL}/home`, ["/lovelace/0"]);
+
+    ha.back();
+    await settle();
+
+    expect(router.currentRoute.value.fullPath).toBe("/home");
+  });
+
+  it("stops following Home Assistant once the frame goes away", async () => {
+    await start(`${PANEL}/home`);
+    await router.push("/artists");
+
+    window.dispatchEvent(new Event("pagehide"));
+    ha.back();
+    await settle();
+
+    expect(router.currentRoute.value.fullPath).toBe("/artists");
   });
 
   it("opens an app at the path of the app panel", async () => {

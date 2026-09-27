@@ -690,8 +690,10 @@ export const routes: RouteRecordRaw[] = [
   },
 ];
 
+const inHAAppPanel = isInHAAppPanel();
+
 const router = createRouter({
-  history: isInHAAppPanel() ? createHAHistory() : createWebHashHistory(),
+  history: inHAAppPanel ? createHAHistory() : createWebHashHistory(),
   routes,
 });
 
@@ -728,7 +730,7 @@ router.onError((error, to) => {
     // moving the hash stays on the same document and the reload is what fetches
     // fresh HTML and assets. Moving only the hash also keeps the rest of the
     // URL (e.g. Home Assistant ingress query params) intact.
-    if (isInHAAppPanel()) {
+    if (inHAAppPanel) {
       // A new entry would land in the history Home Assistant keeps.
       window.history.replaceState(window.history.state, "", `#${to.fullPath}`);
     } else {
