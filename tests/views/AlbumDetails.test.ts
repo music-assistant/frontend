@@ -80,7 +80,7 @@ vi.mock("@/components/details/MediaRowList.vue", () => ({
 vi.mock("@/components/details/ReleaseShelf.vue", () => ({
   default: {
     name: "ReleaseShelf",
-    props: ["title", "viewAllTo"],
+    props: ["title", "viewAllTo", "sourceLabel", "sourceDomain"],
     template: '<div data-row="more_from_artist" />',
   },
 }));
@@ -237,5 +237,23 @@ describe("AlbumDetails", () => {
       name: "artistlisting",
       params: { itemId: "a1", provider: "library", listing: "albums" },
     });
+  });
+
+  it("labels the artist shelf with the album artist's source", async () => {
+    const wrapper = await mountDetails(
+      album({
+        item_id: "1",
+        artists: [
+          {
+            item_id: "a1",
+            provider: "library",
+            name: "Adele",
+          } as Album["artists"][number],
+        ],
+      }),
+    );
+
+    const shelf = wrapper.findComponent({ name: "ReleaseShelf" });
+    expect(shelf.props("sourceLabel")).toBe("in_library");
   });
 });

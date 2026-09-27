@@ -127,6 +127,22 @@ describe("MediaRowList", () => {
     );
   });
 
+  it("shows the explicit badge only on explicit items", () => {
+    const wrapper = mountList({
+      items: [
+        track({ item_id: "clean", name: "Clean" }),
+        track({
+          item_id: "naughty",
+          name: "Naughty",
+          metadata: { explicit: true },
+        }),
+      ],
+    });
+    const rows = wrapper.findAll(".media-rows__row[role=button]");
+    expect(rows[0].find(".explicit-badge").exists()).toBe(false);
+    expect(rows[1].find(".explicit-badge").exists()).toBe(true);
+  });
+
   it("shows only the first `limit` rows", () => {
     const wrapper = mountList({ items: TRACKS, limit: 2 });
     expect(wrapper.findAll(".media-rows__row[role=button]")).toHaveLength(2);
