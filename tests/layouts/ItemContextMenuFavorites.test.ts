@@ -180,4 +180,22 @@ describe("favorites in the item context menu", () => {
     );
     expect(items.map((item) => item.favorite)).toEqual([null, true]);
   });
+
+  // a dislike can have all its provider mappings out of the library (the
+  // backend only keeps rows for relatives of saved items), which must not
+  // read as no state
+  it("offers 'remove dislike' for a disliked item outside the library", async () => {
+    apiMock.getLibraryItem.mockResolvedValue(
+      track({
+        item_id: "1",
+        favorite: false,
+        provider_mappings: [providerMapping({ in_library: false })],
+      }),
+    );
+
+    const labels = await offeredLabels([listedTrack("1")]);
+
+    expect(labels).toContain("favorites_dislike_remove");
+    expect(labels).not.toContain("favorites_dislike");
+  });
 });

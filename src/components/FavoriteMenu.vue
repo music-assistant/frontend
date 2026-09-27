@@ -1,7 +1,10 @@
 <template>
   <!-- reka owns the open state; mirroring it here keeps the trigger's hover
        suppression in step with it -->
-  <DropdownMenu v-if="canEditLibrary" @update:open="menuOpen = $event">
+  <DropdownMenu
+    v-if="canEditLibrary && hasAnyAction"
+    @update:open="menuOpen = $event"
+  >
     <DropdownMenuTrigger as-child>
       <Button
         type="button"
@@ -11,8 +14,8 @@
         :disabled="!item"
         :data-active="state === true || undefined"
         :data-suppress-hover="suppressHover"
-        :title="$t('favorites_menu')"
-        :aria-label="$t('favorites_menu')"
+        :title="$t(triggerLabelKey)"
+        :aria-label="$t(triggerLabelKey)"
         @pointerenter="onPointerEnter"
         @click.stop
       >
@@ -28,23 +31,26 @@
     <!-- the player bar's trigger sits low on the screen, so the menu can be
          asked to hang above it -->
     <DropdownMenuContent :side="side" align="center" class="z-[100001]">
-      <DropdownMenuItem v-if="state === true" @click="clear">
-        <Heart class="size-4" fill="currentColor" />
-        {{ $t("favorites_remove") }}
-      </DropdownMenuItem>
-      <DropdownMenuItem v-else @click="like">
-        <Heart class="size-4" fill="none" />
-        {{ $t("favorites_add") }}
-      </DropdownMenuItem>
-      <!-- the heart only ever says "liked", so the dislike gets its own entry -->
-      <DropdownMenuItem v-if="state === false" @click="clear">
-        <ThumbsDown class="size-4" />
-        {{ $t("favorites_dislike_remove") }}
-      </DropdownMenuItem>
-      <DropdownMenuItem v-else @click="dislike">
-        <ThumbsDown class="size-4" />
-        {{ $t("favorites_dislike") }}
-      </DropdownMenuItem>
+      <template v-if="offersFavorite">
+        <DropdownMenuItem v-if="state === true" @click="clear">
+          <Heart class="size-4" fill="currentColor" />
+          {{ $t("favorites_remove") }}
+        </DropdownMenuItem>
+        <DropdownMenuItem v-else @click="like">
+          <Heart class="size-4" fill="none" />
+          {{ $t("favorites_add") }}
+        </DropdownMenuItem>
+        <!-- the heart only ever says "liked", so the dislike gets its own
+             entry -->
+        <DropdownMenuItem v-if="state === false" @click="clear">
+          <ThumbsDown class="size-4" />
+          {{ $t("favorites_dislike_remove") }}
+        </DropdownMenuItem>
+        <DropdownMenuItem v-else @click="dislike">
+          <ThumbsDown class="size-4" />
+          {{ $t("favorites_dislike") }}
+        </DropdownMenuItem>
+      </template>
       <DropdownMenuItem v-if="offersPlaylist" @click="addToPlaylist">
         <PlusCircle class="size-4" />
         {{ $t("add_playlist") }}
@@ -64,9 +70,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { usePopoutTriggerHover } from "@/composables/usePopoutTriggerHover";
 import {
+  canHoldFavorite,
   clearFavorite,
   favoriteState,
   setFavoriteState,
+  subscribeOwnFavorites,
   type FavoritableItem,
 } from "@/helpers/favorites";
 import { canAddToPlaylist } from "@/helpers/playlist_access";
@@ -75,7 +83,7 @@ import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { Heart, PlusCircle, ThumbsDown } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 
 export interface Props {
   /** The item the menu acts on; without one the trigger is disabled. */
@@ -111,18 +119,45 @@ const emit = defineEmits<{
 const state = computed(() =>
   props.favorite === undefined ? favoriteState(props.item) : props.favorite,
 );
+const triggerLabelKey = computed(() => {
+  if (state.value === true) return "favorites_menu_liked";
+  if (state.value === false) return "favorites_menu_disliked";
+  return "favorites_menu";
+});
 // favouring and adding to a playlist both change the library
 const canEditLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_WRITE),
 );
+// the server keeps no favorite state for some item types the player bar and
+// other callers still hand over, e.g. a podcast episode
+const offersFavorite = computed(
+  () => !!props.item && canHoldFavorite(props.item),
+);
 const offersPlaylist = computed(
   () => !!props.item && canAddToPlaylist(props.item),
+);
+// without an item the trigger stays visible but disabled, e.g. while the
+// player bar has nothing loaded yet
+const hasAnyAction = computed(
+  () => !props.item || offersFavorite.value || offersPlaylist.value,
 );
 
 const menuOpen = ref(false);
 const { suppressHover, onPointerEnter } = usePopoutTriggerHover(
   () => menuOpen.value,
 );
+
+// likes and dislikes made elsewhere (another tab, another row showing the
+// same item) reach every menu that renders the item, not just the one acted on
+let unsubscribeFavorites: (() => void) | undefined;
+onMounted(() => {
+  unsubscribeFavorites = subscribeOwnFavorites((update) => {
+    if (props.item?.uri === update.uri) {
+      setFavoriteState(props.item, update.favorite);
+    }
+  });
+});
+onUnmounted(() => unsubscribeFavorites?.());
 
 const like = async () => {
   if (!props.item) return;

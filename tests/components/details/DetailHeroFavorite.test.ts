@@ -8,13 +8,13 @@ import { track } from "../../fixtures/track";
 // the menu only reaches the api once an entry is picked, which needs the menu
 // open; these tests stay on the trigger the hero shows
 vi.mock("@/plugins/api", () => {
-  const api = {};
+  const api = { subscribe: vi.fn(() => () => {}) };
   return { api, default: api };
 });
 
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope: vi.fn() } }));
 
-const TRIGGER = "button[aria-label='favorites_menu']";
+const TRIGGER = "button[type='button']";
 
 function mountButton(favorite: boolean | null) {
   return mount(DetailHeroFavorite, {

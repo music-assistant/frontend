@@ -1,29 +1,40 @@
 import FavoriteMenu from "@/components/FavoriteMenu.vue";
-import { MediaType, type MediaItem } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  MediaType,
+  type EventMessage,
+  type MediaItem,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { artist } from "../fixtures/artist";
+import { audioSource } from "../fixtures/audioSource";
 import { dropdownMenuStubs } from "../fixtures/dropdownMenu";
 import { withoutFavorite } from "../fixtures/mediaItem";
+import { podcastEpisode } from "../fixtures/podcastEpisode";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { track } from "../fixtures/track";
+import { user } from "../fixtures/user";
 
-const { apiMock } = vi.hoisted(() => ({
+const { apiMock, storeMock } = vi.hoisted(() => ({
   apiMock: {
     addItemToFavorites: vi.fn(),
     removeItemFromFavorites: vi.fn(),
     setFavorite: vi.fn(),
     getLibraryItem: vi.fn(),
+    subscribe: vi.fn(),
   },
+  storeMock: { currentUser: undefined as { user_id: string } | undefined },
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope: vi.fn() } }));
 vi.mock("@/plugins/eventbus", () => ({ eventbus: { emit: vi.fn() } }));
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
 
-const TRIGGER = "button[aria-label='favorites_menu']";
+const TRIGGER = "button[type='button']";
 
 function mountMenu(item: MediaItem, props: Record<string, unknown> = {}) {
   return mount(FavoriteMenu, {
@@ -33,6 +44,15 @@ function mountMenu(item: MediaItem, props: Record<string, unknown> = {}) {
       stubs: dropdownMenuStubs,
     },
   });
+}
+
+/** The handler the menu registered for the user's own favorite changes. */
+function favoriteUpdateHandler() {
+  const call = apiMock.subscribe.mock.calls.find(
+    ([type]) => type === EventType.FAVORITE_UPDATED,
+  );
+  if (!call) throw new Error("the menu did not subscribe to favorite updates");
+  return call[1] as (evt: EventMessage) => void;
 }
 
 function entryLabels(wrapper: VueWrapper): string[] {
@@ -54,6 +74,8 @@ describe("FavoriteMenu", () => {
     vi.mocked(authManager.hasScope).mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.user),
     );
+    storeMock.currentUser = user();
+    apiMock.subscribe.mockImplementation(() => vi.fn());
   });
 
   // one slot, three looks: the trigger carries the state, the menu the actions
@@ -283,6 +305,78 @@ describe("FavoriteMenu", () => {
     });
 
     expect(wrapper.get(TRIGGER).attributes("disabled")).toBeDefined();
+  });
+
+  // the icon alone carries no state to a screen reader
+  it.each([
+    { favorite: null, key: "favorites_menu" },
+    { favorite: true, key: "favorites_menu_liked" },
+    { favorite: false, key: "favorites_menu_disliked" },
+  ])("labels the trigger $key for favorite $favorite", ({ favorite, key }) => {
+    const trigger = mountMenu(track({ favorite })).get(TRIGGER);
+
+    expect(trigger.attributes("aria-label")).toBe(key);
+    expect(trigger.attributes("title")).toBe(key);
+  });
+
+  // the player bar hands over whatever is playing, including a type the
+  // server keeps no favorite state for
+  it("offers only 'add to playlist' for a podcast episode", () => {
+    const wrapper = mountMenu(podcastEpisode());
+
+    expect(entryLabels(wrapper)).toEqual(["add_playlist"]);
+  });
+
+  it("renders no trigger for an item that offers nothing at all", () => {
+    expect(mountMenu(audioSource()).find(TRIGGER).exists()).toBe(false);
+  });
+
+  // a like or dislike made elsewhere (another tab, another row showing the
+  // same item) still has to reach this one
+  it("shows a favorite update made elsewhere on the item it renders", () => {
+    const item = track({ favorite: null });
+    mountMenu(item);
+
+    favoriteUpdateHandler()({
+      event: EventType.FAVORITE_UPDATED,
+      data: {
+        uri: item.uri,
+        media_type: MediaType.TRACK,
+        item_id: item.item_id,
+        favorite: false,
+        user_id: user().user_id,
+      },
+    } as EventMessage);
+
+    expect(item.favorite).toBe(false);
+  });
+
+  it("ignores a favorite update for a different item", () => {
+    const item = track({ item_id: "1", favorite: null });
+    mountMenu(item);
+
+    favoriteUpdateHandler()({
+      event: EventType.FAVORITE_UPDATED,
+      data: {
+        uri: "library://track/2",
+        media_type: MediaType.TRACK,
+        item_id: "2",
+        favorite: true,
+        user_id: user().user_id,
+      },
+    } as EventMessage);
+
+    expect(item.favorite).toBeNull();
+  });
+
+  it("unsubscribes from favorite updates on unmount", () => {
+    const unsubscribe = vi.fn();
+    apiMock.subscribe.mockReturnValue(unsubscribe);
+
+    const wrapper = mountMenu(track());
+    wrapper.unmount();
+
+    expect(unsubscribe).toHaveBeenCalled();
   });
 });
 

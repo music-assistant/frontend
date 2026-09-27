@@ -61,7 +61,7 @@ vi.mock("@/plugins/store", async () => {
 
 const mockStore = store as unknown as { curQueueItem?: QueueItem };
 
-const TRIGGER = "button[aria-label='favorites_menu']";
+const TRIGGER = "button[type='button']";
 
 // the favourite state is shared app-wide and only re-seeds when the playing
 // item changes, so every fixture stands for a different one

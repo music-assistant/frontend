@@ -29,7 +29,7 @@ const {
 }));
 
 vi.mock("@/plugins/api", () => {
-  const api = { providers: {} };
+  const api = { providers: {}, subscribe: vi.fn(() => () => {}) };
   return { api, default: api };
 });
 
@@ -88,8 +88,9 @@ const TRACKS = [
   track({ item_id: "3", name: "Three", favorite: true }),
 ];
 
-// every row's heart opens the same menu, so they share one label
-const FAVORITE_BUTTONS = "button[aria-label='favorites_menu']";
+// the row's own "more options" button is a plain button too, so the dropdown
+// trigger is the one that tells apart
+const FAVORITE_BUTTONS = "button[aria-haspopup='menu']";
 
 function mountList(props: Partial<Props> = {}, slots = {}) {
   return mount(MediaRowList, {

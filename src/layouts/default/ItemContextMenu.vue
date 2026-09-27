@@ -806,11 +806,13 @@ export const getContextMenuItems = async function (
     );
 
     // a favorite belongs to the library item, so a single item follows its
-    // resolved membership while a multi selection reads each item's own flag
+    // resolved membership while a multi selection reads each item's own flag;
+    // a dislike carries no membership implication of its own, so the state
+    // alone decides it
     const isFavorite = (item: MediaItemTypeOrItemMapping) =>
       favoriteState(item) === true && (items.length > 1 || inLibrary);
     const isDisliked = (item: MediaItemTypeOrItemMapping) =>
-      favoriteState(item) === false && (items.length > 1 || inLibrary);
+      favoriteState(item) === false;
 
     // the actions run on the library copy while the next menu is built from
     // the item the caller holds, so its state has to follow

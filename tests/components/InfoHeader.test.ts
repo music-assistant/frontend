@@ -62,7 +62,7 @@ vi.mock("@/components/MenuButton.vue", () => ({
 
 const vuetify = createVuetify({ components, directives });
 
-const TRIGGER = "button[aria-label='favorites_menu']";
+const TRIGGER = "button[type='button']";
 
 function mountHeader(item: Track) {
   return mount(InfoHeader, {
