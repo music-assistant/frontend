@@ -1819,6 +1819,7 @@ if (props.restoreState) {
 
     store.prevState = {
       path: key,
+      parentUri: props.parentItem?.uri,
       scrollPos: el?.scrollTop || 0,
       pagedItems: pagedItems.value,
       allItems: allItems.value,
@@ -1973,7 +1974,11 @@ onMounted(async () => {
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;
-  if (props.restoreState && store.prevState?.path == key) {
+  if (
+    props.restoreState &&
+    store.prevState?.path == key &&
+    store.prevState.parentUri == props.parentItem?.uri
+  ) {
     restoredFromPrevState = true;
     params.value = store.prevState.params;
     pagedItems.value = store.prevState.pagedItems;
@@ -2052,6 +2057,10 @@ watch(
 
 export interface StoredState {
   path: string;
+  // several listings share one path across different parents (e.g. every
+  // artist's albums use "artistalbums"), so the parent's uri scopes the
+  // restore to the item that was actually on screen
+  parentUri?: string;
   scrollPos: number;
   pagedItems: MediaItemType[];
   allItems: MediaItemType[];
