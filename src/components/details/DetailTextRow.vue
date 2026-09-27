@@ -1,5 +1,6 @@
 <template>
   <section
+    ref="root"
     v-hold="onHold"
     class="detail-text"
     :style="{
@@ -15,17 +16,20 @@
       <MarkdownText
         v-if="markdown"
         class="detail-text__body"
+        :class="{ 'detail-text__body--clamped': isClamped }"
         :text="text"
         @click="onTextClick"
       />
       <p
         v-else
         class="detail-text__body detail-text__body--verbatim"
-        @click="showFullText = true"
+        :class="{ 'detail-text__body--clamped': isClamped }"
+        @click="showFullText = isClamped"
       >
         {{ text }}
       </p>
       <button
+        v-if="isClamped"
         type="button"
         class="detail-text__more"
         @click="showFullText = true"
@@ -75,7 +79,8 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
-import { ref } from "vue";
+import { useResizeObserver } from "@vueuse/core";
+import { ref, watch } from "vue";
 
 export interface Props {
   // undefined while the text is still on its way: a skeleton stands in
@@ -89,7 +94,7 @@ export interface Props {
   // lines shown before "read more", one more on phone
   lines?: number;
 }
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   text: undefined,
   title: undefined,
   markdown: false,
@@ -101,16 +106,29 @@ const emit = defineEmits<{
 }>();
 
 const showFullText = ref(false);
+const root = ref<HTMLElement>();
+// whether the text runs past its line limit, so there is more to read
+const isClamped = ref(false);
 
 const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
   emit("edit-rows"),
 );
 
+useResizeObserver(root, () => measureClamp());
+watch(() => props.text, measureClamp, { flush: "post" });
+
 const onTextClick = (event: MouseEvent) => {
+  if (!isClamped.value) return;
   // a link in the text opens on its own; don't also expand the text
   if ((event.target as HTMLElement).closest("a")) return;
   showFullText.value = true;
 };
+
+function measureClamp() {
+  const el = root.value?.querySelector(".detail-text__body");
+  // subpixel line heights can round scrollHeight a pixel above clientHeight
+  isClamped.value = !!el && el.scrollHeight > el.clientHeight + 1;
+}
 </script>
 
 <style scoped>
@@ -132,12 +150,14 @@ const onTextClick = (event: MouseEvent) => {
   font-size: 15px;
   line-height: 1.5;
   color: rgba(var(--v-theme-on-surface), 0.72);
-  cursor: pointer;
   display: -webkit-box;
   -webkit-line-clamp: var(--detail-text-lines);
   line-clamp: var(--detail-text-lines);
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.detail-text__body--clamped {
+  cursor: pointer;
 }
 /* lyrics and the like are printed as written, line breaks and all */
 .detail-text__body--verbatim {

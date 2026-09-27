@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/components/MarkdownText.vue", () => ({
   default: {
@@ -31,7 +31,21 @@ function mountRow(props: Record<string, unknown> = {}) {
   });
 }
 
+// jsdom lays nothing out, so the text's rendered height is faked
+function fakeTextHeight(scrollHeight: number, clientHeight: number) {
+  vi.spyOn(Element.prototype, "scrollHeight", "get").mockReturnValue(
+    scrollHeight,
+  );
+  vi.spyOn(Element.prototype, "clientHeight", "get").mockReturnValue(
+    clientHeight,
+  );
+}
+
 describe("DetailTextRow", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("stands a skeleton in while the text is on its way", () => {
     const wrapper = mountRow();
 
@@ -71,6 +85,26 @@ describe("DetailTextRow", () => {
     await flushPromises();
 
     expect(wrapper.find(".detail-text__full").exists()).toBe(true);
+  });
+
+  it("offers read more when the text runs past its lines", async () => {
+    const wrapper = mountRow({ text: "Short" });
+    fakeTextHeight(200, 60);
+
+    await wrapper.setProps({ text: "A much longer text" });
+    await flushPromises();
+
+    expect(wrapper.find(".detail-text__more").exists()).toBe(true);
+  });
+
+  it("leaves read more out when the whole text fits", async () => {
+    const wrapper = mountRow({ text: "Short" });
+    fakeTextHeight(60, 60);
+
+    await wrapper.setProps({ text: "Still short" });
+    await flushPromises();
+
+    expect(wrapper.find(".detail-text__more").exists()).toBe(false);
   });
 
   it("has a heading only when it was given one", () => {
