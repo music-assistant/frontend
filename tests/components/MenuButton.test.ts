@@ -37,9 +37,11 @@ describe("MenuButton", () => {
     const label = shrinking.find(".truncate");
     expect(label.exists()).toBe(true);
     expect(label.text()).toBe("Play on the kitchen speaker");
-    // the primary action must override the button's own shrink-0 to ellipsis
+    // the primary action must override the button's own shrink-0 and drop its
+    // min width so it can shrink all the way on a narrow row
     expect(shrinkingPrimary.classes()).toContain("shrink");
     expect(shrinkingPrimary.classes()).not.toContain("shrink-0");
+    expect(shrinkingPrimary.classes()).not.toContain("min-w-40");
   });
 
   it("emits click for the primary action and menu for the dropdown", async () => {

@@ -2,7 +2,7 @@
   <ButtonGroup>
     <Button
       :disabled="disabled || loading"
-      :class="['min-w-40 justify-start', truncate && 'shrink']"
+      :class="[truncate ? 'min-w-0 shrink' : 'min-w-40', 'justify-start']"
       @click="emit('click')"
     >
       <Spinner v-if="loading" class="size-5" />
