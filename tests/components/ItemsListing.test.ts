@@ -817,6 +817,19 @@ describe("ItemsListing restore state", () => {
       nextAlbum.uri,
     ]);
   });
+
+  it("restores a parentless listing (e.g. a library page)", async () => {
+    const cached = album({ item_id: "a1" });
+    await cacheArtistAlbums(undefined, [cached]);
+
+    const loadItems = vi.fn<LoadItemsFn>().mockResolvedValue([]);
+    const listing = mountArtistAlbums(undefined, loadItems);
+    await flushPromises();
+
+    // a listing with no parent still matches itself and restores its items
+    expect(loadItems).not.toHaveBeenCalled();
+    expect(shownItems(listing).map((item) => item.uri)).toEqual([cached.uri]);
+  });
 });
 
 /** Mounts a listing of `total` items and asks it to select them all. */
