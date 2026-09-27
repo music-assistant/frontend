@@ -62,7 +62,7 @@ export const ARTIST_ROWS: readonly ArtistRowDefinition[] = [
     labelKey: "artist_all_audiobooks",
     audience: "audiobook",
   },
-  { id: "provider_mappings", labelKey: "mapped_providers", audience: "both" },
+  { id: "provider_mappings", labelKey: "source_details", audience: "both" },
   { id: "artwork", labelKey: "images", audience: "both", adminOnly: true },
 ];
 
