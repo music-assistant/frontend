@@ -135,7 +135,18 @@
                 <ChevronLeft :size="20" />
               </button>
 
-              <div ref="heroGrid" class="ed-hero-grid" @scroll="updateHeroNav">
+              <div
+                :ref="setHeroGridRef"
+                class="ed-hero-grid"
+                :class="{ 'ed-hero-grid--dragging': heroDragging }"
+                @scroll="updateHeroNav"
+                @pointerdown="onHeroPointerDown"
+                @pointermove="onHeroPointerMove"
+                @pointerup="onHeroPointerUp"
+                @pointercancel="onHeroPointerUp"
+                @click.capture="onHeroClickCapture"
+                @dragstart.prevent
+              >
                 <EditorialHeroCard
                   class="ed-hero-grid__lead"
                   :item="heroEntries[0].item"
@@ -176,7 +187,7 @@
               rowItemsMap.get(row.id) !== undefined
             "
             :title="row.folder.name"
-            :provider="row.folder.provider"
+            :provider="folderProvider(row.folder)"
             :items="rowItemsMap.get(row.id) ?? []"
             :dimmed="editMode && row.hidden"
             :tiles-per-view="tilesPerView"
@@ -250,7 +261,13 @@
                     size="icon-sm"
                     :aria-label="$t('tooltip.hide_provider')"
                   >
-                    <ListFilter />
+                    <span class="relative inline-flex">
+                      <ListFilter />
+                      <span
+                        v-if="rowHasActiveFilter(row)"
+                        :class="ACTIVE_DOT_CLASS"
+                      ></span>
+                    </span>
                   </Button>
                 </template>
               </FacetedFilter>
@@ -393,10 +410,13 @@ import {
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
+import { useDragScroll } from "@/composables/useDragScroll";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
+import { returnedByHistory } from "@/helpers/navigation";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import api from "@/plugins/api";
+import { ACTIVE_DOT_CLASS } from "@/constants";
 import {
   EventType,
   PlaybackState,
@@ -504,15 +524,18 @@ watch(
   },
 );
 
-const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
+// The provider whose icon labels a row. Builtin recommendation plugins (e.g.
+// Library Recommendations) aggregate the whole library, so their plugin logo
+// says nothing about the source -- only real music providers get an icon.
+const folderProvider = (folder: RecommendationFolder): string =>
+  api.getProviderManifest(folder.provider)?.builtin
+    ? ""
+    : folder.provider || "";
 
-// Provider instances a user may filter recommendation rows by -- currently
-// loaded music providers, restricted to the user's own provider_filter when set.
+// Provider instances a user may filter recommendation rows by -- the loaded
+// music providers, which the server limits to the sources the user may use.
 const providerFilterOptions = computed(() =>
-  eligibleFilterProviders(
-    Object.values(api.providers),
-    store.currentUser?.provider_filter ?? [],
-  )
+  eligibleFilterProviders(Object.values(api.providers))
     .map((provider) => ({
       value: provider.instance_id,
       label: provider.name,
@@ -619,6 +642,11 @@ const heroColumns = computed<HeroEntry[][]>(() => {
 // Safari swallow the first tap as "hover" instead of a click.
 const canHover = window.matchMedia?.("(hover: hover)")?.matches ?? true;
 const heroGrid = ref<HTMLElement | null>(null);
+// a plain ref would come back as an array here, since the row is rendered
+// inside the v-for over the rows
+const setHeroGridRef = (el: unknown) => {
+  heroGrid.value = el instanceof HTMLElement ? el : null;
+};
 const heroHovering = ref(false);
 const heroCanLeft = ref(false);
 const heroCanRight = ref(false);
@@ -635,6 +663,14 @@ const scrollHero = (dir: number) => {
   if (!el) return;
   el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
 };
+
+const {
+  dragging: heroDragging,
+  onPointerDown: onHeroPointerDown,
+  onPointerMove: onHeroPointerMove,
+  onPointerUp: onHeroPointerUp,
+  onClickCapture: onHeroClickCapture,
+} = useDragScroll(heroGrid);
 
 let heroRo: ResizeObserver | undefined;
 let observedHeroGrid: HTMLElement | null = null;
@@ -655,6 +691,9 @@ const observeHero = () => {
   observedHeroGrid = el;
 };
 
+// the row mounts and unmounts as rows are hidden and shown, so watch the
+// element as well as the content in it
+watch(heroGrid, observeHero);
 watch(heroEntries, () => nextTick(observeHero), { deep: false });
 
 // Assign heroEntries only when the picks actually changed — cheap insurance
@@ -997,9 +1036,9 @@ onMounted(async () => {
   loadGenres();
   window.addEventListener("resize", updateHeroNav);
 
-  // A history back/forward traversal sets `forward` on the entry we're
-  // returning to; a fresh navigation leaves it null.
-  if (prevState && router.options.history.state.forward != null) {
+  // the page comes up as it was left only when gone back to; a fresh
+  // navigation loads it anew
+  if (prevState && returnedByHistory(router)) {
     const snapshot = prevState;
     recommendations.value = snapshot.recommendations;
     recentlyPlayed.value = snapshot.recentlyPlayed;
@@ -1245,6 +1284,13 @@ onBeforeUnmount(() => {
 }
 .ed-hero-grid::-webkit-scrollbar {
   display: none;
+}
+/* doubled up so it outranks the .ed-hero-grid rules in the media queries below */
+.ed-hero-grid.ed-hero-grid--dragging {
+  cursor: grabbing;
+  user-select: none;
+  /* snapping fights the drag while the pointer drives scrollLeft */
+  scroll-snap-type: none;
 }
 .ed-hero-grid__lead {
   flex: 1.5 0 520px;

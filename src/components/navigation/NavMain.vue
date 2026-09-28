@@ -17,6 +17,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useListDragReorder } from "@/composables/useListDragReorder";
+import { isTourStop } from "@/helpers/tour";
 import { Eye, EyeOff, GripVertical } from "@lucide/vue";
 import NavSectionHeader from "./NavSectionHeader.vue";
 import {
@@ -56,6 +57,10 @@ const isActive = (url: string) =>
   !!url && (route.path === url || route.path.startsWith(url + "/"));
 
 const itemActive = (item: NavItem) => !item.action && isActive(item.url);
+
+// the tour finds the items it stops at by their id; the rest carry no marker
+const tourMarker = (item: NavItem) =>
+  item.id && isTourStop(item.id) ? item.id : undefined;
 
 const handleClick = (item: NavItem, event: Event) => {
   if (item.action) {
@@ -211,6 +216,7 @@ const draggedItem = computed(() =>
             :is-active="itemActive(item)"
             :tooltip="item.title"
             :disabled="item.disabled"
+            :data-tour="tourMarker(item)"
             :class="[
               itemActive(item)
                 ? 'no-underline font-bold text-sm'

@@ -25,12 +25,12 @@ import {
   type EventMessage,
   type Genre,
   type MassEvent,
-  type MediaItem,
   type MediaItemType,
   type Player,
   type PlayerOptionValueType,
   type PlayerQueue,
   type Playlist,
+  type PlaylistAccess,
   type ProviderInstance,
   type QueueItem,
   type Radio,
@@ -40,6 +40,7 @@ import {
   type TaskSchedule,
   type Track,
   type User,
+  type UserSummary,
   AlbumType,
   Audiobook,
   AuthProvider,
@@ -60,6 +61,7 @@ import {
   PlaylistMatchPolicy,
   Podcast,
   PodcastEpisode,
+  ProviderAccess,
   ProviderConfig,
   ProviderIconVariant,
   ProviderManifest,
@@ -68,10 +70,12 @@ import {
   RecommendationFolder,
   RemoteAccessInfo,
   RepeatMode,
+  Role,
+  Scope,
   SearchResults,
   SmartPlaylistRules,
   SoundEffect,
-  UserRole,
+  StreamServerInfo,
   MediaCollection,
   ArtistType,
 } from "./interfaces";
@@ -86,6 +90,18 @@ const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
 
 // The player_id argument on music/browse landed in API schema 61.
 const BROWSE_PLAYER_ID_SCHEMA_VERSION = 61;
+
+// Repeat one/all masking the effective autoplay flag landed in API schema 69.
+const REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION = 69;
+
+// The config/providers/share_candidates command landed in API schema 72.
+const SHARE_CANDIDATES_SCHEMA_VERSION = 72;
+
+// The auth/roles command and custom user roles landed in API schema 74.
+const ROLES_SCHEMA_VERSION = 74;
+
+// Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
+const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
 
 export interface CommandOptions {
   /**
@@ -716,6 +732,21 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * Every album, EP and single MusicBrainz credits to a library artist, newest first.
+   *
+   * Only library artists are supported; the list is empty when MusicBrainz doesn't know
+   * the artist. The releases that are not in the library come back as MusicBrainz items
+   * (provider "musicbrainz", without provider mappings), which the server resolves to a
+   * real album when one is opened or added.
+   */
+  public getArtistDiscography(item_id: string): Promise<Album[]> {
+    return this.sendCommand("music/artists/discography", {
+      item_id,
+      provider_instance_id_or_domain: "library",
+    });
+  }
+
   public getSimilarArtists(
     item_id: string,
     provider_instance_id_or_domain: string,
@@ -853,6 +884,27 @@ export class MusicAssistantApi {
       item_id,
       provider_instance_id_or_domain,
     });
+  }
+
+  public setPlaylistAccess(
+    item_id: string,
+    access: PlaylistAccess,
+  ): Promise<Playlist> {
+    // Set who owns a Music Assistant playlist, who may see it and who may edit it.
+    // A library manager may set this for any playlist, an owner may only
+    // change the sharing of a playlist it owns. The dialog reports a refused
+    // change itself, so opt out of the global error toast.
+    return this.sendCommand(
+      "music/playlists/set_access",
+      {
+        item_id,
+        owner: access.owner,
+        sharing: access.sharing,
+        shared_users: access.shared_users,
+        collaborative: access.collaborative,
+      },
+      { suppressGlobalError: true },
+    );
   }
 
   public getPlaylistTracks(
@@ -1480,8 +1532,10 @@ export class MusicAssistantApi {
   public async addItemToFavorites(
     item: string | MediaItemType | ItemMapping,
   ): Promise<void> {
-    // optimistically set the value
-    if (typeof item !== "string" && "favorite" in item) {
+    // optimistically set the value on the caller's copy. Only a media item
+    // holds one: a summary item leaves the key out when there is no state, but
+    // its provider mappings are always there
+    if (typeof item !== "string" && "provider_mappings" in item) {
       item.favorite = true;
     }
     // Add an item (uri or mediaitem) to the favorites.
@@ -1500,17 +1554,25 @@ export class MusicAssistantApi {
     });
   }
 
-  public toggleFavorite(item: MediaItem) {
-    // Toggle favorite for a media item
-    if (item.favorite) {
-      this.removeItemFromFavorites(item.media_type, item.item_id);
-      // optimistically set the value
-      item.favorite = false;
-    } else {
-      this.addItemToFavorites(item);
-      // optimistically set the value
-      item.favorite = true;
+  /**
+   * Set the signed-in user's state on a media item.
+   *
+   * :param item: The item (uri or media item) to set the state on.
+   * :param favorite: true to like, false to dislike, null to clear the state.
+   */
+  public async setFavorite(
+    item: string | MediaItemType | ItemMapping,
+    favorite: boolean | null,
+  ): Promise<void> {
+    // optimistically set the value on the caller's copy, which only a media
+    // item holds (see addItemToFavorites)
+    if (typeof item !== "string" && "provider_mappings" in item) {
+      item.favorite = favorite;
     }
+    return this.sendCommand("music/favorites/set_item", {
+      item,
+      favorite,
+    });
   }
 
   public browse(path?: string, player_id?: string): Promise<MediaItemType[]> {
@@ -2269,6 +2331,35 @@ export class MusicAssistantApi {
     });
   }
 
+  public setProviderAccess(
+    instance_id: string,
+    access: ProviderAccess,
+  ): Promise<ProviderConfig> {
+    // Set who owns a music source and who else may use it.
+    // An admin may set this for any music source, an owner may
+    // only change the sharing of a source it owns. The dialog reports a
+    // refused change itself, so opt out of the global error toast.
+    return this.sendCommand(
+      "config/providers/set_access",
+      {
+        instance_id,
+        owner: access.owner,
+        sharing: access.sharing,
+        shared_users: access.shared_users,
+      },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public getShareCandidates(): Promise<UserSummary[]> {
+    // Get the users a music source or playlist can be shared with, the caller
+    // included; check supportsShareCandidates first.
+    return this.sendCommand("config/providers/share_candidates", undefined, {
+      // callers show their own error toast; avoid a duplicate global one
+      suppressGlobalError: true,
+    });
+  }
+
   // PlayerConfig related functions
 
   public async getPlayerConfigs(
@@ -2678,14 +2769,25 @@ export class MusicAssistantApi {
       return;
     }
 
-    toast.info($t("background_tasks.toast.added"), {
-      action: {
-        label: $t("background_tasks.open"),
-        onClick: () => {
-          void this._openBackgroundTasks();
-        },
-      },
-    });
+    // Imported dynamically for the same reason as the router below: auth.ts
+    // imports this module statically.
+    void import("../auth")
+      // the task list takes system.read
+      .then(({ authManager }) => authManager.hasScope(Scope.SYSTEM_READ))
+      // a chunk gone after a server update only costs the toast its action
+      .catch(() => false)
+      .then((mayOpenTasks) => {
+        toast.info($t("background_tasks.toast.added"), {
+          action: mayOpenTasks
+            ? {
+                label: $t("background_tasks.open"),
+                onClick: () => {
+                  void this._openBackgroundTasks();
+                },
+              }
+            : undefined,
+        });
+      });
   }
 
   private async _openBackgroundTasks(): Promise<void> {
@@ -2698,12 +2800,16 @@ export class MusicAssistantApi {
     await router.push({ name: "backgroundtasks" });
   }
 
+  /**
+   * Resolve a provider domain or instance id to a display name.
+   *
+   * Prefers the name of a loaded instance, then the manifest name, and finally
+   * the generic manifest name for the domain. Falls back to the given id when
+   * nothing matches. It never reads a provider's saved configuration, so an
+   * instance that is not loaded shows the generic service name.
+   * @param provider_domain_or_instance_id - A provider domain or instance id, e.g. from a media item or provider mapping.
+   */
   public getProviderName(provider_domain_or_instance_id: string): string {
-    // try to get the name of the provider from the instance_id or domain
-    if (provider_domain_or_instance_id in this.providers) {
-      provider_domain_or_instance_id =
-        this.providers[provider_domain_or_instance_id].instance_id;
-    }
     // prefer the user configured name
     if (provider_domain_or_instance_id in this.providers) {
       return this.providers[provider_domain_or_instance_id].name;
@@ -2711,6 +2817,12 @@ export class MusicAssistantApi {
     // fallback to manifest name
     if (provider_domain_or_instance_id in this.providerManifests) {
       return this.providerManifests[provider_domain_or_instance_id].name;
+    }
+    // instance not loaded (e.g. a source not shared with this user): fall back
+    // to the generic provider name derived from the domain in the instance id
+    const domain = provider_domain_or_instance_id.split("--")[0];
+    if (domain in this.providerManifests) {
+      return this.providerManifests[domain].name;
     }
     return provider_domain_or_instance_id;
   }
@@ -2943,6 +3055,7 @@ export class MusicAssistantApi {
         new ApiCommandError(
           msg.details || String(msg.error_code),
           msg.error_code,
+          msg.details || undefined,
         ),
       );
     } else {
@@ -2993,6 +3106,35 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server masks autoplay while repeat one/all is on (schema >= 69). */
+  public get supportsRepeatAutoplayLock(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server lists who a music source can be shared with (schema >= 72). */
+  public get supportsShareCandidates(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      SHARE_CANDIDATES_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server lists the user roles and has custom ones (schema >= 74). */
+  public get supportsRoles(): boolean {
+    return (this.serverInfo.value?.schema_version ?? 0) >= ROLES_SCHEMA_VERSION;
+  }
+
+  /** Whether the connected server lets a role with queues.control play AI Radio stations (schema >= 75). */
+  public get supportsAIRadioPlaybackScopes(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
     );
   }
 
@@ -3179,26 +3321,79 @@ export class MusicAssistantApi {
     return users;
   }
 
+  public async getRoles(options?: CommandOptions): Promise<Role[]> {
+    // Get all user roles: the builtin roles first, then the custom roles by name
+    if (this.supportsRoles) {
+      return await this.sendCommand<Role[]>("auth/roles", undefined, options);
+    }
+    // an older server only has the builtin roles, of which it lists the scopes
+    const roleScopes = await this.sendCommand<Record<string, string[]>>(
+      "auth/scopes",
+      undefined,
+      options,
+    );
+    return Object.entries(roleScopes).map(([role_id, scopes]) => ({
+      role_id,
+      name: role_id,
+      scopes,
+      builtin: true,
+    }));
+  }
+
+  public createRole(name: string, scopes: string[]): Promise<Role> {
+    // Create a custom user role (admin only)
+    return this.sendCommand(
+      "auth/role/create",
+      { name, scopes },
+      // callers show the reason the server gives; avoid a duplicate global toast
+      { suppressGlobalError: true },
+    );
+  }
+
+  public updateRole(
+    roleId: string,
+    updates: { name?: string; scopes?: string[] },
+  ): Promise<Role> {
+    // Change the name and/or the scopes of a custom user role (admin only)
+    return this.sendCommand(
+      "auth/role/update",
+      { role_id: roleId, ...updates },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public deleteRole(roleId: string): Promise<void> {
+    // Delete a custom user role that no user holds (admin only)
+    return this.sendCommand(
+      "auth/role/delete",
+      { role_id: roleId },
+      { suppressGlobalError: true },
+    );
+  }
+
   public async createUser(
     username: string,
     password: string,
-    role: UserRole,
+    role: string,
     displayName?: string,
     playerFilter?: string[],
-    providerFilter?: string[],
+    options?: CommandOptions,
   ): Promise<User> {
     // Create a new user (admin only)
     try {
       const result = await this.sendCommand<
         { success?: boolean; user?: User } | User | null | undefined
-      >("auth/user/create", {
-        username,
-        password,
-        role,
-        display_name: displayName,
-        player_filter: playerFilter,
-        provider_filter: providerFilter,
-      });
+      >(
+        "auth/user/create",
+        {
+          username,
+          password,
+          role,
+          display_name: displayName,
+          player_filter: playerFilter,
+        },
+        options,
+      );
 
       if (result == null) {
         throw new Error("Failed to create user");
@@ -3237,12 +3432,12 @@ export class MusicAssistantApi {
       username?: string;
       displayName?: string;
       avatarUrl?: string;
-      role?: UserRole;
+      role?: string;
       password?: string;
       preferences?: Record<string, unknown>;
-      provider_filter?: string[];
       player_filter?: string[];
     },
+    options?: CommandOptions,
   ): Promise<User> {
     // Update user using unified update command
     try {
@@ -3255,14 +3450,12 @@ export class MusicAssistantApi {
       if (updates.password) args.password = updates.password;
       if (updates.preferences != undefined)
         args.preferences = updates.preferences;
-      if (updates.provider_filter != undefined)
-        args.provider_filter = updates.provider_filter;
       if (updates.player_filter != undefined)
         args.player_filter = updates.player_filter;
 
       const result = await this.sendCommand<
         { success?: boolean; user?: User } | User | null | undefined
-      >("auth/user/update", args);
+      >("auth/user/update", args, options);
 
       if (result == null) {
         throw new Error("Failed to update user");
@@ -3292,19 +3485,6 @@ export class MusicAssistantApi {
     } catch (error) {
       console.error("Error updating user:", error);
       throw error;
-    }
-  }
-
-  public async updateUserRole(
-    userId: string,
-    role: UserRole,
-  ): Promise<boolean> {
-    // Update user role using unified update command
-    try {
-      await this.updateUser(userId, { role });
-      return true;
-    } catch (error) {
-      return false;
     }
   }
 
@@ -3427,6 +3607,19 @@ export class MusicAssistantApi {
     return this.sendCommand<RemoteAccessInfo>("remote_access/configure", {
       enabled,
     });
+  }
+
+  // Stream server methods
+
+  public async getStreamServerInfo(
+    options?: CommandOptions,
+  ): Promise<StreamServerInfo> {
+    // Get the address the stream server hands to players
+    return this.sendCommand<StreamServerInfo>(
+      "streams/info",
+      undefined,
+      options,
+    );
   }
 
   public sendCommand<Result>(

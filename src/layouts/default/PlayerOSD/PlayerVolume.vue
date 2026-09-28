@@ -109,10 +109,12 @@
         @touchcancel.stop
       >
         <button
+          type="button"
           class="volume-icon-btn volume-slot-item"
           :class="{ 'is-hidden': showStepButtons }"
           :inert="showStepButtons"
           :disabled="muteDisabled"
+          :aria-label="isMuted ? $t('tooltip.unmute') : $t('tooltip.mute')"
           @click.stop="onMuteToggle"
         >
           <component :is="volumeIconComponent" :size="iconSize" />

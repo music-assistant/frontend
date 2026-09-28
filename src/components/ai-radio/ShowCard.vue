@@ -1,11 +1,12 @@
 <template>
   <div
-    class="show-card ma-tap"
-    role="button"
-    tabindex="0"
-    @click="emit('customize', show.id)"
-    @keydown.enter.self="emit('customize', show.id)"
-    @keydown.space.self.prevent="emit('customize', show.id)"
+    class="show-card"
+    :class="{ 'show-card--editable ma-tap': canEdit }"
+    :role="canEdit ? 'button' : undefined"
+    :tabindex="canEdit ? 0 : undefined"
+    @click="customize"
+    @keydown.enter.self="customize"
+    @keydown.space.self.prevent="customize"
   >
     <div class="show-card__art">
       <MediaItemThumb
@@ -66,7 +67,7 @@
         </span>
       </span>
 
-      <DropdownMenu>
+      <DropdownMenu v-if="canEdit">
         <DropdownMenuTrigger as-child>
           <Button
             variant="ghost-icon"
@@ -113,10 +114,11 @@
         type="button"
         class="show-card__action"
         :disabled="isStopping"
+        :aria-busy="isStopping || undefined"
         :aria-label="$t('providers.ai_radio.card.stop')"
         @click.stop="onStop"
       >
-        <Loader2 v-if="isStopping" :size="18" class="animate-spin" />
+        <Spinner v-if="isStopping" class="size-4.5" />
         <Square v-else :size="14" fill="currentColor" :stroke-width="0" />
       </button>
       <button
@@ -124,10 +126,11 @@
         type="button"
         class="show-card__action show-card__action--reveal"
         :disabled="isStarting"
+        :aria-busy="isStarting || undefined"
         :aria-label="$t('providers.ai_radio.card.play')"
         @click.stop="onPlay"
       >
-        <Loader2 v-if="isStarting" :size="18" class="animate-spin" />
+        <Spinner v-if="isStarting" class="size-4.5" />
         <Play
           v-else
           :size="18"
@@ -155,6 +158,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Tooltip,
   TooltipContent,
@@ -169,13 +173,17 @@ import {
   resolveShowPlayerId,
   slugify,
 } from "@/helpers/ai_radio";
-import type { AIRadioSession, AIRadioStation } from "@/plugins/api/interfaces";
+import {
+  Scope,
+  type AIRadioSession,
+  type AIRadioStation,
+} from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import {
   History,
-  Loader2,
   MoreVertical,
   Play,
   Square,
@@ -209,6 +217,12 @@ const {
   runningSessionForStation,
   reportStartError,
 } = useShows();
+
+// customizing, duplicating and deleting a show takes config.providers.write;
+// playing it does not
+const canEdit = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+);
 
 const isStarting = computed(() => startingShowId.value === props.show.id);
 const isStopping = computed(
@@ -246,6 +260,10 @@ const lastEndedSession = computed(() => {
     session.status === "stopped" || session.status === "completed";
   return endedLive ? session : undefined;
 });
+
+function customize() {
+  if (canEdit.value) emit("customize", props.show.id);
+}
 
 function sessionRelativeTime(session: AIRadioSession): string {
   return relativeTimeFromIso(session.ended_at || session.created_at);
@@ -369,13 +387,15 @@ function onDelete() {
   width: 100%;
   box-sizing: border-box;
   text-align: left;
-  cursor: pointer;
   background: transparent;
   border: none;
   padding: var(--show-card-pad);
   border-radius: var(--show-card-pad);
   color: rgb(var(--v-theme-on-background));
   transition: background 0.15s ease;
+}
+.show-card--editable {
+  cursor: pointer;
 }
 .show-card:hover {
   background: rgba(var(--v-theme-on-surface), 0.08);

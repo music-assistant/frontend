@@ -7,6 +7,7 @@
       id="player-bar"
       class="mediacontrols"
       :data-compact="!getBreakpointValue('bp6')"
+      data-tour="player_bar"
     >
       <div class="mediacontrols-left">
         <PlayerTrackDetails
@@ -75,7 +76,7 @@
   <!-- Mobile: floating player with volume slider inside container -->
   <div v-else class="mediacontrols-mobile-container">
     <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
-    <div class="mediacontrols" :data-mobile="true">
+    <div class="mediacontrols" :data-mobile="true" data-tour="player_bar">
       <!-- the whole card opens the player, so the empty space around the
            track details is clickable too; the controls stop their own clicks -->
       <div class="mediacontrols-left" @click="openActivePlayer">

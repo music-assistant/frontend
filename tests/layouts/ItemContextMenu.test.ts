@@ -29,6 +29,10 @@ vi.mock("@/plugins/store", () => ({
   store: storeMock,
 }));
 
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope: () => false },
+}));
+
 vi.mock("@/plugins/api", () => ({
   default: {
     players: {},

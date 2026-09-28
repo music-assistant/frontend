@@ -209,6 +209,30 @@ describe("SetupFlowDialog", () => {
     );
   });
 
+  it.each([
+    ["form", { ...formStep(), description: "Register https://example.com/cb" }],
+    ["external", { ...terminalStep(FlowStepType.EXTERNAL), description: "Go" }],
+    ["progress", progressStep("Waiting for the device")],
+    ["finish", { ...terminalStep(FlowStepType.FINISH), description: "Done" }],
+    ["abort", { ...terminalStep(FlowStepType.ABORT), reason: "Token expired" }],
+  ] as [string, SetupFlowStep][])(
+    "lets the user select the text of a %s step",
+    async (_type, step) => {
+      const wrapper = await mountHeader(
+        { kind: "reconfigure", instanceId: "spotify--test" },
+        step,
+      );
+      const text = step.description ?? step.progress_text ?? step.reason;
+
+      const body = wrapper
+        .findAll("div")
+        .find((el) => el.element.childElementCount === 0 && el.text() === text);
+      expect(body?.classes()).toEqual(
+        expect.arrayContaining(["select-text", "[&_*]:select-text"]),
+      );
+    },
+  );
+
   it("leaves the subtitle out when the step brings no title", async () => {
     const wrapper = await mountHeader({ kind: "player", playerId: "player-1" });
 
@@ -513,7 +537,7 @@ async function mountHeader(
   return wrapper;
 }
 
-// the per-field help dialog carries a title of its own, so scope to the step's header
+// the step title renders in the dialog header, so read it from there
 function headerText(wrapper: VueWrapper, stub: string) {
   return wrapper.find("dialog-header-stub").find(stub).text();
 }
@@ -534,7 +558,7 @@ async function mountFormStep(entries: ConfigEntry[]) {
   return wrapper;
 }
 
-// the per-field help dialog carries a footer of its own, so scope to the step's
+// the step's action buttons render in the dialog footer, so read them from there
 function stepFooterLabels(wrapper: VueWrapper) {
   return wrapper
     .find("dialog-footer-stub")

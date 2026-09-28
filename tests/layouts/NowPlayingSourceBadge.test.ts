@@ -1,7 +1,7 @@
 import NowPlayingSourceBadge from "@/layouts/default/PlayerOSD/NowPlayingSourceBadge.vue";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Player } from "@/plugins/api/interfaces";
+import type { Player, PlayerQueue } from "@/plugins/api/interfaces";
 import { playerSource } from "../fixtures/playerSource";
 
 vi.mock("@/composables/useProviderIcon", async () => {
@@ -31,7 +31,13 @@ vi.mock("@/plugins/store", async () => {
   };
 });
 
-const { store } = await import("@/plugins/store");
+const { store: storeModule } = await import("@/plugins/store");
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & {
+  activePlayer?: Player;
+  activePlayerQueue?: PlayerQueue;
+};
 
 enableAutoUnmount(afterEach);
 

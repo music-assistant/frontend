@@ -171,6 +171,44 @@ describe("useProgressiveSearch", () => {
     expect(loading.value).toBe(false);
   });
 
+  it("interleaves provider results after the library results", async () => {
+    mockSearch.mockImplementation(
+      (_query, _mediaTypes, _limit, providers: string[] = []) => {
+        if (providers[0] === LIBRARY_SEARCH_TARGET)
+          return Promise.resolve(
+            results({ tracks: [trackFixture("l1", "Lib 1")] }),
+          );
+        if (providers[0] === "fs1")
+          return Promise.resolve(
+            results({
+              tracks: [
+                trackFixture("f1", "Fs 1", "fs1"),
+                trackFixture("f2", "Fs 2", "fs1"),
+                trackFixture("f3", "Fs 3", "fs1"),
+              ],
+            }),
+          );
+        if (providers[0] === "spotify")
+          return Promise.resolve(
+            results({ tracks: [trackFixture("s1", "Spotify 1", "spotify")] }),
+          );
+        return Promise.resolve(emptyResults());
+      },
+    );
+    const { search, searchResult } = setup();
+
+    await search("hit");
+    await flush();
+
+    expect(searchResult.value?.tracks.map((item) => item.name)).toEqual([
+      "Lib 1",
+      "Fs 1",
+      "Spotify 1",
+      "Fs 2",
+      "Fs 3",
+    ]);
+  });
+
   it("floats exact name matches above earlier fuzzy results", async () => {
     mockSearch.mockImplementation(
       (_query, _mediaTypes, _limit, providers: string[] = []) => {
@@ -363,5 +401,51 @@ describe("useProgressiveSearch", () => {
     expect(mockSearch).toHaveBeenLastCalledWith("query", undefined, 8, [
       "spotify",
     ]);
+  });
+
+  it("asks the library for genres on a genre-only search whatever the selection", async () => {
+    const genres = [genreFixture("g1", "Rock")];
+    mockGetLibraryGenres.mockResolvedValue(genres);
+    const { search, searchResult, loading } = setup({
+      mediaTypes: ref<MediaType[]>([MediaType.GENRE]),
+      providers: ref(["spotify"]),
+    });
+
+    await search("rock");
+    await flush();
+
+    expect(mockSearch).not.toHaveBeenCalled();
+    expect(searchResult.value?.genres).toEqual(genres);
+    expect(loading.value).toBe(false);
+  });
+
+  it("leaves the library genres out when the library is not searched", async () => {
+    const { search } = setup({ providers: ref(["spotify"]) });
+
+    await search("rock");
+    await flush();
+
+    expect(mockGetLibraryGenres).not.toHaveBeenCalled();
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops loading once a provider still searching is deselected", async () => {
+    mockSearch.mockImplementation(
+      (_query, _mediaTypes, _limit, providers: string[] = []) =>
+        providers[0] === "spotify"
+          ? new Promise<SearchResults>(() => {})
+          : Promise.resolve(emptyResults()),
+    );
+    const providers = ref<string[]>([]);
+    const { search, loading } = setup({ providers });
+
+    await search("query");
+    await flush();
+    expect(loading.value).toBe(true);
+
+    providers.value = [LIBRARY_SEARCH_TARGET, "fs1"];
+    await nextTick();
+
+    expect(loading.value).toBe(false);
   });
 });

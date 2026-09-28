@@ -1,5 +1,5 @@
 import Footer from "@/layouts/default/Footer.vue";
-import { store } from "@/plugins/store";
+import { store as storeModule } from "@/plugins/store";
 import { type VueWrapper, mount } from "@vue/test-utils";
 import { unrefElement } from "@vueuse/core";
 import { h, nextTick } from "vue";
@@ -33,9 +33,16 @@ vi.mock("@vueuse/core", async () => {
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   return {
-    store: reactive({ mobileLayout: false, showPlayersMenu: false }),
+    store: reactive({
+      mobileLayout: false,
+      showPlayersMenu: false,
+      enabledPlugins: new Set<string>(),
+    }),
   };
 });
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & { mobileLayout: boolean };
 
 const vuetify = createVuetify({ components, directives });
 
