@@ -3,7 +3,10 @@
  * MusicBrainz items without provider mappings. They can be opened and added to
  * the library, which the server resolves to a real album, but not played.
  */
-import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
+import {
+  showContextMenuForMediaItem,
+  showPlayMenuForMediaItem,
+} from "@/layouts/default/ItemContextMenu.vue";
 import { Scope } from "@/plugins/api/interfaces";
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -100,6 +103,12 @@ describe("the context menu of a MusicBrainz release", () => {
     expect(labels).not.toContain("refresh_item");
     expect(labels).not.toContain("remove_library");
     expect(labels.filter((label) => label.startsWith("play_"))).toEqual([]);
+  });
+
+  it("gets no play menu at all", async () => {
+    await showPlayMenuForMediaItem(release, undefined, 0, 0);
+
+    expect(emittedMenus).toHaveLength(0);
   });
 
   it("has no player header, there being nothing to play on it", async () => {

@@ -466,6 +466,7 @@ export const showPlayMenuForMediaItem = async function (
   const playableItems = mediaItems.filter(
     (x) => x.is_playable && !isMusicBrainzItem(x),
   );
+  if (playableItems.length == 0) return;
   const firstItem = playableItems[0];
 
   let playMenuItems: ContextMenuItem[] = [];
