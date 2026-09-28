@@ -232,6 +232,32 @@ describe("ArtistDetails", () => {
     expect(renderedRows(wrapper)).not.toContain("singles_eps");
   });
 
+  it("keeps an empty top-tracks or similar row visible while it can switch source", async () => {
+    // the picked source and the library fallback both come up empty, so the
+    // row's inline picker is the only way back to a source that has content
+    mockLoadArtistTopTracks.mockResolvedValue([]);
+    mockLoadArtistLibraryTracks.mockResolvedValue([]);
+    mockLoadSimilarArtists.mockResolvedValue([]);
+
+    const wrapper = await mountDetails(artist());
+
+    expect(renderedRows(wrapper)).toContain("top_tracks");
+    expect(renderedRows(wrapper)).toContain("similar_artists");
+  });
+
+  it("hides an empty top-tracks or similar row with only one source", async () => {
+    mockLoadArtistTopTracks.mockResolvedValue([]);
+    mockLoadArtistLibraryTracks.mockResolvedValue([]);
+    mockLoadSimilarArtists.mockResolvedValue([]);
+    // a single source means no picker, so an empty row has nowhere else to go
+    mockArtistRowSources.mockReturnValue(["all"]);
+
+    const wrapper = await mountDetails(artist());
+
+    expect(renderedRows(wrapper)).not.toContain("top_tracks");
+    expect(renderedRows(wrapper)).not.toContain("similar_artists");
+  });
+
   it("uses the same audiobooks listing path for every library author/narrator artist", async () => {
     const wrapperA = await mountDetails(
       artist({

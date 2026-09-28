@@ -189,7 +189,7 @@ const form = useForm({
       name: value.name,
       sort_name: value.sortName || value.name,
       provider_mappings: [],
-      favorite: false,
+      favorite: null,
       content_type: value.contentType === "music" ? null : value.contentType,
     };
 

@@ -40,6 +40,7 @@ import {
   type EventMessage,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
+import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import { watch, ref, onMounted, onBeforeUnmount } from "vue";
 
@@ -71,12 +72,22 @@ onMounted(() => {
       // signal user that there might be updated info available for this item
       const updatedItem = evt.data as MediaItemType;
       if (itemDetails.value?.uri == updatedItem.uri) {
-        itemDetails.value = updatedItem as Podcast;
+        itemDetails.value = keepOwnFavorite(
+          updatedItem,
+          itemDetails.value,
+        ) as Podcast;
         updateAvailable.value = true;
       }
     },
   );
   onBeforeUnmount(unsub);
+
+  // the user's own like or dislike, wherever they made it
+  const unsubFavorite = subscribeOwnFavorites((update) => {
+    const item = itemDetails.value;
+    if (item?.uri == update.uri) item.favorite = update.favorite;
+  });
+  onBeforeUnmount(unsubFavorite);
 });
 
 const loadPodcastEpisodes = async function (params: LoadDataParams) {
