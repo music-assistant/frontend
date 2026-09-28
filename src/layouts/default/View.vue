@@ -28,12 +28,15 @@
           <merge-genre-dialog />
           <delete-genre-dialog />
           <link-genre-dialog />
-          <dialog-delete-confirmation />
           <player-group-playback-dialog />
           <setup-flow-dialog />
           <player-rename-dialog />
           <item-context-menu />
           <command-center />
+          <!-- kept last so it portals after the other dialogs, which share
+               its z-index, and a confirmation asked from one of them (e.g.
+               the search popup) appears on top -->
+          <dialog-delete-confirmation />
           <AddManualLink
             v-model="showEditItemDialog"
             :type="editItemType"
@@ -42,6 +45,7 @@
         </div>
       </SidebarInset>
       <PlayerSelect />
+      <TourOverlay />
     </SidebarProvider>
   </v-main>
 </template>
@@ -57,6 +61,7 @@ import AppSidebar from "@/components/navigation/AppSidebar.vue";
 import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
 import PlayerGroupPlaybackDialog from "@/components/PlayerGroupPlaybackDialog.vue";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
+import TourOverlay from "@/components/tour/TourOverlay.vue";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   MediaType,

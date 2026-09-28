@@ -1,9 +1,13 @@
 <template>
   <Toaster rich-colors close-button />
 
-  <!-- Login screen (when not authenticated) -->
+  <!-- Login screen (when not authenticated). On a fresh server's first run
+       there is no account to sign in with until the setup wizard has made
+       one, so the sign-in waits for that account and stays out of sight
+       behind the wizard while it runs. -->
   <Login
-    v-if="showLogin"
+    v-if="showLogin && !awaitingAccount"
+    v-show="!firstRun"
     ref="loginComponent"
     @connected="handleRemoteConnected"
     @authenticated="handleRemoteAuthenticated"
@@ -12,6 +16,10 @@
 
   <!-- Main app (when authenticated and service worker ready for remote) -->
   <router-view v-else-if="showMainApp" />
+
+  <!-- Onboarding opens as a modal over whichever layout is showing, so a fresh
+       admin or a new member is met by it wherever the app lands them -->
+  <OnboardingDialog v-if="showMainApp || firstRun" />
 
   <!-- Kiosk mode leaves Home Assistant no chrome of its own, and this screen
        carries none of ours: a server that is away or restarting would strand
@@ -63,12 +71,7 @@ import {
   resetMediaSession,
 } from "@/helpers/mediaSession";
 import { api, ConnectionState } from "@/plugins/api";
-import {
-  CoreState,
-  EventType,
-  ProviderType,
-  Scope,
-} from "@/plugins/api/interfaces";
+import { CoreState, EventType, Scope } from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
@@ -102,9 +105,26 @@ import {
   WebPlayerMode,
 } from "./plugins/web_player";
 import Login from "./views/Login.vue";
+import OnboardingDialog from "@/components/onboarding/OnboardingDialog.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
+import {
+  enterFirstRunSetup,
+  useFirstRunSetup,
+} from "@/composables/useFirstRunSetup";
+import { useOnboarding } from "@/composables/useOnboarding";
 
 const router = useRouter();
+// the wizard for a fresh install and the welcome for a new member both open as
+// a modal over the app; opened here, before the app is shown, so a fresh
+// sign-in never flashes the app behind them first
+const { open: openOnboarding } = useOnboarding();
+const { firstRun, awaitingAccount } = useFirstRunSetup();
+
+// A fresh server without Home Assistant sends the browser to its setup page,
+// where the first admin account is made: the setup wizard opens on that step
+// straight away, before anything can sign in, and carries on from there once
+// the account is there.
+if (enterFirstRunSetup()) openOnboarding();
 const route = useRoute();
 const { applyThemePreference: setTheme } = useThemePreference();
 const mediaSessionDisabled = computed(() =>
@@ -272,29 +292,6 @@ let initializationCompleted = false;
 // the user's role and its sorted scopes at the last completed initialization
 let initializedAccess: string | undefined;
 
-const refreshPluginEnabledState = async (domain: string) => {
-  try {
-    const providers = await api.getProviderConfigs(ProviderType.PLUGIN, domain);
-    if (providers.length > 0 && providers[0].enabled) {
-      store.enabledPlugins.add(domain);
-    } else {
-      store.enabledPlugins.delete(domain);
-    }
-  } catch (error) {
-    console.error("[App] Failed to check " + domain + " status:", error);
-    store.enabledPlugins.delete(domain);
-  }
-};
-
-const refreshPluginEnabledStates = async () => {
-  await Promise.all([
-    refreshPluginEnabledState("party"),
-    refreshPluginEnabledState("music_quiz"),
-    refreshPluginEnabledState("ai_radio"),
-    refreshPluginEnabledState("milkdrop_visualizer"),
-  ]);
-};
-
 // TODO: Remove this migration code in v2.9 release
 // Added in: current version
 // Can be removed: v2.9
@@ -419,9 +416,6 @@ const completeInitialization = async () => {
     store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
     store.libraryGenresCount = await api.getLibraryGenresCount();
-
-    // Keep plugin-backed UI entries in sync with enabled providers.
-    await refreshPluginEnabledStates();
   } else if (isDashboardViewer) {
     console.debug("[App] Dashboard viewer - fetching player/queue state only");
     // Dashboards render live player/queue state, which regular guests don't need
@@ -436,7 +430,7 @@ const completeInitialization = async () => {
     // the wizard sets up every kind of provider
     authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
   ) {
-    router.push({ name: "onboarding" });
+    openOnboarding();
   } else if (isGuestAccessSession) {
     router.push("/guest");
   } else if (isDashboardViewer) {
@@ -446,9 +440,9 @@ const completeInitialization = async () => {
     router.replace(pinnedPath);
   } else if (shouldOpenWelcome()) {
     // someone who has just been given an account of their own is welcomed into
-    // the app once; everyone else finds the welcome on the sidebar and in the
-    // settings, whenever they want it
-    router.push({ name: "onboarding" });
+    // the app once; everyone else finds the welcome again in the settings,
+    // whenever they want it
+    openOnboarding();
   }
   // Don't push to any route here - let the router handle navigation naturally
   // from the URL hash. The router config already redirects "/" to "/discover"
@@ -654,14 +648,6 @@ onMounted(async () => {
   ) {
     await completeInitialization();
   }
-
-  // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync.
-  api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    if (authManager.isGuestAccessSession() || authManager.isDashboardViewer())
-      return;
-
-    await refreshPluginEnabledStates();
-  });
 
   // Re-prune when the provider set changes at runtime.
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {

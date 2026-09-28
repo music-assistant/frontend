@@ -5,52 +5,74 @@
     <template v-if="itemDetails">
       <template v-for="rowId in visibleRows" :key="rowId">
         <!-- biography -->
-        <ArtistBioRow
+        <DetailTextRow
           v-if="rowId === 'bio' && !!itemDetails.metadata?.description"
-          :item="itemDetails"
+          :text="itemDetails.metadata.description!"
+          :dialog-title="itemDetails.name"
+          markdown
           @edit-rows="rowsEditorOpen = true"
         />
 
-        <!-- top tracks, beside the latest release -->
+        <!-- top tracks -->
         <ArtistTopTracksRow
-          v-else-if="rowId === 'top_tracks' && showRow(topTracksItems)"
+          v-else-if="
+            rowId === 'top_tracks' &&
+            sourceRowVisible('top_tracks', topTracksItems)
+          "
           :artist="itemDetails"
           :tracks="topTracksItems"
-          :source-label="topTracksProvider?.name"
-          :source-domain="topTracksProvider?.domain"
+          :source-label="topTracksSourceDisplay?.label"
+          :source-domain="topTracksSourceDisplay?.domain"
+          :source-options="sourceOptions('top_tracks')"
+          :source-value="topTracksSource"
           :library-track-count="libraryTracks?.length"
-          :latest-release="latestRelease"
+          :empty-message="$t('artist_row_empty')"
           @edit-rows="rowsEditorOpen = true"
+          @select-source="(source) => selectRowSource('top_tracks', source)"
         />
 
         <!-- albums -->
-        <ArtistReleaseShelf
-          v-else-if="rowId === 'albums' && showRow(albumItems)"
+        <ReleaseShelf
+          v-else-if="
+            rowId === 'albums' && sourceRowVisible('albums', albumItems)
+          "
           :title="$t('albums')"
-          :meta="albumsMeta"
+          :source-label="albumsSourceDisplay?.label"
+          :source-domain="albumsSourceDisplay?.domain"
+          :source-options="sourceOptions('albums')"
+          :source-value="albumsSource"
           :items="albumItems"
           :view-all-to="listingRoute('albums')"
-          size="lg"
+          :empty-message="albumsEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
+          @select-source="(source) => selectRowSource('albums', source)"
         />
 
         <!-- singles & EPs -->
-        <ArtistReleaseShelf
-          v-else-if="rowId === 'singles_eps' && showRow(singleItems)"
+        <ReleaseShelf
+          v-else-if="
+            rowId === 'singles_eps' &&
+            sourceRowVisible('singles_eps', singleItems)
+          "
           :title="$t('singles_eps')"
-          :meta="singleItems?.length ? String(singleItems.length) : undefined"
+          :source-label="singlesSourceDisplay?.label"
+          :source-domain="singlesSourceDisplay?.domain"
+          :source-options="sourceOptions('singles_eps')"
+          :source-value="singlesSource"
           :items="singleItems"
           :view-all-to="listingRoute('singles')"
+          :empty-message="singlesEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
+          @select-source="(source) => selectRowSource('singles_eps', source)"
         />
 
         <!-- appears on -->
-        <ArtistReleaseShelf
+        <ReleaseShelf
           v-else-if="rowId === 'appears_on' && showRow(appearsOnItems)"
           :title="$t('appears_on')"
-          :meta="$t('appears_on_hint')"
+          :meta="isPhone ? undefined : $t('appears_on_hint')"
           :items="appearsOnItems"
           :view-all-to="listingRoute('appears_on')"
           :parent-item="itemDetails"
@@ -59,10 +81,20 @@
 
         <!-- similar artists -->
         <ArtistSimilarShelf
-          v-else-if="rowId === 'similar_artists' && showRow(similarArtistItems)"
+          v-else-if="
+            rowId === 'similar_artists' &&
+            sourceRowVisible('similar_artists', similarArtistItems)
+          "
           :items="similarArtistItems"
-          :source-label="similarArtistsProvider?.name"
+          :source-label="similarArtistsSourceDisplay?.label"
+          :source-domain="similarArtistsSourceDisplay?.domain"
+          :source-options="sourceOptions('similar_artists')"
+          :source-value="similarArtistsSource"
+          :empty-message="$t('artist_row_empty')"
           @edit-rows="rowsEditorOpen = true"
+          @select-source="
+            (source) => selectRowSource('similar_artists', source)
+          "
         />
 
         <!-- audiobooks in library (library authors/narrators only) -->
@@ -163,9 +195,7 @@
 </template>
 
 <script setup lang="ts">
-import ArtistBioRow from "@/components/artist/ArtistBioRow.vue";
 import ArtistHero from "@/components/artist/ArtistHero.vue";
-import ArtistReleaseShelf from "@/components/artist/ArtistReleaseShelf.vue";
 import {
   artistRows,
   availableArtistRowIds,
@@ -174,11 +204,19 @@ import {
 import ArtistSimilarShelf from "@/components/artist/ArtistSimilarShelf.vue";
 import ArtistTopTracksRow from "@/components/artist/ArtistTopTracksRow.vue";
 import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
+import DetailTextRow from "@/components/details/DetailTextRow.vue";
+import ReleaseShelf from "@/components/details/ReleaseShelf.vue";
+import {
+  rowSourceOptions,
+  type RowSource,
+  type SourceOption,
+} from "@/components/details/rowRegistry";
 import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import { useArtistRowData } from "@/composables/useArtistRowData";
+import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import {
   ArtistType,
@@ -190,6 +228,7 @@ import {
   type Artist,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
@@ -203,6 +242,8 @@ const props = defineProps<Props>();
 const itemDetails = ref<Artist>();
 const loading = ref(false);
 const rowsEditorOpen = ref(false);
+
+const isPhone = computed(() => isPhoneSizedScreen());
 
 const isAudiobookArtist = computed(() => {
   const artistType = itemDetails.value?.artist_type;
@@ -230,11 +271,41 @@ const {
   singleItems,
   appearsOnItems,
   similarArtistItems,
-  latestRelease,
   albumsMeta,
-  topTracksProvider,
-  similarArtistsProvider,
+  albumsSource,
+  singlesSource,
+  topTracksSource,
+  similarArtistsSource,
+  albumsSourceDisplay,
+  singlesSourceDisplay,
+  topTracksSourceDisplay,
+  similarArtistsSourceDisplay,
 } = useArtistRowData(itemDetails, visibleRows);
+
+// the sources a row's badge can switch between, so the picker matches the rows
+// editor without opening it
+const sourceOptions = (rowId: ArtistRowId): SourceOption[] =>
+  itemDetails.value
+    ? rowSourceOptions(artistRows, rowId, itemDetails.value)
+    : [];
+
+/** Switch a row's source from its badge; the page reloads that row's data. */
+function selectRowSource(rowId: ArtistRowId, source: RowSource) {
+  artistRows.setSource(rowId, source);
+}
+
+// an empty release row explains the library case; from a provider source the
+// badge already names it, so a neutral line is enough
+const albumsEmptyMessage = computed(() =>
+  albumsSource.value === "library"
+    ? $t("artist_no_library_albums")
+    : $t("artist_row_empty"),
+);
+const singlesEmptyMessage = computed(() =>
+  singlesSource.value === "library"
+    ? $t("artist_no_library_singles")
+    : $t("artist_row_empty"),
+);
 
 // how much each row currently holds, for the editor's per-row meta line (it
 // adds the source itself)
@@ -334,7 +405,10 @@ onMounted(() => {
       if (itemDetails.value?.uri == updatedItem.uri) {
         // update UI with the updated item
         loading.value = true;
-        itemDetails.value = updatedItem as Artist;
+        itemDetails.value = keepOwnFavorite(
+          updatedItem,
+          itemDetails.value,
+        ) as Artist;
         loading.value = false;
       } else if ("provider_mappings" in updatedItem) {
         for (const provMap of updatedItem.provider_mappings) {
@@ -345,7 +419,10 @@ onMounted(() => {
             )
           ) {
             loading.value = true;
-            itemDetails.value = updatedItem as Artist;
+            itemDetails.value = keepOwnFavorite(
+              updatedItem,
+              itemDetails.value,
+            ) as Artist;
             loading.value = false;
             break;
           }
@@ -354,6 +431,13 @@ onMounted(() => {
     },
   );
   onBeforeUnmount(unsub);
+
+  // the user's own like or dislike, wherever they made it
+  const unsubFavorite = subscribeOwnFavorites((update) => {
+    const item = itemDetails.value;
+    if (item?.uri == update.uri) item.favorite = update.favorite;
+  });
+  onBeforeUnmount(unsubFavorite);
 });
 
 const loadArtistAudiobooks = async function (params: LoadDataParams) {
@@ -408,6 +492,21 @@ function rowApplies(rowId: ArtistRowId): boolean {
 /** A row is rendered while it loads and once it has something to show. */
 function showRow(items?: unknown[]): boolean {
   return items === undefined || items.length > 0;
+}
+
+/**
+ * A source-backed row stays rendered while it loads, when it has items, or when
+ * it is empty but offers more than one source: its picker (and a release row's
+ * "See all") must not vanish and strand the user on a source that came up empty.
+ */
+function sourceRowVisible(rowId: ArtistRowId, items?: unknown[]): boolean {
+  return showRow(items) || hasSourcePicker(rowId);
+}
+
+/** Whether the row offers more than one source, i.e. an inline source picker. */
+function hasSourcePicker(rowId: ArtistRowId): boolean {
+  if (!itemDetails.value) return false;
+  return artistRows.sources(rowId, itemDetails.value).length > 1;
 }
 
 /** The "View all" target of a shelf. */

@@ -84,14 +84,7 @@ import { configuredProviders } from "@/composables/useOnboarding";
 import type { OnboardingStepId } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
-import {
-  Check,
-  Music,
-  Plus,
-  Puzzle,
-  Speaker,
-  TriangleAlert,
-} from "@lucide/vue";
+import { Check, Music, Plus, Puzzle, TriangleAlert } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, markRaw, ref } from "vue";
 
@@ -111,23 +104,22 @@ const showAddProviderDialog = ref(false);
 
 const configured = computed(() => configuredProviders(props.providerType));
 
+// the players have a step of their own, so this one is the music sources or
+// the plugins
 const descriptionKey = computed(() =>
   match(props.providerType)
-    .with(ProviderType.PLAYER, () => "onboarding.steps.players.description")
     .with(ProviderType.PLUGIN, () => "onboarding.steps.plugins.description")
     .otherwise(() => "onboarding.steps.music_sources.description"),
 );
 
 const addLabelKey = computed(() =>
   match(props.providerType)
-    .with(ProviderType.PLAYER, () => "settings.add_player_provider")
     .with(ProviderType.PLUGIN, () => "settings.add_plugin_provider")
     .otherwise(() => "settings.add_music_provider"),
 );
 
 const icon = computed(() =>
   match(props.providerType)
-    .with(ProviderType.PLAYER, () => markRaw(Speaker))
     .with(ProviderType.PLUGIN, () => markRaw(Puzzle))
     .otherwise(() => markRaw(Music)),
 );

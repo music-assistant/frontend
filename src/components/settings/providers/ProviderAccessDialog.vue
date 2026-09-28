@@ -87,7 +87,7 @@
         <Button
           type="submit"
           form="form-provider-access"
-          :disabled="saving || servesNobody(formAccess)"
+          :disabled="servesNobody(formAccess)"
           :loading="saving"
         >
           {{ $t("settings.save") }}

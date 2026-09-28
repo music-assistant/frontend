@@ -29,9 +29,7 @@ const { sendCommand, getLibraryPlaylists, hasScope, routeMock, routerMock } =
 
 vi.mock("@/plugins/api", () => {
   const mockApi = {
-    // useShows/useHosts derive ai_radio availability from the provider list;
-    // useOrderedPlayers reads players directly.
-    providers: {},
+    // useOrderedPlayers reads the players.
     players: {},
     sendCommand,
     getLibraryPlaylists,
@@ -40,7 +38,7 @@ vi.mock("@/plugins/api", () => {
 });
 
 vi.mock("@/plugins/store", () => ({
-  store: { activePlayerId: undefined },
+  store: { activePlayerId: undefined, enabledPlugins: new Set<string>() },
 }));
 
 vi.mock("@/plugins/auth", () => ({
@@ -417,6 +415,34 @@ describe("AIRadioView editing rights", () => {
       const wrapper = await openView();
 
       expect(!!findButtonByText(wrapper, "Create show")).toBe(offered);
+    },
+  );
+
+  it("invites an admin to create the first show in the empty state", async () => {
+    routeMock.query = {};
+    sendCommand.mockImplementation(async () => []);
+    const wrapper = await openView();
+
+    expect(wrapper.text()).toContain("Create your first show");
+    expect(wrapper.text()).toContain("AI Radio turns one of your playlists");
+    expect(findButtonByText(wrapper, "Create show")).toBeTruthy();
+  });
+
+  it.each(NON_EDITORS)(
+    "tells %s the empty state without inviting them to create a show",
+    async (_role, scopes) => {
+      hasScope.mockImplementation(scopeChecker(scopes));
+      routeMock.query = {};
+      sendCommand.mockImplementation(async () => []);
+      const wrapper = await openView();
+
+      expect(wrapper.text()).toContain("No shows yet");
+      expect(wrapper.text()).toContain("No radio shows have been set up yet");
+      expect(wrapper.text()).not.toContain("Create your first show");
+      expect(wrapper.text()).not.toContain(
+        "AI Radio turns one of your playlists",
+      );
+      expect(findButtonByText(wrapper, "Create show")).toBeUndefined();
     },
   );
 

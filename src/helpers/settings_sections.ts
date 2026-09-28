@@ -22,8 +22,8 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     icon: "mdi-music",
     color: "blue",
     route: { name: "providersettings", query: { types: "music" } },
-    // a member holding the scope manages the music sources it owns here
-    requiresScope: Scope.CONFIG_PROVIDERS_OWN,
+    // a member sees the music sources it may use here, and manages its own
+    requiresScope: Scope.CONFIG_PROVIDERS_READ,
   },
   {
     name: "player_providers",

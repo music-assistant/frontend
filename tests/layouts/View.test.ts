@@ -1,5 +1,5 @@
 import View from "@/layouts/default/View.vue";
-import { store } from "@/plugins/store";
+import { store as storeModule } from "@/plugins/store";
 import { type VueWrapper, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
@@ -10,12 +10,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
-  return { store: reactive({ mobileLayout: false, frameless: false }) };
+  return {
+    store: reactive({
+      mobileLayout: false,
+      frameless: false,
+      enabledPlugins: new Set<string>(),
+    }),
+  };
 });
 
 vi.mock("@/plugins/eventbus", () => ({
   eventbus: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
 }));
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & { mobileLayout: boolean };
 
 const vuetify = createVuetify({ components, directives });
 

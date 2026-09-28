@@ -25,7 +25,6 @@ import {
   type EventMessage,
   type Genre,
   type MassEvent,
-  type MediaItem,
   type MediaItemType,
   type Player,
   type PlayerOptionValueType,
@@ -76,6 +75,7 @@ import {
   SearchResults,
   SmartPlaylistRules,
   SoundEffect,
+  StreamServerInfo,
   MediaCollection,
   ArtistType,
 } from "./interfaces";
@@ -1517,8 +1517,10 @@ export class MusicAssistantApi {
   public async addItemToFavorites(
     item: string | MediaItemType | ItemMapping,
   ): Promise<void> {
-    // optimistically set the value
-    if (typeof item !== "string" && "favorite" in item) {
+    // optimistically set the value on the caller's copy. Only a media item
+    // holds one: a summary item leaves the key out when there is no state, but
+    // its provider mappings are always there
+    if (typeof item !== "string" && "provider_mappings" in item) {
       item.favorite = true;
     }
     // Add an item (uri or mediaitem) to the favorites.
@@ -1537,17 +1539,25 @@ export class MusicAssistantApi {
     });
   }
 
-  public toggleFavorite(item: MediaItem) {
-    // Toggle favorite for a media item
-    if (item.favorite) {
-      this.removeItemFromFavorites(item.media_type, item.item_id);
-      // optimistically set the value
-      item.favorite = false;
-    } else {
-      this.addItemToFavorites(item);
-      // optimistically set the value
-      item.favorite = true;
+  /**
+   * Set the signed-in user's state on a media item.
+   *
+   * :param item: The item (uri or media item) to set the state on.
+   * :param favorite: true to like, false to dislike, null to clear the state.
+   */
+  public async setFavorite(
+    item: string | MediaItemType | ItemMapping,
+    favorite: boolean | null,
+  ): Promise<void> {
+    // optimistically set the value on the caller's copy, which only a media
+    // item holds (see addItemToFavorites)
+    if (typeof item !== "string" && "provider_mappings" in item) {
+      item.favorite = favorite;
     }
+    return this.sendCommand("music/favorites/set_item", {
+      item,
+      favorite,
+    });
   }
 
   public browse(path?: string, player_id?: string): Promise<MediaItemType[]> {
@@ -2775,12 +2785,16 @@ export class MusicAssistantApi {
     await router.push({ name: "backgroundtasks" });
   }
 
+  /**
+   * Resolve a provider domain or instance id to a display name.
+   *
+   * Prefers the name of a loaded instance, then the manifest name, and finally
+   * the generic manifest name for the domain. Falls back to the given id when
+   * nothing matches. It never reads a provider's saved configuration, so an
+   * instance that is not loaded shows the generic service name.
+   * @param provider_domain_or_instance_id - A provider domain or instance id, e.g. from a media item or provider mapping.
+   */
   public getProviderName(provider_domain_or_instance_id: string): string {
-    // try to get the name of the provider from the instance_id or domain
-    if (provider_domain_or_instance_id in this.providers) {
-      provider_domain_or_instance_id =
-        this.providers[provider_domain_or_instance_id].instance_id;
-    }
     // prefer the user configured name
     if (provider_domain_or_instance_id in this.providers) {
       return this.providers[provider_domain_or_instance_id].name;
@@ -2788,6 +2802,12 @@ export class MusicAssistantApi {
     // fallback to manifest name
     if (provider_domain_or_instance_id in this.providerManifests) {
       return this.providerManifests[provider_domain_or_instance_id].name;
+    }
+    // instance not loaded (e.g. a source not shared with this user): fall back
+    // to the generic provider name derived from the domain in the instance id
+    const domain = provider_domain_or_instance_id.split("--")[0];
+    if (domain in this.providerManifests) {
+      return this.providerManifests[domain].name;
     }
     return provider_domain_or_instance_id;
   }
@@ -3572,6 +3592,19 @@ export class MusicAssistantApi {
     return this.sendCommand<RemoteAccessInfo>("remote_access/configure", {
       enabled,
     });
+  }
+
+  // Stream server methods
+
+  public async getStreamServerInfo(
+    options?: CommandOptions,
+  ): Promise<StreamServerInfo> {
+    // Get the address the stream server hands to players
+    return this.sendCommand<StreamServerInfo>(
+      "streams/info",
+      undefined,
+      options,
+    );
   }
 
   public sendCommand<Result>(

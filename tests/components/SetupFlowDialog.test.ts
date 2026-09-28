@@ -513,7 +513,7 @@ async function mountHeader(
   return wrapper;
 }
 
-// the per-field help dialog carries a title of its own, so scope to the step's header
+// the step title renders in the dialog header, so read it from there
 function headerText(wrapper: VueWrapper, stub: string) {
   return wrapper.find("dialog-header-stub").find(stub).text();
 }
@@ -534,7 +534,7 @@ async function mountFormStep(entries: ConfigEntry[]) {
   return wrapper;
 }
 
-// the per-field help dialog carries a footer of its own, so scope to the step's
+// the step's action buttons render in the dialog footer, so read them from there
 function stepFooterLabels(wrapper: VueWrapper) {
   return wrapper
     .find("dialog-footer-stub")

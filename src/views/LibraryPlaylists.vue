@@ -126,11 +126,7 @@ onMounted(() => {
     });
   }
   // Smart Playlist option inside the "Create Playlist" submenu
-  if (
-    Object.values(api.providers).some(
-      (p) => p.available && p.domain === SMART_PLAYLIST_PROVIDER_DOMAIN,
-    )
-  ) {
+  if (store.enabledPlugins.has(SMART_PLAYLIST_PROVIDER_DOMAIN)) {
     playListCreateItems.push({
       label: "smart_playlist.create",
       action: () => {

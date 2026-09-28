@@ -3,9 +3,12 @@
     <template v-for="(genre, index) in genres" :key="genre.item_id">
       <span v-if="index > 0">,&nbsp;</span>
       <button
+        v-hold="(e: Event) => onHold(e, genre)"
         type="button"
         class="detail-hero-genres__genre"
         @click="(e: MouseEvent) => genreClick(e, genre)"
+        @contextmenu.prevent="(e: MouseEvent) => showGenreMenu(e, genre)"
+        @touchstart.passive="onTouchStart"
       >
         {{ genre.name }}
       </button>
@@ -14,10 +17,21 @@
 </template>
 
 <script setup lang="ts">
+import {
+  getEventPosition,
+  useHoldToOpenMenu,
+} from "@/composables/useHoldToOpenMenu";
 import { handleMediaItemClick } from "@/helpers/media_item_actions";
 import { api } from "@/plugins/api";
-import type { Genre, MediaItemType } from "@/plugins/api/interfaces";
-import { ref, watch } from "vue";
+import {
+  Scope,
+  type Genre,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
+import { eventbus } from "@/plugins/eventbus";
+import { Ban } from "@lucide/vue";
+import { computed, ref, watch } from "vue";
 
 export interface Props {
   item: MediaItemType;
@@ -25,6 +39,13 @@ export interface Props {
 const props = defineProps<Props>();
 
 const genres = ref<Genre[]>([]);
+
+// only a library manager can change which genres a library item carries
+const canExcludeGenre = computed(
+  () =>
+    props.item.provider === "library" &&
+    authManager.hasScope(Scope.LIBRARY_MANAGE),
+);
 
 watch(
   () => props.item,
@@ -38,8 +59,41 @@ watch(
   { immediate: true },
 );
 
+const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu<
+  [Genre]
+>((event, genre) => showGenreMenu(event, genre));
+
 const genreClick = function (event: MouseEvent, genre: Genre) {
+  // the click a long-press leaves behind opened the menu, it is not a tap
+  if (swallowClickAfterHold(event)) return;
   handleMediaItemClick(genre, event.clientX, event.clientY);
+};
+
+const showGenreMenu = function (event: Event, genre: Genre) {
+  if (!canExcludeGenre.value) return;
+  const item = props.item;
+  const position = getEventPosition(event);
+  eventbus.emit("contextmenu", {
+    items: [
+      {
+        label: "exclude_genre",
+        icon: Ban,
+        action: async () => {
+          await api.excludeGenreFromItem(
+            genre.item_id,
+            item.media_type,
+            item.item_id,
+          );
+          genres.value = genres.value.filter(
+            (candidate) => candidate.item_id !== genre.item_id,
+          );
+          eventbus.emit("genreExcluded");
+        },
+      },
+    ],
+    posX: position.x,
+    posY: position.y,
+  });
 };
 </script>
 

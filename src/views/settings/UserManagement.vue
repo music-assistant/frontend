@@ -1,7 +1,7 @@
 <template>
   <div class="p-6">
     <Tabs v-model="activeTab" class="gap-6">
-      <TabsList v-if="api.supportsRoles">
+      <TabsList v-if="api.supportsRoles" variant="line">
         <TabsTrigger value="users">{{ $t("auth.users") }}</TabsTrigger>
         <TabsTrigger value="roles">{{ $t("auth.roles") }}</TabsTrigger>
       </TabsList>

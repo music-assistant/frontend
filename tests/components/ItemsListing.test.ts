@@ -1,29 +1,41 @@
 import ItemsListing from "@/components/ItemsListing.vue";
-import type { MusicAssistantApi } from "@/plugins/api";
-import type { Track } from "@/plugins/api/interfaces";
+import { api, type MusicAssistantApi } from "@/plugins/api";
+import {
+  EventType,
+  MediaType,
+  type Album,
+  type EventMessage,
+  type ProviderInstance,
+  type Track,
+} from "@/plugins/api/interfaces";
 import {
   eventbus,
   type DeleteConfirmationDialogEvent,
 } from "@/plugins/eventbus";
-import { store } from "@/plugins/store";
+import { store as storeModule } from "@/plugins/store";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { album } from "../fixtures/album";
+import { artist } from "../fixtures/artist";
 import { genre } from "../fixtures/genre";
 import { track } from "../fixtures/track";
+import { user } from "../fixtures/user";
 
 // Tracks live subscriptions the way the api does, so one that outlives the
 // listing stays listed here.
 const events = vi.hoisted(() => {
   const listeners: unknown[] = [];
+  const listen = (handler: unknown) => {
+    listeners.push(handler);
+    return () => {
+      const index = listeners.indexOf(handler);
+      if (index !== -1) listeners.splice(index, 1);
+    };
+  };
   return {
     listeners,
-    subscribeMulti: (_types: unknown, handler: unknown) => {
-      listeners.push(handler);
-      return () => {
-        const index = listeners.indexOf(handler);
-        if (index !== -1) listeners.splice(index, 1);
-      };
-    },
+    subscribe: (_type: unknown, handler: unknown) => listen(handler),
+    subscribeMulti: (_types: unknown, handler: unknown) => listen(handler),
   };
 });
 
@@ -31,6 +43,7 @@ const mockGetLibraryGenres = vi.hoisted(() =>
   vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
 );
 const mockSubscribeMulti = vi.hoisted(() => vi.fn());
+const mockSubscribe = vi.hoisted(() => vi.fn());
 
 vi.mock("@/plugins/api", () => {
   const api = {
@@ -38,6 +51,7 @@ vi.mock("@/plugins/api", () => {
     providerManifests: {},
     getLibraryGenres: mockGetLibraryGenres,
     subscribe_multi: mockSubscribeMulti,
+    subscribe: mockSubscribe,
   };
   return { api, default: api };
 });
@@ -122,6 +136,9 @@ vi.mock("@/components/PanelviewItemCompact.vue", () =>
   stubComponent("PanelviewItemCompact"),
 );
 
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & { mobileLayout: boolean };
+
 /**
  * Number of handlers the real eventbus currently holds for the listing's
  * selection event, so a handler registered after teardown is visible.
@@ -172,6 +189,8 @@ describe("ItemsListing unmount cleanup", () => {
     mockGetLibraryGenres.mockResolvedValue([]);
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
     store.prevState = undefined;
   });
 
@@ -180,7 +199,8 @@ describe("ItemsListing unmount cleanup", () => {
     await flushPromises();
 
     expect(clearSelectionHandlers()).toBe(1);
-    expect(events.listeners).toHaveLength(1);
+    // the media item events and the user's own favorite changes
+    expect(events.listeners).toHaveLength(2);
 
     listing.unmount();
 
@@ -313,6 +333,8 @@ describe("ItemsListing per-page search", () => {
     mockGetLibraryGenres.mockResolvedValue([]);
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
     store.prevState = undefined;
     store.mobileLayout = false;
   });
@@ -490,6 +512,8 @@ describe("ItemsListing select all", () => {
     mockGetLibraryGenres.mockResolvedValue([]);
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
     store.prevState = undefined;
     store.mobileLayout = false;
     nativeConfirm.mockReset();
@@ -529,6 +553,367 @@ describe("ItemsListing select all", () => {
   });
 });
 
+describe("ItemsListing source selector", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
+    store.prevState = undefined;
+    for (const key of Object.keys(api.providers)) delete api.providers[key];
+    api.providers["spotify--1"] = {
+      instance_id: "spotify--1",
+      name: "Spotify",
+      domain: "spotify",
+    } as ProviderInstance;
+  });
+
+  /** Mounts a listing whose items come from the library or from one provider. */
+  function mountSourceListing(
+    props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+  ) {
+    const loadItems = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "artistalbums",
+      path: "artistalbums",
+      loadPagedData: undefined,
+      loadItems,
+      providerFilterOptions: ["spotify--1"],
+      requireProviderSelection: true,
+      libraryFilterOption: true,
+      ...props,
+    });
+    return { listing, loadItems };
+  }
+
+  function sourceOptions(listing: ReturnType<typeof mountListingRaw>) {
+    const items = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as {
+      label?: string;
+      subItems?: { label?: string; selected?: boolean; action?: () => void }[];
+    }[];
+    return items.find((item) => item.label === "tooltip.select_provider")
+      ?.subItems;
+  }
+
+  it("offers the library beside the providers, and starts there", async () => {
+    const { listing, loadItems } = mountSourceListing();
+    await flushPromises();
+
+    expect(sourceOptions(listing)?.map((option) => option.label)).toEqual([
+      "source_library",
+      "Spotify",
+    ]);
+    expect(sourceOptions(listing)?.[0].selected).toBe(true);
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: ["library"] }),
+    );
+  });
+
+  it("starts on the source the page asked for", async () => {
+    const { listing, loadItems } = mountSourceListing({
+      defaultProvider: "spotify--1",
+    });
+    await flushPromises();
+
+    expect(sourceOptions(listing)?.[1].selected).toBe(true);
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: ["spotify--1"] }),
+    );
+  });
+
+  it("reloads from the source that is picked", async () => {
+    const { listing, loadItems } = mountSourceListing();
+    await flushPromises();
+    loadItems.mockClear();
+
+    sourceOptions(listing)?.[1].action?.();
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: ["spotify--1"] }),
+    );
+    expect(sourceOptions(listing)?.[1].selected).toBe(true);
+  });
+
+  it("leaves the library out when the page does not offer it", async () => {
+    api.providers["tidal--1"] = {
+      instance_id: "tidal--1",
+      name: "Tidal",
+      domain: "tidal",
+    } as ProviderInstance;
+    const { listing } = mountSourceListing({
+      libraryFilterOption: false,
+      providerFilterOptions: ["spotify--1", "tidal--1"],
+    });
+    await flushPromises();
+
+    expect(sourceOptions(listing)?.map((option) => option.label)).toEqual([
+      "Spotify",
+      "Tidal",
+    ]);
+  });
+});
+
+describe("ItemsListing favorite updates", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
+    store.prevState = undefined;
+    // the event only reaches the screen when it belongs to the signed-in user
+    store.currentUser = user();
+  });
+
+  afterEach(() => {
+    store.currentUser = undefined;
+  });
+
+  /** The handler the listing registered for the user's own favorite changes. */
+  function favoriteUpdateHandler() {
+    const call = mockSubscribe.mock.calls.find(
+      ([type]) => type === EventType.FAVORITE_UPDATED,
+    );
+    expect(call, "the listing listens for the favorite updates").toBeDefined();
+    return call![1] as (evt: EventMessage) => void;
+  }
+
+  // a playlist can list the same track twice, and both rows show the state
+  it("shows the state on every row that holds the item", async () => {
+    const listing = mountListingRaw({
+      loadPagedData: vi
+        .fn()
+        .mockResolvedValue([
+          track({ item_id: "1", position: 0 }),
+          track({ item_id: "1", position: 1 }),
+          track({ item_id: "2" }),
+        ]),
+    });
+    await flushPromises();
+
+    favoriteUpdateHandler()({
+      event: EventType.FAVORITE_UPDATED,
+      object_id: "library://track/1",
+      data: {
+        uri: "library://track/1",
+        media_type: MediaType.TRACK,
+        item_id: "1",
+        favorite: true,
+        user_id: user().user_id,
+      },
+    } as EventMessage);
+
+    expect(rows(listing).map((item) => item.favorite)).toEqual([
+      true,
+      true,
+      null,
+    ]);
+  });
+});
+
+describe("ItemsListing empty-state source shortcuts", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    store.prevState = undefined;
+    for (const key of Object.keys(api.providers)) delete api.providers[key];
+    api.providers["spotify--1"] = {
+      instance_id: "spotify--1",
+      name: "Spotify",
+      domain: "spotify",
+    } as ProviderInstance;
+  });
+
+  /** Mounts an empty library-scoped listing with its empty state rendered. */
+  function mountEmptyListing(
+    props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+  ) {
+    const loadItems = vi.fn().mockResolvedValue([]);
+    const listing = mount(ItemsListing, {
+      props: {
+        itemtype: "artistalbums",
+        path: "artistalbums",
+        loadItems,
+        providerFilterOptions: ["spotify--1"],
+        requireProviderSelection: true,
+        libraryFilterOption: true,
+        ...props,
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+          $vuetify: { display: { width: 1280 } },
+        },
+        stubs: {
+          // the shared Container stub drops its slot; render it so the empty
+          // state inside it shows, while the list/snackbar chrome stays stubbed
+          Container: { template: "<div><slot /></div>" },
+          "v-infinite-scroll": true,
+          "v-virtual-scroll": true,
+          "v-snackbar": true,
+          Tabs: true,
+          TabsList: true,
+          TabsTrigger: true,
+          "v-divider": true,
+        },
+      },
+    });
+    return { listing, loadItems };
+  }
+
+  function shortcut(listing: ReturnType<typeof mountEmptyListing>["listing"]) {
+    return listing
+      .findAll("button")
+      .find((button) => button.text().includes("show_results_on"));
+  }
+
+  it("offers a provider shortcut when the empty listing is on the library", async () => {
+    const { listing } = mountEmptyListing();
+    await flushPromises();
+
+    expect(shortcut(listing)).toBeDefined();
+  });
+
+  it("switches the filter to that provider when the shortcut is used", async () => {
+    const { listing, loadItems } = mountEmptyListing();
+    await flushPromises();
+    loadItems.mockClear();
+
+    await shortcut(listing)!.trigger("click");
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: ["spotify--1"] }),
+    );
+  });
+
+  it("offers no shortcut once a provider source is selected", async () => {
+    const { listing } = mountEmptyListing({ defaultProvider: "spotify--1" });
+    await flushPromises();
+
+    expect(shortcut(listing)).toBeUndefined();
+  });
+
+  it("offers no shortcut for a listing that does not offer the library", async () => {
+    const { listing } = mountEmptyListing({
+      itemtype: "tracks",
+      path: "librarytracks",
+      libraryFilterOption: false,
+      requireProviderSelection: false,
+      providerFilterOptions: undefined,
+    });
+    await flushPromises();
+
+    expect(shortcut(listing)).toBeUndefined();
+  });
+});
+
+describe("ItemsListing restore state", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    store.prevState = undefined;
+  });
+
+  type Props = InstanceType<typeof ItemsListing>["$props"];
+  type LoadItemsFn = NonNullable<Props["loadItems"]>;
+
+  /** Mounts an artist-albums listing whose items come from `loadItems`. */
+  function mountArtistAlbums(
+    parentItem: Props["parentItem"],
+    loadItems: LoadItemsFn,
+  ) {
+    return mountListingRaw({
+      itemtype: "artistalbums",
+      path: "artistalbums",
+      restoreState: true,
+      parentItem,
+      loadPagedData: undefined,
+      loadItems,
+    });
+  }
+
+  function shownItems(listing: ReturnType<typeof mountListingRaw>) {
+    return (listing.vm as unknown as { pagedItems: { uri: string }[] })
+      .pagedItems;
+  }
+
+  /** Loads and closes a listing so its items land in the restore cache. */
+  async function cacheArtistAlbums(
+    parentItem: Props["parentItem"],
+    cached: Album[],
+  ) {
+    const first = mountArtistAlbums(
+      parentItem,
+      vi.fn<LoadItemsFn>().mockResolvedValue(cached),
+    );
+    await flushPromises();
+    first.unmount();
+  }
+
+  it("restores the cached items when the same parent is reopened", async () => {
+    const parent = artist({ item_id: "1" });
+    const cached = album({ item_id: "a1" });
+    await cacheArtistAlbums(parent, [cached]);
+
+    const loadItems = vi.fn<LoadItemsFn>().mockResolvedValue([]);
+    const listing = mountArtistAlbums(parent, loadItems);
+    await flushPromises();
+
+    // the previous albums are restored without hitting the loader again
+    expect(loadItems).not.toHaveBeenCalled();
+    expect(shownItems(listing).map((item) => item.uri)).toEqual([cached.uri]);
+  });
+
+  it("reloads instead of showing another artist's cached albums", async () => {
+    await cacheArtistAlbums(artist({ item_id: "1" }), [
+      album({ item_id: "a1" }),
+    ]);
+
+    const nextAlbum = album({ item_id: "a2" });
+    const loadItems = vi.fn<LoadItemsFn>().mockResolvedValue([nextAlbum]);
+    const listing = mountArtistAlbums(artist({ item_id: "2" }), loadItems);
+    await flushPromises();
+
+    // the shared "artistalbums" path must not carry the first artist's albums over
+    expect(loadItems).toHaveBeenCalled();
+    expect(shownItems(listing).map((item) => item.uri)).toEqual([
+      nextAlbum.uri,
+    ]);
+  });
+
+  it("restores a parentless listing (e.g. a library page)", async () => {
+    const cached = album({ item_id: "a1" });
+    await cacheArtistAlbums(undefined, [cached]);
+
+    const loadItems = vi.fn<LoadItemsFn>().mockResolvedValue([]);
+    const listing = mountArtistAlbums(undefined, loadItems);
+    await flushPromises();
+
+    // a listing with no parent still matches itself and restores its items
+    expect(loadItems).not.toHaveBeenCalled();
+    expect(shownItems(listing).map((item) => item.uri)).toEqual([cached.uri]);
+  });
+});
+
 /** Mounts a listing of `total` items and asks it to select them all. */
 async function selectAll(total: number) {
   const listing = mountListingRaw({
@@ -547,6 +932,10 @@ async function selectAll(total: number) {
 
 function selection(listing: ReturnType<typeof mountListingRaw>) {
   return (listing.vm as unknown as { selectedItems: Track[] }).selectedItems;
+}
+
+function rows(listing: ReturnType<typeof mountListingRaw>) {
+  return (listing.vm as unknown as { pagedItems: Track[] }).pagedItems;
 }
 
 function confirmationRequest() {

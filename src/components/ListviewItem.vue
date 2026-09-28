@@ -276,7 +276,7 @@
       <div
         v-if="
           getBreakpointValue('bp3') &&
-          'favorite' in item &&
+          canHoldFavorite(item) &&
           showFavorite &&
           canEditLibrary &&
           item.media_type != MediaType.COLLECTION &&
@@ -311,6 +311,7 @@
 import FavouriteButton from "@/components/FavoriteButton.vue";
 import ListItem from "@/components/ListItem.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import { canHoldFavorite } from "@/helpers/favorites";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,

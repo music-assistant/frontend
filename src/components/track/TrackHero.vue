@@ -86,9 +86,8 @@
             <DetailHeroPlayButton class="track-hero__play" :item="item" />
             <DetailHeroButton
               v-if="radioRelevant(item)"
-              :icon="Radio"
+              :icon="Orbit"
               :label="$t('track_radio')"
-              :icon-only="isPhone"
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />
@@ -138,7 +137,7 @@ import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type { Track } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
-import { Disc, Music, Radio } from "@lucide/vue";
+import { Disc, Music, Orbit } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
@@ -163,9 +162,6 @@ const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
 const releaseYear = computed(() => props.item && trackReleaseYear(props.item));
 
-const favoriteButtonLabel = computed(() =>
-  props.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
-);
 const providerDomain = computed(() =>
   props.item ? getProviderIconDomain(props.item) : "",
 );

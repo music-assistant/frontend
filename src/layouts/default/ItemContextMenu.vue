@@ -4,11 +4,7 @@
   we steer its visibility through the centralized eventbus.
 -->
 <template>
-  <DropdownMenu
-    :open="show"
-    :modal="!store.showPlayersMenu"
-    @update:open="onOpenChange"
-  >
+  <DropdownMenu :open="show" :modal="modal" @update:open="onOpenChange">
     <DropdownMenuContent
       data-item-context-menu
       :reference="reference"
@@ -168,6 +164,9 @@ const reference = computed(() => {
   return { getBoundingClientRect: () => rect };
 });
 
+// a modal menu blocks the page behind it; the players menu keeps it clickable
+const modal = computed(() => !store.showPlayersMenu);
+
 const MenuItemIcon = (props: { icon?: string | Component; size?: number }) => {
   if (!props.icon) return null;
   return typeof props.icon === "string"
@@ -194,6 +193,11 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
   }));
 });
 
+// the menu can be opened on top of another dialog that stays open behind it
+// (such as the search popup), so closing it restores the flag rather than
+// clearing it for the dialog underneath
+let dialogActiveBeforeOpen = false;
+
 onMounted(() => {
   eventbus.on("contextmenu", async (evt: ContextMenuDialogEvent) => {
     items.value = evt.items;
@@ -201,6 +205,7 @@ onMounted(() => {
     posY.value = evt.posY || 0;
     showPlayMenuHeader.value = evt.showPlayMenuHeader || false;
     nextTick(() => {
+      if (!show.value) dialogActiveBeforeOpen = store.dialogActive;
       show.value = true;
       store.dialogActive = true;
     });
@@ -215,7 +220,9 @@ onBeforeUnmount(() => {
 
 const onOpenChange = function (value: boolean) {
   show.value = value;
-  store.dialogActive = value;
+  // the dialog underneath may have closed on its own in the meantime, so
+  // only a flag that is still set is restored
+  store.dialogActive = value || (dialogActiveBeforeOpen && store.dialogActive);
 };
 
 function closeOnOutsidePointer(event: PointerEvent) {
@@ -233,9 +240,14 @@ function closeOnOutsidePointer(event: PointerEvent) {
     return;
   }
 
+  // consume the press so a dialog underneath (such as the search popup)
+  // does not treat it as an outside press and close as well
+  if (modal.value) event.stopPropagation();
+
   show.value = false;
   queueMicrotask(() => {
-    if (!show.value) store.dialogActive = false;
+    if (!show.value)
+      store.dialogActive = dialogActiveBeforeOpen && store.dialogActive;
   });
 }
 
@@ -272,10 +284,16 @@ import {
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
 import { runWithConcurrency } from "@/helpers/concurrency";
+import {
+  FAVORITABLE_MEDIA_TYPES,
+  favoriteState,
+  setFavoriteState,
+} from "@/helpers/favorites";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { playerVisible } from "@/helpers/players";
 import {
+  canAddToPlaylist,
   canEditPlaylistItems,
   canManagePlaylist,
   canSharePlaylist,
@@ -345,6 +363,7 @@ import {
   Shuffle,
   SkipForward,
   Sparkles,
+  ThumbsDown,
   Trash2,
 } from "@lucide/vue";
 import type { Component } from "vue";
@@ -646,9 +665,12 @@ export const getContextMenuItems = async function (
     });
   }
 
-  let resolvedItem = firstItem;
+  // Library membership and favorites are keyed by the library item id,
+  // which provider items and item mappings do not carry, so resolve the
+  // counterpart the library holds. Library rows are verified too since a
+  // row can outlive its item (a list kept open, a cached search result).
+  let libraryItem: MediaItemType | undefined;
   if (
-    (firstItem.provider != "library" || !("provider_mappings" in firstItem)) &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -660,20 +682,41 @@ export const getContextMenuItems = async function (
       MediaType.TRACK,
     ].includes(firstItem.media_type)
   ) {
-    // resolve itemmapping or non-library item
-    resolvedItem =
-      (await api.getLibraryItem(
-        firstItem.media_type,
-        firstItem.item_id,
-        firstItem.provider,
-      )) || firstItem;
+    // a failed lookup still opens the menu, on the item's own claims
+    libraryItem =
+      (await api
+        .getLibraryItem(
+          firstItem.media_type,
+          firstItem.item_id,
+          firstItem.provider,
+        )
+        .catch((err) => {
+          console.error(
+            "[ItemContextMenu] library lookup failed for %s",
+            firstItem.uri,
+            err,
+          );
+          return null;
+        })) ?? undefined;
   }
+  const resolvedItem = libraryItem ?? firstItem;
+
+  // Only the first item of a selection is resolved, so a single item acts
+  // on its library counterpart while a multi-selection keeps its own
+  // identity.
+  const actionTargets = items.length === 1 ? [resolvedItem] : items;
+  // a library row alone is not membership, since the backend also keeps
+  // rows for relatives of saved items, so the resolved row is checked too
+  const inLibrary =
+    items.length === 1
+      ? libraryItem !== undefined && isItemInLibrary(libraryItem)
+      : isItemInLibrary(resolvedItem);
 
   // add to library (genres are excluded: they are managed via the dedicated
   // add-genre dialog and delete/merge actions, not generic library membership)
   if (
+    !inLibrary &&
     canEditLibrary &&
-    !isItemInLibrary(resolvedItem) &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -690,7 +733,7 @@ export const getContextMenuItems = async function (
       labelArgs: [],
       action: () => {
         for (const item of items) {
-          api.addItemToLibrary(item);
+          api.addItemToLibrary(addableItem(item));
           // optimistically flag the mappings so the derived state re-evaluates
           if ("provider_mappings" in item)
             item.provider_mappings.forEach((pm) => (pm.in_library = true));
@@ -709,8 +752,8 @@ export const getContextMenuItems = async function (
       canManagePlaylist(item, store.currentUser, managesLibrary),
   );
   if (
+    inLibrary &&
     canEditLibrary &&
-    isItemInLibrary(resolvedItem) &&
     managesSelectedPlaylists &&
     [
       MediaType.ALBUM,
@@ -731,11 +774,13 @@ export const getContextMenuItems = async function (
           message: $t("confirm_library_remove"),
           confirmLabel: $t("remove"),
           onConfirm: () => {
+            for (const target of actionTargets) {
+              api.removeItemFromLibrary(target.media_type, target.item_id);
+            }
             for (const item of items) {
-              api.removeItemFromLibrary(item.media_type, item.item_id);
               // optimistically clear membership so the derived state re-evaluates;
               // favorite implies membership, so it must clear too
-              if ("favorite" in item) item.favorite = false;
+              setFavoriteState(item, null);
               if ("provider_mappings" in item)
                 item.provider_mappings.forEach((pm) => (pm.in_library = false));
             }
@@ -754,28 +799,30 @@ export const getContextMenuItems = async function (
     });
   }
   // Favorites handling - supports mixed states like played/unplayed
-  if (
-    canEditLibrary &&
-    items.length > 0 &&
-    items.every((item) => "favorite" in item)
-  ) {
-    const favoritableItems = items.filter(
+  if (canEditLibrary && actionTargets.length > 0) {
+    const favoritableItems = actionTargets.filter(
       (item) =>
-        [
-          MediaType.ALBUM,
-          MediaType.ARTIST,
-          MediaType.AUDIOBOOK,
-          MediaType.GENRE,
-          MediaType.PLAYLIST,
-          MediaType.PODCAST,
-          MediaType.RADIO,
-          MediaType.TRACK,
-        ].includes(item.media_type) && itemIsAvailable(item),
+        FAVORITABLE_MEDIA_TYPES.has(item.media_type) && itemIsAvailable(item),
     );
 
+    // a favorite belongs to the library item, so a single item follows its
+    // resolved membership while a multi selection reads each item's own flag;
+    // a dislike carries no membership implication of its own, so the state
+    // alone decides it
+    const isFavorite = (item: MediaItemTypeOrItemMapping) =>
+      favoriteState(item) === true && (items.length > 1 || inLibrary);
+    const isDisliked = (item: MediaItemTypeOrItemMapping) =>
+      favoriteState(item) === false;
+
+    // the actions run on the library copy while the next menu is built from
+    // the item the caller holds, so its state has to follow
+    const markFavorite = (favorite: boolean | null) => {
+      for (const item of items) setFavoriteState(item, favorite);
+    };
+
     if (favoritableItems.length > 0) {
-      const allFavorited = favoritableItems.every((item) => item.favorite);
-      const allNotFavorited = favoritableItems.every((item) => !item.favorite);
+      const allFavorited = favoritableItems.every(isFavorite);
+      const allNotFavorited = !favoritableItems.some(isFavorite);
 
       // If all items are favorited, show "remove from favorites"
       if (allFavorited) {
@@ -786,6 +833,7 @@ export const getContextMenuItems = async function (
             for (const item of favoritableItems) {
               api.removeItemFromFavorites(item.media_type, item.item_id);
             }
+            markFavorite(null);
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
           },
@@ -799,8 +847,9 @@ export const getContextMenuItems = async function (
           labelArgs: [],
           action: () => {
             for (const item of favoritableItems) {
-              api.addItemToFavorites(item);
+              api.addItemToFavorites(addableItem(item));
             }
+            markFavorite(true);
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
           },
@@ -814,9 +863,10 @@ export const getContextMenuItems = async function (
           labelArgs: [],
           action: () => {
             for (const item of favoritableItems.filter(
-              (item) => !item.favorite,
+              (item) => !isFavorite(item),
             )) {
-              api.addItemToFavorites(item);
+              api.addItemToFavorites(addableItem(item));
+              setFavoriteState(item, true);
             }
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
@@ -828,15 +878,77 @@ export const getContextMenuItems = async function (
           label: "favorites_remove",
           labelArgs: [],
           action: () => {
-            for (const item of favoritableItems.filter(
-              (item) => item.favorite,
-            )) {
+            for (const item of favoritableItems.filter(isFavorite)) {
               api.removeItemFromFavorites(item.media_type, item.item_id);
+              setFavoriteState(item, null);
             }
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
           },
           icon: Heart,
+        });
+      }
+
+      // A dislike is a state of its own, so it gets its own pair of entries:
+      // the heart only ever says "liked", and clearing a dislike is not the
+      // same action as removing a favorite.
+      const allDisliked = favoritableItems.every(isDisliked);
+      const noneDisliked = !favoritableItems.some(isDisliked);
+
+      if (allDisliked) {
+        contextMenuItems.push({
+          label: "favorites_dislike_remove",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems) {
+              api.removeItemFromFavorites(item.media_type, item.item_id);
+            }
+            markFavorite(null);
+            eventbus.emit("clearSelection");
+          },
+          icon: ThumbsDown,
+        });
+      } else if (noneDisliked) {
+        contextMenuItems.push({
+          label: "favorites_dislike",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems) {
+              api.setFavorite(addableItem(item), false);
+            }
+            markFavorite(false);
+            eventbus.emit("clearSelection");
+          },
+          icon: ThumbsDown,
+        });
+      } else {
+        // mixed selection: both, each acting on the items it applies to
+        contextMenuItems.push({
+          label: "favorites_dislike",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems.filter(
+              (item) => !isDisliked(item),
+            )) {
+              api.setFavorite(addableItem(item), false);
+              setFavoriteState(item, false);
+            }
+            eventbus.emit("clearSelection");
+          },
+          icon: ThumbsDown,
+        });
+
+        contextMenuItems.push({
+          label: "favorites_dislike_remove",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems.filter(isDisliked)) {
+              api.removeItemFromFavorites(item.media_type, item.item_id);
+              setFavoriteState(item, null);
+            }
+            eventbus.emit("clearSelection");
+          },
+          icon: ThumbsDown,
         });
       }
     }
@@ -869,15 +981,8 @@ export const getContextMenuItems = async function (
       });
     }
   }
-  // add to playlist action (tracks, albums, radios, podcasts, podcast episodes, and audiobooks)
-  if (
-    canEditLibrary &&
-    (firstItem.media_type === MediaType.TRACK ||
-      firstItem.media_type === MediaType.ALBUM ||
-      firstItem.media_type === MediaType.RADIO ||
-      firstItem.media_type === MediaType.PODCAST_EPISODE ||
-      firstItem.media_type === MediaType.AUDIOBOOK)
-  ) {
+  // add to playlist action
+  if (canEditLibrary && canAddToPlaylist(firstItem)) {
     contextMenuItems.push({
       label: "add_playlist",
       labelArgs: [],
@@ -1509,6 +1614,26 @@ const startAudioSourceMenuItem = function (
     labelArgs: [],
     disabled: !store.activePlayer,
   };
+};
+
+/**
+ * The identity to hand an add command for the given item. Adding a library
+ * row whose item no longer exists fails on its dead id, so a library row is
+ * sent as one of its provider mappings, which the server resolves back to a
+ * library item.
+ */
+const addableItem = function (
+  item: MediaItemTypeOrItemMapping,
+): string | MediaItemTypeOrItemMapping {
+  if (item.provider !== "library" || !("provider_mappings" in item)) {
+    return item;
+  }
+  const mapping =
+    item.provider_mappings.find(
+      (pm) => pm.available && api.providers[pm.provider_instance]?.available,
+    ) ?? item.provider_mappings[0];
+  if (!mapping) return item;
+  return `${mapping.provider_instance}://${item.media_type}/${mapping.item_id}`;
 };
 
 /**

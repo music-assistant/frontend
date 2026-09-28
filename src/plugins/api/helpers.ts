@@ -15,6 +15,7 @@ import {
   PodcastEpisode,
   ProviderFeature,
   ProviderInstance,
+  ProviderMapping,
   ProviderType,
   QueueItem,
 } from "./interfaces";
@@ -139,13 +140,14 @@ export function requireServerVersion(minVersion: string): boolean {
 export const isItemInLibrary = function (
   item: MediaItemType | ItemMapping | null | undefined,
 ): boolean {
-  if (!item) return false;
+  // an item mapping or a browse folder carries no membership of its own
+  if (!item || !("provider_mappings" in item)) return false;
   // favoriting forces an item into the library, so favorite implies membership
-  if ("favorite" in item && item.favorite === true) return true;
-  if ("provider_mappings" in item && Array.isArray(item.provider_mappings)) {
-    return item.provider_mappings.some((pm) => !!pm.in_library);
-  }
-  return false;
+  if (item.favorite === true) return true;
+  return (
+    Array.isArray(item.provider_mappings) &&
+    item.provider_mappings.some((pm) => !!pm.in_library)
+  );
 };
 
 /**
@@ -168,6 +170,30 @@ export const getProviderIconDomain = function (
   }
   return item.provider;
 };
+
+/**
+ * The music services an item is mapped to, named after the service itself.
+ *
+ * Several accounts of the same service share one entry: which account holds the
+ * item is a detail of the mapping, not of the item. A mapping nothing can
+ * name is left out rather than shown as its raw domain.
+ */
+export function mappedServices(item: {
+  provider_mappings: ProviderMapping[];
+}): Array<{ domain: string; name: string }> {
+  const seen = new Set<string>();
+  const services: Array<{ domain: string; name: string }> = [];
+  for (const mapping of item.provider_mappings) {
+    if (seen.has(mapping.provider_domain)) continue;
+    const name =
+      api.getProviderManifest(mapping.provider_domain)?.name ||
+      api.getProvider(mapping.provider_instance)?.name;
+    if (!name) continue;
+    seen.add(mapping.provider_domain);
+    services.push({ domain: mapping.provider_domain, name });
+  }
+  return services;
+}
 
 /**
  * Provider icon domain for media listing tiles. Playlists always surface their

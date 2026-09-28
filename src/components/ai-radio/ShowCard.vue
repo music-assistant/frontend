@@ -114,10 +114,11 @@
         type="button"
         class="show-card__action"
         :disabled="isStopping"
+        :aria-busy="isStopping || undefined"
         :aria-label="$t('providers.ai_radio.card.stop')"
         @click.stop="onStop"
       >
-        <Loader2 v-if="isStopping" :size="18" class="animate-spin" />
+        <Spinner v-if="isStopping" class="size-4.5" />
         <Square v-else :size="14" fill="currentColor" :stroke-width="0" />
       </button>
       <button
@@ -125,10 +126,11 @@
         type="button"
         class="show-card__action show-card__action--reveal"
         :disabled="isStarting"
+        :aria-busy="isStarting || undefined"
         :aria-label="$t('providers.ai_radio.card.play')"
         @click.stop="onPlay"
       >
-        <Loader2 v-if="isStarting" :size="18" class="animate-spin" />
+        <Spinner v-if="isStarting" class="size-4.5" />
         <Play
           v-else
           :size="18"
@@ -156,6 +158,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Tooltip,
   TooltipContent,
@@ -181,7 +184,6 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import {
   History,
-  Loader2,
   MoreVertical,
   Play,
   Square,

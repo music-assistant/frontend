@@ -163,15 +163,13 @@ describe("useArtistRowData", () => {
     expect(itemIds(page.albumItems.value)).toEqual(["album-1"]);
   });
 
-  it("requests the albums source for the latest release when only top tracks shows", async () => {
+  it("requests no releases when only top tracks shows", async () => {
     const page = setupRowData({ rows: ["top_tracks"] });
-    saveRowSources({ albums: SPOTIFY });
     mockLoadArtistReleases.mockResolvedValue(RELEASES);
 
     await showArtist(page, libraryArtist());
 
-    expect(releaseSources()).toEqual([SPOTIFY]);
-    expect(page.latestRelease.value?.item_id).toBe("album-1");
+    expect(mockLoadArtistReleases).not.toHaveBeenCalled();
   });
 
   it("drops a response that arrives after the artist changed", async () => {
@@ -206,6 +204,40 @@ describe("useArtistRowData", () => {
 
     expect(mockLoadArtistTopTracks).toHaveBeenCalledTimes(1);
     expect(itemIds(page.topTracksItems.value)).toEqual(["newer", "older"]);
+  });
+
+  it("labels the top tracks row after the library when it uses that fallback", async () => {
+    const page = setupRowData({ rows: ["top_tracks"] });
+    mockLoadArtistLibraryTracks.mockResolvedValue([track()]);
+
+    await showArtist(page, libraryArtist());
+
+    expect(page.topTracksSourceDisplay.value?.label).toBe("In your library");
+  });
+
+  it("labels the top tracks row as all sources when a provider supplies them", async () => {
+    const page = setupRowData({ rows: ["top_tracks"] });
+    mockLoadArtistTopTracks.mockResolvedValue([track()]);
+
+    await showArtist(page, libraryArtist());
+
+    expect(page.topTracksSourceDisplay.value?.label).toBe("All sources");
+  });
+
+  it("names each release row's source", async () => {
+    const page = setupRowData({ rows: ["albums"] });
+    mockLoadArtistReleases.mockResolvedValue(RELEASES);
+    mockApi.getProvider.mockReturnValue({ name: "Spotify", domain: "spotify" });
+
+    await showArtist(page, libraryArtist());
+    expect(page.albumsSourceDisplay.value?.label).toBe("In your library");
+
+    saveRowSources({ albums: SPOTIFY });
+    await flushPromises();
+    expect(page.albumsSourceDisplay.value).toEqual({
+      label: "On Spotify",
+      domain: "spotify",
+    });
   });
 
   it("shares one request between the rows fed by the library and the appearances", async () => {

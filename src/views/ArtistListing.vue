@@ -2,10 +2,11 @@
   <section>
     <ItemsListing
       v-if="itemDetails && config"
+      :key="config.path"
       :icon="ArrowLeft"
       :icon-action="backToArtist"
       :title="$t(config.labelKey)"
-      :subtitle="itemDetails.name"
+      :subtitle="subtitle"
       :itemtype="config.itemtype"
       :path="config.path"
       :parent-item="itemDetails"
@@ -13,7 +14,10 @@
       :show-favorites-only-filter="config.showFavoritesOnlyFilter"
       :show-provider-filter="config.showProviderFilter"
       :single-provider-filter="true"
-      :provider-filter-options="mappingProviderIds"
+      :provider-filter-options="config.providerFilterOptions"
+      :require-provider-selection="config.requireProviderSelection"
+      :library-filter-option="config.libraryFilterOption"
+      :default-provider="config.defaultProvider"
       :show-album-type-filter="config.showAlbumTypeFilter"
       :show-track-number="config.showTrackNumber"
       :show-refresh-button="false"
@@ -33,6 +37,10 @@ import {
   loadArtistReleases,
 } from "@/components/artist/artistData";
 import { artistRows } from "@/components/artist/artistRows";
+import {
+  rowSourceLabel,
+  type RowSource,
+} from "@/components/details/rowRegistry";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { goBack } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
@@ -40,7 +48,7 @@ import { type Artist, type MediaItemType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 export interface Props {
   itemId: string;
@@ -60,8 +68,14 @@ interface ListingConfig {
   showFavoritesOnlyFilter: boolean;
   showProviderFilter: boolean;
   showTrackNumber: boolean;
+  providerFilterOptions: string[];
   // what the listing says when the artist has nothing to show there
   emptyMessage?: string;
+  // a required single source selection: the library or one of the providers
+  // the artist is mapped to
+  requireProviderSelection?: boolean;
+  libraryFilterOption?: boolean;
+  defaultProvider?: RowSource;
 }
 
 const ALBUM_SORT_KEYS = [
@@ -85,19 +99,30 @@ const TRACK_SORT_KEYS = [
 ];
 
 const router = useRouter();
+const route = useRoute();
 const itemDetails = ref<Artist>();
+// the source the releases were last loaded from, so the header names what is
+// on screen
+const activeSource = ref<RowSource>();
 
 watch(
   () => [props.itemId, props.provider],
   async ([itemId, provider]) => {
     // the listing remounts for the new artist instead of keeping the old items
     itemDetails.value = undefined;
+    activeSource.value = undefined;
     const artist = await api.getArtist(itemId, provider);
     // a slower response for a previous artist must not replace the current one
     if (itemId !== props.itemId || provider !== props.provider) return;
     itemDetails.value = artist;
   },
   { immediate: true },
+);
+
+// each shelf has its own source, so the one on screen is never another's
+watch(
+  () => props.listing,
+  () => (activeSource.value = undefined),
 );
 
 // the listing can be filtered to the providers the artist is actually mapped to
@@ -109,15 +134,29 @@ const mappingProviderIds = computed(() => [
   ),
 ]);
 
+// the releases are shown one source at a time, so the header says which one
+const subtitle = computed(() => {
+  const name = itemDetails.value?.name || "";
+  if (!activeSource.value) return name;
+  return `${name} · ${rowSourceLabel(activeSource.value)}`;
+});
+
+const showsLibrary = computed(
+  () => !activeSource.value || activeSource.value === "library",
+);
+
 const config = computed<ListingConfig | undefined>(() => {
   switch (props.listing) {
     case "albums":
       return {
         ...listingDefaults(),
+        ...sourceSelection("albums"),
         labelKey: artistRows.definition("albums").labelKey,
         path: "artistalbums",
         showAlbumTypeFilter: true,
-        emptyMessage: $t("artist_no_library_albums"),
+        emptyMessage: showsLibrary.value
+          ? $t("artist_no_library_albums")
+          : undefined,
         loadItems: async (params: LoadDataParams) =>
           (await loadReleases("albums", params)).filter(
             (album) => !isSingleOrEp(album),
@@ -126,6 +165,7 @@ const config = computed<ListingConfig | undefined>(() => {
     case "singles":
       return {
         ...listingDefaults(),
+        ...sourceSelection("singles_eps"),
         labelKey: artistRows.definition("singles_eps").labelKey,
         path: "artistsingles",
         loadItems: async (params: LoadDataParams) =>
@@ -142,7 +182,10 @@ const config = computed<ListingConfig | undefined>(() => {
         sortKeys: TRACK_SORT_KEYS,
         showProviderFilter: mappingProviderIds.value.length > 1,
         showTrackNumber: false,
-        emptyMessage: $t("artist_no_library_tracks"),
+        emptyMessage:
+          itemDetails.value?.provider === "library"
+            ? $t("artist_no_library_tracks")
+            : $t("artist_no_tracks"),
         loadItems: async (params: LoadDataParams) => {
           if (!itemDetails.value) return [];
           return await loadArtistLibraryTracks(
@@ -184,10 +227,46 @@ function listingDefaults(): Omit<
     showFavoritesOnlyFilter: true,
     showProviderFilter: true,
     showTrackNumber: true,
+    providerFilterOptions: mappingProviderIds.value,
   };
 }
 
-/** The artist's releases, from the provider the user picked or the row's default source. */
+/**
+ * The source selector of a release listing: the same sources the row's picker
+ * on the artist page offers, starting on the one feeding it there. A provider
+ * artist has only its own catalog, so it gets no selector at all.
+ */
+function sourceSelection(rowId: "albums" | "singles_eps") {
+  const artist = itemDetails.value;
+  if (artist?.provider !== "library") return { showProviderFilter: false };
+  return {
+    requireProviderSelection: true,
+    libraryFilterOption: true,
+    providerFilterOptions: artistRows
+      .sources(rowId, artist)
+      .filter((source) => source !== "library"),
+    defaultProvider:
+      carriedSource(rowId) ?? artistRows.effectiveSource(rowId, artist),
+  };
+}
+
+/**
+ * A source carried in by another page's "view all" link, honoured once as the
+ * albums listing's initial source when it is one this listing offers. It is not
+ * saved, so the user's own preference stays as it was.
+ */
+function carriedSource(rowId: "albums" | "singles_eps"): RowSource | undefined {
+  const artist = itemDetails.value;
+  const source = route.query.source;
+  if (rowId !== "albums" || !artist || typeof source !== "string") {
+    return undefined;
+  }
+  return artistRows.sources("albums", artist).includes(source)
+    ? source
+    : undefined;
+}
+
+/** The artist's releases, from the source the user picked or the row's default one. */
 async function loadReleases(
   rowId: "albums" | "singles_eps",
   params: LoadDataParams,
@@ -195,7 +274,9 @@ async function loadReleases(
   if (!itemDetails.value) return [];
   const source =
     params.provider?.[0] ??
+    carriedSource(rowId) ??
     artistRows.effectiveSource(rowId, itemDetails.value);
+  activeSource.value = source;
   return await loadArtistReleases(itemDetails.value, source);
 }
 

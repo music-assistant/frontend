@@ -1,21 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { storeMock, mockSetUserPreference, mockGetProvider } = vi.hoisted(
-  () => ({
+const { storeMock, mockSetUserPreference, mockGetProvider, providersMock } =
+  vi.hoisted(() => ({
     storeMock: {
       currentUser: null as { preferences?: Record<string, unknown> } | null,
     },
     mockSetUserPreference: vi.fn(),
     mockGetProvider: vi.fn(),
-  }),
-);
+    providersMock: {} as Record<string, { name: string; domain: string }>,
+  }));
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
 }));
 
 vi.mock("@/plugins/api", () => ({
-  api: { getProvider: mockGetProvider },
+  api: { getProvider: mockGetProvider, providers: providersMock },
 }));
 
 vi.mock("@/composables/userPreferences", () => ({
@@ -24,6 +24,8 @@ vi.mock("@/composables/userPreferences", () => ({
 
 import {
   createRowRegistry,
+  rowSourceDisplay,
+  rowSourceOptions,
   rowSourceProvider,
   type RowSource,
 } from "@/components/details/rowRegistry";
@@ -59,6 +61,7 @@ describe("rowRegistry", () => {
   beforeEach(() => {
     mockSetUserPreference.mockReset();
     mockGetProvider.mockReset();
+    for (const key of Object.keys(providersMock)) delete providersMock[key];
     setPreferences({});
   });
 
@@ -171,6 +174,20 @@ describe("rowRegistry", () => {
     });
   });
 
+  describe("rowSourceOptions", () => {
+    it("maps a row's sources to picker options with labels and provider domains", () => {
+      providersMock["spotify--abc"] = { name: "Spotify", domain: "spotify" };
+      expect(rowSourceOptions(registry, "with_picker", ITEM)).toEqual([
+        { value: "all", label: "All sources", domain: undefined },
+        { value: "spotify--abc", label: "Spotify", domain: "spotify" },
+      ]);
+    });
+
+    it("is empty for a row without a source picker", () => {
+      expect(rowSourceOptions(registry, "plain", ITEM)).toEqual([]);
+    });
+  });
+
   describe("rowSourceProvider", () => {
     it("names the single provider behind a source", () => {
       mockGetProvider.mockReturnValue({ name: "Spotify", domain: "spotify" });
@@ -186,6 +203,33 @@ describe("rowRegistry", () => {
       expect(rowSourceProvider("all")).toBeUndefined();
       expect(rowSourceProvider(undefined)).toBeUndefined();
       expect(rowSourceProvider("spotify--gone")).toBeUndefined();
+    });
+  });
+
+  describe("rowSourceDisplay", () => {
+    it("reads the library and every-provider sources", () => {
+      expect(rowSourceDisplay("library")).toEqual({ label: "In your library" });
+      expect(rowSourceDisplay("all")).toEqual({ label: "All sources" });
+    });
+
+    it("names a provider and carries its domain for the icon", () => {
+      mockGetProvider.mockReturnValue({ name: "Spotify", domain: "spotify" });
+      expect(rowSourceDisplay("spotify--abc")).toEqual({
+        label: "On Spotify",
+        domain: "spotify",
+      });
+    });
+
+    it("falls back to the raw id when the provider is unknown", () => {
+      mockGetProvider.mockReturnValue(undefined);
+      expect(rowSourceDisplay("spotify--gone")).toEqual({
+        label: "On spotify--gone",
+        domain: undefined,
+      });
+    });
+
+    it("has nothing without a source", () => {
+      expect(rowSourceDisplay(undefined)).toBeUndefined();
     });
   });
 });

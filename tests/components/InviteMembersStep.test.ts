@@ -13,6 +13,7 @@ const { apiMock, authMock, preferenceState, storeMock, users } = vi.hoisted(
       providers: {} as Record<string, { name: string }>,
       providerManifests: {} as Record<string, { builtin: boolean }>,
       getAllUsers: vi.fn(),
+      getPlayerConfigs: vi.fn(async () => []),
       getProviderConfigs: vi.fn(async () => []),
       subscribe: vi.fn(() => vi.fn()),
       sendCommand: vi.fn(),
@@ -57,6 +58,11 @@ vi.mock("@/composables/userPreferences", async () => {
     useUserPreferences: () => ({ getPreference: () => preferenceState.intent }),
   };
 });
+
+// Every test mounts the step on a fresh module registry, so the transform of
+// its module graph is paid at module scope, where no test or hook clock runs,
+// instead of by whichever test happens to mount first.
+await import("@/components/onboarding/steps/InviteMembersStep.vue");
 
 /** A fresh step per test: the onboarding state lives for a whole session. */
 async function mountStep({ load = true } = {}) {

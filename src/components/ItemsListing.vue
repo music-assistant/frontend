@@ -44,12 +44,11 @@
         class="items-start"
         @update:model-value="(v) => onTabChange(v as string)"
       >
-        <TabsList class="h-auto w-auto gap-6 bg-transparent p-0">
+        <TabsList variant="line">
           <TabsTrigger
             v-for="tab in props.toolBarTabs"
             :key="tab.id"
             :value="tab.id"
-            class="flex-none rounded-none border-0 bg-transparent px-1 pt-1 pb-2 text-[15px] text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_0_currentColor] dark:data-[state=active]:bg-transparent"
           >
             {{ tab.label }}
           </TabsTrigger>
@@ -239,6 +238,20 @@
             {{ $t("try_global_search") }}
           </Button>
         </EmptyContent>
+        <EmptyContent
+          v-if="emptyStateProviderActions.length"
+          class="flex-row flex-wrap justify-center gap-2"
+        >
+          <Button
+            v-for="provider in emptyStateProviderActions"
+            :key="provider.value"
+            variant="outline"
+            size="sm"
+            @click="changeProviderFilter(provider.value)"
+          >
+            {{ $t("show_results_on", [provider.label]) }}
+          </Button>
+        </EmptyContent>
       </Empty>
 
       <!-- box shown when item(s) selected; vuetify writes the overlay z-index inline
@@ -306,6 +319,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import { SEARCHABLE_MEDIA_TYPES } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
+import {
+  favoriteState,
+  keepOwnFavorite,
+  setFavoriteState,
+  subscribeOwnFavorites,
+} from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -420,6 +439,12 @@ export interface Props {
   // when set, it replaces the itemtype-derived list (and is not limited to
   // music providers).
   providerFilterOptions?: string[];
+  // when set, the explicit provider list above also offers the library, as its
+  // first option: loadItems is handed "library" while it is the selected one
+  libraryFilterOption?: boolean;
+  // the option a required selection starts on, when nothing valid is stored
+  // (default: the first one offered)
+  defaultProvider?: string;
   updateAvailable?: boolean;
   title?: string;
   subtitle?: string;
@@ -470,6 +495,8 @@ const props = withDefaults(defineProps<Props>(), {
   singleProviderFilter: false,
   requireProviderSelection: false,
   providerFilterOptions: undefined,
+  libraryFilterOption: false,
+  defaultProvider: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
   limit: 50,
@@ -982,6 +1009,19 @@ const changeProviderFilter = function (providerId: string) {
   loadData(true, undefined, true);
 };
 
+// a listing scoped to the library (its own "library" option selected) that comes
+// up empty gives no hint that a provider's catalog is one filter switch away —
+// the artist album/singles "See all" is the case. Offer those sources as
+// one-tap buttons in the empty state; other listings never select "library" so
+// they never show them.
+const emptyStateProviderActions = computed(() => {
+  if (!props.libraryFilterOption) return [];
+  if (params.value.provider?.[0] !== "library") return [];
+  return musicProviders.value.filter(
+    (provider) => provider.value !== "library",
+  );
+});
+
 // the provider list shown by both the provider filter and the provider selector
 const providerFilterSubItems = () =>
   musicProviders.value.map((provider) => ({
@@ -1125,7 +1165,7 @@ const musicProviders = computed(() => {
   // explicit provider list supplied by the parent: resolve the given
   // instance_ids to labels as-is, without any itemtype/type filtering.
   if (props.providerFilterOptions) {
-    return props.providerFilterOptions
+    const providers = props.providerFilterOptions
       .map((instanceId) => api.providers[instanceId])
       .filter((provider) => provider !== undefined)
       .map((provider) => ({
@@ -1133,6 +1173,9 @@ const musicProviders = computed(() => {
         value: provider.instance_id,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
+    if (!props.libraryFilterOption) return providers;
+    // the library is not a provider instance: loadItems is handed "library"
+    return [{ label: t("source_library"), value: "library" }, ...providers];
   }
 
   // Map itemtype to the ProviderFeatures that mark a provider as a possible
@@ -1718,7 +1761,11 @@ const restoreSettings = async function () {
     musicProviders.value.length > 0 &&
     !params.value.provider?.length
   ) {
-    params.value.provider = [musicProviders.value[0].value];
+    const offered = musicProviders.value.map((provider) => provider.value);
+    const preferred = props.defaultProvider;
+    params.value.provider = [
+      preferred && offered.includes(preferred) ? preferred : offered[0],
+    ];
   }
 
   // get stored searchquery (but only if we're allowed to store the state)
@@ -1778,6 +1825,7 @@ if (props.restoreState) {
 
     store.prevState = {
       path: key,
+      parentUri: props.parentItem?.uri,
       scrollPos: el?.scrollTop || 0,
       pagedItems: pagedItems.value,
       allItems: allItems.value,
@@ -1912,6 +1960,7 @@ const loadGenreOptions = async () => {
 };
 
 let _unsubscribeMediaEvents: (() => void) | undefined;
+let _unsubscribeFavorites: (() => void) | undefined;
 
 const clearSelection = () => {
   selectedItems.value = [];
@@ -1926,13 +1975,18 @@ onBeforeUnmount(() => {
   unmounted = true;
   eventbus.off("clearSelection", clearSelection);
   _unsubscribeMediaEvents?.();
+  _unsubscribeFavorites?.();
 });
 
 onMounted(async () => {
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;
-  if (props.restoreState && store.prevState?.path == key) {
+  if (
+    props.restoreState &&
+    store.prevState?.path == key &&
+    store.prevState.parentUri == props.parentItem?.uri
+  ) {
     restoredFromPrevState = true;
     params.value = store.prevState.params;
     pagedItems.value = store.prevState.pagedItems;
@@ -1980,7 +2034,10 @@ onMounted(async () => {
         // update item
         const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
         if (idx >= 0) {
-          pagedItems.value[idx] = evt.data as MediaItemType;
+          pagedItems.value[idx] = keepOwnFavorite(
+            evt.data as MediaItemType,
+            pagedItems.value[idx],
+          );
         }
       } else if (evt.event == EventType.MEDIA_ITEM_PLAYED) {
         // update item
@@ -1997,6 +2054,15 @@ onMounted(async () => {
       }
     },
   );
+
+  // the user's own like or dislike, wherever they made it. A listing can hold
+  // the same item on more than one row (a playlist listing a track twice), and
+  // every one of them shows the state.
+  _unsubscribeFavorites = subscribeOwnFavorites((update) => {
+    for (const item of pagedItems.value) {
+      if (item.uri == update.uri) setFavoriteState(item, update.favorite);
+    }
+  });
 });
 
 watch(
@@ -2011,6 +2077,10 @@ watch(
 
 export interface StoredState {
   path: string;
+  // several listings share one path across different parents (e.g. every
+  // artist's albums use "artistalbums"), so the parent's uri scopes the
+  // restore to the item that was actually on screen
+  parentUri?: string;
   scrollPos: number;
   pagedItems: MediaItemType[];
   allItems: MediaItemType[];
@@ -2162,7 +2232,7 @@ const getFilteredItems = function (
   }
 
   if (params.favoritesOnly) {
-    result = result.filter((x) => "favorite" in x && x.favorite);
+    result = result.filter((x) => favoriteState(x) === true);
   }
 
   if (params.hideFullyPlayed) {
