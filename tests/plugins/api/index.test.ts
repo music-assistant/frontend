@@ -341,7 +341,7 @@ describe("MusicAssistantApi error handling", () => {
   });
 
   it("hands out podcast transcripts from schema 80 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 80 };
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 79 };
     expect(api.supportsPodcastTranscripts).toBe(false);
 
     api.serverInfo.value = { ...SERVER_INFO, schema_version: 80 };
