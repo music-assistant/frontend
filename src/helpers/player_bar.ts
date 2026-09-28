@@ -13,9 +13,10 @@ export const PLAYER_BAR_POPOUT_GAP = 8;
 export const PLAYER_BAR_POPOUT_INSET_X = 12;
 
 /**
- * Room a tall popout leaves below the safe area at the top of the screen, so it
- * keeps reading as a card floating above the player bar instead of a
- * full-height panel. Mirrors --player-bar-popout-top-gap.
+ * Room a tall popout leaves at the top of the screen, so it keeps reading as a
+ * card floating above the player bar instead of a full-height panel. Measured
+ * below the status bar: each consumer adds the top device inset itself.
+ * Mirrors --player-bar-popout-top-gap.
  */
 export const PLAYER_BAR_POPOUT_TOP_GAP = 24;
 
