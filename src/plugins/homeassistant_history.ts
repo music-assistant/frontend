@@ -17,7 +17,9 @@ interface HistoryEntry {
 // What each of Home Assistant's own history entries carries of the app's.
 interface HAEntryMark {
   id: string;
+  // The entry it was opened from, and the page that entry shows.
   from?: string;
+  back?: string;
 }
 
 /**
@@ -47,7 +49,7 @@ export function createHAHistory(): RouterHistory {
   const initialMark = readHAMark();
   const entries: HistoryEntry[] = [
     {
-      ...entryOf(initialLocation, initialMark?.id, initialMark?.from),
+      ...entryOf(initialLocation, initialMark),
       first: isFirstHAEntry(),
     },
   ];
@@ -75,9 +77,10 @@ export function createHAHistory(): RouterHistory {
   }
 
   function navigateHA(replace: boolean): void {
-    const { id, from, location } = entries[position];
+    const { id, from, location, state } = entries[position];
     // Marks Home Assistant's entry, to tell it apart from one of the same page.
-    const musicAssistant: HAEntryMark = { id, from };
+    const back = typeof state.back === "string" ? state.back : undefined;
+    const musicAssistant: HAEntryMark = { id, from, back };
     navigateInHA(panelPath + location, { replace, data: { musicAssistant } });
   }
 
@@ -140,7 +143,7 @@ export function createHAHistory(): RouterHistory {
     // A page from before a reload. It goes next to the one it left, so the
     // router can return there when it turns the step down.
     const entry = {
-      ...entryOf(location, mark?.id, mark?.from),
+      ...entryOf(location, mark),
       first: isFirstHAEntry(),
     };
     if (current.first || mark?.from === current.id) {
@@ -176,8 +179,10 @@ export function createHAHistory(): RouterHistory {
     }
     const current = entries[position];
     current.state = { ...current.state, forward: location };
-    const entry = entryOf(location, undefined, current.id);
-    entry.state.back = current.location;
+    const entry = entryOf(location, {
+      from: current.id,
+      back: current.location,
+    });
     entries.splice(position + 1, Infinity, entry);
     position++;
     syncFrameUrl();
@@ -215,10 +220,9 @@ export function createHAHistory(): RouterHistory {
     push(to, data) {
       const current = entries[position];
       current.state = { ...current.state, forward: to };
-      const entry = entryOf(to, undefined, current.id);
+      const entry = entryOf(to, { from: current.id, back: current.location });
       entry.state = {
         ...entry.state,
-        back: current.location,
         position: position + 1,
         replaced: false,
         ...data,
@@ -281,22 +285,18 @@ function isSameLocation(a: string, b: string): boolean {
 }
 
 /**
- * A history entry with nothing known around it.
- *
- * @param id - The mark of its entry in Home Assistant's history, if known
- * @param from - The mark of the entry it was opened from, if known
+ * A history entry, as far as its mark in Home Assistant's history tells.
  */
 function entryOf(
   location: string,
-  id = newEntryId(),
-  from?: string,
+  { id = newEntryId(), from, back }: Partial<HAEntryMark> = {},
 ): HistoryEntry {
   return {
     id,
     from,
     location,
     state: {
-      back: null,
+      back: back ?? null,
       current: location,
       forward: null,
       position: 0,

@@ -279,6 +279,20 @@ describe("Home Assistant router history", () => {
     expect(history.state.forward).toBe("/browse?path=music%2Fabba%2Fgold");
   });
 
+  it("goes back from the app's own back button after a reload", async () => {
+    await start(`${PANEL}/home`);
+    await push("/artists");
+    await push("/artists/1");
+    await reloadHA();
+
+    expect(history.state.back).toBe("/artists");
+    router.back();
+    await settle();
+
+    expect(router.currentRoute.value.fullPath).toBe("/artists");
+    expect(history.state.back).toBe("/home");
+  });
+
   it("goes forward again to a page from before a reload", async () => {
     await start(`${PANEL}/home`);
     await push("/artists");
