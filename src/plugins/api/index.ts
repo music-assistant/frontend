@@ -3126,7 +3126,7 @@ export class MusicAssistantApi {
     );
   }
 
-  /** Whether the connected server can hand out podcast episode transcripts (schema >= 78). */
+  /** Whether the connected server can hand out podcast episode transcripts (schema >= 80). */
   public get supportsPodcastTranscripts(): boolean {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
