@@ -231,6 +231,23 @@ export const getProviderRootDomain = function (
     : undefined;
 };
 
+// the provider a discography release carries while it is on none of the user's
+// music services
+export const MUSICBRAINZ_PROVIDER = "musicbrainz";
+
+/**
+ * Whether the item is a MusicBrainz entry rather than one of a music service.
+ *
+ * The server resolves such an item to the same album on one of the user's
+ * music services when it is opened or added to the library, so it can be shown
+ * and added but not played as it is.
+ */
+export const isMusicBrainzItem = function (
+  item: MediaItemType | ItemMapping,
+): boolean {
+  return item.provider === MUSICBRAINZ_PROVIDER;
+};
+
 export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
 ): boolean {

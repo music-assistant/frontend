@@ -200,7 +200,7 @@
               :show-disc-number="showTrackNumber"
               :show-duration="showDuration"
               :show-favorite="showFavorite ?? showFavoritesOnlyFilter"
-              :show-menu="item.is_playable"
+              :show-menu="item.is_playable || isMusicBrainzItem(item)"
               :show-provider="showProvider"
               :show-album="showAlbum"
               :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
@@ -329,7 +329,11 @@ import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import { returnedByHistory } from "@/helpers/navigation";
 import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { itemIsAvailable, itemSupportsPlayLog } from "@/plugins/api/helpers";
+import {
+  isMusicBrainzItem,
+  itemIsAvailable,
+  itemSupportsPlayLog,
+} from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
