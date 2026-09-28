@@ -638,7 +638,7 @@
         "audio_analysis_providers": "Audio analysis",
         "audio_analysis_providers_description": "Manage providers that analyze your audio",
         "audio_analysis": "Audio analysis",
-        "audio_analysis_status_hint": "See how the analysis is progressing per music source, and any failures, on the status page.",
+        "audio_analysis_status_hint": "See how the analysis is progressing per provider, and any failures, on the status page.",
         "audio_analysis_status_link": "Open audio analysis status",
         "audio_analysis_coverage": {
             "title": "Audio Analysis Coverage",
@@ -647,7 +647,7 @@
             "unavailable": "unavailable",
             "none": "—"
         },
-        "audio_analysis_description": "Track audio analysis coverage across your music sources",
+        "audio_analysis_description": "Track audio analysis coverage across your providers",
         "audio_analysis_concurrency": {
             "title": "Background analysis concurrency",
             "description": "Control how many tracks are analyzed concurrently during the nightly background scan. This setting lives in the Streams core configuration.",
