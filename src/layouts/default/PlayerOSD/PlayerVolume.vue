@@ -1133,8 +1133,8 @@ const onMouseDown = (event: MouseEvent) => {
 };
 
 const onWheel = (event: WheelEvent) => {
-  // Only claim the wheel when it changes volume, so sliders inside a scrollable
-  // container (the group popout) still scroll it
+  // Only claim the wheel when it changes volume; off the sliders it still
+  // scrolls a scrollable container such as the group popout
   if (!props.allowWheel || isSliderDisabled.value) return;
   event.preventDefault();
 
