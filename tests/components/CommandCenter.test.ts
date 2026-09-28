@@ -767,6 +767,25 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
+  it("keeps equally named results from different providers", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      { ...makeTrack("t1", "Bohemian Rhapsody"), provider: "apple_music" },
+      { ...makeTrack("t2", "Bohemian Rhapsody"), provider: "apple_music" },
+      { ...makeTrack("t3", "Bohemian Rhapsody"), provider: "ytmusic" },
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "bohemian");
+    const items = wrapper
+      .findAll('[data-testid="palette-item"]')
+      .filter((item) => item.text().includes("Bohemian Rhapsody"));
+    expect(items).toHaveLength(2);
+
+    wrapper.unmount();
+  });
+
   it("shows a spinner while a submitted search is loading", async () => {
     const wrapper = mountPalette();
     useCommandCenter().open();

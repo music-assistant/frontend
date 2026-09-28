@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/components/MarkdownText.vue", () => ({
   default: {
@@ -19,7 +19,10 @@ function mountRow(props: Record<string, unknown> = {}) {
       // the long-press directive is registered by a plugin the test skips
       directives: { hold: {} },
       stubs: {
-        Dialog: { template: "<div><slot /></div>" },
+        Dialog: {
+          props: ["open"],
+          template: '<div v-if="open"><slot /></div>',
+        },
         DialogContent: { template: "<div><slot /></div>" },
         DialogFooter: { template: "<div><slot /></div>" },
         DialogHeader: { template: "<div><slot /></div>" },
@@ -31,7 +34,32 @@ function mountRow(props: Record<string, unknown> = {}) {
   });
 }
 
+// happy-dom lays nothing out, so the text's rendered height is faked
+function fakeTextHeight(scrollHeight: number, clientHeight: number) {
+  vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(
+    scrollHeight,
+  );
+  vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(
+    clientHeight,
+  );
+}
+
+// the text is measured once it changes, so swap it in at the faked height
+async function showText(
+  wrapper: ReturnType<typeof mountRow>,
+  text: string,
+  heights: [scrollHeight: number, clientHeight: number],
+) {
+  fakeTextHeight(...heights);
+  await wrapper.setProps({ text });
+  await flushPromises();
+}
+
 describe("DetailTextRow", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("stands a skeleton in while the text is on its way", () => {
     const wrapper = mountRow();
 
@@ -65,12 +93,33 @@ describe("DetailTextRow", () => {
   });
 
   it("opens the whole text from the text itself", async () => {
-    const wrapper = mountRow({ text: "One\nTwo" });
+    const wrapper = mountRow({ text: "Short" });
+    await showText(wrapper, "A much longer text", [200, 60]);
 
     await wrapper.find(".detail-text__body").trigger("click");
     await flushPromises();
 
     expect(wrapper.find(".detail-text__full").exists()).toBe(true);
+  });
+
+  it("keeps a text that fits from opening", async () => {
+    const wrapper = mountRow({ text: "Short" });
+    await showText(wrapper, "Still short", [60, 60]);
+
+    await wrapper.find(".detail-text__body").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find(".detail-text__full").exists()).toBe(false);
+  });
+
+  it("offers read more only while the text runs past its lines", async () => {
+    const wrapper = mountRow({ text: "Short" });
+
+    await showText(wrapper, "A much longer text", [200, 60]);
+    expect(wrapper.find(".detail-text__more").exists()).toBe(true);
+
+    await showText(wrapper, "Short again", [60, 60]);
+    expect(wrapper.find(".detail-text__more").exists()).toBe(false);
   });
 
   it("has a heading only when it was given one", () => {

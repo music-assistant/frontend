@@ -1,4 +1,6 @@
 import ItemsListing from "@/components/ItemsListing.vue";
+import { useEscapeBack } from "@/composables/useEscapeBack";
+import { defineComponent, h } from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   EventType,
@@ -178,6 +180,7 @@ function mountListingRaw(
   props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
 ) {
   return mount(ItemsListing, {
+    attachTo: document.body,
     props: {
       itemtype: "tracks",
       path: "librarytracks",
@@ -386,6 +389,87 @@ describe("ItemsListing per-page search", () => {
     search!.action?.();
     await flushPromises();
   }
+
+  it.each(
+    [true, false].flatMap((backFirst) =>
+      [true, false].flatMap((focused) =>
+        [true, undefined].map((allowKeyHooks) => ({
+          backFirst,
+          focused,
+          allowKeyHooks,
+        })),
+      ),
+    ),
+  )(
+    "dismisses search before back (back first: $backFirst, focused: $focused, hooks: $allowKeyHooks)",
+    async ({ backFirst, focused, allowKeyHooks }) => {
+      const back = vi.fn();
+      const mountBack = () =>
+        mount(
+          defineComponent({
+            setup() {
+              useEscapeBack(back);
+              return () => h("div");
+            },
+          }),
+          { global: { stubs: { "v-divider": true } } },
+        );
+      if (backFirst) mountBack();
+      const listing = mountListingRaw({
+        allowKeyHooks,
+        showSearchButton: true,
+      });
+      if (!backFirst) mountBack();
+      await flushPromises();
+      await toggleSearch(listing);
+      const first = new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      });
+      const input = listing.get(".search-field input")
+        .element as HTMLInputElement;
+      if (!focused) input.blur();
+      (focused ? input : document.body).dispatchEvent(first);
+      await flushPromises();
+      expect(first.defaultPrevented).toBe(true);
+      expect(searchField(listing).exists()).toBe(false);
+      expect(back).not.toHaveBeenCalled();
+      document.body.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Escape",
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      expect(back).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each(["dialog", "players"])(
+    "leaves search open when Escape belongs to %s",
+    async (owner) => {
+      const listing = mountListingRaw({ showSearchButton: true });
+      await flushPromises();
+      await toggleSearch(listing);
+      const event = new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      });
+      store.dialogActive = owner === "dialog";
+      store.showPlayersMenu = owner === "players";
+      try {
+        document.body.dispatchEvent(event);
+        await flushPromises();
+        expect(searchField(listing).exists()).toBe(true);
+        expect(event.defaultPrevented).toBe(false);
+      } finally {
+        store.dialogActive = false;
+        store.showPlayersMenu = false;
+      }
+    },
+  );
 
   function searchField(listing: ReturnType<typeof mountListingRaw>) {
     return listing.find(".search-field");
@@ -1217,6 +1301,67 @@ describe("ItemsListing restore state", () => {
 
     expect(loadItems).not.toHaveBeenCalled();
     expect(shownItems(listing).map((item) => item.uri)).toEqual([cached.uri]);
+  });
+});
+
+describe("ItemsListing date added sort", () => {
+  // added together (one edit), then a later addition, a very old one, and
+  // undated items (none, or unparsable), which sort as the oldest of all
+  const batch = "2024-03-01T12:00:00+00:00";
+  const playlistTracks = [
+    track({ item_id: "1", name: "Batch 1", position: 1, date_added: batch }),
+    track({ item_id: "2", name: "Undated", position: 2 }),
+    track({ item_id: "3", name: "Batch 2", position: 3, date_added: batch }),
+    track({
+      item_id: "4",
+      name: "Newer",
+      position: 4,
+      date_added: "2024-05-10T08:30:00+00:00",
+    }),
+    track({
+      item_id: "5",
+      name: "Old",
+      position: 5,
+      date_added: "1999-06-01T00:00:00+00:00",
+    }),
+    track({ item_id: "6", name: "Unparsable", position: 6, date_added: "?" }),
+  ];
+
+  async function sortedNames(sortKey: string) {
+    const listing = mountListingRaw({
+      itemtype: "playlisttracks",
+      path: "playlist.1.library",
+      // a flat listing: every item at once, sorted in the browser
+      loadPagedData: undefined,
+      loadItems: vi.fn().mockResolvedValue(playlistTracks),
+      sortKeys: [sortKey, "position"],
+    });
+    await flushPromises();
+    return (listing.vm as unknown as { pagedItems: Track[] }).pagedItems.map(
+      (item) => item.name,
+    );
+  }
+
+  it("lists the most recently added first, keeping additions made together in order", async () => {
+    expect(await sortedNames("timestamp_added_desc")).toEqual([
+      "Newer",
+      "Batch 1",
+      "Batch 2",
+      "Old",
+      "Undated",
+      "Unparsable",
+    ]);
+  });
+
+  it("lists the earliest added first", async () => {
+    expect(await sortedNames("timestamp_added")).toEqual([
+      "Undated",
+      "Unparsable",
+      "Old",
+      "Batch 1",
+      "Batch 2",
+      "Newer",
+    ]);
   });
 });
 

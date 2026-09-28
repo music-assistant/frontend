@@ -1,5 +1,5 @@
 import FormTextField from "@/components/forms/FormTextField.vue";
-import type { AnyFieldApi } from "@tanstack/form-core";
+import type { AnyFieldApi } from "@tanstack/vue-form";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 

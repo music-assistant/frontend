@@ -544,6 +544,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
+import { useEscapeBack } from "@/composables/useEscapeBack";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
@@ -701,6 +702,8 @@ const playButtonText = computed(() => {
   if (!store.activePlayer) return $t("play");
   return getPlayerName(store.activePlayer, 20);
 });
+
+useEscapeBack(backButtonClick);
 
 const playButtonClick = function (forceMenu = false) {
   const playButton = document.getElementById("playbutton") as HTMLElement;

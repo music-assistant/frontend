@@ -347,6 +347,7 @@ import {
   Radio,
   type Album,
   type Genre,
+  type MediaItem,
   type MediaItemType,
   type Track,
 } from "@/plugins/api/interfaces";
@@ -1828,8 +1829,14 @@ const restoreSettings = async function () {
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive || store.showPlayersMenu) return;
-  if (loading.value) return;
-  if (e.key === "Escape") closeSearch();
+  if (e.key === "Escape") {
+    if (showSearchInput.value) {
+      e.preventDefault();
+      closeSearch();
+    }
+    return;
+  }
+  if (!props.allowKeyHooks || loading.value) return;
   // Let searchInput handle this.
   if (searchHasFocus.value) return;
 
@@ -1853,6 +1860,8 @@ const keyListener = function (e: KeyboardEvent) {
   } else if (
     !searchHasFocus.value &&
     e.key.length == 1 &&
+    // Space belongs to the play/pause shortcut, and no search starts with one
+    e.key != " " &&
     !e.ctrlKey &&
     !e.metaKey
   ) {
@@ -1861,12 +1870,12 @@ const keyListener = function (e: KeyboardEvent) {
   }
 };
 
-if (props.allowKeyHooks) {
-  document.addEventListener("keydown", keyListener);
-  onBeforeUnmount(() => {
-    document.removeEventListener("keydown", keyListener);
-  });
-}
+// Always listen: an open search claims Escape before the window-level
+// back navigation (useEscapeBack) sees it, even without key hooks
+document.addEventListener("keydown", keyListener);
+onBeforeUnmount(() => {
+  document.removeEventListener("keydown", keyListener);
+});
 
 if (props.restoreState) {
   // handle restore state
@@ -2174,6 +2183,13 @@ const getSortName = function (
   return item.name;
 };
 
+const getDateAdded = function (item: MediaItemType): number {
+  // milliseconds since the epoch; items without a (valid) date sort as the oldest
+  const dateAdded = (item as MediaItem).date_added;
+  const time = dateAdded ? Date.parse(dateAdded) : 0;
+  return Number.isNaN(time) ? 0 : time;
+};
+
 const getFilteredItems = function (
   // In-memory filter for (smaller) item sets that do not have server side paging and filtering
   items: MediaItemType[],
@@ -2281,6 +2297,14 @@ const getFilteredItems = function (
     result.sort(
       (a, b) => ((b as Track).position || 0) - ((a as Track).position || 0),
     );
+  }
+  // Client-side "date added" sort for playlist tracks (a stable sort, so
+  // tracks added together keep their playlist order).
+  if (params.sortBy == "timestamp_added") {
+    result.sort((a, b) => getDateAdded(a) - getDateAdded(b));
+  }
+  if (params.sortBy == "timestamp_added_desc") {
+    result.sort((a, b) => getDateAdded(b) - getDateAdded(a));
   }
   if (params.sortBy == "year") {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));

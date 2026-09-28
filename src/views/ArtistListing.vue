@@ -45,6 +45,7 @@ import {
   type RowSource,
 } from "@/components/details/rowRegistry";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import { useEscapeBack } from "@/composables/useEscapeBack";
 import { goBack } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
 import { type Artist, type MediaItemType } from "@/plugins/api/interfaces";
@@ -241,6 +242,8 @@ const backToArtist = function () {
     params: { provider: props.provider, itemId: props.itemId },
   });
 };
+
+useEscapeBack(backToArtist);
 
 // the listing says which source it is on, a restored visit included, so the
 // header and the empty text follow it without a load; only the release

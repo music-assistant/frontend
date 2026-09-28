@@ -245,6 +245,8 @@ import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
+import { useEscapeBack } from "@/composables/useEscapeBack";
+import { goBack } from "@/helpers/navigation";
 import { computed, provide, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -508,6 +510,11 @@ const getIconBackgroundStyle = (color: string) => {
 const isOverview = computed(() => {
   return router.currentRoute.value.name === "settings";
 });
+
+useEscapeBack(
+  () => goBack(router, { name: "settings" }),
+  () => !isOverview.value,
+);
 
 const activeTab = computed(() => {
   const name = router.currentRoute.value.name?.toString() || "";
