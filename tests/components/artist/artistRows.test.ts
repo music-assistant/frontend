@@ -41,6 +41,7 @@ const MUSIC_ROWS: ArtistRowId[] = [
   "albums",
   "singles_eps",
   "appears_on",
+  "discography",
   "similar_artists",
 ];
 
@@ -163,6 +164,7 @@ describe("artistRows", () => {
         "albums",
         "singles_eps",
         "appears_on",
+        "discography",
         "similar_artists",
         "bio",
         "top_tracks",
@@ -199,6 +201,7 @@ describe("artistRows", () => {
         "top_tracks",
         "singles_eps",
         "appears_on",
+        "discography",
         "similar_artists",
       ];
       await artistRows.setOrder(reordered, MUSIC_ROWS);

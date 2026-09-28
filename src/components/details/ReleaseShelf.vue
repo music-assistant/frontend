@@ -16,6 +16,9 @@
           v-if="sourceLabel"
           :label="sourceLabel"
           :domain="sourceDomain"
+          :options="sourceOptions"
+          :selected="sourceValue"
+          @select="(source) => emit('select-source', source)"
         />
         <span v-else-if="meta" class="release-shelf__meta">{{ meta }}</span>
       </div>
@@ -66,6 +69,7 @@
 
 <script setup lang="ts">
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
+import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
 import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
@@ -73,7 +77,7 @@ import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { parseBool } from "@/helpers/parse";
 import { panelViewItemResponsive } from "@/helpers/utils";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   AlbumType,
   type Album,
@@ -93,6 +97,10 @@ export interface Props {
   sourceLabel?: string;
   // provider domain behind `sourceLabel`, for its icon
   sourceDomain?: string;
+  // the sources the row can switch to; makes the badge a picker when >1 offered
+  sourceOptions?: SourceOption[];
+  // the source currently feeding the row, highlighted in the picker
+  sourceValue?: RowSource;
   // undefined while the row is still loading
   items?: Array<Album | ItemMapping>;
   viewAllTo?: RouteLocationRaw;
@@ -104,6 +112,8 @@ const props = withDefaults(defineProps<Props>(), {
   meta: undefined,
   sourceLabel: undefined,
   sourceDomain: undefined,
+  sourceOptions: undefined,
+  sourceValue: undefined,
   items: undefined,
   viewAllTo: undefined,
   emptyMessage: undefined,
@@ -112,6 +122,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: "edit-rows"): void;
+  (e: "select-source", source: RowSource): void;
 }>();
 
 const SKELETONS = 6;
@@ -123,8 +134,10 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
 );
 
 // the item's type, so every card says what it is; the year already sits on the
-// artwork, so it isn't repeated here
+// artwork, so it isn't repeated here. A release that is not in the library says
+// that instead, which is the more useful thing to know about it.
 const subtitle = function (item: Album | ItemMapping): string {
+  if (isMusicBrainzItem(item)) return $t("not_in_library");
   if ("album_type" in item && item.album_type !== AlbumType.UNKNOWN) {
     return $t(`album_type.${item.album_type}`);
   }

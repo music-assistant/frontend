@@ -13,6 +13,9 @@
             v-if="sourceLabel"
             :label="sourceLabel"
             :domain="sourceDomain"
+            :options="sourceOptions"
+            :selected="sourceValue"
+            @select="(source) => emit('select-source', source)"
           />
         </div>
         <RouterLink
@@ -82,6 +85,12 @@
               <EllipsisVertical :size="16" />
             </button>
           </div>
+          <div
+            v-if="shownTracks.length === 0 && emptyMessage"
+            class="artist-top-tracks__empty"
+          >
+            {{ emptyMessage }}
+          </div>
         </template>
         <template v-else>
           <div
@@ -101,6 +110,7 @@
 
 <script setup lang="ts">
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
+import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
 import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -136,12 +146,19 @@ export interface Props {
   sourceLabel?: string;
   // provider domain behind `sourceLabel`, for its icon
   sourceDomain?: string;
+  // the sources the row can switch to; makes the badge a picker when >1 offered
+  sourceOptions?: SourceOption[];
+  // the source currently feeding the row, highlighted in the picker
+  sourceValue?: RowSource;
+  // shown when the row has no tracks but stays mounted for its source picker
+  emptyMessage?: string;
   libraryTrackCount?: number;
 }
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: "edit-rows"): void;
+  (e: "select-source", source: RowSource): void;
 }>();
 
 const DESKTOP_TRACKS = 9;
@@ -356,6 +373,13 @@ function releaseYear(album?: Album | ItemMapping | null): number | undefined {
 .artist-top-tracks__skeleton-text {
   height: 16px;
   flex: 1;
+}
+.artist-top-tracks__empty {
+  grid-column: 1 / -1;
+  align-self: center;
+  padding: 8px;
+  font-size: 14px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 
 @media (max-width: 768px) {

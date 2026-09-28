@@ -172,11 +172,12 @@
         >
           <div
             class="command-center-thumb relative size-10 shrink-0 overflow-hidden rounded-md"
+            :class="{ 'is-playable': isPlayable(item) }"
             @click="onThumbClick(item, $event)"
           >
             <MediaItemThumb :item="item" :size="40" />
             <span
-              v-if="!isTouch"
+              v-if="!isTouch && isPlayable(item)"
               class="command-center-play"
               aria-hidden="true"
             >
@@ -195,7 +196,7 @@
               :size="18"
             />
             <button
-              v-if="isTouch"
+              v-if="isTouch && isPlayable(item)"
               type="button"
               tabindex="-1"
               class="command-center-play-mobile"
@@ -596,13 +597,16 @@ const mediaSections = computed(() => {
   }[] = [];
 
   for (const mediaType of mediaTypes) {
+    // an item collapses into an earlier library item or same-provider twin;
+    // equally named items on different providers are distinct until matched
     const seen = new Set<string>();
     const items: MediaItemTypeOrItemMapping[] = [];
     for (const item of filteredItems(mediaType)) {
       const key = dedupeKey(item);
       if (key) {
-        if (seen.has(key)) continue;
-        seen.add(key);
+        const providerKey = `${item.provider}:${key}`;
+        if (seen.has(key) || seen.has(providerKey)) continue;
+        seen.add(item.provider === "library" ? key : providerKey);
       }
       items.push(item);
     }
@@ -664,6 +668,11 @@ const onMediaSelect = function (item: MediaItemTypeOrItemMapping) {
   });
 };
 
+// item mappings may omit is_playable, so treat only an explicit false as
+// non-playable to keep the play affordance on valid items
+const isPlayable = (item: MediaItemTypeOrItemMapping) =>
+  item.is_playable !== false;
+
 const onPlayClick = function (
   item: MediaItemTypeOrItemMapping,
   event: MouseEvent,
@@ -674,12 +683,13 @@ const onPlayClick = function (
 };
 
 // the artwork plays on a hover-capable device; on touch, tapping it selects the
-// row like the regular list rows, and the play button on the right handles play
+// row like the regular list rows, and the play button on the right handles play.
+// non-playable rows fall through to the row select (navigation) either way
 const onThumbClick = function (
   item: MediaItemTypeOrItemMapping,
   event: MouseEvent,
 ) {
-  if (isTouch.value) return;
+  if (isTouch.value || !isPlayable(item)) return;
   event.stopPropagation();
   onPlayClick(item, event);
 };
@@ -968,11 +978,11 @@ watch(
 /* hover-capable devices: play over the dimmed artwork on the active row,
    matching the blue play-over-artwork of the regular list rows */
 @media (hover: hover) {
-  .command-center-thumb {
+  .command-center-thumb.is-playable {
     cursor: pointer;
   }
 
-  .command-center-thumb::after {
+  .command-center-thumb.is-playable::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -999,7 +1009,7 @@ watch(
     transition: opacity 0.15s ease;
   }
 
-  [data-highlighted] .command-center-thumb::after,
+  [data-highlighted] .command-center-thumb.is-playable::after,
   [data-highlighted] .command-center-play {
     opacity: 1;
   }

@@ -199,6 +199,10 @@ function makeTrack(id: string, name: string) {
   };
 }
 
+function makeUnplayableTrack(id: string, name: string) {
+  return { ...makeTrack(id, name), is_playable: false };
+}
+
 // the shell picks a sheet or a dialog by layout; the palette under test only
 // hands it the open flag and a slot, so one stub covers both
 const CommandCenterShellStub = {
@@ -514,6 +518,10 @@ describe("CommandCenter", () => {
 
     await typeQuery(wrapper, "bohemian");
     expect(wrapper.find('[data-testid="provider-icon"]').exists()).toBe(true);
+    // the hover dimming/play overlay only shows on playable rows
+    expect(wrapper.get(".command-center-thumb").classes()).toContain(
+      "is-playable",
+    );
 
     // clicking the artwork plays the item, like the regular list rows
     await wrapper.get(".command-center-thumb").trigger("click");
@@ -559,6 +567,59 @@ describe("CommandCenter", () => {
         expect.any(Number),
       );
       expect(state.routerPush).not.toHaveBeenCalled();
+
+      wrapper.unmount();
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
+  it("navigates instead of playing a non-playable result from its thumbnail", async () => {
+    state.resultsByType[MediaType.TRACK] = [makeUnplayableTrack("t1", "Rock")];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    await typeQuery(wrapper, "rock");
+
+    // no play-over-artwork affordance for a non-playable item, and the
+    // thumbnail keeps no hover dimming/play overlay
+    expect(wrapper.find("span.command-center-play").exists()).toBe(false);
+    expect(wrapper.get(".command-center-thumb").classes()).not.toContain(
+      "is-playable",
+    );
+
+    // clicking its artwork falls through to the row, navigating to the item
+    await wrapper.get(".command-center-thumb").trigger("click");
+    expect(state.playBtnSpy).not.toHaveBeenCalled();
+    expect(state.routerPush).toHaveBeenCalledWith({
+      name: MediaType.TRACK,
+      params: { itemId: "t1", provider: "library" },
+    });
+
+    wrapper.unmount();
+  });
+
+  it("hides the touch play button for a non-playable result", async () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("hover: none"),
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    try {
+      state.resultsByType[MediaType.TRACK] = [
+        makeUnplayableTrack("t1", "Rock"),
+      ];
+      const wrapper = mountPalette();
+      useCommandCenter().open();
+      await flushPromises();
+      await typeQuery(wrapper, "rock");
+
+      expect(wrapper.find("button.command-center-play-mobile").exists()).toBe(
+        false,
+      );
 
       wrapper.unmount();
     } finally {
@@ -702,6 +763,25 @@ describe("CommandCenter", () => {
       .findAll('[data-testid="palette-item"]')
       .filter((item) => item.text().includes("Bohemian Rhapsody"));
     expect(items).toHaveLength(1);
+
+    wrapper.unmount();
+  });
+
+  it("keeps equally named results from different providers", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      { ...makeTrack("t1", "Bohemian Rhapsody"), provider: "apple_music" },
+      { ...makeTrack("t2", "Bohemian Rhapsody"), provider: "apple_music" },
+      { ...makeTrack("t3", "Bohemian Rhapsody"), provider: "ytmusic" },
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "bohemian");
+    const items = wrapper
+      .findAll('[data-testid="palette-item"]')
+      .filter((item) => item.text().includes("Bohemian Rhapsody"));
+    expect(items).toHaveLength(2);
 
     wrapper.unmount();
   });

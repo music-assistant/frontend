@@ -25,6 +25,7 @@ const { apiMock, hasScope, storeMock } = vi.hoisted(() => ({
   apiMock: {
     providers: {
       "test_provider--1": { available: true, supported_features: [] },
+      builtin: { available: true, supported_features: [] },
     } as Record<string, unknown>,
     getProvider: vi.fn(),
     getLibraryItem: vi.fn(),
