@@ -306,15 +306,15 @@ export async function getOtherTracksForArtist(
 }
 
 // ---------------------------------------------------------------------------
-// InfoHeader synthesis
+// Hero synthesis
 // ---------------------------------------------------------------------------
 
 /**
- * Build an Artist-shaped MediaItem so InfoHeader can render a classical
- * entity (composer, performer, work) using the existing artist-detail
- * layout. The "http" image provider bypasses the provider-availability
- * filter in getMediaItemImage and the imageproxy in getMediaItemImageUrl,
- * so the supplied URLs are used directly.
+ * Build an Artist-shaped MediaItem so ClassicalHero can render a classical
+ * entity (composer, performer, work) using the artist-detail hero layout.
+ * The "http" image provider bypasses the provider-availability filter in
+ * getMediaItemImage and the imageproxy in getMediaItemImageUrl, so the
+ * supplied URLs are used directly.
  *
  * Drops out once the backend returns proper Artist records for composers
  * and performers.

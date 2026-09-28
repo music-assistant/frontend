@@ -70,7 +70,7 @@ const activeTab = computed<ClassicalTab>(() => {
   return isClassicalTab(segment) ? segment : CLASSICAL_DEFAULT_TAB;
 });
 
-// Detail routes render their own full-bleed banner (InfoHeader); drop the
+// Detail routes render their own full-bleed banner (ClassicalHero); drop the
 // inner padding so the banner reaches the edges.
 const fullBleedContent = computed(() =>
   route.matched.some((r) => r.meta?.hideTabs === true),

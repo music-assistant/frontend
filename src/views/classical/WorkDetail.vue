@@ -1,26 +1,37 @@
 <template>
   <section v-if="work">
-    <!-- The work has no artwork of its own; the header borrows the composer's
-         fanart/thumb. Title/catalog/work-type/year/composer-link follow. -->
-    <InfoHeader v-if="artistItem" :item="artistItem" />
-
-    <div class="work-meta-row">
-      <router-link
-        :to="`/classical/composers/${work.composer_id}`"
-        class="work-composer-link"
-      >
-        {{ work.composer }}
-      </router-link>
-      <span v-if="work.catalog_number" class="work-meta-sep"
-        >· {{ work.catalog_number }}</span
-      >
-      <span v-if="work.work_type" class="work-meta-sep"
-        >· {{ formatWorkType(work.work_type) }}</span
-      >
-      <span v-if="work.year_composed" class="work-meta-sep"
-        >· {{ work.year_composed }}</span
-      >
-    </div>
+    <!-- The work has no artwork of its own; the hero borrows the composer's. -->
+    <ClassicalHero :item="artistItem">
+      <template #meta>
+        <div class="work-meta-line">
+          <Music :size="16" class="work-meta-icon" />
+          <span class="work-meta-text">
+            <router-link
+              :to="`/classical/composers/${work.composer_id}`"
+              class="work-composer-link"
+            >
+              {{ work.composer }}
+            </router-link>
+            <template v-if="work.catalog_number">
+              <span class="work-meta-sep">·</span>{{ work.catalog_number }}
+            </template>
+            <template v-if="work.work_type">
+              <span class="work-meta-sep">·</span
+              >{{ formatWorkType(work.work_type) }}
+            </template>
+            <template v-if="work.year_composed">
+              <span class="work-meta-sep">·</span>{{ work.year_composed }}
+            </template>
+          </span>
+        </div>
+      </template>
+    </ClassicalHero>
+    <DetailTextRow
+      v-if="work.description"
+      :text="work.description"
+      :dialog-title="work.name"
+      markdown
+    />
 
     <Toolbar
       :title="$t('recordings')"
@@ -87,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import InfoHeader from "@/components/InfoHeader.vue";
+import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { type Artist } from "@/plugins/api/interfaces";
 import {
@@ -103,12 +114,14 @@ import {
   type ClassicalRecordingMovement,
   type ClassicalWorkSummary,
 } from "@/services/classical";
+import ClassicalHero from "@/views/classical/components/ClassicalHero.vue";
 import RecordingsFilter from "@/views/classical/components/RecordingsFilter.vue";
 import WorkRecordingCard from "@/views/classical/components/WorkRecordingCard.vue";
 import YearRangeFilter from "@/views/classical/components/YearRangeFilter.vue";
 import { openMovementMenu, openRecordingMenu } from "@/views/classical/menu";
 import { useYearRange, yearBounds } from "@/views/classical/yearRange";
 import { normalizeForFilter } from "@/helpers/utils";
+import { Music } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -225,7 +238,7 @@ const artistItem = computed<Artist | undefined>(() => {
     uri: `library://work/${w.item_id}`,
     fanart_url: c?.fanart_url,
     thumbnail_url: c?.thumbnail_url,
-    // Skip the composer's logo so the InfoHeader name slot shows the work title.
+    // Skip the composer's logo so the hero shows the work title.
     logo_url: null,
     biography: w.description ?? null,
   });
@@ -347,26 +360,39 @@ const formatWorkType = (raw: string) => {
 </script>
 
 <style scoped>
-.work-meta-row {
-  padding: 0.6rem 1rem 0;
+.work-meta-line {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  font-size: 0.95rem;
-  color: var(--muted-foreground, #aaa);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.work-meta-icon {
+  flex: none;
+}
+
+.work-meta-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .work-composer-link {
   font-family: var(--font-classical-serif);
   font-optical-sizing: auto;
   font-weight: 600;
-  font-size: 1.05rem;
   color: inherit;
   text-decoration: none;
 }
 
 .work-composer-link:hover {
   text-decoration: underline;
+}
+
+.work-meta-sep {
+  margin: 0 4px;
+  opacity: 0.5;
 }
 
 .recordings-controls {

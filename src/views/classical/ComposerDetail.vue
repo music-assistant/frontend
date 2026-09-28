@@ -1,6 +1,12 @@
 <template>
   <section v-if="artistItem">
-    <InfoHeader :item="artistItem" />
+    <ClassicalHero :item="artistItem" />
+    <DetailTextRow
+      v-if="artistItem.metadata.description"
+      :text="artistItem.metadata.description"
+      :dialog-title="artistItem.name"
+      markdown
+    />
     <Toolbar :title="$t('works')" :count="works.length" color="transparent" />
     <v-divider />
 
@@ -46,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import InfoHeader from "@/components/InfoHeader.vue";
+import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { type Artist } from "@/plugins/api/interfaces";
 import {
@@ -61,6 +67,7 @@ import {
   type ClassicalPerformer,
   type ClassicalWorkSummary,
 } from "@/services/classical";
+import ClassicalHero from "@/views/classical/components/ClassicalHero.vue";
 import OtherTracksSection from "@/views/classical/components/OtherTracksSection.vue";
 import { openOtherTrackMenu } from "@/views/classical/menu";
 import { computed, ref, watch } from "vue";
