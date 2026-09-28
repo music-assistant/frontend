@@ -79,6 +79,17 @@
           @edit-rows="rowsEditorOpen = true"
         />
 
+        <!-- discography (every release MusicBrainz lists, in the library or not) -->
+        <ReleaseShelf
+          v-else-if="rowId === 'discography' && showRow(discographyItems)"
+          :title="$t('discography')"
+          :meta="isPhone ? undefined : $t('discography_hint')"
+          :items="discographyItems"
+          :view-all-to="listingRoute('discography')"
+          :parent-item="itemDetails"
+          @edit-rows="rowsEditorOpen = true"
+        />
+
         <!-- similar artists -->
         <ArtistSimilarShelf
           v-else-if="
@@ -270,6 +281,7 @@ const {
   albumItems,
   singleItems,
   appearsOnItems,
+  discographyItems,
   similarArtistItems,
   albumsMeta,
   albumsSource,
@@ -318,6 +330,9 @@ const rowMeta = computed<Partial<Record<ArtistRowId, string>>>(() => ({
     ? String(singleItems.value.length)
     : undefined,
   appears_on: $t("appears_on_hint"),
+  discography: discographyItems.value?.length
+    ? String(discographyItems.value.length)
+    : undefined,
 }));
 
 // library audiobooks can be filtered to the providers the artist is mapped to
@@ -480,6 +495,8 @@ function rowApplies(rowId: ArtistRowId): boolean {
     case "appears_on":
     case "audiobooks":
       return isLibraryItem;
+    case "discography":
+      return isLibraryItem && api.supportsArtistDiscography;
     case "audiobooks_all":
       return audiobookSourceProviderIds.value.length > 0;
     case "artwork":

@@ -103,6 +103,9 @@ const ROLES_SCHEMA_VERSION = 74;
 // Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
 const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
 
+// The music/artists/discography command landed in API schema 79.
+const ARTIST_DISCOGRAPHY_SCHEMA_VERSION = 79;
+
 export interface CommandOptions {
   /**
    * Skip the global console.error + error toast for an error result. Use for a
@@ -729,6 +732,21 @@ export class MusicAssistantApi {
       item_id,
       provider_instance_id_or_domain,
       provider_filter,
+    });
+  }
+
+  /**
+   * Every album, EP and single MusicBrainz credits to a library artist, newest first.
+   *
+   * Only library artists are supported; the list is empty when MusicBrainz doesn't know
+   * the artist. The releases that are not in the library come back as MusicBrainz items
+   * (provider "musicbrainz", without provider mappings), which the server resolves to a
+   * real album when one is opened or added.
+   */
+  public getArtistDiscography(item_id: string): Promise<Album[]> {
+    return this.sendCommand("music/artists/discography", {
+      item_id,
+      provider_instance_id_or_domain: "library",
     });
   }
 
@@ -3120,6 +3138,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server lists an artist's discography from MusicBrainz (schema >= 79). */
+  public get supportsArtistDiscography(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      ARTIST_DISCOGRAPHY_SCHEMA_VERSION
     );
   }
 

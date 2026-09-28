@@ -308,6 +308,7 @@ import {
   getPlaylistMigrationProviders,
   isAudioSource,
   isItemInLibrary,
+  isMusicBrainzItem,
   itemIsAvailable,
   itemSupportsPlayLog,
 } from "@/plugins/api/helpers";
@@ -536,7 +537,7 @@ export const getContextMenuItems = async function (
       MediaType.PODCAST,
       MediaType.TRACK,
     ].includes(items[0].media_type) &&
-    itemIsAvailable(items[0])
+    (itemIsAvailable(items[0]) || isMusicBrainzItem(items[0]))
   ) {
     contextMenuItems.push({
       label: "show_info",
@@ -669,8 +670,11 @@ export const getContextMenuItems = async function (
   // which provider items and item mappings do not carry, so resolve the
   // counterpart the library holds. Library rows are verified too since a
   // row can outlive its item (a list kept open, a cached search result).
+  // A MusicBrainz release is skipped: the server hands back the library album
+  // for a release that is in the library, so this one is outside it.
   let libraryItem: MediaItemType | undefined;
   if (
+    !isMusicBrainzItem(firstItem) &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -726,7 +730,7 @@ export const getContextMenuItems = async function (
       MediaType.RADIO,
       MediaType.TRACK,
     ].includes(resolvedItem.media_type) &&
-    itemIsAvailable(resolvedItem)
+    (itemIsAvailable(resolvedItem) || isMusicBrainzItem(resolvedItem))
   ) {
     contextMenuItems.push({
       label: "add_library",
@@ -1107,6 +1111,7 @@ export const getContextMenuItems = async function (
     managesLibrary &&
     items.length === 1 &&
     items[0].media_type !== MediaType.COLLECTION &&
+    !isMusicBrainzItem(items[0]) &&
     (items[0] == parentItem || !itemIsAvailable(items[0]))
   ) {
     contextMenuItems.push({
@@ -1625,6 +1630,8 @@ const startAudioSourceMenuItem = function (
 const addableItem = function (
   item: MediaItemTypeOrItemMapping,
 ): string | MediaItemTypeOrItemMapping {
+  // the server resolves a MusicBrainz uri to the album on a music service
+  if (isMusicBrainzItem(item)) return item.uri;
   if (item.provider !== "library" || !("provider_mappings" in item)) {
     return item;
   }

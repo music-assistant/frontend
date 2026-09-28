@@ -13,23 +13,28 @@ import { artist } from "../fixtures/artist";
 import { track } from "../fixtures/track";
 
 const {
+  apiMock,
   mockGetArtist,
   mockSubscribe,
   mockAvailableArtistRowIds,
   mockResolveArtistRows,
   mockArtistRowSources,
   mockLoadArtistReleases,
+  mockLoadArtistDiscography,
   mockLoadArtistLibraryTracks,
   mockLoadArtistTopTracks,
   mockLoadSimilarArtists,
   mockAppearsOnAlbums,
 } = vi.hoisted(() => ({
+  // what the connected server supports, so a test can model an older one
+  apiMock: { supportsArtistDiscography: true },
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
   mockSubscribe: vi.fn(() => () => {}),
   mockAvailableArtistRowIds: vi.fn(),
   mockResolveArtistRows: vi.fn(),
   mockArtistRowSources: vi.fn(),
   mockLoadArtistReleases: vi.fn(),
+  mockLoadArtistDiscography: vi.fn(),
   mockLoadArtistLibraryTracks: vi.fn(),
   mockLoadArtistTopTracks: vi.fn(),
   mockLoadSimilarArtists: vi.fn(),
@@ -42,6 +47,9 @@ vi.mock("@/plugins/api", () => ({
     subscribe: mockSubscribe,
     providers: {},
     getProvider: () => undefined,
+    get supportsArtistDiscography() {
+      return apiMock.supportsArtistDiscography;
+    },
   },
 }));
 
@@ -67,6 +75,7 @@ vi.mock("@/components/artist/artistRows", () => ({
 vi.mock("@/components/artist/artistData", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/artist/artistData")>()),
   loadArtistReleases: mockLoadArtistReleases,
+  loadArtistDiscography: mockLoadArtistDiscography,
   loadArtistLibraryTracks: mockLoadArtistLibraryTracks,
   loadArtistTopTracks: mockLoadArtistTopTracks,
   loadSimilarArtists: mockLoadSimilarArtists,
@@ -89,7 +98,7 @@ vi.mock("@/components/artist/ArtistTopTracksRow.vue", () => ({
     template: '<div data-row="top_tracks" />',
   },
 }));
-// one component backs three rows, so it reports which title it was given
+// one component backs several rows, so it reports which title it was given
 vi.mock("@/components/details/ReleaseShelf.vue", () => ({
   default: {
     name: "ReleaseShelf",
@@ -129,6 +138,7 @@ const MUSIC_ROWS = [
   "albums",
   "singles_eps",
   "appears_on",
+  "discography",
   "similar_artists",
 ];
 const AUDIOBOOK_ROWS = ["bio", "audiobooks", "audiobooks_all"];
@@ -181,7 +191,9 @@ describe("ArtistDetails", () => {
       }));
     // a library artist mapped to a provider that can supply the row
     mockArtistRowSources.mockReset().mockReturnValue(["library", "all"]);
+    apiMock.supportsArtistDiscography = true;
     mockLoadArtistReleases.mockReset().mockResolvedValue(RELEASES);
+    mockLoadArtistDiscography.mockReset().mockResolvedValue([album()]);
     mockLoadArtistLibraryTracks.mockReset().mockResolvedValue([track()]);
     mockLoadArtistTopTracks.mockReset().mockResolvedValue([track()]);
     mockLoadSimilarArtists.mockReset().mockResolvedValue([artist()]);
@@ -256,6 +268,35 @@ describe("ArtistDetails", () => {
 
     expect(renderedRows(wrapper)).not.toContain("top_tracks");
     expect(renderedRows(wrapper)).not.toContain("similar_artists");
+  });
+
+  it("shows the discography of a library artist", async () => {
+    const wrapper = await mountDetails(artist());
+
+    expect(renderedRows(wrapper)).toContain("discography");
+  });
+
+  it("leaves the discography out on a server without the command", async () => {
+    apiMock.supportsArtistDiscography = false;
+
+    const wrapper = await mountDetails(artist());
+
+    expect(renderedRows(wrapper)).not.toContain("discography");
+  });
+
+  it("leaves the discography out for a provider artist", async () => {
+    const wrapper = await mountDetails(artist({ provider: "spotify--abc" }));
+
+    expect(renderedRows(wrapper)).not.toContain("discography");
+  });
+
+  // MusicBrainz is not loaded, or does not know the artist
+  it("hides the discography once it comes up empty", async () => {
+    mockLoadArtistDiscography.mockResolvedValue([]);
+
+    const wrapper = await mountDetails(artist());
+
+    expect(renderedRows(wrapper)).not.toContain("discography");
   });
 
   it("uses the same audiobooks listing path for every library author/narrator artist", async () => {

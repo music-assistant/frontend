@@ -10,16 +10,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { artist } from "../fixtures/artist";
 import { providerMapping } from "../fixtures/providerMapping";
 
-const { mockGetArtist, mockReplace, routeQuery } = vi.hoisted(() => ({
-  mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
-  mockReplace: vi.fn(),
-  routeQuery: {} as Record<string, string>,
-}));
+const { mockGetArtist, mockGetArtistDiscography, mockReplace, routeQuery } =
+  vi.hoisted(() => ({
+    mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
+    mockGetArtistDiscography:
+      vi.fn<MusicAssistantApi["getArtistDiscography"]>(),
+    mockReplace: vi.fn(),
+    routeQuery: {} as Record<string, string>,
+  }));
 
 vi.mock("@/plugins/api", () => ({
   api: {
     getArtist: mockGetArtist,
     getArtistAlbums: vi.fn().mockResolvedValue([]),
+    getArtistDiscography: mockGetArtistDiscography,
     providers: {},
   },
 }));
@@ -52,6 +56,7 @@ vi.mock("@/components/ItemsListing.vue", () => ({
       "providerOverride",
       "providerFilterOptions",
       "showProviderFilter",
+      "sortKeys",
     ],
     template:
       '<div class="items-listing-stub" :data-path="path" :data-itemtype="itemtype" />',
@@ -89,6 +94,7 @@ describe("ArtistListing", () => {
   beforeEach(() => {
     mockGetArtist.mockReset();
     mockReplace.mockReset();
+    mockGetArtistDiscography.mockReset().mockResolvedValue([]);
     for (const key of Object.keys(api.providers)) delete api.providers[key];
     for (const key of Object.keys(routeQuery)) delete routeQuery[key];
   });
@@ -98,6 +104,7 @@ describe("ArtistListing", () => {
     ["singles", "artistsingles", "artistalbums"],
     ["tracks", "artisttracks", "artisttracks"],
     ["appears_on", "artistappearson", "artistalbums"],
+    ["discography", "artistdiscography", "artistalbums"],
   ])("renders %s as its own listing", async (listing, path, itemtype) => {
     const wrapper = await mountListing(listing);
     expect(listingAttributes(wrapper)).toEqual({ path, itemtype });
@@ -298,6 +305,32 @@ describe("ArtistListing", () => {
     await flushPromises();
 
     expect(listing(wrapper).props("subtitle")).toBe("Artist");
+  });
+
+  it("lists the artist's whole discography, in the order the server sent it", async () => {
+    const wrapper = await mountListing(
+      "discography",
+      artist({ item_id: "artist-1" }),
+    );
+
+    await (
+      listing(wrapper).props("loadItems") as (
+        params: Record<string, unknown>,
+      ) => Promise<unknown>
+    )({});
+
+    expect(mockGetArtistDiscography).toHaveBeenCalledWith("artist-1");
+    expect((listing(wrapper).props("sortKeys") as string[])[0]).toBe(
+      "original",
+    );
+  });
+
+  // the discography is the library artist's, so there is nothing to switch to
+  it("leaves the discography without a source selection", async () => {
+    const props = listing(await mountListing("discography")).props();
+
+    expect(props.showProviderFilter).toBe(false);
+    expect(props.requireProviderSelection).toBeUndefined();
   });
 
   it("uses the same listing path for every artist", async () => {

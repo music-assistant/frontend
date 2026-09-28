@@ -35,6 +35,7 @@
 import {
   appearsOnAlbums,
   isSingleOrEp,
+  loadArtistDiscography,
   loadArtistLibraryTracks,
   loadArtistReleases,
 } from "@/components/artist/artistData";
@@ -56,7 +57,7 @@ export interface Props {
   itemId: string;
   provider: string;
   // which of the artist page's shelves is shown in full
-  listing: "albums" | "singles" | "tracks" | "appears_on";
+  listing: "albums" | "singles" | "tracks" | "appears_on" | "discography";
 }
 const props = defineProps<Props>();
 
@@ -216,6 +217,19 @@ const config = computed<ListingConfig | undefined>(() => {
         showProviderFilter: false,
         loadItems: loadAppearsOn,
       };
+    case "discography":
+      return {
+        ...listingDefaults(),
+        labelKey: artistRows.definition("discography").labelKey,
+        path: "artistdiscography",
+        // the server sends the releases newest first, which "original" keeps
+        sortKeys: ["original", ...ALBUM_SORT_KEYS],
+        showAlbumTypeFilter: true,
+        showFavoritesOnlyFilter: false,
+        showProviderFilter: false,
+        emptyMessage: $t("artist_row_empty"),
+        loadItems: loadDiscography,
+      };
     default:
       return undefined;
   }
@@ -307,6 +321,13 @@ async function loadReleases(
     artistRows.effectiveSource(rowId, itemDetails.value);
   activeSource.value = source;
   return await loadArtistReleases(itemDetails.value, source);
+}
+
+/** Everything MusicBrainz credits to the artist; only a library artist has one. */
+async function loadDiscography(): Promise<MediaItemType[]> {
+  const artist = itemDetails.value;
+  if (artist?.provider !== "library") return [];
+  return await loadArtistDiscography(artist);
 }
 
 /** Albums the artist is credited on without being the album artist. */

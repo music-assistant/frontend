@@ -1,0 +1,130 @@
+/**
+ * A discography lists releases that are on none of the user's music services:
+ * MusicBrainz items without provider mappings. They can be opened and added to
+ * the library, which the server resolves to a real album, but not played.
+ */
+import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
+import { Scope } from "@/plugins/api/interfaces";
+import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { album } from "../fixtures/album";
+import { artist } from "../fixtures/artist";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+
+const { apiMock, emittedMenus, storeMock } = vi.hoisted(() => ({
+  emittedMenus: [] as ContextMenuDialogEvent[],
+  apiMock: {
+    addItemToLibrary: vi.fn(),
+    getItem: vi.fn(),
+    getLibraryItem: vi.fn(),
+    getProvider: vi.fn(),
+    getCoreConfigValue: vi.fn(),
+    playMedia: vi.fn(),
+    providers: {},
+    players: {},
+  },
+  storeMock: {
+    activePlayer: undefined,
+    activePlayerId: undefined,
+    enabledPlugins: new Set<string>(),
+  },
+}));
+
+vi.mock("@/plugins/api", () => ({ default: apiMock, api: apiMock }));
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
+// signed in as a member, which may write the library
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+vi.mock("@/plugins/eventbus", () => ({
+  eventbus: {
+    on: vi.fn(),
+    off: vi.fn(),
+    emit: vi.fn((_type: string, payload: ContextMenuDialogEvent) => {
+      emittedMenus.push(payload);
+    }),
+  },
+}));
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+
+// a release as the discography sends it: the MusicBrainz release group id, the
+// library artist, and no provider mappings at all
+const release = album({
+  item_id: "rg-1",
+  provider: "musicbrainz",
+  provider_mappings: [],
+  year: 1994,
+  artists: [artist({ item_id: "7", name: "Jeff Buckley" })],
+});
+
+/** Opens the menu the way a row or card does, play actions included. */
+async function openMenu() {
+  await showContextMenuForMediaItem(release, undefined, 0, 0, true, true);
+  return emittedMenus[0].items;
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  // what the lookup would answer if the menu did make it
+  apiMock.getLibraryItem.mockResolvedValue(null);
+  emittedMenus.length = 0;
+});
+
+describe("the context menu of a MusicBrainz release", () => {
+  it("offers opening it and adding it to the library", async () => {
+    const labels = (await openMenu()).map((entry) => entry.label);
+
+    expect(labels).toContain("show_info");
+    expect(labels).toContain("add_library");
+  });
+
+  it("offers nothing that needs an item on a music service", async () => {
+    const labels = (await openMenu()).map((entry) => entry.label);
+
+    // nothing to play, nothing stored to favorite, refresh or remove
+    expect(labels).not.toContain("play_now");
+    expect(labels).not.toContain("favorites_add");
+    expect(labels).not.toContain("refresh_item");
+    expect(labels).not.toContain("remove_library");
+    expect(labels.filter((label) => label.startsWith("play_"))).toEqual([]);
+  });
+
+  // the server hands back the library album for a release that is in the
+  // library, so a MusicBrainz item is by definition outside it
+  it("does not look for a library counterpart", async () => {
+    await openMenu();
+
+    expect(apiMock.getLibraryItem).not.toHaveBeenCalled();
+  });
+
+  it("adds it by its uri, which the server resolves to a real album", async () => {
+    const menu = await openMenu();
+
+    await menu.find((entry) => entry.label === "add_library")?.action?.();
+
+    expect(apiMock.addItemToLibrary).toHaveBeenCalledWith(
+      "musicbrainz://album/rg-1",
+    );
+  });
+
+  // the refresh is what an unavailable item is otherwise offered, and there is
+  // no stored item here to refresh
+  it("offers no refresh to a library manager either", async () => {
+    const { authManager } = await import("@/plugins/auth");
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+    );
+
+    const labels = (await openMenu()).map((entry) => entry.label);
+
+    expect(labels).toContain("add_library");
+    expect(labels).not.toContain("refresh_item");
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+  });
+});

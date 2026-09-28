@@ -77,7 +77,7 @@ import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { parseBool } from "@/helpers/parse";
 import { panelViewItemResponsive } from "@/helpers/utils";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   AlbumType,
   type Album,
@@ -134,8 +134,10 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
 );
 
 // the item's type, so every card says what it is; the year already sits on the
-// artwork, so it isn't repeated here
+// artwork, so it isn't repeated here. A release that is not in the library says
+// that instead, which is the more useful thing to know about it.
 const subtitle = function (item: Album | ItemMapping): string {
+  if (isMusicBrainzItem(item)) return $t("not_in_library");
   if ("album_type" in item && item.album_type !== AlbumType.UNKNOWN) {
     return $t(`album_type.${item.album_type}`);
   }
