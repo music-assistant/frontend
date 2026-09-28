@@ -186,6 +186,11 @@ vi.mock("@/plugins/store", () => ({
   store: storeMock,
 }));
 
+// The dashboard viewer boot lazily imports the relay, which pulls in the real router.
+vi.mock("@/plugins/visualizer-relay", () => ({
+  installVisualizerErrorReporting: vi.fn(),
+}));
+
 vi.mock("@/helpers/connection_identity", () => ({
   createLocalConnectionIdentity: () => "local:http://music-assistant.test",
   createRemoteConnectionIdentity: () => "remote:REMOTE",

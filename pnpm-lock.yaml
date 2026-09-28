@@ -54,11 +54,11 @@ importers:
         specifier: ^14.3.0
         version: 14.3.0(vue@3.5.41(typescript@6.0.3))
       butterchurn:
-        specifier: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz
-        version: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz
+        specifier: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.4/butterchurn-3.0.0-beta.5.ma.4.tgz
+        version: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.4/butterchurn-3.0.0-beta.5.ma.4.tgz
       butterchurn-presets:
-        specifier: 2.4.7
-        version: 2.4.7
+        specifier: 3.0.0-beta.4
+        version: 3.0.0-beta.4
       canvas-confetti:
         specifier: ^1.9.4
         version: 1.9.4
@@ -2486,9 +2486,6 @@ packages:
     peerDependencies:
       '@babel/core': ^7.4.0 || ^8.0.0-0 <8.0.0
 
-  babel-runtime@6.26.0:
-    resolution: {integrity: sha512-ITKNuq2wKlW1fJg9sSW52eepoYgZBggvOAHC0u/CYu/qxQ9EVzThCgR69BnSXLHjy2f7SY5zaQ4yt7H9ZVxY2g==}
-
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
@@ -2536,12 +2533,12 @@ packages:
     resolution: {integrity: sha512-nEh+kZOPY1w+gcCMobZ6ETUp9WfibndnosbpwB1iJk/8Gt5ZF2bhS6+B6bPYz424KtwsR6Rflc3tCz1/ghX2dQ==}
     engines: {node: '>=4.0'}
 
-  butterchurn-presets@2.4.7:
-    resolution: {integrity: sha512-4MdM8ripz/VfH1BCldrIKdAc/1ryJFBDvqlyow6Ivo1frwj0H3duzvSMFC7/wIjAjxb1QpwVHVqGqS9uAFKhpg==}
+  butterchurn-presets@3.0.0-beta.4:
+    resolution: {integrity: sha512-TbQLUPvGOYMZAtWKoCmBtludh9aQZ6NaMGQU4lvPeadBPy3Du3yNmwBjlTMLP5c5mRWElxQPjTL1PtR7FZK3OQ==}
 
-  butterchurn@https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz:
-    resolution: {integrity: sha512-NPOYkwmT3x8sz5UYGFiVEo0fLMcVdkxh9Dojog9LMeOx8nz0XVDIAqALy2BdIwHONQANdfuZer1nBv0YZ5UvLw==, tarball: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz}
-    version: 3.0.0-beta.5.ma.2
+  butterchurn@https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.4/butterchurn-3.0.0-beta.5.ma.4.tgz:
+    resolution: {integrity: sha512-yO/NaBbhJ88yct9ACA8SHl0nxfPqhNWvpb9ZIJ5w/eVgcbyN/zIxANTxcwIjBQ6ruCOyZc+Rs/aM1WLT7QIZpA==, tarball: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.4/butterchurn-3.0.0-beta.5.ma.4.tgz}
+    version: 3.0.0-beta.5.ma.4
 
   cacheable@2.5.0:
     resolution: {integrity: sha512-60cyAOytib/OzBw1JNSoSV/boK1AtHryDIjvVBk7XbN4ugfkM3+Sry7fEjNgPMGgOjuaZPAp8ruZ0Cxafwyq9g==}
@@ -2642,10 +2639,6 @@ packages:
 
   core-js-compat@3.49.0:
     resolution: {integrity: sha512-VQXt1jr9cBz03b331DFDCCP90b3fanciLkgiOoy8SBHy06gNf+vQ1A3WFLqG7I8TipYIKeYK9wxd0tUrvHcOZA==}
-
-  core-js@2.6.12:
-    resolution: {integrity: sha512-Kb2wC0fvsWfQrgk8HU5lW6U/Lcs8+9aaYcy4ZFc6DDlo4nZ7n70dEgE5rtR0oG6ufKDUnrwfWL1mXR5ljDatrQ==}
-    deprecated: core-js@<3.23.3 is no longer maintained and not recommended for usage due to the number of issues. Because of the V8 engine whims, feature detection in old core-js versions could cause a slowdown up to 100x even if nothing is polyfilled. Some versions have web compatibility issues. Please, upgrade your dependencies to the actual version of core-js.
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -3558,9 +3551,6 @@ packages:
   lodash.sortby@4.7.0:
     resolution: {integrity: sha512-HDWXG8isMntAyRF5vZ7xKuEvOhT4AhlRt/3czTSjvGUxjYCBVRQY48ViDHyfYz9VIoBkW4TMGQNapx+l3RUwdA==}
 
-  lodash@4.18.1:
-    resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
-
   lru-cache@11.5.2:
     resolution: {integrity: sha512-4pfM1Ff0x50o0tQwb5ucw/RzNyD0/YJME6IVcStalZuMWxdt3sR3huStTtxz4PUmvZfRguvDejasvQ2kifR11g==}
     engines: {node: 20 || >=22}
@@ -3861,9 +3851,6 @@ packages:
 
   regenerate@1.4.2:
     resolution: {integrity: sha512-zrceR/XhGYU/d/opr2EKO7aRHUeiBI8qjtfHqADTwZd6Szfy16la6kqD0MIUs5z5hx6AaKa+PixpPrR289+I0A==}
-
-  regenerator-runtime@0.11.1:
-    resolution: {integrity: sha512-MguG95oij0fC3QV3URf4V2SDYGJhJnJGqvIIgdECeODCT98wSWDAJ94SSuVpYQUoTcGUIL6L4yNB7j1DFFHSBg==}
 
   regexp.prototype.flags@1.5.4:
     resolution: {integrity: sha512-dYqgNSZbDwkaJ2ceRd9ojCGjBq+mOm9LmtXnAnEGyHhN/5R7iDW2TRw3h+o/jCFxus3P2LfWIIiwowAjANm7IA==}
@@ -6847,11 +6834,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  babel-runtime@6.26.0:
-    dependencies:
-      core-js: 2.6.12
-      regenerator-runtime: 0.11.1
-
   balanced-match@1.0.2: {}
 
   balanced-match@4.0.4: {}
@@ -6897,13 +6879,11 @@ snapshots:
     dependencies:
       '@types/node': 26.2.0
 
-  butterchurn-presets@2.4.7:
+  butterchurn-presets@3.0.0-beta.4:
     dependencies:
-      babel-runtime: 6.26.0
-      ecma-proposal-math-extensions: 0.0.2
-      lodash: 4.18.1
+      '@babel/runtime': 7.29.7
 
-  butterchurn@https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz:
+  butterchurn@https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.4/butterchurn-3.0.0-beta.5.ma.4.tgz:
     dependencies:
       '@assemblyscript/loader': 0.28.20
       ecma-proposal-math-extensions: 0.0.2
@@ -7007,8 +6987,6 @@ snapshots:
   core-js-compat@3.49.0:
     dependencies:
       browserslist: 4.28.2
-
-  core-js@2.6.12: {}
 
   cross-spawn@7.0.6:
     dependencies:
@@ -8001,8 +7979,6 @@ snapshots:
 
   lodash.sortby@4.7.0: {}
 
-  lodash@4.18.1: {}
-
   lru-cache@11.5.2: {}
 
   lru-cache@5.1.1:
@@ -8274,8 +8250,6 @@ snapshots:
       regenerate: 1.4.2
 
   regenerate@1.4.2: {}
-
-  regenerator-runtime@0.11.1: {}
 
   regexp.prototype.flags@1.5.4:
     dependencies:
