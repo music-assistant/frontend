@@ -106,6 +106,10 @@ const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
 // The music/artists/discography command landed in API schema 79.
 const ARTIST_DISCOGRAPHY_SCHEMA_VERSION = 79;
 
+// Looking an unavailable library item up again on the music services (music/refresh_item)
+// with library.write instead of library.manage landed in API schema 80.
+const REFRESH_ITEM_LIBRARY_WRITE_SCHEMA_VERSION = 80;
+
 export interface CommandOptions {
   /**
    * Skip the global console.error + error toast for an error result. Use for a
@@ -3146,6 +3150,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       ARTIST_DISCOGRAPHY_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server lets a library writer look an unavailable item up again (schema >= 80). */
+  public get supportsRefreshItemWriteScope(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      REFRESH_ITEM_LIBRARY_WRITE_SCHEMA_VERSION
     );
   }
 

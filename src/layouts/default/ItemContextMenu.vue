@@ -1116,16 +1116,21 @@ export const getContextMenuItems = async function (
       });
     }
   }
-  // refresh item
+  // refresh item: a library manager refreshes the page's own item; an item
+  // none of the music services has any more is looked up on them again, which
+  // a library writer may do too on a server that allows it
+  const unavailable = items.length === 1 && !itemIsAvailable(items[0]);
+  const canFindOnMusicServices =
+    unavailable &&
+    (managesLibrary || (canEditLibrary && api.supportsRefreshItemWriteScope));
   if (
-    managesLibrary &&
     items.length === 1 &&
     items[0].media_type !== MediaType.COLLECTION &&
     !isMusicBrainzItem(items[0]) &&
-    (items[0] == parentItem || !itemIsAvailable(items[0]))
+    ((managesLibrary && items[0] == parentItem) || canFindOnMusicServices)
   ) {
     contextMenuItems.push({
-      label: "refresh_item",
+      label: unavailable ? "find_on_music_services" : "refresh_item",
       labelArgs: [],
       action: async () => {
         const updatedInfo = await api.refreshItem(items[0]);

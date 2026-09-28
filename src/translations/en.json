@@ -2304,6 +2304,7 @@
     "discography": "Discography",
     "discography_hint": "From MusicBrainz",
     "not_in_library": "Not in your library",
+    "find_on_music_services": "Find on your music services",
     "edit_rows": "Edit rows",
     "edit_rows_subtitle": "Applies to every artist page",
     "reset_to_default": "Reset to default",
