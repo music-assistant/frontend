@@ -37,7 +37,7 @@
         </div>
         <div class="flex shrink-0 items-center gap-1">
           <Button
-            v-if="isAdmin && musicQuizProviderInstanceId"
+            v-if="canConfigureMusicQuiz && musicQuizProviderInstanceId"
             variant="ghost"
             size="icon"
             data-testid="music-quiz-settings"
@@ -258,7 +258,7 @@ import {
 } from "@/helpers/music_quiz";
 import type { MusicQuizPlaybackSelection } from "@/helpers/music_quiz_playback";
 import api, { ConnectionState } from "@/plugins/api";
-import { ProviderType } from "@/plugins/api/interfaces";
+import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { Gamepad2, MicVocal, Plus, Settings } from "@lucide/vue";
@@ -375,12 +375,15 @@ const playbackSelection = ref<MusicQuizPlaybackSelection>({
   venuePlayerId: null,
 });
 const musicQuizProviderInstanceId = ref<string | null>(null);
-const isAdmin = computed(() => authManager.isAdmin());
+// the settings shortcut opens the plugin config, which takes managing every provider
+const canConfigureMusicQuiz = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+);
 
 watch(
-  isAdmin,
-  (admin) => {
-    if (admin && !musicQuizProviderInstanceId.value) {
+  canConfigureMusicQuiz,
+  (canConfigure) => {
+    if (canConfigure && !musicQuizProviderInstanceId.value) {
       void resolveMusicQuizProviderInstance();
     }
   },

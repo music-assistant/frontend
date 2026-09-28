@@ -37,6 +37,15 @@ vi.mock("@/plugins/store", () => ({
   },
 }));
 
+// signed in as a member
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+
 vi.mock("@/plugins/breakpoint", () => ({
   getBreakpointValue: vi.fn(() => false),
 }));
@@ -57,6 +66,9 @@ vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
 
 vi.mock("@/plugins/api/helpers", () => ({
   itemIsAvailable: vi.fn(),
+  // what the real helper does, which this module-wide mock would otherwise hide
+  isMusicBrainzItem: (item: { provider: string }) =>
+    item.provider === "musicbrainz",
 }));
 
 vi.mock("colorthief", () => ({

@@ -240,6 +240,10 @@ export function useListDragReorder(options: ListDragReorderOptions) {
   // Whether a reorder drag is in progress (drives the ghost + gap rendering).
   const isDragging = computed(() => dragSourceIndex.value !== null);
 
+  // Index the dragged row would be inserted *before* on drop (null when idle),
+  // for consumers that draw the landing slot themselves.
+  const dropIndex = computed(() => dragDropIndex.value);
+
   // Extra Y offset for a row so the rows between the source and the drop
   // target slide aside, opening a gap the size of the dragged row exactly
   // where it will land. Returns 0 for everything else (incl. the source row).
@@ -261,6 +265,7 @@ export function useListDragReorder(options: ListDragReorderOptions) {
     startItemDrag,
     draggingIndex,
     isDragging,
+    dropIndex,
     ghostY,
     dragRowHeight,
     rowOffset,

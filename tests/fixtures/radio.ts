@@ -16,7 +16,7 @@ export function radio(overrides: Partial<Radio> = {}): Radio {
     media_type: MediaType.RADIO,
     provider_mappings: [],
     metadata: {},
-    favorite: false,
+    favorite: null,
     is_dynamic: false,
     ...overrides,
   });

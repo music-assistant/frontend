@@ -330,6 +330,7 @@
 import { ref, computed, toRaw, watch, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
 import { api } from "@/plugins/api";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
   DSPConfig,
@@ -679,10 +680,13 @@ const savePreset = async () => {
   }
 };
 
-const removePreset = async (presetId?: string | null) => {
-  if (!presetId || !confirm(t("settings.dsp.presets.remove_confirm"))) return;
+const removePreset = (presetId?: string | null) => {
+  if (!presetId) return;
 
-  await api.removeDSPPreset(presetId);
+  eventbus.emit("deleteConfirmationDialog", {
+    message: t("settings.dsp.presets.remove_confirm"),
+    onConfirm: () => api.removeDSPPreset(presetId),
+  });
 };
 
 // Watchers

@@ -38,6 +38,7 @@
           :data-active="open"
           :data-suppress-hover="suppressHover"
           :aria-label="groupMembersLabel"
+          data-tour="player_group"
           @pointerenter="onPointerEnter"
         >
           <span v-if="floating" class="inline-flex">

@@ -118,7 +118,7 @@ import {
 import AutoplayRepeatLockButton from "@/layouts/default/PlayerOSD/AutoplayRepeatLockButton.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useQueueModes } from "@/layouts/default/PlayerOSD/useQueueModes";
-import type { ItemMapping } from "@/plugins/api/interfaces";
+import { Scope, type ItemMapping } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
@@ -158,7 +158,7 @@ const effectiveAutoplay = computed(
   () => autoplayEnabled.value && !repeatLocked.value,
 );
 
-// Active (primary-tinted) vs muted appearance.
+// Active (stronger border + primary icon) vs muted appearance.
 const active = computed(
   () => mode.value === "dynamic" || effectiveAutoplay.value,
 );
@@ -191,8 +191,10 @@ const description = computed(() => {
   return "";
 });
 
-// The full queue settings page is an admin-only shortcut (matches the menu).
-const canConfigure = computed(() => authManager.isAdmin());
+// The full queue settings page needs the scope to change player settings (matches the menu).
+const canConfigure = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
+);
 
 // Collapsed state is remembered per user (server-side preference, so it syncs
 // across devices). Default expanded so new users get the full explanation; once
@@ -240,10 +242,19 @@ const gotoSource = (source: ItemMapping) => {
   );
 }
 
-/* Active (radio / autoplay-on): subtle primary wash so it reads as "on". */
+/* Active (radio / autoplay-on): reads as "on" through the stronger border and
+   the icon below, not a primary wash. */
 .queue-mode-banner--active {
-  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
-  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  border-color: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 18%,
+    transparent
+  );
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 6%,
+    transparent
+  );
 }
 
 /* Collapsed: a tight single line — shrink the padding, gap, icon and toggle so
@@ -267,6 +278,8 @@ const gotoSource = (source: ItemMapping) => {
   width: 36px;
   height: 36px;
   border-radius: 8px;
+  box-sizing: border-box;
+  border: 1px solid transparent;
   cursor: pointer;
   color: color-mix(in srgb, var(--text-color, currentColor) 65%, transparent);
   background: color-mix(
@@ -276,9 +289,12 @@ const gotoSource = (source: ItemMapping) => {
   );
 }
 
+/* The overlay button's "on" look; its theme tokens are inlined, so the raw
+   --overlay-* variables the fullscreen card sets are read here. */
 .queue-mode-banner--active .queue-mode-banner__icon {
-  color: var(--primary-foreground, #fff);
-  background: var(--primary);
+  color: var(--primary);
+  background: var(--overlay-bg);
+  border-color: var(--overlay-border);
 }
 
 .queue-mode-banner__body {
@@ -308,7 +324,6 @@ const gotoSource = (source: ItemMapping) => {
   background: none;
   padding: 0;
   font: inherit;
-  color: var(--primary);
   font-weight: 600;
   cursor: pointer;
 }
@@ -333,7 +348,6 @@ const gotoSource = (source: ItemMapping) => {
   background: none;
   padding: 0;
   font: inherit;
-  color: var(--primary);
   font-weight: 600;
   cursor: pointer;
 }
