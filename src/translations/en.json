@@ -2302,7 +2302,7 @@
     "newest_first": "newest first",
     "appears_on_hint": "Credited on a track, not as the album artist",
     "discography": "Discography",
-    "discography_hint": "Everything MusicBrainz lists for this artist, in your library or not",
+    "discography_hint": "From MusicBrainz",
     "not_in_library": "Not in your library",
     "edit_rows": "Edit rows",
     "edit_rows_subtitle": "Applies to every artist page",
