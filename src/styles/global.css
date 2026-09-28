@@ -152,11 +152,6 @@ html {
      leaving the shared stack only stops them raising the next overlay. */
 
 html {
-  --scrollbar-track-color: color-mix(
-    in srgb,
-    rgb(var(--v-theme-background)) 97%,
-    white
-  );
   overflow: hidden;
   /* Nothing here scrolls, so a downward drag no in-page scroller consumes
      chains out of the Home Assistant ingress iframe and its app takes that for
@@ -209,11 +204,11 @@ html {
 /* Auto-hide scrollbars - only visible on hover */
 * {
   scrollbar-width: thin;
-  scrollbar-color: transparent var(--scrollbar-track-color);
+  scrollbar-color: transparent transparent;
 }
 
 *:hover {
-  scrollbar-color: rgba(128, 128, 128, 0.5) var(--scrollbar-track-color);
+  scrollbar-color: rgba(128, 128, 128, 0.5) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -222,7 +217,7 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--scrollbar-track-color);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
