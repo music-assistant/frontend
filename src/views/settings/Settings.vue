@@ -206,7 +206,7 @@
           variant="link"
           class="text-muted-foreground"
           data-testid="run-onboarding"
-          @click="router.push(onboardingRoute)"
+          @click="launchOnboarding"
         >
           {{ t(onboardingLinkKey) }}
         </Button>
@@ -234,6 +234,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { provideEditedProviderName } from "@/composables/useEditedProviderName";
+import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
 import { availableSettingsSections } from "@/helpers/settings_sections";
@@ -253,6 +255,10 @@ const router = useRouter();
 const { t } = useI18n();
 const { getPreference, setPreference } = useUserPreferences();
 const { mobile } = useDisplay();
+
+// the provider settings page publishes the name it shows, so the crumb above
+// it cannot disagree with its heading
+const editedProviderName = provideEditedProviderName();
 
 const settingsViewMode = ref<"list" | "card">("card");
 const settingsListPrependGap = computed(() => (mobile.value ? 4 : 24));
@@ -426,15 +432,13 @@ const canOpenOnboarding = computed(() => hasOnboardingTrack());
 const onboardingLinkKey = computed(() =>
   isAdminTrack() ? "onboarding.run_again" : "onboarding.welcome_again",
 );
+const { open: openOnboarding } = useOnboarding();
 // The setup wizard opens on whatever is left to set up. The welcome has been
 // shown by the time this link is any use, so nothing is left to do on it and
 // it would otherwise open on its own summary: showing it again means showing
 // it from the top.
-const onboardingRoute = computed(() =>
-  isAdminTrack()
-    ? { name: "onboarding" }
-    : { name: "onboarding", query: { step: "welcome" } },
-);
+const launchOnboarding = () =>
+  openOnboarding(isAdminTrack() ? undefined : "welcome");
 
 const settingsSections = computed(() =>
   availableSettingsSections(
@@ -568,16 +572,6 @@ const activeTab = computed(() => {
   return "music_providers";
 });
 
-const getProviderName = (instanceId: string) => {
-  const providerInstance = api.getProvider(instanceId);
-  if (providerInstance) {
-    return providerInstance.name;
-  }
-  const providerDomain = instanceId.split("--")[0];
-  const manifest = api.providerManifests[providerDomain];
-  return manifest?.name || instanceId;
-};
-
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
   const name = route.name?.toString() || "";
@@ -675,7 +669,9 @@ const breadcrumbItems = computed(() => {
   match(name)
     .with("editprovider", () => {
       items.push({
-        title: getProviderName(route.params.instanceId as string),
+        title:
+          editedProviderName.value ||
+          api.getProviderName(route.params.instanceId as string),
         disabled: true,
       });
     })

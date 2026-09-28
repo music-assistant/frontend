@@ -10,10 +10,12 @@
     <template v-if="itemDetails">
       <template v-for="rowId in visibleRows" :key="rowId">
         <!-- lyrics -->
-        <TrackLyricsRow
+        <DetailTextRow
           v-if="rowId === 'lyrics' && lyrics !== null"
-          :item="itemDetails"
-          :lyrics="lyrics ?? undefined"
+          :title="$t('lyrics')"
+          :text="lyrics ?? undefined"
+          :dialog-title="itemDetails.name"
+          :lines="4"
           @edit-rows="rowsEditorOpen = true"
         />
 
@@ -36,16 +38,12 @@
         <MediaRowList
           v-else-if="rowId === 'other_versions' && showRow(versionItems)"
           :title="$t('other_versions')"
-          :meta="versionItems?.length ? String(versionItems.length) : undefined"
           :items="versionItems"
+          show-source
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         >
           <template #subtitle="{ item }">{{ versionSubtitle(item) }}</template>
-          <template #tag="{ item }">
-            <ProviderIcon :domain="getProviderIconDomain(item)" :size="12" />
-            {{ providerName(item) }}
-          </template>
         </MediaRowList>
 
         <!-- similar tracks -->
@@ -82,17 +80,16 @@
 
 <script setup lang="ts">
 import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
+import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import MediaRowList from "@/components/details/MediaRowList.vue";
 import RowsEditor from "@/components/details/RowsEditor.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
   releaseSubtitle,
   trackBackdrop,
   trackReleaseYear,
 } from "@/components/track/trackData";
 import TrackHero from "@/components/track/TrackHero.vue";
-import TrackLyricsRow from "@/components/track/TrackLyricsRow.vue";
 import {
   availableTrackRowIds,
   trackRows,
@@ -100,8 +97,8 @@ import {
 } from "@/components/track/trackRows";
 import { useTrackRowData } from "@/composables/useTrackRowData";
 import { getArtistsString, getImageThumbForItem } from "@/helpers/utils";
+import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
-import { getProviderIconDomain } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
@@ -232,7 +229,10 @@ onMounted(() => {
       // check if the updated item is the current item
       if (itemDetails.value?.uri == updatedItem.uri) {
         // update UI with the updated item
-        itemDetails.value = updatedItem as Track;
+        itemDetails.value = keepOwnFavorite(
+          updatedItem,
+          itemDetails.value,
+        ) as Track;
       } else if ("provider_mappings" in updatedItem) {
         for (const provMap of updatedItem.provider_mappings) {
           if (
@@ -241,7 +241,10 @@ onMounted(() => {
               props.provider,
             )
           ) {
-            itemDetails.value = updatedItem as Track;
+            itemDetails.value = keepOwnFavorite(
+              updatedItem,
+              itemDetails.value,
+            ) as Track;
             break;
           }
         }
@@ -249,6 +252,13 @@ onMounted(() => {
     },
   );
   onBeforeUnmount(unsub);
+
+  // the user's own like or dislike, wherever they made it
+  const unsubFavorite = subscribeOwnFavorites((update) => {
+    const item = itemDetails.value;
+    if (item?.uri == update.uri) item.favorite = update.favorite;
+  });
+  onBeforeUnmount(unsubFavorite);
 });
 
 /** Loads the first artist when the track and its album have no wide art of their own. */
@@ -297,16 +307,5 @@ function similarSubtitle(item: MediaItemType | ItemMapping): string {
   const parts = [getArtistsString(item.artists)];
   if ("album" in item && item.album) parts.push(item.album.name);
   return parts.filter(Boolean).join(" · ");
-}
-
-/** The name of the provider a version comes from, the library included. */
-function providerName(item: MediaItemType | ItemMapping): string {
-  const domain = getProviderIconDomain(item);
-  if (domain === "library") return $t("library");
-  return (
-    api.getProvider(item.provider)?.name ??
-    api.getProviderManifest(domain)?.name ??
-    item.provider
-  );
 }
 </script>

@@ -1,9 +1,9 @@
 <template>
   <!-- the padding is the corner the badge sits in, so the count keeps the same
-       grip on the speaker for every glyph size; the trigger around it carries
+       grip on the glyph for every size; the trigger around it carries
        the accessible name, count included -->
   <span class="relative inline-flex p-1.5" aria-hidden="true">
-    <Speaker v-bind="$attrs" />
+    <Copy v-bind="$attrs" />
     <!-- filled from the theme rather than the trigger's colour, which turns
          primary while hovered or open and would leave the count unreadable -->
     <Badge
@@ -24,17 +24,17 @@
 
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
-import { Speaker } from "@lucide/vue";
+import { Copy } from "@lucide/vue";
 
-// attributes land on the speaker glyph, so callers size it directly
+// attributes land on the glyph, so callers size it directly
 defineOptions({
   inheritAttrs: false,
 });
 
 defineProps<{
   count: number;
-  // the speaker is small enough in the player drawer that a count sitting on
-  // top of it hides the glyph, so callers at that size pull it out onto the
+  // the glyph is small enough in the player drawer that a count sitting on
+  // top of it hides it, so callers at that size pull it out onto the
   // corner instead; the player bar has the room and keeps the tighter tuck
   outsetCount?: boolean;
 }>();

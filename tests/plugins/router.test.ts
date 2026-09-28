@@ -18,6 +18,7 @@ import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   BUILTIN_ROLE_SCOPES,
+  MEMBER_WITHOUT_OWN_SCOPES,
   OWN_SOURCES_ROLE_SCOPES,
   scopeChecker,
 } from "../fixtures/scopes";
@@ -230,7 +231,9 @@ describe("party dashboard guard", () => {
     ).resolves.toBeUndefined();
   });
 
-  it("lets a dashboard viewer through without a plugin list of its own", async () => {
+  // the global guard sends a viewer back to its pinned route, so a redirect
+  // would loop
+  it("lets a dashboard viewer through even without the plugin", async () => {
     mocks.isDashboardViewer.mockReturnValue(true);
 
     await expect(
@@ -521,7 +524,7 @@ describe("global navigation guard", () => {
     await expect(
       invokeGuard(globalGuard, resolveRoute("/settings/providers?types=music")),
     ).resolves.toBeUndefined();
-    expect(mocks.hasScope).toHaveBeenCalledWith("config.providers.own");
+    expect(mocks.hasScope).toHaveBeenCalledWith("config.providers.read");
   });
 
   it("redirects a member without the scope away from the music sources", async () => {
@@ -532,7 +535,7 @@ describe("global navigation guard", () => {
     ).resolves.toEqual({ name: "discover" });
   });
 
-  it("gates the provider options on the same scope", async () => {
+  it("gates the provider options on the own-sources scope", async () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
 
     await expect(
@@ -587,16 +590,20 @@ describe("global navigation guard", () => {
 });
 
 describe("scope-gated routes", () => {
-  // the builtin roles, and a custom role that manages its own music sources
-  // on top of the guest scopes
+  // the builtin roles, a custom role that manages its own music sources on top
+  // of the guest scopes, and a member role that only reads the source settings
   const ROLE_SCOPES = {
     ...BUILTIN_ROLE_SCOPES,
     own_sources: OWN_SOURCES_ROLE_SCOPES,
+    reads_sources: MEMBER_WITHOUT_OWN_SCOPES,
   };
   type Role = keyof typeof ROLE_SCOPES;
 
   const ROUTE_ACCESS: [path: string, roles: Role[]][] = [
-    ["/settings/providers?types=music", ["admin", "user", "own_sources"]],
+    [
+      "/settings/providers?types=music",
+      ["admin", "user", "own_sources", "reads_sources"],
+    ],
     ["/settings/editprovider/spotify--abc", ["admin", "user", "own_sources"]],
     ["/settings/players", ["admin"]],
     ["/settings/editplayer/player-1", ["admin"]],
@@ -605,7 +612,7 @@ describe("scope-gated routes", () => {
     ["/settings/addgroup/sonos--abc", ["admin"]],
     [
       "/settings/editplayer/player-1/options",
-      ["admin", "user", "guest", "own_sources"],
+      ["admin", "user", "guest", "own_sources", "reads_sources"],
     ],
     ["/settings/system", ["admin"]],
     ["/settings/editcore/webserver", ["admin"]],
@@ -614,10 +621,12 @@ describe("scope-gated routes", () => {
     ["/settings/diagnostics", ["admin"]],
     ["/settings/genremanagement", ["admin"]],
     ["/settings/users", ["admin"]],
-    ["/settings/tasks", ["admin", "user"]],
-    ["/music-quiz", ["admin", "user"]],
-    ["/onboarding", ["admin", "user", "own_sources"]],
-    ["/settings/frontend", ["admin", "user", "guest", "own_sources"]],
+    ["/settings/tasks", ["admin", "user", "reads_sources"]],
+    ["/music-quiz", ["admin", "user", "reads_sources"]],
+    [
+      "/settings/frontend",
+      ["admin", "user", "guest", "own_sources", "reads_sources"],
+    ],
   ];
 
   describe.each(Object.keys(ROLE_SCOPES) as Role[])(
@@ -639,32 +648,21 @@ describe("scope-gated routes", () => {
   );
 });
 
-describe("routes gated on a predicate", () => {
-  // the wizard takes two kinds of session — the admin setting the server up and
-  // the household member being welcomed into it — and no single scope says so
-  it("turns away a session that is on neither onboarding track", async () => {
-    mocks.store.currentUser = { role: "guest", username: "guest" };
-    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
-
-    await expect(
-      invokeGuard(globalGuard, resolveRoute("/onboarding")),
-    ).resolves.toEqual({ name: "discover" });
-  });
-
+describe("a gated route waits for the connection", () => {
   it("reads the current user only once the server connection is ready", async () => {
     vi.useFakeTimers();
     mocks.apiState.value = ConnectionState.AUTHENTICATED;
     const pending = trackGuard(
-      invokeGuard(globalGuard, resolveRoute("/onboarding")),
+      invokeGuard(globalGuard, resolveRoute("/settings/users")),
     );
 
-    // the predicate reads the signed-in user, who is not in yet: a guard that
-    // checked it now would send a member straight back to discover
+    // a scope-gated route reads the signed-in user, who is not in yet: a guard
+    // that checked it now would send an admin straight back to discover
     await vi.advanceTimersByTimeAsync(10_000);
     expect(pending.isSettled()).toBe(false);
 
-    mocks.store.currentUser = { role: "user", username: "sam" };
-    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    mocks.store.currentUser = { role: "admin", username: "admin" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     mocks.apiState.value = ConnectionState.INITIALIZED;
 
     await expect(pending.result).resolves.toBeUndefined();
