@@ -156,7 +156,7 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div v-if="api.supportsAIRadioAllowPost" class="flex items-center gap-3">
         <FieldLabel
           :html-for="`allow-post-${segment.id}`"
           :label="$t('providers.ai_radio.fields.allow_post')"
@@ -208,6 +208,7 @@ import {
   type ShowSegment,
 } from "@/helpers/ai_radio";
 import { copyToClipboard } from "@/helpers/utils";
+import { api } from "@/plugins/api";
 import type { AIRadioWebSearchMode } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Check, ChevronDown, ChevronUp, Copy, Trash2 } from "@lucide/vue";
