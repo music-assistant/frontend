@@ -2,6 +2,7 @@ import { reactive } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ProviderInstance } from "@/plugins/api/interfaces";
 import { ProviderType } from "@/plugins/api/interfaces";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
@@ -24,7 +25,10 @@ const aiRadioProvider: ProviderInstance = {
 };
 
 /** Mocks @/plugins/api and @/plugins/auth for a fresh module import, returning the sendCommand spy. */
-async function mockApiAndAuth(guestSessionKind: string | null) {
+async function mockApiAndAuth(
+  guestSessionKind: string | null,
+  scopes: Parameters<typeof scopeChecker>[0] = BUILTIN_ROLE_SCOPES.user,
+) {
   const providers = reactive<Record<string, ProviderInstance>>({
     ai_radio: aiRadioProvider,
   });
@@ -34,9 +38,10 @@ async function mockApiAndAuth(guestSessionKind: string | null) {
     api: { providers, sendCommand },
     default: { providers, sendCommand },
   }));
+  const hasScope = scopeChecker(scopes);
   vi.doMock("@/plugins/auth", () => ({
-    authManager: { guestSessionKind: () => guestSessionKind },
-    default: { guestSessionKind: () => guestSessionKind },
+    authManager: { guestSessionKind: () => guestSessionKind, hasScope },
+    default: { guestSessionKind: () => guestSessionKind, hasScope },
   }));
 
   return sendCommand;
@@ -49,7 +54,9 @@ async function flushMicrotasks() {
   await Promise.resolve();
 }
 
-describe("ai_radio prefetch gating for session-scoped sessions", () => {
+// every test imports the composables anew after resetting the module registry,
+// which can take seconds under load
+describe("ai_radio prefetch gating", { timeout: 20_000 }, () => {
   afterEach(() => {
     vi.resetModules();
     vi.doUnmock("@/plugins/api");
@@ -60,6 +67,17 @@ describe("ai_radio prefetch gating for session-scoped sessions", () => {
   it("sends no ai_radio commands for a session-scoped session", async () => {
     vi.resetModules();
     const sendCommand = await mockApiAndAuth("dashboard");
+
+    await import("@/composables/ai-radio/useShows");
+    await import("@/composables/ai-radio/useHosts");
+    await flushMicrotasks();
+
+    expect(sendCommand).not.toHaveBeenCalled();
+  });
+
+  it("sends no ai_radio commands for a role that may not load the hosts", async () => {
+    vi.resetModules();
+    const sendCommand = await mockApiAndAuth(null, BUILTIN_ROLE_SCOPES.guest);
 
     await import("@/composables/ai-radio/useShows");
     await import("@/composables/ai-radio/useHosts");

@@ -18,7 +18,7 @@
             :loading="toggleLoading"
             @click="toggleEnabled"
           >
-            {{ $t("settings.enable_provider") }}
+            {{ $t("settings.enable") }}
           </v-btn>
         </div>
       </v-alert>
@@ -81,7 +81,7 @@
                 @click="onReload"
               >
                 <RefreshCw class="size-4" />
-                {{ $t("settings.reload_provider") }}
+                {{ $t("settings.reload") }}
               </Button>
             </template>
           </div>
@@ -100,11 +100,14 @@
               <Button
                 variant="ghost"
                 size="icon-sm"
-                :title="$t('settings.provider_name')"
+                :aria-label="$t('settings.set_custom_name')"
+                :title="$t('settings.set_custom_name')"
                 @click="showRenameDialog = true"
               >
                 <Pencil class="size-4" />
-                <span class="sr-only">{{ $t("settings.provider_name") }}</span>
+                <span class="sr-only">{{
+                  $t("settings.set_custom_name")
+                }}</span>
               </Button>
               <Badge
                 data-testid="provider-status"
@@ -258,7 +261,14 @@
           <v-btn variant="text" @click="showRenameDialog = false">
             {{ $t("close") }}
           </v-btn>
-          <v-btn color="primary" variant="flat" @click="saveRename">
+          <v-btn
+            data-testid="provider-rename-save"
+            color="primary"
+            variant="flat"
+            :loading="renameLoading"
+            :disabled="renameLoading"
+            @click="saveRename"
+          >
             {{ $t("settings.save") }}
           </v-btn>
         </v-card-actions>
@@ -302,14 +312,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useConfigAction } from "@/composables/useConfigAction";
+import { useEditedProviderName } from "@/composables/useEditedProviderName";
 import {
   hasAdvancedEntries,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
 import {
+  isOwnMusicSource,
+  isSelfServiceProvider,
+} from "@/helpers/provider_access";
+import {
   canReconfigureProvider,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  providerDisplayName,
 } from "@/helpers/provider_config";
 import { getExternalLinkUrl, markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -318,8 +334,11 @@ import {
   EventType,
   ProviderConfig,
   ProviderStatus,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
+import { store } from "@/plugins/store";
 import {
   BookOpen,
   CircleAlert,
@@ -348,10 +367,12 @@ const loading = ref(false);
 const showAdvancedSettings = ref(false);
 const toggleLoading = ref(false);
 const showRenameDialog = ref(false);
+const renameLoading = ref(false);
 const editName = ref<string | null>(null);
 const saveErrorOpen = ref(false);
 const saveErrorMessage = ref("");
 const lastSubmitValues = ref<Record<string, ConfigValueType>>();
+const editedProviderName = useEditedProviderName();
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
 let toggleRequestId = 0;
@@ -373,19 +394,27 @@ const providerManifest = computed(() => {
   return api.providerManifests[config.value.domain];
 });
 
-const providerName = computed(
-  () =>
-    config.value?.name ||
-    api.providers[config.value?.instance_id ?? ""]?.name ||
-    providerManifest.value?.name,
+const providerName = computed(() =>
+  config.value
+    ? providerDisplayName(
+        config.value,
+        api.providers[config.value.instance_id],
+        providerManifest.value,
+      )
+    : "",
 );
 
-const canReconfigure = computed(() =>
-  canReconfigureProvider(
-    config.value?.status,
-    providerManifest.value?.has_setup_flow,
-    config.value?.enabled,
-  ),
+// reconfiguring a source sets it up again, which a member may only do for a
+// provider it may set up itself
+const canReconfigure = computed(
+  () =>
+    (authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE) ||
+      isSelfServiceProvider(providerManifest.value)) &&
+    canReconfigureProvider(
+      config.value?.status,
+      providerManifest.value?.has_setup_flow,
+      config.value?.enabled,
+    ),
 );
 
 const canToggleEnabled = computed(
@@ -424,6 +453,17 @@ watch(
   { immediate: true },
 );
 
+// the breadcrumb above this page shows whatever name this heading shows, so
+// the two cannot disagree for a provider that is not loaded but has a custom
+// name of its own
+watch(
+  providerName,
+  (name) => {
+    editedProviderName.value = name;
+  },
+  { immediate: true },
+);
+
 watch(showRenameDialog, (val) => {
   if (val && config.value) {
     editName.value = config.value.name || null;
@@ -438,6 +478,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   unsubProvidersUpdated?.();
+  // a later visit to another provider should fall back to the manifest name
+  // rather than linger on this one
+  editedProviderName.value = "";
 });
 
 // methods
@@ -513,12 +556,12 @@ const onRemove = function () {
   const instanceId = config.value.instance_id;
   eventbus.emit("deleteConfirmationDialog", {
     title: t("settings.remove_provider"),
-    message: t("settings.remove_provider_confirm"),
+    message: t("settings.remove_provider_confirm", [providerName.value]),
     confirmLabel: t("settings.remove_provider"),
     onConfirm: async () => {
       try {
         await api.removeProviderConfig(instanceId);
-        toast.success(t("settings.provider_removed"));
+        toast.success(t("settings.provider_removed", [providerName.value]));
         backToProviders();
       } catch (err) {
         toast.error(String(err));
@@ -606,23 +649,33 @@ const getCreditsMarkdown = function (credits: string[]) {
   return `**${t("settings.provider_credits")}**: ` + credits.join(" / ");
 };
 
-const saveRename = function () {
-  if (config.value) {
-    config.value.name = editName.value || "";
+const saveRename = async function () {
+  // both the save button and the enter key submit, so a rename already on its
+  // way is left to finish rather than racing a second one
+  if (!config.value || renameLoading.value) return;
+  // the name is applied right away so the page shows it at once, which means a
+  // rejected save has to put the previous one back
+  const renamedConfig = config.value;
+  const previousName = renamedConfig.name;
+  renamedConfig.name = editName.value || "";
+  renameLoading.value = true;
+  try {
+    const savedConfig = await api.saveProviderConfig(
+      renamedConfig.domain,
+      { name: renamedConfig.name || null },
+      renamedConfig.instance_id,
+    );
+    // the stored name is the server's to decide, so its answer replaces what
+    // was typed
+    renamedConfig.name = savedConfig.name;
+    toast.success(t("settings.provider_saved"));
+  } catch (err) {
+    renamedConfig.name = previousName;
+    toast.error(String(err));
+  } finally {
+    renameLoading.value = false;
+    showRenameDialog.value = false;
   }
-  api
-    .saveProviderConfig(
-      config.value!.domain,
-      { name: config.value!.name || null },
-      config.value!.instance_id,
-    )
-    .then(() => {
-      loading.value = true;
-    })
-    .finally(() => {
-      loading.value = false;
-      showRenameDialog.value = false;
-    });
 };
 
 async function loadConfig(instanceId: string) {
@@ -630,6 +683,14 @@ async function loadConfig(instanceId: string) {
   try {
     const updatedConfig = await api.getProviderConfig(instanceId);
     if (requestId === configLoadRequestId && props.instanceId === instanceId) {
+      // a member only manages the music sources it owns, the rest is admin-only
+      if (!mayManage(updatedConfig)) {
+        router.replace({
+          name: "providersettings",
+          query: { types: updatedConfig.type },
+        });
+        return;
+      }
       config.value = updatedConfig;
     }
   } catch (err) {
@@ -683,6 +744,13 @@ function getProviderStatusBadgeClass(status?: ProviderStatus | null) {
 function isCurrentProvider(instanceId: string) {
   return (
     props.instanceId === instanceId && config.value?.instance_id === instanceId
+  );
+}
+
+function mayManage(providerConfig: ProviderConfig) {
+  return (
+    authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE) ||
+    isOwnMusicSource(providerConfig, store.currentUser?.user_id)
   );
 }
 </script>

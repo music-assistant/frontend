@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { cn } from "@/lib/utils";
+import { $t } from "@/plugins/i18n";
 import { Minus } from "@lucide/vue";
 import { reactiveOmit } from "@vueuse/core";
 import type { NumberFieldDecrementProps } from "reka-ui";
@@ -19,6 +20,8 @@ const forwarded = useForwardProps(delegatedProps);
   <NumberFieldDecrement
     data-slot="decrement"
     v-bind="forwarded"
+    :aria-label="$t('decrease_value')"
+    :title="$t('decrease_value')"
     :class="
       cn(
         'absolute top-1/2 -translate-y-1/2 left-0 p-3 disabled:cursor-not-allowed disabled:opacity-20 w-10 h-full flex items-center justify-center',

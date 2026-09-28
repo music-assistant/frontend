@@ -74,8 +74,6 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
   // older search id are discarded
   let currentSearchId = 0;
 
-  const loading = computed(() => pendingTargets.value.size > 0);
-
   // the media type selection clamped to the allowed set
   const selectedMediaTypes = computed(() =>
     options.mediaTypes.value.filter((mediaType) =>
@@ -143,8 +141,10 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
 
   // An empty selection searches everything: the library plus all providers.
   // A non-empty selection searches exactly the selected targets, so a
-  // library-only search is possible too.
+  // library-only search is possible too. Genres live in the library only, so
+  // a genre-only search asks the library whatever the selection.
   const enabledTargetIds = computed(() => {
+    if (genreOnly.value) return [LIBRARY_SEARCH_TARGET];
     const allTargetIds = [
       LIBRARY_SEARCH_TARGET,
       ...providerTargets.value.map((target) => target.id),
@@ -153,6 +153,11 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
     if (!selected.length) return allTargetIds;
     return allTargetIds.filter((id) => selected.includes(id));
   });
+
+  // a target deselected while its request is still out no longer counts
+  const loading = computed(() =>
+    enabledTargetIds.value.some((id) => pendingTargets.value.has(id)),
+  );
 
   // Merge the per-target results in a stable order (library first, then
   // providers) and float exact name matches to the top, approximating the
@@ -215,7 +220,10 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
     }
 
     const mediaTypes = effectiveMediaTypes.value;
-    if (!mediaTypes || mediaTypes.includes(MediaType.GENRE)) {
+    if (
+      (!mediaTypes || mediaTypes.includes(MediaType.GENRE)) &&
+      enabledTargetIds.value.includes(LIBRARY_SEARCH_TARGET)
+    ) {
       // supplement the results with (library) genre results
       api
         .getLibraryGenres({

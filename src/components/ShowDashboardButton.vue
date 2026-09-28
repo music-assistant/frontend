@@ -4,6 +4,7 @@
       <Button
         :variant="variant"
         :size="buttonSize"
+        :data-active="activeSession ? true : undefined"
         :class="activeSession ? activePillClass : ''"
         :aria-label="$t('tooltip.show_dashboard')"
         :title="$t('tooltip.show_dashboard')"
@@ -83,6 +84,7 @@ import {
   type DashboardType,
   type EventMessage,
   EventType,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
@@ -115,14 +117,26 @@ const loading = ref(false);
 const dashboards = ref<DashboardDevice[]>([]);
 const sessions = ref<DashboardSession[]>([]);
 
-// A dashboard viewer can't cast a dashboard itself; only show once one is registered.
-const showButton = computed(
-  () => !authManager.isDashboardViewer?.() && dashboards.value.length > 0,
+// casting a dashboard lets a device join, which is what users.invite grants
+const canShowDashboards = computed(() =>
+  authManager.hasScope(Scope.USERS_INVITE),
 );
 
-// Solid primary pill for the active state, matching the fullscreen player header's autoplay/crossfade toggles.
-const activePillClass =
-  "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90";
+// A dashboard viewer can't cast a dashboard itself; only show once one is registered.
+const showButton = computed(
+  () =>
+    canShowDashboards.value &&
+    !authManager.isDashboardViewer?.() &&
+    dashboards.value.length > 0,
+);
+
+// The overlay variant styles its own active state; elsewhere an active session
+// shows as a solid primary pill.
+const activePillClass = computed(() =>
+  props.variant === "overlay"
+    ? ""
+    : "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90",
+);
 
 const sortedDashboards = computed(() =>
   [...dashboards.value].sort(compareDashboards),
@@ -144,7 +158,7 @@ const unsubscribers: Array<() => void> = [];
 
 onMounted(async () => {
   await waitForApiInitialization();
-  if (unmounted) return;
+  if (unmounted || !canShowDashboards.value) return;
 
   fetchSessions();
   loadDashboards();

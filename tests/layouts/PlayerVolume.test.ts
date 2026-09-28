@@ -7,7 +7,7 @@ import {
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
+import { store as storeModule } from "@/plugins/store";
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
@@ -50,6 +50,9 @@ vi.mock("@/helpers/utils", () => ({
   getVolumeIconComponent,
   truncateString: (value: string) => value,
 }));
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & { mobileLayout: boolean };
 
 function createPlayer(overrides: Partial<Player> = {}): Player {
   return {
