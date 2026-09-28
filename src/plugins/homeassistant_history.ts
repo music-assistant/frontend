@@ -131,7 +131,8 @@ export function createHAHistory(): RouterHistory {
     }
     const index = mark
       ? entries.findIndex((entry) => entry.id === mark.id)
-      : entries.findLastIndex(
+      : // Only the first entry of a tab goes unmarked, so it is the earliest.
+        entries.findIndex(
           (entry, i) =>
             i < position && isSameLocation(entry.location, location),
         );
