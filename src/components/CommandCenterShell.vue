@@ -65,7 +65,7 @@ const asSheet = computed(() => store.mobileLayout);
   width: auto !important;
   height: calc(
     100dvh - var(--mobile-navigation-height) - var(--player-bar-popout-gap) -
-      var(--player-bar-popout-top-gap)
+      var(--player-bar-popout-top-gap) - var(--device-inset-top)
   ) !important;
 }
 

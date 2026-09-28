@@ -308,6 +308,7 @@ import {
   getPlaylistMigrationProviders,
   isAudioSource,
   isItemInLibrary,
+  isMusicBrainzItem,
   itemIsAvailable,
   itemSupportsPlayLog,
 } from "@/plugins/api/helpers";
@@ -411,11 +412,13 @@ export const showContextMenuForMediaItem = async function (
 
   let menuItems: ContextMenuItem[] = [];
 
-  if (
+  // the play section, its player header included, is for an item that can be
+  // played at all
+  const withPlayMenu =
     includePlayMenuItems &&
     menuTargets[0].is_playable &&
-    itemIsAvailable(menuTargets[0])
-  ) {
+    itemIsAvailable(menuTargets[0]);
+  if (withPlayMenu) {
     // Play menu items first, then context items
     menuItems = await getPlaybackContextMenuItems(
       menuTargets,
@@ -435,7 +438,7 @@ export const showContextMenuForMediaItem = async function (
     items: menuItems,
     posX: posX,
     posY: posY,
-    showPlayMenuHeader: showPlayMenuHeader,
+    showPlayMenuHeader: showPlayMenuHeader && withPlayMenu,
   });
 };
 
@@ -459,7 +462,11 @@ export const showPlayMenuForMediaItem = async function (
     ? item
     : [item];
   if (mediaItems.length == 0) return;
-  const playableItems = mediaItems.filter((x) => x.is_playable);
+  // a MusicBrainz release in the selection has nothing to play
+  const playableItems = mediaItems.filter(
+    (x) => x.is_playable && !isMusicBrainzItem(x),
+  );
+  if (playableItems.length == 0) return;
   const firstItem = playableItems[0];
 
   let playMenuItems: ContextMenuItem[] = [];
@@ -536,7 +543,7 @@ export const getContextMenuItems = async function (
       MediaType.PODCAST,
       MediaType.TRACK,
     ].includes(items[0].media_type) &&
-    itemIsAvailable(items[0])
+    (itemIsAvailable(items[0]) || isMusicBrainzItem(items[0]))
   ) {
     contextMenuItems.push({
       label: "show_info",
@@ -669,8 +676,11 @@ export const getContextMenuItems = async function (
   // which provider items and item mappings do not carry, so resolve the
   // counterpart the library holds. Library rows are verified too since a
   // row can outlive its item (a list kept open, a cached search result).
+  // A MusicBrainz release is skipped: the server hands back the library album
+  // for a release that is in the library, so this one is outside it.
   let libraryItem: MediaItemType | undefined;
   if (
+    !isMusicBrainzItem(firstItem) &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -704,7 +714,11 @@ export const getContextMenuItems = async function (
   // Only the first item of a selection is resolved, so a single item acts
   // on its library counterpart while a multi-selection keeps its own
   // identity.
-  const actionTargets = items.length === 1 ? [resolvedItem] : items;
+  // (a MusicBrainz release has no library row to act on)
+  const actionTargets =
+    items.length === 1
+      ? [resolvedItem]
+      : items.filter((item) => !isMusicBrainzItem(item));
   // a library row alone is not membership, since the backend also keeps
   // rows for relatives of saved items, so the resolved row is checked too
   const inLibrary =
@@ -726,14 +740,15 @@ export const getContextMenuItems = async function (
       MediaType.RADIO,
       MediaType.TRACK,
     ].includes(resolvedItem.media_type) &&
-    itemIsAvailable(resolvedItem)
+    (itemIsAvailable(resolvedItem) || isMusicBrainzItem(resolvedItem))
   ) {
     contextMenuItems.push({
       label: "add_library",
       labelArgs: [],
       action: () => {
         for (const item of items) {
-          api.addItemToLibrary(addableItem(item));
+          // a release none of the music services has is refused with a toast
+          api.addItemToLibrary(addableItem(item)).catch(() => undefined);
           // optimistically flag the mappings so the derived state re-evaluates
           if ("provider_mappings" in item)
             item.provider_mappings.forEach((pm) => (pm.in_library = true));
@@ -815,9 +830,12 @@ export const getContextMenuItems = async function (
       favoriteState(item) === false;
 
     // the actions run on the library copy while the next menu is built from
-    // the item the caller holds, so its state has to follow
+    // the item the caller holds, so its state has to follow (a MusicBrainz
+    // release in the selection was not acted on)
     const markFavorite = (favorite: boolean | null) => {
-      for (const item of items) setFavoriteState(item, favorite);
+      for (const item of items) {
+        if (!isMusicBrainzItem(item)) setFavoriteState(item, favorite);
+      }
     };
 
     if (favoritableItems.length > 0) {
@@ -981,14 +999,18 @@ export const getContextMenuItems = async function (
       });
     }
   }
-  // add to playlist action
-  if (canEditLibrary && canAddToPlaylist(firstItem)) {
+  // add to playlist action (an item nothing can play has no place in one)
+  if (
+    canEditLibrary &&
+    canAddToPlaylist(firstItem) &&
+    itemIsAvailable(firstItem)
+  ) {
     contextMenuItems.push({
       label: "add_playlist",
       labelArgs: [],
       action: () => {
         eventbus.emit("playlistdialog", {
-          items: items as MediaItemType[],
+          items: items.filter(itemIsAvailable) as MediaItemType[],
           parentItem: parentItem,
         });
       },
@@ -1102,15 +1124,19 @@ export const getContextMenuItems = async function (
       });
     }
   }
-  // refresh item
+  // refresh item: a library manager refreshes the page's own item; an item
+  // none of the music services has any more is looked up on them again, which
+  // a library writer may do too
+  const unavailable = items.length === 1 && !itemIsAvailable(items[0]);
+  const canFindOnMusicServices = unavailable && canEditLibrary;
   if (
-    managesLibrary &&
     items.length === 1 &&
     items[0].media_type !== MediaType.COLLECTION &&
-    (items[0] == parentItem || !itemIsAvailable(items[0]))
+    !isMusicBrainzItem(items[0]) &&
+    ((managesLibrary && items[0] == parentItem) || canFindOnMusicServices)
   ) {
     contextMenuItems.push({
-      label: "refresh_item",
+      label: unavailable ? "find_on_music_services" : "refresh_item",
       labelArgs: [],
       action: async () => {
         const updatedInfo = await api.refreshItem(items[0]);
@@ -1226,7 +1252,7 @@ export const getContextMenuItems = async function (
         action: () => unpinShortcutStandaloneItem(shortcutItem),
         icon: PinOff,
       });
-    } else {
+    } else if (itemIsAvailable(shortcutItem)) {
       contextMenuItems.push({
         label: "shortcut.add_to",
         labelArgs: [],
@@ -1354,7 +1380,10 @@ export const getPlaybackContextMenuItems = async function (
     return playMenuItems;
   }
 
-  const playableItems = items.filter((x) => x.is_playable);
+  // a MusicBrainz release in the selection has nothing to play
+  const playableItems = items.filter(
+    (x) => x.is_playable && !isMusicBrainzItem(x),
+  );
   if (playableItems.length == 0) return playMenuItems;
   const firstItem = playableItems[0];
 
@@ -1625,6 +1654,8 @@ const startAudioSourceMenuItem = function (
 const addableItem = function (
   item: MediaItemTypeOrItemMapping,
 ): string | MediaItemTypeOrItemMapping {
+  // the server resolves a MusicBrainz uri to the album on a music service
+  if (isMusicBrainzItem(item)) return item.uri;
   if (item.provider !== "library" || !("provider_mappings" in item)) {
     return item;
   }

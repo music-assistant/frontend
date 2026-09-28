@@ -597,13 +597,16 @@ const mediaSections = computed(() => {
   }[] = [];
 
   for (const mediaType of mediaTypes) {
+    // an item collapses into an earlier library item or same-provider twin;
+    // equally named items on different providers are distinct until matched
     const seen = new Set<string>();
     const items: MediaItemTypeOrItemMapping[] = [];
     for (const item of filteredItems(mediaType)) {
       const key = dedupeKey(item);
       if (key) {
-        if (seen.has(key)) continue;
-        seen.add(key);
+        const providerKey = `${item.provider}:${key}`;
+        if (seen.has(key) || seen.has(providerKey)) continue;
+        seen.add(item.provider === "library" ? key : providerKey);
       }
       items.push(item);
     }

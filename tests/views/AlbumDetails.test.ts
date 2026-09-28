@@ -1,5 +1,5 @@
 import type { MusicAssistantApi } from "@/plugins/api";
-import { ImageType, type Album } from "@/plugins/api/interfaces";
+import { ImageType, MediaType, type Album } from "@/plugins/api/interfaces";
 import AlbumDetails from "@/views/AlbumDetails.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,7 +8,9 @@ import { track } from "../fixtures/track";
 
 const {
   mockGetAlbum,
+  mockGetItem,
   mockGetArtist,
+  mockBackFromMediaDetails,
   mockSubscribe,
   mockAvailableAlbumRowIds,
   mockResolveAlbumRows,
@@ -19,7 +21,9 @@ const {
   mockLoadArtistReleases,
 } = vi.hoisted(() => ({
   mockGetAlbum: vi.fn<MusicAssistantApi["getAlbum"]>(),
+  mockGetItem: vi.fn<MusicAssistantApi["getItem"]>(),
   mockGetArtist: vi.fn(),
+  mockBackFromMediaDetails: vi.fn(),
   mockSubscribe: vi.fn(() => () => {}),
   mockAvailableAlbumRowIds: vi.fn(),
   mockResolveAlbumRows: vi.fn(),
@@ -33,6 +37,7 @@ const {
 vi.mock("@/plugins/api", () => ({
   api: {
     getAlbum: mockGetAlbum,
+    getItem: mockGetItem,
     getArtist: mockGetArtist,
     subscribe: mockSubscribe,
     providers: {},
@@ -40,6 +45,10 @@ vi.mock("@/plugins/api", () => ({
     hasStreamingProviders: { value: false },
     serverInfo: { value: null },
   },
+}));
+
+vi.mock("@/helpers/navigation", () => ({
+  backFromMediaDetails: mockBackFromMediaDetails,
 }));
 
 // row titles are translated in the view's script, so the keys are what the
@@ -141,8 +150,13 @@ const ALBUM_WITH_REVIEW = album({
 
 async function mountDetails(item: Album = ALBUM_WITH_REVIEW) {
   mockGetAlbum.mockResolvedValue(item);
+  return mountRoute(item.item_id, item.provider);
+}
+
+/** Mounts the page on the given route, without staging a response for it. */
+async function mountRoute(itemId: string, provider: string) {
   const wrapper = mount(AlbumDetails, {
-    props: { itemId: item.item_id, provider: item.provider },
+    props: { itemId, provider },
     global: { mocks: { $t: (key: string) => key } },
   });
   await flushPromises();
@@ -171,6 +185,8 @@ async function loadTracks(wrapper: VueWrapper, libraryOnly = false) {
 describe("AlbumDetails", () => {
   beforeEach(() => {
     mockGetAlbum.mockReset();
+    mockGetItem.mockReset();
+    mockBackFromMediaDetails.mockReset();
     mockGetArtist.mockReset().mockResolvedValue(undefined);
     mockSubscribe.mockReset().mockReturnValue(() => {});
     mockAvailableAlbumRowIds.mockReset().mockReturnValue(ALL_ROWS);
@@ -348,5 +364,54 @@ describe("AlbumDetails", () => {
     await flushPromises();
 
     expect(mockGetArtist).toHaveBeenCalledWith("a1", "library");
+  });
+
+  // a discography release the server resolves on demand: get_album does not
+  // handle the musicbrainz provider, the generic item lookup does
+  it("resolves a MusicBrainz release through the item lookup", async () => {
+    const resolved = album({ item_id: "5", name: "Grace" });
+    mockGetItem.mockResolvedValue(resolved);
+
+    const wrapper = await mountRoute("rg-1", "musicbrainz");
+
+    expect(mockGetItem).toHaveBeenCalledWith(
+      MediaType.ALBUM,
+      "rg-1",
+      "musicbrainz",
+    );
+    expect(mockGetAlbum).not.toHaveBeenCalled();
+    expect(hero(wrapper).props("item")).toEqual(resolved);
+  });
+
+  it("leaves the page when no music service has the release", async () => {
+    mockGetItem.mockRejectedValue(new Error("MediaNotFoundError"));
+
+    const wrapper = await mountRoute("rg-1", "musicbrainz");
+
+    expect(mockBackFromMediaDetails).toHaveBeenCalled();
+    expect(hero(wrapper).props("item")).toBeUndefined();
+  });
+
+  // resolving a release can take a while; the user may have moved on by then
+  it("leaves a late failure alone once the page shows another album", async () => {
+    let fail: (err: Error) => void = () => {};
+    mockGetItem.mockReturnValue(
+      new Promise((_, reject) => {
+        fail = reject;
+      }),
+    );
+    const wrapper = await mountRoute("rg-1", "musicbrainz");
+
+    mockGetAlbum.mockResolvedValue(ALBUM_WITH_REVIEW);
+    await wrapper.setProps({
+      itemId: ALBUM_WITH_REVIEW.item_id,
+      provider: ALBUM_WITH_REVIEW.provider,
+    });
+    await flushPromises();
+    fail(new Error("MediaNotFoundError"));
+    await flushPromises();
+
+    expect(mockBackFromMediaDetails).not.toHaveBeenCalled();
+    expect(hero(wrapper).props("item")).toEqual(ALBUM_WITH_REVIEW);
   });
 });

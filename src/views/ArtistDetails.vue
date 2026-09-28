@@ -79,6 +79,17 @@
           @edit-rows="rowsEditorOpen = true"
         />
 
+        <!-- discography (every release MusicBrainz lists, in the library or not) -->
+        <ReleaseShelf
+          v-else-if="rowId === 'discography' && showRow(discographyItems)"
+          :title="$t('discography')"
+          :meta="isPhone ? undefined : $t('discography_hint')"
+          :items="discographyShelfItems"
+          :view-all-to="listingRoute('discography')"
+          :parent-item="itemDetails"
+          @edit-rows="rowsEditorOpen = true"
+        />
+
         <!-- similar artists -->
         <ArtistSimilarShelf
           v-else-if="
@@ -270,6 +281,7 @@ const {
   albumItems,
   singleItems,
   appearsOnItems,
+  discographyItems,
   similarArtistItems,
   albumsMeta,
   albumsSource,
@@ -293,6 +305,13 @@ const sourceOptions = (rowId: ArtistRowId): SourceOption[] =>
 function selectRowSource(rowId: ArtistRowId, source: RowSource) {
   artistRows.setSource(rowId, source);
 }
+
+// a prolific artist's discography runs to hundreds of releases: the shelf
+// shows the newest, "View all" has them all
+const DISCOGRAPHY_SHELF_LIMIT = 50;
+const discographyShelfItems = computed(() =>
+  discographyItems.value?.slice(0, DISCOGRAPHY_SHELF_LIMIT),
+);
 
 // an empty release row explains the library case; from a provider source the
 // badge already names it, so a neutral line is enough
@@ -318,6 +337,9 @@ const rowMeta = computed<Partial<Record<ArtistRowId, string>>>(() => ({
     ? String(singleItems.value.length)
     : undefined,
   appears_on: $t("appears_on_hint"),
+  discography: discographyItems.value?.length
+    ? String(discographyItems.value.length)
+    : undefined,
 }));
 
 // library audiobooks can be filtered to the providers the artist is mapped to
@@ -479,6 +501,8 @@ function rowApplies(rowId: ArtistRowId): boolean {
   switch (rowId) {
     case "appears_on":
     case "audiobooks":
+      return isLibraryItem;
+    case "discography":
       return isLibraryItem;
     case "audiobooks_all":
       return audiobookSourceProviderIds.value.length > 0;
