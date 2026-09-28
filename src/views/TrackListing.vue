@@ -23,6 +23,7 @@
 <script setup lang="ts">
 import ItemsListing from "@/components/ItemsListing.vue";
 import { loadSimilarTracks } from "@/components/track/trackData";
+import { useEscapeBack } from "@/composables/useEscapeBack";
 import { goBack } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
 import type { MediaItemType, Track } from "@/plugins/api/interfaces";
@@ -93,4 +94,6 @@ const backToTrack = function () {
     query: props.album ? { album: props.album } : undefined,
   });
 };
+
+useEscapeBack(backToTrack);
 </script>

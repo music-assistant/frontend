@@ -1829,8 +1829,14 @@ const restoreSettings = async function () {
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive || store.showPlayersMenu) return;
-  if (loading.value) return;
-  if (e.key === "Escape") closeSearch();
+  if (e.key === "Escape") {
+    if (showSearchInput.value) {
+      e.preventDefault();
+      closeSearch();
+    }
+    return;
+  }
+  if (!props.allowKeyHooks || loading.value) return;
   // Let searchInput handle this.
   if (searchHasFocus.value) return;
 
@@ -1864,12 +1870,12 @@ const keyListener = function (e: KeyboardEvent) {
   }
 };
 
-if (props.allowKeyHooks) {
-  document.addEventListener("keydown", keyListener);
-  onBeforeUnmount(() => {
-    document.removeEventListener("keydown", keyListener);
-  });
-}
+// Always listen: an open search claims Escape before the window-level
+// back navigation (useEscapeBack) sees it, even without key hooks
+document.addEventListener("keydown", keyListener);
+onBeforeUnmount(() => {
+  document.removeEventListener("keydown", keyListener);
+});
 
 if (props.restoreState) {
   // handle restore state

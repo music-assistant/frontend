@@ -1,4 +1,6 @@
 import ItemsListing from "@/components/ItemsListing.vue";
+import { useEscapeBack } from "@/composables/useEscapeBack";
+import { defineComponent, h } from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   EventType,
@@ -178,6 +180,7 @@ function mountListingRaw(
   props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
 ) {
   return mount(ItemsListing, {
+    attachTo: document.body,
     props: {
       itemtype: "tracks",
       path: "librarytracks",
@@ -386,6 +389,87 @@ describe("ItemsListing per-page search", () => {
     search!.action?.();
     await flushPromises();
   }
+
+  it.each(
+    [true, false].flatMap((backFirst) =>
+      [true, false].flatMap((focused) =>
+        [true, undefined].map((allowKeyHooks) => ({
+          backFirst,
+          focused,
+          allowKeyHooks,
+        })),
+      ),
+    ),
+  )(
+    "dismisses search before back (back first: $backFirst, focused: $focused, hooks: $allowKeyHooks)",
+    async ({ backFirst, focused, allowKeyHooks }) => {
+      const back = vi.fn();
+      const mountBack = () =>
+        mount(
+          defineComponent({
+            setup() {
+              useEscapeBack(back);
+              return () => h("div");
+            },
+          }),
+          { global: { stubs: { "v-divider": true } } },
+        );
+      if (backFirst) mountBack();
+      const listing = mountListingRaw({
+        allowKeyHooks,
+        showSearchButton: true,
+      });
+      if (!backFirst) mountBack();
+      await flushPromises();
+      await toggleSearch(listing);
+      const first = new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      });
+      const input = listing.get(".search-field input")
+        .element as HTMLInputElement;
+      if (!focused) input.blur();
+      (focused ? input : document.body).dispatchEvent(first);
+      await flushPromises();
+      expect(first.defaultPrevented).toBe(true);
+      expect(searchField(listing).exists()).toBe(false);
+      expect(back).not.toHaveBeenCalled();
+      document.body.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Escape",
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      expect(back).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each(["dialog", "players"])(
+    "leaves search open when Escape belongs to %s",
+    async (owner) => {
+      const listing = mountListingRaw({ showSearchButton: true });
+      await flushPromises();
+      await toggleSearch(listing);
+      const event = new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      });
+      store.dialogActive = owner === "dialog";
+      store.showPlayersMenu = owner === "players";
+      try {
+        document.body.dispatchEvent(event);
+        await flushPromises();
+        expect(searchField(listing).exists()).toBe(true);
+        expect(event.defaultPrevented).toBe(false);
+      } finally {
+        store.dialogActive = false;
+        store.showPlayersMenu = false;
+      }
+    },
+  );
 
   function searchField(listing: ReturnType<typeof mountListingRaw>) {
     return listing.find(".search-field");
