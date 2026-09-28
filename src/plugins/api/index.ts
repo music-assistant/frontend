@@ -107,7 +107,7 @@ const ROLES_SCHEMA_VERSION = 74;
 const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
 
 // The music/podcasts/podcast_episode_transcript command and has_transcript flag landed in API schema 78.
-const PODCAST_TRANSCRIPTS_SCHEMA_VERSION = 78;
+const PODCAST_TRANSCRIPTS_SCHEMA_VERSION = 80;
 
 export interface CommandOptions {
   /**
