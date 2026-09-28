@@ -369,19 +369,13 @@
               v-if="item.media_type != MediaType.COLLECTION"
               class="flex items-center gap-2"
             >
-              <!-- favorite (heart) icon -->
-              <button
-                v-if="canEditLibrary"
-                type="button"
-                class="favorite-icon-button"
-                :aria-label="$t('tooltip.favorite')"
-                :aria-pressed="item.favorite ? 'true' : 'false'"
-                :title="favoriteButtonLabel"
-                @click="api.toggleFavorite(item)"
-              >
-                <IconHeartFilled v-if="item.favorite" :size="24" />
-                <IconHeart v-else :stroke-width="2" :size="24" />
-              </button>
+              <!-- favorite (heart) menu -->
+              <FavoriteMenu
+                :item="item"
+                variant="ghost-icon"
+                size="icon-xs"
+                icon-class="size-6"
+              />
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
               <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
@@ -493,6 +487,7 @@
 
 <script setup lang="ts">
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
+import FavoriteMenu from "@/components/FavoriteMenu.vue";
 import MarkdownText from "@/components/MarkdownText.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
@@ -549,7 +544,6 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
-import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
@@ -761,18 +755,12 @@ const artistLogo = computed(() => {
 const canManageLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_MANAGE),
 );
-const canEditLibrary = computed(() =>
-  authManager.hasScope(Scope.LIBRARY_WRITE),
-);
 // merging and deleting a genre is limited to library genres and library managers
 const canManageGenre = computed(
   () =>
     compProps.item?.media_type === MediaType.GENRE &&
     compProps.item.provider === "library" &&
     canManageLibrary.value,
-);
-const favoriteButtonLabel = computed(() =>
-  compProps.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
 );
 
 const mergeGenre = () => {
@@ -837,24 +825,6 @@ const collectionNarrators = computed(() => {
 
 .background-image .v-img__img--cover {
   object-position: 50% 20%;
-}
-
-.favorite-icon-button {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  color: currentColor;
-  cursor: pointer;
-  display: inline-flex;
-  height: 24px;
-  justify-content: center;
-  padding: 0;
-  width: 24px;
-}
-
-.favorite-icon-button:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
 }
 
 .v-card--variant-elevated {

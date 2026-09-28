@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { reactive } from "vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { ProviderConfig } from "@/plugins/api/interfaces";
 import { user } from "../fixtures/user";
@@ -232,6 +233,22 @@ describe("writing preferences", () => {
     expect(errorSpy).toHaveBeenCalledOnce();
   });
 
+  it("puts them back on the reactive store the app runs on", async () => {
+    // the app's store hands the preferences back as a reactive proxy, so the
+    // write has to recognise its own set by the object underneath
+    storeMock.currentUser = reactive({
+      user_id: "u1",
+      preferences: { theme: "dark" } as Record<string, unknown>,
+    });
+    mockUpdateUser.mockRejectedValue(new Error("boom"));
+
+    await expect(setUserPreferences({ show_waveform: true })).resolves.toBe(
+      false,
+    );
+
+    expect(storeMock.currentUser?.preferences).toEqual({ theme: "dark" });
+  });
+
   it("leaves preferences that were replaced while it was in flight alone", async () => {
     let failWrite: (error: Error) => void = () => {};
     mockUpdateUser.mockImplementationOnce(
@@ -406,6 +423,26 @@ describe("pruneStaleProviderFilters", () => {
       "discover.hiddenProviders.recently_played": ["spotify1"],
     });
     expect(mockUpdateUser).toHaveBeenCalledTimes(1);
+  });
+
+  // a listing whose source selector offers "your library" saves that choice
+  // under the same key, and it belongs to no provider config
+  it("keeps a listing's library selection", async () => {
+    storeMock.currentUser = {
+      user_id: "u1",
+      preferences: {
+        "itemsListing.artistalbums.artistalbums": {
+          providerFilter: ["library"],
+        },
+      },
+    };
+
+    await pruneStaleProviderFilters();
+
+    expect(storeMock.currentUser.preferences).toEqual({
+      "itemsListing.artistalbums.artistalbums": { providerFilter: ["library"] },
+    });
+    expect(mockUpdateUser).not.toHaveBeenCalled();
   });
 
   it("does nothing when no ids reference a deconfigured provider", async () => {

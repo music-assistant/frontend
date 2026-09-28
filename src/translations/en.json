@@ -82,7 +82,6 @@
     "playlist": "Playlist",
     "playlist_tracks": "Playlist tracks",
     "playlists": "Playlists",
-    "provider_details": "Provider details",
     "queue": "Queue",
     "queue_clear": "Clear queue",
     "queue_delete": "Delete item",
@@ -605,21 +604,21 @@
             "household": "Shared (no owner)",
             "sharing": "Sharing",
             "shared_users": "Shared with",
-            "select_members": "Select members",
-            "shared_with_count": "Shared with {count} member | Shared with {count} members",
+            "select_members": "Select users",
+            "shared_with_count": "Shared with {count} user | Shared with {count} users",
             "options": {
                 "private": "Only me",
-                "selected": "Selected members",
-                "members": "All members",
+                "selected": "Selected users",
+                "members": "All users except guests",
                 "everyone": "Everyone, including guests",
                 "not_shared": "Not shared"
             },
             "hints": {
                 "private": "Only the owner can use this source.",
-                "selected": "The owner and the members selected below.",
-                "members": "Every signed-in member, guests excluded.",
+                "selected": "The owner and the users selected below.",
+                "members": "Every signed-in user, guests excluded.",
                 "everyone": "Any user can use this source.",
-                "selected_no_owner": "Only the members selected below.",
+                "selected_no_owner": "Only the users selected below.",
                 "nobody": "Nobody can use this source until it has an owner or is shared with someone."
             },
             "updated": "Access updated",
@@ -783,7 +782,10 @@
         "delete_player_confirmation": "This player will be removed from Music Assistant. Its settings are lost and it can only come back by setting it up again.",
         "queue_settings_description": "Playback settings for the queue this player plays from",
         "dsp_description": "Filters and gain applied to everything this player plays",
-        "player_options_description": "Options and readings the player itself offers"
+        "player_options_description": "Options and readings the player itself offers",
+        "music_sources_own": "Your sources",
+        "music_sources_shared": "Shared with you",
+        "music_sources_shared_empty": "No music sources have been shared with you yet."
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
@@ -847,7 +849,7 @@
         "playing": "playing"
     },
     "sync_now": "Synchronize now",
-    "sync_running": "One or more music providers are being synchronized.",
+    "sync_running": "One or more music sources are being synchronized.",
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
         "exit_select_items": "Exit multi-select",
@@ -924,6 +926,8 @@
         "musical_key": "Musical key",
         "show_dashboard": "Cast dashboard to a device",
         "collapse_collections": "Collapse collections",
+        "mute": "Mute",
+        "unmute": "Unmute",
         "volume_down": "Volume down",
         "volume_up": "Volume up",
         "playing_from": "Playing from {0}"
@@ -934,17 +938,23 @@
     "tracks": "Tracks",
     "search_in": "Search in {0}...",
     "try_global_search": "Try global search",
+    "show_results_on": "Show results on {0}",
     "type_to_search": "Type here to search...",
     "volume_normalization": "Volume normalization",
     "play_now_replace": "Play Now (clear queue)",
     "currently_playing": "Currently playing",
     "favorites_add": "Add to favorites",
     "favorites_remove": "Remove from favorites",
+    "favorites_dislike": "Dislike",
+    "favorites_dislike_remove": "Remove dislike",
+    "favorites_menu": "Favorite options",
+    "favorites_menu_liked": "Favorite options, liked",
+    "favorites_menu_disliked": "Favorite options, disliked",
     "confirm_library_remove": "Are you sure you want to delete this item from the library? Any items depending on this item will also be recursively removed. Note that this will only remove this item from the library. If this is a music file on disk, it may return on the next sync.",
     "check_item_on_provider": "Check {0} on {1}",
     "check_item_in_library": "Check {0} in the library",
     "media_details": "Media details",
-    "mapped_providers": "Provider details",
+    "source_details": "Source details",
     "item_in_library": "This item is available in the library",
     "back": "Back",
     "recently_played": "Recently played",
@@ -1138,6 +1148,7 @@
     "homescreen_edit_disable": "Leave edit mode",
     "lyrics_will_appear_soon": "Lyrics will appear when the song begins...",
     "optional": "Optional",
+    "recommended": "Recommended",
     "created": "Created",
     "last_used": "Last used",
     "create": "Create",
@@ -1157,6 +1168,9 @@
         "username_already_exists": "Username already exists. Please choose a different username.",
         "invalid_username": "Invalid username. Please choose a different username.",
         "password_min_length": "Password must be at least 8 characters",
+        "username_max_length": "Username must be at most 50 characters",
+        "display_name_max_length": "Display name must be at most 100 characters",
+        "password_max_length": "Password must be at most 128 characters",
         "passwords_must_match": "Passwords must match",
         "login_failed": "Login failed. Please check your credentials.",
         "login_error": "An error occurred during login",
@@ -1859,6 +1873,8 @@
             "gallery": {
                 "empty_title": "Create your first show",
                 "empty_description": "AI Radio turns one of your playlists into a radio show with an AI host. AI Radio needs an AI-capable provider (e.g. Home Assistant) to generate the host — configure one under Settings → Plugins.",
+                "empty_title_listener": "No shows yet",
+                "empty_description_listener": "No radio shows have been set up yet. Check back once someone creates one.",
                 "create_cta": "Create show",
                 "new_show": "New show",
                 "refresh": "Refresh",
@@ -2115,10 +2131,10 @@
         "collaborative_hint": "Everyone the playlist is shared with may also add and remove items.",
         "hints": {
             "private": "Only the owner can see this playlist.",
-            "selected": "The owner and the members selected below.",
-            "members": "Every signed-in member, guests excluded.",
+            "selected": "The owner and the users selected below.",
+            "members": "Every signed-in user, guests excluded.",
             "everyone": "Any user can see this playlist.",
-            "selected_no_owner": "Only the members selected below.",
+            "selected_no_owner": "Only the users selected below.",
             "nobody": "Nobody can see this playlist until it has an owner or is shared with someone."
         },
         "updated": "Sharing updated"
@@ -2182,7 +2198,7 @@
         "op_is": "is",
         "op_is_not": "is not",
         "seed_count_hint": "Up to 50 tracks from your streaming provider, refreshed on each play.",
-        "seed_filters_hint": "Filters are best effort only. Some music providers do not provide the necessary metadata to apply filters.",
+        "seed_filters_hint": "Filters are best effort only. Some music sources do not provide the necessary metadata to apply filters.",
         "seed_heading": "Discover music similar to the following tracks, artists, albums or playlists",
         "seed_no_provider": "No streaming provider supports similar tracks",
         "type_library": "From my library",
@@ -2256,6 +2272,7 @@
     "artist_topalbums": "Top albums",
     "in_library": "In your library",
     "artist_no_library_albums": "You don't have any albums in your library for this artist.",
+    "artist_no_library_singles": "You don't have any singles or EPs in your library for this artist.",
     "artist_no_library_tracks": "You don't have any tracks in your library for this artist.",
     "artist_all_albums": "All albums",
     "artist_all_tracks": "All tracks",
@@ -2271,14 +2288,24 @@
         "other": "Other"
     },
     "singles_eps": "Singles & EPs",
-    "latest_release": "Latest release",
     "view_all": "View all",
     "n_in_library": "{count} in library",
+    "album_radio": "Album endless mix",
+    "n_tracks": "{count} track | {count} tracks",
+    "more_from_artist": "More from this artist",
+    "more_from_artist_name": "More from {name}",
+    "artist_view_library_tracks": "View {count} library track | View {count} library tracks",
+    "artist_view_tracks": "View {count} track | View {count} tracks",
+    "artist_no_tracks": "This artist has no tracks.",
+    "artist_row_empty": "Nothing to show here.",
     "play_on_player": "Play on {player}",
     "artist_radio": "Artist endless mix",
     "newest_first": "newest first",
-    "via_provider": "via {provider}",
     "appears_on_hint": "Credited on a track, not as the album artist",
+    "discography": "Discography",
+    "discography_hint": "From MusicBrainz",
+    "not_in_library": "Not in your library",
+    "find_on_music_services": "Find on your music services",
     "edit_rows": "Edit rows",
     "edit_rows_subtitle": "Applies to every artist page",
     "reset_to_default": "Reset to default",
@@ -2291,6 +2318,10 @@
     "hide_row": "Hide row",
     "show_row": "Show row",
     "edit_rows_hint": "Drag to reorder, hide what you don't want. \"Source\" picks what feeds a row (your library, one source, or all of them).",
+    "track_radio": "Track endless mix",
+    "edit_rows_subtitle_album": "Applies to every album page",
+    "edit_rows_subtitle_track": "Applies to every track page",
+    "n_releases": "{count} release | {count} releases",
     "admin_only": "Admin only",
     "done": "Done",
     "on_provider": "On {0}",
@@ -2509,34 +2540,49 @@
     "command_center_navigate": "navigate",
     "command_center_open": "open",
     "command_center_keep_typing": "Keep typing to search...",
+    "command_center_press_enter": "Press Enter to search",
+    "command_center_search": "search",
     "onboarding": {
         "title": "Set up Music Assistant",
+        "description": "Set up Music Assistant, one step at a time.",
         "step_counter": "Step {current} of {total}",
+        "step_completed": "{step}, completed",
         "next": "Next",
         "skip": "Skip for now",
         "finish": "Finish",
         "finish_failed": "Could not finish. Please try again.",
-        "getting_started": "Getting started",
-        "getting_started_hint": "Finish setting up Music Assistant",
-        "hide_for_now": "Hide for now",
         "nothing_configured": "Nothing set up yet",
         "needs_attention": "Needs attention",
-        "set_up": "Set up",
+        "set_up": "Done",
         "still_to_do": "Still to do",
         "all_done": "Everything on the list is set up.",
         "players_count": "{count} player | {count} players",
-        "steps_to_go": "{count} step to go | {count} steps to go",
         "run_again": "Run the setup wizard again",
-        "add_member": "Add a household member",
+        "add_member": "Add a user",
         "just_you_so_far": "Just you so far.",
         "welcome_title": "Welcome to Music Assistant",
+        "welcome_description": "A quick look around Music Assistant.",
         "welcome_again": "Show the welcome again",
-        "welcome_hint": "Take a quick look around",
         "what_you_picked": "What you picked",
+        "more_count": "+{count} more",
         "steps": {
+            "account": {
+                "title": "Create your account",
+                "description": "This is the administrator account for this Music Assistant server. Accounts for the other users in your home can be added later.",
+                "create": "Create account",
+                "creating": "Creating your account...",
+                "signing_in": "Signing you in...",
+                "failed": "The account could not be created. Please try again.",
+                "sign_in_failed": "Your account was created, but signing in did not work. Reload the page to continue.",
+                "handed_back": "Your account is ready. You can go back to the app you came from.",
+                "account_exists": "This server already has an account, so there is nothing to create here.",
+                "sign_in_here": "Sign in here instead",
+                "reload": "Reload the page",
+                "ready": "Signed in as {name}."
+            },
             "intent": {
-                "title": "Choose how you listen",
-                "description": "This only decides what we suggest first. Everything stays available, whichever you pick.",
+                "title": "Choose how you want to use Music Assistant",
+                "description": "This sets what Music Assistant does first. Everything stays available, whichever you pick.",
                 "phone_apps": {
                     "label": "From the apps on my phone",
                     "description": "Stream from Spotify, AirPlay and other apps to the speakers in your home."
@@ -2544,85 +2590,102 @@
                 "music_hub": {
                     "label": "As my music hub",
                     "description": "Bring your streaming services and local music together in one library."
-                }
+                },
+                "settings_note": "You can change this later from the settings."
             },
             "music_sources": {
                 "title": "Add your music sources",
                 "description": "Connect a streaming service or your local music files, so Music Assistant has something to play."
             },
             "players": {
-                "title": "Add your player providers",
-                "description": "A player provider brings your speakers into Music Assistant, such as Sonos, Chromecast or AirPlay."
+                "title": "Add your players",
+                "description": "The players Music Assistant already found. Switch off any you do not want to use, and rename them as you like.",
+                "description_empty": "Music Assistant finds your speakers through player providers, such as Sonos, Chromecast or AirPlay.",
+                "empty": "No players found yet",
+                "no_provider_hint": "Add a player provider and its players show up here.",
+                "discovering_hint": "Finding players can take a moment. Make sure your speakers are switched on and on the same network as Music Assistant.",
+                "add_more": "Add more players",
+                "rename": "Rename {name}"
             },
             "plugins": {
                 "title": "Add plugins",
-                "description": "Plugins add extras on top of Music Assistant. You can always add them later."
+                "description": "Plugins add extra features on top of Music Assistant, such as Party, Spotify Connect and an AirPlay receiver. You can always add them later."
             },
             "core_settings": {
                 "title": "Check your server settings",
-                "description": "The name this server goes by, the address it is reached on at home, and the address to use from outside your home.",
+                "intro": "The addresses Music Assistant is using right now. They are worked out automatically and are normally right, so you can simply move on.",
+                "internal_address": "Internal address",
+                "internal_address_hint": "Where the apps and devices in your home reach Music Assistant.",
+                "stream_address": "Stream server address",
+                "stream_address_hint": "Where your players fetch the audio from.",
+                "address_unknown": "Not available",
+                "check": {
+                    "checking": "Checking...",
+                    "reachable": "Reachable from this device",
+                    "unreachable": "Not reachable from this device",
+                    "unchecked": "Could not check from this device"
+                },
+                "unreachable_hint": "An address that does not answer here may not answer for your players either. If playback fails, set it under the advanced settings.",
+                "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {system}, in {webserver} and {streams}.",
+                "remote": {
+                    "title": "Listen from outside your home",
+                    "description": "Two ways to reach Music Assistant when you are away. Both can also be set up later.",
+                    "builtin": {
+                        "title": "Built-in remote access",
+                        "easiest": "Easiest",
+                        "description": "Secure and encrypted, with no port forwarding or VPN. Turn it on and connect from anywhere with your remote access ID.",
+                        "switch": "Remote access",
+                        "id": "Your remote access ID",
+                        "copy": "Copy the remote access ID",
+                        "hint": "Use it in the Music Assistant app or at app.music-assistant.io. The QR code is under Settings › {remote_access}."
+                    },
+                    "proxy": {
+                        "title": "Your own reverse proxy",
+                        "description": "Run a reverse proxy in front of the server and enter the address it is reached on from outside as the external address.",
+                        "set_external": "Set the external address"
+                    }
+                },
                 "load_failed": "The server settings could not be loaded. You can change them later from the settings."
             },
             "invite_members": {
-                "title": "Add your household",
-                "description": "Everyone you live with gets an account of their own, with the players and music sources you give them access to.",
-                "load_failed": "Your household could not be loaded. You can add members later from the settings."
+                "title": "Add users",
+                "description": "Everyone in your home gets an account of their own, with the players and music sources you give them access to.",
+                "load_failed": "The users could not be loaded. You can add them later from the settings."
             },
             "finish": {
                 "title": "Finish setup",
-                "description": "Here is where you got to. You can change any of this later from the settings."
+                "description": "Nice work setting things up. Here's a quick recap, and you can change any of this later from the settings."
             },
             "welcome": {
                 "title": "Make yourself at home",
-                "description": "Hi {name}, this is where your household's music lives. Pick how much you would like to see while something is playing.",
-                "enthusiast": {
-                    "label": "All the details",
-                    "description": "Waveform progress and a background visualizer while music plays."
+                "description": "Hi {name}, this is where the music in your home lives. Pick how much of it you would like to see.",
+                "standard": {
+                    "label": "Standard",
+                    "description": "A clean interface with just the essentials."
                 },
-                "regular": {
-                    "label": "Just play music",
-                    "description": "A clean player, with nothing extra on it."
+                "expert": {
+                    "label": "Expert",
+                    "description": "Shows advanced options and extra details, for whoever wants to see everything."
                 },
                 "defaults_hint": "This only sets a few defaults. Every setting stays yours to change.",
                 "save_failed": "Your choice could not be saved. Please try again."
             },
-            "whats_here": {
-                "title": "What's here for you",
-                "description": "The music your household has brought together, and the players you can send it to.",
-                "more_count": "+{count} more",
-                "listen": {
-                    "title": "What you can listen to",
-                    "empty": "No music sources have been shared with you yet.",
-                    "browse": "Browse your music"
-                },
-                "players": {
-                    "title": "Your players",
-                    "empty": "No player yet. Ask your admin to add one.",
-                    "hint": "Pick a player in the bar at the bottom, press play, and open the full player to see what is coming up.",
-                    "pick": "Pick a player"
-                }
+            "your_players": {
+                "title": "Your players",
+                "description": "The players you can send music to.",
+                "empty": "No players yet. Ask your admin to add one."
             },
-            "tour": {
-                "title": "A quick tour",
-                "description": "The places you will use most.",
-                "open": "Open",
-                "open_named": "Open {title}",
-                "library": {
-                    "title": "Your library",
-                    "description": "Artists, albums, tracks and playlists, together in the sidebar. Everything your household added is in here."
-                },
-                "search": {
-                    "title": "Search",
-                    "description": "Open the search from the sidebar to find an artist, an album or a track across everything you can listen to."
-                },
-                "player_bar": {
-                    "title": "The player bar",
-                    "description": "The bar at the bottom picks the player and plays or pauses. Open it for the full player and the queue."
-                },
-                "profile": {
-                    "title": "Your profile and settings",
-                    "description": "Your name, avatar and password, and the theme and language this app uses."
-                }
+            "your_music": {
+                "title": "What you can listen to",
+                "description": "The music sources everyone here has brought together.",
+                "empty": "No music sources have been shared with you yet."
+            },
+            "own_sources": {
+                "title": "Connect your own accounts",
+                "description": "Add your own music services so your playlists and library turn up alongside everyone else's. You can always do this later from your settings.",
+                "add": "Add a music source",
+                "empty": "You have not connected any music sources of your own yet.",
+                "connected": "Your music sources"
             },
             "all_set": {
                 "title": "You're all set",
@@ -2630,5 +2693,45 @@
             }
         }
     },
-    "screens": "Screens"
+    "screens": "Screens",
+    "tour": {
+        "start": "Take a tour",
+        "end": "End the tour",
+        "next": "Next",
+        "step_counter": "{current} of {total}",
+        "offer": {
+            "title": "Want a quick look around?",
+            "description": "A short tour points out the main parts of the app. You can take it again any time from your profile menu."
+        },
+        "stops": {
+            "menu": {
+                "title": "The menu",
+                "description": "Everything starts here: Discover and Browse to find something to play, your library of artists, albums, tracks and playlists, and the settings and your profile at the bottom."
+            },
+            "search": {
+                "title": "Search",
+                "description": "Find an artist, album, track or playlist across everything you can listen to."
+            },
+            "settings": {
+                "title": "Settings",
+                "description": "Where Music Assistant is set up: the music sources and players, and how the app looks and behaves."
+            },
+            "profile": {
+                "title": "Your profile",
+                "description": "Your name, avatar and password live here. This menu is also where you rearrange the menu, sign out, or take this tour again."
+            },
+            "player_bar": {
+                "title": "The player bar",
+                "description": "What is playing right now and the controls for it. Open it for the full player and what is coming up next."
+            },
+            "player_select": {
+                "title": "Pick a player",
+                "description": "Choose where the music plays. Pick a player and press play."
+            },
+            "player_group": {
+                "title": "Group players",
+                "description": "Add other players to the one you picked, so they play the same music together in several rooms. Players that cannot join are not offered."
+            }
+        }
+    }
 }

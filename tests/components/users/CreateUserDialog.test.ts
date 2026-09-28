@@ -1,5 +1,5 @@
 import CreateUserDialog from "@/components/users/CreateUserDialog.vue";
-import { flushPromises, mount } from "@vue/test-utils";
+import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
 const { apiMock, storeMock } = vi.hoisted(() => ({
@@ -48,29 +48,33 @@ vi.mock("vue-i18n", async (importOriginal) => ({
 
 const passthrough = { template: "<div><slot /></div>" };
 
-describe("CreateUserDialog", () => {
-  it("offers the roles the server lists, a custom one by its name", async () => {
-    const wrapper = mount(CreateUserDialog, {
-      props: { modelValue: true },
-      global: {
-        mocks: { $t: (key: string) => key },
-        stubs: {
-          Dialog: passthrough,
-          DialogContent: passthrough,
-          DialogFooter: passthrough,
-          DialogHeader: passthrough,
-          DialogTitle: passthrough,
-          Button: passthrough,
-          MultiSelect: true,
-          // the options only render in an open menu, which the test DOM can't open
-          SelectContent: passthrough,
-          SelectItem: {
-            props: ["value"],
-            template: '<div :data-value="value"><slot /></div>',
-          },
+function mountDialog(): VueWrapper {
+  return mount(CreateUserDialog, {
+    props: { modelValue: true },
+    global: {
+      mocks: { $t: (key: string) => key },
+      stubs: {
+        Dialog: passthrough,
+        DialogContent: passthrough,
+        DialogFooter: passthrough,
+        DialogHeader: passthrough,
+        DialogTitle: passthrough,
+        Button: passthrough,
+        MultiSelect: true,
+        // the options only render in an open menu, which the test DOM can't open
+        SelectContent: passthrough,
+        SelectItem: {
+          props: ["value"],
+          template: '<div :data-value="value"><slot /></div>',
         },
       },
-    });
+    },
+  });
+}
+
+describe("CreateUserDialog", () => {
+  it("offers the roles the server lists, a custom one by its name", async () => {
+    const wrapper = mountDialog();
     await flushPromises();
 
     const options = wrapper
@@ -83,6 +87,19 @@ describe("CreateUserDialog", () => {
       "user",
       "guest",
       "household_member",
+    ]);
+  });
+
+  it("asks for the role above the fold, right after the name fields", () => {
+    const wrapper = mountDialog();
+
+    const labels = wrapper
+      .findAll('[data-slot="field-label"]')
+      .map((label) => label.text());
+    expect(labels.slice(0, 3)).toEqual([
+      "auth.username",
+      "auth.display_name",
+      "auth.role",
     ]);
   });
 });

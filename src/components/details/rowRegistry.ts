@@ -7,6 +7,7 @@ import {
   writeRowsConfig,
 } from "@/helpers/rowsConfig";
 import { api } from "@/plugins/api";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 
 // "library" = in-library items, "all" = every provider at once, else a provider instance id
@@ -153,6 +154,34 @@ export function createRowRegistry<Id extends string, Item>(
   };
 }
 
+/** A source as a picker option: its value, label and (for a provider) icon domain. */
+export interface SourceOption {
+  value: RowSource;
+  label: string;
+  // provider domain, for the icon beside a provider option
+  domain?: string;
+}
+
+/** The sources offered for a row of this item, as picker options in list order. */
+export function rowSourceOptions<Id extends string, Item>(
+  registry: RowRegistry<Id, Item>,
+  id: Id,
+  item: Item,
+): SourceOption[] {
+  return registry.sources(id, item).map((source) => ({
+    value: source,
+    label: rowSourceLabel(source),
+    domain: api.providers[source]?.domain,
+  }));
+}
+
+/** The label of a source: the library, every provider, or one of them. */
+export function rowSourceLabel(source: RowSource): string {
+  if (source === "library") return $t("source_library");
+  if (source === "all") return $t("source_all");
+  return api.providers[source]?.name ?? source;
+}
+
 /** The provider behind a row's source, when a single one feeds it (undefined for "library"/"all"). */
 export function rowSourceProvider(
   source?: RowSource,
@@ -160,4 +189,22 @@ export function rowSourceProvider(
   if (!source || source === "all" || source === "library") return undefined;
   const provider = api.getProvider(source);
   return provider && { name: provider.name, domain: provider.domain };
+}
+
+/**
+ * A row's source as a reader-facing badge: "In your library", "All sources", or
+ * "On <Provider>", with the provider's domain for its icon. Undefined when the
+ * source is unknown.
+ */
+export function rowSourceDisplay(
+  source?: RowSource,
+): { label: string; domain?: string } | undefined {
+  if (!source) return undefined;
+  if (source === "library") return { label: $t("in_library") };
+  if (source === "all") return { label: $t("source_all") };
+  const provider = api.getProvider(source);
+  return {
+    label: $t("on_provider", [provider?.name ?? source]),
+    domain: provider?.domain,
+  };
 }

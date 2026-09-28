@@ -124,22 +124,14 @@
       </TabsContent>
     </Tabs>
 
-    <div class="px-4">
-      <Alert variant="info" class="mb-4 mt-2">
-        <Info />
-        <AlertDescription>
-          {{ $t("settings.dsp.compressor.help") }}
-        </AlertDescription>
-      </Alert>
-    </div>
+    <DSPHelp :text="$t('settings.dsp.compressor.help')" />
   </div>
 </template>
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { Info } from "@lucide/vue";
 import { CompressorFilter } from "@/plugins/api/interfaces";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import DSPHelp from "./DSPHelp.vue";
 import DSPSlider from "./DSPSlider.vue";
 import {
   COMPRESSOR_PRESETS,

@@ -86,6 +86,8 @@ const resolved: Audiobook = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // the menu resolves the library counterpart of the item on every open
+  apiMock.getLibraryItem.mockResolvedValue(null);
   emittedMenus.length = 0;
 });
 

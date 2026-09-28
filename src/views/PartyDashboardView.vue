@@ -90,7 +90,7 @@
             @click="toggleVisualizer"
           >
             <Droplet
-              :size="13"
+              class="size-[13px]"
               :fill="visualizerEnabledPref ? 'currentColor' : 'none'"
             />
           </Button>
@@ -103,7 +103,7 @@
             :aria-label="$t('tooltip.exit_fullscreen')"
             @click="goFullscreen(false)"
           >
-            <Minimize2 :size="13" />
+            <Minimize2 class="size-[13px]" />
           </Button>
 
           <!-- Non-fullscreen: actions -->
@@ -116,7 +116,7 @@
               :title="$t('tooltip.party_settings')"
               @click="goToSettings"
             >
-              <Settings :size="13" />
+              <Settings class="size-[13px]" />
             </Button>
             <ShowDashboardButton dashboard="party" />
             <Button
@@ -126,7 +126,7 @@
               :title="$t('tooltip.enter_fullscreen')"
               @click="goFullscreen(true)"
             >
-              <Maximize2 :size="13" />
+              <Maximize2 class="size-[13px]" />
             </Button>
           </template>
         </div>
@@ -344,6 +344,7 @@ import { usePartyConfig } from "@/composables/usePartyConfig";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import {
   ImageColorPalette,
+  getMediaItemImage,
   getMediaItemImageUrl,
   paletteFromServer,
 } from "@/helpers/utils";
@@ -712,10 +713,12 @@ const fetchQueueItems = async (force = false) => {
   }
 };
 
-// Album art URL for the blurred background element
+// Album art URL for the blurred background element. Resolved the same way as
+// the track cards, so a radio stream blurs its live artwork rather than the
+// station logo sitting on the queue item.
 const albumArtUrl = computed(() => {
-  if (!store.curQueueItem?.image) return "";
-  return getMediaItemImageUrl(store.curQueueItem.image) || "";
+  const img = getMediaItemImage(store.curQueueItem);
+  return img ? getMediaItemImageUrl(img) || "" : "";
 });
 
 // Gradient background style (used when album art is disabled, or as fallback)

@@ -120,6 +120,19 @@ describe("EditUserDialog", () => {
     );
   });
 
+  it("asks for the role above the fold, right after the name fields", () => {
+    const wrapper = mountDialog(user({ username: "marcel" }));
+
+    const labels = wrapper
+      .findAll('[data-slot="field-label"]')
+      .map((label) => label.text());
+    expect(labels.slice(0, 3)).toEqual([
+      "auth.username",
+      "auth.display_name",
+      "auth.role",
+    ]);
+  });
+
   it("shows a custom role by the name the server lists for it", async () => {
     const wrapper = mountDialog(
       user({ username: "sam", role: "household_member" }),

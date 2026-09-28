@@ -3,7 +3,8 @@
  *
  * Sharing is offered for a single Music Assistant playlist to its owner and to
  * a library manager, from a listing as well as from the details page; editing
- * and removing a personal playlist are offered to them only.
+ * and removing a personal playlist are offered to them only. Editing a playlist
+ * without an owner is offered to any member who may change the library.
  */
 import {
   getContextMenuItems,
@@ -67,11 +68,24 @@ const maPlaylist = (owner: string) =>
     },
   });
 
+// a Music Assistant playlist with no access record: it belongs to nobody, so
+// anyone allowed to change the library may edit it
+const ownerlessPlaylist = () =>
+  playlist({
+    is_editable: true,
+    provider_mappings: [
+      providerMapping({ provider_domain: "builtin", in_library: true }),
+    ],
+    access: null,
+  });
+
 const shareAction = (items: ContextMenuItem[]): ContextMenuItem | undefined =>
   items.find((x) => x.label === "share_playlist");
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // the menu resolves the library counterpart before building its items
+  apiMock.getLibraryItem.mockResolvedValue(null);
   // a member, who may change the library but does not manage all of it
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
   storeMock.currentUser = user({ user_id: "me" });
@@ -165,6 +179,7 @@ describe("edit and remove for a personal playlist", () => {
 
   it("are offered to the owner on the details page", async () => {
     const item = maPlaylist("me");
+    apiMock.getLibraryItem.mockResolvedValue(item);
     const labels_ = labels(await getContextMenuItems([item], item));
 
     expect(labels_).toContain("edit_playlist");
@@ -181,9 +196,38 @@ describe("edit and remove for a personal playlist", () => {
 
   it("are not offered to another member it is shared with", async () => {
     const item = maPlaylist("other");
+    apiMock.getLibraryItem.mockResolvedValue(item);
     const labels_ = labels(await getContextMenuItems([item], item));
 
     expect(labels_).not.toContain("edit_playlist");
     expect(labels_).not.toContain("remove_library");
+  });
+});
+
+describe("edit for a playlist without an owner", () => {
+  const labels = (items: ContextMenuItem[]) => items.map((x) => x.label);
+
+  beforeEach(() => {
+    apiMock.providers.builtin = {
+      ...(apiMock.providers.builtin as object),
+      supported_features: [ProviderFeature.LIBRARY_PLAYLISTS_EDIT],
+    };
+  });
+
+  it("is offered to a member who may change the library", async () => {
+    const item = ownerlessPlaylist();
+    const labels_ = labels(await getContextMenuItems([item], item));
+
+    expect(labels_).toContain("edit_playlist");
+  });
+
+  it("is not offered to a guest who may not", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+    const item = ownerlessPlaylist();
+    const labels_ = labels(await getContextMenuItems([item], item));
+
+    expect(labels_).not.toContain("edit_playlist");
   });
 });

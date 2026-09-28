@@ -34,10 +34,11 @@
 
         <!-- FORM step -->
         <template v-else-if="step.type === FlowStepType.FORM">
+          <!-- step text often carries a URL or key to copy; global.css disables selection -->
           <MarkdownText
             v-if="step.description"
             :text="step.description"
-            class="text-muted-foreground mb-4 text-sm leading-relaxed"
+            class="text-muted-foreground mb-4 text-sm leading-relaxed select-text [&_*]:select-text"
           />
 
           <!-- base (non-field) error -->
@@ -61,7 +62,6 @@
                 :disabled="busy || isDisabled(entry)"
                 @update:value="onValueUpdate(entry, $event)"
                 @toggle-password="showPasswordValues = !showPasswordValues"
-                @help="onEntryHelp(entry)"
               />
               <div
                 v-if="step.errors && step.errors[entry.key]"
@@ -87,13 +87,13 @@
               step.description ??
               $t('settings.setup_flow.external_default_text')
             "
-            class="text-muted-foreground mb-4 text-sm leading-relaxed"
+            class="text-muted-foreground mb-4 text-sm leading-relaxed select-text [&_*]:select-text"
           />
           <div
             class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
           >
             <Button size="lg" @click="openExternal">
-              <ExternalLink :size="18" />
+              <ExternalLink class="size-4.5" />
               {{ $t("settings.setup_flow.open_external") }}
             </Button>
             <div
@@ -143,7 +143,7 @@
             <MarkdownText
               v-if="step.progress_text"
               :text="step.progress_text"
-              class="text-muted-foreground w-full text-sm leading-relaxed"
+              class="text-muted-foreground w-full text-sm leading-relaxed select-text [&_*]:select-text"
             />
           </div>
         </template>
@@ -164,7 +164,7 @@
             <MarkdownText
               v-if="step.description"
               :text="step.description"
-              class="text-muted-foreground w-full text-sm leading-relaxed"
+              class="text-muted-foreground w-full text-sm leading-relaxed select-text [&_*]:select-text"
             />
           </div>
         </template>
@@ -196,7 +196,7 @@
             </h3>
             <MarkdownText
               :text="step.reason || $t('settings.setup_flow.aborted_text')"
-              class="text-muted-foreground w-full text-sm leading-relaxed"
+              class="text-muted-foreground w-full text-sm leading-relaxed select-text [&_*]:select-text"
             />
           </div>
         </template>
@@ -262,29 +262,6 @@
         <template v-else-if="step.type === FlowStepType.ABORT">
           <Button @click="close(false)">{{ $t("close") }}</Button>
         </template>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-
-  <!-- Per-field help dialog -->
-  <Dialog :open="helpEntry !== undefined" @update:open="onHelpOpenChange">
-    <DialogContent class="sm:max-w-[480px]">
-      <DialogHeader>
-        <DialogTitle>{{ helpEntry?.label }}</DialogTitle>
-      </DialogHeader>
-      <MarkdownText
-        :text="helpEntry?.description"
-        class="text-muted-foreground text-sm"
-      />
-      <DialogFooter>
-        <Button
-          v-if="helpEntry?.help_link"
-          variant="outline"
-          @click="openLink(helpEntry!.help_link!)"
-        >
-          {{ $t("read_more") }}
-        </Button>
-        <Button @click="helpEntry = undefined">{{ $t("close") }}</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
@@ -354,7 +331,6 @@ const step = ref<SetupFlowStep | null>(null);
 const launch = ref<SetupFlowDialogEvent | null>(null);
 const formEntries = ref<ConfigEntry[]>([]);
 const showPasswordValues = ref(false);
-const helpEntry = ref<ConfigEntry | undefined>(undefined);
 // on the server's clock, since the step's `expires_at` is a server timestamp
 const now = ref(serverNow());
 
@@ -705,14 +681,6 @@ function openExternal() {
   a.click();
 }
 
-function openLink(url: string) {
-  const a = document.createElement("a");
-  a.setAttribute("href", url);
-  a.setAttribute("target", "_blank");
-  a.setAttribute("rel", "noopener");
-  a.click();
-}
-
 function openInstanceSettings() {
   const instanceId = step.value?.result?.instance_id;
   if (!instanceId) return;
@@ -769,10 +737,6 @@ function onGuardedClose(event: Event) {
   }
 }
 
-function onHelpOpenChange(value: boolean) {
-  if (!value) helpEntry.value = undefined;
-}
-
 function close(sendAbort = true) {
   if (sendAbort && step.value && !isTerminal.value && step.value.flow_id) {
     // fire-and-forget: cancel the running flow server-side
@@ -788,7 +752,6 @@ function close(sendAbort = true) {
   formEntries.value = [];
   busy.value = false;
   showPasswordValues.value = false;
-  helpEntry.value = undefined;
 }
 
 function cleanupFlow() {
@@ -796,11 +759,6 @@ function cleanupFlow() {
     unsubscribeFlow();
     unsubscribeFlow = null;
   }
-}
-
-function onEntryHelp(entry: ConfigEntry) {
-  if (entry.description) helpEntry.value = entry;
-  else if (entry.help_link) openLink(entry.help_link);
 }
 
 function isDisabled(entry: ConfigEntry): boolean {

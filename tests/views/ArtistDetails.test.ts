@@ -17,7 +17,9 @@ const {
   mockSubscribe,
   mockAvailableArtistRowIds,
   mockResolveArtistRows,
+  mockArtistRowSources,
   mockLoadArtistReleases,
+  mockLoadArtistDiscography,
   mockLoadArtistLibraryTracks,
   mockLoadArtistTopTracks,
   mockLoadSimilarArtists,
@@ -27,7 +29,9 @@ const {
   mockSubscribe: vi.fn(() => () => {}),
   mockAvailableArtistRowIds: vi.fn(),
   mockResolveArtistRows: vi.fn(),
+  mockArtistRowSources: vi.fn(),
   mockLoadArtistReleases: vi.fn(),
+  mockLoadArtistDiscography: vi.fn(),
   mockLoadArtistLibraryTracks: vi.fn(),
   mockLoadArtistTopTracks: vi.fn(),
   mockLoadSimilarArtists: vi.fn(),
@@ -56,7 +60,7 @@ vi.mock("@/components/artist/artistRows", () => ({
     resolve: mockResolveArtistRows,
     definition: (id: string) => ({ id, labelKey: id }),
     effectiveSource: () => "all",
-    sources: () => ["library", "all"],
+    sources: mockArtistRowSources,
   },
 }));
 
@@ -65,6 +69,7 @@ vi.mock("@/components/artist/artistRows", () => ({
 vi.mock("@/components/artist/artistData", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/artist/artistData")>()),
   loadArtistReleases: mockLoadArtistReleases,
+  loadArtistDiscography: mockLoadArtistDiscography,
   loadArtistLibraryTracks: mockLoadArtistLibraryTracks,
   loadArtistTopTracks: mockLoadArtistTopTracks,
   loadSimilarArtists: mockLoadSimilarArtists,
@@ -78,8 +83,8 @@ vi.mock("@/components/artist/ArtistHero.vue", () => ({
     template: "<div data-hero />",
   },
 }));
-vi.mock("@/components/artist/ArtistBioRow.vue", () => ({
-  default: { name: "ArtistBioRow", template: '<div data-row="bio" />' },
+vi.mock("@/components/details/DetailTextRow.vue", () => ({
+  default: { name: "DetailTextRow", template: '<div data-row="bio" />' },
 }));
 vi.mock("@/components/artist/ArtistTopTracksRow.vue", () => ({
   default: {
@@ -87,11 +92,11 @@ vi.mock("@/components/artist/ArtistTopTracksRow.vue", () => ({
     template: '<div data-row="top_tracks" />',
   },
 }));
-// one component backs three rows, so it reports which title it was given
-vi.mock("@/components/artist/ArtistReleaseShelf.vue", () => ({
+// one component backs several rows, so it reports which title it was given
+vi.mock("@/components/details/ReleaseShelf.vue", () => ({
   default: {
-    name: "ArtistReleaseShelf",
-    props: ["title"],
+    name: "ReleaseShelf",
+    props: ["title", "items"],
     template: '<div :data-row="title" />',
   },
 }));
@@ -127,6 +132,7 @@ const MUSIC_ROWS = [
   "albums",
   "singles_eps",
   "appears_on",
+  "discography",
   "similar_artists",
 ];
 const AUDIOBOOK_ROWS = ["bio", "audiobooks", "audiobooks_all"];
@@ -177,7 +183,10 @@ describe("ArtistDetails", () => {
         order: availableIds,
         hidden: new Set<string>(),
       }));
+    // a library artist mapped to a provider that can supply the row
+    mockArtistRowSources.mockReset().mockReturnValue(["library", "all"]);
     mockLoadArtistReleases.mockReset().mockResolvedValue(RELEASES);
+    mockLoadArtistDiscography.mockReset().mockResolvedValue([album()]);
     mockLoadArtistLibraryTracks.mockReset().mockResolvedValue([track()]);
     mockLoadArtistTopTracks.mockReset().mockResolvedValue([track()]);
     mockLoadSimilarArtists.mockReset().mockResolvedValue([artist()]);
@@ -204,6 +213,90 @@ describe("ArtistDetails", () => {
 
     expect(renderedRows(wrapper)).not.toContain("albums");
     expect(renderedRows(wrapper)).toContain("singles_eps");
+  });
+
+  it("keeps an empty release row visible when a provider can still supply it", async () => {
+    // no in-library releases, but the artist is mapped to a provider that can
+    mockLoadArtistReleases.mockResolvedValue([]);
+
+    const wrapper = await mountDetails(artist());
+
+    // the row stays so its "See all" reaches the provider's catalog
+    expect(renderedRows(wrapper)).toContain("albums");
+    expect(renderedRows(wrapper)).toContain("singles_eps");
+  });
+
+  it("hides an empty release row with no other source to browse", async () => {
+    mockLoadArtistReleases.mockResolvedValue([]);
+    // only the library feeds the row, so an empty one has nowhere else to go
+    mockArtistRowSources.mockReturnValue(["library"]);
+
+    const wrapper = await mountDetails(artist());
+
+    expect(renderedRows(wrapper)).not.toContain("albums");
+    expect(renderedRows(wrapper)).not.toContain("singles_eps");
+  });
+
+  it("keeps an empty top-tracks or similar row visible while it can switch source", async () => {
+    // the picked source and the library fallback both come up empty, so the
+    // row's inline picker is the only way back to a source that has content
+    mockLoadArtistTopTracks.mockResolvedValue([]);
+    mockLoadArtistLibraryTracks.mockResolvedValue([]);
+    mockLoadSimilarArtists.mockResolvedValue([]);
+
+    const wrapper = await mountDetails(artist());
+
+    expect(renderedRows(wrapper)).toContain("top_tracks");
+    expect(renderedRows(wrapper)).toContain("similar_artists");
+  });
+
+  it("hides an empty top-tracks or similar row with only one source", async () => {
+    mockLoadArtistTopTracks.mockResolvedValue([]);
+    mockLoadArtistLibraryTracks.mockResolvedValue([]);
+    mockLoadSimilarArtists.mockResolvedValue([]);
+    // a single source means no picker, so an empty row has nowhere else to go
+    mockArtistRowSources.mockReturnValue(["all"]);
+
+    const wrapper = await mountDetails(artist());
+
+    expect(renderedRows(wrapper)).not.toContain("top_tracks");
+    expect(renderedRows(wrapper)).not.toContain("similar_artists");
+  });
+
+  it("shows the discography of a library artist", async () => {
+    const wrapper = await mountDetails(artist());
+
+    expect(renderedRows(wrapper)).toContain("discography");
+  });
+
+  it("leaves the discography out for a provider artist", async () => {
+    const wrapper = await mountDetails(artist({ provider: "spotify--abc" }));
+
+    expect(renderedRows(wrapper)).not.toContain("discography");
+  });
+
+  it("shows the newest releases on the shelf and keeps the rest for the listing", async () => {
+    mockLoadArtistDiscography.mockResolvedValue(
+      Array.from({ length: 60 }, (_, index) =>
+        album({ item_id: String(index) }),
+      ),
+    );
+
+    const wrapper = await mountDetails(artist());
+
+    const shelf = wrapper
+      .findAllComponents({ name: "ReleaseShelf" })
+      .find((component) => component.props("title") === "discography");
+    expect(shelf?.props("items")).toHaveLength(50);
+  });
+
+  // MusicBrainz is not loaded, or does not know the artist
+  it("hides the discography once it comes up empty", async () => {
+    mockLoadArtistDiscography.mockResolvedValue([]);
+
+    const wrapper = await mountDetails(artist());
+
+    expect(renderedRows(wrapper)).not.toContain("discography");
   });
 
   it("uses the same audiobooks listing path for every library author/narrator artist", async () => {

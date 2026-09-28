@@ -23,6 +23,7 @@ vi.mock("@/plugins/auth", () => ({
 vi.mock("@/plugins/api", () => ({
   default: {
     players: {},
+    providers: {},
     sendCommand: vi.fn(async () => []),
     getLibraryPlaylists: vi.fn<MusicAssistantApi["getLibraryPlaylists"]>(
       async () => [],

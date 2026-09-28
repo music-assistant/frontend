@@ -17,6 +17,7 @@ import {
   hasConfigurableAccess,
   isOwnMusicSource,
   isSelfServiceProvider,
+  ownedMusicSourceCount,
   ownerCandidates,
   servesNobody,
   shareCandidates,
@@ -137,6 +138,38 @@ describe("isOwnMusicSource", () => {
 
   it("is false when nobody is signed in", () => {
     expect(isOwnMusicSource(owned, undefined)).toBe(false);
+  });
+});
+
+describe("ownedMusicSourceCount", () => {
+  const owned = (owner: string | null) =>
+    providerConfig({
+      access: { owner, sharing: ProviderSharing.PRIVATE, shared_users: [] },
+    });
+
+  it("counts only the sources owned by the given user", () => {
+    const configs = [
+      owned("user-1"),
+      owned("user-1"),
+      owned("user-2"),
+      // a household source carries no owner
+      providerConfig(),
+    ];
+    expect(ownedMusicSourceCount(configs, "user-1")).toBe(2);
+  });
+
+  it("counts none when nobody is signed in", () => {
+    expect(ownedMusicSourceCount([owned("user-1")], undefined)).toBe(0);
+  });
+
+  it("ignores sources owned by others and those without a record", () => {
+    expect(
+      ownedMusicSourceCount([owned("user-2"), providerConfig()], "user-1"),
+    ).toBe(0);
+  });
+
+  it("counts none for an empty list", () => {
+    expect(ownedMusicSourceCount([], "user-1")).toBe(0);
   });
 });
 

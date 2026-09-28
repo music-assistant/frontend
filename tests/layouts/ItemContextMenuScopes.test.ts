@@ -25,6 +25,7 @@ const { apiMock, hasScope, storeMock } = vi.hoisted(() => ({
   apiMock: {
     providers: {
       "test_provider--1": { available: true, supported_features: [] },
+      builtin: { available: true, supported_features: [] },
     } as Record<string, unknown>,
     getProvider: vi.fn(),
     getLibraryItem: vi.fn(),
@@ -72,10 +73,17 @@ async function offeredLabels(
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // the menu resolves the library counterpart before building its items
+  apiMock.getLibraryItem.mockResolvedValue(null);
   storeMock.enabledPlugins.clear();
 });
 
 describe("library changes in the item context menu", () => {
+  // the menu verifies membership against the library copy of the item
+  beforeEach(() => {
+    apiMock.getLibraryItem.mockResolvedValue(listedTrack);
+  });
+
   it("are offered to a member", async () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
 
