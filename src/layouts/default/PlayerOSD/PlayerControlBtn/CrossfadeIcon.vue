@@ -55,7 +55,7 @@ withDefaults(
 }
 
 .crossfade-spark {
-  stroke: color-mix(in srgb, currentColor 20%, #ffffff);
+  stroke: currentColor;
   stroke-linecap: round;
   stroke-dasharray: 4 39.98;
   stroke-dashoffset: 0;

@@ -79,29 +79,15 @@
     "search": "Cerca",
     "settings": {
         "add_new": "Aggiungi nuovo",
-        "add_provider": "Aggiungi un nuovo provider",
-        "advanced_settings": "Impostazioni avanzate",
-        "check_docs": "Consulta la documentazione",
-        "config_player": "Configura lettore: {0}",
         "configure": "Configura",
         "delete": "Cancella",
         "disable": "Disabilita",
         "documentation": "Documentazione",
         "enable": "Abilita",
         "enable_player": "Abilita questo lettore",
-        "enable_provider": "Abilita questo provider",
-        "enabled": "Abilita",
         "invalid_input": "L'input non è valido",
         "metadataproviders": "Provider di metadati",
-        "musicproviders": "Provider musicali",
-        "need_help_setup_provider": "Hai bisogno di aiuto per impostare questo provider?",
-        "no_providers": "Nessun Provider Musicale configurato",
-        "no_providers_detail": "Inizia la tua esperienza con Music Assistant aggiungendo i tuoi provider musicali qui sotto.",
-        "not_loaded": "Questo provider non è (ancora) caricato",
-        "player_address": "Indirizzo",
         "player_disabled": "Questo lettore è disabilitato",
-        "player_id": "ID lettore",
-        "player_model": "Modello",
         "player_name": "Nome lettore personalizzato",
         "player_not_available": "Questo lettore non è (ancora) disponibile",
         "player_provider": "Provider",
@@ -109,21 +95,15 @@
         "player_type_label": "Tipo lettore",
         "playerproviders": "Lettore provider",
         "players": "Lettori",
-        "pluginproviders": "Plugin providers",
         "provider_disabled": "Questo provider è disabilitato",
         "provider_name": "Nome personalizzato per questo provider",
-        "providers": "Provider",
         "reload": "Ricarica",
         "save": "Salva",
         "settings": "Impostazioni",
-        "setup_provider": "Impostazioni provider: {0}",
         "sync": "Sincronizza ora",
         "sync_running": "Questo provider si sta sincronizzando",
-        "core_modules": "Moduli principali",
         "server_info": "Informazione server",
-        "server_id": "ID server",
         "server_version": "Versione server",
-        "server_base_url": "URL di base",
         "server_as_addon": "Home Assistant add-on",
         "artists_in_library": "Artisti in libreria",
         "albums_in_library": "Album in libreria",
@@ -131,8 +111,6 @@
         "playlists_in_library": "Playlist in libreria",
         "radio_in_library": "Radio in libreria",
         "download_log": "Scarica file log",
-        "edit_group_members": "Modifica i membri del gruppo",
-        "add_new_provider_button": "Aggiungi {0} provider",
         "add_group_player": "Aggiungi lettore di gruppo",
         "group_members": "Membri del gruppo",
         "default": "Predefinito",
@@ -175,10 +153,6 @@
                 "el_GR": "Greco"
             }
         },
-        "no_music_providers": "Nessuna Sorgente di Musica configurata",
-        "no_music_providers_detail": "Inizia la tua esperienza con Music Assistant aggiungendo i tuoi provider musicali.",
-        "no_player_providers": "Nessun provider dei lettori configurato",
-        "no_player_providers_detail": "Configura i provider dei lettori per selezionare i dispositivi sui quali Music Assistant può riprodurre la tua musica.",
         "dynamic_members": {
             "label": "Membri dinamici del gruppo",
             "description": "Consentire ai membri di unirsi\/abbandonare il gruppo (temporaneamente) in modo dinamico, in modo che il gruppo si comporti più o meno come se i lettori fossero sincronizzati manualmente, con la differenza principale che il lettore del gruppo manterrà la coda."
@@ -190,8 +164,7 @@
             "output": "Uscita",
             "filter": {
                 "add": "Aggiungi filtro",
-                "type": "Tipo di filtro",
-                "new": "Nuovo {type}"
+                "type": "Tipo di filtro"
             },
             "move_up": "Sposta su",
             "move_down": "Sposta giù",
@@ -254,13 +227,6 @@
             "label": "Questo tipo di gruppo non supporta DSP quando in riproduzione su più dispositivi."
         },
         "add_group_player_desc_universal": "Creando un Universal Player Group, è possibile raggruppare player di diversi provider\/ecosistemi insieme. \nQuesto distribuirà il medesimo audio a tutti i membri del gruppo (non in sincronia).",
-        "metadata": "Metadati",
-        "metadataprovider": "Provider metadati",
-        "music": "Musica",
-        "musicprovider": "Provider musica",
-        "player": "Player",
-        "plugin": "Plugin",
-        "pluginprovider": "Plugin provider",
         "providers_total": "{0} fornitori totali {1}",
         "stage": {
             "label": "Stage",
@@ -277,18 +243,19 @@
             "label": "Forza il layout mobile",
             "description": "Forzare il layout mobile (con il menu di navigazione in basso), anche su schermi più grandi."
         },
-        "providers_description": "Gestisci le tue fonti musicali, i servizi di streaming e le integrazioni",
         "players_description": "Configura e gestisci i tuoi dispositivi di output audio",
         "frontend_description": "Personalizza il tema e l'aspetto dell'interfaccia utente",
-        "provider_type": "Tipo",
-        "onboarding_title": "Benvenuto in Music Assistant!",
         "profile_description": "Gestisci impostazioni e preferenze tuo account personale",
         "users": "Utenti",
         "users_description": "Gestisci account utenti, ruoli e autorizzazioni",
         "audio_analysis": "Analisi audio",
-        "sendspin_static_delay": {
-            "label": "Ritardo di riproduzione costante (ms)",
-            "description": "Ritardo in millisecondi per sincronizzare questo lettore con altri lettori. Aumentare in caso di ritardo nella riproduzione dell'audio, ad esempio per compensare la latenza causata da un amplificatore, da altoparlanti attivi o dal sistema operativo."
+        "category": {
+            "audiobooks": "Audiolibri"
+        },
+        "enable_browser_controls": {
+            "options": {
+                "disabled": "Disabilitato"
+            }
         }
     },
     "show_info": "Mostra info",

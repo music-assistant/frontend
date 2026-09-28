@@ -22,16 +22,21 @@
           <create-playlist-dialog />
           <create-smart-playlist-dialog />
           <import-playlist-dialog />
+          <migrate-playlist-dialog />
+          <playlist-access-dialog />
           <play-announcement-dialog />
           <merge-genre-dialog />
           <delete-genre-dialog />
           <link-genre-dialog />
-          <dialog-delete-confirmation />
           <player-group-playback-dialog />
           <setup-flow-dialog />
           <player-rename-dialog />
           <item-context-menu />
           <command-center />
+          <!-- kept last so it portals after the other dialogs, which share
+               its z-index, and a confirmation asked from one of them (e.g.
+               the search popup) appears on top -->
+          <dialog-delete-confirmation />
           <AddManualLink
             v-model="showEditItemDialog"
             :type="editItemType"
@@ -40,6 +45,7 @@
         </div>
       </SidebarInset>
       <PlayerSelect />
+      <TourOverlay />
     </SidebarProvider>
   </v-main>
 </template>
@@ -55,6 +61,7 @@ import AppSidebar from "@/components/navigation/AppSidebar.vue";
 import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
 import PlayerGroupPlaybackDialog from "@/components/PlayerGroupPlaybackDialog.vue";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
+import TourOverlay from "@/components/tour/TourOverlay.vue";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   MediaType,
@@ -72,8 +79,10 @@ import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
 import CreateSmartPlaylistDialog from "./CreateSmartPlaylistDialog.vue";
 import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
+import MigratePlaylistDialog from "./MigratePlaylistDialog.vue";
 import PlayAnnouncementDialog from "./PlayAnnouncementDialog.vue";
 import PlayerSelect from "./PlayerSelect.vue";
+import PlaylistAccessDialog from "./PlaylistAccessDialog.vue";
 
 const route = useRoute();
 

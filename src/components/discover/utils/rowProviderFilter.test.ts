@@ -28,21 +28,7 @@ describe("eligibleFilterProviders", () => {
       provider("chromecast--def", ProviderType.PLAYER),
     ];
 
-    expect(eligibleFilterProviders(providers, [])).toEqual([providers[0]]);
-  });
-
-  it("is unrestricted when the user has no provider_filter", () => {
-    const providers = [provider("spotify--abc"), provider("filesystem--def")];
-
-    expect(eligibleFilterProviders(providers, [])).toEqual(providers);
-  });
-
-  it("restricts to the user's provider_filter when set", () => {
-    const providers = [provider("spotify--abc"), provider("filesystem--def")];
-
-    expect(eligibleFilterProviders(providers, ["spotify--abc"])).toEqual([
-      providers[0],
-    ]);
+    expect(eligibleFilterProviders(providers)).toEqual([providers[0]]);
   });
 });
 

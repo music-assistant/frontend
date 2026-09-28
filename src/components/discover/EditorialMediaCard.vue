@@ -5,9 +5,11 @@
     role="button"
     tabindex="0"
     :class="{
-      'ed-card--unavailable': !isAvailable,
+      'ed-card--unavailable': !isAvailable && !notInLibrary,
+      'ed-card--not-in-library': notInLibrary,
       'ed-card--fluid': fluid,
       'ed-card--disabled': disabled,
+      'ed-card--round': round,
     }"
     @click="onClick"
     @keydown.enter.self="onClick"
@@ -25,7 +27,8 @@
         }"
         loading="lazy"
         :src="artImage"
-        :alt="item.name"
+        alt=""
+        @error="artFailed = true"
       />
       <MediaCollectionThumb
         v-else-if="props.item.media_type == MediaType.COLLECTION"
@@ -46,6 +49,7 @@
         :show-badge="false"
         icon-style="position: absolute; right: 6px; bottom: 6px; z-index: 2"
       />
+      <slot name="art-overlay"></slot>
       <div
         v-if="showCheckboxes"
         class="ed-card__select"
@@ -88,6 +92,7 @@
 <script setup lang="ts">
 import {
   itemArtwork,
+  placeholderArtwork,
   placeholderBackground,
 } from "@/components/discover/editorialArtwork";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
@@ -106,6 +111,7 @@ import {
 import {
   getListItemProviderIconDomain,
   getProviderRootDomain,
+  isMusicBrainzItem,
 } from "@/plugins/api/helpers";
 import {
   type Album,
@@ -117,7 +123,7 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { Play } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import MediaCollectionThumb from "../MediaCollectionThumb.vue";
 
@@ -131,6 +137,8 @@ interface Props {
   isPlaying?: boolean;
   disablePlayButton?: boolean;
   disabled?: boolean;
+  // circular artwork, for artist cards
+  round?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
 }
@@ -143,6 +151,7 @@ const props = withDefaults(defineProps<Props>(), {
   isPlaying: false,
   disablePlayButton: false,
   disabled: false,
+  round: false,
   parentItem: undefined,
   sortBy: undefined,
 });
@@ -153,9 +162,26 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const art = computed(() => itemArtwork(props.item, 320));
+const resolvedArt = computed(() => itemArtwork(props.item, 320));
+
+// a proxied cover can 404 (e.g. a release the Cover Art Archive has none for),
+// which leaves the item on the placeholder treatment instead of a broken image;
+// the next item, or this one refreshed with another cover, gets its own attempt
+const artFailed = ref(false);
+watch(
+  () => [props.item.uri, resolvedArt.value.image],
+  () => (artFailed.value = false),
+);
+
+const art = computed(() =>
+  artFailed.value ? placeholderArtwork(props.item) : resolvedArt.value,
+);
 
 const isGenre = computed(() => props.item.media_type === MediaType.GENRE);
+
+// a release only MusicBrainz knows: muted rather than shown as unavailable,
+// since it can be opened and added to the library
+const notInLibrary = computed(() => isMusicBrainzItem(props.item));
 
 // provider entries in the browse root show the provider icon
 const { iconDataUri: providerRootIcon } = useProviderIcon(() =>
@@ -173,7 +199,11 @@ const getStyle = computed(() => {
 
 const isPlayable = computed(() => props.item.is_playable !== false);
 const showPlay = computed(
-  () => isPlayable.value && props.isAvailable && !props.showCheckboxes,
+  () =>
+    isPlayable.value &&
+    props.isAvailable &&
+    !notInLibrary.value &&
+    !props.showCheckboxes,
 );
 
 // Provider badge on the cover — always for playlists (to show the source),
@@ -206,6 +236,7 @@ const subtitle = computed(() => {
         owner?: string;
       }
   >;
+  if (notInLibrary.value) return t("not_in_library");
   if (it.artists?.length) return getArtistsString(it.artists, 1);
   if (it.authors?.length)
     return getAuthorsNarratorsArray(it.authors).join(" / ");
@@ -305,6 +336,11 @@ const onMenu = (e: MouseEvent) => {
 .ed-card--unavailable {
   opacity: 0.3;
 }
+/* a release that is not in the library: muted artwork, readable title */
+.ed-card--not-in-library .ed-card__art {
+  opacity: 0.55;
+  filter: grayscale(1);
+}
 .ed-card--disabled {
   pointer-events: none;
 }
@@ -318,6 +354,9 @@ const onMenu = (e: MouseEvent) => {
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.25),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.ed-card--round .ed-card__art {
+  border-radius: 999px;
 }
 .ed-card__initials {
   position: absolute;
@@ -417,6 +456,20 @@ const onMenu = (e: MouseEvent) => {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+}
+/* a round card reveals its play button over the middle of the portrait */
+.ed-card--round .ed-card__meta {
+  position: static;
+}
+.ed-card--round .ed-card__play {
+  top: calc(var(--ed-card-pad) + var(--ed-art-size) / 2);
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  transform: translate(-50%, -50%) translateY(8px);
+}
+.ed-card--round:hover .ed-card__play {
+  transform: translate(-50%, -50%);
 }
 /* Touch devices: no hover-revealed play button — tap goes straight to the
    content and long-press opens the context menu instead. */
