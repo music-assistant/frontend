@@ -181,7 +181,16 @@ export function createHAHistory(): RouterHistory {
     entries.splice(position + 1, Infinity, entry);
     position++;
     syncFrameUrl();
+    // Marks Home Assistant's entry, to find it again when coming back to it.
+    navigateHA(true);
     notifyListeners(current.location, 1);
+  }
+
+  function handlePageHide(event: PageTransitionEvent): void {
+    // A page kept for going back to comes back as it was.
+    if (!event.persisted) {
+      stopFollowingHA();
+    }
   }
 
   function stopFollowingHA(): void {
@@ -192,7 +201,7 @@ export function createHAHistory(): RouterHistory {
   haWindow.addEventListener("popstate", handleHAPop);
   haWindow.addEventListener("location-changed", handleHANavigation);
   // Home Assistant outlives the frame, and would keep this document around.
-  window.addEventListener("pagehide", stopFollowingHA);
+  window.addEventListener("pagehide", handlePageHide);
 
   return {
     base: "",
@@ -243,7 +252,7 @@ export function createHAHistory(): RouterHistory {
     destroy() {
       listeners = [];
       stopFollowingHA();
-      window.removeEventListener("pagehide", stopFollowingHA);
+      window.removeEventListener("pagehide", handlePageHide);
     },
   };
 }

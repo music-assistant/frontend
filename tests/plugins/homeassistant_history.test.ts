@@ -355,11 +355,39 @@ describe("Home Assistant router history", () => {
     expect(router.currentRoute.value.fullPath).toBe("/artists");
   });
 
+  it("keeps following Home Assistant when the page is kept to come back to", async () => {
+    await start(`${PANEL}/home`);
+    await push("/artists");
+
+    window.dispatchEvent(
+      Object.assign(new Event("pagehide"), { persisted: true }),
+    );
+    ha.back();
+    await settle();
+
+    expect(router.currentRoute.value.fullPath).toBe("/home");
+  });
+
   it("follows a page Home Assistant opens itself", async () => {
     await start(`${PANEL}/home`);
     await push("/artists/1");
 
     ha.open(`${PANEL}/artists`);
+    await settle();
+
+    expect(router.currentRoute.value.fullPath).toBe("/artists");
+    expect(history.state.back).toBe("/artists/1");
+  });
+
+  it("comes back to a page Home Assistant opened itself", async () => {
+    await start(`${PANEL}/home`);
+    await push("/artists/1");
+    ha.open(`${PANEL}/artists`);
+    await settle();
+    ha.back();
+    await settle();
+
+    ha.forward();
     await settle();
 
     expect(router.currentRoute.value.fullPath).toBe("/artists");
