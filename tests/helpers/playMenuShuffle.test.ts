@@ -37,6 +37,15 @@ vi.mock("@/plugins/store", () => ({
   store: mockStore,
 }));
 
+// signed in as a member
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+
 vi.mock("@/plugins/eventbus", () => ({
   eventbus: {
     on: vi.fn(),
@@ -69,6 +78,9 @@ vi.mock("@/helpers/icon", () => ({
 
 vi.mock("@/plugins/api/helpers", () => ({
   isAudioSource: vi.fn(() => false),
+  // what the real helper does, which this module-wide mock would otherwise hide
+  isMusicBrainzItem: (item: { provider: string }) =>
+    item.provider === "musicbrainz",
   isItemInLibrary: vi.fn(() => true),
   itemIsAvailable: vi.fn(() => true),
   itemSupportsPlayLog: vi.fn(() => false),

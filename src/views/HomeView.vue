@@ -58,7 +58,9 @@
     <!-- Newly discovered devices that still need setup; Review opens the
          players list filtered down to them. -->
     <Alert
-      v-if="isAdmin && showSetupPrompt && playersNeedingSetup.length > 0"
+      v-if="
+        canConfigurePlayers && showSetupPrompt && playersNeedingSetup.length > 0
+      "
       variant="warning"
       class="mx-7 mb-6 mt-4 flex w-auto items-center gap-3 py-3 pl-4 pr-3 [&>svg]:translate-y-0"
     >
@@ -110,6 +112,7 @@ import Toolbar from "@/components/Toolbar.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { api } from "@/plugins/api";
+import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import {
   ArrowRight,
@@ -128,7 +131,9 @@ const editMode = ref(false);
 const hasProviderErrors = ref(false);
 const showProviderWarning = ref(true);
 const erroredProviderType = ref<string | null>(null);
-const isAdmin = ref(false);
+const canConfigurePlayers = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
+);
 const showSetupPrompt = ref(true);
 
 const playersNeedingSetup = computed(() =>
@@ -157,8 +162,8 @@ const navigateToProviders = () => {
 };
 
 onMounted(async () => {
-  isAdmin.value = authManager.isAdmin();
-  if (authManager.isAdmin()) {
+  // the warning leads on to every provider type, not just a member's own music sources
+  if (authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)) {
     try {
       const configs = await api.getProviderConfigs();
       const firstError = configs.find(

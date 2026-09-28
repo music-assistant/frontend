@@ -58,7 +58,7 @@
             item: stage.title,
           })
         "
-        class="audio-processing-stage-details-popover !z-[10001] w-fit max-w-[280px] p-2 text-left text-xs"
+        class="audio-processing-stage-details-popover z-[10001] w-fit max-w-[280px] p-2 text-left text-xs"
         @open-auto-focus="focusDetails"
       >
         <div

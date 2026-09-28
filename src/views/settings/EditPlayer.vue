@@ -234,11 +234,8 @@ import {
 } from "@/helpers/config_entry_ui";
 import { getHassProviderInstance } from "@/helpers/hass_controls";
 import { goBack } from "@/helpers/navigation";
-import { getPlayerSetupLabel } from "@/helpers/player_config";
-import {
-  getPlayerName,
-  getPlayerSettingsMenuItems,
-} from "@/helpers/player_settings_actions";
+import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
+import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";

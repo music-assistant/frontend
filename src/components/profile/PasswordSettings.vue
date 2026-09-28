@@ -70,7 +70,7 @@
       <Button
         type="submit"
         form="form-password-settings"
-        :disabled="!canChangePassword || changing"
+        :disabled="!canChangePassword"
         :loading="changing"
       >
         {{ $t("auth.update_password") || "Update password" }}

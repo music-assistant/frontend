@@ -49,11 +49,18 @@
       <div
         ref="track"
         class="ed-shelf__track ma-scroll"
+        :class="{ 'ed-shelf__track--dragging': dragging }"
         :style="{
           '--ed-gap': gap + 'px',
           ...(tileArt != null ? { '--ed-tile-art': tileArt + 'px' } : {}),
         }"
         @scroll="onScroll"
+        @pointerdown="onPointerDown"
+        @pointermove="onPointerMove"
+        @pointerup="onPointerUp"
+        @pointercancel="onPointerUp"
+        @click.capture="onClickCapture"
+        @dragstart.prevent
       >
         <slot></slot>
       </div>
@@ -83,6 +90,7 @@ export interface EditorialShelfExpose {
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { useDragScroll } from "@/composables/useDragScroll";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { ChevronLeft, ChevronRight } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
@@ -210,6 +218,9 @@ const scroll = (dir: number) => {
   if (!el) return;
   el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
 };
+
+const { dragging, onPointerDown, onPointerMove, onPointerUp, onClickCapture } =
+  useDragScroll(track);
 
 function scrollToStart() {
   const el = track.value;
@@ -343,6 +354,12 @@ onBeforeUnmount(() => {
   overflow-anchor: none;
   scroll-padding-left: calc(var(--ed-gutter) - var(--ed-card-pad));
   scroll-padding-right: var(--ed-gutter);
+}
+.ed-shelf__track--dragging {
+  cursor: grabbing;
+  user-select: none;
+  /* snapping fights the drag while the pointer drives scrollLeft */
+  scroll-snap-type: none;
 }
 .ma-scroll {
   scrollbar-width: none;

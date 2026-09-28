@@ -5,13 +5,15 @@ import {
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   BrowseFolder,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
@@ -98,6 +100,19 @@ export const handleMediaItemClick = async function (
   posY: number,
   parentItem?: MediaItemType,
 ) {
+  // a MusicBrainz release has nothing to play: the server resolves it to the
+  // same album on one of the user's music services when its page opens
+  if (isMusicBrainzItem(item)) {
+    router.push({
+      name: item.media_type,
+      params: {
+        itemId: item.item_id,
+        provider: item.provider,
+      },
+    });
+    return;
+  }
+
   // open menu when item is unavailable so the user has a way to remove/refresh the item
   if (!itemIsAvailable(item)) {
     handleMenuBtnClick(item, posX, posY, undefined, false);
@@ -195,6 +210,8 @@ export const handleMenuBtnClick = function (
 const readClickSetting = async function (
   key: string,
 ): Promise<string | undefined> {
+  // the defaults apply to a role that may not read the core settings
+  if (!authManager.hasScope(Scope.CONFIG_CORE_READ)) return undefined;
   try {
     const value = await api.getCoreConfigValue("player_queues", key);
     return typeof value === "string" ? value : undefined;

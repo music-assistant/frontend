@@ -58,11 +58,14 @@ vi.mock("@/plugins/api", () => ({
   },
 }));
 
-vi.mock("@/plugins/auth", () => ({
-  authManager: {
-    isAdmin: () => false,
-  },
-}));
+// signed in as a member
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: scopeChecker(BUILTIN_ROLE_SCOPES.user) },
+  };
+});
 
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),

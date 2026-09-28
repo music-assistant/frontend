@@ -1,51 +1,76 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { defineComponent, h, type Ref } from "vue";
+import { provideEditedProviderName } from "@/composables/useEditedProviderName";
 import {
   ConfigEntryType,
   EventType,
+  ProviderSharing,
   ProviderStatus,
+  ProviderType,
   type ProviderConfig,
+  type Scope,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
+import { store } from "@/plugins/store";
 import EditProvider from "@/views/settings/EditProvider.vue";
 import { providerConfig } from "../fixtures/providerConfig";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+import { user } from "../fixtures/user";
 
-const { apiMock, eventbusMock, routerMock, toastMock, unsubscribeMock } =
-  vi.hoisted(() => ({
-    apiMock: {
-      getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
-      getProviderConfig: vi.fn<MusicAssistantApi["getProviderConfig"]>(),
-      invokeProviderConfigAction:
-        vi.fn<MusicAssistantApi["invokeProviderConfigAction"]>(),
-      providerManifests: {
-        spotify: {
-          allow_disable: true,
-          codeowners: [],
-          credits: [],
-          description: "Spotify music provider",
-          documentation: "https://example.com/spotify",
-          has_setup_flow: true,
-          name: "Spotify",
-        },
+const {
+  apiMock,
+  authMock,
+  eventbusMock,
+  i18nMock,
+  routerMock,
+  toastMock,
+  unsubscribeMock,
+} = vi.hoisted(() => ({
+  apiMock: {
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    getProviderConfig: vi.fn<MusicAssistantApi["getProviderConfig"]>(),
+    invokeProviderConfigAction:
+      vi.fn<MusicAssistantApi["invokeProviderConfigAction"]>(),
+    providerManifests: {
+      spotify: {
+        allow_disable: true,
+        codeowners: [],
+        credits: [],
+        description: "Spotify music provider",
+        documentation: "https://example.com/spotify",
+        has_setup_flow: true,
+        name: "Spotify",
+        self_service: true,
       },
-      providers: {},
-      reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
-      removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
-      saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
-      subscribe: vi.fn(),
     },
-    eventbusMock: {
-      emit: vi.fn(),
-    },
-    routerMock: {
-      push: vi.fn(),
-    },
-    toastMock: {
-      error: vi.fn(),
-      success: vi.fn(),
-    },
-    unsubscribeMock: vi.fn(),
-  }));
+    providers: {},
+    reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
+    removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
+    saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
+    subscribe: vi.fn(),
+  },
+  authMock: {
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
+  },
+  eventbusMock: {
+    emit: vi.fn(),
+  },
+  // a spy that returns the key, so the interpolation arguments a message is
+  // given stay assertable
+  i18nMock: {
+    t: vi.fn((key: string) => key),
+  },
+  routerMock: {
+    push: vi.fn(),
+    replace: vi.fn(),
+  },
+  toastMock: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+  unsubscribeMock: vi.fn(),
+}));
 
 let providersUpdated: (() => void) | undefined;
 
@@ -67,9 +92,38 @@ const providerDetailsStubs = {
   DropdownMenuTrigger: SlotStub,
 };
 
+// the rename dialog's Vuetify shell, rendered where it is declared so the
+// dialog can be driven through the template; kept out of the shared stubs
+// because a real <button> would shadow the `button-stub` the other tests click
+const renameDialogStubs = {
+  VBtn: {
+    emits: ["click"],
+    template:
+      '<button type="button" @click="$emit(\'click\')"><slot /></button>',
+  },
+  VCard: SlotStub,
+  VCardActions: SlotStub,
+  VCardText: SlotStub,
+  VCardTitle: SlotStub,
+  VDialog: {
+    props: ["modelValue"],
+    template: '<div v-if="modelValue"><slot /></div>',
+  },
+  VTextField: {
+    props: ["modelValue"],
+    emits: ["update:modelValue"],
+    template:
+      '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+  },
+};
+
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
   default: apiMock,
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: authMock,
 }));
 
 vi.mock("@/plugins/eventbus", () => ({
@@ -101,9 +155,7 @@ vi.mock("vue-i18n", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-i18n")>();
   return {
     ...actual,
-    useI18n: () => ({
-      t: (key: string) => key,
-    }),
+    useI18n: () => i18nMock,
   };
 });
 
@@ -118,10 +170,13 @@ vi.mock("vue-router", async (importOriginal) => {
 beforeEach(() => {
   vi.clearAllMocks();
   providersUpdated = undefined;
+  authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  store.currentUser = undefined;
   apiMock.providerManifests.spotify.allow_disable = true;
   apiMock.providerManifests.spotify.documentation =
     "https://example.com/spotify";
   apiMock.providerManifests.spotify.has_setup_flow = true;
+  apiMock.providerManifests.spotify.self_service = true;
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.subscribe.mockImplementation(
     (event: EventType, callback: () => void) => {
@@ -173,6 +228,30 @@ describe("EditProvider", () => {
       rel: "noopener noreferrer",
       target: "_blank",
     });
+  });
+
+  it("shows the custom name of a source that is not loaded, and hands the settings frame the same one", async () => {
+    // not in api.providers: nothing is running to ask for a name, so only the
+    // configuration knows this instance is not just "Spotify"
+    const config = spotifyConfig(
+      ProviderStatus.DISABLED,
+      "current value",
+      undefined,
+      false,
+    );
+    config.name = "The kitchen's Spotify";
+    apiMock.getProviderConfig.mockResolvedValue(config);
+
+    const { wrapper, publishedName } = mountFramedProvider();
+    await flushPromises();
+
+    expect(wrapper.get("h2").text()).toBe("The kitchen's Spotify");
+    expect(publishedName.value).toBe("The kitchen's Spotify");
+
+    wrapper.unmount();
+
+    // opening another provider next should fall back to that one's own name
+    expect(publishedName.value).toBe("");
   });
 
   it("hides reconfiguration when the provider has no setup flow", async () => {
@@ -754,6 +833,244 @@ describe("EditProvider", () => {
     expect(link.text()).toBe("Local Audio add-on");
   });
 
+  it("names the source in the removal confirmation and toast", async () => {
+    // a renamed provider must be removed under the name the user gave it, so
+    // the custom name has to win over the manifest's "Spotify"
+    const config = spotifyConfig(ProviderStatus.INCOMPATIBLE);
+    config.name = "My Spotify";
+    config.last_error = {
+      error_code: 1,
+      message: "This provider is retired.",
+    };
+    apiMock.getProviderConfig.mockResolvedValue(config);
+    apiMock.removeProviderConfig.mockResolvedValue(undefined);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    // the banner's only button is the destructive "remove" one
+    await wrapper.get("button-stub").trigger("click");
+
+    const removeCall = eventbusMock.emit.mock.calls.find(
+      ([event]) => event === "deleteConfirmationDialog",
+    );
+    expect(removeCall?.[1].message).toBe("settings.remove_provider_confirm");
+    // the stubbed t returns the key, so the name is checked where it is passed
+    expect(i18nMock.t).toHaveBeenCalledWith(
+      "settings.remove_provider_confirm",
+      ["My Spotify"],
+    );
+
+    await removeCall?.[1].onConfirm();
+    await flushPromises();
+
+    expect(apiMock.removeProviderConfig).toHaveBeenCalledWith("spotify--test");
+    expect(toastMock.success).toHaveBeenCalledWith("settings.provider_removed");
+    expect(i18nMock.t).toHaveBeenCalledWith("settings.provider_removed", [
+      "My Spotify",
+    ]);
+  });
+
+  it("falls back to the default name when the source has no custom name", async () => {
+    // an unloaded provider has no instance to read a name from, so the config's
+    // default name has to carry it rather than the generic manifest name
+    const config = spotifyConfig(ProviderStatus.INCOMPATIBLE);
+    config.name = null;
+    config.default_name = "Spotify (sam)";
+    config.last_error = {
+      error_code: 1,
+      message: "This provider is retired.",
+    };
+    apiMock.getProviderConfig.mockResolvedValue(config);
+    apiMock.removeProviderConfig.mockResolvedValue(undefined);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    await wrapper.get("button-stub").trigger("click");
+
+    expect(i18nMock.t).toHaveBeenCalledWith(
+      "settings.remove_provider_confirm",
+      ["Spotify (sam)"],
+    );
+  });
+
+  it("saves a new name for the source and confirms it", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+    // the server decides the stored name - here it deduplicates the one that
+    // was typed - so the header has to show its answer, not what was sent
+    const savedConfig = spotifyConfig(ProviderStatus.LOADED);
+    savedConfig.name = "Kitchen Spotify (2)";
+    apiMock.saveProviderConfig.mockResolvedValue(savedConfig);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: { ...providerDetailsStubs, ...renameDialogStubs },
+      },
+    });
+    await flushPromises();
+
+    // the stubbed $t returns the key, so the pencil's label is the key itself
+    await wrapper
+      .get('[aria-label="settings.set_custom_name"]')
+      .trigger("click");
+    await wrapper.get("input").setValue("Kitchen Spotify");
+    await wrapper.get('[data-testid="provider-rename-save"]').trigger("click");
+    await flushPromises();
+
+    expect(apiMock.saveProviderConfig).toHaveBeenCalledWith(
+      "spotify",
+      { name: "Kitchen Spotify" },
+      "spotify--test",
+    );
+    expect(wrapper.get("h2").text()).toBe("Kitchen Spotify (2)");
+    expect(toastMock.success).toHaveBeenCalledWith("settings.provider_saved");
+  });
+
+  it("restores the previous name when renaming fails", async () => {
+    const config = spotifyConfig(ProviderStatus.LOADED);
+    config.name = "My Spotify";
+    apiMock.getProviderConfig.mockResolvedValue(config);
+    apiMock.saveProviderConfig.mockRejectedValue(new Error("Rename failed"));
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: { ...providerDetailsStubs, ...renameDialogStubs },
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .get('[aria-label="settings.set_custom_name"]')
+      .trigger("click");
+    await wrapper.get("input").setValue("Kitchen Spotify");
+    await wrapper.get('[data-testid="provider-rename-save"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get("h2").text()).toBe("My Spotify");
+    expect(toastMock.error).toHaveBeenCalledWith("Error: Rename failed");
+  });
+
+  it("ignores a second submission while a rename is still saving", async () => {
+    let resolveSave: (config: ProviderConfig) => void = () => {};
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+    // held open so the dialog is still on screen, and submittable, while the
+    // first rename is in flight
+    apiMock.saveProviderConfig.mockImplementation(
+      () =>
+        new Promise<ProviderConfig>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: { ...providerDetailsStubs, ...renameDialogStubs },
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .get('[aria-label="settings.set_custom_name"]')
+      .trigger("click");
+    await wrapper.get("input").setValue("Kitchen Spotify");
+    // the button first and the enter key second: the pending save disables the
+    // button, so the key press is the entry point a second save could get in by
+    await wrapper.get('[data-testid="provider-rename-save"]').trigger("click");
+    await wrapper.get("input").trigger("keyup.enter");
+
+    expect(apiMock.saveProviderConfig).toHaveBeenCalledTimes(1);
+
+    const savedConfig = spotifyConfig(ProviderStatus.LOADED);
+    savedConfig.name = "Kitchen Spotify";
+    resolveSave(savedConfig);
+    await flushPromises();
+
+    expect(wrapper.get("h2").text()).toBe("Kitchen Spotify");
+    expect(toastMock.success).toHaveBeenCalledTimes(1);
+    expect(toastMock.success).toHaveBeenCalledWith("settings.provider_saved");
+  });
+
+  it("saves a rename from the enter key on the name field", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+    const savedConfig = spotifyConfig(ProviderStatus.LOADED);
+    savedConfig.name = "Kitchen Spotify";
+    apiMock.saveProviderConfig.mockResolvedValue(savedConfig);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: { ...providerDetailsStubs, ...renameDialogStubs },
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .get('[aria-label="settings.set_custom_name"]')
+      .trigger("click");
+    await wrapper.get("input").setValue("Kitchen Spotify");
+    // no save in flight, so the key press is the only thing that can submit
+    await wrapper.get("input").trigger("keyup.enter");
+    await flushPromises();
+
+    expect(apiMock.saveProviderConfig).toHaveBeenCalledTimes(1);
+    expect(apiMock.saveProviderConfig).toHaveBeenCalledWith(
+      "spotify",
+      { name: "Kitchen Spotify" },
+      "spotify--test",
+    );
+    expect(wrapper.get("h2").text()).toBe("Kitchen Spotify");
+  });
+
   it("keeps a pending local edit and shows a toast when an action returns no entries", async () => {
     apiMock.getProviderConfig.mockResolvedValueOnce(
       spotifyConfig(ProviderStatus.LOADED),
@@ -862,6 +1179,130 @@ describe("EditProvider", () => {
     expect(apiMock.saveProviderConfig).not.toHaveBeenCalled();
     expect(toastMock.success).not.toHaveBeenCalled();
   });
+
+  it("sends an admin back to the music sources page after saving", async () => {
+    const wrapper = await mountSavedProvider();
+
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "providersettings",
+      query: { types: ProviderType.MUSIC },
+    });
+    expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
+  });
+
+  it("sends a member back to the music sources page after saving", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+    store.currentUser = user({ user_id: "member-id" });
+
+    await mountSavedProvider({
+      ...spotifyConfig(ProviderStatus.LOADED),
+      access: {
+        owner: "member-id",
+        sharing: ProviderSharing.PRIVATE,
+        shared_users: [],
+      },
+    });
+
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "providersettings",
+      query: { types: ProviderType.MUSIC },
+    });
+  });
+
+  it("sends a member away from a source it does not own", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+    store.currentUser = user({ user_id: "member-id" });
+    apiMock.getProviderConfig.mockResolvedValue({
+      ...spotifyConfig(ProviderStatus.LOADED),
+      access: {
+        owner: "someone-else",
+        sharing: ProviderSharing.MEMBERS,
+        shared_users: [],
+      },
+    });
+
+    const wrapper = shallowMount(EditProvider, {
+      props: { instanceId: "spotify--test" },
+      global: {
+        mocks: { $t: (key: string) => key },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    // the options are never shown; the member lands back on the list
+    expect(routerMock.replace).toHaveBeenCalledWith({
+      name: "providersettings",
+      query: { types: ProviderType.MUSIC },
+    });
+    expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(false);
+  });
+
+  it("lets a member open a source it owns", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+    store.currentUser = user({ user_id: "member-id" });
+    apiMock.getProviderConfig.mockResolvedValue({
+      ...spotifyConfig(ProviderStatus.LOADED),
+      access: {
+        owner: "member-id",
+        sharing: ProviderSharing.PRIVATE,
+        shared_users: [],
+      },
+    });
+
+    const wrapper = shallowMount(EditProvider, {
+      props: { instanceId: "spotify--test" },
+      global: {
+        mocks: { $t: (key: string) => key },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(routerMock.replace).not.toHaveBeenCalled();
+    expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
+  });
+
+  it.each([
+    [true, true],
+    [false, false],
+  ])(
+    "offers a member reconfiguration of its own source only when members may set up the provider (self service: %s)",
+    async (selfService, offered) => {
+      authMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      );
+      store.currentUser = user({ user_id: "member-id" });
+      apiMock.providerManifests.spotify.self_service = selfService;
+      apiMock.getProviderConfig.mockResolvedValue({
+        ...spotifyConfig(ProviderStatus.LOADED),
+        access: {
+          owner: "member-id",
+          sharing: ProviderSharing.PRIVATE,
+          shared_users: [],
+        },
+      });
+
+      const wrapper = shallowMount(EditProvider, {
+        props: { instanceId: "spotify--test" },
+        global: {
+          mocks: { $t: (key: string) => key },
+          stubs: providerDetailsStubs,
+        },
+      });
+      await flushPromises();
+
+      expect(
+        wrapper.find('[data-testid="provider-reconfigure"]').exists(),
+      ).toBe(offered);
+    },
+  );
 });
 
 /**
@@ -899,4 +1340,58 @@ function spotifyConfig(
       },
     },
   });
+}
+
+/**
+ * Mounts the provider page and saves the form, so the redirect it performs
+ * afterwards is assertable.
+ */
+async function mountSavedProvider(
+  config: ProviderConfig = spotifyConfig(ProviderStatus.LOADED),
+) {
+  apiMock.getProviderConfig.mockResolvedValue(config);
+  apiMock.saveProviderConfig.mockResolvedValue(config);
+
+  const wrapper = shallowMount(EditProvider, {
+    props: {
+      instanceId: "spotify--test",
+    },
+    global: {
+      mocks: {
+        $t: (key: string) => key,
+      },
+      stubs: providerDetailsStubs,
+    },
+  });
+  await flushPromises();
+
+  wrapper.findComponent({ name: "EditConfig" }).vm.$emit("submit", {});
+  await flushPromises();
+  return wrapper;
+}
+
+/**
+ * Mounts the provider page the way the settings layout does, and hands back the
+ * name it publishes for the breadcrumb above it.
+ */
+function mountFramedProvider(instanceId: string = "spotify--test") {
+  let publishedName: Ref<string> | undefined;
+  const SettingsFrame = defineComponent({
+    setup() {
+      publishedName = provideEditedProviderName();
+      return () => h(EditProvider, { instanceId });
+    },
+  });
+
+  const wrapper = shallowMount(SettingsFrame, {
+    global: {
+      mocks: {
+        $t: (key: string) => key,
+      },
+      // the page itself is what this frame is here to mount; everything below
+      // it stays stubbed
+      stubs: { ...providerDetailsStubs, EditProvider: false },
+    },
+  });
+  return { wrapper, publishedName: publishedName! };
 }
