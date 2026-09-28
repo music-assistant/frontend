@@ -41,7 +41,11 @@ function player(overrides: Record<string, unknown> = {}): Player {
 }
 
 function space(target?: HTMLElement) {
-  const event = new KeyboardEvent("keydown", { key: " ", bubbles: true });
+  const event = new KeyboardEvent("keydown", {
+    key: " ",
+    bubbles: true,
+    cancelable: true,
+  });
   (target ?? window).dispatchEvent(event);
 }
 
@@ -115,6 +119,33 @@ describe("usePlayPauseShortcut", () => {
 
     expect(playerCommandPlayPause).not.toHaveBeenCalled();
     button.remove();
+  });
+
+  it("leaves Space to a focused menu item", () => {
+    state.storeMock.activePlayer = player();
+    mountShortcut();
+    const item = document.createElement("div");
+    item.setAttribute("role", "menuitem");
+    item.setAttribute("tabindex", "-1");
+    document.body.appendChild(item);
+
+    space(item);
+
+    expect(playerCommandPlayPause).not.toHaveBeenCalled();
+    item.remove();
+  });
+
+  it("ignores Space another handler already consumed", () => {
+    state.storeMock.activePlayer = player();
+    mountShortcut();
+    const el = document.createElement("div");
+    el.addEventListener("keydown", (e) => e.preventDefault());
+    document.body.appendChild(el);
+
+    space(el);
+
+    expect(playerCommandPlayPause).not.toHaveBeenCalled();
+    el.remove();
   });
 
   it("ignores Space while a play action is still in flight", () => {
