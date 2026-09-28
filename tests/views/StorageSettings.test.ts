@@ -3,7 +3,6 @@ import RemoveLocationDialog from "@/components/settings/storage/RemoveLocationDi
 import type { MusicAssistantApi } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
-  type Scope,
   StorageKind,
   type StorageLocation,
   StorageUsage,
@@ -12,14 +11,13 @@ import StorageSettings from "@/views/settings/StorageSettings.vue";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
-import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import {
   managedShare,
   storageInfo,
   storageLocation,
 } from "../fixtures/storage";
 
-const { apiMock, hasScopeMock, toastMock } = vi.hoisted(() => ({
+const { apiMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
     serverInfo: { value: { server_version: "2.11.0" } },
     getStorageInfo: vi.fn<MusicAssistantApi["getStorageInfo"]>(),
@@ -27,12 +25,10 @@ const { apiMock, hasScopeMock, toastMock } = vi.hoisted(() => ({
     removeNetworkShare: vi.fn<MusicAssistantApi["removeNetworkShare"]>(),
     removeLocalFolder: vi.fn<MusicAssistantApi["removeLocalFolder"]>(),
   },
-  hasScopeMock: vi.fn<(scope: Scope) => boolean>(),
   toastMock: { error: vi.fn(), success: vi.fn() },
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
-vi.mock("@/plugins/auth", () => ({ authManager: { hasScope: hasScopeMock } }));
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
   canonicalizeLocale: (locale: string) => locale,
@@ -62,7 +58,6 @@ const dataDir = storageLocation({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   apiMock.getStorageInfo.mockResolvedValue(
     storageInfo({ locations: [media, share, folder, dataDir] }),
   );
@@ -103,26 +98,6 @@ describe("StorageSettings", () => {
     expect(hint.get("a").attributes("href")).toBe(
       "https://music-assistant.io/installation/",
     );
-  });
-
-  it("offers a member nothing to change", async () => {
-    hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
-    apiMock.getStorageInfo.mockResolvedValue(
-      storageInfo({
-        locations: [media, share],
-        can_mount_shares: false,
-        can_add_local_folder: true,
-      }),
-    );
-
-    const wrapper = await mountPage();
-
-    expect(locationRows(wrapper)).toHaveLength(2);
-    expect(exists(wrapper, "storage-add-share")).toBe(false);
-    expect(exists(wrapper, "storage-add-folder")).toBe(false);
-    expect(exists(wrapper, "storage-mount-hint")).toBe(false);
-    expect(wrapper.findAll("[data-testid^='storage-reload']")).toHaveLength(0);
-    expect(wrapper.findAll("[data-testid^='storage-remove']")).toHaveLength(0);
   });
 
   it("offers each music location the actions it supports", async () => {

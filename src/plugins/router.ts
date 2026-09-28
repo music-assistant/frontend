@@ -504,9 +504,8 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "storagesettings" */ "@/views/settings/StorageSettings.vue"
               ),
             props: true,
-            // a member sees the music locations it can pick from; changing them
-            // takes config.providers.write
-            meta: { requiresScope: Scope.CONFIG_PROVIDERS_READ },
+            // managing the storage is admin work; members pick folders in the picker
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
           },
           {
             path: "players",

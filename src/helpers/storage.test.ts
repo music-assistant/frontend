@@ -9,10 +9,10 @@ import {
   formatStorageSize,
   isManagedShare,
   isRegisteredFolder,
-  networkShareAddSettings,
   networkShareAddress,
-  networkShareChanges,
+  networkShareFormChanged,
   networkShareFormFromLocation,
+  networkShareSettings,
   SHARE_TYPE_LABEL_KEYS,
   STORAGE_KIND_ICONS,
   STORAGE_KIND_LABEL_KEYS,
@@ -121,8 +121,8 @@ describe("networkShareAddress", () => {
   });
 });
 
-describe("networkShareAddSettings", () => {
-  it("sends the credentials and the version of an SMB share", () => {
+describe("networkShareSettings", () => {
+  it("sends every setting of an SMB share, credentials included", () => {
     const form = {
       ...emptyNetworkShareForm(ShareType.CIFS),
       server: " nas.local ",
@@ -133,7 +133,7 @@ describe("networkShareAddSettings", () => {
       readOnly: true,
     };
 
-    expect(networkShareAddSettings(form)).toEqual({
+    expect(networkShareSettings(form)).toEqual({
       server: "nas.local",
       share: "music",
       username: "marcel",
@@ -144,18 +144,37 @@ describe("networkShareAddSettings", () => {
     });
   });
 
-  it("leaves out what a guest share on the automatic version does not have", () => {
+  it("sends a guest on the automatic version as nulls", () => {
     const form = {
       ...emptyNetworkShareForm(ShareType.CIFS),
       server: "nas.local",
       share: "music",
     };
 
-    expect(networkShareAddSettings(form)).toEqual({
+    expect(networkShareSettings(form)).toEqual({
       server: "nas.local",
       share: "music",
+      username: null,
+      version: null,
       read_only: false,
     });
+  });
+
+  it("keeps the stored password while none is typed", () => {
+    const form = networkShareFormFromLocation(share);
+
+    expect(networkShareSettings(form)).not.toHaveProperty("password");
+  });
+
+  it("sends no password for a guest", () => {
+    const form = {
+      ...networkShareFormFromLocation(share),
+      username: " ",
+      password: "left over",
+    };
+
+    expect(networkShareSettings(form)).toMatchObject({ username: null });
+    expect(networkShareSettings(form)).not.toHaveProperty("password");
   });
 
   it("sends no credentials for an NFS share", () => {
@@ -167,73 +186,33 @@ describe("networkShareAddSettings", () => {
       password: "secret",
     };
 
-    expect(networkShareAddSettings(form)).toEqual({
+    expect(networkShareSettings(form)).toEqual({
       server: "nas.local",
       share: "/volume1/music",
+      username: null,
+      version: null,
       read_only: false,
     });
   });
 });
 
-describe("networkShareChanges", () => {
-  it("changes nothing for an untouched form", () => {
+describe("networkShareFormChanged", () => {
+  it("sees no change in an untouched form", () => {
     expect(
-      networkShareChanges(share, networkShareFormFromLocation(share)),
-    ).toEqual({});
+      networkShareFormChanged(share, networkShareFormFromLocation(share)),
+    ).toBe(false);
   });
 
-  it("sends only the settings that changed", () => {
-    const form = {
-      ...networkShareFormFromLocation(share),
-      server: "192.168.1.10",
-      readOnly: true,
-    };
+  it.each([
+    ["the server", { server: "192.168.1.10" }],
+    ["the read-only switch", { readOnly: true }],
+    ["the version", { version: "2.0" }],
+    ["a typed password", { password: "new" }],
+    ["a cleared username", { username: "" }],
+  ])("sees a change in %s", (_label, change) => {
+    const form = { ...networkShareFormFromLocation(share), ...change };
 
-    expect(networkShareChanges(share, form)).toEqual({
-      server: "192.168.1.10",
-      read_only: true,
-    });
-  });
-
-  it("sends a new password and keeps the stored one otherwise", () => {
-    const form = { ...networkShareFormFromLocation(share), password: "new" };
-
-    expect(networkShareChanges(share, form)).toEqual({ password: "new" });
-  });
-
-  it("clears the password along with the username", () => {
-    const form = {
-      ...networkShareFormFromLocation(share),
-      username: " ",
-      password: "ignored",
-    };
-
-    expect(networkShareChanges(share, form)).toEqual({
-      username: null,
-      password: null,
-    });
-  });
-
-  it("sends null to go back to the automatic version", () => {
-    const pinned = managedShare({ version: "2.0" });
-    const form = { ...networkShareFormFromLocation(pinned), version: null };
-
-    expect(networkShareChanges(pinned, form)).toEqual({ version: null });
-  });
-
-  it("never sends credentials for an NFS share", () => {
-    const nfs = managedShare({
-      share_type: ShareType.NFS,
-      share: "/volume1/music",
-      username: null,
-    });
-    const form = {
-      ...networkShareFormFromLocation(nfs),
-      username: "marcel",
-      password: "secret",
-    };
-
-    expect(networkShareChanges(nfs, form)).toEqual({});
+    expect(networkShareFormChanged(share, form)).toBe(true);
   });
 });
 

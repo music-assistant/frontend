@@ -58,8 +58,7 @@ const position = ref<StoragePosition | null>(null);
 const subfolders = ref<string[]>([]);
 const loadingFolders = ref(false);
 
-// only who can add a location there is pointed to the Storage page; for anyone else
-// it lists nothing the picker does not show already
+// the Storage page, where locations are added, is only open to who manages them
 const canManageStorage = computed(() =>
   authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
 );

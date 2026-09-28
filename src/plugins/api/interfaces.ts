@@ -1964,7 +1964,9 @@ export interface NetworkShareSettings {
   server: string;
   // cifs share name or nfs export path
   share: string;
+  // null is a guest
   username?: string | null;
+  // omitted keeps the stored one on an update
   password?: string | null;
   // null is automatic
   version?: string | null;

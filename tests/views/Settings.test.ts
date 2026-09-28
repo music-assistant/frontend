@@ -229,7 +229,7 @@ describe("Settings breadcrumbs on the storage page", () => {
   });
 
   it("name the storage page as the page they are on", () => {
-    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     routeState.name = "storagesettings";
     routeState.params = {};
 

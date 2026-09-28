@@ -80,8 +80,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     icon: "mdi-harddisk",
     color: "cyan",
     route: { name: "storagesettings" },
-    // a member sees the music locations it can pick from
-    requiresScope: Scope.CONFIG_PROVIDERS_READ,
+    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
   },
   {
     name: "profile",

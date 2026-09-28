@@ -61,6 +61,7 @@ describe("NetworkShareDialog", () => {
       share: "music",
       username: "marcel",
       password: "secret",
+      version: null,
       read_only: false,
     });
     expect(toastMock.success).toHaveBeenCalledWith(
@@ -94,6 +95,8 @@ describe("NetworkShareDialog", () => {
     expect(apiMock.addNetworkShare).toHaveBeenCalledWith(ShareType.NFS, {
       server: "nas.local",
       share: "/volume1/music",
+      username: null,
+      version: null,
       read_only: false,
     });
   });
@@ -134,7 +137,7 @@ describe("NetworkShareDialog", () => {
     expect(Array.from(radios, (radio) => radio.disabled)).toEqual([true]);
   });
 
-  it("sends only what changed on an existing share", async () => {
+  it("replaces the settings of an existing share, keeping its password", async () => {
     const wrapper = await openDialog(share);
 
     await type("share-server", "192.168.1.10");
@@ -142,6 +145,10 @@ describe("NetworkShareDialog", () => {
 
     expect(apiMock.updateNetworkShare).toHaveBeenCalledWith("nas_music", {
       server: "192.168.1.10",
+      share: "music",
+      username: "marcel",
+      version: null,
+      read_only: false,
     });
     expect(toastMock.success).toHaveBeenCalledWith(
       "settings.storage.share_saved",

@@ -180,53 +180,37 @@ export const networkShareFormFromLocation = (
   readOnly: location.read_only,
 });
 
-/** The settings to add a new network share with, from the dialog's form. */
-export function networkShareAddSettings(
+/**
+ * All settings of a network share as the dialog's form holds them, to add a share
+ * with or to replace the settings of an existing one.
+ *
+ * A missing username (always so for NFS) is sent as null, meaning a guest, and an
+ * automatic version as null. A password is only sent along with a username and when
+ * one was typed; leaving it out keeps the stored one.
+ */
+export function networkShareSettings(
   form: NetworkShareForm,
 ): NetworkShareSettings {
+  const username =
+    form.shareType === ShareType.CIFS ? form.username.trim() || null : null;
   const settings: NetworkShareSettings = {
     server: form.server.trim(),
     share: form.share.trim(),
+    username,
+    version: form.version,
     read_only: form.readOnly,
   };
-  if (form.shareType === ShareType.CIFS) {
-    if (form.username.trim()) settings.username = form.username.trim();
-    if (form.password) settings.password = form.password;
-  }
-  if (form.version) settings.version = form.version;
+  if (username && form.password) settings.password = form.password;
   return settings;
 }
 
-/**
- * The settings of a managed network share the dialog's form changed.
- *
- * Only a changed setting is included, as the server keeps an omitted one as it is. A
- * cleared username or an automatic version is sent as null, and an empty password
- * keeps the stored one unless the username is cleared along with it.
- */
-export function networkShareChanges(
+/** Whether the form holds other settings than the managed share has now. */
+export const networkShareFormChanged = (
   location: ManagedShareLocation,
   form: NetworkShareForm,
-): Partial<NetworkShareSettings> {
-  const changes: Partial<NetworkShareSettings> = {};
-  const server = form.server.trim();
-  const share = form.share.trim();
-  if (server !== location.server) changes.server = server;
-  if (share !== location.share) changes.share = share;
-  if (location.share_type === ShareType.CIFS) {
-    const username = form.username.trim() || null;
-    if (username !== (location.username ?? null)) {
-      changes.username = username;
-      if (!username) changes.password = null;
-    }
-    if (username && form.password) changes.password = form.password;
-  }
-  if (form.version !== (location.version ?? null)) {
-    changes.version = form.version;
-  }
-  if (form.readOnly !== location.read_only) changes.read_only = form.readOnly;
-  return changes;
-}
+): boolean =>
+  JSON.stringify(networkShareSettings(form)) !==
+  JSON.stringify(networkShareSettings(networkShareFormFromLocation(location)));
 
 /**
  * The reason a storage command failed: the server's own message when it sent one,

@@ -64,7 +64,6 @@
           v-for="location in mediaLocations"
           :key="location.path"
           :location="location"
-          :manageable="canManage"
           :pending="pending?.path === location.path ? pending.action : null"
           @reload="reloadShare(location)"
           @edit="openShareDialog(location)"
@@ -144,12 +143,7 @@ import {
 } from "@/helpers/storage";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import {
-  Scope,
-  type StorageLocation,
-  StorageUsage,
-} from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
+import { type StorageLocation, StorageUsage } from "@/plugins/api/interfaces";
 import { FolderPlus, HardDrive, Info, Plus, RefreshCw } from "@lucide/vue";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -167,21 +161,14 @@ const locationToRemove = ref<StorageLocation | null>(null);
 // the command running on a location, which keeps its actions from being pressed again
 const pending = ref<{ path: string; action: "reload" | "remove" } | null>(null);
 
-// reading the storage takes config.providers.read, changing it config.providers.write
-const canManage = computed(() =>
-  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
-);
 const canAddShare = computed(
   () =>
-    canManage.value &&
     !!info.value?.can_mount_shares &&
     info.value.supported_share_types.length > 0,
 );
-const canAddFolder = computed(
-  () => canManage.value && !!info.value?.can_add_local_folder,
-);
+const canAddFolder = computed(() => !!info.value?.can_add_local_folder);
 const showMountHint = computed(
-  () => canManage.value && !!info.value && !info.value.can_mount_shares,
+  () => !!info.value && !info.value.can_mount_shares,
 );
 const serverLocations = computed(
   () =>

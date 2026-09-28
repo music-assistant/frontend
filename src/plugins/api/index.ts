@@ -3660,12 +3660,12 @@ export class MusicAssistantApi {
 
   public updateNetworkShare(
     name: string,
-    changes: Partial<NetworkShareSettings>,
+    settings: NetworkShareSettings,
   ): Promise<StorageLocation> {
-    // Change the settings of a network share; an omitted setting stays as it is
+    // Replace the settings of a network share; an omitted password keeps the stored one
     return this.sendCommand<StorageLocation>(
       "storage/network_shares/update",
-      { name, ...changes },
+      { name, ...settings },
       { suppressGlobalError: true },
     );
   }

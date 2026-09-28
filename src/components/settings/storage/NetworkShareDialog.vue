@@ -244,9 +244,9 @@ import {
   emptyNetworkShareForm,
   type ManagedShareLocation,
   type NetworkShareForm,
-  networkShareAddSettings,
-  networkShareChanges,
+  networkShareFormChanged,
   networkShareFormFromLocation,
+  networkShareSettings,
   SHARE_TYPE_LABEL_KEYS,
   SHARE_VERSIONS,
   storageErrorText,
@@ -319,18 +319,16 @@ const save = async () => {
   saving.value = true;
   error.value = null;
   try {
+    const settings = networkShareSettings(form.value);
     if (props.location) {
-      const changes = networkShareChanges(props.location, form.value);
-      if (Object.keys(changes).length > 0) {
-        await api.updateNetworkShare(props.location.share_name, changes);
+      // an untouched form has nothing to replace
+      if (networkShareFormChanged(props.location, form.value)) {
+        await api.updateNetworkShare(props.location.share_name, settings);
         toast.success(t("settings.storage.share_saved"));
         emit("saved");
       }
     } else {
-      await api.addNetworkShare(
-        form.value.shareType,
-        networkShareAddSettings(form.value),
-      );
+      await api.addNetworkShare(form.value.shareType, settings);
       toast.success(t("settings.storage.share_added"));
       emit("saved");
     }

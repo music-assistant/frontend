@@ -31,8 +31,6 @@ import { useI18n } from "vue-i18n";
 /** A storage location on the Storage page, with the actions a managed one offers. */
 const props = defineProps<{
   location: StorageLocation;
-  // whether the viewer may change the storage
-  manageable?: boolean;
   // the command running on this location, if any
   pending?: "reload" | "remove" | null;
 }>();
@@ -86,13 +84,9 @@ const spaceText = computed(() => {
   return parts.join(" · ");
 });
 
-const canReloadOrEdit = computed(
-  () => props.manageable && isManagedShare(props.location),
-);
+const canReloadOrEdit = computed(() => isManagedShare(props.location));
 const canRemove = computed(
-  () =>
-    props.manageable &&
-    (isManagedShare(props.location) || isRegisteredFolder(props.location)),
+  () => isManagedShare(props.location) || isRegisteredFolder(props.location),
 );
 </script>
 
