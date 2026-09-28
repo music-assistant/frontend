@@ -1,10 +1,13 @@
 <template>
-  <div class="provider-icon-wrapper" :style="{ width: `${size}px` }">
+  <div
+    class="provider-icon-wrapper"
+    :style="`width: var(--provider-icon-size, ${size}px);`"
+  >
     <!-- the library is not a real provider, so render its membership badge directly -->
     <div
       v-if="domain === 'library'"
       class="d-flex align-center justify-center"
-      :style="`width: ${size}px;height: ${size}px;`"
+      :style="`width: var(--provider-icon-size, ${size}px);height: var(--provider-icon-size, ${size}px);`"
       :title="$t('in_library')"
     >
       <LibraryBig :size="size" />
@@ -13,7 +16,7 @@
     <div
       v-else-if="iconDataUri"
       class="d-flex align-center justify-center align-content-center justify-content-center"
-      :style="`width: ${size}px;height: ${size}px;${applyInvert ? 'filter: invert(1);' : ''}`"
+      :style="`width: var(--provider-icon-size, ${size}px);height: var(--provider-icon-size, ${size}px);${applyInvert ? 'filter: invert(1);' : ''}`"
       :title="providerName"
     >
       <img class="provider-img" :src="iconDataUri" :alt="providerName" />

@@ -67,11 +67,9 @@ const providers = computed(() => mappedServices(props.item));
     background: none;
     gap: 10px;
   }
-  /* ProviderIcon sizes itself inline from its prop, so lift the bare icons here */
-  .detail-hero-providers :deep(.provider-icon-wrapper),
-  .detail-hero-providers :deep(.provider-icon-wrapper > div) {
-    width: 20px !important;
-    height: 20px !important;
+  /* enlarge the bare icons by overriding ProviderIcon's inherited size variable */
+  .detail-hero-providers {
+    --provider-icon-size: 20px;
   }
 }
 </style>
