@@ -209,6 +209,30 @@ describe("SetupFlowDialog", () => {
     );
   });
 
+  it.each([
+    ["form", { ...formStep(), description: "Register https://example.com/cb" }],
+    ["external", { ...terminalStep(FlowStepType.EXTERNAL), description: "Go" }],
+    ["progress", progressStep("Waiting for the device")],
+    ["finish", { ...terminalStep(FlowStepType.FINISH), description: "Done" }],
+    ["abort", { ...terminalStep(FlowStepType.ABORT), reason: "Token expired" }],
+  ] as [string, SetupFlowStep][])(
+    "lets the user select the text of a %s step",
+    async (_type, step) => {
+      const wrapper = await mountHeader(
+        { kind: "reconfigure", instanceId: "spotify--test" },
+        step,
+      );
+      const text = step.description ?? step.progress_text ?? step.reason;
+
+      const body = wrapper
+        .findAll("div")
+        .find((el) => el.element.childElementCount === 0 && el.text() === text);
+      expect(body?.classes()).toEqual(
+        expect.arrayContaining(["select-text", "[&_*]:select-text"]),
+      );
+    },
+  );
+
   it("leaves the subtitle out when the step brings no title", async () => {
     const wrapper = await mountHeader({ kind: "player", playerId: "player-1" });
 
