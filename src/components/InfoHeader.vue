@@ -703,7 +703,7 @@ const playButtonText = computed(() => {
   return getPlayerName(store.activePlayer, 20);
 });
 
-useEscapeBack(backButtonClick, () => !showFullInfo.value);
+useEscapeBack(backButtonClick);
 
 const playButtonClick = function (forceMenu = false) {
   const playButton = document.getElementById("playbutton") as HTMLElement;

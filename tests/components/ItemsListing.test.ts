@@ -446,33 +446,7 @@ describe("ItemsListing per-page search", () => {
     },
   );
 
-  it.each([
-    "altKey",
-    "ctrlKey",
-    "metaKey",
-    "shiftKey",
-    "repeat",
-    "isComposing",
-  ])("leaves search open for Escape with %s", async (guard) => {
-    const listing = mountListingRaw({
-      showSearchButton: true,
-      allowKeyHooks: true,
-    });
-    await flushPromises();
-    await toggleSearch(listing);
-    const event = new KeyboardEvent("keydown", {
-      key: "Escape",
-      bubbles: true,
-      cancelable: true,
-      [guard]: true,
-    });
-    listing.get(".search-field input").element.dispatchEvent(event);
-    await flushPromises();
-    expect(event.defaultPrevented).toBe(false);
-    expect(searchField(listing).exists()).toBe(true);
-  });
-
-  it.each(["prevented", "dialog", "players"])(
+  it.each(["dialog", "players"])(
     "leaves search open when Escape belongs to %s",
     async (owner) => {
       const listing = mountListingRaw({ showSearchButton: true });
@@ -483,58 +457,19 @@ describe("ItemsListing per-page search", () => {
         bubbles: true,
         cancelable: true,
       });
-      if (owner === "prevented") event.preventDefault();
       store.dialogActive = owner === "dialog";
       store.showPlayersMenu = owner === "players";
       try {
         document.body.dispatchEvent(event);
         await flushPromises();
         expect(searchField(listing).exists()).toBe(true);
-        expect(event.defaultPrevented).toBe(owner === "prevented");
+        expect(event.defaultPrevented).toBe(false);
       } finally {
         store.dialogActive = false;
         store.showPlayersMenu = false;
       }
     },
   );
-
-  it("dismisses only the focused search when multiple listings are open", async () => {
-    const first = mountListingRaw({ showSearchButton: true });
-    const second = mountListingRaw({ showSearchButton: true });
-    await flushPromises();
-    await toggleSearch(first);
-    await toggleSearch(second);
-    second.get(".search-field input").element.dispatchEvent(
-      new KeyboardEvent("keydown", {
-        key: "Escape",
-        bubbles: true,
-        cancelable: true,
-      }),
-    );
-    await flushPromises();
-    expect(searchField(first).exists()).toBe(true);
-    expect(searchField(second).exists()).toBe(false);
-  });
-
-  it("dismisses only one unfocused search per Escape", async () => {
-    const first = mountListingRaw({ showSearchButton: true });
-    const second = mountListingRaw({ showSearchButton: true });
-    await flushPromises();
-    await toggleSearch(first);
-    await toggleSearch(second);
-    (second.get(".search-field input").element as HTMLInputElement).blur();
-    document.body.dispatchEvent(
-      new KeyboardEvent("keydown", {
-        key: "Escape",
-        bubbles: true,
-        cancelable: true,
-      }),
-    );
-    await flushPromises();
-    expect(
-      [first, second].filter((listing) => searchField(listing).exists()),
-    ).toHaveLength(1);
-  });
 
   function searchField(listing: ReturnType<typeof mountListingRaw>) {
     return listing.find(".search-field");

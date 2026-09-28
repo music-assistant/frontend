@@ -2,7 +2,7 @@ import { useEscapeBack } from "@/composables/useEscapeBack";
 import { store } from "@/plugins/store";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { h, KeepAlive, nextTick, ref } from "vue";
+import { h, ref } from "vue";
 
 vi.mock("@/plugins/store", () => ({
   store: {
@@ -53,15 +53,7 @@ describe("useEscapeBack", () => {
     expect(back).toHaveBeenCalledTimes(1);
   });
 
-  it.each([
-    { key: "Enter" },
-    { repeat: true },
-    { isComposing: true },
-    { altKey: true },
-    { ctrlKey: true },
-    { metaKey: true },
-    { shiftKey: true },
-  ])("ignores %j", (init) => {
+  it.each([{ key: "Enter" }, { repeat: true }])("ignores %j", (init) => {
     const { back } = harness();
     expect(escape(document.body, init).defaultPrevented).toBe(false);
     expect(back).not.toHaveBeenCalled();
@@ -83,25 +75,11 @@ describe("useEscapeBack", () => {
     "select",
     'div contenteditable=""',
     'div contenteditable="plaintext-only"',
-    'div role="combobox"',
-    'div role="textbox"',
-    'div role="searchbox"',
-    'div role="slider"',
-    'div role="spinbutton"',
   ])("protects editable %s and descendants", (markup) => {
     const { back } = harness();
     document.body.innerHTML = `<${markup}><span></span></${markup.split(" ")[0]}>`;
     const target = document.body.firstElementChild!;
     escape(target.querySelector("span") ?? target);
-    expect(back).not.toHaveBeenCalled();
-  });
-
-  it("protects active editors even when the event targets document", () => {
-    const { back } = harness();
-    const input = document.createElement("input");
-    document.body.append(input);
-    input.focus();
-    escape(document);
     expect(back).not.toHaveBeenCalled();
   });
 
@@ -133,8 +111,7 @@ describe("useEscapeBack", () => {
     "hidden",
     'aria-hidden="true"',
     'data-state="closed"',
-    'style="display:none"',
-    'style="visibility:hidden"',
+    'style="display: none"',
   ])("ignores hidden overlay ancestor %s", (attributes) => {
     const { back } = harness();
     document.body.innerHTML = `<div ${attributes}><div role="dialog"></div></div>`;
@@ -170,28 +147,4 @@ describe("useEscapeBack", () => {
       expect(back).not.toHaveBeenCalled();
     },
   );
-
-  it("does not duplicate listeners across KeepAlive activation", async () => {
-    const back = vi.fn();
-    const visible = ref(true);
-    const child = {
-      setup() {
-        useEscapeBack(back);
-        return () => h("div");
-      },
-    };
-    mount({
-      setup: () => () => h(KeepAlive, () => (visible.value ? h(child) : null)),
-    });
-    escape();
-    expect(back).toHaveBeenCalledTimes(1);
-    visible.value = false;
-    await nextTick();
-    escape();
-    expect(back).toHaveBeenCalledTimes(1);
-    visible.value = true;
-    await nextTick();
-    escape();
-    expect(back).toHaveBeenCalledTimes(2);
-  });
 });

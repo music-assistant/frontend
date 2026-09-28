@@ -1,31 +1,23 @@
 import { store } from "@/plugins/store";
-import { onActivated, onBeforeUnmount, onDeactivated, onMounted } from "vue";
+import { onBeforeUnmount, onMounted } from "vue";
 
-/** Back is a fallback: controls and dismissible UI always get Escape first. */
+const EDITABLE =
+  'input, select, textarea, [contenteditable]:not([contenteditable="false"])';
+const OVERLAY =
+  '.v-overlay--active, [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-slot="popover-content"]';
+const HIDDEN =
+  '[hidden], [aria-hidden="true"], [data-state="closed"], [style*="display: none"]';
+
+/**
+ * Navigate back on Escape while the calling view is mounted.
+ *
+ * Fields, open overlays and dialogs always get Escape first; back is only the fallback.
+ */
 export function useEscapeBack(
   navigateBack: () => void,
   enabled: () => boolean = () => true,
 ) {
   const blockedEvents = new WeakSet<KeyboardEvent>();
-  const editableSelector = [
-    "input",
-    "select",
-    "textarea",
-    '[contenteditable]:not([contenteditable="false"])',
-    '[role="combobox"]',
-    '[role="searchbox"]',
-    '[role="slider"]',
-    '[role="spinbutton"]',
-    '[role="textbox"]',
-  ].join(",");
-  const overlaySelector = [
-    ".v-overlay--active",
-    '[role="dialog"]',
-    '[role="alertdialog"]',
-    '[role="menu"]',
-    '[role="listbox"]',
-    '[data-slot="popover-content"]',
-  ].join(",");
 
   const isBlocked = (event: KeyboardEvent) => {
     if (
@@ -33,40 +25,18 @@ export function useEscapeBack(
       store.dialogActive ||
       store.showPlayersMenu ||
       store.showFullscreenPlayer
-    ) {
+    )
       return true;
-    }
-    if (
-      [...event.composedPath(), document.activeElement].some(
-        (target) =>
-          target instanceof Element && target.closest(editableSelector),
-      )
-    ) {
-      return true;
-    }
-    return [...document.querySelectorAll(overlaySelector)].some((overlay) => {
-      if (
-        overlay.closest('[hidden], [aria-hidden="true"], [data-state="closed"]')
-      ) {
-        return false;
-      }
-      // Include hidden ancestors (v-show), but not geometry: jsdom and some
-      // teleported/transitioning overlays do not have a useful bounding box.
-      for (
-        let node: Element | null = overlay;
-        node;
-        node = node.parentElement
-      ) {
-        const style = window.getComputedStyle(node);
-        if (style.display === "none" || style.visibility === "hidden")
-          return false;
-      }
-      return true;
-    });
+    const target = event.target;
+    if (target instanceof Element && target.closest(EDITABLE)) return true;
+    return [...document.querySelectorAll(OVERLAY)].some(
+      (overlay) => !overlay.closest(HIDDEN),
+    );
   };
 
+  // reka and the fullscreen player close on the same keypress from window
+  // listeners that may run first, so decide before any of them act
   const capture = (event: KeyboardEvent) => {
-    // Remember UI that may be synchronously dismissed by a later listener.
     if (event.key === "Escape" && isBlocked(event)) blockedEvents.add(event);
   };
   const handle = (event: KeyboardEvent) => {
@@ -74,31 +44,20 @@ export function useEscapeBack(
       event.key !== "Escape" ||
       event.defaultPrevented ||
       event.repeat ||
-      event.isComposing ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey ||
       blockedEvents.has(event) ||
       isBlocked(event)
-    ) {
+    )
       return;
-    }
     event.preventDefault();
     navigateBack();
   };
-  const attach = () => {
+
+  onMounted(() => {
     window.addEventListener("keydown", capture, true);
-    // Document-level search/menu handlers run before this bubble listener,
-    // regardless of which component mounted first.
     window.addEventListener("keydown", handle);
-  };
-  const detach = () => {
+  });
+  onBeforeUnmount(() => {
     window.removeEventListener("keydown", capture, true);
     window.removeEventListener("keydown", handle);
-  };
-  onMounted(attach);
-  onActivated(attach);
-  onDeactivated(detach);
-  onBeforeUnmount(detach);
+  });
 }

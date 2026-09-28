@@ -1830,24 +1830,6 @@ const restoreSettings = async function () {
 const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive || store.showPlayersMenu) return;
   if (e.key === "Escape") {
-    if (
-      e.defaultPrevented ||
-      e.isComposing ||
-      e.repeat ||
-      e.altKey ||
-      e.ctrlKey ||
-      e.metaKey ||
-      e.shiftKey
-    )
-      return;
-    // A focused search belongs to its own listing, not the first listener.
-    const target = e.target;
-    if (
-      target instanceof Element &&
-      target.closest(".listing-search") &&
-      !searchInputRef.value?.$el.contains(target)
-    )
-      return;
     if (showSearchInput.value) {
       e.preventDefault();
       closeSearch();
@@ -1886,8 +1868,8 @@ const keyListener = function (e: KeyboardEvent) {
   }
 };
 
-// Visible search consumes Escape even when general listing shortcuts are off.
-// Document bubbling runs before the window-level back-navigation fallback.
+// Always listen: an open search claims Escape before the window-level
+// back navigation (useEscapeBack) sees it, even without key hooks
 document.addEventListener("keydown", keyListener);
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", keyListener);
