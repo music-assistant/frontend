@@ -323,6 +323,19 @@ describe("Home Assistant router history", () => {
     expect(history.state.back).toBe("/home");
   });
 
+  it("goes back to the tab's first page when a later one took its place", async () => {
+    // The tab opened on the app itself.
+    await start(`${PANEL}/home`);
+    await push("/artists");
+    await replace("/home");
+
+    ha.back();
+    await settle();
+
+    expect(router.currentRoute.value.fullPath).toBe("/home");
+    expect(history.state.back).toBeNull();
+  });
+
   it("stays on the page when a guard turns down one from before a reload", async () => {
     await start(`${PANEL}/home`, [`${PANEL}/artists/1`]);
     router.beforeEach((to) => to.path !== "/artists/1");

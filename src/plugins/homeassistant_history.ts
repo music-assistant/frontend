@@ -124,18 +124,17 @@ export function createHAHistory(): RouterHistory {
     const mark = readHAMark();
     const current = entries[position];
     // The first entry of a tab is Home Assistant's own, and keeps no mark.
-    if (
-      mark ? mark.id === current.id : isSameLocation(location, current.location)
-    ) {
+    const isFirst = !mark && isFirstHAEntry();
+    const isLanded = (entry: HistoryEntry) =>
+      mark
+        ? entry.id === mark.id
+        : isFirst
+          ? !!entry.first
+          : isSameLocation(entry.location, location);
+    if (isLanded(current)) {
       return;
     }
-    const index = mark
-      ? entries.findIndex((entry) => entry.id === mark.id)
-      : // Only the first entry of a tab goes unmarked, so it is the earliest.
-        entries.findIndex(
-          (entry, i) =>
-            i < position && isSameLocation(entry.location, location),
-        );
+    const index = entries.findIndex(isLanded);
     if (index !== -1) {
       move(index - position, true);
       return;
