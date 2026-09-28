@@ -133,6 +133,7 @@ function mountGroupVolume(player: Player) {
       requestExpandOnGroupTap: true,
     },
     global: {
+      mocks: { $t: (key: string) => key },
       stubs: sliderStub,
     },
   });
@@ -146,6 +147,7 @@ function mountPopoutVolume(player: Player, allowWheel = false) {
       allowWheel,
     },
     global: {
+      mocks: { $t: (key: string) => key },
       stubs: sliderStub,
     },
   });
@@ -287,7 +289,7 @@ describe("PlayerVolume group expansion", () => {
     expect(wrapper.emitted("toggle-group-expansion")).toBeUndefined();
   });
 
-  it("uses group mute state for the group volume icon", () => {
+  it("uses group mute state for the group volume icon and button label", async () => {
     const child = createPlayer({
       player_id: "child",
       name: "Office",
@@ -302,9 +304,46 @@ describe("PlayerVolume group expansion", () => {
       [child.player_id]: child,
     };
 
-    mountGroupVolume(parent);
+    const wrapper = mountGroupVolume(parent);
 
     expect(getVolumeIconComponent).toHaveBeenCalledWith(parent, 25, false);
+    expect(wrapper.get(".volume-icon-btn").attributes("aria-label")).toBe(
+      "tooltip.mute",
+    );
+
+    await wrapper.setProps({
+      player: { ...parent, group_volume_muted: true, volume_muted: false },
+    });
+
+    expect(wrapper.get(".volume-icon-btn").attributes("aria-label")).toBe(
+      "tooltip.unmute",
+    );
+    await wrapper.get(".volume-icon-btn").trigger("click");
+    expect(api.playerCommandGroupVolumeMute).toHaveBeenCalledWith(
+      parent.player_id,
+      false,
+    );
+    expect(api.playerCommandMuteToggle).not.toHaveBeenCalled();
+  });
+
+  it("labels an individual player's mute action using its own state", async () => {
+    const player = createPlayer({ group_volume_muted: true });
+    const wrapper = mountGroupVolume(player);
+
+    expect(wrapper.get(".volume-icon-btn").attributes("aria-label")).toBe(
+      "tooltip.mute",
+    );
+
+    await wrapper.setProps({
+      player: { ...player, volume_muted: true, group_volume_muted: false },
+    });
+
+    expect(wrapper.get(".volume-icon-btn").attributes("aria-label")).toBe(
+      "tooltip.unmute",
+    );
+    await wrapper.get(".volume-icon-btn").trigger("click");
+    expect(api.playerCommandMuteToggle).toHaveBeenCalledWith(player.player_id);
+    expect(api.playerCommandGroupVolumeMute).not.toHaveBeenCalled();
   });
 
   it("allows a muted group slider tap to expand child volumes", async () => {
@@ -643,7 +682,7 @@ describe("PlayerVolume group popout", () => {
     api.players = { [player.player_id]: player };
     const wrapper = mount(PlayerVolume, {
       props: { player, allowWheel: true },
-      global: { stubs: sliderStub },
+      global: { mocks: { $t: (key: string) => key }, stubs: sliderStub },
     });
 
     const event = new WheelEvent("wheel", {
@@ -726,7 +765,7 @@ describe("PlayerVolume touch expansion", () => {
     api.players = { [player.player_id]: player };
     wrapper = mount(PlayerVolume, {
       props: { player },
-      global: { stubs: sliderStub },
+      global: { mocks: { $t: (key: string) => key }, stubs: sliderStub },
     });
 
     expect(wrapper.findAll(".volume-step-btn")).toHaveLength(0);
