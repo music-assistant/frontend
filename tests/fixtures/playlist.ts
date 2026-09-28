@@ -16,7 +16,7 @@ export function playlist(overrides: Partial<Playlist> = {}): Playlist {
     media_type: MediaType.PLAYLIST,
     provider_mappings: [],
     metadata: {},
-    favorite: false,
+    favorite: null,
     owner: "",
     is_editable: false,
     supported_mediatypes: [MediaType.TRACK],

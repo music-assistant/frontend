@@ -26,7 +26,7 @@
         }"
         loading="lazy"
         :src="artImage"
-        :alt="item.name"
+        alt=""
       />
       <MediaCollectionThumb
         v-else-if="props.item.media_type == MediaType.COLLECTION"

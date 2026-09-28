@@ -1,4 +1,5 @@
 import {
+  MediaType,
   type PlaylistAccess,
   ProviderSharing,
   UserRole,
@@ -6,8 +7,10 @@ import {
 import { describe, expect, it } from "vitest";
 import { playlist } from "../../tests/fixtures/playlist";
 import { providerMapping } from "../../tests/fixtures/providerMapping";
+import { track } from "../../tests/fixtures/track";
 import { user } from "../../tests/fixtures/user";
 import {
+  canAddToPlaylist,
   canEditPlaylistItems,
   canManagePlaylist,
   canSharePlaylist,
@@ -193,4 +196,23 @@ describe("canEditPlaylistItems", () => {
 
     expect(canEditPlaylistItems(item, member, false)).toBe(false);
   });
+});
+
+describe("canAddToPlaylist", () => {
+  it.each([
+    MediaType.TRACK,
+    MediaType.ALBUM,
+    MediaType.RADIO,
+    MediaType.PODCAST_EPISODE,
+    MediaType.AUDIOBOOK,
+  ])("takes a %s", (media_type) => {
+    expect(canAddToPlaylist(track({ media_type }))).toBe(true);
+  });
+
+  it.each([MediaType.ARTIST, MediaType.PLAYLIST, MediaType.GENRE])(
+    "does not take a %s",
+    (media_type) => {
+      expect(canAddToPlaylist(track({ media_type }))).toBe(false);
+    },
+  );
 });
