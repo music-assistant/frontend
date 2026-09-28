@@ -10,29 +10,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { artist } from "../fixtures/artist";
 import { providerMapping } from "../fixtures/providerMapping";
 
-const {
-  apiMock,
-  mockGetArtist,
-  mockGetArtistDiscography,
-  mockReplace,
-  routeQuery,
-} = vi.hoisted(() => ({
-  // what the connected server supports, so a test can model an older one
-  apiMock: { supportsArtistDiscography: true },
-  mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
-  mockGetArtistDiscography: vi.fn<MusicAssistantApi["getArtistDiscography"]>(),
-  mockReplace: vi.fn(),
-  routeQuery: {} as Record<string, string>,
-}));
+const { mockGetArtist, mockGetArtistDiscography, mockReplace, routeQuery } =
+  vi.hoisted(() => ({
+    mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
+    mockGetArtistDiscography:
+      vi.fn<MusicAssistantApi["getArtistDiscography"]>(),
+    mockReplace: vi.fn(),
+    routeQuery: {} as Record<string, string>,
+  }));
 
 vi.mock("@/plugins/api", () => ({
   api: {
     getArtist: mockGetArtist,
     getArtistAlbums: vi.fn().mockResolvedValue([]),
     getArtistDiscography: mockGetArtistDiscography,
-    get supportsArtistDiscography() {
-      return apiMock.supportsArtistDiscography;
-    },
     providers: {},
   },
 }));
@@ -104,7 +95,6 @@ describe("ArtistListing", () => {
     mockGetArtist.mockReset();
     mockReplace.mockReset();
     mockGetArtistDiscography.mockReset().mockResolvedValue([]);
-    apiMock.supportsArtistDiscography = true;
     for (const key of Object.keys(api.providers)) delete api.providers[key];
     for (const key of Object.keys(routeQuery)) delete routeQuery[key];
   });
@@ -333,19 +323,6 @@ describe("ArtistListing", () => {
     expect((listing(wrapper).props("sortKeys") as string[])[0]).toBe(
       "original",
     );
-  });
-
-  // a url typed or restored on a server without the command
-  it("loads no discography from an older server", async () => {
-    apiMock.supportsArtistDiscography = false;
-    const wrapper = await mountListing("discography");
-
-    const items = await (
-      listing(wrapper).props("loadItems") as () => Promise<unknown[]>
-    )();
-
-    expect(items).toEqual([]);
-    expect(mockGetArtistDiscography).not.toHaveBeenCalled();
   });
 
   // the discography is the library artist's, so there is nothing to switch to

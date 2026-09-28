@@ -452,22 +452,6 @@ describe("MusicAssistantApi error handling", () => {
     expect(api.supportsAIRadioPlaybackScopes).toBe(true);
   });
 
-  it("lists an artist's discography from schema 79 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 78 };
-    expect(api.supportsArtistDiscography).toBe(false);
-
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 79 };
-    expect(api.supportsArtistDiscography).toBe(true);
-  });
-
-  it("lets a library writer look an unavailable item up again from schema 80 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 79 };
-    expect(api.supportsRefreshItemWriteScope).toBe(false);
-
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 80 };
-    expect(api.supportsRefreshItemWriteScope).toBe(true);
-  });
-
   it("asks the library for an artist's discography", () => {
     api.getArtistDiscography("artist-1");
 

@@ -13,11 +13,6 @@ import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 const { apiMock, emittedMenus, hasScope, storeMock } = vi.hoisted(() => ({
   emittedMenus: [] as ContextMenuDialogEvent[],
   apiMock: {
-    // what the connected server supports, so a test can model an older one
-    refreshItemWriteScope: true,
-    get supportsRefreshItemWriteScope() {
-      return this.refreshItemWriteScope;
-    },
     getItem: vi.fn(),
     getLibraryItem: vi.fn(),
     getProvider: vi.fn(),
@@ -65,7 +60,6 @@ async function offeredLabels(): Promise<string[]> {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  apiMock.refreshItemWriteScope = true;
   apiMock.getLibraryItem.mockResolvedValue(gone);
   apiMock.refreshItem.mockResolvedValue(undefined);
   hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
@@ -90,22 +84,17 @@ describe("the context menu of an unavailable library item", () => {
     expect(apiMock.refreshItem).toHaveBeenCalledWith(gone);
   });
 
-  // an older server refuses the command to anyone but a library manager
-  it("offers a member nothing on an older server", async () => {
-    apiMock.refreshItemWriteScope = false;
-
-    expect(await offeredLabels()).not.toContain("find_on_music_services");
-  });
-
-  it("still lets an admin look it up on an older server", async () => {
-    apiMock.refreshItemWriteScope = false;
+  it("lets an admin look it up as well", async () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
 
     expect(await offeredLabels()).toContain("find_on_music_services");
   });
 
-  it("keeps it out of playlists", async () => {
-    expect(await offeredLabels()).not.toContain("add_playlist");
+  it("keeps it out of playlists and shortcuts", async () => {
+    const labels = await offeredLabels();
+
+    expect(labels).not.toContain("add_playlist");
+    expect(labels).not.toContain("shortcut.add_to");
   });
 
   it("offers a guest nothing", async () => {

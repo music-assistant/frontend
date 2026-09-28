@@ -13,7 +13,6 @@ import { artist } from "../fixtures/artist";
 import { track } from "../fixtures/track";
 
 const {
-  apiMock,
   mockGetArtist,
   mockSubscribe,
   mockAvailableArtistRowIds,
@@ -26,8 +25,6 @@ const {
   mockLoadSimilarArtists,
   mockAppearsOnAlbums,
 } = vi.hoisted(() => ({
-  // what the connected server supports, so a test can model an older one
-  apiMock: { supportsArtistDiscography: true },
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
   mockSubscribe: vi.fn(() => () => {}),
   mockAvailableArtistRowIds: vi.fn(),
@@ -47,9 +44,6 @@ vi.mock("@/plugins/api", () => ({
     subscribe: mockSubscribe,
     providers: {},
     getProvider: () => undefined,
-    get supportsArtistDiscography() {
-      return apiMock.supportsArtistDiscography;
-    },
   },
 }));
 
@@ -191,7 +185,6 @@ describe("ArtistDetails", () => {
       }));
     // a library artist mapped to a provider that can supply the row
     mockArtistRowSources.mockReset().mockReturnValue(["library", "all"]);
-    apiMock.supportsArtistDiscography = true;
     mockLoadArtistReleases.mockReset().mockResolvedValue(RELEASES);
     mockLoadArtistDiscography.mockReset().mockResolvedValue([album()]);
     mockLoadArtistLibraryTracks.mockReset().mockResolvedValue([track()]);
@@ -274,14 +267,6 @@ describe("ArtistDetails", () => {
     const wrapper = await mountDetails(artist());
 
     expect(renderedRows(wrapper)).toContain("discography");
-  });
-
-  it("leaves the discography out on a server without the command", async () => {
-    apiMock.supportsArtistDiscography = false;
-
-    const wrapper = await mountDetails(artist());
-
-    expect(renderedRows(wrapper)).not.toContain("discography");
   });
 
   it("leaves the discography out for a provider artist", async () => {

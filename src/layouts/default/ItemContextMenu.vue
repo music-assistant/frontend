@@ -1125,11 +1125,9 @@ export const getContextMenuItems = async function (
   }
   // refresh item: a library manager refreshes the page's own item; an item
   // none of the music services has any more is looked up on them again, which
-  // a library writer may do too on a server that allows it
+  // a library writer may do too
   const unavailable = items.length === 1 && !itemIsAvailable(items[0]);
-  const canFindOnMusicServices =
-    unavailable &&
-    (managesLibrary || (canEditLibrary && api.supportsRefreshItemWriteScope));
+  const canFindOnMusicServices = unavailable && canEditLibrary;
   if (
     items.length === 1 &&
     items[0].media_type !== MediaType.COLLECTION &&
@@ -1253,7 +1251,7 @@ export const getContextMenuItems = async function (
         action: () => unpinShortcutStandaloneItem(shortcutItem),
         icon: PinOff,
       });
-    } else {
+    } else if (itemIsAvailable(shortcutItem)) {
       contextMenuItems.push({
         label: "shortcut.add_to",
         labelArgs: [],

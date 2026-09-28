@@ -503,7 +503,7 @@ function rowApplies(rowId: ArtistRowId): boolean {
     case "audiobooks":
       return isLibraryItem;
     case "discography":
-      return isLibraryItem && api.supportsArtistDiscography;
+      return isLibraryItem;
     case "audiobooks_all":
       return audiobookSourceProviderIds.value.length > 0;
     case "artwork":

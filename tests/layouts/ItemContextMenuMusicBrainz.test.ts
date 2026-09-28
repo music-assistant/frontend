@@ -95,6 +95,7 @@ describe("the context menu of a MusicBrainz release", () => {
     // refresh or remove
     expect(labels).not.toContain("play_now");
     expect(labels).not.toContain("add_playlist");
+    expect(labels).not.toContain("shortcut.add_to");
     expect(labels).not.toContain("favorites_add");
     expect(labels).not.toContain("refresh_item");
     expect(labels).not.toContain("remove_library");
