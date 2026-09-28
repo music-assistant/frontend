@@ -794,6 +794,10 @@
             "music_locations_empty_title": "No music locations yet",
             "music_locations_empty": "There is no folder, drive or network share with music yet.",
             "server_storage": "Server storage",
+            "usage": {
+                "data": "Data",
+                "cache": "Cache"
+            },
             "kind": {
                 "builtin_media": "Home Assistant media folder",
                 "container_volume": "Docker volume",

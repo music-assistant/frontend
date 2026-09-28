@@ -109,6 +109,7 @@
       v-model:open="showShareDialog"
       :location="shareToEdit"
       :share-types="info?.supported_share_types ?? []"
+      :share-versions="info?.supported_share_versions ?? {}"
       @saved="refresh"
     />
     <LocalFolderDialog v-model:open="showFolderDialog" @added="refresh" />

@@ -63,8 +63,8 @@ export function managedShare(
 }
 
 /**
- * The storage info of an install that can mount SMB and NFS shares, for tests
- * that only care about a few of its fields.
+ * The storage info of a Home Assistant install, which mounts SMB and NFS shares
+ * through the Supervisor, for tests that only care about a few of its fields.
  */
 export function storageInfo(overrides: Partial<StorageInfo> = {}): StorageInfo {
   return {
@@ -72,6 +72,10 @@ export function storageInfo(overrides: Partial<StorageInfo> = {}): StorageInfo {
     can_mount_shares: true,
     mount_backend: MountBackend.SUPERVISOR,
     supported_share_types: [ShareType.CIFS, ShareType.NFS],
+    supported_share_versions: {
+      [ShareType.CIFS]: ["1.0", "2.0"],
+      [ShareType.NFS]: [],
+    },
     can_add_local_folder: false,
     ...overrides,
   };

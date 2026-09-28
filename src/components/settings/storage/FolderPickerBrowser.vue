@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { joinStoragePath, type StoragePosition } from "@/helpers/storage";
+import {
+  joinStoragePath,
+  storageLocationName,
+  type StoragePosition,
+} from "@/helpers/storage";
 import { Check, ChevronRight, Folder } from "@lucide/vue";
 import { computed } from "vue";
 
@@ -33,7 +37,7 @@ const isSelected = computed(() => currentPath.value === props.selectedPath);
 
 // the location itself heads the trail, followed by one crumb per subfolder
 const crumbs = computed(() => [
-  props.position.location.name,
+  storageLocationName(props.position.location),
   ...props.position.segments,
 ]);
 

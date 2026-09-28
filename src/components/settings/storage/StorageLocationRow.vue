@@ -13,11 +13,13 @@ import { Spinner } from "@/components/ui/spinner";
 import {
   formatStorageSize,
   isManagedShare,
+  isNamedByKind,
   isRegisteredFolder,
   networkShareAddress,
   SHARE_TYPE_LABEL_KEYS,
   STORAGE_KIND_ICONS,
   STORAGE_KIND_LABEL_KEYS,
+  storageLocationName,
 } from "@/helpers/storage";
 import {
   MountBackend,
@@ -40,6 +42,7 @@ const emit = defineEmits<{ reload: []; edit: []; remove: [] }>();
 const { t, locale } = useI18n();
 
 const isMedia = computed(() => props.location.usage === StorageUsage.MEDIA);
+const name = computed(() => storageLocationName(props.location));
 
 const icon = computed<Component>(() => {
   if (props.location.usage === StorageUsage.DATA) return Database;
@@ -101,8 +104,8 @@ const canRemove = computed(
     </ItemMedia>
     <ItemContent class="min-w-0">
       <ItemTitle class="flex flex-wrap items-center gap-2">
-        {{ location.name }}
-        <Badge v-if="isMedia" variant="secondary">
+        {{ name }}
+        <Badge v-if="isMedia && !isNamedByKind(location)" variant="secondary">
           {{ t(STORAGE_KIND_LABEL_KEYS[location.kind]) }}
         </Badge>
         <Badge v-if="location.read_only" variant="outline">
@@ -131,8 +134,8 @@ const canRemove = computed(
           size="icon-sm"
           :disabled="!!pending"
           :aria-busy="pending === 'reload' || undefined"
-          :aria-label="`${t('settings.reload')}: ${location.name}`"
-          :title="`${t('settings.reload')}: ${location.name}`"
+          :aria-label="`${t('settings.reload')}: ${name}`"
+          :title="`${t('settings.reload')}: ${name}`"
           data-testid="storage-reload"
           @click="emit('reload')"
         >
@@ -143,8 +146,8 @@ const canRemove = computed(
           variant="ghost"
           size="icon-sm"
           :disabled="!!pending"
-          :aria-label="`${t('edit')}: ${location.name}`"
-          :title="`${t('edit')}: ${location.name}`"
+          :aria-label="`${t('edit')}: ${name}`"
+          :title="`${t('edit')}: ${name}`"
           data-testid="storage-edit"
           @click="emit('edit')"
         >
@@ -158,8 +161,8 @@ const canRemove = computed(
         class="text-destructive hover:text-destructive"
         :disabled="!!pending"
         :aria-busy="pending === 'remove' || undefined"
-        :aria-label="`${t('remove')}: ${location.name}`"
-        :title="`${t('remove')}: ${location.name}`"
+        :aria-label="`${t('remove')}: ${name}`"
+        :title="`${t('remove')}: ${name}`"
         data-testid="storage-remove"
         @click="emit('remove')"
       >

@@ -70,8 +70,11 @@ describe("FolderPickerField", () => {
 
     const rows = locationButtons(wrapper);
     expect(rows).toHaveLength(2);
-    expect(rows[0].text()).toContain("Media folder");
+    // the media folder is named after its kind, with no badge repeating it
     expect(rows[0].text()).toContain("settings.storage.kind.builtin_media");
+    expect(rows[0].findAll("[data-slot='badge']")).toHaveLength(0);
+    expect(rows[1].text()).toContain("NAS music");
+    expect(rows[1].text()).toContain("settings.storage.kind.network_share");
     expect(rows[1].text()).toContain("settings.storage.unavailable");
     expect(rows[1].text()).toContain("The NAS did not answer.");
     // the server's own directories are no place for music
@@ -98,7 +101,7 @@ describe("FolderPickerField", () => {
     await subfolderButtons(wrapper)[0].trigger("click");
     await flushPromises();
     expect(apiMock.getStorageFolders).toHaveBeenLastCalledWith("/media/Albums");
-    expect(wrapper.text()).toContain("Media folder");
+    expect(wrapper.text()).toContain("settings.storage.kind.builtin_media");
     expect(subfolderNames(wrapper)).toEqual(["Jazz"]);
 
     await wrapper.get('[data-testid="folder-picker-use"]').trigger("click");

@@ -1,5 +1,5 @@
 import { ApiCommandError } from "@/plugins/api/errors";
-import { ShareType, StorageKind } from "@/plugins/api/interfaces";
+import { ShareType, StorageKind, StorageUsage } from "@/plugins/api/interfaces";
 import { i18n } from "@/plugins/i18n";
 import { describe, expect, it } from "vitest";
 import { managedShare, storageLocation } from "../../tests/fixtures/storage";
@@ -8,6 +8,7 @@ import {
   findStoragePosition,
   formatStorageSize,
   isManagedShare,
+  isNamedByKind,
   isRegisteredFolder,
   networkShareAddress,
   networkShareFormChanged,
@@ -17,6 +18,7 @@ import {
   STORAGE_KIND_ICONS,
   STORAGE_KIND_LABEL_KEYS,
   storageErrorText,
+  storageLocationName,
 } from "./storage";
 
 const share = managedShare();
@@ -85,6 +87,42 @@ describe("storage labels and icons", () => {
 
   it.each(Object.values(ShareType))("names the %s share type", (shareType) => {
     expect(i18n.global.te(SHARE_TYPE_LABEL_KEYS[shareType], "en")).toBe(true);
+  });
+});
+
+describe("storageLocationName", () => {
+  it("names the Home Assistant media folder after its kind", () => {
+    const media = storageLocation({ name: "media" });
+
+    expect(storageLocationName(media)).toBe(
+      i18n.global.t("settings.storage.kind.builtin_media"),
+    );
+    expect(isNamedByKind(media)).toBe(true);
+  });
+
+  it.each([
+    [StorageUsage.DATA, "settings.storage.usage.data"],
+    [StorageUsage.CACHE, "settings.storage.usage.cache"],
+  ])("names the server's %s storage", (usage, key) => {
+    const location = storageLocation({
+      usage,
+      kind: StorageKind.LOCAL_DISK,
+      name: "data",
+    });
+
+    expect(storageLocationName(location)).toBe(i18n.global.t(key));
+    expect(isNamedByKind(location)).toBe(false);
+  });
+
+  it("keeps the name the server gave any other location", () => {
+    expect(storageLocationName(managedShare({ name: "NAS music" }))).toBe(
+      "NAS music",
+    );
+    expect(
+      storageLocationName(
+        storageLocation({ kind: StorageKind.REMOVABLE, name: "SANDISK" }),
+      ),
+    ).toBe("SANDISK");
   });
 });
 
@@ -196,6 +234,25 @@ describe("networkShareSettings", () => {
   });
 });
 
+describe("networkShareFormFromLocation", () => {
+  it("keeps a stored version the server can honour", () => {
+    const pinned = managedShare({ version: "2.0" });
+
+    expect(networkShareFormFromLocation(pinned, ["1.0", "2.0"]).version).toBe(
+      "2.0",
+    );
+  });
+
+  it("reads a stored version the server can not honour as automatic", () => {
+    const pinned = managedShare({ version: "3.0" });
+
+    expect(networkShareFormFromLocation(pinned, ["1.0", "2.0"]).version).toBe(
+      null,
+    );
+    expect(networkShareFormFromLocation(pinned, []).version).toBe(null);
+  });
+});
+
 describe("networkShareFormChanged", () => {
   it("sees no change in an untouched form", () => {
     expect(
@@ -213,6 +270,14 @@ describe("networkShareFormChanged", () => {
     const form = { ...networkShareFormFromLocation(share), ...change };
 
     expect(networkShareFormChanged(share, form)).toBe(true);
+  });
+
+  it("sees a change in a stored version the form reads as automatic", () => {
+    const pinned = managedShare({ version: "3.0" });
+
+    expect(
+      networkShareFormChanged(pinned, networkShareFormFromLocation(pinned, [])),
+    ).toBe(true);
   });
 });
 

@@ -122,6 +122,7 @@ describe("StorageSettings", () => {
     const server = wrapper.get('[data-testid="storage-server"]');
     expect(music.text()).not.toContain("/data");
     expect(server.text()).toContain("/data");
+    expect(server.text()).toContain("settings.storage.usage.data");
     expect(server.text()).toContain("settings.storage.used_space");
     expect(server.text()).toContain("settings.storage.free_space");
   });

@@ -43,7 +43,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { buttonVariants } from "@/components/ui/button";
-import { isManagedShare } from "@/helpers/storage";
+import { isManagedShare, storageLocationName } from "@/helpers/storage";
 import type { StorageLocation } from "@/plugins/api/interfaces";
 import { computed, ref, watch } from "vue";
 
@@ -66,7 +66,9 @@ watch(
 );
 
 const isShare = computed(() => !!shown.value && isManagedShare(shown.value));
-const name = computed(() => shown.value?.name ?? "");
+const name = computed(() =>
+  shown.value ? storageLocationName(shown.value) : "",
+);
 
 const onOpenChange = (open: boolean) => {
   if (!open) emit("update:location", null);

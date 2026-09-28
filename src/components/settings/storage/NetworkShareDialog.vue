@@ -17,7 +17,7 @@
         </DialogDescription>
       </DialogHeader>
       <div class="flex-1 overflow-y-auto px-6">
-        <form :id="formId" @submit.prevent="save">
+        <form :id="formId" @submit.prevent="submit">
           <FieldGroup>
             <FieldSet class="gap-3">
               <FieldLegend variant="label" class="mb-0">
@@ -27,7 +27,7 @@
                 :model-value="form.shareType"
                 :disabled="!!location || shareTypeChoices.length < 2"
                 class="flex flex-wrap gap-6"
-                @update:model-value="onShareTypeChange(String($event))"
+                @update:model-value="setShareType($event as ShareType)"
               >
                 <Field
                   v-for="shareType in shareTypeChoices"
@@ -144,7 +144,8 @@
               <Switch :id="`${formId}-read-only`" v-model="form.readOnly" />
             </Field>
 
-            <Field orientation="horizontal">
+            <!-- the protocol version is all there is behind the advanced settings -->
+            <Field v-if="versionChoices.length > 0" orientation="horizontal">
               <Switch
                 :id="`${formId}-advanced`"
                 v-model="showAdvanced"
@@ -155,7 +156,7 @@
               </FieldLabel>
             </Field>
 
-            <Field v-if="showAdvanced">
+            <Field v-if="showAdvanced && versionChoices.length > 0">
               <FieldLabel :for="`${formId}-version`">
                 {{ $t("settings.storage.share_dialog.version") }}
               </FieldLabel>
@@ -171,7 +172,7 @@
                     {{ $t("settings.storage.share_dialog.version_auto") }}
                   </SelectItem>
                   <SelectItem
-                    v-for="version in SHARE_VERSIONS[form.shareType]"
+                    v-for="version in versionChoices"
                     :key="version"
                     :value="version"
                   >
@@ -239,24 +240,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useNetworkShareForm } from "@/composables/useNetworkShareForm";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import {
-  emptyNetworkShareForm,
   type ManagedShareLocation,
-  type NetworkShareForm,
-  networkShareFormChanged,
-  networkShareFormFromLocation,
-  networkShareSettings,
   SHARE_TYPE_LABEL_KEYS,
-  SHARE_VERSIONS,
-  storageErrorText,
 } from "@/helpers/storage";
-import { api } from "@/plugins/api";
-import { ShareType } from "@/plugins/api/interfaces";
+import type { ShareType } from "@/plugins/api/interfaces";
 import { TriangleAlert } from "@lucide/vue";
-import { computed, ref, useId, watch } from "vue";
-import { useI18n } from "vue-i18n";
-import { toast } from "vue-sonner";
+import { useId } from "vue";
 
 /** Adds a network share, or edits the settings of a managed one. */
 const props = defineProps<{
@@ -265,6 +257,8 @@ const props = defineProps<{
   location: ManagedShareLocation | null;
   // the share types this install can mount
   shareTypes: ShareType[];
+  // the protocol versions this install can honour per share type
+  shareVersions: Partial<Record<ShareType, string[]>>;
 }>();
 
 const emit = defineEmits<{
@@ -276,85 +270,28 @@ const emit = defineEmits<{
 // reka's select cannot hold an empty value, so "automatic" gets a value of its own
 const VERSION_AUTO = "auto";
 
-const { t } = useI18n();
 const formId = useId();
-
-const form = ref<NetworkShareForm>(emptyNetworkShareForm(ShareType.CIFS));
-const showAdvanced = ref(false);
-// the required fields are only flagged once saving was tried
-const submitted = ref(false);
-const saving = ref(false);
-const error = ref<string | null>(null);
-
-const isCifs = computed(() => form.value.shareType === ShareType.CIFS);
-const shareTypeChoices = computed(() =>
-  props.location ? [props.location.share_type] : props.shareTypes,
-);
-const serverInvalid = computed(
-  () => submitted.value && !form.value.server.trim(),
-);
-const shareInvalid = computed(
-  () => submitted.value && !form.value.share.trim(),
-);
-
-const onShareTypeChange = (value: string) => {
-  const shareType = value as ShareType;
-  form.value.shareType = shareType;
-  // the versions differ per share type
-  if (
-    form.value.version &&
-    !SHARE_VERSIONS[shareType].includes(form.value.version)
-  ) {
-    form.value.version = null;
-  }
-};
+const {
+  form,
+  showAdvanced,
+  saving,
+  error,
+  isCifs,
+  shareTypeChoices,
+  versionChoices,
+  serverInvalid,
+  shareInvalid,
+  setShareType,
+  save,
+} = useNetworkShareForm(props);
 
 const onVersionChange = (value: string) => {
   form.value.version = value === VERSION_AUTO ? null : value;
 };
 
-const save = async () => {
-  submitted.value = true;
-  if (!form.value.server.trim() || !form.value.share.trim()) return;
-  saving.value = true;
-  error.value = null;
-  try {
-    const settings = networkShareSettings(form.value);
-    if (props.location) {
-      // an untouched form has nothing to replace
-      if (networkShareFormChanged(props.location, form.value)) {
-        await api.updateNetworkShare(props.location.share_name, settings);
-        toast.success(t("settings.storage.share_saved"));
-        emit("saved");
-      }
-    } else {
-      await api.addNetworkShare(form.value.shareType, settings);
-      toast.success(t("settings.storage.share_added"));
-      emit("saved");
-    }
-    emit("update:open", false);
-  } catch (err) {
-    // the dialog stays open, so the reason shows next to what the user can correct
-    error.value = storageErrorText(
-      err,
-      t("settings.storage.share_save_failed"),
-    );
-  } finally {
-    saving.value = false;
-  }
+const submit = async () => {
+  const result = await save();
+  if (result === "saved") emit("saved");
+  if (result === "saved" || result === "unchanged") emit("update:open", false);
 };
-
-watch(
-  () => props.open,
-  (open) => {
-    if (!open) return;
-    form.value = props.location
-      ? networkShareFormFromLocation(props.location)
-      : emptyNetworkShareForm(props.shareTypes[0] ?? ShareType.CIFS);
-    showAdvanced.value = form.value.version !== null;
-    submitted.value = false;
-    error.value = null;
-  },
-  { immediate: true },
-);
 </script>

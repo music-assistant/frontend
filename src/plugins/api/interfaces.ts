@@ -1955,6 +1955,9 @@ export interface StorageInfo {
   can_mount_shares: boolean;
   mount_backend: MountBackend | null;
   supported_share_types: ShareType[];
+  // the protocol versions the mount backend can honour per share type, next to
+  // automatic; an empty or missing list means the version can not be chosen
+  supported_share_versions: Partial<Record<ShareType, string[]>>;
   // a folder on the server itself can be registered
   can_add_local_folder: boolean;
 }

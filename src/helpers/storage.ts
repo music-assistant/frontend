@@ -4,8 +4,9 @@ import {
   ShareType,
   StorageKind,
   type StorageLocation,
+  StorageUsage,
 } from "@/plugins/api/interfaces";
-import { canonicalizeLocale } from "@/plugins/i18n";
+import { $t, canonicalizeLocale } from "@/plugins/i18n";
 import { Container, Folder, HardDrive, House, Network, Usb } from "@lucide/vue";
 import type { Component } from "vue";
 
@@ -33,12 +34,6 @@ export const STORAGE_KIND_LABEL_KEYS: Record<StorageKind, string> = {
 export const SHARE_TYPE_LABEL_KEYS: Record<ShareType, string> = {
   [ShareType.CIFS]: "settings.storage.share_type.cifs",
   [ShareType.NFS]: "settings.storage.share_type.nfs",
-};
-
-/** The protocol versions the server accepts per type of network share. */
-export const SHARE_VERSIONS: Record<ShareType, readonly string[]> = {
-  [ShareType.CIFS]: ["1.0", "2.0", "2.1", "3.0", "3.1.1"],
-  [ShareType.NFS]: ["3", "4", "4.1", "4.2"],
 };
 
 /** A folder inside a storage location: the location plus the subfolders leading to it. */
@@ -128,6 +123,31 @@ export type ManagedShareLocation = StorageLocation & {
   share_type: ShareType;
 };
 
+/**
+ * Whether the location is named after its kind: the media folder of Home Assistant,
+ * which a kind badge would only repeat.
+ */
+export const isNamedByKind = (location: StorageLocation): boolean =>
+  location.usage === StorageUsage.MEDIA &&
+  location.kind === StorageKind.BUILTIN_MEDIA;
+
+/**
+ * The name to show for a location. The rows whose role is fixed (the Home Assistant
+ * media folder and the server's own data and cache) are named here, in the user's
+ * language; every other location keeps the name the server gave it.
+ */
+export function storageLocationName(location: StorageLocation): string {
+  if (location.usage === StorageUsage.DATA) {
+    return $t("settings.storage.usage.data");
+  }
+  if (location.usage === StorageUsage.CACHE) {
+    return $t("settings.storage.usage.cache");
+  }
+  if (isNamedByKind(location))
+    return $t(STORAGE_KIND_LABEL_KEYS[location.kind]);
+  return location.name;
+}
+
 /** Whether the location is a network share Music Assistant mounted and manages. */
 export const isManagedShare = (
   location: StorageLocation,
@@ -167,16 +187,25 @@ export const emptyNetworkShareForm = (
 /**
  * The network share form prefilled with a managed share's settings. The password is
  * never sent to the client, so it starts empty, meaning "keep the stored one".
+ *
+ * @param location - The managed share.
+ * @param versions - The versions the server can honour for the share's type; a stored
+ *   version outside them reads as automatic. Without it the stored version is kept.
  */
 export const networkShareFormFromLocation = (
   location: ManagedShareLocation,
+  versions?: readonly string[],
 ): NetworkShareForm => ({
   shareType: location.share_type,
   server: location.server ?? "",
   share: location.share ?? "",
   username: location.username ?? "",
   password: "",
-  version: location.version,
+  version:
+    location.version !== null &&
+    (!versions || versions.includes(location.version))
+      ? location.version
+      : null,
   readOnly: location.read_only,
 });
 
@@ -204,7 +233,10 @@ export function networkShareSettings(
   return settings;
 }
 
-/** Whether the form holds other settings than the managed share has now. */
+/**
+ * Whether the form holds other settings than the managed share has now, a stored
+ * version the form shows as automatic included.
+ */
 export const networkShareFormChanged = (
   location: ManagedShareLocation,
   form: NetworkShareForm,

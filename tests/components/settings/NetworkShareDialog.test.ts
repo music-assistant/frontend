@@ -101,6 +101,16 @@ describe("NetworkShareDialog", () => {
     });
   });
 
+  it("offers a version behind the advanced toggle only where one can be chosen", async () => {
+    await openDialog();
+
+    expect(field("share-advanced")).not.toBeNull();
+
+    await click(`[value="${ShareType.NFS}"]`);
+
+    expect(field("share-advanced")).toBeNull();
+  });
+
   it("offers only the share types this install can mount", async () => {
     await openDialog(null, [ShareType.CIFS]);
 
@@ -172,7 +182,15 @@ async function openDialog(
   shareTypes: ShareType[] = [ShareType.CIFS, ShareType.NFS],
 ): Promise<VueWrapper> {
   const wrapper = mount(NetworkShareDialog, {
-    props: { open: false, location, shareTypes },
+    props: {
+      open: false,
+      location,
+      shareTypes,
+      shareVersions: {
+        [ShareType.CIFS]: ["1.0", "2.0"],
+        [ShareType.NFS]: [],
+      },
+    },
     attachTo: document.body,
     global: { mocks: { $t: (key: string) => key } },
   });

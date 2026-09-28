@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
-import { STORAGE_KIND_ICONS, STORAGE_KIND_LABEL_KEYS } from "@/helpers/storage";
+import {
+  isNamedByKind,
+  STORAGE_KIND_ICONS,
+  STORAGE_KIND_LABEL_KEYS,
+  storageLocationName,
+} from "@/helpers/storage";
 import type { StorageLocation } from "@/plugins/api/interfaces";
 import { ChevronRight } from "@lucide/vue";
 
@@ -32,8 +37,12 @@ const emit = defineEmits<{ open: [location: StorageLocation] }>();
         />
         <span class="flex min-w-0 flex-1 flex-col gap-0.5">
           <span class="flex flex-wrap items-center gap-2 text-sm font-medium">
-            {{ location.name }}
-            <Badge as="span" variant="secondary">
+            {{ storageLocationName(location) }}
+            <Badge
+              v-if="!isNamedByKind(location)"
+              as="span"
+              variant="secondary"
+            >
               {{ $t(STORAGE_KIND_LABEL_KEYS[location.kind]) }}
             </Badge>
             <Badge v-if="!location.available" as="span" variant="destructive">
