@@ -326,6 +326,7 @@ import {
   subscribeOwnFavorites,
 } from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
+import { returnedByHistory } from "@/helpers/navigation";
 import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable, itemSupportsPlayLog } from "@/plugins/api/helpers";
@@ -445,6 +446,10 @@ export interface Props {
   // the option a required selection starts on, when nothing valid is stored
   // (default: the first one offered)
   defaultProvider?: string;
+  // a provider carried in by a link: selected instead of the saved filter on
+  // this visit. Nothing is saved until the user picks a provider themselves,
+  // which may be this one.
+  providerOverride?: string;
   updateAvailable?: boolean;
   title?: string;
   subtitle?: string;
@@ -497,6 +502,7 @@ const props = withDefaults(defineProps<Props>(), {
   providerFilterOptions: undefined,
   libraryFilterOption: false,
   defaultProvider: undefined,
+  providerOverride: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
   limit: 50,
@@ -520,6 +526,12 @@ const props = withDefaults(defineProps<Props>(), {
   forcedViewMode: undefined,
   toolBarTabs: undefined,
 });
+
+const emit = defineEmits<{
+  // the provider selection whenever it is set: on start, from a restored
+  // visit, or by the user
+  "provider-change": [provider: string[] | undefined];
+}>();
 
 // global refs
 const router = useRouter();
@@ -976,11 +988,37 @@ const changeAlbumTypeFilter = function (albumType: string) {
   loadData(undefined, undefined, true);
 };
 
+// the provider carried in by a link, kept until the user picks a provider
+// themselves: every preference write hands the listing its saved settings
+// again, and this keeps the carried one in front of the saved filter across
+// those. One that is not offered here is ignored.
+let carriedProvider = props.providerOverride;
+const offeredCarriedProvider = () =>
+  carriedProvider !== undefined &&
+  musicProviders.value.some((provider) => provider.value === carriedProvider)
+    ? carriedProvider
+    : undefined;
+
+// a cached visit that was on a carried-in provider is only returned to by
+// going back; reached any other way, the listing starts over on the saved
+// filter, or on what is carried in now
+const cachedVisitApplies = () =>
+  !store.prevState?.carried ||
+  offeredCarriedProvider() !== undefined ||
+  returnedByHistory(router);
+
 const changeProviderFilter = function (providerId: string) {
   if (props.requireProviderSelection) {
-    // required selector: always keep exactly one provider selected — clicking
-    // the active provider is a no-op (it cannot be cleared to "all").
-    if (params.value.provider?.[0] === providerId) return;
+    // required selector: always keep exactly one provider selected, so
+    // clicking the active provider cannot clear it to "all". It pins the
+    // provider carried in by a link, which is already on screen, and is a
+    // no-op otherwise.
+    if (params.value.provider?.[0] === providerId) {
+      if (offeredCarriedProvider() !== providerId) return;
+      carriedProvider = undefined;
+      saveProviderFilter();
+      return;
+    }
     params.value.provider = [providerId];
   } else if (props.singleProviderFilter) {
     // single-select: clicking the active provider clears it, otherwise it
@@ -1000,14 +1038,19 @@ const changeProviderFilter = function (providerId: string) {
   if (params.value.provider?.length === 0) {
     params.value.provider = undefined;
   }
+  // the user's own pick is what gets saved and shown from here on
+  carriedProvider = undefined;
+  saveProviderFilter();
+  loadData(true, undefined, true);
+};
+
+const saveProviderFilter = () =>
   setItemsListingPreference(
     props.path || props.itemtype,
     props.itemtype,
     "providerFilter",
     params.value.provider,
   );
-  loadData(true, undefined, true);
-};
 
 // a listing scoped to the library (its own "library" option selected) that comes
 // up empty gives no hint that a provider's catalog is one filter switch away —
@@ -1754,6 +1797,10 @@ const restoreSettings = async function () {
     params.value.provider = next.length > 0 ? next : undefined;
   }
 
+  // the carried-in provider outranks the saved filter, on every restore
+  const carried = offeredCarriedProvider();
+  if (carried !== undefined) params.value.provider = [carried];
+
   // required selector: when nothing valid is stored, default to the first
   // available provider so exactly one is always selected.
   if (
@@ -1826,6 +1873,7 @@ if (props.restoreState) {
     store.prevState = {
       path: key,
       parentUri: props.parentItem?.uri,
+      carried: offeredCarriedProvider() !== undefined,
       scrollPos: el?.scrollTop || 0,
       pagedItems: pagedItems.value,
       allItems: allItems.value,
@@ -1896,6 +1944,14 @@ watch(
 
 // Watch savedPrefs and restore settings when they change (e.g., when user loads)
 watch(savedPrefs, () => restoreSettings(), { immediate: true });
+
+// the page is told which provider the listing is on, a restored visit
+// included, so it can show that without a load of its own
+watch(
+  () => params.value.provider,
+  (provider) => emit("provider-change", provider),
+  { deep: true, immediate: true },
+);
 
 // When a provider stops being usable at runtime, drop it from the active filter
 // and reload so the view refreshes without a remount. Only the live query is
@@ -1985,7 +2041,8 @@ onMounted(async () => {
   if (
     props.restoreState &&
     store.prevState?.path == key &&
-    store.prevState.parentUri == props.parentItem?.uri
+    store.prevState.parentUri == props.parentItem?.uri &&
+    cachedVisitApplies()
   ) {
     restoredFromPrevState = true;
     params.value = store.prevState.params;
@@ -1993,16 +2050,25 @@ onMounted(async () => {
     allItems.value = store.prevState.allItems;
     allItemsReceived.value = store.prevState.allItemsReceived;
     initialDataReceived.value = store.prevState.initialDataReceived;
-    // scroll the main listing back to its previous scroll position
-    nextTick(() => {
-      const el = document.querySelector(".content-section") as HTMLElement;
+    // what the last visit left behind gives way to a provider carried in by a
+    // link, unless it already came from there
+    const carried = offeredCarriedProvider();
+    const switchProvider =
+      carried !== undefined && params.value.provider?.[0] !== carried;
+    if (switchProvider) {
+      params.value.provider = [carried];
+    } else {
+      // scroll the main listing back to its previous scroll position
+      nextTick(() => {
+        const el = document.querySelector(".content-section") as HTMLElement;
 
-      if (el) {
-        scrollElement(el, store.prevState!.scrollPos, 50);
-      }
-    });
+        if (el) {
+          scrollElement(el, store.prevState!.scrollPos, 50);
+        }
+      });
+    }
     loading.value = false;
-    if (applyQueryGenreFilter()) {
+    if (applyQueryGenreFilter() || switchProvider) {
       loadData(true, undefined, true);
     }
   } else {
@@ -2081,6 +2147,9 @@ export interface StoredState {
   // artist's albums use "artistalbums"), so the parent's uri scopes the
   // restore to the item that was actually on screen
   parentUri?: string;
+  // the listing was left on a provider carried in by a link, one the user has
+  // not picked: only going back shows that visit again
+  carried: boolean;
   scrollPos: number;
   pagedItems: MediaItemType[];
   allItems: MediaItemType[];

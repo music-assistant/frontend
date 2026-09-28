@@ -401,6 +401,7 @@ import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
+import { returnedByHistory } from "@/helpers/navigation";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { ACTIVE_DOT_CLASS } from "@/constants";
@@ -1007,9 +1008,9 @@ onMounted(async () => {
   loadGenres();
   window.addEventListener("resize", updateHeroNav);
 
-  // A history back/forward traversal sets `forward` on the entry we're
-  // returning to; a fresh navigation leaves it null.
-  if (prevState && router.options.history.state.forward != null) {
+  // the page comes up as it was left only when gone back to; a fresh
+  // navigation loads it anew
+  if (prevState && returnedByHistory(router)) {
     const snapshot = prevState;
     recommendations.value = snapshot.recommendations;
     recentlyPlayed.value = snapshot.recentlyPlayed;
