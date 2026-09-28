@@ -850,7 +850,7 @@
         "playing": "playing"
     },
     "sync_now": "Synchronize now",
-    "sync_running": "One or more music providers are being synchronized.",
+    "sync_running": "One or more music sources are being synchronized.",
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
         "exit_select_items": "Exit multi-select",
@@ -2197,7 +2197,7 @@
         "op_is": "is",
         "op_is_not": "is not",
         "seed_count_hint": "Up to 50 tracks from your streaming provider, refreshed on each play.",
-        "seed_filters_hint": "Filters are best effort only. Some music providers do not provide the necessary metadata to apply filters.",
+        "seed_filters_hint": "Filters are best effort only. Some music sources do not provide the necessary metadata to apply filters.",
         "seed_heading": "Discover music similar to the following tracks, artists, albums or playlists",
         "seed_no_provider": "No streaming provider supports similar tracks",
         "type_library": "From my library",
