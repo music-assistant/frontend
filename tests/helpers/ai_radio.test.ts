@@ -333,6 +333,7 @@ describe("decompileHost", () => {
         id: legacySection.id,
         name: legacySection.name,
         prompt: legacySection.prompt,
+        rssFeeds: [],
         webSearch: "allow",
         maxChars: 500,
         plays: { kind: "every_n_songs", n: 3 },
