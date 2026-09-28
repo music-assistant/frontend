@@ -222,6 +222,41 @@ describe("Settings breadcrumbs on the settings of a provider", () => {
   });
 });
 
+describe("Settings breadcrumbs on the storage page", () => {
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it("name the storage page as the page they are on", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    routeState.name = "storagesettings";
+    routeState.params = {};
+
+    const wrapper = mount(Settings, {
+      global: {
+        stubs: {
+          Toolbar: {
+            template: '<div><slot name="title" /><slot name="append" /></div>',
+          },
+          ToolbarHeading: ToolbarHeadingStub,
+          RouterView: true,
+          VBtn: true,
+          VDivider: true,
+        },
+      },
+    });
+
+    expect(wrapper.getComponent(ToolbarHeadingStub).props("items")).toEqual([
+      {
+        title: "settings.storage.title",
+        disabled: true,
+        to: { name: "storagesettings" },
+      },
+    ]);
+  });
+});
+
 /** The settings overview, which is where onboarding is reachable again from. */
 function mountOverview() {
   routeState.name = "settings";

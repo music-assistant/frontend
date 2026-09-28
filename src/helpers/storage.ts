@@ -1,0 +1,239 @@
+import { ApiCommandError } from "@/plugins/api/errors";
+import {
+  type NetworkShareSettings,
+  ShareType,
+  StorageKind,
+  type StorageLocation,
+} from "@/plugins/api/interfaces";
+import { canonicalizeLocale } from "@/plugins/i18n";
+import { Container, Folder, HardDrive, House, Network, Usb } from "@lucide/vue";
+import type { Component } from "vue";
+
+/** The icon of each kind of storage location. */
+export const STORAGE_KIND_ICONS: Record<StorageKind, Component> = {
+  [StorageKind.BUILTIN_MEDIA]: House,
+  [StorageKind.CONTAINER_VOLUME]: Container,
+  [StorageKind.NETWORK_SHARE]: Network,
+  [StorageKind.REMOVABLE]: Usb,
+  [StorageKind.LOCAL_DISK]: HardDrive,
+  [StorageKind.MANUAL]: Folder,
+};
+
+/** The translation key of the label of each kind of storage location. */
+export const STORAGE_KIND_LABEL_KEYS: Record<StorageKind, string> = {
+  [StorageKind.BUILTIN_MEDIA]: "settings.storage.kind.builtin_media",
+  [StorageKind.CONTAINER_VOLUME]: "settings.storage.kind.container_volume",
+  [StorageKind.NETWORK_SHARE]: "settings.storage.kind.network_share",
+  [StorageKind.REMOVABLE]: "settings.storage.kind.removable",
+  [StorageKind.LOCAL_DISK]: "settings.storage.kind.local_disk",
+  [StorageKind.MANUAL]: "settings.storage.kind.manual",
+};
+
+/** The translation key of the name of each type of network share. */
+export const SHARE_TYPE_LABEL_KEYS: Record<ShareType, string> = {
+  [ShareType.CIFS]: "settings.storage.share_type.cifs",
+  [ShareType.NFS]: "settings.storage.share_type.nfs",
+};
+
+/** The protocol versions the server accepts per type of network share. */
+export const SHARE_VERSIONS: Record<ShareType, readonly string[]> = {
+  [ShareType.CIFS]: ["1.0", "2.0", "2.1", "3.0", "3.1.1"],
+  [ShareType.NFS]: ["3", "4", "4.1", "4.2"],
+};
+
+/** A folder inside a storage location: the location plus the subfolders leading to it. */
+export interface StoragePosition {
+  location: StorageLocation;
+  segments: string[];
+}
+
+/** What the network share dialog edits; empty strings stand for "not set". */
+export interface NetworkShareForm {
+  shareType: ShareType;
+  server: string;
+  share: string;
+  username: string;
+  password: string;
+  // null is automatic
+  version: string | null;
+  readOnly: boolean;
+}
+
+/**
+ * The absolute path of a subfolder of a storage location.
+ *
+ * @param root - The path of the storage location.
+ * @param segments - The names of the subfolders leading from the location to the folder.
+ */
+export function joinStoragePath(
+  root: string,
+  segments: readonly string[],
+): string {
+  const base = root.length > 1 ? root.replace(/\/+$/, "") : root;
+  if (segments.length === 0) return base;
+  return `${base === "/" ? "" : base}/${segments.join("/")}`;
+}
+
+/**
+ * The storage location holding a folder, and the subfolders leading to it.
+ *
+ * The innermost location wins when locations are nested. A path that lies in no
+ * location gives null.
+ *
+ * @param locations - The storage locations to look in.
+ * @param path - The absolute path of the folder.
+ */
+export function findStoragePosition(
+  locations: readonly StorageLocation[],
+  path: string,
+): StoragePosition | null {
+  const target = joinStoragePath(path, []);
+  let best: StoragePosition | null = null;
+  let bestRoot = "";
+  for (const location of locations) {
+    const root = joinStoragePath(location.path, []);
+    const prefix = root === "/" ? "/" : `${root}/`;
+    if (target !== root && !target.startsWith(prefix)) continue;
+    if (best && bestRoot.length >= root.length) continue;
+    const rest = target === root ? "" : target.slice(prefix.length);
+    best = { location, segments: rest.split("/").filter(Boolean) };
+    bestRoot = root;
+  }
+  return best;
+}
+
+/**
+ * A size in gigabytes (as the server reports it), in the unit that reads best.
+ *
+ * @param gigabytes - The size in gigabytes of 1024 megabytes.
+ * @param locale - The locale to format the number for.
+ */
+export function formatStorageSize(gigabytes: number, locale: string): string {
+  const [value, unit] =
+    gigabytes >= 1024
+      ? [gigabytes / 1024, "terabyte"]
+      : gigabytes >= 1
+        ? [gigabytes, "gigabyte"]
+        : [gigabytes * 1024, "megabyte"];
+  return new Intl.NumberFormat(canonicalizeLocale(locale), {
+    style: "unit",
+    unit,
+    maximumFractionDigits: value >= 100 ? 0 : 1,
+  }).format(value);
+}
+
+/** A network share Music Assistant mounted and manages. */
+export type ManagedShareLocation = StorageLocation & {
+  share_name: string;
+  share_type: ShareType;
+};
+
+/** Whether the location is a network share Music Assistant mounted and manages. */
+export const isManagedShare = (
+  location: StorageLocation,
+): location is ManagedShareLocation =>
+  location.managed && location.share_name !== null && !!location.share_type;
+
+/** Whether the location is a folder an admin registered on the Storage page. */
+export const isRegisteredFolder = (location: StorageLocation): boolean =>
+  location.managed && location.kind === StorageKind.MANUAL;
+
+/**
+ * The address of a network share the way people write it: `//server/share` for SMB,
+ * `server:/export` for NFS.
+ */
+export function networkShareAddress(
+  shareType: ShareType,
+  server: string,
+  share: string,
+): string {
+  if (shareType === ShareType.NFS) return `${server}:${share}`;
+  return `//${server}/${share}`;
+}
+
+/** An empty network share form for a new share of the given type. */
+export const emptyNetworkShareForm = (
+  shareType: ShareType,
+): NetworkShareForm => ({
+  shareType,
+  server: "",
+  share: "",
+  username: "",
+  password: "",
+  version: null,
+  readOnly: false,
+});
+
+/**
+ * The network share form prefilled with a managed share's settings. The password is
+ * never sent to the client, so it starts empty, meaning "keep the stored one".
+ */
+export const networkShareFormFromLocation = (
+  location: ManagedShareLocation,
+): NetworkShareForm => ({
+  shareType: location.share_type,
+  server: location.server ?? "",
+  share: location.share ?? "",
+  username: location.username ?? "",
+  password: "",
+  version: location.version,
+  readOnly: location.read_only,
+});
+
+/** The settings to add a new network share with, from the dialog's form. */
+export function networkShareAddSettings(
+  form: NetworkShareForm,
+): NetworkShareSettings {
+  const settings: NetworkShareSettings = {
+    server: form.server.trim(),
+    share: form.share.trim(),
+    read_only: form.readOnly,
+  };
+  if (form.shareType === ShareType.CIFS) {
+    if (form.username.trim()) settings.username = form.username.trim();
+    if (form.password) settings.password = form.password;
+  }
+  if (form.version) settings.version = form.version;
+  return settings;
+}
+
+/**
+ * The settings of a managed network share the dialog's form changed.
+ *
+ * Only a changed setting is included, as the server keeps an omitted one as it is. A
+ * cleared username or an automatic version is sent as null, and an empty password
+ * keeps the stored one unless the username is cleared along with it.
+ */
+export function networkShareChanges(
+  location: ManagedShareLocation,
+  form: NetworkShareForm,
+): Partial<NetworkShareSettings> {
+  const changes: Partial<NetworkShareSettings> = {};
+  const server = form.server.trim();
+  const share = form.share.trim();
+  if (server !== location.server) changes.server = server;
+  if (share !== location.share) changes.share = share;
+  if (location.share_type === ShareType.CIFS) {
+    const username = form.username.trim() || null;
+    if (username !== (location.username ?? null)) {
+      changes.username = username;
+      if (!username) changes.password = null;
+    }
+    if (username && form.password) changes.password = form.password;
+  }
+  if (form.version !== (location.version ?? null)) {
+    changes.version = form.version;
+  }
+  if (form.readOnly !== location.read_only) changes.read_only = form.readOnly;
+  return changes;
+}
+
+/**
+ * The reason a storage command failed: the server's own message when it sent one,
+ * the fallback otherwise.
+ */
+export function storageErrorText(error: unknown, fallback: string): string {
+  return error instanceof ApiCommandError && error.details
+    ? error.details
+    : fallback;
+}

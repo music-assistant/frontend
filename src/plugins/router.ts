@@ -497,6 +497,18 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.CONFIG_PROVIDERS_READ },
           },
           {
+            path: "storage",
+            name: "storagesettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "storagesettings" */ "@/views/settings/StorageSettings.vue"
+              ),
+            props: true,
+            // a member sees the music locations it can pick from; changing them
+            // takes config.providers.write
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_READ },
+          },
+          {
             path: "players",
             name: "playersettings",
             component: () =>

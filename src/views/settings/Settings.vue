@@ -449,12 +449,14 @@ const settingsSections = computed(() =>
   ),
 );
 
+// grouped at the top of the list view; storage sits with the sources it serves
 const providerSectionNames = [
   "music_providers",
   "player_providers",
   "metadata_providers",
   "plugin_providers",
   "audio_analysis_providers",
+  "storage",
 ];
 
 const musicSections = computed(() => {
@@ -501,6 +503,7 @@ const getIconBackgroundStyle = (color: string) => {
     "deep-purple": "rgb(124, 58, 237)",
     orange: "rgb(249, 115, 22)",
     teal: "rgb(20, 184, 166)",
+    cyan: "rgb(6, 182, 212)",
     "grey-darken-1": "rgb(158, 158, 158)",
   };
   return { backgroundColor: colorMap[color] || colorMap.indigo };
@@ -550,6 +553,9 @@ const activeTab = computed(() => {
   }
   if (name.includes("about")) {
     return "about";
+  }
+  if (name === "storagesettings") {
+    return "storage";
   }
 
   const typesQuery = router.currentRoute.value.query.types as
@@ -663,6 +669,12 @@ const breadcrumbItems = computed(() => {
         title: t("settings.audio_analysis_providers"),
         disabled: name === "providersettings",
         to: { name: "providersettings", query: { types: "audio_analysis" } },
+      });
+    } else if (currentTab === "storage") {
+      items.push({
+        title: t("settings.storage.title"),
+        disabled: name === "storagesettings",
+        to: { name: "storagesettings" },
       });
     } else if (currentTab === "about") {
       items.push({

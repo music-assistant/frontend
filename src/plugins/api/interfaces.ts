@@ -530,6 +530,8 @@ export enum ConfigEntryType {
   IMAGE = "image",
   // url: clickable link; in an invoke_action response the frontend opens it (one-shot)
   URL = "url",
+  // folder: absolute path of a folder on the server, picked from the storage locations
+  FOLDER = "folder",
 
   // Only used in the frontend
   OPTIONS = "options",
@@ -1882,6 +1884,91 @@ export interface RemoteAccessInfo {
 /** The address the stream server hands to players, as it is in use right now. */
 export interface StreamServerInfo {
   base_url: string;
+}
+
+// Storage interfaces
+
+export enum StorageUsage {
+  // anything a music source can use
+  MEDIA = "media",
+  // the server's own data and cache directories
+  DATA = "data",
+  CACHE = "cache",
+}
+
+export enum StorageKind {
+  BUILTIN_MEDIA = "builtin_media",
+  CONTAINER_VOLUME = "container_volume",
+  NETWORK_SHARE = "network_share",
+  REMOVABLE = "removable",
+  LOCAL_DISK = "local_disk",
+  // a folder an admin registered on the Storage page
+  MANUAL = "manual",
+}
+
+export enum ShareType {
+  CIFS = "cifs",
+  NFS = "nfs",
+}
+
+export enum MountBackend {
+  SUPERVISOR = "supervisor",
+  LOCAL_MOUNT = "local_mount",
+}
+
+/** A folder or volume the server can see, identified by its path. */
+export interface StorageLocation {
+  // absolute path inside the server process
+  path: string;
+  name: string;
+  usage: StorageUsage;
+  kind: StorageKind;
+  // usable right now (mounted and a directory)
+  available: boolean;
+  read_only: boolean;
+  // created by Music Assistant; only managed locations can be edited or removed
+  managed: boolean;
+  backend: MountBackend | null;
+  fstype: string | null;
+  mountpoint: string | null;
+  // key of a managed network share, used to update, reload or remove it
+  share_name: string | null;
+  share_type: ShareType | null;
+  server: string | null;
+  // cifs share name or nfs export path
+  share: string | null;
+  username: string | null;
+  // protocol version the user picked; null is automatic
+  version: string | null;
+  free_space_gb: number | null;
+  total_space_gb: number | null;
+  // size of the directory itself; data and cache locations only
+  used_space_gb: number | null;
+  // localized reason why a managed share is not available
+  error: string | null;
+}
+
+export interface StorageInfo {
+  // filtered by what the caller may see
+  locations: StorageLocation[];
+  // a backend that can mount a network share is available
+  can_mount_shares: boolean;
+  mount_backend: MountBackend | null;
+  supported_share_types: ShareType[];
+  // a folder on the server itself can be registered
+  can_add_local_folder: boolean;
+}
+
+/** The connection settings of a network share, as the add and update commands take them. */
+export interface NetworkShareSettings {
+  server: string;
+  // cifs share name or nfs export path
+  share: string;
+  username?: string | null;
+  password?: string | null;
+  // null is automatic
+  version?: string | null;
+  read_only?: boolean;
 }
 
 // Party interfaces

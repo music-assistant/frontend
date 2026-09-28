@@ -14,6 +14,7 @@ const ALL_SECTIONS = [
   "plugin_providers",
   "players",
   "audio_analysis_providers",
+  "storage",
   "profile",
   "frontend",
   "users",
@@ -40,6 +41,7 @@ describe("availableSettingsSections", () => {
   it("lists a member its own music sources and its personal settings", () => {
     expect(sectionNames(BUILTIN_ROLE_SCOPES.user)).toEqual([
       "music_providers",
+      "storage",
       "profile",
       "frontend",
       "about",
@@ -57,16 +59,21 @@ describe("availableSettingsSections", () => {
   it("lists a role managing its own music sources nothing more to manage", () => {
     expect(sectionNames(OWN_SOURCES_ROLE_SCOPES)).toEqual([
       "music_providers",
+      "storage",
       "profile",
       "frontend",
       "about",
     ]);
   });
 
-  it("lists the music sources to a role that may only read them", () => {
-    expect(
-      sectionNames([...BUILTIN_ROLE_SCOPES.guest, Scope.CONFIG_PROVIDERS_READ]),
-    ).toContain("music_providers");
+  it("lists the music sources and their storage to a role that may only read them", () => {
+    const sections = sectionNames([
+      ...BUILTIN_ROLE_SCOPES.guest,
+      Scope.CONFIG_PROVIDERS_READ,
+    ]);
+
+    expect(sections).toContain("music_providers");
+    expect(sections).toContain("storage");
   });
 
   it("lists the users to a role that may read them", () => {
