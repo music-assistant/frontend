@@ -53,9 +53,10 @@ const gone = album({
   ],
 });
 
+/** The entries of the item's menu; none when there is nothing to offer at all. */
 async function offeredLabels(): Promise<string[]> {
   await showContextMenuForMediaItem(gone, undefined, 0, 0, true, true);
-  return emittedMenus[0].items.map((entry) => entry.label);
+  return emittedMenus[0]?.items.map((entry) => entry.label) ?? [];
 }
 
 beforeEach(() => {
