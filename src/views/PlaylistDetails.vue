@@ -76,6 +76,8 @@
     :sort-keys="[
       'position',
       'position_desc',
+      'timestamp_added',
+      'timestamp_added_desc',
       'name',
       'artist',
       'album',

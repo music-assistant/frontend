@@ -1,6 +1,7 @@
 import {
   appearsOnAlbums,
   isSingleOrEp,
+  loadArtistDiscography,
   loadArtistLibraryTracks,
   loadArtistReleases,
   loadArtistTopTracks,
@@ -40,6 +41,8 @@ export function useArtistRowData(
   const topTracks = ref(new Map<RowSource, Track[]>());
   const similarArtists = ref(new Map<RowSource, Artist[]>());
   const libraryTracks = ref<Track[]>();
+  // fed by the library artist alone, so it needs no per-source cache
+  const discography = ref<Album[]>();
 
   // a new artist, or new provider mappings, start from empty rows; anything
   // else (a favorite toggle, a metadata update) keeps what is already loaded
@@ -48,6 +51,7 @@ export function useArtistRowData(
     topTracks.value = new Map();
     similarArtists.value = new Map();
     libraryTracks.value = undefined;
+    discography.value = undefined;
     loadRowData();
   });
 
@@ -98,6 +102,9 @@ export function useArtistRowData(
       return appearsOnAlbums(libraryTracks.value, artist.value, ownReleases);
     },
   );
+
+  // kept in the order the server sent it, which is newest first
+  const discographyItems = computed(() => discography.value);
 
   // falls back to the newest library tracks when no provider supplies top tracks
   const topTracksItems = computed(() => {
@@ -157,6 +164,7 @@ export function useArtistRowData(
       fetchReleases(appearsOnSource.value!);
       fetchLibraryTracks();
     }
+    if (rows.includes("discography")) fetchDiscography();
     if (rows.includes("top_tracks")) {
       fetchLibraryTracks();
       fetchTopTracks(topTracksSource.value!);
@@ -188,6 +196,14 @@ export function useArtistRowData(
     );
   }
 
+  function fetchDiscography() {
+    return fetchOnce(
+      "discography",
+      (artist) => loadArtistDiscography(artist),
+      (items) => (discography.value = items),
+    );
+  }
+
   function fetchLibraryTracks() {
     return fetchOnce(
       "library_tracks",
@@ -216,6 +232,7 @@ export function useArtistRowData(
     albumItems,
     singleItems,
     appearsOnItems,
+    discographyItems,
     similarArtistItems,
     albumsMeta,
     albumsSource,

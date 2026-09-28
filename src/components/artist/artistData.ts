@@ -47,6 +47,16 @@ export async function artistAlbumsBySource(
 }
 
 /**
+ * The artist's discography as MusicBrainz knows it, newest first: the library
+ * albums, and the releases outside the library as MusicBrainz items.
+ *
+ * Only ever called for a library artist, the only kind the server lists.
+ */
+export async function loadArtistDiscography(artist: Artist): Promise<Album[]> {
+  return await api.getArtistDiscography(artist.item_id);
+}
+
+/**
  * The provider instances the artist is mapped to that support `feature`, sorted
  * by provider name: the candidate sources for a row fed by the artist's own
  * provider catalogs.

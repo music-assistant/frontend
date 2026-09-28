@@ -135,12 +135,15 @@ import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import { useAlbumRowData } from "@/composables/useAlbumRowData";
 import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
+import { backFromMediaDetails } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
+import { MUSICBRAINZ_PROVIDER } from "@/plugins/api/helpers";
 import {
   AlbumType,
   EventMessage,
   EventType,
   MediaItemType,
+  MediaType,
   Scope,
   type Album,
   type Artist,
@@ -150,13 +153,15 @@ import {
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import type { RouteLocationRaw } from "vue-router";
+import { useRouter, type RouteLocationRaw } from "vue-router";
 
 export interface Props {
   itemId: string;
   provider: string;
 }
 const props = defineProps<Props>();
+
+const router = useRouter();
 
 const itemDetails = ref<Album>();
 const rowsEditorOpen = ref(false);
@@ -280,7 +285,10 @@ const loadItemDetails = async function () {
   // the previous album must not stay actionable under the new route
   itemDetails.value = undefined;
   albumTracks.value = undefined;
-  const album = await api.getAlbum(itemId, provider);
+  const album =
+    provider === MUSICBRAINZ_PROVIDER
+      ? await resolveMusicBrainzAlbum(itemId)
+      : await api.getAlbum(itemId, provider);
   // a slower response for a previous album must not replace the current one
   if (itemId !== props.itemId || provider !== props.provider) return;
   itemDetails.value = album;
@@ -403,6 +411,30 @@ async function loadFullArtist() {
   // a slower response for a previous album must not replace the current one
   if (itemDetails.value?.uri !== album.uri) return;
   fullArtist.value = loaded ?? null;
+}
+
+/**
+ * Resolves a MusicBrainz release to the same album on one of the user's music
+ * services, which is what the page shows. Returns undefined when none of them
+ * has it, leaving the page for where the user came from.
+ */
+async function resolveMusicBrainzAlbum(
+  itemId: string,
+): Promise<Album | undefined> {
+  try {
+    return (await api.getItem(
+      MediaType.ALBUM,
+      itemId,
+      MUSICBRAINZ_PROVIDER,
+    )) as Album;
+  } catch {
+    // the server's own message is already on screen as a toast; a lookup that
+    // outlived a move to another album must not pull the user off that one
+    if (itemId === props.itemId && props.provider === MUSICBRAINZ_PROVIDER) {
+      backFromMediaDetails(router);
+    }
+    return undefined;
+  }
 }
 
 /** A row is rendered while it loads and once it has something to show. */

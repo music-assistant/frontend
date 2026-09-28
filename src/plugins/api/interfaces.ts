@@ -1023,6 +1023,7 @@ export interface MediaItem extends _MediaItemBase {
   // out of the items it returns when there is no state, so absent reads as null.
   favorite?: boolean | null;
   position?: number | null; //required for playlist tracks, optional for all other
+  date_added?: string | null;
 }
 
 export interface ItemMapping extends _MediaItemBase {
