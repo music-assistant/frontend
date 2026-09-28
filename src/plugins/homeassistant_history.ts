@@ -161,11 +161,36 @@ export function createHAHistory(): RouterHistory {
     }
   }
 
+  // Follows a page Home Assistant opens itself, such as the app's own entry
+  // in its sidebar.
+  function handleHANavigation(event: Event): void {
+    const location = readHALocation();
+    if (
+      location === null ||
+      // The app's own navigations are marked, and Home Assistant's are not.
+      readHAMark() ||
+      (event as CustomEvent<{ replace?: boolean }>).detail?.replace ||
+      isSameLocation(location, currentLocation())
+    ) {
+      return;
+    }
+    const current = entries[position];
+    current.state = { ...current.state, forward: location };
+    const entry = entryOf(location, undefined, current.id);
+    entry.state.back = current.location;
+    entries.splice(position + 1, Infinity, entry);
+    position++;
+    syncFrameUrl();
+    notifyListeners(current.location, 1);
+  }
+
   function stopFollowingHA(): void {
     haWindow.removeEventListener("popstate", handleHAPop);
+    haWindow.removeEventListener("location-changed", handleHANavigation);
   }
 
   haWindow.addEventListener("popstate", handleHAPop);
+  haWindow.addEventListener("location-changed", handleHANavigation);
   // Home Assistant outlives the frame, and would keep this document around.
   window.addEventListener("pagehide", stopFollowingHA);
 

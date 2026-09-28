@@ -66,23 +66,35 @@ function fakeHomeAssistant(initialPath: string, earlierPaths: string[] = []) {
       options: { replace?: boolean; data?: Record<string, unknown> };
     }) {
       if (message.type !== "home-assistant/navigate") return;
-      const { replace, data } = message.options;
-      if (replace) {
-        // A replaced entry keeps where it came from, and the tab's first entry
-        // stays marked as such instead of taking the data.
-        const { root, from } = entries[index].state;
-        const state = root ? { root } : data;
-        entries[index] = { path: message.path, state: { ...state, from } };
-      } else {
-        const from = pathnameOf(entries[index].path);
-        entries.splice(index + 1, entries.length, {
-          path: message.path,
-          state: { ...data, from },
-        });
-        index++;
-      }
+      // Messages reach Home Assistant a task later.
+      setTimeout(() => navigate(message.path, message.options));
     },
   });
+
+  function navigate(
+    path: string,
+    { replace, data }: { replace?: boolean; data?: Record<string, unknown> },
+  ) {
+    if (replace) {
+      // A replaced entry keeps where it came from, and the tab's first entry
+      // stays marked as such instead of taking the data.
+      const { root, from } = entries[index].state;
+      const state = root ? { root } : data;
+      entries[index] = { path, state: { ...state, from } };
+    } else {
+      const from = pathnameOf(entries[index].path);
+      entries.splice(index + 1, entries.length, {
+        path,
+        state: { ...data, from },
+      });
+      index++;
+    }
+    haWindow.dispatchEvent(
+      Object.assign(new Event("location-changed"), { detail: { replace } }),
+    );
+  }
+
+  const parent = Object.getOwnPropertyDescriptor(window, "parent");
   Object.defineProperty(window, "parent", {
     value: haWindow,
     configurable: true,
@@ -95,11 +107,14 @@ function fakeHomeAssistant(initialPath: string, earlierPaths: string[] = []) {
     },
     back: () => haWindow.history.go(-1),
     forward: () => haWindow.history.go(1),
+    // Home Assistant opening a page of its own accord.
+    open: (path: string) => navigate(path, {}),
     restore() {
-      Object.defineProperty(window, "parent", {
-        value: window,
-        configurable: true,
-      });
+      if (parent) {
+        Object.defineProperty(window, "parent", parent);
+      } else {
+        delete (window as { parent?: Window }).parent;
+      }
     },
   };
 }
@@ -113,6 +128,17 @@ describe("Home Assistant router history", () => {
   let router: Router;
   let ha: ReturnType<typeof fakeHomeAssistant>;
 
+  // Opens a page and lets Home Assistant follow.
+  async function push(to: string) {
+    await router.push(to);
+    await settle();
+  }
+
+  async function replace(to: string) {
+    await router.replace(to);
+    await settle();
+  }
+
   async function start(haPath: string, earlierPaths: string[] = []) {
     ha = fakeHomeAssistant(haPath, earlierPaths);
     await openApp();
@@ -121,7 +147,7 @@ describe("Home Assistant router history", () => {
   async function openApp() {
     history = createHAHistory();
     router = createRouter({ history, routes });
-    await router.push(history.location);
+    await push(history.location);
   }
 
   // Home Assistant reloads, and opens the app afresh in a new frame.
@@ -143,8 +169,8 @@ describe("Home Assistant router history", () => {
   it("gives Home Assistant an entry for every page opened", async () => {
     await start(`${PANEL}/home`);
 
-    await router.push("/artists");
-    await router.push("/search?query=abba");
+    await push("/artists");
+    await push("/search?query=abba");
 
     expect(ha.entries()).toEqual([
       `${PANEL}/home`,
@@ -155,8 +181,8 @@ describe("Home Assistant router history", () => {
 
   it("follows Home Assistant's back button through the app", async () => {
     await start(`${PANEL}/home`);
-    await router.push("/artists");
-    await router.push("/artists/1");
+    await push("/artists");
+    await push("/artists/1");
 
     ha.back();
     await settle();
@@ -168,8 +194,8 @@ describe("Home Assistant router history", () => {
 
   it("goes back to the parent of a browsed folder", async () => {
     await start(`${PANEL}/home`);
-    await router.push("/browse?path=music");
-    await router.push("/browse?path=music%2Fabba");
+    await push("/browse?path=music");
+    await push("/browse?path=music%2Fabba");
 
     ha.back();
     await settle();
@@ -179,8 +205,8 @@ describe("Home Assistant router history", () => {
 
   it("walks Home Assistant's history from the app's own back button", async () => {
     await start(`${PANEL}/home`);
-    await router.push("/search?query=abba");
-    await router.push("/artists/1");
+    await push("/search?query=abba");
+    await push("/artists/1");
 
     router.back();
     await settle();
@@ -191,15 +217,15 @@ describe("Home Assistant router history", () => {
 
   it("keeps a replaced page out of Home Assistant's history", async () => {
     await start(`${PANEL}/home`);
-    await router.push("/artists");
-    await router.replace("/search");
+    await push("/artists");
+    await replace("/search");
 
     expect(ha.entries()).toEqual([`${PANEL}/home`, `${PANEL}/search`]);
   });
 
   it("takes Home Assistant back along when a guard keeps the page", async () => {
     await start(`${PANEL}/home`);
-    await router.push("/artists");
+    await push("/artists");
     router.beforeEach((to) => to.path !== "/home");
 
     ha.back();
@@ -239,9 +265,9 @@ describe("Home Assistant router history", () => {
 
   it("goes back through browsed folders from before a reload", async () => {
     await start(`${PANEL}/home`);
-    await router.push("/browse?path=music");
-    await router.push("/browse?path=music%2Fabba");
-    await router.push("/browse?path=music%2Fabba%2Fgold");
+    await push("/browse?path=music");
+    await push("/browse?path=music%2Fabba");
+    await push("/browse?path=music%2Fabba%2Fgold");
     await reloadHA();
 
     ha.back();
@@ -255,8 +281,8 @@ describe("Home Assistant router history", () => {
 
   it("goes forward again to a page from before a reload", async () => {
     await start(`${PANEL}/home`);
-    await router.push("/artists");
-    await router.push("/artists/1");
+    await push("/artists");
+    await push("/artists/1");
     ha.back();
     await settle();
     await reloadHA();
@@ -271,7 +297,7 @@ describe("Home Assistant router history", () => {
   it("goes forward from the tab's first page after a reload", async () => {
     // The tab opened on the app itself.
     await start(`${PANEL}/home`);
-    await router.push("/artists");
+    await push("/artists");
     ha.back();
     await settle();
     await reloadHA();
@@ -297,8 +323,8 @@ describe("Home Assistant router history", () => {
 
   it("steps forward onto a page that is also the one behind", async () => {
     await start(`${PANEL}/home`);
-    await router.push("/artists");
-    await router.push("/home");
+    await push("/artists");
+    await push("/home");
     ha.back();
     await settle();
 
@@ -320,7 +346,7 @@ describe("Home Assistant router history", () => {
 
   it("stops following Home Assistant once the frame goes away", async () => {
     await start(`${PANEL}/home`);
-    await router.push("/artists");
+    await push("/artists");
 
     window.dispatchEvent(new Event("pagehide"));
     ha.back();
@@ -329,9 +355,41 @@ describe("Home Assistant router history", () => {
     expect(router.currentRoute.value.fullPath).toBe("/artists");
   });
 
+  it("follows a page Home Assistant opens itself", async () => {
+    await start(`${PANEL}/home`);
+    await push("/artists/1");
+
+    ha.open(`${PANEL}/artists`);
+    await settle();
+
+    expect(router.currentRoute.value.fullPath).toBe("/artists");
+    expect(history.state.back).toBe("/artists/1");
+  });
+
+  it("keeps up with pages opened faster than Home Assistant follows", async () => {
+    await start(`${PANEL}/home`);
+
+    const opened: string[] = [];
+    router.afterEach((to) => {
+      opened.push(to.fullPath);
+    });
+
+    // Both are opened before Home Assistant, a message away, follows the first.
+    await router.push("/search");
+    await router.push("/artists");
+    await settle();
+
+    expect(opened).toEqual(["/search", "/artists"]);
+    expect(ha.entries()).toEqual([
+      `${PANEL}/home`,
+      `${PANEL}/search`,
+      `${PANEL}/artists`,
+    ]);
+  });
+
   it("opens an app at the path of the app panel", async () => {
     await start("/app/d5369777_music_assistant");
-    await router.push("/artists");
+    await push("/artists");
 
     expect(ha.entries()).toEqual([
       "/app/d5369777_music_assistant/",
@@ -347,11 +405,14 @@ describe("Home Assistant router history", () => {
 });
 
 describe("Home Assistant app panel", () => {
+  const frameElement = Object.getOwnPropertyDescriptor(window, "frameElement");
+
   afterEach(() => {
-    Object.defineProperty(window, "frameElement", {
-      value: null,
-      configurable: true,
-    });
+    if (frameElement) {
+      Object.defineProperty(window, "frameElement", frameElement);
+    } else {
+      delete (window as { frameElement?: Element | null }).frameElement;
+    }
   });
 
   function frameIn(hostName: string) {
