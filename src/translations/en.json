@@ -837,7 +837,6 @@
     },
     "sidebar": {
         "title": "Sidebar",
-        "description": "Displays the mobile sidebar.",
         "toggle": "Toggle Sidebar",
         "expand": "Expand Sidebar",
         "collapse": "Collapse Sidebar"
