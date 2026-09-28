@@ -139,11 +139,12 @@ function mountGroupVolume(player: Player) {
   });
 }
 
-function mountPopoutVolume(player: Player) {
+function mountPopoutVolume(player: Player, allowWheel = false) {
   return mount(PlayerVolume, {
     props: {
       player,
       preferGroupVolume: true,
+      allowWheel,
     },
     global: {
       mocks: { $t: (key: string) => key },
@@ -408,7 +409,7 @@ describe("PlayerVolume group popout", () => {
   // room it has above it and the point it grows up from
   const SLIDER_BOTTOM = 700;
 
-  function mountLargeGroup() {
+  function mountLargeGroup(allowWheel = false) {
     const children = ["Office", "Kitchen", "Bedroom", "Bathroom", "Study"].map(
       (name) => createPlayer({ player_id: name.toLowerCase(), name }),
     );
@@ -419,7 +420,7 @@ describe("PlayerVolume group popout", () => {
     api.players = Object.fromEntries(
       [parent, ...children].map((player) => [player.player_id, player]),
     );
-    return { children, wrapper: mountPopoutVolume(parent) };
+    return { children, wrapper: mountPopoutVolume(parent, allowWheel) };
   }
 
   const originalInnerHeight = Object.getOwnPropertyDescriptor(
@@ -611,19 +612,31 @@ describe("PlayerVolume group popout", () => {
     expect(popout.scrollTop).toBe(900);
   });
 
-  it("leaves the wheel to scroll the popout rows", async () => {
-    const { wrapper } = mountLargeGroup();
-    const popout = await openPopout(wrapper);
-    const row = popout.querySelector<HTMLElement>(".player-volume-container")!;
+  function wheelEvent(deltaY: number) {
+    return new WheelEvent("wheel", { deltaY, bubbles: true, cancelable: true });
+  }
 
-    const event = new WheelEvent("wheel", {
-      deltaY: 120,
-      bubbles: true,
-      cancelable: true,
-    });
-    row.dispatchEvent(event);
+  it("changes a popout row's volume with the wheel on its slider", async () => {
+    const { wrapper } = mountLargeGroup(true);
+    const row = firstRow(await openPopout(wrapper));
+
+    const event = wheelEvent(-120);
+    row.container.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(api.playerCommandVolumeUp).toHaveBeenCalledWith(row.playerId);
+  });
+
+  it("leaves the wheel off the sliders to scroll the popout", async () => {
+    const { wrapper } = mountLargeGroup(true);
+    const popout = await openPopout(wrapper);
+
+    const event = wheelEvent(120);
+    popout.querySelector(".group-popout-label")!.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(false);
+    expect(api.playerCommandVolumeDown).not.toHaveBeenCalled();
+    expect(api.playerCommandGroupVolumeDown).not.toHaveBeenCalled();
   });
 
   it("nests the rows the way the touch-action override selects them", async () => {
