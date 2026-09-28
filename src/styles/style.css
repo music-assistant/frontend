@@ -173,7 +173,8 @@
   max-height: var(
     --reka-popover-content-available-height,
     calc(
-      100dvh - var(--player-bar-popout-top-gap) - var(--player-bar-popout-gap)
+      100dvh - var(--player-bar-popout-top-gap) - var(--device-inset-top) -
+        var(--player-bar-popout-gap)
     )
   );
 }
