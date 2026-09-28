@@ -1,6 +1,7 @@
 import {
   appearsOnAlbums,
   isSingleOrEp,
+  loadArtistDiscography,
   loadArtistLibraryTracks,
   loadArtistReleases,
   loadArtistTopTracks,
@@ -9,7 +10,7 @@ import {
 } from "@/components/artist/artistData";
 import { artistRows, type ArtistRowId } from "@/components/artist/artistRows";
 import {
-  rowSourceProvider,
+  rowSourceDisplay,
   type RowSource,
 } from "@/components/details/rowRegistry";
 import { mappingsIdentity, useRowRequests } from "@/composables/useRowRequests";
@@ -40,6 +41,8 @@ export function useArtistRowData(
   const topTracks = ref(new Map<RowSource, Track[]>());
   const similarArtists = ref(new Map<RowSource, Artist[]>());
   const libraryTracks = ref<Track[]>();
+  // fed by the library artist alone, so it needs no per-source cache
+  const discography = ref<Album[]>();
 
   // a new artist, or new provider mappings, start from empty rows; anything
   // else (a favorite toggle, a metadata update) keeps what is already loaded
@@ -48,6 +51,7 @@ export function useArtistRowData(
     topTracks.value = new Map();
     similarArtists.value = new Map();
     libraryTracks.value = undefined;
+    discography.value = undefined;
     loadRowData();
   });
 
@@ -81,7 +85,6 @@ export function useArtistRowData(
   const singleItems = computed(() =>
     singlesSourceReleases.value?.filter((album) => isSingleOrEp(album)),
   );
-  const latestRelease = computed(() => albumSourceReleases.value?.[0]);
 
   const albumsMeta = computed(() =>
     albumItems.value?.length
@@ -100,6 +103,9 @@ export function useArtistRowData(
     },
   );
 
+  // kept in the order the server sent it, which is newest first
+  const discographyItems = computed(() => discography.value);
+
   // falls back to the newest library tracks when no provider supplies top tracks
   const topTracksItems = computed(() => {
     const items = sourceItems(topTracks.value, topTracksSource.value);
@@ -112,11 +118,26 @@ export function useArtistRowData(
     sourceItems(similarArtists.value, similarArtistsSource.value),
   );
 
-  const topTracksProvider = computed(() =>
-    rowSourceProvider(topTracksSource.value),
+  const albumsSourceDisplay = computed(() =>
+    rowSourceDisplay(albumsSource.value),
   );
-  const similarArtistsProvider = computed(() =>
-    rowSourceProvider(similarArtistsSource.value),
+  const singlesSourceDisplay = computed(() =>
+    rowSourceDisplay(singlesSource.value),
+  );
+
+  // the row falls back to the newest library tracks when no provider supplies
+  // top tracks, so its badge then names the library rather than the source
+  const topTracksSourceDisplay = computed(() => {
+    const provided = sourceItems(topTracks.value, topTracksSource.value);
+    const usesLibraryFallback =
+      provided?.length === 0 && !!libraryTracks.value?.length;
+    return rowSourceDisplay(
+      usesLibraryFallback ? "library" : topTracksSource.value,
+    );
+  });
+
+  const similarArtistsSourceDisplay = computed(() =>
+    rowSourceDisplay(similarArtistsSource.value),
   );
 
   // unhiding a row or switching its source in the editor loads what it needs,
@@ -137,15 +158,13 @@ export function useArtistRowData(
   function loadRowData() {
     if (!artist.value) return;
     const rows = visibleRows.value;
-    // the top tracks row shows the latest release from the albums source
-    if (rows.includes("albums") || rows.includes("top_tracks")) {
-      fetchReleases(albumsSource.value!);
-    }
+    if (rows.includes("albums")) fetchReleases(albumsSource.value!);
     if (rows.includes("singles_eps")) fetchReleases(singlesSource.value!);
     if (rows.includes("appears_on")) {
       fetchReleases(appearsOnSource.value!);
       fetchLibraryTracks();
     }
+    if (rows.includes("discography")) fetchDiscography();
     if (rows.includes("top_tracks")) {
       fetchLibraryTracks();
       fetchTopTracks(topTracksSource.value!);
@@ -177,6 +196,14 @@ export function useArtistRowData(
     );
   }
 
+  function fetchDiscography() {
+    return fetchOnce(
+      "discography",
+      (artist) => loadArtistDiscography(artist),
+      (items) => (discography.value = items),
+    );
+  }
+
   function fetchLibraryTracks() {
     return fetchOnce(
       "library_tracks",
@@ -205,11 +232,17 @@ export function useArtistRowData(
     albumItems,
     singleItems,
     appearsOnItems,
+    discographyItems,
     similarArtistItems,
-    latestRelease,
     albumsMeta,
-    topTracksProvider,
-    similarArtistsProvider,
+    albumsSource,
+    singlesSource,
+    topTracksSource,
+    similarArtistsSource,
+    albumsSourceDisplay,
+    singlesSourceDisplay,
+    topTracksSourceDisplay,
+    similarArtistsSourceDisplay,
   };
 }
 

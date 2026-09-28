@@ -2,6 +2,7 @@ import { canOpenAIRadio } from "@/helpers/ai_radio_access";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
+import { returnedByHistory } from "@/helpers/navigation";
 import { $t } from "@/plugins/i18n";
 import { nextTick, watch } from "vue";
 import {
@@ -811,7 +812,7 @@ router.afterEach((to, from, failure) => {
   if (failure) return;
   // Don't reset on same route
   if (to.path === from.path) return;
-  if (router.options.history.state.forward != null) return;
+  if (returnedByHistory(router)) return;
   // nextTick needed because afterEach fires before Vue unmounts the page
   // Resetting here would wipe its scroll position before it's saved
   nextTick(() => {

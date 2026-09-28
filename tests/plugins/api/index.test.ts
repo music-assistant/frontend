@@ -452,6 +452,16 @@ describe("MusicAssistantApi error handling", () => {
     expect(api.supportsAIRadioPlaybackScopes).toBe(true);
   });
 
+  it("asks the library for an artist's discography", () => {
+    api.getArtistDiscography("artist-1");
+
+    expect(transport.lastCommand.command).toBe("music/artists/discography");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+    });
+  });
+
   describe("a refused ordering command", () => {
     // the server refuses every one of these with the same code and the same
     // localized "the command failed", so the player's own state is what tells

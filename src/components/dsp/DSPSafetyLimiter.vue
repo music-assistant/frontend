@@ -12,20 +12,12 @@
       }"
     />
 
-    <div class="px-4">
-      <Alert variant="info" class="mb-4 mt-2">
-        <Info />
-        <AlertDescription>
-          {{ $t("settings.dsp.safety_limiter.help") }}
-        </AlertDescription>
-      </Alert>
-    </div>
+    <DSPHelp :text="$t('settings.dsp.safety_limiter.help')" />
   </div>
 </template>
 <script setup lang="ts">
-import { Info } from "@lucide/vue";
 import { SafetyLimiterFilter } from "@/plugins/api/interfaces";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import DSPHelp from "./DSPHelp.vue";
 import DSPSlider from "./DSPSlider.vue";
 
 const limiter = defineModel<SafetyLimiterFilter>({ required: true });
