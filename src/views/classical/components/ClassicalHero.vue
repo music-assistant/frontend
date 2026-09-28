@@ -17,14 +17,6 @@
       <div v-if="$slots.meta" class="classical-hero__meta">
         <slot name="meta"></slot>
       </div>
-
-      <div class="classical-hero__actions">
-        <DetailHeroPlayButton
-          class="classical-hero__play"
-          shrink-label
-          :item="item"
-        />
-      </div>
     </template>
 
     <template v-if="item" #aside>
@@ -36,7 +28,6 @@
 
 <script setup lang="ts">
 import DetailHero from "@/components/details/DetailHero.vue";
-import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { ImageType, type Artist } from "@/plugins/api/interfaces";
@@ -98,18 +89,6 @@ const logo = computed(() =>
   color: rgba(255, 255, 255, 0.85);
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
-.classical-hero__actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  /* the shared main column aligns its items to the start, so claim the full
-     width here to give the shrinking play button room to work within */
-  align-self: stretch;
-  min-width: 0;
-}
-.classical-hero__play {
-  min-width: 0;
-}
 .classical-hero__genre {
   min-width: 0;
   font-size: 14px;
@@ -126,8 +105,5 @@ const logo = computed(() =>
 }
 .classical-hero--phone .classical-hero__meta {
   font-size: 14px;
-}
-.classical-hero--phone .classical-hero__play {
-  flex: 1;
 }
 </style>
