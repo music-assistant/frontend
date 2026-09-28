@@ -10,7 +10,7 @@
       :style="`width: var(--provider-icon-size, ${size}px);height: var(--provider-icon-size, ${size}px);`"
       :title="$t('in_library')"
     >
-      <LibraryBig :size="size" />
+      <LibraryBig class="provider-img" :size="size" />
     </div>
     <!-- provider image (svg or png) served as data uri; blank when no variant exists -->
     <div
