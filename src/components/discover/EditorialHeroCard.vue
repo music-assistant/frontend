@@ -14,7 +14,7 @@
         class="ed-hero__img"
         loading="lazy"
         :src="art.image"
-        :alt="item.name"
+        alt=""
       />
     </div>
     <div class="ed-hero__scrim"></div>
