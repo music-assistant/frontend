@@ -220,6 +220,27 @@ describe("the context menu of a MusicBrainz release", () => {
     expect(apiMock.playMedia.mock.calls[0][0]).toEqual([inLibrary.uri]);
   });
 
+  it("is left out when the rest of a selection goes into a playlist", async () => {
+    const mapping = providerMapping({ in_library: true });
+    const inLibrary = album({ item_id: "1", provider_mappings: [mapping] });
+    apiMock.getLibraryItem.mockResolvedValue(inLibrary);
+    apiMock.providers = {
+      [mapping.provider_instance]: { available: true, supported_features: [] },
+    };
+
+    await showContextMenuForMediaItem([inLibrary, release], undefined, 0, 0);
+    emittedMenus[0].items
+      .find((entry) => entry.label === "add_playlist")
+      ?.action?.();
+    apiMock.providers = {};
+
+    // the dialog's payload is the last emit
+    const dialog = emittedMenus[emittedMenus.length - 1] as unknown as {
+      items: Array<{ item_id: string }>;
+    };
+    expect(dialog.items.map((item) => item.item_id)).toEqual(["1"]);
+  });
+
   it("is not marked a favorite along with the rest of a selection", async () => {
     const mapping = providerMapping({ in_library: true });
     const inLibrary = album({ item_id: "1", provider_mappings: [mapping] });

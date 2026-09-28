@@ -1010,7 +1010,7 @@ export const getContextMenuItems = async function (
       labelArgs: [],
       action: () => {
         eventbus.emit("playlistdialog", {
-          items: items as MediaItemType[],
+          items: items.filter(itemIsAvailable) as MediaItemType[],
           parentItem: parentItem,
         });
       },
