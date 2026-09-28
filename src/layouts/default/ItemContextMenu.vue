@@ -412,11 +412,13 @@ export const showContextMenuForMediaItem = async function (
 
   let menuItems: ContextMenuItem[] = [];
 
-  if (
+  // the play section, its player header included, is for an item that can be
+  // played at all
+  const withPlayMenu =
     includePlayMenuItems &&
     menuTargets[0].is_playable &&
-    itemIsAvailable(menuTargets[0])
-  ) {
+    itemIsAvailable(menuTargets[0]);
+  if (withPlayMenu) {
     // Play menu items first, then context items
     menuItems = await getPlaybackContextMenuItems(
       menuTargets,
@@ -436,7 +438,7 @@ export const showContextMenuForMediaItem = async function (
     items: menuItems,
     posX: posX,
     posY: posY,
-    showPlayMenuHeader: showPlayMenuHeader,
+    showPlayMenuHeader: showPlayMenuHeader && withPlayMenu,
   });
 };
 
@@ -824,9 +826,12 @@ export const getContextMenuItems = async function (
       favoriteState(item) === false;
 
     // the actions run on the library copy while the next menu is built from
-    // the item the caller holds, so its state has to follow
+    // the item the caller holds, so its state has to follow (a MusicBrainz
+    // release in the selection was not acted on)
     const markFavorite = (favorite: boolean | null) => {
-      for (const item of items) setFavoriteState(item, favorite);
+      for (const item of items) {
+        if (!isMusicBrainzItem(item)) setFavoriteState(item, favorite);
+      }
     };
 
     if (favoritableItems.length > 0) {

@@ -15,6 +15,7 @@ import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 const { apiMock, emittedMenus, storeMock } = vi.hoisted(() => ({
   emittedMenus: [] as ContextMenuDialogEvent[],
   apiMock: {
+    addItemToFavorites: vi.fn(),
     addItemToLibrary: vi.fn(),
     removeItemFromLibrary: vi.fn(),
     getItem: vi.fn(),
@@ -96,6 +97,31 @@ describe("the context menu of a MusicBrainz release", () => {
     expect(labels.filter((label) => label.startsWith("play_"))).toEqual([]);
   });
 
+  it("has no player header, there being nothing to play on it", async () => {
+    await openMenu();
+
+    expect(emittedMenus[0].showPlayMenuHeader).toBe(false);
+  });
+
+  it("keeps the player header on a release that is on a music service", async () => {
+    const mapping = providerMapping();
+    apiMock.providers = {
+      [mapping.provider_instance]: { available: true, supported_features: [] },
+    };
+
+    await showContextMenuForMediaItem(
+      album({ item_id: "1", provider_mappings: [mapping] }),
+      undefined,
+      0,
+      0,
+      true,
+      true,
+    );
+    apiMock.providers = {};
+
+    expect(emittedMenus[0].showPlayMenuHeader).toBe(true);
+  });
+
   // the server hands back the library album for a release that is in the
   // library, so a MusicBrainz item is by definition outside it
   it("does not look for a library counterpart", async () => {
@@ -149,6 +175,25 @@ describe("the context menu of a MusicBrainz release", () => {
       inLibrary.media_type,
       "1",
     );
+  });
+
+  it("is not marked a favorite along with the rest of a selection", async () => {
+    const mapping = providerMapping({ in_library: true });
+    const inLibrary = album({ item_id: "1", provider_mappings: [mapping] });
+    apiMock.getLibraryItem.mockResolvedValue(inLibrary);
+    // a favorite is only offered for an album on an available music service
+    apiMock.providers = {
+      [mapping.provider_instance]: { available: true, supported_features: [] },
+    };
+
+    await showContextMenuForMediaItem([inLibrary, release], undefined, 0, 0);
+    apiMock.providers = {};
+    await emittedMenus[0].items
+      .find((entry) => entry.label === "favorites_add")
+      ?.action?.();
+
+    expect(inLibrary.favorite).toBe(true);
+    expect(release.favorite).toBeNull();
   });
 
   // the refresh is what an unavailable item is otherwise offered, and there is
