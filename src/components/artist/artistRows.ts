@@ -1,3 +1,4 @@
+import { artistProvidersForFeature } from "@/components/artist/artistData";
 import {
   createRowRegistry,
   type RowDefinition,
@@ -16,6 +17,7 @@ export type ArtistRowId =
   | "albums"
   | "singles_eps"
   | "appears_on"
+  | "discography"
   | "similar_artists"
   | "audiobooks"
   | "audiobooks_all" // authors / narrators only
@@ -50,6 +52,7 @@ export const ARTIST_ROWS: readonly ArtistRowDefinition[] = [
     supportsSource: true,
   },
   { id: "appears_on", labelKey: "appears_on", audience: "music" },
+  { id: "discography", labelKey: "discography", audience: "music" },
   {
     id: "similar_artists",
     labelKey: "similar_artists",
@@ -128,23 +131,14 @@ function rowSourceCandidates(id: ArtistRowId, artist: Artist): RowSource[] {
 function rowSourceProviders(id: ArtistRowId, artist: Artist): string[] {
   const feature = ROW_FEATURES[id];
   if (!feature) return [];
-  const ids = new Set<string>();
-  for (const mapping of artist.provider_mappings) {
-    if (providerSupports(mapping.provider_instance, feature)) {
-      ids.add(mapping.provider_instance);
-    }
-  }
-  if (ALL_PROVIDER_ROWS.includes(id)) {
-    for (const provider of Object.values(api.providers)) {
-      const isMetadataOrPlugin =
-        provider.type === ProviderType.METADATA ||
-        provider.type === ProviderType.PLUGIN;
-      if (
-        isMetadataOrPlugin &&
-        providerSupports(provider.instance_id, feature)
-      ) {
-        ids.add(provider.instance_id);
-      }
+  const ids = new Set(artistProvidersForFeature(artist, feature));
+  if (!ALL_PROVIDER_ROWS.includes(id)) return [...ids];
+  for (const provider of Object.values(api.providers)) {
+    const isMetadataOrPlugin =
+      provider.type === ProviderType.METADATA ||
+      provider.type === ProviderType.PLUGIN;
+    if (isMetadataOrPlugin && providerSupports(provider.instance_id, feature)) {
+      ids.add(provider.instance_id);
     }
   }
   return [...ids].sort((a, b) =>

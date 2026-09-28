@@ -85,6 +85,12 @@
               <EllipsisVertical :size="16" />
             </button>
           </div>
+          <div
+            v-if="shownTracks.length === 0 && emptyMessage"
+            class="artist-top-tracks__empty"
+          >
+            {{ emptyMessage }}
+          </div>
         </template>
         <template v-else>
           <div
@@ -144,6 +150,8 @@ export interface Props {
   sourceOptions?: SourceOption[];
   // the source currently feeding the row, highlighted in the picker
   sourceValue?: RowSource;
+  // shown when the row has no tracks but stays mounted for its source picker
+  emptyMessage?: string;
   libraryTrackCount?: number;
 }
 const props = defineProps<Props>();
@@ -365,6 +373,13 @@ function releaseYear(album?: Album | ItemMapping | null): number | undefined {
 .artist-top-tracks__skeleton-text {
   height: 16px;
   flex: 1;
+}
+.artist-top-tracks__empty {
+  grid-column: 1 / -1;
+  align-self: center;
+  padding: 8px;
+  font-size: 14px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 
 @media (max-width: 768px) {

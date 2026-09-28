@@ -65,18 +65,14 @@
           <span v-if="itemDuration(item)" class="media-rows__duration">{{
             formatDuration(itemDuration(item)!)
           }}</span>
-          <button
-            v-if="showFavorite && 'favorite' in item && canEditLibrary"
-            type="button"
-            class="media-rows__button"
-            :class="{ 'media-rows__button--favorite': item.favorite }"
-            :aria-label="$t('tooltip.favorite')"
-            :aria-pressed="item.favorite ? 'true' : 'false'"
-            @click.stop="api.toggleFavorite(item)"
-          >
-            <IconHeartFilled v-if="item.favorite" :size="18" />
-            <IconHeart v-else :stroke-width="2" :size="18" />
-          </button>
+          <FavoriteMenu
+            v-if="showFavorite && canHoldFavorite(item)"
+            :item="item"
+            variant="ghost"
+            size="icon-sm"
+            icon-class="size-4.5"
+            class="size-7 rounded-full text-muted-foreground data-[active=true]:text-primary"
+          />
           <button
             type="button"
             class="media-rows__button"
@@ -104,6 +100,7 @@
 
 <script setup lang="ts">
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
+import FavoriteMenu from "@/components/FavoriteMenu.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -111,6 +108,7 @@ import {
   getEventPosition,
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
+import { canHoldFavorite } from "@/helpers/favorites";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
@@ -122,15 +120,12 @@ import { getProviderIconDomain, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   AlbumType,
   PlaybackState,
-  Scope,
   type ItemMapping,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { EllipsisVertical } from "@lucide/vue";
-import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
 import { computed } from "vue";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 
@@ -173,11 +168,6 @@ defineSlots<{
 const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
-
-// favouring an item changes the library
-const canEditLibrary = computed(() =>
-  authManager.hasScope(Scope.LIBRARY_WRITE),
-);
 
 const shownItems = computed(() =>
   props.limit ? props.items?.slice(0, props.limit) : props.items,
@@ -396,9 +386,6 @@ function itemDuration(item: RowItem): number | undefined {
 }
 .media-rows__button:hover {
   background: rgba(var(--v-theme-on-surface), 0.08);
-}
-.media-rows__button--favorite {
-  color: rgb(var(--v-theme-primary));
 }
 .media-rows__skeleton-text {
   height: 16px;

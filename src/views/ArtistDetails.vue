@@ -26,6 +26,7 @@
           :source-options="sourceOptions('top_tracks')"
           :source-value="topTracksSource"
           :library-track-count="libraryTracks?.length"
+          :empty-message="$t('artist_row_empty')"
           @edit-rows="rowsEditorOpen = true"
           @select-source="(source) => selectRowSource('top_tracks', source)"
         />
@@ -78,6 +79,17 @@
           @edit-rows="rowsEditorOpen = true"
         />
 
+        <!-- discography (every release MusicBrainz lists, in the library or not) -->
+        <ReleaseShelf
+          v-else-if="rowId === 'discography' && showRow(discographyItems)"
+          :title="$t('discography')"
+          :meta="isPhone ? undefined : $t('discography_hint')"
+          :items="discographyShelfItems"
+          :view-all-to="listingRoute('discography')"
+          :parent-item="itemDetails"
+          @edit-rows="rowsEditorOpen = true"
+        />
+
         <!-- similar artists -->
         <ArtistSimilarShelf
           v-else-if="
@@ -89,6 +101,7 @@
           :source-domain="similarArtistsSourceDisplay?.domain"
           :source-options="sourceOptions('similar_artists')"
           :source-value="similarArtistsSource"
+          :empty-message="$t('artist_row_empty')"
           @edit-rows="rowsEditorOpen = true"
           @select-source="
             (source) => selectRowSource('similar_artists', source)
@@ -214,6 +227,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import { useArtistRowData } from "@/composables/useArtistRowData";
+import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import {
   ArtistType,
@@ -267,6 +281,7 @@ const {
   albumItems,
   singleItems,
   appearsOnItems,
+  discographyItems,
   similarArtistItems,
   albumsMeta,
   albumsSource,
@@ -290,6 +305,13 @@ const sourceOptions = (rowId: ArtistRowId): SourceOption[] =>
 function selectRowSource(rowId: ArtistRowId, source: RowSource) {
   artistRows.setSource(rowId, source);
 }
+
+// a prolific artist's discography runs to hundreds of releases: the shelf
+// shows the newest, "View all" has them all
+const DISCOGRAPHY_SHELF_LIMIT = 50;
+const discographyShelfItems = computed(() =>
+  discographyItems.value?.slice(0, DISCOGRAPHY_SHELF_LIMIT),
+);
 
 // an empty release row explains the library case; from a provider source the
 // badge already names it, so a neutral line is enough
@@ -315,6 +337,9 @@ const rowMeta = computed<Partial<Record<ArtistRowId, string>>>(() => ({
     ? String(singleItems.value.length)
     : undefined,
   appears_on: $t("appears_on_hint"),
+  discography: discographyItems.value?.length
+    ? String(discographyItems.value.length)
+    : undefined,
 }));
 
 // library audiobooks can be filtered to the providers the artist is mapped to
@@ -402,7 +427,10 @@ onMounted(() => {
       if (itemDetails.value?.uri == updatedItem.uri) {
         // update UI with the updated item
         loading.value = true;
-        itemDetails.value = updatedItem as Artist;
+        itemDetails.value = keepOwnFavorite(
+          updatedItem,
+          itemDetails.value,
+        ) as Artist;
         loading.value = false;
       } else if ("provider_mappings" in updatedItem) {
         for (const provMap of updatedItem.provider_mappings) {
@@ -413,7 +441,10 @@ onMounted(() => {
             )
           ) {
             loading.value = true;
-            itemDetails.value = updatedItem as Artist;
+            itemDetails.value = keepOwnFavorite(
+              updatedItem,
+              itemDetails.value,
+            ) as Artist;
             loading.value = false;
             break;
           }
@@ -422,6 +453,13 @@ onMounted(() => {
     },
   );
   onBeforeUnmount(unsub);
+
+  // the user's own like or dislike, wherever they made it
+  const unsubFavorite = subscribeOwnFavorites((update) => {
+    const item = itemDetails.value;
+    if (item?.uri == update.uri) item.favorite = update.favorite;
+  });
+  onBeforeUnmount(unsubFavorite);
 });
 
 const loadArtistAudiobooks = async function (params: LoadDataParams) {
@@ -463,6 +501,8 @@ function rowApplies(rowId: ArtistRowId): boolean {
   switch (rowId) {
     case "appears_on":
     case "audiobooks":
+      return isLibraryItem;
+    case "discography":
       return isLibraryItem;
     case "audiobooks_all":
       return audiobookSourceProviderIds.value.length > 0;
