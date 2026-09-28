@@ -9,12 +9,14 @@ import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
+import { providerMapping } from "../fixtures/providerMapping";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 const { apiMock, emittedMenus, storeMock } = vi.hoisted(() => ({
   emittedMenus: [] as ContextMenuDialogEvent[],
   apiMock: {
     addItemToLibrary: vi.fn(),
+    removeItemFromLibrary: vi.fn(),
     getItem: vi.fn(),
     getLibraryItem: vi.fn(),
     getProvider: vi.fn(),
@@ -71,6 +73,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   // what the lookup would answer if the menu did make it
   apiMock.getLibraryItem.mockResolvedValue(null);
+  apiMock.addItemToLibrary.mockResolvedValue(undefined);
   emittedMenus.length = 0;
 });
 
@@ -108,6 +111,43 @@ describe("the context menu of a MusicBrainz release", () => {
 
     expect(apiMock.addItemToLibrary).toHaveBeenCalledWith(
       "musicbrainz://album/rg-1",
+    );
+  });
+
+  it("swallows the refusal when no music service has it", async () => {
+    apiMock.addItemToLibrary.mockRejectedValue(new Error("not available"));
+    const menu = await openMenu();
+
+    // the api plugin already showed the server's message as a toast; the suite
+    // fails on a rejection nobody handles
+    await menu.find((entry) => entry.label === "add_library")?.action?.();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(apiMock.addItemToLibrary).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves it out of a bulk removal from the library", async () => {
+    const inLibrary = album({
+      item_id: "1",
+      provider_mappings: [providerMapping({ in_library: true })],
+    });
+    apiMock.getLibraryItem.mockResolvedValue(inLibrary);
+
+    await showContextMenuForMediaItem([inLibrary, release], undefined, 0, 0);
+    const remove = emittedMenus[0].items.find(
+      (entry) => entry.label === "remove_library",
+    );
+    await remove?.action?.();
+    // the removal asks for confirmation first
+    const dialog = emittedMenus.find((payload) => "onConfirm" in payload) as
+      | { onConfirm: () => void }
+      | undefined;
+    dialog?.onConfirm();
+
+    expect(apiMock.removeItemFromLibrary).toHaveBeenCalledTimes(1);
+    expect(apiMock.removeItemFromLibrary).toHaveBeenCalledWith(
+      inLibrary.media_type,
+      "1",
     );
   });
 

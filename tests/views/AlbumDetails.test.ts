@@ -391,4 +391,27 @@ describe("AlbumDetails", () => {
     expect(mockBackFromMediaDetails).toHaveBeenCalled();
     expect(hero(wrapper).props("item")).toBeUndefined();
   });
+
+  // resolving a release can take a while; the user may have moved on by then
+  it("leaves a late failure alone once the page shows another album", async () => {
+    let fail: (err: Error) => void = () => {};
+    mockGetItem.mockReturnValue(
+      new Promise((_, reject) => {
+        fail = reject;
+      }),
+    );
+    const wrapper = await mountRoute("rg-1", "musicbrainz");
+
+    mockGetAlbum.mockResolvedValue(ALBUM_WITH_REVIEW);
+    await wrapper.setProps({
+      itemId: ALBUM_WITH_REVIEW.item_id,
+      provider: ALBUM_WITH_REVIEW.provider,
+    });
+    await flushPromises();
+    fail(new Error("MediaNotFoundError"));
+    await flushPromises();
+
+    expect(mockBackFromMediaDetails).not.toHaveBeenCalled();
+    expect(hero(wrapper).props("item")).toEqual(ALBUM_WITH_REVIEW);
+  });
 });

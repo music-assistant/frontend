@@ -708,7 +708,11 @@ export const getContextMenuItems = async function (
   // Only the first item of a selection is resolved, so a single item acts
   // on its library counterpart while a multi-selection keeps its own
   // identity.
-  const actionTargets = items.length === 1 ? [resolvedItem] : items;
+  // (a MusicBrainz release has no library row to act on)
+  const actionTargets =
+    items.length === 1
+      ? [resolvedItem]
+      : items.filter((item) => !isMusicBrainzItem(item));
   // a library row alone is not membership, since the backend also keeps
   // rows for relatives of saved items, so the resolved row is checked too
   const inLibrary =
@@ -737,7 +741,8 @@ export const getContextMenuItems = async function (
       labelArgs: [],
       action: () => {
         for (const item of items) {
-          api.addItemToLibrary(addableItem(item));
+          // a release none of the music services has is refused with a toast
+          api.addItemToLibrary(addableItem(item)).catch(() => undefined);
           // optimistically flag the mappings so the derived state re-evaluates
           if ("provider_mappings" in item)
             item.provider_mappings.forEach((pm) => (pm.in_library = true));

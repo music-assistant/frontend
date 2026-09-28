@@ -94,6 +94,12 @@ describe("ListviewItem for a release that is not in the library", () => {
     expect(wrapper.get(".subtitle").text()).toBe("not_in_library • 1994");
   });
 
+  it("keeps the play button on a release that is on a music service", () => {
+    const wrapper = mountRow(album({ item_id: "1" }));
+
+    expect(wrapper.find(".listitem-play-blue").exists()).toBe(true);
+  });
+
   it("describes a release that is on a music service as before", () => {
     const wrapper = mountRow(
       album({

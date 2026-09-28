@@ -35,15 +35,16 @@ vi.mock("vue-i18n", async (importOriginal) => ({
 
 // a cover the proxy hands out; a data uri keeps it out of the image proxy
 const COVER = "data:image/png;base64,iVBORw0KGgo=";
+const OTHER_COVER = "data:image/png;base64,iVBORw0KGgoAAAA=";
 
-const withCover = (overrides: Partial<Album> = {}) =>
+const withCover = (overrides: Partial<Album> = {}, cover = COVER) =>
   album({
     name: "Grace",
     metadata: {
       images: [
         {
           type: ImageType.THUMB,
-          path: COVER,
+          path: cover,
           provider: "builtin",
           remotely_accessible: true,
         },
@@ -52,13 +53,16 @@ const withCover = (overrides: Partial<Album> = {}) =>
     ...overrides,
   });
 
-const release = (overrides: Partial<Album> = {}) =>
-  withCover({
-    item_id: "rg-1",
-    provider: "musicbrainz",
-    provider_mappings: [],
-    ...overrides,
-  });
+const release = (overrides: Partial<Album> = {}, cover = COVER) =>
+  withCover(
+    {
+      item_id: "rg-1",
+      provider: "musicbrainz",
+      provider_mappings: [],
+      ...overrides,
+    },
+    cover,
+  );
 
 function mountCard(item: Album, isAvailable = true) {
   return mount(EditorialMediaCard, {
@@ -104,6 +108,22 @@ describe("EditorialMediaCard", () => {
 
     expect(wrapper.find("img").exists()).toBe(false);
     expect(wrapper.get(".ed-card__initials").text()).toBe("GR");
+  });
+
+  it("offers no play button for a release that is not in the library", () => {
+    const wrapper = mountCard(release());
+
+    expect(wrapper.find(".ed-card__play").exists()).toBe(false);
+  });
+
+  // a metadata refresh replaces the item under the same uri
+  it("retries a cover the same item got since", async () => {
+    const wrapper = mountCard(release());
+    await wrapper.get("img").trigger("error");
+
+    await wrapper.setProps({ item: release({}, OTHER_COVER) });
+
+    expect(wrapper.get("img").attributes("src")).toBe(OTHER_COVER);
   });
 
   it("gives the next item its cover back", async () => {

@@ -428,8 +428,11 @@ async function resolveMusicBrainzAlbum(
       MUSICBRAINZ_PROVIDER,
     )) as Album;
   } catch {
-    // the server's own message is already on screen as a toast
-    backFromMediaDetails(router);
+    // the server's own message is already on screen as a toast; a lookup that
+    // outlived a move to another album must not pull the user off that one
+    if (itemId === props.itemId && props.provider === MUSICBRAINZ_PROVIDER) {
+      backFromMediaDetails(router);
+    }
     return undefined;
   }
 }

@@ -162,18 +162,19 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
+const resolvedArt = computed(() => itemArtwork(props.item, 320));
+
 // a proxied cover can 404 (e.g. a release the Cover Art Archive has none for),
-// which leaves the item on the placeholder treatment instead of a broken image
+// which leaves the item on the placeholder treatment instead of a broken image;
+// the next item, or this one refreshed with another cover, gets its own attempt
 const artFailed = ref(false);
 watch(
-  () => props.item.uri,
+  () => [props.item.uri, resolvedArt.value.image],
   () => (artFailed.value = false),
 );
 
 const art = computed(() =>
-  artFailed.value
-    ? placeholderArtwork(props.item)
-    : itemArtwork(props.item, 320),
+  artFailed.value ? placeholderArtwork(props.item) : resolvedArt.value,
 );
 
 const isGenre = computed(() => props.item.media_type === MediaType.GENRE);
@@ -198,7 +199,11 @@ const getStyle = computed(() => {
 
 const isPlayable = computed(() => props.item.is_playable !== false);
 const showPlay = computed(
-  () => isPlayable.value && props.isAvailable && !props.showCheckboxes,
+  () =>
+    isPlayable.value &&
+    props.isAvailable &&
+    !notInLibrary.value &&
+    !props.showCheckboxes,
 );
 
 // Provider badge on the cover — always for playlists (to show the source),

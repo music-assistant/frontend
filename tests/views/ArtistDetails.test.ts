@@ -102,7 +102,7 @@ vi.mock("@/components/artist/ArtistTopTracksRow.vue", () => ({
 vi.mock("@/components/details/ReleaseShelf.vue", () => ({
   default: {
     name: "ReleaseShelf",
-    props: ["title"],
+    props: ["title", "items"],
     template: '<div :data-row="title" />',
   },
 }));
@@ -288,6 +288,21 @@ describe("ArtistDetails", () => {
     const wrapper = await mountDetails(artist({ provider: "spotify--abc" }));
 
     expect(renderedRows(wrapper)).not.toContain("discography");
+  });
+
+  it("shows the newest releases on the shelf and keeps the rest for the listing", async () => {
+    mockLoadArtistDiscography.mockResolvedValue(
+      Array.from({ length: 60 }, (_, index) =>
+        album({ item_id: String(index) }),
+      ),
+    );
+
+    const wrapper = await mountDetails(artist());
+
+    const shelf = wrapper
+      .findAllComponents({ name: "ReleaseShelf" })
+      .find((component) => component.props("title") === "discography");
+    expect(shelf?.props("items")).toHaveLength(50);
   });
 
   // MusicBrainz is not loaded, or does not know the artist

@@ -84,7 +84,7 @@
           v-else-if="rowId === 'discography' && showRow(discographyItems)"
           :title="$t('discography')"
           :meta="isPhone ? undefined : $t('discography_hint')"
-          :items="discographyItems"
+          :items="discographyShelfItems"
           :view-all-to="listingRoute('discography')"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
@@ -305,6 +305,13 @@ const sourceOptions = (rowId: ArtistRowId): SourceOption[] =>
 function selectRowSource(rowId: ArtistRowId, source: RowSource) {
   artistRows.setSource(rowId, source);
 }
+
+// a prolific artist's discography runs to hundreds of releases: the shelf
+// shows the newest, "View all" has them all
+const DISCOGRAPHY_SHELF_LIMIT = 50;
+const discographyShelfItems = computed(() =>
+  discographyItems.value?.slice(0, DISCOGRAPHY_SHELF_LIMIT),
+);
 
 // an empty release row explains the library case; from a provider source the
 // badge already names it, so a neutral line is enough

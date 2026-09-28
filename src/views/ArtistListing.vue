@@ -326,7 +326,10 @@ async function loadReleases(
 /** Everything MusicBrainz credits to the artist; only a library artist has one. */
 async function loadDiscography(): Promise<MediaItemType[]> {
   const artist = itemDetails.value;
-  if (artist?.provider !== "library") return [];
+  // a url typed or restored on an older server must not send the command
+  if (artist?.provider !== "library" || !api.supportsArtistDiscography) {
+    return [];
+  }
   return await loadArtistDiscography(artist);
 }
 

@@ -231,8 +231,8 @@ export const getProviderRootDomain = function (
     : undefined;
 };
 
-// the provider of an album an artist's discography lists from MusicBrainz that is
-// on none of the user's music services yet
+// the provider a discography release carries while it is on none of the user's
+// music services
 export const MUSICBRAINZ_PROVIDER = "musicbrainz";
 
 /**
