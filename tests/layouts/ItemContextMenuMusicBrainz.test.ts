@@ -27,7 +27,9 @@ const { apiMock, emittedMenus, storeMock } = vi.hoisted(() => ({
     players: {},
   },
   storeMock: {
-    activePlayer: undefined,
+    activePlayer: undefined as
+      | { player_id: string; available: boolean }
+      | undefined,
     activePlayerId: undefined,
     enabledPlugins: new Set<string>(),
   },
@@ -89,8 +91,10 @@ describe("the context menu of a MusicBrainz release", () => {
   it("offers nothing that needs an item on a music service", async () => {
     const labels = (await openMenu()).map((entry) => entry.label);
 
-    // nothing to play, nothing stored to favorite, refresh or remove
+    // nothing to play or to put in a playlist, nothing stored to favorite,
+    // refresh or remove
     expect(labels).not.toContain("play_now");
+    expect(labels).not.toContain("add_playlist");
     expect(labels).not.toContain("favorites_add");
     expect(labels).not.toContain("refresh_item");
     expect(labels).not.toContain("remove_library");
@@ -175,6 +179,35 @@ describe("the context menu of a MusicBrainz release", () => {
       inLibrary.media_type,
       "1",
     );
+  });
+
+  it("is left out when the rest of a selection is played", async () => {
+    const mapping = providerMapping({ in_library: true });
+    const inLibrary = album({ item_id: "1", provider_mappings: [mapping] });
+    apiMock.getLibraryItem.mockResolvedValue(inLibrary);
+    apiMock.providers = {
+      [mapping.provider_instance]: { available: true, supported_features: [] },
+    };
+    storeMock.activePlayer = { player_id: "p1", available: true };
+
+    await showContextMenuForMediaItem(
+      [inLibrary, release],
+      undefined,
+      0,
+      0,
+      true,
+      true,
+    );
+    apiMock.providers = {};
+    storeMock.activePlayer = undefined;
+    const playNow = emittedMenus[0].items.find(
+      (entry) => entry.label === "play_now",
+    );
+    expect(playNow).toBeDefined();
+    playNow?.action?.();
+
+    // the queue option is whatever the server's default is; the uris matter
+    expect(apiMock.playMedia.mock.calls[0][0]).toEqual([inLibrary.uri]);
   });
 
   it("is not marked a favorite along with the rest of a selection", async () => {

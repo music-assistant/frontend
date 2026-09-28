@@ -462,7 +462,10 @@ export const showPlayMenuForMediaItem = async function (
     ? item
     : [item];
   if (mediaItems.length == 0) return;
-  const playableItems = mediaItems.filter((x) => x.is_playable);
+  // a MusicBrainz release in the selection has nothing to play
+  const playableItems = mediaItems.filter(
+    (x) => x.is_playable && !isMusicBrainzItem(x),
+  );
   const firstItem = playableItems[0];
 
   let playMenuItems: ContextMenuItem[] = [];
@@ -995,8 +998,12 @@ export const getContextMenuItems = async function (
       });
     }
   }
-  // add to playlist action
-  if (canEditLibrary && canAddToPlaylist(firstItem)) {
+  // add to playlist action (an item nothing can play has no place in one)
+  if (
+    canEditLibrary &&
+    canAddToPlaylist(firstItem) &&
+    itemIsAvailable(firstItem)
+  ) {
     contextMenuItems.push({
       label: "add_playlist",
       labelArgs: [],
@@ -1374,7 +1381,10 @@ export const getPlaybackContextMenuItems = async function (
     return playMenuItems;
   }
 
-  const playableItems = items.filter((x) => x.is_playable);
+  // a MusicBrainz release in the selection has nothing to play
+  const playableItems = items.filter(
+    (x) => x.is_playable && !isMusicBrainzItem(x),
+  );
   if (playableItems.length == 0) return playMenuItems;
   const firstItem = playableItems[0];
 

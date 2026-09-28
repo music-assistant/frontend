@@ -104,6 +104,10 @@ describe("the context menu of an unavailable library item", () => {
     expect(await offeredLabels()).toContain("find_on_music_services");
   });
 
+  it("keeps it out of playlists", async () => {
+    expect(await offeredLabels()).not.toContain("add_playlist");
+  });
+
   it("offers a guest nothing", async () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
 
