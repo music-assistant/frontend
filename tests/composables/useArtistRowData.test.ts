@@ -35,6 +35,7 @@ const {
 } = vi.hoisted(() => ({
   mockApi: {
     getProvider: vi.fn(),
+    subscribe: vi.fn(() => () => {}),
     subscribe_multi: vi.fn<
       (events: EventType[], callback: (evt: EventMessage) => void) => () => void
     >(() => () => {}),

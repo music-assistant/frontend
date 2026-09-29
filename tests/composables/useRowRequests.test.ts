@@ -8,9 +8,15 @@ import { flushPromises } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { effectScope, ref, type EffectScope } from "vue";
 
-const { mockSubscribeMulti, mockUnsubscribe } = vi.hoisted(() => ({
-  mockSubscribeMulti: vi.fn(),
-  mockUnsubscribe: vi.fn(),
+const { mockSubscribeMulti, mockUnsubscribe, mockOnLibrarySyncCompleted } =
+  vi.hoisted(() => ({
+    mockSubscribeMulti: vi.fn(),
+    mockUnsubscribe: vi.fn(),
+    mockOnLibrarySyncCompleted: vi.fn(),
+  }));
+
+vi.mock("@/composables/useLibrarySync", () => ({
+  onLibrarySyncCompleted: mockOnLibrarySyncCompleted,
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -42,6 +48,7 @@ function watchLibrary(
   reload: () => void,
 ) {
   mockSubscribeMulti.mockReturnValue(mockUnsubscribe);
+  mockOnLibrarySyncCompleted.mockReturnValue(mockUnsubscribe);
   page.scope.run(() => page.refetchOnLibraryChange(prefixesByType, reload));
   const [events, listener] = mockSubscribeMulti.mock.lastCall!;
   expect(events).toEqual([
@@ -223,6 +230,24 @@ describe("useRowRequests", () => {
 
     page.scope.stop();
 
-    expect(mockUnsubscribe).toHaveBeenCalledTimes(1);
+    expect(mockUnsubscribe).toHaveBeenCalledTimes(2);
+  });
+
+  it("refetches the affected keys when a library sync finishes", async () => {
+    vi.useFakeTimers();
+    const page = setupRequests();
+    await show(page, "a");
+    const load = vi.fn().mockResolvedValue([]);
+    const reload = () => page.fetchOnce("releases", load, vi.fn());
+    await reload();
+    watchLibrary(page, { [MediaType.ALBUM]: ["releases"] }, reload);
+    const [mediaType, onSyncCompleted] =
+      mockOnLibrarySyncCompleted.mock.lastCall!;
+
+    (onSyncCompleted as () => void)();
+    await vi.runAllTimersAsync();
+
+    expect(mediaType).toBe(MediaType.ALBUM);
+    expect(load).toHaveBeenCalledTimes(2);
   });
 });

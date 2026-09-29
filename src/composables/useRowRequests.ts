@@ -1,3 +1,4 @@
+import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -61,10 +62,11 @@ export function useRowRequests<Item>(
   }
 
   /**
-   * Refetches rows when the library adds, updates or removes an item.
+   * Refetches rows when the library adds, updates or removes an item, or
+   * finishes a provider sync.
    *
    * The requests whose key starts with one of the prefixes listed for the
-   * changed item's media type are forgotten and `reload` runs, so the rows
+   * changed media type are forgotten and `reload` runs, so the rows
    * that are shown request them again. Their current data stays on screen
    * until the new response replaces it.
    *
@@ -77,28 +79,40 @@ export function useRowRequests<Item>(
   ): void {
     const changed = new Set<string>();
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const unsubscribe = api.subscribe_multi(
-      [
-        EventType.MEDIA_ITEM_ADDED,
-        EventType.MEDIA_ITEM_UPDATED,
-        EventType.MEDIA_ITEM_DELETED,
-      ],
-      (evt: EventMessage) => {
-        const mediaType = (evt.data as MediaItemType | null | undefined)
-          ?.media_type;
-        const prefixes = mediaType && prefixesByType[mediaType];
-        if (!prefixes) return;
-        prefixes.forEach((prefix) => changed.add(prefix));
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-          forget([...changed]);
-          changed.clear();
-          reload();
-        }, LIBRARY_CHANGE_DELAY_MS);
-      },
-    );
+    const onChange = (mediaType: MediaType) => {
+      const prefixes = prefixesByType[mediaType];
+      if (!prefixes) return;
+      prefixes.forEach((prefix) => changed.add(prefix));
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        forget([...changed]);
+        changed.clear();
+        reload();
+      }, LIBRARY_CHANGE_DELAY_MS);
+    };
+    const unsubscribers = [
+      api.subscribe_multi(
+        [
+          EventType.MEDIA_ITEM_ADDED,
+          EventType.MEDIA_ITEM_UPDATED,
+          EventType.MEDIA_ITEM_DELETED,
+        ],
+        (evt: EventMessage) => {
+          const mediaType = (evt.data as MediaItemType | null | undefined)
+            ?.media_type;
+          if (mediaType) onChange(mediaType);
+        },
+      ),
+      // a provider sync suppresses the per-item events, so its completion
+      // stands in for them
+      ...Object.keys(prefixesByType).map((mediaType) =>
+        onLibrarySyncCompleted(mediaType as MediaType, () =>
+          onChange(mediaType as MediaType),
+        ),
+      ),
+    ];
     onScopeDispose(() => {
-      unsubscribe();
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
       clearTimeout(timer);
     });
   }
