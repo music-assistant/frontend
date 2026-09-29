@@ -578,6 +578,40 @@ describe("SetupFlowDialog launched with initial values", () => {
     expect(entryValues(wrapper)).toEqual({ path: "/music" });
   });
 
+  it.each([
+    ["that showed its form", true],
+    ["whose form is still on its way", false],
+  ])(
+    "shows the server's values to a launch without values, right after one with values %s",
+    async (_case, firstAnswered) => {
+      apiMock.abortSetupFlow.mockResolvedValue();
+      apiMock.setupProvider
+        .mockReturnValueOnce(
+          firstAnswered
+            ? Promise.resolve(formStep(localFilesEntries()))
+            : new Promise<SetupFlowStep>(() => undefined),
+        )
+        .mockResolvedValueOnce(formStep(localFilesEntries()));
+      const wrapper = shallowMount(SetupFlowDialog, {
+        global: { renderStubDefaultSlot: true },
+      });
+      void launchSetupFlow?.({
+        kind: "provider",
+        domain: "filesystem_local",
+        initialValues: { path: "/media/nas_music" },
+      });
+      await flushPromises();
+
+      await launchSetupFlow?.({ kind: "provider", domain: "filesystem_local" });
+      await flushPromises();
+
+      expect(entryValues(wrapper)).toEqual({
+        content_type: "music",
+        path: "/media",
+      });
+    },
+  );
+
   it("tells a provider flow that it finished", async () => {
     apiMock.setupProvider.mockResolvedValue(terminalStep(FlowStepType.FINISH));
     const onFlowEnded = vi.fn();

@@ -587,6 +587,22 @@ describe("StorageSettings while a command runs", () => {
     });
   });
 
+  it("frees the rows after a refresh that failed", async () => {
+    const wrapper = await mountPage();
+    apiMock.getStorageInfo.mockRejectedValueOnce(new Error("connection lost"));
+
+    await wrapper.get('[data-testid="storage-refresh"]').trigger("click");
+    await flushPromises();
+
+    expect(toastMock.error).toHaveBeenCalledWith(
+      "settings.storage.load_failed",
+    );
+    expect(actionStates(wrapper)).toEqual({
+      [share.path]: [false, false, false],
+      [folder.path]: [false],
+    });
+  });
+
   it("frees the rows after a failed command", async () => {
     const reason = "The NAS did not answer.";
     apiMock.reloadNetworkShare.mockRejectedValue(
