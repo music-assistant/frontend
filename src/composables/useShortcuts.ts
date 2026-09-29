@@ -142,11 +142,18 @@ function getShortcutIdentities(
         itemId: safeDecode(mapping.item_id),
       });
       // Some URIs store provider domain instead of provider instance.
-      identities.push({
-        provider: safeDecode(mapping.provider_domain),
-        mediaType: item.media_type,
-        itemId: safeDecode(mapping.item_id),
-      });
+      const domains = new Set([
+        mapping.provider_domain,
+        // A converted source also by the domain its id names.
+        ...embeddedProviderDomains(mapping.provider_instance),
+      ]);
+      for (const domain of domains) {
+        identities.push({
+          provider: safeDecode(domain),
+          mediaType: item.media_type,
+          itemId: safeDecode(mapping.item_id),
+        });
+      }
     }
   }
 
