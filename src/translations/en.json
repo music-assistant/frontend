@@ -822,6 +822,7 @@
             "remove_in_use": "{sources} uses this location. Disable or remove that music source first. | {sources} use this location. Disable or remove those music sources first.",
             "add_network_share": "Add network share",
             "add_local_folder": "Add a folder on this server",
+            "use_as_source": "Use as music source",
             "share_added": "Network share added",
             "share_saved": "Network share saved",
             "share_reloaded": "Network share reloaded",

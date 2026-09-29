@@ -4,12 +4,14 @@ import { i18n } from "@/plugins/i18n";
 import { describe, expect, it } from "vitest";
 import { managedShare, storageLocation } from "../../tests/fixtures/storage";
 import {
+  canHoldNewSource,
   emptyNetworkShareForm,
   findStoragePosition,
   formatNames,
   formatStorageSize,
   isManagedShare,
   isNamedByKind,
+  isInsideStoragePath,
   isRegisteredFolder,
   networkShareAddress,
   networkShareFormChanged,
@@ -23,6 +25,7 @@ import {
   STORAGE_KIND_LABEL_KEYS,
   storageErrorText,
   storageLocationName,
+  usedByShownOn,
 } from "./storage";
 
 const share = managedShare();
@@ -97,6 +100,113 @@ describe("normalizeStoragePath and sameStoragePath", () => {
   it("matches nothing without a path", () => {
     expect(sameStoragePath(null, "/media")).toBe(false);
     expect(sameStoragePath("", "")).toBe(false);
+  });
+});
+
+describe("isInsideStoragePath", () => {
+  it.each([
+    ["/media/music", "/media", true],
+    ["/media/music/Albums", "/media", true],
+    ["/media/music/", "/media//", true],
+    ["/media", "/", true],
+    ["/media", "/media", false],
+    ["/media/", "/media", false],
+    ["/", "/", false],
+    ["/media/musicbox", "/media/music", false],
+    ["/data", "/media", false],
+    ["/media", "/media/music", false],
+  ])("takes %j inside %j: %s", (path, folder, inside) => {
+    expect(isInsideStoragePath(path, folder)).toBe(inside);
+  });
+});
+
+describe("usedByShownOn", () => {
+  it("names a source on the share it reads, not also on the media folder above", () => {
+    const mediaFolder = storageLocation({
+      path: "/media",
+      used_by: ["Filesystem (remote share)"],
+    });
+    const nas = managedShare({
+      path: "/media/nas_music",
+      used_by: ["Filesystem (remote share)"],
+    });
+    const locations = [mediaFolder, nas];
+
+    expect(usedByShownOn(mediaFolder, locations)).toEqual([]);
+    expect(usedByShownOn(nas, locations)).toEqual([
+      "Filesystem (remote share)",
+    ]);
+  });
+
+  it("keeps a source whose folder lies in no location inside this one", () => {
+    const mediaFolder = storageLocation({
+      path: "/media",
+      used_by: ["Local files", "Filesystem (remote share)"],
+    });
+    const nas = managedShare({
+      path: "/media/nas_music/",
+      used_by: ["Filesystem (remote share)"],
+    });
+    // a sibling that only shares the start of its name lies not inside the share
+    const nasBox = storageLocation({
+      path: "/media/nas_musicbox",
+      used_by: [],
+    });
+
+    expect(usedByShownOn(mediaFolder, [mediaFolder, nas, nasBox])).toEqual([
+      "Local files",
+    ]);
+  });
+
+  it("names every source on the innermost location only", () => {
+    const outer = storageLocation({
+      path: "/media",
+      used_by: ["Deep", "Middle"],
+    });
+    const middle = storageLocation({
+      path: "/media/a",
+      used_by: ["Deep", "Middle"],
+    });
+    const inner = storageLocation({ path: "/media/a/b", used_by: ["Deep"] });
+    const locations = [outer, middle, inner];
+
+    expect(usedByShownOn(outer, locations)).toEqual([]);
+    expect(usedByShownOn(middle, locations)).toEqual(["Middle"]);
+    expect(usedByShownOn(inner, locations)).toEqual(["Deep"]);
+  });
+
+  // two sources on two music folders easily get the same name
+  it("names each of two sources of the same name on its own location", () => {
+    const mediaFolder = storageLocation({
+      path: "/media",
+      used_by: ["Local files [music]", "Local files [music]"],
+    });
+    const nas = managedShare({
+      path: "/media/nas",
+      used_by: ["Local files [music]"],
+    });
+    const locations = [mediaFolder, nas];
+
+    expect(usedByShownOn(mediaFolder, locations)).toEqual([
+      "Local files [music]",
+    ]);
+    expect(usedByShownOn(nas, locations)).toEqual(["Local files [music]"]);
+  });
+
+  // the middle location also lists the source of the inner one
+  it("names a source of the same name once on each of three nested locations", () => {
+    const name = "Local files [music]";
+    const outer = storageLocation({
+      path: "/media",
+      used_by: [name, name, name],
+    });
+    const middle = storageLocation({ path: "/media/a", used_by: [name, name] });
+    const inner = storageLocation({ path: "/media/a/b", used_by: [name] });
+    const locations = [outer, middle, inner];
+
+    expect(usedByShownOn(outer, locations)).toEqual([name]);
+    expect(usedByShownOn(middle, locations)).toEqual([name]);
+    expect(usedByShownOn(inner, locations)).toEqual([name]);
   });
 });
 
@@ -199,6 +309,24 @@ describe("storageLocationName", () => {
         storageLocation({ kind: StorageKind.REMOVABLE, name: "SANDISK" }),
       ),
     ).toBe("SANDISK");
+  });
+});
+
+describe("canHoldNewSource", () => {
+  it("takes an available music location that no source reads", () => {
+    expect(canHoldNewSource(managedShare())).toBe(true);
+  });
+
+  it.each([
+    ["a source reads from inside it", { used_by: ["Local files"] }],
+    [
+      "a source reads it through a folder around it",
+      { read_by: ["Local files"] },
+    ],
+    ["it is not available", { available: false }],
+    ["it is storage of the server itself", { usage: StorageUsage.DATA }],
+  ])("refuses a location when %s", (_reason, overrides) => {
+    expect(canHoldNewSource(managedShare(overrides))).toBe(false);
   });
 });
 

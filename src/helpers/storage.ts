@@ -88,6 +88,18 @@ export const sameStoragePath = (
 ): boolean => !!a && !!b && normalizeStoragePath(a) === normalizeStoragePath(b);
 
 /**
+ * Whether a path lies inside a folder, below it rather than being the folder itself.
+ *
+ * @param path - The path that may lie inside, e.g. `/media/music/Albums`.
+ * @param folder - The folder it may lie in, e.g. `/media/music`.
+ */
+export function isInsideStoragePath(path: string, folder: string): boolean {
+  const inner = normalizeStoragePath(path);
+  const outer = normalizeStoragePath(folder);
+  return inner !== outer && inner.startsWith(storagePathPrefix(outer));
+}
+
+/**
  * A path cut into the pieces a line may break between: every piece but the last ends
  * with its slash, and a leading slash stays with the first name.
  *
@@ -120,7 +132,7 @@ export function findStoragePosition(
   let bestRoot = "";
   for (const location of locations) {
     const root = normalizeStoragePath(location.path);
-    const prefix = root === "/" ? "/" : `${root}/`;
+    const prefix = storagePathPrefix(root);
     if (target !== root && !target.startsWith(prefix)) continue;
     if (best && bestRoot.length >= root.length) continue;
     const rest = target === root ? "" : target.slice(prefix.length);
@@ -199,6 +211,45 @@ export function storageLocationName(location: StorageLocation): string {
     return $t(STORAGE_KIND_LABEL_KEYS[location.kind]);
   return location.name;
 }
+
+/**
+ * The music sources a location names under "Used by". The server lists a source on
+ * every location that holds its folder; a row names it only on the innermost of those,
+ * so a source shows once, also when another source has the same name.
+ *
+ * @param location - The location whose row is shown.
+ * @param locations - Every location the page lists.
+ */
+export function usedByShownOn(
+  location: StorageLocation,
+  locations: readonly StorageLocation[],
+): string[] {
+  const inner = locations.filter((other) =>
+    isInsideStoragePath(other.path, location.path),
+  );
+  // a location inside another lists only sources that one lists too
+  const outermost = inner.filter(
+    (other) =>
+      !inner.some((around) => isInsideStoragePath(other.path, around.path)),
+  );
+  const shown = [...location.used_by];
+  for (const name of outermost.flatMap((other) => other.used_by)) {
+    const index = shown.indexOf(name);
+    if (index !== -1) shown.splice(index, 1);
+  }
+  return shown;
+}
+
+/**
+ * Whether a location can hold a music source of its own: an available music location
+ * that no source reads yet, neither from a folder inside it nor through a folder
+ * around it, so a source on it overlaps no other.
+ */
+export const canHoldNewSource = (location: StorageLocation): boolean =>
+  location.usage === StorageUsage.MEDIA &&
+  location.available &&
+  location.used_by.length === 0 &&
+  location.read_by.length === 0;
 
 /** Whether the location is a network share Music Assistant mounted and manages. */
 export const isManagedShare = (
@@ -304,4 +355,9 @@ export function storageErrorText(error: unknown, fallback: string): string {
   return error instanceof ApiCommandError && error.details
     ? error.details
     : fallback;
+}
+
+// the start every path inside a normalised folder has
+function storagePathPrefix(folder: string): string {
+  return folder === "/" ? "/" : `${folder}/`;
 }
