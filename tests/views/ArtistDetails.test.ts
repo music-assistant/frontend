@@ -278,6 +278,20 @@ describe("ArtistDetails", () => {
     expect(renderedRows(wrapper)).not.toContain("discography");
   });
 
+  it("counts a library artist's tracks as in the library in the rows editor", async () => {
+    const wrapper = await mountDetails(artist());
+
+    const editor = wrapper.findComponent({ name: "RowsEditor" });
+    expect(editor.props("rowMeta").top_tracks).toBe("n_in_library");
+  });
+
+  it("counts a provider artist's tracks as plain tracks in the rows editor", async () => {
+    const wrapper = await mountDetails(artist({ provider: "spotify--abc" }));
+
+    const editor = wrapper.findComponent({ name: "RowsEditor" });
+    expect(editor.props("rowMeta").top_tracks).toBe("n_tracks");
+  });
+
   it("shows the newest releases on the shelf and keeps the rest for the listing", async () => {
     mockLoadArtistDiscography.mockResolvedValue(
       Array.from({ length: 60 }, (_, index) =>

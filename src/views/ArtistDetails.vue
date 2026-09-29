@@ -330,7 +330,7 @@ const singlesEmptyMessage = computed(() =>
 // adds the source itself)
 const rowMeta = computed<Partial<Record<ArtistRowId, string>>>(() => ({
   top_tracks: libraryTracks.value?.length
-    ? $t("n_in_library", { count: libraryTracks.value.length })
+    ? topTracksMeta(libraryTracks.value.length)
     : undefined,
   albums: albumsMeta.value,
   singles_eps: singleItems.value?.length
@@ -511,6 +511,13 @@ function rowApplies(rowId: ArtistRowId): boolean {
     default:
       return true;
   }
+}
+
+/** The top tracks row's track count; only a library artist's are in the library. */
+function topTracksMeta(count: number): string {
+  return itemDetails.value?.provider === "library"
+    ? $t("n_in_library", { count })
+    : $t("n_tracks", count, { named: { count } });
 }
 
 /** A row is rendered while it loads and once it has something to show. */

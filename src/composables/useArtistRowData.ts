@@ -110,7 +110,8 @@ export function useArtistRowData(
   // kept in the order the server sent it, which is newest first
   const discographyItems = computed(() => discography.value);
 
-  // falls back to the newest library tracks when no provider supplies top tracks
+  // falls back to the artist's newest tracks when no provider supplies top
+  // tracks (for a provider artist, those of its own provider)
   const topTracksItems = computed(() => {
     const items = sourceItems(topTracks.value, topTracksSource.value);
     if (items === undefined) return undefined;
@@ -129,12 +130,13 @@ export function useArtistRowData(
     rowSourceDisplay(singlesSource.value),
   );
 
-  // the row falls back to the newest library tracks when no provider supplies
-  // top tracks, so its badge then names the library rather than the source
+  // on that fallback, only a library artist's badge switches to the library
   const topTracksSourceDisplay = computed(() => {
     const provided = sourceItems(topTracks.value, topTracksSource.value);
     const usesLibraryFallback =
-      provided?.length === 0 && !!libraryTracks.value?.length;
+      artist.value?.provider === "library" &&
+      provided?.length === 0 &&
+      !!libraryTracks.value?.length;
     return rowSourceDisplay(
       usesLibraryFallback ? "library" : topTracksSource.value,
     );

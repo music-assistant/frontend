@@ -7,6 +7,7 @@ import {
   writeRowsConfig,
 } from "@/helpers/rowsConfig";
 import { api } from "@/plugins/api";
+import { providerDisplayName } from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 
@@ -179,7 +180,8 @@ export function rowSourceOptions<Id extends string, Item>(
 export function rowSourceLabel(source: RowSource): string {
   if (source === "library") return $t("source_library");
   if (source === "all") return $t("source_all");
-  return api.providers[source]?.name ?? source;
+  const provider = api.providers[source];
+  return provider ? providerDisplayName(provider) : source;
 }
 
 /** The provider behind a row's source, when a single one feeds it (undefined for "library"/"all"). */
@@ -188,7 +190,9 @@ export function rowSourceProvider(
 ): { name: string; domain: string } | undefined {
   if (!source || source === "all" || source === "library") return undefined;
   const provider = api.getProvider(source);
-  return provider && { name: provider.name, domain: provider.domain };
+  return (
+    provider && { name: providerDisplayName(provider), domain: provider.domain }
+  );
 }
 
 /**
@@ -204,7 +208,9 @@ export function rowSourceDisplay(
   if (source === "all") return { label: $t("source_all") };
   const provider = api.getProvider(source);
   return {
-    label: $t("on_provider", [provider?.name ?? source]),
+    label: $t("on_provider", [
+      provider ? providerDisplayName(provider) : source,
+    ]),
     domain: provider?.domain,
   };
 }
