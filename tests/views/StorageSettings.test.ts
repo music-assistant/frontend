@@ -563,6 +563,30 @@ describe("StorageSettings while a command runs", () => {
     expect(actionStates(wrapper)[folder.path]).toEqual([false]);
   });
 
+  it("keeps the rows waiting while the page refreshes", async () => {
+    const refreshed = deferred<ReturnType<typeof storageInfo>>();
+    const wrapper = await mountPage();
+    apiMock.getStorageInfo.mockReturnValueOnce(refreshed.promise);
+
+    await wrapper.get('[data-testid="storage-refresh"]').trigger("click");
+
+    expect(actionStates(wrapper)).toEqual({
+      [share.path]: [true, true, true],
+      [folder.path]: [true],
+    });
+    expect(spinnersOf(wrapper, share)).toEqual([]);
+
+    refreshed.resolve(
+      storageInfo({ locations: [media, share, folder, dataDir] }),
+    );
+    await flushPromises();
+
+    expect(actionStates(wrapper)).toEqual({
+      [share.path]: [false, false, false],
+      [folder.path]: [false],
+    });
+  });
+
   it("frees the rows after a failed command", async () => {
     const reason = "The NAS did not answer.";
     apiMock.reloadNetworkShare.mockRejectedValue(

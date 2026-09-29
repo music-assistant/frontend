@@ -68,7 +68,7 @@
           :location="location"
           :shown-used-by="usedByShownOn(location, mediaLocations)"
           :can-use-as-source="canHoldNewSource(location)"
-          :busy="!!pending"
+          :busy="!!pending || loading"
           :pending="pending?.path === location.path ? pending.action : null"
           @reload="reloadShare(location)"
           @edit="openShareDialog(location)"
@@ -206,7 +206,7 @@ const showFolderDialog = ref(false);
 const shareToEdit = ref<ManagedShareLocation | null>(null);
 const locationToRemove = ref<StorageLocation | null>(null);
 // the command running on a location; one runs at a time, and the actions of every row
-// wait for it, so none is pressed on what the page showed before it
+// wait for it and for any refresh, so none is pressed on what the page showed before
 const pending = ref<{ path: string; action: "reload" | "remove" } | null>(null);
 
 const canAddShare = computed(
