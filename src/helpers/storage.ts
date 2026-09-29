@@ -70,6 +70,24 @@ export function joinStoragePath(
 }
 
 /**
+ * A path in the one form paths are compared in: a run of slashes counts as one and a
+ * trailing slash is dropped, while the root stays `/`. Only for comparing; a stored
+ * path is kept exactly as it is.
+ *
+ * @param path - The path to normalise, e.g. `/media//music/` into `/media/music`.
+ */
+export function normalizeStoragePath(path: string): string {
+  const collapsed = path.replace(/\/{2,}/g, "/");
+  return collapsed.length > 1 ? collapsed.replace(/\/$/, "") : collapsed;
+}
+
+/** Whether two paths name the same folder; a missing path matches nothing. */
+export const sameStoragePath = (
+  a: string | null | undefined,
+  b: string | null | undefined,
+): boolean => !!a && !!b && normalizeStoragePath(a) === normalizeStoragePath(b);
+
+/**
  * A path cut into the pieces a line may break between: every piece but the last ends
  * with its slash, and a leading slash stays with the first name.
  *
@@ -97,11 +115,11 @@ export function findStoragePosition(
   locations: readonly StorageLocation[],
   path: string,
 ): StoragePosition | null {
-  const target = joinStoragePath(path, []);
+  const target = normalizeStoragePath(path);
   let best: StoragePosition | null = null;
   let bestRoot = "";
   for (const location of locations) {
-    const root = joinStoragePath(location.path, []);
+    const root = normalizeStoragePath(location.path);
     const prefix = root === "/" ? "/" : `${root}/`;
     if (target !== root && !target.startsWith(prefix)) continue;
     if (best && bestRoot.length >= root.length) continue;

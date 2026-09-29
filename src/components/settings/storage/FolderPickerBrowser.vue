@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
   joinStoragePath,
+  sameStoragePath,
   storageLocationName,
   type StoragePosition,
 } from "@/helpers/storage";
@@ -34,7 +35,9 @@ const currentPath = computed(() =>
   joinStoragePath(props.position.location.path, props.position.segments),
 );
 
-const isSelected = computed(() => currentPath.value === props.selectedPath);
+const isSelected = computed(() =>
+  sameStoragePath(currentPath.value, props.selectedPath),
+);
 
 // the location itself heads the trail, followed by one crumb per subfolder
 const crumbs = computed(() => [

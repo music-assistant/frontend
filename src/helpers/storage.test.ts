@@ -15,7 +15,9 @@ import {
   networkShareFormChanged,
   networkShareFormFromLocation,
   networkShareSettings,
+  normalizeStoragePath,
   pathParts,
+  sameStoragePath,
   SHARE_TYPE_LABEL_KEYS,
   STORAGE_KIND_ICONS,
   STORAGE_KIND_LABEL_KEYS,
@@ -57,8 +59,44 @@ describe("joinStoragePath and findStoragePosition", () => {
     expect(findStoragePosition([music], "/mnt/musicbox")).toBeNull();
   });
 
+  it("places a stored path with extra slashes in its location", () => {
+    expect(findStoragePosition(locations, "/media//Albums/")).toEqual({
+      location: media,
+      segments: ["Albums"],
+    });
+    const rootWithSlash = storageLocation({ path: "/mnt/music/" });
+    expect(findStoragePosition([rootWithSlash], "/mnt/music")).toEqual({
+      location: rootWithSlash,
+      segments: [],
+    });
+  });
+
   it("finds nothing for a path outside every location", () => {
     expect(findStoragePosition(locations, "/data/music")).toBeNull();
+  });
+});
+
+describe("normalizeStoragePath and sameStoragePath", () => {
+  it.each([
+    ["/media/music", "/media/music"],
+    ["/media/music/", "/media/music"],
+    ["/media//music", "/media/music"],
+    ["//media/music//", "/media/music"],
+    ["/", "/"],
+    ["//", "/"],
+    ["", ""],
+  ])("compares %j as %j", (path, normalized) => {
+    expect(normalizeStoragePath(path)).toBe(normalized);
+  });
+
+  it("takes a path with a trailing slash for the same folder", () => {
+    expect(sameStoragePath("/media/music/", "/media/music")).toBe(true);
+    expect(sameStoragePath("/media/music", "/media/musicbox")).toBe(false);
+  });
+
+  it("matches nothing without a path", () => {
+    expect(sameStoragePath(null, "/media")).toBe(false);
+    expect(sameStoragePath("", "")).toBe(false);
   });
 });
 

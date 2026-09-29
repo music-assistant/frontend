@@ -190,6 +190,34 @@ describe("FolderPickerField", () => {
     expect(use.attributes("disabled")).toBeDefined();
   });
 
+  it("recognises a stored folder written with a trailing slash", async () => {
+    const stored = "/media/Albums/";
+    const wrapper = await mountPicker(folderEntry(stored));
+
+    expect(wrapper.find('[data-testid="folder-picker-outside"]').exists()).toBe(
+      false,
+    );
+    expect(
+      locationButtons(wrapper)[0]
+        .find('[data-testid="folder-picker-holds-selection"]')
+        .exists(),
+    ).toBe(true);
+
+    await locationButtons(wrapper)[0].trigger("click");
+    await flushPromises();
+    await subfolderButtons(wrapper)[0].trigger("click");
+    await flushPromises();
+
+    const use = wrapper.get('[data-testid="folder-picker-use"]');
+    expect(use.text()).toBe("settings.folder_picker.folder_selected");
+    expect(use.attributes("disabled")).toBeDefined();
+    // the stored value is left exactly as it was
+    expect(wrapper.emitted("update:value")).toBeUndefined();
+    expect(
+      wrapper.get('[data-testid="folder-picker-selection"]').text(),
+    ).toContain(stored);
+  });
+
   it("keeps a stored folder outside every location as the selection", async () => {
     const wrapper = await mountPicker(folderEntry("/mnt/legacy/music"));
 
