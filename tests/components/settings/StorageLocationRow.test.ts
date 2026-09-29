@@ -1,9 +1,9 @@
 import StorageLocationRow from "@/components/settings/storage/StorageLocationRow.vue";
-import type { StorageLocation } from "@/plugins/api/interfaces";
+import { StorageKind, type StorageLocation } from "@/plugins/api/interfaces";
 import { i18n } from "@/plugins/i18n";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
-import { managedShare } from "../../fixtures/storage";
+import { managedShare, storageLocation } from "../../fixtures/storage";
 
 describe("StorageLocationRow", () => {
   it("tells to disable or remove the one source that uses the location", () => {
@@ -24,6 +24,34 @@ describe("StorageLocationRow", () => {
     );
   });
 
+  it("names only the sources it is given, and stays blocked by all of them", () => {
+    const wrapper = mountRow(
+      storageLocation({
+        path: "/media/music",
+        name: "Music",
+        kind: StorageKind.MANUAL,
+        managed: true,
+        used_by: ["Local files"],
+      }),
+      [],
+    );
+
+    expect(wrapper.find('[data-testid="storage-used-by"]').exists()).toBe(
+      false,
+    );
+    const remove = wrapper.get('[data-testid="storage-remove"]');
+    expect(remove.attributes("disabled")).toBeDefined();
+    // the row does not name the source, so the reason does
+    expect(removeHint(wrapper)).toBe(
+      "Local files uses this location. Disable or remove that music source first.",
+    );
+    expect(
+      wrapper.get(`#${remove.attributes("aria-describedby")}`).text(),
+    ).toBe(
+      "Local files uses this location. Disable or remove that music source first.",
+    );
+  });
+
   it("reads the sources that only read through the location as such", () => {
     const wrapper = mountRow(managedShare({ read_by: ["Local files"] }));
 
@@ -34,9 +62,9 @@ describe("StorageLocationRow", () => {
   });
 });
 
-function mountRow(location: StorageLocation) {
+function mountRow(location: StorageLocation, shownUsedBy?: string[]) {
   return mount(StorageLocationRow, {
-    props: { location },
+    props: { location, shownUsedBy },
     global: { plugins: [i18n] },
   });
 }

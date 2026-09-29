@@ -66,6 +66,7 @@
           v-for="location in mediaLocations"
           :key="location.path"
           :location="location"
+          :shown-used-by="usedByShownOn(location, mediaLocations)"
           :busy="!!pending"
           :pending="pending?.path === location.path ? pending.action : null"
           @reload="reloadShare(location)"
@@ -178,6 +179,7 @@ import {
   isManagedShare,
   type ManagedShareLocation,
   storageErrorText,
+  usedByShownOn,
 } from "@/helpers/storage";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";

@@ -1,5 +1,6 @@
 import NetworkShareDialog from "@/components/settings/storage/NetworkShareDialog.vue";
 import RemoveLocationDialog from "@/components/settings/storage/RemoveLocationDialog.vue";
+import StorageLocationRow from "@/components/settings/storage/StorageLocationRow.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
@@ -194,8 +195,10 @@ describe("StorageSettings", () => {
     expect(remove.element.parentElement?.getAttribute("title")).toBe(
       "settings.storage.remove_in_use",
     );
-    expect(remove.attributes("aria-describedby")).toBe(
-      inUseRow.get('[data-testid="storage-used-by"]').attributes("id"),
+    // and screen readers hear the same reason
+    const describedBy = remove.attributes("aria-describedby");
+    expect(inUseRow.get(`#${describedBy}`).text()).toBe(
+      "settings.storage.remove_in_use",
     );
     // a location nobody uses can still be removed
     expect(
@@ -255,6 +258,29 @@ describe("StorageSettings", () => {
     expect(
       row(wrapper, share).find('[data-testid="storage-read-by"]').exists(),
     ).toBe(false);
+  });
+
+  it("names each source under the innermost location that holds its folder", async () => {
+    const mediaFolder = storageLocation({
+      used_by: ["Local files", "Filesystem (remote share)"],
+    });
+    const nas = managedShare({
+      path: "/media/nas_music",
+      used_by: ["Filesystem (remote share)"],
+    });
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [mediaFolder, nas] }),
+    );
+
+    const wrapper = await mountPage();
+
+    const shownOn = (location: StorageLocation) =>
+      wrapper
+        .findAllComponents(StorageLocationRow)
+        .find((row) => row.props("location").path === location.path)
+        ?.props("shownUsedBy");
+    expect(shownOn(mediaFolder)).toEqual(["Local files"]);
+    expect(shownOn(nas)).toEqual(["Filesystem (remote share)"]);
   });
 
   it("tells why any unavailable location is unavailable", async () => {

@@ -35,6 +35,8 @@ import { useI18n } from "vue-i18n";
 /** A storage location on the Storage page, with the actions a managed one offers. */
 const props = defineProps<{
   location: StorageLocation;
+  // the sources to name under "Used by"; the location's own list when left out
+  shownUsedBy?: string[];
   // a command runs on the page, so no action may start
   busy?: boolean;
   // the command running on this location, if any
@@ -91,12 +93,11 @@ const spaceText = computed(() => {
   return parts.join(" · ");
 });
 
-const usedById = useId();
-const usedBy = computed(() =>
-  props.location.used_by.length > 0
-    ? formatNames(props.location.used_by, locale.value)
-    : null,
-);
+const blockedReasonId = useId();
+const usedBy = computed(() => {
+  const names = props.shownUsedBy ?? props.location.used_by;
+  return names.length > 0 ? formatNames(names, locale.value) : null;
+});
 // sources whose folder holds this location lose its files with it, but do not block
 const readBy = computed(() =>
   props.location.read_by.length > 0
@@ -108,14 +109,16 @@ const canReloadOrEdit = computed(() => isManagedShare(props.location));
 const canRemove = computed(
   () => isManagedShare(props.location) || isRegisteredFolder(props.location),
 );
-// the server refuses to remove a location a music source reads from
-const removeBlockedReason = computed(() =>
-  usedBy.value
-    ? t("settings.storage.remove_in_use", props.location.used_by.length, {
-        named: { sources: usedBy.value },
+// the server refuses to remove a location a music source reads from; the reason
+// names all of them, also those the row leaves to a location inside this one
+const removeBlockedReason = computed(() => {
+  const names = props.location.used_by;
+  return names.length > 0
+    ? t("settings.storage.remove_in_use", names.length, {
+        named: { sources: formatNames(names, locale.value) },
       })
-    : null,
-);
+    : null;
+});
 </script>
 
 <template>
@@ -157,7 +160,6 @@ const removeBlockedReason = computed(() =>
       </p>
       <p
         v-if="usedBy"
-        :id="usedById"
         class="text-muted-foreground m-0 text-sm leading-normal"
         data-testid="storage-used-by"
       >
@@ -213,13 +215,16 @@ const removeBlockedReason = computed(() =>
           :disabled="busy || !!pending || !!removeBlockedReason"
           :aria-busy="pending === 'remove' || undefined"
           :aria-label="`${t('remove')}: ${name}`"
-          :aria-describedby="removeBlockedReason ? usedById : undefined"
+          :aria-describedby="removeBlockedReason ? blockedReasonId : undefined"
           data-testid="storage-remove"
           @click="emit('remove')"
         >
           <Spinner v-if="pending === 'remove'" />
           <Trash2 v-else />
         </Button>
+        <span v-if="removeBlockedReason" :id="blockedReasonId" class="sr-only">
+          {{ removeBlockedReason }}
+        </span>
       </span>
     </ItemActions>
   </Item>

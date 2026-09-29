@@ -10,6 +10,7 @@ import {
   formatStorageSize,
   isManagedShare,
   isNamedByKind,
+  isInsideStoragePath,
   isRegisteredFolder,
   networkShareAddress,
   networkShareFormChanged,
@@ -23,6 +24,7 @@ import {
   STORAGE_KIND_LABEL_KEYS,
   storageErrorText,
   storageLocationName,
+  usedByShownOn,
 } from "./storage";
 
 const share = managedShare();
@@ -97,6 +99,90 @@ describe("normalizeStoragePath and sameStoragePath", () => {
   it("matches nothing without a path", () => {
     expect(sameStoragePath(null, "/media")).toBe(false);
     expect(sameStoragePath("", "")).toBe(false);
+  });
+});
+
+describe("isInsideStoragePath", () => {
+  it.each([
+    ["/media/music", "/media", true],
+    ["/media/music/Albums", "/media", true],
+    ["/media/music/", "/media//", true],
+    ["/media", "/", true],
+    ["/media", "/media", false],
+    ["/media/", "/media", false],
+    ["/", "/", false],
+    ["/media/musicbox", "/media/music", false],
+    ["/data", "/media", false],
+    ["/media", "/media/music", false],
+  ])("takes %j inside %j: %s", (path, folder, inside) => {
+    expect(isInsideStoragePath(path, folder)).toBe(inside);
+  });
+});
+
+describe("usedByShownOn", () => {
+  it("names a source on the share it reads, not also on the media folder above", () => {
+    const mediaFolder = storageLocation({
+      path: "/media",
+      used_by: ["Filesystem (remote share)"],
+    });
+    const nas = managedShare({
+      path: "/media/nas_music",
+      used_by: ["Filesystem (remote share)"],
+    });
+    const locations = [mediaFolder, nas];
+
+    expect(usedByShownOn(mediaFolder, locations)).toEqual([]);
+    expect(usedByShownOn(nas, locations)).toEqual([
+      "Filesystem (remote share)",
+    ]);
+  });
+
+  it("keeps a source whose folder lies in no location inside this one", () => {
+    const mediaFolder = storageLocation({
+      path: "/media",
+      used_by: ["Local files", "Filesystem (remote share)"],
+    });
+    const nas = managedShare({
+      path: "/media/nas_music/",
+      used_by: ["Filesystem (remote share)"],
+    });
+    // a sibling that only shares the start of its name lies not inside the share
+    const nasBox = storageLocation({
+      path: "/media/nas_musicbox",
+      used_by: [],
+    });
+
+    expect(usedByShownOn(mediaFolder, [mediaFolder, nas, nasBox])).toEqual([
+      "Local files",
+    ]);
+  });
+
+  it("names every source on the innermost location only", () => {
+    const outer = storageLocation({
+      path: "/media",
+      used_by: ["Deep", "Middle"],
+    });
+    const middle = storageLocation({
+      path: "/media/a",
+      used_by: ["Deep", "Middle"],
+    });
+    const inner = storageLocation({ path: "/media/a/b", used_by: ["Deep"] });
+    const locations = [outer, middle, inner];
+
+    expect(usedByShownOn(outer, locations)).toEqual([]);
+    expect(usedByShownOn(middle, locations)).toEqual(["Middle"]);
+    expect(usedByShownOn(inner, locations)).toEqual(["Deep"]);
+  });
+
+  // the server sends names only, so two sources of the same name count as one
+  it("leaves out a source whose namesake is named on a location inside", () => {
+    const mediaFolder = storageLocation({
+      path: "/media",
+      used_by: ["Local files"],
+    });
+    const nas = managedShare({ path: "/media/nas", used_by: ["Local files"] });
+
+    expect(usedByShownOn(mediaFolder, [mediaFolder, nas])).toEqual([]);
   });
 });
 
