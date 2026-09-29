@@ -74,18 +74,35 @@
 
     <Alert v-if="showMountHint" variant="info" data-testid="storage-mount-hint">
       <Info />
-      <AlertTitle>{{ $t("settings.storage.cannot_mount_title") }}</AlertTitle>
-      <AlertDescription>
-        <p>{{ $t("settings.storage.cannot_mount_text") }}</p>
-        <a
-          :href="installationDocsUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="font-medium underline underline-offset-4"
-        >
-          {{ $t("settings.storage.cannot_mount_link") }}
-        </a>
-      </AlertDescription>
+      <!-- only a server without a container can register a folder of its own -->
+      <template v-if="canAddFolder">
+        <AlertTitle>
+          {{ $t("settings.storage.cannot_mount_host_title") }}
+        </AlertTitle>
+        <AlertDescription>
+          {{
+            $t("settings.storage.cannot_mount_host_text", {
+              button: $t("settings.storage.add_local_folder"),
+            })
+          }}
+        </AlertDescription>
+      </template>
+      <template v-else>
+        <AlertTitle>
+          {{ $t("settings.storage.cannot_mount_container_title") }}
+        </AlertTitle>
+        <AlertDescription>
+          <p>{{ $t("settings.storage.cannot_mount_container_text") }}</p>
+          <a
+            :href="dockerDocsUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="font-medium underline underline-offset-4"
+          >
+            {{ $t("settings.storage.cannot_mount_link") }}
+          </a>
+        </AlertDescription>
+      </template>
     </Alert>
 
     <section
@@ -150,7 +167,7 @@ import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
-const INSTALLATION_DOCS_URL = "https://music-assistant.io/installation/";
+const DOCKER_DOCS_URL = "https://music-assistant.io/installation/#with-docker";
 
 const { t } = useI18n();
 const { info, loading, failed, mediaLocations, refresh } = useStorageInfo();
@@ -178,9 +195,7 @@ const serverLocations = computed(
     ) ?? [],
 );
 // the docs of a beta server live on the beta site
-const installationDocsUrl = computed(() =>
-  getExternalLinkUrl(INSTALLATION_DOCS_URL),
-);
+const dockerDocsUrl = computed(() => getExternalLinkUrl(DOCKER_DOCS_URL));
 
 const openShareDialog = (location: StorageLocation | null) => {
   shareToEdit.value = location && isManagedShare(location) ? location : null;

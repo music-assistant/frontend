@@ -85,7 +85,7 @@ describe("StorageSettings", () => {
     expect(exists(wrapper, "storage-add-folder")).toBe(true);
   });
 
-  it("explains how to add a share where the install cannot mount one", async () => {
+  it("points a container that cannot mount a share to the host", async () => {
     apiMock.getStorageInfo.mockResolvedValue(
       storageInfo({ can_mount_shares: false, supported_share_types: [] }),
     );
@@ -94,10 +94,31 @@ describe("StorageSettings", () => {
 
     expect(exists(wrapper, "storage-add-share")).toBe(false);
     const hint = wrapper.get('[data-testid="storage-mount-hint"]');
-    expect(hint.text()).toContain("settings.storage.cannot_mount_text");
-    expect(hint.get("a").attributes("href")).toBe(
-      "https://music-assistant.io/installation/",
+    expect(hint.text()).toContain(
+      "settings.storage.cannot_mount_container_text",
     );
+    expect(hint.get("a").attributes("href")).toBe(
+      "https://music-assistant.io/installation/#with-docker",
+    );
+  });
+
+  it("points a server without a container that cannot mount a share to adding its folder", async () => {
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({
+        can_mount_shares: false,
+        supported_share_types: [],
+        can_add_local_folder: true,
+      }),
+    );
+
+    const wrapper = await mountPage();
+
+    const hint = wrapper.get('[data-testid="storage-mount-hint"]');
+    expect(hint.text()).toContain("settings.storage.cannot_mount_host_text");
+    expect(hint.text()).not.toContain("container");
+    expect(hint.find("a").exists()).toBe(false);
+    // the button the notice sends the user to
+    expect(exists(wrapper, "storage-add-folder")).toBe(true);
   });
 
   it("offers each music location the actions it supports", async () => {

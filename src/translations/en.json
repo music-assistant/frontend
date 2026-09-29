@@ -834,8 +834,10 @@
             "remove_share_confirm": "Remove {name}? Music Assistant disconnects the share. The files on it are not deleted.",
             "remove_folder_title": "Remove folder",
             "remove_folder_confirm": "Remove {name} from the list? The folder and its files are not deleted.",
-            "cannot_mount_title": "Add network shares on the host",
-            "cannot_mount_text": "This installation of Music Assistant cannot connect to a network share itself. Mount the share on the host and bind it into the Music Assistant container; it then shows up here.",
+            "cannot_mount_container_title": "Add network shares on the host",
+            "cannot_mount_container_text": "This installation runs in a container and cannot connect to a network share itself. Mount the share on the host and map its folder into the Music Assistant container; it then shows up here.",
+            "cannot_mount_host_title": "Mount network shares on this server",
+            "cannot_mount_host_text": "This server cannot connect to a network share itself. Mount the share on the server, then add its folder with \"{button}\".",
             "cannot_mount_link": "How to set this up",
             "share_dialog": {
                 "edit_title": "Edit network share",
