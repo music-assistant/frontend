@@ -4,7 +4,12 @@
  * that says where it stands.
  */
 import ListviewItem from "@/components/ListviewItem.vue";
-import { AlbumType, type Album } from "@/plugins/api/interfaces";
+import {
+  AlbumType,
+  MediaType,
+  type Album,
+  type ItemMapping,
+} from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
@@ -113,5 +118,26 @@ describe("ListviewItem for a release that is not in the library", () => {
     expect(wrapper.get(".subtitle").text()).toBe(
       "album_type.single • Jeff Buckley • 1994",
     );
+  });
+
+  // a track's album is a slim mapping, e.g. in an artist's "Appears on" list
+  it("shows only the year of an album mapping", () => {
+    const mapping: ItemMapping = {
+      item_id: "2",
+      provider: "library",
+      name: "CM",
+      version: "",
+      uri: "library://album/2",
+      external_ids: [],
+      is_playable: true,
+      media_type: MediaType.ALBUM,
+      available: true,
+      year: 2009,
+    };
+
+    // the listing hands mappings over cast to full media items
+    const wrapper = mountRow(mapping as unknown as Album);
+
+    expect(wrapper.get(".subtitle").text()).toBe("2009");
   });
 });
