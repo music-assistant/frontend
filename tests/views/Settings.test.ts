@@ -228,7 +228,7 @@ describe("Settings breadcrumbs on the storage page", () => {
     routeState.params = { playerId: "kitchen" };
   });
 
-  it("name the storage page as the page they are on", () => {
+  it("names the storage page as the current page", () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     routeState.name = "storagesettings";
     routeState.params = {};

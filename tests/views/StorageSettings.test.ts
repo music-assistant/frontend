@@ -426,12 +426,6 @@ function exists(wrapper: VueWrapper, testId: string): boolean {
   return wrapper.find(`[data-testid="${testId}"]`).exists();
 }
 
-function locationRows(wrapper: VueWrapper) {
-  return wrapper
-    .get('[data-testid="storage-music-locations"]')
-    .findAll('[data-testid="storage-location"]');
-}
-
 function row(wrapper: VueWrapper, location: StorageLocation) {
   return wrapper.get(
     `[data-testid="storage-location"][data-path="${location.path}"]`,
