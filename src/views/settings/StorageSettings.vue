@@ -77,8 +77,25 @@
 
     <Alert v-if="showMountHint" variant="info" data-testid="storage-mount-hint">
       <Info />
+      <!-- a Home Assistant app gets its network shares from Home Assistant -->
+      <template v-if="runsAsHomeAssistantApp">
+        <AlertTitle>
+          {{ $t("settings.storage.cannot_mount_ha_title") }}
+        </AlertTitle>
+        <AlertDescription>
+          <p>{{ $t("settings.storage.cannot_mount_ha_text") }}</p>
+          <a
+            :href="storageDocsUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="font-medium underline underline-offset-4"
+          >
+            {{ $t("settings.storage.cannot_mount_link") }}
+          </a>
+        </AlertDescription>
+      </template>
       <!-- only a server without a container can register a folder of its own -->
-      <template v-if="canAddFolder">
+      <template v-else-if="canAddFolder">
         <AlertTitle>
           {{ $t("settings.storage.cannot_mount_host_title") }}
         </AlertTitle>
@@ -171,6 +188,7 @@ import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
 const DOCKER_DOCS_URL = "https://music-assistant.io/installation/#with-docker";
+const STORAGE_DOCS_URL = "https://music-assistant.io/settings/storage/";
 
 const { t } = useI18n();
 const { info, loading, failed, mediaLocations, refresh } = useStorageInfo();
@@ -200,6 +218,10 @@ const serverLocations = computed(
 );
 // the docs of a beta server live on the beta site
 const dockerDocsUrl = computed(() => getExternalLinkUrl(DOCKER_DOCS_URL));
+const storageDocsUrl = computed(() => getExternalLinkUrl(STORAGE_DOCS_URL));
+const runsAsHomeAssistantApp = computed(
+  () => !!api.serverInfo.value?.homeassistant_addon,
+);
 
 const openShareDialog = (location: StorageLocation | null) => {
   shareToEdit.value = location && isManagedShare(location) ? location : null;

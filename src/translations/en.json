@@ -840,6 +840,8 @@
             "cannot_mount_container_text": "This installation runs in a container and cannot connect to a network share itself. Mount the share on the host and map its folder into the Music Assistant container; it then shows up here.",
             "cannot_mount_host_title": "Mount network shares on this server",
             "cannot_mount_host_text": "This server cannot connect to a network share itself. Mount the share on the server, then add its folder with \"{button}\".",
+            "cannot_mount_ha_title": "Network shares cannot be added right now",
+            "cannot_mount_ha_text": "Home Assistant does not connect network shares for Music Assistant right now. Update the Music Assistant app in Home Assistant and restart it. A network share that you add in Home Assistant under Settings › System › Storage, with the usage Media, shows up here as well.",
             "cannot_mount_link": "How to set this up",
             "share_dialog": {
                 "edit_title": "Edit network share",

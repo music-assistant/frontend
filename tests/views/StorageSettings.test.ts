@@ -24,7 +24,9 @@ import {
 
 const { apiMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
-    serverInfo: { value: { server_version: "2.11.0" } },
+    serverInfo: {
+      value: { server_version: "2.11.0", homeassistant_addon: false },
+    },
     getStorageInfo: vi.fn<MusicAssistantApi["getStorageInfo"]>(),
     reloadNetworkShare: vi.fn<MusicAssistantApi["reloadNetworkShare"]>(),
     removeNetworkShare: vi.fn<MusicAssistantApi["removeNetworkShare"]>(),
@@ -63,6 +65,7 @@ const dataDir = storageLocation({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  apiMock.serverInfo.value.homeassistant_addon = false;
   apiMock.getStorageInfo.mockResolvedValue(
     storageInfo({ locations: [media, share, folder, dataDir] }),
   );
@@ -90,6 +93,33 @@ describe("StorageSettings", () => {
     expect(exists(wrapper, "storage-add-folder")).toBe(true);
   });
 
+  it("points a Home Assistant app that cannot mount a share to Home Assistant", async () => {
+    apiMock.serverInfo.value.homeassistant_addon = true;
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ can_mount_shares: false, supported_share_types: [] }),
+    );
+
+    const wrapper = await mountPage();
+
+    expect(exists(wrapper, "storage-add-share")).toBe(false);
+    const hint = wrapper.get('[data-testid="storage-mount-hint"]');
+    expect(hint.text()).toContain("settings.storage.cannot_mount_ha_title");
+    expect(hint.text()).toContain("settings.storage.cannot_mount_ha_text");
+    expect(hint.text()).not.toContain("container");
+    expect(hint.get("a").attributes("href")).toBe(
+      "https://music-assistant.io/settings/storage/",
+    );
+  });
+
+  it("shows no hint to a Home Assistant app that can mount a share", async () => {
+    apiMock.serverInfo.value.homeassistant_addon = true;
+
+    const wrapper = await mountPage();
+
+    expect(exists(wrapper, "storage-add-share")).toBe(true);
+    expect(exists(wrapper, "storage-mount-hint")).toBe(false);
+  });
+
   it("points a container that cannot mount a share to the host", async () => {
     apiMock.getStorageInfo.mockResolvedValue(
       storageInfo({ can_mount_shares: false, supported_share_types: [] }),
@@ -102,6 +132,7 @@ describe("StorageSettings", () => {
     expect(hint.text()).toContain(
       "settings.storage.cannot_mount_container_text",
     );
+    expect(hint.text()).not.toContain("cannot_mount_ha");
     expect(hint.get("a").attributes("href")).toBe(
       "https://music-assistant.io/installation/#with-docker",
     );
@@ -121,6 +152,7 @@ describe("StorageSettings", () => {
     const hint = wrapper.get('[data-testid="storage-mount-hint"]');
     expect(hint.text()).toContain("settings.storage.cannot_mount_host_text");
     expect(hint.text()).not.toContain("container");
+    expect(hint.text()).not.toContain("cannot_mount_ha");
     expect(hint.find("a").exists()).toBe(false);
     // the button the notice sends the user to
     expect(exists(wrapper, "storage-add-folder")).toBe(true);
