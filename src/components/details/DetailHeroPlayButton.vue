@@ -31,6 +31,7 @@ export interface Props {
   shrinkLabel?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
+  parentItem: undefined,
   shrinkLabel: false,
 });
 
