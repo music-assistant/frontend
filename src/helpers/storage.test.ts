@@ -175,15 +175,38 @@ describe("usedByShownOn", () => {
     expect(usedByShownOn(inner, locations)).toEqual(["Deep"]);
   });
 
-  // the server sends names only, so two sources of the same name count as one
-  it("leaves out a source whose namesake is named on a location inside", () => {
+  // two sources on two music folders easily get the same name
+  it("names each of two sources of the same name on its own location", () => {
     const mediaFolder = storageLocation({
       path: "/media",
-      used_by: ["Local files"],
+      used_by: ["Local files [music]", "Local files [music]"],
     });
-    const nas = managedShare({ path: "/media/nas", used_by: ["Local files"] });
+    const nas = managedShare({
+      path: "/media/nas",
+      used_by: ["Local files [music]"],
+    });
+    const locations = [mediaFolder, nas];
 
-    expect(usedByShownOn(mediaFolder, [mediaFolder, nas])).toEqual([]);
+    expect(usedByShownOn(mediaFolder, locations)).toEqual([
+      "Local files [music]",
+    ]);
+    expect(usedByShownOn(nas, locations)).toEqual(["Local files [music]"]);
+  });
+
+  // the middle location also lists the source of the inner one
+  it("names a source of the same name once on each of three nested locations", () => {
+    const name = "Local files [music]";
+    const outer = storageLocation({
+      path: "/media",
+      used_by: [name, name, name],
+    });
+    const middle = storageLocation({ path: "/media/a", used_by: [name, name] });
+    const inner = storageLocation({ path: "/media/a/b", used_by: [name] });
+    const locations = [outer, middle, inner];
+
+    expect(usedByShownOn(outer, locations)).toEqual([name]);
+    expect(usedByShownOn(middle, locations)).toEqual([name]);
+    expect(usedByShownOn(inner, locations)).toEqual([name]);
   });
 });
 

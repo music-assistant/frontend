@@ -215,7 +215,7 @@ export function storageLocationName(location: StorageLocation): string {
 /**
  * The music sources a location names under "Used by". The server lists a source on
  * every location that holds its folder; a row names it only on the innermost of those,
- * so a source shows once. Sources are matched by the names the server sends.
+ * so a source shows once, also when another source has the same name.
  *
  * @param location - The location whose row is shown.
  * @param locations - Every location the page lists.
@@ -227,9 +227,17 @@ export function usedByShownOn(
   const inner = locations.filter((other) =>
     isInsideStoragePath(other.path, location.path),
   );
-  return location.used_by.filter(
-    (name) => !inner.some((other) => other.used_by.includes(name)),
+  // a location inside another lists only sources that one lists too
+  const outermost = inner.filter(
+    (other) =>
+      !inner.some((around) => isInsideStoragePath(other.path, around.path)),
   );
+  const shown = [...location.used_by];
+  for (const name of outermost.flatMap((other) => other.used_by)) {
+    const index = shown.indexOf(name);
+    if (index !== -1) shown.splice(index, 1);
+  }
+  return shown;
 }
 
 /**
