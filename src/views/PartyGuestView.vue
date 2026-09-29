@@ -174,6 +174,7 @@ import { useGuestArtistTracks } from "@/composables/guest/useGuestArtistTracks";
 import { useGuestQueue } from "@/composables/guest/useGuestQueue";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { useRateLimiting } from "@/composables/useRateLimiting";
+import { queuedGuestTrackUris } from "@/helpers/queue_position";
 import api from "@/plugins/api";
 import {
   type Artist,
@@ -262,13 +263,12 @@ const onSearchSelect = (item: MediaItemTypeOrItemMapping) => {
   }
 };
 
-const queuedUris = computed(() => {
-  const uris = new Set<string>();
-  for (const item of queueItems.value) {
-    if (item.media_item?.uri) uris.add(item.media_item.uri);
-  }
-  return uris;
-});
+const queuedUris = computed(() =>
+  queuedGuestTrackUris(
+    queueItems.value,
+    partyConfig.value?.prevent_duplicate_tracks ?? true,
+  ),
+);
 
 // --- Template-specific state ---
 const addingItems = ref(new Set<string>());

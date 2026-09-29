@@ -2,10 +2,13 @@ import {
   BEFORE_FIRST_INDEX,
   currentQueueIndex,
   isQueueEnded,
+  queuedGuestTrackUris,
 } from "@/helpers/queue_position";
 import { type PlayerQueue } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { playerQueue } from "../fixtures/playerQueue";
+import { queueItem } from "../fixtures/queueItem";
+import { track } from "../fixtures/track";
 
 function makeQueue(overrides: Partial<PlayerQueue> = {}): PlayerQueue {
   return playerQueue({ items: 5, ...overrides });
@@ -51,5 +54,25 @@ describe("isQueueEnded", () => {
 
   it("is false when there is no queue at all", () => {
     expect(isQueueEnded(undefined)).toBe(false);
+  });
+});
+
+describe("queuedGuestTrackUris", () => {
+  const songA = track({ item_id: "a", uri: "library://track/a" });
+  const songB = track({ item_id: "b", uri: "library://track/b" });
+  const items = [
+    queueItem({ queue_item_id: "1", media_item: songA }),
+    queueItem({ queue_item_id: "2", media_item: songB }),
+    queueItem({ queue_item_id: "3", media_item: songA }),
+  ];
+
+  it("is empty when Prevent Duplicate Tracks is off", () => {
+    expect(queuedGuestTrackUris(items, false)).toEqual(new Set());
+  });
+
+  it("holds every queued track when Prevent Duplicate Tracks is on", () => {
+    expect(queuedGuestTrackUris(items, true)).toEqual(
+      new Set([songA.uri, songB.uri]),
+    );
   });
 });
