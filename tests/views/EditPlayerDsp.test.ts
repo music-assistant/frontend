@@ -18,8 +18,7 @@ const apiMock = vi.hoisted(() => ({
   applyDSPPreset: vi.fn<MusicAssistantApi["applyDSPPreset"]>(),
   getDSPConfig: vi.fn<MusicAssistantApi["getDSPConfig"]>(),
   playerDSPCallback: undefined as
-    | ((event: { data: DSPConfig }) => void)
-    | undefined,
+    ((event: { data: DSPConfig }) => void) | undefined,
   players: { "player-1": {} },
   removeDSPPreset: vi.fn<MusicAssistantApi["removeDSPPreset"]>(),
   saveDSPConfig: vi.fn<MusicAssistantApi["saveDSPConfig"]>(),
