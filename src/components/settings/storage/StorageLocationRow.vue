@@ -35,6 +35,8 @@ import { useI18n } from "vue-i18n";
 /** A storage location on the Storage page, with the actions a managed one offers. */
 const props = defineProps<{
   location: StorageLocation;
+  // a command runs on the page, so no action may start
+  busy?: boolean;
   // the command running on this location, if any
   pending?: "reload" | "remove" | null;
 }>();
@@ -162,7 +164,7 @@ const removeBlockedReason = computed(() =>
         <Button
           variant="ghost"
           size="icon-sm"
-          :disabled="!!pending"
+          :disabled="busy || !!pending"
           :aria-busy="pending === 'reload' || undefined"
           :aria-label="`${t('settings.reload')}: ${name}`"
           :title="`${t('settings.reload')}: ${name}`"
@@ -175,7 +177,7 @@ const removeBlockedReason = computed(() =>
         <Button
           variant="ghost"
           size="icon-sm"
-          :disabled="!!pending"
+          :disabled="busy || !!pending"
           :aria-label="`${t('edit')}: ${name}`"
           :title="`${t('edit')}: ${name}`"
           data-testid="storage-edit"
@@ -195,7 +197,7 @@ const removeBlockedReason = computed(() =>
           variant="ghost"
           size="icon-sm"
           class="text-destructive hover:text-destructive"
-          :disabled="!!pending || !!removeBlockedReason"
+          :disabled="busy || !!pending || !!removeBlockedReason"
           :aria-busy="pending === 'remove' || undefined"
           :aria-label="`${t('remove')}: ${name}`"
           :aria-describedby="removeBlockedReason ? usedById : undefined"

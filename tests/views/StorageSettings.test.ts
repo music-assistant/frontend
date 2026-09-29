@@ -8,7 +8,12 @@ import {
   StorageUsage,
 } from "@/plugins/api/interfaces";
 import StorageSettings from "@/views/settings/StorageSettings.vue";
-import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
+import {
+  type DOMWrapper,
+  flushPromises,
+  mount,
+  type VueWrapper,
+} from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
 import {
@@ -280,6 +285,127 @@ describe("StorageSettings", () => {
   });
 });
 
+describe("StorageSettings while a command runs", () => {
+  it("keeps every row waiting and shows the spinner only on the running action", async () => {
+    const reload = deferred<typeof share>();
+    apiMock.reloadNetworkShare.mockReturnValue(reload.promise);
+    const wrapper = await mountPage();
+
+    await row(wrapper, share)
+      .get('[data-testid="storage-reload"]')
+      .trigger("click");
+
+    expect(actionStates(wrapper)).toEqual({
+      [share.path]: [true, true, true],
+      [folder.path]: [true],
+    });
+    expect(spinnersOf(wrapper, share)).toEqual(["storage-reload"]);
+    expect(spinnersOf(wrapper, folder)).toEqual([]);
+    // the page refreshes itself once the command is done
+    expect(isDisabled(wrapper.get('[data-testid="storage-refresh"]'))).toBe(
+      true,
+    );
+    // adding does not depend on the running command
+    expect(isDisabled(wrapper.get('[data-testid="storage-add-share"]'))).toBe(
+      false,
+    );
+
+    reload.resolve(share);
+    await flushPromises();
+
+    expect(actionStates(wrapper)).toEqual({
+      [share.path]: [false, false, false],
+      [folder.path]: [false],
+    });
+    expect(spinnersOf(wrapper, share)).toEqual([]);
+  });
+
+  it("lets no second row start a command while one runs", async () => {
+    apiMock.reloadNetworkShare.mockReturnValue(
+      deferred<typeof share>().promise,
+    );
+    const wrapper = await mountPage();
+    await row(wrapper, share)
+      .get('[data-testid="storage-reload"]')
+      .trigger("click");
+
+    await row(wrapper, folder)
+      .get('[data-testid="storage-remove"]')
+      .trigger("click");
+    // even a confirmation that got through is turned away
+    wrapper.findComponent(RemoveLocationDialog).vm.$emit("confirm", folder);
+    await flushPromises();
+
+    expect(wrapper.findComponent(RemoveLocationDialog).props("location")).toBe(
+      null,
+    );
+    expect(apiMock.removeLocalFolder).not.toHaveBeenCalled();
+  });
+
+  it("keeps the rows waiting until the refresh after the command is done", async () => {
+    const reloaded = deferred<ReturnType<typeof storageInfo>>();
+    apiMock.getStorageInfo
+      .mockResolvedValueOnce(
+        storageInfo({ locations: [media, share, folder, dataDir] }),
+      )
+      .mockReturnValueOnce(reloaded.promise);
+    const wrapper = await mountPage();
+
+    await row(wrapper, share)
+      .get('[data-testid="storage-reload"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(actionStates(wrapper)[folder.path]).toEqual([true]);
+
+    reloaded.resolve(
+      storageInfo({ locations: [media, share, folder, dataDir] }),
+    );
+    await flushPromises();
+
+    expect(actionStates(wrapper)[folder.path]).toEqual([false]);
+  });
+
+  it("frees the rows after a failed command", async () => {
+    const reason = "The NAS did not answer.";
+    apiMock.reloadNetworkShare.mockRejectedValue(
+      new ApiCommandError(reason, 1, reason),
+    );
+    const wrapper = await mountPage();
+
+    await row(wrapper, share)
+      .get('[data-testid="storage-reload"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(toastMock.error).toHaveBeenCalledWith(reason);
+    expect(apiMock.getStorageInfo).toHaveBeenCalledTimes(2);
+    expect(actionStates(wrapper)[share.path]).toEqual([false, false, false]);
+  });
+
+  it("frees the rows after a failed refresh", async () => {
+    apiMock.getStorageInfo
+      .mockResolvedValueOnce(
+        storageInfo({ locations: [media, share, folder, dataDir] }),
+      )
+      .mockRejectedValueOnce(new Error("connection lost"));
+    const wrapper = await mountPage();
+
+    await row(wrapper, share)
+      .get('[data-testid="storage-reload"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(toastMock.error).toHaveBeenCalledWith(
+      "settings.storage.load_failed",
+    );
+    expect(actionStates(wrapper)[share.path]).toEqual([false, false, false]);
+    expect(isDisabled(wrapper.get('[data-testid="storage-refresh"]'))).toBe(
+      false,
+    );
+  });
+});
+
 async function mountPage(): Promise<VueWrapper> {
   const wrapper = mount(StorageSettings, {
     global: {
@@ -316,4 +442,41 @@ function actionsOf(wrapper: VueWrapper, location: StorageLocation): string[] {
   return row(wrapper, location)
     .findAll("button")
     .map((button) => button.attributes("data-testid") ?? "");
+}
+
+/** Whether each action of each music location is disabled, by the location's path. */
+function actionStates(wrapper: VueWrapper): Record<string, boolean[]> {
+  const states: Record<string, boolean[]> = {};
+  for (const location of wrapper
+    .get('[data-testid="storage-music-locations"]')
+    .findAll('[data-testid="storage-location"]')) {
+    const buttons = location.findAll(
+      '[data-testid="storage-reload"], [data-testid="storage-edit"], [data-testid="storage-remove"]',
+    );
+    if (buttons.length === 0) continue;
+    states[location.attributes("data-path") as string] =
+      buttons.map(isDisabled);
+  }
+  return states;
+}
+
+/** The actions of a location that show a spinner. */
+function spinnersOf(wrapper: VueWrapper, location: StorageLocation): string[] {
+  return row(wrapper, location)
+    .findAll("button")
+    .filter((button) => button.find('[role="status"]').exists())
+    .map((button) => button.attributes("data-testid") ?? "");
+}
+
+function isDisabled(element: Omit<DOMWrapper<Element>, "exists">): boolean {
+  return element.attributes("disabled") !== undefined;
+}
+
+/** A promise the test settles by hand. */
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((settle) => {
+    resolve = settle;
+  });
+  return { promise, resolve };
 }

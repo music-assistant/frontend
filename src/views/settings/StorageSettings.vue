@@ -23,12 +23,14 @@
             <FolderPlus />
             {{ $t("settings.storage.add_local_folder") }}
           </Button>
+          <!-- the page refreshes itself once a running command is done -->
           <Button
             variant="ghost"
             size="icon-sm"
-            :disabled="loading"
+            :disabled="loading || !!pending"
             :aria-label="$t('refresh')"
             :title="$t('refresh')"
+            data-testid="storage-refresh"
             @click="refresh"
           >
             <RefreshCw :class="{ 'animate-spin': loading }" />
@@ -64,6 +66,7 @@
           v-for="location in mediaLocations"
           :key="location.path"
           :location="location"
+          :busy="!!pending"
           :pending="pending?.path === location.path ? pending.action : null"
           @reload="reloadShare(location)"
           @edit="openShareDialog(location)"
@@ -176,7 +179,8 @@ const showShareDialog = ref(false);
 const showFolderDialog = ref(false);
 const shareToEdit = ref<ManagedShareLocation | null>(null);
 const locationToRemove = ref<StorageLocation | null>(null);
-// the command running on a location, which keeps its actions from being pressed again
+// the command running on a location; one runs at a time, and the actions of every row
+// wait for it, so none is pressed on what the page showed before it
 const pending = ref<{ path: string; action: "reload" | "remove" } | null>(null);
 
 const canAddShare = computed(
@@ -209,16 +213,21 @@ const runCommand = async (
   successKey: string,
   failureKey: string,
 ) => {
+  if (pending.value) return;
   pending.value = { path: location.path, action };
   try {
-    await command();
-    toast.success(t(successKey));
-  } catch (error) {
-    toast.error(storageErrorText(error, t(failureKey)));
+    try {
+      await command();
+      toast.success(t(successKey));
+    } catch (error) {
+      toast.error(storageErrorText(error, t(failureKey)));
+    }
+    // the rows stay busy until they show what the command left behind; a failed
+    // refresh reports itself and keeps what the page had
+    await refresh();
   } finally {
     pending.value = null;
   }
-  await refresh();
 };
 
 const reloadShare = (location: StorageLocation) => {
