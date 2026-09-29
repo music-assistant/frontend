@@ -336,7 +336,6 @@ async function loadDiscography(): Promise<MediaItemType[]> {
 /** Albums the artist is credited on without being the album artist. */
 async function loadAppearsOn(): Promise<MediaItemType[]> {
   if (!itemDetails.value) return [];
-  // a provider artist's appearances can include slim album mappings
-  return (await loadArtistAppearsOn(itemDetails.value)) as MediaItemType[];
+  return await loadArtistAppearsOn(itemDetails.value);
 }
 </script>

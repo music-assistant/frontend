@@ -145,6 +145,7 @@ describe("useArtistRowData", () => {
   afterEach(() => {
     scopes.splice(0).forEach((scope) => scope.stop());
     store.currentUser = undefined;
+    vi.useRealTimers();
   });
 
   it("requests one list for two rows fed by the same source", async () => {
@@ -279,7 +280,6 @@ describe("useArtistRowData", () => {
 
     onLibraryChange({ event: EventType.MEDIA_ITEM_ADDED, data: added });
     await vi.runAllTimersAsync();
-    vi.useRealTimers();
 
     expect(mockLoadArtistAppearsOn).toHaveBeenCalledTimes(2);
     expect(itemIds(page.appearsOnItems.value)).toEqual(["guest"]);
@@ -331,7 +331,6 @@ describe("useArtistRowData", () => {
       data: album({ item_id: "added" }),
     });
     await vi.runAllTimersAsync();
-    vi.useRealTimers();
 
     expect(itemIds(page.discographyItems.value)).toEqual(["added"]);
     expect(mockLoadArtistReleases).toHaveBeenCalledTimes(2);

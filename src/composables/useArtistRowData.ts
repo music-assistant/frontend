@@ -18,7 +18,6 @@ import {
   MediaType,
   type Album,
   type Artist,
-  type ItemMapping,
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -43,7 +42,7 @@ export function useArtistRowData(
   const similarArtists = ref(new Map<RowSource, Artist[]>());
   const libraryTracks = ref<Track[]>();
   // fed by the artist alone, so these need no per-source cache
-  const appearsOn = ref<Array<Album | ItemMapping>>();
+  const appearsOn = ref<Album[]>();
   const discography = ref<Album[]>();
 
   // a new artist, or new provider mappings, start from empty rows; anything
