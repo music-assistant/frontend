@@ -167,9 +167,10 @@ describe("Settings breadcrumbs on the options of a player", () => {
  */
 async function providerTrail(
   providerPage: Component | boolean,
+  instanceId = "spotify--kitchen",
 ): Promise<ToolbarHeadingItem[]> {
   routeState.name = "editprovider";
-  routeState.params = { instanceId: "spotify--kitchen" };
+  routeState.params = { instanceId };
   const wrapper = mount(Settings, {
     global: {
       stubs: {
@@ -254,6 +255,43 @@ describe("Settings breadcrumbs on the storage page", () => {
         to: { name: "storagesettings" },
       },
     ]);
+  });
+});
+
+describe("Settings breadcrumbs on the settings of a provider that is not loaded", () => {
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    apiMock.getProvider.mockReturnValue(undefined);
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+    delete apiMock.providerManifests.fanarttv;
+    delete apiMock.providerManifests.filesystem_local;
+  });
+
+  it("lead to the sources of the type of its provider", async () => {
+    apiMock.providerManifests.fanarttv = {
+      name: "fanart.tv",
+      type: ProviderType.METADATA,
+    };
+
+    const trail = await providerTrail(true, "fanarttv--kitchen");
+
+    expect(trail[0].title).toBe("settings.metadataproviders");
+  });
+
+  // the server converts SMB and NFS sources into Local files, keeping their ids
+  it("lead a converted source to the music sources, by Local files", async () => {
+    apiMock.providerManifests.filesystem_local = {
+      name: "Local files",
+      type: ProviderType.MUSIC,
+    };
+
+    const trail = await providerTrail(true, "filesystem_nfs--k2Lm9xQa");
+
+    expect(trail[0].title).toBe("settings.music_sources");
   });
 });
 

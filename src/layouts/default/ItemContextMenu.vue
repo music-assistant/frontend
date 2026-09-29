@@ -292,6 +292,7 @@ import {
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { playerVisible } from "@/helpers/players";
+import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import {
   canAddToPlaylist,
   canEditPlaylistItems,
@@ -1281,7 +1282,7 @@ export const getContextMenuItems = async function (
             provider_instance: resolvedItem.provider,
             provider_domain:
               api.providers[resolvedItem.provider]?.domain ||
-              resolvedItem.provider.split("--")[0],
+              embeddedProviderDomain(resolvedItem.provider),
             item_id: resolvedItem.item_id,
             available: true,
           };

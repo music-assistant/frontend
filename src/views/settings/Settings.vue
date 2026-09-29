@@ -238,6 +238,7 @@ import { provideEditedProviderName } from "@/composables/useEditedProviderName";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
+import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import { availableSettingsSections } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import { requireServerVersion } from "@/plugins/api/helpers";
@@ -573,7 +574,7 @@ const activeTab = computed(() => {
     // disabled instances are not loaded, so fall back to the manifest type
     const providerType =
       api.getProvider(instanceId)?.type ||
-      api.providerManifests[instanceId.split("--")[0]]?.type;
+      api.providerManifests[embeddedProviderDomain(instanceId)]?.type;
     if (providerType === ProviderType.MUSIC) return "music_providers";
     if (providerType === ProviderType.PLAYER) return "player_providers";
     if (providerType === ProviderType.METADATA) return "metadata_providers";

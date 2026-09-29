@@ -3,6 +3,7 @@ import { store } from "../store";
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
 import { resolveActiveSourceId } from "@/composables/activeSource";
+import { resolveProviderDomain } from "@/helpers/provider_domain";
 import {
   resetServerTime,
   serverNow,
@@ -2823,12 +2824,11 @@ export class MusicAssistantApi {
       return this.providerManifests[provider_domain_or_instance_id].name;
     }
     // instance not loaded (e.g. a source not shared with this user): fall back
-    // to the generic provider name derived from the domain in the instance id
-    const domain = provider_domain_or_instance_id.split("--")[0];
-    if (domain in this.providerManifests) {
-      return this.providerManifests[domain].name;
-    }
-    return provider_domain_or_instance_id;
+    // to the generic name of the provider the instance id belongs to
+    const domain = resolveProviderDomain(provider_domain_or_instance_id, this);
+    return domain
+      ? this.providerManifests[domain].name
+      : provider_domain_or_instance_id;
   }
 
   public getProvider(
