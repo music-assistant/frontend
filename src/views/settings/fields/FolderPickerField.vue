@@ -86,35 +86,42 @@ const selectionOutsideLocations = computed(
   () => !!info.value && !!selectedPath.value && !selectedPosition.value,
 );
 
-const openFolder = async (target: StoragePosition) => {
+// how a folder request ended: the folder is shown, it could not be opened (the view
+// stays where it was), or a newer request took over
+type FolderResult = "opened" | "failed" | "superseded";
+
+const openFolder = async (target: StoragePosition): Promise<FolderResult> => {
   const request = ++folderRequest;
   loadingFolders.value = true;
   try {
     const names = await api.getStorageFolders(
       joinStoragePath(target.location.path, target.segments),
     );
-    if (request !== folderRequest) return;
+    if (request !== folderRequest) return "superseded";
     subfolders.value = names;
     position.value = target;
+    return "opened";
   } catch (error) {
-    if (request !== folderRequest) return;
+    if (request !== folderRequest) return "superseded";
     toast.error(
       storageErrorText(error, $t("settings.folder_picker.browse_failed")),
     );
+    return "failed";
   } finally {
     if (request === folderRequest) loadingFolders.value = false;
   }
 };
 
-const onNavigate = (target: StoragePosition | null) => {
-  if (target) {
-    void openFolder(target);
-    return;
-  }
+const showLocations = () => {
   // back at the locations, no folder request is waited for any more
   folderRequest++;
   loadingFolders.value = false;
   position.value = null;
+};
+
+const onNavigate = (target: StoragePosition | null) => {
+  if (target) void openFolder(target);
+  else showLocations();
 };
 
 const openLocation = (location: StorageLocation) =>
@@ -135,15 +142,20 @@ const reload = async () => {
   if (request !== folderRequest) return;
   const current = position.value;
   if (!current) return;
-  // the location may have gone away or become unavailable in the meantime
+  // the folder may have gone in the meantime, then the view falls back to the root of
+  // its location, and to the locations when the location is gone or fails as well
   const location = mediaLocations.value.find(
     (item) => item.path === current.location.path,
   );
   if (location?.available) {
-    await openFolder({ location, segments: current.segments });
-  } else {
-    position.value = null;
+    const reopened = await openFolder({ location, segments: current.segments });
+    if (reopened !== "failed") return;
+    if (current.segments.length > 0) {
+      const root = await openFolder({ location, segments: [] });
+      if (root !== "failed") return;
+    }
   }
+  showLocations();
 };
 
 onMounted(refresh);

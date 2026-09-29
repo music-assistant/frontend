@@ -431,6 +431,79 @@ describe("FolderPickerField while folders load", () => {
   });
 });
 
+describe("FolderPickerField when a folder is gone", () => {
+  const gone = () =>
+    Promise.reject(
+      new ApiCommandError(
+        "The folder does not exist.",
+        1,
+        "The folder does not exist.",
+      ),
+    );
+
+  it("goes back to the location root when a refresh finds the open folder gone", async () => {
+    const wrapper = await openMediaFolder();
+    await subfolderButtons(wrapper)[0].trigger("click");
+    await flushPromises();
+    expect(currentFolder(wrapper)).toBe("Albums");
+    apiMock.getStorageFolders.mockImplementation((path) =>
+      path === "/media/Albums" ? gone() : Promise.resolve(["Podcasts"]),
+    );
+
+    await wrapper.get('[data-testid="folder-picker-refresh"]').trigger("click");
+    await flushPromises();
+
+    expect(currentFolder(wrapper)).toBe("settings.storage.kind.builtin_media");
+    expect(subfolderNames(wrapper)).toEqual(["Podcasts"]);
+    // the reason tells why the view changed
+    expect(toastMock.error).toHaveBeenCalledWith("The folder does not exist.");
+    await wrapper.get('[data-testid="folder-picker-use"]').trigger("click");
+    expect(wrapper.emitted("update:value")).toEqual([["/media"]]);
+  });
+
+  it("goes back to the locations when the location root fails as well", async () => {
+    const wrapper = await openMediaFolder();
+    await subfolderButtons(wrapper)[0].trigger("click");
+    await flushPromises();
+    apiMock.getStorageFolders.mockImplementation(gone);
+
+    await wrapper.get('[data-testid="folder-picker-refresh"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="folder-picker-use"]').exists()).toBe(
+      false,
+    );
+    expect(locationButtons(wrapper)).toHaveLength(2);
+  });
+
+  it("goes back to the locations when the location itself is gone", async () => {
+    const wrapper = await openMediaFolder();
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [offlineShare, dataDir] }),
+    );
+
+    await wrapper.get('[data-testid="folder-picker-refresh"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="folder-picker-use"]').exists()).toBe(
+      false,
+    );
+    expect(locationButtons(wrapper)).toHaveLength(1);
+  });
+
+  it("stays where it was when a folder the user opens fails", async () => {
+    const wrapper = await openMediaFolder();
+    apiMock.getStorageFolders.mockImplementation(gone);
+
+    await subfolderButtons(wrapper)[0].trigger("click");
+    await flushPromises();
+
+    expect(toastMock.error).toHaveBeenCalledWith("The folder does not exist.");
+    expect(currentFolder(wrapper)).toBe("settings.storage.kind.builtin_media");
+    expect(subfolderNames(wrapper)).toEqual(["Albums", "Podcasts"]);
+  });
+});
+
 /** Mounts the picker and opens the media folder, whose subfolders load at once. */
 async function openMediaFolder(): Promise<VueWrapper> {
   const wrapper = await mountPicker();
