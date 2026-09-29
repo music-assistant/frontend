@@ -497,6 +497,17 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.CONFIG_PROVIDERS_READ },
           },
           {
+            path: "storage",
+            name: "storagesettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "storagesettings" */ "@/views/settings/StorageSettings.vue"
+              ),
+            props: true,
+            // managing the storage is admin work; members pick folders in the picker
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
+          },
+          {
             path: "players",
             name: "playersettings",
             component: () =>

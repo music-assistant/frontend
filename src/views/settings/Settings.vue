@@ -238,6 +238,7 @@ import { provideEditedProviderName } from "@/composables/useEditedProviderName";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
+import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import { availableSettingsSections } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import { requireServerVersion } from "@/plugins/api/helpers";
@@ -449,12 +450,14 @@ const settingsSections = computed(() =>
   ),
 );
 
+// grouped at the top of the list view; storage sits with the sources it serves
 const providerSectionNames = [
   "music_providers",
   "player_providers",
   "metadata_providers",
   "plugin_providers",
   "audio_analysis_providers",
+  "storage",
 ];
 
 const musicSections = computed(() => {
@@ -501,6 +504,7 @@ const getIconBackgroundStyle = (color: string) => {
     "deep-purple": "rgb(124, 58, 237)",
     orange: "rgb(249, 115, 22)",
     teal: "rgb(20, 184, 166)",
+    cyan: "rgb(6, 182, 212)",
     "grey-darken-1": "rgb(158, 158, 158)",
   };
   return { backgroundColor: colorMap[color] || colorMap.indigo };
@@ -551,10 +555,12 @@ const activeTab = computed(() => {
   if (name.includes("about")) {
     return "about";
   }
+  if (name === "storagesettings") {
+    return "storage";
+  }
 
   const typesQuery = router.currentRoute.value.query.types as
-    | string
-    | undefined;
+    string | undefined;
   const firstType = typesQuery ? typesQuery.split(",")[0].trim() : undefined;
   if (firstType === "music") return "music_providers";
   if (firstType === "player") return "player_providers";
@@ -567,7 +573,7 @@ const activeTab = computed(() => {
     // disabled instances are not loaded, so fall back to the manifest type
     const providerType =
       api.getProvider(instanceId)?.type ||
-      api.providerManifests[instanceId.split("--")[0]]?.type;
+      api.providerManifests[embeddedProviderDomain(instanceId)]?.type;
     if (providerType === ProviderType.MUSIC) return "music_providers";
     if (providerType === ProviderType.PLAYER) return "player_providers";
     if (providerType === ProviderType.METADATA) return "metadata_providers";
@@ -604,12 +610,10 @@ const breadcrumbItems = computed(() => {
         to: canConfigurePlayers ? { name: "playersettings" } : undefined,
       });
     } else if (currentTab === "system") {
-      if (
-        !(
-          name === "backgroundtasks" &&
-          !authManager.hasScope(Scope.CONFIG_CORE_WRITE)
-        )
-      ) {
+      if (!(
+        name === "backgroundtasks" &&
+        !authManager.hasScope(Scope.CONFIG_CORE_WRITE)
+      )) {
         items.push({
           title: t("settings.system"),
           disabled: name === "systemsettings",
@@ -663,6 +667,12 @@ const breadcrumbItems = computed(() => {
         title: t("settings.audio_analysis_providers"),
         disabled: name === "providersettings",
         to: { name: "providersettings", query: { types: "audio_analysis" } },
+      });
+    } else if (currentTab === "storage") {
+      items.push({
+        title: t("settings.storage.title"),
+        disabled: name === "storagesettings",
+        to: { name: "storagesettings" },
       });
     } else if (currentTab === "about") {
       items.push({

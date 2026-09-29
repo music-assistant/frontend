@@ -4,8 +4,10 @@
  */
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import {
+  type ItemMapping,
   type MediaItemType,
   type MediaItemTypeOrItemMapping,
+  MediaType,
   ProviderFeature,
   type Scope,
 } from "@/plugins/api/interfaces";
@@ -29,6 +31,7 @@ const { apiMock, hasScope, storeMock } = vi.hoisted(() => ({
     } as Record<string, unknown>,
     getProvider: vi.fn(),
     getLibraryItem: vi.fn(),
+    sendCommand: vi.fn(),
     players: {},
   },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
@@ -195,6 +198,45 @@ describe("library management in the item context menu", () => {
     hasScope.mockImplementation(scopeChecker(scopes));
 
     expect(await offeredManagement()).toEqual([]);
+  });
+});
+
+describe("mapping a source item onto a library item", () => {
+  const libraryTrack = track({ item_id: "5" });
+
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    apiMock.getProvider.mockReturnValue({ supported_features: [] });
+  });
+
+  // the server converts SMB and NFS sources into Local files, keeping their ids
+  it("maps an item of a converted source that is not loaded as Local files", async () => {
+    const sourceItem = {
+      item_id: "Artist/track.flac",
+      provider: "filesystem_smb--fyQZakP3",
+      name: "Track",
+      media_type: MediaType.TRACK,
+      available: true,
+    } as ItemMapping;
+
+    const entry = (await getContextMenuItems([sourceItem], libraryTrack)).find(
+      (item) => item.label === "map_provider_mapping",
+    );
+    await entry?.action?.();
+
+    expect(apiMock.sendCommand).toHaveBeenCalledWith(
+      "music/add_provider_mapping",
+      {
+        media_type: MediaType.TRACK,
+        db_id: "5",
+        mapping: {
+          provider_instance: "filesystem_smb--fyQZakP3",
+          provider_domain: "filesystem_local",
+          item_id: "Artist/track.flac",
+          available: true,
+        },
+      },
+    );
   });
 });
 

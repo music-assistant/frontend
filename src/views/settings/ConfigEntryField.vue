@@ -170,6 +170,15 @@
       @update:value="onUpdateValue($event)"
     />
 
+    <!-- folder on one of the server's storage locations -->
+    <FolderPickerField
+      v-else-if="confEntry.type == ConfigEntryType.FOLDER"
+      :entry="confEntry"
+      :label="displayLabel()"
+      :disabled="isFieldDisabled"
+      @update:value="onUpdateValue($event)"
+    />
+
     <!-- value with all options expanded: one button per option -->
     <RadioGroupField
       v-else-if="
@@ -179,6 +188,7 @@
       "
       :label="displayLabel()"
       :options="displayOptions"
+      :value="confEntry.value"
       :disabled="isFieldDisabled"
       @update:value="onUpdateValue($event)"
     />
@@ -307,6 +317,7 @@ import {
 } from "@/plugins/api/interfaces";
 import IconPicker from "@/components/IconPicker.vue";
 import AlertField from "./fields/AlertField.vue";
+import FolderPickerField from "./fields/FolderPickerField.vue";
 import HassControlPickerField from "./fields/HassControlPickerField.vue";
 import HassControlsField from "./fields/HassControlsField.vue";
 import LabelField from "./fields/LabelField.vue";
@@ -346,8 +357,7 @@ const isFieldDisabled = computed(() => {
 const imageSrc = computed(
   () =>
     (props.confEntry.value ?? props.confEntry.default_value) as
-      | string
-      | undefined,
+      string | undefined,
 );
 
 const emit = defineEmits<{

@@ -4,6 +4,7 @@ import {
   setFavoriteState,
   subscribeOwnFavorites,
 } from "@/helpers/favorites";
+import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import { api } from "@/plugins/api";
 import type {
   Album,
@@ -26,14 +27,7 @@ import {
 import { store } from "@/plugins/store";
 
 export type ShortcutItem =
-  | Playlist
-  | Artist
-  | Album
-  | Track
-  | Radio
-  | Podcast
-  | Audiobook
-  | Genre;
+  Playlist | Artist | Album | Track | Radio | Podcast | Audiobook | Genre;
 
 const SUPPORTED_TYPES = new Set([
   MediaType.PLAYLIST,
@@ -121,7 +115,7 @@ function getShortcutIdentities(
   ];
 
   // Also match the provider domain form for instance-based provider ids.
-  const baseProvider = safeDecode(item.provider.split("--")[0]);
+  const baseProvider = safeDecode(embeddedProviderDomain(item.provider));
   if (baseProvider && baseProvider !== safeDecode(item.provider)) {
     identities.push({
       provider: baseProvider,

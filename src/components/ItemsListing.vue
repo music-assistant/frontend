@@ -893,10 +893,7 @@ const isParentDirItem = function (item: MediaItemTypeOrItemMapping) {
 const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
   if (store.activePlayer?.playback_state != PlaybackState.PLAYING) return false;
   const current = store.curQueueItem?.media_item as
-    | Track
-    | Radio
-    | PodcastEpisode
-    | undefined;
+    Track | Radio | PodcastEpisode | undefined;
   if (!current) return false;
   switch (itemtype) {
     case "tracks":

@@ -1,7 +1,27 @@
 import { useRowRequests } from "@/composables/useRowRequests";
+import {
+  EventType,
+  MediaType,
+  type EventMessage,
+} from "@/plugins/api/interfaces";
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { effectScope, ref, type EffectScope } from "vue";
+
+const { mockSubscribeMulti, mockUnsubscribe, mockOnLibrarySyncCompleted } =
+  vi.hoisted(() => ({
+    mockSubscribeMulti: vi.fn(),
+    mockUnsubscribe: vi.fn(),
+    mockOnLibrarySyncCompleted: vi.fn(),
+  }));
+
+vi.mock("@/composables/useLibrarySync", () => ({
+  onLibrarySyncCompleted: mockOnLibrarySyncCompleted,
+}));
+
+vi.mock("@/plugins/api", () => ({
+  api: { subscribe_multi: mockSubscribeMulti },
+}));
 
 interface Item {
   id: string;
@@ -15,10 +35,32 @@ function setupRequests() {
   const onReset = vi.fn();
   const scope = effectScope();
   scopes.push(scope);
-  const { fetchOnce } = scope.run(() =>
+  const { fetchOnce, refetchOnLibraryChange } = scope.run(() =>
     useRowRequests(item, (shown) => shown.id, onReset),
   )!;
-  return { item, onReset, fetchOnce };
+  return { item, onReset, fetchOnce, refetchOnLibraryChange, scope };
+}
+
+/** Listens for library changes and returns a way to emit one. */
+function watchLibrary(
+  page: ReturnType<typeof setupRequests>,
+  prefixesByType: Partial<Record<MediaType, string[]>>,
+  reload: () => void,
+) {
+  mockSubscribeMulti.mockReturnValue(mockUnsubscribe);
+  mockOnLibrarySyncCompleted.mockReturnValue(mockUnsubscribe);
+  page.scope.run(() => page.refetchOnLibraryChange(prefixesByType, reload));
+  const [events, listener] = mockSubscribeMulti.mock.lastCall!;
+  expect(events).toEqual([
+    EventType.MEDIA_ITEM_ADDED,
+    EventType.MEDIA_ITEM_UPDATED,
+    EventType.MEDIA_ITEM_DELETED,
+  ]);
+  return (mediaType: MediaType) =>
+    (listener as (evt: EventMessage) => void)({
+      event: EventType.MEDIA_ITEM_ADDED,
+      data: { media_type: mediaType },
+    });
 }
 
 /** Puts an item on screen, the way a page does once its details load. */
@@ -30,6 +72,8 @@ async function show(page: ReturnType<typeof setupRequests>, id: string) {
 describe("useRowRequests", () => {
   afterEach(() => {
     scopes.splice(0).forEach((scope) => scope.stop());
+    vi.useRealTimers();
+    vi.clearAllMocks();
     vi.restoreAllMocks();
   });
 
@@ -106,5 +150,104 @@ describe("useRowRequests", () => {
     );
 
     expect(store).toHaveBeenCalledWith([]);
+  });
+
+  it("refetches the affected keys once after a burst of library changes", async () => {
+    vi.useFakeTimers();
+    const page = setupRequests();
+    await show(page, "a");
+    const load = vi.fn().mockResolvedValue([]);
+    const reload = vi.fn(async () => {
+      await page.fetchOnce("releases:library", load, vi.fn());
+      await page.fetchOnce("similar", load, vi.fn());
+    });
+    await reload();
+    const emit = watchLibrary(
+      page,
+      { [MediaType.ALBUM]: ["releases"] },
+      reload,
+    );
+
+    emit(MediaType.ALBUM);
+    emit(MediaType.ALBUM);
+    await vi.runAllTimersAsync();
+
+    expect(reload).toHaveBeenCalledTimes(2);
+    expect(load).toHaveBeenCalledTimes(3);
+  });
+
+  it("ignores changes to media types the rows do not hold", async () => {
+    vi.useFakeTimers();
+    const page = setupRequests();
+    await show(page, "a");
+    const reload = vi.fn();
+    const emit = watchLibrary(
+      page,
+      { [MediaType.ALBUM]: ["releases"] },
+      reload,
+    );
+
+    emit(MediaType.PLAYLIST);
+    await vi.runAllTimersAsync();
+
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("drops a response that arrives after its key was refetched", async () => {
+    vi.useFakeTimers();
+    const page = setupRequests();
+    await show(page, "a");
+    let resolveLoad: (items: string[]) => void = () => {};
+    const store = vi.fn();
+    const pending = page.fetchOnce(
+      "releases",
+      () =>
+        new Promise<string[]>((resolve) => {
+          resolveLoad = resolve;
+        }),
+      store,
+    );
+    const reload = () =>
+      page.fetchOnce("releases", async () => ["fresh"], store);
+    const emit = watchLibrary(
+      page,
+      { [MediaType.ALBUM]: ["releases"] },
+      reload,
+    );
+
+    emit(MediaType.ALBUM);
+    await vi.runAllTimersAsync();
+    resolveLoad(["stale"]);
+    await pending;
+
+    expect(store).toHaveBeenCalledTimes(1);
+    expect(store).toHaveBeenCalledWith(["fresh"]);
+  });
+
+  it("stops listening when the page goes away", async () => {
+    const page = setupRequests();
+    watchLibrary(page, { [MediaType.ALBUM]: ["releases"] }, vi.fn());
+
+    page.scope.stop();
+
+    expect(mockUnsubscribe).toHaveBeenCalledTimes(2);
+  });
+
+  it("refetches the affected keys when a library sync finishes", async () => {
+    vi.useFakeTimers();
+    const page = setupRequests();
+    await show(page, "a");
+    const load = vi.fn().mockResolvedValue([]);
+    const reload = () => page.fetchOnce("releases", load, vi.fn());
+    await reload();
+    watchLibrary(page, { [MediaType.ALBUM]: ["releases"] }, reload);
+    const [mediaType, onSyncCompleted] =
+      mockOnLibrarySyncCompleted.mock.lastCall!;
+
+    (onSyncCompleted as () => void)();
+    await vi.runAllTimersAsync();
+
+    expect(mediaType).toBe(MediaType.ALBUM);
+    expect(load).toHaveBeenCalledTimes(2);
   });
 });

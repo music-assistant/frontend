@@ -90,12 +90,7 @@ interface FilterOption {
 }
 
 type CountMediaType =
-  | "track"
-  | "album"
-  | "artist"
-  | "playlist"
-  | "podcast"
-  | "audiobook";
+  "track" | "album" | "artist" | "playlist" | "podcast" | "audiobook";
 type CountKey = `${CountMediaType}Count`;
 
 // count columns relevant to each taxonomy; "all" shows everything.
@@ -282,29 +277,27 @@ const columns: ColumnDef<GenreRow>[] = [
         ),
       ]),
   },
-  ...mediaTypeDefs.map(
-    ({ key, countKey, id }): ColumnDef<GenreRow> => ({
-      id,
-      accessorKey: countKey,
-      header: ({ column }) =>
-        h(DataTableColumnHeader, {
-          // h() can't infer the generic prop, so cast to the widened Column type.
-          column: column as Column<unknown, unknown>,
-          title: toSentenceCase(t(`${key}s`)),
-          align: "center",
-        }),
-      cell: ({ row }) =>
-        h(
-          "div",
-          {
-            class:
-              "cursor-pointer text-center tabular-nums text-muted-foreground hover:text-foreground",
-            onClick: () => emit("navigate-library", row.original.genre, key),
-          },
-          formatCount(row.original[countKey]),
-        ),
-    }),
-  ),
+  ...mediaTypeDefs.map(({ key, countKey, id }): ColumnDef<GenreRow> => ({
+    id,
+    accessorKey: countKey,
+    header: ({ column }) =>
+      h(DataTableColumnHeader, {
+        // h() can't infer the generic prop, so cast to the widened Column type.
+        column: column as Column<unknown, unknown>,
+        title: toSentenceCase(t(`${key}s`)),
+        align: "center",
+      }),
+    cell: ({ row }) =>
+      h(
+        "div",
+        {
+          class:
+            "cursor-pointer text-center tabular-nums text-muted-foreground hover:text-foreground",
+          onClick: () => emit("navigate-library", row.original.genre, key),
+        },
+        formatCount(row.original[countKey]),
+      ),
+  })),
   {
     id: "actions",
     cell: ({ row }) =>

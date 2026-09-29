@@ -14,11 +14,12 @@ import {
   type RowSource,
 } from "@/components/details/rowRegistry";
 import { mappingsIdentity, useRowRequests } from "@/composables/useRowRequests";
-import type {
-  Album,
-  Artist,
-  ItemMapping,
-  Track,
+import {
+  MediaType,
+  type Album,
+  type Artist,
+  type ItemMapping,
+  type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed, ref, watch, type Ref } from "vue";
@@ -46,14 +47,26 @@ export function useArtistRowData(
 
   // a new artist, or new provider mappings, start from empty rows; anything
   // else (a favorite toggle, a metadata update) keeps what is already loaded
-  const { fetchOnce } = useRowRequests(artist, mappingsIdentity, () => {
-    releases.value = new Map();
-    topTracks.value = new Map();
-    similarArtists.value = new Map();
-    libraryTracks.value = undefined;
-    discography.value = undefined;
-    loadRowData();
-  });
+  const { fetchOnce, refetchOnLibraryChange } = useRowRequests(
+    artist,
+    mappingsIdentity,
+    () => {
+      releases.value = new Map();
+      topTracks.value = new Map();
+      similarArtists.value = new Map();
+      libraryTracks.value = undefined;
+      discography.value = undefined;
+      loadRowData();
+    },
+  );
+
+  refetchOnLibraryChange(
+    {
+      [MediaType.ALBUM]: ["releases", "discography"],
+      [MediaType.TRACK]: ["library_tracks", "top_tracks"],
+    },
+    () => loadRowData(),
+  );
 
   const rowSource = function (rowId: ArtistRowId): RowSource | undefined {
     if (!artist.value) return undefined;
