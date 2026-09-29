@@ -7,10 +7,12 @@ import { useArtistRowData } from "@/composables/useArtistRowData";
 import {
   AlbumType,
   ArtistType,
+  EventType,
   ProviderFeature,
   ProviderType,
   type Album,
   type Artist,
+  type EventMessage,
   type Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -33,6 +35,10 @@ const {
 } = vi.hoisted(() => ({
   mockApi: {
     getProvider: vi.fn(),
+    subscribe: vi.fn(() => () => {}),
+    subscribe_multi: vi.fn<
+      (events: EventType[], callback: (evt: EventMessage) => void) => () => void
+    >(() => () => {}),
     providers: {} as Record<string, unknown>,
   },
   mockLoadArtistReleases:
@@ -285,6 +291,28 @@ describe("useArtistRowData", () => {
     await flushPromises();
 
     expect(mockLoadArtistDiscography).toHaveBeenCalledTimes(1);
+  });
+
+  it("refetches the album rows, not the track rows, after an album is added", async () => {
+    vi.useFakeTimers();
+    const page = setupRowData({
+      rows: ["discography", "albums", "top_tracks"],
+    });
+    await showArtist(page, libraryArtist());
+    mockLoadArtistDiscography.mockResolvedValue([album({ item_id: "added" })]);
+    const [, onLibraryChange] = mockApi.subscribe_multi.mock.lastCall!;
+
+    onLibraryChange({
+      event: EventType.MEDIA_ITEM_ADDED,
+      data: album({ item_id: "added" }),
+    });
+    await vi.runAllTimersAsync();
+    vi.useRealTimers();
+
+    expect(itemIds(page.discographyItems.value)).toEqual(["added"]);
+    expect(mockLoadArtistReleases).toHaveBeenCalledTimes(2);
+    expect(mockLoadArtistTopTracks).toHaveBeenCalledTimes(1);
+    expect(mockLoadArtistLibraryTracks).toHaveBeenCalledTimes(1);
   });
 
   it("requests no discography when only other rows show", async () => {

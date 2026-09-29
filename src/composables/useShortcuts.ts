@@ -4,6 +4,7 @@ import {
   setFavoriteState,
   subscribeOwnFavorites,
 } from "@/helpers/favorites";
+import { embeddedProviderDomains } from "@/helpers/provider_domain";
 import { api } from "@/plugins/api";
 import type {
   Album,
@@ -26,14 +27,7 @@ import {
 import { store } from "@/plugins/store";
 
 export type ShortcutItem =
-  | Playlist
-  | Artist
-  | Album
-  | Track
-  | Radio
-  | Podcast
-  | Audiobook
-  | Genre;
+  Playlist | Artist | Album | Track | Radio | Podcast | Audiobook | Genre;
 
 const SUPPORTED_TYPES = new Set([
   MediaType.PLAYLIST,
@@ -120,14 +114,17 @@ function getShortcutIdentities(
     },
   ];
 
-  // Also match the provider domain form for instance-based provider ids.
-  const baseProvider = safeDecode(item.provider.split("--")[0]);
-  if (baseProvider && baseProvider !== safeDecode(item.provider)) {
-    identities.push({
-      provider: baseProvider,
-      mediaType: item.media_type,
-      itemId: safeDecode(item.item_id),
-    });
+  // Also match the provider domain form for instance-based provider ids; a converted
+  // source by the domain it had as well as the one it now has.
+  for (const domain of embeddedProviderDomains(item.provider)) {
+    const baseProvider = safeDecode(domain);
+    if (baseProvider && baseProvider !== safeDecode(item.provider)) {
+      identities.push({
+        provider: baseProvider,
+        mediaType: item.media_type,
+        itemId: safeDecode(item.item_id),
+      });
+    }
   }
 
   if ("provider_mappings" in item && Array.isArray(item.provider_mappings)) {
@@ -138,11 +135,18 @@ function getShortcutIdentities(
         itemId: safeDecode(mapping.item_id),
       });
       // Some URIs store provider domain instead of provider instance.
-      identities.push({
-        provider: safeDecode(mapping.provider_domain),
-        mediaType: item.media_type,
-        itemId: safeDecode(mapping.item_id),
-      });
+      const domains = new Set([
+        mapping.provider_domain,
+        // A converted source also by the domain its id names.
+        ...embeddedProviderDomains(mapping.provider_instance),
+      ]);
+      for (const domain of domains) {
+        identities.push({
+          provider: safeDecode(domain),
+          mediaType: item.media_type,
+          itemId: safeDecode(mapping.item_id),
+        });
+      }
     }
   }
 

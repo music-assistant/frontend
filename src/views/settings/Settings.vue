@@ -238,6 +238,7 @@ import { provideEditedProviderName } from "@/composables/useEditedProviderName";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
+import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import { availableSettingsSections } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import { requireServerVersion } from "@/plugins/api/helpers";
@@ -535,7 +536,8 @@ const activeTab = computed(() => {
     name === "backgroundtasks" ||
     name === "diagnostics" ||
     name === "genremanagement" ||
-    name === "audioanalysissettings"
+    name === "audioanalysissettings" ||
+    name === "storagesettings"
   ) {
     return "system";
   }
@@ -553,8 +555,7 @@ const activeTab = computed(() => {
   }
 
   const typesQuery = router.currentRoute.value.query.types as
-    | string
-    | undefined;
+    string | undefined;
   const firstType = typesQuery ? typesQuery.split(",")[0].trim() : undefined;
   if (firstType === "music") return "music_providers";
   if (firstType === "player") return "player_providers";
@@ -567,7 +568,7 @@ const activeTab = computed(() => {
     // disabled instances are not loaded, so fall back to the manifest type
     const providerType =
       api.getProvider(instanceId)?.type ||
-      api.providerManifests[instanceId.split("--")[0]]?.type;
+      api.providerManifests[embeddedProviderDomain(instanceId)]?.type;
     if (providerType === ProviderType.MUSIC) return "music_providers";
     if (providerType === ProviderType.PLAYER) return "player_providers";
     if (providerType === ProviderType.METADATA) return "metadata_providers";
@@ -604,12 +605,10 @@ const breadcrumbItems = computed(() => {
         to: canConfigurePlayers ? { name: "playersettings" } : undefined,
       });
     } else if (currentTab === "system") {
-      if (
-        !(
-          name === "backgroundtasks" &&
-          !authManager.hasScope(Scope.CONFIG_CORE_WRITE)
-        )
-      ) {
+      if (!(
+        name === "backgroundtasks" &&
+        !authManager.hasScope(Scope.CONFIG_CORE_WRITE)
+      )) {
         items.push({
           title: t("settings.system"),
           disabled: name === "systemsettings",
@@ -737,6 +736,12 @@ const breadcrumbItems = computed(() => {
     .with("genremanagement", () => {
       items.push({
         title: t("settings.genre_management"),
+        disabled: true,
+      });
+    })
+    .with("storagesettings", () => {
+      items.push({
+        title: t("settings.storage.title"),
         disabled: true,
       });
     })
