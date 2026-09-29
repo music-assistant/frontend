@@ -734,8 +734,7 @@ function onGuardedClose(event: Event) {
   // them as an outside click and dismiss the whole dialog. Keep it open when the
   // interaction lands inside a Vuetify overlay.
   const original = (event as CustomEvent).detail?.originalEvent as
-    | Event
-    | undefined;
+    Event | undefined;
   const target = (original?.target ?? event.target) as HTMLElement | null;
   if (target?.closest?.(".v-overlay-container, .v-overlay, .v-menu")) {
     event.preventDefault();

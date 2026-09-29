@@ -1200,11 +1200,7 @@ export type MediaItemType =
   | BrowseFolder;
 
 export type PlayableMediaItemType =
-  | Track
-  | Radio
-  | AudioSource
-  | Audiobook
-  | PodcastEpisode;
+  Track | Radio | AudioSource | Audiobook | PodcastEpisode;
 export type MediaItemTypeOrItemMapping = MediaItemType | ItemMapping;
 
 export interface SearchResults {
@@ -2096,14 +2092,10 @@ export interface AIRadioFlowOptional {
 }
 
 export type AIRadioFlowItem =
-  | AIRadioFlowMust
-  | AIRadioFlowAlternative
-  | AIRadioFlowOptional;
+  AIRadioFlowMust | AIRadioFlowAlternative | AIRadioFlowOptional;
 
 export type AIRadioPlacement =
-  | "start_of_playlist"
-  | "between_songs"
-  | "end_of_playlist";
+  "start_of_playlist" | "between_songs" | "end_of_playlist";
 
 export interface AIRadioSectionOrderRule {
   when: AIRadioPlacement;

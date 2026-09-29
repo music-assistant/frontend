@@ -500,8 +500,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   }
 
   function getParticipantStorageContext():
-    | MusicQuizParticipantStorageContext
-    | undefined {
+    MusicQuizParticipantStorageContext | undefined {
     const connectionIdentity = api.isRemoteConnection.value
       ? createRemoteConnectionIdentity(
           remoteConnectionManager.currentRemoteId.value,

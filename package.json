@@ -79,7 +79,7 @@
         "lint-staged": "^17.5.1",
         "material-design-icons-iconfont": "6.7.0",
         "oxlint": "^1.80.0",
-        "prettier": "3.8.3",
+        "prettier": "3.9.9",
         "sass": "1.104.0",
         "typescript": "6.0.3",
         "typescript-eslint": "^8.70.1",

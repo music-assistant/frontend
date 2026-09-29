@@ -32,10 +32,7 @@ export interface NetworkShareFormOptions {
  * replace, `invalid` and `failed` leave the form open with the reason shown.
  */
 export type NetworkShareSaveResult =
-  | "saved"
-  | "unchanged"
-  | "invalid"
-  | "failed";
+  "saved" | "unchanged" | "invalid" | "failed";
 
 /**
  * The state of the form that adds a network share or edits a managed one, and the

@@ -40,6 +40,7 @@ vi.mock("@/plugins/api", () => ({
     getItem: mockGetItem,
     getArtist: mockGetArtist,
     subscribe: mockSubscribe,
+    subscribe_multi: mockSubscribe,
     providers: {},
     getProvider: () => undefined,
     hasStreamingProviders: { value: false },

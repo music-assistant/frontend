@@ -555,8 +555,7 @@ const activeTab = computed(() => {
   }
 
   const typesQuery = router.currentRoute.value.query.types as
-    | string
-    | undefined;
+    string | undefined;
   const firstType = typesQuery ? typesQuery.split(",")[0].trim() : undefined;
   if (firstType === "music") return "music_providers";
   if (firstType === "player") return "player_providers";
@@ -606,12 +605,10 @@ const breadcrumbItems = computed(() => {
         to: canConfigurePlayers ? { name: "playersettings" } : undefined,
       });
     } else if (currentTab === "system") {
-      if (
-        !(
-          name === "backgroundtasks" &&
-          !authManager.hasScope(Scope.CONFIG_CORE_WRITE)
-        )
-      ) {
+      if (!(
+        name === "backgroundtasks" &&
+        !authManager.hasScope(Scope.CONFIG_CORE_WRITE)
+      )) {
         items.push({
           title: t("settings.system"),
           disabled: name === "systemsettings",

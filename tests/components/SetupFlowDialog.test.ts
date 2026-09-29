@@ -57,8 +57,7 @@ const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
 );
 
 let launchSetupFlow:
-  | ((event: SetupFlowDialogEvent) => Promise<void>)
-  | undefined;
+  ((event: SetupFlowDialogEvent) => Promise<void>) | undefined;
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,

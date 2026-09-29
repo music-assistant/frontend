@@ -27,14 +27,7 @@ import {
 import { store } from "@/plugins/store";
 
 export type ShortcutItem =
-  | Playlist
-  | Artist
-  | Album
-  | Track
-  | Radio
-  | Podcast
-  | Audiobook
-  | Genre;
+  Playlist | Artist | Album | Track | Radio | Podcast | Audiobook | Genre;
 
 const SUPPORTED_TYPES = new Set([
   MediaType.PLAYLIST,
