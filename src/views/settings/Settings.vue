@@ -606,11 +606,9 @@ const breadcrumbItems = computed(() => {
         to: canConfigurePlayers ? { name: "playersettings" } : undefined,
       });
     } else if (currentTab === "system") {
-      // these pages open without the scope of the System page, which such a user
-      // can not reach
       if (
         !(
-          (name === "backgroundtasks" || name === "storagesettings") &&
+          name === "backgroundtasks" &&
           !authManager.hasScope(Scope.CONFIG_CORE_WRITE)
         )
       ) {

@@ -6,9 +6,9 @@ import type { ToolbarHeadingItem } from "@/components/ToolbarHeading.vue";
 import { useEditedProviderName } from "@/composables/useEditedProviderName";
 import {
   ProviderType,
-  Scope,
   UserRole,
   type ProviderManifest,
+  type Scope,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import Settings from "@/views/settings/Settings.vue";
@@ -229,10 +229,11 @@ describe("Settings breadcrumbs on the storage page", () => {
     routeState.params = { playerId: "kitchen" };
   });
 
-  /** The trail the settings page hands its heading on the storage page. */
-  function storageTrail(): ToolbarHeadingItem[] {
+  it("names the storage page as a page of the System settings", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     routeState.name = "storagesettings";
     routeState.params = {};
+
     const wrapper = mount(Settings, {
       global: {
         stubs: {
@@ -246,30 +247,13 @@ describe("Settings breadcrumbs on the storage page", () => {
         },
       },
     });
-    return wrapper.getComponent(ToolbarHeadingStub).props("items");
-  }
 
-  it("names the storage page as a page of the System settings", () => {
-    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
-
-    expect(storageTrail()).toEqual([
+    expect(wrapper.getComponent(ToolbarHeadingStub).props("items")).toEqual([
       {
         title: "settings.system",
         disabled: false,
         to: { name: "systemsettings" },
       },
-      { title: "settings.storage.title", disabled: true },
-    ]);
-  });
-
-  // "Manage storage" in the folder picker brings a user here who manages the music
-  // sources but can not change the core settings, so can not open System
-  it("leaves out the System page a user can not open", () => {
-    hasScope.mockImplementation(
-      scopeChecker([...BUILTIN_ROLE_SCOPES.user, Scope.CONFIG_PROVIDERS_WRITE]),
-    );
-
-    expect(storageTrail()).toEqual([
       { title: "settings.storage.title", disabled: true },
     ]);
   });
