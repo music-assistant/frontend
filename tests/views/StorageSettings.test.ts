@@ -23,7 +23,7 @@ import {
   storageLocation,
 } from "../fixtures/storage";
 
-const { apiMock, toastMock } = vi.hoisted(() => ({
+const { apiMock, eventbusMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
     serverInfo: {
       value: { server_version: "2.11.0", homeassistant_addon: false },
@@ -33,10 +33,12 @@ const { apiMock, toastMock } = vi.hoisted(() => ({
     removeNetworkShare: vi.fn<MusicAssistantApi["removeNetworkShare"]>(),
     removeLocalFolder: vi.fn<MusicAssistantApi["removeLocalFolder"]>(),
   },
+  eventbusMock: { emit: vi.fn(), on: vi.fn(), off: vi.fn() },
   toastMock: { error: vi.fn(), success: vi.fn() },
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+vi.mock("@/plugins/eventbus", () => ({ eventbus: eventbusMock }));
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
   canonicalizeLocale: (locale: string) => locale,
@@ -162,13 +164,17 @@ describe("StorageSettings", () => {
   it("offers each music location the actions it supports", async () => {
     const wrapper = await mountPage();
 
-    expect(actionsOf(wrapper, media)).toEqual([]);
+    expect(actionsOf(wrapper, media)).toEqual(["storage-use-as-source"]);
     expect(actionsOf(wrapper, share)).toEqual([
+      "storage-use-as-source",
       "storage-reload",
       "storage-edit",
       "storage-remove",
     ]);
-    expect(actionsOf(wrapper, folder)).toEqual(["storage-remove"]);
+    expect(actionsOf(wrapper, folder)).toEqual([
+      "storage-use-as-source",
+      "storage-remove",
+    ]);
     expect(row(wrapper, share).text()).toContain(
       "settings.storage.share_summary_via_ha",
     );
@@ -281,6 +287,82 @@ describe("StorageSettings", () => {
         ?.props("shownUsedBy");
     expect(shownOn(mediaFolder)).toEqual(["Local files"]);
     expect(shownOn(nas)).toEqual(["Filesystem (remote share)"]);
+  });
+
+  it("offers only an available music location no source reads as a music source", async () => {
+    const used = storageLocation({ ...folder, used_by: ["Audiobooks"] });
+    const readThrough = managedShare({ read_by: ["Local files"] });
+    const gone = storageLocation({
+      path: "/media/usb",
+      kind: StorageKind.REMOVABLE,
+      available: false,
+    });
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [media, used, readThrough, gone, dataDir] }),
+    );
+
+    const wrapper = await mountPage();
+
+    const offered = (location: StorageLocation) =>
+      row(wrapper, location)
+        .find('[data-testid="storage-use-as-source"]')
+        .exists();
+    expect(offered(media)).toBe(true);
+    expect(offered(used)).toBe(false);
+    expect(offered(readThrough)).toBe(false);
+    expect(offered(gone)).toBe(false);
+    expect(offered(dataDir)).toBe(false);
+  });
+
+  it("sets up a Local files source on the folder of the location", async () => {
+    const wrapper = await mountPage();
+
+    await row(wrapper, share)
+      .get('[data-testid="storage-use-as-source"]')
+      .trigger("click");
+
+    expect(eventbusMock.emit).toHaveBeenCalledWith("setupFlowDialog", {
+      kind: "provider",
+      domain: "filesystem_local",
+      initialValues: { path: "/media/nas_music" },
+      onFlowEnded: expect.any(Function),
+    });
+  });
+
+  it("fetches the storage again once the source is set up", async () => {
+    const wrapper = await mountPage();
+    await row(wrapper, share)
+      .get('[data-testid="storage-use-as-source"]')
+      .trigger("click");
+    const { onFlowEnded } = eventbusMock.emit.mock.calls[0]![1];
+
+    onFlowEnded(false);
+    await flushPromises();
+    expect(apiMock.getStorageInfo).toHaveBeenCalledTimes(1);
+
+    onFlowEnded(true);
+    await flushPromises();
+    expect(apiMock.getStorageInfo).toHaveBeenCalledTimes(2);
+  });
+
+  it("offers a share that was just added as a music source, if no source reads it", async () => {
+    const wrapper = await mountPage();
+    const addedAction = wrapper
+      .findComponent(NetworkShareDialog)
+      .props("addedAction")!;
+
+    const action = addedAction(share);
+    expect(action?.label).toBe("settings.storage.use_as_source");
+    action?.onClick(new MouseEvent("click"));
+    expect(eventbusMock.emit).toHaveBeenCalledWith(
+      "setupFlowDialog",
+      expect.objectContaining({ initialValues: { path: "/media/nas_music" } }),
+    );
+
+    // on Home Assistant a Local files source on /media already reads a new share
+    expect(addedAction(managedShare({ read_by: ["Local files"] }))).toBe(
+      undefined,
+    );
   });
 
   it("tells why any unavailable location is unavailable", async () => {
@@ -411,6 +493,11 @@ describe("StorageSettings while a command runs", () => {
     });
     expect(spinnersOf(wrapper, share)).toEqual(["storage-reload"]);
     expect(spinnersOf(wrapper, folder)).toEqual([]);
+    expect(
+      isDisabled(
+        row(wrapper, folder).get('[data-testid="storage-use-as-source"]'),
+      ),
+    ).toBe(true);
     // the page refreshes itself once the command is done
     expect(isDisabled(wrapper.get('[data-testid="storage-refresh"]'))).toBe(
       true,

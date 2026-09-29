@@ -4,6 +4,7 @@ import { i18n } from "@/plugins/i18n";
 import { describe, expect, it } from "vitest";
 import { managedShare, storageLocation } from "../../tests/fixtures/storage";
 import {
+  canHoldNewSource,
   emptyNetworkShareForm,
   findStoragePosition,
   formatNames,
@@ -285,6 +286,24 @@ describe("storageLocationName", () => {
         storageLocation({ kind: StorageKind.REMOVABLE, name: "SANDISK" }),
       ),
     ).toBe("SANDISK");
+  });
+});
+
+describe("canHoldNewSource", () => {
+  it("takes an available music location that no source reads", () => {
+    expect(canHoldNewSource(managedShare())).toBe(true);
+  });
+
+  it.each([
+    ["a source reads from inside it", { used_by: ["Local files"] }],
+    [
+      "a source reads it through a folder around it",
+      { read_by: ["Local files"] },
+    ],
+    ["it is not available", { available: false }],
+    ["it is storage of the server itself", { usage: StorageUsage.DATA }],
+  ])("refuses a location when %s", (_reason, overrides) => {
+    expect(canHoldNewSource(managedShare(overrides))).toBe(false);
   });
 });
 

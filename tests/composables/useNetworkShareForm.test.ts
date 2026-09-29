@@ -128,6 +128,25 @@ describe("useNetworkShareForm", () => {
     expect(shareForm.saving.value).toBe(false);
   });
 
+  it("offers the next step in the toast of a share it added", async () => {
+    const onClick = vi.fn();
+    const addedAction = vi.fn(() => ({
+      label: "Use as music source",
+      onClick,
+    }));
+    const { shareForm } = openForm({ addedAction });
+    shareForm.form.value.server = "nas.local";
+    shareForm.form.value.share = "music";
+
+    await shareForm.save();
+
+    expect(addedAction).toHaveBeenCalledWith(share);
+    expect(toastMock.success).toHaveBeenCalledWith(
+      "settings.storage.share_added",
+      { action: { label: "Use as music source", onClick } },
+    );
+  });
+
   it("has nothing to save for an untouched share", async () => {
     const { shareForm } = openForm({ location: share });
 

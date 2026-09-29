@@ -67,11 +67,13 @@
           :key="location.path"
           :location="location"
           :shown-used-by="usedByShownOn(location, mediaLocations)"
+          :can-use-as-source="canHoldNewSource(location)"
           :busy="!!pending"
           :pending="pending?.path === location.path ? pending.action : null"
           @reload="reloadShare(location)"
           @edit="openShareDialog(location)"
           @remove="locationToRemove = location"
+          @use-as-source="useAsSource(location)"
         />
       </ItemGroup>
     </section>
@@ -148,6 +150,7 @@
       :location="shareToEdit"
       :share-types="info?.supported_share_types ?? []"
       :share-versions="info?.supported_share_versions ?? {}"
+      :added-action="offerUseAsSource"
       @saved="refresh"
     />
     <LocalFolderDialog v-model:open="showFolderDialog" @added="refresh" />
@@ -176,6 +179,7 @@ import { ItemGroup } from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
 import { useStorageInfo } from "@/composables/useStorageInfo";
 import {
+  canHoldNewSource,
   isManagedShare,
   type ManagedShareLocation,
   storageErrorText,
@@ -184,12 +188,14 @@ import {
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { type StorageLocation, StorageUsage } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
 import { FolderPlus, HardDrive, Info, Plus, RefreshCw } from "@lucide/vue";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
 const DOCKER_DOCS_URL = "https://music-assistant.io/installation/#with-docker";
+const LOCAL_FILES_DOMAIN = "filesystem_local";
 const STORAGE_DOCS_URL = "https://music-assistant.io/settings/storage/";
 
 const { t } = useI18n();
@@ -224,6 +230,28 @@ const storageDocsUrl = computed(() => getExternalLinkUrl(STORAGE_DOCS_URL));
 const runsAsHomeAssistantApp = computed(
   () => !!api.serverInfo.value?.homeassistant_addon,
 );
+
+// a Local files source starts with the location's folder filled in; once it is set
+// up, the location names it under "Used by" and no longer offers this
+const useAsSource = (location: StorageLocation) => {
+  eventbus.emit("setupFlowDialog", {
+    kind: "provider",
+    domain: LOCAL_FILES_DOMAIN,
+    initialValues: { path: location.path },
+    onFlowEnded: (finished) => {
+      if (finished) void refresh();
+    },
+  });
+};
+
+// right after a network share is added, its toast offers to use it as a music source
+const offerUseAsSource = (location: StorageLocation) =>
+  canHoldNewSource(location)
+    ? {
+        label: t("settings.storage.use_as_source"),
+        onClick: () => useAsSource(location),
+      }
+    : undefined;
 
 const openShareDialog = (location: StorageLocation | null) => {
   shareToEdit.value = location && isManagedShare(location) ? location : null;

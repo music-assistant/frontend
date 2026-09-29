@@ -271,9 +271,10 @@ import {
   type ManagedShareLocation,
   SHARE_TYPE_LABEL_KEYS,
 } from "@/helpers/storage";
-import type { ShareType } from "@/plugins/api/interfaces";
+import type { ShareType, StorageLocation } from "@/plugins/api/interfaces";
 import { TriangleAlert } from "@lucide/vue";
 import { nextTick, useId, useTemplateRef } from "vue";
+import type { Action } from "vue-sonner";
 
 /** Adds a network share, or edits the settings of a managed one. */
 const props = defineProps<{
@@ -284,6 +285,8 @@ const props = defineProps<{
   shareTypes: ShareType[];
   // the protocol versions this install can honour per share type
   shareVersions: Partial<Record<ShareType, string[]>>;
+  // the next step the toast of a newly added share offers, if any
+  addedAction?: (location: StorageLocation) => Action | undefined;
 }>();
 
 const emit = defineEmits<{

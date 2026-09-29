@@ -28,7 +28,14 @@ import {
   type StorageLocation,
   StorageUsage,
 } from "@/plugins/api/interfaces";
-import { Database, HardDrive, Pencil, RefreshCw, Trash2 } from "@lucide/vue";
+import {
+  Database,
+  HardDrive,
+  Music,
+  Pencil,
+  RefreshCw,
+  Trash2,
+} from "@lucide/vue";
 import { type Component, computed, useId } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -37,13 +44,20 @@ const props = defineProps<{
   location: StorageLocation;
   // the sources to name under "Used by"; the location's own list when left out
   shownUsedBy?: string[];
+  // the location may become the folder of a new music source
+  canUseAsSource?: boolean;
   // a command runs on the page, so no action may start
   busy?: boolean;
   // the command running on this location, if any
   pending?: "reload" | "remove" | null;
 }>();
 
-const emit = defineEmits<{ reload: []; edit: []; remove: [] }>();
+const emit = defineEmits<{
+  reload: [];
+  edit: [];
+  remove: [];
+  useAsSource: [];
+}>();
 
 const { t, locale } = useI18n();
 
@@ -174,7 +188,24 @@ const removeBlockedReason = computed(() => {
       </p>
       <ItemDescription v-if="spaceText">{{ spaceText }}</ItemDescription>
     </ItemContent>
-    <ItemActions v-if="canReloadOrEdit || canRemove">
+    <ItemActions v-if="canUseAsSource || canReloadOrEdit || canRemove">
+      <!-- on a phone the label would crowd the row, so it is left to the
+           accessible name and the tooltip -->
+      <Button
+        v-if="canUseAsSource"
+        variant="outline"
+        size="sm"
+        class="max-sm:size-8 max-sm:px-0"
+        :disabled="busy || !!pending"
+        :title="t('settings.storage.use_as_source')"
+        data-testid="storage-use-as-source"
+        @click="emit('useAsSource')"
+      >
+        <Music />
+        <span class="max-sm:sr-only">
+          {{ t("settings.storage.use_as_source") }}
+        </span>
+      </Button>
       <template v-if="canReloadOrEdit">
         <Button
           variant="ghost"

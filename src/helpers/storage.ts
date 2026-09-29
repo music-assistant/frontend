@@ -232,6 +232,17 @@ export function usedByShownOn(
   );
 }
 
+/**
+ * Whether a location can hold a music source of its own: an available music location
+ * that no source reads yet, neither from a folder inside it nor through a folder
+ * around it, so a source on it overlaps no other.
+ */
+export const canHoldNewSource = (location: StorageLocation): boolean =>
+  location.usage === StorageUsage.MEDIA &&
+  location.available &&
+  location.used_by.length === 0 &&
+  location.read_by.length === 0;
+
 /** Whether the location is a network share Music Assistant mounted and manages. */
 export const isManagedShare = (
   location: StorageLocation,
