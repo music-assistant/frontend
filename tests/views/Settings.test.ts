@@ -229,7 +229,7 @@ describe("Settings breadcrumbs on the storage page", () => {
     routeState.params = { playerId: "kitchen" };
   });
 
-  it("names the storage page as the current page", () => {
+  it("names the storage page as a page of the System settings", () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     routeState.name = "storagesettings";
     routeState.params = {};
@@ -250,10 +250,11 @@ describe("Settings breadcrumbs on the storage page", () => {
 
     expect(wrapper.getComponent(ToolbarHeadingStub).props("items")).toEqual([
       {
-        title: "settings.storage.title",
-        disabled: true,
-        to: { name: "storagesettings" },
+        title: "settings.system",
+        disabled: false,
+        to: { name: "systemsettings" },
       },
+      { title: "settings.storage.title", disabled: true },
     ]);
   });
 });

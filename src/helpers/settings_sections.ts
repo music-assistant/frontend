@@ -74,15 +74,6 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     minServerVersion: "2.9.0",
   },
   {
-    name: "storage",
-    label: "settings.storage.title",
-    description: "settings.storage.description",
-    icon: "mdi-harddisk",
-    color: "cyan",
-    route: { name: "storagesettings" },
-    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
-  },
-  {
     name: "profile",
     label: "auth.profile",
     description: "settings.profile_description",

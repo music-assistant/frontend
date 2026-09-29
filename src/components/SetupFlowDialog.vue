@@ -343,6 +343,8 @@ let launchSeq = 0;
 // never changes mid-flow, so it can't be used for that)
 let stepSeq = 0;
 let completionNotified = false;
+// values the launch asked for in the first form step, cleared once that step is built
+let initialValues: Record<string, ConfigValueType> | null = null;
 
 let unsubscribeFlow: (() => void) | null = null;
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
@@ -521,6 +523,7 @@ async function onLaunch(evt: SetupFlowDialogEvent) {
   // proxy-wraps the stored event, so it never equals the raw evt again
   const seq = ++launchSeq;
   completionNotified = false;
+  initialValues = evt.kind === "provider" ? (evt.initialValues ?? null) : null;
   launch.value = evt;
   step.value = null;
   busy.value = true;
@@ -568,11 +571,7 @@ function applyStep(newStep: SetupFlowStep) {
     unsubscribeFlow();
     unsubscribeFlow = null;
   }
-  if (
-    isTerminal.value &&
-    !completionNotified &&
-    (launch.value?.kind === "reconfigure" || launch.value?.kind === "player")
-  ) {
+  if (isTerminal.value && !completionNotified && launch.value) {
     completionNotified = true;
     launch.value.onFlowEnded?.(newStep.type === FlowStepType.FINISH);
   }
@@ -609,10 +608,16 @@ function buildForm(formStep: SetupFlowStep, preserveValues: boolean) {
   if (preserveValues) {
     for (const entry of formEntries.value) previous[entry.key] = entry.value;
   }
+  // the first form step starts from the values the launch asked for; a key the step
+  // has no entry for is left out, and a later step starts from what the server sends
+  const launchValues = initialValues ?? {};
+  initialValues = null;
   formEntries.value = formStep.entries.map((entry) => {
     const copy: ConfigEntry = { ...entry };
     if (preserveValues && entry.key in previous) {
       copy.value = previous[entry.key];
+    } else if (entry.key in launchValues) {
+      copy.value = launchValues[entry.key];
     } else if (copy.value === undefined || copy.value === null) {
       copy.value = copy.default_value;
     }
@@ -729,8 +734,7 @@ function onGuardedClose(event: Event) {
   // them as an outside click and dismiss the whole dialog. Keep it open when the
   // interaction lands inside a Vuetify overlay.
   const original = (event as CustomEvent).detail?.originalEvent as
-    | Event
-    | undefined;
+    Event | undefined;
   const target = (original?.target ?? event.target) as HTMLElement | null;
   if (target?.closest?.(".v-overlay-container, .v-overlay, .v-menu")) {
     event.preventDefault();
@@ -749,6 +753,7 @@ function close(sendAbort = true) {
   stepSeq++;
   step.value = null;
   launch.value = null;
+  initialValues = null;
   formEntries.value = [];
   busy.value = false;
   showPasswordValues.value = false;

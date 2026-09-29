@@ -3,6 +3,7 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import mitt, { Emitter } from "mitt";
 import {
+  ConfigValueType,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
@@ -101,7 +102,14 @@ export type SetupFlowEndedCallback = (finished: boolean) => void;
 // Launches the setup flow dialog for one of: adding a provider (by domain),
 // reconfiguring a provider instance, or setting up a player.
 export type SetupFlowDialogEvent =
-  | { kind: "provider"; domain: string }
+  | {
+      kind: "provider";
+      domain: string;
+      // values for entries of the first form step, by entry key; the user still
+      // sees the step and confirms it
+      initialValues?: Record<string, ConfigValueType>;
+      onFlowEnded?: SetupFlowEndedCallback;
+    }
   | {
       kind: "reconfigure";
       instanceId: string;

@@ -357,8 +357,7 @@ const isFieldDisabled = computed(() => {
 const imageSrc = computed(
   () =>
     (props.confEntry.value ?? props.confEntry.default_value) as
-      | string
-      | undefined,
+      string | undefined,
 );
 
 const emit = defineEmits<{

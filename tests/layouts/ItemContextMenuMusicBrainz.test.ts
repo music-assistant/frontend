@@ -31,8 +31,7 @@ const { apiMock, emittedMenus, storeMock } = vi.hoisted(() => ({
   },
   storeMock: {
     activePlayer: undefined as
-      | { player_id: string; available: boolean }
-      | undefined,
+      { player_id: string; available: boolean } | undefined,
     activePlayerId: undefined,
     enabledPlugins: new Set<string>(),
   },
@@ -180,8 +179,7 @@ describe("the context menu of a MusicBrainz release", () => {
     await remove?.action?.();
     // the removal asks for confirmation first
     const dialog = emittedMenus.find((payload) => "onConfirm" in payload) as
-      | { onConfirm: () => void }
-      | undefined;
+      { onConfirm: () => void } | undefined;
     dialog?.onConfirm();
 
     expect(apiMock.removeItemFromLibrary).toHaveBeenCalledTimes(1);
