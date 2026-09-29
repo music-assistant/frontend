@@ -835,6 +835,7 @@
             "folder_remove_failed": "Could not remove the folder",
             "remove_share_title": "Remove network share",
             "remove_share_confirm": "Remove {name}? Music Assistant disconnects the share. The files on it are not deleted.",
+            "remove_share_read_by": "{sources} also reads this share. Its items from this share leave the library at the next sync. | {sources} also read this share. Their items from this share leave the library at the next sync.",
             "remove_folder_title": "Remove folder",
             "remove_folder_confirm": "Remove {name} from the list? The folder and its files are not deleted.",
             "cannot_mount_container_title": "Add network shares on the host",
