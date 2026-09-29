@@ -134,7 +134,9 @@ import {
 } from "@/components/ui/card";
 import { api } from "@/plugins/api";
 import { requireServerVersion } from "@/plugins/api/helpers";
-import { CoreConfig } from "@/plugins/api/interfaces";
+import { CoreConfig, Scope } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
+import { HardDrive } from "@lucide/vue";
 import {
   computed,
   inject,
@@ -163,6 +165,8 @@ interface SystemConfigExtraEntry {
   description: string;
   icon: string | Component;
   minServerVersion?: string;
+  // only a role granting this scope may open the page, so only it sees the entry
+  requiresScope?: Scope;
 }
 
 type SystemConfigItem = CoreConfig | SystemConfigExtraEntry;
@@ -198,9 +202,19 @@ const extraSystemEntries = computed<SystemConfigExtraEntry[]>(() =>
       route: "/settings/audio-analysis",
       minServerVersion: "2.9.0",
     },
+    {
+      domain: "storage",
+      name: "settings.storage.title",
+      description: "settings.storage.description",
+      icon: HardDrive,
+      route: "/settings/storage",
+      requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
+    },
   ].filter(
-    (entry) =>
-      !entry.minServerVersion || requireServerVersion(entry.minServerVersion),
+    (entry: SystemConfigExtraEntry) =>
+      (!entry.minServerVersion ||
+        requireServerVersion(entry.minServerVersion)) &&
+      (!entry.requiresScope || authManager.hasScope(entry.requiresScope)),
   ),
 );
 
