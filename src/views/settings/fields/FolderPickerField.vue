@@ -58,6 +58,9 @@ const { info, loading, failed, mediaLocations, refresh } = useStorageInfo();
 const position = ref<StoragePosition | null>(null);
 const subfolders = ref<string[]>([]);
 const loadingFolders = ref(false);
+// only the answer to the latest folder request is applied: a slow share may answer
+// after the user has moved on to another folder
+let folderRequest = 0;
 
 // the Storage page, where locations are added, is only open to who manages them
 const canManageStorage = computed(() =>
@@ -84,24 +87,34 @@ const selectionOutsideLocations = computed(
 );
 
 const openFolder = async (target: StoragePosition) => {
+  const request = ++folderRequest;
   loadingFolders.value = true;
   try {
-    subfolders.value = await api.getStorageFolders(
+    const names = await api.getStorageFolders(
       joinStoragePath(target.location.path, target.segments),
     );
+    if (request !== folderRequest) return;
+    subfolders.value = names;
     position.value = target;
   } catch (error) {
+    if (request !== folderRequest) return;
     toast.error(
       storageErrorText(error, $t("settings.folder_picker.browse_failed")),
     );
   } finally {
-    loadingFolders.value = false;
+    if (request === folderRequest) loadingFolders.value = false;
   }
 };
 
 const onNavigate = (target: StoragePosition | null) => {
-  if (target) void openFolder(target);
-  else position.value = null;
+  if (target) {
+    void openFolder(target);
+    return;
+  }
+  // back at the locations, no folder request is waited for any more
+  folderRequest++;
+  loadingFolders.value = false;
+  position.value = null;
 };
 
 const openLocation = (location: StorageLocation) =>
@@ -116,7 +129,10 @@ const useCurrentFolder = () => {
 };
 
 const reload = async () => {
+  const request = folderRequest;
   await refresh();
+  // where the user went while the storage was fetched is what stays on screen
+  if (request !== folderRequest) return;
   const current = position.value;
   if (!current) return;
   // the location may have gone away or become unavailable in the meantime
@@ -204,7 +220,7 @@ onMounted(refresh);
         :position="position"
         :subfolders="subfolders"
         :selected-path="selectedPath"
-        :loading="loadingFolders"
+        :loading="loadingFolders || loading"
         :disabled="disabled"
         @navigate="onNavigate"
         @use="useCurrentFolder"
@@ -213,7 +229,7 @@ onMounted(refresh);
         v-else
         :locations="mediaLocations"
         :selected-location-path="selectedPosition?.location.path"
-        :disabled="disabled || loadingFolders"
+        :disabled="disabled || loadingFolders || loading"
         @open="openLocation"
       />
 

@@ -8,6 +8,8 @@ import {
   StorageKind,
   StorageUsage,
 } from "@/plugins/api/interfaces";
+import FolderPickerBrowser from "@/components/settings/storage/FolderPickerBrowser.vue";
+import type { StoragePosition } from "@/helpers/storage";
 import ConfigEntryField from "@/views/settings/ConfigEntryField.vue";
 import FolderPickerField from "@/views/settings/fields/FolderPickerField.vue";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
@@ -337,6 +339,129 @@ describe("FolderPickerField", () => {
     expect(wrapper.emitted("update:value")).toEqual([["/media/Podcasts"]]);
   });
 });
+
+describe("FolderPickerField while folders load", () => {
+  it("applies only the answer to the latest folder request", async () => {
+    const wrapper = await openMediaFolder();
+    const albums = deferred<string[]>();
+    const podcasts = deferred<string[]>();
+    apiMock.getStorageFolders.mockImplementation((path) =>
+      path === "/media/Albums" ? albums.promise : podcasts.promise,
+    );
+
+    navigateTo(wrapper, ["Albums"]);
+    navigateTo(wrapper, ["Podcasts"]);
+    podcasts.resolve(["Live"]);
+    await flushPromises();
+    albums.resolve(["Jazz"]);
+    await flushPromises();
+
+    expect(currentFolder(wrapper)).toBe("Podcasts");
+    expect(subfolderNames(wrapper)).toEqual(["Live"]);
+    await wrapper.get('[data-testid="folder-picker-use"]').trigger("click");
+    expect(wrapper.emitted("update:value")).toEqual([["/media/Podcasts"]]);
+  });
+
+  it("stays quiet about a folder the user already left", async () => {
+    const wrapper = await openMediaFolder();
+    const albums = deferred<string[]>();
+    apiMock.getStorageFolders.mockImplementation((path) =>
+      path === "/media/Albums" ? albums.promise : Promise.resolve(["Live"]),
+    );
+
+    navigateTo(wrapper, ["Albums"]);
+    navigateTo(wrapper, ["Podcasts"]);
+    await flushPromises();
+    albums.reject(new ApiCommandError("Gone", 1, "Gone"));
+    await flushPromises();
+
+    expect(toastMock.error).not.toHaveBeenCalled();
+    expect(currentFolder(wrapper)).toBe("Podcasts");
+  });
+
+  it("holds the browser while the storage is fetched again", async () => {
+    const wrapper = await openMediaFolder();
+    const fetched = deferred<ReturnType<typeof storageInfo>>();
+    apiMock.getStorageInfo.mockReturnValueOnce(fetched.promise);
+
+    await wrapper.get('[data-testid="folder-picker-refresh"]').trigger("click");
+
+    // shown the way the picker shows a folder that is loading
+    expect(subfolderButtons(wrapper)).toHaveLength(0);
+    expect(
+      wrapper.get('[data-testid="folder-picker-use"]').attributes("disabled"),
+    ).toBeDefined();
+    const crumbs = wrapper.findAll('[data-testid="folder-picker-crumb"]');
+    expect(crumbs.length).toBeGreaterThan(0);
+    expect(
+      crumbs.every((crumb) => crumb.attributes("disabled") !== undefined),
+    ).toBe(true);
+
+    fetched.resolve(storageInfo({ locations: [media, offlineShare, dataDir] }));
+    await flushPromises();
+
+    expect(subfolderNames(wrapper)).toEqual(["Albums", "Podcasts"]);
+    expect(
+      wrapper.get('[data-testid="folder-picker-use"]').attributes("disabled"),
+    ).toBeUndefined();
+  });
+
+  it("keeps a folder opened during a refresh instead of reopening the old one", async () => {
+    const wrapper = await openMediaFolder();
+    const fetched = deferred<ReturnType<typeof storageInfo>>();
+    const podcasts = deferred<string[]>();
+    const mediaAgain = deferred<string[]>();
+    apiMock.getStorageInfo.mockReturnValueOnce(fetched.promise);
+    apiMock.getStorageFolders.mockImplementation((path) =>
+      path === "/media/Podcasts" ? podcasts.promise : mediaAgain.promise,
+    );
+
+    await wrapper.get('[data-testid="folder-picker-refresh"]').trigger("click");
+    navigateTo(wrapper, ["Podcasts"]);
+    // the refresh ends while the folder the user went to is still on its way
+    fetched.resolve(storageInfo({ locations: [media, offlineShare, dataDir] }));
+    await flushPromises();
+    podcasts.resolve(["Live"]);
+    await flushPromises();
+    mediaAgain.resolve(["Albums", "Podcasts"]);
+    await flushPromises();
+
+    expect(currentFolder(wrapper)).toBe("Podcasts");
+    expect(subfolderNames(wrapper)).toEqual(["Live"]);
+  });
+});
+
+/** Mounts the picker and opens the media folder, whose subfolders load at once. */
+async function openMediaFolder(): Promise<VueWrapper> {
+  const wrapper = await mountPicker();
+  await locationButtons(wrapper)[0].trigger("click");
+  await flushPromises();
+  return wrapper;
+}
+
+/**
+ * Navigates the open browser to a folder of the media location, the way a click on
+ * a subfolder or crumb does, also while the browser would not take the click.
+ */
+function navigateTo(wrapper: VueWrapper, segments: string[]) {
+  const target: StoragePosition = { location: media, segments };
+  wrapper.findComponent(FolderPickerBrowser).vm.$emit("navigate", target);
+}
+
+function currentFolder(wrapper: VueWrapper) {
+  return wrapper.get('[aria-current="location"]').text();
+}
+
+/** A promise the test settles by hand. */
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((settle, fail) => {
+    resolve = settle;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
+}
 
 function folderEntry(value: string | null = null): ConfigEntryUI {
   const entry: ConfigEntry = {
