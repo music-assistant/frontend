@@ -197,12 +197,13 @@ const removeBlockedReason = computed(() => {
         size="sm"
         class="max-sm:size-8 max-sm:px-0"
         :disabled="busy || !!pending"
-        :title="t('settings.storage.use_as_source')"
+        :aria-label="`${t('settings.storage.use_as_source')}: ${name}`"
+        :title="`${t('settings.storage.use_as_source')}: ${name}`"
         data-testid="storage-use-as-source"
         @click="emit('useAsSource')"
       >
         <Music />
-        <span class="max-sm:sr-only">
+        <span class="max-sm:hidden">
           {{ t("settings.storage.use_as_source") }}
         </span>
       </Button>

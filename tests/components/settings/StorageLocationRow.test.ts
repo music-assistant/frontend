@@ -52,13 +52,17 @@ describe("StorageLocationRow", () => {
     );
   });
 
-  it("offers to use the location as a music source, by label and tooltip", async () => {
+  it("offers to use the location as a music source, named after the location", async () => {
     const wrapper = mountRow(managedShare(), undefined, true);
 
     const button = wrapper.get('[data-testid="storage-use-as-source"]');
-    // on a phone the label is only read out, the tooltip still names it
     expect(button.text()).toBe("Use as music source");
-    expect(button.attributes("title")).toBe("Use as music source");
+    // the name and tooltip tell the buttons of several rows apart, also on a
+    // phone where the label is hidden
+    expect(button.attributes("aria-label")).toBe(
+      "Use as music source: NAS music",
+    );
+    expect(button.attributes("title")).toBe("Use as music source: NAS music");
     await button.trigger("click");
 
     expect(wrapper.emitted("useAsSource")).toHaveLength(1);
