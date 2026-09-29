@@ -504,6 +504,62 @@ describe("FolderPickerField when a folder is gone", () => {
   });
 });
 
+describe("FolderPickerField when the storage can not be fetched again", () => {
+  const away = () =>
+    Promise.reject(
+      new ApiCommandError("The server is away.", 1, "The server is away."),
+    );
+
+  /** Opens the Albums folder of the media location, whose subfolder is Jazz. */
+  async function openAlbums() {
+    const wrapper = await openMediaFolder();
+    await subfolderButtons(wrapper)[0].trigger("click");
+    await flushPromises();
+    expect(currentFolder(wrapper)).toBe("Albums");
+    apiMock.getStorageFolders.mockClear();
+    return wrapper;
+  }
+
+  it("keeps the folder and its subfolders when a refresh fails", async () => {
+    const wrapper = await openAlbums();
+    const fetched = deferred<ReturnType<typeof storageInfo>>();
+    apiMock.getStorageInfo.mockReturnValueOnce(fetched.promise);
+    // with the server away, a folder request would fail as well
+    apiMock.getStorageFolders.mockImplementation(away);
+
+    await wrapper.get('[data-testid="folder-picker-refresh"]').trigger("click");
+    fetched.reject(
+      new ApiCommandError("The server is away.", 1, "The server is away."),
+    );
+    await flushPromises();
+
+    expect(currentFolder(wrapper)).toBe("Albums");
+    expect(subfolderNames(wrapper)).toEqual(["Jazz"]);
+    expect(apiMock.getStorageFolders).not.toHaveBeenCalled();
+    // the refresh reports its failure once, and nothing else adds to it
+    expect(toastMock.error).toHaveBeenCalledTimes(1);
+    expect(toastMock.error).toHaveBeenCalledWith("The server is away.");
+  });
+
+  it("reopens the folder as before once a refresh succeeds again", async () => {
+    const wrapper = await openAlbums();
+    apiMock.getStorageInfo.mockImplementationOnce(away);
+    await wrapper.get('[data-testid="folder-picker-refresh"]').trigger("click");
+    await flushPromises();
+
+    const listed = deferred<string[]>();
+    apiMock.getStorageFolders.mockReturnValueOnce(listed.promise);
+    await wrapper.get('[data-testid="folder-picker-refresh"]').trigger("click");
+    await flushPromises();
+    listed.resolve(["Jazz", "Soul"]);
+    await flushPromises();
+
+    expect(apiMock.getStorageFolders).toHaveBeenCalledWith("/media/Albums");
+    expect(currentFolder(wrapper)).toBe("Albums");
+    expect(subfolderNames(wrapper)).toEqual(["Jazz", "Soul"]);
+  });
+});
+
 /** Mounts the picker and opens the media folder, whose subfolders load at once. */
 async function openMediaFolder(): Promise<VueWrapper> {
   const wrapper = await mountPicker();

@@ -138,6 +138,9 @@ const useCurrentFolder = () => {
 const reload = async () => {
   const request = folderRequest;
   await refresh();
+  // a refresh that failed has said so and keeps the storage it had, so the folder on
+  // screen stays as well
+  if (failed.value) return;
   // where the user went while the storage was fetched is what stays on screen
   if (request !== folderRequest) return;
   const current = position.value;
