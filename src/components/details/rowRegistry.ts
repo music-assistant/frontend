@@ -150,6 +150,10 @@ export function createRowRegistry<Id extends string, Item>(
       const candidates = sourceCandidates(id, item);
       const saved = getSource(id);
       if (saved && candidates.includes(saved)) return saved;
+      // a streaming service is offered once, through one of its accounts
+      const sameService =
+        saved && candidates.find((c) => isSameStreamingService(c, saved));
+      if (sameService) return sameService;
       return defaultSource(id, item, candidates);
     },
   };
@@ -213,4 +217,13 @@ export function rowSourceDisplay(
     ]),
     domain: provider?.domain,
   };
+}
+
+/** Whether two sources are accounts of the same streaming service. */
+function isSameStreamingService(a: RowSource, b: RowSource): boolean {
+  const provider = api.providers[a];
+  return (
+    !!provider?.is_streaming_provider &&
+    provider.domain === api.providers[b]?.domain
+  );
 }

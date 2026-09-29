@@ -122,6 +122,29 @@ describe("rowRegistry", () => {
     expect(registry.effectiveSource("with_picker", ITEM)).toBe("all");
   });
 
+  it("maps a saved account to the offered account of the same service", () => {
+    providersMock["spotify--abc"] = SPOTIFY_ACCOUNT;
+    providersMock["spotify--xyz"] = {
+      ...SPOTIFY_ACCOUNT,
+      name: "Spotify [marcelveldt3]",
+    };
+    setPreferences({ [SOURCES_KEY]: { with_picker: "spotify--xyz" } });
+    expect(registry.effectiveSource("with_picker", ITEM)).toBe("spotify--abc");
+  });
+
+  it("does not map a saved instance of a non-streaming provider", () => {
+    providersMock["spotify--abc"] = {
+      ...SPOTIFY_ACCOUNT,
+      is_streaming_provider: false,
+    };
+    providersMock["spotify--xyz"] = {
+      ...SPOTIFY_ACCOUNT,
+      is_streaming_provider: false,
+    };
+    setPreferences({ [SOURCES_KEY]: { with_picker: "spotify--xyz" } });
+    expect(registry.effectiveSource("with_picker", ITEM)).toBe("all");
+  });
+
   it("falls back to the library when the item offers no candidates", () => {
     const bare = createRowRegistry<RowId, Item>({
       rows: registry.rows,
