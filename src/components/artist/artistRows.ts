@@ -103,7 +103,7 @@ export const artistRows = createRowRegistry<ArtistRowId, Artist>({
 });
 
 // rows fed by the artist's releases, in or outside the library
-const RELEASE_ROWS: ArtistRowId[] = ["albums", "singles_eps", "appears_on"];
+const RELEASE_ROWS: ArtistRowId[] = ["albums", "singles_eps"];
 
 // rows the server aggregates over every provider by default
 const ALL_PROVIDER_ROWS: ArtistRowId[] = ["top_tracks", "similar_artists"];

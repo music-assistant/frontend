@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     getArtistAlbums: vi.fn().mockResolvedValue([]),
+    getArtistAppearsOn: vi.fn().mockResolvedValue([]),
     getArtistTracks: vi.fn().mockResolvedValue([]),
     getArtistTopTracks: vi.fn().mockResolvedValue([]),
     getSimilarArtists: vi.fn().mockResolvedValue([]),
@@ -14,8 +15,8 @@ vi.mock("@/plugins/api", () => ({
 }));
 
 import {
-  appearsOnAlbums,
   isSingleOrEp,
+  loadArtistAppearsOn,
   loadArtistLibraryTracks,
   loadArtistReleases,
   loadArtistTopTracks,
@@ -26,7 +27,6 @@ import { AlbumType, type ItemMapping } from "@/plugins/api/interfaces";
 import { album } from "../../fixtures/album";
 import { artist } from "../../fixtures/artist";
 import { providerMapping } from "../../fixtures/providerMapping";
-import { track } from "../../fixtures/track";
 
 // the artist's own id on Spotify differs from its library id, so the provider
 // source can only be queried through the mapping
@@ -60,6 +60,7 @@ describe("artistData", () => {
     apiMock.getArtistTopTracks.mockClear();
     apiMock.getSimilarArtists.mockClear();
     apiMock.getArtistTracks.mockClear();
+    apiMock.getArtistAppearsOn.mockClear();
   });
 
   describe("loadArtistReleases", () => {
@@ -88,6 +89,19 @@ describe("artistData", () => {
       expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
         "sp1",
         "spotify--abc",
+      );
+    });
+  });
+
+  describe("loadArtistAppearsOn", () => {
+    it("asks the server for a library artist's appearances", async () => {
+      const appearances = [album({ item_id: "guest" })];
+      apiMock.getArtistAppearsOn.mockResolvedValueOnce(appearances);
+
+      expect(await loadArtistAppearsOn(LIBRARY_ARTIST)).toEqual(appearances);
+      expect(apiMock.getArtistAppearsOn).toHaveBeenLastCalledWith(
+        "1",
+        "library",
       );
     });
   });
@@ -162,37 +176,6 @@ describe("artistData", () => {
       const releases = [album({ year: 2000 }), album({ year: 2010 })];
       sortReleasesNewestFirst(releases);
       expect(releases[0].year).toBe(2000);
-    });
-  });
-
-  describe("appearsOnAlbums", () => {
-    it("keeps the albums the artist is not an album artist of, once each", () => {
-      const compilation = albumMapping();
-      const ownAlbum = albumMapping({
-        item_id: "11",
-        name: "Own",
-        uri: "library://album/11",
-      });
-      const tracks = [
-        track({ item_id: "1", album: compilation }),
-        track({ item_id: "2", album: compilation }),
-        track({ item_id: "3", album: ownAlbum }),
-        track({ item_id: "4", album: null }),
-      ];
-
-      expect(appearsOnAlbums(tracks, LIBRARY_ARTIST, [ownAlbum])).toEqual([
-        compilation,
-      ]);
-    });
-
-    it("drops an album that credits the artist as album artist", () => {
-      const ownAlbum = album({
-        item_id: "12",
-        artists: [{ ...LIBRARY_ARTIST }],
-      });
-      expect(
-        appearsOnAlbums([track({ album: ownAlbum })], LIBRARY_ARTIST),
-      ).toEqual([]);
     });
   });
 });

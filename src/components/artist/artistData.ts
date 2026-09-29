@@ -92,6 +92,15 @@ export async function loadArtistLibraryTracks(
   );
 }
 
+/**
+ * Albums the artist appears on without being an album artist, newest first.
+ *
+ * Only ever called for a library artist, the only kind the server lists.
+ */
+export async function loadArtistAppearsOn(artist: Artist): Promise<Album[]> {
+  return await api.getArtistAppearsOn(artist.item_id, artist.provider);
+}
+
 /** The artist's most popular tracks, as reported by `source`. */
 export async function loadArtistTopTracks(
   artist: Artist,
@@ -135,29 +144,6 @@ export function sortReleasesNewestFirst<T extends Album>(albums: T[]): T[] {
   });
 }
 
-/**
- * Albums the artist appears on without being an album artist, derived from the
- * artist's library tracks.
- *
- * A library track carries its album as a slim mapping without album artists,
- * so pass the artist's own releases as `artistAlbums` to leave those out.
- */
-export function appearsOnAlbums(
-  tracks: Track[],
-  artist: Artist,
-  artistAlbums: Array<Album | ItemMapping> = [],
-): Array<Album | ItemMapping> {
-  const ownAlbums = new Set(artistAlbums.map((album) => album.uri));
-  const albums = new Map<string, Album | ItemMapping>();
-  for (const track of tracks) {
-    const album = track.album;
-    if (!album || ownAlbums.has(album.uri) || albums.has(album.uri)) continue;
-    if (isAlbumArtist(album, artist)) continue;
-    albums.set(album.uri, album);
-  }
-  return [...albums.values()];
-}
-
 /** The provider_filter argument for a source, or undefined for "library"/"all". */
 function providerFilterFor(source: RowSource): string | undefined {
   return source === "library" || source === "all" ? undefined : source;
@@ -183,14 +169,4 @@ function releaseTime(album: Album): number {
     if (!isNaN(parsed)) return parsed;
   }
   return album.year ? Date.UTC(album.year, 0, 1) : 0;
-}
-
-/** Whether the artist is credited as an album artist of the given album. */
-function isAlbumArtist(album: Album | ItemMapping, artist: Artist): boolean {
-  if (!("artists" in album)) return false;
-  return album.artists.some(
-    (albumArtist) =>
-      albumArtist.uri === artist.uri ||
-      albumArtist.name.toLowerCase() === artist.name.toLowerCase(),
-  );
 }
