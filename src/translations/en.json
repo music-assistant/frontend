@@ -881,6 +881,7 @@
             "browse_failed": "Could not open the folder",
             "empty_title": "Nothing to pick from yet",
             "empty_text": "There is no folder, drive or network share to pick from yet. Select \"Manage storage\" to add one.",
+            "empty_text_member": "There is no folder, drive or network share to pick from yet. Ask an administrator to add one.",
             "manage": "Manage storage"
         }
     },

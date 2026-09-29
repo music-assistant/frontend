@@ -194,7 +194,7 @@ onMounted(refresh);
             {{
               canManageStorage
                 ? $t("settings.folder_picker.empty_text")
-                : $t("settings.storage.music_locations_empty")
+                : $t("settings.folder_picker.empty_text_member")
             }}
           </EmptyDescription>
         </EmptyHeader>

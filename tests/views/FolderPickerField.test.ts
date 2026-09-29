@@ -222,13 +222,27 @@ describe("FolderPickerField", () => {
     );
     const wrapper = await mountPicker();
 
-    expect(wrapper.find('[data-testid="folder-picker-empty"]').exists()).toBe(
-      true,
-    );
+    const empty = wrapper.get('[data-testid="folder-picker-empty"]');
+    expect(empty.text()).toContain("settings.folder_picker.empty_text");
+    expect(empty.text()).not.toContain("empty_text_member");
     const manage = wrapper.get('[data-testid="folder-picker-manage"]');
     expect(manage.attributes("href")).toBe("#/settings/storage");
     // the setup dialog it is used from has to stay open
     expect(manage.attributes("target")).toBe("_blank");
+  });
+
+  it("sends a user who can not open the Storage page to an administrator", async () => {
+    hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [dataDir] }),
+    );
+    const wrapper = await mountPicker();
+
+    const empty = wrapper.get('[data-testid="folder-picker-empty"]');
+    expect(empty.text()).toContain("settings.folder_picker.empty_text_member");
+    expect(wrapper.find('[data-testid="folder-picker-manage"]').exists()).toBe(
+      false,
+    );
   });
 
   it("links to the Storage page only for who can change the storage", async () => {
