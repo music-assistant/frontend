@@ -205,6 +205,58 @@ describe("StorageSettings", () => {
     ).toBeUndefined();
   });
 
+  it("names the sources reading through a location, and lets it be removed", async () => {
+    const readThrough = managedShare({ read_by: ["Local files"] });
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [readThrough] }),
+    );
+
+    const wrapper = await mountPage();
+
+    const shareRow = row(wrapper, readThrough);
+    expect(shareRow.get('[data-testid="storage-read-by"]').text()).toBe(
+      "settings.storage.read_by",
+    );
+    expect(shareRow.find('[data-testid="storage-used-by"]').exists()).toBe(
+      false,
+    );
+    // only a source whose own folder is in the location keeps it from going
+    expect(isDisabled(shareRow.get('[data-testid="storage-remove"]'))).toBe(
+      false,
+    );
+  });
+
+  it("names who uses and who also reads a location, and blocks its removal", async () => {
+    const both = managedShare({
+      used_by: ["Audiobooks"],
+      read_by: ["Local files"],
+    });
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [both] }),
+    );
+
+    const wrapper = await mountPage();
+
+    const shareRow = row(wrapper, both);
+    expect(shareRow.get('[data-testid="storage-used-by"]').text()).toBe(
+      "settings.storage.used_by",
+    );
+    expect(shareRow.get('[data-testid="storage-read-by"]').text()).toBe(
+      "settings.storage.read_by",
+    );
+    expect(isDisabled(shareRow.get('[data-testid="storage-remove"]'))).toBe(
+      true,
+    );
+  });
+
+  it("names no sources for a location nobody reads", async () => {
+    const wrapper = await mountPage();
+
+    expect(
+      row(wrapper, share).find('[data-testid="storage-read-by"]').exists(),
+    ).toBe(false);
+  });
+
   it("tells why any unavailable location is unavailable", async () => {
     const usb = storageLocation({
       path: "/media/usb",

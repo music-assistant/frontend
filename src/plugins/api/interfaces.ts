@@ -1949,6 +1949,9 @@ export interface StorageLocation {
   // names of the music sources that read from the location; empty for a caller that
   // does not manage every source. A location in use can not be removed
   used_by: string[];
+  // names of the music sources whose own folder holds this location, so they read its
+  // files as part of their folder; they do not keep the location from being removed
+  read_by: string[];
 }
 
 export interface StorageInfo {

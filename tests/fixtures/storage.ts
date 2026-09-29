@@ -37,6 +37,7 @@ export function storageLocation(
     used_space_gb: null,
     error: null,
     used_by: [],
+    read_by: [],
     ...overrides,
   };
 }

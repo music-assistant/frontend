@@ -97,6 +97,12 @@ const usedBy = computed(() =>
     ? formatNames(props.location.used_by, locale.value)
     : null,
 );
+// sources whose folder holds this location lose its files with it, but do not block
+const readBy = computed(() =>
+  props.location.read_by.length > 0
+    ? formatNames(props.location.read_by, locale.value)
+    : null,
+);
 
 const canReloadOrEdit = computed(() => isManagedShare(props.location));
 const canRemove = computed(
@@ -156,6 +162,13 @@ const removeBlockedReason = computed(() =>
         data-testid="storage-used-by"
       >
         {{ t("settings.storage.used_by", { sources: usedBy }) }}
+      </p>
+      <p
+        v-if="readBy"
+        class="text-muted-foreground m-0 text-sm leading-normal"
+        data-testid="storage-read-by"
+      >
+        {{ t("settings.storage.read_by", { sources: readBy }) }}
       </p>
       <ItemDescription v-if="spaceText">{{ spaceText }}</ItemDescription>
     </ItemContent>
