@@ -725,6 +725,18 @@ export class MusicAssistantApi {
     });
   }
 
+  public getArtistAppearsOn(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+  ): Promise<Album[]> {
+    return this.sendCommand("music/artists/artist_appears_on", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+    });
+  }
+
   public getArtistTopAlbums(
     item_id: string,
     provider_instance_id_or_domain: string,

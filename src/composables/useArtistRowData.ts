@@ -1,6 +1,6 @@
 import {
-  appearsOnAlbums,
   isSingleOrEp,
+  loadArtistAppearsOn,
   loadArtistDiscography,
   loadArtistLibraryTracks,
   loadArtistReleases,
@@ -42,7 +42,8 @@ export function useArtistRowData(
   const topTracks = ref(new Map<RowSource, Track[]>());
   const similarArtists = ref(new Map<RowSource, Artist[]>());
   const libraryTracks = ref<Track[]>();
-  // fed by the library artist alone, so it needs no per-source cache
+  // fed by the artist alone, so these need no per-source cache
+  const appearsOn = ref<Array<Album | ItemMapping>>();
   const discography = ref<Album[]>();
 
   // a new artist, or new provider mappings, start from empty rows; anything
@@ -55,6 +56,7 @@ export function useArtistRowData(
       topTracks.value = new Map();
       similarArtists.value = new Map();
       libraryTracks.value = undefined;
+      appearsOn.value = undefined;
       discography.value = undefined;
       loadRowData();
     },
@@ -62,8 +64,8 @@ export function useArtistRowData(
 
   refetchOnLibraryChange(
     {
-      [MediaType.ALBUM]: ["releases", "discography"],
-      [MediaType.TRACK]: ["library_tracks", "top_tracks"],
+      [MediaType.ALBUM]: ["releases", "appears_on", "discography"],
+      [MediaType.TRACK]: ["library_tracks", "appears_on", "top_tracks"],
     },
     () => loadRowData(),
   );
@@ -75,7 +77,6 @@ export function useArtistRowData(
 
   const albumsSource = computed(() => rowSource("albums"));
   const singlesSource = computed(() => rowSource("singles_eps"));
-  const appearsOnSource = computed(() => rowSource("appears_on"));
   const topTracksSource = computed(() => rowSource("top_tracks"));
   const similarArtistsSource = computed(() => rowSource("similar_artists"));
 
@@ -105,16 +106,7 @@ export function useArtistRowData(
       : undefined,
   );
 
-  // every album the artist's library tracks point at that is not one of their
-  // own releases is an appearance
-  const appearsOnItems = computed<Array<Album | ItemMapping> | undefined>(
-    () => {
-      const ownReleases = sourceItems(releases.value, appearsOnSource.value);
-      if (!artist.value || !libraryTracks.value || !ownReleases)
-        return undefined;
-      return appearsOnAlbums(libraryTracks.value, artist.value, ownReleases);
-    },
-  );
+  const appearsOnItems = computed(() => appearsOn.value);
 
   // kept in the order the server sent it, which is newest first
   const discographyItems = computed(() => discography.value);
@@ -160,7 +152,6 @@ export function useArtistRowData(
       visibleRows,
       albumsSource,
       singlesSource,
-      appearsOnSource,
       topTracksSource,
       similarArtistsSource,
     ],
@@ -173,10 +164,7 @@ export function useArtistRowData(
     const rows = visibleRows.value;
     if (rows.includes("albums")) fetchReleases(albumsSource.value!);
     if (rows.includes("singles_eps")) fetchReleases(singlesSource.value!);
-    if (rows.includes("appears_on")) {
-      fetchReleases(appearsOnSource.value!);
-      fetchLibraryTracks();
-    }
+    if (rows.includes("appears_on")) fetchAppearsOn();
     if (rows.includes("discography")) fetchDiscography();
     if (rows.includes("top_tracks")) {
       fetchLibraryTracks();
@@ -206,6 +194,14 @@ export function useArtistRowData(
       source,
       similarArtists.value,
       loadSimilarArtists,
+    );
+  }
+
+  function fetchAppearsOn() {
+    return fetchOnce(
+      "appears_on",
+      (artist) => loadArtistAppearsOn(artist),
+      (items) => (appearsOn.value = items),
     );
   }
 

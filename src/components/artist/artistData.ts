@@ -92,6 +92,24 @@ export async function loadArtistLibraryTracks(
   );
 }
 
+/**
+ * Albums the artist appears on without being an album artist. The server lists
+ * them for a library artist, newest first; for a provider artist they are
+ * derived from its tracks.
+ */
+export async function loadArtistAppearsOn(
+  artist: Artist,
+): Promise<Array<Album | ItemMapping>> {
+  if (artist.provider === "library") {
+    return await api.getArtistAppearsOn(artist.item_id, artist.provider);
+  }
+  const [tracks, releases] = await Promise.all([
+    loadArtistLibraryTracks(artist),
+    api.getArtistAlbums(artist.item_id, artist.provider),
+  ]);
+  return appearsOnAlbums(tracks, artist, releases);
+}
+
 /** The artist's most popular tracks, as reported by `source`. */
 export async function loadArtistTopTracks(
   artist: Artist,

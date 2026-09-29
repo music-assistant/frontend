@@ -33,8 +33,8 @@
 
 <script setup lang="ts">
 import {
-  appearsOnAlbums,
   isSingleOrEp,
+  loadArtistAppearsOn,
   loadArtistDiscography,
   loadArtistLibraryTracks,
   loadArtistReleases,
@@ -336,19 +336,7 @@ async function loadDiscography(): Promise<MediaItemType[]> {
 /** Albums the artist is credited on without being the album artist. */
 async function loadAppearsOn(): Promise<MediaItemType[]> {
   if (!itemDetails.value) return [];
-  // every album the artist's library tracks point at that is not one of their
-  // own releases is an appearance
-  const [tracks, releases] = await Promise.all([
-    loadArtistLibraryTracks(itemDetails.value),
-    loadArtistReleases(
-      itemDetails.value,
-      artistRows.effectiveSource("appears_on", itemDetails.value),
-    ),
-  ]);
-  return appearsOnAlbums(
-    tracks,
-    itemDetails.value,
-    releases,
-  ) as MediaItemType[];
+  // a provider artist's appearances can include slim album mappings
+  return (await loadArtistAppearsOn(itemDetails.value)) as MediaItemType[];
 }
 </script>

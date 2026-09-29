@@ -23,7 +23,7 @@ const {
   mockLoadArtistLibraryTracks,
   mockLoadArtistTopTracks,
   mockLoadSimilarArtists,
-  mockAppearsOnAlbums,
+  mockLoadArtistAppearsOn,
 } = vi.hoisted(() => ({
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
   mockSubscribe: vi.fn(() => () => {}),
@@ -35,7 +35,7 @@ const {
   mockLoadArtistLibraryTracks: vi.fn(),
   mockLoadArtistTopTracks: vi.fn(),
   mockLoadSimilarArtists: vi.fn(),
-  mockAppearsOnAlbums: vi.fn(),
+  mockLoadArtistAppearsOn: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -74,7 +74,7 @@ vi.mock("@/components/artist/artistData", async (importOriginal) => ({
   loadArtistLibraryTracks: mockLoadArtistLibraryTracks,
   loadArtistTopTracks: mockLoadArtistTopTracks,
   loadSimilarArtists: mockLoadSimilarArtists,
-  appearsOnAlbums: mockAppearsOnAlbums,
+  loadArtistAppearsOn: mockLoadArtistAppearsOn,
 }));
 
 vi.mock("@/components/artist/ArtistHero.vue", () => ({
@@ -191,7 +191,9 @@ describe("ArtistDetails", () => {
     mockLoadArtistLibraryTracks.mockReset().mockResolvedValue([track()]);
     mockLoadArtistTopTracks.mockReset().mockResolvedValue([track()]);
     mockLoadSimilarArtists.mockReset().mockResolvedValue([artist()]);
-    mockAppearsOnAlbums.mockReset().mockReturnValue([album({ item_id: "3" })]);
+    mockLoadArtistAppearsOn
+      .mockReset()
+      .mockResolvedValue([album({ item_id: "3" })]);
   });
 
   it("renders the rows in the resolved order", async () => {

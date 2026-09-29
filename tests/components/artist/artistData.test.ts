@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     getArtistAlbums: vi.fn().mockResolvedValue([]),
+    getArtistAppearsOn: vi.fn().mockResolvedValue([]),
     getArtistTracks: vi.fn().mockResolvedValue([]),
     getArtistTopTracks: vi.fn().mockResolvedValue([]),
     getSimilarArtists: vi.fn().mockResolvedValue([]),
@@ -16,6 +17,7 @@ vi.mock("@/plugins/api", () => ({
 import {
   appearsOnAlbums,
   isSingleOrEp,
+  loadArtistAppearsOn,
   loadArtistLibraryTracks,
   loadArtistReleases,
   loadArtistTopTracks,
@@ -60,6 +62,7 @@ describe("artistData", () => {
     apiMock.getArtistTopTracks.mockClear();
     apiMock.getSimilarArtists.mockClear();
     apiMock.getArtistTracks.mockClear();
+    apiMock.getArtistAppearsOn.mockClear();
   });
 
   describe("loadArtistReleases", () => {
@@ -89,6 +92,40 @@ describe("artistData", () => {
         "sp1",
         "spotify--abc",
       );
+    });
+  });
+
+  describe("loadArtistAppearsOn", () => {
+    it("asks the server for a library artist's appearances", async () => {
+      const appearances = [album({ item_id: "guest" })];
+      apiMock.getArtistAppearsOn.mockResolvedValueOnce(appearances);
+
+      expect(await loadArtistAppearsOn(LIBRARY_ARTIST)).toEqual(appearances);
+      expect(apiMock.getArtistAppearsOn).toHaveBeenLastCalledWith(
+        "1",
+        "library",
+      );
+      expect(apiMock.getArtistTracks).not.toHaveBeenCalled();
+    });
+
+    it("derives a provider artist's appearances from its tracks", async () => {
+      const ownAlbum = albumMapping({ item_id: "own", uri: "sp://album/own" });
+      const guestAlbum = albumMapping({
+        item_id: "guest",
+        uri: "sp://album/g",
+      });
+      apiMock.getArtistTracks.mockResolvedValueOnce([
+        track({ album: ownAlbum }),
+        track({ album: guestAlbum }),
+      ]);
+      apiMock.getArtistAlbums.mockResolvedValueOnce([ownAlbum]);
+
+      expect(await loadArtistAppearsOn(PROVIDER_ARTIST)).toEqual([guestAlbum]);
+      expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
+        "sp1",
+        "spotify--abc",
+      );
+      expect(apiMock.getArtistAppearsOn).not.toHaveBeenCalled();
     });
   });
 
