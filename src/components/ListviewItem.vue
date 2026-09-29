@@ -95,7 +95,12 @@
               {{ item.track_number }}
             </div>
             <span v-if="showPlay" class="listitem-play-blue">
-              <Play :size="16" fill="currentColor" :stroke-width="0" />
+              <Play
+                :size="16"
+                fill="currentColor"
+                :stroke-width="0"
+                class="play-icon-centered"
+              />
             </span>
           </div>
           <!-- other rows: blue play overlays the art on hover -->
@@ -124,7 +129,12 @@
                 />
               </div>
               <span v-if="showPlay" class="listitem-play-blue">
-                <Play :size="16" fill="currentColor" :stroke-width="0" />
+                <Play
+                  :size="16"
+                  fill="currentColor"
+                  :stroke-width="0"
+                  class="play-icon-centered"
+                />
               </span>
             </div>
           </div>
@@ -297,7 +307,12 @@
         @click.stop="onPlayClick"
       >
         <span class="listitem-play-blue-mobile">
-          <Play :size="11" fill="currentColor" :stroke-width="0" />
+          <Play
+            :size="11"
+            fill="currentColor"
+            :stroke-width="0"
+            class="play-icon-centered"
+          />
         </span>
       </v-btn>
     </template>

@@ -16,12 +16,7 @@
       stroke-width="0"
     />
     <Pause v-else-if="isPlaying" :size="size" fill="currentColor" />
-    <Play
-      v-else
-      :size="size"
-      fill="currentColor"
-      :style="{ marginLeft: `${compProps.playOffset}px` }"
-    />
+    <Play v-else :size="size" fill="currentColor" class="play-icon-centered" />
   </Icon>
   <v-progress-circular
     v-if="player && isLoading"
@@ -48,7 +43,6 @@ export interface Props {
   icon?: IconProps;
   spinnerSize?: number;
   size?: number;
-  playOffset?: number;
 }
 
 const compProps = withDefaults(defineProps<Props>(), {
@@ -56,7 +50,6 @@ const compProps = withDefaults(defineProps<Props>(), {
   icon: undefined,
   spinnerSize: 46,
   size: 24,
-  playOffset: 1,
 });
 
 const { isPlaying, showStop, isLoading, isDisabled, playPause } =

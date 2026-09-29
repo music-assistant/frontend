@@ -406,7 +406,6 @@
               :icon="{ staticWidth: '60px', staticHeight: '60px' }"
               :spinner-size="73"
               :size="30"
-              :play-offset="2"
             />
           </div>
           <NextBtn
