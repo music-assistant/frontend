@@ -68,7 +68,7 @@ vi.mock("@/plugins/auth", () => ({
 }));
 
 vi.mock("@/plugins/homeassistant", () => ({
-  notifyHARouteChange: vi.fn(),
+  navigateInHA: vi.fn(),
 }));
 
 vi.mock("@/plugins/i18n", () => ({
