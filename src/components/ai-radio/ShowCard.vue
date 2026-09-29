@@ -136,7 +136,7 @@
           :size="18"
           fill="currentColor"
           :stroke-width="0"
-          class="show-card__action-play-icon"
+          class="show-card__action-play-icon play-icon-centered"
         />
       </button>
     </div>
@@ -508,7 +508,6 @@ function onDelete() {
   opacity: 0.7;
 }
 .show-card__action-play-icon {
-  margin-left: 2px;
   fill: currentColor;
   stroke: none;
 }

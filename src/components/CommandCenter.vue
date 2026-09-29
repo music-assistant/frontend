@@ -181,7 +181,11 @@
               class="command-center-play"
               aria-hidden="true"
             >
-              <Play class="size-3.5" fill="currentColor" :stroke-width="0" />
+              <Play
+                class="play-icon-centered size-3.5"
+                fill="currentColor"
+                :stroke-width="0"
+              />
             </span>
           </div>
           <div class="flex min-w-0 flex-col">
@@ -203,7 +207,11 @@
               :aria-label="$t('play')"
               @click.stop="onPlayClick(item, $event)"
             >
-              <Play class="size-2.5" fill="currentColor" :stroke-width="0" />
+              <Play
+                class="play-icon-centered size-2.5"
+                fill="currentColor"
+                :stroke-width="0"
+              />
             </button>
             <button
               type="button"
