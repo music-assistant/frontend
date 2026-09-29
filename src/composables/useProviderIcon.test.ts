@@ -51,6 +51,22 @@ describe("useProviderIcon", () => {
     expect(icon.iconDataUri.value).toBe("data:image/svg+xml;base64,PHN2Zy8+");
   });
 
+  // the server converts SMB and NFS sources into Local files, keeping their ids
+  it("shows Local files for a converted source that isn't loaded", () => {
+    providerManifests["filesystem_local"] = {
+      name: "Local files",
+      icon_images: [ProviderIconVariant.DEFAULT],
+    };
+    providerIcons["filesystem_local:default"] =
+      "data:image/svg+xml;base64,PGxvY2FsLz4=";
+
+    const icon = run("filesystem_smb--fyQZakP3");
+    expect(icon.providerName.value).toBe("Local files");
+    expect(icon.iconDataUri.value).toBe(
+      "data:image/svg+xml;base64,PGxvY2FsLz4=",
+    );
+  });
+
   it("has no icon when the domain is unknown", () => {
     const icon = run("mystery--abc");
     expect(icon.providerName.value).toBe("");

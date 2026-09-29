@@ -71,6 +71,20 @@ describe("useShortcuts standalone helpers", () => {
     expect(isShortcutPinned(ENCODED_PODCAST_URI)).toBe(true);
   });
 
+  // the server converts SMB and NFS sources into Local files, keeping their ids
+  it("matches an item of a converted source by the domain it now has", () => {
+    storeMock.currentUser.preferences["sidebar.shortcuts"] = [
+      "filesystem_local://track/Artist%2Ftrack.flac",
+    ];
+
+    const sourceTrack = track({
+      provider: "filesystem_smb--fyQZakP3",
+      item_id: "Artist/track.flac",
+    });
+
+    expect(isShortcutPinnedItem(sourceTrack)).toBe(true);
+  });
+
   it("detects pinned state on resolved library item via provider mappings", () => {
     storeMock.currentUser.preferences["sidebar.shortcuts"] = [
       ENCODED_PODCAST_URI,
