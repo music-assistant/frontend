@@ -880,7 +880,7 @@
             "holds_selection": "Selected folder is here",
             "browse_failed": "Could not open the folder",
             "empty_title": "Nothing to pick from yet",
-            "empty_text": "There is no folder, drive or network share with music yet. Add one under Storage settings.",
+            "empty_text": "There is no folder, drive or network share to pick from yet. Select \"Manage storage\" to add one.",
             "manage": "Manage storage"
         }
     },
