@@ -91,15 +91,6 @@ export function useProviderContextMenu(options: UseProviderContextMenuOptions) {
           item.type != ProviderType.MUSIC,
       },
       {
-        label: "settings.remove_provider",
-        labelArgs: [],
-        action: () => {
-          options.onRemove(item);
-        },
-        icon: "mdi-delete",
-        hide: providerManifest.builtin,
-      },
-      {
         label: "settings.reload",
         labelArgs: [],
         action: () => {
@@ -148,6 +139,16 @@ export function useProviderContextMenu(options: UseProviderContextMenuOptions) {
         icon: "mdi-speaker-multiple",
       });
     }
+    menuItems.push({
+      label: "settings.remove_provider",
+      labelArgs: [],
+      action: () => {
+        options.onRemove(item);
+      },
+      icon: "mdi-delete",
+      color: "error",
+      hide: providerManifest.builtin,
+    });
     eventbus.emit("contextmenu", {
       items: menuItems,
       posX: (evt as PointerEvent).clientX,
