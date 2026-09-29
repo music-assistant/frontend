@@ -5,7 +5,7 @@ import type {
   ConfigValueType,
 } from "@/plugins/api/interfaces";
 import { CircleCheck } from "@lucide/vue";
-import { computed, useId, useTemplateRef } from "vue";
+import { computed, useId } from "vue";
 
 const props = defineProps<{
   label: string;
@@ -18,7 +18,6 @@ const props = defineProps<{
 const emit = defineEmits<{ "update:value": [value: ConfigValueType] }>();
 
 const labelId = useId();
-const group = useTemplateRef<HTMLElement>("group");
 
 const optionTitle = (option: ConfigValueOption) =>
   option.title?.toString() || option.value?.toString() || "";
@@ -39,21 +38,6 @@ const isSelected = (option: ConfigValueOption) =>
 const onPick = (option: ConfigValueOption) => {
   emit("update:value", option.value);
 };
-
-// arrow keys move the focus between the options in the order they read in (row by
-// row when they sit side by side), as a radio group is expected to; only a click,
-// Enter or Space picks one, so moving never submits a step that submits on pick
-const moveFocus = (event: KeyboardEvent, step: number) => {
-  const buttons = Array.from(
-    group.value?.querySelectorAll<HTMLButtonElement>(
-      "button[role='radio']:not(:disabled)",
-    ) ?? [],
-  );
-  if (buttons.length === 0) return;
-  event.preventDefault();
-  const current = buttons.indexOf(event.target as HTMLButtonElement);
-  buttons[(current + step + buttons.length) % buttons.length].focus();
-};
 </script>
 
 <template>
@@ -61,9 +45,10 @@ const moveFocus = (event: KeyboardEvent, step: number) => {
     <span v-if="label" :id="labelId" class="text-muted-foreground text-sm">{{
       label
     }}</span>
+    <!-- toggle buttons, not radios: a radio is picked by moving onto it with an arrow
+         key, and a step that submits on pick must only go on when an option is pressed -->
     <div
-      ref="group"
-      role="radiogroup"
+      role="group"
       :aria-labelledby="label ? labelId : undefined"
       :class="
         compact
@@ -71,17 +56,12 @@ const moveFocus = (event: KeyboardEvent, step: number) => {
           : 'flex flex-col gap-2'
       "
       :data-layout="compact ? 'compact' : 'stacked'"
-      @keydown.down="moveFocus($event, 1)"
-      @keydown.right="moveFocus($event, 1)"
-      @keydown.up="moveFocus($event, -1)"
-      @keydown.left="moveFocus($event, -1)"
     >
       <Button
         v-for="(option, index) of options"
         :key="index"
         type="button"
-        role="radio"
-        :aria-checked="isSelected(option)"
+        :aria-pressed="isSelected(option)"
         variant="outline"
         :disabled="disabled || option.disabled"
         data-testid="option-button"

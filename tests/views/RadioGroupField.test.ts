@@ -33,21 +33,39 @@ afterEach(() => {
 });
 
 describe("RadioGroupField", () => {
-  it("offers its options as a single choice", () => {
+  it("offers its options as a labelled group of toggle buttons", () => {
     mountField("music");
 
-    expect(wrapper!.find('[role="radiogroup"]').exists()).toBe(true);
-    expect(optionButtons().map((button) => button.attributes("role"))).toEqual([
-      "radio",
-      "radio",
-      "radio",
+    const group = wrapper!.get('[role="group"]');
+    expect(wrapper!.get(`#${group.attributes("aria-labelledby")}`).text()).toBe(
+      "What do you want to add?",
+    );
+    expect(
+      optionButtons().map((button) => [
+        button.element.tagName,
+        button.attributes("role"),
+      ]),
+    ).toEqual([
+      ["BUTTON", undefined],
+      ["BUTTON", undefined],
+      ["BUTTON", undefined],
     ]);
+  });
+
+  it("keeps every option in the tab order, as buttons are", () => {
+    mountField("music");
+
+    expect(
+      optionButtons().map(
+        (button) => (button.element as HTMLButtonElement).tabIndex,
+      ),
+    ).toEqual([0, 0, 0]);
   });
 
   it("marks the option that holds the current value", () => {
     mountField("music");
 
-    expect(checkedStates()).toEqual(["true", "false", "false"]);
+    expect(pressedStates()).toEqual(["true", "false", "false"]);
     // marked by more than colour
     expect(optionButtons()[0].find("svg").exists()).toBe(true);
     expect(optionButtons()[1].find("svg").exists()).toBe(false);
@@ -59,13 +77,13 @@ describe("RadioGroupField", () => {
     await optionButtons()[1].trigger("click");
 
     expect(wrapper!.emitted("update:value")).toEqual([["audiobooks"]]);
-    expect(checkedStates()).toEqual(["false", "true", "false"]);
+    expect(pressedStates()).toEqual(["false", "true", "false"]);
   });
 
   it("marks nothing without a current value", () => {
     mountField(null);
 
-    expect(checkedStates()).toEqual(["false", "false", "false"]);
+    expect(pressedStates()).toEqual(["false", "false", "false"]);
   });
 
   it("can not select a disabled option", async () => {
@@ -76,22 +94,22 @@ describe("RadioGroupField", () => {
     await podcasts.trigger("click");
 
     expect(wrapper!.emitted("update:value")).toBeUndefined();
-    expect(checkedStates()).toEqual(["true", "false", "false"]);
+    expect(pressedStates()).toEqual(["true", "false", "false"]);
   });
 
   it("lays options with nothing to explain out side by side", async () => {
     mountField("music", SHORT_OPTIONS);
 
-    const group = wrapper!.get('[role="radiogroup"]');
+    const group = wrapper!.get('[role="group"]');
     expect(group.attributes("data-layout")).toBe("compact");
     expect(group.classes()).toContain("grid");
     // the selection keeps its mark
-    expect(checkedStates()).toEqual(["true", "false", "false", "false"]);
+    expect(pressedStates()).toEqual(["true", "false", "false", "false"]);
     expect(optionButtons()[0].find("svg").exists()).toBe(true);
 
     await optionButtons()[3].trigger("click");
 
-    expect(checkedStates()).toEqual(["false", "false", "false", "true"]);
+    expect(pressedStates()).toEqual(["false", "false", "false", "true"]);
   });
 
   it.each([
@@ -103,33 +121,25 @@ describe("RadioGroupField", () => {
       { ...SHORT_OPTIONS[3], ...extra },
     ]);
 
-    expect(wrapper!.get('[role="radiogroup"]').attributes("data-layout")).toBe(
+    expect(wrapper!.get('[role="group"]').attributes("data-layout")).toBe(
       "stacked",
     );
   });
 
-  it("moves the focus side by side in reading order", async () => {
-    mountField("music", SHORT_OPTIONS);
-    const buttons = optionButtons();
-    (buttons[1].element as HTMLButtonElement).focus();
-
-    await buttons[1].trigger("keydown", { key: "ArrowRight" });
-    expect(document.activeElement).toBe(buttons[2].element);
-    await buttons[2].trigger("keydown", { key: "ArrowLeft" });
-    expect(document.activeElement).toBe(buttons[1].element);
-  });
-
-  // a step that submits on pick must not submit on a keypress that only moves around
-  it("moves the focus with the arrow keys without picking", async () => {
+  // a step that submits on pick must only go on when an option is pressed
+  it("leaves the arrow keys alone", async () => {
     mountField("music");
-    const [music, audiobooks] = optionButtons();
+    const [music] = optionButtons();
     (music.element as HTMLButtonElement).focus();
 
-    await music.trigger("keydown", { key: "ArrowDown" });
+    const arrow = new KeyboardEvent("keydown", {
+      key: "ArrowDown",
+      bubbles: true,
+      cancelable: true,
+    });
+    music.element.dispatchEvent(arrow);
 
-    expect(document.activeElement).toBe(audiobooks.element);
-    // the disabled option is skipped, so the focus wraps around to the first
-    await audiobooks.trigger("keydown", { key: "ArrowDown" });
+    expect(arrow.defaultPrevented).toBe(false);
     expect(document.activeElement).toBe(music.element);
     expect(wrapper!.emitted("update:value")).toBeUndefined();
   });
@@ -153,6 +163,6 @@ function optionButtons() {
   return wrapper!.findAll('[data-testid="option-button"]');
 }
 
-function checkedStates() {
-  return optionButtons().map((button) => button.attributes("aria-checked"));
+function pressedStates() {
+  return optionButtons().map((button) => button.attributes("aria-pressed"));
 }
