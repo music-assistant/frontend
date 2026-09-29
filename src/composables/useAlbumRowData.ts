@@ -8,7 +8,7 @@ import {
   type RowSource,
 } from "@/components/details/rowRegistry";
 import { mappingsIdentity, useRowRequests } from "@/composables/useRowRequests";
-import type { Album } from "@/plugins/api/interfaces";
+import { MediaType, type Album } from "@/plugins/api/interfaces";
 import { computed, ref, watch, type Ref } from "vue";
 
 /**
@@ -32,11 +32,20 @@ export function useAlbumRowData(
 
   // a new album, or new provider mappings, start from empty rows; anything
   // else (a favorite toggle, a metadata update) keeps what is already loaded
-  const { fetchOnce } = useRowRequests(album, mappingsIdentity, () => {
-    versionItems.value = undefined;
-    artistReleases.value = new Map();
-    loadRowData();
-  });
+  const { fetchOnce, refetchOnLibraryChange } = useRowRequests(
+    album,
+    mappingsIdentity,
+    () => {
+      versionItems.value = undefined;
+      artistReleases.value = new Map();
+      loadRowData();
+    },
+  );
+
+  refetchOnLibraryChange(
+    { [MediaType.ALBUM]: ["versions", "artist_releases"] },
+    () => loadRowData(),
+  );
 
   // the source feeding "more from this artist"; it follows the full album artist
   // once loaded into album.artists[0], so a saved provider becomes effective then
