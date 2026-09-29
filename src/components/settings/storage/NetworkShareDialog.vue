@@ -19,13 +19,12 @@
       <div class="flex-1 overflow-y-auto px-6">
         <form :id="formId" @submit.prevent="submit">
           <FieldGroup>
-            <FieldSet class="gap-3">
+            <FieldSet v-if="shareTypeChoices.length > 1" class="gap-3">
               <FieldLegend variant="label" class="mb-0">
                 {{ $t("settings.storage.share_dialog.share_type") }}
               </FieldLegend>
               <RadioGroup
                 :model-value="form.shareType"
-                :disabled="!!location || shareTypeChoices.length < 2"
                 class="flex flex-wrap gap-6"
                 @update:model-value="setShareType($event as ShareType)"
               >
@@ -48,6 +47,15 @@
                 </Field>
               </RadioGroup>
             </FieldSet>
+            <!-- a single share type is no choice: it is stated, not offered -->
+            <Field v-else orientation="horizontal" class="gap-2">
+              <FieldTitle>
+                {{ $t("settings.storage.share_dialog.share_type") }}
+              </FieldTitle>
+              <span class="text-sm" data-testid="share-type">
+                {{ $t(SHARE_TYPE_LABEL_KEYS[form.shareType]) }}
+              </span>
+            </Field>
 
             <Field :data-invalid="serverInvalid">
               <FieldLabel :for="`${formId}-server`">
@@ -148,15 +156,19 @@
             <Field v-if="versionChoices.length > 0" orientation="horizontal">
               <Switch
                 :id="`${formId}-advanced`"
-                v-model="showAdvanced"
+                :model-value="showAdvanced"
                 data-testid="share-advanced"
+                @update:model-value="toggleAdvanced"
               />
               <FieldLabel :for="`${formId}-advanced`" class="font-normal">
                 {{ $t("settings.show_advanced_settings") }}
               </FieldLabel>
             </Field>
 
-            <Field v-if="showAdvanced && versionChoices.length > 0">
+            <Field
+              v-if="showAdvanced && versionChoices.length > 0"
+              ref="versionField"
+            >
               <FieldLabel :for="`${formId}-version`">
                 {{ $t("settings.storage.share_dialog.version") }}
               </FieldLabel>
@@ -229,6 +241,7 @@ import {
   FieldLabel,
   FieldLegend,
   FieldSet,
+  FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -248,7 +261,7 @@ import {
 } from "@/helpers/storage";
 import type { ShareType } from "@/plugins/api/interfaces";
 import { TriangleAlert } from "@lucide/vue";
-import { useId } from "vue";
+import { nextTick, useId, useTemplateRef } from "vue";
 
 /** Adds a network share, or edits the settings of a managed one. */
 const props = defineProps<{
@@ -284,6 +297,19 @@ const {
   setShareType,
   save,
 } = useNetworkShareForm(props);
+
+const versionField = useTemplateRef<InstanceType<typeof Field>>("versionField");
+
+// the revealed field sits at the bottom of a form that may already scroll
+const toggleAdvanced = async (shown: boolean) => {
+  showAdvanced.value = shown;
+  if (!shown) return;
+  await nextTick();
+  (versionField.value?.$el as HTMLElement | undefined)?.scrollIntoView({
+    block: "nearest",
+    behavior: "smooth",
+  });
+};
 
 const onVersionChange = (value: string) => {
   form.value.version = value === VERSION_AUTO ? null : value;

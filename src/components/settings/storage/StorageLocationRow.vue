@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
 import {
+  formatNames,
   formatStorageSize,
   isManagedShare,
   isNamedByKind,
@@ -27,7 +28,7 @@ import {
   StorageUsage,
 } from "@/plugins/api/interfaces";
 import { Database, HardDrive, Pencil, RefreshCw, Trash2 } from "@lucide/vue";
-import { type Component, computed } from "vue";
+import { type Component, computed, useId } from "vue";
 import { useI18n } from "vue-i18n";
 
 /** A storage location on the Storage page, with the actions a managed one offers. */
@@ -87,9 +88,24 @@ const spaceText = computed(() => {
   return parts.join(" · ");
 });
 
+const usedById = useId();
+const usedBy = computed(() =>
+  props.location.used_by.length > 0
+    ? formatNames(props.location.used_by, locale.value)
+    : null,
+);
+
 const canReloadOrEdit = computed(() => isManagedShare(props.location));
 const canRemove = computed(
   () => isManagedShare(props.location) || isRegisteredFolder(props.location),
+);
+// the server refuses to remove a location a music source reads from
+const removeBlockedReason = computed(() =>
+  usedBy.value
+    ? t("settings.storage.remove_in_use", props.location.used_by.length, {
+        named: { sources: usedBy.value },
+      })
+    : null,
 );
 </script>
 
@@ -115,16 +131,29 @@ const canRemove = computed(
           {{ t("settings.storage.unavailable") }}
         </Badge>
       </ItemTitle>
-      <ItemDescription class="break-all">{{ location.path }}</ItemDescription>
+      <!-- a path, a reason or a list of sources is read in full, so these lines do
+           not take the two-line clamp of ItemDescription -->
+      <p class="text-muted-foreground m-0 text-sm leading-normal break-all">
+        {{ location.path }}
+      </p>
       <ItemDescription v-if="shareSummary" data-testid="storage-share-summary">
         {{ shareSummary }}
       </ItemDescription>
-      <ItemDescription
+      <p
         v-if="!location.available && location.error"
-        class="text-destructive"
+        class="text-destructive m-0 text-sm leading-normal"
+        data-testid="storage-error"
       >
         {{ location.error }}
-      </ItemDescription>
+      </p>
+      <p
+        v-if="usedBy"
+        :id="usedById"
+        class="text-muted-foreground m-0 text-sm leading-normal"
+        data-testid="storage-used-by"
+      >
+        {{ t("settings.storage.used_by", { sources: usedBy }) }}
+      </p>
       <ItemDescription v-if="spaceText">{{ spaceText }}</ItemDescription>
     </ItemContent>
     <ItemActions v-if="canReloadOrEdit || canRemove">
@@ -154,21 +183,28 @@ const canRemove = computed(
           <Pencil />
         </Button>
       </template>
-      <Button
+      <!-- a disabled button takes no pointer events, so its wrapper carries the
+           tooltip that says why it can not be pressed -->
+      <span
         v-if="canRemove"
-        variant="ghost"
-        size="icon-sm"
-        class="text-destructive hover:text-destructive"
-        :disabled="!!pending"
-        :aria-busy="pending === 'remove' || undefined"
-        :aria-label="`${t('remove')}: ${name}`"
-        :title="`${t('remove')}: ${name}`"
-        data-testid="storage-remove"
-        @click="emit('remove')"
+        class="inline-flex"
+        :title="removeBlockedReason ?? `${t('remove')}: ${name}`"
       >
-        <Spinner v-if="pending === 'remove'" />
-        <Trash2 v-else />
-      </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          class="text-destructive hover:text-destructive"
+          :disabled="!!pending || !!removeBlockedReason"
+          :aria-busy="pending === 'remove' || undefined"
+          :aria-label="`${t('remove')}: ${name}`"
+          :aria-describedby="removeBlockedReason ? usedById : undefined"
+          data-testid="storage-remove"
+          @click="emit('remove')"
+        >
+          <Spinner v-if="pending === 'remove'" />
+          <Trash2 v-else />
+        </Button>
+      </span>
     </ItemActions>
   </Item>
 </template>

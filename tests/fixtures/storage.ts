@@ -36,6 +36,7 @@ export function storageLocation(
     total_space_gb: null,
     used_space_gb: null,
     error: null,
+    used_by: [],
     ...overrides,
   };
 }

@@ -6,6 +6,7 @@ import { managedShare, storageLocation } from "../../tests/fixtures/storage";
 import {
   emptyNetworkShareForm,
   findStoragePosition,
+  formatNames,
   formatStorageSize,
   isManagedShare,
   isNamedByKind,
@@ -66,13 +67,29 @@ describe("formatStorageSize", () => {
     [512, "512 GB"],
     [2048, "2 TB"],
     [0.5, "512 MB"],
+    [0.0012, "1.2 MB"],
+    [0.0001, "0.1 MB"],
+    [0, "0 MB"],
   ])("formats %s gigabytes as %s", (gigabytes, expected) => {
     expect(formatStorageSize(gigabytes, "en")).toBe(expected);
+  });
+
+  it("never reads a size above zero as zero", () => {
+    expect(formatStorageSize(0.00001, "en")).toBe("0.01 MB");
   });
 
   // Lokalise locales use underscores, which Intl rejects as a language tag
   it("formats under an underscored locale", () => {
     expect(formatStorageSize(41.26, "en_GB")).toBe("41.3 GB");
+  });
+});
+
+describe("formatNames", () => {
+  it("lists names the way the language writes them", () => {
+    expect(formatNames(["Local files"], "en")).toBe("Local files");
+    expect(formatNames(["Music", "Audiobooks", "Podcasts"], "en_GB")).toBe(
+      "Music, Audiobooks and Podcasts",
+    );
   });
 });
 

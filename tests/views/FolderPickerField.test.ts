@@ -5,6 +5,7 @@ import {
   type ConfigEntry,
   ConfigEntryType,
   type Scope,
+  StorageKind,
   StorageUsage,
 } from "@/plugins/api/interfaces";
 import ConfigEntryField from "@/views/settings/ConfigEntryField.vue";
@@ -79,6 +80,54 @@ describe("FolderPickerField", () => {
     expect(rows[1].text()).toContain("The NAS did not answer.");
     // the server's own directories are no place for music
     expect(wrapper.text()).not.toContain("/data");
+  });
+
+  it("tells why a location that Music Assistant did not add is unavailable", async () => {
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({
+        locations: [
+          storageLocation({
+            path: "/media/usb",
+            name: "SANDISK",
+            kind: StorageKind.REMOVABLE,
+            available: false,
+            error: "The drive does not answer.",
+          }),
+        ],
+      }),
+    );
+    const wrapper = await mountPicker();
+
+    const [usb] = locationButtons(wrapper);
+    expect(usb.text()).toContain("settings.storage.unavailable");
+    expect(usb.get('[data-testid="folder-picker-error"]').text()).toBe(
+      "The drive does not answer.",
+    );
+  });
+
+  it("marks the location that holds the selected folder", async () => {
+    const wrapper = await mountPicker(folderEntry("/media/Albums/Jazz"));
+
+    const [mediaRow, shareRow] = locationButtons(wrapper);
+    expect(
+      mediaRow.find('[data-testid="folder-picker-holds-selection"]').exists(),
+    ).toBe(true);
+    expect(
+      shareRow.find('[data-testid="folder-picker-holds-selection"]').exists(),
+    ).toBe(false);
+  });
+
+  // the app loads no CSS reset, so a list keeps its browser markers unless told not to
+  it("draws its lists without markers", async () => {
+    const wrapper = await mountPicker();
+    const lists = () => wrapper.findAll("ul, ol");
+    expect(lists().every((list) => list.classes("list-none"))).toBe(true);
+
+    await locationButtons(wrapper)[0].trigger("click");
+    await flushPromises();
+
+    expect(lists().length).toBeGreaterThan(1);
+    expect(lists().every((list) => list.classes("list-none"))).toBe(true);
   });
 
   it("refuses to open an unavailable location", async () => {

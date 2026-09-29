@@ -98,7 +98,8 @@ export function findStoragePosition(
 }
 
 /**
- * A size in gigabytes (as the server reports it), in the unit that reads best.
+ * A size in gigabytes (as the server reports it), in the unit that reads best. A size
+ * above zero never reads as zero.
  *
  * @param gigabytes - The size in gigabytes of 1024 megabytes.
  * @param locale - The locale to format the number for.
@@ -110,11 +111,29 @@ export function formatStorageSize(gigabytes: number, locale: string): string {
       : gigabytes >= 1
         ? [gigabytes, "gigabyte"]
         : [gigabytes * 1024, "megabyte"];
+  // below one, a fixed number of decimals would round a small size away
+  const digits: Intl.NumberFormatOptions =
+    value > 0 && value < 1
+      ? { maximumSignificantDigits: 1 }
+      : { maximumFractionDigits: value >= 100 ? 0 : 1 };
   return new Intl.NumberFormat(canonicalizeLocale(locale), {
     style: "unit",
     unit,
-    maximumFractionDigits: value >= 100 ? 0 : 1,
+    ...digits,
   }).format(value);
+}
+
+/**
+ * Names as one list the way the language writes it, e.g. "A, B and C".
+ *
+ * @param names - The names to list.
+ * @param locale - The locale to list them for.
+ */
+export function formatNames(names: readonly string[], locale: string): string {
+  return new Intl.ListFormat(canonicalizeLocale(locale), {
+    style: "long",
+    type: "conjunction",
+  }).format(names);
 }
 
 /** A network share Music Assistant mounted and manages. */

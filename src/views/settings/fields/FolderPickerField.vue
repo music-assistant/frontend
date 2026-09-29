@@ -70,13 +70,16 @@ const selectedPath = computed(() =>
     : null,
 );
 
+const selectedPosition = computed(() =>
+  selectedPath.value
+    ? findStoragePosition(mediaLocations.value, selectedPath.value)
+    : null,
+);
+
 // a stored path outside every location (a legacy source, a location gone since)
 // stays the selection until the user picks another folder
 const selectionOutsideLocations = computed(
-  () =>
-    !!info.value &&
-    !!selectedPath.value &&
-    !findStoragePosition(mediaLocations.value, selectedPath.value),
+  () => !!info.value && !!selectedPath.value && !selectedPosition.value,
 );
 
 const openFolder = async (target: StoragePosition) => {
@@ -205,6 +208,7 @@ onMounted(refresh);
       <FolderPickerLocations
         v-else
         :locations="mediaLocations"
+        :selected-location-path="selectedPosition?.location.path"
         :disabled="disabled || loadingFolders"
         @open="openLocation"
       />

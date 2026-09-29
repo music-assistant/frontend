@@ -136,6 +136,63 @@ describe("StorageSettings", () => {
     );
   });
 
+  it("names the sources that use a location and keeps it from being removed", async () => {
+    const inUse = storageLocation({
+      ...folder,
+      used_by: ["Local files", "Audiobooks"],
+    });
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [inUse, share] }),
+    );
+
+    const wrapper = await mountPage();
+
+    const inUseRow = row(wrapper, inUse);
+    expect(inUseRow.get('[data-testid="storage-used-by"]').text()).toBe(
+      "settings.storage.used_by",
+    );
+    const remove = inUseRow.get('[data-testid="storage-remove"]');
+    expect(remove.attributes("disabled")).toBeDefined();
+    // the reason sits on the wrapper, as a disabled button takes no pointer
+    expect(remove.element.parentElement?.getAttribute("title")).toBe(
+      "settings.storage.remove_in_use",
+    );
+    expect(remove.attributes("aria-describedby")).toBe(
+      inUseRow.get('[data-testid="storage-used-by"]').attributes("id"),
+    );
+    // a location nobody uses can still be removed
+    expect(
+      row(wrapper, share)
+        .get('[data-testid="storage-remove"]')
+        .attributes("disabled"),
+    ).toBeUndefined();
+  });
+
+  it("tells why any unavailable location is unavailable", async () => {
+    const usb = storageLocation({
+      path: "/media/usb",
+      name: "SANDISK",
+      kind: StorageKind.REMOVABLE,
+      available: false,
+      error: "The drive does not answer.",
+    });
+    const gone = storageLocation({ ...folder, available: false });
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [usb, gone] }),
+    );
+
+    const wrapper = await mountPage();
+
+    expect(row(wrapper, usb).get('[data-testid="storage-error"]').text()).toBe(
+      "The drive does not answer.",
+    );
+    // without a reason the badge says it all
+    expect(row(wrapper, gone).text()).toContain("settings.storage.unavailable");
+    expect(
+      row(wrapper, gone).find('[data-testid="storage-error"]').exists(),
+    ).toBe(false);
+  });
+
   it("lists the server's own storage apart from the music locations", async () => {
     const wrapper = await mountPage();
 

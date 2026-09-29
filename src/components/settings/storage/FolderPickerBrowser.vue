@@ -57,7 +57,7 @@ const openSubfolder = (name: string) =>
 <template>
   <div class="flex flex-col gap-2">
     <nav :aria-label="$t('settings.folder_picker.breadcrumb')">
-      <ol class="flex flex-wrap items-center gap-1 text-sm">
+      <ol class="m-0 flex list-none flex-wrap items-center gap-1 p-0 text-sm">
         <li>
           <button
             type="button"
@@ -108,7 +108,7 @@ const openSubfolder = (name: string) =>
       >
         {{ $t("settings.folder_picker.no_subfolders") }}
       </p>
-      <ul v-else class="flex flex-col py-1">
+      <ul v-else class="m-0 flex list-none flex-col px-0 py-1">
         <li v-for="name in subfolders" :key="name">
           <button
             type="button"

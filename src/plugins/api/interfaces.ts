@@ -1944,8 +1944,11 @@ export interface StorageLocation {
   total_space_gb: number | null;
   // size of the directory itself; data and cache locations only
   used_space_gb: number | null;
-  // localized reason why a managed share is not available
+  // localized reason why the location is not available
   error: string | null;
+  // names of the music sources that read from the location; empty for a caller that
+  // does not manage every source. A location in use can not be removed
+  used_by: string[];
 }
 
 export interface StorageInfo {

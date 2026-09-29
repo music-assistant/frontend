@@ -111,10 +111,44 @@ describe("NetworkShareDialog", () => {
     expect(field("share-advanced")).toBeNull();
   });
 
-  it("offers only the share types this install can mount", async () => {
+  it("offers a choice only between the share types this install can mount", async () => {
+    await openDialog();
+
+    expect(document.querySelectorAll("[role='radio']")).toHaveLength(2);
+    expect(field("share-type")).toBeNull();
+  });
+
+  it("states the only share type this install can mount instead of offering it", async () => {
     await openDialog(null, [ShareType.CIFS]);
 
-    expect(document.querySelectorAll("[role='radio']")).toHaveLength(1);
+    expect(document.querySelectorAll("[role='radio']")).toHaveLength(0);
+    expect(field("share-type")?.textContent?.trim()).toBe(
+      "settings.storage.share_type.cifs",
+    );
+    // and preselects it
+    expect(field("share-username")).not.toBeNull();
+  });
+
+  it("brings the revealed protocol version into view", async () => {
+    const scrollIntoView = vi
+      .spyOn(HTMLElement.prototype, "scrollIntoView")
+      .mockImplementation(() => undefined);
+    try {
+      await openDialog();
+
+      await click('[data-testid="share-advanced"]');
+
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+      expect(scrollIntoView.mock.contexts[0]).toBe(
+        document
+          .getElementById(
+            field("share-advanced")!.id.replace(/-advanced$/, "-version"),
+          )
+          ?.closest("[data-slot='field']"),
+      );
+    } finally {
+      scrollIntoView.mockRestore();
+    }
   });
 
   it("shows why the server refused the share and stays open", async () => {
@@ -141,10 +175,11 @@ describe("NetworkShareDialog", () => {
     expect(field("share-share")?.value).toBe("music");
     expect(field("share-username")?.value).toBe("marcel");
     expect(field("share-password")?.value).toBe("");
-    // the type of an existing share is fixed
-    const radios =
-      document.querySelectorAll<HTMLButtonElement>("[role='radio']");
-    expect(Array.from(radios, (radio) => radio.disabled)).toEqual([true]);
+    // the type of an existing share is fixed, so it is stated, not offered
+    expect(document.querySelectorAll("[role='radio']")).toHaveLength(0);
+    expect(field("share-type")?.textContent?.trim()).toBe(
+      "settings.storage.share_type.cifs",
+    );
   });
 
   it("replaces the settings of an existing share, keeping its password", async () => {
