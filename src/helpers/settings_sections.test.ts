@@ -14,6 +14,7 @@ const ALL_SECTIONS = [
   "plugin_providers",
   "players",
   "audio_analysis_providers",
+  "storage",
   "profile",
   "frontend",
   "users",
