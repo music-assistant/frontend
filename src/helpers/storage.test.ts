@@ -15,6 +15,7 @@ import {
   networkShareFormChanged,
   networkShareFormFromLocation,
   networkShareSettings,
+  pathParts,
   SHARE_TYPE_LABEL_KEYS,
   STORAGE_KIND_ICONS,
   STORAGE_KIND_LABEL_KEYS,
@@ -58,6 +59,26 @@ describe("joinStoragePath and findStoragePosition", () => {
 
   it("finds nothing for a path outside every location", () => {
     expect(findStoragePosition(locations, "/data/music")).toBeNull();
+  });
+});
+
+describe("pathParts", () => {
+  it.each([
+    ["/media/music/Albums", ["/media/", "music/", "Albums"]],
+    ["/media", ["/media"]],
+    ["/media/music/", ["/media/", "music/"]],
+    ["/", ["/"]],
+    ["music/Albums", ["music/", "Albums"]],
+    ["", []],
+  ])("cuts %s after each slash", (path, parts) => {
+    expect(pathParts(path)).toEqual(parts);
+  });
+
+  it("keeps a name with spaces in one piece", () => {
+    expect(pathParts("/media/OK Computer (1997)")).toEqual([
+      "/media/",
+      "OK Computer (1997)",
+    ]);
   });
 });
 

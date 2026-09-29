@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import StoragePath from "@/components/settings/storage/StoragePath.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -133,8 +134,8 @@ const removeBlockedReason = computed(() =>
       </ItemTitle>
       <!-- a path, a reason or a list of sources is read in full, so these lines do
            not take the two-line clamp of ItemDescription -->
-      <p class="text-muted-foreground m-0 text-sm leading-normal break-all">
-        {{ location.path }}
+      <p class="text-muted-foreground m-0 text-sm leading-normal">
+        <StoragePath :path="location.path" />
       </p>
       <ItemDescription v-if="shareSummary" data-testid="storage-share-summary">
         {{ shareSummary }}

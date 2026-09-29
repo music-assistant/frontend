@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import StoragePath from "@/components/settings/storage/StoragePath.vue";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -126,10 +127,12 @@ const openSubfolder = (name: string) =>
       </ul>
     </div>
 
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <span class="text-muted-foreground min-w-0 text-xs break-all">
-        {{ currentPath }}
-      </span>
+    <!-- the path gets a line of its own, so the button keeps one place however
+         long the path is -->
+    <p class="text-muted-foreground m-0 text-xs">
+      <StoragePath :path="currentPath" />
+    </p>
+    <div class="flex justify-end">
       <Button
         type="button"
         size="sm"

@@ -70,6 +70,21 @@ export function joinStoragePath(
 }
 
 /**
+ * A path cut into the pieces a line may break between: every piece but the last ends
+ * with its slash, and a leading slash stays with the first name.
+ *
+ * @param path - The path to cut, e.g. `/media/music` into `/media/` and `music`.
+ */
+export function pathParts(path: string): string[] {
+  const parts = path.match(/[^/]*\/+|[^/]+$/g) ?? [];
+  const [first, second, ...rest] = parts;
+  if (first !== undefined && second !== undefined && /^\/+$/.test(first)) {
+    return [first + second, ...rest];
+  }
+  return parts;
+}
+
+/**
  * The storage location holding a folder, and the subfolders leading to it.
  *
  * The innermost location wins when locations are nested. A path that lies in no

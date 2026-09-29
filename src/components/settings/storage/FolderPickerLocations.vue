@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import StoragePath from "@/components/settings/storage/StoragePath.vue";
 import { Badge } from "@/components/ui/badge";
 import {
   isNamedByKind,
@@ -65,10 +66,10 @@ const emit = defineEmits<{ open: [location: StorageLocation] }>();
             </Badge>
           </span>
           <span
-            class="text-muted-foreground text-xs break-all"
+            class="text-muted-foreground text-xs"
             :class="{ 'opacity-60': !location.available }"
           >
-            {{ location.path }}
+            <StoragePath :path="location.path" />
           </span>
           <!-- the reason stays readable while the rest of the row is dimmed -->
           <span

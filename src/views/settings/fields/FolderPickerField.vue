@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import FolderPickerBrowser from "@/components/settings/storage/FolderPickerBrowser.vue";
 import FolderPickerLocations from "@/components/settings/storage/FolderPickerLocations.vue";
+import StoragePath from "@/components/settings/storage/StoragePath.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -155,8 +156,11 @@ onMounted(refresh);
           <span class="text-muted-foreground text-xs">
             {{ $t("settings.folder_picker.selected") }}
           </span>
-          <span class="text-sm font-medium break-all">
-            {{ selectedPath ?? $t("settings.folder_picker.none_selected") }}
+          <span class="text-sm font-medium">
+            <StoragePath v-if="selectedPath" :path="selectedPath" />
+            <template v-else>
+              {{ $t("settings.folder_picker.none_selected") }}
+            </template>
           </span>
           <span
             v-if="selectionOutsideLocations"

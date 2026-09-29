@@ -5,7 +5,7 @@ import type {
   ConfigValueType,
 } from "@/plugins/api/interfaces";
 import { CircleCheck } from "@lucide/vue";
-import { useId, useTemplateRef } from "vue";
+import { computed, useId, useTemplateRef } from "vue";
 
 const props = defineProps<{
   label: string;
@@ -26,6 +26,11 @@ const optionTitle = (option: ConfigValueOption) =>
 const optionHint = (option: ConfigValueOption) =>
   option.disabled ? option.disabled_reason : option.description;
 
+// options with nothing to explain are short, so they sit side by side
+const compact = computed(() =>
+  props.options.every((option) => !optionHint(option)),
+);
+
 const isSelected = (option: ConfigValueOption) =>
   props.value !== null &&
   props.value !== undefined &&
@@ -35,9 +40,9 @@ const onPick = (option: ConfigValueOption) => {
   emit("update:value", option.value);
 };
 
-// arrow keys move the focus between the options, as a radio group is expected to;
-// only a click, Enter or Space picks one, so moving never submits a step that
-// submits on pick
+// arrow keys move the focus between the options in the order they read in (row by
+// row when they sit side by side), as a radio group is expected to; only a click,
+// Enter or Space picks one, so moving never submits a step that submits on pick
 const moveFocus = (event: KeyboardEvent, step: number) => {
   const buttons = Array.from(
     group.value?.querySelectorAll<HTMLButtonElement>(
@@ -52,7 +57,7 @@ const moveFocus = (event: KeyboardEvent, step: number) => {
 </script>
 
 <template>
-  <div class="flex w-full flex-col gap-2 py-1">
+  <div class="@container flex w-full flex-col gap-2 py-1">
     <span v-if="label" :id="labelId" class="text-muted-foreground text-sm">{{
       label
     }}</span>
@@ -60,7 +65,12 @@ const moveFocus = (event: KeyboardEvent, step: number) => {
       ref="group"
       role="radiogroup"
       :aria-labelledby="label ? labelId : undefined"
-      class="flex flex-col gap-2"
+      :class="
+        compact
+          ? 'grid grid-cols-2 gap-2 @md:grid-cols-4'
+          : 'flex flex-col gap-2'
+      "
+      :data-layout="compact ? 'compact' : 'stacked'"
       @keydown.down="moveFocus($event, 1)"
       @keydown.right="moveFocus($event, 1)"
       @keydown.up="moveFocus($event, -1)"
@@ -76,11 +86,16 @@ const moveFocus = (event: KeyboardEvent, step: number) => {
         :disabled="disabled || option.disabled"
         data-testid="option-button"
         :data-selected="isSelected(option) || undefined"
-        class="h-auto items-start gap-2 p-3 text-left whitespace-normal"
-        :class="{
-          'border-primary bg-primary/10 dark:border-primary dark:bg-primary/15':
-            isSelected(option),
-        }"
+        class="h-auto whitespace-normal"
+        :class="[
+          compact
+            ? 'relative min-h-9 justify-center px-3 py-2 text-center'
+            : 'items-start gap-2 p-3 text-left',
+          {
+            'border-primary bg-primary/10 dark:border-primary dark:bg-primary/15':
+              isSelected(option),
+          },
+        ]"
         @click="onPick(option)"
       >
         <span class="flex min-w-0 flex-1 flex-col gap-1">
@@ -92,10 +107,14 @@ const moveFocus = (event: KeyboardEvent, step: number) => {
             {{ optionHint(option) }}
           </span>
         </span>
-        <!-- the mark tells the selected option apart without relying on colour -->
+        <!-- the mark tells the selected option apart without relying on colour; a
+             compact button carries it on its corner, so the label keeps its width -->
         <CircleCheck
           v-if="isSelected(option)"
           class="text-primary size-4 shrink-0"
+          :class="{
+            'bg-background absolute -top-1.5 -right-1.5 rounded-full': compact,
+          }"
           aria-hidden="true"
         />
       </Button>

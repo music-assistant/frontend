@@ -17,6 +17,14 @@ const OPTIONS: ConfigValueOption[] = [
   },
 ];
 
+// options with nothing to explain, as the content types of Local files
+const SHORT_OPTIONS: ConfigValueOption[] = [
+  { title: "Music", value: "music" },
+  { title: "Audiobooks", value: "audiobooks" },
+  { title: "Podcasts", value: "podcasts" },
+  { title: "Sound Effects", value: "sound_effects" },
+];
+
 let wrapper: VueWrapper | undefined;
 
 afterEach(() => {
@@ -71,6 +79,46 @@ describe("RadioGroupField", () => {
     expect(checkedStates()).toEqual(["true", "false", "false"]);
   });
 
+  it("lays options with nothing to explain out side by side", async () => {
+    mountField("music", SHORT_OPTIONS);
+
+    const group = wrapper!.get('[role="radiogroup"]');
+    expect(group.attributes("data-layout")).toBe("compact");
+    expect(group.classes()).toContain("grid");
+    // the selection keeps its mark
+    expect(checkedStates()).toEqual(["true", "false", "false", "false"]);
+    expect(optionButtons()[0].find("svg").exists()).toBe(true);
+
+    await optionButtons()[3].trigger("click");
+
+    expect(checkedStates()).toEqual(["false", "false", "false", "true"]);
+  });
+
+  it.each([
+    ["a description", { description: "Your own recordings." }],
+    ["a disabled reason", { disabled: true, disabled_reason: "Not here." }],
+  ])("keeps the options stacked when one carries %s", (_label, extra) => {
+    mountField("music", [
+      ...SHORT_OPTIONS.slice(0, 3),
+      { ...SHORT_OPTIONS[3], ...extra },
+    ]);
+
+    expect(wrapper!.get('[role="radiogroup"]').attributes("data-layout")).toBe(
+      "stacked",
+    );
+  });
+
+  it("moves the focus side by side in reading order", async () => {
+    mountField("music", SHORT_OPTIONS);
+    const buttons = optionButtons();
+    (buttons[1].element as HTMLButtonElement).focus();
+
+    await buttons[1].trigger("keydown", { key: "ArrowRight" });
+    expect(document.activeElement).toBe(buttons[2].element);
+    await buttons[2].trigger("keydown", { key: "ArrowLeft" });
+    expect(document.activeElement).toBe(buttons[1].element);
+  });
+
   // a step that submits on pick must not submit on a keypress that only moves around
   it("moves the focus with the arrow keys without picking", async () => {
     mountField("music");
@@ -88,11 +136,11 @@ describe("RadioGroupField", () => {
 });
 
 /** Mounts the field the way its form does: a picked value comes back as the current one. */
-function mountField(value: ConfigValueType) {
+function mountField(value: ConfigValueType, options = OPTIONS) {
   wrapper = mount(RadioGroupField, {
     props: {
       label: "What do you want to add?",
-      options: OPTIONS,
+      options,
       value,
       "onUpdate:value": (picked: ConfigValueType) =>
         wrapper!.setProps({ value: picked }),
