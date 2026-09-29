@@ -1,7 +1,7 @@
 /**
  * The row's own looks for a release that is not in the library: the muted
  * treatment (instead of the unavailable one), its artwork kept, and a subtitle
- * that says where it stands.
+ * that says where it stands. Also the subtitle of a slim album mapping.
  */
 import ListviewItem from "@/components/ListviewItem.vue";
 import {
@@ -119,9 +119,11 @@ describe("ListviewItem for a release that is not in the library", () => {
       "album_type.single • Jeff Buckley • 1994",
     );
   });
+});
 
-  // a track's album is a slim mapping, e.g. in an artist's "Appears on" list
-  it("shows only the year of an album mapping", () => {
+// a track's album is a slim mapping, e.g. in an artist's "Appears on" list
+describe("ListviewItem for an album mapping", () => {
+  it("shows only its year", () => {
     const mapping: ItemMapping = {
       item_id: "2",
       provider: "library",

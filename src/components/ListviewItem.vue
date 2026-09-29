@@ -180,7 +180,7 @@
       <div v-else-if="item.media_type == MediaType.ALBUM">
         {{ albumSubtitle }}
       </div>
-      <!-- track/album fallback: artist present -->
+      <!-- track fallback: artist present -->
       <div v-else-if="'artists' in item && item.artists">
         {{ getArtistsString(item.artists) }}
       </div>
