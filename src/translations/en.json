@@ -819,7 +819,7 @@
             "used_space": "{0} used",
             "used_by": "Used by {sources}",
             "read_by": "Also read by {sources}",
-            "remove_in_use": "{sources} uses this location. Remove that music source first. | {sources} use this location. Remove those music sources first.",
+            "remove_in_use": "{sources} uses this location. Disable or remove that music source first. | {sources} use this location. Disable or remove those music sources first.",
             "add_network_share": "Add network share",
             "add_local_folder": "Add a folder on this server",
             "share_added": "Network share added",
