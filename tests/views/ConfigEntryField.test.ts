@@ -74,6 +74,8 @@ const HEADED_FIELDS: [string, ConfigEntryUI][] = [
   ["pairing code", pairingCodeEntry()],
   ["expanded options", expandedOptionsEntry()],
 ];
+// expanded options are a single choice, so their group is a radio group
+const LABELLED_GROUP = '[role="group"], [role="radiogroup"]';
 
 describe("ConfigEntryField", () => {
   it.each([ConfigEntryType.INTEGER, ConfigEntryType.FLOAT])(
@@ -170,6 +172,14 @@ describe("ConfigEntryField", () => {
     expect(wrapper.text()).toContain("Not supported by this player.");
   });
 
+  it("marks the option the entry holds", () => {
+    const wrapper = mountField({ ...expandedOptionsEntry(), value: "flac" });
+
+    expect(
+      optionButtons(wrapper).map((el) => el.attributes("aria-checked")),
+    ).toEqual(["true", "false"]);
+  });
+
   it("emits the value of the option behind the pressed button", async () => {
     const wrapper = mountField(expandedOptionsEntry());
 
@@ -242,7 +252,7 @@ describe("ConfigEntryField", () => {
       const wrapper = mountField({ ...confEntry, label: "" });
 
       expect(
-        wrapper.get('[role="group"]').attributes("aria-labelledby"),
+        wrapper.get(LABELLED_GROUP).attributes("aria-labelledby"),
       ).toBeUndefined();
       expect(wrapper.text()).not.toContain(confEntry.key);
     },
@@ -253,9 +263,7 @@ describe("ConfigEntryField", () => {
     (_name, confEntry) => {
       const wrapper = mountField({ ...confEntry, label: null });
 
-      const labelId = wrapper
-        .get('[role="group"]')
-        .attributes("aria-labelledby");
+      const labelId = wrapper.get(LABELLED_GROUP).attributes("aria-labelledby");
       expect(labelId).toBeDefined();
       expect(wrapper.get(`#${labelId}`).text()).toBe(confEntry.key);
     },

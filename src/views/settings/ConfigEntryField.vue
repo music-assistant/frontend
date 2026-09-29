@@ -188,6 +188,7 @@
       "
       :label="displayLabel()"
       :options="displayOptions"
+      :value="confEntry.value"
       :disabled="isFieldDisabled"
       @update:value="onUpdateValue($event)"
     />
