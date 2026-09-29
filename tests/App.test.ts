@@ -139,8 +139,7 @@ const {
           }
         | undefined,
       activePlayer: undefined as
-        | { current_media?: { title?: string; artist?: string } }
-        | undefined,
+        { current_media?: { title?: string; artist?: string } } | undefined,
       forceMobileLayout: false,
       isIngressSession: false,
       roles: [] as Role[],
