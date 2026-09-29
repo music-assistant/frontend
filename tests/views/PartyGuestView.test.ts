@@ -33,9 +33,10 @@ const guest = vi.hoisted(() => ({
 }));
 
 // shared so tests can set the party config before mounting the view
-const partyConfig = vi.hoisted(() => ({
-  config: { value: null as PartyConfig | null },
-}));
+const partyConfig = await vi.hoisted(async () => {
+  const { ref } = await import("vue");
+  return { config: ref<PartyConfig | null>(null) };
+});
 
 vi.mock("@/plugins/api", () => ({
   default: {
@@ -306,5 +307,27 @@ describe("PartyGuestView requesting the same track again", () => {
     expect(
       view.findComponent(PartyResultItem).props("addedItems").has(track.uri),
     ).toBe(true);
+  });
+  it("lets a guest request an added track again once duplicates are allowed", async () => {
+    partyConfig.config.value = {
+      prevent_duplicate_tracks: true,
+    } as unknown as PartyConfig;
+    const view = mountViewRaw();
+    await flushPromises();
+
+    const track = trackFixture();
+    view.findComponent(MediaSearch).vm.$emit("select", track);
+    await flushPromises();
+    view.findComponent(PartyResultItem).vm.$emit("addToQueue", track, "end");
+    await flushPromises();
+
+    partyConfig.config.value = {
+      prevent_duplicate_tracks: false,
+    } as unknown as PartyConfig;
+    await flushPromises();
+
+    expect(
+      view.findComponent(PartyResultItem).props("addedItems").has(track.uri),
+    ).toBe(false);
   });
 });

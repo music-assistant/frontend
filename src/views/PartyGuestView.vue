@@ -69,7 +69,7 @@
           :boost-badge-color="boostBadgeColor"
           :request-badge-color="requestBadgeColor"
           :adding-items="addingItems"
-          :added-items="addedItems"
+          :added-items="shownAddedItems"
           :queued-uris="queuedUris"
           :is-expanded="
             expandedResultItemId === `${track.media_type}-${track.item_id}`
@@ -129,7 +129,7 @@
         :boost-badge-color="boostBadgeColor"
         :request-badge-color="requestBadgeColor"
         :adding-items="addingItems"
-        :added-items="addedItems"
+        :added-items="shownAddedItems"
         :queued-uris="queuedUris"
         :is-expanded="true"
         @add-to-queue="addToQueue"
@@ -273,6 +273,12 @@ const queuedUris = computed(() =>
 // --- Template-specific state ---
 const addingItems = ref(new Set<string>());
 const addedItems = ref(new Set<string>());
+// only shown while duplicates are prevented, so toggling the setting takes effect right away
+const shownAddedItems = computed(() =>
+  (partyConfig.value?.prevent_duplicate_tracks ?? true)
+    ? addedItems.value
+    : new Set<string>(),
+);
 const skippingSong = ref(false);
 const boostingQueueItemId = ref("");
 const expandedResultItemId = ref("");
@@ -367,10 +373,7 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
       }
     }
 
-    // only lock the track out of re-requesting when duplicates are disallowed
-    if (partyConfig.value?.prevent_duplicate_tracks ?? true) {
-      addedItems.value.add(item.uri);
-    }
+    addedItems.value.add(item.uri);
 
     const message =
       position === "next"
