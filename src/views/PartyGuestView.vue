@@ -367,7 +367,10 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
       }
     }
 
-    addedItems.value.add(item.uri);
+    // only lock the track out of re-requesting when duplicates are disallowed
+    if (partyConfig.value?.prevent_duplicate_tracks ?? true) {
+      addedItems.value.add(item.uri);
+    }
 
     const message =
       position === "next"
