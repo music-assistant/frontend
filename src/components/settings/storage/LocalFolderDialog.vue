@@ -1,5 +1,5 @@
 <template>
-  <Dialog :open="open" @update:open="emit('update:open', $event)">
+  <Dialog :open="open" @update:open="onOpenChange">
     <DialogContent
       class="sm:max-w-[480px]"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
@@ -21,6 +21,7 @@
             <Input
               :id="`${formId}-path`"
               v-model="path"
+              :disabled="saving"
               :aria-invalid="pathInvalid || !!error"
               autocomplete="off"
               data-testid="folder-path"
@@ -39,7 +40,12 @@
         </FieldGroup>
       </form>
       <DialogFooter>
-        <Button variant="outline" @click="emit('update:open', false)">
+        <Button
+          variant="outline"
+          :disabled="saving"
+          data-testid="folder-cancel"
+          @click="onOpenChange(false)"
+        >
           {{ $t("cancel") }}
         </Button>
         <Button
@@ -98,6 +104,12 @@ const saving = ref(false);
 const error = ref<string | null>(null);
 
 const pathInvalid = computed(() => submitted.value && !path.value.trim());
+
+// the form waits for the answer to its save, which belongs to what is on screen
+const onOpenChange = (open: boolean) => {
+  if (!open && saving.value) return;
+  emit("update:open", open);
+};
 
 const save = async () => {
   submitted.value = true;

@@ -212,6 +212,52 @@ describe("NetworkShareDialog", () => {
   });
 });
 
+describe("NetworkShareDialog while it saves", () => {
+  it("can not be closed or edited until the share is added, then closes once", async () => {
+    const added = deferred<ManagedShareLocation>();
+    apiMock.addNetworkShare.mockReturnValue(added.promise);
+    const wrapper = await openDialog();
+    await type("share-server", "nas.local");
+    await type("share-share", "music");
+    await submit();
+
+    await pressEscape();
+    expect(wrapper.emitted("update:open")).toBeUndefined();
+    await click('[data-slot="dialog-close"]');
+    expect(wrapper.emitted("update:open")).toBeUndefined();
+    await click('[data-testid="share-cancel"]');
+    expect(wrapper.emitted("update:open")).toBeUndefined();
+
+    expect(isHeld(field("share-server"))).toBe(true);
+    expect(isHeld(field("share-cancel"))).toBe(true);
+
+    added.resolve(share);
+    await flushPromises();
+
+    expect(wrapper.emitted("update:open")).toEqual([[false]]);
+  });
+
+  it("stays open with the reason after a failed add and can then be closed", async () => {
+    const added = deferred<ManagedShareLocation>();
+    apiMock.addNetworkShare.mockReturnValue(added.promise);
+    const wrapper = await openDialog();
+    await type("share-server", "nas.local");
+    await type("share-share", "music");
+    await submit();
+
+    added.reject(new ApiCommandError("Login failed.", 1, "Login failed."));
+    await flushPromises();
+
+    expect(wrapper.emitted("update:open")).toBeUndefined();
+    expect(field("share-error")?.textContent).toContain("Login failed.");
+    expect(isHeld(field("share-server"))).toBe(false);
+
+    await pressEscape();
+
+    expect(wrapper.emitted("update:open")).toEqual([[false]]);
+  });
+});
+
 async function openDialog(
   location: ManagedShareLocation | null = null,
   shareTypes: ShareType[] = [ShareType.CIFS, ShareType.NFS],
@@ -256,4 +302,30 @@ async function click(selector: string) {
 async function submit() {
   document.querySelector("form")?.dispatchEvent(new Event("submit"));
   await flushPromises();
+}
+
+async function pressEscape() {
+  document.activeElement?.dispatchEvent(
+    new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+  );
+  await flushPromises();
+}
+
+/** Whether a control takes no input, on its own or through a disabled fieldset. */
+function isHeld(element: Element | null) {
+  if (!element) throw new Error("No such control");
+  return (
+    element.hasAttribute("disabled") || !!element.closest("fieldset[disabled]")
+  );
+}
+
+/** A promise the test settles by hand. */
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((settle, fail) => {
+    resolve = settle;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
 }

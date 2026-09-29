@@ -1,5 +1,5 @@
 <template>
-  <Dialog :open="open" @update:open="emit('update:open', $event)">
+  <Dialog :open="open" @update:open="onOpenChange">
     <DialogContent
       class="flex max-h-[90vh] flex-col p-0 sm:max-w-[520px]"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
@@ -18,194 +18,206 @@
       </DialogHeader>
       <div class="flex-1 overflow-y-auto px-6">
         <form :id="formId" @submit.prevent="submit">
-          <FieldGroup>
-            <FieldSet v-if="shareTypeChoices.length > 1" class="gap-3">
-              <FieldLegend variant="label" class="mb-0">
-                {{ $t("settings.storage.share_dialog.share_type") }}
-              </FieldLegend>
-              <RadioGroup
-                :model-value="form.shareType"
-                class="flex flex-wrap gap-6"
-                @update:model-value="setShareType($event as ShareType)"
-              >
-                <Field
-                  v-for="shareType in shareTypeChoices"
-                  :key="shareType"
-                  orientation="horizontal"
-                  class="w-auto"
+          <!-- a disabled fieldset holds every control of the form while it saves -->
+          <fieldset :disabled="saving" class="m-0 min-w-0 border-0 p-0">
+            <FieldGroup>
+              <FieldSet v-if="shareTypeChoices.length > 1" class="gap-3">
+                <FieldLegend variant="label" class="mb-0">
+                  {{ $t("settings.storage.share_dialog.share_type") }}
+                </FieldLegend>
+                <RadioGroup
+                  :model-value="form.shareType"
+                  class="flex flex-wrap gap-6"
+                  @update:model-value="setShareType($event as ShareType)"
                 >
-                  <RadioGroupItem
-                    :id="`${formId}-${shareType}`"
-                    :value="shareType"
-                  />
-                  <FieldLabel
-                    :for="`${formId}-${shareType}`"
-                    class="font-normal"
+                  <Field
+                    v-for="shareType in shareTypeChoices"
+                    :key="shareType"
+                    orientation="horizontal"
+                    class="w-auto"
                   >
-                    {{ $t(SHARE_TYPE_LABEL_KEYS[shareType]) }}
-                  </FieldLabel>
-                </Field>
-              </RadioGroup>
-            </FieldSet>
-            <!-- a single share type is no choice: it is stated, not offered -->
-            <Field v-else orientation="horizontal" class="gap-2">
-              <FieldTitle>
-                {{ $t("settings.storage.share_dialog.share_type") }}
-              </FieldTitle>
-              <span class="text-sm" data-testid="share-type">
-                {{ $t(SHARE_TYPE_LABEL_KEYS[form.shareType]) }}
-              </span>
-            </Field>
+                    <RadioGroupItem
+                      :id="`${formId}-${shareType}`"
+                      :value="shareType"
+                    />
+                    <FieldLabel
+                      :for="`${formId}-${shareType}`"
+                      class="font-normal"
+                    >
+                      {{ $t(SHARE_TYPE_LABEL_KEYS[shareType]) }}
+                    </FieldLabel>
+                  </Field>
+                </RadioGroup>
+              </FieldSet>
+              <!-- a single share type is no choice: it is stated, not offered -->
+              <Field v-else orientation="horizontal" class="gap-2">
+                <FieldTitle>
+                  {{ $t("settings.storage.share_dialog.share_type") }}
+                </FieldTitle>
+                <span class="text-sm" data-testid="share-type">
+                  {{ $t(SHARE_TYPE_LABEL_KEYS[form.shareType]) }}
+                </span>
+              </Field>
 
-            <Field :data-invalid="serverInvalid">
-              <FieldLabel :for="`${formId}-server`">
-                {{ $t("settings.storage.share_dialog.server") }}
-              </FieldLabel>
-              <Input
-                :id="`${formId}-server`"
-                v-model="form.server"
-                :aria-invalid="serverInvalid"
-                autocomplete="off"
-                data-testid="share-server"
-              />
-              <FieldError
-                v-if="serverInvalid"
-                :errors="[$t('auth.field_required')]"
-              />
-              <FieldDescription v-else>
-                {{ $t("settings.storage.share_dialog.server_hint") }}
-              </FieldDescription>
-            </Field>
-
-            <Field :data-invalid="shareInvalid">
-              <FieldLabel :for="`${formId}-share`">
-                {{
-                  isCifs
-                    ? $t("settings.storage.share_dialog.share_name")
-                    : $t("settings.storage.share_dialog.export_path")
-                }}
-              </FieldLabel>
-              <Input
-                :id="`${formId}-share`"
-                v-model="form.share"
-                :aria-invalid="shareInvalid"
-                autocomplete="off"
-                data-testid="share-share"
-              />
-              <FieldError
-                v-if="shareInvalid"
-                :errors="[$t('auth.field_required')]"
-              />
-              <FieldDescription v-else>
-                {{
-                  isCifs
-                    ? $t("settings.storage.share_dialog.share_name_hint")
-                    : $t("settings.storage.share_dialog.export_path_hint")
-                }}
-              </FieldDescription>
-            </Field>
-
-            <template v-if="isCifs">
-              <Field>
-                <FieldLabel :for="`${formId}-username`">
-                  {{ $t("settings.storage.share_dialog.username") }}
+              <Field :data-invalid="serverInvalid">
+                <FieldLabel :for="`${formId}-server`">
+                  {{ $t("settings.storage.share_dialog.server") }}
                 </FieldLabel>
                 <Input
-                  :id="`${formId}-username`"
-                  v-model="form.username"
+                  :id="`${formId}-server`"
+                  v-model="form.server"
+                  :aria-invalid="serverInvalid"
                   autocomplete="off"
-                  data-testid="share-username"
+                  data-testid="share-server"
                 />
+                <FieldError
+                  v-if="serverInvalid"
+                  :errors="[$t('auth.field_required')]"
+                />
+                <FieldDescription v-else>
+                  {{ $t("settings.storage.share_dialog.server_hint") }}
+                </FieldDescription>
               </Field>
-              <Field>
-                <FieldLabel :for="`${formId}-password`">
-                  {{ $t("settings.storage.share_dialog.password") }}
+
+              <Field :data-invalid="shareInvalid">
+                <FieldLabel :for="`${formId}-share`">
+                  {{
+                    isCifs
+                      ? $t("settings.storage.share_dialog.share_name")
+                      : $t("settings.storage.share_dialog.export_path")
+                  }}
                 </FieldLabel>
-                <!-- new-password keeps the browser from filling in the login of this app -->
                 <Input
-                  :id="`${formId}-password`"
-                  v-model="form.password"
-                  type="password"
-                  autocomplete="new-password"
-                  :placeholder="
-                    location?.username
-                      ? $t('settings.storage.share_dialog.password_keep')
-                      : undefined
-                  "
-                  data-testid="share-password"
+                  :id="`${formId}-share`"
+                  v-model="form.share"
+                  :aria-invalid="shareInvalid"
+                  autocomplete="off"
+                  data-testid="share-share"
                 />
-                <FieldDescription>
-                  {{ $t("settings.storage.share_dialog.credentials_hint") }}
+                <FieldError
+                  v-if="shareInvalid"
+                  :errors="[$t('auth.field_required')]"
+                />
+                <FieldDescription v-else>
+                  {{
+                    isCifs
+                      ? $t("settings.storage.share_dialog.share_name_hint")
+                      : $t("settings.storage.share_dialog.export_path_hint")
+                  }}
                 </FieldDescription>
               </Field>
-            </template>
 
-            <Field orientation="horizontal">
-              <FieldContent>
-                <FieldLabel :for="`${formId}-read-only`">
-                  {{ $t("settings.storage.read_only") }}
+              <template v-if="isCifs">
+                <Field>
+                  <FieldLabel :for="`${formId}-username`">
+                    {{ $t("settings.storage.share_dialog.username") }}
+                  </FieldLabel>
+                  <Input
+                    :id="`${formId}-username`"
+                    v-model="form.username"
+                    autocomplete="off"
+                    data-testid="share-username"
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel :for="`${formId}-password`">
+                    {{ $t("settings.storage.share_dialog.password") }}
+                  </FieldLabel>
+                  <!-- new-password keeps the browser from filling in the login of this app -->
+                  <Input
+                    :id="`${formId}-password`"
+                    v-model="form.password"
+                    type="password"
+                    autocomplete="new-password"
+                    :placeholder="
+                      location?.username
+                        ? $t('settings.storage.share_dialog.password_keep')
+                        : undefined
+                    "
+                    data-testid="share-password"
+                  />
+                  <FieldDescription>
+                    {{ $t("settings.storage.share_dialog.credentials_hint") }}
+                  </FieldDescription>
+                </Field>
+              </template>
+
+              <Field orientation="horizontal">
+                <FieldContent>
+                  <FieldLabel :for="`${formId}-read-only`">
+                    {{ $t("settings.storage.read_only") }}
+                  </FieldLabel>
+                  <FieldDescription>
+                    {{ $t("settings.storage.share_dialog.read_only_hint") }}
+                  </FieldDescription>
+                </FieldContent>
+                <Switch :id="`${formId}-read-only`" v-model="form.readOnly" />
+              </Field>
+
+              <!-- the protocol version is all there is behind the advanced settings -->
+              <Field v-if="versionChoices.length > 0" orientation="horizontal">
+                <Switch
+                  :id="`${formId}-advanced`"
+                  :model-value="showAdvanced"
+                  data-testid="share-advanced"
+                  @update:model-value="toggleAdvanced"
+                />
+                <FieldLabel :for="`${formId}-advanced`" class="font-normal">
+                  {{ $t("settings.show_advanced_settings") }}
                 </FieldLabel>
-                <FieldDescription>
-                  {{ $t("settings.storage.share_dialog.read_only_hint") }}
-                </FieldDescription>
-              </FieldContent>
-              <Switch :id="`${formId}-read-only`" v-model="form.readOnly" />
-            </Field>
+              </Field>
 
-            <!-- the protocol version is all there is behind the advanced settings -->
-            <Field v-if="versionChoices.length > 0" orientation="horizontal">
-              <Switch
-                :id="`${formId}-advanced`"
-                :model-value="showAdvanced"
-                data-testid="share-advanced"
-                @update:model-value="toggleAdvanced"
-              />
-              <FieldLabel :for="`${formId}-advanced`" class="font-normal">
-                {{ $t("settings.show_advanced_settings") }}
-              </FieldLabel>
-            </Field>
-
-            <Field
-              v-if="showAdvanced && versionChoices.length > 0"
-              ref="versionField"
-            >
-              <FieldLabel :for="`${formId}-version`">
-                {{ $t("settings.storage.share_dialog.version") }}
-              </FieldLabel>
-              <Select
-                :model-value="form.version ?? VERSION_AUTO"
-                @update:model-value="onVersionChange(String($event))"
+              <Field
+                v-if="showAdvanced && versionChoices.length > 0"
+                ref="versionField"
               >
-                <SelectTrigger :id="`${formId}-version`" class="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem :value="VERSION_AUTO">
-                    {{ $t("settings.storage.share_dialog.version_auto") }}
-                  </SelectItem>
-                  <SelectItem
-                    v-for="version in versionChoices"
-                    :key="version"
-                    :value="version"
-                  >
-                    {{ version }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <FieldDescription>
-                {{ $t("settings.storage.share_dialog.version_hint") }}
-              </FieldDescription>
-            </Field>
+                <FieldLabel :for="`${formId}-version`">
+                  {{ $t("settings.storage.share_dialog.version") }}
+                </FieldLabel>
+                <Select
+                  :model-value="form.version ?? VERSION_AUTO"
+                  @update:model-value="onVersionChange(String($event))"
+                >
+                  <SelectTrigger :id="`${formId}-version`" class="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem :value="VERSION_AUTO">
+                      {{ $t("settings.storage.share_dialog.version_auto") }}
+                    </SelectItem>
+                    <SelectItem
+                      v-for="version in versionChoices"
+                      :key="version"
+                      :value="version"
+                    >
+                      {{ version }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <FieldDescription>
+                  {{ $t("settings.storage.share_dialog.version_hint") }}
+                </FieldDescription>
+              </Field>
 
-            <Alert v-if="error" variant="destructive" data-testid="share-error">
-              <TriangleAlert />
-              <AlertDescription>{{ error }}</AlertDescription>
-            </Alert>
-          </FieldGroup>
+              <Alert
+                v-if="error"
+                variant="destructive"
+                data-testid="share-error"
+              >
+                <TriangleAlert />
+                <AlertDescription>{{ error }}</AlertDescription>
+              </Alert>
+            </FieldGroup>
+          </fieldset>
         </form>
       </div>
       <DialogFooter class="border-t px-6 pt-4 pb-6">
-        <Button variant="outline" @click="emit('update:open', false)">
+        <Button
+          variant="outline"
+          :disabled="saving"
+          data-testid="share-cancel"
+          @click="onOpenChange(false)"
+        >
           {{ $t("cancel") }}
         </Button>
         <Button
@@ -313,6 +325,12 @@ const toggleAdvanced = async (shown: boolean) => {
 
 const onVersionChange = (value: string) => {
   form.value.version = value === VERSION_AUTO ? null : value;
+};
+
+// the form waits for the answer to its save, which belongs to what is on screen
+const onOpenChange = (open: boolean) => {
+  if (!open && saving.value) return;
+  emit("update:open", open);
 };
 
 const submit = async () => {
