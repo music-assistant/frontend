@@ -333,7 +333,7 @@ import {
   isMusicBrainzItem,
   itemIsAvailable,
   itemSupportsPlayLog,
-  providerDisplayName,
+  providerServiceName,
 } from "@/plugins/api/helpers";
 import {
   EventMessage,
@@ -1222,7 +1222,7 @@ const musicProviders = computed(() => {
       .map((provider) => ({
         label: sharesDomain(provider)
           ? provider.name
-          : providerDisplayName(provider),
+          : providerServiceName(provider),
         value: provider.instance_id,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));

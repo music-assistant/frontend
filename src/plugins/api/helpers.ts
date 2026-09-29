@@ -200,7 +200,7 @@ export function mappedServices(item: {
  * streaming provider, whose accounts all offer the same catalog, else the
  * instance's name.
  */
-export function providerDisplayName(provider: ProviderInstance): string {
+export function providerServiceName(provider: ProviderInstance): string {
   if (!provider.is_streaming_provider) return provider.name;
   return api.providerManifests[provider.domain]?.name || provider.name;
 }
