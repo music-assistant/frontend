@@ -99,11 +99,7 @@
           v-if="playerSetupLabel"
           class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
         >
-          <Button
-            v-if="playerSetupLabel"
-            data-testid="player-setup"
-            @click="startPlayerSetup"
-          >
+          <Button data-testid="player-setup" @click="startPlayerSetup">
             <RefreshCw class="size-4" />
             {{ $t(playerSetupLabel) }}
           </Button>

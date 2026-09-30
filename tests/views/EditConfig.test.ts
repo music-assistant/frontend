@@ -437,6 +437,15 @@ describe("EditConfig", () => {
     },
   );
 
+  it("keeps the card with its toggle for a config holding only advanced entries", () => {
+    const wrapper = mountEntries([
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual([]);
+    expect(advancedToggle(wrapper).exists()).toBe(true);
+  });
+
   it("reveals the advanced entries from its own toggle", async () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING }),
