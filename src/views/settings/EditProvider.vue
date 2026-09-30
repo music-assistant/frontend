@@ -71,7 +71,7 @@
                 variant="destructive"
                 @click="onReconfigure"
               >
-                <RefreshCw class="size-4" />
+                <Wrench class="size-4" />
                 {{ $t("settings.reconfigure") }}
               </Button>
               <!-- error: also offer a plain reload -->
@@ -160,7 +160,7 @@
             data-testid="provider-reconfigure"
             @click="onReconfigure"
           >
-            <RefreshCw class="size-4" />
+            <Wrench class="size-4" />
             {{ $t("settings.reconfigure") }}
           </Button>
           <Button
@@ -337,6 +337,7 @@ import {
   RotateCcw,
   Trash2,
   TriangleAlert,
+  Wrench,
 } from "@lucide/vue";
 import { computed, markRaw, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";

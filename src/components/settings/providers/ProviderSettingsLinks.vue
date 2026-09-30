@@ -9,7 +9,7 @@
       :key="row.key"
       v-bind="row.to ? { to: row.to } : { type: 'button', disabled: row.busy }"
       :data-testid="`provider-settings-link-${row.key}`"
-      class="hover:bg-accent/50 focus-visible:ring-ring flex w-full items-center gap-4 border-b px-4 py-4 text-left no-underline transition-colors last:border-b-0 focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none"
+      class="hover:bg-accent/50 focus-visible:ring-ring flex w-full items-center gap-4 border-b px-6 py-4 text-left no-underline transition-colors last:border-b-0 focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none"
       @click="row.action?.()"
     >
       <component :is="row.icon" class="text-primary size-5 shrink-0" />
@@ -18,20 +18,34 @@
         <div class="text-muted-foreground truncate text-sm">
           {{ row.description }}
         </div>
+        <!-- a phone has no room beside the label, so the state gets a line of its own -->
+        <div
+          v-if="row.state"
+          data-testid="provider-settings-state-below"
+          class="text-sm sm:hidden"
+          :class="stateClass(row)"
+        >
+          {{ row.state }}
+        </div>
       </div>
       <span
         v-if="row.state"
-        class="text-muted-foreground flex items-center gap-2 text-sm"
+        data-testid="provider-settings-state"
+        class="hidden max-w-[45%] truncate text-sm sm:block"
+        :class="stateClass(row)"
+        :title="row.state"
       >
-        <RefreshCw
-          v-if="row.busy"
-          class="size-4 animate-spin"
-          aria-hidden="true"
-        />
         {{ row.state }}
       </span>
+      <component
+        :is="row.actionIcon"
+        v-if="row.actionIcon"
+        class="text-primary size-4 shrink-0"
+        :class="{ 'animate-spin': row.busy }"
+        aria-hidden="true"
+      />
       <ChevronRight
-        v-if="row.to"
+        v-else-if="row.to"
         class="text-muted-foreground size-4 shrink-0"
       />
     </component>
@@ -55,7 +69,13 @@ import {
   type ProviderConfig,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { ChevronRight, KeyRound, RefreshCw, Speaker } from "@lucide/vue";
+import {
+  ChevronRight,
+  KeyRound,
+  LibraryBig,
+  RefreshCw,
+  Speaker,
+} from "@lucide/vue";
 import type { Component } from "vue";
 import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
@@ -83,6 +103,8 @@ interface SettingsRow {
   // a navigation; a row without one acts on the spot
   to?: RouteLocationRaw;
   action?: () => unknown;
+  // shown at the end of a row that acts on the spot, turning while it is busy
+  actionIcon?: Component;
   busy?: boolean;
 }
 
@@ -115,7 +137,11 @@ watch(
     if (!showsPlayers) return;
     void loadPlayerConfigs();
     unsubPlayersChanged = api.subscribe_multi(
-      [EventType.PLAYER_ADDED, EventType.PLAYER_CONFIG_UPDATED],
+      [
+        EventType.PLAYER_ADDED,
+        EventType.PLAYER_CONFIG_UPDATED,
+        EventType.PLAYER_REMOVED,
+      ],
       () => void loadPlayerConfigs(),
     );
   },
@@ -150,16 +176,24 @@ const rows = computed(() => {
     const syncing = isProviderSyncing(instanceId);
     items.push({
       key: "sync",
-      icon: markRaw(RefreshCw),
+      icon: markRaw(LibraryBig),
       label: $t("settings.library_sync"),
       description: $t("settings.library_sync_description"),
       state: syncing ? $t("settings.sync_in_progress") : $t("settings.sync"),
       busy: syncing,
+      actionIcon: markRaw(RefreshCw),
       action: () => api.startSync(undefined, [instanceId]),
     });
   }
   return items;
 });
+
+// a row that acts on the spot reads as an action until it is busy
+function stateClass(row: SettingsRow) {
+  return row.actionIcon && !row.busy
+    ? "text-primary font-medium"
+    : "text-muted-foreground";
+}
 
 async function loadPlayerConfigs() {
   try {

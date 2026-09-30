@@ -102,11 +102,32 @@ describe("ProviderSettingsLinks", () => {
       const row = wrapper.get('[data-testid="provider-settings-link-access"]');
 
       expect(row.element.tagName).toBe("BUTTON");
-      expect(row.text()).toContain("Marcel · Only me");
+      expect(rowState(wrapper, "access")).toBe("Marcel · Only me");
 
       await row.trigger("click");
 
       expect(wrapper.emitted("access")).toHaveLength(1);
+    });
+
+    it("keeps a long state beside the label from squeezing it, and moves it below on a phone", () => {
+      const row = mountLinks().get(
+        '[data-testid="provider-settings-link-access"]',
+      );
+
+      const beside = row.get('[data-testid="provider-settings-state"]');
+      expect(beside.classes()).toEqual(
+        expect.arrayContaining([
+          "hidden",
+          "sm:block",
+          "max-w-[45%]",
+          "truncate",
+        ]),
+      );
+      // the full text for a state cut short
+      expect(beside.attributes("title")).toBe("Marcel · Only me");
+      expect(
+        row.get('[data-testid="provider-settings-state-below"]').classes(),
+      ).toContain("sm:hidden");
     });
   });
 
@@ -157,12 +178,12 @@ describe("ProviderSettingsLinks", () => {
       expect(
         wrapper
           .get('[data-testid="provider-settings-link-players"]')
-          .find("span")
+          .find('[data-testid^="provider-settings-state"]')
           .exists(),
       ).toBe(false);
     });
 
-    it("follows the players the provider discovers or changes", async () => {
+    it("follows the players the provider discovers, changes or removes", async () => {
       const wrapper = mountLinks();
       await flushPromises();
       expect(playersState(wrapper)).toBe("0");
@@ -174,10 +195,20 @@ describe("ProviderSettingsLinks", () => {
       await flushPromises();
 
       expect(apiMock.subscribe_multi).toHaveBeenCalledWith(
-        [EventType.PLAYER_ADDED, EventType.PLAYER_CONFIG_UPDATED],
+        [
+          EventType.PLAYER_ADDED,
+          EventType.PLAYER_CONFIG_UPDATED,
+          EventType.PLAYER_REMOVED,
+        ],
         expect.any(Function),
       );
       expect(playersState(wrapper)).toBe("1");
+
+      apiMock.getPlayerConfigs.mockResolvedValue([]);
+      playersChanged();
+      await flushPromises();
+
+      expect(playersState(wrapper)).toBe("0");
     });
 
     it("stops following the players once the page closes", async () => {
@@ -206,12 +237,15 @@ describe("ProviderSettingsLinks", () => {
 
   describe("library sync row", () => {
     it("syncs this source on the spot", async () => {
-      const row = mountLinks().get(
-        '[data-testid="provider-settings-link-sync"]',
-      );
+      const wrapper = mountLinks();
+      const row = wrapper.get('[data-testid="provider-settings-link-sync"]');
 
       expect(row.element.tagName).toBe("BUTTON");
-      expect(row.get("span").text()).toBe("settings.sync");
+      expect(rowState(wrapper, "sync")).toBe("settings.sync");
+      // it reads as an action rather than as a state
+      expect(
+        row.get('[data-testid="provider-settings-state"]').classes(),
+      ).toContain("text-primary");
       expect(row.find("svg.animate-spin").exists()).toBe(false);
 
       await row.trigger("click");
@@ -240,11 +274,13 @@ describe("ProviderSettingsLinks", () => {
     it("shows a sync that is running and does not start another", async () => {
       isProviderSyncing.mockImplementation((id) => id === "sonos--1");
 
-      const row = mountLinks().get(
-        '[data-testid="provider-settings-link-sync"]',
-      );
+      const wrapper = mountLinks();
+      const row = wrapper.get('[data-testid="provider-settings-link-sync"]');
 
-      expect(row.get("span").text()).toBe("settings.sync_in_progress");
+      expect(rowState(wrapper, "sync")).toBe("settings.sync_in_progress");
+      expect(
+        row.get('[data-testid="provider-settings-state"]').classes(),
+      ).toContain("text-muted-foreground");
       expect(row.find("svg.animate-spin").exists()).toBe(true);
       expect(row.attributes("disabled")).toBeDefined();
     });
@@ -260,9 +296,20 @@ function rowLabels(wrapper: LinksWrapper): string[] {
 }
 
 function playersState(wrapper: LinksWrapper): string {
-  return wrapper
-    .get('[data-testid="provider-settings-link-players"] span')
-    .text();
+  return rowState(wrapper, "players");
+}
+
+/**
+ * The state of a row, which it shows beside the label and, on a phone, below
+ * it; the two have to agree.
+ */
+function rowState(wrapper: LinksWrapper, key: string): string {
+  const row = wrapper.get(`[data-testid="provider-settings-link-${key}"]`);
+  const beside = row.get('[data-testid="provider-settings-state"]').text();
+  expect(row.get('[data-testid="provider-settings-state-below"]').text()).toBe(
+    beside,
+  );
+  return beside;
 }
 
 function mountLinks({ errorHandler }: { errorHandler?: () => void } = {}) {
