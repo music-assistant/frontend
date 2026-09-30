@@ -619,15 +619,36 @@ describe("PlayerSelect", () => {
     expect(setPreference).not.toHaveBeenCalled();
   });
 
-  it("still auto-selects for a dashboard viewer on a server that can't resolve the party player", () => {
+  it("still auto-selects for a dashboard viewer on a server that can't resolve the party player", async () => {
     isDashboardViewer = true;
     supportsPartyPlayerResolution = false;
     const attic = createPlayer("attic", "Attic");
+    const builtin = createPlayer("builtin", "This device");
     api.players = { [attic.player_id]: attic };
 
     mountPlayerSelect();
 
     expect(store.activePlayerId).toBe(attic.player_id);
+
+    // the fallback pick is never handed over to the display's own player
+    api.players[builtin.player_id] = builtin;
+    store.companionPlayerId = builtin.player_id;
+    await nextTick();
+    expect(store.activePlayerId).toBe(attic.player_id);
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+
+  it("never persists a dashboard viewer's remembered built-in player as the placeholder", () => {
+    isDashboardViewer = true;
+    supportsPartyPlayerResolution = false;
+    const builtin = createPlayer("builtin", "This device");
+    setActivePlayerPreference(builtin.player_id);
+    api.players = { [builtin.player_id]: builtin };
+
+    mountPlayerSelect();
+
+    expect(store.activePlayerId).toBe(builtin.player_id);
+    expect(setPreference).not.toHaveBeenCalled();
   });
 
   it("keeps the remembered player when it is unavailable at startup", () => {

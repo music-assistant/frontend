@@ -348,8 +348,6 @@ watch(
     // would overwrite the player the user actually selected earlier
     if (playerId === autoSelectedPlayerId) return;
     autoSelectedPlayerId = undefined;
-    // dashboard viewer preferences are shared by every dashboard session
-    if (authManager.isDashboardViewer()) return;
     rememberPlayer(playerId);
   },
 );
@@ -505,8 +503,8 @@ function checkDefaultPlayer() {
  * device, which only registers a moment after the app has started.
  */
 function preferBuiltinPlayer() {
-  if (authManager.isDashboardViewer() && api.supportsPartyPlayerResolution)
-    return;
+  // a display must never end up showing its own built-in player
+  if (authManager.isDashboardViewer()) return;
   if (store.activePlayerId !== autoSelectedPlayerId) return;
   if (getPreference<string>("activePlayerId").value) return;
   const builtinPlayerId = selectBuiltinPlayer();
@@ -516,6 +514,8 @@ function preferBuiltinPlayer() {
 }
 
 function rememberPlayer(playerId: string) {
+  // dashboard viewer preferences are shared by every dashboard session
+  if (authManager.isDashboardViewer()) return;
   const player = api.players[playerId];
   if (!player) return;
   const rememberedPlayer = isBuiltinPlayer(player)
