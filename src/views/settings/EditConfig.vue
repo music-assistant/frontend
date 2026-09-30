@@ -86,8 +86,9 @@
       </CardContent>
     </Card>
 
+    <!-- nothing to edit, so nothing to save -->
     <div
-      v-if="!disabled"
+      v-if="!disabled && hasOptions"
       :class="
         inlineSave
           ? 'mt-4 flex justify-end'
