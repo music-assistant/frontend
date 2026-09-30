@@ -5,7 +5,8 @@
     :show-menu-btn="showMenu"
     :menu-button-label="menuButtonLabel"
     :class="{
-      unavailable: !isAvailable,
+      unavailable: !isAvailable && !notInLibrary,
+      'not-in-library': notInLibrary,
       'listitem-selecting': showCheckboxes,
       'album-track-row': albumTrackView,
     }"
@@ -65,7 +66,8 @@
             <div v-else>
               <MediaItemThumb
                 size="50"
-                :item="isAvailable ? item : undefined"
+                :item="isAvailable || notInLibrary ? item : undefined"
+                alt=""
               />
             </div>
           </div>
@@ -81,7 +83,7 @@
           <div
             v-if="albumTrackView"
             class="track-number-play"
-            :class="{ 'is-playable': item.is_playable }"
+            :class="{ 'is-playable': showPlay }"
             @click="onPlayAreaClick"
           >
             <div
@@ -92,15 +94,20 @@
             >
               {{ item.track_number }}
             </div>
-            <span v-if="item.is_playable" class="listitem-play-blue">
-              <Play :size="16" fill="currentColor" :stroke-width="0" />
+            <span v-if="showPlay" class="listitem-play-blue">
+              <Play
+                :size="16"
+                fill="currentColor"
+                :stroke-width="0"
+                class="play-icon-centered"
+              />
             </span>
           </div>
           <!-- other rows: blue play overlays the art on hover -->
           <div v-else class="listitem-thumb-area">
             <div
               class="media-thumb listitem-media-thumb"
-              :class="{ 'is-playable': item.is_playable }"
+              :class="{ 'is-playable': showPlay }"
               @click="onPlayAreaClick"
             >
               <div
@@ -117,11 +124,17 @@
               <div v-else>
                 <MediaItemThumb
                   size="50"
-                  :item="isAvailable ? item : undefined"
+                  :item="isAvailable || notInLibrary ? item : undefined"
+                  alt=""
                 />
               </div>
-              <span v-if="item.is_playable" class="listitem-play-blue">
-                <Play :size="16" fill="currentColor" :stroke-width="0" />
+              <span v-if="showPlay" class="listitem-play-blue">
+                <Play
+                  :size="16"
+                  fill="currentColor"
+                  :stroke-width="0"
+                  class="play-icon-centered"
+                />
               </span>
             </div>
           </div>
@@ -173,15 +186,11 @@
         </v-item-group>
       </div>
 
-      <!-- album: albumtype + artists + year -->
-      <div v-else-if="item.media_type == MediaType.ALBUM && 'year' in item">
-        <span v-if="item.album_type != AlbumType.UNKNOWN"
-          >{{ $t("album_type." + item.album_type) }} •
-        </span>
-        <span>{{ getArtistsString(item.artists) }}</span>
-        <span v-if="item.year"> • {{ item.year }}</span>
+      <!-- album: albumtype + artists + year, or that it is not in the library -->
+      <div v-else-if="item.media_type == MediaType.ALBUM">
+        {{ albumSubtitle }}
       </div>
-      <!-- track/album fallback: artist present -->
+      <!-- track fallback: artist present -->
       <div v-else-if="'artists' in item && item.artists">
         {{ getArtistsString(item.artists) }}
       </div>
@@ -274,7 +283,7 @@
       <div
         v-if="
           getBreakpointValue('bp3') &&
-          'favorite' in item &&
+          canHoldFavorite(item) &&
           showFavorite &&
           canEditLibrary &&
           item.media_type != MediaType.COLLECTION &&
@@ -288,7 +297,7 @@
       <!-- touch devices: play button on the right, just left of the ⋮ menu, so
            tapping the album art never triggers (possibly remote) playback -->
       <v-btn
-        v-if="isTouch && item.is_playable"
+        v-if="isTouch && showPlay"
         icon
         variant="text"
         size="small"
@@ -298,7 +307,12 @@
         @click.stop="onPlayClick"
       >
         <span class="listitem-play-blue-mobile">
-          <Play :size="11" fill="currentColor" :stroke-width="0" />
+          <Play
+            :size="11"
+            fill="currentColor"
+            :stroke-width="0"
+            class="play-icon-centered"
+          />
         </span>
       </v-btn>
     </template>
@@ -309,6 +323,7 @@
 import FavouriteButton from "@/components/FavoriteButton.vue";
 import ListItem from "@/components/ListItem.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import { canHoldFavorite } from "@/helpers/favorites";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
@@ -320,7 +335,10 @@ import {
   getAuthorsNarratorsArray,
   truncateString,
 } from "@/helpers/utils";
-import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
+import {
+  getListItemProviderIconDomain,
+  isMusicBrainzItem,
+} from "@/plugins/api/helpers";
 import {
   AlbumType,
   ContentType,
@@ -394,10 +412,37 @@ const compProps = withDefaults(defineProps<Props>(), {
 });
 
 // computed properties
+// a release only MusicBrainz knows: muted rather than shown as unavailable,
+// since it can be opened and added to the library
+const notInLibrary = computed(() => isMusicBrainzItem(compProps.item));
+
+// a row that is not available has nothing to play, whatever its flag says
+const showPlay = computed(
+  () => compProps.item.is_playable && compProps.isAvailable,
+);
+
 // favouring an item changes the library
 const canEditLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_WRITE),
 );
+// an album can also be a slim mapping (e.g. a track's album) without type or artists
+const albumSubtitle = computed(() => {
+  const item = compProps.item;
+  const parts: string[] = [];
+  if (notInLibrary.value) {
+    parts.push($t("not_in_library"));
+  } else {
+    const albumType = "album_type" in item ? item.album_type : undefined;
+    if (albumType && albumType !== AlbumType.UNKNOWN) {
+      parts.push($t(`album_type.${albumType}`));
+    }
+    if ("artists" in item && item.artists.length) {
+      parts.push(getArtistsString(item.artists));
+    }
+  }
+  if ("year" in item && item.year) parts.push(String(item.year));
+  return parts.join(" • ");
+});
 const collabArtists = computed(() => {
   if (!("artists" in compProps.item) || !compProps.item.artists) return "";
   const albumArtists =
@@ -466,7 +511,7 @@ const onClick = function (evt: Event) {
 
 // non-playable rows fall through to the row click (navigation)
 const onPlayAreaClick = function (evt: PointerEvent) {
-  if (!compProps.item.is_playable) return;
+  if (!showPlay.value) return;
   evt.stopPropagation();
   onPlayClick(evt);
 };
@@ -495,6 +540,12 @@ const onPlayClick = function (evt: PointerEvent) {
 
 .unavailable {
   opacity: 0.3;
+}
+
+/* a release that is not in the library: muted artwork, readable text */
+.not-in-library .listitem-media-thumb :deep(.v-img) {
+  opacity: 0.55;
+  filter: grayscale(1);
 }
 
 .listitem-prepend {

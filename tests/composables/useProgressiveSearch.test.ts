@@ -21,14 +21,15 @@ const { mockSearch, mockGetLibraryGenres, mockProviders, mockManifests } =
     };
   });
 
-vi.mock("@/plugins/api", () => ({
-  api: {
+vi.mock("@/plugins/api", () => {
+  const api = {
     providers: mockProviders,
     providerManifests: mockManifests,
     search: mockSearch,
     getLibraryGenres: mockGetLibraryGenres,
-  },
-}));
+  };
+  return { api, default: api };
+});
 
 import {
   LIBRARY_SEARCH_TARGET,
@@ -169,6 +170,44 @@ describe("useProgressiveSearch", () => {
       "Spotify hit",
     ]);
     expect(loading.value).toBe(false);
+  });
+
+  it("interleaves provider results after the library results", async () => {
+    mockSearch.mockImplementation(
+      (_query, _mediaTypes, _limit, providers: string[] = []) => {
+        if (providers[0] === LIBRARY_SEARCH_TARGET)
+          return Promise.resolve(
+            results({ tracks: [trackFixture("l1", "Lib 1")] }),
+          );
+        if (providers[0] === "fs1")
+          return Promise.resolve(
+            results({
+              tracks: [
+                trackFixture("f1", "Fs 1", "fs1"),
+                trackFixture("f2", "Fs 2", "fs1"),
+                trackFixture("f3", "Fs 3", "fs1"),
+              ],
+            }),
+          );
+        if (providers[0] === "spotify")
+          return Promise.resolve(
+            results({ tracks: [trackFixture("s1", "Spotify 1", "spotify")] }),
+          );
+        return Promise.resolve(emptyResults());
+      },
+    );
+    const { search, searchResult } = setup();
+
+    await search("hit");
+    await flush();
+
+    expect(searchResult.value?.tracks.map((item) => item.name)).toEqual([
+      "Lib 1",
+      "Fs 1",
+      "Spotify 1",
+      "Fs 2",
+      "Fs 3",
+    ]);
   });
 
   it("floats exact name matches above earlier fuzzy results", async () => {

@@ -2,7 +2,7 @@ import { canOpenAIRadio } from "@/helpers/ai_radio_access";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
-import { hasOnboardingTrack } from "@/helpers/onboarding_access";
+import { returnedByHistory } from "@/helpers/navigation";
 import { $t } from "@/plugins/i18n";
 import { nextTick, watch } from "vue";
 import {
@@ -15,17 +15,13 @@ import { toast } from "vue-sonner";
 import { api, ConnectionState } from "./api";
 import { Scope } from "./api/interfaces";
 import { authManager } from "./auth";
-import { notifyHARouteChange } from "./homeassistant";
+import { createHAHistory, isInHAAppPanel } from "./homeassistant_history";
 import { store } from "./store";
 
 declare module "vue-router" {
   interface RouteMeta {
     // only a role granting this scope may open the route
     requiresScope?: Scope;
-    // only a session this answers true for may open the route: what a route
-    // takes when no single scope decides it. Checked like a scope, after the
-    // guard has waited for the connection, so it reads a user who is in
-    requiresAccess?: () => boolean;
   }
 }
 
@@ -107,7 +103,9 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
-          // Dashboard viewers can't populate enabledPlugins (scoped like guests); trust the server, since the session only exists via an already-enabled dashboard.
+          // A redirect would loop with the global guard, which sends a
+          // dashboard viewer back to its pinned route; trust the server, since
+          // the session only exists via an already-enabled dashboard.
           if (authManager.isDashboardViewer()) return;
 
           // Only allow access if party plugin is enabled
@@ -469,17 +467,6 @@ export const routes: RouteRecordRaw[] = [
         meta: { requiresScope: Scope.USERS_INVITE },
       },
       {
-        path: "/onboarding",
-        name: "onboarding",
-        component: () =>
-          import(/* webpackChunkName: "onboarding" */ "@/views/Onboarding.vue"),
-        // the wizard runs the setup for an admin and the welcome for everyone
-        // else who lives here, and no one scope covers both; requiresAccess
-        // also makes the guard wait for INITIALIZED, so the first step is never
-        // picked from an empty provider map on a hard reload
-        meta: { requiresAccess: hasOnboardingTrack },
-      },
-      {
         path: "/settings",
         name: "settings",
         component: () =>
@@ -505,8 +492,20 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "providersettings" */ "@/views/settings/Providers.vue"
               ),
             props: true,
-            // a member manages the music sources it owns from the same page
-            meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
+            // whoever may read the source settings opens the page; a member
+            // manages the sources it owns from it
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_READ },
+          },
+          {
+            path: "storage",
+            name: "storagesettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "storagesettings" */ "@/views/settings/StorageSettings.vue"
+              ),
+            props: true,
+            // managing the storage is admin work; members pick folders in the picker
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
           },
           {
             path: "players",
@@ -691,8 +690,10 @@ export const routes: RouteRecordRaw[] = [
   },
 ];
 
+const inHAAppPanel = isInHAAppPanel();
+
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: inHAAppPanel ? createHAHistory() : createWebHashHistory(),
   routes,
 });
 
@@ -729,7 +730,12 @@ router.onError((error, to) => {
     // moving the hash stays on the same document and the reload is what fetches
     // fresh HTML and assets. Moving only the hash also keeps the rest of the
     // URL (e.g. Home Assistant ingress query params) intact.
-    window.location.hash = to.fullPath;
+    if (inHAAppPanel) {
+      // A new entry would land in the history Home Assistant keeps.
+      window.history.replaceState(window.history.state, "", `#${to.fullPath}`);
+    } else {
+      window.location.hash = to.fullPath;
+    }
     window.location.reload();
   }
 });
@@ -768,16 +774,12 @@ router.beforeEach(async (to) => {
     }
   }
 
-  // Check gated routes - every matched route may require a scope, a predicate,
-  // or both
+  // Check gated routes - every matched route may require a scope
   const requiredScopes = to.matched.flatMap((record) =>
     record.meta.requiresScope ? [record.meta.requiresScope] : [],
   );
-  const accessChecks = to.matched.flatMap((record) =>
-    record.meta.requiresAccess ? [record.meta.requiresAccess] : [],
-  );
 
-  if (requiredScopes.length || accessChecks.length) {
+  if (requiredScopes.length) {
     // Wait for API to be initialized before checking access
     // This ensures store.currentUser and store.roleScopes are set before we check permissions
     if (api.state.value !== ConnectionState.INITIALIZED) {
@@ -813,17 +815,6 @@ router.beforeEach(async (to) => {
       console.warn(`The ${missingScope} scope is required for`, to.path);
       return { name: "discover" };
     }
-
-    if (accessChecks.some((mayOpen) => !mayOpen())) {
-      console.warn("This session may not open", to.path);
-      return { name: "discover" };
-    }
-  }
-});
-
-router.afterEach((to) => {
-  if (store.isIngressSession) {
-    notifyHARouteChange(to.fullPath);
   }
 });
 
@@ -833,7 +824,7 @@ router.afterEach((to, from, failure) => {
   if (failure) return;
   // Don't reset on same route
   if (to.path === from.path) return;
-  if (router.options.history.state.forward != null) return;
+  if (returnedByHistory(router)) return;
   // nextTick needed because afterEach fires before Vue unmounts the page
   // Resetting here would wipe its scroll position before it's saved
   nextTick(() => {

@@ -2,6 +2,7 @@ import Players from "@/views/settings/Players.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
 import {
+  PlayerType,
   ProviderType,
   Scope,
   type PlayerConfig,
@@ -52,9 +53,12 @@ vi.mock("@/plugins/eventbus", () => ({
   },
 }));
 
+vi.mock("@/helpers/player_config", () => ({
+  getPlayerName: (config: PlayerConfig) => config.name ?? config.player_id,
+}));
+
 // the menu itself is covered where it is built; here it only has to arrive
 vi.mock("@/helpers/player_settings_actions", () => ({
-  getPlayerName: (config: PlayerConfig) => config.name ?? config.player_id,
   getPlayerSettingsMenuItems,
 }));
 
@@ -75,12 +79,17 @@ vi.mock("vue-router", () => ({
   }),
 }));
 
+vi.mock("@/plugins/router", () => ({
+  default: { push: vi.fn() },
+}));
+
 const playerConfig = {
   enabled: true,
   name: "Kitchen",
   default_name: null,
   player_id: "kitchen",
   provider: "test",
+  player_type: PlayerType.PLAYER,
   values: {},
 };
 

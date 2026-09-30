@@ -1,26 +1,5 @@
 <template>
-  <section
-    class="artist-top-tracks"
-    :class="{ 'artist-top-tracks--with-latest': showLatestRelease }"
-  >
-    <div v-if="showLatestRelease" class="artist-top-tracks__latest">
-      <h2 class="artist-top-tracks__title">{{ $t("latest_release") }}</h2>
-      <EditorialMediaCard
-        :item="latestRelease!"
-        :parent-item="artist"
-        fluid
-        :is-available="itemIsAvailable(latestRelease!)"
-      >
-        <template #art-overlay>
-          <span class="artist-top-tracks__art-scrim"></span>
-          <span v-if="latestReleaseYear" class="artist-top-tracks__year">{{
-            latestReleaseYear
-          }}</span>
-        </template>
-        <template #subtitle>{{ latestReleaseSubtitle }}</template>
-      </EditorialMediaCard>
-    </div>
-
+  <section class="artist-top-tracks">
     <div class="artist-top-tracks__main">
       <div class="artist-top-tracks__head">
         <div
@@ -30,23 +9,23 @@
           @click.capture="swallowClickAfterHold"
         >
           <h2 class="artist-top-tracks__title">{{ $t("artist_toptracks") }}</h2>
-          <span v-if="sourceLabel" class="artist-top-tracks__source">
-            <ProviderIcon
-              v-if="sourceDomain"
-              :domain="sourceDomain"
-              :size="12"
-            />
-            {{ sourceLabel }}
-          </span>
+          <RowSourceBadge
+            v-if="sourceLabel"
+            :label="sourceLabel"
+            :domain="sourceDomain"
+            :options="sourceOptions"
+            :selected="sourceValue"
+            @select="(source) => emit('select-source', source)"
+          />
         </div>
         <RouterLink
-          v-if="libraryTrackCount"
+          v-if="artistTrackCount"
           :to="allTracksRoute"
           class="artist-top-tracks__more"
         >
           {{
-            $t("artist_view_library_tracks", libraryTrackCount, {
-              named: { count: libraryTrackCount },
+            $t(viewTracksKey, artistTrackCount, {
+              named: { count: artistTrackCount },
             })
           }}
         </RouterLink>
@@ -90,6 +69,10 @@
                 albumLine(track)
               }}</span>
             </span>
+            <ExplicitBadge
+              v-if="isExplicit(track)"
+              class="artist-top-tracks__explicit"
+            />
             <span v-if="track.duration" class="artist-top-tracks__duration">{{
               formatDuration(track.duration)
             }}</span>
@@ -101,6 +84,12 @@
             >
               <EllipsisVertical :size="16" />
             </button>
+          </div>
+          <div
+            v-if="shownTracks.length === 0 && emptyMessage"
+            class="artist-top-tracks__empty"
+          >
+            {{ emptyMessage }}
           </div>
         </template>
         <template v-else>
@@ -120,9 +109,10 @@
 </template>
 
 <script setup lang="ts">
-import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
+import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
+import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
+import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getEventPosition,
@@ -132,10 +122,9 @@ import {
   handleMediaItemClick,
   handleMenuBtnClick,
 } from "@/helpers/media_item_actions";
+import { parseBool } from "@/helpers/parse";
 import { formatDuration } from "@/helpers/utils";
-import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
-  AlbumType,
   PlaybackState,
   type Album,
   type Artist,
@@ -143,7 +132,7 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
-import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { EllipsisVertical, Play } from "@lucide/vue";
 import { computed } from "vue";
@@ -153,17 +142,24 @@ export interface Props {
   artist: Artist;
   // undefined while the row is still loading
   tracks?: Track[];
-  // provider name when a single provider feeds the row, nothing when aggregated
+  // source label for the row's badge, e.g. "In your library" or "On Spotify"
   sourceLabel?: string;
   // provider domain behind `sourceLabel`, for its icon
   sourceDomain?: string;
-  libraryTrackCount?: number;
-  latestRelease?: Album;
+  // the sources the row can switch to; makes the badge a picker when >1 offered
+  sourceOptions?: SourceOption[];
+  // the source currently feeding the row, highlighted in the picker
+  sourceValue?: RowSource;
+  // shown when the row has no tracks but stays mounted for its source picker
+  emptyMessage?: string;
+  // how many tracks the "view tracks" link leads to
+  artistTrackCount?: number;
 }
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: "edit-rows"): void;
+  (e: "select-source", source: RowSource): void;
 }>();
 
 const DESKTOP_TRACKS = 9;
@@ -179,39 +175,12 @@ const skeletonCount = computed(() =>
   isPhone.value ? PHONE_TRACKS : DESKTOP_TRACKS,
 );
 
-// the latest release sits beside the track grid, which the phone layout has no
-// room for
-const showLatestRelease = computed(
-  () => !isPhone.value && !!props.latestRelease,
+// tracks from a non-library artist are that provider's, not the user's library
+const viewTracksKey = computed(() =>
+  props.artist.provider === "library"
+    ? "artist_view_library_tracks"
+    : "artist_view_tracks",
 );
-
-const latestReleaseYear = computed(() => releaseYear(props.latestRelease));
-
-const latestReleaseSubtitle = computed(() => {
-  const release = props.latestRelease;
-  if (!release) return "";
-  const parts: string[] = [];
-  if (release.album_type !== AlbumType.UNKNOWN) {
-    parts.push($t(`album_type.${release.album_type}`));
-  }
-  const released = releaseDate(release);
-  if (released) {
-    parts.push(
-      released.toLocaleDateString(
-        canonicalizeLocale(i18n.global.locale.value),
-        {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          timeZone: "UTC",
-        },
-      ),
-    );
-  } else if (release.year) {
-    parts.push(String(release.year));
-  }
-  return parts.join(" · ");
-});
 
 const allTracksRoute = computed<RouteLocationRaw>(() => ({
   name: "artistlisting",
@@ -244,6 +213,10 @@ const albumLine = function (track: Track): string {
   return year ? `${track.album.name} · ${year}` : track.album.name;
 };
 
+const isExplicit = function (track: Track): boolean {
+  return !!track.metadata && parseBool(track.metadata.explicit || false);
+};
+
 const onTrackClick = function (
   event: MouseEvent | KeyboardEvent,
   track: Track,
@@ -264,53 +237,11 @@ function releaseYear(album?: Album | ItemMapping | null): number | undefined {
   if (!album || !("year" in album)) return undefined;
   return album.year || undefined;
 }
-
-/** The album's parsed release date, when it has a valid one. */
-function releaseDate(album: Album): Date | undefined {
-  const released = album.metadata?.release_date;
-  if (!released) return undefined;
-  const parsed = new Date(released);
-  return isNaN(parsed.getTime()) ? undefined : parsed;
-}
 </script>
 
 <style scoped>
 .artist-top-tracks {
   padding: 26px 28px 28px;
-  display: grid;
-  gap: 28px;
-  align-items: start;
-}
-.artist-top-tracks--with-latest {
-  grid-template-columns: 184px minmax(0, 1fr);
-}
-.artist-top-tracks__latest {
-  width: 184px;
-}
-.artist-top-tracks__latest > .artist-top-tracks__title {
-  margin-bottom: 14px;
-}
-/* the card fills the column instead of carrying the shelf's tile padding */
-.artist-top-tracks__latest :deep(.ed-card) {
-  padding: 0;
-}
-.artist-top-tracks__art-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(0, 0, 0, 0.05) 0%,
-    rgba(0, 0, 0, 0.35) 60%,
-    rgba(0, 0, 0, 0.7) 100%
-  );
-}
-.artist-top-tracks__year {
-  position: absolute;
-  left: 12px;
-  bottom: 10px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #fff;
 }
 .artist-top-tracks__main {
   min-width: 0;
@@ -350,19 +281,6 @@ function releaseDate(album: Album): Date | undefined {
 .artist-top-tracks__more:focus-visible {
   text-decoration: underline;
 }
-.artist-top-tracks__source {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: rgba(var(--v-theme-on-surface), 0.12);
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
 .artist-top-tracks__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -433,6 +351,9 @@ function releaseDate(album: Album): Date | undefined {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.artist-top-tracks__explicit {
+  flex: none;
+}
 .artist-top-tracks__duration {
   font-size: 12px;
   color: rgba(var(--v-theme-on-surface), 0.6);
@@ -454,11 +375,17 @@ function releaseDate(album: Album): Date | undefined {
   height: 16px;
   flex: 1;
 }
+.artist-top-tracks__empty {
+  grid-column: 1 / -1;
+  align-self: center;
+  padding: 8px;
+  font-size: 14px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
 
 @media (max-width: 768px) {
   .artist-top-tracks {
     padding: 22px 16px 20px;
-    grid-template-columns: minmax(0, 1fr);
   }
   .artist-top-tracks__head {
     margin-bottom: 8px;

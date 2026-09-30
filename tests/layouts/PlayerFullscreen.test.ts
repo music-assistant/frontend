@@ -34,6 +34,7 @@ vi.mock("@/plugins/store", async () => {
       showFullscreenPlayer: false,
       showPlayersMenu: false,
       showQueueItems: false,
+      enabledPlugins: new Set<string>(),
     }),
   };
 });

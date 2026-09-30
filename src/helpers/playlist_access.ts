@@ -1,4 +1,6 @@
 import {
+  type MediaItemTypeOrItemMapping,
+  MediaType,
   type Playlist,
   type PlaylistAccess,
   ProviderSharing,
@@ -72,3 +74,16 @@ export const canEditPlaylistItems = (
     accessAllows(access, user)
   );
 };
+
+// the media types a playlist can hold
+const PLAYLIST_ITEM_TYPES = [
+  MediaType.TRACK,
+  MediaType.ALBUM,
+  MediaType.RADIO,
+  MediaType.PODCAST_EPISODE,
+  MediaType.AUDIOBOOK,
+];
+
+/** Whether an item is of a type a playlist can hold. */
+export const canAddToPlaylist = (item: MediaItemTypeOrItemMapping) =>
+  PLAYLIST_ITEM_TYPES.includes(item.media_type);

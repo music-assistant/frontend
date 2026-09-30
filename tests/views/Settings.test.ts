@@ -3,29 +3,60 @@
  * of the user may open.
  */
 import type { ToolbarHeadingItem } from "@/components/ToolbarHeading.vue";
-import { UserRole, type Scope } from "@/plugins/api/interfaces";
+import { useEditedProviderName } from "@/composables/useEditedProviderName";
+import {
+  ProviderType,
+  UserRole,
+  type ProviderManifest,
+  type Scope,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import Settings from "@/views/settings/Settings.vue";
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick, type Component } from "vue";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
-const { apiMock, hasScope, routerPush, routeState } = vi.hoisted(() => ({
-  apiMock: {
-    players: { kitchen: { name: "Kitchen" } },
-    providerManifests: {},
-    getProvider: vi.fn(),
-  },
-  hasScope: vi.fn<(scope: Scope) => boolean>(),
-  routerPush: vi.fn(),
-  // which settings page is open: the overview is the one carrying the link
-  // back into onboarding
-  routeState: { name: "editplayeroptions" },
-}));
+const { apiMock, hasScope, onboardingOpen, routerPush, routeState } =
+  vi.hoisted(() => ({
+    apiMock: {
+      players: { kitchen: { name: "Kitchen" } },
+      providerManifests: {} as Record<
+        string,
+        Pick<ProviderManifest, "name" | "type">
+      >,
+      getProvider: vi.fn(),
+      // resolves an instance id to a name, falling back to the manifest name
+      // for the domain, the way the real client does
+      getProviderName: vi.fn(
+        (id: string) =>
+          apiMock.providerManifests[id.split("--")[0]]?.name ?? id,
+      ),
+    },
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
+    onboardingOpen: vi.fn(),
+    routerPush: vi.fn(),
+    // which settings page is open, and on what: the overview is the one carrying
+    // the link back into onboarding
+    routeState: {
+      name: "editplayeroptions",
+      params: { playerId: "kitchen" } as Record<string, string>,
+    },
+  }));
+
+// the source behind the instance id in the route, whose generic name the crumb
+// shows until the page below it resolves the name of this instance
+apiMock.providerManifests.spotify = {
+  name: "Spotify",
+  type: ProviderType.MUSIC,
+};
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
+vi.mock("@/composables/useOnboarding", () => ({
+  useOnboarding: () => ({ open: onboardingOpen }),
+}));
 // the sections are covered where they are decided
 vi.mock("@/helpers/settings_sections", () => ({
   availableSettingsSections: () => [],
@@ -45,7 +76,7 @@ vi.mock("vue-router", async (importOriginal) => ({
     currentRoute: {
       value: {
         name: routeState.name,
-        params: { playerId: "kitchen" },
+        params: routeState.params,
         query: {},
       },
     },
@@ -130,6 +161,141 @@ describe("Settings breadcrumbs on the options of a player", () => {
   );
 });
 
+/**
+ * The trail the settings page hands its heading on the settings of a provider,
+ * with the page below it stubbed by `providerPage`.
+ */
+async function providerTrail(
+  providerPage: Component | boolean,
+  instanceId = "spotify--kitchen",
+): Promise<ToolbarHeadingItem[]> {
+  routeState.name = "editprovider";
+  routeState.params = { instanceId };
+  const wrapper = mount(Settings, {
+    global: {
+      stubs: {
+        Toolbar: {
+          template: '<div><slot name="title" /><slot name="append" /></div>',
+        },
+        ToolbarHeading: ToolbarHeadingStub,
+        RouterView: providerPage,
+        VBtn: true,
+        VDivider: true,
+      },
+    },
+  });
+  // the page publishes its name as it mounts, which the trail picks up on the
+  // render after
+  await nextTick();
+  const items = wrapper.getComponent(ToolbarHeadingStub).props("items");
+  wrapper.unmount();
+  return items;
+}
+
+describe("Settings breadcrumbs on the settings of a provider", () => {
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it("name the provider the way the page below them does", async () => {
+    const trail = await providerTrail({
+      setup() {
+        useEditedProviderName().value = "The kitchen's Spotify";
+      },
+      template: "<div />",
+    });
+
+    expect(trail.at(-1)).toEqual({
+      title: "The kitchen's Spotify",
+      disabled: true,
+    });
+  });
+
+  it("fall back on the name of the source until the page names the instance", async () => {
+    const trail = await providerTrail(true);
+
+    expect(trail.at(-1)).toEqual({ title: "Spotify", disabled: true });
+  });
+});
+
+describe("Settings breadcrumbs on the storage page", () => {
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it("names the storage page as a page of the System settings", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    routeState.name = "storagesettings";
+    routeState.params = {};
+
+    const wrapper = mount(Settings, {
+      global: {
+        stubs: {
+          Toolbar: {
+            template: '<div><slot name="title" /><slot name="append" /></div>',
+          },
+          ToolbarHeading: ToolbarHeadingStub,
+          RouterView: true,
+          VBtn: true,
+          VDivider: true,
+        },
+      },
+    });
+
+    expect(wrapper.getComponent(ToolbarHeadingStub).props("items")).toEqual([
+      {
+        title: "settings.system",
+        disabled: false,
+        to: { name: "systemsettings" },
+      },
+      { title: "settings.storage.title", disabled: true },
+    ]);
+  });
+});
+
+describe("Settings breadcrumbs on the settings of a provider that is not loaded", () => {
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    apiMock.getProvider.mockReturnValue(undefined);
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+    delete apiMock.providerManifests.fanarttv;
+    delete apiMock.providerManifests.filesystem_local;
+  });
+
+  it("lead to the sources of the type of its provider", async () => {
+    apiMock.providerManifests.fanarttv = {
+      name: "fanart.tv",
+      type: ProviderType.METADATA,
+    };
+
+    const trail = await providerTrail(true, "fanarttv--kitchen");
+
+    expect(trail[0].title).toBe("settings.metadataproviders");
+  });
+
+  // the server converts SMB and NFS sources into Local files, keeping their ids
+  it("lead a converted source to the music sources, by Local files", async () => {
+    apiMock.providerManifests.filesystem_local = {
+      name: "Local files",
+      type: ProviderType.MUSIC,
+    };
+
+    const trail = await providerTrail(true, "filesystem_nfs--k2Lm9xQa");
+
+    expect(trail[0].title).toBe("settings.music_sources");
+  });
+});
+
 /** The settings overview, which is where onboarding is reachable again from. */
 function mountOverview() {
   routeState.name = "settings";
@@ -152,6 +318,7 @@ function mountOverview() {
 describe("the link back into onboarding", () => {
   beforeEach(() => {
     routerPush.mockReset();
+    onboardingOpen.mockReset();
   });
 
   afterEach(() => {
@@ -170,7 +337,7 @@ describe("the link back into onboarding", () => {
     await link.trigger("click");
 
     // the setup opens on whatever is left to set up
-    expect(routerPush).toHaveBeenCalledWith({ name: "onboarding" });
+    expect(onboardingOpen).toHaveBeenCalledWith(undefined);
 
     wrapper.unmount();
   });
@@ -190,10 +357,7 @@ describe("the link back into onboarding", () => {
 
     // showing the welcome again means showing it from the top: by the time
     // this link is any use, nothing on it is left to do
-    expect(routerPush).toHaveBeenCalledWith({
-      name: "onboarding",
-      query: { step: "welcome" },
-    });
+    expect(onboardingOpen).toHaveBeenCalledWith("welcome");
 
     wrapper.unmount();
   });

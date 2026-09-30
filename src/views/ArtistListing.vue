@@ -18,6 +18,7 @@
       :require-provider-selection="config.requireProviderSelection"
       :library-filter-option="config.libraryFilterOption"
       :default-provider="config.defaultProvider"
+      :provider-override="config.providerOverride"
       :show-album-type-filter="config.showAlbumTypeFilter"
       :show-track-number="config.showTrackNumber"
       :show-refresh-button="false"
@@ -25,16 +26,18 @@
       :load-items="config.loadItems"
       :empty-message="config.emptyMessage"
       :restore-state="true"
+      @provider-change="onProviderChange"
     />
   </section>
 </template>
 
 <script setup lang="ts">
 import {
-  appearsOnAlbums,
   isSingleOrEp,
-  loadArtistLibraryTracks,
+  loadArtistAppearsOn,
+  loadArtistDiscography,
   loadArtistReleases,
+  loadArtistTracks,
 } from "@/components/artist/artistData";
 import { artistRows } from "@/components/artist/artistRows";
 import {
@@ -42,19 +45,20 @@ import {
   type RowSource,
 } from "@/components/details/rowRegistry";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import { useEscapeBack } from "@/composables/useEscapeBack";
 import { goBack } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
 import { type Artist, type MediaItemType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 export interface Props {
   itemId: string;
   provider: string;
   // which of the artist page's shelves is shown in full
-  listing: "albums" | "singles" | "tracks" | "appears_on";
+  listing: "albums" | "singles" | "tracks" | "appears_on" | "discography";
 }
 const props = defineProps<Props>();
 
@@ -76,6 +80,8 @@ interface ListingConfig {
   requireProviderSelection?: boolean;
   libraryFilterOption?: boolean;
   defaultProvider?: RowSource;
+  // a source carried in by a link, shown on arrival instead of the saved one
+  providerOverride?: RowSource;
 }
 
 const ALBUM_SORT_KEYS = [
@@ -99,14 +105,20 @@ const TRACK_SORT_KEYS = [
 ];
 
 const router = useRouter();
+const route = useRoute();
 const itemDetails = ref<Artist>();
-// the source the releases were last loaded from, so the header names what is
-// on screen
+// the source of the releases on screen: the one the listing is on, or the one
+// they were last loaded from, so the header names it
 const activeSource = ref<RowSource>();
+// the source another page's "view all" link carried in, taken off the url as
+// soon as it is read: it is honoured on arrival only, and a return to or
+// reload of this page lands on what the user has picked since
+let linkedSource: string | undefined;
 
 watch(
   () => [props.itemId, props.provider],
   async ([itemId, provider]) => {
+    linkedSource = takeLinkedSource();
     // the listing remounts for the new artist instead of keeping the old items
     itemDetails.value = undefined;
     activeSource.value = undefined;
@@ -118,10 +130,14 @@ watch(
   { immediate: true },
 );
 
-// each shelf has its own source, so the one on screen is never another's
+// each shelf has its own source, so the one on screen is never another's, and
+// a switch of shelf is an arrival of its own that reads the url again
 watch(
   () => props.listing,
-  () => (activeSource.value = undefined),
+  () => {
+    activeSource.value = undefined;
+    linkedSource = takeLinkedSource();
+  },
 );
 
 // the listing can be filtered to the providers the artist is actually mapped to
@@ -181,10 +197,13 @@ const config = computed<ListingConfig | undefined>(() => {
         sortKeys: TRACK_SORT_KEYS,
         showProviderFilter: mappingProviderIds.value.length > 1,
         showTrackNumber: false,
-        emptyMessage: $t("artist_no_library_tracks"),
+        emptyMessage:
+          itemDetails.value?.provider === "library"
+            ? $t("artist_no_library_tracks")
+            : $t("artist_no_tracks"),
         loadItems: async (params: LoadDataParams) => {
           if (!itemDetails.value) return [];
-          return await loadArtistLibraryTracks(
+          return await loadArtistTracks(
             itemDetails.value,
             params.provider?.[0],
           );
@@ -199,6 +218,19 @@ const config = computed<ListingConfig | undefined>(() => {
         showProviderFilter: false,
         loadItems: loadAppearsOn,
       };
+    case "discography":
+      return {
+        ...listingDefaults(),
+        labelKey: artistRows.definition("discography").labelKey,
+        path: "artistdiscography",
+        // the server sends the releases newest first, which "original" keeps
+        sortKeys: ["original", ...ALBUM_SORT_KEYS],
+        showAlbumTypeFilter: true,
+        showFavoritesOnlyFilter: false,
+        showProviderFilter: false,
+        emptyMessage: $t("artist_row_empty"),
+        loadItems: loadDiscography,
+      };
     default:
       return undefined;
   }
@@ -209,6 +241,16 @@ const backToArtist = function () {
     name: "artist",
     params: { provider: props.provider, itemId: props.itemId },
   });
+};
+
+useEscapeBack(backToArtist);
+
+// the listing says which source it is on, a restored visit included, so the
+// header and the empty text follow it without a load; only the release
+// listings choose a source
+const onProviderChange = function (provider?: string[]) {
+  if (!config.value?.requireProviderSelection) return;
+  activeSource.value = provider?.[0];
 };
 
 /** Shared shape of the listings; every case overrides what differs. */
@@ -242,7 +284,33 @@ function sourceSelection(rowId: "albums" | "singles_eps") {
       .sources(rowId, artist)
       .filter((source) => source !== "library"),
     defaultProvider: artistRows.effectiveSource(rowId, artist),
+    providerOverride: carriedSource(rowId),
   };
+}
+
+/** The source named in the url's query, if any, taken off the url. */
+function takeLinkedSource(): string | undefined {
+  const source = route.query.source;
+  if (typeof source !== "string") return undefined;
+  const query = { ...route.query };
+  delete query.source;
+  router.replace({ query });
+  return source;
+}
+
+/**
+ * The source a "view all" link carried in, when it is one the albums listing
+ * offers. The listing opens on it instead of the saved filter, without saving
+ * it, so the user's own preference stays as it was.
+ */
+function carriedSource(rowId: "albums" | "singles_eps"): RowSource | undefined {
+  const artist = itemDetails.value;
+  if (rowId !== "albums" || !artist || linkedSource === undefined) {
+    return undefined;
+  }
+  return artistRows.sources("albums", artist).includes(linkedSource)
+    ? linkedSource
+    : undefined;
 }
 
 /** The artist's releases, from the source the user picked or the row's default one. */
@@ -258,22 +326,16 @@ async function loadReleases(
   return await loadArtistReleases(itemDetails.value, source);
 }
 
+/** Everything MusicBrainz credits to the artist; only a library artist has one. */
+async function loadDiscography(): Promise<MediaItemType[]> {
+  const artist = itemDetails.value;
+  if (artist?.provider !== "library") return [];
+  return await loadArtistDiscography(artist);
+}
+
 /** Albums the artist is credited on without being the album artist. */
 async function loadAppearsOn(): Promise<MediaItemType[]> {
   if (!itemDetails.value) return [];
-  // every album the artist's library tracks point at that is not one of their
-  // own releases is an appearance
-  const [tracks, releases] = await Promise.all([
-    loadArtistLibraryTracks(itemDetails.value),
-    loadArtistReleases(
-      itemDetails.value,
-      artistRows.effectiveSource("appears_on", itemDetails.value),
-    ),
-  ]);
-  return appearsOnAlbums(
-    tracks,
-    itemDetails.value,
-    releases,
-  ) as MediaItemType[];
+  return await loadArtistAppearsOn(itemDetails.value);
 }
 </script>

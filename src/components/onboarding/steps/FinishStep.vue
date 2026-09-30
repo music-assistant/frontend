@@ -27,8 +27,12 @@
               }}
             </ItemDescription>
             <!-- the welcome asked one thing; the summary says what came of it -->
-            <ItemDescription v-else-if="step.id === 'welcome' && persona">
-              {{ $t(`onboarding.steps.welcome.${persona}.label`) }}
+            <ItemDescription
+              v-else-if="step.id === 'welcome' && expertMode != null"
+            >
+              {{
+                $t(`onboarding.steps.welcome.${experienceOf(expertMode)}.label`)
+              }}
             </ItemDescription>
           </ItemContent>
         </Item>
@@ -70,6 +74,27 @@
       {{ $t("onboarding.all_done") }}
     </p>
 
+    <Item variant="muted" data-testid="onboarding-tour-offer">
+      <ItemMedia variant="icon">
+        <Route aria-hidden="true" />
+      </ItemMedia>
+      <ItemContent>
+        <ItemTitle>{{ $t("tour.offer.title") }}</ItemTitle>
+        <ItemDescription>{{ $t("tour.offer.description") }}</ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        <Button
+          variant="outline"
+          size="sm"
+          :disabled="busy"
+          data-testid="onboarding-tour"
+          @click="emit('finish', { tour: true })"
+        >
+          {{ $t("tour.start") }}
+        </Button>
+      </ItemActions>
+    </Item>
+
     <div>
       <Button
         :disabled="busy"
@@ -95,9 +120,19 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { useOnboarding } from "@/composables/useOnboarding";
-import { isTodo, type OnboardingStepId } from "@/helpers/onboarding";
-import { Circle, CircleCheck } from "@lucide/vue";
+import {
+  experienceOf,
+  isTodo,
+  type OnboardingStepId,
+} from "@/helpers/onboarding";
+import { Circle, CircleCheck, Route } from "@lucide/vue";
 import { computed } from "vue";
+
+/** What the summary asks for on the way out. */
+export interface FinishOptions {
+  // walk the user through the app once onboarding has closed
+  tour?: boolean;
+}
 
 const props = defineProps<{
   busy?: boolean;
@@ -110,15 +145,15 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "advance"): void;
   (e: "navigate", step: OnboardingStepId): void;
-  (e: "finish"): void;
+  (e: "finish", options?: FinishOptions): void;
 }>();
 
-const { ctx, steps, pending, persona } = useOnboarding();
+const { ctx, steps, pending, expertMode } = useOnboarding();
 
 // A review is nothing to set up and nothing to do, so it is on neither list.
-// Neither is a welcome that was only ever shown: being done with the member is
-// not the same as the member having picked something, and there is nothing to
-// look back at when they walked past the question.
+// Neither is a welcome the member only closed: being done with them is not the
+// same as an answer on the account, and there is nothing to look back at when
+// none was ever written.
 const done = computed(() =>
   steps.value.filter(
     (step) =>
@@ -127,7 +162,7 @@ const done = computed(() =>
       // own_sources is an invitation, surfaced under "still to do" while it is
       // open, not a choice to look back on once it is done
       step.id !== "own_sources" &&
-      (step.id !== "welcome" || persona.value != null),
+      (step.id !== "welcome" || expertMode.value != null),
   ),
 );
 const playerCount = computed(() => ctx.value.playerCount);

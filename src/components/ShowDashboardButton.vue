@@ -10,7 +10,10 @@
         :title="$t('tooltip.show_dashboard')"
         @click="loadDashboards"
       >
-        <TvMinimal :size="iconSize" />
+        <TvMinimal
+          class="size-(--icon-size)"
+          :style="{ '--icon-size': `${iconSize}px` }"
+        />
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" :class="contentClass">

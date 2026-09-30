@@ -4,7 +4,6 @@ import {
   subscribeToDeviceSetting,
 } from "@/helpers/device_settings";
 import { reactive, readonly } from "vue";
-import type { Router } from "vue-router";
 
 export interface HARoute {
   path: string;
@@ -26,7 +25,6 @@ export interface HASafeAreaInsets {
 interface HAState {
   isSubscribed: boolean;
   kioskModeEnabled: boolean;
-  routeSyncEnabled: boolean;
   safeAreaEnabled: boolean;
   properties: HAProperties;
 }
@@ -34,7 +32,6 @@ interface HAState {
 const state = reactive<HAState>({
   isSubscribed: false,
   kioskModeEnabled: false,
-  routeSyncEnabled: false,
   safeAreaEnabled: false,
   properties: {
     narrow: false,
@@ -45,8 +42,6 @@ const state = reactive<HAState>({
 const SAFE_AREA_EDGES = ["top", "right", "bottom", "left"] as const;
 
 let messageHandler: ((event: MessageEvent) => void) | null = null;
-let routerInstance: Router | null = null;
-let isNavigatingFromHA = false;
 let reportedInsets: Partial<HASafeAreaInsets> | null = null;
 
 /**
@@ -95,7 +90,6 @@ function handleMessage(event: MessageEvent) {
   }
 
   if (event.data?.type === "home-assistant/properties") {
-    const oldRoute = state.properties.route?.path;
     state.properties.narrow = event.data.narrow ?? false;
     state.properties.route = event.data.route ?? null;
 
@@ -106,26 +100,6 @@ function handleMessage(event: MessageEvent) {
       reportedInsets = event.data.safeAreaInsets;
     }
     applySafeAreaInsets();
-
-    if (
-      state.routeSyncEnabled &&
-      routerInstance &&
-      state.properties.route?.path
-    ) {
-      const haRoutePath = state.properties.route.path;
-      const currentMARoute = routerInstance.currentRoute.value.fullPath;
-
-      if (
-        oldRoute &&
-        haRoutePath !== currentMARoute &&
-        oldRoute !== haRoutePath
-      ) {
-        isNavigatingFromHA = true;
-        routerInstance.push(haRoutePath).finally(() => {
-          isNavigatingFromHA = false;
-        });
-      }
-    }
   }
 }
 
@@ -136,23 +110,16 @@ function handleMessage(event: MessageEvent) {
  *   and menu it draws around the frame and leave the app the whole screen
  * @param options.handleSafeArea - If true, takes the safe area padding HA puts
  *   around the ingress iframe over into the device inset tokens
- * @param options.router - Vue router instance for route synchronization
  */
 export function subscribeToHAProperties(
   options: {
     kioskMode?: boolean;
     handleSafeArea?: boolean;
-    router?: Router;
   } = {},
 ): void {
   if (state.isSubscribed) {
     console.warn("[HA Integration] Already subscribed to HA properties");
     return;
-  }
-
-  if (options.router) {
-    routerInstance = options.router;
-    state.routeSyncEnabled = true;
   }
 
   messageHandler = handleMessage;
@@ -200,9 +167,7 @@ export function unsubscribeFromHAProperties(): void {
 
   state.isSubscribed = false;
   state.kioskModeEnabled = false;
-  state.routeSyncEnabled = false;
   state.safeAreaEnabled = false;
-  routerInstance = null;
   reportedInsets = null;
 
   // Home Assistant pads the iframe again the moment we unsubscribe, so hand the
@@ -237,10 +202,9 @@ function applyKioskModePreference(): void {
   }
 
   const handleSafeArea = state.safeAreaEnabled;
-  const router = routerInstance ?? undefined;
 
   unsubscribeFromHAProperties();
-  subscribeToHAProperties({ kioskMode, handleSafeArea, router });
+  subscribeToHAProperties({ kioskMode, handleSafeArea });
 }
 
 // Home Assistant keeps kiosk mode up across a reload of this frame, so the
@@ -248,30 +212,6 @@ function applyKioskModePreference(): void {
 // startup, which would find Home Assistant already in kiosk mode and leave it
 // there.
 subscribeToDeviceSetting(HA_KIOSK_MODE, applyKioskModePreference);
-
-/**
- * Notify Home Assistant of a route change in Music Assistant.
- * This keeps the HA URL in sync with the MA route.
- *
- * @param path - The MA route path (e.g., "/home", "/artists/spotify/123")
- */
-export function notifyHARouteChange(path: string): void {
-  if (!state.isSubscribed || !state.routeSyncEnabled) {
-    return;
-  }
-
-  if (isNavigatingFromHA) {
-    return;
-  }
-
-  const prefix = state.properties.route?.prefix;
-  if (!prefix) {
-    return;
-  }
-
-  const fullPath = prefix + path;
-  navigateInHA(fullPath, { replace: true });
-}
 
 /**
  * Open or close the Home Assistant sidebar over the app.
@@ -292,11 +232,12 @@ export function toggleHAMenu(): void {
  * Navigate to a path within Home Assistant.
  *
  * @param path - The HA path to navigate to (e.g., "/lovelace", "/config")
- * @param options - Navigation options (replace history, etc.)
+ * @param options - Navigation options: whether to replace the current history
+ *   entry, and data for Home Assistant to keep with the entry
  */
 export function navigateInHA(
   path: string,
-  options: { replace?: boolean } = {},
+  options: { replace?: boolean; data?: Record<string, unknown> } = {},
 ): void {
   window.parent.postMessage(
     {

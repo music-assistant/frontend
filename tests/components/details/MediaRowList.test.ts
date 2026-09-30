@@ -2,21 +2,20 @@ import MediaRowList, {
   type Props,
 } from "@/components/details/MediaRowList.vue";
 import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../../fixtures/album";
 import { artist } from "../../fixtures/artist";
+import { withoutFavorite } from "../../fixtures/mediaItem";
 import { track } from "../../fixtures/track";
 
 const {
-  mockToggleFavorite,
   mockHandleMediaItemClick,
   mockHandleMenuBtnClick,
   mockItemIsAvailable,
   mockHasScope,
   storeMock,
 } = vi.hoisted(() => ({
-  mockToggleFavorite: vi.fn(),
   mockHasScope: vi.fn(() => true),
   mockHandleMediaItemClick: vi.fn(),
   mockHandleMenuBtnClick: vi.fn(),
@@ -30,7 +29,7 @@ const {
 }));
 
 vi.mock("@/plugins/api", () => {
-  const api = { toggleFavorite: mockToggleFavorite, providers: {} };
+  const api = { providers: {}, subscribe: vi.fn(() => () => {}) };
   return { api, default: api };
 });
 
@@ -77,10 +76,21 @@ const TRACKS = [
     name: "One",
     artists: [artist({ name: "Vera Lund" })],
     duration: 125,
+    favorite: null,
   }),
-  track({ item_id: "2", name: "Two", version: "Live", duration: 61 }),
+  track({
+    item_id: "2",
+    name: "Two",
+    version: "Live",
+    duration: 61,
+    favorite: false,
+  }),
   track({ item_id: "3", name: "Three", favorite: true }),
 ];
+
+// the row's own "more options" button is a plain button too, so the dropdown
+// trigger is the one that tells apart
+const FAVORITE_BUTTONS = "button[aria-haspopup='menu']";
 
 function mountList(props: Partial<Props> = {}, slots = {}) {
   return mount(MediaRowList, {
@@ -96,7 +106,6 @@ function mountList(props: Partial<Props> = {}, slots = {}) {
 
 describe("MediaRowList", () => {
   beforeEach(() => {
-    mockToggleFavorite.mockClear();
     mockHandleMediaItemClick.mockClear();
     mockHandleMenuBtnClick.mockClear();
     mockItemIsAvailable.mockReset().mockReturnValue(true);
@@ -127,6 +136,22 @@ describe("MediaRowList", () => {
     );
   });
 
+  it("shows the explicit badge only on explicit items", () => {
+    const wrapper = mountList({
+      items: [
+        track({ item_id: "clean", name: "Clean" }),
+        track({
+          item_id: "naughty",
+          name: "Naughty",
+          metadata: { explicit: true },
+        }),
+      ],
+    });
+    const rows = wrapper.findAll(".media-rows__row[role=button]");
+    expect(rows[0].find(".explicit-badge").exists()).toBe(false);
+    expect(rows[1].find(".explicit-badge").exists()).toBe(true);
+  });
+
   it("shows only the first `limit` rows", () => {
     const wrapper = mountList({ items: TRACKS, limit: 2 });
     expect(wrapper.findAll(".media-rows__row[role=button]")).toHaveLength(2);
@@ -138,32 +163,55 @@ describe("MediaRowList", () => {
     expect(wrapper.findAll(".thumb")).toHaveLength(0);
   });
 
-  it("toggles the favorite through the api", async () => {
+  it("opens the favorite menu without opening the row", async () => {
     const wrapper = mountList({ items: TRACKS, showFavorite: true });
-    const hearts = wrapper.findAll("button[aria-label='tooltip.favorite']");
+    const hearts = wrapper.findAll(FAVORITE_BUTTONS);
     expect(hearts).toHaveLength(3);
-    expect(hearts[2].classes()).toContain("media-rows__button--favorite");
-    expect(hearts[0].classes()).not.toContain("media-rows__button--favorite");
 
-    await hearts[0].trigger("click");
-    expect(mockToggleFavorite).toHaveBeenCalledWith(TRACKS[0]);
-    // the heart must not also open the row
+    await hearts[0].trigger("click", { button: 0, ctrlKey: false });
+    await flushPromises();
+
+    expect(hearts[0].attributes("data-state")).toBe("open");
     expect(mockHandleMediaItemClick).not.toHaveBeenCalled();
+  });
+
+  // one slot, three looks: a dislike takes the heart's place in the same button
+  it.each([
+    { row: 0, icon: "lucide-heart", fill: "none", active: undefined },
+    { row: 1, icon: "lucide-thumbs-down", fill: "none", active: undefined },
+    { row: 2, icon: "lucide-heart", fill: "currentColor", active: "true" },
+  ])("shows $icon on row $row", ({ row, icon, fill, active }) => {
+    const heart = mountList({ items: TRACKS, showFavorite: true }).findAll(
+      FAVORITE_BUTTONS,
+    )[row];
+
+    expect(heart.findAll("svg")).toHaveLength(1);
+    expect(heart.get("svg").classes()).toContain(icon);
+    expect(heart.get("svg").attributes("fill")).toBe(fill);
+    expect(heart.attributes("data-active")).toBe(active);
+  });
+
+  // a listing leaves the key out of a row the user has no state on
+  it("shows the outline heart on a row without the favorite key", () => {
+    const heart = mountList({
+      items: [withoutFavorite(track({ item_id: "4", name: "Four" }))],
+      showFavorite: true,
+    }).get(FAVORITE_BUTTONS);
+
+    expect(heart.get("svg").classes()).toContain("lucide-heart");
+    expect(heart.get("svg").attributes("fill")).toBe("none");
+    expect(heart.attributes("data-active")).toBeUndefined();
   });
 
   it("has no heart buttons unless asked for", () => {
     const wrapper = mountList({ items: TRACKS });
-    expect(wrapper.findAll("button[aria-label='tooltip.favorite']")).toEqual(
-      [],
-    );
+    expect(wrapper.findAll(FAVORITE_BUTTONS)).toEqual([]);
   });
 
   it("hides the hearts from a role that cannot change the library", () => {
     mockHasScope.mockReturnValue(false);
     const wrapper = mountList({ items: TRACKS, showFavorite: true });
-    expect(wrapper.findAll("button[aria-label='tooltip.favorite']")).toEqual(
-      [],
-    );
+    expect(wrapper.findAll(FAVORITE_BUTTONS)).toEqual([]);
     mockHasScope.mockReturnValue(true);
   });
 

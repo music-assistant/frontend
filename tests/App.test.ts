@@ -3,13 +3,14 @@
 import App from "@/App.vue";
 import {
   EventType,
-  ProviderStatus,
-  ProviderType,
   UserRole,
-  type ProviderConfig,
   type Role,
   type User,
 } from "@/plugins/api/interfaces";
+import {
+  leaveFirstRunSetup,
+  useFirstRunSetup,
+} from "@/composables/useFirstRunSetup";
 import { saveDeviceSetting } from "@/helpers/device_settings";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import type { MusicAssistantApi } from "@/plugins/api";
@@ -17,7 +18,6 @@ import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "vue-sonner";
-import { providerConfig } from "./fixtures/providerConfig";
 import { role } from "./fixtures/role";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "./fixtures/scopes";
 import { user } from "./fixtures/user";
@@ -38,6 +38,7 @@ const {
   mockPruneStaleProviderFilters,
   mockRememberCurrentRemoteConnection,
   mockRunAfterPreferenceWrites,
+  mockOnboardingOpen,
   mockRouterPush,
   mockRouterReplace,
   mockSetPreference,
@@ -119,6 +120,7 @@ const {
     mockPruneStaleProviderFilters: vi.fn(),
     mockRememberCurrentRemoteConnection: vi.fn(),
     mockRunAfterPreferenceWrites: vi.fn(),
+    mockOnboardingOpen: vi.fn(),
     mockRouterPush: vi.fn(),
     mockRouterReplace: vi.fn(),
     mockSetPreference: vi.fn(),
@@ -137,9 +139,7 @@ const {
           }
         | undefined,
       activePlayer: undefined as
-        | { current_media?: { title?: string; artist?: string } }
-        | undefined,
-      enabledPlugins: new Set<string>(),
+        { current_media?: { title?: string; artist?: string } } | undefined,
       forceMobileLayout: false,
       isIngressSession: false,
       roles: [] as Role[],
@@ -200,6 +200,10 @@ vi.mock("@/composables/userPreferences", () => ({
 
 vi.mock("@/composables/useShortcuts", () => ({
   initGlobalShortcutsSync: vi.fn(),
+}));
+
+vi.mock("@/composables/useOnboarding", () => ({
+  useOnboarding: () => ({ open: mockOnboardingOpen }),
 }));
 
 vi.mock("@/plugins/web_player", () => ({
@@ -347,7 +351,6 @@ describe("App initialization", () => {
     apiMock.fetchProviders.mockResolvedValue(undefined);
     apiMock.initialize.mockResolvedValue(undefined);
     apiMock.setLocale.mockResolvedValue(undefined);
-    apiMock.getProviderConfigs.mockResolvedValue([partyPluginConfig()]);
     for (const method of [
       apiMock.getLibraryAlbumsCount,
       apiMock.getLibraryArtistsCount,
@@ -375,7 +378,6 @@ describe("App initialization", () => {
     mockGetKioskModePreference.mockReturnValue(true);
     storeMock.currentUser = undefined;
     storeMock.activePlayer = undefined;
-    storeMock.enabledPlugins = new Set<string>();
     storeMock.isIngressSession = false;
     webPlayerMock.audioSource = "disabled";
     webPlayerMock.browserControlsMode = "active_player";
@@ -507,7 +509,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
+      expect(mockOnboardingOpen).toHaveBeenCalled();
     });
 
     it.each([
@@ -521,7 +523,7 @@ describe("App initialization", () => {
 
         wrapper = await mountApp();
 
-        expect(mockRouterPush).not.toHaveBeenCalled();
+        expect(mockOnboardingOpen).not.toHaveBeenCalled();
       },
     );
 
@@ -530,7 +532,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).not.toHaveBeenCalled();
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
     });
 
     it("opens the wizard when the server's setup flow asks for it, and drops the parameter", async () => {
@@ -539,7 +541,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
+      expect(mockOnboardingOpen).toHaveBeenCalled();
       expect(window.location.search).not.toContain("onboard");
     });
 
@@ -564,7 +566,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
+      expect(mockOnboardingOpen).toHaveBeenCalled();
     });
 
     it("welcomes a member once, and never again", async () => {
@@ -574,7 +576,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).not.toHaveBeenCalled();
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
     });
 
     it("leaves a member who has had the account a while to find it", async () => {
@@ -584,7 +586,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).not.toHaveBeenCalled();
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
     });
 
     it("never welcomes a guest, who is only passing through", async () => {
@@ -595,7 +597,7 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
-      expect(mockRouterPush).not.toHaveBeenCalled();
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
     });
 
     it("leaves a guest session on its own screen", async () => {
@@ -607,7 +609,7 @@ describe("App initialization", () => {
       wrapper = await mountApp();
 
       expect(mockRouterPush).toHaveBeenCalledWith("/guest");
-      expect(mockRouterPush).not.toHaveBeenCalledWith({ name: "onboarding" });
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
     });
 
     it("leaves a dashboard viewer pinned to its own screen", async () => {
@@ -621,9 +623,71 @@ describe("App initialization", () => {
       expect(mockRouterReplace).toHaveBeenCalledWith("/now-playing");
       expect(mockRouterPush).not.toHaveBeenCalled();
     });
+
+    describe("on a fresh server's first run", () => {
+      // the first run is a page load's; hand the next test a plain one
+      afterEach(() => leaveFirstRunSetup());
+
+      /** The app as the server's setup page loads it, nothing connected. */
+      function mountFirstRun(search = "") {
+        window.history.replaceState({}, "", `/setup${search}`);
+        apiMock.state.value = "disconnected";
+        return mountAppWithoutSettling();
+      }
+
+      it("opens the setup wizard before anything can sign in", async () => {
+        wrapper = mountFirstRun("?return_url=musicassistant%3A%2F%2Fauth");
+        await flushPromises();
+
+        expect(mockOnboardingOpen).toHaveBeenCalled();
+        expect(
+          wrapper.findComponent({ name: "OnboardingDialog" }).exists(),
+        ).toBe(true);
+        // the sign-in waits for the account the wizard makes
+        expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(false);
+        expect(apiMock.initialize).not.toHaveBeenCalled();
+        // the app runs from the server's own path from here on, the client's
+        // hand-back still in the query for a reload to find
+        expect(window.location.pathname).toBe("/");
+        expect(window.location.search).toBe(
+          "?return_url=musicassistant%3A%2F%2Fauth",
+        );
+      });
+
+      it("starts the sign-in once the account is there, out of sight", async () => {
+        wrapper = mountFirstRun();
+        await flushPromises();
+        vi.stubGlobal(
+          "fetch",
+          vi.fn(
+            async () =>
+              new Response(
+                JSON.stringify({ success: true, token: "admin-token" }),
+                { status: 200 },
+              ),
+          ),
+        );
+
+        await useFirstRunSetup().createAccount({
+          username: "admin",
+          password: "correct horse battery",
+          displayName: "",
+        });
+        await flushPromises();
+
+        expect(authManagerMock.setToken).toHaveBeenCalledWith("admin-token");
+        // the sign-in runs behind the wizard, which stays where it is
+        const login = wrapper.findComponent({ name: "Login" });
+        expect(login.exists()).toBe(true);
+        expect((login.element as HTMLElement).style.display).toBe("none");
+        expect(
+          wrapper.findComponent({ name: "OnboardingDialog" }).exists(),
+        ).toBe(true);
+      });
+    });
   });
 
-  it("keeps full initialization and plugin discovery for regular users", async () => {
+  it("keeps full initialization for regular users", async () => {
     const userRole = role({
       role_id: "user",
       name: "User",
@@ -641,40 +705,8 @@ describe("App initialization", () => {
     expect(apiMock.fetchProviders).not.toHaveBeenCalled();
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledOnce();
     expectLibraryCountsCalled();
-    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
-      1,
-      ProviderType.PLUGIN,
-      "party",
-    );
-    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
-      2,
-      ProviderType.PLUGIN,
-      "music_quiz",
-    );
-    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
-      3,
-      ProviderType.PLUGIN,
-      "ai_radio",
-    );
-    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
-      4,
-      ProviderType.PLUGIN,
-      "milkdrop_visualizer",
-    );
-    expect(storeMock.enabledPlugins).toEqual(
-      new Set<string>([
-        "party",
-        "music_quiz",
-        "ai_radio",
-        "milkdrop_visualizer",
-      ]),
-    );
     expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
     expectStartupDataRequestedBeforeReveal();
-
-    await signalProvidersUpdated();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(8);
-    expect(mockPruneStaleProviderFilters).toHaveBeenCalledTimes(2);
   });
 
   it("takes the server's copy of the user when the provider set changes", async () => {
@@ -785,28 +817,19 @@ describe("App initialization", () => {
 
   it("waits for the startup data before revealing the main app", async () => {
     const serverState = createDeferred<void>();
-    const pluginConfigs = createDeferred<ProviderConfig[]>();
     apiMock.fetchState.mockReturnValue(serverState.promise);
-    apiMock.getProviderConfigs.mockReturnValue(pluginConfigs.promise);
     wrapper = mountAppWithoutSettling();
 
     await flushPromises();
     expect(apiMock.fetchState).toHaveBeenCalledOnce();
     expectLibraryCountsNotCalled();
-    expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
-    expect(apiMock.state.value).not.toBe("initialized");
-
-    serverState.resolve();
-    await flushPromises();
-    expectLibraryCountsCalled();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(4);
-    // The plugin lookups are still in flight: revealing the app here would
+    // The server state is still in flight: revealing the app here would
     // render it with an unknown set of enabled plugins.
     expect(apiMock.state.value).not.toBe("initialized");
     expect(mockInitializeWebPlayerModeSync).not.toHaveBeenCalled();
     expect(wrapper.find("router-view-stub").exists()).toBe(false);
 
-    pluginConfigs.resolve([partyPluginConfig()]);
+    serverState.resolve();
     await flushPromises();
     expect(apiMock.state.value).toBe("initialized");
     expect(wrapper.find("router-view-stub").exists()).toBe(true);
@@ -1422,7 +1445,7 @@ async function mountApp() {
   await flushPromises();
   expect(apiMock.state.value).toBe("initialized");
   expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
-  expect(apiMock.subscribe).toHaveBeenCalledTimes(3);
+  expect(apiMock.subscribe).toHaveBeenCalledTimes(2);
   return mounted;
 }
 
@@ -1448,7 +1471,7 @@ async function signalProvidersUpdated() {
   const callbacks = apiMock.subscribe.mock.calls
     .filter(([event]) => event === EventType.PROVIDERS_UPDATED)
     .map(([, callback]) => callback as () => void | Promise<void>);
-  expect(callbacks).toHaveLength(2);
+  expect(callbacks).toHaveLength(1);
   await Promise.all(callbacks.map((callback) => callback()));
 }
 
@@ -1491,7 +1514,6 @@ function expectStartupDataRequestedBeforeReveal() {
     apiMock.getLibraryPodcastsCount,
     apiMock.getLibraryRadiosCount,
     apiMock.getLibraryTracksCount,
-    apiMock.getProviderConfigs,
   ]) {
     expect(method).toHaveBeenCalled();
     expect(Math.max(...method.mock.invocationCallOrder)).toBeLessThan(revealed);
@@ -1548,16 +1570,4 @@ function createStorage(): Storage {
       values.set(key, value);
     },
   };
-}
-
-/**
- * The party plugin config, as returned for the plugin lookups App runs on init.
- */
-function partyPluginConfig(): ProviderConfig {
-  return providerConfig({
-    type: ProviderType.PLUGIN,
-    domain: "party",
-    name: "Party",
-    status: ProviderStatus.LOADED,
-  });
 }

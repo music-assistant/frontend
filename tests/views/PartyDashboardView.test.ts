@@ -4,9 +4,11 @@ import {
   EventType,
   ImageType,
   PlaybackState,
+  type PlayerQueue,
+  type QueueItem,
   type Scope,
 } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
+import { store as storeModule } from "@/plugins/store";
 import PartyDashboardView from "@/views/PartyDashboardView.vue";
 import { type VueWrapper, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -109,6 +111,12 @@ vi.mock("@/composables/visualizer/useVisualizer", async () => {
 vi.mock("@/composables/lyrics/useLyricsElapsedTime", () => ({
   useLyricsElapsedTime: () => ({ elapsedTime: { value: 0 } }),
 }));
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & {
+  activePlayerQueue?: PlayerQueue;
+  curQueueItem?: QueueItem;
+};
 
 // The view drives the real Fullscreen API, which happy-dom does not implement,
 // so it is stood up here as a small state machine that fires the same event the

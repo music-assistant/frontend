@@ -206,7 +206,7 @@
           variant="link"
           class="text-muted-foreground"
           data-testid="run-onboarding"
-          @click="router.push(onboardingRoute)"
+          @click="launchOnboarding"
         >
           {{ t(onboardingLinkKey) }}
         </Button>
@@ -234,8 +234,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { provideEditedProviderName } from "@/composables/useEditedProviderName";
+import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
+import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import { availableSettingsSections } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import { requireServerVersion } from "@/plugins/api/helpers";
@@ -243,6 +246,8 @@ import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
+import { useEscapeBack } from "@/composables/useEscapeBack";
+import { goBack } from "@/helpers/navigation";
 import { computed, provide, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -253,6 +258,10 @@ const router = useRouter();
 const { t } = useI18n();
 const { getPreference, setPreference } = useUserPreferences();
 const { mobile } = useDisplay();
+
+// the provider settings page publishes the name it shows, so the crumb above
+// it cannot disagree with its heading
+const editedProviderName = provideEditedProviderName();
 
 const settingsViewMode = ref<"list" | "card">("card");
 const settingsListPrependGap = computed(() => (mobile.value ? 4 : 24));
@@ -426,15 +435,13 @@ const canOpenOnboarding = computed(() => hasOnboardingTrack());
 const onboardingLinkKey = computed(() =>
   isAdminTrack() ? "onboarding.run_again" : "onboarding.welcome_again",
 );
+const { open: openOnboarding } = useOnboarding();
 // The setup wizard opens on whatever is left to set up. The welcome has been
 // shown by the time this link is any use, so nothing is left to do on it and
 // it would otherwise open on its own summary: showing it again means showing
 // it from the top.
-const onboardingRoute = computed(() =>
-  isAdminTrack()
-    ? { name: "onboarding" }
-    : { name: "onboarding", query: { step: "welcome" } },
-);
+const launchOnboarding = () =>
+  openOnboarding(isAdminTrack() ? undefined : "welcome");
 
 const settingsSections = computed(() =>
   availableSettingsSections(
@@ -505,6 +512,11 @@ const isOverview = computed(() => {
   return router.currentRoute.value.name === "settings";
 });
 
+useEscapeBack(
+  () => goBack(router, { name: "settings" }),
+  () => !isOverview.value,
+);
+
 const activeTab = computed(() => {
   const name = router.currentRoute.value.name?.toString() || "";
   if (name === "profile") {
@@ -524,7 +536,8 @@ const activeTab = computed(() => {
     name === "backgroundtasks" ||
     name === "diagnostics" ||
     name === "genremanagement" ||
-    name === "audioanalysissettings"
+    name === "audioanalysissettings" ||
+    name === "storagesettings"
   ) {
     return "system";
   }
@@ -542,8 +555,7 @@ const activeTab = computed(() => {
   }
 
   const typesQuery = router.currentRoute.value.query.types as
-    | string
-    | undefined;
+    string | undefined;
   const firstType = typesQuery ? typesQuery.split(",")[0].trim() : undefined;
   if (firstType === "music") return "music_providers";
   if (firstType === "player") return "player_providers";
@@ -556,7 +568,7 @@ const activeTab = computed(() => {
     // disabled instances are not loaded, so fall back to the manifest type
     const providerType =
       api.getProvider(instanceId)?.type ||
-      api.providerManifests[instanceId.split("--")[0]]?.type;
+      api.providerManifests[embeddedProviderDomain(instanceId)]?.type;
     if (providerType === ProviderType.MUSIC) return "music_providers";
     if (providerType === ProviderType.PLAYER) return "player_providers";
     if (providerType === ProviderType.METADATA) return "metadata_providers";
@@ -567,16 +579,6 @@ const activeTab = computed(() => {
 
   return "music_providers";
 });
-
-const getProviderName = (instanceId: string) => {
-  const providerInstance = api.getProvider(instanceId);
-  if (providerInstance) {
-    return providerInstance.name;
-  }
-  const providerDomain = instanceId.split("--")[0];
-  const manifest = api.providerManifests[providerDomain];
-  return manifest?.name || instanceId;
-};
 
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
@@ -603,12 +605,10 @@ const breadcrumbItems = computed(() => {
         to: canConfigurePlayers ? { name: "playersettings" } : undefined,
       });
     } else if (currentTab === "system") {
-      if (
-        !(
-          name === "backgroundtasks" &&
-          !authManager.hasScope(Scope.CONFIG_CORE_WRITE)
-        )
-      ) {
+      if (!(
+        name === "backgroundtasks" &&
+        !authManager.hasScope(Scope.CONFIG_CORE_WRITE)
+      )) {
         items.push({
           title: t("settings.system"),
           disabled: name === "systemsettings",
@@ -675,7 +675,9 @@ const breadcrumbItems = computed(() => {
   match(name)
     .with("editprovider", () => {
       items.push({
-        title: getProviderName(route.params.instanceId as string),
+        title:
+          editedProviderName.value ||
+          api.getProviderName(route.params.instanceId as string),
         disabled: true,
       });
     })
@@ -734,6 +736,12 @@ const breadcrumbItems = computed(() => {
     .with("genremanagement", () => {
       items.push({
         title: t("settings.genre_management"),
+        disabled: true,
+      });
+    })
+    .with("storagesettings", () => {
+      items.push({
+        title: t("settings.storage.title"),
         disabled: true,
       });
     })

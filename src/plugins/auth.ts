@@ -329,7 +329,11 @@ export class AuthManager {
       return;
     }
 
-    // Reload page to show Vue login screen (browser mode)
+    // Reload page to show Vue login screen (browser mode). Reset the route so
+    // the next user doesn't land on the page the previous user left open.
+    const loginUrl = new URL(window.location.href);
+    loginUrl.hash = "/discover";
+    window.history.replaceState({}, "", loginUrl);
     window.location.reload();
   }
 

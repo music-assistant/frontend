@@ -163,7 +163,7 @@
         },
         "dynamic_members": {
             "label": "Dynamische groepsleden",
-            "description": "Sta leden toe om (tijdelijk) dynamisch lid te worden van de groep, zodat de groep zich min of meer hetzelfde gedraagt als het handmatig synchroniseren van spelers samen, met als belangrijkste verschil dat de groepsspeler de wachtrij vasthoudt."
+            "description": "Sta leden toe om (tijdelijk) dynamisch lid te worden van de groep, zodat de groep zich min of meer hetzelfde gedraagt als het handmatig synchroniseren van spelers samen, met als belangrijkste verschil dat de groepspeler de wachtrij vasthoudt."
         },
         "dsp": {
             "configure_on": "DSP configureren op: {name}",
@@ -739,8 +739,8 @@
             "title": "Toegang tot {name}",
             "description": "Van wie deze muziekbron is en wie deze verder mag gebruiken.",
             "owner": "Eigenaar",
-            "owner_hint": "Afspeel- en luistergeschiedenis worden beheerd via het account van de eigenaar. Een huishoudelijke bron heeft geen eigenaar en wordt beheerd door beheerders.",
-            "household": "Huishouden",
+            "owner_hint": "Voor het afspelen en de luistergeschiedenis wordt het account van de eigenaar gebruikt. Een bron zonder eigenaar wordt beheerd door beheerders.",
+            "household": "Gedeeld (geen eigenaar)",
             "sharing": "Delen",
             "shared_users": "Gedeeld met",
             "select_members": "Selecteer leden",
@@ -755,7 +755,7 @@
             "hints": {
                 "private": "Alleen de eigenaar kan deze bron gebruiken.",
                 "selected": "De eigenaar en de hieronder geselecteerde leden.",
-                "members": "Ieder aangemeld lid van het huishouden, met uitzondering van gasten.",
+                "members": "Alle ingelogde gebruikers, met uitzondering van gasten.",
                 "everyone": "Iedere gebruiker, inclusief gasten.",
                 "selected_no_owner": "Alleen de hieronder geselecteerde leden.",
                 "nobody": "Niemand kan deze bron gebruiken totdat er een eigenaar is of totdat deze met iemand wordt gedeeld."
@@ -766,7 +766,10 @@
         },
         "set_custom_name": "Een eigen naam instellen",
         "genre_table_page_of": "Pagina {0} van de {1}",
-        "genre_table_rows_selected": "{selected} van de {total} rij geselecteerd. | {selected} van de {total} rijen geselecteerd."
+        "genre_table_rows_selected": "{selected} van de {total} rij geselecteerd. | {selected} van de {total} rijen geselecteerd.",
+        "music_sources_own": "Jouw bronnen",
+        "music_sources_shared": "Met jou gedeeld",
+        "music_sources_shared_empty": "Er zijn nog geen muziekbronnen met je gedeeld."
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -814,17 +817,17 @@
     "sync_now": "Nu synchroniseren",
     "sync_running": "Een of meer muziekproviders worden gesynchroniseerd.",
     "tooltip": {
-        "album_artist_filter": "Albumartiest-filter in-\/uitschakelen",
+        "album_artist_filter": "Albumartiest-filter omschakelen",
         "explicit": "Expliciet",
-        "filter_library": "Wissel in bibliotheek-\/favorietenfilter",
-        "library": "Schakel in bibliotheek\/favoriet",
+        "filter_library": "In bibliotheek-\/favorietenfilter omschakelen",
+        "library": "In bibliotheek\/favoriet omschakelen",
         "linked": "Dit provideritem is gekoppeld aan de itemdetails",
         "refresh": "De lijst vernieuwen",
         "refresh_new_content": "Er is nieuwe inhoud beschikbaar, klik om te vernieuwen",
         "search": "Zoekveld weergeven\/verbergen",
         "select_items": "Bulkselectie",
         "sort_options": "Sorteeropties",
-        "toggle_view_mode": "Weergavemodus wijzigen",
+        "toggle_view_mode": "Weergavemodus omschakelen: lijst\/miniaturen",
         "filter_favorites": "Alleen favorieten weergeven",
         "favorite": "Markeer\/verwijder als favoriet",
         "open_provider_link": "Dit item op de website van de provider openen",
@@ -849,9 +852,9 @@
         "genre_content_type": "Mediatype",
         "previous_page": "Vorige pagina",
         "next_page": "Volgende pagina",
-        "toggle_players": "Spelers weergeven\/verbergen",
-        "toggle_top_picks": "Topkeuzes weergeven\/verbergen",
-        "toggle_row": "Zichtbaarheid van de rij in- of uitschakelen",
+        "toggle_players": "Spelers omschakelen",
+        "toggle_top_picks": "Topkeuzes omschakelen",
+        "toggle_row": "Zichtbaarheid van de rij omschakelen",
         "toggle_power": "Aan- of uitzetten",
         "open_options": "Opties openen",
         "more_options": "Meer opties",
@@ -1198,7 +1201,7 @@
         "guest_role": "Gast",
         "tokens_load_failed": "Het laden van toegangstokens is mislukt",
         "users_load_failed": "Het laden van gebruikers is mislukt",
-        "service_role": "Dienst",
+        "service_role": "Onderhoud",
         "system_user": "Systeem",
         "system_user_hint": "Home Assistant logt in met dit account, dus de gebruikersnaam, rol en het wachtwoord ervan kunnen niet worden gewijzigd.",
         "roles": "Rollen",
@@ -1229,10 +1232,10 @@
             "always": "Altijd toegestaan",
             "also": "Ook toegestaan",
             "needed_for": "Nodig voor: {permission}",
-            "browse_library": "Mag door de bibliotheek bladeren",
-            "play_music": "Mag muziek afspelen en de spelers bedienen",
-            "change_queue": "Mag de wachtrij bekijken en wijzigen",
-            "see_sources_and_players": "Mag de muziekbronnen en spelerinstellingen bekijken",
+            "browse_library": "Door de bibliotheek bladeren",
+            "play_music": "Muziek afspelen en de spelers bedienen",
+            "change_queue": "De wachtrij bekijken en aanpassen",
+            "see_sources_and_players": "De muziekbronnen en spelerinstellingen bekijken",
             "library": "Bibliotheek",
             "library_write": "Mag items toevoegen aan en verwijderen uit de bibliotheek en favorieten",
             "players": "Spelers",
@@ -1247,7 +1250,10 @@
             "server": "Server",
             "config_core_read": "Mag de serverinstellingen bekijken",
             "system_read": "Mag achtergrondtaken en hun logboeken bekijken"
-        }
+        },
+        "username_max_length": "De gebruikersnaam mag maximaal 50 tekens lang zijn",
+        "display_name_max_length": "De weergavenaam mag maximaal 100 tekens lang zijn",
+        "password_max_length": "Het wachtwoord mag maximaal 128 tekens lang zijn"
     },
     "login": {
         "subtitle": "Maak verbinding met je muziekserver",
@@ -1478,7 +1484,7 @@
             "disable_guest_access": "Gasttoegang uitschakelen",
             "enable_guest_access": "Gasttoegang inschakelen",
             "guest_access_enabled": "Gasttoegang ingeschakeld",
-            "guest_access_toggle_failed": "Gasttoegang schakelen mislukt",
+            "guest_access_toggle_failed": "Gasttoegang omschakelen mislukt",
             "powered_by": "Mogelijk gemaakt door",
             "copy_link": "Link kopiëren",
             "more_share_options": "Meer deelopties",
@@ -2296,9 +2302,9 @@
     "visualizer": {
         "title": "MilkDrop",
         "preset_random": "Willekeurige preset",
-        "toggle": "De MilkDrop-visualizer schakelen",
+        "toggle": "De MilkDrop-visualizer omschakelen",
         "preset_random_favorites": "Willekeurig uit favorieten",
-        "toggle_favorite": "Voeg deze preset aan favorieten toe",
+        "toggle_favorite": "Sla deze preset op als favoriet",
         "provider_missing": "De MilkDrop Visualizer-plug-in is niet geïnstalleerd of niet beschikbaar. Voeg deze toe via Instellingen > Providers om de visualizer te kunnen gebruiken.",
         "section_general": "Uiterlijk",
         "section_presets": "Presets",
@@ -2380,13 +2386,13 @@
     },
     "data_table": {
         "view": "Weergave",
-        "toggle_columns": "Kolommen schakelen",
+        "toggle_columns": "Kolommen omschakelen",
         "hide": "Verbergen"
     },
     "sidebar": {
         "title": "Zijbalk",
         "description": "Laat de mobiele zijbalk zien.",
-        "toggle": "Zijbalk schakelen",
+        "toggle": "Zijbalk omschakelen",
         "expand": "Zijbalk uitklappen",
         "collapse": "Zijbalk inklappen"
     },
@@ -2415,7 +2421,7 @@
     "screens": "Beeldschermen",
     "play_from_here_to_latest": "Speel vanaf hier tot de laatste",
     "players_need_setup": "Er is een nieuw apparaat ontdekt dat moet worden ingesteld | er zijn {count} nieuwe apparaten ontdekt die ingesteld moeten worden.",
-    "review": "Bekijk",
+    "review": "Recensie",
     "import_playlist_search_providers_description": "Geselecteerde muziekbronnen worden gebruikt als alternatieve bronnen wanneer de oorspronkelijke bron van een nummer niet beschikbaar is.",
     "import_playlist_match_policy_label": "Nummer matching",
     "import_playlist_match_policy_exact_title": "Exacte release",
@@ -2487,7 +2493,7 @@
     "hide_row": "Rij verbergen",
     "show_row": "Rij weergeven",
     "edit_rows_hint": "Sleep om de volgorde aan te passen, verberg wat je niet wilt zien. Bij \"Bron\" kun je kiezen vanuit welke bron een rij wordt gevuld (je bibliotheek, één bron of allemaal).",
-    "admin_only": "Alleen administratoren",
+    "admin_only": "Alleen beheerders",
     "done": "Klaar",
     "onboarding": {
         "title": "Music Assistant instellen",
@@ -2496,16 +2502,12 @@
         "skip": "Voorlopig overslaan",
         "finish": "Afronden",
         "finish_failed": "Het instellen kon niet worden voltooid. Probeer het nog eens.",
-        "getting_started": "Aan de slag gaan",
-        "getting_started_hint": "Voltooi het instellen van Music Assistant",
-        "hide_for_now": "Voorlopig verbergen",
         "nothing_configured": "Er is nog niets ingesteld",
         "needs_attention": "Heeft aandacht nodig",
-        "set_up": "Instellen",
+        "set_up": "Klaar",
         "still_to_do": "Nog te doen",
         "all_done": "Alles op de lijst is ingesteld.",
         "players_count": "{count} speler | {count} spelers",
-        "steps_to_go": "Nog {count} stap te gaan | Nog {count} stappen te gaan",
         "run_again": "Voer de instelwizard opnieuw uit",
         "steps": {
             "intent": {
@@ -2518,7 +2520,8 @@
                 "music_hub": {
                     "label": "Als mijn muziekhub",
                     "description": "Breng je streamingdiensten en lokale muziek samen in één bibliotheek."
-                }
+                },
+                "settings_note": "Je kunt dit later aanpassen in de instellingen."
             },
             "music_sources": {
                 "title": "Voeg je muziekbronnen toe",
@@ -2526,89 +2529,122 @@
             },
             "players": {
                 "title": "Voeg je spelerproviders toe",
-                "description": "Een spelerprovider zoals Sonos, Chromecast of AirPlay, integreert je luidsprekers met Music Assistant."
+                "description": "Een spelerprovider zoals Sonos, Chromecast of AirPlay, integreert je luidsprekers met Music Assistant.",
+                "description_empty": "Music Assistant vindt je luidsprekers via spelerproviders zoals Sonos, Chromecast of AirPlay.",
+                "empty": "Nog geen spelers gevonden",
+                "no_provider_hint": "Voeg een spelerprovider toe, daarna zullen de bijbehorende spelers hier verschijnen.",
+                "discovering_hint": "Het kan even duren voordat spelers worden gevonden. Zorg ervoor dat je luidsprekers zijn ingeschakeld en zich op hetzelfde netwerk bevinden als Music Assistant.",
+                "add_more": "Voeg meer spelers toe",
+                "rename": "Hernoem {name}"
             },
             "plugins": {
                 "title": "Plug-ins toevoegen",
                 "description": "Plug-ins voegen extra functionaliteit toe aan Music Assistant. Je kunt ze altijd later nog toevoegen."
             },
             "finish": {
-                "title": "Installatie afronden",
-                "description": "Dit is waar je nu op uitgekomen bent. Je kunt dit later allemaal aanpassen via de instellingen."
+                "title": "Instellen afronden",
+                "description": "Dit is waarop je nu uitgekomen bent. Je kunt dit later allemaal nog aanpassen via de instellingen."
             },
             "core_settings": {
                 "title": "Controleer je serverinstellingen",
-                "description": "De naam waaronder deze server bekendstaat, het adres waarop het thuis bereikbaar is en het adres dat je buitenshuis kunt gebruiken.",
-                "load_failed": "De serverinstellingen konden niet worden geladen. Je kunt ze later aanpassen via de instellingen."
-            },
-            "invite_members": {
-                "title": "Voeg je huishouden toe",
-                "description": "Iedereen met wie je samenwoont, krijgt een eigen account, met de spelers en muziekbronnen waartoe je hen toegang geeft.",
-                "load_failed": "Je huishouden kon niet worden geladen. Je kunt later leden toevoegen via de instellingen."
-            },
-            "welcome": {
-                "title": "Doe alsof je thuis bent",
-                "description": "Hoi {name}, dit is de plek waar de muziek van jouw huishouden zich bevindt. Kies hoeveel je wilt zien terwijl er iets wordt afgespeeld.",
-                "enthusiast": {
-                    "label": "Alle details",
-                    "description": "Voortgangsbalk in vorm van een geluidsgolf en een achtergrondvisualisatie terwijl de muziek speelt."
+                "load_failed": "De serverinstellingen konden niet worden geladen. Je kunt ze later aanpassen via de instellingen.",
+                "intro": "De adressen die Music Assistant momenteel gebruikt. Deze worden automatisch bepaald en zijn normaal gesproken correct, dus je kunt gewoon verdergaan.",
+                "internal_address": "Intern adres",
+                "internal_address_hint": "Waar de apps en apparaten in je huis Music Assistant kunnen bereiken.",
+                "stream_address": "Adres van de streamserver",
+                "stream_address_hint": "Waar je spelers de audio vandaan halen.",
+                "address_unknown": "Niet beschikbaar",
+                "check": {
+                    "checking": "Bezig met controleren...",
+                    "reachable": "Bereikbaar vanaf dit apparaat",
+                    "unreachable": "Niet bereikbaar vanaf dit apparaat",
+                    "unchecked": "Kon vanaf dit apparaat geen controle uitvoeren"
                 },
-                "regular": {
-                    "label": "Speel gewoon muziek af",
-                    "description": "Een standaard speler, zonder overbodige toevoegingen."
-                },
-                "defaults_hint": "Hiermee worden slechts enkele standaardinstellingen ingesteld. Je kunt alle instellingen zelf aanpassen.",
-                "save_failed": "Je keuze kon niet worden opgeslagen. Probeer het opnieuw."
-            },
-            "whats_here": {
-                "title": "Wat je hier kunt vinden",
-                "description": "De muziek die jullie huishouden heeft verzameld, en de spelers waar je het naartoe kunt sturen.",
-                "more_count": "+{count} meer",
-                "listen": {
-                    "title": "Wat je kunt beluisteren",
-                    "empty": "Er zijn nog geen muziekbronnen met je gedeeld.",
-                    "browse": "Blader door je muziek"
-                },
-                "players": {
-                    "title": "Jouw spelers",
-                    "empty": "Er is nog geen speler. Vraag je beheerder om er een toe te voegen.",
-                    "hint": "Kies een speler in de balk onderaan, druk op afspelen en open de volledige speler om te zien wat er later aankomt.",
-                    "pick": "Kies een speler"
+                "unreachable_hint": "Een adres dat hier niet wordt beantwoord, wordt mogelijk ook niet door je spelers beantwoord. Als het afspelen mislukt, stel dit dan in via de geavanceerde instellingen.",
+                "override_hint": "Je hoeft deze instellingen alleen aan te passen in een complexer netwerk, bijvoorbeeld achter een reverse proxy of tussen VLAN’s. Je vindt ze later onder Instellingen › {system}, in {webserver} en {streams}.",
+                "remote": {
+                    "title": "Luister buitenshuis",
+                    "description": "Er zijn twee manieren om Music Assistant te bereiken als je niet thuis bent. Beide kun je ook later instellen.",
+                    "builtin": {
+                        "title": "Ingebouwde toegang op afstand",
+                        "easiest": "Het makkelijkst",
+                        "description": "Veilig en versleuteld, zonder port forwarding of VPN. Schakel het in en maak overal verbinding met je Externe Toegang ID.",
+                        "switch": "Externe Toegang",
+                        "id": "Jouw Externe Toegang ID",
+                        "copy": "Kopieer de Externe Toegang ID",
+                        "hint": "Gebruik deze in de Music Assistant-app of op app.music-assistant.io. De QR-code vind je onder Instellingen › {remote_access}."
+                    },
+                    "proxy": {
+                        "title": "Je eigen reverse proxy",
+                        "description": "Zet een reverse proxy voor de server en voer het adres in waarmee de server van buitenaf bereikbaar is als het externe adres.",
+                        "set_external": "Stel het externe adres in"
+                    }
                 }
             },
-            "tour": {
-                "title": "Een korte rondleiding",
-                "description": "De plekken die je het meest zult gebruiken.",
-                "open": "Openen",
-                "open_named": "Open {title}",
-                "library": {
-                    "title": "Je bibliotheek",
-                    "description": "Artiesten, albums, nummers en afspeellijsten, allemaal bij elkaar in de zijbalk. Alles wat je huishouden heeft toegevoegd, staat hier."
+            "invite_members": {
+                "title": "Gebruikers toevoegen",
+                "description": "Iedereen met wie je samenwoont, krijgt een eigen account, met de spelers en muziekbronnen waartoe je hen toegang geeft.",
+                "load_failed": "De gebruikers konden niet worden geladen. Je kunt ze later via de instellingen toevoegen."
+            },
+            "welcome": {
+                "title": "Voel je thuis",
+                "description": "Hoi {name}, dit is de plek waar de muziek in je huis zich bevindt. Kies hoeveel je wilt zien terwijl er iets wordt afgespeeld.",
+                "defaults_hint": "Hiermee worden slechts enkele standaardinstellingen ingesteld. Je kunt alle instellingen zelf aanpassen.",
+                "save_failed": "Je keuze kon niet worden opgeslagen. Probeer het opnieuw.",
+                "standard": {
+                    "label": "Standaard",
+                    "description": "Een overzichtelijke interface met alleen de essentiële functies."
                 },
-                "search": {
-                    "title": "Zoeken",
-                    "description": "Open de zoekfunctie in de zijbalk om een artiest, een album of een nummer te zoeken in het volledige aanbod dat je kunt beluisteren."
-                },
-                "player_bar": {
-                    "title": "De spelerbalk",
-                    "description": "Met de balk onderaan kun je de speler selecteren en afspelen of pauzeren. Open de balk om de volledige speler en de wachtrij te bekijken."
-                },
-                "profile": {
-                    "title": "Je profiel en instellingen",
-                    "description": "Je naam, avatar en wachtwoord, en het thema en de taal die deze app gebruikt."
+                "expert": {
+                    "label": "Expert",
+                    "description": "Toont geavanceerde opties en extra details, voor wie alles wil zien."
                 }
             },
             "all_set": {
                 "title": "Je bent helemaal klaar",
-                "description": "Dat is alles. Je kunt dit later allemaal nog wijzigen in de instellingen."
+                "description": "Dat is alles. Je kunt dit later allemaal nog aanpassen in de instellingen."
+            },
+            "own_sources": {
+                "title": "Koppel je eigen accounts",
+                "description": "Voeg je eigen muziekdiensten toe, zodat je afspeellijsten en muziekbibliotheek naast die van anderen worden weergegeven. Je kunt dit later altijd nog doen via je instellingen.",
+                "add": "Voeg een muziekbron toe",
+                "empty": "Je hebt nog geen eigen muziekbronnen gekoppeld.",
+                "connected": "Jouw muziekbronnen"
+            },
+            "your_players": {
+                "title": "Jouw spelers",
+                "description": "De spelers waar je muziek naartoe kunt sturen.",
+                "empty": "Nog geen spelers. Vraag je beheerder om er een toe te voegen."
+            },
+            "your_music": {
+                "title": "Wat je kunt beluisteren",
+                "description": "De muziekbronnen die iedereen hier heeft samengebracht.",
+                "empty": "Er zijn nog geen muziekbronnen met je gedeeld."
+            },
+            "account": {
+                "title": "Maak je account aan",
+                "description": "Dit is het beheerdersaccount voor deze Music Assistant-server. Accounts voor de andere gebruikers in je huishouden kunnen later worden toegevoegd.",
+                "create": "Account aanmaken",
+                "creating": "Je account wordt aangemaakt...",
+                "signing_in": "Je wordt ingelogd...",
+                "failed": "Het account kon niet worden aangemaakt. Probeer het opnieuw.",
+                "sign_in_failed": "Je account is aangemaakt, maar inloggen is niet gelukt. Vernieuw de pagina om verder te gaan.",
+                "handed_back": "Je account is klaar. Je kunt nu teruggaan naar de app waar je vandaan kwam.",
+                "account_exists": "Op de server is al een account aangemaakt, dus je hoeft niets aan te maken.",
+                "sign_in_here": "In plaats daarvan hier inloggen",
+                "reload": "Vernieuw de pagina",
+                "ready": "Ingelogd als {name}."
             }
         },
-        "add_member": "Voeg een huishoudlid toe",
+        "add_member": "Een gebruiker toevoegen",
         "just_you_so_far": "Tot nu toe ben jij de enige.",
         "welcome_title": "Welkom bij Music Assistant",
-        "welcome_again": "Laat het welkomstscherm nogmaals zien",
-        "welcome_hint": "Kijk even rond",
-        "what_you_picked": "Wat je hebt gekozen"
+        "welcome_again": "Laat het welkomscherm nogmaals zien",
+        "what_you_picked": "Wat je hebt gekozen",
+        "description": "Stel Music Assistant stap voor stap in.",
+        "step_completed": "{step}, voltooid",
+        "welcome_description": "Een korte rondleiding door Music Assistant.",
+        "more_count": "+{count} meer"
     },
     "share_playlist": "Deel afspeellijst",
     "playlist_access": {
@@ -2635,5 +2671,51 @@
     "track_radio": "Nummer Endless Mix",
     "edit_rows_subtitle_track": "Van toepassing op iedere nummerpagina",
     "n_releases": "{count} release | {count} releases",
-    "artist_view_library_tracks": "Bekijk {count} bibliotheeknummer | Bekijk {count} bibliotheeknummers"
+    "artist_view_library_tracks": "Bekijk {count} bibliotheeknummer | Bekijk {count} bibliotheeknummers",
+    "album_radio": "Album Endless Mix",
+    "n_tracks": "{count} nummer | {count} nummers",
+    "more_from_artist": "Meer van deze artiest",
+    "more_from_artist_name": "Meer van {name}",
+    "edit_rows_subtitle_album": "Van toepassing op elke albumpagina",
+    "recommended": "Aanbevolen",
+    "tour": {
+        "start": "Volg een rondleiding",
+        "end": "Beëindig de rondleiding",
+        "next": "Volgende",
+        "step_counter": "{current} van de {total}",
+        "offer": {
+            "title": "Wil je even snel rondkijken?",
+            "description": "Een korte rondleiding laat de belangrijkste onderdelen van de app zien. Je kunt deze rondleiding op elk gewenst moment opnieuw bekijken via je profielmenu."
+        },
+        "stops": {
+            "menu": {
+                "title": "Het menu",
+                "description": "Hier begint het allemaal: Ontdek en Blader om iets te vinden om af te spelen, je bibliotheek met artiesten, albums, nummers en afspeellijsten, en onderaan de instellingen en je profiel."
+            },
+            "search": {
+                "title": "Zoeken",
+                "description": "Zoek een artiest, album, nummer of afspeellijst in het volledige aanbod van muziek waarnaar je kunt luisteren."
+            },
+            "settings": {
+                "title": "Instellingen",
+                "description": "Waar Music Assistant is ingesteld: de muziekbronnen en spelers, en hoe de app eruitziet en werkt."
+            },
+            "profile": {
+                "title": "Jouw profiel",
+                "description": "Je naam, avatar en wachtwoord staan hier. In dit menu kun je ook het menu anders indelen, uitloggen of deze rondleiding opnieuw doen."
+            },
+            "player_bar": {
+                "title": "De spelerbalk",
+                "description": "Wat er nu wordt afgespeeld samen met de bedieningselementen. Open het om de volledige speler te laten zien samen met wat er straks aankomt."
+            },
+            "player_select": {
+                "title": "Kies een speler",
+                "description": "Kies waar de muziek wordt afgespeeld. Selecteer een speler en druk op afspelen."
+            },
+            "player_group": {
+                "title": "Groepspelers",
+                "description": "Voeg andere spelers toe aan de speler die je hebt gekozen, zodat ze in meerdere kamers samen dezelfde muziek spelen. Spelers die niet kunnen deelnemen, worden niet aangeboden."
+            }
+        }
+    }
 }

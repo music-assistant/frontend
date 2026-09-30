@@ -54,14 +54,12 @@ async function flushMicrotasks() {
   await Promise.resolve();
 }
 
-// every test imports the composables anew after resetting the module registry,
-// which can take seconds under load
-describe("ai_radio prefetch gating", { timeout: 20_000 }, () => {
+describe("ai_radio prefetch gating", () => {
   afterEach(() => {
     vi.resetModules();
     vi.doUnmock("@/plugins/api");
     vi.doUnmock("@/plugins/auth");
-    vi.doUnmock("@/plugins/i18n");
+    // i18n stays mocked, the real one would load every locale on the next import
   });
 
   it("sends no ai_radio commands for a session-scoped session", async () => {

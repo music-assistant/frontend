@@ -1,22 +1,36 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { storeMock, mockSetUserPreference, mockGetProvider } = vi.hoisted(
-  () => ({
-    storeMock: {
-      currentUser: null as { preferences?: Record<string, unknown> } | null,
-    },
-    mockSetUserPreference: vi.fn(),
-    mockGetProvider: vi.fn(),
-  }),
-);
+const {
+  storeMock,
+  mockSetUserPreference,
+  mockGetProvider,
+  providersMock,
+  manifestsMock,
+} = vi.hoisted(() => ({
+  storeMock: {
+    currentUser: null as { preferences?: Record<string, unknown> } | null,
+  },
+  mockSetUserPreference: vi.fn(),
+  mockGetProvider: vi.fn(),
+  providersMock: {} as Record<
+    string,
+    { name: string; domain: string; is_streaming_provider?: boolean }
+  >,
+  manifestsMock: {} as Record<string, { name: string }>,
+}));
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
 }));
 
-vi.mock("@/plugins/api", () => ({
-  api: { getProvider: mockGetProvider },
-}));
+vi.mock("@/plugins/api", () => {
+  const api = {
+    getProvider: mockGetProvider,
+    providers: providersMock,
+    providerManifests: manifestsMock,
+  };
+  return { api, default: api };
+});
 
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: mockSetUserPreference,
@@ -24,7 +38,8 @@ vi.mock("@/composables/userPreferences", () => ({
 
 import {
   createRowRegistry,
-  rowSourceProvider,
+  rowSourceDisplay,
+  rowSourceOptions,
   type RowSource,
 } from "@/components/details/rowRegistry";
 
@@ -51,6 +66,13 @@ const registry = createRowRegistry<RowId, Item>({
 
 const ITEM: Item = { candidates: ["all", "spotify--abc"] };
 
+// one of several accounts of a streaming service, named after the account
+const SPOTIFY_ACCOUNT = {
+  name: "Spotify [marcelveldt2]",
+  domain: "spotify",
+  is_streaming_provider: true,
+};
+
 function setPreferences(preferences: Record<string, unknown>) {
   storeMock.currentUser = { preferences };
 }
@@ -59,6 +81,8 @@ describe("rowRegistry", () => {
   beforeEach(() => {
     mockSetUserPreference.mockReset();
     mockGetProvider.mockReset();
+    for (const key of Object.keys(providersMock)) delete providersMock[key];
+    for (const key of Object.keys(manifestsMock)) delete manifestsMock[key];
     setPreferences({});
   });
 
@@ -94,6 +118,29 @@ describe("rowRegistry", () => {
 
   it("ignores a saved source that is no longer among the candidates", () => {
     setPreferences({ [SOURCES_KEY]: { with_picker: "spotify--gone" } });
+    expect(registry.effectiveSource("with_picker", ITEM)).toBe("all");
+  });
+
+  it("maps a saved account to the offered account of the same service", () => {
+    providersMock["spotify--abc"] = SPOTIFY_ACCOUNT;
+    providersMock["spotify--xyz"] = {
+      ...SPOTIFY_ACCOUNT,
+      name: "Spotify [marcelveldt3]",
+    };
+    setPreferences({ [SOURCES_KEY]: { with_picker: "spotify--xyz" } });
+    expect(registry.effectiveSource("with_picker", ITEM)).toBe("spotify--abc");
+  });
+
+  it("does not map a saved instance of a non-streaming provider", () => {
+    providersMock["spotify--abc"] = {
+      ...SPOTIFY_ACCOUNT,
+      is_streaming_provider: false,
+    };
+    providersMock["spotify--xyz"] = {
+      ...SPOTIFY_ACCOUNT,
+      is_streaming_provider: false,
+    };
+    setPreferences({ [SOURCES_KEY]: { with_picker: "spotify--xyz" } });
     expect(registry.effectiveSource("with_picker", ITEM)).toBe("all");
   });
 
@@ -171,21 +218,62 @@ describe("rowRegistry", () => {
     });
   });
 
-  describe("rowSourceProvider", () => {
-    it("names the single provider behind a source", () => {
-      mockGetProvider.mockReturnValue({ name: "Spotify", domain: "spotify" });
-      expect(rowSourceProvider("spotify--abc")).toEqual({
-        name: "Spotify",
-        domain: "spotify",
-      });
-      expect(mockGetProvider).toHaveBeenCalledWith("spotify--abc");
+  describe("rowSourceOptions", () => {
+    it("maps a row's sources to picker options with labels and provider domains", () => {
+      providersMock["spotify--abc"] = { name: "Spotify", domain: "spotify" };
+      expect(rowSourceOptions(registry, "with_picker", ITEM)).toEqual([
+        { value: "all", label: "All sources", domain: undefined },
+        { value: "spotify--abc", label: "Spotify", domain: "spotify" },
+      ]);
     });
 
-    it("has none for the library, every provider, or an unknown one", () => {
-      expect(rowSourceProvider("library")).toBeUndefined();
-      expect(rowSourceProvider("all")).toBeUndefined();
-      expect(rowSourceProvider(undefined)).toBeUndefined();
-      expect(rowSourceProvider("spotify--gone")).toBeUndefined();
+    it("names a streaming provider after the service rather than the account", () => {
+      manifestsMock["spotify"] = { name: "Spotify" };
+      providersMock["spotify--abc"] = SPOTIFY_ACCOUNT;
+      expect(rowSourceOptions(registry, "with_picker", ITEM)).toEqual([
+        { value: "all", label: "All sources", domain: undefined },
+        { value: "spotify--abc", label: "Spotify", domain: "spotify" },
+      ]);
+    });
+
+    it("is empty for a row without a source picker", () => {
+      expect(rowSourceOptions(registry, "plain", ITEM)).toEqual([]);
+    });
+  });
+
+  describe("rowSourceDisplay", () => {
+    it("reads the library and every-provider sources", () => {
+      expect(rowSourceDisplay("library")).toEqual({ label: "In your library" });
+      expect(rowSourceDisplay("all")).toEqual({ label: "All sources" });
+    });
+
+    it("names a provider and carries its domain for the icon", () => {
+      mockGetProvider.mockReturnValue({ name: "Spotify", domain: "spotify" });
+      expect(rowSourceDisplay("spotify--abc")).toEqual({
+        label: "On Spotify",
+        domain: "spotify",
+      });
+    });
+
+    it("names a streaming provider after the service", () => {
+      manifestsMock["spotify"] = { name: "Spotify" };
+      mockGetProvider.mockReturnValue(SPOTIFY_ACCOUNT);
+      expect(rowSourceDisplay("spotify--abc")).toEqual({
+        label: "On Spotify",
+        domain: "spotify",
+      });
+    });
+
+    it("falls back to the raw id when the provider is unknown", () => {
+      mockGetProvider.mockReturnValue(undefined);
+      expect(rowSourceDisplay("spotify--gone")).toEqual({
+        label: "On spotify--gone",
+        domain: undefined,
+      });
+    });
+
+    it("has nothing without a source", () => {
+      expect(rowSourceDisplay(undefined)).toBeUndefined();
     });
   });
 });

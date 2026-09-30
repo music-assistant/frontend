@@ -76,6 +76,8 @@
     :sort-keys="[
       'position',
       'position_desc',
+      'timestamp_added',
+      'timestamp_added_desc',
       'name',
       'artist',
       'album',
@@ -113,6 +115,7 @@ import {
   isMusicAssistantPlaylist,
 } from "@/helpers/playlist_access";
 import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
+import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -191,12 +194,22 @@ onMounted(() => {
       // signal user that there might be updated info available for this item
       const updatedItem = evt.data as MediaItemType;
       if (itemDetails.value?.uri == updatedItem.uri) {
-        itemDetails.value = updatedItem as Playlist;
+        itemDetails.value = keepOwnFavorite(
+          updatedItem,
+          itemDetails.value,
+        ) as Playlist;
         updateAvailable.value = true;
       }
     },
   );
   onBeforeUnmount(unsub);
+
+  // the user's own like or dislike, wherever they made it
+  const unsubFavorite = subscribeOwnFavorites((update) => {
+    const item = itemDetails.value;
+    if (item?.uri == update.uri) item.favorite = update.favorite;
+  });
+  onBeforeUnmount(unsubFavorite);
 });
 
 const loadPlaylistTracks = async function (params: LoadDataParams) {

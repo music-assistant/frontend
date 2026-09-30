@@ -122,17 +122,15 @@ describe("OwnSourcesStep", () => {
   it("opens the add-a-source dialog in self-service music mode", async () => {
     const wrapper = mountStep();
 
-    // the dialog stays unmounted until opened, so it never fetches the
+    // the dialog stays closed until asked for, so it never fetches the
     // provider configs the wizard has already loaded
-    expect(wrapper.findComponent({ name: "AddProviderDialog" }).exists()).toBe(
-      false,
-    );
+    const dialog = wrapper.findComponent({ name: "AddProviderDialog" });
+    expect(dialog.props("show")).toBe(false);
 
     await wrapper
       .find("[data-testid=onboarding-add-provider]")
       .trigger("click");
 
-    const dialog = wrapper.findComponent({ name: "AddProviderDialog" });
     expect(dialog.props("show")).toBe(true);
     // a member only ever adds a music source of their own, self-service and
     // multi-instance, exactly as the settings page offers it
