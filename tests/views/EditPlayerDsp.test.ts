@@ -29,8 +29,8 @@ const apiMock = vi.hoisted(() => ({
 const registryMock = vi.hoisted(() => ({
   presets: undefined as Ref<DSPConfigPreset[]> | undefined,
 }));
-// The view reads only mobileLayout, and the real store calls into
-// @/helpers/utils at import time, which is mocked down to getPlayerName here.
+// The view reads only mobileLayout, and uses only truncateString from
+// @/helpers/utils.
 const storeMock = vi.hoisted(() => ({ mobileLayout: false }));
 
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
@@ -52,7 +52,7 @@ vi.mock("@/composables/useDSPPresets", async () => {
   };
 });
 vi.mock("@/helpers/utils", () => ({
-  getPlayerName: () => "Test player",
+  truncateString: (str: string) => str,
 }));
 vi.mock("vue-i18n", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-i18n")>();

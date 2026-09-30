@@ -52,6 +52,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     group_members: ["leader", "child"],
     synced_to: null,
     active_source: "leader",
+    output_protocols: [],
     ...overrides,
   } as Player;
 }

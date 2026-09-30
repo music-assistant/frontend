@@ -25,7 +25,7 @@
               class="text-muted-foreground"
             />
             <span class="truncate text-xs font-medium">
-              {{ volumePlayer.name }}
+              {{ getPlayerDisplayName(volumePlayer) }}
             </span>
           </div>
           <PlayerVolume
@@ -61,8 +61,11 @@
 <script setup lang="ts">
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Separator } from "@/components/ui/separator";
-import { isPlayerGrouped } from "@/helpers/players";
-import { getPlayerName } from "@/helpers/utils";
+import {
+  getPlayerDisplayName,
+  getPlayerName,
+  isPlayerGrouped,
+} from "@/helpers/players";
 import { api } from "@/plugins/api";
 import {
   type Player,

@@ -168,7 +168,11 @@ describe("PlayAnnouncementDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     apiMock.players = {
-      kitchen: { player_id: "kitchen", name: "Kitchen" } as Player,
+      kitchen: {
+        player_id: "kitchen",
+        name: "Kitchen",
+        output_protocols: [],
+      } as unknown as Player,
     };
     apiMock.baseUrl = "https://music.example";
     apiMock.isRemoteConnection.value = false;

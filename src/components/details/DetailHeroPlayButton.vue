@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import MenuButton from "@/components/MenuButton.vue";
 import { handlePlayBtnClick } from "@/helpers/media_item_actions";
-import { getPlayerName } from "@/helpers/utils";
+import { getPlayerName } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import type { MediaItemType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";

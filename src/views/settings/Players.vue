@@ -57,8 +57,9 @@
           </template>
 
           <template #title>
-            <div class="player-name">
-              {{ getPlayerName(item) }}
+            <div class="player-name flex min-w-0 items-center gap-1.5">
+              <span class="truncate">{{ getPlayerName(item) }}</span>
+              <PlayerDeviceBadge v-if="isThisDevice(item)" label />
             </div>
           </template>
 
@@ -150,6 +151,7 @@
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
+import PlayerDeviceBadge from "@/components/PlayerDeviceBadge.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
 import ProtocolChip from "@/components/ProtocolChip.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
@@ -160,9 +162,8 @@ import { Button } from "@/components/ui/button";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { getPlayerName } from "@/helpers/player_config";
 import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
-import { isPlayerUnavailable } from "@/helpers/players";
+import { isBuiltinPlayer, isPlayerUnavailable } from "@/helpers/players";
 
-import { isHiddenSendspinWebPlayer } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -228,9 +229,7 @@ const canAddPlayerProviders = computed(() =>
 const loadItems = async function () {
   playerConfigs.value = (
     await api.getPlayerConfigs(undefined, false, false, true)
-  )
-    .filter((x) => !isHiddenSendspinWebPlayer(x))
-    .sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)));
+  ).sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)));
 };
 
 const editPlayer = function (playerId: string, provider: string) {
@@ -258,6 +257,11 @@ const handlePlayerClick = function (playerConfig: PlayerConfig) {
 const getOutputProtocols = function (playerId: string) {
   // all output methods for this player, native included
   return api.players[playerId]?.output_protocols || [];
+};
+
+const isThisDevice = function (playerConfig: PlayerConfig) {
+  const player = api.players[playerConfig.player_id];
+  return player !== undefined && isBuiltinPlayer(player);
 };
 
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {

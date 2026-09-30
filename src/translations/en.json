@@ -2840,5 +2840,6 @@
                 "description": "Add other players to the one you picked, so they play the same music together in several rooms. Players that cannot join are not offered."
             }
         }
-    }
+    },
+    "web_player_name": "{owner}'s {device} ({client})"
 }

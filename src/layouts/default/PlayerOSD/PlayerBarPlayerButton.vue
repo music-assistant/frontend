@@ -40,6 +40,7 @@
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
 import { usePopoutTriggerHover } from "@/composables/usePopoutTriggerHover";
+import { getPlayerDisplayName } from "@/helpers/players";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { computed } from "vue";
@@ -47,7 +48,11 @@ import { computed } from "vue";
 const { suppressHover, onPointerEnter } = usePopoutTriggerHover(
   () => store.showPlayersMenu,
 );
-const playerName = computed(() => store.activePlayer?.name || $t("no_player"));
+const playerName = computed(() =>
+  store.activePlayer
+    ? getPlayerDisplayName(store.activePlayer)
+    : $t("no_player"),
+);
 const playerSelectLabel = computed(
   () => `${$t("tooltip.select_player")}: ${playerName.value}`,
 );

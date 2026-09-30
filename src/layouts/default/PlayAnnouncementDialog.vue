@@ -166,6 +166,7 @@ import {
   liveAnnouncementSupported,
   useLiveAnnouncement,
 } from "@/composables/useLiveAnnouncement";
+import { getPlayerDisplayName } from "@/helpers/players";
 import { formatDuration } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { type PlayAnnouncementDialogEvent, eventbus } from "@/plugins/eventbus";
@@ -195,7 +196,10 @@ const volumeOverride = ref<number | null>(null);
 let closeTimer: number | null = null;
 const mode = ref<AnnouncementMode>("type");
 
-const playerName = computed(() => api.players[playerId.value]?.name ?? "");
+const playerName = computed(() => {
+  const player = api.players[playerId.value];
+  return player ? getPlayerDisplayName(player) : "";
+});
 const micAvailable = computed(() => liveAnnouncementSupported());
 
 const {
