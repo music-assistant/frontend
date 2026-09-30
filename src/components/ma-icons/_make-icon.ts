@@ -19,7 +19,7 @@ export function makeSvgIcon(name: string, svg: string): Component {
   let innerHtml = rootMatch[2];
   for (let previous = ""; previous !== innerHtml; ) {
     previous = innerHtml;
-    innerHtml = innerHtml.replace(/<!--[\s\S]*?-->/g, "");
+    innerHtml = innerHtml.replace(/<!--[\s\S]*?-->/g, " ");
   }
   innerHtml = innerHtml.replace(/\s+/g, " ").trim();
 

@@ -24,6 +24,16 @@ describe("PlayerIcon", () => {
     expect(wrapper.find("path").exists()).toBe(true);
   });
 
+  it("does not join a token split by a comment", () => {
+    const TestIcon = makeSvgIcon(
+      "test-icon",
+      '<svg viewBox="0 0 24 24"><path d="M1 1h22v22H1z" o<!-- -->nclick="alert(1)" /></svg>',
+    );
+    const wrapper = mount(TestIcon);
+
+    expect(wrapper.html()).not.toContain("onclick");
+  });
+
   it("accepts leading whitespace like the upstream validator", () => {
     const TestIcon = makeSvgIcon(
       "test-icon",
