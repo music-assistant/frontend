@@ -888,7 +888,10 @@
             "empty_text": "There is no folder, drive or network share to pick from yet. Select \"Manage storage\" to add one.",
             "empty_text_member": "There is no folder, drive or network share to pick from yet. Ask an administrator to add one.",
             "manage": "Manage storage"
-        }
+        },
+        "remove_provider_confirm_music": "Remove \"{0}\"? All music that this source provides is removed from your library, along with its play history. This cannot be undone.",
+        "remove_provider_confirm_player": "Remove \"{0}\"? Its players and their settings are removed too. This cannot be undone.",
+        "remove_provider_acknowledge": "I understand that this removes music from my library"
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
