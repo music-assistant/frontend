@@ -174,7 +174,7 @@ watch(
   { immediate: true },
 );
 
-// On desktop sendspin plays through Web Audio, which is not a media element.
+// The builtin sendspin player plays through Web Audio, which is not a media element.
 // Once that goes quiet on pause the browser drops the media session and the
 // OS gives the media keys to another app. The silent element keeps the
 // session alive there too. On mobile the sendspin audio element does that.
