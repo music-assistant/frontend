@@ -12,6 +12,7 @@
         <div class="disabled-banner">
           <span>{{ $t("settings.provider_disabled") }}</span>
           <v-btn
+            v-if="canToggleSource(config)"
             size="small"
             color="warning"
             variant="flat"
@@ -139,44 +140,17 @@
               "
             ></div>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button
-                data-testid="provider-menu"
-                variant="ghost"
-                size="icon-sm"
-                class="absolute top-4 right-4"
-                :aria-label="$t('more_options')"
-              >
-                <MoreVertical class="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                data-testid="provider-reset-defaults"
-                :disabled="!config.enabled"
-                @click="resetToDefaults"
-              >
-                <RotateCcw class="size-4" />
-                {{ $t("settings.reset_to_defaults") }}
-              </DropdownMenuItem>
-              <template v-if="canToggleEnabled">
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  data-testid="provider-toggle-enabled"
-                  :disabled="toggleLoading"
-                  @click="toggleEnabled"
-                >
-                  <Power class="size-4" />
-                  {{
-                    config.enabled
-                      ? $t("settings.disable")
-                      : $t("settings.enable")
-                  }}
-                </DropdownMenuItem>
-              </template>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            data-testid="provider-menu"
+            variant="ghost"
+            size="icon-sm"
+            class="absolute top-4 right-4"
+            aria-haspopup="menu"
+            :aria-label="$t('more_options')"
+            @click="openProviderMenu"
+          >
+            <MoreVertical class="size-4" />
+          </Button>
         </CardHeader>
         <CardContent
           class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
@@ -219,6 +193,13 @@
           />
         </CardContent>
       </Card>
+
+      <ProviderSettingsLinks
+        :config="config"
+        :access-summary="accessSummary(config)"
+        class="mb-4"
+        @access="openAccessDialog(config)"
+      />
 
       <!-- ambient sounds: manage user-added custom sounds -->
       <AmbientSoundsCustomSounds
@@ -283,6 +264,15 @@
       <v-progress-circular indeterminate size="64" color="primary" />
     </v-overlay>
 
+    <ProviderAccessDialog
+      v-model:open="showAccessDialog"
+      :config="accessDialogConfig"
+      :users="managesAllSources() ? users : null"
+      :share-candidates="accessShareCandidates"
+      :can-change-owner="managesAllSources()"
+      @saved="onAccessSaved"
+    />
+
     <provider-save-error-dialog
       v-model:open="saveErrorOpen"
       :message="saveErrorMessage"
@@ -296,6 +286,8 @@
 import MarkdownText from "@/components/MarkdownText.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
+import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
+import ProviderSettingsLinks from "@/components/settings/providers/ProviderSettingsLinks.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -304,30 +296,29 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useProviderAccess } from "@/composables/settings/providers/useProviderAccess";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { useEditedProviderName } from "@/composables/useEditedProviderName";
+import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import {
   hasAdvancedEntries,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
 import {
-  isOwnMusicSource,
-  isSelfServiceProvider,
-} from "@/helpers/provider_access";
-import {
-  canReconfigureProvider,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
   providerDisplayName,
 } from "@/helpers/provider_config";
+import {
+  canConfigureSourceAccess,
+  canManageSource,
+  canOwnSources,
+  canReconfigureSource,
+  canToggleSource,
+  managesAllSources,
+} from "@/helpers/provider_permissions";
 import { confirmProviderRemoval } from "@/helpers/provider_removal";
+import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
 import { getExternalLinkUrl, markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -335,23 +326,19 @@ import {
   EventType,
   ProviderConfig,
   ProviderStatus,
-  Scope,
 } from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { store } from "@/plugins/store";
 import {
   BookOpen,
   CircleAlert,
   MoreVertical,
   Pencil,
-  Power,
   RefreshCw,
   RotateCcw,
   Trash2,
   TriangleAlert,
 } from "@lucide/vue";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, markRaw, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -374,6 +361,19 @@ const saveErrorOpen = ref(false);
 const saveErrorMessage = ref("");
 const lastSubmitValues = ref<Record<string, ConfigValueType>>();
 const editedProviderName = useEditedProviderName();
+const {
+  users,
+  accessShareCandidates,
+  accessDialogConfig,
+  showAccessDialog,
+  accessSummary,
+  openAccessDialog,
+} = useProviderAccess({
+  managesAllSources,
+  canOwnSources,
+  // the users only name the owner and fill the dialog of the access row
+  needsUsers: () => !!config.value && canConfigureSourceAccess(config.value),
+});
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
 let toggleRequestId = 0;
@@ -405,23 +405,8 @@ const providerName = computed(() =>
     : "",
 );
 
-// reconfiguring a source sets it up again, which a member may only do for a
-// provider it may set up itself
 const canReconfigure = computed(
-  () =>
-    (authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE) ||
-      isSelfServiceProvider(providerManifest.value)) &&
-    canReconfigureProvider(
-      config.value?.status,
-      providerManifest.value?.has_setup_flow,
-      config.value?.enabled,
-    ),
-);
-
-const canToggleEnabled = computed(
-  () =>
-    !!config.value &&
-    (!config.value.enabled || providerManifest.value?.allow_disable === true),
+  () => !!config.value && canReconfigureSource(config.value),
 );
 
 const providerStatusLabel = computed(() =>
@@ -496,6 +481,35 @@ const resetToDefaults = function () {
   editConfig.value?.resetToDefaults();
 };
 
+const openProviderMenu = function (evt: MouseEvent) {
+  if (!config.value) return;
+  const menuItems = getProviderSettingsMenuItems(config.value, {
+    onToggleEnabled: toggleEnabled,
+    onReload,
+    onRemove,
+  });
+  // resetting acts on the form rather than on the provider, so it is not part
+  // of the menu the sources list shares
+  menuItems.push({
+    label: "settings.reset_to_defaults",
+    action: resetToDefaults,
+    icon: markRaw(RotateCcw),
+    disabled: !config.value.enabled,
+  });
+  // a click from the keyboard carries no coordinates, so fall back to the
+  // button itself and the menu opens against it rather than in the corner
+  const { x, y } = getEventPosition(evt);
+  const trigger =
+    x || y
+      ? undefined
+      : (evt.currentTarget as HTMLElement | null)?.getBoundingClientRect();
+  eventbus.emit("contextmenu", {
+    items: menuItems,
+    posX: trigger ? trigger.left : x,
+    posY: trigger ? trigger.bottom : y,
+  });
+};
+
 const onReload = function () {
   if (!config.value) return;
   api
@@ -559,11 +573,20 @@ const onRemove = function () {
     try {
       await api.removeProviderConfig(instanceId);
       toast.success(t("settings.provider_removed", [providerName.value]));
+      // the source is gone, and with it the page showing its settings; unsaved
+      // edits have nothing left to save to, so they must not hold the way out
+      editConfig.value?.discardChanges();
       backToProviders();
     } catch (err) {
       toast.error(String(err));
     }
   });
+};
+
+const onAccessSaved = function (savedConfig: ProviderConfig) {
+  if (config.value?.instance_id === savedConfig.instance_id) {
+    config.value.access = savedConfig.access;
+  }
 };
 
 const retrySave = function () {
@@ -680,7 +703,7 @@ async function loadConfig(instanceId: string) {
     const updatedConfig = await api.getProviderConfig(instanceId);
     if (requestId === configLoadRequestId && props.instanceId === instanceId) {
       // a member only manages the music sources it owns, the rest is admin-only
-      if (!mayManage(updatedConfig)) {
+      if (!canManageSource(updatedConfig)) {
         router.replace({
           name: "providersettings",
           query: { types: updatedConfig.type },
@@ -740,13 +763,6 @@ function getProviderStatusBadgeClass(status?: ProviderStatus | null) {
 function isCurrentProvider(instanceId: string) {
   return (
     props.instanceId === instanceId && config.value?.instance_id === instanceId
-  );
-}
-
-function mayManage(providerConfig: ProviderConfig) {
-  return (
-    authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE) ||
-    isOwnMusicSource(providerConfig, store.currentUser?.user_id)
   );
 }
 </script>
