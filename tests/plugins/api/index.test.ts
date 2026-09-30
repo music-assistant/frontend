@@ -332,6 +332,19 @@ describe("MusicAssistantApi error handling", () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
+  it("leaves a failing provider removal to its caller", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const result = api.removeProviderConfig("spotify--1");
+    const rejection = expect(result).rejects.toMatchObject({ message: "Boom" });
+
+    expect(transport.lastCommand.command).toBe("config/providers/remove");
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    await rejection;
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
   it("lists the share candidates from schema 72 on", () => {
     api.serverInfo.value = { ...SERVER_INFO, schema_version: 71 };
     expect(api.supportsShareCandidates).toBe(false);
