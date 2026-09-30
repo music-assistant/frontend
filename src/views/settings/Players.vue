@@ -112,7 +112,7 @@
         </ListItem>
       </v-list>
 
-      <div v-else class="players-grid">
+      <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         <SettingsPlayerCard
           v-for="item in filteredPlayers"
           :key="item.player_id"
@@ -497,25 +497,6 @@ watch(
   height: 40px;
   border-radius: 50%;
   background: rgba(var(--v-theme-primary), 0.15);
-}
-
-.players-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-auto-rows: auto;
-  gap: 24px;
-}
-
-@media (min-width: 960px) {
-  .players-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1264px) {
-  .players-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 .player-disabled {
