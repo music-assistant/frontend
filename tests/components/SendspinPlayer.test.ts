@@ -595,6 +595,20 @@ describe("SendspinPlayer MediaSession", () => {
     wrapper.unmount();
   });
 
+  it("reports no state while the web player is missing from the server", () => {
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    webPlayer.interacted = true;
+    // api.disconnect() clears the players while the component stays mounted
+    delete apiMock.players["web-player"];
+
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+
+    expect(mediaSession.playbackState).toBe("none");
+    wrapper.unmount();
+  });
+
   it("limits built-in-only controls to the web player", () => {
     webPlayer.browserControlsMode = BrowserMediaControlsMode.WEB_PLAYER;
     apiMock.players["web-player"].playback_state = PlaybackState.PAUSED;
@@ -969,7 +983,7 @@ describe("SendspinPlayer silent audio on desktop", () => {
     vi.unstubAllGlobals();
   });
 
-  it("backs the web player's media session with the silent audio", () => {
+  it("backs the web player's media session with the silent audio", async () => {
     const playSpy = vi
       .spyOn(HTMLMediaElement.prototype, "play")
       .mockResolvedValue();
@@ -977,8 +991,24 @@ describe("SendspinPlayer silent audio on desktop", () => {
     const wrapper = mount(DesktopSendspinPlayer, {
       props: { playerId: "web-player" },
     });
+    await nextTick();
 
     expect(playSpy).toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("keeps the silent audio paused when mounted while paused", async () => {
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue();
+    apiMock.players["web-player"].playback_state = PlaybackState.PAUSED;
+
+    const wrapper = mount(DesktopSendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await nextTick();
+
+    expect(playSpy).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 });

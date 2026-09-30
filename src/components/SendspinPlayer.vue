@@ -190,6 +190,8 @@ watch(
     metadataPlayerId,
     silentAudioBacksSession,
     () => webPlayer.interacted,
+    // The element only exists after mount, so the first run above bails out
+    silentAudioRef,
   ],
   ([activeState, ownState, disabled, targetPlayerId, backs, interacted]) => {
     if (silentAudioInterval) {
@@ -243,11 +245,14 @@ watch(
       // Web player is the source. Use the server's player state: the library's
       // isPlaying only follows stream start/end, so it can stay true while
       // paused and the OS would then send pause instead of play.
-      // Show as paused if player has error.
-      const playing = ownState
-        ? ownState === PlaybackState.PLAYING
-        : isPlaying.value;
-      state = playing && pState !== "error" ? "playing" : "paused";
+      // Show as paused if player has error. Without a server player (e.g.
+      // disconnected) there is nothing to report.
+      if (!ownState) {
+        state = "none";
+      } else {
+        const playing = ownState === PlaybackState.PLAYING;
+        state = playing && pState !== "error" ? "playing" : "paused";
+      }
     } else {
       // Active player is the source
       const activeState = store.activePlayer?.playback_state;
@@ -288,16 +293,6 @@ onMounted(() => {
   console.debug("Sendspin: Component mounted, connecting...");
 
   registerWebPlayerAudioUnlock(primeAudio);
-
-  // If the silent audio backs the session, play it now that silentAudioRef exists
-  if (
-    silentAudioBacksSession.value &&
-    !mediaSessionDisabled.value &&
-    webPlayer.interacted &&
-    silentAudioRef.value
-  ) {
-    silentAudioRef.value.play().catch(() => {});
-  }
 
   // Create and initialize player
   if (audioRef.value) {
