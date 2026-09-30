@@ -20,7 +20,7 @@ const generatedPath = join(
 );
 const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 // The renderer puts SVG markup into innerHTML, so nothing executable may get in.
-const unsafeSvg = /<script|<foreignObject|<style|href=|url\(|\son[a-z]+\s*=/i;
+const unsafeSvg = /<script|<foreignObject|<style|\bhref\s*=|url\(|\son[a-z]+\s*=/i;
 const execFileAsync = promisify(execFile);
 
 const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
