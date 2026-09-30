@@ -22,7 +22,7 @@
           class="py-5"
         >
           <h4
-            class="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground"
+            class="mb-4 flex items-center gap-2 text-sm font-medium text-muted-foreground"
           >
             <component :is="getCategoryIcon(panel)" class="size-4" />
             {{ getCategoryTranslation(panel) }}
@@ -65,7 +65,7 @@
           class="py-5"
         >
           <h4
-            class="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground"
+            class="mb-4 flex items-center gap-2 text-sm font-medium text-muted-foreground"
           >
             <component :is="getCategoryIcon(panel)" class="size-4" />
             {{ getCategoryTranslation(panel) }}

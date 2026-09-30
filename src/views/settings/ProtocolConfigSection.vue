@@ -5,7 +5,7 @@
   >
     <!-- Mirrors the category title in EditConfig.vue -->
     <h4
-      class="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground"
+      class="mb-4 flex items-center gap-2 text-sm font-medium text-muted-foreground"
     >
       <Antenna class="size-4" />
       {{ $t("settings.category.protocol_settings") }}
