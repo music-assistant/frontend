@@ -96,9 +96,6 @@ const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
 // The player_id argument on music/browse landed in API schema 61.
 const BROWSE_PLAYER_ID_SCHEMA_VERSION = 61;
 
-// Venue-mode party player resolution without guest access landed in API schema 66.
-const PARTY_PLAYER_RESOLUTION_SCHEMA_VERSION = 66;
-
 // Repeat one/all masking the effective autoplay flag landed in API schema 69.
 const REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION = 69;
 
@@ -3154,14 +3151,6 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server resolves the party player without guest access (schema >= 66). */
-  public get supportsPartyPlayerResolution(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      PARTY_PLAYER_RESOLUTION_SCHEMA_VERSION
     );
   }
 

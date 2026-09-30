@@ -483,9 +483,7 @@ function resetPanelState() {
 
 function checkDefaultPlayer() {
   // dashboard viewers never pick players themselves; the hosting view pins one.
-  // older servers can't resolve the party player, so fall back to auto-select.
-  if (authManager.isDashboardViewer() && api.supportsPartyPlayerResolution)
-    return;
+  if (authManager.isDashboardViewer()) return;
   if (store.activePlayer) return;
   const defaultPlayerId = selectDefaultPlayer();
   if (!defaultPlayerId) return;
