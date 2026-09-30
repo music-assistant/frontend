@@ -1,0 +1,407 @@
+<template>
+  <section class="artist-top-tracks">
+    <div class="artist-top-tracks__main">
+      <div class="artist-top-tracks__head">
+        <div
+          v-hold="onHold"
+          class="artist-top-tracks__titles"
+          @touchstart.passive="onTouchStart"
+          @click.capture="swallowClickAfterHold"
+        >
+          <h2 class="artist-top-tracks__title">{{ $t("artist_toptracks") }}</h2>
+          <RowSourceBadge
+            v-if="sourceLabel"
+            :label="sourceLabel"
+            :domain="sourceDomain"
+            :options="sourceOptions"
+            :selected="sourceValue"
+            @select="(source) => emit('select-source', source)"
+          />
+        </div>
+        <RouterLink
+          v-if="artistTrackCount"
+          :to="allTracksRoute"
+          class="artist-top-tracks__more"
+        >
+          {{
+            $t(viewTracksKey, artistTrackCount, {
+              named: { count: artistTrackCount },
+            })
+          }}
+        </RouterLink>
+      </div>
+
+      <div class="artist-top-tracks__grid">
+        <template v-if="shownTracks">
+          <div
+            v-for="(track, index) in shownTracks"
+            :key="track.uri"
+            v-hold="(e: Event) => onTrackHold(e, track)"
+            class="artist-top-tracks__track"
+            :class="{
+              'artist-top-tracks__track--playing': isNowPlaying(track),
+            }"
+            role="button"
+            tabindex="0"
+            @click="(e: MouseEvent) => onTrackClick(e, track)"
+            @keydown.enter.self="(e: KeyboardEvent) => onTrackClick(e, track)"
+            @keydown.space.self.prevent="
+              (e: KeyboardEvent) => onTrackClick(e, track)
+            "
+            @contextmenu.prevent="(e: MouseEvent) => onTrackMenu(e, track)"
+            @touchstart.passive="onTrackTouchStart"
+          >
+            <span class="artist-top-tracks__index">
+              <Play
+                v-if="isNowPlaying(track)"
+                :size="15"
+                fill="currentColor"
+                :stroke-width="0"
+              />
+              <template v-else>{{ index + 1 }}</template>
+            </span>
+            <span class="artist-top-tracks__art">
+              <MediaItemThumb :item="track" :size="40" />
+            </span>
+            <span class="artist-top-tracks__text">
+              <span class="artist-top-tracks__name">{{ track.name }}</span>
+              <span class="artist-top-tracks__album">{{
+                albumLine(track)
+              }}</span>
+            </span>
+            <ExplicitBadge
+              v-if="isExplicit(track)"
+              class="artist-top-tracks__explicit"
+            />
+            <span v-if="track.duration" class="artist-top-tracks__duration">{{
+              formatDuration(track.duration)
+            }}</span>
+            <button
+              type="button"
+              class="artist-top-tracks__menu"
+              :aria-label="`${$t('more_options')}: ${track.name}`"
+              @click.stop="(e: MouseEvent) => onTrackMenu(e, track)"
+            >
+              <EllipsisVertical :size="16" />
+            </button>
+          </div>
+          <div
+            v-if="shownTracks.length === 0 && emptyMessage"
+            class="artist-top-tracks__empty"
+          >
+            {{ emptyMessage }}
+          </div>
+        </template>
+        <template v-else>
+          <div
+            v-for="index in skeletonCount"
+            :key="index"
+            class="artist-top-tracks__track"
+            aria-hidden="true"
+          >
+            <Skeleton class="artist-top-tracks__art" />
+            <Skeleton class="artist-top-tracks__skeleton-text" />
+          </div>
+        </template>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script setup lang="ts">
+import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
+import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
+import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  getEventPosition,
+  useHoldToOpenMenu,
+} from "@/composables/useHoldToOpenMenu";
+import {
+  handleMediaItemClick,
+  handleMenuBtnClick,
+} from "@/helpers/media_item_actions";
+import { parseBool } from "@/helpers/parse";
+import { formatDuration } from "@/helpers/utils";
+import {
+  PlaybackState,
+  type Album,
+  type Artist,
+  type ItemMapping,
+  type Track,
+} from "@/plugins/api/interfaces";
+import { isPhoneSizedScreen } from "@/plugins/breakpoint";
+import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
+import { EllipsisVertical, Play } from "@lucide/vue";
+import { computed } from "vue";
+import { RouterLink, type RouteLocationRaw } from "vue-router";
+
+export interface Props {
+  artist: Artist;
+  // undefined while the row is still loading
+  tracks?: Track[];
+  // source label for the row's badge, e.g. "In your library" or "On Spotify"
+  sourceLabel?: string;
+  // provider domain behind `sourceLabel`, for its icon
+  sourceDomain?: string;
+  // the sources the row can switch to; makes the badge a picker when >1 offered
+  sourceOptions?: SourceOption[];
+  // the source currently feeding the row, highlighted in the picker
+  sourceValue?: RowSource;
+  // shown when the row has no tracks but stays mounted for its source picker
+  emptyMessage?: string;
+  // how many tracks the "view tracks" link leads to
+  artistTrackCount?: number;
+}
+const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  (e: "edit-rows"): void;
+  (e: "select-source", source: RowSource): void;
+}>();
+
+const DESKTOP_TRACKS = 9;
+const PHONE_TRACKS = 5;
+
+const isPhone = computed(() => isPhoneSizedScreen());
+
+const shownTracks = computed(() =>
+  props.tracks?.slice(0, isPhone.value ? PHONE_TRACKS : DESKTOP_TRACKS),
+);
+
+const skeletonCount = computed(() =>
+  isPhone.value ? PHONE_TRACKS : DESKTOP_TRACKS,
+);
+
+// tracks from a non-library artist are that provider's, not the user's library
+const viewTracksKey = computed(() =>
+  props.artist.provider === "library"
+    ? "artist_view_library_tracks"
+    : "artist_view_tracks",
+);
+
+const allTracksRoute = computed<RouteLocationRaw>(() => ({
+  name: "artistlisting",
+  params: {
+    provider: props.artist.provider,
+    itemId: props.artist.item_id,
+    listing: "tracks",
+  },
+}));
+
+const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
+  emit("edit-rows"),
+);
+
+const {
+  onHold: onTrackHold,
+  onTouchStart: onTrackTouchStart,
+  swallowClickAfterHold: swallowClickAfterTrackHold,
+} = useHoldToOpenMenu<[Track]>((evt, track) => onTrackMenu(evt, track));
+
+const isNowPlaying = function (track: Track): boolean {
+  if (store.activePlayer?.playback_state != PlaybackState.PLAYING) return false;
+  const current = store.curQueueItem?.media_item;
+  return !!current && current.item_id === track.item_id;
+};
+
+const albumLine = function (track: Track): string {
+  if (!track.album) return "";
+  const year = releaseYear(track.album);
+  return year ? `${track.album.name} · ${year}` : track.album.name;
+};
+
+const isExplicit = function (track: Track): boolean {
+  return !!track.metadata && parseBool(track.metadata.explicit || false);
+};
+
+const onTrackClick = function (
+  event: MouseEvent | KeyboardEvent,
+  track: Track,
+) {
+  if (swallowClickAfterTrackHold(event)) return;
+  const x = "clientX" in event ? event.clientX : 0;
+  const y = "clientY" in event ? event.clientY : 0;
+  handleMediaItemClick(track, x, y, props.artist);
+};
+
+const onTrackMenu = function (event: Event, track: Track) {
+  const { x, y } = getEventPosition(event);
+  handleMenuBtnClick(track, x, y, props.artist, true);
+};
+
+/** The release year of an album or its slim mapping, when it carries one. */
+function releaseYear(album?: Album | ItemMapping | null): number | undefined {
+  if (!album || !("year" in album)) return undefined;
+  return album.year || undefined;
+}
+</script>
+
+<style scoped>
+.artist-top-tracks {
+  padding: 26px 28px 28px;
+}
+.artist-top-tracks__main {
+  min-width: 0;
+}
+.artist-top-tracks__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.artist-top-tracks__titles {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.artist-top-tracks__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: rgb(var(--v-theme-on-background));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.artist-top-tracks__more {
+  flex: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+  white-space: nowrap;
+}
+.artist-top-tracks__more:hover,
+.artist-top-tracks__more:focus-visible {
+  text-decoration: underline;
+}
+.artist-top-tracks__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 56px;
+  column-gap: 16px;
+  min-height: 184px;
+  align-content: center;
+  margin-left: -8px;
+}
+.artist-top-tracks__track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  min-width: 0;
+}
+.artist-top-tracks__track:hover {
+  background: rgba(var(--v-theme-on-surface), 0.05);
+}
+.artist-top-tracks__track--playing {
+  background: rgba(var(--v-theme-on-surface), 0.08);
+}
+.artist-top-tracks__index {
+  width: 18px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 13px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  font-variant-numeric: tabular-nums;
+}
+.artist-top-tracks__track--playing .artist-top-tracks__index {
+  color: rgb(var(--v-theme-primary));
+  justify-content: center;
+}
+.artist-top-tracks__art {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.artist-top-tracks__text {
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
+.artist-top-tracks__name {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.artist-top-tracks__track--playing .artist-top-tracks__name {
+  color: rgb(var(--v-theme-primary));
+}
+.artist-top-tracks__album {
+  display: block;
+  font-size: 12px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.artist-top-tracks__explicit {
+  flex: none;
+}
+.artist-top-tracks__duration {
+  font-size: 12px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.artist-top-tracks__menu {
+  width: 22px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: none;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  cursor: pointer;
+}
+.artist-top-tracks__skeleton-text {
+  height: 16px;
+  flex: 1;
+}
+.artist-top-tracks__empty {
+  grid-column: 1 / -1;
+  align-self: center;
+  padding: 8px;
+  font-size: 14px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+
+@media (max-width: 768px) {
+  .artist-top-tracks {
+    padding: 22px 16px 20px;
+  }
+  .artist-top-tracks__head {
+    margin-bottom: 8px;
+  }
+  .artist-top-tracks__title {
+    font-size: 19px;
+  }
+  .artist-top-tracks__grid {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    margin-left: 0;
+  }
+  .artist-top-tracks__track {
+    padding: 0;
+    border-radius: 0;
+    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  }
+}
+</style>

@@ -58,7 +58,7 @@ function preventAutoFocus(event: Event) {
      group it shows up to the room left above the navigation instead */
   max-height: calc(
     100dvh - var(--mobile-navigation-height) - var(--player-bar-popout-gap) -
-      var(--player-bar-popout-top-gap)
+      var(--player-bar-popout-top-gap) - var(--device-inset-top)
   );
 }
 

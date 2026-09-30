@@ -1,5 +1,9 @@
 <template>
-  <section v-if="isAdmin" style="margin-bottom: 10px">
+  <!-- the section only removes exclusions, so it has no purpose without any -->
+  <section
+    v-if="canManageLibrary && exclusions.length"
+    style="margin-bottom: 10px"
+  >
     <Toolbar
       :title="exclusionTitle"
       :menu-items="toolbarMenuItems"
@@ -41,7 +45,7 @@ import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { api } from "@/plugins/api";
-import { Genre, MediaType } from "@/plugins/api/interfaces";
+import { Genre, MediaType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { ChevronDown, ChevronUp } from "@lucide/vue";
@@ -57,7 +61,9 @@ const props = defineProps<Props>();
 
 const { t } = useI18n();
 
-const isAdmin = computed(() => authManager.isAdmin());
+const canManageLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_MANAGE),
+);
 const sectionExpanded = ref(false);
 const operationInProgress = ref(false);
 const exclusions = ref<Genre[]>([]);

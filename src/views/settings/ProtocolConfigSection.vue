@@ -29,7 +29,6 @@
         @update:value="emit('update:value', conf_entry, $event)"
         @toggle-password="emit('toggle-password')"
         @action="emit('action', conf_entry)"
-        @help="emit('help', conf_entry)"
       />
 
       <template v-if="protocolPanels.length > 0">
@@ -88,7 +87,6 @@
                 @update:value="emit('update:value', conf_entry, $event)"
                 @toggle-password="emit('toggle-password')"
                 @action="emit('action', conf_entry)"
-                @help="emit('help', conf_entry)"
               />
               <div
                 v-if="
@@ -138,7 +136,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "update:value", entry: ConfigEntryUI, value: ConfigValueType): void;
   (e: "action", entry: ConfigEntryUI): void;
-  (e: "help", entry: ConfigEntryUI): void;
   (e: "toggle-password"): void;
 }>();
 

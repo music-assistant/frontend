@@ -31,6 +31,7 @@ vi.mock("@/plugins/store", async () => {
       activePlayer: undefined,
       activePlayerId: undefined,
       curQueueItem: undefined,
+      enabledPlugins: new Set<string>(),
     }),
   };
 });

@@ -2,11 +2,16 @@
   <!-- audio analysis details (bpm / musical key), only present on full track details -->
   <Popover v-if="bpm || musicalKey">
     <PopoverTrigger as-child>
-      <AudioWaveform
-        :size="26"
-        class="cursor-pointer"
+      <Button
+        type="button"
+        variant="ghost-icon"
+        size="icon-xs"
+        class="size-6.5"
+        :aria-label="$t('audio_analysis')"
         :title="$t('audio_analysis')"
-      />
+      >
+        <AudioWaveform class="size-6.5" />
+      </Button>
     </PopoverTrigger>
     <PopoverContent
       side="bottom"
@@ -49,6 +54,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,

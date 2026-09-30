@@ -63,8 +63,8 @@
             <Badge
               v-if="qrAvailable"
               variant="warning"
-              class="cursor-pointer"
-              @click="showGuestAccessDialog = true"
+              :class="{ 'cursor-pointer': canManageParty }"
+              @click="openGuestAccessDialog"
             >
               <WifiIcon :size="11" />
               {{ $t("providers.party.guest_access_enabled") }}
@@ -72,8 +72,8 @@
             <Badge
               v-else
               variant="info"
-              class="cursor-pointer"
-              @click="showGuestAccessDialog = true"
+              :class="{ 'cursor-pointer': canManageParty }"
+              @click="openGuestAccessDialog"
             >
               <WifiOff :size="11" />
               {{ $t("providers.party.guest_access_disabled") }}
@@ -90,7 +90,7 @@
             @click="toggleVisualizer"
           >
             <Droplet
-              :size="13"
+              class="size-[13px]"
               :fill="visualizerEnabledPref ? 'currentColor' : 'none'"
             />
           </Button>
@@ -103,20 +103,20 @@
             :aria-label="$t('tooltip.exit_fullscreen')"
             @click="goFullscreen(false)"
           >
-            <Minimize2 :size="13" />
+            <Minimize2 class="size-[13px]" />
           </Button>
 
           <!-- Non-fullscreen: actions -->
           <template v-if="!isFullscreen">
             <Button
-              v-if="partyInstanceId"
+              v-if="partyInstanceId && canManageParty"
               variant="ghost-icon"
               size="icon-sm"
               :aria-label="$t('tooltip.party_settings')"
               :title="$t('tooltip.party_settings')"
               @click="goToSettings"
             >
-              <Settings :size="13" />
+              <Settings class="size-[13px]" />
             </Button>
             <ShowDashboardButton dashboard="party" />
             <Button
@@ -126,7 +126,7 @@
               :title="$t('tooltip.enter_fullscreen')"
               @click="goFullscreen(true)"
             >
-              <Maximize2 :size="13" />
+              <Maximize2 class="size-[13px]" />
             </Button>
           </template>
         </div>
@@ -344,6 +344,7 @@ import { usePartyConfig } from "@/composables/usePartyConfig";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import {
   ImageColorPalette,
+  getMediaItemImage,
   getMediaItemImageUrl,
   paletteFromServer,
 } from "@/helpers/utils";
@@ -354,8 +355,10 @@ import {
   MediaType,
   PlaybackState,
   QueueItem,
+  Scope,
   Track,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import {
   Droplet,
@@ -406,6 +409,16 @@ let burnInInterval: ReturnType<typeof setInterval> | null = null;
 const accessError = ref("");
 const showGuestAccessDialog = ref(false);
 const guestAccessSaving = ref(false);
+
+// guest access is saved with the party's provider settings, which take
+// config.providers.write
+const canManageParty = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+);
+
+const openGuestAccessDialog = () => {
+  if (canManageParty.value) showGuestAccessDialog.value = true;
+};
 
 const toggleGuestAccess = async () => {
   if (!partyInstanceId.value) return;
@@ -700,10 +713,12 @@ const fetchQueueItems = async (force = false) => {
   }
 };
 
-// Album art URL for the blurred background element
+// Album art URL for the blurred background element. Resolved the same way as
+// the track cards, so a radio stream blurs its live artwork rather than the
+// station logo sitting on the queue item.
 const albumArtUrl = computed(() => {
-  if (!store.curQueueItem?.image) return "";
-  return getMediaItemImageUrl(store.curQueueItem.image) || "";
+  const img = getMediaItemImage(store.curQueueItem);
+  return img ? getMediaItemImageUrl(img) || "" : "";
 });
 
 // Gradient background style (used when album art is disabled, or as fallback)
