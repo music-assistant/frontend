@@ -17,7 +17,7 @@ export function makeSvgIcon(name: string, svg: string): Component {
   delete rootAttributes.height;
   // Strip again until nothing changes, so a split comment cannot survive.
   let innerHtml = rootMatch[2];
-  for (let previous = ""; previous !== innerHtml; ) {
+  for (let previous = ""; previous !== innerHtml;) {
     previous = innerHtml;
     innerHtml = innerHtml.replace(/<!--[\s\S]*?-->/g, " ");
   }
