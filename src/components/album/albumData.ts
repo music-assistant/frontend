@@ -1,4 +1,8 @@
-import { sortReleasesNewestFirst } from "@/components/artist/artistData";
+import {
+  artistAlbumsBySource,
+  sortReleasesNewestFirst,
+} from "@/components/artist/artistData";
+import type { RowSource } from "@/components/details/rowRegistry";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -22,16 +26,19 @@ export async function loadAlbumVersions(album: Album): Promise<Album[]> {
 }
 
 /**
- * The album artist's other releases, newest first.
+ * The album artist's other releases from the given source, newest first.
  *
  * The album on screen is left out, by uri and by name: the artist's releases
- * are listed on whichever provider holds the artist, so the same album can come
+ * are listed on whichever provider `source` selects, so the same album can come
  * back under an id this page has never seen.
  */
-export async function loadArtistReleases(album: Album): Promise<Album[]> {
+export async function loadArtistReleases(
+  album: Album,
+  source: RowSource,
+): Promise<Album[]> {
   const artist = album.artists[0];
   if (!artist) return [];
-  const releases = await api.getArtistAlbums(artist.item_id, artist.provider);
+  const releases = await artistAlbumsBySource(artist, source);
   const name = album.name.toLowerCase();
   return sortReleasesNewestFirst(
     releases.filter(

@@ -47,6 +47,7 @@
 import Toolbar from "@/components/Toolbar.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { useEscapeBack } from "@/composables/useEscapeBack";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
@@ -98,6 +99,8 @@ watch(shortcutsPreference, () => buildMenu(props.item));
 const backButtonClick = function () {
   backFromMediaDetails(router);
 };
+
+useEscapeBack(backButtonClick);
 
 /** The item's overflow menu, with the page's own "Edit rows" entry last. */
 async function buildMenu(item?: MediaItemType) {
@@ -201,7 +204,8 @@ async function buildMenu(item?: MediaItemType) {
   opacity: 1;
 }
 
-/* sits at the bottom of the hero, above the artwork layers */
+/* sits at the bottom of the hero, above the artwork layers. A container so its
+   controls collapse to the room the hero actually has, which the sidebar narrows */
 .detail-hero__body {
   position: relative;
   margin: auto 28px 24px;
@@ -209,6 +213,7 @@ async function buildMenu(item?: MediaItemType) {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
+  container: detail-hero / inline-size;
 }
 .detail-hero__main {
   display: flex;

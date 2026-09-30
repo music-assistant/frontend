@@ -4,6 +4,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* The play triangle's visual weight sits left of its box, so it looks
+   off-centre in a round button without this nudge. */
+@utility play-icon-centered {
+  translate: 6% 0;
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -173,7 +179,8 @@
   max-height: var(
     --reka-popover-content-available-height,
     calc(
-      100dvh - var(--player-bar-popout-top-gap) - var(--player-bar-popout-gap)
+      100dvh - var(--player-bar-popout-top-gap) - var(--device-inset-top) -
+        var(--player-bar-popout-gap)
     )
   );
 }

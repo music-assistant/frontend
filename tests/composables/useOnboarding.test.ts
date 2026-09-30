@@ -1,12 +1,20 @@
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import {
+  EventType,
+  PlayerType,
   ProviderSharing,
   ProviderType,
+  Scope,
   UserRole,
-  type Scope,
+  type EventMessage,
+  type Player,
+  type PlayerConfig,
   type User,
 } from "@/plugins/api/interfaces";
+import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { outputProtocol } from "../fixtures/outputProtocol";
+import { playerConfig } from "../fixtures/playerConfig";
 import { providerConfig } from "../fixtures/providerConfig";
 import {
   BUILTIN_ROLE_SCOPES,
@@ -19,6 +27,7 @@ import { user } from "../fixtures/user";
 const {
   apiMock,
   authMock,
+  playerConfigs,
   preferenceState,
   providerConfigs,
   routerMock,
@@ -29,22 +38,37 @@ const {
   users,
 } = vi.hoisted(() => ({
   apiMock: {
-    players: {} as Record<string, unknown>,
+    // the players that registered, which is where a player's live state is
+    players: {} as Record<string, Partial<Player>>,
     // the instances that loaded, which name a provider that has no custom name
-    providers: {} as Record<string, { name: string }>,
+    providers: {} as Record<string, { name: string; domain?: string }>,
     providerManifests: {} as Record<string, { builtin: boolean; name: string }>,
     getAllUsers: vi.fn(),
+    getPlayerConfig: vi.fn(),
+    getPlayerConfigs: vi.fn(),
     getProviderConfigs: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
+    subscribe_multi:
+      vi.fn<
+        (
+          events: EventType[],
+          handler: (evt: EventMessage) => void,
+        ) => () => void
+      >(),
     sendCommand: vi.fn(),
     serverInfo: { value: undefined as { onboard_done: boolean } | undefined },
   },
   authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
+  // what the server hands back as the player configurations
+  playerConfigs: { list: [] as PlayerConfig[] },
   // replaced with real refs by the userPreferences mock factory below, so
   // the composable's computed context follows what a test sets here
   preferenceState: {
     intent: { value: undefined } as { value?: string },
-    persona: { value: undefined } as { value?: string },
+    expertMode: { value: undefined } as { value?: boolean },
+    // the welcome's answer as an account holds it that answered before the
+    // expert mode flag existed
+    legacyPersona: { value: undefined } as { value?: string },
     welcomedAt: { value: undefined } as { value?: string },
   },
   // what the server hands back as the provider configurations
@@ -87,11 +111,13 @@ vi.mock("@/plugins/store", async () => {
 vi.mock("@/composables/userPreferences", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   preferenceState.intent = ref<string | undefined>(undefined);
-  preferenceState.persona = ref<string | undefined>(undefined);
+  preferenceState.expertMode = ref<boolean | undefined>(undefined);
+  preferenceState.legacyPersona = ref<string | undefined>(undefined);
   preferenceState.welcomedAt = ref<string | undefined>(undefined);
-  const preferences: Record<string, { value?: string }> = {
+  const preferences: Record<string, { value?: string | boolean }> = {
     "onboarding.intent": preferenceState.intent,
-    "onboarding.persona": preferenceState.persona,
+    expert_mode: preferenceState.expertMode,
+    "onboarding.persona": preferenceState.legacyPersona,
     "onboarding.welcome": preferenceState.welcomedAt,
   };
   return {
@@ -119,6 +145,34 @@ async function loadOnboarding(): Promise<Onboarding> {
   return onboarding;
 }
 
+/** The same, as the module, for the listings it exports directly. */
+async function loadOnboardingModule(): Promise<OnboardingModule> {
+  const module = await loadModule();
+  await module.useOnboarding().loadOnboardingData();
+  return module;
+}
+
+/**
+ * The composable as a fresh server's first run loads it: sent to the setup
+ * page, before there is an account to sign in with. The first-run state is
+ * loaded from the same registry, which is the one the composable reads.
+ */
+async function loadFirstRun(): Promise<
+  Onboarding & { firstRunState: ReturnType<FirstRunModule["useFirstRunSetup"]> }
+> {
+  window.history.replaceState({}, "", "/setup");
+  const module = await loadModule();
+  const firstRun = await import("@/composables/useFirstRunSetup");
+  expect(firstRun.enterFirstRunSetup()).toBe(true);
+  authMock.hasScope.mockReturnValue(false);
+  storeState.store.currentUser = undefined;
+  const onboarding = module.useOnboarding();
+  await onboarding.loadOnboardingData();
+  return { ...onboarding, firstRunState: firstRun.useFirstRunSetup() };
+}
+
+type FirstRunModule = typeof import("@/composables/useFirstRunSetup");
+
 /** Who the session is signed in as, which is half of what decides the track. */
 function signIn(overrides: Partial<User> = {}): User {
   const account = user(overrides);
@@ -143,13 +197,18 @@ function addProvider(
   instanceId: string,
   domain: string,
   type: ProviderType,
-  options: { builtin?: boolean; enabled?: boolean; lastError?: unknown } = {},
+  options: {
+    builtin?: boolean;
+    enabled?: boolean;
+    lastError?: unknown;
+    name?: string;
+  } = {},
 ) {
   providerConfigs.list.push({
     instance_id: instanceId,
     domain,
     type,
-    name: null,
+    name: options.name ?? null,
     enabled: options.enabled ?? true,
     last_error: options.lastError ?? null,
   });
@@ -175,6 +234,38 @@ function addOwnedSource(instanceId: string, domain: string, owner: string) {
   };
 }
 
+/** A player the server holds a configuration for, registered or not. */
+function addPlayerConfig(overrides: Partial<PlayerConfig> = {}): PlayerConfig {
+  const config = playerConfig(overrides);
+  playerConfigs.list.push(config);
+  return config;
+}
+
+/** A player that registered, which is where its live state comes from. */
+function registerPlayer(playerId: string, overrides: Partial<Player> = {}) {
+  apiMock.players[playerId] = {
+    player_id: playerId,
+    available: true,
+    ...overrides,
+  };
+}
+
+/** What every player is labelled with, by player, whatever the order. */
+function playerLabels(module: OnboardingModule): Record<string, string> {
+  return Object.fromEntries(
+    module
+      .discoveredPlayers()
+      .map((player) => [player.player_id, player.providerLabel]),
+  );
+}
+
+/** The handler the wizard follows the players with. */
+function playerEventHandler(): (evt: EventMessage) => void {
+  const call = apiMock.subscribe_multi.mock.calls.at(-1);
+  if (!call) throw new Error("The players are not being followed");
+  return call[1];
+}
+
 /**
  * An error as the api client rejects with, from the module registry the
  * composable was just loaded from: a reset registry hands out a fresh class, so
@@ -193,7 +284,15 @@ const SERVERS_THAT_NEED_NO_COMMAND: [
   ["did not say either way", undefined],
 ];
 
+// A custom role that may control the players without reading what they are
+// configured with, which every builtin role happens to be allowed.
+const NO_PLAYER_CONFIG_SCOPES: readonly Scope[] =
+  BUILTIN_ROLE_SCOPES.guest.filter(
+    (scope) => scope !== Scope.CONFIG_PLAYERS_READ,
+  );
+
 let warnSpy: ReturnType<typeof vi.spyOn>;
+let originalUrl: string;
 
 // every test loads the composable anew after resetting the module registry,
 // which can take seconds under load
@@ -202,15 +301,23 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     apiMock.players = {};
     apiMock.providers = {};
     apiMock.providerManifests = {};
+    playerConfigs.list = [];
     providerConfigs.list = [];
     users.list = [user({ user_id: "admin-1", username: "admin" })];
     apiMock.getProviderConfigs.mockReset();
     apiMock.getProviderConfigs.mockImplementation(async () => [
       ...providerConfigs.list,
     ]);
+    apiMock.getPlayerConfigs.mockReset();
+    apiMock.getPlayerConfigs.mockImplementation(async () => [
+      ...playerConfigs.list,
+    ]);
+    apiMock.getPlayerConfig.mockReset();
     apiMock.getAllUsers.mockReset();
     apiMock.getAllUsers.mockImplementation(async () => [...users.list]);
     apiMock.subscribe.mockClear();
+    apiMock.subscribe_multi.mockReset();
+    apiMock.subscribe_multi.mockImplementation(() => vi.fn());
     apiMock.sendCommand.mockReset();
     apiMock.sendCommand.mockResolvedValue(undefined);
     apiMock.serverInfo.value = { onboard_done: false };
@@ -220,17 +327,21 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     signIn({ user_id: "admin-1", username: "admin", role: UserRole.ADMIN });
     // both answer as the real ones do: a promise, and whether it landed
     setUserPreferenceMock.mockReset();
-    setUserPreferenceMock.mockResolvedValue(undefined);
+    setUserPreferenceMock.mockResolvedValue(true);
     setUserPreferencesMock.mockReset();
     setUserPreferencesMock.mockResolvedValue(true);
     toastMock.error.mockReset();
     warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    originalUrl = window.location.href;
   });
 
   afterEach(() => {
     warnSpy.mockRestore();
+    // a first run rewrites the address bar; hand it back as it was found
+    window.history.replaceState({}, "", originalUrl);
     preferenceState.intent.value = undefined;
-    preferenceState.persona.value = undefined;
+    preferenceState.expertMode.value = undefined;
+    preferenceState.legacyPersona.value = undefined;
     preferenceState.welcomedAt.value = undefined;
   });
 
@@ -239,7 +350,8 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     addProvider("builtin--1", "builtin_player", ProviderType.PLAYER, {
       builtin: true,
     });
-    apiMock.players = { player_1: {}, player_2: {} };
+    addPlayerConfig({ player_id: "kitchen" });
+    addPlayerConfig({ player_id: "office" });
 
     const { ctx, pending } = await loadOnboarding();
 
@@ -288,8 +400,8 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     // the welcome instead of the setup: none of the admin track is theirs
     expect(steps.value.map((step) => step.id)).toEqual([
       "welcome",
-      "whats_here",
-      "tour",
+      "your_players",
+      "your_music",
       "all_set",
     ]);
     expect(ctx.value.isAdmin).toBe(false);
@@ -347,6 +459,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     const both = Promise.all([loadOnboardingData(), loadOnboardingData()]);
 
     expect(apiMock.getProviderConfigs).toHaveBeenCalledOnce();
+    expect(apiMock.getPlayerConfigs).toHaveBeenCalledOnce();
     expect(apiMock.getAllUsers).toHaveBeenCalledOnce();
 
     handOverConfigs([]);
@@ -378,6 +491,47 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     // the api toasts its own failures; the wizard simply has nothing to show
     expect(dataLoaded.value).toBe(false);
     expect(ctx.value.providers).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledOnce();
+  });
+
+  it("loads the players along with the rest of the onboarding data", async () => {
+    addPlayerConfig({ player_id: "kitchen", enabled: false });
+
+    const module = await loadOnboardingModule();
+
+    // the switched-off players too: those are unregistered, and the wizard is
+    // where they are switched back on
+    expect(apiMock.getPlayerConfigs).toHaveBeenCalledWith(
+      undefined,
+      false,
+      false,
+      true,
+    );
+    expect(module.discoveredPlayers()).toHaveLength(1);
+  });
+
+  it("never asks the server for the players a role may not list", async () => {
+    signInAs({ role: "dj" }, NO_PLAYER_CONFIG_SCOPES);
+    addPlayerConfig();
+
+    const module = await loadOnboardingModule();
+
+    // a request that could only fail at them would greet them with an error
+    // toast; the empty list they can see is the answer
+    expect(apiMock.getPlayerConfigs).not.toHaveBeenCalled();
+    expect(module.discoveredPlayers()).toEqual([]);
+    expect(warnSpy).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
+  it("lists no players when they cannot be loaded", async () => {
+    addPlayerConfig();
+    apiMock.getPlayerConfigs.mockRejectedValue(new Error("boom"));
+
+    const module = await loadOnboardingModule();
+
+    // the api toasts its own failures; the step simply has nothing to show
+    expect(module.discoveredPlayers()).toEqual([]);
     expect(warnSpy).toHaveBeenCalledOnce();
   });
 
@@ -660,6 +814,64 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     },
   );
 
+  describe("a fresh server's first run", () => {
+    it("is the admin track's from before anyone can sign in", async () => {
+      const { ctx, steps, pending } = await loadFirstRun();
+
+      expect(ctx.value.firstRun).toBe(true);
+      expect(ctx.value.signedIn).toBe(false);
+      // no account, so no permissions and no member either
+      expect(ctx.value.isAdmin).toBe(false);
+      expect(ctx.value.isMember).toBe(false);
+      expect(steps.value[0]?.id).toBe("account");
+      expect(pending.value[0]?.id).toBe("account");
+      // nothing was asked of a server nobody is signed in to
+      expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+      expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+    });
+
+    it("ticks the account off once the app is signed in with it", async () => {
+      const { ctx, pending } = await loadFirstRun();
+
+      authMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+      );
+      signIn({ user_id: "admin-1", username: "admin", role: UserRole.ADMIN });
+
+      expect(ctx.value.signedIn).toBe(true);
+      expect(ctx.value.isAdmin).toBe(true);
+      expect(pending.value.map((step) => step.id)).not.toContain("account");
+    });
+
+    it("stays the admin's while their permissions are still on their way", async () => {
+      const { ctx, steps } = await loadFirstRun();
+
+      // the app holds the account before it has loaded what its role grants
+      signIn({ user_id: "admin-1", username: "admin", role: UserRole.ADMIN });
+
+      expect(ctx.value.signedIn).toBe(true);
+      expect(ctx.value.isAdmin).toBe(false);
+      // an admin without permissions in yet is no member being welcomed
+      expect(ctx.value.isMember).toBe(false);
+      expect(steps.value.map((step) => step.id)).toContain("account");
+      expect(steps.value.map((step) => step.id)).not.toContain("welcome");
+    });
+
+    it("ends with the setup it hosted", async () => {
+      const { finish, firstRunState } = await loadFirstRun();
+      authMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+      );
+      signIn({ user_id: "admin-1", username: "admin", role: UserRole.ADMIN });
+
+      await expect(finish()).resolves.toBe(true);
+
+      // run again from the settings, the setup is the one every other
+      // session gets
+      expect(firstRunState.firstRun.value).toBe(false);
+    });
+  });
+
   describe("the track a session is on", () => {
     const ADMIN_STEPS = [
       "intent",
@@ -672,16 +884,16 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     ];
     const MEMBER_STEPS = [
       "welcome",
-      "whats_here",
+      "your_players",
+      "your_music",
       "own_sources",
-      "tour",
       "all_set",
     ];
     // a member whose role may not add its own sources skips the own-sources step
     const MEMBER_STEPS_WITHOUT_OWN = [
       "welcome",
-      "whats_here",
-      "tour",
+      "your_players",
+      "your_music",
       "all_set",
     ];
 
@@ -733,6 +945,490 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       expect(ctx.value.providers).toEqual([]);
       expect(warnSpy).not.toHaveBeenCalled();
       expect(toastMock.error).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("the players the wizard found", () => {
+    beforeEach(() => {
+      apiMock.providers["chromecast--1"] = {
+        name: "Chromecast in the kitchen",
+        domain: "chromecast",
+      };
+      apiMock.providerManifests["chromecast"] = {
+        builtin: false,
+        name: "Chromecast manifest",
+      };
+    });
+
+    it("lists the players by name, switched-off ones included", async () => {
+      addPlayerConfig({
+        player_id: "kitchen",
+        default_name: "Kitchen speaker",
+      });
+      addPlayerConfig({
+        player_id: "office",
+        name: "Attic",
+        default_name: "Office speaker",
+        enabled: false,
+      });
+      registerPlayer("kitchen", { needs_setup: true, icon: "speaker" });
+
+      const module = await loadOnboardingModule();
+
+      // by the name they go by, so a renamed player sits where the user reads
+      // it; a switched-off one is unregistered and so has no live state at all
+      expect(module.discoveredPlayers()).toEqual([
+        {
+          player_id: "office",
+          name: "Attic",
+          customName: "Attic",
+          providerLabel: "Chromecast in the kitchen",
+          enabled: false,
+          available: false,
+          needsSetup: false,
+          icon: null,
+          canToggle: true,
+        },
+        {
+          player_id: "kitchen",
+          name: "Kitchen speaker",
+          customName: null,
+          providerLabel: "Chromecast in the kitchen",
+          enabled: true,
+          available: true,
+          needsSetup: true,
+          icon: "speaker",
+          canToggle: true,
+        },
+      ]);
+    });
+
+    it("leaves out a player that is one output of another", async () => {
+      addPlayerConfig({ player_id: "kitchen" });
+      addPlayerConfig({
+        player_id: "kitchen-airplay",
+        player_type: PlayerType.PROTOCOL,
+      });
+
+      const module = await loadOnboardingModule();
+
+      // a protocol player is set up as part of the player it plays for
+      expect(
+        module.discoveredPlayers().map((player) => player.player_id),
+      ).toEqual(["kitchen"]);
+    });
+
+    it("leaves out a web player of a tab that is gone", async () => {
+      addPlayerConfig({
+        player_id: "tab-1",
+        provider: "sendspin",
+        default_name: "Music Assistant Web (Firefox)",
+      });
+      addPlayerConfig({
+        player_id: "tab-2",
+        provider: "sendspin",
+        default_name: "Music Assistant (Chrome)",
+      });
+      registerPlayer("tab-2");
+
+      const module = await loadOnboardingModule();
+
+      // the web players this app spawns come and go with every browser tab, so
+      // one that is not around is nothing anyone set up
+      expect(
+        module.discoveredPlayers().map((player) => player.player_id),
+      ).toEqual(["tab-2"]);
+    });
+
+    it("cannot switch a player whose provider is not running", async () => {
+      addPlayerConfig({ player_id: "living", provider: "sonos--1" });
+
+      const module = await loadOnboardingModule();
+
+      expect(module.discoveredPlayers()[0].canToggle).toBe(false);
+    });
+
+    it("labels a player with the provider it came from", async () => {
+      addPlayerConfig({ player_id: "living", provider: "sonos--1" });
+      addPlayerConfig({ player_id: "study", provider: "airplay--1" });
+      apiMock.providers["sonos--1"] = { name: "Sonos", domain: "sonos" };
+      apiMock.providerManifests["sonos"] = {
+        builtin: false,
+        name: "Sonos manifest",
+      };
+      apiMock.providerManifests["airplay"] = {
+        builtin: false,
+        name: "AirPlay",
+      };
+
+      const module = await loadOnboardingModule();
+
+      // the instance's own name, and the manifest for a provider whose
+      // instance is not running to name itself
+      expect(playerLabels(module)).toEqual({
+        living: "Sonos",
+        study: "AirPlay",
+      });
+    });
+
+    it("labels a player with the name its provider was given, running or not", async () => {
+      addProvider("sonos--1", "sonos", ProviderType.PLAYER, {
+        name: "Downstairs Sonos",
+      });
+      addPlayerConfig({ player_id: "living", provider: "sonos--1" });
+      apiMock.providerManifests["sonos"] = {
+        builtin: false,
+        name: "Sonos manifest",
+      };
+
+      const module = await loadOnboardingModule();
+
+      // the same name the provider badge shows, which only the configuration
+      // knows while the provider is switched off or failed to load
+      expect(playerLabels(module)).toEqual({ living: "Downstairs Sonos" });
+    });
+
+    it("labels a player of the server's own machinery with what it plays through", async () => {
+      addPlayerConfig({
+        player_id: "everywhere",
+        provider: "universal_player",
+      });
+      apiMock.providerManifests["universal_player"] = {
+        builtin: true,
+        name: "Universal player",
+      };
+      apiMock.providerManifests["airplay"] = {
+        builtin: false,
+        name: "AirPlay",
+      };
+      registerPlayer("everywhere", {
+        output_protocols: [
+          outputProtocol({
+            output_protocol_id: "native",
+            name: "Native",
+            is_native: true,
+            protocol_domain: "universal_player",
+          }),
+          outputProtocol({ name: "AirPlay (Kitchen)" }),
+          outputProtocol({
+            output_protocol_id: "airplay-office",
+            name: "AirPlay (Office)",
+          }),
+          // a protocol whose provider has no manifest here names itself
+          outputProtocol({
+            output_protocol_id: "dlna-tv",
+            name: "DLNA",
+            protocol_domain: "dlna",
+          }),
+        ],
+      });
+
+      // what it plays through rather than the machinery behind it, each
+      // protocol once however many outputs it has, and its own output left out
+      expect(playerLabels(await loadOnboardingModule())).toEqual({
+        everywhere: "AirPlay, DLNA",
+      });
+    });
+
+    it("keeps what a player was last labelled with once it is switched off", async () => {
+      addPlayerConfig({
+        player_id: "everywhere",
+        provider: "universal_player",
+      });
+      apiMock.providerManifests["universal_player"] = {
+        builtin: true,
+        name: "Universal player",
+      };
+      apiMock.providerManifests["airplay"] = {
+        builtin: false,
+        name: "AirPlay",
+      };
+      registerPlayer("everywhere", {
+        output_protocols: [outputProtocol({ name: "AirPlay (Kitchen)" })],
+      });
+
+      const module = await loadOnboardingModule();
+      expect(playerLabels(module)).toEqual({ everywhere: "AirPlay" });
+
+      // switching it off unregisters it, and its outputs with it; the label
+      // the user just read stays
+      delete apiMock.players["everywhere"];
+      expect(playerLabels(module)).toEqual({ everywhere: "AirPlay" });
+
+      // back, but playing through nothing: its provider names it again
+      registerPlayer("everywhere", { output_protocols: [] });
+      expect(playerLabels(module)).toEqual({ everywhere: "Universal player" });
+    });
+
+    it("keeps the name a provider was given even without a manifest for it", async () => {
+      addProvider("sonos--1", "sonos", ProviderType.PLAYER, {
+        name: "Downstairs Sonos",
+      });
+      delete apiMock.providerManifests["sonos"];
+      addPlayerConfig({ player_id: "living", provider: "sonos--1" });
+
+      const module = await loadOnboardingModule();
+
+      expect(playerLabels(module)).toEqual({ living: "Downstairs Sonos" });
+    });
+
+    it("falls back on the provider itself when a player plays through nothing", async () => {
+      addPlayerConfig({ player_id: "upstairs", provider: "sync_group" });
+      addPlayerConfig({
+        player_id: "everywhere",
+        provider: "universal_player",
+      });
+      apiMock.providers["sync_group"] = {
+        name: "Player groups",
+        domain: "sync_group",
+      };
+      apiMock.providerManifests["sync_group"] = {
+        builtin: true,
+        name: "Sync group manifest",
+      };
+      apiMock.providerManifests["universal_player"] = {
+        builtin: true,
+        name: "Universal player",
+      };
+
+      expect(playerLabels(await loadOnboardingModule())).toEqual({
+        upstairs: "Player groups",
+        everywhere: "Universal player",
+      });
+    });
+
+    it("counts the players that are switched on", async () => {
+      addPlayerConfig({ player_id: "kitchen" });
+      addPlayerConfig({ player_id: "office", enabled: false });
+      addPlayerConfig({
+        player_id: "kitchen-airplay",
+        player_type: PlayerType.PROTOCOL,
+      });
+
+      const { ctx } = await loadOnboarding();
+
+      // the summary's "2 players" label reads this, and it says what the step
+      // lists rather than what the server holds a configuration for
+      expect(ctx.value.playerCount).toBe(1);
+    });
+  });
+
+  describe("following the players while the wizard is open", () => {
+    it("follows the events a player turns up and goes on", async () => {
+      const stopFollowing = vi.fn();
+      apiMock.subscribe_multi.mockReturnValue(stopFollowing);
+
+      const { followPlayers } = await loadOnboarding();
+
+      expect(followPlayers()).toBe(stopFollowing);
+      expect(apiMock.subscribe_multi).toHaveBeenCalledOnce();
+      expect(apiMock.subscribe_multi.mock.calls[0][0]).toEqual([
+        EventType.PLAYER_CONFIG_UPDATED,
+        EventType.PLAYER_ADDED,
+        EventType.PLAYER_REMOVED,
+      ]);
+    });
+
+    it("follows nothing on behalf of a role that may not read the configurations", async () => {
+      signInAs({ role: "dj" }, NO_PLAYER_CONFIG_SCOPES);
+
+      const { followPlayers } = await loadOnboarding();
+      const stopFollowing = followPlayers();
+
+      expect(apiMock.subscribe_multi).not.toHaveBeenCalled();
+      // and what stops it is still something to call on the way out
+      expect(() => stopFollowing()).not.toThrow();
+    });
+
+    it("takes in a player the server reports", async () => {
+      const module = await loadOnboardingModule();
+      module.useOnboarding().followPlayers();
+
+      playerEventHandler()({
+        event: EventType.PLAYER_CONFIG_UPDATED,
+        object_id: "kitchen",
+        data: playerConfig({ player_id: "kitchen", default_name: "Kitchen" }),
+      });
+
+      expect(module.discoveredPlayers().map((player) => player.name)).toEqual([
+        "Kitchen",
+      ]);
+    });
+
+    it("updates a player it already lists", async () => {
+      addPlayerConfig({ player_id: "kitchen", default_name: "Kitchen" });
+
+      const module = await loadOnboardingModule();
+      module.useOnboarding().followPlayers();
+
+      playerEventHandler()({
+        event: EventType.PLAYER_CONFIG_UPDATED,
+        object_id: "kitchen",
+        data: playerConfig({
+          player_id: "kitchen",
+          default_name: "Kitchen",
+          name: "Attic",
+          enabled: false,
+        }),
+      });
+
+      expect(module.discoveredPlayers()).toEqual([
+        expect.objectContaining({ name: "Attic", enabled: false }),
+      ]);
+    });
+
+    it("ignores a player reported before the list is asked for", async () => {
+      addPlayerConfig({ player_id: "office", default_name: "Office" });
+      const module = await loadModule();
+      module.useOnboarding().followPlayers();
+
+      playerEventHandler()({
+        event: EventType.PLAYER_CONFIG_UPDATED,
+        object_id: "kitchen",
+        data: playerConfig({ player_id: "kitchen" }),
+      });
+      expect(module.discoveredPlayers()).toEqual([]);
+
+      await module.useOnboarding().loadOnboardingData();
+      expect(module.discoveredPlayers().map((player) => player.name)).toEqual([
+        "Office",
+      ]);
+    });
+
+    it("keeps a player that turns up while the list is loading", async () => {
+      addPlayerConfig({ player_id: "office", default_name: "Office" });
+      let handOverConfigs: (configs: PlayerConfig[]) => void = () => {};
+      apiMock.getPlayerConfigs.mockImplementation(
+        () =>
+          new Promise<PlayerConfig[]>((resolve) => {
+            handOverConfigs = resolve;
+          }),
+      );
+      const module = await loadModule();
+      module.useOnboarding().followPlayers();
+      const loading = module.useOnboarding().loadOnboardingData();
+
+      playerEventHandler()({
+        event: EventType.PLAYER_CONFIG_UPDATED,
+        object_id: "kitchen",
+        data: playerConfig({ player_id: "kitchen", default_name: "Kitchen" }),
+      });
+      handOverConfigs([...playerConfigs.list]);
+      await loading;
+
+      // the answer was worked out before the player turned up, so it is
+      // merged in over the list rather than replacing it
+      expect(
+        module
+          .discoveredPlayers()
+          .map((player) => player.name)
+          .sort(),
+      ).toEqual(["Kitchen", "Office"]);
+    });
+
+    it("fetches the configuration of a player it has not seen", async () => {
+      const module = await loadOnboardingModule();
+      module.useOnboarding().followPlayers();
+      apiMock.getPlayerConfig.mockResolvedValue(
+        playerConfig({ player_id: "office", default_name: "Office" }),
+      );
+
+      registerPlayer("office");
+      playerEventHandler()({
+        event: EventType.PLAYER_ADDED,
+        object_id: "office",
+        data: { player_id: "office", type: PlayerType.PLAYER },
+      });
+
+      expect(apiMock.getPlayerConfig).toHaveBeenCalledWith("office");
+      await vi.waitFor(() =>
+        expect(module.discoveredPlayers().map((player) => player.name)).toEqual(
+          ["Office"],
+        ),
+      );
+    });
+
+    it("drops the configuration of a player that left before it came in", async () => {
+      const module = await loadOnboardingModule();
+      module.useOnboarding().followPlayers();
+      let handOverConfig: (config: PlayerConfig) => void = () => {};
+      apiMock.getPlayerConfig.mockImplementation(
+        () =>
+          new Promise<PlayerConfig>((resolve) => {
+            handOverConfig = resolve;
+          }),
+      );
+
+      registerPlayer("office");
+      playerEventHandler()({
+        event: EventType.PLAYER_ADDED,
+        object_id: "office",
+        data: { player_id: "office", type: PlayerType.PLAYER },
+      });
+      // gone again before its configuration came in
+      delete apiMock.players["office"];
+      playerEventHandler()({
+        event: EventType.PLAYER_REMOVED,
+        object_id: "office",
+      });
+      handOverConfig(playerConfig({ player_id: "office" }));
+      await flushPromises();
+
+      expect(apiMock.getPlayerConfig).toHaveBeenCalledOnce();
+      expect(module.discoveredPlayers()).toEqual([]);
+    });
+
+    it("fetches nothing for a player it lists or one that is another's output", async () => {
+      addPlayerConfig({ player_id: "kitchen" });
+
+      const module = await loadOnboardingModule();
+      module.useOnboarding().followPlayers();
+
+      // a player seen before only came back; a protocol player is configured
+      // as part of the player it plays for and is never listed on its own
+      playerEventHandler()({
+        event: EventType.PLAYER_ADDED,
+        object_id: "kitchen",
+        data: { player_id: "kitchen", type: PlayerType.PLAYER },
+      });
+      playerEventHandler()({
+        event: EventType.PLAYER_ADDED,
+        object_id: "kitchen-airplay",
+        data: { player_id: "kitchen-airplay", type: PlayerType.PROTOCOL },
+      });
+
+      expect(apiMock.getPlayerConfig).not.toHaveBeenCalled();
+      expect(module.discoveredPlayers()).toHaveLength(1);
+    });
+
+    it("drops a player that was switched on when it leaves", async () => {
+      addPlayerConfig({ player_id: "kitchen" });
+
+      const module = await loadOnboardingModule();
+      module.useOnboarding().followPlayers();
+
+      playerEventHandler()({
+        event: EventType.PLAYER_REMOVED,
+        object_id: "kitchen",
+      });
+
+      expect(module.discoveredPlayers()).toEqual([]);
+    });
+
+    it("keeps a player that only unregistered because it was switched off", async () => {
+      addPlayerConfig({ player_id: "kitchen", enabled: false });
+
+      const module = await loadOnboardingModule();
+      module.useOnboarding().followPlayers();
+
+      playerEventHandler()({
+        event: EventType.PLAYER_REMOVED,
+        object_id: "kitchen",
+      });
+
+      // switching it off is what unregistered it, and the wizard is where it
+      // is switched back on
+      expect(module.discoveredPlayers()).toHaveLength(1);
     });
   });
 
@@ -790,41 +1486,45 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
   });
 
   describe("the welcome", () => {
-    it("writes the persona and the settings it stands for in one go", async () => {
+    it("writes the answer as the expert mode flag, and nothing else", async () => {
       signInAs();
 
-      const { setPersona } = await loadOnboarding();
-      await expect(setPersona("enthusiast")).resolves.toBe(true);
+      const { setExpertMode } = await loadOnboarding();
+      await expect(setExpertMode(true)).resolves.toBe(true);
 
-      // one update: the account never holds the answer without the settings
-      // that answer was given for, and one message if it fails: the step has
-      // something of its own to say, so the api stays quiet
+      // one flag: what it changes is read from it wherever it applies, and
+      // one message if it fails: the step has something of its own to say, so
+      // the api stays quiet
       expect(setUserPreferencesMock).toHaveBeenCalledOnce();
       expect(setUserPreferencesMock).toHaveBeenCalledWith(
-        {
-          "onboarding.persona": "enthusiast",
-          show_waveform: true,
-          visualizer_enabled: true,
-        },
+        { expert_mode: true },
         { suppressGlobalError: true },
       );
     });
 
-    it("seeds the settings again when the member answers again", async () => {
+    it("moves the flag when the member answers again", async () => {
       signInAs();
-      preferenceState.persona.value = "enthusiast";
+      preferenceState.expertMode.value = true;
 
-      const { setPersona } = await loadOnboarding();
-      await setPersona("regular");
+      const { setExpertMode } = await loadOnboarding();
+      await setExpertMode(false);
 
       expect(setUserPreferencesMock).toHaveBeenCalledWith(
-        {
-          "onboarding.persona": "regular",
-          show_waveform: false,
-          visualizer_enabled: false,
-        },
+        { expert_mode: false },
         { suppressGlobalError: true },
       );
+    });
+
+    it("reads an answer an earlier welcome wrote as a persona", async () => {
+      signInAs();
+      preferenceState.legacyPersona.value = "enthusiast";
+
+      const { ctx, pending } = await loadOnboarding();
+
+      // the old answer still counts as the expert experience, so nothing is
+      // asked again and the summary can look back at it
+      expect(ctx.value.answers.expert).toBe(true);
+      expect(pending.value).toEqual([]);
     });
 
     it("marks the member as welcomed on the way out", async () => {
@@ -918,10 +1618,10 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       signInAs();
       setUserPreferencesMock.mockResolvedValue(false);
 
-      const { setPersona } = await loadOnboarding();
+      const { setExpertMode } = await loadOnboarding();
 
       // the step has something to tell the user; this only says what happened
-      await expect(setPersona("regular")).resolves.toBe(false);
+      await expect(setExpertMode(false)).resolves.toBe(false);
     });
 
     it("marks the welcome once, however often it is asked to", async () => {

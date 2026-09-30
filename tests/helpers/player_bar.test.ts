@@ -2,6 +2,7 @@ import {
   PLAYER_BAR_POPOUT_COLLISION_PADDING,
   PLAYER_BAR_POPOUT_GAP,
   PLAYER_BAR_POPOUT_INSET_X,
+  PLAYER_BAR_POPOUT_TOP_GAP,
   fullscreenPlayerSelectAnchor,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
@@ -15,6 +16,7 @@ const PLAYER_SELECT_BUTTON_ID = "player-select-button";
 // as the wrong number instead of quietly passing.
 const INSET_RIGHT = 44;
 const INSET_LEFT = 77;
+const INSET_TOP = 55;
 
 function setDeviceInsets() {
   document.documentElement.style.setProperty(
@@ -135,6 +137,23 @@ describe("PLAYER_BAR_POPOUT_COLLISION_PADDING", () => {
     );
     expect(PLAYER_BAR_POPOUT_COLLISION_PADDING.right).toBe(
       PLAYER_BAR_POPOUT_INSET_X + INSET_RIGHT,
+    );
+  });
+
+  // Its top edge spans the status bar and the cutout as well, so a tall popout
+  // only stops short of them by carrying that inset too.
+  it("grows the top gap by the room the status bar takes", () => {
+    expect(PLAYER_BAR_POPOUT_COLLISION_PADDING.top).toBe(
+      PLAYER_BAR_POPOUT_TOP_GAP,
+    );
+
+    document.documentElement.style.setProperty(
+      "--device-inset-top",
+      `${INSET_TOP}px`,
+    );
+
+    expect(PLAYER_BAR_POPOUT_COLLISION_PADDING.top).toBe(
+      PLAYER_BAR_POPOUT_TOP_GAP + INSET_TOP,
     );
   });
 

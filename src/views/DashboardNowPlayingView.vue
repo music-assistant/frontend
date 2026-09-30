@@ -88,8 +88,11 @@ onMounted(() => {
 // Synced marquee scrolling for the title/artist, same as the fullscreen player.
 const marqueeSync = new MarqueeTextSync();
 
-// Waveform is always on here: the guest session has no show_waveform preference, so it defaults on.
-const { waveformBins: waveformData } = useActiveTrackWaveform();
+// The dashboard has no settings of its own, so it shows the waveform whatever
+// the signed-in account's setting says.
+const { waveformBins: waveformData } = useActiveTrackWaveform({
+  ignorePreference: true,
+});
 
 const artworkUrl = computed(
   () => getMediaImageUrl(store.activePlayer?.current_media?.image_url) || null,

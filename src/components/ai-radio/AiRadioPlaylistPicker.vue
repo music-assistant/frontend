@@ -41,7 +41,7 @@
       />
       <div class="flex max-h-64 min-h-[80px] flex-col overflow-y-auto">
         <div v-if="loadingPlaylists" class="flex justify-center py-6">
-          <Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />
+          <Spinner class="text-muted-foreground" />
         </div>
         <template v-else-if="filteredPlaylists.length > 0">
           <button
@@ -77,10 +77,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner";
 import { useShows } from "@/composables/ai-radio/useShows";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { $t } from "@/plugins/i18n";
-import { Loader2, Music } from "@lucide/vue";
+import { Music } from "@lucide/vue";
 import { computed, onMounted, ref, watch } from "vue";
 
 /** A user-picked source playlist, kept as plain ids so it round-trips through route query and drafts. */

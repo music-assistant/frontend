@@ -4,7 +4,6 @@
     class="detail-hero-button"
     :class="{
       'detail-hero-button--phone': isPhone,
-      'detail-hero-button--icon-only': iconOnly,
       'detail-hero-button--pressed': pressed,
     }"
     :disabled="disabled"
@@ -16,7 +15,7 @@
     @click="emit('click', $event)"
   >
     <component :is="icon" :size="isPhone ? 18 : 16" />
-    <span v-if="!iconOnly">{{ label }}</span>
+    <span class="detail-hero-button__label">{{ label }}</span>
   </button>
 </template>
 
@@ -26,15 +25,13 @@ import { computed, type Component } from "vue";
 
 export interface Props {
   icon: Component;
-  // always the accessible name; visible beside the icon unless `iconOnly`
+  // always the accessible name; hidden, leaving the icon, when the hero is compact
   label: string;
-  iconOnly?: boolean;
   disabled?: boolean;
   // set for a toggle (aria-pressed); when on, the icon takes the primary colour
   pressed?: boolean;
 }
 withDefaults(defineProps<Props>(), {
-  iconOnly: false,
   disabled: false,
   pressed: undefined,
 });
@@ -49,6 +46,7 @@ const isPhone = computed(() => isPhoneSizedScreen());
 <style scoped>
 .detail-hero-button {
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
   gap: 8px;
@@ -80,14 +78,24 @@ const isPhone = computed(() => isPhoneSizedScreen());
 .detail-hero-button--pressed svg {
   color: rgb(var(--v-theme-primary));
 }
-.detail-hero-button--icon-only {
-  width: 36px;
-  padding: 0;
-}
 .detail-hero-button--phone {
   width: 44px;
   height: 44px;
   padding: 0;
   border-radius: 10px;
+}
+
+/* below a wide hero the labels go, leaving icon-only buttons; the play button
+   is a separate component and keeps its label as the primary action. Phone
+   buttons already carry their own square, larger touch target.
+   Keep the 1100px width in sync with DetailHeroProviders' pill breakpoint. */
+@container detail-hero (max-width: 1100px) {
+  .detail-hero-button__label {
+    display: none;
+  }
+  .detail-hero-button:not(.detail-hero-button--phone) {
+    width: 36px;
+    padding: 0;
+  }
 }
 </style>

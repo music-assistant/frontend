@@ -1,7 +1,7 @@
 import {
   ONBOARDING_STEPS,
-  PERSONA_DEFAULTS,
   applicableSteps,
+  experienceOf,
   firstStep,
   orderSteps,
   pendingSteps,
@@ -21,7 +21,12 @@ const BASE_ORDER = [
   "finish",
 ] as const;
 
-const MEMBER_ORDER = ["welcome", "whats_here", "tour", "all_set"] as const;
+const MEMBER_ORDER = [
+  "welcome",
+  "your_players",
+  "your_music",
+  "all_set",
+] as const;
 
 function provider(
   type: ProviderType,
@@ -38,6 +43,8 @@ function context(
   return {
     isAdmin: true,
     isMember: false,
+    firstRun: false,
+    signedIn: true,
     welcomed: false,
     canOwnSources: false,
     ownedMusicSourceCount: 0,
@@ -69,6 +76,43 @@ function step(ctx: OnboardingContext, id: string) {
 describe("onboarding step order", () => {
   it("runs the admin track in its base order without an answer", () => {
     expect(stepIds(applicableSteps(context()))).toEqual([...BASE_ORDER]);
+  });
+
+  it("starts a first run with the account, before anyone can sign in", () => {
+    // no account yet, so no permissions either: the track is the first run's
+    const ctx = context({ isAdmin: false, firstRun: true, signedIn: false });
+
+    expect(stepIds(applicableSteps(ctx))).toEqual(["account", ...BASE_ORDER]);
+    expect(firstStep(ctx)).toBe("account");
+    expect(step(ctx, "account").isDone(ctx)).toBe(false);
+    // nothing is a member either: the two tracks never mix
+    expect(pendingSteps(ctx)[0]?.id).toBe("account");
+  });
+
+  it("ticks the account off once the first run is signed in, and moves on", () => {
+    const ctx = context({ firstRun: true, signedIn: true });
+
+    expect(step(ctx, "account").isDone(ctx)).toBe(true);
+    expect(firstStep(ctx)).toBe("intent");
+  });
+
+  it("keeps the account ahead of a deferred music sources step", () => {
+    const ctx = context({
+      firstRun: true,
+      signedIn: false,
+      answers: { intent: "phone_apps" },
+    });
+
+    expect(stepIds(applicableSteps(ctx)).slice(0, 2)).toEqual([
+      "account",
+      "intent",
+    ]);
+  });
+
+  it("never asks a setup run again for an account", () => {
+    expect(stepIds(applicableSteps(context({ signedIn: true })))).not.toContain(
+      "account",
+    );
   });
 
   it("keeps the base order for someone building a music hub", () => {
@@ -112,14 +156,16 @@ describe("onboarding step order", () => {
     );
     expect(registered?.optional).toBeUndefined();
     expect(registered?.deferred).toBeUndefined();
-    // the registry carries the own-sources step between what's here and the
-    // tour, whether or not a given member is offered it
+    // the registry carries the account step ahead of the admin track, which
+    // only a first run is offered, and the own-sources step between the music
+    // and the summary, whether or not a given member is offered it
     expect(stepIds([...ONBOARDING_STEPS])).toEqual([
+      "account",
       ...BASE_ORDER,
       "welcome",
-      "whats_here",
+      "your_players",
+      "your_music",
       "own_sources",
-      "tour",
       "all_set",
     ]);
   });
@@ -367,14 +413,14 @@ describe("the member track", () => {
     },
   );
 
-  it("asks for the persona, and for nothing else", () => {
+  it("asks for the experience, and for nothing else", () => {
     const ctx = memberContext();
 
     expect(step(ctx, "welcome").kind).toBe("step");
     expect(stepIds(pendingSteps(ctx))).toEqual(["welcome"]);
     // the rest is there to be looked at: a review is never something to do,
     // and neither is the summary that rounds the welcome off
-    for (const id of ["whats_here", "tour"]) {
+    for (const id of ["your_players", "your_music"]) {
       expect(step(ctx, id).kind).toBe("review");
       expect(step(ctx, id).isDone(ctx)).toBe(false);
     }
@@ -383,7 +429,7 @@ describe("the member track", () => {
   });
 
   it("is done with the member once they have answered", () => {
-    const ctx = memberContext({ answers: { persona: "enthusiast" } });
+    const ctx = memberContext({ answers: { expert: true } });
 
     expect(step(ctx, "welcome").isDone(ctx)).toBe(true);
     expect(pendingSteps(ctx)).toEqual([]);
@@ -411,13 +457,14 @@ describe("the member track", () => {
     const pending = memberContext();
     expect(stepIds(pendingSteps(pending))).toEqual(["welcome"]);
 
-    const answered = memberContext({ answers: { persona: "regular" } });
+    // the standard experience is an answer too, not the question left open
+    const answered = memberContext({ answers: { expert: false } });
     expect(pendingSteps(answered)).toEqual([]);
   });
 
   it("opens on the welcome, and on the summary once it is answered", () => {
     expect(firstStep(memberContext())).toBe("welcome");
-    expect(firstStep(memberContext({ answers: { persona: "regular" } }))).toBe(
+    expect(firstStep(memberContext({ answers: { expert: false } }))).toBe(
       "all_set",
     );
     expect(firstStep(memberContext({ welcomed: true }))).toBe("all_set");
@@ -426,12 +473,12 @@ describe("the member track", () => {
   it("never falls back onto the other track's summary", () => {
     // the member is done: the end of their track is where the wizard lands,
     // not the summary of a setup they were never running
-    const ctx = memberContext({ answers: { persona: "enthusiast" } });
+    const ctx = memberContext({ answers: { expert: true } });
     expect(firstStep(ctx, "core_settings")).toBe("all_set");
   });
 
   it("follows a deep link to a step of its own", () => {
-    expect(firstStep(memberContext(), "tour")).toBe("tour");
+    expect(firstStep(memberContext(), "your_music")).toBe("your_music");
   });
 });
 
@@ -469,12 +516,12 @@ describe("the own-sources invitation", () => {
     ).toBe(true);
   });
 
-  it("runs after what's here and before the tour", () => {
+  it("runs after the music that is here and before the summary", () => {
     expect(stepIds(applicableSteps(ownMemberContext()))).toEqual([
       "welcome",
-      "whats_here",
+      "your_players",
+      "your_music",
       "own_sources",
-      "tour",
       "all_set",
     ]);
   });
@@ -489,27 +536,9 @@ describe("the own-sources invitation", () => {
   });
 });
 
-describe("the persona defaults", () => {
-  it.each(["enthusiast", "regular"] as const)(
-    "seeds what the %s asked for",
-    (persona) => {
-      // both answers write the same settings, so choosing again always lands
-      // on a complete set rather than on half of the last one
-      expect(Object.keys(PERSONA_DEFAULTS[persona]).sort()).toEqual([
-        "show_waveform",
-        "visualizer_enabled",
-      ]);
-    },
-  );
-
-  it("shows the player off to whoever asked for the details", () => {
-    expect(PERSONA_DEFAULTS.enthusiast).toEqual({
-      show_waveform: true,
-      visualizer_enabled: true,
-    });
-    expect(PERSONA_DEFAULTS.regular).toEqual({
-      show_waveform: false,
-      visualizer_enabled: false,
-    });
+describe("the welcome's answer", () => {
+  it("names the experience the expert mode flag stands for", () => {
+    expect(experienceOf(true)).toBe("expert");
+    expect(experienceOf(false)).toBe("standard");
   });
 });

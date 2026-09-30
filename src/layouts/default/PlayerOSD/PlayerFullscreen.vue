@@ -384,7 +384,7 @@
           <div class="media-controls-item favorite-btn-wrapper">
             <FavoriteMenuBtn
               style="max-height: 30px; min-height: 0; min-width: 0"
-              :size="18"
+              icon-class="size-4.5"
             />
           </div>
           <ShuffleBtn
@@ -409,7 +409,6 @@
               :icon="{ staticWidth: '60px', staticHeight: '60px' }"
               :spinner-size="73"
               :size="30"
-              :play-offset="2"
             />
           </div>
           <NextBtn
@@ -473,7 +472,7 @@
             <PlayerIcon
               :icon="store.activePlayer?.icon"
               :size="20"
-              class="mr-1"
+              class="mr-1 size-5"
             />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
           </Button>
@@ -500,6 +499,7 @@ import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { playbackSpeedSupported } from "@/helpers/elapsed";
+import { expertModeSetting } from "@/helpers/expert_mode";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
@@ -574,7 +574,7 @@ const showAlbumSubtitle = computed(
 
 const { albumSubtitle } = useNowPlayingSource();
 const { getPreference, setPreference } = useUserPreferences();
-const showWaveformPref = getPreference("show_waveform", true);
+const showWaveformPref = computed(() => expertModeSetting("show_waveform"));
 const showChapterProgress = getPreference("audiobook_chapter_progress", true);
 const nowTick = ref(0);
 let chapterTimer: ReturnType<typeof setInterval> | null = null;

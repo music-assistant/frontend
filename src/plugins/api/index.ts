@@ -3,6 +3,7 @@ import { store } from "../store";
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
 import { resolveActiveSourceId } from "@/composables/activeSource";
+import { resolveProviderDomain } from "@/helpers/provider_domain";
 import {
   resetServerTime,
   serverNow,
@@ -25,7 +26,6 @@ import {
   type EventMessage,
   type Genre,
   type MassEvent,
-  type MediaItem,
   type MediaItemType,
   type Player,
   type PlayerOptionValueType,
@@ -73,12 +73,16 @@ import {
   RepeatMode,
   Role,
   Scope,
+  NetworkShareSettings,
   SearchResults,
+  ShareType,
   SmartPlaylistRules,
   SoundEffect,
+  StorageInfo,
+  StorageLocation,
+  StreamServerInfo,
   TranscriptCue,
   UserRole,
-  StreamServerInfo,
   MediaCollection,
   ArtistType,
 } from "./interfaces";
@@ -726,6 +730,18 @@ export class MusicAssistantApi {
     });
   }
 
+  public getArtistAppearsOn(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+  ): Promise<Album[]> {
+    return this.sendCommand("music/artists/artist_appears_on", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+    });
+  }
+
   public getArtistTopAlbums(
     item_id: string,
     provider_instance_id_or_domain: string,
@@ -735,6 +751,21 @@ export class MusicAssistantApi {
       item_id,
       provider_instance_id_or_domain,
       provider_filter,
+    });
+  }
+
+  /**
+   * Every album, EP and single MusicBrainz credits to a library artist, newest first.
+   *
+   * Only library artists are supported; the list is empty when MusicBrainz doesn't know
+   * the artist. The releases that are not in the library come back as MusicBrainz items
+   * (provider "musicbrainz", without provider mappings), which the server resolves to a
+   * real album when one is opened or added.
+   */
+  public getArtistDiscography(item_id: string): Promise<Album[]> {
+    return this.sendCommand("music/artists/discography", {
+      item_id,
+      provider_instance_id_or_domain: "library",
     });
   }
 
@@ -1534,8 +1565,10 @@ export class MusicAssistantApi {
   public async addItemToFavorites(
     item: string | MediaItemType | ItemMapping,
   ): Promise<void> {
-    // optimistically set the value
-    if (typeof item !== "string" && "favorite" in item) {
+    // optimistically set the value on the caller's copy. Only a media item
+    // holds one: a summary item leaves the key out when there is no state, but
+    // its provider mappings are always there
+    if (typeof item !== "string" && "provider_mappings" in item) {
       item.favorite = true;
     }
     // Add an item (uri or mediaitem) to the favorites.
@@ -1554,17 +1587,25 @@ export class MusicAssistantApi {
     });
   }
 
-  public toggleFavorite(item: MediaItem) {
-    // Toggle favorite for a media item
-    if (item.favorite) {
-      this.removeItemFromFavorites(item.media_type, item.item_id);
-      // optimistically set the value
-      item.favorite = false;
-    } else {
-      this.addItemToFavorites(item);
-      // optimistically set the value
-      item.favorite = true;
+  /**
+   * Set the signed-in user's state on a media item.
+   *
+   * :param item: The item (uri or media item) to set the state on.
+   * :param favorite: true to like, false to dislike, null to clear the state.
+   */
+  public async setFavorite(
+    item: string | MediaItemType | ItemMapping,
+    favorite: boolean | null,
+  ): Promise<void> {
+    // optimistically set the value on the caller's copy, which only a media
+    // item holds (see addItemToFavorites)
+    if (typeof item !== "string" && "provider_mappings" in item) {
+      item.favorite = favorite;
     }
+    return this.sendCommand("music/favorites/set_item", {
+      item,
+      favorite,
+    });
   }
 
   public browse(path?: string, player_id?: string): Promise<MediaItemType[]> {
@@ -2792,12 +2833,16 @@ export class MusicAssistantApi {
     await router.push({ name: "backgroundtasks" });
   }
 
+  /**
+   * Resolve a provider domain or instance id to a display name.
+   *
+   * Prefers the name of a loaded instance, then the manifest name, and finally
+   * the generic manifest name for the domain. Falls back to the given id when
+   * nothing matches. It never reads a provider's saved configuration, so an
+   * instance that is not loaded shows the generic service name.
+   * @param provider_domain_or_instance_id - A provider domain or instance id, e.g. from a media item or provider mapping.
+   */
   public getProviderName(provider_domain_or_instance_id: string): string {
-    // try to get the name of the provider from the instance_id or domain
-    if (provider_domain_or_instance_id in this.providers) {
-      provider_domain_or_instance_id =
-        this.providers[provider_domain_or_instance_id].instance_id;
-    }
     // prefer the user configured name
     if (provider_domain_or_instance_id in this.providers) {
       return this.providers[provider_domain_or_instance_id].name;
@@ -2807,12 +2852,11 @@ export class MusicAssistantApi {
       return this.providerManifests[provider_domain_or_instance_id].name;
     }
     // instance not loaded (e.g. a source not shared with this user): fall back
-    // to the generic provider name derived from the domain in the instance id
-    const domain = provider_domain_or_instance_id.split("--")[0];
-    if (domain in this.providerManifests) {
-      return this.providerManifests[domain].name;
-    }
-    return provider_domain_or_instance_id;
+    // to the generic name of the provider the instance id belongs to
+    const domain = resolveProviderDomain(provider_domain_or_instance_id, this);
+    return domain
+      ? this.providerManifests[domain].name
+      : provider_domain_or_instance_id;
   }
 
   public getProvider(
@@ -3615,6 +3659,86 @@ export class MusicAssistantApi {
       "streams/info",
       undefined,
       options,
+    );
+  }
+
+  // Storage methods
+  // Every caller reports a failure itself (a toast or inline in its dialog), so the
+  // storage commands skip the global error toast.
+
+  public getStorageInfo(): Promise<StorageInfo> {
+    // Get the storage locations the caller may see and what this install can mount
+    return this.sendCommand<StorageInfo>("storage/info", undefined, {
+      suppressGlobalError: true,
+    });
+  }
+
+  public getStorageFolders(path: string): Promise<string[]> {
+    // Get the names of the subfolders of a media location, or of a folder inside one
+    return this.sendCommand<string[]>(
+      "storage/folders",
+      { path },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public addNetworkShare(
+    share_type: ShareType,
+    settings: NetworkShareSettings,
+  ): Promise<StorageLocation> {
+    // Mount a network share as a new media location
+    return this.sendCommand<StorageLocation>(
+      "storage/network_shares/add",
+      { share_type, ...settings },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public updateNetworkShare(
+    name: string,
+    settings: NetworkShareSettings,
+  ): Promise<StorageLocation> {
+    // Replace the settings of a network share; an omitted password keeps the stored one
+    return this.sendCommand<StorageLocation>(
+      "storage/network_shares/update",
+      { name, ...settings },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public removeNetworkShare(name: string): Promise<void> {
+    // Unmount and forget a network share; refused while a music source uses it
+    return this.sendCommand(
+      "storage/network_shares/remove",
+      { name },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public reloadNetworkShare(name: string): Promise<StorageLocation> {
+    // Mount a network share again
+    return this.sendCommand<StorageLocation>(
+      "storage/network_shares/reload",
+      { name },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public addLocalFolder(path: string): Promise<StorageLocation> {
+    // Register a folder on the server itself as a media location
+    return this.sendCommand<StorageLocation>(
+      "storage/local_folders/add",
+      { path },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public removeLocalFolder(path: string): Promise<void> {
+    // Forget a registered folder; refused while a music source uses it
+    return this.sendCommand(
+      "storage/local_folders/remove",
+      { path },
+      { suppressGlobalError: true },
     );
   }
 

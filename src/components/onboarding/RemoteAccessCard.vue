@@ -85,7 +85,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { splitCode } from "@/helpers/segmented_code";
+import { formatRemoteId } from "@/helpers/segmented_code";
 import { copyToClipboard } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import type { RemoteAccessInfo } from "@/plugins/api/interfaces";
@@ -98,9 +98,6 @@ import { toast } from "vue-sonner";
  * Music Assistant's own remote access, switched on and off from the setup
  * wizard. The id to connect with is shown, and can be copied, once it is on.
  */
-
-// the remote access id in groups, the way the remote access settings show it
-const REMOTE_ID_GROUPS = [8, 5, 5, 8];
 
 const switchId = useId();
 const info = ref<RemoteAccessInfo>();
@@ -118,7 +115,7 @@ const enabled = computed(
 );
 const remoteId = computed(() => {
   const id = info.value?.remote_id;
-  return id ? splitCode(id, REMOTE_ID_GROUPS).join("-") : undefined;
+  return id ? formatRemoteId(id) : undefined;
 });
 
 const load = async function (): Promise<void> {

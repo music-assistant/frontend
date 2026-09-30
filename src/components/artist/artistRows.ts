@@ -1,3 +1,4 @@
+import { artistProvidersForFeature } from "@/components/artist/artistData";
 import {
   createRowRegistry,
   type RowDefinition,
@@ -16,6 +17,7 @@ export type ArtistRowId =
   | "albums"
   | "singles_eps"
   | "appears_on"
+  | "discography"
   | "similar_artists"
   | "audiobooks"
   | "audiobooks_all" // authors / narrators only
@@ -50,6 +52,7 @@ export const ARTIST_ROWS: readonly ArtistRowDefinition[] = [
     supportsSource: true,
   },
   { id: "appears_on", labelKey: "appears_on", audience: "music" },
+  { id: "discography", labelKey: "discography", audience: "music" },
   {
     id: "similar_artists",
     labelKey: "similar_artists",
@@ -62,7 +65,7 @@ export const ARTIST_ROWS: readonly ArtistRowDefinition[] = [
     labelKey: "artist_all_audiobooks",
     audience: "audiobook",
   },
-  { id: "provider_mappings", labelKey: "mapped_providers", audience: "both" },
+  { id: "provider_mappings", labelKey: "source_details", audience: "both" },
   { id: "artwork", labelKey: "images", audience: "both", adminOnly: true },
 ];
 
@@ -100,7 +103,7 @@ export const artistRows = createRowRegistry<ArtistRowId, Artist>({
 });
 
 // rows fed by the artist's releases, in or outside the library
-const RELEASE_ROWS: ArtistRowId[] = ["albums", "singles_eps", "appears_on"];
+const RELEASE_ROWS: ArtistRowId[] = ["albums", "singles_eps"];
 
 // rows the server aggregates over every provider by default
 const ALL_PROVIDER_ROWS: ArtistRowId[] = ["top_tracks", "similar_artists"];
@@ -128,23 +131,14 @@ function rowSourceCandidates(id: ArtistRowId, artist: Artist): RowSource[] {
 function rowSourceProviders(id: ArtistRowId, artist: Artist): string[] {
   const feature = ROW_FEATURES[id];
   if (!feature) return [];
-  const ids = new Set<string>();
-  for (const mapping of artist.provider_mappings) {
-    if (providerSupports(mapping.provider_instance, feature)) {
-      ids.add(mapping.provider_instance);
-    }
-  }
-  if (ALL_PROVIDER_ROWS.includes(id)) {
-    for (const provider of Object.values(api.providers)) {
-      const isMetadataOrPlugin =
-        provider.type === ProviderType.METADATA ||
-        provider.type === ProviderType.PLUGIN;
-      if (
-        isMetadataOrPlugin &&
-        providerSupports(provider.instance_id, feature)
-      ) {
-        ids.add(provider.instance_id);
-      }
+  const ids = new Set(artistProvidersForFeature(artist, feature));
+  if (!ALL_PROVIDER_ROWS.includes(id)) return [...ids];
+  for (const provider of Object.values(api.providers)) {
+    const isMetadataOrPlugin =
+      provider.type === ProviderType.METADATA ||
+      provider.type === ProviderType.PLUGIN;
+    if (isMetadataOrPlugin && providerSupports(provider.instance_id, feature)) {
+      ids.add(provider.instance_id);
     }
   }
   return [...ids].sort((a, b) =>

@@ -14,6 +14,7 @@ import { ProviderType } from "@/plugins/api/interfaces";
 
 export type OnboardingStepId =
   // the admin track: setting the server up
+  | "account"
   | "intent"
   | "music_sources"
   | "players"
@@ -23,28 +24,24 @@ export type OnboardingStepId =
   | "finish"
   // the member track: being welcomed into a server someone else set up
   | "welcome"
-  | "whats_here"
+  | "your_players"
+  | "your_music"
   | "own_sources"
-  | "tour"
   | "all_set";
 
 export type OnboardingIntent = "phone_apps" | "music_hub";
 
-/** How much of the player a member wants to see, as the welcome asks it. */
-export type OnboardingPersona = "enthusiast" | "regular";
+/** How much of the app a member wants to see, as the welcome asks it. */
+export type OnboardingExperience = "standard" | "expert";
 
 /**
- * The preferences a persona seeds. Nothing reads the persona itself: the
- * answer only decides what these are set to, once, and every one of them stays
- * a setting the member can change afterwards.
+ * The welcome's answer as the account holds it: expert mode on or off. What
+ * the answer changes is read from that flag wherever it applies, so nothing is
+ * seeded and answering again simply moves the flag.
  */
-export const PERSONA_DEFAULTS: Readonly<
-  Record<OnboardingPersona, Readonly<Record<string, boolean>>>
-> = {
-  // the waveform progress bar and the background visualizer of the full player
-  enthusiast: { show_waveform: true, visualizer_enabled: true },
-  regular: { show_waveform: false, visualizer_enabled: false },
-};
+export function experienceOf(expert: boolean): OnboardingExperience {
+  return expert ? "expert" : "standard";
+}
 
 /** A configured provider, reduced to what the steps need. */
 export interface OnboardingProvider {
@@ -58,7 +55,8 @@ export interface OnboardingProvider {
 
 export interface OnboardingAnswers {
   intent?: OnboardingIntent;
-  persona?: OnboardingPersona;
+  // the welcome's answer: whether they asked for the expert experience
+  expert?: boolean;
 }
 
 export interface OnboardingContext {
@@ -67,6 +65,11 @@ export interface OnboardingContext {
   // member who is not on the admin track. Never both, so the two tracks never
   // run into each other
   isMember: boolean;
+  // the server's first-run setup: nobody can sign in until this session has
+  // made the admin account, and it is on the admin track from before it has
+  firstRun: boolean;
+  // whether anyone is signed in, which on a first run says the account is made
+  signedIn: boolean;
   // the welcome has been shown to this member before, whatever they made of it
   welcomed: boolean;
   // whether this member's role lets them add music sources of their own; the
@@ -118,8 +121,10 @@ function hasConfiguredProvider(
 }
 
 // Which track a step belongs to. Every step is on exactly one of them, and a
-// context is only ever on one, so the two never mix in a single run.
-const onAdminTrack = (ctx: OnboardingContext) => ctx.isAdmin;
+// context is only ever on one, so the two never mix in a single run. The admin
+// a first run is about to make is on the admin track from before they can
+// sign in, so the setup reads as one list from its first step.
+const onAdminTrack = (ctx: OnboardingContext) => ctx.isAdmin || ctx.firstRun;
 const onMemberTrack = (ctx: OnboardingContext) => ctx.isMember;
 
 /**
@@ -131,6 +136,14 @@ export const isTodo = (step: OnboardingStep): boolean => step.kind === "step";
 
 /** Both tracks, each in its base order. */
 export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
+  {
+    id: "account",
+    kind: "step",
+    // only a fresh server asks for this: the account is made once, before
+    // anything else, and a setup run again later has nothing to make
+    appliesTo: (ctx) => ctx.firstRun,
+    isDone: (ctx) => ctx.signedIn,
+  },
   {
     id: "intent",
     kind: "step",
@@ -185,14 +198,22 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     id: "welcome",
     kind: "step",
     appliesTo: onMemberTrack,
-    // the one thing the welcome asks for: how much of the player they want to
+    // the one thing the welcome asks for: how much of the app they want to
     // see. Everything after it is there to be looked at, not filled in.
     // Having been shown it is enough: nobody is asked to answer a question
     // they have already been put in front of and walked away from.
-    isDone: (ctx) => ctx.answers.persona != null || ctx.welcomed,
+    isDone: (ctx) => ctx.answers.expert != null || ctx.welcomed,
+  },
+  // what is here for them, one short look at a time: the players first, then
+  // the music, so the invitation to add music of their own follows straight on
+  {
+    id: "your_players",
+    kind: "review",
+    appliesTo: onMemberTrack,
+    isDone: () => false,
   },
   {
-    id: "whats_here",
+    id: "your_music",
     kind: "review",
     appliesTo: onMemberTrack,
     isDone: () => false,
@@ -203,12 +224,6 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     // a member-track step, but only for a role that may add its own sources
     appliesTo: (ctx) => ctx.isMember && ctx.canOwnSources,
     isDone: (ctx) => ctx.ownedMusicSourceCount > 0,
-  },
-  {
-    id: "tour",
-    kind: "review",
-    appliesTo: onMemberTrack,
-    isDone: () => false,
   },
   {
     id: "all_set",

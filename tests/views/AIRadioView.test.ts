@@ -418,6 +418,34 @@ describe("AIRadioView editing rights", () => {
     },
   );
 
+  it("invites an admin to create the first show in the empty state", async () => {
+    routeMock.query = {};
+    sendCommand.mockImplementation(async () => []);
+    const wrapper = await openView();
+
+    expect(wrapper.text()).toContain("Create your first show");
+    expect(wrapper.text()).toContain("AI Radio turns one of your playlists");
+    expect(findButtonByText(wrapper, "Create show")).toBeTruthy();
+  });
+
+  it.each(NON_EDITORS)(
+    "tells %s the empty state without inviting them to create a show",
+    async (_role, scopes) => {
+      hasScope.mockImplementation(scopeChecker(scopes));
+      routeMock.query = {};
+      sendCommand.mockImplementation(async () => []);
+      const wrapper = await openView();
+
+      expect(wrapper.text()).toContain("No shows yet");
+      expect(wrapper.text()).toContain("No radio shows have been set up yet");
+      expect(wrapper.text()).not.toContain("Create your first show");
+      expect(wrapper.text()).not.toContain(
+        "AI Radio turns one of your playlists",
+      );
+      expect(findButtonByText(wrapper, "Create show")).toBeUndefined();
+    },
+  );
+
   it("opens the create dialog for an admin following a playlist link", async () => {
     routeMock.query = {
       source_playlist_id: "42",

@@ -5,7 +5,8 @@
     role="button"
     tabindex="0"
     :class="{
-      'ed-card--unavailable': !isAvailable,
+      'ed-card--unavailable': !isAvailable && !notInLibrary,
+      'ed-card--not-in-library': notInLibrary,
       'ed-card--fluid': fluid,
       'ed-card--disabled': disabled,
       'ed-card--round': round,
@@ -26,7 +27,8 @@
         }"
         loading="lazy"
         :src="artImage"
-        :alt="item.name"
+        alt=""
+        @error="artFailed = true"
       />
       <MediaCollectionThumb
         v-else-if="props.item.media_type == MediaType.COLLECTION"
@@ -78,7 +80,7 @@
           :size="18"
           fill="currentColor"
           :stroke-width="0"
-          class="ed-card__play-icon"
+          class="ed-card__play-icon play-icon-centered"
         />
       </span>
     </div>
@@ -90,6 +92,7 @@
 <script setup lang="ts">
 import {
   itemArtwork,
+  placeholderArtwork,
   placeholderBackground,
 } from "@/components/discover/editorialArtwork";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
@@ -108,6 +111,7 @@ import {
 import {
   getListItemProviderIconDomain,
   getProviderRootDomain,
+  isMusicBrainzItem,
 } from "@/plugins/api/helpers";
 import {
   type Album,
@@ -119,7 +123,7 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { Play } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import MediaCollectionThumb from "../MediaCollectionThumb.vue";
 
@@ -158,9 +162,26 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const art = computed(() => itemArtwork(props.item, 320));
+const resolvedArt = computed(() => itemArtwork(props.item, 320));
+
+// a proxied cover can 404 (e.g. a release the Cover Art Archive has none for),
+// which leaves the item on the placeholder treatment instead of a broken image;
+// the next item, or this one refreshed with another cover, gets its own attempt
+const artFailed = ref(false);
+watch(
+  () => [props.item.uri, resolvedArt.value.image],
+  () => (artFailed.value = false),
+);
+
+const art = computed(() =>
+  artFailed.value ? placeholderArtwork(props.item) : resolvedArt.value,
+);
 
 const isGenre = computed(() => props.item.media_type === MediaType.GENRE);
+
+// a release only MusicBrainz knows: muted rather than shown as unavailable,
+// since it can be opened and added to the library
+const notInLibrary = computed(() => isMusicBrainzItem(props.item));
 
 // provider entries in the browse root show the provider icon
 const { iconDataUri: providerRootIcon } = useProviderIcon(() =>
@@ -178,7 +199,11 @@ const getStyle = computed(() => {
 
 const isPlayable = computed(() => props.item.is_playable !== false);
 const showPlay = computed(
-  () => isPlayable.value && props.isAvailable && !props.showCheckboxes,
+  () =>
+    isPlayable.value &&
+    props.isAvailable &&
+    !notInLibrary.value &&
+    !props.showCheckboxes,
 );
 
 // Provider badge on the cover — always for playlists (to show the source),
@@ -211,6 +236,7 @@ const subtitle = computed(() => {
         owner?: string;
       }
   >;
+  if (notInLibrary.value) return t("not_in_library");
   if (it.artists?.length) return getArtistsString(it.artists, 1);
   if (it.authors?.length)
     return getAuthorsNarratorsArray(it.authors).join(" / ");
@@ -309,6 +335,11 @@ const onMenu = (e: MouseEvent) => {
 }
 .ed-card--unavailable {
   opacity: 0.3;
+}
+/* a release that is not in the library: muted artwork, readable title */
+.ed-card--not-in-library .ed-card__art {
+  opacity: 0.55;
+  filter: grayscale(1);
 }
 .ed-card--disabled {
   pointer-events: none;
@@ -416,7 +447,6 @@ const onMenu = (e: MouseEvent) => {
   z-index: 4;
 }
 .ed-card__play-icon {
-  margin-left: 2px;
   /* guarantee a solid white triangle regardless of lucide's default fill */
   fill: currentColor;
   stroke: none;

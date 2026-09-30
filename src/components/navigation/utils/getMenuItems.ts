@@ -263,8 +263,7 @@ export const getMenuItems = function (): MenuItem[] {
 export function resolveMenuConfig(): ResolvedMenuConfig {
   const knownIds = DEFAULT_MENU_ITEMS;
   const pref = store.currentUser?.preferences?.[MENU_PREFERENCE_KEY] as
-    | MenuConfig
-    | undefined;
+    MenuConfig | undefined;
   if (pref && typeof pref === "object") {
     const known = new Set(knownIds);
     const hidden = new Set(

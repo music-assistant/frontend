@@ -78,18 +78,23 @@
 
 <script setup lang="ts">
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress.vue";
+import AccountStep from "@/components/onboarding/steps/AccountStep.vue";
 import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue";
-import FinishStep from "@/components/onboarding/steps/FinishStep.vue";
+import FinishStep, {
+  type FinishOptions,
+} from "@/components/onboarding/steps/FinishStep.vue";
 import IntentStep from "@/components/onboarding/steps/IntentStep.vue";
 import InviteMembersStep from "@/components/onboarding/steps/InviteMembersStep.vue";
 import OwnSourcesStep from "@/components/onboarding/steps/OwnSourcesStep.vue";
+import PlayersStep from "@/components/onboarding/steps/PlayersStep.vue";
 import ProvidersStep from "@/components/onboarding/steps/ProvidersStep.vue";
-import TourStep from "@/components/onboarding/steps/TourStep.vue";
 import WelcomeStep from "@/components/onboarding/steps/WelcomeStep.vue";
-import WhatsHereStep from "@/components/onboarding/steps/WhatsHereStep.vue";
+import YourMusicStep from "@/components/onboarding/steps/YourMusicStep.vue";
+import YourPlayersStep from "@/components/onboarding/steps/YourPlayersStep.vue";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useOnboarding } from "@/composables/useOnboarding";
+import { useTour } from "@/composables/useTour";
 import { firstStep, type OnboardingStepId } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -111,24 +116,23 @@ const {
   requestedStep,
   loadOnboardingData,
   loadProviderConfigs,
+  followPlayers,
   markWelcomed,
-  setIntent,
   finish,
 } = useOnboarding();
+const { start: startTour } = useTour();
 
 const STEP_VIEWS: Record<
   OnboardingStepId,
   { component: Component; props?: Record<string, unknown> }
 > = {
+  account: { component: markRaw(AccountStep) },
   intent: { component: markRaw(IntentStep) },
   music_sources: {
     component: markRaw(ProvidersStep),
     props: { providerType: ProviderType.MUSIC },
   },
-  players: {
-    component: markRaw(ProvidersStep),
-    props: { providerType: ProviderType.PLAYER },
-  },
+  players: { component: markRaw(PlayersStep) },
   plugins: {
     component: markRaw(ProvidersStep),
     props: { providerType: ProviderType.PLUGIN },
@@ -137,9 +141,9 @@ const STEP_VIEWS: Record<
   invite_members: { component: markRaw(InviteMembersStep) },
   finish: { component: markRaw(FinishStep), props: { stepId: "finish" } },
   welcome: { component: markRaw(WelcomeStep) },
-  whats_here: { component: markRaw(WhatsHereStep) },
+  your_players: { component: markRaw(YourPlayersStep) },
+  your_music: { component: markRaw(YourMusicStep) },
   own_sources: { component: markRaw(OwnSourcesStep) },
-  tour: { component: markRaw(TourStep) },
   // the same summary, told as the end of the welcome instead of the setup
   all_set: { component: markRaw(FinishStep), props: { stepId: "all_set" } },
 };
@@ -157,12 +161,16 @@ const ready = ref(false);
 // their way out — and a second click must not set off from where the first one
 // has already arrived
 const moving = ref(false);
+// what stops the players being followed once the wizard is gone
+let stopFollowingPlayers: (() => void) | undefined;
 
 /** What a step exposes to the wizard, which every step may leave to default. */
 interface StepInstance {
   beforeLeave?: () => Promise<boolean>;
   // a choice step raises this while its answer is on its way to the server
   busy?: boolean;
+  // a step with a submit of its own, which the wizard's Next stands down for
+  ownsForwardAction?: boolean;
 }
 
 const stepRef = ref<StepInstance | null>(null);
@@ -210,9 +218,13 @@ const stepView = computed(() => {
   };
 });
 
-// The summary owns its own finish button, so the footer is for the steps only.
+// The summary owns its own finish button, and a form step its own submit, so
+// the footer is for the other steps only.
 const showForwardAction = computed(
-  () => currentStep.value != null && currentStep.value.kind !== "summary",
+  () =>
+    currentStep.value != null &&
+    currentStep.value.kind !== "summary" &&
+    !stepRef.value?.ownsForwardAction,
 );
 // a step that does not hold the wizard up is skipped rather than moved on from,
 // whether it is optional by nature or one the answers deferred
@@ -251,9 +263,8 @@ const jumpTo = async function (id: OnboardingStepId) {
 
 // Next moves one step along the visible order and no further: a step that is
 // already done is walked through, not skipped over, so the running order the
-// user sees is the order they move through. Moving on from the intent question
-// unanswered is an answer of its own — the music hub is what the wizard then
-// runs as, instead of leaving the question to be asked again.
+// user sees is the order they move through. A question walked past answers
+// itself with its recommended option, which the step does on its way out.
 const next = async function () {
   // a choice being saved on the step owns the move: standing aside keeps Next
   // from advancing a second step or waving a default over the answer
@@ -261,12 +272,6 @@ const next = async function () {
   moving.value = true;
   try {
     if (!(await leaveStep())) return;
-    if (
-      currentStep.value?.id === "intent" &&
-      ctx.value.answers.intent == null
-    ) {
-      await setIntent("music_hub");
-    }
     const following = steps.value[currentIndex.value + 1];
     if (following) goTo(following.id);
   } finally {
@@ -274,11 +279,13 @@ const next = async function () {
   }
 };
 
-const finishOnboarding = async function () {
+// The tour is only given once onboarding has let go: a finish that did not
+// land keeps the wizard up, and the tour waits with it.
+const finishOnboarding = async function (options?: FinishOptions) {
   if (finishing.value) return;
   finishing.value = true;
   try {
-    await finish();
+    if ((await finish()) && options?.tour) startTour();
   } finally {
     finishing.value = false;
   }
@@ -289,18 +296,36 @@ const focusStepHeading = async function () {
   stepHeading.value?.focus();
 };
 
-// The setup decides everything off the provider configurations and the users,
-// so the wizard asks for them itself as it opens; the step it opens on is
-// settled from that answer rather than from whatever a previous open left
-// behind. The member track reads the providers and players that are running,
-// neither of which it has to ask for — bar a member who can own sources, whose
+// The setup decides everything off the provider configurations, the players
+// and the users, so the wizard asks for them itself as it opens; the step it
+// opens on is settled from that answer rather than from whatever a previous
+// open left behind. The players keep turning up while the setup runs, so they
+// are followed from before the load until the wizard is gone.
+const loadAdminTrack = async () => {
+  stopFollowingPlayers?.();
+  stopFollowingPlayers = followPlayers();
+  await loadOnboardingData();
+};
+
+// The member track reads the providers and players that are running, neither
+// of which it has to ask for — bar a member who can own sources, whose
 // own-sources step needs the provider configs to tell which sources they own.
 onMounted(async () => {
-  if (!ctx.value.isMember) await loadOnboardingData();
+  if (!ctx.value.isMember) await loadAdminTrack();
   else if (ctx.value.canOwnSources) await loadProviderConfigs();
   currentId.value = firstStep(ctx.value, requestedStep.value);
   ready.value = true;
 });
+
+// On a fresh server the wizard opens before there is an admin to load the
+// setup for: the server only tells one what is configured. The account step
+// makes them, and the load runs again once they are in.
+watch(
+  () => ctx.value.isAdmin,
+  async (isAdmin, wasAdmin) => {
+    if (isAdmin && !wasAdmin && ctx.value.firstRun) await loadAdminTrack();
+  },
+);
 
 // Focus lands on the heading as the wizard opens and follows the step from
 // there, so the keyboard stays inside the wizard as it moves.
@@ -311,6 +336,7 @@ watch(currentId, focusStepHeading);
 // welcomed into the same app twice. Finishing writes this itself, and the
 // marker is only ever written once, so the two never collide.
 onBeforeUnmount(() => {
+  stopFollowingPlayers?.();
   if (ctx.value.isMember) void markWelcomed();
 });
 </script>
