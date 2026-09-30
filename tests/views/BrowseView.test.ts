@@ -192,7 +192,9 @@ describe("BrowseView folder header", () => {
     const wrapper = mountBrowse("radio://");
     await flushPromises();
 
-    expect(browse).toHaveBeenCalledWith("root", "player");
+    expect(browse).toHaveBeenCalledWith("root", "player", {
+      suppressGlobalError: true,
+    });
     expect(playedFolder(wrapper)).toBeUndefined();
   });
 

@@ -149,7 +149,9 @@ async function findInParentListing(
 ): Promise<BrowseFolder | undefined> {
   try {
     rememberFolders(
-      await api.browse(parentBrowsePath(path), store.activePlayerId),
+      await api.browse(parentBrowsePath(path), store.activePlayerId, {
+        suppressGlobalError: true,
+      }),
     );
   } catch {
     return undefined;
