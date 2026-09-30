@@ -1,5 +1,6 @@
 import { isOwnMusicSource } from "@/helpers/provider_access";
 import { isBuiltinProvider } from "@/helpers/provider_config";
+import { confirmProviderRemoval } from "@/helpers/provider_removal";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -7,8 +8,6 @@ import {
   type ProviderStatus,
   ProviderType,
 } from "@/plugins/api/interfaces";
-import { eventbus } from "@/plugins/eventbus";
-import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import {
   computed,
@@ -160,22 +159,15 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
   // dropped from the list once the server has removed it
   const removeSource = function (config: ProviderConfig) {
     const instanceId = config.instance_id;
-    eventbus.emit("deleteConfirmationDialog", {
-      title: $t("settings.remove_provider"),
-      message: $t("settings.remove_provider_confirm", [
-        getProviderName(config),
-      ]),
-      confirmLabel: $t("settings.remove_provider"),
-      onConfirm: async () => {
-        try {
-          await api.removeProviderConfig(instanceId);
-          providerConfigs.value = providerConfigs.value.filter(
-            (x) => x.instance_id != instanceId,
-          );
-        } catch (err) {
-          toast.error(String(err));
-        }
-      },
+    confirmProviderRemoval(config, getProviderName(config), async () => {
+      try {
+        await api.removeProviderConfig(instanceId);
+        providerConfigs.value = providerConfigs.value.filter(
+          (x) => x.instance_id != instanceId,
+        );
+      } catch (err) {
+        toast.error(String(err));
+      }
     });
   };
 

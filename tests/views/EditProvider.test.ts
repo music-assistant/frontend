@@ -144,7 +144,7 @@ vi.mock("@/helpers/utils", async (importOriginal) => {
 });
 
 vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string) => key,
+  $t: i18nMock.t,
 }));
 
 vi.mock("vue-sonner", () => ({
@@ -864,10 +864,12 @@ describe("EditProvider", () => {
     const removeCall = eventbusMock.emit.mock.calls.find(
       ([event]) => event === "deleteConfirmationDialog",
     );
-    expect(removeCall?.[1].message).toBe("settings.remove_provider_confirm");
+    expect(removeCall?.[1].message).toBe(
+      "settings.remove_provider_confirm_music",
+    );
     // the stubbed t returns the key, so the name is checked where it is passed
     expect(i18nMock.t).toHaveBeenCalledWith(
-      "settings.remove_provider_confirm",
+      "settings.remove_provider_confirm_music",
       ["My Spotify"],
     );
 
@@ -910,7 +912,7 @@ describe("EditProvider", () => {
     await wrapper.get("button-stub").trigger("click");
 
     expect(i18nMock.t).toHaveBeenCalledWith(
-      "settings.remove_provider_confirm",
+      "settings.remove_provider_confirm_music",
       ["Spotify (sam)"],
     );
   });

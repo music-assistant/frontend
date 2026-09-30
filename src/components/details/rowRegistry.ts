@@ -188,17 +188,6 @@ export function rowSourceLabel(source: RowSource): string {
   return provider ? providerServiceName(provider) : source;
 }
 
-/** The provider behind a row's source, when a single one feeds it (undefined for "library"/"all"). */
-export function rowSourceProvider(
-  source?: RowSource,
-): { name: string; domain: string } | undefined {
-  if (!source || source === "all" || source === "library") return undefined;
-  const provider = api.getProvider(source);
-  return (
-    provider && { name: providerServiceName(provider), domain: provider.domain }
-  );
-}
-
 /**
  * A row's source as a reader-facing badge: "In your library", "All sources", or
  * "On <Provider>", with the provider's domain for its icon. Undefined when the

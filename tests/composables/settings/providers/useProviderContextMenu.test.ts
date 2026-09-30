@@ -184,8 +184,8 @@ describe("menu item order", () => {
       "settings.disable",
       "settings.documentation",
       "settings.sync",
-      "settings.remove_provider",
       "settings.reload",
+      "settings.remove_provider",
     ]);
   });
 

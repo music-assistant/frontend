@@ -19,13 +19,13 @@
           />
         </div>
         <RouterLink
-          v-if="libraryTrackCount"
+          v-if="artistTrackCount"
           :to="allTracksRoute"
           class="artist-top-tracks__more"
         >
           {{
-            $t(viewTracksKey, libraryTrackCount, {
-              named: { count: libraryTrackCount },
+            $t(viewTracksKey, artistTrackCount, {
+              named: { count: artistTrackCount },
             })
           }}
         </RouterLink>
@@ -152,7 +152,8 @@ export interface Props {
   sourceValue?: RowSource;
   // shown when the row has no tracks but stays mounted for its source picker
   emptyMessage?: string;
-  libraryTrackCount?: number;
+  // how many tracks the "view tracks" link leads to
+  artistTrackCount?: number;
 }
 const props = defineProps<Props>();
 
