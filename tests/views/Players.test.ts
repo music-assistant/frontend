@@ -226,6 +226,19 @@ describe("Players", () => {
     );
   });
 
+  it("opens the menu at the touch position for a long-press", async () => {
+    const wrapper = await mountPlayers("list");
+
+    await wrapper.get(".player-list-item").trigger("contextmenu", {
+      touches: [{ clientX: 11, clientY: 22 }],
+    });
+
+    expect(emitEvent).toHaveBeenCalledWith(
+      "contextmenu",
+      expect.objectContaining({ posX: 11, posY: 22 }),
+    );
+  });
+
   it("filters the list by player status", async () => {
     const wrapper = await mountPlayers("list");
     const filters = wrapper.findComponent({ name: "PlayerFilters" });

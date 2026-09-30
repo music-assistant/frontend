@@ -1,3 +1,4 @@
+import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -149,10 +150,11 @@ export function useProviderContextMenu(options: UseProviderContextMenuOptions) {
       color: "error",
       hide: providerManifest.builtin,
     });
+    const position = getEventPosition(evt);
     eventbus.emit("contextmenu", {
       items: menuItems,
-      posX: (evt as PointerEvent).clientX,
-      posY: (evt as PointerEvent).clientY,
+      posX: position.x,
+      posY: position.y,
     });
   };
 

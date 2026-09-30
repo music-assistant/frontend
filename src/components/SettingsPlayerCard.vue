@@ -1,11 +1,15 @@
 <template>
   <v-card
+    v-hold="onHold"
     class="rounded-lg player-card"
     :class="{
       'player-disabled': !playerConfig.enabled,
       'player-unavailable': isUnavailable,
     }"
+    @click.capture="swallowClickAfterHold"
     @click="handleClick"
+    @click.right.prevent="handleMenu"
+    @touchstart.passive="onTouchStart"
   >
     <div class="card-content">
       <div class="card-header">
@@ -66,6 +70,7 @@
 import ProtocolChip from "@/components/ProtocolChip.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import PlayerSetupWarning from "@/components/PlayerSetupWarning.vue";
+import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { isPlayerUnavailable } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { PlayerConfig } from "@/plugins/api/interfaces";
@@ -121,6 +126,9 @@ const handleClick = () => {
 const handleMenu = (event: Event) => {
   emit("menu", event, props.playerConfig);
 };
+
+const { onHold, onTouchStart, swallowClickAfterHold } =
+  useHoldToOpenMenu(handleMenu);
 
 const handleSetup = () => {
   emit("setup", props.playerConfig);
