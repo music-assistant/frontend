@@ -2,11 +2,9 @@
   <section class="p-4">
     <SettingsHeaderCard
       v-if="config && api.providerManifests[config.domain]"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :icon="getCoreIcon(config.domain)"
       :title="getItemTitle(config)"
       :description="getItemDescription(config)"
-      :show-advanced-toggle="hasAdvancedEntries(allConfigEntries)"
       @reset-to-defaults="resetToDefaults"
     />
 
@@ -35,7 +33,6 @@
 <script setup lang="ts">
 import { Spinner } from "@/components/ui/spinner";
 import { useConfigAction } from "@/composables/useConfigAction";
-import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
 import { api } from "@/plugins/api";
 import { ConfigValueType, CoreConfig } from "@/plugins/api/interfaces";
 import {

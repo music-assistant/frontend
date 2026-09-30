@@ -276,7 +276,7 @@ describe("EditConfig", () => {
     expect(saveDisabled(wrapper)).toBe(true);
   });
 
-  it("leaves the form-wide controls to the settings screen around it", async () => {
+  it("leaves resetting to defaults to the settings screen around it", async () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING }),
     ]);
@@ -287,7 +287,6 @@ describe("EditConfig", () => {
     expect(wrapper.get('[data-testid="config-save"]').text()).toContain(
       "settings.save",
     );
-    expect(wrapper.text()).not.toContain("settings.show_advanced_settings");
     expect(wrapper.text()).not.toContain("settings.reset_to_defaults");
   });
 
@@ -416,6 +415,80 @@ describe("EditConfig", () => {
     // a form inside a dialog: nothing floats, the button follows the fields
     expect(wrapper.find(".floating-save").exists()).toBe(false);
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(true);
+  });
+
+  it.each([
+    { advanced: true, disabled: false, offered: true },
+    { advanced: false, disabled: false, offered: false },
+    { advanced: true, disabled: true, offered: false },
+  ])(
+    "offers the advanced toggle for advanced entries: $advanced, disabled: $disabled",
+    ({ advanced, disabled, offered }) => {
+      const wrapper = mountEntries(
+        [
+          entry({ key: "server", type: ConfigEntryType.STRING }),
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced }),
+        ],
+        disabled,
+      );
+
+      expect(wrapper.text()).toContain("settings.options");
+      expect(advancedToggle(wrapper).exists()).toBe(offered);
+    },
+  );
+
+  it("reveals the advanced entries from its own toggle", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+    expect(renderedKeys(wrapper)).toEqual(["server"]);
+
+    advancedToggle(wrapper).vm.$emit("update:showAdvancedSettings", true);
+    await nextTick();
+
+    expect(wrapper.emitted("update:showAdvancedSettings")).toEqual([[true]]);
+    expect(renderedKeys(wrapper)).toEqual(["server", "port"]);
+  });
+
+  it("hands the advanced state it is given to its toggle", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        showAdvancedSettings: true,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(advancedToggle(wrapper).props("showAdvancedSettings")).toBe(true);
+    expect(renderedKeys(wrapper)).toEqual(["port"]);
+  });
+
+  it("leaves out its header when the host asks", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        hideHeader: true,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(wrapper.text()).not.toContain("settings.options");
+    expect(advancedToggle(wrapper).exists()).toBe(false);
+  });
+
+  it("leaves out the card for a config with nothing to show", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING, hidden: true }),
+    ]);
+
+    expect(wrapper.findComponent({ name: "Card" }).exists()).toBe(false);
   });
 });
 
@@ -595,6 +668,10 @@ function mountEntries(
     props: { configEntries, disabled, inlineSave },
     global: { renderStubDefaultSlot: true },
   });
+}
+
+function advancedToggle(wrapper: VueWrapper) {
+  return wrapper.findComponent({ name: "AdvancedSettingsToggle" });
 }
 
 function renderedKeys(wrapper: VueWrapper) {
