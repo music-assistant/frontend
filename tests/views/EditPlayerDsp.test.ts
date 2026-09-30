@@ -9,13 +9,16 @@ import type {
 import { DSPFilterType, EventType } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import EditPlayerDsp from "@/views/settings/EditPlayerDsp.vue";
+import {
+  eventbus,
+  type DeleteConfirmationDialogEvent,
+} from "@/plugins/eventbus";
 
 const apiMock = vi.hoisted(() => ({
   applyDSPPreset: vi.fn<MusicAssistantApi["applyDSPPreset"]>(),
   getDSPConfig: vi.fn<MusicAssistantApi["getDSPConfig"]>(),
   playerDSPCallback: undefined as
-    | ((event: { data: DSPConfig }) => void)
-    | undefined,
+    ((event: { data: DSPConfig }) => void) | undefined,
   players: { "player-1": {} },
   removeDSPPreset: vi.fn<MusicAssistantApi["removeDSPPreset"]>(),
   saveDSPConfig: vi.fn<MusicAssistantApi["saveDSPConfig"]>(),
@@ -638,6 +641,49 @@ describe("EditPlayerDsp preset identity", () => {
     expect(apiMock.saveDSPConfig).not.toHaveBeenCalled();
   });
 });
+
+describe("EditPlayerDsp preset removal", () => {
+  const nativeConfirm = vi.fn();
+
+  beforeEach(() => {
+    nativeConfirm.mockReset();
+    // the test environment has no window.confirm, so a native popup would throw
+    // here; the stub turns that into a readable assertion instead
+    vi.stubGlobal("confirm", nativeConfirm);
+    vi.spyOn(eventbus, "emit");
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.mocked(eventbus.emit).mockRestore();
+  });
+
+  it("asks through the app's own dialog before removing a preset", async () => {
+    const wrapper = await mountEditor();
+
+    await wrapper.get(".preset-item button").trigger("click");
+    const request = confirmationRequest();
+
+    expect(nativeConfirm).not.toHaveBeenCalled();
+    expect(request?.message).toBe("settings.dsp.presets.remove_confirm");
+    expect(apiMock.removeDSPPreset).not.toHaveBeenCalled();
+
+    await request?.onConfirm();
+
+    expect(apiMock.removeDSPPreset).toHaveBeenCalledWith("preset-1");
+    // the trash button must not also load the preset it removes
+    expect(apiMock.applyDSPPreset).not.toHaveBeenCalled();
+  });
+});
+
+function confirmationRequest() {
+  // the emitter types its payload per event, which a call list cannot express
+  const calls = vi.mocked(eventbus.emit).mock.calls as unknown as [
+    string,
+    DeleteConfirmationDialogEvent,
+  ][];
+  return calls.find(([event]) => event === "deleteConfirmationDialog")?.[1];
+}
 
 async function mountEditor() {
   const wrapper = shallowMount(EditPlayerDsp, {

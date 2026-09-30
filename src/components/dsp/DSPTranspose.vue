@@ -1,65 +1,63 @@
 <template>
-  <div class="p-4">
-    <div class="flex items-center gap-4 pb-7">
-      <div class="relative min-w-0 flex-1 px-1">
-        <Slider
-          class="dsp-slider"
-          :model-value="[sliderValue]"
+  <div>
+    <div class="p-4">
+      <div class="flex items-center gap-4 pb-7">
+        <div class="relative min-w-0 flex-1 px-1">
+          <Slider
+            class="dsp-slider"
+            :model-value="[sliderValue]"
+            :min="MIN_SEMITONES"
+            :max="MAX_SEMITONES"
+            :step="1"
+            @update:model-value="onSlide"
+          />
+          <div
+            class="pointer-events-none absolute inset-x-1 top-full mt-2 flex justify-between text-xs text-muted-foreground"
+          >
+            <span>{{ format(MIN_SEMITONES) }}</span>
+            <span>{{ $t("settings.dsp.transpose.original_key") }}</span>
+            <span>+{{ format(MAX_SEMITONES) }}</span>
+          </div>
+        </div>
+        <Input
+          v-model="fieldValue"
+          type="number"
           :min="MIN_SEMITONES"
           :max="MAX_SEMITONES"
-          :step="1"
-          @update:model-value="onSlide"
+          step="0.001"
+          class="max-w-[100px]"
+          :aria-label="$t('settings.dsp.types.transpose')"
+          @focus="isEditing = true"
+          @blur="isEditing = false"
         />
-        <div
-          class="pointer-events-none absolute inset-x-1 top-full mt-2 flex justify-between text-xs text-muted-foreground"
-        >
-          <span>{{ format(MIN_SEMITONES) }}</span>
-          <span>{{ $t("settings.dsp.transpose.original_key") }}</span>
-          <span>+{{ format(MAX_SEMITONES) }}</span>
-        </div>
+        <span class="min-w-[90px] text-muted-foreground">
+          {{ unitLabel }}
+        </span>
       </div>
-      <Input
-        v-model="fieldValue"
-        type="number"
-        :min="MIN_SEMITONES"
-        :max="MAX_SEMITONES"
-        step="0.001"
-        class="max-w-[100px]"
-        :aria-label="$t('settings.dsp.types.transpose')"
-        @focus="isEditing = true"
-        @blur="isEditing = false"
-      />
-      <span class="min-w-[90px] text-muted-foreground">
-        {{ unitLabel }}
-      </span>
-    </div>
 
-    <div class="flex flex-wrap items-center gap-3">
-      <Button
-        variant="outline"
-        size="sm"
-        :class="isConcertPitch432 ? 'border-primary text-primary' : ''"
-        @click="setConcertPitch432"
-      >
-        {{ $t("settings.dsp.transpose.concert_pitch_432") }}
-      </Button>
-      <span class="text-xs text-muted-foreground">
-        {{ $t("settings.dsp.transpose.concert_pitch_432_hint") }}
-      </span>
+      <div class="flex flex-wrap items-center gap-3">
+        <Button
+          variant="outline"
+          size="sm"
+          :class="isConcertPitch432 ? 'border-primary text-primary' : ''"
+          @click="setConcertPitch432"
+        >
+          {{ $t("settings.dsp.transpose.concert_pitch_432") }}
+        </Button>
+        <span class="text-xs text-muted-foreground">
+          {{ $t("settings.dsp.transpose.concert_pitch_432_hint") }}
+        </span>
+      </div>
     </div>
-
-    <Alert variant="info" class="mt-4">
-      <Info />
-      <AlertDescription>
-        {{ $t("settings.dsp.transpose.help") }}
-      </AlertDescription>
-    </Alert>
-    <Alert v-if="model.semitones !== 0" variant="warning" class="mt-2">
-      <TriangleAlert />
-      <AlertDescription>
-        {{ $t("settings.dsp.transpose.cpu_hint") }}
-      </AlertDescription>
-    </Alert>
+    <DSPHelp :text="$t('settings.dsp.transpose.help')" />
+    <div v-if="model.semitones !== 0" class="px-4 pb-4">
+      <Alert variant="warning">
+        <TriangleAlert />
+        <AlertDescription>
+          {{ $t("settings.dsp.transpose.cpu_hint") }}
+        </AlertDescription>
+      </Alert>
+    </div>
   </div>
 </template>
 
@@ -70,8 +68,9 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { TransposeFilter } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Info, TriangleAlert } from "@lucide/vue";
+import { TriangleAlert } from "@lucide/vue";
 import { computed, ref } from "vue";
+import DSPHelp from "./DSPHelp.vue";
 
 const MIN_SEMITONES = -6;
 const MAX_SEMITONES = 6;

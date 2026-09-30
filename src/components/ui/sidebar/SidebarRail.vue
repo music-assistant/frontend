@@ -1,22 +1,29 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from "vue";
+import { computed, type HTMLAttributes } from "vue";
 import { cn } from "@/lib/utils";
+import { $t } from "@/plugins/i18n";
 import { useSidebar } from "./utils";
 
 const props = defineProps<{
   class?: HTMLAttributes["class"];
 }>();
 
-const { toggleSidebar } = useSidebar();
+const { toggleSidebar, state } = useSidebar();
+
+const isCollapsed = computed(() => state.value === "collapsed");
+const sidebarToggleLabel = computed(() =>
+  isCollapsed.value ? $t("sidebar.expand") : $t("sidebar.collapse"),
+);
 </script>
 
 <template>
   <button
     data-sidebar="rail"
     data-slot="sidebar-rail"
-    :aria-label="$t('sidebar.toggle')"
+    :aria-label="sidebarToggleLabel"
+    :aria-expanded="!isCollapsed"
     :tabindex="-1"
-    :title="$t('sidebar.toggle')"
+    :title="sidebarToggleLabel"
     :class="
       cn(
         'hover:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] sm:flex',

@@ -1,0 +1,143 @@
+/**
+ * Tests for the "Migrate playlist" context menu action.
+ *
+ * The action is only offered on the playlist details page (item === parentItem)
+ * for static library playlists, and only when at least one eligible destination
+ * provider exists.
+ */
+import {
+  getContextMenuItems,
+  type ContextMenuItem,
+} from "@/layouts/default/ItemContextMenu.vue";
+import {
+  MediaType,
+  ProviderFeature,
+  ProviderType,
+} from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { playlist } from "../fixtures/playlist";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+
+const { apiMock, storeMock, mockEventbusEmit } = vi.hoisted(() => ({
+  apiMock: {
+    providers: {} as Record<string, unknown>,
+    getProvider: vi.fn(),
+    getLibraryItem: vi.fn(),
+    players: {},
+  },
+  storeMock: {
+    enabledPlugins: new Set<string>(),
+  },
+  mockEventbusEmit: vi.fn(),
+}));
+
+vi.mock("@/plugins/api", () => ({ default: apiMock, api: apiMock }));
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
+vi.mock("@/plugins/eventbus", () => ({
+  eventbus: {
+    on: vi.fn(),
+    off: vi.fn(),
+    emit: mockEventbusEmit,
+  },
+}));
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+// signed in as a member unless a test says otherwise
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+
+const builtinProvider = () => ({
+  type: ProviderType.MUSIC,
+  domain: "builtin",
+  name: "Music Assistant",
+  instance_id: "builtin",
+  supported_features: [
+    ProviderFeature.PLAYLIST_CREATE,
+    ProviderFeature.PLAYLIST_TRACKS_EDIT,
+  ],
+  available: true,
+  is_streaming_provider: false,
+});
+
+const migrateAction = (items: ContextMenuItem[]): ContextMenuItem | undefined =>
+  items.find((x) => x.label === "migrate_playlist.action");
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  // the menu resolves the library counterpart before building its items
+  apiMock.getLibraryItem.mockResolvedValue(null);
+  apiMock.providers = { builtin: builtinProvider() };
+  apiMock.getProvider.mockImplementation((id: string) => apiMock.providers[id]);
+  storeMock.enabledPlugins = new Set();
+  vi.mocked(authManager.hasScope).mockImplementation(
+    scopeChecker(BUILTIN_ROLE_SCOPES.user),
+  );
+});
+
+describe("migrate playlist context menu action", () => {
+  it("is offered for a static library playlist with an eligible destination", async () => {
+    const item = playlist();
+    const items = await getContextMenuItems([item], item);
+    expect(migrateAction(items)).toBeDefined();
+  });
+
+  it("is not offered for a dynamic (smart) playlist", async () => {
+    const item = playlist({ is_dynamic: true });
+    const items = await getContextMenuItems([item], item);
+    expect(migrateAction(items)).toBeUndefined();
+  });
+
+  it("is not offered for a non-library playlist", async () => {
+    const item = playlist({ provider: "spotify" });
+    const items = await getContextMenuItems([item], item);
+    expect(migrateAction(items)).toBeUndefined();
+  });
+
+  it("is not offered from a menu that isn't the playlist's own details page", async () => {
+    const parent = playlist();
+    const otherItem = { ...playlist(), item_id: "other" };
+    const items = await getContextMenuItems([otherItem], parent);
+    expect(migrateAction(items)).toBeUndefined();
+  });
+
+  it("is not offered when there is no eligible destination provider", async () => {
+    apiMock.providers = {};
+    const item = playlist();
+    const items = await getContextMenuItems([item], item);
+    expect(migrateAction(items)).toBeUndefined();
+  });
+
+  it("is not offered for a playlist that doesn't support tracks", async () => {
+    const item = playlist({
+      supported_mediatypes: [MediaType.PODCAST_EPISODE, MediaType.AUDIOBOOK],
+    });
+    const items = await getContextMenuItems([item], item);
+    expect(migrateAction(items)).toBeUndefined();
+  });
+
+  it("emits the migrate playlist dialog event with the playlist when triggered", async () => {
+    const item = playlist();
+    const items = await getContextMenuItems([item], item);
+    const action = migrateAction(items);
+
+    await action?.action?.();
+
+    expect(mockEventbusEmit).toHaveBeenCalledWith("migratePlaylistDialog", {
+      playlist: item,
+    });
+  });
+
+  it("is not offered to a role that may not change the library", async () => {
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+    const item = playlist();
+    const items = await getContextMenuItems([item], item);
+    expect(migrateAction(items)).toBeUndefined();
+  });
+});

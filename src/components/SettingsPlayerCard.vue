@@ -21,6 +21,8 @@
           size="small"
           variant="text"
           class="menu-btn"
+          :aria-label="`${$t('more_options')}: ${playerName}`"
+          :title="`${$t('more_options')}: ${playerName}`"
           @click.stop="handleMenu"
         />
       </div>

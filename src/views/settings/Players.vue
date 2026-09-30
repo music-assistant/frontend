@@ -36,6 +36,7 @@
           :key="item.player_id"
           link
           :show-menu-btn="true"
+          :menu-button-label="`${$t('more_options')}: ${getPlayerName(item)}`"
           :class="{
             'player-disabled': !item.enabled,
             'player-unavailable': isPlayerUnavailable(
@@ -131,7 +132,7 @@
         </div>
       </div>
     </Container>
-    <div class="missing-players-hint">
+    <div v-if="canAddPlayerProviders" class="missing-players-hint">
       <v-icon icon="mdi-information-outline" size="16" class="hint-icon" />
       <i18n-t keypath="settings.missing_players_hint" tag="span" scope="global">
         <router-link
@@ -155,11 +156,11 @@ import PlayerIcon from "@/components/PlayerIcon.vue";
 import PlayerSetupWarning from "@/components/PlayerSetupWarning.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
-import {
-  getPlayerName,
-  getPlayerSettingsMenuItems,
-} from "@/helpers/player_settings_actions";
+
+import { getPlayerName } from "@/helpers/player_config";
+import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
 import { isPlayerUnavailable } from "@/helpers/players";
+
 import { isHiddenSendspinWebPlayer } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -167,7 +168,9 @@ import {
   PlayerConfig,
   PlayerType,
   ProviderFeature,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { CircleAlert, Plus } from "@lucide/vue";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
@@ -215,6 +218,10 @@ const providersWithCreateGroupSupport = computed(() => {
         : -1,
     );
 });
+// the hint leads to adding player providers, which takes config.providers.write
+const canAddPlayerProviders = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+);
 
 // methods
 const loadItems = async function () {
