@@ -201,7 +201,7 @@
           variant="ghost"
           size="icon-sm"
           :class="{ '-ml-1': showGroupControl || canPlayPause }"
-          :disabled="!player.available"
+          :disabled="isPlayerUnavailable(player)"
           :aria-label="$t('tooltip.more_options')"
           @click.stop="openPlayerMenu"
         >
@@ -239,12 +239,14 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { getSetupRequiredPlayerMenuItems } from "@/helpers/player_settings_actions";
 import {
   canEditPlayerGroup,
   getPlayerDisplayName,
   getPlayerGroupMemberCount,
   getPlayerName,
   isBuiltinPlayer,
+  isPlayerUnavailable,
 } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
 import { getMediaImageUrl } from "@/helpers/utils";
@@ -428,12 +430,14 @@ watch(
 
 function openPlayerMenu(event: Event) {
   event.stopPropagation();
-  if (!props.player.available) return;
+  if (isPlayerUnavailable(props.player)) return;
   const position = getEventPosition(event);
   eventbus.emit("contextmenu", {
-    items: getPlayerMenuItems(props.player, playerQueue.value, {
-      context: "player",
-    }),
+    items: props.player.needs_setup
+      ? getSetupRequiredPlayerMenuItems(props.player)
+      : getPlayerMenuItems(props.player, playerQueue.value, {
+          context: "player",
+        }),
     posX: position.x,
     posY: position.y,
   });

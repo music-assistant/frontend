@@ -74,6 +74,10 @@ vi.mock("@/helpers/player_menu_items", () => ({
   getPlayerMenuItems: () => [],
 }));
 
+vi.mock("@/helpers/player_settings_actions", () => ({
+  getSetupRequiredPlayerMenuItems: () => [{ label: "configure_player" }],
+}));
+
 vi.mock("@/helpers/utils", () => ({
   getMediaImageUrl: (url: string) => url,
 }));
@@ -324,11 +328,22 @@ describe("PlayerCard", () => {
       wrapper.find(".player-select-action").attributes("disabled"),
     ).toBeUndefined();
     expect(wrapper.find('[aria-label="play"]').attributes("disabled")).toBe("");
-    expect(
-      wrapper
-        .find('[aria-label="tooltip.more_options"]')
-        .attributes("disabled"),
-    ).toBe("");
+  });
+
+  it("offers the setup menu for a player that needs setup", async () => {
+    vi.clearAllMocks();
+    const wrapper = mountPlayerCard(
+      createPlayer({ available: false, needs_setup: true }),
+    );
+    const menuButton = wrapper.find('[aria-label="tooltip.more_options"]');
+
+    expect(menuButton.attributes("disabled")).toBeUndefined();
+    await menuButton.trigger("click");
+
+    expect(emitContextMenu).toHaveBeenCalledWith(
+      "contextmenu",
+      expect.objectContaining({ items: [{ label: "configure_player" }] }),
+    );
   });
 
   it("lists every player name in a manual group", () => {
