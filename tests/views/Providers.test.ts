@@ -1,6 +1,6 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { ref } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type ProviderConfig,
   ProviderFeature,
@@ -231,6 +231,11 @@ const ProviderRowStub = {
   template: `<div data-testid="provider-row">{{ name }}</div>`,
 };
 
+// a console spy has to be let go even when its test fails
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getAllUsers.mockResolvedValue([owner, member]);
@@ -376,7 +381,6 @@ describe("Providers", () => {
       "contextmenu",
       expect.anything(),
     );
-    warnSpy.mockRestore();
   });
 
   it("asks for confirmation before removing a provider from the row menu", async () => {

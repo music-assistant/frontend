@@ -1,7 +1,7 @@
 import ProviderSettingsLinks from "@/components/settings/providers/ProviderSettingsLinks.vue";
 import type { getProviderSettingsSections as readProviderSettingsSections } from "@/helpers/provider_settings_actions";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { type Player, ProviderType } from "@/plugins/api/interfaces";
+import { EventType, type Player, ProviderType } from "@/plugins/api/interfaces";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { outputProtocol } from "../../fixtures/outputProtocol";
@@ -9,18 +9,19 @@ import { playerConfig } from "../../fixtures/playerConfig";
 import { providerConfig } from "../../fixtures/providerConfig";
 import { providerInstance } from "../../fixtures/providerInstance";
 
-const { apiMock, getProviderSettingsSections, isProviderSyncing } = vi.hoisted(
-  () => ({
+const { apiMock, getProviderSettingsSections, isProviderSyncing, unsubscribe } =
+  vi.hoisted(() => ({
     apiMock: {
       getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
       getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
       players: {} as Record<string, Player>,
       startSync: vi.fn<MusicAssistantApi["startSync"]>(),
+      subscribe_multi: vi.fn<MusicAssistantApi["subscribe_multi"]>(),
     },
     getProviderSettingsSections: vi.fn<typeof readProviderSettingsSections>(),
     isProviderSyncing: vi.fn<(instanceId: string) => boolean>(),
-  }),
-);
+    unsubscribe: vi.fn(),
+  }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
@@ -41,6 +42,10 @@ const RouterLinkStub = {
 
 describe("ProviderSettingsLinks", () => {
   enableAutoUnmount(afterEach);
+  // a console spy has to be let go even when its test fails
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -52,6 +57,7 @@ describe("ProviderSettingsLinks", () => {
     apiMock.getPlayerConfigs.mockResolvedValue([]);
     apiMock.players = {};
     apiMock.startSync.mockResolvedValue([]);
+    apiMock.subscribe_multi.mockReturnValue(unsubscribe);
     getProviderSettingsSections.mockReturnValue({
       access: true,
       players: true,
@@ -143,9 +149,7 @@ describe("ProviderSettingsLinks", () => {
 
     it("leaves the count out when the players do not load", async () => {
       apiMock.getPlayerConfigs.mockRejectedValue(new Error("refused"));
-      const consoleError = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      vi.spyOn(console, "error").mockImplementation(() => {});
 
       const wrapper = mountLinks();
       await flushPromises();
@@ -156,7 +160,33 @@ describe("ProviderSettingsLinks", () => {
           .find("span")
           .exists(),
       ).toBe(false);
-      consoleError.mockRestore();
+    });
+
+    it("follows the players the provider discovers or changes", async () => {
+      const wrapper = mountLinks();
+      await flushPromises();
+      expect(playersState(wrapper)).toBe("0");
+
+      apiMock.getPlayerConfigs.mockResolvedValue([
+        playerConfig({ player_id: "own", provider: "sonos--1" }),
+      ]);
+      playersChanged();
+      await flushPromises();
+
+      expect(apiMock.subscribe_multi).toHaveBeenCalledWith(
+        [EventType.PLAYER_ADDED, EventType.PLAYER_CONFIG_UPDATED],
+        expect.any(Function),
+      );
+      expect(playersState(wrapper)).toBe("1");
+    });
+
+    it("stops following the players once the page closes", async () => {
+      const wrapper = mountLinks();
+      await flushPromises();
+
+      wrapper.unmount();
+
+      expect(unsubscribe).toHaveBeenCalledOnce();
     });
 
     it("asks nothing of the server for a provider without players", async () => {
@@ -170,6 +200,7 @@ describe("ProviderSettingsLinks", () => {
       await flushPromises();
 
       expect(apiMock.getPlayerConfigs).not.toHaveBeenCalled();
+      expect(apiMock.subscribe_multi).not.toHaveBeenCalled();
     });
   });
 
@@ -187,6 +218,23 @@ describe("ProviderSettingsLinks", () => {
       await flushPromises();
 
       expect(apiMock.startSync).toHaveBeenCalledWith(undefined, ["sonos--1"]);
+    });
+
+    it("hands a failing sync to the app error handling", async () => {
+      const failure = new Error("refused");
+      apiMock.startSync.mockRejectedValue(failure);
+      const errorHandler = vi.fn();
+
+      await mountLinks({ errorHandler })
+        .get('[data-testid="provider-settings-link-sync"]')
+        .trigger("click");
+      await flushPromises();
+
+      expect(errorHandler).toHaveBeenCalledWith(
+        failure,
+        expect.anything(),
+        expect.anything(),
+      );
     });
 
     it("shows a sync that is running and does not start another", async () => {
@@ -217,16 +265,26 @@ function playersState(wrapper: LinksWrapper): string {
     .text();
 }
 
-function mountLinks() {
+function mountLinks({ errorHandler }: { errorHandler?: () => void } = {}) {
   return mount(ProviderSettingsLinks, {
     props: {
       config: providerConfig({ domain: "sonos", type: ProviderType.PLAYER }),
       accessSummary: "Marcel · Only me",
     },
     global: {
+      config: { errorHandler },
       stubs: { RouterLink: RouterLinkStub },
     },
   });
+}
+
+/**
+ * Deliver the player change the players row keeps up with.
+ */
+function playersChanged() {
+  for (const [, callback] of apiMock.subscribe_multi.mock.calls) {
+    callback();
+  }
 }
 
 /**

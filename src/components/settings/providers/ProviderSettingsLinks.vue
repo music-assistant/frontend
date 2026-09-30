@@ -49,11 +49,15 @@ import {
   getProviderSettingsSections,
 } from "@/helpers/provider_settings_actions";
 import { api } from "@/plugins/api";
-import type { PlayerConfig, ProviderConfig } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  type PlayerConfig,
+  type ProviderConfig,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { ChevronRight, KeyRound, RefreshCw, Speaker } from "@lucide/vue";
 import type { Component } from "vue";
-import { computed, markRaw, ref, watch } from "vue";
+import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 
 /**
@@ -78,7 +82,7 @@ interface SettingsRow {
   state?: string;
   // a navigation; a row without one acts on the spot
   to?: RouteLocationRaw;
-  action?: () => void;
+  action?: () => unknown;
   busy?: boolean;
 }
 
@@ -100,14 +104,24 @@ const playerCount = computed(
 // watchers
 
 // only a player provider has players to count, and it only counts once its
-// instance is loaded
+// instance is loaded; a provider that was just enabled discovers its players
+// after that, so the count follows them
+let unsubPlayersChanged: (() => void) | undefined;
 watch(
   () => sections.value.players,
   (showsPlayers) => {
-    if (showsPlayers) void loadPlayerConfigs();
+    unsubPlayersChanged?.();
+    unsubPlayersChanged = undefined;
+    if (!showsPlayers) return;
+    void loadPlayerConfigs();
+    unsubPlayersChanged = api.subscribe_multi(
+      [EventType.PLAYER_ADDED, EventType.PLAYER_CONFIG_UPDATED],
+      () => void loadPlayerConfigs(),
+    );
   },
   { immediate: true },
 );
+onBeforeUnmount(() => unsubPlayersChanged?.());
 
 const rows = computed(() => {
   const instanceId = props.config.instance_id;
@@ -141,7 +155,7 @@ const rows = computed(() => {
       description: $t("settings.library_sync_description"),
       state: syncing ? $t("settings.sync_in_progress") : $t("settings.sync"),
       busy: syncing,
-      action: () => void api.startSync(undefined, [instanceId]),
+      action: () => api.startSync(undefined, [instanceId]),
     });
   }
   return items;

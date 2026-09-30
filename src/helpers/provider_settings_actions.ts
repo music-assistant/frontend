@@ -14,7 +14,9 @@ import {
   type ProviderConfig,
   ProviderFeature,
   ProviderType,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import {
   BookOpen,
@@ -52,6 +54,7 @@ export const getProviderSettingsSections = (config: ProviderConfig) => {
     sync:
       config.type === ProviderType.MUSIC &&
       managesAllSources() &&
+      authManager.hasScope(Scope.LIBRARY_MANAGE) &&
       !!provider?.available,
     players: config.type === ProviderType.PLAYER && !!provider,
   };
@@ -122,7 +125,7 @@ export const getProviderSettingsMenuItems = (
       },
       {
         label: "settings.sync",
-        action: () => void api.startSync(undefined, [instanceId]),
+        action: () => api.startSync(undefined, [instanceId]),
         icon: markRaw(RefreshCw),
         hide: !sections.sync,
       },
@@ -148,7 +151,8 @@ export const getProviderSettingsMenuItems = (
   }
   if (
     provider?.available &&
-    provider.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER)
+    provider.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER) &&
+    authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)
   ) {
     menuItems.push({
       label: "settings.add_group_player",

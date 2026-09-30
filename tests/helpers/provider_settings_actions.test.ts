@@ -11,12 +11,13 @@ import {
   ProviderFeature,
   type ProviderInstance,
   ProviderType,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { providerConfig } from "../fixtures/providerConfig";
 
-const { apiMock, openLinkInNewTab, permissionsMock, routerMock } = vi.hoisted(
-  () => ({
+const { apiMock, hasScope, openLinkInNewTab, permissionsMock, routerMock } =
+  vi.hoisted(() => ({
     apiMock: {
       getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
       providerManifests: {} as Record<string, TestProviderManifest>,
@@ -30,8 +31,8 @@ const { apiMock, openLinkInNewTab, permissionsMock, routerMock } = vi.hoisted(
       managesAllSources: vi.fn<() => boolean>(),
     },
     routerMock: { push: vi.fn() },
-  }),
-);
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
+  }));
 
 interface TestProviderManifest {
   allow_disable: boolean;
@@ -41,6 +42,7 @@ interface TestProviderManifest {
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/router", () => ({ default: routerMock }));
+vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
 vi.mock("@/helpers/utils", () => ({ openLinkInNewTab }));
 // the permission rules are covered where they live
 vi.mock("@/helpers/provider_permissions", () => permissionsMock);
@@ -57,6 +59,7 @@ beforeEach(() => {
   permissionsMock.canReconfigureSource.mockReturnValue(false);
   permissionsMock.canToggleSource.mockReturnValue(true);
   permissionsMock.managesAllSources.mockReturnValue(true);
+  hasScope.mockReturnValue(true);
 });
 
 describe("menu item order", () => {
@@ -203,7 +206,8 @@ describe("sync item", () => {
     );
 
     expect(findItem(items, "settings.sync").hide).toBe(false);
-    findItem(items, "settings.sync").action?.();
+    // the menu handles a failing sync, so the action hands it the command
+    expect(findItem(items, "settings.sync").action?.()).toBeInstanceOf(Promise);
     expect(apiMock.startSync).toHaveBeenCalledWith(undefined, ["spotify--1"]);
   });
 
@@ -274,6 +278,25 @@ describe("player extras", () => {
     expect(routerMock.push).toHaveBeenCalledWith("/settings/addgroup/sonos--1");
   });
 
+  it("leaves adding a group player to a role that may change player settings", () => {
+    hasScope.mockImplementation(
+      (scope) => scope !== Scope.CONFIG_PLAYERS_WRITE,
+    );
+    apiMock.getProvider.mockReturnValue(
+      providerInstance({
+        instance_id: "sonos--1",
+        supported_features: [ProviderFeature.CREATE_GROUP_PLAYER],
+        type: ProviderType.PLAYER,
+      }),
+    );
+
+    const labels = labelsOf(
+      listMenu(providerConfig({ domain: "sonos", type: ProviderType.PLAYER })),
+    );
+
+    expect(labels).not.toContain("settings.add_group_player");
+  });
+
   it("omits both extras without a running provider instance", () => {
     const labels = labelsOf(
       listMenu(providerConfig({ domain: "sonos", type: ProviderType.PLAYER })),
@@ -342,14 +365,27 @@ describe("getProviderSettingsSections", () => {
   });
 
   it.each<
-    [string, { managesAll?: boolean; available?: boolean; type?: ProviderType }]
+    [
+      string,
+      {
+        managesAll?: boolean;
+        libraryManage?: boolean;
+        available?: boolean;
+        type?: ProviderType;
+      },
+    ]
   >([
     ["a member", { managesAll: false }],
+    ["a role that may not manage the library", { libraryManage: false }],
     ["an unavailable source", { available: false }],
     ["a source that is not a music source", { type: ProviderType.PLAYER }],
   ])("offers no library sync to %s", (_label, overrides) => {
     permissionsMock.managesAllSources.mockReturnValue(
       overrides.managesAll ?? true,
+    );
+    hasScope.mockImplementation(
+      (scope) =>
+        scope !== Scope.LIBRARY_MANAGE || (overrides.libraryManage ?? true),
     );
     apiMock.getProvider.mockReturnValue(
       providerInstance({ available: overrides.available ?? true }),
