@@ -10,6 +10,7 @@ const SlotStub = {
 const headerStubs = {
   Button: SlotStub,
   Card: SlotStub,
+  CardContent: SlotStub,
   CardDescription: SlotStub,
   CardHeader: SlotStub,
   CardTitle: SlotStub,
@@ -35,6 +36,23 @@ describe("SettingsHeaderCard", () => {
       .trigger("click");
 
     expect(wrapper.emitted("resetToDefaults")).toHaveLength(1);
+  });
+
+  it("links the documentation it is given", () => {
+    const link = mountHeader({
+      documentationUrl: "https://music-assistant.io/settings/core/",
+    }).get('[data-testid="settings-documentation"]');
+
+    expect(link.attributes("href")).toBe(
+      "https://music-assistant.io/settings/core/",
+    );
+    expect(link.attributes("target")).toBe("_blank");
+  });
+
+  it("leaves out the documentation row without a link", () => {
+    expect(
+      mountHeader().find('[data-testid="settings-documentation"]').exists(),
+    ).toBe(false);
   });
 });
 

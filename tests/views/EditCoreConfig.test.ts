@@ -14,6 +14,7 @@ const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
         codeowners: [],
         credits: [],
         description: "Cache controller",
+        documentation: undefined as string | undefined,
         has_setup_flow: false,
         name: "Cache",
       },
@@ -35,6 +36,7 @@ vi.mock("@/plugins/api", () => ({
 }));
 
 vi.mock("@/helpers/utils", () => ({
+  getExternalLinkUrl: (url?: string | null) => url ?? undefined,
   openActionUrlEntries: <T>(entries: T) => entries,
 }));
 
@@ -108,6 +110,32 @@ describe("EditCoreConfig", () => {
       false,
     );
   });
+
+  it.each(["https://music-assistant.io/settings/core/#cache", undefined])(
+    "links the documentation the manifest names: %s",
+    async (documentation) => {
+      apiMock.getCoreConfig.mockResolvedValueOnce(coreConfig());
+      apiMock.providerManifests.cache.documentation = documentation;
+
+      const wrapper = shallowMount(EditCoreConfig, {
+        props: {
+          domain: "cache",
+        },
+        global: {
+          mocks: {
+            $t: (key: string) => key,
+          },
+        },
+      });
+      await flushPromises();
+
+      expect(
+        wrapper
+          .findComponent({ name: "SettingsHeaderCard" })
+          .props("documentationUrl"),
+      ).toBe(documentation);
+    },
+  );
 
   it("resets the form to its defaults from the header menu", async () => {
     apiMock.getCoreConfig.mockResolvedValueOnce(coreConfig());
