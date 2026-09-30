@@ -507,12 +507,13 @@ describe("EditConfig", () => {
     expect(wrapper.findComponent({ name: "Card" }).exists()).toBe(false);
   });
 
-  it("leaves out the card for a config with nothing to show", () => {
+  it("leaves out the card and its save action for a config with nothing to show", () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING, hidden: true }),
     ]);
 
     expect(wrapper.findComponent({ name: "Card" }).exists()).toBe(false);
+    expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
   });
 });
 
