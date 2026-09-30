@@ -39,6 +39,7 @@ import {
   EventType,
   Genre,
   MediaType,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
@@ -99,7 +100,7 @@ const sections = [
 ];
 
 const menuItems = computed<ToolBarMenuItem[]>(() => {
-  if (!authManager.isAdmin()) return [];
+  if (!authManager.hasScope(Scope.LIBRARY_MANAGE)) return [];
   return [
     {
       label: "add_genre",

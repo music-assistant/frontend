@@ -55,7 +55,11 @@
             <div class="group-popout-label">
               {{ truncateString(child.name, 20) }}
             </div>
-            <PlayerVolume :player="child" width="100%" />
+            <PlayerVolume
+              :player="child"
+              width="100%"
+              :allow-wheel="allowWheel"
+            />
           </div>
           <!-- Group volume at bottom with divider -->
           <div class="group-popout-divider"></div>
@@ -65,6 +69,7 @@
               :prefer-group-volume="true"
               :enable-popout="false"
               width="100%"
+              :allow-wheel="allowWheel"
             />
           </div>
         </div>
@@ -109,10 +114,12 @@
         @touchcancel.stop
       >
         <button
+          type="button"
           class="volume-icon-btn volume-slot-item"
           :class="{ 'is-hidden': showStepButtons }"
           :inert="showStepButtons"
           :disabled="muteDisabled"
+          :aria-label="isMuted ? $t('tooltip.unmute') : $t('tooltip.mute')"
           @click.stop="onMuteToggle"
         >
           <component :is="volumeIconComponent" :size="iconSize" />
@@ -1128,8 +1135,8 @@ const onMouseDown = (event: MouseEvent) => {
 };
 
 const onWheel = (event: WheelEvent) => {
-  // Only claim the wheel when it changes volume, so sliders inside a scrollable
-  // container (the group popout) still scroll it
+  // Only claim the wheel when it changes volume; off the sliders it still
+  // scrolls a scrollable container such as the group popout
   if (!props.allowWheel || isSliderDisabled.value) return;
   event.preventDefault();
 

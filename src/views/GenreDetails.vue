@@ -5,7 +5,7 @@
         <Button
           variant="ghost"
           size="icon"
-          :title="$t('tooltip.toggle_view_mode')"
+          :title="viewModeMenuLabel"
           @click="(e: MouseEvent) => openViewModeMenu(e)"
         >
           <v-icon :icon="viewModeIcon" />
@@ -165,7 +165,7 @@
     </template>
 
     <GenreAliasManager
-      v-if="itemDetails && isAdmin"
+      v-if="itemDetails && canManageLibrary"
       :genre="itemDetails"
       :existing-genre-names="existingGenreNames"
       @reload="loadItemDetails"
@@ -183,6 +183,7 @@ import { Button } from "@/components/ui/button";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
 import { panelViewItemResponsive } from "@/helpers/utils";
+import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
@@ -192,6 +193,7 @@ import {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
@@ -228,7 +230,9 @@ const existingGenreNames = ref<Set<string>>(new Set());
 const { t } = useI18n();
 const router = useRouter();
 
-const isAdmin = computed(() => authManager.isAdmin());
+const canManageLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_MANAGE),
+);
 
 type GenreViewMode = "discovery" | "list" | "panel" | "panel_compact";
 
@@ -261,6 +265,14 @@ const viewModeIcon = computed(() => {
   if (viewMode.value === "panel_compact") return "mdi-view-comfy";
   return "mdi-view-list";
 });
+
+const getViewModeLabel = function (mode: GenreViewMode) {
+  return t(`view.${mode}`);
+};
+
+const viewModeMenuLabel = computed(() =>
+  t("tooltip.view_mode_current", [getViewModeLabel(viewMode.value)]),
+);
 
 const openViewModeMenu = (e: MouseEvent) => {
   eventbus.emit("contextmenu", {
@@ -480,11 +492,21 @@ onMounted(() => {
     (evt: EventMessage) => {
       const updatedItem = evt.data as MediaItemType;
       if (itemDetails.value?.uri == updatedItem.uri) {
-        itemDetails.value = updatedItem as Genre;
+        itemDetails.value = keepOwnFavorite(
+          updatedItem,
+          itemDetails.value,
+        ) as Genre;
       }
     },
   );
   onBeforeUnmount(unsub);
+
+  // the user's own like or dislike, wherever they made it
+  const unsubFavorite = subscribeOwnFavorites((update) => {
+    const item = itemDetails.value;
+    if (item?.uri == update.uri) item.favorite = update.favorite;
+  });
+  onBeforeUnmount(unsubFavorite);
 });
 </script>
 

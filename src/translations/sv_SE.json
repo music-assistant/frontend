@@ -59,7 +59,8 @@
         "display": "Skärm",
         "visualizer": "Visualisera",
         "light": "Ljus",
-        "unknown": "Okänd"
+        "unknown": "Okänd",
+        "source": "Ljudingång"
     },
     "players": "Spelare",
     "playlist": "Spellista",
@@ -83,29 +84,15 @@
     "search": "Sök",
     "settings": {
         "add_new": "Lägg till ny",
-        "add_provider": "Lägg till en ny leverantör",
-        "advanced_settings": "Avancerade inställningar",
-        "check_docs": "Kontrollera dokumentationen",
-        "config_player": "Konfigurera spelare: {0}",
         "configure": "Konfigurera",
         "delete": "Radera",
         "disable": "Inaktivera",
         "documentation": "Dokumentation",
         "enable": "Aktivera",
         "enable_player": "Aktivera denna spelare",
-        "enable_provider": "Aktivera denna leverantören",
-        "enabled": "Aktivera",
         "invalid_input": "Inmatningen är ogiltig",
         "metadataproviders": "Leverantörer av metadata",
-        "musicproviders": "Musikleverantörer",
-        "need_help_setup_provider": "Behöver du hjälp med att konfigurera denna leverantör?",
-        "no_providers": "Inga musikleverantörer konfigurerade",
-        "no_providers_detail": "Starta din Music Assistant upplevelse genom att lägga till dina musikleverantörer nedan.",
-        "not_loaded": "Leverantören är (ännu) inte laddad",
-        "player_address": "Adress",
         "player_disabled": "Den här spelaren är inaktiverad",
-        "player_id": "Spelar-ID",
-        "player_model": "Modell",
         "player_name": "Anpassat spelarnamn",
         "player_not_available": "Denna spelare är för närvarande inte (ännu) tillgänglig",
         "player_provider": "Leverantör",
@@ -113,21 +100,15 @@
         "player_type_label": "Typ av spelare",
         "playerproviders": "Leverantörer av spelare",
         "players": "Spelare",
-        "pluginproviders": "Leverantörer av plugin-program",
         "provider_disabled": "Denna leverantören är inaktiverad",
         "provider_name": "Anpassat namn för denna leverantören",
-        "providers": "Leverantörer",
         "reload": "Ladda om",
         "save": "Spara",
         "settings": "Inställningar",
-        "setup_provider": "Ställ in leverantör: {0}",
         "sync": "Synkronisera nu",
         "sync_running": "Denna leverantör synkroniseras nu",
-        "core_modules": "Kärnmoduler",
         "server_info": "Serverinformation",
-        "server_id": "Server-ID",
         "server_version": "Serverversion",
-        "server_base_url": "Bas-URL",
         "server_as_addon": "Home Assistant tillägg",
         "artists_in_library": "Artister i biblioteket",
         "albums_in_library": "Album i biblioteket",
@@ -135,8 +116,6 @@
         "playlists_in_library": "Spellistor i biblioteket",
         "radio_in_library": "Radio i biblioteket",
         "download_log": "Ladda ner loggfil",
-        "edit_group_members": "Redigera gruppmedlemmar",
-        "add_new_provider_button": "Lägg till {0} leverantör",
         "add_group_player": "Lägg till gruppspelare",
         "group_members": "Gruppmedlemmar",
         "default": "standard",
@@ -182,10 +161,6 @@
                 "bg_BG": "Bulgariska"
             }
         },
-        "no_music_providers": "Inga musikleverantörer har konfigurerats",
-        "no_music_providers_detail": "Börja din upplevelse av Music Assistant genom att lägga till dina musikleverantörer.",
-        "no_player_providers": "Inga spelarleverantörer konfigurerade",
-        "no_player_providers_detail": "Konfigurera spelarleverantörer för att välja enheter där Music Assistent kan spela upp din musik.",
         "dynamic_members": {
             "label": "Dynamiska gruppmedlemmar",
             "description": "Tillåt medlemmar att (tillfälligt) gå med i\/lämna gruppen dynamiskt, så att gruppen mer eller mindre beter sig på samma sätt som att manuellt synkronisera spelare tillsammans, med den största skillnaden att gruppspelaren kommer att hålla kön."
@@ -197,8 +172,7 @@
             "output": "Utgång",
             "filter": {
                 "add": "Lägg till filter",
-                "type": "Typ av filter",
-                "new": "Ny {type}"
+                "type": "Typ av filter"
             },
             "move_up": "Flytta upp",
             "move_down": "Flytta ner",
@@ -237,7 +211,7 @@
             },
             "parameter": {
                 "frequency": "Frekvens",
-                "gain": "Få",
+                "gain": "Förstärkning",
                 "q_factor": "Q Faktor",
                 "balance": "Balans"
             },
@@ -288,10 +262,10 @@
                 "help": "Höjer eller sänker nivån på allt som passerar genom denna punkt i kedjan."
             },
             "balance": {
-                "help": "Flyttar ljudet mot vänster eller höger högtalare. Gäller endast stereoljud."
+                "help": "Flyttar ljudet mot vänster eller höger högtalare."
             },
             "stereo_width": {
-                "help": "Justerar stereobildens bredd. Vänster om mitten smalnar av mot mono, höger breddar ljudet.",
+                "help": "Justerar stereobildens bredd. Vänster om mitten smalnar av mot mono, höger breddar ljudet. Gäller endast stereoljud.",
                 "clip_hint": "Att bredda filtret bortom originalet kan höja toppar och orsaka klippning. Överväg att lägga till en limiter efter det här filtret.",
                 "scale": {
                     "mono": "Mono",
@@ -300,7 +274,7 @@
                 }
             },
             "crossfeed": {
-                "help": "Gör att hörlurslyssning känns mer naturligt genom att försiktigt blanda vänster och höger kanal, ungefär som att lyssna på högtalare.",
+                "help": "Gör att hörlurslyssning känns mer naturligt genom att försiktigt blanda vänster och höger kanal, ungefär som att lyssna på högtalare. Gäller endast stereoljud.",
                 "presets": {
                     "low": "Låg",
                     "medium": "Medium",
@@ -377,15 +351,7 @@
             "label": "Den här grupptypen stöder inte DSP vid uppspelning till flera enheter."
         },
         "add_group_player_desc_universal": "Genom att skapa en universell spelargrupp kan du gruppera spelare från olika leverantörer\/ekosystem. Detta kommer att distribuera samma ljud till alla medlemsspelare (men inte synkroniserat).",
-        "edit_provider": "Redigera leverantör: {0}",
-        "metadata": "Metadata",
-        "metadataprovider": "Metadataleverantör",
-        "music": "Musik",
-        "musicprovider": "Musikleverantör",
-        "player": "Spelare",
         "playerprovider": "Spelarleverantör",
-        "plugin": "Plugin",
-        "pluginprovider": "Plugin leverantör",
         "providers_total": "{count} totalt leverantör | {count} totalt antal leverantörer",
         "stage": {
             "label": "Etapp",
@@ -402,11 +368,8 @@
             "label": "Tvinga fram mobil layout",
             "description": "Hantera dina musikkällor, spelarleverantörer och plugin program"
         },
-        "providers_description": "Hantera dina musikkällor, spelarleverantörer och plugin program",
         "players_description": "Konfigurera och hantera dina ljudutgångsenheter",
         "frontend_description": "Anpassa användargränssnittets tema och utseende",
-        "provider_type": "Typ",
-        "onboarding_title": "Välkommen till Music Assistant!",
         "profile_description": "Hantera dina personliga kontoinställningar och preferenser",
         "users": "Användare",
         "users_description": "Hantera användarkonton, roller och behörigheter",
@@ -416,7 +379,6 @@
         "about_description": "Versionsinformation, medverkande och mer",
         "auto_refresh_log": "Automatisk uppdatering",
         "log_truncated": "Visar sista {0} rader. Ladda ner hela loggfilen för fullständig historik.",
-        "version_info": "Versionsinformation",
         "library_stats": "Biblioteksstatistik",
         "links": "Länkar",
         "changelog": "Ändringslogg",
@@ -424,7 +386,6 @@
         "bug_reports": "Felrapporter",
         "discussion_forums": "Diskussionsforum",
         "license": "Licens",
-        "open_home_foundation": "Open Home Foundation",
         "proud_part_of": "Stolt del av",
         "core_module": {
             "cache": {
@@ -470,7 +431,6 @@
         "remote_access_feature_no_port_forwarding": "Ingen port vidarebefordran eller VPN krävs",
         "remote_access_mode_optimized": "Optimerat läge (HA Cloud)",
         "remote_access_mode_basic": "Körs i grundläge",
-        "remote_access_mode_optimized_description": "Använder STUN\/TURN servrar från Home Assistant Cloud för optimal prestanda. Fungerar tillförlitligt i alla nätverkskonfigurationer.",
         "remote_access_mode_basic_description": "Använder publika STUN servrar. Detta kanske inte fungerar i komplexa nätverkskonfigurationer. Uppgradera till Home Assistant Cloud för bästa möjliga upplevelse.",
         "remote_access_upgrade_to_optimized": "Uppgradera till Home Assistant Cloud",
         "remote_access_status": "Status för fjärråtkomst",
@@ -501,8 +461,6 @@
         "remote_access_protocol_optimized": "WebRTC med optimerade STUN\/TURN servrar från Home Assistant Cloud (fungerar i alla nätverkskonfigurationer).",
         "remote_access_encryption_description": "End-to-end-kryptering med DTLS-SRTP säkerställer att dina data förblir privata och säkra.",
         "frontend": "Gränssnitt",
-        "players_count": "{0} spelare{1}",
-        "one_player": "1 spelare",
         "view_players": "Visa spelare",
         "players_total": "{count} totalt spelare | {count} totalt antal spelare",
         "api_docs": "API Dokumentation",
@@ -519,14 +477,6 @@
             "volume_control": "Volymkontroll",
             "audiobooks": "Ljudböcker"
         },
-        "onboarding_subtitle": "Nu kommer vi igång genom att ansluta dina musikkällor och ljudenheter.",
-        "onboarding_music_title": "Musik",
-        "onboarding_music_desc": "Anslut dina streamingtjänster som Spotify, Tidal eller ditt lokala musikbibliotek.",
-        "onboarding_add_music": "Lägg till musik",
-        "onboarding_player_title": "Spelare",
-        "onboarding_player_desc": "Anslut dina högtalare och enheter som Sonos, Chromecast eller AirPlay.",
-        "onboarding_add_player": "Lägg till spelare",
-        "onboarding_footer": "Du kan alltid lägga till fler leverantörer senare från den här inställningssidan.",
         "remote_access_qr_code": "QR kod",
         "remote_access_qr_code_description": "Skanna med din telefonkamera för att ansluta direkt.",
         "reset_to_defaults": "Återställ till standardinställningarna",
@@ -557,7 +507,6 @@
             }
         },
         "settings_saved": "Inställningarna har sparats",
-        "protocol_disabled_message": "Aktivera det här protokollet för att konfigurera dess inställningar",
         "protocol_no_settings": "Detta utdataprotokoll har ingen ytterligare konfiguration",
         "protocol_no_settings_with_advanced": "Inga inställningar syns. Aktivera avancerade inställningar för att se fler konfigurationsalternativ.",
         "show_advanced_settings": "Visa avancerade inställningar",
@@ -584,21 +533,6 @@
         "restore_all_present": "Alla standardgenrer finns redan.",
         "full_restore_success": "Fullständig återställning klar. {0} standardgenre (r) återställd (a).",
         "genre_statistics": "Genre biblioteksadministration",
-        "total_genres": "Totalt antal genrer",
-        "view_all_genres": "Visa alla genrer",
-        "background_scanner": "Bakgrundsskanning",
-        "background_scanner_description": "Mappar automatiskt spår, album och artister till genrer.",
-        "scanner_status": "Skanner status",
-        "scanner_running": "Pågående...",
-        "scanner_idle": "På tomgång",
-        "last_scan": "Senaste skanning",
-        "last_scan_mapped": "Kartlagda objekt (Senaste Skanning)",
-        "scan_now": "Skanna nu",
-        "scan_triggered": "Genreskanningen har startat.",
-        "scan_already_running": "Genreskanning pågår redan.",
-        "scan_never": "Aldrig",
-        "scanner_status_failed": "Misslyckades med att hämta skanner status",
-        "scan_trigger_failed": "Misslyckades med att utlösa genreskanning",
         "restore_defaults_failed": "Misslyckades med att återställa standardinställningarna för genren",
         "full_restore_failed": "Misslyckades med att utföra fullständig genreåterställning",
         "error_loading_genres": "Fel vid inläsning av genrer",
@@ -614,29 +548,18 @@
         "metadata_providers_description": "Hantera metadataleverantörer för illustrationer och ytterligare information",
         "plugin_providers_description": "Hantera plugin program som utökar musikassistentens funktionalitet",
         "restore_genres": "Återställ genrer",
-        "scan_ago": "{0} sedan",
         "genre_statistics_description": "Bläddra bland och filtrera alla genrer i ditt bibliotek. Genrer kan exkluderas globalt och återställas.",
-        "excluded_genres": "Uteslutna genrer",
-        "excluded_genres_description": "Genrer som listas här är globalt exkluderade från ditt bibliotek och kommer inte att visas i några vyer.",
         "genre_table_rows_per_page": "Rader per sida",
-        "genre_table_page_info": "{0}–{1} av {2}",
         "missing_players_hint": "Saknade spelare? {0}",
         "add_player_providers": "Lägg till fler spelarleverantörer",
         "add_audio_analysis_provider": "Lägg till en leverantör för ljudanalys",
         "audio_analysis_providers": "Ljudanalys",
         "audio_analysis_providers_description": "Hantera leverantörer som analyserar ditt ljud",
         "audio_analysis": "Ljudanalys",
-        "sendspin_static_delay": {
-            "label": "Statisk uppspelningsfördröjning (ms)",
-            "description": "Offset i millisekunder för att hålla den här spelaren synkroniserad med andra spelare. Öka om ljudet spelas upp för sent, till exempel för att kompensera för latens från en förstärkare, aktiva högtalare eller operativsystemet."
-        },
         "audio_analysis_coverage": {
             "title": "Ljudanalysbevakning",
-            "col_provider": "Leverantör",
-            "col_coverage": "Bevakning",
             "col_pending": "I avvaktan på",
             "col_stale": "Gammal",
-            "col_version": "Version",
             "unavailable": "inte tillgänglig",
             "none": "—"
         },
@@ -683,9 +606,7 @@
         "queue_global_settings_link": "Öppna globala kö inställningar",
         "protocol_provider_unavailable": "Leverantören för detta utdataprotokoll är för närvarande inte tillgänglig.",
         "protocol_multi_info": "Den här spelaren stöder flera utdataprotokoll. Music Assistant kombinerar dem till en enda spelare. Välj ett protokoll nedan för att konfigurera hur det används.",
-        "protocol_enable_label": "Aktivera utdataprotokoll",
         "protocol_configure_title": "Konfigurera {name}",
-        "protocol_configure_label": "Konfigurera utdataprotokoll",
         "protocol_configure_title_via": "Konfigurera {name} (över {base})",
         "show_waveform": {
             "label": "Föredragen vågforms förloppsindikator",
@@ -717,7 +638,9 @@
             "external_default_text": "Ett nytt webbläsarfönster öppnas så att du kan logga in och auktorisera Musikassistenten. Kom tillbaka hit när du är klar – dialogrutan fortsätter automatiskt.",
             "external_host": "Öppnar {0}",
             "session_ended_title": "Installationssessionen avslutad",
-            "session_ended_text": "Installationssessionen avslutades – den kan ha slutförts. Kontrollera dina leverantörer eller spelare för att bekräfta."
+            "session_ended_text": "Installationssessionen avslutades – den kan ha slutförts. Kontrollera dina leverantörer eller spelare för att bekräfta.",
+            "setup_title": "Sätt upp {0}",
+            "reconfigure_title": "Konfigurera om {0}"
         },
         "options": "Alternativ",
         "add_group_player_desc": "Skapa en permanent spelargrupp med {0} spelare. När du spelar i den här spelargruppen synkroniseras medlemsspelarna automatiskt.",
@@ -753,10 +676,8 @@
         "provider_status_unknown": "Okänd",
         "player_saved": "Spelarinställningar sparade",
         "provider_settings": "{name} leverantörsinställningar",
-        "reload_provider": "Ladda om leverantören",
         "protocol_native_badge": "Infödd",
         "visualizer_description": "Kvalitet, förinställningar och favoriter för MilkDrop musikvisualiseraren",
-        "visualizer": "Visualiserare",
         "visualizer_enabled": {
             "label": "MilkDrop visualiserare",
             "description": "Visa en MilkDrop-visualisering bakom helskärmsspelaren, som reagerar live på musiken. Varje spelare kan åsidosätta detta från sin helskärmsmeny. Vågformen kopplas från Sendspin-strömmen, så den erbjuds endast för spelare med en Sendspin-utgång."
@@ -795,7 +716,60 @@
         "audiobook_chapter_progress": {
             "label": "Visa förloppet i ljudbokskapitlet",
             "description": "Visa förfluten och återstående tid för det aktuella ljudbokskapitlet istället för hela ljudboken."
-        }
+        },
+        "provider_status_retired": "Pensionerad",
+        "player_status": {
+            "available": "Tillgänglig",
+            "needs_setup": "Behöver konfigureras",
+            "unavailable": "Inte tillgänglig",
+            "disabled": "Inaktiverad"
+        },
+        "player_status_label": "Status",
+        "server_name": "Servernamn",
+        "server_internal_url": "Intern URL",
+        "server_external_url": "Extern URL",
+        "server_remote_access": "Fjärråtkomst",
+        "audio_analysis_status_hint": "Se hur analysen fortskrider för varje leverantör, samt eventuella fel, på statussidan.",
+        "audio_analysis_status_link": "Öppna status för ljudanalys",
+        "music_sources_empty_title": "Inga musikkällor ännu",
+        "music_sources_empty": "Anslut ett konto för en musiktjänst eller lägg till ett lokalt bibliotek för att börja lyssna.",
+        "source_access": {
+            "action": "Åtkomst",
+            "share_action": "Delning",
+            "title": "Tillgång till {name}",
+            "description": "Vem den här musikkällan tillhör och vem mer som får använda den.",
+            "owner": "Ägare",
+            "owner_hint": "Uppspelnings- och lyssningshistorik använder ägarens konto. En källa utan ägare hanteras av administratörer.",
+            "household": "Delad (ingen ägare)",
+            "sharing": "Delning",
+            "shared_users": "Delad med",
+            "select_members": "Välj användare",
+            "shared_with_count": "Delad med {count} användare | Delad med {count} användare",
+            "options": {
+                "private": "Bara jag",
+                "selected": "Utvalda användare",
+                "members": "Alla användare utom gäster",
+                "everyone": "Alla, inklusive gäster",
+                "not_shared": "Ej delad"
+            },
+            "hints": {
+                "private": "Endast ägaren kan använda denna källa.",
+                "selected": "Ägaren och de användare som valts ut nedan.",
+                "members": "Varje inloggad användare, exklusive gäster.",
+                "everyone": "Alla användare kan använda denna källa.",
+                "selected_no_owner": "Endast de användare som valts ut nedan.",
+                "nobody": "Ingen kan använda den här resursen förrän den har en ägare eller har delats med någon."
+            },
+            "updated": "Åtkomst uppdaterad",
+            "share_title": "Dela {name}",
+            "nobody": "Ingen kan använda den här källan."
+        },
+        "set_custom_name": "Ange ett eget namn",
+        "genre_table_page_of": "Sida {0} av {1}",
+        "genre_table_rows_selected": "{selected} av {total} rad markerad. | {selected} av {total} rader markerade.",
+        "music_sources_own": "Dina källor",
+        "music_sources_shared": "Delat med dig",
+        "music_sources_shared_empty": "Inga musikkällor har delats med dig ännu."
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
@@ -918,7 +892,9 @@
         "hide_provider": "Dölj musikleverantör",
         "exit_select_items": "Avsluta flerval",
         "playing_from": "Spelar från {0}",
-        "open_documentation": "Öppna {provider} dokumentationen"
+        "open_documentation": "Öppna {provider} dokumentationen",
+        "view_mode_current": "Aktuell vy: {0}. Ändra visningsläge",
+        "view_mode_switch": "Aktuell vy: {0}. Byt till {1}"
     },
     "topresult": "Toppresultat",
     "track": "Spår",
@@ -951,7 +927,8 @@
         "list": "Listvy",
         "panel": "Rutnätsvy",
         "panel_compact": "Kompakt rutsnätsvy",
-        "discovery": "Upptäckt"
+        "discovery": "Upptäckt",
+        "card": "Kort vy"
     },
     "play_replace": "Spela nu (rensa kö)",
     "played": "Spelade",
@@ -1217,17 +1194,66 @@
         "token_copy_failed": "Misslyckades med att kopiera token till urklipp",
         "player_filter": "Spelarfilter",
         "player_filter_hint": "Begränsa den här användaren till endast de valda spelarna. Lämna tomt för fullständig åtkomst till alla spelare.",
-        "provider_filter": "Filter för musikleverantör",
-        "provider_filter_hint": "Begränsa den här användaren till endast de valda musikleverantörerna. Lämna tomt för fullständig åtkomst till alla musikleverantörer.",
         "no_players_selected": "Alla spelare (inga begränsningar)",
-        "no_providers_selected": "Alla leverantörer (inga begränsningar)",
         "select_players": "Välj spelare",
-        "select_providers": "Välj leverantörer",
         "save_changes": "Spara ändringar",
         "update_password": "Uppdatera lösenord",
         "guest_role": "Gäst",
         "tokens_load_failed": "Misslyckades med att ladda åtkomst tokens",
-        "users_load_failed": "Misslyckades med att ladda användare"
+        "users_load_failed": "Misslyckades med att ladda användare",
+        "service_role": "Service",
+        "system_user": "System",
+        "system_user_hint": "Home Assistant loggar in med det här kontot, så dess användarnamn, roll och lösenord kan inte ändras.",
+        "roles": "Roller",
+        "builtin_roles": "Inbyggda roller",
+        "custom_roles": "Anpassade roller",
+        "create_role": "Skapa roll",
+        "edit_role": "Redigera roll",
+        "delete_role": "Ta bort roll",
+        "role_name": "Namn",
+        "role_template": "Utgå från",
+        "role_users": "{count} användare | {count} användare",
+        "no_custom_roles": "Inga anpassade roller än",
+        "no_custom_roles_hint": "Skapa en roll för att välja exakt vad någon får göra.",
+        "admin_role_permissions": "Administratörer kan göra allt.",
+        "admin_only_permissions": "Hantering av användare, hela biblioteket, alla musikkällor, serverinställningar och systemunderhåll sköts av administratörer.",
+        "builtin_role_hint": "Inbyggda roller kan inte ändras.",
+        "custom_role_readonly_hint": "Endast administratörer kan ändra roller.",
+        "confirm_delete_role": "Är du säker på att du vill ta bort rollen {name}? Denna åtgärd kan inte ångras.",
+        "role_created": "Rollen har skapats",
+        "role_create_failed": "Det gick inte att skapa rollen",
+        "role_updated": "Rollen har uppdaterats",
+        "role_update_failed": "Det gick inte att uppdatera rollen",
+        "role_deleted": "Rollen har tagits bort",
+        "role_delete_failed": "Det gick inte att ta bort rollen",
+        "roles_load_failed": "Det gick inte att läsa in roller",
+        "role_in_use_hint": "Ge dess användare en annan roll innan du tar bort den.",
+        "permissions": {
+            "always": "Alltid tillåtet",
+            "also": "Även tillåtet",
+            "needed_for": "Behövs för: {permission}",
+            "browse_library": "Bläddra i biblioteket",
+            "play_music": "Spela upp musik och styr spelarna",
+            "change_queue": "Visa och ändra kön",
+            "see_sources_and_players": "Visa musikkällor och uppspelningsinställningar",
+            "library": "Bibliotek",
+            "library_write": "Lägg till och ta bort objekt i biblioteket och bland favoriterna",
+            "players": "Spelare",
+            "config_players_write": "Ändra spelarinställningar och skapa spelargrupper",
+            "music_sources": "Musikkällor",
+            "config_providers_read": "Visa inställningarna för musikkällorna",
+            "config_providers_own": "Lägg till och hantera egna musikkällor",
+            "users": "Användare",
+            "users_read": "Se de andra användarna",
+            "users_invite": "Visa instrumentpaneler och håll i ett musikquiz",
+            "users_impersonate": "Agera å andra användares vägnar",
+            "server": "Server",
+            "config_core_read": "Visa serverinställningarna",
+            "system_read": "Visa bakgrundsaktiviteterna och deras loggar"
+        },
+        "username_max_length": "Användarnamnet får vara högst 50 tecken långt.",
+        "display_name_max_length": "Visningsnamnet får vara högst 100 tecken långt.",
+        "password_max_length": "Lösenordet får vara högst 128 tecken långt."
     },
     "login": {
         "subtitle": "Anslut till din musikserver",
@@ -2393,5 +2419,303 @@
     "command_center_open": "öppna",
     "command_center_keep_typing": "Fortsätt skriva för att söka...",
     "screens": "Skärmar",
-    "play_from_here_to_latest": "Spela härifrån till senaste"
+    "play_from_here_to_latest": "Spela härifrån till senaste",
+    "players_need_setup": "En ny enhet upptäcktes som behöver konfigureras | {count} nya enheter upptäcktes som behöver konfigureras",
+    "review": "Recension",
+    "import_playlist_search_providers_description": "Utvalda leverantörer används som reservkällor när ett spårs originalkälla inte är tillgänglig.",
+    "import_playlist_match_policy_label": "Spårmatchning",
+    "import_playlist_match_policy_exact_title": "Exakt utgåva",
+    "import_playlist_match_policy_exact_description": "Matcha bara spår mot exakt samma utgåva.",
+    "import_playlist_match_policy_same_recording_title": "Samma inspelning (rekommenderas)",
+    "import_playlist_match_policy_same_recording_description": "Föredra en exakt matchning, annars acceptera samma inspelning från en annan utgåva.",
+    "import_playlist_match_policy_best_effort_title": "Bästa insats",
+    "import_playlist_match_policy_best_effort_description": "Föredra en exakt matchning, sedan samma inspelning, annars acceptera den närmaste tillgängliga matchningen.",
+    "migrate_playlist": {
+        "action": "Migrera spellista",
+        "title": "Migrera spellistan",
+        "description": "Kopiera \"{0}\" till en annan leverantör och matcha dess spår längs vägen.",
+        "destination_label": "Destination",
+        "destination_placeholder": "Välj en destination",
+        "name_label": "Spellistans namn",
+        "match_policy_label": "Spårmatchning",
+        "match_policy": {
+            "exact": {
+                "title": "Exakt utgåva",
+                "description": "Lägg bara till spår som matchar exakt samma utgåva. Spår som inte kan matchas på detta sätt hoppas över."
+            },
+            "same_recording": {
+                "title": "Samma inspelning",
+                "description": "Föredra en exakt matchning, annars acceptera samma inspelning från en annan utgåva. Spår som inte kan matchas på detta sätt hoppas över."
+            },
+            "best_effort": {
+                "title": "Bästa insats",
+                "description": "Föredra en exakt matchning, sedan samma inspelning, annars acceptera den närmaste tillgängliga matchningen."
+            }
+        },
+        "submit": "Migrera",
+        "no_destinations_error": "Ingen kvalificerad destinationsleverantör finns tillgänglig för den här spellistan."
+    },
+    "increase_value": "Öka värdet",
+    "decrease_value": "Minska värdet",
+    "previous_track": "Föregående spår",
+    "next_track": "Nästa spår",
+    "previous_chapter": "Föregående kapitel",
+    "next_chapter": "Nästa kapitel",
+    "autoplay_repeat_disabled": "Automatisk uppspelning har stängts av automatiskt eftersom upprepning är aktiverat.",
+    "biography": "Biografi",
+    "author": "Författare",
+    "narrator": "Berättare",
+    "artist_entity_type": {
+        "person": "Person",
+        "group": "Grupp",
+        "orchestra": "Orkester",
+        "choir": "Kör",
+        "character": "Karaktär",
+        "other": "Andra"
+    },
+    "singles_eps": "Singlar och EP skivor",
+    "latest_release": "Senaste utgåvan",
+    "view_all": "Visa alla",
+    "play_on_player": "Spela på {player}",
+    "artist_radio": "Artistens oändliga mix",
+    "newest_first": "nyast först",
+    "via_provider": "via {provider}",
+    "appears_on_hint": "Angiven som medverkande på ett spår, inte som albumartist",
+    "edit_rows": "Redigera rader",
+    "edit_rows_subtitle": "Gäller varje artistsida",
+    "reset_to_default": "Återställ till standard",
+    "rows_shown": "{shown} av {total} visade rader",
+    "row_source": "Källa",
+    "source_library": "Ditt bibliotek",
+    "source_all": "Alla källor",
+    "row_hidden": "Dold",
+    "reorder_row": "Flytta rad",
+    "hide_row": "Dölj rad",
+    "show_row": "Visa rad",
+    "edit_rows_hint": "Dra för att ändra ordning, dölj det du inte vill ha. ”Källa” väljer vad som matar en rad (ditt bibliotek, en enskild källa eller alla källor).",
+    "admin_only": "Endast för administratörer",
+    "done": "Gjort",
+    "onboarding": {
+        "title": "Konfigurera Music Assistant",
+        "step_counter": "Steg {current} av {total}",
+        "next": "Nästa",
+        "skip": "Hoppa över tills vidare",
+        "finish": "Avsluta",
+        "finish_failed": "Kunde inte slutföra. Försök igen.",
+        "nothing_configured": "Ingenting har ställts in ännu",
+        "needs_attention": "Kräver åtgärd",
+        "set_up": "Gjort",
+        "still_to_do": "Återstår att göra",
+        "all_done": "Allt på listan är iordningställt.",
+        "players_count": "{count} spelare | {count} spelare",
+        "run_again": "Kör installationsguiden igen",
+        "steps": {
+            "intent": {
+                "title": "Välj hur du vill använda Music Assistant",
+                "description": "Detta avgör vad Music Assistant gör först. Allt förblir tillgängligt oavsett vad du väljer.",
+                "phone_apps": {
+                    "label": "Från apparna på min telefon",
+                    "description": "Strömma från Spotify, AirPlay och andra appar till högtalarna i ditt hem."
+                },
+                "music_hub": {
+                    "label": "Som mitt musik nav",
+                    "description": "Samla dina strömningstjänster och din lokala musik i ett och samma bibliotek."
+                },
+                "settings_note": "Du kan ändra detta senare i inställningarna."
+            },
+            "music_sources": {
+                "title": "Lägg till dina musikkällor",
+                "description": "Anslut en streamingtjänst eller dina lokala musikfiler så att Music Assistant har något att spela upp."
+            },
+            "players": {
+                "title": "Lägg till dina spelare",
+                "description": "De spelare som Music Assistant redan har hittat. Stäng av de du inte vill använda och döp om dem som du vill.",
+                "description_empty": "Music Assistant hittar dina högtalare via uppspelningsleverantörer, såsom Sonos, Chromecast eller AirPlay.",
+                "empty": "Inga spelare hittades ännu",
+                "no_provider_hint": "Lägg till en spelarleverantör, så visas dess spelare här.",
+                "discovering_hint": "Det kan ta en stund att hitta spelare. Se till att högtalarna är påslagna och anslutna till samma nätverk som Music Assistant.",
+                "add_more": "Lägg till fler spelare",
+                "rename": "Döp om {name}"
+            },
+            "plugins": {
+                "title": "Lägg till insticksprogram",
+                "description": "Insticksprogram lägger till extra funktioner i Music Assistant, till exempel Party, Spotify Connect och en AirPlay mottagare. Du kan alltid lägga till dem senare."
+            },
+            "finish": {
+                "title": "Slutför konfigurationen",
+                "description": "Bra jobbat med inställningarna. Här är en snabb sammanfattning – du kan ändra allt detta senare under inställningarna."
+            },
+            "core_settings": {
+                "title": "Kontrollera dina serverinställningar",
+                "load_failed": "Serverinställningarna kunde inte läsas in. Du kan ändra dem senare via inställningarna.",
+                "intro": "De adresser som Music Assistant använder just nu. De fastställs automatiskt och är oftast korrekta, så du kan helt enkelt gå vidare.",
+                "internal_address": "Internadress",
+                "internal_address_hint": "Där apparna och enheterna i ditt hem når Music Assistant.",
+                "stream_address": "Adress till strömningsserver",
+                "stream_address_hint": "Varifrån dina spelare hämtar ljudet.",
+                "address_unknown": "Ej tillgänglig",
+                "check": {
+                    "checking": "Kontrollerar...",
+                    "reachable": "Nås från den här enheten",
+                    "unreachable": "Inte åtkomlig från den här enheten",
+                    "unchecked": "Det gick inte att kontrollera från den här enheten"
+                },
+                "unreachable_hint": "En adress som inte fungerar här kanske inte heller fungerar i dina spelare. Om uppspelningen misslyckas kan du ändra inställningen under avancerade inställningar.",
+                "override_hint": "Du behöver bara ändra dessa i ett mer komplext nätverk, till exempel bakom en omvänd proxy eller över VLAN. Du hittar dem senare under Inställningar › {system}, i {webserver} och {streams}.",
+                "remote": {
+                    "title": "Lyssna utanför ditt hem",
+                    "description": "Två sätt att nå Music Assistant när du är borta. Båda kan även ställas in senare.",
+                    "builtin": {
+                        "title": "Inbyggd fjärråtkomst",
+                        "easiest": "Enklast",
+                        "description": "Säkert och krypterat, utan portvidare befordran eller VPN. Aktivera det och anslut varifrån som helst med ditt ID för fjärråtkomst.",
+                        "switch": "Fjärråtkomst",
+                        "id": "Ditt ID för fjärråtkomst",
+                        "copy": "Kopiera fjärråtkomst ID",
+                        "hint": "Använd den i appen Music Assistant eller på app.music-assistant.io. QR koden finns under Inställningar › {remote_access}."
+                    },
+                    "proxy": {
+                        "title": "Din egen omvänd proxy",
+                        "description": "Kör en omvänd proxy framför servern och ange den adress som används för att nå den utifrån som den externa adressen.",
+                        "set_external": "Ange den externa adressen"
+                    }
+                }
+            },
+            "invite_members": {
+                "title": "Lägg till användare",
+                "description": "Alla i hushållet får ett eget konto, med de spelare och musikkällor som du ger dem tillgång till.",
+                "load_failed": "Användarna kunde inte läsas in. Du kan lägga till dem senare via inställningarna."
+            },
+            "welcome": {
+                "title": "Känn dig som hemma",
+                "description": "Hej {name}, det är här musiken i ditt hem bor. Välj hur mycket av den du vill se.",
+                "defaults_hint": "Detta anger bara några få standardinställningar. Du kan fortfarande ändra alla inställningar.",
+                "save_failed": "Ditt val kunde inte sparas. Vänligen försök igen.",
+                "standard": {
+                    "label": "Standard",
+                    "description": "Ett rent gränssnitt med bara det nödvändigaste."
+                },
+                "expert": {
+                    "label": "Expert",
+                    "description": "Visar avancerade alternativ och ytterligare detaljer för den som vill se allt."
+                }
+            },
+            "all_set": {
+                "title": "Allt är klart",
+                "description": "Det var allt. Du kan ändra något av detta senare i inställningarna."
+            },
+            "own_sources": {
+                "title": "Anslut dina egna konton",
+                "description": "Lägg till dina egna musiktjänster så att dina spellistor och ditt bibliotek visas tillsammans med alla andras. Du kan alltid göra detta senare via inställningarna.",
+                "add": "Lägg till en musikkälla",
+                "empty": "Du har ännu inte anslutit några egna musikkällor.",
+                "connected": "Dina musikkällor"
+            },
+            "your_players": {
+                "title": "Dina spelare",
+                "description": "Spelarna du kan skicka musik till.",
+                "empty": "Inga spelare än. Be din administratör att lägga till en."
+            },
+            "your_music": {
+                "title": "Vad du kan lyssna på",
+                "description": "Musikkällorna som alla här har samlat ihop.",
+                "empty": "Inga musikkällor har delats med dig ännu."
+            },
+            "account": {
+                "title": "Skapa ditt konto",
+                "description": "Detta är administratörskontot för denna Music Assistant server. Konton för övriga användare i hemmet kan läggas till senare.",
+                "create": "Skapa konto",
+                "creating": "Skapar ditt konto...",
+                "signing_in": "Loggar in dig...",
+                "failed": "Kontot kunde inte skapas. Försök igen.",
+                "sign_in_failed": "Ditt konto har skapats, men det gick inte att logga in. Ladda om sidan för att fortsätta.",
+                "handed_back": "Ditt konto är klart. Du kan gå tillbaka till appen du kom ifrån.",
+                "account_exists": "Den här servern har redan ett konto, så det finns inget att skapa här.",
+                "sign_in_here": "Logga in här istället",
+                "reload": "Ladda om sidan",
+                "ready": "Inloggad som {name}."
+            }
+        },
+        "add_member": "Lägg till en användare",
+        "just_you_so_far": "Bara du hittills.",
+        "welcome_title": "Välkommen till Music Assistant",
+        "welcome_again": "Visa välkomsthälsningen igen",
+        "what_you_picked": "Det du valde",
+        "description": "Konfigurera Music Assistant, steg för steg.",
+        "step_completed": "{step}, avslutad",
+        "welcome_description": "En snabb rundtur i Music Assistant.",
+        "more_count": "+{count} mer"
+    },
+    "share_playlist": "Dela spellista",
+    "playlist_access": {
+        "title": "Dela {name}",
+        "description": "Vem den här spellistan tillhör, vem som kan se den och vem som kan redigera den.",
+        "owner_hint": "En spellista utan ägare hanteras av administratörer.",
+        "personal": "Personlig",
+        "shared": "Delad",
+        "collaborative": "Samarbetsinriktad",
+        "collaborative_hint": "Alla som spellistan delas med kan också lägga till och ta bort objekt.",
+        "hints": {
+            "private": "Endast ägaren kan se den här spellistan.",
+            "selected": "Ägaren och de användare som valts ut nedan.",
+            "members": "Varje inloggad användare, exklusive gäster.",
+            "everyone": "Alla användare kan se den här spellistan.",
+            "selected_no_owner": "Endast de användare som valts ut nedan.",
+            "nobody": "Ingen kan se den här spellistan förrän den har en ägare eller delas med någon."
+        },
+        "updated": "Delning uppdaterad"
+    },
+    "n_in_library": "{count} på biblioteket",
+    "search_sources": "Källor",
+    "all_sources": "Alla källor",
+    "track_radio": "Mix med oändliga spår",
+    "edit_rows_subtitle_track": "Gäller varje låtsida",
+    "n_releases": "{count} släpp | {count} utgåvor",
+    "artist_view_library_tracks": "Se {count} biblioteksspår | Visa {count}biblioteksspår",
+    "album_radio": "Album i oavbruten mix",
+    "n_tracks": "{count} spår | {count} spår",
+    "more_from_artist": "Mer från denna artist",
+    "more_from_artist_name": "Mer från {name}",
+    "edit_rows_subtitle_album": "Gäller varje albumsida",
+    "recommended": "Rekommenderad",
+    "tour": {
+        "start": "Ta en rundtur",
+        "end": "Avsluta rundturen",
+        "next": "Nästa",
+        "step_counter": "{current} av {total}",
+        "offer": {
+            "title": "Vill du ta en snabb titt?",
+            "description": "En kort rundtur visar appens viktigaste delar. Du kan när som helst gå igenom den på nytt via din profilmeny."
+        },
+        "stops": {
+            "menu": {
+                "title": "Menyn",
+                "description": "Allt börjar här: Utforska och bläddra för att hitta något att spela, se ditt bibliotek med artister, album, låtar och spellistor, samt inställningar och din profil längst ner."
+            },
+            "search": {
+                "title": "Sök",
+                "description": "Hitta en artist, ett album, en låt eller en spellista bland allt du kan lyssna på."
+            },
+            "settings": {
+                "title": "Inställningar",
+                "description": "Där Music Assistant konfigureras: musikkällor och uppspelningsenheter, samt hur appen ser ut och fungerar."
+            },
+            "profile": {
+                "title": "Din profil",
+                "description": "Här hittar du ditt namn, din avatar och ditt lösenord. I den här menyn kan du även ändra ordningen i menyn, logga ut eller gå igenom den här rundturen på nytt."
+            },
+            "player_bar": {
+                "title": "Spelarpanelen",
+                "description": "Se vad som spelas just nu och tillhörande reglage. Öppna vyn för att se hela spelaren och vad som står på tur."
+            },
+            "player_select": {
+                "title": "Välj en spelare",
+                "description": "Välj var musiken ska spelas. Välj en spelare och tryck på uppspelning."
+            },
+            "player_group": {
+                "title": "Gruppspelare",
+                "description": "Lägg till andra spelare till den du valde, så att de spelar samma musik tillsammans i flera rum. Spelare som inte kan ansluta visas inte som alternativ."
+            }
+        }
+    }
 }

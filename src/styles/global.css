@@ -94,7 +94,8 @@ html {
      the player card stays the only thing set in from it. */
   --player-bar-popout-inset-x: var(--mobile-dock-inset-x);
   /* Room a tall popout leaves at the top of the screen, so it keeps reading as a
-     card floating above the player bar instead of a full-height panel. */
+     card floating above the player bar instead of a full-height panel. Measured
+     below the status bar: each consumer adds --device-inset-top itself. */
   --player-bar-popout-top-gap: 24px;
 }
 
@@ -137,6 +138,8 @@ html {
       10001  anything that has to clear those, whatever it is
      100000  sheets
      100001  menus opened from a sheet or a player bar popout
+     100002  the guided tour's spotlight, above the sheet and menu it starts from
+     100003  the guided tour's card
      999999  item context menu
 
    Values below this range mostly order elements inside a component's own

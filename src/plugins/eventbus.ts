@@ -3,6 +3,7 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import mitt, { Emitter } from "mitt";
 import {
+  ConfigValueType,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
@@ -47,6 +48,9 @@ export type DeleteConfirmationDialogEvent = {
   message: string;
   title?: string;
   confirmLabel?: string;
+  // false for a confirmation that does not destroy anything: the confirm button
+  // is then the regular one instead of the red destructive one
+  destructive?: boolean;
   onConfirm: () => void | Promise<void>;
 };
 
@@ -62,6 +66,14 @@ export type PlayerGroupPlaybackDialogEvent = {
 export type ImportPlaylistEvent = {
   m3uData: string;
   playlistName: string;
+};
+
+export type MigratePlaylistDialogEvent = {
+  playlist: Playlist;
+};
+
+export type PlaylistAccessDialogEvent = {
+  playlist: Playlist;
 };
 
 export type CreateSmartPlaylistEvent = {
@@ -90,7 +102,14 @@ export type SetupFlowEndedCallback = (finished: boolean) => void;
 // Launches the setup flow dialog for one of: adding a provider (by domain),
 // reconfiguring a provider instance, or setting up a player.
 export type SetupFlowDialogEvent =
-  | { kind: "provider"; domain: string }
+  | {
+      kind: "provider";
+      domain: string;
+      // values for entries of the first form step, by entry key; the user still
+      // sees the step and confirms it
+      initialValues?: Record<string, ConfigValueType>;
+      onFlowEnded?: SetupFlowEndedCallback;
+    }
   | {
       kind: "reconfigure";
       instanceId: string;
@@ -108,6 +127,8 @@ export type Events = {
   playerGroupPlaybackDialog: PlayerGroupPlaybackDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
+  migratePlaylistDialog: MigratePlaylistDialogEvent;
+  playlistAccessDialog: PlaylistAccessDialogEvent;
   createSmartPlaylist: CreateSmartPlaylistEvent;
   audioOverlayDialog: AudioOverlayDialogEvent;
   playAnnouncementDialog: PlayAnnouncementDialogEvent;

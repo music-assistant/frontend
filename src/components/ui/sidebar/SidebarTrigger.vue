@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import NavUser from "@/components/navigation/NavUser.vue";
+import { $t } from "@/plugins/i18n";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -17,6 +18,9 @@ const props = defineProps<{
 const { toggleSidebar, state } = useSidebar();
 
 const isCollapsed = computed(() => state.value === "collapsed");
+const sidebarToggleLabel = computed(() =>
+  isCollapsed.value ? $t("sidebar.expand") : $t("sidebar.collapse"),
+);
 </script>
 
 <template>
@@ -47,14 +51,16 @@ const isCollapsed = computed(() => state.value === "collapsed");
               'flex-shrink-0 group-data-[collapsible=icon]:size-8!',
               !isCollapsed && 'ml-auto',
             ]"
+            :aria-label="sidebarToggleLabel"
+            :aria-expanded="!isCollapsed"
+            :title="sidebarToggleLabel"
             @click="toggleSidebar"
           >
             <PanelLeft />
-            <span class="sr-only">{{ $t("sidebar.toggle") }}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right" align="center" :hidden="!isCollapsed">
-          {{ isCollapsed ? $t("sidebar.expand") : $t("sidebar.collapse") }}
+          {{ sidebarToggleLabel }}
         </TooltipContent>
       </Tooltip>
     </div>
@@ -87,6 +93,7 @@ const isCollapsed = computed(() => state.value === "collapsed");
 .trigger-container--collapsed .navuser-trigger :deep(ul[data-sidebar="menu"]) {
   padding-left: 6px !important;
   padding-right: 6px !important;
+  padding-bottom: 6px !important;
 }
 
 .trigger-container--collapsed
