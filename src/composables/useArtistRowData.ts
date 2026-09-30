@@ -2,9 +2,9 @@ import {
   isSingleOrEp,
   loadArtistAppearsOn,
   loadArtistDiscography,
-  loadArtistTracks,
   loadArtistReleases,
   loadArtistTopTracks,
+  loadArtistTracks,
   loadSimilarArtists,
   sortReleasesNewestFirst,
 } from "@/components/artist/artistData";
@@ -264,7 +264,7 @@ function sourceItems<T>(
   return source ? cache.get(source) : undefined;
 }
 
-/** The artist's tracks of the newest releases first, the top-tracks fallback. */
+/** The artist's tracks, newest release first, as the top-tracks fallback. */
 function newestArtistTracks(tracks: Track[]): Track[] {
   return [...tracks].sort((a, b) => albumYear(b) - albumYear(a));
 }

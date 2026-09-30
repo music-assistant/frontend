@@ -36,8 +36,8 @@ import {
   isSingleOrEp,
   loadArtistAppearsOn,
   loadArtistDiscography,
-  loadArtistTracks,
   loadArtistReleases,
+  loadArtistTracks,
 } from "@/components/artist/artistData";
 import { artistRows } from "@/components/artist/artistRows";
 import {

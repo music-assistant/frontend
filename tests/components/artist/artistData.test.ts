@@ -21,9 +21,9 @@ import {
   artistProvidersForFeature,
   isSingleOrEp,
   loadArtistAppearsOn,
-  loadArtistTracks,
   loadArtistReleases,
   loadArtistTopTracks,
+  loadArtistTracks,
   loadSimilarArtists,
   sortReleasesNewestFirst,
 } from "@/components/artist/artistData";
