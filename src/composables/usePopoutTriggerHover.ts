@@ -1,7 +1,7 @@
 import { readonly, ref, watch } from "vue";
 
 /**
- * Hover state for the button that opens a player bar popout.
+ * Hover state for a button that opens a popout.
  *
  * Bind `suppressHover` to the button's `data-suppress-hover` and
  * `onPointerEnter` to its `pointerenter`.

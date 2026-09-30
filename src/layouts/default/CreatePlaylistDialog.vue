@@ -89,7 +89,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import api from "@/plugins/api";
-import { MediaType, ProviderFeature } from "@/plugins/api/interfaces";
+import { MediaType, ProviderFeature, Scope } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { type CreatePlaylistEvent, eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
@@ -217,13 +218,16 @@ const doSave = async () => {
         showBackgroundTaskToast: false,
       });
       toast.info($t("background_tasks.toast.added"), {
-        action: {
-          label: $t("background_tasks.open"),
-          onClick: () => {
-            store.showFullscreenPlayer = false;
-            router.push({ name: "backgroundtasks" });
-          },
-        },
+        // the task list takes system.read
+        action: authManager.hasScope(Scope.SYSTEM_READ)
+          ? {
+              label: $t("background_tasks.open"),
+              onClick: () => {
+                store.showFullscreenPlayer = false;
+                router.push({ name: "backgroundtasks" });
+              },
+            }
+          : undefined,
       });
       return;
     }

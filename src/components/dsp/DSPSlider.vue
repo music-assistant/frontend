@@ -11,6 +11,7 @@
           :min="sliderMin"
           :max="sliderMax"
           :step="sliderStep"
+          :aria-label="config.label"
           @update:model-value="onSlide"
         />
       </div>

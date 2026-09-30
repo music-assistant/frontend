@@ -17,6 +17,7 @@ export function providerConfig(
     name: null,
     default_name: null,
     last_error: null,
+    access: null,
     status: null,
     values: {},
     ...overrides,

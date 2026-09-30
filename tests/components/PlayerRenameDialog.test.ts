@@ -4,16 +4,14 @@ import { eventbus } from "@/plugins/eventbus";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, storeMock, toastError, toastSuccess } = vi.hoisted(() => ({
+const { apiMock, renamePlayer, storeMock } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, Player>,
-    savePlayerConfig: vi.fn(),
   },
+  renamePlayer: vi.fn(),
   storeMock: {
     dialogActive: false,
   },
-  toastError: vi.fn(),
-  toastSuccess: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -25,18 +23,8 @@ vi.mock("@/plugins/store", () => ({
   store: storeMock,
 }));
 
-vi.mock("vue-sonner", () => ({
-  toast: {
-    error: toastError,
-    success: toastSuccess,
-  },
-}));
-
-vi.mock("vue-i18n", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("vue-i18n")>()),
-  useI18n: () => ({
-    t: (key: string) => key,
-  }),
+vi.mock("@/helpers/player_settings_actions", () => ({
+  renamePlayer,
 }));
 
 const passthroughStub = { template: "<div><slot /></div>" };
@@ -99,7 +87,7 @@ describe("PlayerRenameDialog", () => {
     apiMock.players = {
       kitchen: { player_id: "kitchen", name: "Kitchen" } as Player,
     };
-    apiMock.savePlayerConfig.mockResolvedValue({});
+    renamePlayer.mockResolvedValue(true);
     storeMock.dialogActive = false;
   });
 
@@ -128,11 +116,8 @@ describe("PlayerRenameDialog", () => {
     await wrapper.get("form").trigger("submit");
     await flushPromises();
 
-    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
-      name: "Lounge",
-    });
+    expect(renamePlayer).toHaveBeenCalledWith("kitchen", "Lounge");
     expect(apiMock.players.kitchen.name).toBe("Lounge");
-    expect(toastSuccess).toHaveBeenCalledWith("settings.player_saved");
     expect(wrapper.find(".rename-dialog").exists()).toBe(false);
     expect(storeMock.dialogActive).toBe(false);
   });
@@ -149,14 +134,12 @@ describe("PlayerRenameDialog", () => {
     await wrapper.get("form").trigger("submit");
     await flushPromises();
 
-    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
-      name: null,
-    });
+    expect(renamePlayer).toHaveBeenCalledWith("kitchen", null);
     expect(apiMock.players.kitchen.name).toBe("Chromecast");
   });
 
   it("keeps the dialog open when saving fails", async () => {
-    apiMock.savePlayerConfig.mockRejectedValue(new Error("Save failed"));
+    renamePlayer.mockResolvedValue(false);
     const wrapper = mountDialog();
     await openRenameDialog({ playerId: "kitchen", name: "Kitchen" });
 
@@ -165,7 +148,6 @@ describe("PlayerRenameDialog", () => {
     await flushPromises();
 
     expect(apiMock.players.kitchen.name).toBe("Kitchen");
-    expect(toastError).toHaveBeenCalledWith("Error: Save failed");
     expect(wrapper.find(".rename-dialog").exists()).toBe(true);
   });
 
@@ -183,8 +165,6 @@ describe("PlayerRenameDialog", () => {
     await wrapper.get("form").trigger("submit");
     await flushPromises();
 
-    expect(apiMock.savePlayerConfig).toHaveBeenLastCalledWith("office", {
-      name: "Study",
-    });
+    expect(renamePlayer).toHaveBeenLastCalledWith("office", "Study");
   });
 });
