@@ -157,6 +157,7 @@ import PlayerSetupWarning from "@/components/PlayerSetupWarning.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
 
+import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { getPlayerName } from "@/helpers/player_config";
 import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
 import { isPlayerUnavailable } from "@/helpers/players";
@@ -270,10 +271,11 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
       );
     },
   });
+  const position = getEventPosition(evt);
   eventbus.emit("contextmenu", {
     items: menuItems,
-    posX: (evt as PointerEvent).clientX,
-    posY: (evt as PointerEvent).clientY,
+    posX: position.x,
+    posY: position.y,
   });
 };
 
