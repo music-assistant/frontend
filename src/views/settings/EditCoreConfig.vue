@@ -5,6 +5,9 @@
       :icon="getCoreIcon(config.domain)"
       :title="getItemTitle(config)"
       :description="getItemDescription(config)"
+      :documentation-url="
+        getExternalLinkUrl(api.providerManifests[config.domain].documentation)
+      "
       @reset-to-defaults="resetToDefaults"
     />
 
@@ -33,6 +36,7 @@
 <script setup lang="ts">
 import { Spinner } from "@/components/ui/spinner";
 import { useConfigAction } from "@/composables/useConfigAction";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { ConfigValueType, CoreConfig } from "@/plugins/api/interfaces";
 import {

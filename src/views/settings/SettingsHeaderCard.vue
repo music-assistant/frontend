@@ -42,6 +42,22 @@
         </DropdownMenuContent>
       </DropdownMenu>
     </CardHeader>
+    <CardContent
+      v-if="documentationUrl"
+      class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
+    >
+      <Button
+        as="a"
+        data-testid="settings-documentation"
+        variant="outline"
+        :href="documentationUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <BookOpen class="size-4" />
+        {{ $t("settings.documentation") }}
+      </Button>
+    </CardContent>
   </Card>
 </template>
 
@@ -49,6 +65,7 @@
 import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -60,7 +77,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { MoreVertical, RotateCcw } from "@lucide/vue";
+import { BookOpen, MoreVertical, RotateCcw } from "@lucide/vue";
 import type { Component } from "vue";
 
 /**
@@ -73,6 +90,8 @@ defineProps<{
   description?: string;
   /** Tints the icon and its tile, e.g. "text-orange-500"; defaults to the primary colour. */
   iconClass?: string;
+  /** Where the documentation of this screen lives; without one no link is offered. */
+  documentationUrl?: string;
 }>();
 
 const emit = defineEmits<{
