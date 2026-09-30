@@ -7,14 +7,18 @@ const { apiMock } = vi.hoisted(() => ({
     getArtistTracks: vi.fn().mockResolvedValue([]),
     getArtistTopTracks: vi.fn().mockResolvedValue([]),
     getSimilarArtists: vi.fn().mockResolvedValue([]),
+    providers: {} as Record<string, ProviderInstance>,
+    providerManifests: {} as Record<string, ProviderManifest>,
   },
 }));
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
+  default: apiMock,
 }));
 
 import {
+  artistProvidersForFeature,
   isSingleOrEp,
   loadArtistAppearsOn,
   loadArtistLibraryTracks,
@@ -23,9 +27,17 @@ import {
   loadSimilarArtists,
   sortReleasesNewestFirst,
 } from "@/components/artist/artistData";
-import { AlbumType, type ItemMapping } from "@/plugins/api/interfaces";
+import {
+  AlbumType,
+  ProviderFeature,
+  type ItemMapping,
+  type ProviderInstance,
+  type ProviderManifest,
+} from "@/plugins/api/interfaces";
 import { album } from "../../fixtures/album";
 import { artist } from "../../fixtures/artist";
+import { providerInstance } from "../../fixtures/providerInstance";
+import { providerManifest } from "../../fixtures/providerManifest";
 import { providerMapping } from "../../fixtures/providerMapping";
 
 // the artist's own id on Spotify differs from its library id, so the provider
@@ -141,6 +153,90 @@ describe("artistData", () => {
         "library",
         "spotify--abc",
       );
+    });
+  });
+
+  describe("artistProvidersForFeature", () => {
+    // registers a loaded provider instance that lists artist albums
+    function addProvider(overrides: Partial<ProviderInstance>) {
+      const provider = providerInstance({
+        supported_features: [ProviderFeature.ARTIST_ALBUMS],
+        ...overrides,
+      });
+      apiMock.providers[provider.instance_id] = provider;
+    }
+
+    function mappedTo(...providerInstances: string[]) {
+      return artist({
+        provider_mappings: providerInstances.map((provider_instance) =>
+          providerMapping({ provider_instance }),
+        ),
+      });
+    }
+
+    beforeEach(() => {
+      apiMock.providers = {};
+      apiMock.providerManifests = {
+        spotify: providerManifest({ domain: "spotify", name: "Spotify" }),
+      };
+    });
+
+    it("offers each account of a streaming service once, as its lowest instance id", () => {
+      for (const [instanceId, name] of [
+        ["spotify--b", "Spotify [marcelveldt3]"],
+        ["spotify--a", "Spotify [marcelveldt2]"],
+      ]) {
+        addProvider({
+          instance_id: instanceId,
+          name,
+          domain: "spotify",
+          is_streaming_provider: true,
+        });
+      }
+
+      expect(
+        artistProvidersForFeature(
+          mappedTo("spotify--b", "spotify--a"),
+          ProviderFeature.ARTIST_ALBUMS,
+        ),
+      ).toEqual(["spotify--a"]);
+    });
+
+    it("keeps every other instance, sorted by the name each source shows", () => {
+      addProvider({
+        instance_id: "spotify--a",
+        name: "Zoe's Spotify",
+        domain: "spotify",
+        is_streaming_provider: true,
+      });
+      addProvider({
+        instance_id: "filesystem_local--x",
+        name: "Vinyl rips",
+        domain: "filesystem_local",
+      });
+      addProvider({
+        instance_id: "filesystem_local--y",
+        name: "Archive",
+        domain: "filesystem_local",
+      });
+
+      expect(
+        artistProvidersForFeature(
+          mappedTo("spotify--a", "filesystem_local--x", "filesystem_local--y"),
+          ProviderFeature.ARTIST_ALBUMS,
+        ),
+      ).toEqual(["filesystem_local--y", "spotify--a", "filesystem_local--x"]);
+    });
+
+    it("leaves out a provider without the feature", () => {
+      addProvider({ instance_id: "tidal--a", supported_features: [] });
+
+      expect(
+        artistProvidersForFeature(
+          mappedTo("tidal--a"),
+          ProviderFeature.ARTIST_ALBUMS,
+        ),
+      ).toEqual([]);
     });
   });
 

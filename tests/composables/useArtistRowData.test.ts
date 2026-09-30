@@ -230,6 +230,21 @@ describe("useArtistRowData", () => {
     expect(page.topTracksSourceDisplay.value?.label).toBe("In your library");
   });
 
+  it("keeps naming a provider artist's own provider when it uses that fallback", async () => {
+    const page = setupRowData({ rows: ["top_tracks"] });
+    mockLoadArtistLibraryTracks.mockResolvedValue([track()]);
+    mockApi.getProvider.mockReturnValue({ name: "Spotify", domain: "spotify" });
+
+    await showArtist(page, artist({ item_id: "sp1", provider: SPOTIFY }));
+
+    expect(itemIds(page.topTracksItems.value)).toHaveLength(1);
+    expect(page.topTracksSourceDisplay.value).toEqual({
+      label: "On Spotify",
+      domain: "spotify",
+    });
+    expect(mockApi.getProvider).toHaveBeenCalledWith(SPOTIFY);
+  });
+
   it("labels the top tracks row as all sources when a provider supplies them", async () => {
     const page = setupRowData({ rows: ["top_tracks"] });
     mockLoadArtistTopTracks.mockResolvedValue([track()]);

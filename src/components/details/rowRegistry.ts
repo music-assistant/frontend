@@ -7,6 +7,7 @@ import {
   writeRowsConfig,
 } from "@/helpers/rowsConfig";
 import { api } from "@/plugins/api";
+import { providerServiceName } from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 
@@ -149,6 +150,10 @@ export function createRowRegistry<Id extends string, Item>(
       const candidates = sourceCandidates(id, item);
       const saved = getSource(id);
       if (saved && candidates.includes(saved)) return saved;
+      // a streaming service is offered once, through one of its accounts
+      const sameService =
+        saved && candidates.find((c) => isSameStreamingService(c, saved));
+      if (sameService) return sameService;
       return defaultSource(id, item, candidates);
     },
   };
@@ -179,7 +184,8 @@ export function rowSourceOptions<Id extends string, Item>(
 export function rowSourceLabel(source: RowSource): string {
   if (source === "library") return $t("source_library");
   if (source === "all") return $t("source_all");
-  return api.providers[source]?.name ?? source;
+  const provider = api.providers[source];
+  return provider ? providerServiceName(provider) : source;
 }
 
 /** The provider behind a row's source, when a single one feeds it (undefined for "library"/"all"). */
@@ -188,7 +194,9 @@ export function rowSourceProvider(
 ): { name: string; domain: string } | undefined {
   if (!source || source === "all" || source === "library") return undefined;
   const provider = api.getProvider(source);
-  return provider && { name: provider.name, domain: provider.domain };
+  return (
+    provider && { name: providerServiceName(provider), domain: provider.domain }
+  );
 }
 
 /**
@@ -204,7 +212,18 @@ export function rowSourceDisplay(
   if (source === "all") return { label: $t("source_all") };
   const provider = api.getProvider(source);
   return {
-    label: $t("on_provider", [provider?.name ?? source]),
+    label: $t("on_provider", [
+      provider ? providerServiceName(provider) : source,
+    ]),
     domain: provider?.domain,
   };
+}
+
+/** Whether two sources are accounts of the same streaming service. */
+function isSameStreamingService(a: RowSource, b: RowSource): boolean {
+  const provider = api.providers[a];
+  return (
+    !!provider?.is_streaming_provider &&
+    provider.domain === api.providers[b]?.domain
+  );
 }

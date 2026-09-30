@@ -196,6 +196,16 @@ export function mappedServices(item: {
 }
 
 /**
+ * The name to show for a provider instance: the service's own name for a
+ * streaming provider, whose accounts all offer the same catalog, else the
+ * instance's name.
+ */
+export function providerServiceName(provider: ProviderInstance): string {
+  if (!provider.is_streaming_provider) return provider.name;
+  return api.providerManifests[provider.domain]?.name || provider.name;
+}
+
+/**
  * Provider icon domain for media listing tiles. Playlists always surface their
  * source provider icon: a playlist listing is library-only by definition, so a
  * bookshelf icon would be redundant and the source is the useful signal. Every
