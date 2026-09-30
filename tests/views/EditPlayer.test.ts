@@ -62,8 +62,6 @@ const SlotStub = {
 };
 
 const playerDetailsStubs = {
-  // rendered for real so this screen's advanced toggle stays assertable
-  AdvancedSettingsToggle: false,
   Button: SlotStub,
   Card: SlotStub,
   CardContent: SlotStub,
@@ -159,36 +157,22 @@ describe("EditPlayer", () => {
     expect(wrapper.get("h2").text()).toBe("Kitchen");
   });
 
-  it("offers the setup and the advanced toggle in the header", async () => {
+  it("offers the setup in the header and leaves the advanced toggle to the form", async () => {
     const wrapper = await mountPlayerPage();
 
     expect(wrapper.get('[data-testid="player-setup"]').text()).toContain(
       "reconfigure_player",
     );
     expect(
-      wrapper.find('[data-testid="player-advanced-settings"]').exists(),
-    ).toBe(true);
-  });
-
-  it("leaves out the advanced toggle without advanced settings to reveal", async () => {
-    const config = playerConfig();
-    delete config.values.sample_rates;
-    apiMock.getPlayerConfig.mockResolvedValue(config);
-
-    const wrapper = await mountPlayerPage();
-
-    expect(
-      wrapper.find('[data-testid="player-advanced-settings"]').exists(),
+      wrapper.findComponent({ name: "AdvancedSettingsToggle" }).exists(),
     ).toBe(false);
   });
 
-  it("controls advanced settings from the header", async () => {
+  it("keeps the advanced settings the form reveals", async () => {
     const wrapper = await mountPlayerPage();
     const editConfig = wrapper.findComponent({ name: "EditConfig" });
 
-    wrapper
-      .findComponent({ name: "Switch" })
-      .vm.$emit("update:modelValue", true);
+    editConfig.vm.$emit("update:showAdvancedSettings", true);
     await wrapper.vm.$nextTick();
 
     expect(editConfig.props("showAdvancedSettings")).toBe(true);

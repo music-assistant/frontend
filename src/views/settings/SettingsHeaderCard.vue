@@ -42,15 +42,6 @@
         </DropdownMenuContent>
       </DropdownMenu>
     </CardHeader>
-    <CardContent
-      v-if="showAdvancedToggle"
-      class="flex items-center border-t bg-muted/20 px-6 py-4"
-    >
-      <AdvancedSettingsToggle
-        v-model:show-advanced-settings="showAdvancedSettings"
-        test-id="settings-advanced-settings"
-      />
-    </CardContent>
   </Card>
 </template>
 
@@ -58,7 +49,6 @@
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -72,7 +62,6 @@ import {
 import { cn } from "@/lib/utils";
 import { MoreVertical, RotateCcw } from "@lucide/vue";
 import type { Component } from "vue";
-import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 
 /**
  * Header card shared by the settings screens that edit a plain config: it names what
@@ -84,15 +73,9 @@ defineProps<{
   description?: string;
   /** Tints the icon and its tile, e.g. "text-orange-500"; defaults to the primary colour. */
   iconClass?: string;
-  /** Whether the config holds advanced entries the toggle can reveal. */
-  showAdvancedToggle?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: "resetToDefaults"): void;
 }>();
-
-const showAdvancedSettings = defineModel<boolean>("showAdvancedSettings", {
-  default: false,
-});
 </script>

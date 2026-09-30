@@ -2,12 +2,10 @@
   <div class="p-4">
     <!-- Header card -->
     <SettingsHeaderCard
-      v-model:show-advanced-settings="showAdvancedSettings"
       :icon="Palette"
       icon-class="text-orange-500"
       :title="$t('settings.frontend')"
       :description="$t('settings.frontend_description')"
-      :show-advanced-toggle="hasAdvancedEntries(config)"
       @reset-to-defaults="resetToDefaults"
     />
 
@@ -42,7 +40,6 @@ import { useRouter } from "vue-router";
 import { Spinner } from "@/components/ui/spinner";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { DEVICE_SETTING_KEYS } from "@/constants";
-import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
 import {
   BROWSER_MEDIA_CONTROLS,
   BrowserMediaControlsMode,

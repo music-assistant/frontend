@@ -8,11 +8,8 @@ const SlotStub = {
 };
 
 const headerStubs = {
-  // rendered for real so this screen's advanced toggle stays assertable
-  AdvancedSettingsToggle: false,
   Button: SlotStub,
   Card: SlotStub,
-  CardContent: SlotStub,
   CardDescription: SlotStub,
   CardHeader: SlotStub,
   CardTitle: SlotStub,
@@ -38,22 +35,6 @@ describe("SettingsHeaderCard", () => {
       .trigger("click");
 
     expect(wrapper.emitted("resetToDefaults")).toHaveLength(1);
-  });
-
-  it("leaves out the advanced toggle without advanced settings to reveal", () => {
-    expect(
-      mountHeader().find('[data-testid="settings-advanced-settings"]').exists(),
-    ).toBe(false);
-  });
-
-  it("reports the advanced toggle being flipped", async () => {
-    const wrapper = mountHeader({ showAdvancedToggle: true });
-
-    await wrapper
-      .findComponent({ name: "Switch" })
-      .vm.$emit("update:modelValue", true);
-
-    expect(wrapper.emitted("update:showAdvancedSettings")).toEqual([[true]]);
   });
 });
 

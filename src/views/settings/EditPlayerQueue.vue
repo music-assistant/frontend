@@ -1,11 +1,9 @@
 <template>
   <section class="p-4">
     <SettingsHeaderCard
-      v-model:show-advanced-settings="showAdvancedSettings"
       :icon="SlidersHorizontal"
       :title="$t('settings.queue_settings')"
       :description="queueName"
-      :show-advanced-toggle="hasAdvancedEntries(allConfigEntries)"
       @reset-to-defaults="resetToDefaults"
     />
 
@@ -50,7 +48,6 @@ import { api } from "@/plugins/api";
 import { ConfigValueType, PlayerQueueConfig } from "@/plugins/api/interfaces";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
 import { goBack } from "@/helpers/navigation";
 import { Info, SlidersHorizontal } from "@lucide/vue";
 import { computed, ref, watch } from "vue";

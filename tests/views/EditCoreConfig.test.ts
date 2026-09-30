@@ -139,36 +139,6 @@ describe("EditCoreConfig", () => {
     expect(resetToDefaults).toHaveBeenCalled();
   });
 
-  it.each([
-    { advanced: true, offered: true },
-    { advanced: false, offered: false },
-  ])(
-    "offers the advanced toggle for a config with advanced entries: $advanced",
-    async ({ advanced, offered }) => {
-      const config = coreConfig();
-      config.values.clear_on_start.advanced = advanced;
-      apiMock.getCoreConfig.mockResolvedValueOnce(config);
-
-      const wrapper = shallowMount(EditCoreConfig, {
-        props: {
-          domain: "cache",
-        },
-        global: {
-          mocks: {
-            $t: (key: string) => key,
-          },
-        },
-      });
-      await flushPromises();
-
-      expect(
-        wrapper
-          .findComponent({ name: "SettingsHeaderCard" })
-          .props("showAdvancedToggle"),
-      ).toBe(offered);
-    },
-  );
-
   it("takes the value an action did provide", async () => {
     apiMock.getCoreConfig.mockResolvedValueOnce(coreConfig());
     apiMock.invokeCoreConfigAction.mockResolvedValueOnce([

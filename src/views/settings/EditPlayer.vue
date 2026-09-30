@@ -96,7 +96,7 @@
           </Button>
         </CardHeader>
         <CardContent
-          v-if="playerSetupLabel || showAdvancedToggle"
+          v-if="playerSetupLabel"
           class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
         >
           <Button
@@ -107,11 +107,6 @@
             <RefreshCw class="size-4" />
             {{ $t(playerSetupLabel) }}
           </Button>
-          <AdvancedSettingsToggle
-            v-if="showAdvancedToggle"
-            v-model:show-advanced-settings="showAdvancedSettings"
-            test-id="player-advanced-settings"
-          />
         </CardContent>
       </Card>
     </div>
@@ -228,7 +223,6 @@ import {
   HassControlPickerEntry,
   HassControlPlayerKey,
   UI_ENTRY_TYPE,
-  hasAdvancedEntries,
   isInjected,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
@@ -240,7 +234,6 @@ import { useConfigAction } from "@/composables/useConfigAction";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { MoreVertical, Pencil, RefreshCw, RotateCcw } from "@lucide/vue";
-import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 import EditConfig from "./EditConfig.vue";
 import PlayerSettingsLinks from "./PlayerSettingsLinks.vue";
 // global refs
@@ -359,10 +352,6 @@ const config_entries = computed(() => {
   }
   return entries;
 });
-
-const showAdvancedToggle = computed(
-  () => !!config.value?.enabled && hasAdvancedEntries(config_entries.value),
-);
 
 // watchers
 

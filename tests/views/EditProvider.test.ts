@@ -85,8 +85,6 @@ const SlotStub = {
 };
 
 const providerDetailsStubs = {
-  // rendered for real so this screen's advanced toggle stays assertable
-  AdvancedSettingsToggle: false,
   Badge: SlotStub,
   Card: SlotStub,
   CardContent: SlotStub,
@@ -572,34 +570,31 @@ describe("EditProvider", () => {
     expect(resetToDefaults).toHaveBeenCalled();
   });
 
-  it.each([
-    { advanced: true, offered: true },
-    { advanced: false, offered: false },
-  ])(
-    "offers the advanced toggle for a config with advanced entries: $advanced",
-    async ({ advanced, offered }) => {
-      const config = spotifyConfig(ProviderStatus.LOADED);
-      config.values.account.advanced = advanced;
-      apiMock.getProviderConfig.mockResolvedValue(config);
+  it("leaves the advanced toggle to the settings form", async () => {
+    const config = spotifyConfig(ProviderStatus.LOADED);
+    config.values.account.advanced = true;
+    apiMock.getProviderConfig.mockResolvedValue(config);
 
-      const wrapper = shallowMount(EditProvider, {
-        props: {
-          instanceId: "spotify--test",
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
         },
-        global: {
-          mocks: {
-            $t: (key: string) => key,
-          },
-          stubs: providerDetailsStubs,
-        },
-      });
-      await flushPromises();
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
 
-      expect(
-        wrapper.find('[data-testid="provider-advanced-settings"]').exists(),
-      ).toBe(offered);
-    },
-  );
+    expect(
+      wrapper.findComponent({ name: "AdvancedSettingsToggle" }).exists(),
+    ).toBe(false);
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("configEntries"),
+    ).toContainEqual(expect.objectContaining({ key: "account" }));
+  });
 
   it("enables a disabled provider when disabling is not supported", async () => {
     apiMock.providerManifests.spotify.allow_disable = false;
