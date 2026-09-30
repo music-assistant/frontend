@@ -264,9 +264,13 @@ const protocolPanels = computed(() => {
   return panels.value.filter((p) => isProtocolCategory(p));
 });
 
-// a disabled form cannot be edited, so there is nothing to reveal
+// a disabled form cannot be edited, so there is nothing to reveal; without the
+// header there is no place for the toggle
 const showAdvancedToggle = computed(
-  () => !props.disabled && hasAdvancedEntries(entries.value || []),
+  () =>
+    !props.hideHeader &&
+    !props.disabled &&
+    hasAdvancedEntries(entries.value || []),
 );
 
 // a config with nothing to show or reveal leaves out the card altogether

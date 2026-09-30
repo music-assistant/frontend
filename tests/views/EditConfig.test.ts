@@ -483,6 +483,21 @@ describe("EditConfig", () => {
     expect(advancedToggle(wrapper).exists()).toBe(false);
   });
 
+  it("leaves out the card when the host hides the header and every entry is advanced", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        hideHeader: true,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(wrapper.findComponent({ name: "Card" }).exists()).toBe(false);
+  });
+
   it("leaves out the card for a config with nothing to show", () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING, hidden: true }),
