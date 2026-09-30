@@ -40,7 +40,6 @@ import {
   createRowRegistry,
   rowSourceDisplay,
   rowSourceOptions,
-  rowSourceProvider,
   type RowSource,
 } from "@/components/details/rowRegistry";
 
@@ -239,33 +238,6 @@ describe("rowRegistry", () => {
 
     it("is empty for a row without a source picker", () => {
       expect(rowSourceOptions(registry, "plain", ITEM)).toEqual([]);
-    });
-  });
-
-  describe("rowSourceProvider", () => {
-    it("names the single provider behind a source", () => {
-      mockGetProvider.mockReturnValue({ name: "Spotify", domain: "spotify" });
-      expect(rowSourceProvider("spotify--abc")).toEqual({
-        name: "Spotify",
-        domain: "spotify",
-      });
-      expect(mockGetProvider).toHaveBeenCalledWith("spotify--abc");
-    });
-
-    it("names a streaming provider after the service", () => {
-      manifestsMock["spotify"] = { name: "Spotify" };
-      mockGetProvider.mockReturnValue(SPOTIFY_ACCOUNT);
-      expect(rowSourceProvider("spotify--abc")).toEqual({
-        name: "Spotify",
-        domain: "spotify",
-      });
-    });
-
-    it("has none for the library, every provider, or an unknown one", () => {
-      expect(rowSourceProvider("library")).toBeUndefined();
-      expect(rowSourceProvider("all")).toBeUndefined();
-      expect(rowSourceProvider(undefined)).toBeUndefined();
-      expect(rowSourceProvider("spotify--gone")).toBeUndefined();
     });
   });
 
