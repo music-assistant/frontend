@@ -110,7 +110,11 @@
               v-if="store.activePlayer?.powered == false"
               :style="`font-size: ${titleFontSize};font-weight:600;`"
             >
-              {{ store.activePlayer?.name }}
+              {{
+                store.activePlayer
+                  ? getPlayerDisplayName(store.activePlayer)
+                  : ""
+              }}
             </v-card-title>
             <!-- current media title -->
             <v-card-title
@@ -129,7 +133,11 @@
               @click="store.showPlayersMenu = true"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer?.name || $t("no_player") }}
+                {{
+                  store.activePlayer
+                    ? getPlayerDisplayName(store.activePlayer)
+                    : $t("no_player")
+                }}
               </MarqueeText>
             </v-card-title>
 
@@ -504,11 +512,11 @@ import { expertModeSetting } from "@/helpers/expert_mode";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { getPlayerDisplayName, getPlayerName } from "@/helpers/players";
 import {
   ImageColorPalette,
   formatDuration,
   getMediaImageUrl,
-  getPlayerName,
 } from "@/helpers/utils";
 import LyricsOffsetMenuControl from "@/layouts/default/PlayerOSD/LyricsOffsetMenuControl.vue";
 import PlaybackSpeedDialog from "@/layouts/default/PlayerOSD/PlaybackSpeedDialog.vue";

@@ -1,4 +1,7 @@
-import type { LiveAnnouncementState } from "@/composables/useLiveAnnouncement";
+import type {
+  LiveAnnouncementCallbacks,
+  LiveAnnouncementState,
+} from "@/composables/useLiveAnnouncement";
 import PlayAnnouncementDialog from "@/layouts/default/PlayAnnouncementDialog.vue";
 import type { Player } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -20,6 +23,7 @@ const { apiMock, storeMock, toastSuccess, liveMock } = await vi.hoisted(
       storeMock: {
         dialogActive: false,
         isIngressSession: false,
+        companionPlayerId: undefined as string | undefined,
       },
       toastSuccess: vi.fn(),
       liveMock: {
@@ -28,6 +32,7 @@ const { apiMock, storeMock, toastSuccess, liveMock } = await vi.hoisted(
         start: vi.fn(),
         stop: vi.fn(),
         cancel: vi.fn(),
+        callbacks: undefined as LiveAnnouncementCallbacks | undefined,
       },
     };
   },
@@ -44,7 +49,10 @@ vi.mock("@/composables/useLiveAnnouncement", async (importOriginal) => ({
   ...(await importOriginal<
     typeof import("@/composables/useLiveAnnouncement")
   >()),
-  useLiveAnnouncement: () => liveMock,
+  useLiveAnnouncement: (callbacks: LiveAnnouncementCallbacks) => {
+    liveMock.callbacks = callbacks;
+    return liveMock;
+  },
 }));
 
 vi.mock("@/plugins/store", () => ({
@@ -52,7 +60,8 @@ vi.mock("@/plugins/store", () => ({
 }));
 
 vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string) => key,
+  $t: (key: string, args?: string[]) =>
+    args ? `${key}:${args.join(",")}` : key,
 }));
 
 vi.mock("vue-sonner", () => ({
@@ -168,12 +177,17 @@ describe("PlayAnnouncementDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     apiMock.players = {
-      kitchen: { player_id: "kitchen", name: "Kitchen" } as Player,
+      kitchen: {
+        player_id: "kitchen",
+        name: "Kitchen",
+        output_protocols: [],
+      } as unknown as Player,
     };
     apiMock.baseUrl = "https://music.example";
     apiMock.isRemoteConnection.value = false;
     liveMock.state.value = "idle";
     storeMock.dialogActive = false;
+    storeMock.companionPlayerId = undefined;
     apiMock.getPlayerConfigValue.mockResolvedValue(true);
     withoutMicrophone();
   });
@@ -436,6 +450,33 @@ describe("PlayAnnouncementDialog", () => {
     await micButton(wrapper).trigger("blur");
 
     expect(liveMock.stop).toHaveBeenCalled();
+  });
+
+  it("names the player in its sentences", async () => {
+    const wrapper = mountDialog();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+    liveMock.callbacks?.onFinished();
+
+    expect(wrapper.text()).toContain("play_announcement_explanation:Kitchen");
+    expect(toastSuccess).toHaveBeenCalledWith("play_announcement_sent:Kitchen");
+  });
+
+  it("uses its own sentences for the player of this device", async () => {
+    storeMock.companionPlayerId = "kitchen";
+    const wrapper = mountDialog();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+    liveMock.callbacks?.onFinished();
+
+    expect(wrapper.text()).toContain(
+      "play_announcement_explanation_this_device",
+    );
+    expect(toastSuccess).toHaveBeenCalledWith(
+      "play_announcement_sent_this_device",
+    );
   });
 
   it("does not carry the previous message over to the next announcement", async () => {

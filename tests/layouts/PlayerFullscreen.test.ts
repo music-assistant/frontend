@@ -138,6 +138,12 @@ vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/players")>()),
+  getPlayerDisplayName: (player: { name: string }) => player.name,
+  getPlayerName: (player: { name: string }) => player.name,
+}));
+
 // the overflow menu is handed to the app-wide context menu over the event bus,
 // which is where a test can read the entries it was built with
 vi.mock("@/plugins/eventbus", () => ({

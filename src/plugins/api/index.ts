@@ -1604,17 +1604,25 @@ export class MusicAssistantApi {
     });
   }
 
-  public browse(path?: string, player_id?: string): Promise<MediaItemType[]> {
+  public browse(
+    path?: string,
+    player_id?: string,
+    options?: CommandOptions,
+  ): Promise<MediaItemType[]> {
     // Browse Music providers.
     // player_id scopes player-bound audio sources to that player;
     // older servers (schema < 61) don't accept the argument, so omit it there.
     const supportsPlayerId =
       (this.serverInfo.value?.schema_version ?? 0) >=
       BROWSE_PLAYER_ID_SCHEMA_VERSION;
-    return this.sendCommand("music/browse", {
-      path,
-      player_id: supportsPlayerId ? player_id : undefined,
-    });
+    return this.sendCommand(
+      "music/browse",
+      {
+        path,
+        player_id: supportsPlayerId ? player_id : undefined,
+      },
+      options,
+    );
   }
 
   public search(

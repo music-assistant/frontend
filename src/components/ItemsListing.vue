@@ -38,6 +38,8 @@
 
     <v-divider />
 
+    <slot name="header"></slot>
+
     <div v-if="props.toolBarTabs !== undefined" class="content-tabs">
       <Tabs
         :model-value="activeTabId"
