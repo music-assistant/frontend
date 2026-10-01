@@ -1452,6 +1452,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
   ): Promise<PodcastEpisode> {
+    // Get a single podcast episode.
     return this.sendCommand("music/podcasts/podcast_episode", {
       item_id,
       provider_instance_id_or_domain,

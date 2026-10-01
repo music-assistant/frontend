@@ -76,7 +76,7 @@
 
 <script setup lang="ts">
 import DetailTextRow from "@/components/details/DetailTextRow.vue";
-import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import ItemsListing from "@/components/ItemsListing.vue";
 import {
   podcastEpisodeBackdrop,
   type PodcastEpisodeBackdrop,
@@ -146,7 +146,7 @@ const podcastKey = computed(() => {
 // right arrow always lands on the row below. changing the sort in the listing
 // moves it away from the steppers, which stay on the podcast's own order
 const orderedSiblings = computed(() =>
-  [...siblings.value].sort((a, b) => (b.position || 0) - (a.position || 0)),
+  [...siblings.value].sort((a, b) => b.position - a.position),
 );
 
 const currentIndex = computed(() =>
@@ -195,7 +195,7 @@ const openEpisode = function (episode?: PodcastEpisode) {
   });
 };
 
-const loadOtherEpisodes = async function (_params: LoadDataParams) {
+const loadOtherEpisodes = async function () {
   const [episode, episodes] = await Promise.all([
     // an episode that failed to load has no other episodes to list
     detailsRequest?.catch(() => undefined),
