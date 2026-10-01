@@ -1,5 +1,6 @@
 {
     "about_episode": "About this episode",
+    "about_podcast": "About this podcast",
     "actions": "Actions",
     "add_library": "Add to library",
     "add_playlist": "Add to playlist...",
@@ -2404,6 +2405,7 @@
     "n_in_library": "{count} in library",
     "album_radio": "Album endless mix",
     "n_tracks": "{count} track | {count} tracks",
+    "n_episodes": "{count} episode | {count} episodes",
     "more_from_artist": "More from this artist",
     "more_from_artist_name": "More from {name}",
     "artist_view_library_tracks": "View {count} library track | View {count} library tracks",
