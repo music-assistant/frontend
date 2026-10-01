@@ -272,13 +272,9 @@
       <span
         v-if="'fully_played' in item"
         class="listitem-played-state"
-        :title="
-          item.fully_played
-            ? $t('item_fully_played')
-            : isInProgress
-              ? $t('item_in_progress')
-              : undefined
-        "
+        :role="playedStateLabel ? 'img' : undefined"
+        :title="playedStateLabel"
+        :aria-label="playedStateLabel"
       >
         <Check v-if="item.fully_played" />
         <ClockFading v-else-if="isInProgress" />
@@ -465,6 +461,12 @@ const isInProgress = computed(
     "resume_position_ms" in compProps.item &&
     !!compProps.item.resume_position_ms,
 );
+// undefined while unplayed, when the played state shows nothing
+const playedStateLabel = computed(() => {
+  if ("fully_played" in compProps.item && compProps.item.fully_played)
+    return $t("item_fully_played");
+  return isInProgress.value ? $t("item_in_progress") : undefined;
+});
 
 const HiResDetails = computed(() => {
   if (!("provider_mappings" in compProps.item)) return "";

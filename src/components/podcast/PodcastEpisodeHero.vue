@@ -72,14 +72,18 @@
             <span
               v-if="item.fully_played"
               class="podcast-episode-hero__badge"
+              role="img"
               :title="$t('item_fully_played')"
+              :aria-label="$t('item_fully_played')"
             >
               <Check :size="20" />
             </span>
             <span
               v-else-if="item.resume_position_ms"
               class="podcast-episode-hero__badge"
+              role="img"
               :title="$t('item_in_progress')"
+              :aria-label="$t('item_in_progress')"
             >
               <ClockFading :size="20" />
             </span>
