@@ -23,11 +23,15 @@ import { computed, useTemplateRef, type ComponentPublicInstance } from "vue";
 
 export interface Props {
   item: MediaItemType;
+  // container the item belongs to, which gives the play menu its options for
+  // playing on from the item (e.g. the podcast an episode belongs to)
+  parentItem?: MediaItemType;
   // let the button shrink and ellipsis its label to fit; for a row that cannot
   // wrap, so its other buttons keep their place as the header narrows
   shrinkLabel?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
+  parentItem: undefined,
   shrinkLabel: false,
 });
 
@@ -68,7 +72,7 @@ const playButtonClick = function (forceMenu = false) {
     props.item,
     rect?.right ?? 0,
     rect?.bottom ?? 0,
-    undefined,
+    props.parentItem,
     forceMenu,
   );
 };
