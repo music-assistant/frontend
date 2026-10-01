@@ -1,7 +1,6 @@
 <template>
   <DetailHero
     class="podcast-episode-hero"
-    :class="{ 'podcast-episode-hero--phone': isPhone }"
     :item="item"
     :backdrop="backdrop"
     :blur-backdrop="blurBackdrop"
@@ -106,20 +105,7 @@
     <template v-if="item" #aside>
       <!-- episodes carry no genres of their own, so they show the podcast's -->
       <DetailHeroGenres v-if="parentPodcast" :item="parentPodcast" />
-      <div v-if="providers.length" class="podcast-episode-hero__chips">
-        <span class="podcast-episode-hero__chip">
-          <template
-            v-for="(provider, index) in providers"
-            :key="provider.domain"
-          >
-            <span v-if="index > 0" class="podcast-episode-hero__chip-sep"
-              >·</span
-            >
-            <ProviderIcon :domain="provider.domain" :size="14" />
-            {{ provider.name }}
-          </template>
-        </span>
-      </div>
+      <DetailHeroProviders :item="item" />
     </template>
   </DetailHero>
 </template>
@@ -129,10 +115,9 @@ import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { formatDuration } from "@/helpers/utils";
-import { mappedServices } from "@/plugins/api/helpers";
 import type { Podcast, PodcastEpisode } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import {
@@ -184,11 +169,6 @@ const releaseDate = computed(() => {
     ? released.toLocaleDateString(undefined, { dateStyle: "medium" })
     : "";
 });
-
-// one chip per music service, however many accounts of it hold the episode
-const providers = computed(() =>
-  props.item ? mappedServices(props.item) : [],
-);
 
 const gotoPodcast = function () {
   const podcast = props.item?.podcast;
@@ -306,28 +286,6 @@ const gotoPodcast = function () {
 .podcast-episode-hero__badge--empty {
   visibility: hidden;
 }
-.podcast-episode-hero__chips {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.podcast-episode-hero__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.45);
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.podcast-episode-hero__chip-sep {
-  opacity: 0.4;
-}
 
 @media (max-width: 768px) {
   .podcast-episode-hero__main {
@@ -357,9 +315,6 @@ const gotoPodcast = function () {
     width: 44px;
     height: 44px;
     border-radius: 10px;
-  }
-  .podcast-episode-hero--phone .podcast-episode-hero__chips {
-    justify-content: flex-start;
   }
 }
 </style>
