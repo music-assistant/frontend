@@ -110,9 +110,8 @@ describe("PodcastEpisodeDetails", () => {
   beforeEach(() => {
     mockGetPodcastEpisode
       .mockReset()
-      .mockImplementation(
-        async (itemId) =>
-          EPISODES.find((episode) => episode.item_id === itemId)!,
+      .mockImplementation(async (itemId) =>
+        EPISODES.find((episode) => episode.item_id === itemId)!,
       );
     mockGetPodcastEpisodes.mockReset().mockResolvedValue(EPISODES);
     mockGetPodcast.mockReset().mockResolvedValue(SHOW);
