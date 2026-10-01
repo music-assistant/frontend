@@ -81,7 +81,7 @@
                 variant="outline"
                 @click="onReload"
               >
-                <RefreshCw class="size-4" />
+                <RotateCw class="size-4" />
                 {{ $t("settings.reload") }}
               </Button>
             </template>
@@ -333,7 +333,7 @@ import {
   CircleAlert,
   MoreVertical,
   Pencil,
-  RefreshCw,
+  RotateCw,
   RotateCcw,
   Trash2,
   TriangleAlert,
