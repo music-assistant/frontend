@@ -88,21 +88,6 @@ import {
 
 const DEBUG = process.env.NODE_ENV === "development";
 
-// Server-side string localization + the translations/set_locale command landed in API schema 32.
-const TRANSLATIONS_SCHEMA_VERSION = 32;
-
-// The shuffle argument on player_queues/play_media landed in API schema 51.
-const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
-
-// The player_id argument on music/browse landed in API schema 61.
-const BROWSE_PLAYER_ID_SCHEMA_VERSION = 61;
-
-// Repeat one/all masking the effective autoplay flag landed in API schema 69.
-const REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION = 69;
-
-// The config/providers/share_candidates command landed in API schema 72.
-const SHARE_CANDIDATES_SCHEMA_VERSION = 72;
-
 // The auth/roles command and custom user roles landed in API schema 74.
 const ROLES_SCHEMA_VERSION = 74;
 
@@ -1621,19 +1606,8 @@ export class MusicAssistantApi {
     options?: CommandOptions,
   ): Promise<MediaItemType[]> {
     // Browse Music providers.
-    // player_id scopes player-bound audio sources to that player;
-    // older servers (schema < 61) don't accept the argument, so omit it there.
-    const supportsPlayerId =
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      BROWSE_PLAYER_ID_SCHEMA_VERSION;
-    return this.sendCommand(
-      "music/browse",
-      {
-        path,
-        player_id: supportsPlayerId ? player_id : undefined,
-      },
-      options,
-    );
+    // player_id scopes player-bound audio sources to that player.
+    return this.sendCommand("music/browse", { path, player_id }, options);
   }
 
   public search(
@@ -2406,7 +2380,7 @@ export class MusicAssistantApi {
 
   public getShareCandidates(): Promise<UserSummary[]> {
     // Get the users a music source or playlist can be shared with, the caller
-    // included; check supportsShareCandidates first.
+    // included.
     return this.sendCommand("config/providers/share_candidates", undefined, {
       // callers show their own error toast; avoid a duplicate global one
       suppressGlobalError: true,
@@ -3153,30 +3127,6 @@ export class MusicAssistantApi {
     });
   }
 
-  /** Whether the connected server accepts an explicit shuffle on play_media (schema >= 51). */
-  public get supportsPlayMediaShuffle(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server masks autoplay while repeat one/all is on (schema >= 69). */
-  public get supportsRepeatAutoplayLock(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server lists who a music source can be shared with (schema >= 72). */
-  public get supportsShareCandidates(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      SHARE_CANDIDATES_SCHEMA_VERSION
-    );
-  }
-
   /** Whether the connected server lists the user roles and has custom ones (schema >= 74). */
   public get supportsRoles(): boolean {
     return (this.serverInfo.value?.schema_version ?? 0) >= ROLES_SCHEMA_VERSION;
@@ -3190,25 +3140,13 @@ export class MusicAssistantApi {
     );
   }
 
-  /** Whether the connected server localizes server-provided strings (schema >= 32). */
-  public get supportsServerSideTranslations(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      TRANSLATIONS_SCHEMA_VERSION
-    );
-  }
-
   /**
    * Declare the connection's UI locale to the server (translations/set_locale).
    *
-   * The server resolves server-provided strings for this locale at serialization. Older servers
-   * (schema < 32) don't implement the command, so it is skipped there and they keep serving their
-   * default-locale strings.
+   * The server resolves server-provided strings for this locale at serialization.
    */
   public async setLocale(locale: string): Promise<void> {
-    if (!locale || locale === "auto" || !this.supportsServerSideTranslations) {
-      return;
-    }
+    if (!locale || locale === "auto") return;
     await this.sendCommand("translations/set_locale", { locale });
   }
 

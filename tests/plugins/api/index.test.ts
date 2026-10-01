@@ -122,6 +122,14 @@ describe("MusicAssistantApi error handling", () => {
     transport.receive(SERVER_INFO);
     await initialization;
     expect(api.state.value).toBe(ConnectionState.CONNECTED);
+    // answer what the api sends on connect, so no command is left in flight
+    for (const command of transport.sentCommands) {
+      transport.receive({
+        message_id: command.message_id!,
+        result: null,
+        partial: false,
+      });
+    }
   });
 
   afterEach(() => {
@@ -343,14 +351,6 @@ describe("MusicAssistantApi error handling", () => {
 
     await rejection;
     expect(mockToastError).not.toHaveBeenCalled();
-  });
-
-  it("lists the share candidates from schema 72 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 71 };
-    expect(api.supportsShareCandidates).toBe(false);
-
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 72 };
-    expect(api.supportsShareCandidates).toBe(true);
   });
 
   it("lists the roles from schema 74 on", () => {

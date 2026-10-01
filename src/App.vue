@@ -547,9 +547,6 @@ onMounted(async () => {
   watch(
     () => i18n.global.locale.value,
     async (locale) => {
-      // Only relevant for servers that localize server-provided strings; older servers can't
-      // re-localize, so there's nothing to push or re-fetch.
-      if (!api.supportsServerSideTranslations) return;
       try {
         await api.setLocale(locale as string);
         if (
