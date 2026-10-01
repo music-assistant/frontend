@@ -1328,8 +1328,7 @@ export const getContextMenuItems = async function (
     items[0] === parentItem &&
     items[0].media_type === MediaType.GENRE &&
     items[0].provider === "library" &&
-    managesLibrary &&
-    api.supportsCustomGenreImages
+    managesLibrary
   ) {
     contextMenuItems.push({
       label: "custom_image",

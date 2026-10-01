@@ -109,9 +109,6 @@ const ROLES_SCHEMA_VERSION = 74;
 // Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
 const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
 
-// The music/genres/set_image and music/genres/remove_image commands landed in API schema 85.
-const CUSTOM_GENRE_IMAGES_SCHEMA_VERSION = 85;
-
 export interface CommandOptions {
   /**
    * Skip the global console.error + error toast for an error result. Use for a
@@ -3185,14 +3182,6 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server has the custom genre image commands (schema >= 85). */
-  public get supportsCustomGenreImages(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      CUSTOM_GENRE_IMAGES_SCHEMA_VERSION
     );
   }
 

@@ -78,7 +78,7 @@ import {
   readFileAsBase64,
 } from "@/helpers/customImage";
 import { getImageThumbForItem } from "@/helpers/utils";
-import { api } from "@/plugins/api";
+import { api, ApiCommandError } from "@/plugins/api";
 import { ImageType, type Genre } from "@/plugins/api/interfaces";
 import { eventbus, type GenreImageDialogEvent } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -144,9 +144,9 @@ const upload = async () => {
     // The server explains why (size, unsupported format), and that message
     // is more useful than anything we could write here.
     uploadError.value =
-      typeof error === "string"
-        ? error
-        : ((error as Error)?.message ?? t("custom_image_upload_failed"));
+      error instanceof ApiCommandError && error.details
+        ? error.details
+        : t("custom_image_upload_failed");
   } finally {
     uploading.value = false;
   }
