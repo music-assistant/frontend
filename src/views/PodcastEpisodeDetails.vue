@@ -29,7 +29,7 @@
       v-if="itemDetails"
       :key="episodeKey"
       itemtype="podcastepisodes"
-      :parent-item="parentPodcast"
+      :parent-item="episodePodcast"
       :refresh-on-parent-update="true"
       :show-provider="false"
       :show-favorites-only-filter="false"
