@@ -413,6 +413,7 @@ describe("PlayerFullscreen transcript", () => {
     wrapper = shallowMount(PlayerFullscreen, {
       props: { colorPalette: EMPTY_COLOR_PALETTE },
       global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
         stubs: {
           "v-dialog": { template: "<div><slot /></div>" },
           "v-card": { template: "<div><slot /></div>" },
