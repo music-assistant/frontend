@@ -3,7 +3,8 @@
     <Card v-if="hasOptions" class="gap-0 py-0">
       <CardHeader
         v-if="!hideHeader"
-        class="flex flex-wrap items-center gap-3 border-b px-6 py-4 [.border-b]:pb-4"
+        class="flex flex-wrap items-center gap-3 px-6 py-4 [.border-b]:pb-4"
+        :class="{ 'border-b': hasVisibleSections }"
       >
         <CardTitle>{{ $t("settings.options") }}</CardTitle>
         <AdvancedSettingsToggle
@@ -12,7 +13,10 @@
           test-id="config-advanced-settings"
         />
       </CardHeader>
-      <CardContent class="divide-y divide-border px-6">
+      <CardContent
+        v-if="hasVisibleSections"
+        class="divide-y divide-border px-6"
+      >
         <!-- Generic settings section -->
         <section
           v-for="panel of regularPanels.filter(
@@ -86,9 +90,9 @@
       </CardContent>
     </Card>
 
-    <!-- nothing to edit, so nothing to save -->
+    <!-- with nothing editable in view, only unsaved edits still need saving -->
     <div
-      v-if="!disabled && hasOptions"
+      v-if="!disabled && (hasVisibleSections || hasUnsavedChanges)"
       :class="
         inlineSave
           ? 'mt-4 flex justify-end'
@@ -274,12 +278,15 @@ const showAdvancedToggle = computed(
     hasAdvancedEntries(entries.value || []),
 );
 
-// a config with nothing to show or reveal leaves out the card altogether
-const hasOptions = computed(
+const hasVisibleSections = computed(
   () =>
-    showAdvancedToggle.value ||
     protocolPanels.value.length > 0 ||
     Object.keys(visibleEntriesByCategory.value).length > 0,
+);
+
+// a config with nothing to show or reveal leaves out the card altogether
+const hasOptions = computed(
+  () => showAdvancedToggle.value || hasVisibleSections.value,
 );
 
 const requiredValuesPresent = computed(() =>
