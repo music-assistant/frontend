@@ -478,8 +478,8 @@ export const showPlayMenuForMediaItem = async function (
   const firstItem = playableItems[0];
 
   let playMenuItems: ContextMenuItem[] = [];
-  // an episode played from its own page has a podcast to play on from, which
-  // the enqueue options below cannot express
+  // an episode played with its podcast as the parent can play on through the
+  // podcast from there, which the enqueue options below cannot express
   if (
     playableItems.length == 1 &&
     parentItem?.media_type == MediaType.PODCAST &&

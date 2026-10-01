@@ -47,7 +47,7 @@
       :title="$t('other_episodes')"
       :hide-on-empty="true"
       :allow-collapse="true"
-      :path="`podcast_episodes.${podcastKey}`"
+      :path="`podcast.${podcastKey}`"
     />
 
     <Dialog v-model:open="showTranscript">
@@ -136,7 +136,7 @@ const showTranscriptButton = computed(
 );
 
 // the sort and view choices belong to the podcast, so every episode of it opens
-// the listing the same way instead of storing a preference per episode
+// the listing the same way as the podcast page's own episode listing
 const podcastKey = computed(() => {
   const podcast = itemDetails.value?.podcast;
   return podcast ? `${podcast.item_id}.${podcast.provider}` : "";
