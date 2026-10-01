@@ -362,10 +362,25 @@ export const getPlaylistMigrationProviders = function (
 };
 
 /**
- * Generate a friendly device name from the user agent and browser APIs.
- * Uses User-Agent Client Hints API when available for more accurate detection.
+ * Generate a friendly device name, such as "Web (Chrome on Mac)".
  */
 export function getDeviceName(): string {
+  const { browser, device, isPwa } = getDeviceInfo();
+  const appType = isPwa ? "PWA" : "Web";
+
+  return `${appType} (${browser} on ${device})`;
+}
+
+/**
+ * Detect the browser and device this app runs on, and whether it runs as an
+ * installed app (PWA).
+ * Uses User-Agent Client Hints API when available for more accurate detection.
+ */
+export function getDeviceInfo(): {
+  browser: string;
+  device: string;
+  isPwa: boolean;
+} {
   const ua = navigator.userAgent;
   let browser = "Browser";
   let device = "";
@@ -496,9 +511,7 @@ export function getDeviceName(): string {
     ("standalone" in navigator &&
       (navigator as Navigator & { standalone: boolean }).standalone);
 
-  const appType = isPwa ? "PWA" : "Web";
-
-  return `${appType} (${browser} on ${device})`;
+  return { browser, device, isPwa };
 }
 
 interface NavigatorUAData {

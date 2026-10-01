@@ -13,7 +13,7 @@
         {{ $t("grouped_volume") }}
       </SheetTitle>
       <SheetDescription class="sr-only">
-        {{ player.name }}
+        {{ getPlayerDisplayName(player) }}
       </SheetDescription>
       <PlayerVolumePanel :player="player" />
     </SheetContent>
@@ -28,6 +28,7 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { getPlayerDisplayName } from "@/helpers/players";
 import type { Player } from "@/plugins/api/interfaces";
 import PlayerVolumePanel from "./PlayerVolumePanel.vue";
 

@@ -350,7 +350,8 @@ import {
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
-import { getArtistsString, getPlayerName } from "@/helpers/utils";
+import { getPlayerDisplayName, getPlayerName } from "@/helpers/players";
+import { getArtistsString } from "@/helpers/utils";
 import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
   MediaType,
@@ -768,7 +769,9 @@ const playerResults = computed(() => {
   const term = query.value.trim().toLowerCase();
   if (!term) return [];
   return orderedPlayers.value
-    .filter((player) => player.name.toLowerCase().includes(term))
+    .filter((player) =>
+      getPlayerDisplayName(player).toLowerCase().includes(term),
+    )
     .slice(0, 6);
 });
 

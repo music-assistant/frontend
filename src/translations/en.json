@@ -1095,7 +1095,9 @@
         "remove_message": "Playback is active on {0}. Removing this player from the group will move the playback session to the remaining players.",
         "power_off_message": "Playback is active on {0}. Powering it off will move the playback session to the remaining players.",
         "keep_playing": "Keep playing",
-        "stop_and_ungroup": "Stop and ungroup"
+        "stop_and_ungroup": "Stop and ungroup",
+        "remove_message_this_device": "Playback is active on this device. Removing it from the group will move the playback session to the remaining players.",
+        "power_off_message_this_device": "Playback is active on this device. Powering it off will move the playback session to the remaining players."
     },
     "powered_off_players": "Unpowered players",
     "sync_player_with": "Synchronize with another player",
@@ -2840,5 +2842,9 @@
                 "description": "Add other players to the one you picked, so they play the same music together in several rooms. Players that cannot join are not offered."
             }
         }
-    }
+    },
+    "web_player_name": "{owner}'s {device} ({client})",
+    "play_on_this_device": "Play on this device",
+    "play_announcement_explanation_this_device": "Speak a message out loud on this device.",
+    "play_announcement_sent_this_device": "Announcement sent to this device"
 }

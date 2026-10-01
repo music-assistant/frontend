@@ -29,12 +29,13 @@
           v-if="store.activePlayer.powered === false"
           class="now-playing-title"
         >
-          {{ store.activePlayer.name }}
+          {{ getPlayerDisplayName(store.activePlayer) }}
         </div>
         <template v-else>
           <MarqueeText :sync="marqueeSync" class="now-playing-title">
             {{
-              store.activePlayer.current_media?.title || store.activePlayer.name
+              store.activePlayer.current_media?.title ||
+              getPlayerDisplayName(store.activePlayer)
             }}
           </MarqueeText>
           <!-- placeholder when no artist, so the artwork position stays fixed -->
@@ -62,6 +63,7 @@ import PlayerIcon from "@/components/PlayerIcon.vue";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { getPlayerDisplayName } from "@/helpers/players";
 import {
   type ImageColorPalette,
   getMediaImageUrl,
