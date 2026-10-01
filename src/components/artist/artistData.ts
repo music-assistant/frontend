@@ -1,4 +1,7 @@
-import type { RowSource } from "@/components/details/rowRegistry";
+import {
+  rowSourceLabel,
+  type RowSource,
+} from "@/components/details/rowRegistry";
 import { api } from "@/plugins/api";
 import {
   AlbumType,
@@ -58,30 +61,37 @@ export async function loadArtistDiscography(artist: Artist): Promise<Album[]> {
 
 /**
  * The provider instances the artist is mapped to that support `feature`, sorted
- * by provider name: the candidate sources for a row fed by the artist's own
- * provider catalogs.
+ * by their source label: the candidate sources for a row fed by the artist's
+ * own provider catalogs. A streaming service is offered once, as the instance
+ * with the lowest id, since all of its accounts share one catalog.
  */
 export function artistProvidersForFeature(
   artist: Artist,
   feature: ProviderFeature,
 ): string[] {
-  const ids = new Set<string>();
+  // keyed by domain for a streaming provider, by instance id for any other
+  const ids = new Map<string, string>();
   for (const mapping of artist.provider_mappings) {
-    if (
-      api.providers[mapping.provider_instance]?.supported_features.includes(
-        feature,
-      )
-    ) {
-      ids.add(mapping.provider_instance);
+    const provider = api.providers[mapping.provider_instance];
+    if (!provider?.supported_features.includes(feature)) continue;
+    const key = provider.is_streaming_provider
+      ? provider.domain
+      : provider.instance_id;
+    const current = ids.get(key);
+    if (!current || provider.instance_id < current) {
+      ids.set(key, provider.instance_id);
     }
   }
-  return [...ids].sort((a, b) =>
-    (api.providers[a]?.name ?? a).localeCompare(api.providers[b]?.name ?? b),
+  return [...ids.values()].sort((a, b) =>
+    rowSourceLabel(a).localeCompare(rowSourceLabel(b)),
   );
 }
 
-/** The artist's in-library tracks, optionally limited to a single provider. */
-export async function loadArtistLibraryTracks(
+/**
+ * The artist's tracks, optionally limited to a single provider: those in the
+ * library for a library artist, its provider's own for a provider artist.
+ */
+export async function loadArtistTracks(
   artist: Artist,
   providerFilter?: string,
 ): Promise<Track[]> {

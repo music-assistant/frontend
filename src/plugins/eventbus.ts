@@ -51,6 +51,9 @@ export type DeleteConfirmationDialogEvent = {
   // false for a confirmation that does not destroy anything: the confirm button
   // is then the regular one instead of the red destructive one
   destructive?: boolean;
+  // when set, a checkbox with this label has to be ticked before the confirm
+  // button is enabled
+  acknowledgement?: string;
   onConfirm: () => void | Promise<void>;
 };
 

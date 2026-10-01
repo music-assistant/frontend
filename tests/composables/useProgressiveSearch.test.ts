@@ -21,14 +21,15 @@ const { mockSearch, mockGetLibraryGenres, mockProviders, mockManifests } =
     };
   });
 
-vi.mock("@/plugins/api", () => ({
-  api: {
+vi.mock("@/plugins/api", () => {
+  const api = {
     providers: mockProviders,
     providerManifests: mockManifests,
     search: mockSearch,
     getLibraryGenres: mockGetLibraryGenres,
-  },
-}));
+  };
+  return { api, default: api };
+});
 
 import {
   LIBRARY_SEARCH_TARGET,

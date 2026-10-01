@@ -79,6 +79,19 @@ export const playerVisible = function (
 };
 
 /**
+ * Check if the player is unavailable.
+ *
+ * A needs_setup player is also serialized as unavailable, but it has its own
+ * "Start Setup" CTA, so it does not count as unavailable here - see the
+ * matching note on playerVisible function.
+ */
+export const isPlayerUnavailable = function (
+  player: Player | null | undefined,
+): boolean {
+  return !(player?.available ?? false) && !(player?.needs_setup ?? false);
+};
+
+/**
  * Check if the player may become the active playback target.
  *
  * Capture-only audio inputs are listed for discoverability but never render

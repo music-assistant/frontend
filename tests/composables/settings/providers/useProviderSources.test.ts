@@ -409,7 +409,7 @@ describe("removeSource", () => {
       expect.objectContaining({ onConfirm: expect.any(Function) }),
     );
     expect(i18nMock.$t).toHaveBeenCalledWith(
-      "settings.remove_provider_confirm",
+      "settings.remove_provider_confirm_music",
       ["My Spotify"],
     );
     expect(apiMock.removeProviderConfig).not.toHaveBeenCalled();

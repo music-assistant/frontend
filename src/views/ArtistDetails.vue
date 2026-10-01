@@ -25,7 +25,7 @@
           :source-domain="topTracksSourceDisplay?.domain"
           :source-options="sourceOptions('top_tracks')"
           :source-value="topTracksSource"
-          :library-track-count="libraryTracks?.length"
+          :artist-track-count="artistTracks?.length"
           :empty-message="$t('artist_row_empty')"
           @edit-rows="rowsEditorOpen = true"
           @select-source="(source) => selectRowSource('top_tracks', source)"
@@ -276,7 +276,7 @@ const visibleRows = computed(() => {
 });
 
 const {
-  libraryTracks,
+  artistTracks,
   topTracksItems,
   albumItems,
   singleItems,
@@ -329,8 +329,8 @@ const singlesEmptyMessage = computed(() =>
 // how much each row currently holds, for the editor's per-row meta line (it
 // adds the source itself)
 const rowMeta = computed<Partial<Record<ArtistRowId, string>>>(() => ({
-  top_tracks: libraryTracks.value?.length
-    ? $t("n_in_library", { count: libraryTracks.value.length })
+  top_tracks: artistTracks.value?.length
+    ? topTracksMeta(artistTracks.value.length)
     : undefined,
   albums: albumsMeta.value,
   singles_eps: singleItems.value?.length
@@ -511,6 +511,13 @@ function rowApplies(rowId: ArtistRowId): boolean {
     default:
       return true;
   }
+}
+
+/** The top tracks row's track count; only a library artist's are in the library. */
+function topTracksMeta(count: number): string {
+  return itemDetails.value?.provider === "library"
+    ? $t("n_in_library", { count })
+    : $t("n_tracks", count, { named: { count } });
 }
 
 /** A row is rendered while it loads and once it has something to show. */
