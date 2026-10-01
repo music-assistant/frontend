@@ -87,8 +87,11 @@ export function artistProvidersForFeature(
   );
 }
 
-/** The artist's in-library tracks, optionally limited to a single provider. */
-export async function loadArtistLibraryTracks(
+/**
+ * The artist's tracks, optionally limited to a single provider: those in the
+ * library for a library artist, its provider's own for a provider artist.
+ */
+export async function loadArtistTracks(
   artist: Artist,
   providerFilter?: string,
 ): Promise<Track[]> {

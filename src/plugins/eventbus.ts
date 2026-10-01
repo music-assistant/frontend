@@ -62,6 +62,8 @@ export type PlayerGroupPlaybackChange = "remove" | "power_off";
 export type PlayerGroupPlaybackDialogEvent = {
   change: PlayerGroupPlaybackChange;
   playerName: string;
+  // the player is the built-in player of this device
+  isThisDevice: boolean;
   onKeepPlaying: () => void | Promise<void>;
   onStopAndUngroup: () => void | Promise<void>;
 };

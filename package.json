@@ -13,6 +13,7 @@
         "lint:eslint": "eslint . --max-warnings=0",
         "format": "prettier --write \"**/*.{js,cjs,ts,vue}\"",
         "format:check": "prettier --check \"**/*.{js,cjs,ts,vue}\"",
+        "sync:shared-icons": "node scripts/sync-shared-icons.mjs",
         "test": "vitest",
         "test:ui": "vitest --ui",
         "test:run": "vitest run",

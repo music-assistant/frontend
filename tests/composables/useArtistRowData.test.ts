@@ -30,7 +30,7 @@ const {
   mockLoadArtistReleases,
   mockLoadArtistAppearsOn,
   mockLoadArtistDiscography,
-  mockLoadArtistLibraryTracks,
+  mockLoadArtistTracks,
   mockLoadArtistTopTracks,
   mockLoadSimilarArtists,
 } = vi.hoisted(() => ({
@@ -46,7 +46,7 @@ const {
     vi.fn<(artist: Artist, source: RowSource) => Promise<Album[]>>(),
   mockLoadArtistAppearsOn: vi.fn<(artist: Artist) => Promise<Album[]>>(),
   mockLoadArtistDiscography: vi.fn<(artist: Artist) => Promise<Album[]>>(),
-  mockLoadArtistLibraryTracks: vi.fn<(artist: Artist) => Promise<Track[]>>(),
+  mockLoadArtistTracks: vi.fn<(artist: Artist) => Promise<Track[]>>(),
   mockLoadArtistTopTracks:
     vi.fn<(artist: Artist, source: RowSource) => Promise<Track[]>>(),
   mockLoadSimilarArtists:
@@ -62,7 +62,7 @@ vi.mock("@/components/artist/artistData", async (importOriginal) => ({
   loadArtistReleases: mockLoadArtistReleases,
   loadArtistAppearsOn: mockLoadArtistAppearsOn,
   loadArtistDiscography: mockLoadArtistDiscography,
-  loadArtistLibraryTracks: mockLoadArtistLibraryTracks,
+  loadArtistTracks: mockLoadArtistTracks,
   loadArtistTopTracks: mockLoadArtistTopTracks,
   loadSimilarArtists: mockLoadSimilarArtists,
 }));
@@ -137,7 +137,7 @@ describe("useArtistRowData", () => {
     mockLoadArtistReleases.mockReset().mockResolvedValue([]);
     mockLoadArtistAppearsOn.mockReset().mockResolvedValue([]);
     mockLoadArtistDiscography.mockReset().mockResolvedValue([]);
-    mockLoadArtistLibraryTracks.mockReset().mockResolvedValue([]);
+    mockLoadArtistTracks.mockReset().mockResolvedValue([]);
     mockLoadArtistTopTracks.mockReset().mockResolvedValue([]);
     mockLoadSimilarArtists.mockReset().mockResolvedValue([]);
   });
@@ -210,7 +210,7 @@ describe("useArtistRowData", () => {
 
   it("falls back to the newest library tracks when the source has no top tracks", async () => {
     const page = setupRowData({ rows: ["top_tracks"] });
-    mockLoadArtistLibraryTracks.mockResolvedValue([
+    mockLoadArtistTracks.mockResolvedValue([
       track({ item_id: "older", album: album({ year: 1999 }) }),
       track({ item_id: "newer", album: album({ year: 2024 }) }),
     ]);
@@ -223,7 +223,7 @@ describe("useArtistRowData", () => {
 
   it("labels the top tracks row after the library when it uses that fallback", async () => {
     const page = setupRowData({ rows: ["top_tracks"] });
-    mockLoadArtistLibraryTracks.mockResolvedValue([track()]);
+    mockLoadArtistTracks.mockResolvedValue([track()]);
 
     await showArtist(page, libraryArtist());
 
@@ -232,7 +232,7 @@ describe("useArtistRowData", () => {
 
   it("keeps naming a provider artist's own provider when it uses that fallback", async () => {
     const page = setupRowData({ rows: ["top_tracks"] });
-    mockLoadArtistLibraryTracks.mockResolvedValue([track()]);
+    mockLoadArtistTracks.mockResolvedValue([track()]);
     mockApi.getProvider.mockReturnValue({ name: "Spotify", domain: "spotify" });
 
     await showArtist(page, artist({ item_id: "sp1", provider: SPOTIFY }));
@@ -280,7 +280,7 @@ describe("useArtistRowData", () => {
     expect(itemIds(page.appearsOnItems.value)).toEqual(["guest"]);
     expect(mockLoadArtistAppearsOn).toHaveBeenCalledTimes(1);
     expect(releaseSources()).toEqual(["library"]);
-    expect(mockLoadArtistLibraryTracks).not.toHaveBeenCalled();
+    expect(mockLoadArtistTracks).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -350,7 +350,7 @@ describe("useArtistRowData", () => {
     expect(itemIds(page.discographyItems.value)).toEqual(["added"]);
     expect(mockLoadArtistReleases).toHaveBeenCalledTimes(2);
     expect(mockLoadArtistTopTracks).toHaveBeenCalledTimes(1);
-    expect(mockLoadArtistLibraryTracks).toHaveBeenCalledTimes(1);
+    expect(mockLoadArtistTracks).toHaveBeenCalledTimes(1);
   });
 
   it("requests no discography when only other rows show", async () => {
@@ -390,6 +390,6 @@ describe("useArtistRowData", () => {
     await showArtist(page, libraryArtist({ artist_type: ArtistType.AUTHOR }));
 
     expect(mockLoadArtistReleases).not.toHaveBeenCalled();
-    expect(mockLoadArtistLibraryTracks).not.toHaveBeenCalled();
+    expect(mockLoadArtistTracks).not.toHaveBeenCalled();
   });
 });

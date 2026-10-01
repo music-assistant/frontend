@@ -1,6 +1,8 @@
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { Player, PlayerConfig } from "@/plugins/api/interfaces";
+import { webPlayer } from "@/plugins/web_player";
 import { mount } from "@vue/test-utils";
+import type { DirectiveBinding } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock } = vi.hoisted(() => ({
@@ -27,11 +29,22 @@ const playerConfig = {
 
 const passthroughStub = { template: "<div><slot /></div>" };
 
+// the long-press directive is registered by a plugin the test skips, so a
+// stand-in captures the handler bound to it
+let holdHandler: (event: Event) => void;
+
 function mountCard(configOverrides: Partial<PlayerConfig> = {}) {
   return mount(SettingsPlayerCard, {
     props: { playerConfig: { ...playerConfig, ...configOverrides } },
     global: {
       mocks: { $t: (key: string) => key },
+      directives: {
+        hold: {
+          mounted: (_el: Element, binding: DirectiveBinding) => {
+            holdHandler = binding.value;
+          },
+        },
+      },
       stubs: {
         PlayerIcon: true,
         ProtocolChip: true,
@@ -46,11 +59,17 @@ function mountCard(configOverrides: Partial<PlayerConfig> = {}) {
 describe("SettingsPlayerCard", () => {
   beforeEach(() => {
     apiMock.getProviderManifest.mockReturnValue(undefined);
+    webPlayer.player_id = null;
   });
 
   it("relays PlayerSetupWarning's click through to its own setup event", async () => {
     apiMock.players = {
-      kitchen: { available: false, needs_setup: true, output_protocols: [] },
+      kitchen: {
+        player_id: "kitchen",
+        available: false,
+        needs_setup: true,
+        output_protocols: [],
+      },
     };
     const wrapper = mountCard();
 
@@ -66,7 +85,12 @@ describe("SettingsPlayerCard", () => {
 
   it("bubbles a click on the warning badge up to its own click event", async () => {
     apiMock.players = {
-      kitchen: { available: false, needs_setup: true, output_protocols: [] },
+      kitchen: {
+        player_id: "kitchen",
+        available: false,
+        needs_setup: true,
+        output_protocols: [],
+      },
     };
     const wrapper = mountCard();
 
@@ -77,7 +101,12 @@ describe("SettingsPlayerCard", () => {
 
   it("does not dim a needs-setup card the way it dims a merely unavailable one", () => {
     apiMock.players = {
-      kitchen: { available: false, needs_setup: true, output_protocols: [] },
+      kitchen: {
+        player_id: "kitchen",
+        available: false,
+        needs_setup: true,
+        output_protocols: [],
+      },
     };
     const wrapper = mountCard();
 
@@ -86,7 +115,12 @@ describe("SettingsPlayerCard", () => {
 
   it("dims a card that is unavailable without needing setup", () => {
     apiMock.players = {
-      kitchen: { available: false, needs_setup: false, output_protocols: [] },
+      kitchen: {
+        player_id: "kitchen",
+        available: false,
+        needs_setup: false,
+        output_protocols: [],
+      },
     };
     const wrapper = mountCard();
 
@@ -95,10 +129,76 @@ describe("SettingsPlayerCard", () => {
 
   it("dims a disabled card even when the player is available", () => {
     apiMock.players = {
-      kitchen: { available: true, needs_setup: false, output_protocols: [] },
+      kitchen: {
+        player_id: "kitchen",
+        available: true,
+        needs_setup: false,
+        output_protocols: [],
+      },
     };
     const wrapper = mountCard({ enabled: false });
 
     expect(wrapper.classes()).toContain("player-disabled");
+  });
+
+  it("emits menu and suppresses the native menu on right-click", () => {
+    apiMock.players = {
+      kitchen: { available: true, needs_setup: false, output_protocols: [] },
+    };
+    const wrapper = mountCard();
+    const event = new MouseEvent("contextmenu", {
+      bubbles: true,
+      cancelable: true,
+      button: 2,
+    });
+
+    wrapper.element.dispatchEvent(event);
+
+    expect(wrapper.emitted("menu")).toEqual([[event, playerConfig]]);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it("emits menu on long-press", () => {
+    apiMock.players = {
+      kitchen: { available: true, needs_setup: false, output_protocols: [] },
+    };
+    const wrapper = mountCard();
+    const event = new Event("touchstart");
+
+    holdHandler(event);
+
+    expect(wrapper.emitted("menu")).toEqual([[event, playerConfig]]);
+  });
+
+  it("swallows the click that follows a long-press instead of opening", async () => {
+    apiMock.players = {
+      kitchen: { available: true, needs_setup: false, output_protocols: [] },
+    };
+    const wrapper = mountCard();
+
+    holdHandler(new Event("touchstart"));
+    await wrapper.trigger("click");
+    expect(wrapper.emitted("click")).toBeUndefined();
+
+    await wrapper.trigger("click");
+    expect(wrapper.emitted("click")).toEqual([[playerConfig]]);
+  });
+
+  it("labels the player of this device next to its real name", () => {
+    apiMock.players = {
+      kitchen: {
+        player_id: "kitchen",
+        available: true,
+        needs_setup: false,
+        output_protocols: [],
+      },
+    };
+    webPlayer.player_id = "kitchen";
+    const wrapper = mountCard();
+
+    expect(wrapper.get(".player-name").text()).toContain("Kitchen");
+    expect(wrapper.get(".player-device-badge-label").text()).toBe(
+      "this_device",
+    );
   });
 });

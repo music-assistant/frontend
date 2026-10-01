@@ -21,9 +21,9 @@ import {
   artistProvidersForFeature,
   isSingleOrEp,
   loadArtistAppearsOn,
-  loadArtistLibraryTracks,
   loadArtistReleases,
   loadArtistTopTracks,
+  loadArtistTracks,
   loadSimilarArtists,
   sortReleasesNewestFirst,
 } from "@/components/artist/artistData";
@@ -145,9 +145,9 @@ describe("artistData", () => {
     });
   });
 
-  describe("loadArtistLibraryTracks", () => {
+  describe("loadArtistTracks", () => {
     it("passes the provider filter through", async () => {
-      await loadArtistLibraryTracks(LIBRARY_ARTIST, "spotify--abc");
+      await loadArtistTracks(LIBRARY_ARTIST, "spotify--abc");
       expect(apiMock.getArtistTracks).toHaveBeenLastCalledWith(
         "1",
         "library",
