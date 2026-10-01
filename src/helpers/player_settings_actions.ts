@@ -159,18 +159,20 @@ export const getPlayerSettingsMenuItems = (
 
 /**
  * Menu entries for a player that still needs setup and so can't play yet:
- * setting it up and, for a role that changes player settings, renaming it,
- * opening its settings and disabling it.
+ * setting it up, renaming it, opening its settings and disabling it. Empty for
+ * a role that may not change player settings.
  */
 export const getSetupRequiredPlayerMenuItems = (
   player: Player,
 ): ContextMenuItem[] => {
+  // setting a player up takes the same scope as changing its settings
+  if (!authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)) return [];
+
   const playerId = player.player_id;
   const menuItems: ContextMenuItem[] = [];
 
   const setupMenuItem = getPlayerSetupMenuItem(player);
   if (setupMenuItem) menuItems.push(setupMenuItem);
-  if (!authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)) return menuItems;
 
   menuItems.push(
     {

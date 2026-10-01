@@ -368,12 +368,10 @@ describe("getSetupRequiredPlayerMenuItems", () => {
     ]);
   });
 
-  it("offers only the setup to a role that may not change player settings", () => {
+  it("offers nothing to a role that may not change player settings", () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
 
-    expect(
-      visibleLabels(getSetupRequiredPlayerMenuItems(setupRequiredPlayer())),
-    ).toEqual(["configure_player"]);
+    expect(getSetupRequiredPlayerMenuItems(setupRequiredPlayer())).toEqual([]);
   });
 
   it("opens the rename dialog on the names the player config carries", async () => {

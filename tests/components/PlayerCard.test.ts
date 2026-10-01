@@ -7,13 +7,14 @@ import {
   PlayerFeature,
   type PlayerMedia,
   PlayerType,
+  type Scope,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, emitContextMenu } = vi.hoisted(() => ({
+const { apiMock, emitContextMenu, hasScope } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, Player>,
     queues: {} as Record<
@@ -32,10 +33,15 @@ const { apiMock, emitContextMenu } = vi.hoisted(() => ({
       vi.fn<MusicAssistantApi["playerCommandPowerToggle"]>(),
   },
   emitContextMenu: vi.fn(),
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
 }));
 
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope },
 }));
 
 vi.mock("@/plugins/store", () => ({
@@ -254,6 +260,7 @@ describe("PlayerCard", () => {
     apiMock.players = {};
     apiMock.queues = {};
     store.deviceType = "desktop";
+    hasScope.mockReturnValue(true);
   });
 
   it("uses a primary border for the active player", () => {
@@ -344,6 +351,20 @@ describe("PlayerCard", () => {
       "contextmenu",
       expect.objectContaining({ items: [{ label: "configure_player" }] }),
     );
+  });
+
+  it("keeps the menu of a player that needs setup from a role that may not set it up", async () => {
+    vi.clearAllMocks();
+    hasScope.mockReturnValue(false);
+    const wrapper = mountPlayerCard(
+      createPlayer({ available: false, needs_setup: true }),
+    );
+    const menuButton = wrapper.find('[aria-label="tooltip.more_options"]');
+
+    expect(menuButton.attributes("disabled")).toBeDefined();
+    await wrapper.trigger("contextmenu");
+
+    expect(emitContextMenu).not.toHaveBeenCalled();
   });
 
   it("lists every player name in a manual group", () => {
