@@ -933,7 +933,7 @@ const fetchLyrics = async () => {
 
 // Watch for track changes and handle lyrics
 watch(
-  () => store.curQueueItem?.media_item?.item_id,
+  () => store.curQueueItem?.queue_item_id,
   () => {
     resetLyricsOffset();
     transcriptSyncEnabled.value = true;
