@@ -160,6 +160,7 @@
       :player-id="store.activePlayerId"
       variant="overlay"
       :button-size="showLabel ? 'icon' : 'icon-sm'"
+      :icon-size="16"
       content-class="z-[10001]"
     />
 

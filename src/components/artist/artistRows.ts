@@ -1,6 +1,7 @@
 import { artistProvidersForFeature } from "@/components/artist/artistData";
 import {
   createRowRegistry,
+  rowSourceLabel,
   type RowDefinition,
   type RowSource,
 } from "@/components/details/rowRegistry";
@@ -103,7 +104,7 @@ export const artistRows = createRowRegistry<ArtistRowId, Artist>({
 });
 
 // rows fed by the artist's releases, in or outside the library
-const RELEASE_ROWS: ArtistRowId[] = ["albums", "singles_eps", "appears_on"];
+const RELEASE_ROWS: ArtistRowId[] = ["albums", "singles_eps"];
 
 // rows the server aggregates over every provider by default
 const ALL_PROVIDER_ROWS: ArtistRowId[] = ["top_tracks", "similar_artists"];
@@ -124,7 +125,7 @@ function rowSourceCandidates(id: ArtistRowId, artist: Artist): RowSource[] {
 }
 
 /**
- * The providers able to supply a row, sorted by name: those the artist is mapped to that
+ * The providers able to supply a row, sorted by label: those the artist is mapped to that
  * support the row's feature and, for the rows the server aggregates, any metadata or plugin
  * provider that does. The server only loads the sources the user may use.
  */
@@ -142,7 +143,7 @@ function rowSourceProviders(id: ArtistRowId, artist: Artist): string[] {
     }
   }
   return [...ids].sort((a, b) =>
-    (api.providers[a]?.name ?? a).localeCompare(api.providers[b]?.name ?? b),
+    rowSourceLabel(a).localeCompare(rowSourceLabel(b)),
   );
 }
 

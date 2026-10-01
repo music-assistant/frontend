@@ -102,6 +102,11 @@ vi.mock("@/composables/useProgressiveSearch", async (importOriginal) => {
   };
 });
 
+vi.mock("@/helpers/players", () => ({
+  getPlayerDisplayName: (player: Player) => player.name,
+  getPlayerName: (player: Player) => player.name,
+}));
+
 vi.mock("@/composables/useOrderedPlayers", async () => {
   const { computed } = await import("vue");
   return {

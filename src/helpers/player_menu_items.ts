@@ -11,7 +11,7 @@ import {
   Scope,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
-import { isSelectablePlayer } from "@/helpers/players";
+import { getPlayerDisplayName, isSelectablePlayer } from "@/helpers/players";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { resolveExternalSource } from "@/composables/externalSource";
 import { resolveActiveSourceId } from "@/composables/activeSource";
@@ -224,7 +224,7 @@ export const getPlayerMenuItems = (
         )
         .map((p) => {
           return {
-            label: p.name,
+            label: getPlayerDisplayName(p),
             labelArgs: [],
             action: () => {
               api.queueCommandTransfer(playerQueue!.queue_id, p.player_id);

@@ -15,7 +15,7 @@ import { toast } from "vue-sonner";
 import { api, ConnectionState } from "./api";
 import { Scope } from "./api/interfaces";
 import { authManager } from "./auth";
-import { notifyHARouteChange } from "./homeassistant";
+import { createHAHistory, isInHAAppPanel } from "./homeassistant_history";
 import { store } from "./store";
 
 declare module "vue-router" {
@@ -690,8 +690,10 @@ export const routes: RouteRecordRaw[] = [
   },
 ];
 
+const inHAAppPanel = isInHAAppPanel();
+
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: inHAAppPanel ? createHAHistory() : createWebHashHistory(),
   routes,
 });
 
@@ -728,7 +730,12 @@ router.onError((error, to) => {
     // moving the hash stays on the same document and the reload is what fetches
     // fresh HTML and assets. Moving only the hash also keeps the rest of the
     // URL (e.g. Home Assistant ingress query params) intact.
-    window.location.hash = to.fullPath;
+    if (inHAAppPanel) {
+      // A new entry would land in the history Home Assistant keeps.
+      window.history.replaceState(window.history.state, "", `#${to.fullPath}`);
+    } else {
+      window.location.hash = to.fullPath;
+    }
     window.location.reload();
   }
 });
@@ -808,12 +815,6 @@ router.beforeEach(async (to) => {
       console.warn(`The ${missingScope} scope is required for`, to.path);
       return { name: "discover" };
     }
-  }
-});
-
-router.afterEach((to) => {
-  if (store.isIngressSession) {
-    notifyHARouteChange(to.fullPath);
   }
 });
 

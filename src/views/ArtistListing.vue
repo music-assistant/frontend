@@ -33,11 +33,11 @@
 
 <script setup lang="ts">
 import {
-  appearsOnAlbums,
   isSingleOrEp,
+  loadArtistAppearsOn,
   loadArtistDiscography,
-  loadArtistLibraryTracks,
   loadArtistReleases,
+  loadArtistTracks,
 } from "@/components/artist/artistData";
 import { artistRows } from "@/components/artist/artistRows";
 import {
@@ -203,7 +203,7 @@ const config = computed<ListingConfig | undefined>(() => {
             : $t("artist_no_tracks"),
         loadItems: async (params: LoadDataParams) => {
           if (!itemDetails.value) return [];
-          return await loadArtistLibraryTracks(
+          return await loadArtistTracks(
             itemDetails.value,
             params.provider?.[0],
           );
@@ -336,19 +336,6 @@ async function loadDiscography(): Promise<MediaItemType[]> {
 /** Albums the artist is credited on without being the album artist. */
 async function loadAppearsOn(): Promise<MediaItemType[]> {
   if (!itemDetails.value) return [];
-  // every album the artist's library tracks point at that is not one of their
-  // own releases is an appearance
-  const [tracks, releases] = await Promise.all([
-    loadArtistLibraryTracks(itemDetails.value),
-    loadArtistReleases(
-      itemDetails.value,
-      artistRows.effectiveSource("appears_on", itemDetails.value),
-    ),
-  ]);
-  return appearsOnAlbums(
-    tracks,
-    itemDetails.value,
-    releases,
-  ) as MediaItemType[];
+  return await loadArtistAppearsOn(itemDetails.value);
 }
 </script>

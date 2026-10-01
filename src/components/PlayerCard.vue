@@ -241,11 +241,13 @@ import {
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   canEditPlayerGroup,
+  getPlayerDisplayName,
   getPlayerGroupMemberCount,
+  getPlayerName,
   isBuiltinPlayer,
 } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
-import { getMediaImageUrl, getPlayerName } from "@/helpers/utils";
+import { getMediaImageUrl } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { resolvePlayerQueue } from "@/plugins/api/helpers";
 import {
@@ -367,18 +369,18 @@ const groupMemberNames = computed(() => {
         Boolean(member) &&
         (props.player.type === PlayerType.GROUP || member.available),
     )
-    .map((member) => member.name);
+    .map(getPlayerDisplayName);
 
   if (childNames.length === 0 || props.player.type === PlayerType.GROUP) {
     return childNames;
   }
-  return [props.player.name, ...childNames];
+  return [getPlayerDisplayName(props.player), ...childNames];
 });
 
 const cardPlayerName = computed(() =>
   props.groupMemberLayout === "subtitle-list" &&
   groupMemberNames.value.length > 0
-    ? props.player.name
+    ? getPlayerDisplayName(props.player)
     : getPlayerName(props.player, 27),
 );
 
@@ -401,7 +403,7 @@ const accessibleGroupMemberNames = computed(() =>
 
 const accessiblePlayerLabel = computed(() =>
   [
-    props.player.name,
+    getPlayerDisplayName(props.player),
     ...accessibleGroupMemberNames.value,
     props.player.current_media?.title,
     mediaByline.value,

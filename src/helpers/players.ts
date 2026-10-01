@@ -1,18 +1,25 @@
-// Shared predicates that decide which players this device owns and which of
-// them may be shown in the UI.
+// Shared helpers that decide which players this device owns, how players are
+// named and which of them may be shown in the UI.
+import { truncateString } from "@/helpers/utils";
+import { api } from "@/plugins/api";
+import { getDeviceInfo, getDeviceName } from "@/plugins/api/helpers";
 import {
   PlaybackState,
   Player,
   PlayerFeature,
   PlayerType,
+  User,
 } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 
 /**
  * Check if the player is (or streams to) the built-in player of this device.
  */
-export const isBuiltinPlayer = function (player: Player): boolean {
+export const isBuiltinPlayer = function (
+  player: Pick<Player, "player_id" | "output_protocols">,
+): boolean {
   return (
     player.player_id === webPlayer.player_id ||
     player.player_id === store.companionPlayerId ||
@@ -22,6 +29,54 @@ export const isBuiltinPlayer = function (player: Player): boolean {
         x.output_protocol_id === store.companionPlayerId,
     )
   );
+};
+
+/**
+ * Return the name to show for the player during playback.
+ *
+ * The built-in player of this device is shown as "This device"; settings show
+ * the player's real name instead.
+ */
+export const getPlayerDisplayName = function (
+  player: Pick<Player, "player_id" | "name" | "output_protocols">,
+): string {
+  return isBuiltinPlayer(player) ? $t("this_device") : player.name;
+};
+
+/**
+ * Return the display name of the player, truncated to the given length and
+ * suffixed with "+N" when N other players are synced to it.
+ */
+export const getPlayerName = function (player: Player, truncate = 26) {
+  if (!player) return "";
+  const availableChildPlayers = player.group_members.filter(
+    (x) => api.players[x]?.available && x != player.player_id,
+  );
+  const name = getPlayerDisplayName(player);
+  if (player.type != PlayerType.GROUP && availableChildPlayers.length) {
+    return `${truncateString(name, truncate - 3)} +${
+      availableChildPlayers.length
+    }`;
+  }
+  return truncateString(name, truncate);
+};
+
+/**
+ * Return the name the built-in web player registers with, such as
+ * "Marcel's Mac (Chrome)", or "Marcel's iPhone (App)" for an installed app.
+ * Falls back to getDeviceName() when the owner is unknown.
+ */
+export const getWebPlayerName = function (owner?: User): string {
+  if (!owner) return getDeviceName();
+  const { browser, device, isPwa } = getDeviceInfo();
+  const ownerName = (owner.display_name?.trim() || owner.username).split(
+    /\s+/,
+  )[0];
+  return $t("web_player_name", {
+    owner: ownerName,
+    device,
+    client: isPwa ? "App" : browser,
+  });
 };
 
 export const isPlayerActive = function (player: Player): boolean {
@@ -76,6 +131,19 @@ export const playerVisible = function (
     return false;
   }
   return true;
+};
+
+/**
+ * Check if the player is unavailable.
+ *
+ * A needs_setup player is also serialized as unavailable, but it has its own
+ * "Start Setup" CTA, so it does not count as unavailable here - see the
+ * matching note on playerVisible function.
+ */
+export const isPlayerUnavailable = function (
+  player: Player | null | undefined,
+): boolean {
+  return !(player?.available ?? false) && !(player?.needs_setup ?? false);
 };
 
 /**

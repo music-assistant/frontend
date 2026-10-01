@@ -8,10 +8,10 @@ import {
   storageErrorText,
 } from "@/helpers/storage";
 import { api } from "@/plugins/api";
-import { ShareType } from "@/plugins/api/interfaces";
+import { ShareType, type StorageLocation } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed, ref, watch } from "vue";
-import { toast } from "vue-sonner";
+import { type Action, toast } from "vue-sonner";
 
 /** What the network share form is opened on; read reactively, e.g. component props. */
 export interface NetworkShareFormOptions {
@@ -23,6 +23,8 @@ export interface NetworkShareFormOptions {
   shareTypes: ShareType[];
   // the protocol versions this install can honour per share type, next to automatic
   shareVersions: Partial<Record<ShareType, string[]>>;
+  // the next step the toast of a newly added share offers, if any
+  addedAction?: (location: StorageLocation) => Action | undefined;
 }
 
 /**
@@ -88,8 +90,13 @@ export function useNetworkShareForm(options: NetworkShareFormOptions) {
         await api.updateNetworkShare(options.location.share_name, settings);
         toast.success($t("settings.storage.share_saved"));
       } else {
-        await api.addNetworkShare(form.value.shareType, settings);
-        toast.success($t("settings.storage.share_added"));
+        const added = await api.addNetworkShare(form.value.shareType, settings);
+        const action = options.addedAction?.(added);
+        if (action) {
+          toast.success($t("settings.storage.share_added"), { action });
+        } else {
+          toast.success($t("settings.storage.share_added"));
+        }
       }
       return "saved";
     } catch (err) {

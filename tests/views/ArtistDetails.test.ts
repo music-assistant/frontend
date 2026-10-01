@@ -20,10 +20,10 @@ const {
   mockArtistRowSources,
   mockLoadArtistReleases,
   mockLoadArtistDiscography,
-  mockLoadArtistLibraryTracks,
+  mockLoadArtistTracks,
   mockLoadArtistTopTracks,
   mockLoadSimilarArtists,
-  mockAppearsOnAlbums,
+  mockLoadArtistAppearsOn,
 } = vi.hoisted(() => ({
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
   mockSubscribe: vi.fn(() => () => {}),
@@ -32,10 +32,10 @@ const {
   mockArtistRowSources: vi.fn(),
   mockLoadArtistReleases: vi.fn(),
   mockLoadArtistDiscography: vi.fn(),
-  mockLoadArtistLibraryTracks: vi.fn(),
+  mockLoadArtistTracks: vi.fn(),
   mockLoadArtistTopTracks: vi.fn(),
   mockLoadSimilarArtists: vi.fn(),
-  mockAppearsOnAlbums: vi.fn(),
+  mockLoadArtistAppearsOn: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -71,10 +71,10 @@ vi.mock("@/components/artist/artistData", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/artist/artistData")>()),
   loadArtistReleases: mockLoadArtistReleases,
   loadArtistDiscography: mockLoadArtistDiscography,
-  loadArtistLibraryTracks: mockLoadArtistLibraryTracks,
+  loadArtistTracks: mockLoadArtistTracks,
   loadArtistTopTracks: mockLoadArtistTopTracks,
   loadSimilarArtists: mockLoadSimilarArtists,
-  appearsOnAlbums: mockAppearsOnAlbums,
+  loadArtistAppearsOn: mockLoadArtistAppearsOn,
 }));
 
 vi.mock("@/components/artist/ArtistHero.vue", () => ({
@@ -188,10 +188,12 @@ describe("ArtistDetails", () => {
     mockArtistRowSources.mockReset().mockReturnValue(["library", "all"]);
     mockLoadArtistReleases.mockReset().mockResolvedValue(RELEASES);
     mockLoadArtistDiscography.mockReset().mockResolvedValue([album()]);
-    mockLoadArtistLibraryTracks.mockReset().mockResolvedValue([track()]);
+    mockLoadArtistTracks.mockReset().mockResolvedValue([track()]);
     mockLoadArtistTopTracks.mockReset().mockResolvedValue([track()]);
     mockLoadSimilarArtists.mockReset().mockResolvedValue([artist()]);
-    mockAppearsOnAlbums.mockReset().mockReturnValue([album({ item_id: "3" })]);
+    mockLoadArtistAppearsOn
+      .mockReset()
+      .mockResolvedValue([album({ item_id: "3" })]);
   });
 
   it("renders the rows in the resolved order", async () => {
@@ -242,7 +244,7 @@ describe("ArtistDetails", () => {
     // the picked source and the library fallback both come up empty, so the
     // row's inline picker is the only way back to a source that has content
     mockLoadArtistTopTracks.mockResolvedValue([]);
-    mockLoadArtistLibraryTracks.mockResolvedValue([]);
+    mockLoadArtistTracks.mockResolvedValue([]);
     mockLoadSimilarArtists.mockResolvedValue([]);
 
     const wrapper = await mountDetails(artist());
@@ -253,7 +255,7 @@ describe("ArtistDetails", () => {
 
   it("hides an empty top-tracks or similar row with only one source", async () => {
     mockLoadArtistTopTracks.mockResolvedValue([]);
-    mockLoadArtistLibraryTracks.mockResolvedValue([]);
+    mockLoadArtistTracks.mockResolvedValue([]);
     mockLoadSimilarArtists.mockResolvedValue([]);
     // a single source means no picker, so an empty row has nowhere else to go
     mockArtistRowSources.mockReturnValue(["all"]);
@@ -274,6 +276,20 @@ describe("ArtistDetails", () => {
     const wrapper = await mountDetails(artist({ provider: "spotify--abc" }));
 
     expect(renderedRows(wrapper)).not.toContain("discography");
+  });
+
+  it("counts a library artist's tracks as in the library in the rows editor", async () => {
+    const wrapper = await mountDetails(artist());
+
+    const editor = wrapper.findComponent({ name: "RowsEditor" });
+    expect(editor.props("rowMeta").top_tracks).toBe("n_in_library");
+  });
+
+  it("counts a provider artist's tracks as plain tracks in the rows editor", async () => {
+    const wrapper = await mountDetails(artist({ provider: "spotify--abc" }));
+
+    const editor = wrapper.findComponent({ name: "RowsEditor" });
+    expect(editor.props("rowMeta").top_tracks).toBe("n_tracks");
   });
 
   it("shows the newest releases on the shelf and keeps the rest for the listing", async () => {

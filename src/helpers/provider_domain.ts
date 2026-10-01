@@ -28,6 +28,18 @@ export function embeddedProviderDomain(idOrDomain: string): string {
 }
 
 /**
+ * Every domain an instance id names: the part before `--`, or the domain itself, and for
+ * a provider the server has folded into another also the provider it went into.
+ *
+ * @param idOrDomain - A provider instance id, e.g. `filesystem_smb--abc`, or a domain.
+ */
+export function embeddedProviderDomains(idOrDomain: string): string[] {
+  const embedded = idOrDomain.split("--")[0];
+  const merged = MERGED_PROVIDER_DOMAINS[embedded];
+  return merged ? [embedded, merged] : [embedded];
+}
+
+/**
  * The domain of the provider an instance id or domain belongs to, undefined when the
  * app can not know it.
  *

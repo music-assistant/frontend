@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   embeddedProviderDomain,
+  embeddedProviderDomains,
   type KnownProviders,
   resolveProviderDomain,
 } from "./provider_domain";
@@ -76,5 +77,17 @@ describe("embeddedProviderDomain", () => {
     ["filesystem_local--abc", "filesystem_local"],
   ])("reads %s as %s", (id, domain) => {
     expect(embeddedProviderDomain(id)).toBe(domain);
+  });
+});
+
+describe("embeddedProviderDomains", () => {
+  it.each([
+    ["spotify--abc", ["spotify"]],
+    ["spotify", ["spotify"]],
+    ["filesystem_local--abc", ["filesystem_local"]],
+    ["filesystem_smb--fyQZakP3", ["filesystem_smb", "filesystem_local"]],
+    ["filesystem_nfs", ["filesystem_nfs", "filesystem_local"]],
+  ])("reads %s as %j", (id, domains) => {
+    expect(embeddedProviderDomains(id)).toEqual(domains);
   });
 });

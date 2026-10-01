@@ -80,7 +80,7 @@ import {
   isPlayerGroupFilter,
   type PlayerGroupFilter,
 } from "@/helpers/player_group";
-import { getPlayerName } from "@/helpers/utils";
+import { getPlayerName } from "@/helpers/players";
 import type { Player } from "@/plugins/api/interfaces";
 import { EllipsisVertical } from "@lucide/vue";
 

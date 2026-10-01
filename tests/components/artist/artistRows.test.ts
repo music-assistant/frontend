@@ -1,20 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { storeMock, mockSetUserPreference, providersMock } = vi.hoisted(() => ({
-  storeMock: {
-    currentUser: null as { preferences?: Record<string, unknown> } | null,
-  },
-  mockSetUserPreference: vi.fn(),
-  providersMock: {} as Record<string, unknown>,
-}));
+const { storeMock, mockSetUserPreference, providersMock, manifestsMock } =
+  vi.hoisted(() => ({
+    storeMock: {
+      currentUser: null as { preferences?: Record<string, unknown> } | null,
+    },
+    mockSetUserPreference: vi.fn(),
+    providersMock: {} as Record<string, unknown>,
+    manifestsMock: {} as Record<string, { name: string }>,
+  }));
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
 }));
 
-vi.mock("@/plugins/api", () => ({
-  api: { providers: providersMock },
-}));
+vi.mock("@/plugins/api", () => {
+  const api = { providers: providersMock, providerManifests: manifestsMock };
+  return { api, default: api };
+});
 
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: mockSetUserPreference,
@@ -62,6 +65,7 @@ function addProvider(
   instanceId: string,
   features: ProviderFeature[],
   type = ProviderType.MUSIC,
+  overrides: Record<string, unknown> = {},
 ) {
   providersMock[instanceId] = {
     instance_id: instanceId,
@@ -69,6 +73,7 @@ function addProvider(
     domain: instanceId.split("--")[0],
     type,
     supported_features: features,
+    ...overrides,
   };
 }
 
@@ -77,6 +82,7 @@ describe("artistRows", () => {
     mockSetUserPreference.mockReset();
     setPreferences({});
     for (const key of Object.keys(providersMock)) delete providersMock[key];
+    for (const key of Object.keys(manifestsMock)) delete manifestsMock[key];
   });
 
   describe("availableArtistRowIds", () => {
@@ -121,6 +127,39 @@ describe("artistRows", () => {
       expect(
         artistRows.sources("similar_artists", mappedTo("spotify--abc")),
       ).toEqual(["all", "lastfm--ghi", "spotify--abc"]);
+    });
+
+    it("offers a streaming service once beside the metadata providers, sorted by the name shown", () => {
+      manifestsMock["spotify"] = { name: "Spotify" };
+      for (const [instanceId, name] of [
+        ["spotify--b", "Zoe's Spotify"],
+        ["spotify--a", "Zed's Spotify"],
+      ]) {
+        addProvider(
+          instanceId,
+          [ProviderFeature.SIMILAR_ARTISTS],
+          ProviderType.MUSIC,
+          { name, is_streaming_provider: true },
+        );
+      }
+      addProvider(
+        "lastfm--ghi",
+        [ProviderFeature.SIMILAR_ARTISTS],
+        ProviderType.METADATA,
+        { name: "Last.fm" },
+      );
+      addProvider(
+        "tidal--def",
+        [ProviderFeature.SIMILAR_ARTISTS],
+        ProviderType.MUSIC,
+        { name: "Tidal" },
+      );
+      expect(
+        artistRows.sources(
+          "similar_artists",
+          mappedTo("spotify--b", "tidal--def", "spotify--a"),
+        ),
+      ).toEqual(["all", "lastfm--ghi", "spotify--a", "tidal--def"]);
     });
 
     it("offers nothing for a provider artist or a row without a picker", () => {

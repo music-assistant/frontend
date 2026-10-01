@@ -28,8 +28,9 @@ import { user } from "../fixtures/user";
 const {
   mockApi,
   mockLoadArtistReleases,
+  mockLoadArtistAppearsOn,
   mockLoadArtistDiscography,
-  mockLoadArtistLibraryTracks,
+  mockLoadArtistTracks,
   mockLoadArtistTopTracks,
   mockLoadSimilarArtists,
 } = vi.hoisted(() => ({
@@ -43,8 +44,9 @@ const {
   },
   mockLoadArtistReleases:
     vi.fn<(artist: Artist, source: RowSource) => Promise<Album[]>>(),
+  mockLoadArtistAppearsOn: vi.fn<(artist: Artist) => Promise<Album[]>>(),
   mockLoadArtistDiscography: vi.fn<(artist: Artist) => Promise<Album[]>>(),
-  mockLoadArtistLibraryTracks: vi.fn<(artist: Artist) => Promise<Track[]>>(),
+  mockLoadArtistTracks: vi.fn<(artist: Artist) => Promise<Track[]>>(),
   mockLoadArtistTopTracks:
     vi.fn<(artist: Artist, source: RowSource) => Promise<Track[]>>(),
   mockLoadSimilarArtists:
@@ -58,8 +60,9 @@ vi.mock("@/plugins/api", () => ({ api: mockApi, default: mockApi }));
 vi.mock("@/components/artist/artistData", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/artist/artistData")>()),
   loadArtistReleases: mockLoadArtistReleases,
+  loadArtistAppearsOn: mockLoadArtistAppearsOn,
   loadArtistDiscography: mockLoadArtistDiscography,
-  loadArtistLibraryTracks: mockLoadArtistLibraryTracks,
+  loadArtistTracks: mockLoadArtistTracks,
   loadArtistTopTracks: mockLoadArtistTopTracks,
   loadSimilarArtists: mockLoadSimilarArtists,
 }));
@@ -132,8 +135,9 @@ describe("useArtistRowData", () => {
     };
     mockApi.getProvider.mockReset();
     mockLoadArtistReleases.mockReset().mockResolvedValue([]);
+    mockLoadArtistAppearsOn.mockReset().mockResolvedValue([]);
     mockLoadArtistDiscography.mockReset().mockResolvedValue([]);
-    mockLoadArtistLibraryTracks.mockReset().mockResolvedValue([]);
+    mockLoadArtistTracks.mockReset().mockResolvedValue([]);
     mockLoadArtistTopTracks.mockReset().mockResolvedValue([]);
     mockLoadSimilarArtists.mockReset().mockResolvedValue([]);
   });
@@ -141,6 +145,7 @@ describe("useArtistRowData", () => {
   afterEach(() => {
     scopes.splice(0).forEach((scope) => scope.stop());
     store.currentUser = undefined;
+    vi.useRealTimers();
   });
 
   it("requests one list for two rows fed by the same source", async () => {
@@ -205,7 +210,7 @@ describe("useArtistRowData", () => {
 
   it("falls back to the newest library tracks when the source has no top tracks", async () => {
     const page = setupRowData({ rows: ["top_tracks"] });
-    mockLoadArtistLibraryTracks.mockResolvedValue([
+    mockLoadArtistTracks.mockResolvedValue([
       track({ item_id: "older", album: album({ year: 1999 }) }),
       track({ item_id: "newer", album: album({ year: 2024 }) }),
     ]);
@@ -218,11 +223,26 @@ describe("useArtistRowData", () => {
 
   it("labels the top tracks row after the library when it uses that fallback", async () => {
     const page = setupRowData({ rows: ["top_tracks"] });
-    mockLoadArtistLibraryTracks.mockResolvedValue([track()]);
+    mockLoadArtistTracks.mockResolvedValue([track()]);
 
     await showArtist(page, libraryArtist());
 
     expect(page.topTracksSourceDisplay.value?.label).toBe("In your library");
+  });
+
+  it("keeps naming a provider artist's own provider when it uses that fallback", async () => {
+    const page = setupRowData({ rows: ["top_tracks"] });
+    mockLoadArtistTracks.mockResolvedValue([track()]);
+    mockApi.getProvider.mockReturnValue({ name: "Spotify", domain: "spotify" });
+
+    await showArtist(page, artist({ item_id: "sp1", provider: SPOTIFY }));
+
+    expect(itemIds(page.topTracksItems.value)).toHaveLength(1);
+    expect(page.topTracksSourceDisplay.value).toEqual({
+      label: "On Spotify",
+      domain: "spotify",
+    });
+    expect(mockApi.getProvider).toHaveBeenCalledWith(SPOTIFY);
   });
 
   it("labels the top tracks row as all sources when a provider supplies them", async () => {
@@ -250,15 +270,34 @@ describe("useArtistRowData", () => {
     });
   });
 
-  it("shares one request between the rows fed by the library and the appearances", async () => {
+  it("loads the appearances with a request of their own", async () => {
     const page = setupRowData({ rows: ["albums", "appears_on"] });
     mockLoadArtistReleases.mockResolvedValue(RELEASES);
-    mockLoadArtistLibraryTracks.mockResolvedValue([track()]);
+    mockLoadArtistAppearsOn.mockResolvedValue([album({ item_id: "guest" })]);
 
     await showArtist(page, libraryArtist());
 
+    expect(itemIds(page.appearsOnItems.value)).toEqual(["guest"]);
+    expect(mockLoadArtistAppearsOn).toHaveBeenCalledTimes(1);
     expect(releaseSources()).toEqual(["library"]);
-    expect(mockLoadArtistLibraryTracks).toHaveBeenCalledTimes(1);
+    expect(mockLoadArtistTracks).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["album", album({ item_id: "added" })],
+    ["track", track({ item_id: "added" })],
+  ])("refetches the appearances after a %s is added", async (_type, added) => {
+    vi.useFakeTimers();
+    const page = setupRowData({ rows: ["appears_on"] });
+    await showArtist(page, libraryArtist());
+    mockLoadArtistAppearsOn.mockResolvedValue([album({ item_id: "guest" })]);
+    const [, onLibraryChange] = mockApi.subscribe_multi.mock.lastCall!;
+
+    onLibraryChange({ event: EventType.MEDIA_ITEM_ADDED, data: added });
+    await vi.runAllTimersAsync();
+
+    expect(mockLoadArtistAppearsOn).toHaveBeenCalledTimes(2);
+    expect(itemIds(page.appearsOnItems.value)).toEqual(["guest"]);
   });
 
   it("feeds a provider artist's rows from its own provider", async () => {
@@ -307,12 +346,11 @@ describe("useArtistRowData", () => {
       data: album({ item_id: "added" }),
     });
     await vi.runAllTimersAsync();
-    vi.useRealTimers();
 
     expect(itemIds(page.discographyItems.value)).toEqual(["added"]);
     expect(mockLoadArtistReleases).toHaveBeenCalledTimes(2);
     expect(mockLoadArtistTopTracks).toHaveBeenCalledTimes(1);
-    expect(mockLoadArtistLibraryTracks).toHaveBeenCalledTimes(1);
+    expect(mockLoadArtistTracks).toHaveBeenCalledTimes(1);
   });
 
   it("requests no discography when only other rows show", async () => {
@@ -352,6 +390,6 @@ describe("useArtistRowData", () => {
     await showArtist(page, libraryArtist({ artist_type: ArtistType.AUTHOR }));
 
     expect(mockLoadArtistReleases).not.toHaveBeenCalled();
-    expect(mockLoadArtistLibraryTracks).not.toHaveBeenCalled();
+    expect(mockLoadArtistTracks).not.toHaveBeenCalled();
   });
 });

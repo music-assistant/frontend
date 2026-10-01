@@ -80,7 +80,7 @@
           :size="18"
           fill="currentColor"
           :stroke-width="0"
-          class="ed-card__play-icon"
+          class="ed-card__play-icon play-icon-centered"
         />
       </span>
     </div>
@@ -447,7 +447,6 @@ const onMenu = (e: MouseEvent) => {
   z-index: 4;
 }
 .ed-card__play-icon {
-  margin-left: 2px;
   /* guarantee a solid white triangle regardless of lucide's default fill */
   fill: currentColor;
   stroke: none;

@@ -78,9 +78,13 @@ vi.mock("@/plugins/eventbus", () => ({
   },
 }));
 
+// plain let read lazily by the mock, so tests can flip it per case
+let isDashboardViewer = false;
+
 vi.mock("@/plugins/auth", () => ({
   authManager: {
     hasScope,
+    isDashboardViewer: () => isDashboardViewer,
   },
 }));
 
@@ -117,6 +121,8 @@ vi.mock("@/composables/userPreferences", async () => {
 });
 
 vi.mock("@/helpers/players", () => ({
+  getPlayerDisplayName: (player: Player) =>
+    player.player_id === "builtin" ? "This device" : player.name,
   groupMemberPickerVisible: () => true,
   isBuiltinPlayer: (player: Player) => player.player_id === "builtin",
   isPlayerActive: (player: Player) =>
@@ -367,6 +373,7 @@ describe("PlayerSelect", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    isDashboardViewer = false;
     const preferenceValues = preferenceState.reactiveValues;
     if (preferenceValues) {
       for (const key of Object.keys(preferenceValues)) {
@@ -586,6 +593,29 @@ describe("PlayerSelect", () => {
     expect(setPreference).not.toHaveBeenCalled();
   });
 
+  it("never auto-selects for a dashboard viewer", async () => {
+    isDashboardViewer = true;
+    const attic = createPlayer("attic", "Attic");
+    const builtin = createPlayer("builtin", "This device");
+    api.players = { [attic.player_id]: attic };
+
+    mountPlayerSelect();
+    // no automatic default: the hosting dashboard view pins the player
+    expect(store.activePlayerId).toBeUndefined();
+
+    // the display's own built-in player registering late is not picked either
+    api.players[builtin.player_id] = builtin;
+    store.companionPlayerId = builtin.player_id;
+    await nextTick();
+    expect(store.activePlayerId).toBeUndefined();
+
+    // a view's pin is not persisted as the shared viewer user's choice
+    store.activePlayerId = attic.player_id;
+    await nextTick();
+    expect(store.activePlayerId).toBe(attic.player_id);
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+
   it("keeps the remembered player when it is unavailable at startup", () => {
     const kitchen = createPlayer("kitchen", "Kitchen");
     kitchen.available = false;
@@ -674,6 +704,27 @@ describe("PlayerSelect", () => {
         .findAll(".player-card")
         .map((card) => card.attributes("data-player-id")),
     ).toEqual(["player-7"]);
+  });
+
+  it("filters the built-in player by the name it is shown with", async () => {
+    api.players = Object.fromEntries(
+      Array.from({ length: 11 }, (_, index) => {
+        const player =
+          index === 7
+            ? createPlayer("builtin", "Marcel's Mac (Chrome)")
+            : createPlayer(`player-${index}`, `Player ${index}`);
+        return [player.player_id, player];
+      }),
+    );
+    const wrapper = mountPlayerSelect();
+
+    await wrapper.find(".player-search").setValue("this device");
+
+    expect(
+      wrapper
+        .findAll(".player-card")
+        .map((card) => card.attributes("data-player-id")),
+    ).toEqual(["builtin"]);
   });
 
   it("selects a player and closes the sheet from the card action", async () => {
