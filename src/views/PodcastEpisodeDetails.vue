@@ -209,21 +209,21 @@ const openTranscript = async function () {
   showTranscript.value = true;
   if (transcriptLoaded.value || transcriptLoading.value) return;
   transcriptLoading.value = true;
-  const requested = episodeKey.value;
+  const requested = detailsRequest;
   try {
     // the server renders the cues as readable text, so this arrives without timestamps
     const [text] = await api.getPodcastEpisodeTranscript(
       props.itemId,
       props.provider,
     );
-    // stepping to another episode while this was in flight leaves it for that one
-    if (requested !== episodeKey.value) return;
+    // stepping away while this was in flight leaves it for that route load
+    if (requested !== detailsRequest) return;
     transcript.value = text;
     transcriptLoaded.value = true;
   } catch (error) {
     console.error("Failed to fetch podcast transcript:", error);
   } finally {
-    if (requested === episodeKey.value) transcriptLoading.value = false;
+    if (requested === detailsRequest) transcriptLoading.value = false;
   }
 };
 
