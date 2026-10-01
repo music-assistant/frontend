@@ -10,8 +10,8 @@ export { readFileAsBase64 } from "@/helpers/dspIR";
 // against the raw file, before base64 encoding inflates it by ~4/3.
 export const MAX_CUSTOM_IMAGE_BYTES = 2 * 1024 * 1024;
 
-// The server accepts any raster format it can decode (validated from the
-// actual content, SVG rejected); the picker hint stays broad on purpose.
+// The server accepts PNG, JPEG, WebP, GIF and BMP (validated from the
+// actual content); the picker hint stays broad on purpose.
 export const CUSTOM_IMAGE_ACCEPT = "image/*";
 
 // Relative path prefix the server uses for user-uploaded custom images.
