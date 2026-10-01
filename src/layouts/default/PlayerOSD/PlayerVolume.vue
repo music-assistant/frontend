@@ -340,7 +340,12 @@ const childPlayers = computed(() => {
       items.push(child);
     }
   }
-  items.sort((a, b) => (a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1));
+  items.sort((a, b) =>
+    getPlayerDisplayName(a).toUpperCase() >
+    getPlayerDisplayName(b).toUpperCase()
+      ? 1
+      : -1,
+  );
   return items;
 });
 

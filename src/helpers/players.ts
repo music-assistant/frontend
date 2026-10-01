@@ -17,7 +17,9 @@ import { webPlayer } from "@/plugins/web_player";
 /**
  * Check if the player is (or streams to) the built-in player of this device.
  */
-export const isBuiltinPlayer = function (player: Player): boolean {
+export const isBuiltinPlayer = function (
+  player: Pick<Player, "player_id" | "output_protocols">,
+): boolean {
   return (
     player.player_id === webPlayer.player_id ||
     player.player_id === store.companionPlayerId ||
@@ -35,7 +37,9 @@ export const isBuiltinPlayer = function (player: Player): boolean {
  * The built-in player of this device is shown as "This device"; settings show
  * the player's real name instead.
  */
-export const getPlayerDisplayName = function (player: Player): string {
+export const getPlayerDisplayName = function (
+  player: Pick<Player, "player_id" | "name" | "output_protocols">,
+): string {
   return isBuiltinPlayer(player) ? $t("this_device") : player.name;
 };
 

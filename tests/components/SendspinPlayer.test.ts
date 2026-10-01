@@ -83,6 +83,7 @@ const {
   return {
     authState: {
       guest: null as "music_quiz" | "party" | null,
+      dashboardViewer: false,
     },
     // Mutable so tests can drive the players/queues the seek handlers read.
     apiMock: {
@@ -139,6 +140,7 @@ vi.mock("@/plugins/auth", () => ({
     isGuestAccessSession: () => authState.guest !== null,
     isMusicQuizGuest: () => authState.guest === "music_quiz",
     isPartyGuest: () => authState.guest === "party",
+    isDashboardViewer: () => authState.dashboardViewer,
   },
 }));
 
@@ -238,6 +240,7 @@ const ANCHOR = 1_700_000_000;
 describe("SendspinPlayer MediaSession", () => {
   beforeEach(() => {
     authState.guest = null;
+    authState.dashboardViewer = false;
     handlers.clear();
     mediaSession.metadata = {} as MediaMetadata;
     mediaSession.playbackState = "playing";
@@ -383,6 +386,23 @@ describe("SendspinPlayer MediaSession", () => {
 
     expect(mockGetWebPlayerName).toHaveBeenCalledWith(storeMock.currentUser);
     expect(sendspinState.lastOptions?.clientName).toBe("Browser");
+    wrapper.unmount();
+  });
+
+  it.each([
+    ["a party guest", () => (authState.guest = "party")],
+    ["a music quiz guest", () => (authState.guest = "music_quiz")],
+    ["a dashboard viewer", () => (authState.dashboardViewer = true)],
+  ])("registers without an owner name for %s", async (_label, signIn) => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    storeMock.currentUser = user({ display_name: "Party Guest" });
+    signIn();
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    expect(mockGetWebPlayerName).toHaveBeenCalledWith(undefined);
     wrapper.unmount();
   });
 

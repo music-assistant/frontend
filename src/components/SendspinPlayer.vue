@@ -308,7 +308,13 @@ onMounted(() => {
         player = new SendspinPlayer({
           baseUrl: "http://sendspin.local",
           audioElement,
-          clientName: getWebPlayerName(store.currentUser),
+          // Shared guest accounts have no person to name the device after
+          clientName: getWebPlayerName(
+            authManager.isGuestAccessSession() ||
+              authManager.isDashboardViewer()
+              ? undefined
+              : store.currentUser,
+          ),
           // How the server recognizes us as its built-in player rather than a
           // third-party client that has to be paired by hand.
           productName: "Web Player",

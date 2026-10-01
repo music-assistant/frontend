@@ -107,9 +107,11 @@ const volumePlayers = computed(() => {
         player.volume_control !== PLAYER_CONTROL_NONE,
     )
     .sort((left, right) =>
-      left.name.localeCompare(right.name, undefined, {
-        sensitivity: "base",
-      }),
+      getPlayerDisplayName(left).localeCompare(
+        getPlayerDisplayName(right),
+        undefined,
+        { sensitivity: "base" },
+      ),
     );
 });
 </script>

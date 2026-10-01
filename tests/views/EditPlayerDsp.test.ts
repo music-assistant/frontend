@@ -29,12 +29,6 @@ const apiMock = vi.hoisted(() => ({
 const registryMock = vi.hoisted(() => ({
   presets: undefined as Ref<DSPConfigPreset[]> | undefined,
 }));
-// The view reads only mobileLayout, and uses only truncateString from
-// @/helpers/utils.
-const storeMock = vi.hoisted(() => ({ mobileLayout: false }));
-
-vi.mock("@/plugins/store", () => ({ store: storeMock }));
-
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
   default: apiMock,
@@ -51,6 +45,7 @@ vi.mock("@/composables/useDSPPresets", async () => {
     }),
   };
 });
+// The view uses only truncateString from @/helpers/utils.
 vi.mock("@/helpers/utils", () => ({
   truncateString: (str: string) => str,
 }));
