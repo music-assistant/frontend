@@ -197,7 +197,8 @@ const openEpisode = function (episode?: PodcastEpisode) {
 
 const loadOtherEpisodes = async function (_params: LoadDataParams) {
   const [episode, episodes] = await Promise.all([
-    detailsRequest,
+    // an episode that failed to load has no other episodes to list
+    detailsRequest?.catch(() => undefined),
     episodesRequest,
   ]);
   if (!episode || !episodes) return [];
@@ -245,10 +246,15 @@ watch(
       // an episode listing we cannot fetch leaves the steppers and the listing
       // empty rather than failing the page
       .catch(() => []));
-    const episode = await details;
+    const episode = await details.catch((error) => {
+      console.error("Failed to fetch podcast episode:", error);
+      return undefined;
+    });
     // a quick click through the steppers can move on while these are in flight
     if (details !== detailsRequest) return;
+    // an episode that failed to load must not leave the previous one shown
     itemDetails.value = episode;
+    if (!episode) return;
     const siblingEpisodes = await episodes;
     if (episodes !== episodesRequest) return;
     siblings.value = siblingEpisodes;
