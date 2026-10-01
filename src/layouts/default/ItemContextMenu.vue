@@ -1641,6 +1641,24 @@ const buildEnqueueMenuItems = function (
  * queue would never be reached: starting it is the only meaningful action. The
  * configured default decides whether the existing queue is kept or replaced.
  */
+const startAudioSourceMenuItem = function (
+  items: MediaItemTypeOrItemMapping[],
+  defaultEnqueueOption: QueueOption | undefined,
+): ContextMenuItem {
+  return {
+    label: "play_now",
+    action: () => {
+      api.playMedia(
+        items.map((x) => x.uri),
+        defaultEnqueueOption,
+      );
+    },
+    icon: PlayCircle,
+    labelArgs: [],
+    disabled: !store.activePlayer,
+  };
+};
+
 /**
  * Menu entry that plays a podcast from the given episode onwards.
  *
@@ -1658,24 +1676,6 @@ const playPodcastFromHereMenuItem = function (
       api.playMedia(podcast.uri, undefined, { start_item: episode.item_id });
     },
     icon: PlayCircle,
-    disabled: !store.activePlayer,
-  };
-};
-
-const startAudioSourceMenuItem = function (
-  items: MediaItemTypeOrItemMapping[],
-  defaultEnqueueOption: QueueOption | undefined,
-): ContextMenuItem {
-  return {
-    label: "play_now",
-    action: () => {
-      api.playMedia(
-        items.map((x) => x.uri),
-        defaultEnqueueOption,
-      );
-    },
-    icon: PlayCircle,
-    labelArgs: [],
     disabled: !store.activePlayer,
   };
 };
