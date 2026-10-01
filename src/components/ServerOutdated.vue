@@ -1,5 +1,7 @@
 <template>
-  <div class="flex min-h-dvh items-center justify-center bg-background p-4">
+  <div
+    class="flex min-h-dvh items-center justify-center bg-background p-4 text-foreground"
+  >
     <Empty class="max-w-md">
       <EmptyHeader>
         <EmptyMedia variant="icon">

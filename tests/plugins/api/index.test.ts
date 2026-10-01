@@ -355,6 +355,10 @@ describe("MusicAssistantApi error handling", () => {
   });
 
   it("flags a server below the minimum schema version as outdated", () => {
+    // before server_info arrives there is nothing to judge yet
+    api.serverInfo.value = undefined;
+    expect(api.serverOutdated).toBe(false);
+
     api.serverInfo.value = {
       ...SERVER_INFO,
       schema_version: MIN_SERVER_SCHEMA_VERSION - 1,
