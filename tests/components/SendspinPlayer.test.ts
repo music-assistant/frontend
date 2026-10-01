@@ -687,6 +687,7 @@ describe("SendspinPlayer MediaSession", () => {
 
   it("targets the selected player when that mode is enabled", () => {
     webPlayer.browserControlsMode = BrowserMediaControlsMode.ACTIVE_PLAYER;
+    apiMock.players["active-player"] = storeMock.activePlayer!;
 
     const wrapper = mount(SendspinPlayer, {
       props: { playerId: "web-player" },
