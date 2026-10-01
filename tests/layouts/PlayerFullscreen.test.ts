@@ -20,7 +20,6 @@ vi.mock("@/plugins/api", async () => {
     getTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
     getPodcastEpisodeTranscript:
       vi.fn<MusicAssistantApi["getPodcastEpisodeTranscript"]>(),
-    supportsPodcastTranscripts: true,
     playerCommandSeek: vi.fn<MusicAssistantApi["playerCommandSeek"]>(),
     playMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
   });
@@ -194,7 +193,6 @@ interface TestStore {
 }
 
 interface TestApi {
-  supportsPodcastTranscripts: boolean;
   getPodcastEpisodeTranscript: ReturnType<typeof vi.fn>;
   queues: Record<
     string,
@@ -293,7 +291,6 @@ afterEach(async () => {
   testStore.curQueueItem = undefined;
   testApi.queues = {};
   testApi.queueElapsedTime = {};
-  testApi.supportsPodcastTranscripts = true;
   testApi.getPodcastEpisodeTranscript.mockReset();
 });
 
@@ -418,7 +415,7 @@ describe("PlayerFullscreen transcript", () => {
     await nextTick();
   }
 
-  it("asks a current server for the transcript", async () => {
+  it("asks for the transcript", async () => {
     const api = (await import("@/plugins/api")).default;
     const testApi = api as unknown as TestApi;
     testApi.getPodcastEpisodeTranscript.mockResolvedValue([null, null]);
@@ -429,16 +426,6 @@ describe("PlayerFullscreen transcript", () => {
       "podcast-1:episode-1",
       "pocketcasts--abc",
     );
-  });
-
-  it("never asks a server too old to know about transcripts", async () => {
-    const api = (await import("@/plugins/api")).default;
-    const testApi = api as unknown as TestApi;
-    testApi.supportsPodcastTranscripts = false;
-
-    await openEpisode(null);
-
-    expect(testApi.getPodcastEpisodeTranscript).not.toHaveBeenCalled();
   });
 
   it("skips an episode the provider says has no transcript", async () => {

@@ -692,13 +692,11 @@ const isTrack = computed(
   () => store.curQueueItem?.media_item?.media_type === MediaType.TRACK,
 );
 // An episode the provider already marked as having no transcript is skipped
-// outright; null means the provider cannot tell, so we still ask. A server
-// too old to know about transcripts is never asked at all.
+// outright; null means the provider cannot tell, so we still ask.
 const hasReadableText = computed(
   () =>
     isTrack.value ||
     (isEpisode.value &&
-      api.supportsPodcastTranscripts &&
       store.curQueueItem?.media_item?.metadata?.has_transcript !== false),
 );
 
