@@ -524,7 +524,10 @@ import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
 import { useNowPlayingSource } from "@/composables/nowPlayingSource";
-import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
+import {
+  resolveActiveElapsedTime,
+  resolveQueueElapsedTime,
+} from "@/helpers/activeElapsedTime";
 import { resolveCurrentChapter } from "@/helpers/chapters";
 import api from "@/plugins/api";
 import {
@@ -742,12 +745,15 @@ const transcriptSyncEnabled = ref(true);
 let unlinkedAtPosition: number | null = null;
 
 const toggleTranscriptSync = () => {
+  // Read the queue directly: the panel's own clock only runs while it is open,
+  // and the toggle stays usable while it is closed.
+  const position = resolveQueueElapsedTime() ?? 0;
   if (transcriptSyncEnabled.value) {
     // Unlinking: remember where playback was
-    unlinkedAtPosition = lyricsElapsedTime.value ?? null;
+    unlinkedAtPosition = position;
   } else if (unlinkedAtPosition !== null) {
     // Re-linking: the difference is the ad duration — shift the offset back
-    const adDuration = (lyricsElapsedTime.value ?? 0) - unlinkedAtPosition;
+    const adDuration = position - unlinkedAtPosition;
     adjustLyricsOffset(-adDuration);
     unlinkedAtPosition = null;
   }
