@@ -24,9 +24,10 @@
     />
 
     <!-- keyed per episode: a listing already loading drops a reload request, so
-    clicking through episodes quickly would leave the previous episode's list -->
+    clicking through episodes quickly would leave the previous episode's list.
+    it waits for the podcast lookup so it opens with that podcast's settings -->
     <ItemsListing
-      v-if="itemDetails"
+      v-if="itemDetails && podcastChecked"
       :key="episodeKey"
       itemtype="podcastepisodes"
       :parent-item="episodePodcast"
@@ -119,6 +120,8 @@ const itemDetails = ref<PodcastEpisode>();
 const siblings = ref<PodcastEpisode[]>([]);
 // the podcast itself, which the listing rows need for their play actions
 const parentPodcast = ref<Podcast>();
+// the episode whose podcast lookup has finished
+const checkedEpisodeKey = ref<string>();
 const showTranscript = ref(false);
 const transcript = ref<string | null>(null);
 const transcriptLoaded = ref(false);
@@ -138,9 +141,13 @@ const showTranscriptButton = computed(
 // the sort and view choices belong to the podcast, so every episode of it opens
 // the listing the same way as the podcast page's own episode listing
 const podcastKey = computed(() => {
-  const podcast = itemDetails.value?.podcast;
+  const podcast = episodePodcast.value ?? itemDetails.value?.podcast;
   return podcast ? `${podcast.item_id}.${podcast.provider}` : "";
 });
+
+const podcastChecked = computed(
+  () => checkedEpisodeKey.value === episodeKey.value,
+);
 
 // the listing opens newest first, so the steppers follow that same order and the
 // right arrow always lands on the row below. changing the sort in the listing
@@ -235,6 +242,7 @@ watch(
     transcriptLoaded.value = false;
     transcriptLoading.value = false;
     showTranscript.value = false;
+    checkedEpisodeKey.value = undefined;
     const details = (detailsRequest = api.getPodcastEpisode(itemId, provider));
     const episodes = (episodesRequest = details
       .then((episode) =>
@@ -255,18 +263,22 @@ watch(
     // an episode that failed to load must not leave the previous one shown
     itemDetails.value = episode;
     if (!episode) return;
-    const siblingEpisodes = await episodes;
-    if (episodes !== episodesRequest) return;
-    siblings.value = siblingEpisodes;
-    if (parentPodcast.value && isPodcastOf(parentPodcast.value, episode))
-      return;
     // only fetched when the podcast itself changes, so stepping through the
     // episodes of one podcast does not keep asking for it
-    const podcast = await api
-      .getPodcast(episode.podcast.item_id, episode.podcast.provider)
-      .catch(() => undefined);
+    const podcastRequest =
+      parentPodcast.value && isPodcastOf(parentPodcast.value, episode)
+        ? Promise.resolve(parentPodcast.value)
+        : api
+            .getPodcast(episode.podcast.item_id, episode.podcast.provider)
+            .catch(() => undefined);
+    const [siblingEpisodes, podcast] = await Promise.all([
+      episodes,
+      podcastRequest,
+    ]);
     if (details !== detailsRequest) return;
+    siblings.value = siblingEpisodes;
     parentPodcast.value = podcast;
+    checkedEpisodeKey.value = episodeKey.value;
   },
   { immediate: true },
 );

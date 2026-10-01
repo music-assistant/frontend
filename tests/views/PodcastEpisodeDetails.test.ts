@@ -1,10 +1,11 @@
 import type { MusicAssistantApi } from "@/plugins/api";
-import type { PodcastEpisode } from "@/plugins/api/interfaces";
+import type { Podcast, PodcastEpisode } from "@/plugins/api/interfaces";
 import PodcastEpisodeDetails from "@/views/PodcastEpisodeDetails.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { podcast } from "../fixtures/podcast";
 import { podcastEpisode } from "../fixtures/podcastEpisode";
+import { providerMapping } from "../fixtures/providerMapping";
 
 const {
   mockGetPodcastEpisode,
@@ -65,6 +66,20 @@ vi.mock("@/components/ui/dialog", () => ({
 }));
 
 const SHOW = podcast({ item_id: "pod1", provider: "rss", name: "Show" });
+// the library copy of SHOW, which is what the podcast lookup returns once it is
+// in the library
+const LIBRARY_SHOW = podcast({
+  item_id: "7",
+  provider: "library",
+  name: "Show",
+  provider_mappings: [
+    providerMapping({
+      item_id: "pod1",
+      provider_domain: "rss",
+      provider_instance: "rss",
+    }),
+  ],
+});
 const EPISODES = [1, 2, 3].map((position) =>
   podcastEpisode({
     item_id: `ep${position}`,
@@ -95,8 +110,9 @@ describe("PodcastEpisodeDetails", () => {
   beforeEach(() => {
     mockGetPodcastEpisode
       .mockReset()
-      .mockImplementation(async (itemId) =>
-        EPISODES.find((episode) => episode.item_id === itemId)!,
+      .mockImplementation(
+        async (itemId) =>
+          EPISODES.find((episode) => episode.item_id === itemId)!,
       );
     mockGetPodcastEpisodes.mockReset().mockResolvedValue(EPISODES);
     mockGetPodcast.mockReset().mockResolvedValue(SHOW);
@@ -138,6 +154,62 @@ describe("PodcastEpisodeDetails", () => {
       "ep1",
       "ep3",
     ]);
+  });
+
+  it("shares the list settings of a library podcast with its podcast page", async () => {
+    mockGetPodcast.mockResolvedValue(LIBRARY_SHOW);
+
+    const wrapper = await mountDetails(EPISODES[1]);
+
+    expect(listing(wrapper).props("parentItem")).toEqual(LIBRARY_SHOW);
+    expect(listing(wrapper).props("path")).toBe("podcast.7.library");
+  });
+
+  it("waits for the podcast before showing the list", async () => {
+    let resolvePodcast!: (value: Podcast) => void;
+    mockGetPodcast.mockReturnValue(
+      new Promise((resolve) => (resolvePodcast = resolve)),
+    );
+
+    const wrapper = await mountDetails(EPISODES[1]);
+    expect(listing(wrapper).exists()).toBe(false);
+
+    resolvePodcast(LIBRARY_SHOW);
+    await flushPromises();
+    expect(listing(wrapper).props("path")).toBe("podcast.7.library");
+  });
+
+  it("hides the list while an episode of another podcast loads", async () => {
+    const otherShow = podcast({ item_id: "pod2", provider: "rss" });
+    const otherEpisode = podcastEpisode({
+      item_id: "other1",
+      provider: "rss",
+      podcast: otherShow,
+    });
+    const wrapper = await mountDetails(EPISODES[1]);
+    let resolvePodcast!: (value: Podcast) => void;
+    mockGetPodcastEpisode.mockResolvedValue(otherEpisode);
+    mockGetPodcastEpisodes.mockResolvedValue([otherEpisode]);
+    mockGetPodcast.mockReturnValue(
+      new Promise((resolve) => (resolvePodcast = resolve)),
+    );
+
+    await wrapper.setProps({ itemId: "other1" });
+    expect(listing(wrapper).exists()).toBe(false);
+    await flushPromises();
+    expect(listing(wrapper).exists()).toBe(false);
+
+    resolvePodcast(otherShow);
+    await flushPromises();
+    expect(listing(wrapper).props("path")).toBe("podcast.pod2.rss");
+  });
+
+  it("lists the episodes under the episode's podcast when that cannot be loaded", async () => {
+    mockGetPodcast.mockRejectedValue(new Error("gone"));
+
+    const wrapper = await mountDetails(EPISODES[1]);
+
+    expect(listing(wrapper).props("path")).toBe("podcast.pod1.rss");
   });
 
   it("shows no episode when it fails to load", async () => {

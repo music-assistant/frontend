@@ -175,7 +175,7 @@ const releaseDate = computed(() => {
 });
 
 const gotoPodcast = function () {
-  const podcast = props.item?.podcast;
+  const podcast = props.parentPodcast ?? props.item?.podcast;
   if (!podcast) return;
   router.push({
     name: "podcast",
