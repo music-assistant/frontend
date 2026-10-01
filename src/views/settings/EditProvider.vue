@@ -516,7 +516,8 @@ const onReload = function () {
   api
     .reloadProvider(config.value.instance_id)
     .then(() => toast.success(t("settings.provider_reloading")))
-    .catch((err) => toast.error(String(err)));
+    // the api reports a failing reload itself
+    .catch(() => {});
   backToProviders();
 };
 
@@ -543,10 +544,9 @@ const toggleEnabled = async function () {
     config.value.status = updatedConfig.status;
     config.value.last_error = updatedConfig.last_error;
     toast.success(t("settings.provider_saved"));
-  } catch (err) {
+  } catch {
+    // the api reports the failure itself; the page shows what the server kept
     if (!isCurrentProvider(instanceId)) return;
-
-    toast.error(String(err));
     await refreshProviderConfig(instanceId);
   } finally {
     if (requestId === toggleRequestId) {

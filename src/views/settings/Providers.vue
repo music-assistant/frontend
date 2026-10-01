@@ -192,7 +192,6 @@ import { Info, Music, Plus } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, inject, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import { toast } from "vue-sonner";
 import AddProviderDialog from "./AddProviderDialog.vue";
 
 const router = useRouter();
@@ -345,17 +344,16 @@ const toggleEnabled = function (config: ProviderConfig) {
   config.enabled = enabled;
   api
     .saveProviderConfig(config.domain, { enabled }, config.instance_id)
-    .catch((err) => {
-      // the server kept the previous state, so the row has to show it again
+    .catch(() => {
+      // the api already reports the failure; the server kept the previous
+      // state, so the row has to show it again
       config.enabled = !enabled;
-      toast.error(String(err));
     });
 };
 
 const reloadProvider = function (providerInstanceId: string) {
-  api
-    .reloadProvider(providerInstanceId)
-    .catch((err) => toast.error(String(err)));
+  // the api reports a failing reload itself
+  api.reloadProvider(providerInstanceId).catch(() => {});
 };
 
 const openMenu = function (evt: Event, item: ProviderConfig) {

@@ -455,7 +455,8 @@ describe("Providers", () => {
     (await toggle()).action();
     await flushPromises();
 
-    expect(toastMock.error).toHaveBeenCalledWith("Error: nope");
+    // the api toasts a refused save itself
+    expect(toastMock.error).not.toHaveBeenCalled();
     expect((await toggle()).label).toBe("settings.disable");
   });
 

@@ -374,7 +374,8 @@ describe("EditProvider", () => {
       wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
     ).toBe(false);
     expect(apiMock.getProviderConfig).toHaveBeenCalledTimes(2);
-    expect(toastMock.error).toHaveBeenCalledWith("Error: Save failed");
+    // the api toasts a refused save itself
+    expect(toastMock.error).not.toHaveBeenCalled();
   });
 
   it("reconciles provider state when enabling fails after being saved", async () => {
