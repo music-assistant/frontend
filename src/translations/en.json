@@ -1497,8 +1497,8 @@
         "guest_ended_dashboard_message": "Cast the dashboard again from Music Assistant to continue.",
         "continue_to_app": "Continue to Music Assistant",
         "scan_qr_hint_guest": "Point your camera at the QR code the host is showing.",
-        "server_outdated_title": "Your server needs an update",
-        "server_outdated_message": "This app needs a newer version of the Music Assistant server than {version}. Update your server, then try again."
+        "server_outdated_title": "The server needs an update",
+        "server_outdated_message": "This app needs a newer version of the Music Assistant server than {version}. Once the server is updated, try again."
     },
     "yes": "Yes",
     "no": "No",
