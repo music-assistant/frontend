@@ -11,7 +11,7 @@ import { outputProtocol } from "../../tests/fixtures/outputProtocol";
 import { playerConfig } from "../../tests/fixtures/playerConfig";
 import { providerInstance } from "../../tests/fixtures/providerInstance";
 
-const { apiMock, isHiddenSendspinWebPlayer } = vi.hoisted(() => ({
+const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
     getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
@@ -19,11 +19,9 @@ const { apiMock, isHiddenSendspinWebPlayer } = vi.hoisted(() => ({
     // its own gets the one its provider reports
     players: {} as Record<string, Partial<Player>>,
   },
-  isHiddenSendspinWebPlayer: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
-vi.mock("@/helpers/utils", () => ({ isHiddenSendspinWebPlayer }));
 
 describe("getPlayerName", () => {
   beforeEach(() => {
@@ -88,15 +86,12 @@ describe("getPlayerSetupLabel", () => {
 });
 
 describe("getListedPlayerConfigs", () => {
-  it("lists every player config, disabled ones included, but the hidden web players", async () => {
+  it("lists every player config, disabled ones included", async () => {
     const kitchen = playerConfig({ player_id: "kitchen", enabled: false });
-    const webPlayer = playerConfig({ player_id: "web", provider: "sendspin" });
-    apiMock.getPlayerConfigs.mockResolvedValue([kitchen, webPlayer]);
-    isHiddenSendspinWebPlayer.mockImplementation(
-      (config) => config.player_id === "web",
-    );
+    const office = playerConfig({ player_id: "office" });
+    apiMock.getPlayerConfigs.mockResolvedValue([kitchen, office]);
 
-    expect(await getListedPlayerConfigs()).toEqual([kitchen]);
+    expect(await getListedPlayerConfigs()).toEqual([kitchen, office]);
     expect(apiMock.getPlayerConfigs).toHaveBeenCalledWith(
       undefined,
       false,

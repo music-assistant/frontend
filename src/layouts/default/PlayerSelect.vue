@@ -210,6 +210,7 @@ import {
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
 import {
+  getPlayerDisplayName,
   isBuiltinPlayer,
   isPlayerActive,
   isSelectablePlayer,
@@ -297,7 +298,7 @@ const filteredPlayers = computed(() => {
   const query = playerSearchQuery.value.trim().toLocaleLowerCase();
   if (!query) return orderedPlayers.value;
   return orderedPlayers.value.filter((player) =>
-    player.name.toLocaleLowerCase().includes(query),
+    getPlayerDisplayName(player).toLocaleLowerCase().includes(query),
   );
 });
 

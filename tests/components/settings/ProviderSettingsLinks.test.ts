@@ -30,7 +30,6 @@ const { apiMock, getProviderSettingsSections, isProviderSyncing, unsubscribe } =
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
-vi.mock("@/helpers/utils", () => ({ isHiddenSendspinWebPlayer: () => false }));
 // the rules deciding which sections apply to a source are covered where they live
 vi.mock("@/helpers/provider_settings_actions", () => ({
   getProviderAccessLabel: () => "settings.source_access.action",

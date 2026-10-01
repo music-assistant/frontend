@@ -1,4 +1,3 @@
-import { isHiddenSendspinWebPlayer } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import type { Player, PlayerConfig } from "@/plugins/api/interfaces";
 
@@ -12,10 +11,8 @@ export const getPlayerName = (config: PlayerConfig): string =>
   config.player_id;
 
 /** The players the players settings list shows, disabled ones included. */
-export const getListedPlayerConfigs = async (): Promise<PlayerConfig[]> =>
-  (await api.getPlayerConfigs(undefined, false, false, true)).filter(
-    (config) => !isHiddenSendspinWebPlayer(config),
-  );
+export const getListedPlayerConfigs = (): Promise<PlayerConfig[]> =>
+  api.getPlayerConfigs(undefined, false, false, true);
 
 /**
  * Whether the player belongs to one of the given provider instances: it is one

@@ -117,6 +117,8 @@ vi.mock("@/composables/userPreferences", async () => {
 });
 
 vi.mock("@/helpers/players", () => ({
+  getPlayerDisplayName: (player: Player) =>
+    player.player_id === "builtin" ? "This device" : player.name,
   groupMemberPickerVisible: () => true,
   isBuiltinPlayer: (player: Player) => player.player_id === "builtin",
   isPlayerActive: (player: Player) =>
@@ -674,6 +676,27 @@ describe("PlayerSelect", () => {
         .findAll(".player-card")
         .map((card) => card.attributes("data-player-id")),
     ).toEqual(["player-7"]);
+  });
+
+  it("filters the built-in player by the name it is shown with", async () => {
+    api.players = Object.fromEntries(
+      Array.from({ length: 11 }, (_, index) => {
+        const player =
+          index === 7
+            ? createPlayer("builtin", "Marcel's Mac (Chrome)")
+            : createPlayer(`player-${index}`, `Player ${index}`);
+        return [player.player_id, player];
+      }),
+    );
+    const wrapper = mountPlayerSelect();
+
+    await wrapper.find(".player-search").setValue("this device");
+
+    expect(
+      wrapper
+        .findAll(".player-card")
+        .map((card) => card.attributes("data-player-id")),
+    ).toEqual(["builtin"]);
   });
 
   it("selects a player and closes the sheet from the card action", async () => {

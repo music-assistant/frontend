@@ -352,7 +352,7 @@ import {
   HighLowPassMode,
   EventType,
 } from "@/plugins/api/interfaces";
-import { getPlayerName } from "@/helpers/utils";
+import { truncateString } from "@/helpers/utils";
 import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
@@ -700,12 +700,8 @@ watch(
   },
   { immediate: true },
 );
-const playerName = computed(() =>
-  getPlayerName(api.players[props.playerId!], 27),
-);
-const fullPlayerName = computed(
-  () => api.players[props.playerId!]?.name || playerName.value,
-);
+const fullPlayerName = computed(() => api.players[props.playerId!]?.name ?? "");
+const playerName = computed(() => truncateString(fullPlayerName.value, 27));
 // Stable names: the switch's checked state already conveys on/off, so the
 // accessible name identifies what the switch controls.
 const dspToggleLabel = computed(() => `DSP: ${fullPlayerName.value}`);

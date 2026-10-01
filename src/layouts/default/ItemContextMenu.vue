@@ -20,7 +20,9 @@
             <div class="flex flex-col">
               <span>{{ $t("play_on") }}</span>
               <span class="text-muted-foreground text-xs">{{
-                store.activePlayer?.name || $t("no_player")
+                store.activePlayer
+                  ? getPlayerDisplayName(store.activePlayer)
+                  : $t("no_player")
               }}</span>
             </div>
           </DropdownMenuSubTrigger>
@@ -181,9 +183,14 @@ const MenuItemIcon = (props: { icon?: string | Component; size?: number }) => {
 const playerSubItems = computed<ContextMenuItem[]>(() => {
   const sortedPlayers = Object.values(api.players)
     .filter((x) => playerVisible(x))
-    .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1));
+    .sort((a, b) =>
+      getPlayerDisplayName(a).toUpperCase() >
+      getPlayerDisplayName(b).toUpperCase()
+        ? 1
+        : -1,
+    );
   return sortedPlayers.map((player) => ({
-    label: player.name,
+    label: getPlayerDisplayName(player),
     action: () => {
       store.activePlayerId = player.player_id;
     },
@@ -291,7 +298,7 @@ import {
 } from "@/helpers/favorites";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
-import { playerVisible } from "@/helpers/players";
+import { getPlayerDisplayName, playerVisible } from "@/helpers/players";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import {
   canAddToPlaylist,
