@@ -7,13 +7,11 @@ import type {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // `getProvider` decides whether an image is considered fetchable: an
-// unloaded/disabled provider is absent from the map entirely. `schema_version`
-// picks the imageproxy dialect, 31 and up serve the opaque id form only.
+// unloaded/disabled provider is absent from the map entirely.
 vi.mock("@/plugins/api", () => ({
   api: {
     baseUrl: "http://server",
     providers: {},
-    serverInfo: { value: { schema_version: 31 } },
     getProvider: (id: string) =>
       id === "filesystem--loaded" ? { available: true } : undefined,
   },

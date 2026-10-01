@@ -1729,7 +1729,6 @@ const SHUFFLEABLE_MEDIA_TYPES = [
 const canPlayShuffled = function (
   items: MediaItemTypeOrItemMapping[],
 ): boolean {
-  if (!api.supportsPlayMediaShuffle) return false;
   return (
     items.length > 1 || SHUFFLEABLE_MEDIA_TYPES.includes(items[0].media_type)
   );
