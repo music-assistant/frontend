@@ -14,6 +14,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { genre } from "../fixtures/genre";
 import { playlist } from "../fixtures/playlist";
+import { podcastEpisode } from "../fixtures/podcastEpisode";
 import { providerMapping } from "../fixtures/providerMapping";
 import { radio } from "../fixtures/radio";
 import {
@@ -198,6 +199,20 @@ describe("library management in the item context menu", () => {
     hasScope.mockImplementation(scopeChecker(scopes));
 
     expect(await offeredManagement()).toEqual([]);
+  });
+
+  // episodes are fetched from the provider on every view, never stored
+  it("leaves the metadata and refresh entries off an episode's own page", async () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    const episode = podcastEpisode({
+      provider: "test_provider--1",
+      provider_mappings: [providerMapping()],
+    });
+
+    const offered = await offeredLabels([episode], episode);
+
+    expect(offered).not.toContain("update_metadata");
+    expect(offered).not.toContain("refresh_item");
   });
 });
 

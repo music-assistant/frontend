@@ -8,6 +8,8 @@ import { QueueOption } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { audioSource } from "../fixtures/audioSource";
+import { podcast } from "../fixtures/podcast";
+import { podcastEpisode } from "../fixtures/podcastEpisode";
 import { providerMapping } from "../fixtures/providerMapping";
 import { radio } from "../fixtures/radio";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
@@ -118,6 +120,28 @@ describe("showPlayMenuForMediaItem", () => {
     await showPlayMenuForMediaItem(track());
 
     expect(emittedItems()).toHaveLength(5);
+  });
+
+  it("offers to play an episode on to the latest one of its podcast", async () => {
+    const episode = podcastEpisode({ item_id: "ep1" });
+    const show = podcast({ item_id: "pod1" });
+
+    await showPlayMenuForMediaItem(episode, show);
+
+    const [first] = emittedItems();
+    expect(first.label).toBe("play_from_here_to_latest");
+    first.action?.();
+    expect(apiMock.playMedia).toHaveBeenCalledWith(show.uri, undefined, {
+      start_item: "ep1",
+    });
+  });
+
+  it("leaves that out for an episode without its podcast", async () => {
+    await showPlayMenuForMediaItem(podcastEpisode());
+
+    expect(emittedItems().map((x) => x.label)).not.toContain(
+      "play_from_here_to_latest",
+    );
   });
 });
 
