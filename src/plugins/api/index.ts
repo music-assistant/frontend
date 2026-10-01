@@ -88,11 +88,10 @@ import {
 
 const DEBUG = process.env.NODE_ENV === "development";
 
-// The auth/roles command and custom user roles landed in API schema 74.
-const ROLES_SCHEMA_VERSION = 74;
-
-// Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
-const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
+// The oldest server API schema this frontend works with. Only the public web app
+// (app.music-assistant.io) can meet an older server, the bundled frontend always
+// matches its own. Raise it when a change would break the previous stable server.
+export const MIN_SERVER_SCHEMA_VERSION = 75;
 
 export interface CommandOptions {
   /**
@@ -3127,16 +3126,11 @@ export class MusicAssistantApi {
     });
   }
 
-  /** Whether the connected server lists the user roles and has custom ones (schema >= 74). */
-  public get supportsRoles(): boolean {
-    return (this.serverInfo.value?.schema_version ?? 0) >= ROLES_SCHEMA_VERSION;
-  }
-
-  /** Whether the connected server lets a role with queues.control play AI Radio stations (schema >= 75). */
-  public get supportsAIRadioPlaybackScopes(): boolean {
+  /** Whether the connected server is too old for this frontend and needs an update. */
+  public get serverOutdated(): boolean {
+    const schemaVersion = this.serverInfo.value?.schema_version;
     return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
+      schemaVersion !== undefined && schemaVersion < MIN_SERVER_SCHEMA_VERSION
     );
   }
 
@@ -3311,23 +3305,9 @@ export class MusicAssistantApi {
     return users;
   }
 
-  public async getRoles(options?: CommandOptions): Promise<Role[]> {
+  public getRoles(options?: CommandOptions): Promise<Role[]> {
     // Get all user roles: the builtin roles first, then the custom roles by name
-    if (this.supportsRoles) {
-      return await this.sendCommand<Role[]>("auth/roles", undefined, options);
-    }
-    // an older server only has the builtin roles, of which it lists the scopes
-    const roleScopes = await this.sendCommand<Record<string, string[]>>(
-      "auth/scopes",
-      undefined,
-      options,
-    );
-    return Object.entries(roleScopes).map(([role_id, scopes]) => ({
-      role_id,
-      name: role_id,
-      scopes,
-      builtin: true,
-    }));
+    return this.sendCommand<Role[]>("auth/roles", undefined, options);
   }
 
   public createRole(name: string, scopes: string[]): Promise<Role> {

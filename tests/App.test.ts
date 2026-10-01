@@ -71,6 +71,7 @@ const {
     initialize: vi.fn<MusicAssistantApi["initialize"]>(),
     isRemoteConnection: { value: false },
     requireAuthentication: vi.fn<MusicAssistantApi["requireAuthentication"]>(),
+    serverOutdated: false,
     serverInfo: {
       value: {
         onboard_done: true,
@@ -329,6 +330,7 @@ describe("App initialization", () => {
     i18nMock.global.locale.value = "en";
     apiMock.state.value = "authenticated";
     apiMock.isRemoteConnection.value = false;
+    apiMock.serverOutdated = false;
     proxyState.isReady.value = true;
     apiMock.serverInfo.value = {
       onboard_done: true,
@@ -464,6 +466,20 @@ describe("App initialization", () => {
       expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
     },
   );
+
+  it("asks to update an outdated server instead of starting the app", async () => {
+    apiMock.serverOutdated = true;
+
+    wrapper = mountAppWithoutSettling();
+    await flushPromises();
+
+    expect(wrapper.findComponent({ name: "ServerOutdated" }).exists()).toBe(
+      true,
+    );
+    expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(false);
+    expect(apiMock.getCurrentUserInfo).not.toHaveBeenCalled();
+    expect(apiMock.state.value).toBe("authenticated");
+  });
 
   it("follows the force mobile layout setting without a reload", async () => {
     wrapper = await mountApp();

@@ -179,7 +179,6 @@ import {
 } from "@/helpers/provider_permissions";
 import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
 import { api } from "@/plugins/api";
-import { requireServerVersion } from "@/plugins/api/helpers";
 import {
   type ProviderConfig,
   ProviderStage,
@@ -210,11 +209,8 @@ const currentType = computed(() =>
     : ProviderType.MUSIC,
 );
 
-// the status page only exists on servers that ship audio analysis
 const showAudioAnalysisStatusHint = computed(
-  () =>
-    currentType.value === ProviderType.AUDIO_ANALYSIS &&
-    requireServerVersion("2.9.0"),
+  () => currentType.value === ProviderType.AUDIO_ANALYSIS,
 );
 
 const addProviderLabel = computed(() => {

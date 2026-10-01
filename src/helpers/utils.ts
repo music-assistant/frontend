@@ -274,7 +274,7 @@ export const getStreamingProviderMappings = function (
 export const sleep = (delay: number) =>
   new Promise((resolve) => setTimeout(resolve, delay));
 
-// Sizes accepted by the imageproxy (both endpoints). 0 means
+// Sizes accepted by the imageproxy. 0 means
 // no resize. Anything else returns HTTP 400, so we round up to the next
 // allowed value for arbitrary caller-supplied sizes.
 const IMAGEPROXY_ALLOWED_SIZES = [80, 160, 256, 512, 1024] as const;
@@ -291,7 +291,7 @@ const normalizeImageProxySize = function (size?: number): number {
  * Get the proper image URL for player media, handling protocol mismatches
  * and backend-provided imageproxy URLs.
  *
- * - If URL is HTTP but frontend is served over HTTPS, proxy through imageproxy
+ * - If URL is HTTP but frontend is served over HTTPS, return an empty string (mixed content)
  * - If URL is already an imageproxy URL from another host, transform to use our baseUrl
  * - Otherwise return the URL as-is
  *
@@ -306,10 +306,8 @@ export const getMediaImageUrl = function (
   // Handle data URLs directly
   if (imageUrl.startsWith("data:image")) return imageUrl;
 
-  // Rebuild existing imageproxy URLs with our baseUrl. Two URL shapes exist:
-  //   legacy: http://host/imageproxy?provider=tunein&size=500&path=...
-  //   opaque: http://host/imageproxy/<64-hex-id>?size=256&fmt=jpg
-  // Pass a base so relative inputs like `/imageproxy/<id>?size=...` parse,
+  // Rebuild existing imageproxy URLs (/imageproxy/<64-hex-id>?size=256&fmt=jpg)
+  // with our baseUrl. Pass a base so relative inputs like `/imageproxy/<id>?size=...` parse,
   // and swallow parse errors so a malformed input falls through unchanged.
   if (imageUrl.includes("/imageproxy")) {
     try {
@@ -320,9 +318,6 @@ export const getMediaImageUrl = function (
         return params
           ? `${api.baseUrl}/imageproxy/${proxyId}?${params}`
           : `${api.baseUrl}/imageproxy/${proxyId}`;
-      }
-      if (url.searchParams.has("provider")) {
-        return `${api.baseUrl}/imageproxy?${url.searchParams.toString()}`;
       }
     } catch {
       // fall through and return imageUrl as-is below
