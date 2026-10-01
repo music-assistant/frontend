@@ -76,6 +76,7 @@ import {
   RefreshCw,
   Speaker,
 } from "@lucide/vue";
+import { useDebounceFn } from "@vueuse/core";
 import type { Component } from "vue";
 import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
@@ -130,6 +131,8 @@ const playerCount = computed(
 // instance is loaded; a provider that was just enabled discovers its players
 // after that, so the count follows them
 let unsubPlayersChanged: (() => void) | undefined;
+// discovery announces its players one by one, so a burst reloads the list once
+const reloadPlayerConfigs = useDebounceFn(loadPlayerConfigs, 300);
 watch(
   () => sections.value.players,
   (showsPlayers) => {
@@ -143,7 +146,7 @@ watch(
         EventType.PLAYER_CONFIG_UPDATED,
         EventType.PLAYER_REMOVED,
       ],
-      () => void loadPlayerConfigs(),
+      () => void reloadPlayerConfigs(),
     );
   },
   { immediate: true },

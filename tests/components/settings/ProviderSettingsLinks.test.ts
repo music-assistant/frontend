@@ -136,6 +136,14 @@ describe("ProviderSettingsLinks", () => {
   });
 
   describe("players row", () => {
+    // player changes reach the row debounced; flushPromises still runs on setImmediate
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it("opens the players list filtered to this provider", () => {
       const row = mountLinks().get(
         '[data-testid="provider-settings-link-players"]',
@@ -207,6 +215,20 @@ describe("ProviderSettingsLinks", () => {
       resolveFirst([]);
       await flushPromises();
       expect(playersState(wrapper)).toBe("1");
+    });
+
+    it("reloads the players once for a burst of player changes", async () => {
+      mountLinks();
+      await flushPromises();
+      apiMock.getPlayerConfigs.mockClear();
+
+      announcePlayerChange();
+      announcePlayerChange();
+      announcePlayerChange();
+      vi.runAllTimers();
+      await flushPromises();
+
+      expect(apiMock.getPlayerConfigs).toHaveBeenCalledTimes(1);
     });
 
     it("drops a count it can no longer refresh", async () => {
@@ -373,9 +395,15 @@ function mountLinks({ errorHandler }: { errorHandler?: () => void } = {}) {
 }
 
 /**
- * Deliver the player change the players row keeps up with.
+ * Deliver the player change the players row keeps up with, once its debounce
+ * has passed.
  */
 function playersChanged() {
+  announcePlayerChange();
+  vi.runAllTimers();
+}
+
+function announcePlayerChange() {
   for (const [, callback] of apiMock.subscribe_multi.mock.calls) {
     callback();
   }
