@@ -12,7 +12,6 @@ const { apiMock, routerPush } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
-vi.mock("@/plugins/api/helpers", () => ({ requireServerVersion: () => true }));
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
   useRouter: () => ({ push: routerPush }),

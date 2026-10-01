@@ -241,7 +241,6 @@ import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import { availableSettingsSections } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
-import { requireServerVersion } from "@/plugins/api/helpers";
 import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { Settings } from "@lucide/vue";
@@ -444,10 +443,7 @@ const launchOnboarding = () =>
   openOnboarding(isAdminTrack() ? undefined : "welcome");
 
 const settingsSections = computed(() =>
-  availableSettingsSections(
-    (scope) => authManager.hasScope(scope),
-    requireServerVersion,
-  ),
+  availableSettingsSections((scope) => authManager.hasScope(scope)),
 );
 
 const providerSectionNames = [
