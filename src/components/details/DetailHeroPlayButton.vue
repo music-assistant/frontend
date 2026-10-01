@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import MenuButton from "@/components/MenuButton.vue";
 import { handlePlayBtnClick } from "@/helpers/media_item_actions";
-import { getPlayerName } from "@/helpers/players";
+import { getPlayerName, isBuiltinPlayer } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import type { MediaItemType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -36,13 +36,14 @@ const playButton = useTemplateRef<ComponentPublicInstance>("playButton");
 const isPhone = computed(() => isPhoneSizedScreen());
 
 // a phone has little room, so the player name is trimmed harder there
-const playButtonText = computed(() =>
-  store.activePlayer
-    ? $t("play_on_player", {
-        player: getPlayerName(store.activePlayer, isPhone.value ? 12 : 20),
-      })
-    : $t("play"),
-);
+const playButtonText = computed(() => {
+  const player = store.activePlayer;
+  if (!player) return $t("play");
+  if (isBuiltinPlayer(player)) return $t("play_on_this_device");
+  return $t("play_on_player", {
+    player: getPlayerName(player, isPhone.value ? 12 : 20),
+  });
+});
 
 // The queue playMedia targets are resolved directly, since activePlayerQueue is
 // undefined while an external source is active.

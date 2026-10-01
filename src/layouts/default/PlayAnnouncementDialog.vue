@@ -10,7 +10,11 @@
       <DialogHeader>
         <DialogTitle class="mb-1">{{ $t("play_announcement") }}</DialogTitle>
         <DialogDescription>
-          {{ $t("play_announcement_explanation", [playerName]) }}
+          {{
+            isThisDevice
+              ? $t("play_announcement_explanation_this_device")
+              : $t("play_announcement_explanation", [playerName])
+          }}
         </DialogDescription>
       </DialogHeader>
 
@@ -166,7 +170,7 @@ import {
   liveAnnouncementSupported,
   useLiveAnnouncement,
 } from "@/composables/useLiveAnnouncement";
-import { getPlayerDisplayName } from "@/helpers/players";
+import { getPlayerDisplayName, isBuiltinPlayer } from "@/helpers/players";
 import { formatDuration } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { type PlayAnnouncementDialogEvent, eventbus } from "@/plugins/eventbus";
@@ -200,6 +204,10 @@ const playerName = computed(() => {
   const player = api.players[playerId.value];
   return player ? getPlayerDisplayName(player) : "";
 });
+const isThisDevice = computed(() => {
+  const player = api.players[playerId.value];
+  return player !== undefined && isBuiltinPlayer(player);
+});
 const micAvailable = computed(() => liveAnnouncementSupported());
 
 const {
@@ -210,7 +218,11 @@ const {
   cancel: cancelLive,
 } = useLiveAnnouncement({
   onFinished: () => {
-    toast.success($t("play_announcement_sent", [playerName.value]));
+    toast.success(
+      isThisDevice.value
+        ? $t("play_announcement_sent_this_device")
+        : $t("play_announcement_sent", [playerName.value]),
+    );
     showDialog.value = false;
   },
   onError: (errorMessage: string) => toast.error(errorMessage),

@@ -1,4 +1,4 @@
-import { getPlayerDisplayName } from "@/helpers/players";
+import { getPlayerDisplayName, isBuiltinPlayer } from "@/helpers/players";
 import api from "@/plugins/api";
 import { resolvePlayerQueue } from "@/plugins/api/helpers";
 import {
@@ -24,6 +24,7 @@ export function requestGroupPlaybackConfirmation(
   eventbus.emit("playerGroupPlaybackDialog", {
     change,
     playerName: getPlayerDisplayName(player),
+    isThisDevice: isBuiltinPlayer(player),
     onKeepPlaying: () => keepPlaying(player.player_id, onKeepPlaying),
     onStopAndUngroup: () =>
       stopAndUngroup(player.player_id, change === "power_off"),
