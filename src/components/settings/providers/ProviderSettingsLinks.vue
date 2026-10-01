@@ -200,6 +200,7 @@ async function loadPlayerConfigs() {
     playerConfigs.value = await getListedPlayerConfigs();
   } catch (error) {
     // the row still leads to the players, only without the count
+    playerConfigs.value = undefined;
     console.error("Error fetching player configs:", error);
   }
 }

@@ -183,6 +183,27 @@ describe("ProviderSettingsLinks", () => {
       ).toBe(false);
     });
 
+    it("drops a count it can no longer refresh", async () => {
+      apiMock.getPlayerConfigs.mockResolvedValue([
+        playerConfig({ player_id: "own", provider: "sonos--1" }),
+      ]);
+      const wrapper = mountLinks();
+      await flushPromises();
+      expect(playersState(wrapper)).toBe("1");
+
+      apiMock.getPlayerConfigs.mockRejectedValue(new Error("refused"));
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      playersChanged();
+      await flushPromises();
+
+      expect(
+        wrapper
+          .get('[data-testid="provider-settings-link-players"]')
+          .find('[data-testid^="provider-settings-state"]')
+          .exists(),
+      ).toBe(false);
+    });
+
     it("follows the players the provider discovers, changes or removes", async () => {
       const wrapper = mountLinks();
       await flushPromises();
