@@ -746,7 +746,8 @@ let unlinkedAtPosition: number | null = null;
 const toggleTranscriptSync = () => {
   // Read the queue directly: the panel's own clock only runs while it is open,
   // and the toggle stays usable while it is closed.
-  const position = resolveQueueElapsedTime() ?? 0;
+  const position = resolveQueueElapsedTime();
+  if (position === undefined) return;
   if (transcriptSyncEnabled.value) {
     // Unlinking: remember where playback was
     unlinkedAtPosition = position;
