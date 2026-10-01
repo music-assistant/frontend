@@ -520,7 +520,8 @@
         "fix_now": "Fix now",
         "web_player_enabled": {
             "label": "Enable built-in (Sendspin) Web Player",
-            "description": "Allow playback to this device\/browser using the built-in Sendspin web player."
+            "description": "Allow playback to this device\/browser using the built-in Sendspin web player.",
+            "turned_off_for_browsers": "Turned off for all web browsers in System > Players."
         },
         "enable_browser_controls": {
             "label": "Browser media controls",

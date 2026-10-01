@@ -4,18 +4,20 @@ import FrontendConfig from "@/views/settings/FrontendConfig.vue";
 import { BrowserMediaControlsMode } from "@/helpers/device_settings";
 import { ConfigEntryType } from "@/plugins/api/interfaces";
 
-const { apiMock, routerMock, storeMock, setPreference } = vi.hoisted(() => ({
-  apiMock: { players: {}, providers: {} },
-  routerMock: { push: vi.fn(() => Promise.resolve()) },
-  storeMock: {
-    isIngressSession: false,
-    currentUser: {
-      user_id: "user",
-      preferences: {} as Record<string, unknown>,
+const { apiMock, routerMock, storeMock, setPreference, browserPlayersAllowed } =
+  vi.hoisted(() => ({
+    apiMock: { players: {}, providers: {} },
+    routerMock: { push: vi.fn(() => Promise.resolve()) },
+    storeMock: {
+      isIngressSession: false,
+      currentUser: {
+        user_id: "user",
+        preferences: {} as Record<string, unknown>,
+      },
     },
-  },
-  setPreference: vi.fn(() => Promise.resolve()),
-}));
+    setPreference: vi.fn(() => Promise.resolve()),
+    browserPlayersAllowed: vi.fn(() => Promise.resolve(true)),
+  }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
@@ -24,6 +26,7 @@ vi.mock("@/plugins/i18n", () => ({
   i18n: { global: { availableLocales: ["en", "nl"] } },
 }));
 vi.mock("vue-router", () => ({ useRouter: () => routerMock }));
+vi.mock("@/plugins/web_player", () => ({ browserPlayersAllowed }));
 vi.mock("@/composables/userPreferences", () => ({
   useUserPreferences: () => ({ setPreference }),
 }));
@@ -158,5 +161,30 @@ describe("FrontendConfig save", () => {
       BrowserMediaControlsMode.WEB_PLAYER,
       BrowserMediaControlsMode.DISABLED,
     ]);
+  });
+
+  it("greys out the web player switch when System > Players turns browsers off", async () => {
+    browserPlayersAllowed.mockResolvedValueOnce(false);
+    const wrapper = await mountPage();
+    const entries = (
+      wrapper.vm as unknown as {
+        config: {
+          key: string;
+          depends_on?: string | null;
+          description?: string;
+        }[];
+      }
+    ).config;
+    const entry = entries.find(({ key }) => key === "web_player_enabled");
+    const gate = entries.find(({ key }) => key === entry?.depends_on);
+
+    expect(entry?.description).toBe(
+      "settings.web_player_enabled.turned_off_for_browsers",
+    );
+    expect(gate).toMatchObject({ hidden: true, value: false });
+
+    // the gate is not a setting of this device or account
+    await submitAll(wrapper);
+    expect(setPreference).not.toHaveBeenCalled();
   });
 });

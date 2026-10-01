@@ -62,6 +62,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { getKioskModePreference } from "@/plugins/homeassistant";
 import { $t, i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { browserPlayersAllowed } from "@/plugins/web_player";
 import EditConfig from "./EditConfig.vue";
 import SettingsHeaderCard from "./SettingsHeaderCard.vue";
 
@@ -93,7 +94,7 @@ const RELOAD_EXEMPT_PREFERENCE_KEYS = new Set([
   "volume_haptics",
 ]);
 
-onMounted(() => {
+onMounted(async () => {
   // TODO: Remove localStorage fallbacks below once migration period is over
   // (theme and language moved from localStorage to user preferences)
   // NOTE: the theme itself is owned by useThemePreference (applied at app
@@ -270,6 +271,8 @@ onMounted(() => {
   ];
 
   // Add web player settings (if not running in companion mode)
+  const allowBrowserPlayers =
+    companionMode.value || (await browserPlayersAllowed());
   if (!companionMode.value) {
     configEntries.push({
       key: "web_player_enabled",
@@ -279,10 +282,25 @@ onMounted(() => {
       required: false,
       options: [],
       category: "web_player",
+      // greyed out while System > Players turns off every browser player
+      depends_on: allowBrowserPlayers ? null : "allow_browser_players",
       value:
         localStorage.getItem("frontend.settings.web_player_enabled") !==
         "false",
     });
+    if (!allowBrowserPlayers) {
+      configEntries.push({
+        key: "allow_browser_players",
+        type: ConfigEntryType.BOOLEAN,
+        label: "allow_browser_players",
+        default_value: false,
+        required: false,
+        options: [],
+        category: "web_player",
+        hidden: true,
+        value: false,
+      });
+    }
   }
 
   // These are frontend-only settings, so the frontend owns their translations (server-provided
@@ -315,6 +333,16 @@ onMounted(() => {
           description === descriptionKey ? opt.description : description,
       };
     });
+  }
+  if (!allowBrowserPlayers) {
+    const webPlayerEntry = configEntries.find(
+      (entry) => entry.key === "web_player_enabled",
+    );
+    if (webPlayerEntry) {
+      webPlayerEntry.description = $t(
+        "settings.web_player_enabled.turned_off_for_browsers",
+      );
+    }
   }
   config.value = configEntries;
   initialValues = Object.fromEntries(

@@ -10,7 +10,7 @@ import {
 import { resetMediaSession } from "@/helpers/mediaSession";
 import authManager from "./auth";
 import api from "./api";
-import { EventType } from "./api/interfaces";
+import { EventType, Scope } from "./api/interfaces";
 import { companionMode } from "./companion";
 import router from "./router";
 import { resetSendspinConnection } from "./sendspin-connection";
@@ -176,8 +176,26 @@ let modeSyncInitialized = false;
 let modeSyncInitializationPromise: Promise<void> | null = null;
 let pendingModeApplication = Promise.resolve();
 
+/**
+ * Whether the server lets web browsers play as their own player (System > Players).
+ */
+export async function browserPlayersAllowed(): Promise<boolean> {
+  // a role that may not read the core settings is left to the server's own check
+  if (!authManager.hasScope(Scope.CONFIG_CORE_READ)) return true;
+  try {
+    return (
+      (await api.getCoreConfigValue("players", "allow_browser_players")) !==
+      false
+    );
+  } catch {
+    // the server still keeps a blocked browser out
+    return true;
+  }
+}
+
 function resolvePreferredMode(
   browserControlsMode: BrowserMediaControlsMode,
+  allowBrowserPlayers: boolean,
 ): WebPlayerMode {
   // This route explicitly disables the web player
   const routeDisablesWebPlayer = router.currentRoute.value.matched.some(
@@ -206,7 +224,8 @@ function resolvePreferredMode(
     return WebPlayerMode.SENDSPIN_ONLY;
   }
 
-  const webPlayerEnabled = readDeviceSetting(WEB_PLAYER_ENABLED) !== "false";
+  const webPlayerEnabled =
+    allowBrowserPlayers && readDeviceSetting(WEB_PLAYER_ENABLED) !== "false";
   if (webPlayerEnabled) {
     return browserControlsMode === BrowserMediaControlsMode.DISABLED
       ? WebPlayerMode.SENDSPIN_ONLY
@@ -222,7 +241,10 @@ function queueModeApplication(): Promise<void> {
   pendingModeApplication = pendingModeApplication.then(async () => {
     const browserControlsMode = getBrowserMediaControlsMode();
     webPlayer.browserControlsMode = browserControlsMode;
-    const mode = resolvePreferredMode(browserControlsMode);
+    const mode = resolvePreferredMode(
+      browserControlsMode,
+      await browserPlayersAllowed(),
+    );
     if (mode !== webPlayer.mode || mode !== webPlayer.tabMode) {
       await webPlayer.setMode(mode);
     }

@@ -21,6 +21,8 @@ const { authState, routerAfterEach } = vi.hoisted(() => {
   return {
     authState: {
       guest: null as "music_quiz" | "party" | null,
+      // the server's System > Players setting, null when it cannot be read
+      allowBrowserPlayers: true as boolean | null,
     },
     routerAfterEach: vi.fn(),
   };
@@ -31,12 +33,18 @@ vi.mock("@/plugins/auth", () => ({
     isMusicQuizGuest: () => authState.guest === "music_quiz",
     isPartyGuest: () => authState.guest === "party",
     isGuestAccessSession: () => authState.guest !== null,
+    // guest accounts may not read the core settings
+    hasScope: () => authState.guest === null,
   },
 }));
 
 vi.mock("@/plugins/api", () => ({
   default: {
     subscribe: vi.fn(() => () => {}),
+    getCoreConfigValue: vi.fn(async () => {
+      if (authState.allowBrowserPlayers === null) throw new Error("no access");
+      return authState.allowBrowserPlayers;
+    }),
   },
 }));
 
@@ -134,6 +142,7 @@ describe("web player preferred mode", () => {
 
   beforeEach(() => {
     authState.guest = null;
+    authState.allowBrowserPlayers = true;
     companionMode.value = false;
     partyListenInEnabled.value = false;
     vi.stubGlobal("localStorage", createStorage());
@@ -149,6 +158,20 @@ describe("web player preferred mode", () => {
     expect(handler).toHaveBeenCalledOnce();
     clearWebPlayerAudioUnlock(handler);
     expect(webPlayer.primeAudio()).toBe(false);
+  });
+
+  it("keeps a browser off its own player when System > Players turns them off", async () => {
+    authState.allowBrowserPlayers = false;
+    setRegularPreferences(true, BrowserMediaControlsMode.ACTIVE_PLAYER);
+
+    expect(await applyPreferredMode()).toBe(WebPlayerMode.CONTROLS_ONLY);
+  });
+
+  it("starts the player when the server setting cannot be read", async () => {
+    authState.allowBrowserPlayers = null;
+    setRegularPreferences(true, BrowserMediaControlsMode.DISABLED);
+
+    expect(await applyPreferredMode()).toBe(WebPlayerMode.SENDSPIN_ONLY);
   });
 
   it("uses receive-only Sendspin for Music Quiz guests", async () => {
