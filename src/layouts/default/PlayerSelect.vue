@@ -270,9 +270,9 @@ let restoreFocusOnClose = false;
 let autoSelectedPlayerId: string | undefined;
 
 // PlayerSelect is the only surface that lists needs_setup players (a click here
-// launches the setup flow, see selectPlayer), to a role that may set them up,
-// and capture-only audio inputs (informational rows, so the device stays
-// discoverable).
+// launches the setup flow, see selectPlayer), to a role that may set them up.
+// It also lists capture-only audio inputs (informational rows, so the device
+// stays discoverable).
 const orderedPlayers = useOrderedPlayers({
   allowNeedsSetup: () => authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
   allowSources: true,
