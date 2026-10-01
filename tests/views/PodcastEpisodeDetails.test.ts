@@ -10,12 +10,15 @@ const {
   mockGetPodcastEpisode,
   mockGetPodcastEpisodes,
   mockGetPodcast,
+  mockGetPodcastEpisodeTranscript,
   mockSubscribe,
   mockRouterPush,
 } = vi.hoisted(() => ({
   mockGetPodcastEpisode: vi.fn<MusicAssistantApi["getPodcastEpisode"]>(),
   mockGetPodcastEpisodes: vi.fn<MusicAssistantApi["getPodcastEpisodes"]>(),
   mockGetPodcast: vi.fn<MusicAssistantApi["getPodcast"]>(),
+  mockGetPodcastEpisodeTranscript:
+    vi.fn<MusicAssistantApi["getPodcastEpisodeTranscript"]>(),
   mockSubscribe: vi.fn(() => () => {}),
   mockRouterPush: vi.fn(),
 }));
@@ -25,6 +28,7 @@ vi.mock("@/plugins/api", () => ({
     getPodcastEpisode: mockGetPodcastEpisode,
     getPodcastEpisodes: mockGetPodcastEpisodes,
     getPodcast: mockGetPodcast,
+    getPodcastEpisodeTranscript: mockGetPodcastEpisodeTranscript,
     subscribe: mockSubscribe,
   },
 }));
@@ -96,6 +100,7 @@ describe("PodcastEpisodeDetails", () => {
       );
     mockGetPodcastEpisodes.mockReset().mockResolvedValue(EPISODES);
     mockGetPodcast.mockReset().mockResolvedValue(SHOW);
+    mockGetPodcastEpisodeTranscript.mockReset();
     mockSubscribe.mockReset().mockReturnValue(() => {});
     mockRouterPush.mockReset();
   });
@@ -143,5 +148,43 @@ describe("PodcastEpisodeDetails", () => {
 
     expect(hero(wrapper).props("item")).toBeUndefined();
     expect(listing(wrapper).exists()).toBe(false);
+  });
+
+  describe("transcript", () => {
+    interface TranscriptState {
+      transcript: string | null;
+      transcriptLoading: boolean;
+    }
+
+    it("keeps a transcript that arrives late off the next episode", async () => {
+      let resolveOld!: (value: [string | null, null]) => void;
+      mockGetPodcastEpisodeTranscript.mockReturnValueOnce(
+        new Promise((resolve) => (resolveOld = resolve)),
+      );
+      const wrapper = await mountDetails(EPISODES[1]);
+
+      hero(wrapper).vm.$emit("transcript");
+      await wrapper.setProps({ itemId: "ep1" });
+      await flushPromises();
+      resolveOld(["old episode", null]);
+      await flushPromises();
+
+      const state = wrapper.vm as unknown as TranscriptState;
+      expect(state.transcript).toBeNull();
+      expect(state.transcriptLoading).toBe(false);
+    });
+
+    it("stops loading when the transcript cannot be fetched", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      mockGetPodcastEpisodeTranscript.mockRejectedValue(new Error("gone"));
+      const wrapper = await mountDetails(EPISODES[1]);
+
+      hero(wrapper).vm.$emit("transcript");
+      await flushPromises();
+
+      const state = wrapper.vm as unknown as TranscriptState;
+      expect(state.transcript).toBeNull();
+      expect(state.transcriptLoading).toBe(false);
+    });
   });
 });
