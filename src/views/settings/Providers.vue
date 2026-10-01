@@ -341,16 +341,15 @@ const openProvider = function (provider: ProviderConfig) {
 };
 
 const toggleEnabled = function (config: ProviderConfig) {
-  config.enabled = !config.enabled;
+  const enabled = !config.enabled;
+  config.enabled = enabled;
   api
-    .saveProviderConfig(
-      config.domain,
-      {
-        enabled: config.enabled,
-      },
-      config.instance_id,
-    )
-    .catch((err) => toast.error(String(err)));
+    .saveProviderConfig(config.domain, { enabled }, config.instance_id)
+    .catch((err) => {
+      // the server kept the previous state, so the row has to show it again
+      config.enabled = !enabled;
+      toast.error(String(err));
+    });
 };
 
 const reloadProvider = function (providerInstanceId: string) {

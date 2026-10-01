@@ -1,7 +1,12 @@
 import ProviderSettingsLinks from "@/components/settings/providers/ProviderSettingsLinks.vue";
 import type { getProviderSettingsSections as readProviderSettingsSections } from "@/helpers/provider_settings_actions";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { EventType, type Player, ProviderType } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  type Player,
+  type PlayerConfig,
+  ProviderType,
+} from "@/plugins/api/interfaces";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { outputProtocol } from "../../fixtures/outputProtocol";
@@ -181,6 +186,28 @@ describe("ProviderSettingsLinks", () => {
           .find('[data-testid^="provider-settings-state"]')
           .exists(),
       ).toBe(false);
+    });
+
+    it("keeps the count of the latest refresh when responses cross", async () => {
+      let resolveFirst: (configs: PlayerConfig[]) => void = () => {};
+      const wrapper = mountLinks();
+      await flushPromises();
+
+      apiMock.getPlayerConfigs.mockReturnValueOnce(
+        new Promise((resolve) => (resolveFirst = resolve)),
+      );
+      playersChanged();
+      apiMock.getPlayerConfigs.mockResolvedValueOnce([
+        playerConfig({ player_id: "own", provider: "sonos--1" }),
+      ]);
+      playersChanged();
+      await flushPromises();
+      expect(playersState(wrapper)).toBe("1");
+
+      // the older request answers last, with a list that is out of date
+      resolveFirst([]);
+      await flushPromises();
+      expect(playersState(wrapper)).toBe("1");
     });
 
     it("drops a count it can no longer refresh", async () => {

@@ -442,6 +442,23 @@ describe("Providers", () => {
     expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(1);
   });
 
+  it("shows the previous state again when toggling a provider fails", async () => {
+    apiMock.saveProviderConfig.mockRejectedValue(new Error("nope"));
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    const toggle = async () => {
+      eventbusMock.emit.mockClear();
+      return (await openMenu(wrapper)).find((item: { label: string }) =>
+        ["settings.disable", "settings.enable"].includes(item.label),
+      );
+    };
+    (await toggle()).action();
+    await flushPromises();
+
+    expect(toastMock.error).toHaveBeenCalledWith("Error: nope");
+    expect((await toggle()).label).toBe("settings.disable");
+  });
+
   it("omits reconfigure from the menu when no setup flow exists", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED, false);
 

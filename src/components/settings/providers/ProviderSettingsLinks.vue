@@ -115,6 +115,7 @@ const sections = computed(() => getProviderSettingsSections(props.config));
 // the players list this row opens, so the count always matches it; unknown
 // until the list loads
 const playerConfigs = ref<PlayerConfig[]>();
+let playerConfigsRequestId = 0;
 
 const playerCount = computed(
   () =>
@@ -196,9 +197,13 @@ function stateClass(row: SettingsRow) {
 }
 
 async function loadPlayerConfigs() {
+  // player events come in bursts, so only the latest request may set the count
+  const requestId = ++playerConfigsRequestId;
   try {
-    playerConfigs.value = await getListedPlayerConfigs();
+    const configs = await getListedPlayerConfigs();
+    if (requestId === playerConfigsRequestId) playerConfigs.value = configs;
   } catch (error) {
+    if (requestId !== playerConfigsRequestId) return;
     // the row still leads to the players, only without the count
     playerConfigs.value = undefined;
     console.error("Error fetching player configs:", error);
