@@ -217,6 +217,7 @@ import {
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { PlayerType, type Player } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
@@ -482,6 +483,8 @@ function resetPanelState() {
 }
 
 function checkDefaultPlayer() {
+  // dashboard viewers never pick players themselves; the hosting view pins one.
+  if (authManager.isDashboardViewer()) return;
   if (store.activePlayer) return;
   const defaultPlayerId = selectDefaultPlayer();
   if (!defaultPlayerId) return;
@@ -499,6 +502,8 @@ function checkDefaultPlayer() {
  * device, which only registers a moment after the app has started.
  */
 function preferBuiltinPlayer() {
+  // a display must never end up showing its own built-in player
+  if (authManager.isDashboardViewer()) return;
   if (store.activePlayerId !== autoSelectedPlayerId) return;
   if (getPreference<string>("activePlayerId").value) return;
   const builtinPlayerId = selectBuiltinPlayer();
@@ -508,6 +513,8 @@ function preferBuiltinPlayer() {
 }
 
 function rememberPlayer(playerId: string) {
+  // dashboard viewer preferences are shared by every dashboard session
+  if (authManager.isDashboardViewer()) return;
   const player = api.players[playerId];
   if (!player) return;
   const rememberedPlayer = isBuiltinPlayer(player)
