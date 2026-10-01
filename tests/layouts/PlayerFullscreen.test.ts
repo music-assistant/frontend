@@ -1,8 +1,10 @@
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
+import LyricsViewer from "@/components/LyricsViewer.vue";
+import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import PlayerFullscreen from "@/layouts/default/PlayerOSD/PlayerFullscreen.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
-import { shallowMount, type VueWrapper } from "@vue/test-utils";
+import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 
@@ -410,9 +412,24 @@ describe("PlayerFullscreen transcript", () => {
 
     wrapper = shallowMount(PlayerFullscreen, {
       props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+        },
+      },
     });
     await nextTick();
     await nextTick();
+  }
+
+  /** Move the queue's reported position to `seconds`. */
+  async function seekQueue(seconds: number): Promise<void> {
+    const api = (await import("@/plugins/api")).default;
+    (api as unknown as TestApi).queueElapsedTime[QUEUE_ID] = {
+      elapsed_time: seconds,
+      elapsed_time_last_updated: NOW,
+    };
   }
 
   it("asks for the transcript", async () => {
@@ -435,6 +452,56 @@ describe("PlayerFullscreen transcript", () => {
     await openEpisode(false);
 
     expect(testApi.getPodcastEpisodeTranscript).not.toHaveBeenCalled();
+  });
+
+  describe("sync toggle", () => {
+    beforeEach(async () => {
+      // only the clock, so flushPromises can still let the transcript load
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(NOW * 1000);
+      const api = (await import("@/plugins/api")).default;
+      (api as unknown as TestApi).getPodcastEpisodeTranscript.mockResolvedValue(
+        ["Hello", [{ start: 0, text: "Hello" }]],
+      );
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("stops following playback while unlinked", async () => {
+      await openEpisode(null);
+      await flushPromises();
+      const vm = wrapper!.vm as unknown as {
+        showLyrics: boolean;
+        toggleTranscriptSync: () => void;
+      };
+      vm.showLyrics = true;
+      await nextTick();
+      const viewer = () => wrapper!.findComponent(LyricsViewer);
+      expect(viewer().props("syncDisabled")).toBe(false);
+
+      vm.toggleTranscriptSync();
+      await nextTick();
+      expect(viewer().props("syncDisabled")).toBe(true);
+
+      vm.toggleTranscriptSync();
+      await nextTick();
+      expect(viewer().props("syncDisabled")).toBe(false);
+    });
+
+    it("shifts the transcript back by the time spent unlinked, even with the panel closed", async () => {
+      await openEpisode(null);
+      await flushPromises();
+      const vm = wrapper!.vm as unknown as { toggleTranscriptSync: () => void };
+      const { offset } = useLyricsOffset();
+
+      vm.toggleTranscriptSync();
+      await seekQueue(40);
+      vm.toggleTranscriptSync();
+
+      expect(offset.value).toBe(-30);
+    });
   });
 });
 
