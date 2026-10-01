@@ -931,11 +931,17 @@ const fetchLyrics = async () => {
   }
 };
 
+// A track's offset makes up for speaker latency and carries over to the next
+// track; an episode's offset corrects that episode's drift, so it is reset when
+// an episode starts or ends.
+let offsetForEpisode = false;
+
 // Watch for track changes and handle lyrics
 watch(
   () => store.curQueueItem?.queue_item_id,
   () => {
-    resetLyricsOffset();
+    if (isEpisode.value || offsetForEpisode) resetLyricsOffset();
+    offsetForEpisode = isEpisode.value;
     transcriptSyncEnabled.value = true;
     unlinkedAtPosition = null;
     fetchLyrics();

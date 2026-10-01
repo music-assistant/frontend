@@ -506,6 +506,39 @@ describe("PlayerFullscreen transcript", () => {
   });
 });
 
+describe("PlayerFullscreen lyrics offset", () => {
+  /** Make `media_type` the current queue item, as a new entry in the queue. */
+  async function playNext(queueItemId: string, mediaType: MediaType) {
+    const { store } = await import("@/plugins/store");
+    (store as unknown as TestStore).curQueueItem = {
+      queue_item_id: queueItemId,
+      media_item: { item_id: queueItemId, media_type: mediaType },
+    };
+    await nextTick();
+  }
+
+  it("keeps a track's offset for the next track and resets it around an episode", async () => {
+    await playNext("track-1", MediaType.TRACK);
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+    });
+    // the offset is shared module state, so start from a known value
+    const { offset, adjust, reset } = useLyricsOffset();
+    reset();
+    adjust(1.5);
+
+    await playNext("track-2", MediaType.TRACK);
+    expect(offset.value).toBe(1.5);
+
+    await playNext("episode-1", MediaType.PODCAST_EPISODE);
+    expect(offset.value).toBe(0);
+
+    adjust(-90);
+    await playNext("track-3", MediaType.TRACK);
+    expect(offset.value).toBe(0);
+  });
+});
+
 describe("PlayerFullscreen player select button", () => {
   async function mountFullscreenDialog(
     extraStubs: Record<string, unknown> = {},
