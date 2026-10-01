@@ -26,7 +26,7 @@
               <Mic :size="16" class="podcast-hero__icon" />
               <span class="podcast-hero__line-text">{{ item.publisher }}</span>
             </div>
-            <div v-if="episodeCount" class="podcast-hero__line">
+            <div v-if="episodeCount != null" class="podcast-hero__line">
               <PodcastIcon :size="16" class="podcast-hero__icon" />
               <span class="podcast-hero__line-text">
                 {{
