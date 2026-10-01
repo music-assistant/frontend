@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Draft: speaker pair / group, composed in the Lucide style. Pending design pass. -->
+  <rect width="9" height="18" x="2" y="3" rx="2"/>
+  <rect width="9" height="18" x="13" y="3" rx="2"/>
+  <path d="M6.5 7.5h.01"/>
+  <path d="M17.5 7.5h.01"/>
+  <circle cx="6.5" cy="14.5" r="2.5"/>
+  <circle cx="17.5" cy="14.5" r="2.5"/>
+</svg>

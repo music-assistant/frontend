@@ -36,8 +36,8 @@ import {
   isSingleOrEp,
   loadArtistAppearsOn,
   loadArtistDiscography,
-  loadArtistLibraryTracks,
   loadArtistReleases,
+  loadArtistTracks,
 } from "@/components/artist/artistData";
 import { artistRows } from "@/components/artist/artistRows";
 import {
@@ -203,7 +203,7 @@ const config = computed<ListingConfig | undefined>(() => {
             : $t("artist_no_tracks"),
         loadItems: async (params: LoadDataParams) => {
           if (!itemDetails.value) return [];
-          return await loadArtistLibraryTracks(
+          return await loadArtistTracks(
             itemDetails.value,
             params.provider?.[0],
           );

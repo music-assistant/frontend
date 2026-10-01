@@ -79,6 +79,10 @@ vi.mock("vue-router", () => ({
   }),
 }));
 
+vi.mock("@/plugins/router", () => ({
+  default: { push: vi.fn() },
+}));
+
 const playerConfig = {
   enabled: true,
   name: "Kitchen",
@@ -219,6 +223,19 @@ describe("Players", () => {
     expect(emitEvent).toHaveBeenCalledWith(
       "contextmenu",
       expect.objectContaining({ items: [{ label: "settings.delete" }] }),
+    );
+  });
+
+  it("opens the menu at the touch position for a long-press", async () => {
+    const wrapper = await mountPlayers("list");
+
+    await wrapper.get(".player-list-item").trigger("contextmenu", {
+      touches: [{ clientX: 11, clientY: 22 }],
+    });
+
+    expect(emitEvent).toHaveBeenCalledWith(
+      "contextmenu",
+      expect.objectContaining({ posX: 11, posY: 22 }),
     );
   });
 

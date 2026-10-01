@@ -1,4 +1,5 @@
 import { api } from "@/plugins/api";
+import { providerServiceName } from "@/plugins/api/helpers";
 import {
   Genre,
   MediaType,
@@ -116,7 +117,7 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
         seenStreamingDomains.add(provider.domain);
         targets.push({
           id: provider.domain,
-          name: api.providerManifests[provider.domain]?.name || provider.name,
+          name: providerServiceName(provider),
           iconDomain: provider.domain,
         });
       } else {

@@ -18,7 +18,7 @@ export const badgeVariants = cva(
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
         info: "border-transparent bg-blue-500/20 text-blue-500 [a&]:hover:bg-blue-500/30",
         warning:
-          "border-transparent bg-yellow-500/20 text-yellow-500 [a&]:hover:bg-yellow-500/30",
+          "border-transparent bg-warning/20 text-warning [a&]:hover:bg-warning/30",
       },
     },
     defaultVariants: {

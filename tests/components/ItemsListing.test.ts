@@ -8,6 +8,7 @@ import {
   type Album,
   type EventMessage,
   type ProviderInstance,
+  type ProviderManifest,
   type Track,
 } from "@/plugins/api/interfaces";
 import {
@@ -678,6 +679,9 @@ describe("ItemsListing source selector", () => {
     store.currentUser = undefined;
     mockSetItemsListingPreference.mockClear();
     for (const key of Object.keys(api.providers)) delete api.providers[key];
+    for (const key of Object.keys(api.providerManifests)) {
+      delete api.providerManifests[key];
+    }
     api.providers["spotify--1"] = {
       instance_id: "spotify--1",
       name: "Spotify",
@@ -689,6 +693,22 @@ describe("ItemsListing source selector", () => {
       domain: "tidal",
     } as ProviderInstance;
   });
+
+  /** Registers two accounts of one streaming service, each under its own name. */
+  function addSpotifyAccounts() {
+    api.providerManifests["spotify"] = { name: "Spotify" } as ProviderManifest;
+    for (const [instanceId, name] of [
+      ["spotify--1", "Spotify [marcelveldt2]"],
+      ["spotify--2", "Spotify [marcelveldt3]"],
+    ]) {
+      api.providers[instanceId] = {
+        instance_id: instanceId,
+        name,
+        domain: "spotify",
+        is_streaming_provider: true,
+      } as ProviderInstance;
+    }
+  }
 
   /** Mounts a listing whose items come from the library or from one provider. */
   function mountSourceListing(
@@ -787,6 +807,33 @@ describe("ItemsListing source selector", () => {
     expect(sourceOptions(listing)?.map((option) => option.label)).toEqual([
       "Spotify",
       "Tidal",
+    ]);
+  });
+
+  it("names a streaming service offered once after the service", async () => {
+    addSpotifyAccounts();
+    const { listing } = mountSourceListing({
+      providerFilterOptions: ["spotify--1"],
+    });
+    await flushPromises();
+
+    expect(sourceOptions(listing)?.map((option) => option.label)).toEqual([
+      "source_library",
+      "Spotify",
+    ]);
+  });
+
+  it("names the accounts of a streaming service offered side by side after themselves", async () => {
+    addSpotifyAccounts();
+    const { listing } = mountSourceListing({
+      providerFilterOptions: ["spotify--1", "spotify--2"],
+    });
+    await flushPromises();
+
+    expect(sourceOptions(listing)?.map((option) => option.label)).toEqual([
+      "source_library",
+      "Spotify [marcelveldt2]",
+      "Spotify [marcelveldt3]",
     ]);
   });
 

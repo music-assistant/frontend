@@ -333,6 +333,7 @@ import {
   isMusicBrainzItem,
   itemIsAvailable,
   itemSupportsPlayLog,
+  providerServiceName,
 } from "@/plugins/api/helpers";
 import {
   EventMessage,
@@ -349,6 +350,7 @@ import {
   type Genre,
   type MediaItem,
   type MediaItemType,
+  type ProviderInstance,
   type Track,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -1210,11 +1212,17 @@ const musicProviders = computed(() => {
   // explicit provider list supplied by the parent: resolve the given
   // instance_ids to labels as-is, without any itemtype/type filtering.
   if (props.providerFilterOptions) {
-    const providers = props.providerFilterOptions
+    const instances = props.providerFilterOptions
       .map((instanceId) => api.providers[instanceId])
-      .filter((provider) => provider !== undefined)
+      .filter((provider) => provider !== undefined);
+    // accounts of one service listed side by side keep their own names
+    const sharesDomain = (provider: ProviderInstance) =>
+      instances.filter((other) => other.domain === provider.domain).length > 1;
+    const providers = instances
       .map((provider) => ({
-        label: provider.name,
+        label: sharesDomain(provider)
+          ? provider.name
+          : providerServiceName(provider),
         value: provider.instance_id,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));

@@ -2348,10 +2348,15 @@ export class MusicAssistantApi {
   }
 
   public removeProviderConfig(instance_id: string): Promise<void> {
-    // Remove ProviderConfig.
-    return this.sendCommand("config/providers/remove", {
-      instance_id,
-    });
+    // Remove ProviderConfig. Callers report a failed removal themselves, so
+    // opt out of the global error toast.
+    return this.sendCommand(
+      "config/providers/remove",
+      {
+        instance_id,
+      },
+      { suppressGlobalError: true },
+    );
   }
 
   public reloadProvider(instance_id: string): Promise<void> {
