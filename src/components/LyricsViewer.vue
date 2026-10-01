@@ -150,7 +150,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 // A podcast transcript is prose to read rather than lyrics to sing along to, so
-// it is left aligned and sized for full sentences.
+// it is left aligned and spaced for full sentences.
 const isTranscript = computed(
   () =>
     !!props.mediaItem &&
@@ -595,7 +595,7 @@ onBeforeUnmount(() => {
   color: v-bind(textColor);
 }
 
-/* Transcript text: reading size and alignment instead of sing-along size */
+/* Transcript text: prose alignment and spacing instead of sing-along styling */
 .read-as-prose {
   text-align: left;
   padding-left: 4%;
@@ -603,7 +603,6 @@ onBeforeUnmount(() => {
 }
 
 .read-as-prose .lyrics-line {
-  font-size: clamp(0.8rem, 0.85vw, 1.05rem);
   font-weight: 500;
   line-height: 1.5;
   padding: 4px;
