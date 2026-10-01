@@ -446,6 +446,23 @@ describe("EditConfig", () => {
     expect(advancedToggle(wrapper).exists()).toBe(true);
   });
 
+  it("offers saving an advanced-only config once its entries show", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+    const save = () => wrapper.find('[data-testid="config-save"]');
+    expect(save().exists()).toBe(false);
+
+    await wrapper.setProps({ showAdvancedSettings: true });
+    expect(save().exists()).toBe(true);
+
+    // an edit hidden again by the toggle can still be saved
+    edit(wrapper, 0, 9000);
+    await wrapper.setProps({ showAdvancedSettings: false });
+    expect(renderedKeys(wrapper)).toEqual([]);
+    expect(save().exists()).toBe(true);
+  });
+
   it("reveals the advanced entries from its own toggle", async () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING }),
