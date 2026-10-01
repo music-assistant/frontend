@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 
 const mocks = vi.hoisted(() => ({
@@ -27,6 +27,7 @@ vi.mock("@/plugins/api", async () => {
 
 import api from "@/plugins/api";
 import {
+  getDeviceName,
   getPlaylistMigrationProviders,
   getProviderRootDomain,
   mappedServices,
@@ -450,5 +451,32 @@ describe("mappedServices", () => {
         ),
       ),
     ).toEqual([{ domain: "spotify", name: "Spotify" }]);
+  });
+});
+
+describe("getDeviceName", () => {
+  const originalUserAgent = Object.getOwnPropertyDescriptor(
+    navigator,
+    "userAgent",
+  );
+
+  afterEach(() => {
+    if (originalUserAgent) {
+      Object.defineProperty(navigator, "userAgent", originalUserAgent);
+    } else {
+      Reflect.deleteProperty(navigator, "userAgent");
+    }
+    vi.unstubAllGlobals();
+  });
+
+  it("names the browser and device this app runs on", () => {
+    Object.defineProperty(navigator, "userAgent", {
+      configurable: true,
+      value:
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+    });
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+
+    expect(getDeviceName()).toBe("Web (Chrome on Mac)");
   });
 });

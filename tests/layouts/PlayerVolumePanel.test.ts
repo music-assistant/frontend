@@ -20,10 +20,10 @@ vi.mock("@/plugins/store", async () => {
   return { store: reactive({ mobileLayout: false }) };
 });
 
-vi.mock("@/helpers/players", () => ({ isPlayerGrouped }));
-
-vi.mock("@/helpers/utils", () => ({
+vi.mock("@/helpers/players", () => ({
+  getPlayerDisplayName: (player: Player) => player.name,
   getPlayerName: (player: Player) => player.name,
+  isPlayerGrouped,
 }));
 
 const mockStore = store as unknown as { mobileLayout: boolean };

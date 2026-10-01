@@ -16,7 +16,8 @@ import {
   isMediaSessionDisabled,
   resetMediaSession,
 } from "@/helpers/mediaSession";
-import { getDeviceName, resolvePlayerQueue } from "@/plugins/api/helpers";
+import { resolvePlayerQueue } from "@/plugins/api/helpers";
+import { getWebPlayerName } from "@/helpers/players";
 import { SendspinPlayer, Codec } from "@sendspin/sendspin-js";
 
 import almostSilentMp3 from "@/assets/almost_silent.mp3";
@@ -320,7 +321,13 @@ onMounted(() => {
         player = new SendspinPlayer({
           baseUrl: "http://sendspin.local",
           audioElement,
-          clientName: getDeviceName(),
+          // Shared guest accounts have no person to name the device after
+          clientName: getWebPlayerName(
+            authManager.isGuestAccessSession() ||
+              authManager.isDashboardViewer()
+              ? undefined
+              : store.currentUser,
+          ),
           // How the server recognizes us as its built-in player rather than a
           // third-party client that has to be paired by hand.
           productName: "Web Player",
