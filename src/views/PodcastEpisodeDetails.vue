@@ -93,8 +93,15 @@ import {
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/plugins/api";
-import type { Podcast, PodcastEpisode } from "@/plugins/api/interfaces";
-import { computed, ref, watch } from "vue";
+import {
+  EventType,
+  type EventMessage,
+  type PlaylogUpdate,
+  type Podcast,
+  type PodcastEpisode,
+} from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 export interface Props {
@@ -257,6 +264,27 @@ watch(
   },
   { immediate: true },
 );
+
+onMounted(() => {
+  // marking the episode (un)played or playing it to the end changes its played
+  // state; a new object lets the hero rebuild its menu for that state
+  const unsub = api.subscribe(
+    EventType.PLAYLOG_UPDATED,
+    (evt: EventMessage) => {
+      const update = evt.data as PlaylogUpdate | undefined;
+      const episode = itemDetails.value;
+      if (!update || !episode || update.uri !== episode.uri) return;
+      // per-user playlog: ignore changes belonging to another user (null = everyone)
+      if (update.userid && update.userid !== store.currentUser?.user_id) return;
+      itemDetails.value = {
+        ...episode,
+        fully_played: update.fully_played,
+        resume_position_ms: update.seconds_played * 1000,
+      };
+    },
+  );
+  onBeforeUnmount(unsub);
+});
 
 // stepping to another episode navigates in place, so it starts at the top
 watch(
