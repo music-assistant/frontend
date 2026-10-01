@@ -439,7 +439,9 @@ function getTargetPlayerId(): string | undefined {
 }
 
 function hasSomethingToPlay(playerId: string): boolean {
-  const queue = resolvePlayerQueue(api.players[playerId]);
+  const player = api.players[playerId];
+  if (!player) return false;
+  const queue = resolvePlayerQueue(player);
   return !queue || queue.items > 0;
 }
 
