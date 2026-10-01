@@ -1,10 +1,10 @@
 import {
-  appearsOnAlbums,
   isSingleOrEp,
+  loadArtistAppearsOn,
   loadArtistDiscography,
-  loadArtistLibraryTracks,
   loadArtistReleases,
   loadArtistTopTracks,
+  loadArtistTracks,
   loadSimilarArtists,
   sortReleasesNewestFirst,
 } from "@/components/artist/artistData";
@@ -18,7 +18,6 @@ import {
   MediaType,
   type Album,
   type Artist,
-  type ItemMapping,
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -41,8 +40,9 @@ export function useArtistRowData(
   const releases = ref(new Map<RowSource, Album[]>());
   const topTracks = ref(new Map<RowSource, Track[]>());
   const similarArtists = ref(new Map<RowSource, Artist[]>());
-  const libraryTracks = ref<Track[]>();
-  // fed by the library artist alone, so it needs no per-source cache
+  const artistTracks = ref<Track[]>();
+  // fed by the artist alone, so these need no per-source cache
+  const appearsOn = ref<Album[]>();
   const discography = ref<Album[]>();
 
   // a new artist, or new provider mappings, start from empty rows; anything
@@ -54,7 +54,8 @@ export function useArtistRowData(
       releases.value = new Map();
       topTracks.value = new Map();
       similarArtists.value = new Map();
-      libraryTracks.value = undefined;
+      artistTracks.value = undefined;
+      appearsOn.value = undefined;
       discography.value = undefined;
       loadRowData();
     },
@@ -62,8 +63,8 @@ export function useArtistRowData(
 
   refetchOnLibraryChange(
     {
-      [MediaType.ALBUM]: ["releases", "discography"],
-      [MediaType.TRACK]: ["library_tracks", "top_tracks"],
+      [MediaType.ALBUM]: ["releases", "appears_on", "discography"],
+      [MediaType.TRACK]: ["artist_tracks", "appears_on", "top_tracks"],
     },
     () => loadRowData(),
   );
@@ -75,7 +76,6 @@ export function useArtistRowData(
 
   const albumsSource = computed(() => rowSource("albums"));
   const singlesSource = computed(() => rowSource("singles_eps"));
-  const appearsOnSource = computed(() => rowSource("appears_on"));
   const topTracksSource = computed(() => rowSource("top_tracks"));
   const similarArtistsSource = computed(() => rowSource("similar_artists"));
 
@@ -105,26 +105,18 @@ export function useArtistRowData(
       : undefined,
   );
 
-  // every album the artist's library tracks point at that is not one of their
-  // own releases is an appearance
-  const appearsOnItems = computed<Array<Album | ItemMapping> | undefined>(
-    () => {
-      const ownReleases = sourceItems(releases.value, appearsOnSource.value);
-      if (!artist.value || !libraryTracks.value || !ownReleases)
-        return undefined;
-      return appearsOnAlbums(libraryTracks.value, artist.value, ownReleases);
-    },
-  );
+  const appearsOnItems = computed(() => appearsOn.value);
 
   // kept in the order the server sent it, which is newest first
   const discographyItems = computed(() => discography.value);
 
-  // falls back to the newest library tracks when no provider supplies top tracks
+  // falls back to the artist's newest tracks when no provider supplies top
+  // tracks (for a provider artist, those of its own provider)
   const topTracksItems = computed(() => {
     const items = sourceItems(topTracks.value, topTracksSource.value);
     if (items === undefined) return undefined;
     if (items.length) return items;
-    return libraryTracks.value && newestLibraryTracks(libraryTracks.value);
+    return artistTracks.value && newestArtistTracks(artistTracks.value);
   });
 
   const similarArtistItems = computed(() =>
@@ -138,12 +130,13 @@ export function useArtistRowData(
     rowSourceDisplay(singlesSource.value),
   );
 
-  // the row falls back to the newest library tracks when no provider supplies
-  // top tracks, so its badge then names the library rather than the source
+  // on that fallback, only a library artist's badge switches to the library
   const topTracksSourceDisplay = computed(() => {
     const provided = sourceItems(topTracks.value, topTracksSource.value);
     const usesLibraryFallback =
-      provided?.length === 0 && !!libraryTracks.value?.length;
+      artist.value?.provider === "library" &&
+      provided?.length === 0 &&
+      !!artistTracks.value?.length;
     return rowSourceDisplay(
       usesLibraryFallback ? "library" : topTracksSource.value,
     );
@@ -160,7 +153,6 @@ export function useArtistRowData(
       visibleRows,
       albumsSource,
       singlesSource,
-      appearsOnSource,
       topTracksSource,
       similarArtistsSource,
     ],
@@ -173,13 +165,10 @@ export function useArtistRowData(
     const rows = visibleRows.value;
     if (rows.includes("albums")) fetchReleases(albumsSource.value!);
     if (rows.includes("singles_eps")) fetchReleases(singlesSource.value!);
-    if (rows.includes("appears_on")) {
-      fetchReleases(appearsOnSource.value!);
-      fetchLibraryTracks();
-    }
+    if (rows.includes("appears_on")) fetchAppearsOn();
     if (rows.includes("discography")) fetchDiscography();
     if (rows.includes("top_tracks")) {
-      fetchLibraryTracks();
+      fetchArtistTracks();
       fetchTopTracks(topTracksSource.value!);
     }
     if (rows.includes("similar_artists")) {
@@ -209,6 +198,14 @@ export function useArtistRowData(
     );
   }
 
+  function fetchAppearsOn() {
+    return fetchOnce(
+      "appears_on",
+      (artist) => loadArtistAppearsOn(artist),
+      (items) => (appearsOn.value = items),
+    );
+  }
+
   function fetchDiscography() {
     return fetchOnce(
       "discography",
@@ -217,11 +214,11 @@ export function useArtistRowData(
     );
   }
 
-  function fetchLibraryTracks() {
+  function fetchArtistTracks() {
     return fetchOnce(
-      "library_tracks",
-      (artist) => loadArtistLibraryTracks(artist),
-      (items) => (libraryTracks.value = items),
+      "artist_tracks",
+      (artist) => loadArtistTracks(artist),
+      (items) => (artistTracks.value = items),
     );
   }
 
@@ -240,7 +237,7 @@ export function useArtistRowData(
   }
 
   return {
-    libraryTracks,
+    artistTracks,
     topTracksItems,
     albumItems,
     singleItems,
@@ -267,8 +264,8 @@ function sourceItems<T>(
   return source ? cache.get(source) : undefined;
 }
 
-/** The library tracks of the newest releases first, the top-tracks fallback. */
-function newestLibraryTracks(tracks: Track[]): Track[] {
+/** The artist's tracks, newest release first, as the top-tracks fallback. */
+function newestArtistTracks(tracks: Track[]): Track[] {
   return [...tracks].sort((a, b) => albumYear(b) - albumYear(a));
 }
 

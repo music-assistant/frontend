@@ -327,6 +327,7 @@ import {
   getProviderSupportIssuesUrl,
   providerDisplayName,
 } from "@/helpers/provider_config";
+import { confirmProviderRemoval } from "@/helpers/provider_removal";
 import { getExternalLinkUrl, markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -554,19 +555,14 @@ const onReconfigure = function () {
 const onRemove = function () {
   if (!config.value) return;
   const instanceId = config.value.instance_id;
-  eventbus.emit("deleteConfirmationDialog", {
-    title: t("settings.remove_provider"),
-    message: t("settings.remove_provider_confirm", [providerName.value]),
-    confirmLabel: t("settings.remove_provider"),
-    onConfirm: async () => {
-      try {
-        await api.removeProviderConfig(instanceId);
-        toast.success(t("settings.provider_removed", [providerName.value]));
-        backToProviders();
-      } catch (err) {
-        toast.error(String(err));
-      }
-    },
+  confirmProviderRemoval(config.value, providerName.value, async () => {
+    try {
+      await api.removeProviderConfig(instanceId);
+      toast.success(t("settings.provider_removed", [providerName.value]));
+      backToProviders();
+    } catch (err) {
+      toast.error(String(err));
+    }
   });
 };
 

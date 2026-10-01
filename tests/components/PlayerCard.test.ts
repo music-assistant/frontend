@@ -76,22 +76,25 @@ vi.mock("@/helpers/player_menu_items", () => ({
 
 vi.mock("@/helpers/utils", () => ({
   getMediaImageUrl: (url: string) => url,
-  getPlayerName: (player: Player) => {
-    const childCount = player.group_members.filter(
-      (playerId) =>
-        playerId !== player.player_id && apiMock.players[playerId]?.available,
-    ).length;
-    return player.type !== PlayerType.GROUP && childCount > 0
-      ? `${player.name} +${childCount}`
-      : player.name;
-  },
 }));
 
 vi.mock("@/helpers/players", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/helpers/players")>();
+  const getPlayerDisplayName = (player: Player) =>
+    player.player_id === "builtin" ? "this_device" : player.name;
   return {
     ...actual,
     isBuiltinPlayer: (player: Player) => player.player_id === "builtin",
+    getPlayerDisplayName,
+    getPlayerName: (player: Player) => {
+      const childCount = player.group_members.filter(
+        (playerId) =>
+          playerId !== player.player_id && apiMock.players[playerId]?.available,
+      ).length;
+      return player.type !== PlayerType.GROUP && childCount > 0
+        ? `${getPlayerDisplayName(player)} +${childCount}`
+        : getPlayerDisplayName(player);
+    },
   };
 });
 
@@ -373,6 +376,30 @@ describe("PlayerCard", () => {
     ).toHaveLength(1);
   });
 
+  it("names a built-in group member after this device", () => {
+    const builtin = createPlayer({
+      player_id: "builtin",
+      name: "Marcel's Mac (Chrome)",
+    });
+    const parent = createPlayer({
+      group_members: ["player", "builtin"],
+    });
+    apiMock.players = {
+      [parent.player_id]: parent,
+      [builtin.player_id]: builtin,
+    };
+
+    const wrapper = mountPlayerCard(parent, {
+      showGroupMemberNames: true,
+      groupMemberLayout: "subtitle-list",
+    });
+
+    expect(wrapper.find(".player-card-name").text()).toBe("Kitchen");
+    expect(wrapper.find(".player-card-group-members").text()).toBe(
+      "this_device",
+    );
+  });
+
   it("can render grouped players as separate title lines", () => {
     const office = createPlayer({
       player_id: "office",
@@ -474,18 +501,37 @@ describe("PlayerCard", () => {
     expect(visibleNames()).toEqual(["Child 1", "Child 2"]);
   });
 
-  it("keeps the this-device badge accessible on phones", () => {
-    store.deviceType = "phone";
+  it("names the built-in player after this device, with an icon-only badge", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        player_id: "builtin",
+        name: "Marcel's Mac (Chrome)",
+      }),
+    );
+    const badge = wrapper.get(".player-device-badge");
+
+    expect(wrapper.get(".player-card-name").text()).toBe("this_device");
+    expect(wrapper.text()).not.toContain("Marcel's Mac (Chrome)");
+    expect(badge.attributes("aria-hidden")).toBe("true");
+    expect(badge.find(".player-device-badge-label").exists()).toBe(false);
+  });
+
+  it.each([
+    ["desktop", "lucide-monitor"],
+    ["phone", "lucide-smartphone"],
+    ["tablet", "lucide-tablet"],
+  ] as const)("shows the %s form factor on the badge", (deviceType, icon) => {
+    store.deviceType = deviceType;
 
     const wrapper = mountPlayerCard(
       createPlayer({
         player_id: "builtin",
       }),
     );
-    const badgeLabel = wrapper.find(".player-device-badge-label");
 
-    expect(badgeLabel.text()).toBe("this_device");
-    expect(badgeLabel.classes()).toContain("sr-only");
+    expect(wrapper.get(".player-device-badge").find(`.${icon}`).exists()).toBe(
+      true,
+    );
   });
 
   it("uses a neutral outline for the this-device badge", () => {
@@ -494,12 +540,11 @@ describe("PlayerCard", () => {
         player_id: "builtin",
       }),
     );
-    const badge = wrapper.get(".player-device-badge-label").element
-      .parentElement;
+    const badge = wrapper.get(".player-device-badge");
 
-    expect(badge?.classList).toContain("border-foreground/25");
-    expect(badge?.classList).toContain("text-muted-foreground");
-    expect(badge?.classList).toContain("shadow-none");
+    expect(badge.classes()).toContain("border-foreground/25");
+    expect(badge.classes()).toContain("text-muted-foreground");
+    expect(badge.classes()).toContain("shadow-none");
   });
 
   it("shows member names beneath a dedicated group title", () => {

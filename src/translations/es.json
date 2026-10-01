@@ -66,7 +66,6 @@
     "playlist": "Lista de reproducción",
     "playlist_tracks": "Canciones de la lista de reproducción",
     "playlists": "Listas de reproducción",
-    "provider_details": "Detalles del proveedor",
     "queue": "Cola",
     "queue_clear": "Limpiar todos los elementos de la cola",
     "queue_delete": "Eliminar elemento",
@@ -815,13 +814,12 @@
         "playing": "reproduciendo"
     },
     "sync_now": "Sincronizar ahora",
-    "sync_running": "Uno o más proveedores de música están siendo sincronizados.",
+    "sync_running": "Se están sincronizando una o varias fuentes de música.",
     "tooltip": {
         "album_artist_filter": "Alternar filtro de álbum-artista",
         "explicit": "Explícito",
         "filter_library": "Alternar filtro en la biblioteca\/favorito",
         "library": "Alternar en biblioteca\/favorito",
-        "linked": "Este elemento del proveedor está vinculado a los detalles del elemento actual.",
         "refresh": "Actualizar la lista de elementos",
         "refresh_new_content": "Hay nuevo contenido disponible, haga clic para actualizar la lista",
         "search": "Mostrar\/ocultar entrada de búsqueda",
@@ -911,7 +909,6 @@
     "check_item_on_provider": "Comprueba {0} en {1}",
     "check_item_in_library": "Comprueba {0} en la biblioteca",
     "media_details": "Detalles de los medios",
-    "mapped_providers": "Detalles del proveedor",
     "item_in_library": "Este elemento está disponible en la biblioteca",
     "back": "Atrás",
     "recently_played": "Reproducido recientemente",
@@ -2116,7 +2113,7 @@
         "op_is": "es",
         "op_is_not": "no es",
         "seed_count_hint": "Hasta 50 canciones de tu proveedor de streaming, actualizadas en cada reproducción.",
-        "seed_filters_hint": "Los filtros se aplican en la medida de lo posible. Algunos proveedores de música no proporcionan los metadatos necesarios para aplicarlos.",
+        "seed_filters_hint": "Los filtros se aplican en la medida de lo posible. Algunas fuentes de música no proporcionan los metadatos necesarios para aplicarlos.",
         "seed_heading": "Descubre música similar a las siguientes canciones, artistas, álbumes o listas de reproducción.",
         "seed_no_provider": "Ningún proveedor de streaming admite canciones similares.",
         "type_library": "Desde mi biblioteca",
@@ -2393,7 +2390,6 @@
     },
     "sidebar": {
         "title": "Barra lateral",
-        "description": "Muestra la barra lateral para dispositivos móviles.",
         "toggle": "Mostrar\/ocultar barra lateral",
         "expand": "Expandir barra lateral",
         "collapse": "Contraer barra lateral"
@@ -2476,12 +2472,10 @@
         "other": "Otro"
     },
     "singles_eps": "Singles y EP",
-    "latest_release": "Último lanzamiento",
     "view_all": "Ver todo",
     "play_on_player": "Reproducir en {player}",
     "artist_radio": "Reproducción continua del artista",
     "newest_first": "Primero los más recientes",
-    "via_provider": "vía {provider}",
     "appears_on_hint": "Acreditado en una canción, no como artista del álbum",
     "edit_rows": "Editar filas",
     "edit_rows_subtitle": "Se aplica a todas las páginas de artistas",
@@ -2719,5 +2713,18 @@
                 "description": "Añade otros reproductores al que has seleccionado para que reproduzcan juntos la misma música en varias habitaciones. Los reproductores que no pueden unirse no se ofrecen."
             }
         }
-    }
+    },
+    "command_center_press_enter": "Pulsa Intro para buscar",
+    "command_center_search": "Buscar",
+    "artist_no_library_singles": "No tienes ningún sencillo ni EP de este artista en tu biblioteca.",
+    "artist_view_tracks": "Ver {count} canción | Ver {count} canciones",
+    "artist_no_tracks": "Este artista no tiene canciones.",
+    "artist_row_empty": "Nada que mostrar aquí.",
+    "show_results_on": "Mostrar resultados en {0}",
+    "source_details": "Detalles de la fuente",
+    "favorites_dislike": "No me gusta",
+    "favorites_dislike_remove": "Quitar «no me gusta»",
+    "favorites_menu": "Opciones de favoritos",
+    "favorites_menu_liked": "Opciones de favoritos, me gusta",
+    "favorites_menu_disliked": "Opciones de favoritos, no me gusta"
 }

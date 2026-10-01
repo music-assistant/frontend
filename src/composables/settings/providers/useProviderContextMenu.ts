@@ -1,3 +1,4 @@
+import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -91,15 +92,6 @@ export function useProviderContextMenu(options: UseProviderContextMenuOptions) {
           item.type != ProviderType.MUSIC,
       },
       {
-        label: "settings.remove_provider",
-        labelArgs: [],
-        action: () => {
-          options.onRemove(item);
-        },
-        icon: "mdi-delete",
-        hide: providerManifest.builtin,
-      },
-      {
         label: "settings.reload",
         labelArgs: [],
         action: () => {
@@ -148,10 +140,21 @@ export function useProviderContextMenu(options: UseProviderContextMenuOptions) {
         icon: "mdi-speaker-multiple",
       });
     }
+    menuItems.push({
+      label: "settings.remove_provider",
+      labelArgs: [],
+      action: () => {
+        options.onRemove(item);
+      },
+      icon: "mdi-delete",
+      color: "error",
+      hide: providerManifest.builtin,
+    });
+    const position = getEventPosition(evt);
     eventbus.emit("contextmenu", {
       items: menuItems,
-      posX: (evt as PointerEvent).clientX,
-      posY: (evt as PointerEvent).clientY,
+      posX: position.x,
+      posY: position.y,
     });
   };
 

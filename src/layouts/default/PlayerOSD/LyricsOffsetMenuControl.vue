@@ -7,15 +7,15 @@
 <template>
   <div class="lyrics-offset-row" @pointerdown.stop @click.stop>
     <ChevronsLeftRight :size="20" class="lyrics-offset-row__icon" />
-    <span class="lyrics-offset-row__label">{{ $t("lyrics_offset") }}</span>
+    <span class="lyrics-offset-row__label">{{ $t(offsetLabel) }}</span>
     <div class="lyrics-offset-row__stepper">
       <button
         type="button"
         class="lyrics-offset-row__btn"
         :aria-label="$t('tooltip.decrease_offset')"
         @click.stop
-        @mousedown.stop="startRepeating(-0.1)"
-        @touchstart.stop.prevent="startRepeating(-0.1)"
+        @mousedown.stop="startRepeating(-1)"
+        @touchstart.stop.prevent="startRepeating(-1)"
       >
         <Minus :size="16" />
       </button>
@@ -25,8 +25,8 @@
         class="lyrics-offset-row__btn"
         :aria-label="$t('tooltip.increase_offset')"
         @click.stop
-        @mousedown.stop="startRepeating(0.1)"
-        @touchstart.stop.prevent="startRepeating(0.1)"
+        @mousedown.stop="startRepeating(1)"
+        @touchstart.stop.prevent="startRepeating(1)"
       >
         <Plus :size="16" />
       </button>
@@ -36,15 +36,40 @@
 
 <script setup lang="ts">
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
+import { MediaType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import { ChevronsLeftRight, Minus, Plus } from "@lucide/vue";
-import { onBeforeUnmount } from "vue";
+import { computed, onBeforeUnmount } from "vue";
 
 const { adjust, display } = useLyricsOffset();
 
-// Press-and-hold: first step on press, then accelerate after a short delay.
+// The same stepper shifts a track's lyrics and an episode's transcript.
+const offsetLabel = computed(() =>
+  store.curQueueItem?.media_item?.media_type === MediaType.PODCAST_EPISODE
+    ? "transcript_offset"
+    : "lyrics_offset",
+);
+
+// Press-and-hold: first step on press, then repeat on a fixed tick with a step
+// that grows the longer the button is held, so the far end of the range stays
+// reachable without dozens of clicks.
+const HOLD_DELAY = 400;
+const HOLD_TICK = 80;
+const BASE_STEP = 0.1;
+const HOLD_RAMP = [
+  { heldFor: 3000, step: 1 },
+  { heldFor: 1500, step: 0.5 },
+];
+
 let holdDelay: number | null = null;
 let holdInterval: number | null = null;
+let holdStart = 0;
+
+const holdStep = () => {
+  const held = performance.now() - holdStart;
+  return HOLD_RAMP.find((stage) => held >= stage.heldFor)?.step ?? BASE_STEP;
+};
 
 const stopRepeating = () => {
   if (holdDelay !== null) {
@@ -60,12 +85,16 @@ const stopRepeating = () => {
   window.removeEventListener("touchcancel", stopRepeating);
 };
 
-const startRepeating = (delta: number) => {
+const startRepeating = (direction: number) => {
   stopRepeating();
-  adjust(delta);
+  holdStart = performance.now();
+  adjust(direction * BASE_STEP);
   holdDelay = window.setTimeout(() => {
-    holdInterval = window.setInterval(() => adjust(delta), 80);
-  }, 400);
+    holdInterval = window.setInterval(
+      () => adjust(direction * holdStep()),
+      HOLD_TICK,
+    );
+  }, HOLD_DELAY);
   window.addEventListener("mouseup", stopRepeating);
   window.addEventListener("touchend", stopRepeating);
   window.addEventListener("touchcancel", stopRepeating);
@@ -114,7 +143,7 @@ onBeforeUnmount(stopRepeating);
 }
 
 .lyrics-offset-row__value {
-  min-width: 3.5ch;
+  min-width: 6.5ch;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }

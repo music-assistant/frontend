@@ -99,15 +99,18 @@
            grip (only up-next rows are reorderable). -->
       <div class="qitem__actions">
         <!-- drag handle to reorder. Active on up-next items; disabled/grayed on
-             every other row (now playing, buffered, played can't be reordered). -->
+             every other row (now playing, buffered, played can't be reordered).
+             Touch and contextmenu stay on the grip so holding it before a drag
+             doesn't trigger the row's long-press menu. -->
         <button
           type="button"
           class="qitem__grip"
           :disabled="state !== 'upcoming'"
           :aria-label="$t('queue_reorder')"
           @pointerdown.stop.prevent="emit('dragstart', $event)"
+          @touchstart.passive.stop
           @click.stop
-          @contextmenu.prevent
+          @contextmenu.stop.prevent
         >
           <GripVerticalIcon class="size-4" />
         </button>

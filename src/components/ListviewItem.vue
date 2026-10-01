@@ -95,7 +95,12 @@
               {{ item.track_number }}
             </div>
             <span v-if="showPlay" class="listitem-play-blue">
-              <Play :size="16" fill="currentColor" :stroke-width="0" />
+              <Play
+                :size="16"
+                fill="currentColor"
+                :stroke-width="0"
+                class="play-icon-centered"
+              />
             </span>
           </div>
           <!-- other rows: blue play overlays the art on hover -->
@@ -124,7 +129,12 @@
                 />
               </div>
               <span v-if="showPlay" class="listitem-play-blue">
-                <Play :size="16" fill="currentColor" :stroke-width="0" />
+                <Play
+                  :size="16"
+                  fill="currentColor"
+                  :stroke-width="0"
+                  class="play-icon-centered"
+                />
               </span>
             </div>
           </div>
@@ -177,17 +187,10 @@
       </div>
 
       <!-- album: albumtype + artists + year, or that it is not in the library -->
-      <div v-else-if="item.media_type == MediaType.ALBUM && 'year' in item">
-        <span v-if="notInLibrary">{{ $t("not_in_library") }}</span>
-        <template v-else>
-          <span v-if="item.album_type != AlbumType.UNKNOWN"
-            >{{ $t("album_type." + item.album_type) }} •
-          </span>
-          <span>{{ getArtistsString(item.artists) }}</span>
-        </template>
-        <span v-if="item.year"> • {{ item.year }}</span>
+      <div v-else-if="item.media_type == MediaType.ALBUM">
+        {{ albumSubtitle }}
       </div>
-      <!-- track/album fallback: artist present -->
+      <!-- track fallback: artist present -->
       <div v-else-if="'artists' in item && item.artists">
         {{ getArtistsString(item.artists) }}
       </div>
@@ -264,17 +267,18 @@
       />
 
       <!-- fully played or in progress icon -->
-      <!-- only used for podcast-episodes and audiobook-chapters -->
-      <v-icon
-        v-if="'fully_played' in item && item.fully_played"
-        :title="$t('item_fully_played')"
-        >mdi-check</v-icon
+      <!-- only used for podcast-episodes and audiobook-chapters; the slot stays
+      when unplayed so the durations line up across rows -->
+      <span
+        v-if="'fully_played' in item"
+        class="listitem-played-state"
+        :role="playedStateLabel ? 'img' : undefined"
+        :title="playedStateLabel"
+        :aria-label="playedStateLabel"
       >
-      <v-icon
-        v-else-if="'resume_position_ms' in item && item.resume_position_ms"
-        :title="$t('item_in_progress')"
-        >mdi-clock-fast</v-icon
-      >
+        <Check v-if="item.fully_played" />
+        <ClockFading v-else-if="isInProgress" />
+      </span>
 
       <!-- favorite (heart) icon -->
       <div
@@ -304,7 +308,12 @@
         @click.stop="onPlayClick"
       >
         <span class="listitem-play-blue-mobile">
-          <Play :size="11" fill="currentColor" :stroke-width="0" />
+          <Play
+            :size="11"
+            fill="currentColor"
+            :stroke-width="0"
+            class="play-icon-centered"
+          />
         </span>
       </v-btn>
     </template>
@@ -343,7 +352,7 @@ import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { useMediaQuery } from "@vueuse/core";
-import { Play } from "@lucide/vue";
+import { Check, ClockFading, Play } from "@lucide/vue";
 import { computed } from "vue";
 import { VTooltip } from "vuetify/components";
 import MediaItemThumb from "./MediaItemThumb.vue";
@@ -417,6 +426,24 @@ const showPlay = computed(
 const canEditLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_WRITE),
 );
+// an album can also be a slim mapping (e.g. a track's album) without type or artists
+const albumSubtitle = computed(() => {
+  const item = compProps.item;
+  const parts: string[] = [];
+  if (notInLibrary.value) {
+    parts.push($t("not_in_library"));
+  } else {
+    const albumType = "album_type" in item ? item.album_type : undefined;
+    if (albumType && albumType !== AlbumType.UNKNOWN) {
+      parts.push($t(`album_type.${albumType}`));
+    }
+    if ("artists" in item && item.artists.length) {
+      parts.push(getArtistsString(item.artists));
+    }
+  }
+  if ("year" in item && item.year) parts.push(String(item.year));
+  return parts.join(" • ");
+});
 const collabArtists = computed(() => {
   if (!("artists" in compProps.item) || !compProps.item.artists) return "";
   const albumArtists =
@@ -428,6 +455,17 @@ const collabArtists = computed(() => {
     (a) => !albumNames.has(a.name.toLowerCase()),
   );
   return collab.map((a) => a.name).join(" | ");
+});
+const isInProgress = computed(
+  () =>
+    "resume_position_ms" in compProps.item &&
+    !!compProps.item.resume_position_ms,
+);
+// undefined while unplayed, when the played state shows nothing
+const playedStateLabel = computed(() => {
+  if ("fully_played" in compProps.item && compProps.item.fully_played)
+    return $t("item_fully_played");
+  return isInProgress.value ? $t("item_in_progress") : undefined;
 });
 
 const HiResDetails = computed(() => {
@@ -651,6 +689,14 @@ const onPlayClick = function (evt: PointerEvent) {
   margin-inline: 10px;
 }
 
+.listitem-played-state {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
 .track-duration {
   font-size: 0.875rem;
   opacity: 0.7;

@@ -81,6 +81,7 @@ import {
   StorageInfo,
   StorageLocation,
   StreamServerInfo,
+  TranscriptCue,
   MediaCollection,
   ArtistType,
 } from "./interfaces";
@@ -719,6 +720,18 @@ export class MusicAssistantApi {
     provider_filter?: string,
   ): Promise<Album[]> {
     return this.sendCommand("music/artists/artist_albums", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+    });
+  }
+
+  public getArtistAppearsOn(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+  ): Promise<Album[]> {
+    return this.sendCommand("music/artists/artist_appears_on", {
       item_id,
       provider_instance_id_or_domain,
       provider_filter,
@@ -1435,6 +1448,17 @@ export class MusicAssistantApi {
     });
   }
 
+  public getPodcastEpisode(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<PodcastEpisode> {
+    // Get a single podcast episode.
+    return this.sendCommand("music/podcasts/podcast_episode", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
   public getItemByUri(uri: string): Promise<MediaItemType> {
     // Get single music item providing a mediaitem uri.
     return this.sendCommand("music/item_by_uri", {
@@ -1459,6 +1483,17 @@ export class MusicAssistantApi {
     return this.sendCommand("metadata/update_metadata", {
       item,
       force_refresh,
+    });
+  }
+
+  public getPodcastEpisodeTranscript(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<[string | null, TranscriptCue[] | null]> {
+    // Get a podcast episode's transcript as plain text plus timed lines.
+    return this.sendCommand("music/podcasts/podcast_episode_transcript", {
+      item_id,
+      provider_instance_id_or_domain,
     });
   }
 
@@ -1580,17 +1615,25 @@ export class MusicAssistantApi {
     });
   }
 
-  public browse(path?: string, player_id?: string): Promise<MediaItemType[]> {
+  public browse(
+    path?: string,
+    player_id?: string,
+    options?: CommandOptions,
+  ): Promise<MediaItemType[]> {
     // Browse Music providers.
     // player_id scopes player-bound audio sources to that player;
     // older servers (schema < 61) don't accept the argument, so omit it there.
     const supportsPlayerId =
       (this.serverInfo.value?.schema_version ?? 0) >=
       BROWSE_PLAYER_ID_SCHEMA_VERSION;
-    return this.sendCommand("music/browse", {
-      path,
-      player_id: supportsPlayerId ? player_id : undefined,
-    });
+    return this.sendCommand(
+      "music/browse",
+      {
+        path,
+        player_id: supportsPlayerId ? player_id : undefined,
+      },
+      options,
+    );
   }
 
   public search(
@@ -2323,10 +2366,15 @@ export class MusicAssistantApi {
   }
 
   public removeProviderConfig(instance_id: string): Promise<void> {
-    // Remove ProviderConfig.
-    return this.sendCommand("config/providers/remove", {
-      instance_id,
-    });
+    // Remove ProviderConfig. Callers report a failed removal themselves, so
+    // opt out of the global error toast.
+    return this.sendCommand(
+      "config/providers/remove",
+      {
+        instance_id,
+      },
+      { suppressGlobalError: true },
+    );
   }
 
   public reloadProvider(instance_id: string): Promise<void> {

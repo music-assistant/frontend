@@ -7,22 +7,29 @@ import {
 import ArtistListing, { type Props } from "@/views/ArtistListing.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
 import { providerMapping } from "../fixtures/providerMapping";
 
-const { mockGetArtist, mockGetArtistDiscography, mockReplace, routeQuery } =
-  vi.hoisted(() => ({
-    mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
-    mockGetArtistDiscography:
-      vi.fn<MusicAssistantApi["getArtistDiscography"]>(),
-    mockReplace: vi.fn(),
-    routeQuery: {} as Record<string, string>,
-  }));
+const {
+  mockGetArtist,
+  mockGetArtistAppearsOn,
+  mockGetArtistDiscography,
+  mockReplace,
+  routeQuery,
+} = vi.hoisted(() => ({
+  mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
+  mockGetArtistAppearsOn: vi.fn<MusicAssistantApi["getArtistAppearsOn"]>(),
+  mockGetArtistDiscography: vi.fn<MusicAssistantApi["getArtistDiscography"]>(),
+  mockReplace: vi.fn(),
+  routeQuery: {} as Record<string, string>,
+}));
 
 vi.mock("@/plugins/api", () => ({
   api: {
     getArtist: mockGetArtist,
     getArtistAlbums: vi.fn().mockResolvedValue([]),
+    getArtistAppearsOn: mockGetArtistAppearsOn,
     getArtistDiscography: mockGetArtistDiscography,
     providers: {},
   },
@@ -94,6 +101,7 @@ describe("ArtistListing", () => {
   beforeEach(() => {
     mockGetArtist.mockReset();
     mockReplace.mockReset();
+    mockGetArtistAppearsOn.mockReset().mockResolvedValue([]);
     mockGetArtistDiscography.mockReset().mockResolvedValue([]);
     for (const key of Object.keys(api.providers)) delete api.providers[key];
     for (const key of Object.keys(routeQuery)) delete routeQuery[key];
@@ -323,6 +331,24 @@ describe("ArtistListing", () => {
     expect((listing(wrapper).props("sortKeys") as string[])[0]).toBe(
       "original",
     );
+  });
+
+  it("lists a library artist's appearances as the server sends them", async () => {
+    const appearances = [album({ item_id: "guest" })];
+    mockGetArtistAppearsOn.mockResolvedValue(appearances);
+    const wrapper = await mountListing(
+      "appears_on",
+      artist({ item_id: "artist-1" }),
+    );
+
+    const items = await (
+      listing(wrapper).props("loadItems") as (
+        params: Record<string, unknown>,
+      ) => Promise<unknown>
+    )({});
+
+    expect(mockGetArtistAppearsOn).toHaveBeenCalledWith("artist-1", "library");
+    expect(items).toEqual(appearances);
   });
 
   // the discography is the library artist's, so there is nothing to switch to

@@ -167,6 +167,22 @@ describe("opening the menu", () => {
       posY: 7,
     });
   });
+
+  it("emits the menu items at the touch position for a long-press", () => {
+    const { result } = mountMenu();
+    const touchEvent = {
+      touches: [{ clientX: 11, clientY: 22 }],
+      changedTouches: [],
+    } as unknown as Event;
+
+    result.openMenu(touchEvent, providerConfig({ domain: "spotify" }));
+
+    expect(eventbusMock.emit).toHaveBeenCalledWith("contextmenu", {
+      items: expect.any(Array),
+      posX: 11,
+      posY: 22,
+    });
+  });
 });
 
 describe("menu item order", () => {
@@ -184,8 +200,8 @@ describe("menu item order", () => {
       "settings.disable",
       "settings.documentation",
       "settings.sync",
-      "settings.remove_provider",
       "settings.reload",
+      "settings.remove_provider",
     ]);
   });
 
