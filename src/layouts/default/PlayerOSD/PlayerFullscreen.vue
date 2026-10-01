@@ -51,6 +51,7 @@
             :lyrics-state="lyricsState"
             :lyrics-active="showLyrics"
             :transcript-sync-enabled="transcriptSyncEnabled"
+            :transcript-timed="!!currentLyrics.synced"
             @toggle-lyrics="toggleLyrics"
             @toggle-transcript-sync="toggleTranscriptSync"
           />

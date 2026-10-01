@@ -6,7 +6,7 @@
     <!-- streaming quality details chip (moved up from under the track info) -->
     <QualityDetailsBtn v-if="hasActiveAudioPath" pill />
 
-    <!-- transcript: split button - left toggles the panel, right toggles auto-scroll -->
+    <!-- transcript: split button - left toggles the panel, right toggles auto-scroll (timed transcripts only) -->
     <template v-if="lyricsState === 'available' && showsTranscript">
       <ButtonGroup>
         <TooltipProvider :delay-duration="200">
@@ -29,27 +29,29 @@
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <ButtonGroupSeparator />
-        <TooltipProvider :delay-duration="200">
-          <Tooltip>
-            <TooltipTrigger as-child>
-              <Button
-                variant="overlay"
-                :size="showLabel ? 'default' : 'icon-sm'"
-                :data-active="props.transcriptSyncEnabled || undefined"
-                :aria-pressed="props.transcriptSyncEnabled"
-                :aria-label="transcriptSyncToggleLabel"
-                @click="emit('toggle-transcript-sync')"
-              >
-                <Unlink2 v-if="!props.transcriptSyncEnabled" />
-                <Link2 v-else />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
-              {{ transcriptSyncToggleLabel }}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <template v-if="transcriptTimed">
+          <ButtonGroupSeparator />
+          <TooltipProvider :delay-duration="200">
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  variant="overlay"
+                  :size="showLabel ? 'default' : 'icon-sm'"
+                  :data-active="props.transcriptSyncEnabled || undefined"
+                  :aria-pressed="props.transcriptSyncEnabled"
+                  :aria-label="transcriptSyncToggleLabel"
+                  @click="emit('toggle-transcript-sync')"
+                >
+                  <Unlink2 v-if="!props.transcriptSyncEnabled" />
+                  <Link2 v-else />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
+                {{ transcriptSyncToggleLabel }}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </template>
       </ButtonGroup>
     </template>
 
@@ -280,6 +282,7 @@ const props = defineProps<{
   lyricsState?: string;
   lyricsActive?: boolean;
   transcriptSyncEnabled?: boolean;
+  transcriptTimed?: boolean;
 }>();
 const emit = defineEmits<{
   (e: "toggle-lyrics"): void;
