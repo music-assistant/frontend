@@ -23,12 +23,15 @@
         <ProviderIcon :domain="provider.domain" :size="16" aria-hidden="true" />
         {{ provider.name }}
         <!-- a provider that is set up but switched off or broken is flagged -->
-        <TriangleAlert
+        <span
           v-if="provider.needsAttention"
-          class="text-muted-foreground size-3.5"
-          :aria-label="$t('onboarding.needs_attention')"
-          :title="$t('onboarding.needs_attention')"
-        />
+          :title="$t(attentionLabelKey(provider.status))"
+        >
+          <TriangleAlert
+            class="text-muted-foreground size-3.5"
+            :aria-label="$t(attentionLabelKey(provider.status))"
+          />
+        </span>
       </Badge>
     </div>
 
@@ -113,7 +116,7 @@ import {
   configuredProviders,
   discoveredPlayers,
 } from "@/composables/useOnboarding";
-import type { OnboardingStepId } from "@/helpers/onboarding";
+import { attentionLabelKey, type OnboardingStepId } from "@/helpers/onboarding";
 import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
