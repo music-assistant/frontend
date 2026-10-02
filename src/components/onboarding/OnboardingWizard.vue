@@ -50,7 +50,10 @@
     </header>
 
     <!-- only the step scrolls; keyed so each step starts at the top -->
-    <div :key="currentId" class="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
+    <div
+      :key="currentId ?? undefined"
+      class="-mx-1 min-h-0 flex-1 overflow-y-auto px-1"
+    >
       <div
         v-if="!ready"
         class="flex min-h-40 items-center justify-center"
@@ -75,6 +78,16 @@
       class="flex shrink-0 items-center justify-end gap-2"
     >
       <Button
+        v-if="isSummary"
+        class="w-full sm:w-auto"
+        :disabled="finishing"
+        data-testid="onboarding-finish"
+        @click="finishOnboarding()"
+      >
+        {{ $t("onboarding.finish") }}
+      </Button>
+      <Button
+        v-else
         class="w-full sm:w-auto"
         :disabled="moving || stepBusy"
         data-testid="onboarding-next"
@@ -213,6 +226,8 @@ const trackTitleKey = computed(() =>
   ctx.value.isMember ? "onboarding.welcome_title" : "onboarding.title",
 );
 
+const isSummary = computed(() => currentStep.value?.kind === "summary");
+
 const stepView = computed(() => {
   const id = currentId.value;
   if (!id) return null;
@@ -221,20 +236,16 @@ const stepView = computed(() => {
     component: view.component,
     // the summary is the only step that finishes the wizard, so it is the only
     // one that has to know a finish is on its way out
-    props:
-      currentStep.value?.kind === "summary"
-        ? { ...view.props, busy: finishing.value }
-        : view.props,
+    props: isSummary.value
+      ? { ...view.props, busy: finishing.value }
+      : view.props,
   };
 });
 
-// The summary owns its own finish button, and a form step its own submit, so
-// the footer is for the other steps only.
+// A form step owns its own submit, so the footer is for the other steps; on
+// the summary it holds Finish.
 const showForwardAction = computed(
-  () =>
-    currentStep.value != null &&
-    currentStep.value.kind !== "summary" &&
-    !stepRef.value?.ownsForwardAction,
+  () => currentStep.value != null && !stepRef.value?.ownsForwardAction,
 );
 // a step that does not hold the wizard up is skipped rather than moved on from,
 // whether it is optional by nature or one the answers deferred

@@ -94,16 +94,6 @@
         </Button>
       </ItemActions>
     </Item>
-
-    <div>
-      <Button
-        :disabled="busy"
-        data-testid="onboarding-finish"
-        @click="emit('finish')"
-      >
-        {{ $t("onboarding.finish") }}
-      </Button>
-    </div>
   </section>
 </template>
 
