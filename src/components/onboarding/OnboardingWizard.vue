@@ -52,7 +52,7 @@
     <!-- only the step scrolls; keyed so each step starts at the top -->
     <div
       :key="currentId ?? undefined"
-      class="-mx-1 min-h-0 flex-1 overflow-y-auto px-1"
+      class="-mx-1 flex min-h-0 flex-1 flex-col overflow-y-auto px-1"
     >
       <div
         v-if="!ready"

@@ -1,5 +1,5 @@
 <template>
-  <section class="flex flex-col gap-4">
+  <section class="flex min-h-0 flex-col gap-4">
     <!-- with players to act on, the description says what can be done to
          them; without, it says what finds them -->
     <p class="text-muted-foreground text-sm">
@@ -35,7 +35,7 @@
     <!-- a minimum height the empty state fits in, so the step does not jump
          as the first players turn up, and a live region so a player that was
          just found is announced -->
-    <div class="min-h-40" aria-live="polite">
+    <div class="min-h-40 overflow-y-auto" aria-live="polite">
       <ItemGroup v-if="players.length > 0" class="gap-2">
         <DiscoveredPlayerItem
           v-for="player in players"

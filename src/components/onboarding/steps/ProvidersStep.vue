@@ -1,9 +1,8 @@
 <template>
-  <section class="flex flex-col gap-4">
+  <section class="flex min-h-0 flex-col gap-4">
     <p class="text-muted-foreground text-sm">{{ $t(descriptionKey) }}</p>
 
-    <!-- fixed minimum height so the step does not jump once providers load -->
-    <div class="min-h-24">
+    <div class="overflow-y-auto">
       <ItemGroup v-if="configured.length > 0" class="gap-2">
         <Item
           v-for="provider in configured"
