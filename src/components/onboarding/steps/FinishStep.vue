@@ -49,7 +49,7 @@
           type="button"
           variant="outline"
           size="sm"
-          class="w-full cursor-pointer text-left"
+          class="hover:bg-accent/50 w-full cursor-pointer text-left transition-colors"
           data-testid="onboarding-summary-pending"
           @click="emit('navigate', step.id)"
         >
@@ -63,6 +63,10 @@
             <Badge v-if="step.optional || step.deferred" variant="outline">
               {{ $t("optional") }}
             </Badge>
+            <ChevronRight
+              class="text-muted-foreground size-4"
+              aria-hidden="true"
+            />
           </ItemActions>
         </Item>
       </ItemGroup>
@@ -115,7 +119,7 @@ import {
   isTodo,
   type OnboardingStepId,
 } from "@/helpers/onboarding";
-import { Circle, CircleCheck, Route } from "@lucide/vue";
+import { ChevronRight, Circle, CircleCheck, Route } from "@lucide/vue";
 import { computed } from "vue";
 
 /** What the summary asks for on the way out. */

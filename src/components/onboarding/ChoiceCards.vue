@@ -27,7 +27,7 @@
         <component :is="option.icon" class="size-6" aria-hidden="true" />
       </span>
       <span class="flex min-w-0 flex-col gap-1">
-        <span class="flex items-center gap-2">
+        <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span class="font-semibold">{{ $t(option.labelKey) }}</span>
           <Badge v-if="option.recommended" as="span" variant="secondary">
             {{ $t("recommended") }}

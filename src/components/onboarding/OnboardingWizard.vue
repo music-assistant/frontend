@@ -23,7 +23,7 @@
           </Button>
           <h1
             ref="stepHeading"
-            class="truncate text-xl font-semibold outline-none"
+            class="text-xl font-semibold outline-none"
             tabindex="-1"
             data-testid="onboarding-heading"
           >
@@ -37,7 +37,9 @@
             :current="currentIndex"
             @navigate="jumpTo"
           />
-          <span class="text-muted-foreground shrink-0 text-sm">
+          <span
+            class="text-muted-foreground sr-only shrink-0 text-sm sm:not-sr-only"
+          >
             {{
               $t("onboarding.step_counter", {
                 current: stepNumber,
@@ -213,8 +215,15 @@ const currentStep = computed(() => steps.value[currentIndex.value]);
 const canGoBack = computed(() => currentIndex.value > 0);
 const stepNumber = computed(() => Math.max(currentIndex.value + 1, 1));
 // the progress list, done state and all, in the same order the wizard walks
+// a review has nothing to tick off, so one that is behind the current step
+// counts as looked over
 const progressSteps = computed(() =>
-  steps.value.map((step) => ({ id: step.id, done: step.isDone(ctx.value) })),
+  steps.value.map((step, index) => ({
+    id: step.id,
+    done:
+      step.isDone(ctx.value) ||
+      (step.kind === "review" && index < currentIndex.value),
+  })),
 );
 const stepTitle = computed(() =>
   currentId.value ? $t(`onboarding.steps.${currentId.value}.title`) : "",

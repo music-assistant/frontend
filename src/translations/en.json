@@ -2726,6 +2726,7 @@
                 "no_provider_hint": "Add a player provider and its players show up here.",
                 "discovering_hint": "Finding players can take a moment. Make sure your speakers are switched on and on the same network as Music Assistant.",
                 "add_more": "Add more players",
+                "discovered_by": "Discovered by",
                 "rename": "Rename {name}"
             },
             "plugins": {
