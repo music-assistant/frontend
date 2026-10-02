@@ -111,11 +111,9 @@ export function useProviderAccess(options: UseProviderAccessOptions) {
 
   onMounted(() => {
     // listing the users is an admin call, so a member picks from the share
-    // candidates; the server lists them to whoever may own a source, older
-    // servers not at all
+    // candidates; the server lists them to whoever may own a source
     if (toValue(options.managesAllSources)) loadUsers();
-    else if (toValue(options.canOwnSources) && api.supportsShareCandidates)
-      loadShareCandidates();
+    else if (toValue(options.canOwnSources)) loadShareCandidates();
   });
 
   return {

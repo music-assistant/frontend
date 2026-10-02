@@ -22,7 +22,6 @@ const { apiMock, emittedMenus, storeMock } = vi.hoisted(() => ({
     playMedia: vi.fn(),
     providers: { "test_provider--1": { available: true } },
     players: {},
-    supportsPlayMediaShuffle: true,
   },
   storeMock: {
     activePlayer: { player_id: "player-1" },

@@ -71,6 +71,7 @@ const {
     initialize: vi.fn<MusicAssistantApi["initialize"]>(),
     isRemoteConnection: { value: false },
     requireAuthentication: vi.fn<MusicAssistantApi["requireAuthentication"]>(),
+    serverOutdated: false,
     serverInfo: {
       value: {
         onboard_done: true,
@@ -81,7 +82,6 @@ const {
     setLocale: vi.fn<MusicAssistantApi["setLocale"]>(),
     state: { value: "authenticated" },
     subscribe: vi.fn(),
-    supportsServerSideTranslations: false,
   };
   const authManagerMock = {
     bindPersistentToken: vi.fn(),
@@ -330,7 +330,7 @@ describe("App initialization", () => {
     i18nMock.global.locale.value = "en";
     apiMock.state.value = "authenticated";
     apiMock.isRemoteConnection.value = false;
-    apiMock.supportsServerSideTranslations = false;
+    apiMock.serverOutdated = false;
     proxyState.isReady.value = true;
     apiMock.serverInfo.value = {
       onboard_done: true,
@@ -466,6 +466,20 @@ describe("App initialization", () => {
       expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
     },
   );
+
+  it("asks to update an outdated server instead of starting the app", async () => {
+    apiMock.serverOutdated = true;
+
+    wrapper = mountAppWithoutSettling();
+    await flushPromises();
+
+    expect(wrapper.findComponent({ name: "ServerOutdated" }).exists()).toBe(
+      true,
+    );
+    expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(false);
+    expect(apiMock.getCurrentUserInfo).not.toHaveBeenCalled();
+    expect(apiMock.state.value).toBe("authenticated");
+  });
 
   it("follows the force mobile layout setting without a reload", async () => {
     wrapper = await mountApp();
@@ -1344,8 +1358,7 @@ describe("App initialization", () => {
     expect(apiMock.getCurrentUserInfo).toHaveBeenCalledOnce();
   });
 
-  it("pushes a locale change to a server that localizes its own strings", async () => {
-    apiMock.supportsServerSideTranslations = true;
+  it("pushes a locale change to the server", async () => {
     wrapper = await mountAuthenticatedApp();
 
     i18nMock.global.locale.value = "de";
@@ -1355,18 +1368,7 @@ describe("App initialization", () => {
     expect(apiMock.fetchState).toHaveBeenCalledOnce();
   });
 
-  it("keeps the locale local on a server without server-side translations", async () => {
-    wrapper = await mountAuthenticatedApp();
-
-    i18nMock.global.locale.value = "de";
-    await flushPromises();
-
-    expect(apiMock.setLocale).not.toHaveBeenCalled();
-    expect(apiMock.fetchState).not.toHaveBeenCalled();
-  });
-
   it("skips the state refresh for a guest after a locale change", async () => {
-    apiMock.supportsServerSideTranslations = true;
     guestType.value = "party";
     wrapper = await mountAuthenticatedApp();
 
@@ -1378,7 +1380,6 @@ describe("App initialization", () => {
   });
 
   it("survives a failed locale push", async () => {
-    apiMock.supportsServerSideTranslations = true;
     apiMock.setLocale.mockRejectedValue(new Error("offline"));
     wrapper = await mountAuthenticatedApp();
 

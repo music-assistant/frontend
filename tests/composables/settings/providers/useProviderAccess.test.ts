@@ -18,7 +18,6 @@ const { apiMock, i18nMock, storeMock, toastMock } = vi.hoisted(() => ({
     getAllUsers: vi.fn<MusicAssistantApi["getAllUsers"]>(),
     getShareCandidates: vi.fn<MusicAssistantApi["getShareCandidates"]>(),
     providerManifests: {} as Record<string, { builtin: boolean }>,
-    supportsShareCandidates: true,
   },
   i18nMock: { $t: vi.fn((key: string) => key) },
   storeMock: { currentUser: undefined as User | undefined },
@@ -69,7 +68,6 @@ beforeEach(() => {
   apiMock.getAllUsers.mockResolvedValue([]);
   apiMock.getShareCandidates.mockResolvedValue([]);
   apiMock.providerManifests = { spotify: { builtin: false } };
-  apiMock.supportsShareCandidates = true;
   storeMock.currentUser = undefined;
 });
 

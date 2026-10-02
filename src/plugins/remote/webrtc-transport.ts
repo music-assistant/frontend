@@ -50,11 +50,8 @@ const FALLBACK_ICE_SERVERS: IceServerConfig[] = [
 const STABLE_CONNECTION_THRESHOLD_MS = 5000;
 
 // Proxied HTTP requests (album art, previews) get their own channel so their large
-// payloads don't hold up API messages. Older servers take a label they don't know for
-// the API channel itself, so the channel is only opened once the server reports it
-// knows this one.
+// payloads don't hold up API messages.
 const HTTP_PROXY_CHANNEL_LABEL = "http_proxy";
-const HTTP_PROXY_CHANNEL_SCHEMA_VERSION = 49;
 
 export class WebRTCTransport extends BaseTransport {
   private options: Required<WebRTCTransportOptions>;
@@ -327,9 +324,9 @@ export class WebRTCTransport extends BaseTransport {
         this.handleHttpProxyResponse(parsed);
         return;
       }
-      // server_info is the first message on this channel and carries the schema version.
+      // open the proxy channel once server_info, the first message on this channel, arrives
       if (typeof parsed.schema_version === "number") {
-        this.maybeOpenHttpProxyChannel(parsed.schema_version);
+        this.maybeOpenHttpProxyChannel();
       }
     } catch {
       // not JSON or not an HTTP proxy response
@@ -403,13 +400,8 @@ export class WebRTCTransport extends BaseTransport {
     });
   }
 
-  private maybeOpenHttpProxyChannel(schemaVersion: number): void {
-    if (
-      this.httpProxyChannelRequested ||
-      schemaVersion < HTTP_PROXY_CHANNEL_SCHEMA_VERSION
-    ) {
-      return;
-    }
+  private maybeOpenHttpProxyChannel(): void {
+    if (this.httpProxyChannelRequested) return;
     this.httpProxyChannelRequested = true;
     void this.openHttpProxyChannel();
   }
