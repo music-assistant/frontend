@@ -4,7 +4,7 @@
 // it is playing. Two real states hit that: a queue that was loaded but never started, and a queue
 // that played to its end (`ended`), which keeps its position on the last item so there is still
 // evidence of what played.
-import { PlayerQueue } from "@/plugins/api/interfaces";
+import { PlayerQueue, QueueItem } from "@/plugins/api/interfaces";
 
 // Sentinel for "the queue sits before its first item": no row is current, and everything is
 // up next. Comparisons against a real absolute index never match it.
@@ -25,3 +25,16 @@ export const currentQueueIndex = (queue?: PlayerQueue | null): number => {
 /** Whether the queue holds items it already played through and can start over. */
 export const isQueueEnded = (queue?: PlayerQueue | null): boolean =>
   !!queue?.ended && queue.items > 0;
+
+/** URIs a party guest may not request again, empty when "Prevent Duplicate Tracks" is off. */
+export const queuedGuestTrackUris = (
+  queueItems: QueueItem[],
+  preventDuplicateTracks: boolean,
+): Set<string> => {
+  const uris = new Set<string>();
+  if (!preventDuplicateTracks) return uris;
+  for (const item of queueItems) {
+    if (item.media_item?.uri) uris.add(item.media_item.uri);
+  }
+  return uris;
+};
