@@ -291,7 +291,11 @@ const CHECK_BADGES: Record<
     class: "bg-primary/10 text-primary",
     icon: markRaw(CircleCheck),
   },
-  unreachable: { variant: "destructive", icon: markRaw(CircleAlert) },
+  unreachable: {
+    variant: "default",
+    class: "bg-destructive/10 text-destructive",
+    icon: markRaw(CircleAlert),
+  },
   unchecked: { variant: "outline", icon: markRaw(CircleHelp) },
 };
 
