@@ -72,9 +72,10 @@
 
     <footer
       v-if="ready && showForwardAction"
-      class="flex shrink-0 items-center gap-2"
+      class="flex shrink-0 items-center justify-end gap-2"
     >
       <Button
+        class="w-full sm:w-auto"
         :disabled="moving || stepBusy"
         data-testid="onboarding-next"
         @click="next"
