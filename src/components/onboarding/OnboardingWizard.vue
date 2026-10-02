@@ -1,9 +1,13 @@
 <template>
-  <div class="flex w-full flex-col gap-5" data-testid="onboarding-wizard">
-    <header class="flex flex-col gap-3">
+  <div
+    class="flex min-h-0 w-full flex-1 flex-col gap-5"
+    data-testid="onboarding-wizard"
+  >
+    <header class="flex shrink-0 flex-col gap-3">
       <p class="text-muted-foreground text-sm">{{ $t(trackTitleKey) }}</p>
       <template v-if="ready && currentStep">
-        <div class="flex min-w-0 items-center gap-2">
+        <!-- as tall as the back button, so the title stays put without it -->
+        <div class="flex min-h-9 min-w-0 items-center gap-2">
           <Button
             v-if="canGoBack"
             variant="ghost"
@@ -19,7 +23,7 @@
           </Button>
           <h1
             ref="stepHeading"
-            class="truncate text-xl font-semibold"
+            class="truncate text-xl font-semibold outline-none"
             tabindex="-1"
             data-testid="onboarding-heading"
           >
@@ -45,26 +49,31 @@
       </template>
     </header>
 
-    <div
-      v-if="!ready"
-      class="flex min-h-40 items-center justify-center"
-      data-testid="onboarding-loading"
-    >
-      <Spinner class="size-6" />
+    <!-- only the step scrolls; keyed so each step starts at the top -->
+    <div :key="currentId" class="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
+      <div
+        v-if="!ready"
+        class="flex min-h-40 items-center justify-center"
+        data-testid="onboarding-loading"
+      >
+        <Spinner class="size-6" />
+      </div>
+
+      <component
+        :is="stepView.component"
+        v-else-if="stepView"
+        ref="stepRef"
+        v-bind="stepView.props"
+        @advance="next"
+        @navigate="goTo"
+        @finish="finishOnboarding"
+      />
     </div>
 
-    <component
-      :is="stepView.component"
-      v-else-if="stepView"
-      :key="currentId"
-      ref="stepRef"
-      v-bind="stepView.props"
-      @advance="next"
-      @navigate="goTo"
-      @finish="finishOnboarding"
-    />
-
-    <footer v-if="ready && showForwardAction" class="flex items-center gap-2">
+    <footer
+      v-if="ready && showForwardAction"
+      class="flex shrink-0 items-center gap-2"
+    >
       <Button
         :disabled="moving || stepBusy"
         data-testid="onboarding-next"

@@ -1,7 +1,9 @@
 <template>
   <Dialog :open="active" @update:open="onOpenChange">
+    <!-- fixed height so the dialog keeps its place when a step changes size;
+         the wizard scrolls the step inside it -->
     <DialogContent
-      class="max-h-[calc(100dvh-1rem)] gap-0 overflow-y-auto p-4 sm:max-w-[calc(100%-2rem)] sm:p-6 lg:max-w-3xl"
+      class="flex h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden p-4 sm:h-[min(84dvh,52rem)] sm:max-w-[calc(100%-2rem)] sm:p-6 lg:max-w-3xl"
       :show-close-button="ctx.isMember"
       data-testid="onboarding-modal"
       @escape-key-down="onDismissAttempt"
