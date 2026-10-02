@@ -89,6 +89,7 @@
       <Button
         v-else
         class="w-full sm:w-auto"
+        :variant="skipping ? 'secondary' : 'default'"
         :disabled="moving || stepBusy"
         data-testid="onboarding-next"
         @click="next"
@@ -249,12 +250,13 @@ const showForwardAction = computed(
 );
 // a step that does not hold the wizard up is skipped rather than moved on from,
 // whether it is optional by nature or one the answers deferred
-const forwardLabel = computed(() => {
+const skipping = computed(() => {
   const step = currentStep.value;
-  if ((step?.optional || step?.deferred) && !step.isDone(ctx.value))
-    return $t("onboarding.skip");
-  return $t("onboarding.next");
+  return !!(step?.optional || step?.deferred) && !step.isDone(ctx.value);
 });
+const forwardLabel = computed(() =>
+  skipping.value ? $t("onboarding.skip") : $t("onboarding.next"),
+);
 
 const goTo = function (id: OnboardingStepId) {
   currentId.value = id;

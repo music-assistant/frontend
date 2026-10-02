@@ -19,10 +19,7 @@ const emit = defineEmits<{
   (e: "navigate", step: OnboardingStepId): void;
 }>();
 
-// a completed step behind the current one is a jump target; Back reaches the
-// rest one at a time, so a step still to do is not offered as a shortcut
-const canRevisit = (index: number): boolean =>
-  index < props.current && props.steps[index].done;
+const canRevisit = (index: number): boolean => index < props.current;
 
 const onClick = function (index: number, id: OnboardingStepId): void {
   if (canRevisit(index)) emit("navigate", id);
