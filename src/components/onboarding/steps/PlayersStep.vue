@@ -38,7 +38,7 @@
     <!-- a minimum height the empty state fits in, so the step does not jump
          as the first players turn up, and a live region so a player that was
          just found is announced -->
-    <div class="min-h-40 overflow-y-auto" aria-live="polite">
+    <ScrollFade class="min-h-40" aria-live="polite">
       <ItemGroup v-if="players.length > 0" class="gap-2">
         <DiscoveredPlayerItem
           v-for="player in players"
@@ -72,7 +72,7 @@
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
-    </div>
+    </ScrollFade>
 
     <!-- the picker adds a provider either way; only where nothing is set up
          yet, and the hint above has just said what a provider is, is it named -->
@@ -100,8 +100,8 @@
 
 <script setup lang="ts">
 import DiscoveredPlayerItem from "@/components/onboarding/DiscoveredPlayerItem.vue";
+import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Empty,

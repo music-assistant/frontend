@@ -50,10 +50,7 @@
     </header>
 
     <!-- only the step scrolls; keyed so each step starts at the top -->
-    <div
-      :key="currentId ?? undefined"
-      class="-mx-1 flex min-h-0 flex-1 flex-col overflow-y-auto px-1"
-    >
+    <ScrollFade :key="currentId ?? undefined" class="-mx-1 flex flex-col px-1">
       <div
         v-if="!ready"
         class="flex min-h-40 items-center justify-center"
@@ -71,7 +68,7 @@
         @navigate="goTo"
         @finish="finishOnboarding"
       />
-    </div>
+    </ScrollFade>
 
     <footer
       v-if="ready && showForwardAction"
@@ -102,6 +99,7 @@
 
 <script setup lang="ts">
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress.vue";
+import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import AccountStep from "@/components/onboarding/steps/AccountStep.vue";
 import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue";
 import FinishStep, {

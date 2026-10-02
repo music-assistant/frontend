@@ -2,7 +2,7 @@
   <section class="flex min-h-0 flex-col gap-4">
     <p class="text-muted-foreground text-sm">{{ $t(descriptionKey) }}</p>
 
-    <div class="overflow-y-auto">
+    <ScrollFade>
       <ItemGroup v-if="configured.length > 0" class="gap-2">
         <Item
           v-for="provider in configured"
@@ -53,7 +53,7 @@
           <EmptyTitle>{{ $t("onboarding.nothing_configured") }}</EmptyTitle>
         </EmptyHeader>
       </Empty>
-    </div>
+    </ScrollFade>
 
     <div>
       <Button
@@ -74,6 +74,7 @@
 </template>
 
 <script setup lang="ts">
+import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
