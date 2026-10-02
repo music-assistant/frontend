@@ -12,12 +12,18 @@
 
     <!-- the player providers that are set up, so what "add more" adds to is in
          view, and a provider that found nothing yet still shows for its work -->
-    <div v-if="providers.length > 0" class="flex flex-wrap gap-2">
-      <Badge
-        v-for="provider in providers"
+    <p
+      v-if="providers.length > 0"
+      class="text-muted-foreground flex flex-wrap items-center gap-y-1 text-sm"
+    >
+      <span class="pr-3">{{
+        $t("onboarding.steps.players.discovered_by")
+      }}</span>
+      <span
+        v-for="(provider, index) in providers"
         :key="provider.instance_id"
-        variant="outline"
-        class="gap-1.5 py-1"
+        class="text-foreground inline-flex items-center gap-1.5 px-3 first:pl-0 last:pr-0"
+        :class="{ 'border-border border-r': index < providers.length - 1 }"
         data-testid="onboarding-player-provider"
       >
         <ProviderIcon :domain="provider.domain" :size="16" aria-hidden="true" />
@@ -32,8 +38,8 @@
             :aria-label="$t(attentionLabelKey(provider.status))"
           />
         </span>
-      </Badge>
-    </div>
+      </span>
+    </p>
 
     <!-- a minimum height the empty state fits in, so the step does not jump
          as the first players turn up, and a live region so a player that was
