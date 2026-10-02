@@ -1,11 +1,10 @@
 <template>
   <section class="p-4">
     <SettingsHeaderCard
-      v-model:show-advanced-settings="showAdvancedSettings"
       :icon="SlidersHorizontal"
       :title="$t('settings.queue_settings')"
       :description="queueName"
-      :show-advanced-toggle="hasAdvancedEntries(allConfigEntries)"
+      :documentation-url="documentationUrl"
       @reset-to-defaults="resetToDefaults"
     />
 
@@ -50,14 +49,17 @@ import { api } from "@/plugins/api";
 import { ConfigValueType, PlayerQueueConfig } from "@/plugins/api/interfaces";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
 import { goBack } from "@/helpers/navigation";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import { Info, SlidersHorizontal } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import EditConfig from "./EditConfig.vue";
 import SettingsHeaderCard from "./SettingsHeaderCard.vue";
+
+const QUEUE_DOCS_URL =
+  "https://music-assistant.io/settings/individual-player/#queue-settings";
 
 // global refs
 const router = useRouter();
@@ -80,6 +82,9 @@ const allConfigEntries = computed(() => {
 const queueName = computed(
   () => api.queues[props.queueId || ""]?.display_name || props.queueId,
 );
+
+// the docs of a beta server live on the beta site
+const documentationUrl = computed(() => getExternalLinkUrl(QUEUE_DOCS_URL));
 
 // watchers
 watch(

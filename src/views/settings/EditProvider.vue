@@ -212,11 +212,6 @@
             <CircleAlert class="size-4" />
             {{ $t("settings.known_issues") }}
           </Button>
-          <AdvancedSettingsToggle
-            v-if="config.enabled && hasAdvancedEntries(allConfigEntries)"
-            v-model:show-advanced-settings="showAdvancedSettings"
-            test-id="provider-advanced-settings"
-          />
         </CardContent>
       </Card>
 
@@ -313,10 +308,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { useEditedProviderName } from "@/composables/useEditedProviderName";
-import {
-  hasAdvancedEntries,
-  mergeConfigEntries,
-} from "@/helpers/config_entry_ui";
+import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import {
   isOwnMusicSource,
   isSelfServiceProvider,
@@ -355,7 +347,6 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
-import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 import AmbientSoundsCustomSounds from "./AmbientSoundsCustomSounds.vue";
 import EditConfig from "./EditConfig.vue";
 

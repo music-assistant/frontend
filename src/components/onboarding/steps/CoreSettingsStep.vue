@@ -153,6 +153,7 @@
           :disabled="false"
           :show-advanced-settings="true"
           :inline-save="true"
+          :hide-header="true"
           @submit="onSubmit"
         />
 

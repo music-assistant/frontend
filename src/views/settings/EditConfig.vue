@@ -1,86 +1,98 @@
 <template>
   <v-form v-if="entries" ref="form" v-model="valid" :disabled="disabled">
-    <!-- Generic settings section -->
-    <div
-      v-for="panel of regularPanels.filter(
-        (p) => p === 'generic' && entriesForCategory(p).length > 0,
-      )"
-      :key="panel"
-      class="category-section"
-    >
-      <div class="category-header">
-        <span class="category-icon">
-          <component :is="getCategoryIcon(panel)" :size="16" />
-        </span>
-        <span class="category-title">
-          {{ getCategoryTranslation(panel) }}
-        </span>
-      </div>
-      <div class="category-content">
-        <ConfigEntryRow
-          v-for="conf_entry of entriesForCategory(panel)"
-          :key="conf_entry.key"
-          :conf-entry="conf_entry"
-          :show-password-values="showPasswordValues"
-          :disabled="isRowDisabled(conf_entry)"
-          :provider-domain="providerDomain"
-          @update:value="onValueUpdate(conf_entry, $event)"
-          @toggle-password="showPasswordValues = !showPasswordValues"
-          @action="onEntryAction(conf_entry)"
-          @set-entry-value="onEntryValueSet"
+    <Card v-if="hasOptions" class="gap-0 py-0">
+      <CardHeader
+        v-if="!hideHeader"
+        class="flex flex-wrap items-center gap-3 px-6 py-4 [.border-b]:pb-4"
+        :class="{ 'border-b': hasVisibleSections }"
+      >
+        <CardTitle>{{ $t("settings.options") }}</CardTitle>
+        <AdvancedSettingsToggle
+          v-if="showAdvancedToggle"
+          v-model:show-advanced-settings="showAdvancedSettings"
+          test-id="config-advanced-settings"
         />
-      </div>
-    </div>
+      </CardHeader>
+      <CardContent
+        v-if="hasVisibleSections"
+        class="divide-y divide-border px-6"
+      >
+        <!-- Generic settings section -->
+        <section
+          v-for="panel of regularPanels.filter(
+            (p) => p === 'generic' && entriesForCategory(p).length > 0,
+          )"
+          :key="panel"
+          class="py-5"
+        >
+          <h4
+            class="mb-4 flex items-center gap-2 text-sm font-medium text-muted-foreground"
+          >
+            <component :is="getCategoryIcon(panel)" class="size-4" />
+            {{ getCategoryTranslation(panel) }}
+          </h4>
+          <ConfigEntryRow
+            v-for="conf_entry of entriesForCategory(panel)"
+            :key="conf_entry.key"
+            :conf-entry="conf_entry"
+            :show-password-values="showPasswordValues"
+            :disabled="isRowDisabled(conf_entry)"
+            :provider-domain="providerDomain"
+            @update:value="onValueUpdate(conf_entry, $event)"
+            @toggle-password="showPasswordValues = !showPasswordValues"
+            @action="onEntryAction(conf_entry)"
+            @set-entry-value="onEntryValueSet"
+          />
+        </section>
 
-    <!-- No provider-domain: that is only set for a provider config, which carries no protocol
-         categories. No set-entry-value handler: its only emitter is the Home Assistant entity
-         picker, which sits with the player controls on the parent player. -->
-    <ProtocolConfigSection
-      :entries="entries || []"
-      :protocol-panels="protocolPanels"
-      :visible-entries-by-category="visibleEntriesByCategory"
-      :show-password-values="showPasswordValues"
-      :is-disabled="isRowDisabled"
-      :output-protocols="outputProtocols"
-      @update:value="onValueUpdate"
-      @action="onEntryAction"
-      @toggle-password="showPasswordValues = !showPasswordValues"
-    />
-
-    <!-- Other regular settings sections -->
-    <div
-      v-for="panel of regularPanels.filter(
-        (p) => p !== 'generic' && entriesForCategory(p).length > 0,
-      )"
-      :key="panel"
-      class="category-section"
-    >
-      <div class="category-header">
-        <span class="category-icon">
-          <component :is="getCategoryIcon(panel)" :size="16" />
-        </span>
-        <span class="category-title">
-          {{ getCategoryTranslation(panel) }}
-        </span>
-      </div>
-      <div class="category-content">
-        <ConfigEntryRow
-          v-for="conf_entry of entriesForCategory(panel)"
-          :key="conf_entry.key"
-          :conf-entry="conf_entry"
+        <!-- No provider-domain: that is only set for a provider config, which carries no protocol
+             categories. No set-entry-value handler: its only emitter is the Home Assistant entity
+             picker, which sits with the player controls on the parent player. -->
+        <ProtocolConfigSection
+          :entries="entries || []"
+          :protocol-panels="protocolPanels"
+          :visible-entries-by-category="visibleEntriesByCategory"
           :show-password-values="showPasswordValues"
-          :disabled="isRowDisabled(conf_entry)"
-          :provider-domain="providerDomain"
-          @update:value="onValueUpdate(conf_entry, $event)"
+          :is-disabled="isRowDisabled"
+          :output-protocols="outputProtocols"
+          @update:value="onValueUpdate"
+          @action="onEntryAction"
           @toggle-password="showPasswordValues = !showPasswordValues"
-          @action="onEntryAction(conf_entry)"
-          @set-entry-value="onEntryValueSet"
         />
-      </div>
-    </div>
 
+        <!-- Other regular settings sections -->
+        <section
+          v-for="panel of regularPanels.filter(
+            (p) => p !== 'generic' && entriesForCategory(p).length > 0,
+          )"
+          :key="panel"
+          class="py-5"
+        >
+          <h4
+            class="mb-4 flex items-center gap-2 text-sm font-medium text-muted-foreground"
+          >
+            <component :is="getCategoryIcon(panel)" class="size-4" />
+            {{ getCategoryTranslation(panel) }}
+          </h4>
+          <ConfigEntryRow
+            v-for="conf_entry of entriesForCategory(panel)"
+            :key="conf_entry.key"
+            :conf-entry="conf_entry"
+            :show-password-values="showPasswordValues"
+            :disabled="isRowDisabled(conf_entry)"
+            :provider-domain="providerDomain"
+            @update:value="onValueUpdate(conf_entry, $event)"
+            @toggle-password="showPasswordValues = !showPasswordValues"
+            @action="onEntryAction(conf_entry)"
+            @set-entry-value="onEntryValueSet"
+          />
+        </section>
+      </CardContent>
+    </Card>
+
+    <!-- with nothing editable in view, only unsaved edits still need saving -->
     <div
-      v-if="!disabled"
+      v-if="!disabled && (hasVisibleSections || hasUnsavedChanges)"
       :class="
         inlineSave
           ? 'mt-4 flex justify-end'
@@ -139,12 +151,14 @@
 import {
   allRequiredValuesPresent,
   ConfigEntryUI,
+  hasAdvancedEntries,
   isEntryDisabled,
   isInjected,
   NON_INTERACTIVE_ENTRY_TYPES,
   VALUELESS_ENTRY_TYPES,
 } from "@/helpers/config_entry_ui";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ConfigEntryType,
   ConfigValueType,
@@ -171,6 +185,7 @@ import {
 } from "@lucide/vue";
 import { type Component, computed, onBeforeUnmount, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
+import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 import ConfigEntryRow from "./ConfigEntryRow.vue";
 import ProtocolConfigSection from "./ProtocolConfigSection.vue";
 
@@ -193,6 +208,9 @@ export interface Props {
   // Keep the Save button in the flow of the form instead of floating over the page:
   // inside a dialog, a fixed position is measured from the dialog rather than the screen.
   inlineSave?: boolean;
+  // Leave out the Options header and its advanced toggle, for a host that names the form and
+  // decides which of its entries show.
+  hideHeader?: boolean;
 }
 
 const emit = defineEmits<{
@@ -250,6 +268,26 @@ const regularPanels = computed(() => {
 const protocolPanels = computed(() => {
   return panels.value.filter((p) => isProtocolCategory(p));
 });
+
+// a disabled form cannot be edited, so there is nothing to reveal; without the
+// header there is no place for the toggle
+const showAdvancedToggle = computed(
+  () =>
+    !props.hideHeader &&
+    !props.disabled &&
+    hasAdvancedEntries(entries.value || []),
+);
+
+const hasVisibleSections = computed(
+  () =>
+    protocolPanels.value.length > 0 ||
+    Object.keys(visibleEntriesByCategory.value).length > 0,
+);
+
+// a config with nothing to show or reveal leaves out the card altogether
+const hasOptions = computed(
+  () => showAdvancedToggle.value || hasVisibleSections.value,
+);
 
 const requiredValuesPresent = computed(() =>
   entries.value ? allRequiredValuesPresent(entries.value) : false,
@@ -577,47 +615,6 @@ const getCategoryIcon = function (category: string): Component {
 </script>
 
 <style scoped>
-/* Category sections (modern card, header aligned with fields) */
-.category-section {
-  margin-bottom: 14px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  border-radius: 14px;
-  background: rgb(var(--v-theme-surface));
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-}
-
-.category-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 16px;
-  background: rgba(var(--v-theme-on-surface), 0.03);
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.category-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: rgba(var(--v-theme-primary), 0.12);
-  color: rgb(var(--v-theme-primary));
-  flex-shrink: 0;
-}
-
-.category-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.category-content {
-  padding: 14px 16px;
-}
-
 .floating-save {
   position: fixed;
   /* A landscape phone is wide enough to count as the desktop layout, so this

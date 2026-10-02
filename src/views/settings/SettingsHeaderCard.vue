@@ -43,13 +43,20 @@
       </DropdownMenu>
     </CardHeader>
     <CardContent
-      v-if="showAdvancedToggle"
-      class="flex items-center border-t bg-muted/20 px-6 py-4"
+      v-if="documentationUrl"
+      class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
     >
-      <AdvancedSettingsToggle
-        v-model:show-advanced-settings="showAdvancedSettings"
-        test-id="settings-advanced-settings"
-      />
+      <Button
+        as="a"
+        data-testid="settings-documentation"
+        variant="outline"
+        :href="documentationUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <BookOpen class="size-4" />
+        {{ $t("settings.documentation") }}
+      </Button>
     </CardContent>
   </Card>
 </template>
@@ -70,9 +77,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { MoreVertical, RotateCcw } from "@lucide/vue";
+import { BookOpen, MoreVertical, RotateCcw } from "@lucide/vue";
 import type { Component } from "vue";
-import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 
 /**
  * Header card shared by the settings screens that edit a plain config: it names what
@@ -84,15 +90,11 @@ defineProps<{
   description?: string;
   /** Tints the icon and its tile, e.g. "text-orange-500"; defaults to the primary colour. */
   iconClass?: string;
-  /** Whether the config holds advanced entries the toggle can reveal. */
-  showAdvancedToggle?: boolean;
+  /** Where the documentation of this screen lives; without one no link is offered. */
+  documentationUrl?: string;
 }>();
 
 const emit = defineEmits<{
   (e: "resetToDefaults"): void;
 }>();
-
-const showAdvancedSettings = defineModel<boolean>("showAdvancedSettings", {
-  default: false,
-});
 </script>
