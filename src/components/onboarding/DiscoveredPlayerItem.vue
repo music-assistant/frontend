@@ -32,18 +32,35 @@
     <ItemActions>
       <!-- a player that is switched on but not reachable says so; one that
            still has to be set up says that instead, as its setup is why -->
-      <CircleAlert
-        v-if="player.enabled && player.needsSetup"
-        class="size-4 text-amber-500"
-        :aria-label="$t('settings.player_needs_setup')"
+      <Button
+        v-if="player.enabled && player.needsSetup && canEdit"
+        variant="secondary"
+        size="sm"
         :title="$t('settings.player_needs_setup')"
-      />
-      <Hourglass
+        data-testid="onboarding-player-setup"
+        @click="startSetup"
+      >
+        <CircleAlert class="size-4 text-amber-500" aria-hidden="true" />
+        {{ $t("settings.start_setup") }}
+      </Button>
+      <span
+        v-else-if="player.enabled && player.needsSetup"
+        :title="$t('settings.player_needs_setup')"
+      >
+        <CircleAlert
+          class="size-4 text-amber-500"
+          :aria-label="$t('settings.player_needs_setup')"
+        />
+      </span>
+      <span
         v-else-if="player.enabled && !player.available"
-        class="text-muted-foreground size-4"
-        :aria-label="$t('settings.player_not_available')"
         :title="$t('settings.player_not_available')"
-      />
+      >
+        <Hourglass
+          class="text-muted-foreground size-4"
+          :aria-label="$t('settings.player_not_available')"
+        />
+      </span>
       <!-- the pencil keeps its place while the field is open, so the switch
            next to it stays put -->
       <Button
@@ -88,6 +105,7 @@ import {
   renamePlayer,
   setPlayerEnabled,
 } from "@/helpers/player_settings_actions";
+import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { CircleAlert, Hourglass, Pencil } from "@lucide/vue";
 import { computed, nextTick, ref } from "vue";
@@ -121,6 +139,13 @@ const startRename = async function () {
   renameInput.value?.focus();
   // the whole name is selected, so typing replaces it and an arrow key edits it
   (renameInput.value?.$el as HTMLInputElement | undefined)?.select();
+};
+
+const startSetup = function () {
+  eventbus.emit("setupFlowDialog", {
+    kind: "player",
+    playerId: props.player.player_id,
+  });
 };
 
 const cancelRename = function () {

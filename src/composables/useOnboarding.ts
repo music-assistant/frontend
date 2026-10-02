@@ -43,6 +43,7 @@ import {
   type Player,
   type PlayerConfig,
   type ProviderConfig,
+  type ProviderStatus,
   type ProviderType,
   type User,
 } from "@/plugins/api/interfaces";
@@ -59,6 +60,7 @@ export interface ConfiguredProvider {
   domain: string;
   // set up, but not doing anything: switched off or failed to load
   needsAttention: boolean;
+  status: ProviderStatus | null;
 }
 
 /** A player the wizard lists, built from its configuration and live state. */
@@ -324,6 +326,7 @@ export function configuredProviders(type: ProviderType): ConfiguredProvider[] {
         ) || config.domain,
       domain: config.domain,
       needsAttention: config.enabled === false || config.last_error != null,
+      status: config.status,
     }));
 }
 

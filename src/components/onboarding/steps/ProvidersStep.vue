@@ -24,12 +24,23 @@
               class="text-primary size-4"
               aria-hidden="true"
             />
-            <TriangleAlert
-              v-else
-              class="text-muted-foreground size-4"
-              :aria-label="$t('onboarding.needs_attention')"
-              :title="$t('onboarding.needs_attention')"
-            />
+            <template v-else>
+              <Button
+                v-if="needsReconfigure(provider)"
+                variant="secondary"
+                size="sm"
+                data-testid="onboarding-provider-reconfigure"
+                @click="reconfigure(provider.instance_id)"
+              >
+                {{ $t("settings.reconfigure") }}
+              </Button>
+              <span :title="$t(attentionLabelKey(provider.status))">
+                <TriangleAlert
+                  class="text-muted-foreground size-4"
+                  :aria-label="$t(attentionLabelKey(provider.status))"
+                />
+              </span>
+            </template>
           </ItemActions>
         </Item>
       </ItemGroup>
@@ -79,9 +90,15 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
-import { configuredProviders } from "@/composables/useOnboarding";
-import type { OnboardingStepId } from "@/helpers/onboarding";
+import {
+  configuredProviders,
+  type ConfiguredProvider,
+} from "@/composables/useOnboarding";
+import { attentionLabelKey, type OnboardingStepId } from "@/helpers/onboarding";
+import { providerRequiresReconfiguration } from "@/helpers/provider_config";
+import { api } from "@/plugins/api";
 import { ProviderType } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
 import { Check, Music, Plus, Puzzle, TriangleAlert } from "@lucide/vue";
 import { match } from "ts-pattern";
@@ -100,6 +117,16 @@ defineEmits<{
 }>();
 
 const showAddProviderDialog = ref(false);
+
+const needsReconfigure = (provider: ConfiguredProvider) =>
+  providerRequiresReconfiguration(
+    provider.status,
+    api.providerManifests[provider.domain]?.has_setup_flow,
+  );
+
+const reconfigure = function (instanceId: string) {
+  eventbus.emit("setupFlowDialog", { kind: "reconfigure", instanceId });
+};
 
 const configured = computed(() => configuredProviders(props.providerType));
 
