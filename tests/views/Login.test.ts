@@ -84,7 +84,8 @@ vi.mock("@/plugins/remote", () => ({
 
 vi.mock("vue-i18n", () => ({
   useI18n: () => ({
-    t: (_key: string, fallback: string) => fallback,
+    t: (key: string, fallback: string | string[]) =>
+      Array.isArray(fallback) ? `${key}: ${fallback.join(", ")}` : fallback,
   }),
 }));
 
@@ -918,5 +919,50 @@ describe("credentials field input behavior", () => {
       autocorrect: "off",
       spellcheck: "false",
     });
+  });
+});
+
+describe("credentials login errors", () => {
+  async function mountCredentialsStep() {
+    mockStandaloneFrontend();
+    const wrapper = mountLogin();
+    await flushPromises();
+    await wrapper.find("input").setValue("http://music-assistant.local:8095");
+    await wrapper.find("button").trigger("click");
+    await flushPromises();
+    return wrapper;
+  }
+
+  async function showServerError(message: string) {
+    const wrapper = await mountCredentialsStep();
+    (
+      wrapper.vm as unknown as {
+        handleAuthenticationError: (error: unknown) => void;
+      }
+    ).handleAuthenticationError(new Error(message));
+    await flushPromises();
+    return wrapper
+      .find('input[placeholder="Enter your password"]')
+      .attributes("error-messages");
+  }
+
+  it("explains a disabled account", async () => {
+    expect(await showServerError("User account is disabled")).toContain(
+      "This account is disabled. Ask an admin to enable it.",
+    );
+  });
+
+  it("shows the retry time when sign-in attempts are rate limited", async () => {
+    expect(
+      await showServerError(
+        "Too many failed attempts. Please try again in 42 seconds.",
+      ),
+    ).toContain("login.error_too_many_attempts: 42");
+  });
+
+  it("keeps the invalid credentials message for a wrong password", async () => {
+    expect(await showServerError("Invalid username or password")).toContain(
+      "Couldn't sign you in. Please check your username and password.",
+    );
   });
 });
