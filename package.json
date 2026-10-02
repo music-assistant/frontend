@@ -74,7 +74,7 @@
         "eslint": "10.11.0",
         "eslint-config-prettier": "10.1.8",
         "eslint-plugin-oxlint": "^1.80.0",
-        "eslint-plugin-vue": "10.10.0",
+        "eslint-plugin-vue": "10.11.1",
         "husky": "^9.1.7",
         "jsdom": "^30.1.1",
         "lint-staged": "^17.5.1",
