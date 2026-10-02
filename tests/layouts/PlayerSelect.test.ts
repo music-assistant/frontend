@@ -9,6 +9,7 @@ import {
   PlaybackState,
   type Player,
   PlayerType,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { store as storeModule } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
@@ -20,7 +21,7 @@ const { emitEvent, getPreference, hasScope, preferenceState, setPreference } =
   vi.hoisted(() => ({
     emitEvent: vi.fn(),
     getPreference: vi.fn(),
-    hasScope: vi.fn(() => true),
+    hasScope: vi.fn((_scope: Scope) => true),
     preferenceState: {
       values: {} as Record<string, unknown>,
       reactiveValues: undefined as Record<string, unknown> | undefined,
@@ -135,7 +136,11 @@ vi.mock("@/helpers/players", () => ({
       !player.needs_setup &&
       player.type !== PlayerType.SOURCE,
     ),
-  playerVisible: () => true,
+  playerVisible: (
+    player: Player,
+    _allowGroupChilds: boolean,
+    allowNeedsSetup: boolean,
+  ) => !player.needs_setup || allowNeedsSetup,
 }));
 
 // the real store computes these; on the mock they are plain writable state
@@ -373,6 +378,7 @@ describe("PlayerSelect", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    hasScope.mockImplementation(() => true);
     isDashboardViewer = false;
     const preferenceValues = preferenceState.reactiveValues;
     if (preferenceValues) {
@@ -773,6 +779,27 @@ describe("PlayerSelect", () => {
       playerId: player.player_id,
       onFlowEnded: expect.any(Function),
     });
+  });
+
+  it("leaves setup-required players out for a role that may not set them up", () => {
+    hasScope.mockImplementation(
+      (scope: Scope) => scope !== Scope.CONFIG_PLAYERS_WRITE,
+    );
+    const setupRequired = createPlayer("kitchen", "Kitchen");
+    setupRequired.available = false;
+    setupRequired.needs_setup = true;
+    api.players = {
+      kitchen: setupRequired,
+      office: createPlayer("office", "Office"),
+    };
+
+    const wrapper = mountPlayerSelect();
+
+    expect(
+      wrapper
+        .findAll(".player-card")
+        .map((card) => card.attributes("data-player-id")),
+    ).toEqual(["office"]);
   });
 
   it.each([
