@@ -1,6 +1,6 @@
 import OnboardingDialog from "@/components/onboarding/OnboardingDialog.vue";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { flushPromises, mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h, ref } from "vue";
 
@@ -34,9 +34,7 @@ const overlayOf = (content: Element | null): Element | null => {
   return node;
 };
 
-afterEach(() => {
-  document.body.innerHTML = "";
-});
+enableAutoUnmount(afterEach);
 
 describe("OnboardingDialog stacking", () => {
   it("lets a dialog opened from the wizard show on top of it", async () => {
