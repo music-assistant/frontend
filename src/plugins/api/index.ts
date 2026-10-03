@@ -109,6 +109,9 @@ const ROLES_SCHEMA_VERSION = 74;
 // Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
 const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
 
+// The per-segment allow_post option on AI Radio sections landed in API schema 81.
+const AI_RADIO_ALLOW_POST_SCHEMA_VERSION = 81;
+
 export interface CommandOptions {
   /**
    * Skip the global console.error + error toast for an error result. Use for a
@@ -3187,6 +3190,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server keeps a segment's allow_post option (schema >= 81). */
+  public get supportsAIRadioAllowPost(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      AI_RADIO_ALLOW_POST_SCHEMA_VERSION
     );
   }
 
