@@ -43,9 +43,20 @@ export function sanitizeDSPPresetConfig(config: DSPConfig): DSPConfig {
 export function areDSPConfigsEqual(left: DSPConfig, right: DSPConfig): boolean {
   return (
     left.enabled === right.enabled &&
+    (left.preset_id ?? null) === (right.preset_id ?? null) &&
+    areDSPSettingsEqual(left, right)
+  );
+}
+
+// Compares what a preset stores, so switching DSP on/off and the preset
+// selection itself are left out.
+export function areDSPSettingsEqual(
+  left: DSPConfig,
+  right: DSPConfig,
+): boolean {
+  return (
     left.input_gain === right.input_gain &&
     left.output_gain === right.output_gain &&
-    (left.preset_id ?? null) === (right.preset_id ?? null) &&
     areDspFiltersEqual(left.filters, right.filters)
   );
 }

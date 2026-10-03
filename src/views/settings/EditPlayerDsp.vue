@@ -405,6 +405,7 @@ import { Switch } from "@/components/ui/switch";
 import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
   areDSPConfigsEqual,
+  areDSPSettingsEqual,
   dspFilterTypeLabel,
   sanitizeDSPPresetConfig,
 } from "@/helpers/audioProcessing";
@@ -426,6 +427,9 @@ const newPresetName = ref("");
 // the force-mobile setting, rather than Vuetify's width-only breakpoint.
 const mobileLayout = computed(() => store.mobileLayout);
 let updatedFromServer = false;
+// Last config received from the server, used to tell whether a local edit
+// still matches the selected preset.
+let serverDSPConfig: DSPConfig | undefined;
 let localConfigGeneration = 0;
 let applyRequestId = 0;
 let playerLoadRequestId = 0;
@@ -796,7 +800,12 @@ watch(
     if (newVal) {
       localConfigGeneration += 1;
       if (props.playerId) markPlayerOperation(props.playerId);
-      newVal.preset_id = null;
+      if (
+        newVal.preset_id &&
+        (!serverDSPConfig || !areDSPSettingsEqual(newVal, serverDSPConfig))
+      ) {
+        newVal.preset_id = null;
+      }
       debouncedSave(newVal);
     }
   },
@@ -809,11 +818,13 @@ function setServerDSPConfig(
 ): void {
   if (playerId) markPlayerOperation(playerId);
   updatedFromServer = true;
+  serverDSPConfig = structuredClone(config);
   dsp.value = structuredClone(config);
 }
 
 function clearServerDSPConfig(): void {
   updatedFromServer = true;
+  serverDSPConfig = undefined;
   dsp.value = undefined;
 }
 
