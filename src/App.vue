@@ -1,10 +1,6 @@
 <template>
   <Toaster rich-colors close-button />
 
-  <!-- Onboarding opens as a modal over whichever layout is showing, so a fresh
-       admin or a new member is met by it wherever the app lands them -->
-  <OnboardingDialog v-if="showMainApp || firstRun" />
-
   <!-- Login screen (when not authenticated). On a fresh server's first run
        there is no account to sign in with until the setup wizard has made
        one, so the sign-in waits for that account and stays out of sight
@@ -20,6 +16,10 @@
 
   <!-- Main app (when authenticated and service worker ready for remote) -->
   <router-view v-else-if="showMainApp" />
+
+  <!-- Onboarding opens as a modal over whichever layout is showing, so a fresh
+       admin or a new member is met by it wherever the app lands them -->
+  <OnboardingDialog v-if="showMainApp || firstRun" />
 
   <!-- Kiosk mode leaves Home Assistant no chrome of its own, and this screen
        carries none of ours: a server that is away or restarting would strand
