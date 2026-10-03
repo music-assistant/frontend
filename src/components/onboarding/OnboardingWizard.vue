@@ -214,6 +214,9 @@ const leaveStep = async (options?: StepLeaveOptions) =>
 // stands aside while it is, so a choice and a Next cannot both move on
 const stepBusy = computed(() => stepRef.value?.busy ?? false);
 
+// steps the user has been past, so a review stays ticked after going back
+const passedSteps = ref(new Set<OnboardingStepId>());
+
 const currentIndex = computed(() =>
   steps.value.findIndex((step) => step.id === currentId.value),
 );
@@ -221,14 +224,14 @@ const currentStep = computed(() => steps.value[currentIndex.value]);
 const canGoBack = computed(() => currentIndex.value > 0);
 const stepNumber = computed(() => Math.max(currentIndex.value + 1, 1));
 // the progress list, done state and all, in the same order the wizard walks
-// a review has nothing to tick off, so one that is behind the current step
-// counts as looked over
+// a review has nothing to tick off, so one the user has been past counts as
+// looked over
 const progressSteps = computed(() =>
-  steps.value.map((step, index) => ({
+  steps.value.map((step) => ({
     id: step.id,
     done:
       step.isDone(ctx.value) ||
-      (step.kind === "review" && index < currentIndex.value),
+      (step.kind === "review" && passedSteps.value.has(step.id)),
   })),
 );
 const stepTitle = computed(() =>
@@ -373,6 +376,13 @@ watch(currentId, (id) => {
   if (id) requestedStep.value = id;
 });
 const removeStepGuard = setStepGuard(() => leaveStep({ pausing: true }));
+
+watch(currentId, (_, previous) => {
+  for (const step of steps.value.slice(0, currentIndex.value)) {
+    passedSteps.value.add(step.id);
+  }
+  if (previous) passedSteps.value.add(previous);
+});
 
 // Leaving the welcome is what counts as having been welcomed, whether the
 // member answered the question, walked past it or closed the modal: nobody is

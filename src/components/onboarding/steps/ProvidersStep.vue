@@ -11,8 +11,8 @@
           size="sm"
           data-testid="onboarding-configured-provider"
         >
-          <ItemMedia>
-            <ProviderIcon :domain="provider.domain" :size="32" />
+          <ItemMedia variant="icon">
+            <ProviderIcon :domain="provider.domain" :size="20" />
           </ItemMedia>
           <ItemContent>
             <ItemTitle>{{ provider.name }}</ItemTitle>

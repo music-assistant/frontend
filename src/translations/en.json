@@ -2739,6 +2739,8 @@
         "still_to_do": "Still to do",
         "all_done": "Everything on the list is set up.",
         "players_count": "{count} player | {count} players",
+        "music_sources_count": "{count} music source | {count} music sources",
+        "plugins_count": "{count} plugin | {count} plugins",
         "run_again": "Run the setup wizard again",
         "paused_title": "Setup paused",
         "paused_text": "Pick up where you left off, now or later from the settings.",

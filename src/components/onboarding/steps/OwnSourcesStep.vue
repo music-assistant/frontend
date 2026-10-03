@@ -18,8 +18,8 @@
             size="sm"
             data-testid="onboarding-own-source"
           >
-            <ItemMedia>
-              <ProviderIcon :domain="source.domain" :size="32" />
+            <ItemMedia variant="icon">
+              <ProviderIcon :domain="source.domain" :size="20" />
             </ItemMedia>
             <ItemContent>
               <ItemTitle>{{ sourceName(source) }}</ItemTitle>
