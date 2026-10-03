@@ -2064,6 +2064,11 @@ export interface AIRadioSectionConstraints {
   max_chars?: number;
 }
 
+export interface AIRadioRssFeed {
+  url: string;
+  max_articles?: number;
+}
+
 export interface AIRadioSection {
   id: string;
   name: string;
@@ -2071,6 +2076,7 @@ export interface AIRadioSection {
   prompt: string;
   web_search?: AIRadioWebSearchMode;
   constraints?: AIRadioSectionConstraints;
+  rss_feeds?: AIRadioRssFeed[];
   cover_image?: string;
 }
 

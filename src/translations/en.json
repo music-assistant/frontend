@@ -1913,6 +1913,7 @@
                 "web_search_mode": "Web Search Mode",
                 "character_limit": "Character Limit",
                 "prompt": "Prompt",
+                "rss_feeds": "RSS feeds",
                 "instructions": "Host and Program Instructions",
                 "shuffle_playlist_tracks": "Shuffle Playlist Tracks",
                 "voice": "Voice",
@@ -2069,7 +2070,13 @@
                 "option_value": "Option value",
                 "option_value_placeholder": "e.g. en_US-lessac-medium",
                 "add_option": "Add option",
-                "remove_option": "Remove option"
+                "remove_option": "Remove option",
+                "rss_feeds_help": "Feeds listed here are fetched at render time.",
+                "rss_feed_url": "Feed URL",
+                "rss_feed_url_placeholder": "https:\/\/example.com\/feed.xml",
+                "rss_feed_max_articles": "Max articles",
+                "rss_feed_add": "Add feed",
+                "rss_feed_remove": "Remove feed"
             },
             "hosts": {
                 "title": "Hosts",

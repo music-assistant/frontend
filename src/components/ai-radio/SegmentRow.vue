@@ -156,6 +156,58 @@
         </div>
       </div>
 
+      <div class="flex flex-col gap-1.5">
+        <Label>{{ $t("providers.ai_radio.fields.rss_feeds") }}</Label>
+        <p class="text-xs text-muted-foreground">
+          {{ $t("providers.ai_radio.customize.rss_feeds_help") }}
+        </p>
+        <div
+          v-for="(feed, index) in rssFeeds"
+          :key="index"
+          class="flex items-center gap-2"
+        >
+          <Input
+            :model-value="feed.url"
+            class="h-8 min-w-0 flex-1"
+            :placeholder="
+              $t('providers.ai_radio.customize.rss_feed_url_placeholder')
+            "
+            :aria-label="$t('providers.ai_radio.customize.rss_feed_url')"
+            @update:model-value="updateFeedUrl(index, String($event))"
+          />
+          <NumberField
+            :model-value="feed.max_articles ?? DEFAULT_RSS_MAX_ARTICLES"
+            class="w-20 shrink-0"
+            :min="RSS_MAX_ARTICLES_MIN"
+            :max="RSS_MAX_ARTICLES_MAX"
+            :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
+            :aria-label="
+              $t('providers.ai_radio.customize.rss_feed_max_articles')
+            "
+            @update:model-value="updateFeedMaxArticles(index, $event)"
+          >
+            <NumberFieldContent>
+              <NumberFieldInput class="h-8 text-xs" />
+            </NumberFieldContent>
+          </NumberField>
+          <Button
+            variant="ghost-icon"
+            size="icon-sm"
+            class="shrink-0 text-destructive hover:text-destructive"
+            :aria-label="$t('providers.ai_radio.customize.rss_feed_remove')"
+            @click="removeFeed(index)"
+          >
+            <Trash2 class="h-4 w-4" />
+          </Button>
+        </div>
+        <div>
+          <Button variant="outline" size="sm" @click="addFeed">
+            <Plus class="h-4 w-4" />
+            {{ $t("providers.ai_radio.customize.rss_feed_add") }}
+          </Button>
+        </div>
+      </div>
+
       <div class="flex justify-end">
         <Button
           variant="outline"
@@ -192,14 +244,20 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  DEFAULT_RSS_MAX_ARTICLES,
   playsRuleLabel,
+  RSS_MAX_ARTICLES_MAX,
+  RSS_MAX_ARTICLES_MIN,
   type PlaysRule,
   type ShowSegment,
 } from "@/helpers/ai_radio";
 import { copyToClipboard } from "@/helpers/utils";
-import type { AIRadioWebSearchMode } from "@/plugins/api/interfaces";
+import type {
+  AIRadioRssFeed,
+  AIRadioWebSearchMode,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Check, ChevronDown, ChevronUp, Copy, Trash2 } from "@lucide/vue";
+import { Check, ChevronDown, ChevronUp, Copy, Plus, Trash2 } from "@lucide/vue";
 import { computed, onUnmounted, ref } from "vue";
 import { toast } from "vue-sonner";
 
@@ -209,6 +267,7 @@ const PROMPT_PLACEHOLDERS = [
   "<prev_songinfo>",
   "<timestamp>",
   "<weather_hourly>",
+  "<rss_feed>",
 ];
 
 const props = defineProps<{
@@ -317,6 +376,43 @@ const maxChars = computed({
   set: (value: number) =>
     emit("update", { ...props.segment, maxChars: Math.max(0, value) }),
 });
+
+const rssFeeds = computed<AIRadioRssFeed[]>(() => props.segment.rssFeeds ?? []);
+
+function emitFeeds(feeds: AIRadioRssFeed[]) {
+  emit("update", { ...props.segment, rssFeeds: feeds });
+}
+
+function addFeed() {
+  emitFeeds([
+    ...rssFeeds.value,
+    { url: "", max_articles: DEFAULT_RSS_MAX_ARTICLES },
+  ]);
+}
+
+function removeFeed(index: number) {
+  emitFeeds(rssFeeds.value.filter((_, i) => i !== index));
+}
+
+function updateFeedUrl(index: number, url: string) {
+  emitFeeds(
+    rssFeeds.value.map((feed, i) => (i === index ? { ...feed, url } : feed)),
+  );
+}
+
+function updateFeedMaxArticles(index: number, value: number | undefined) {
+  const count = Number.isFinite(value)
+    ? Math.min(
+        RSS_MAX_ARTICLES_MAX,
+        Math.max(RSS_MAX_ARTICLES_MIN, Math.round(value as number)),
+      )
+    : DEFAULT_RSS_MAX_ARTICLES;
+  emitFeeds(
+    rssFeeds.value.map((feed, i) =>
+      i === index ? { ...feed, max_articles: count } : feed,
+    ),
+  );
+}
 
 const playsKind = computed({
   get: () => props.segment.plays.kind,
