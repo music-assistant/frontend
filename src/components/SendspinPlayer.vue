@@ -496,8 +496,8 @@ function registerMediaSessionActionHandlers(): void {
 }
 
 function loadSavedVolume(): number {
-  const saved = Number(localStorage.getItem(VOLUME_STORAGE_KEY) ?? NaN);
-  return Number.isFinite(saved) ? Math.min(100, Math.max(0, saved)) : 100;
+  const saved = parseInt(localStorage.getItem(VOLUME_STORAGE_KEY) ?? "", 10);
+  return isNaN(saved) ? 100 : Math.min(100, Math.max(0, saved));
 }
 </script>
 
