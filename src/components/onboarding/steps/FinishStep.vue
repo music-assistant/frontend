@@ -19,12 +19,8 @@
           </ItemMedia>
           <ItemContent>
             <ItemTitle>{{ $t(`onboarding.steps.${step.id}.title`) }}</ItemTitle>
-            <ItemDescription v-if="step.id === 'players' && playerCount > 0">
-              {{
-                $t("onboarding.players_count", playerCount, {
-                  named: { count: playerCount },
-                })
-              }}
+            <ItemDescription v-if="countLabels[step.id]">
+              {{ countLabels[step.id] }}
             </ItemDescription>
             <!-- the welcome asked one thing; the summary says what came of it -->
             <ItemDescription
@@ -113,12 +109,17 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
-import { useOnboarding } from "@/composables/useOnboarding";
+import {
+  configuredProviders,
+  useOnboarding,
+} from "@/composables/useOnboarding";
 import {
   experienceOf,
   isTodo,
   type OnboardingStepId,
 } from "@/helpers/onboarding";
+import { ProviderType } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { ChevronRight, Circle, CircleCheck, Route } from "@lucide/vue";
 import { computed } from "vue";
 
@@ -159,7 +160,19 @@ const done = computed(() =>
       (step.id !== "welcome" || expertMode.value != null),
   ),
 );
-const playerCount = computed(() => ctx.value.playerCount);
+const countLabel = (key: string, count: number) =>
+  count > 0 ? $t(key, count, { named: { count } }) : undefined;
+const countLabels = computed<Partial<Record<OnboardingStepId, string>>>(() => ({
+  players: countLabel("onboarding.players_count", ctx.value.playerCount),
+  music_sources: countLabel(
+    "onboarding.music_sources_count",
+    configuredProviders(ProviderType.MUSIC).length,
+  ),
+  plugins: countLabel(
+    "onboarding.plugins_count",
+    configuredProviders(ProviderType.PLUGIN).length,
+  ),
+}));
 
 const isMemberSummary = computed(() => props.stepId === "all_set");
 // a member set nothing up: what their summary looks back at is the answer they
