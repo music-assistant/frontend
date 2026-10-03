@@ -2678,6 +2678,8 @@
         "still_to_do": "Still to do",
         "all_done": "Everything on the list is set up.",
         "players_count": "{count} player | {count} players",
+        "music_sources_count": "{count} music source | {count} music sources",
+        "plugins_count": "{count} plugin | {count} plugins",
         "run_again": "Run the setup wizard again",
         "add_member": "Add a user",
         "just_you_so_far": "Just you so far.",

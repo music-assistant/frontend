@@ -13,11 +13,11 @@
           size="sm"
           data-testid="onboarding-music-source"
         >
-          <ItemMedia>
+          <ItemMedia variant="icon">
             <!-- the name right next to it already says which source it is -->
             <ProviderIcon
               :domain="source.domain"
-              :size="32"
+              :size="20"
               aria-hidden="true"
             />
           </ItemMedia>
