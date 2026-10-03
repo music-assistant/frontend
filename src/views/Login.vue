@@ -1911,7 +1911,17 @@ const handleAuthenticationError = (error: unknown) => {
   }
 
   // Transform technical error messages into user-friendly ones
-  if (
+  const retryAfter = errorMessage.match(
+    /Too many failed attempts.*?(\d+) seconds/,
+  )?.[1];
+  if (errorMessage.includes("User account is disabled")) {
+    errorMessage = t(
+      "login.error_account_disabled",
+      "This account is disabled. Ask an admin to enable it.",
+    );
+  } else if (retryAfter) {
+    errorMessage = t("login.error_too_many_attempts", [retryAfter]);
+  } else if (
     errorMessage.includes("Invalid credentials") ||
     errorMessage.includes("Invalid username") ||
     errorMessage.includes("Invalid password") ||
