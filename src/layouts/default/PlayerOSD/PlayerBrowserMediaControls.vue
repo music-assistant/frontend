@@ -12,6 +12,11 @@
 // First second of this file has an inaudible 15Hz tone (-64dB), rest is silent.
 // We only play the tone once at the start to ensure that the notification is shown.
 import audio from "@/assets/almost_silent.mp3";
+import {
+  SKIP_BACK_SECONDS,
+  SKIP_FORWARD_SECONDS,
+  useSkipControls,
+} from "@/composables/useSkipControls";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import api from "@/plugins/api";
@@ -99,6 +104,7 @@ const lastSeekPosTimeout = function () {
 };
 
 useMediaBrowserMetaData();
+const { showSkip } = useSkipControls();
 
 const seekHandler = function (
   evt: MediaSessionActionDetails,
@@ -108,7 +114,16 @@ const seekHandler = function (
   if (evt.action === "seekto" && evt.seekTime != null) {
     to = evt.seekTime;
   } else if (evt.action === "seekforward" || evt.action === "seekbackward") {
-    const offset = evt.seekOffset || 10;
+    const offset = evt.seekOffset || defaultSeekOffset(evt.action);
+    const queueId = store.activePlayerQueue?.queue_id;
+    // the server adds up quick presses and keeps the jump within the item
+    if (showSkip.value && queueId) {
+      api.queueCommandSkip(
+        queueId,
+        evt.action === "seekbackward" ? -offset : offset,
+      );
+      return;
+    }
     const elapsed_time = lastSeekPos ?? resolveActiveElapsedTime(player_id);
     if (elapsed_time == null) return;
     if (evt.action === "seekbackward") {
@@ -160,6 +175,12 @@ onMounted(() => {
     });
   }
 });
+
+// jump the same amounts as the skip buttons while they are shown
+function defaultSeekOffset(action: MediaSessionAction): number {
+  if (!showSkip.value) return 10;
+  return action === "seekbackward" ? SKIP_BACK_SECONDS : SKIP_FORWARD_SECONDS;
+}
 </script>
 <style lang="css">
 .audio-control {

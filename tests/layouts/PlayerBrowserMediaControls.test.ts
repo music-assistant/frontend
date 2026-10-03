@@ -1,6 +1,6 @@
 import PlayerBrowserMediaControls from "@/layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { PlaybackState } from "@/plugins/api/interfaces";
+import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -22,9 +22,11 @@ const {
   apiMock,
   storeMock,
   mockPlayerCommandSeek,
+  mockQueueCommandSkip,
   mockUseMediaBrowserMetaData,
 } = vi.hoisted(() => {
   const mockPlayerCommandSeek = vi.fn<MusicAssistantApi["playerCommandSeek"]>();
+  const mockQueueCommandSkip = vi.fn<MusicAssistantApi["queueCommandSkip"]>();
   return {
     apiMock: {
       players: {} as Record<string, MockPlayer>,
@@ -39,11 +41,18 @@ const {
       playerCommandPrevious:
         vi.fn<MusicAssistantApi["playerCommandPrevious"]>(),
       playerCommandSeek: mockPlayerCommandSeek,
+      queueCommandSkip: mockQueueCommandSkip,
+      supportsAccurateSkip: false,
     },
     storeMock: {
       activePlayer: undefined as MockPlayer | undefined,
+      activePlayerQueue: undefined as { queue_id: string } | undefined,
+      curQueueItem: undefined as
+        | { media_item: { media_type: MediaType } }
+        | undefined,
     },
     mockPlayerCommandSeek,
+    mockQueueCommandSkip,
     mockUseMediaBrowserMetaData: vi.fn(),
   };
 });
@@ -97,7 +106,11 @@ describe("PlayerBrowserMediaControls seek handling", () => {
     // same player up in api.players.
     apiMock.players = { "player-1": { player_id: "player-1" } };
     storeMock.activePlayer = apiMock.players["player-1"];
+    storeMock.curQueueItem = undefined;
+    storeMock.activePlayerQueue = undefined;
+    apiMock.supportsAccurateSkip = false;
     mockPlayerCommandSeek.mockClear();
+    mockQueueCommandSkip.mockClear();
     mockUseMediaBrowserMetaData.mockClear();
   });
 
@@ -155,6 +168,64 @@ describe("PlayerBrowserMediaControls seek handling", () => {
     wrapper.unmount();
   });
 
+  it("keeps the 10 second jump for an audiobook on an older server", () => {
+    seedPlayingQueue({ elapsed_time: 30, secondsAgo: 0, playback_speed: 1 });
+    storeMock.curQueueItem = {
+      media_item: { media_type: MediaType.AUDIOBOOK },
+    };
+
+    const wrapper = mount(PlayerBrowserMediaControls);
+    invokeAction("seekforward");
+
+    expect(mockPlayerCommandSeek).toHaveBeenCalledWith("player-1", 40);
+    expect(mockQueueCommandSkip).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  // audiobooks and podcasts skip the same amounts as the skip buttons
+  it.each([
+    { mediaType: MediaType.AUDIOBOOK, action: "seekforward", seconds: 30 },
+    { mediaType: MediaType.AUDIOBOOK, action: "seekbackward", seconds: -10 },
+    {
+      mediaType: MediaType.PODCAST_EPISODE,
+      action: "seekforward",
+      seconds: 30,
+    },
+  ] as const)(
+    "skips $seconds seconds on a $action for a $mediaType",
+    ({ mediaType, action, seconds }) => {
+      seedSkipCapableQueue(mediaType);
+
+      const wrapper = mount(PlayerBrowserMediaControls);
+      invokeAction(action);
+
+      expect(mockQueueCommandSkip).toHaveBeenCalledWith("queue", seconds);
+      expect(mockPlayerCommandSeek).not.toHaveBeenCalled();
+      wrapper.unmount();
+    },
+  );
+
+  it("keeps the offset the OS sends for an audiobook", () => {
+    seedSkipCapableQueue(MediaType.AUDIOBOOK);
+
+    const wrapper = mount(PlayerBrowserMediaControls);
+    invokeAction("seekforward", { seekOffset: 5 });
+
+    expect(mockQueueCommandSkip).toHaveBeenCalledWith("queue", 5);
+    wrapper.unmount();
+  });
+
+  it("keeps seeking a track by 10 seconds on a server with accurate skip", () => {
+    seedSkipCapableQueue(MediaType.TRACK);
+
+    const wrapper = mount(PlayerBrowserMediaControls);
+    invokeAction("seekforward");
+
+    expect(mockPlayerCommandSeek).toHaveBeenCalledWith("player-1", 40);
+    expect(mockQueueCommandSkip).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
   it("does not seek when no timing source is available", () => {
     const wrapper = mount(PlayerBrowserMediaControls);
     invokeAction("seekforward", { seekOffset: 10 });
@@ -186,6 +257,13 @@ function seedPlayingQueue(timing: {
     elapsed_time: timing.elapsed_time,
     elapsed_time_last_updated: ANCHOR - timing.secondsAgo,
   };
+}
+
+function seedSkipCapableQueue(mediaType: MediaType): void {
+  seedPlayingQueue({ elapsed_time: 30, secondsAgo: 0, playback_speed: 1 });
+  apiMock.supportsAccurateSkip = true;
+  storeMock.activePlayerQueue = { queue_id: "queue" };
+  storeMock.curQueueItem = { media_item: { media_type: mediaType } };
 }
 
 function invokeAction(
