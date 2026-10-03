@@ -1,9 +1,12 @@
 <template>
   <Dialog :open="active" @update:open="onOpenChange">
-    <!-- fixed height so the header and Next stay put when a step changes size;
-         the wizard scrolls the step inside it -->
+    <!-- one layer below the other dialogs, so a setup flow or confirmation
+         opened from the wizard shows on top of it. Fixed height so the header
+         and Next stay put when a step changes size; the wizard scrolls the
+         step inside it -->
     <DialogContent
-      class="flex h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden p-4 sm:h-[min(84dvh,44rem)] sm:max-w-[calc(100%-2rem)] sm:p-6 lg:max-w-3xl"
+      class="z-[9998] flex h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden p-4 sm:h-[min(84dvh,44rem)] sm:max-w-[calc(100%-2rem)] sm:p-6 lg:max-w-3xl"
+      overlay-class="z-[9998]"
       :show-close-button="ctx.isMember"
       data-testid="onboarding-modal"
       @escape-key-down="onDismissAttempt"

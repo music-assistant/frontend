@@ -201,7 +201,7 @@
           variant="ghost"
           size="icon-sm"
           :class="{ '-ml-1': showGroupControl || canPlayPause }"
-          :disabled="!player.available"
+          :disabled="menuDisabled"
           :aria-label="$t('tooltip.more_options')"
           @click.stop="openPlayerMenu"
         >
@@ -239,6 +239,7 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { getSetupRequiredPlayerMenuItems } from "@/helpers/player_settings_actions";
 import {
   canEditPlayerGroup,
   getPlayerDisplayName,
@@ -255,7 +256,9 @@ import {
   type Player,
   PLAYER_CONTROL_NONE,
   PlayerType,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
@@ -301,6 +304,14 @@ const playerQueue = computed(() => resolvePlayerQueue(props.player));
 // a set-up audio input can't be selected for playback; its row only informs
 const isInformationalSource = computed(
   () => props.player.type === PlayerType.SOURCE && !props.player.needs_setup,
+);
+
+// a player that still needs setup can't play yet, so its menu only sets it up
+// and manages it, which takes a role that may change player settings
+const menuDisabled = computed(() =>
+  props.player.needs_setup
+    ? !authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)
+    : !props.player.available,
 );
 
 const artworkUrl = computed(() => {
@@ -428,12 +439,14 @@ watch(
 
 function openPlayerMenu(event: Event) {
   event.stopPropagation();
-  if (!props.player.available) return;
+  if (menuDisabled.value) return;
   const position = getEventPosition(event);
   eventbus.emit("contextmenu", {
-    items: getPlayerMenuItems(props.player, playerQueue.value, {
-      context: "player",
-    }),
+    items: props.player.needs_setup
+      ? getSetupRequiredPlayerMenuItems(props.player)
+      : getPlayerMenuItems(props.player, playerQueue.value, {
+          context: "player",
+        }),
     posX: position.x,
     posY: position.y,
   });
