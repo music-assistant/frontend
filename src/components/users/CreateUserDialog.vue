@@ -1,7 +1,7 @@
 <template>
   <Dialog v-model:open="isOpen">
-    <DialogContent class="max-h-[70vh] flex flex-col p-0">
-      <DialogHeader class="px-6 pt-6 pb-4">
+    <DialogContent class="max-h-[90vh] flex flex-col p-0">
+      <DialogHeader class="px-6 pt-6 pb-4 text-left">
         <DialogTitle>{{ $t("auth.create_user") }}</DialogTitle>
       </DialogHeader>
       <div ref="scrollContainer" class="flex-1 overflow-y-auto px-6">

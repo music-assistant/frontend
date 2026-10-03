@@ -1,4 +1,5 @@
-import { ProviderType } from "@/plugins/api/interfaces";
+import { getProviderStatusTranslationKey } from "@/helpers/provider_config";
+import { ProviderType, type ProviderStatus } from "@/plugins/api/interfaces";
 
 /**
  * Step model and orchestration for the onboarding wizard.
@@ -133,6 +134,11 @@ const onMemberTrack = (ctx: OnboardingContext) => ctx.isMember;
  * — and never skipped over either, which is what the wizard reads this for.
  */
 export const isTodo = (step: OnboardingStep): boolean => step.kind === "step";
+
+export const attentionLabelKey = (status: ProviderStatus | null) =>
+  status
+    ? getProviderStatusTranslationKey(status)
+    : "onboarding.needs_attention";
 
 /** Both tracks, each in its base order. */
 export const ONBOARDING_STEPS: readonly OnboardingStep[] = [

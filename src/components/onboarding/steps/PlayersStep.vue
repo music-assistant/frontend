@@ -1,5 +1,5 @@
 <template>
-  <section class="flex flex-col gap-4">
+  <section class="flex min-h-0 flex-col gap-4">
     <!-- with players to act on, the description says what can be done to
          them; without, it says what finds them -->
     <p class="text-muted-foreground text-sm">
@@ -12,30 +12,39 @@
 
     <!-- the player providers that are set up, so what "add more" adds to is in
          view, and a provider that found nothing yet still shows for its work -->
-    <div v-if="providers.length > 0" class="flex flex-wrap gap-2">
-      <Badge
-        v-for="provider in providers"
+    <p
+      v-if="providers.length > 0"
+      class="text-muted-foreground flex flex-wrap items-center gap-y-1 text-sm"
+    >
+      <span class="pr-3">{{
+        $t("onboarding.steps.players.discovered_by")
+      }}</span>
+      <span
+        v-for="(provider, index) in providers"
         :key="provider.instance_id"
-        variant="outline"
-        class="gap-1.5 py-1"
+        class="text-foreground inline-flex items-center gap-1.5 px-3 first:pl-0 last:pr-0"
+        :class="{ 'border-border border-r': index < providers.length - 1 }"
         data-testid="onboarding-player-provider"
       >
         <ProviderIcon :domain="provider.domain" :size="16" aria-hidden="true" />
         {{ provider.name }}
         <!-- a provider that is set up but switched off or broken is flagged -->
-        <TriangleAlert
+        <span
           v-if="provider.needsAttention"
-          class="text-muted-foreground size-3.5"
-          :aria-label="$t('onboarding.needs_attention')"
-          :title="$t('onboarding.needs_attention')"
-        />
-      </Badge>
-    </div>
+          :title="$t(attentionLabelKey(provider.status))"
+        >
+          <TriangleAlert
+            class="text-muted-foreground size-3.5"
+            :aria-label="$t(attentionLabelKey(provider.status))"
+          />
+        </span>
+      </span>
+    </p>
 
     <!-- a minimum height the empty state fits in, so the step does not jump
          as the first players turn up, and a live region so a player that was
          just found is announced -->
-    <div class="min-h-40" aria-live="polite">
+    <ScrollFade class="min-h-40" aria-live="polite">
       <ItemGroup v-if="players.length > 0" class="gap-2">
         <DiscoveredPlayerItem
           v-for="player in players"
@@ -69,7 +78,7 @@
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
-    </div>
+    </ScrollFade>
 
     <!-- the picker adds a provider either way; only where nothing is set up
          yet, and the hint above has just said what a provider is, is it named -->
@@ -97,8 +106,8 @@
 
 <script setup lang="ts">
 import DiscoveredPlayerItem from "@/components/onboarding/DiscoveredPlayerItem.vue";
+import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -113,7 +122,7 @@ import {
   configuredProviders,
   discoveredPlayers,
 } from "@/composables/useOnboarding";
-import type { OnboardingStepId } from "@/helpers/onboarding";
+import { attentionLabelKey, type OnboardingStepId } from "@/helpers/onboarding";
 import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";

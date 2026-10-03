@@ -59,7 +59,10 @@
          players list filtered down to them. -->
     <Alert
       v-if="
-        canConfigurePlayers && showSetupPrompt && playersNeedingSetup.length > 0
+        canConfigurePlayers &&
+        showSetupPrompt &&
+        !onboardingActive &&
+        playersNeedingSetup.length > 0
       "
       variant="warning"
       class="mx-7 mb-6 mt-4 flex w-auto items-center gap-3 py-3 pl-4 pr-3 [&>svg]:translate-y-0"
@@ -111,6 +114,7 @@ import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useOnboarding } from "@/composables/useOnboarding";
 import { api } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -135,6 +139,7 @@ const canConfigurePlayers = computed(() =>
   authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
 );
 const showSetupPrompt = ref(true);
+const { active: onboardingActive } = useOnboarding();
 
 const playersNeedingSetup = computed(() =>
   Object.values(api.players).filter(

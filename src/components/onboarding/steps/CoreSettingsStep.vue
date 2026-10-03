@@ -44,6 +44,7 @@
         <ItemActions v-if="address.url">
           <Badge
             :variant="CHECK_BADGES[address.check].variant"
+            :class="CHECK_BADGES[address.check].class"
             :data-check="address.check"
             role="status"
             aria-live="polite"
@@ -273,15 +274,28 @@ type CheckState = AddressCheck | "checking";
 /** How each state of an address check is shown. */
 const CHECK_BADGES: Record<
   CheckState,
-  { variant: BadgeVariants["variant"]; icon: Component; iconClass?: string }
+  {
+    variant: BadgeVariants["variant"];
+    class?: string;
+    icon: Component;
+    iconClass?: string;
+  }
 > = {
   checking: {
     variant: "outline",
     icon: markRaw(LoaderCircle),
     iconClass: "animate-spin",
   },
-  reachable: { variant: "default", icon: markRaw(CircleCheck) },
-  unreachable: { variant: "destructive", icon: markRaw(CircleAlert) },
+  reachable: {
+    variant: "default",
+    class: "bg-primary/10 text-primary",
+    icon: markRaw(CircleCheck),
+  },
+  unreachable: {
+    variant: "default",
+    class: "bg-destructive/10 text-destructive",
+    icon: markRaw(CircleAlert),
+  },
   unchecked: { variant: "outline", icon: markRaw(CircleHelp) },
 };
 

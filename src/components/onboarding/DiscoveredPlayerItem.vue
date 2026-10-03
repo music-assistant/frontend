@@ -2,6 +2,7 @@
   <Item
     variant="outline"
     size="sm"
+    class="flex-nowrap"
     :class="{ 'opacity-60': !player.enabled }"
     data-testid="onboarding-player"
   >
@@ -10,7 +11,7 @@
     </ItemMedia>
     <!-- the rename field sits over the name and label rather than in their
          place, so the row keeps its height while the name is being edited -->
-    <ItemContent class="relative">
+    <ItemContent class="relative min-w-0">
       <ItemTitle :class="{ invisible: renaming }">{{ player.name }}</ItemTitle>
       <ItemDescription :class="{ invisible: renaming }">
         {{ player.providerLabel }}
@@ -32,24 +33,44 @@
     <ItemActions>
       <!-- a player that is switched on but not reachable says so; one that
            still has to be set up says that instead, as its setup is why -->
-      <CircleAlert
-        v-if="player.enabled && player.needsSetup"
-        class="size-4 text-amber-500"
-        :aria-label="$t('settings.player_needs_setup')"
+      <Button
+        v-if="player.enabled && player.needsSetup && canEdit"
+        variant="secondary"
+        size="sm"
         :title="$t('settings.player_needs_setup')"
-      />
-      <Hourglass
+        data-testid="onboarding-player-setup"
+        @click="startSetup"
+      >
+        <CircleAlert class="size-4 text-amber-500" aria-hidden="true" />
+        <span class="hidden sm:inline">{{ $t("settings.start_setup") }}</span>
+      </Button>
+      <span
+        v-else-if="player.enabled && player.needsSetup"
+        :title="$t('settings.player_needs_setup')"
+      >
+        <CircleAlert
+          class="size-4 text-amber-500"
+          :aria-label="$t('settings.player_needs_setup')"
+        />
+      </span>
+      <span
         v-else-if="player.enabled && !player.available"
-        class="text-muted-foreground size-4"
-        :aria-label="$t('settings.player_not_available')"
         :title="$t('settings.player_not_available')"
-      />
+      >
+        <Hourglass
+          class="text-muted-foreground size-4"
+          :aria-label="$t('settings.player_not_available')"
+        />
+      </span>
       <!-- the pencil keeps its place while the field is open, so the switch
-           next to it stays put -->
+           next to it stays put; no transition, or it is still hidden on the
+           frame the closing field hands focus back to it -->
       <Button
         v-if="canEdit"
+        ref="renameButton"
         variant="ghost"
         size="icon-xs"
+        class="transition-none"
         :class="{ invisible: renaming }"
         :aria-label="renameLabel"
         :title="renameLabel"
@@ -88,6 +109,7 @@ import {
   renamePlayer,
   setPlayerEnabled,
 } from "@/helpers/player_settings_actions";
+import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { CircleAlert, Hourglass, Pencil } from "@lucide/vue";
 import { computed, nextTick, ref } from "vue";
@@ -101,6 +123,7 @@ const props = defineProps<{
 const renaming = ref(false);
 const draftName = ref("");
 const renameInput = ref<InstanceType<typeof Input> | null>(null);
+const renameButton = ref<InstanceType<typeof Button> | null>(null);
 // the two saves are separate, so leaving the field by clicking the switch
 // commits the name and still flips the switch
 const savingName = ref(false);
@@ -123,8 +146,23 @@ const startRename = async function () {
   (renameInput.value?.$el as HTMLInputElement | undefined)?.select();
 };
 
-const cancelRename = function () {
+const startSetup = function () {
+  eventbus.emit("setupFlowDialog", {
+    kind: "player",
+    playerId: props.player.player_id,
+  });
+};
+
+// the field closing takes the focus with it, so it goes back to the pencil
+// rather than to the dialog
+const closeRename = async function () {
   renaming.value = false;
+  await nextTick();
+  (renameButton.value?.$el as HTMLElement | undefined)?.focus();
+};
+
+const cancelRename = function () {
+  void closeRename();
 };
 
 // Enter and leaving the field both keep what was typed; an empty field hands
@@ -137,14 +175,14 @@ const commitRename = async function () {
     name === props.player.customName ||
     (props.player.customName === null && name === props.player.name);
   if (unchanged) {
-    renaming.value = false;
+    await closeRename();
     return;
   }
   savingName.value = true;
   try {
     // a save that did not land keeps the field open to try again or cancel
     if (await renamePlayer(props.player.player_id, name)) {
-      renaming.value = false;
+      await closeRename();
     }
   } finally {
     savingName.value = false;
