@@ -4,6 +4,7 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import mitt, { Emitter } from "mitt";
 import {
   ConfigValueType,
+  Genre,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
@@ -42,6 +43,10 @@ export type DeleteGenreDialogEvent = {
 
 export type LinkGenreDialogEvent = {
   items: MediaItemType[];
+};
+
+export type GenreImageDialogEvent = {
+  genre: Genre;
 };
 
 export type DeleteConfirmationDialogEvent = {
@@ -131,6 +136,7 @@ export type Events = {
   deleteConfirmationDialog: DeleteConfirmationDialogEvent;
   playerGroupPlaybackDialog: PlayerGroupPlaybackDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
+  genreImageDialog: GenreImageDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
   migratePlaylistDialog: MigratePlaylistDialogEvent;
   playlistAccessDialog: PlaylistAccessDialogEvent;
