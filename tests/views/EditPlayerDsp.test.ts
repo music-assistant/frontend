@@ -197,7 +197,7 @@ describe("EditPlayerDsp preset identity", () => {
     );
   });
 
-  it("clears preset identity immediately on a top-level manual edit", async () => {
+  it("keeps preset identity when DSP is switched off and on", async () => {
     apiMock.getDSPConfig.mockResolvedValue(
       makeConfig({ preset_id: "preset-1" }),
     );
@@ -207,12 +207,48 @@ describe("EditPlayerDsp preset identity", () => {
     await wrapper.get(".dsp-switch").trigger("click");
     await nextTick();
 
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(apiMock.saveDSPConfig).toHaveBeenLastCalledWith(
+      "player-1",
+      expect.objectContaining({
+        enabled: false,
+        preset_id: "preset-1",
+      }),
+    );
+
+    await wrapper.get(".dsp-switch").trigger("click");
+    await nextTick();
+
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(apiMock.saveDSPConfig).toHaveBeenLastCalledWith(
+      "player-1",
+      expect.objectContaining({
+        enabled: true,
+        preset_id: "preset-1",
+      }),
+    );
+  });
+
+  it("clears preset identity immediately on a top-level manual edit", async () => {
+    apiMock.getDSPConfig.mockResolvedValue(
+      makeConfig({ preset_id: "preset-1" }),
+    );
+    const wrapper = await mountEditor();
+
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+    wrapper
+      .findAllComponents({ name: "DSPSlider" })[0]
+      .vm.$emit("update:modelValue", -3);
+    await nextTick();
+
     expect(selectedPresetBadge(wrapper)).toBeUndefined();
     await vi.advanceTimersByTimeAsync(2100);
     expect(apiMock.saveDSPConfig).toHaveBeenCalledWith(
       "player-1",
       expect.objectContaining({
-        enabled: false,
+        input_gain: -3,
         preset_id: null,
       }),
     );
