@@ -48,8 +48,7 @@ const {
       activePlayer: undefined as MockPlayer | undefined,
       activePlayerQueue: undefined as { queue_id: string } | undefined,
       curQueueItem: undefined as
-        | { media_item: { media_type: MediaType } }
-        | undefined,
+        { media_item: { media_type: MediaType } } | undefined,
     },
     mockPlayerCommandSeek,
     mockQueueCommandSkip,
