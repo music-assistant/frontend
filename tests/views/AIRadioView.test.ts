@@ -149,11 +149,11 @@ function trackDocumentListeners() {
 }
 
 /**
- * Records the status poll timers armed while a view runs.
+ * Records the long-running timers armed while a view runs.
  *
- * `pending()` reports the ones not cleared again, which is what a poll loop
- * still running boils down to. Poll delays start at 5s, well clear of the
- * short timeouts the components and the test harness arm themselves.
+ * `pending()` reports the ones not cleared again, i.e. what the view left
+ * behind. Only delays of 5s and up count, well clear of the short timeouts the
+ * components and the test harness arm themselves.
  */
 function trackPollTimers() {
   const POLL_DELAY_FLOOR_MS = 5000;
