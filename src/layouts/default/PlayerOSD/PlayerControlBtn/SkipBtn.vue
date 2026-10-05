@@ -60,6 +60,8 @@ const label = computed(() =>
 
 // stays enabled during a play action so quick repeated presses add up
 const isDisabled = computed(
-  () => !compProps.playerQueue?.active || !compProps.playerQueue.current_item,
+  () =>
+    !compProps.playerQueue?.active ||
+    !compProps.playerQueue.current_item?.duration,
 );
 </script>
