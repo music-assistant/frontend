@@ -8,7 +8,7 @@
     <SheetContent
       side="bottom"
       class="h-[85vh] flex flex-col p-0"
-      @open-auto-focus="onOpenAutoFocus"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
       <!-- right padding keeps the search box clear of the sheet's close button -->
       <SheetHeader class="flex-row items-center gap-3 border-b py-3 pl-4 pr-12">
@@ -157,6 +157,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { canEditPlaylistItems } from "@/helpers/playlist_access";
 import api from "@/plugins/api";
 import type {
@@ -361,11 +362,6 @@ const confirmNewPlaylist = async function () {
 
 const close = function () {
   show.value = false;
-};
-
-// on phones the keyboard would cover the list, so only focus search on desktop
-const onOpenAutoFocus = function (evt: Event) {
-  if (store.mobileLayout) evt.preventDefault();
 };
 
 /** Creates the playlist on the provider and adds the selected item(s) to it. */
