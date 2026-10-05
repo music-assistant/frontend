@@ -2,7 +2,6 @@ import PlayerControls from "@/layouts/default/PlayerOSD/PlayerControls.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import SkipBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBtn.vue";
-import api from "@/plugins/api";
 import {
   MediaType,
   type PlayableMediaItemType,
@@ -17,7 +16,6 @@ vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 
 vi.mock("@/plugins/api", () => {
   const api = {
-    supportsAccurateSkip: true,
     subscribe: vi.fn(() => () => {}),
     providers: {},
     players: {},
@@ -40,7 +38,6 @@ vi.mock("@/plugins/store", async () => {
   };
 });
 
-const mockApi = api as unknown as { supportsAccurateSkip: boolean };
 const mockStore = store as unknown as { curQueueItem?: QueueItem };
 
 function setPlaying(mediaType: MediaType) {
@@ -57,7 +54,6 @@ enableAutoUnmount(afterEach);
 
 afterEach(() => {
   mockStore.curQueueItem = undefined;
-  mockApi.supportsAccurateSkip = true;
 });
 
 describe("PlayerControls", () => {
@@ -80,18 +76,6 @@ describe("PlayerControls", () => {
 
   it("keeps shuffle and repeat for a track", () => {
     setPlaying(MediaType.TRACK);
-
-    const wrapper = mountControls();
-
-    expect(wrapper.findComponent(SkipBtn).exists()).toBe(false);
-    expect(wrapper.findComponent(ShuffleBtn).exists()).toBe(true);
-    expect(wrapper.findComponent(RepeatBtn).exists()).toBe(true);
-  });
-
-  // older servers skip inaccurately, so the buttons stay off there
-  it("keeps shuffle and repeat on a server without accurate skip", () => {
-    mockApi.supportsAccurateSkip = false;
-    setPlaying(MediaType.AUDIOBOOK);
 
     const wrapper = mountControls();
 

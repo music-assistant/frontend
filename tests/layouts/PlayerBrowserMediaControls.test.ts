@@ -42,7 +42,6 @@ const {
         vi.fn<MusicAssistantApi["playerCommandPrevious"]>(),
       playerCommandSeek: mockPlayerCommandSeek,
       queueCommandSkip: mockQueueCommandSkip,
-      supportsAccurateSkip: false,
     },
     storeMock: {
       activePlayer: undefined as MockPlayer | undefined,
@@ -107,7 +106,6 @@ describe("PlayerBrowserMediaControls seek handling", () => {
     storeMock.activePlayer = apiMock.players["player-1"];
     storeMock.curQueueItem = undefined;
     storeMock.activePlayerQueue = undefined;
-    apiMock.supportsAccurateSkip = false;
     mockPlayerCommandSeek.mockClear();
     mockQueueCommandSkip.mockClear();
     mockUseMediaBrowserMetaData.mockClear();
@@ -167,10 +165,10 @@ describe("PlayerBrowserMediaControls seek handling", () => {
     wrapper.unmount();
   });
 
-  it("keeps the 10 second jump for an audiobook on an older server", () => {
+  it("keeps the 10 second jump for a track", () => {
     seedPlayingQueue({ elapsed_time: 30, secondsAgo: 0, playback_speed: 1 });
     storeMock.curQueueItem = {
-      media_item: { media_type: MediaType.AUDIOBOOK },
+      media_item: { media_type: MediaType.TRACK },
     };
 
     const wrapper = mount(PlayerBrowserMediaControls);
@@ -260,7 +258,6 @@ function seedPlayingQueue(timing: {
 
 function seedSkipCapableQueue(mediaType: MediaType): void {
   seedPlayingQueue({ elapsed_time: 30, secondsAgo: 0, playback_speed: 1 });
-  apiMock.supportsAccurateSkip = true;
   storeMock.activePlayerQueue = { queue_id: "queue" };
   storeMock.curQueueItem = { media_item: { media_type: mediaType } };
 }

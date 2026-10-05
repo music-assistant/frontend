@@ -27,7 +27,6 @@ vi.mock("@/plugins/api", async () => {
       vi.fn<MusicAssistantApi["getPodcastEpisodeTranscript"]>(),
     playerCommandSeek: vi.fn<MusicAssistantApi["playerCommandSeek"]>(),
     playMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
-    supportsAccurateSkip: false,
   });
   return { api, default: api };
 });
@@ -206,7 +205,6 @@ interface TestStore {
 
 interface TestApi {
   getPodcastEpisodeTranscript: ReturnType<typeof vi.fn>;
-  supportsAccurateSkip: boolean;
   queues: Record<
     string,
     { queue_id: string; state: PlaybackState; active: boolean }
@@ -304,7 +302,6 @@ afterEach(async () => {
   testStore.curQueueItem = undefined;
   testApi.queues = {};
   testApi.queueElapsedTime = {};
-  testApi.supportsAccurateSkip = false;
   testApi.getPodcastEpisodeTranscript.mockReset();
 });
 
@@ -734,9 +731,7 @@ describe("PlayerFullscreen controls row", () => {
     mdAndUp: boolean,
   ): Promise<VueWrapper> {
     const { store } = await import("@/plugins/store");
-    const api = (await import("@/plugins/api")).default;
     const testStore = store as unknown as TestStore;
-    (api as unknown as TestApi).supportsAccurateSkip = true;
     testStore.activePlayer = { player_id: "p1", group_members: [] };
     testStore.curQueueItem = {
       media_item: { media_type: mediaType, metadata: {} },
