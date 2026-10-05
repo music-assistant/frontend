@@ -366,7 +366,7 @@ describe("AIRadioView editing rights", () => {
     expect(headings(wrapper)).toEqual(["Hosts", "Shows"]);
     expect(findButtonByText(wrapper, "Add host")).toBeTruthy();
     expect(findButtonByText(wrapper, "Add show")).toBeTruthy();
-    expect(findButtonByText(wrapper, "Go to Settings → Plugins")).toBeTruthy();
+    expect(findButtonByText(wrapper, "Go to Settings › Plugins")).toBeTruthy();
     expect(wrapper.find('[aria-label="More options"]').exists()).toBe(true);
     expect(requested("ai_radio/hosts/list")).toBe(true);
     expect(requested("ai_radio/hosts/presets/list")).toBe(true);
@@ -388,7 +388,7 @@ describe("AIRadioView editing rights", () => {
       expect(headings(wrapper)).toEqual(["Shows"]);
       expect(findButtonByText(wrapper, "Add show")).toBeUndefined();
       expect(
-        findButtonByText(wrapper, "Go to Settings → Plugins"),
+        findButtonByText(wrapper, "Go to Settings › Plugins"),
       ).toBeUndefined();
       expect(wrapper.find('[aria-label="More options"]').exists()).toBe(false);
       expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);
