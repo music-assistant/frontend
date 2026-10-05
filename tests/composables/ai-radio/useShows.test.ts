@@ -1,8 +1,7 @@
-import { useShows } from "@/composables/ai-radio/useShows";
-import api, { ConnectionState } from "@/plugins/api";
-import { store as storeModule } from "@/plugins/store";
+import type { store as storeModule } from "@/plugins/store";
 import { flushPromises } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
+import { reactive, ref } from "vue";
 
 const { sendCommand, subscribe, listeners } = vi.hoisted(() => {
   const listeners: Array<(event: unknown) => void> = [];
@@ -16,22 +15,6 @@ const { sendCommand, subscribe, listeners } = vi.hoisted(() => {
         if (index >= 0) listeners.splice(index, 1);
       };
     }),
-  };
-});
-
-vi.mock("@/plugins/api", async () => {
-  const { ref } = await import("vue");
-  return {
-    default: {
-      sendCommand,
-      subscribe,
-      getLibraryPlaylists: vi.fn(),
-      state: ref("initialized"),
-    },
-    ConnectionState: {
-      INITIALIZED: "initialized",
-      RECONNECTING: "reconnecting",
-    },
   };
 });
 
@@ -52,14 +35,38 @@ vi.mock("vue-sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
 }));
 
-vi.mock("@/plugins/store", async () => {
-  const { reactive } = await import("vue");
-  return { store: reactive({ enabledPlugins: new Set<string>() }) };
-});
-
-const store = storeModule as typeof storeModule & {
-  enabledPlugins: ReadonlySet<string>;
-};
+/** Imports the composable with fresh module state and makes ai_radio available. */
+async function setup() {
+  vi.resetModules();
+  sendCommand.mockReset();
+  subscribe.mockClear();
+  listeners.length = 0;
+  // fresh api and store objects, so modules imported by earlier tests stop reacting
+  vi.doMock("@/plugins/api", () => ({
+    default: {
+      sendCommand,
+      subscribe,
+      getLibraryPlaylists: vi.fn(),
+      state: ref("initialized"),
+    },
+    ConnectionState: {
+      INITIALIZED: "initialized",
+      RECONNECTING: "reconnecting",
+    },
+  }));
+  vi.doMock("@/plugins/store", () => ({
+    store: reactive({ enabledPlugins: new Set<string>() }),
+  }));
+  const store = (await import("@/plugins/store"))
+    .store as typeof storeModule & {
+    enabledPlugins: ReadonlySet<string>;
+  };
+  const { default: api, ConnectionState } = await import("@/plugins/api");
+  const { useShows } = await import("@/composables/ai-radio/useShows");
+  store.enabledPlugins = new Set(["ai_radio"]);
+  await flushPromises();
+  return { shows: useShows(), store, api, ConnectionState };
+}
 
 function emit(event: string) {
   for (const listener of listeners) {
@@ -67,11 +74,21 @@ function emit(event: string) {
   }
 }
 
+const runningSession = {
+  session_id: "s1",
+  station_id: "st1",
+  queue_id: null,
+  status: "running",
+  created_at: "2026-10-05T10:00:00",
+  started_at: null,
+  ended_at: null,
+  error: null,
+  last_render_error: null,
+};
+
 describe("useShows provider events", () => {
   it("ignores hints before anything was loaded", async () => {
-    sendCommand.mockResolvedValue({ sessions: [] });
-    store.enabledPlugins = new Set(["ai_radio"]);
-    await flushPromises();
+    await setup();
     expect(sendCommand).not.toHaveBeenCalled();
     expect(listeners).toHaveLength(1);
 
@@ -84,35 +101,25 @@ describe("useShows provider events", () => {
   });
 
   it("refetches the status on sessions_updated once it was loaded", async () => {
-    await useShows().loadStatus();
+    const { shows } = await setup();
+    sendCommand.mockResolvedValue({ sessions: [] });
+    await shows.loadStatus();
     sendCommand.mockClear();
-    sendCommand.mockResolvedValue({
-      sessions: [
-        {
-          session_id: "s1",
-          station_id: "st1",
-          queue_id: null,
-          status: "running",
-          created_at: "2026-10-05T10:00:00",
-          started_at: null,
-          ended_at: null,
-          error: null,
-          last_render_error: null,
-        },
-      ],
-    });
+    sendCommand.mockResolvedValue({ sessions: [runningSession] });
 
     emit("sessions_updated");
     await flushPromises();
 
     expect(sendCommand).toHaveBeenCalledTimes(1);
     expect(sendCommand).toHaveBeenCalledWith("ai_radio/status");
-    expect(useShows().sessions.value.map((s) => s.session_id)).toEqual(["s1"]);
+    expect(shows.sessions.value.map((s) => s.session_id)).toEqual(["s1"]);
   });
 
   it("refetches only the loaded caches after a reconnect", async () => {
-    sendCommand.mockClear();
+    const { shows, api, ConnectionState } = await setup();
     sendCommand.mockResolvedValue({ sessions: [] });
+    await shows.loadStatus();
+    sendCommand.mockClear();
 
     api.state.value = ConnectionState.RECONNECTING;
     await flushPromises();
@@ -127,9 +134,10 @@ describe("useShows provider events", () => {
   });
 
   it("refetches shows and sections on their hints, each on its own", async () => {
+    const { shows } = await setup();
     sendCommand.mockResolvedValue([]);
-    await useShows().loadShows();
-    await useShows().loadSections();
+    await shows.loadShows();
+    await shows.loadSections();
     sendCommand.mockClear();
 
     emit("stations_updated");
@@ -147,11 +155,21 @@ describe("useShows provider events", () => {
   });
 
   it("resubscribes once per availability flip", async () => {
+    const { shows, store } = await setup();
+    sendCommand.mockResolvedValue({ sessions: [] });
+    await shows.loadStatus();
+    sendCommand.mockResolvedValue([]);
+    await shows.loadShows();
+    await shows.loadSections();
+
     store.enabledPlugins = new Set();
     await flushPromises();
     expect(listeners).toHaveLength(0);
 
     sendCommand.mockClear();
+    sendCommand.mockImplementation(async (command: string) =>
+      command === "ai_radio/status" ? { sessions: [] } : [],
+    );
     store.enabledPlugins = new Set(["ai_radio"]);
     await flushPromises();
     expect(listeners).toHaveLength(1);

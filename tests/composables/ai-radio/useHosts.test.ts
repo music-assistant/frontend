@@ -1,6 +1,3 @@
-import { useHosts } from "@/composables/ai-radio/useHosts";
-import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import api, { ConnectionState } from "@/plugins/api";
 import {
   EventType,
   PLAYER_CONTROL_NONE,
@@ -9,9 +6,10 @@ import {
   type Player,
   type PlayerQueue,
 } from "@/plugins/api/interfaces";
-import { store as storeModule } from "@/plugins/store";
+import type { store as storeModule } from "@/plugins/store";
 import { flushPromises } from "@vue/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { reactive, ref } from "vue";
 
 const { sendCommand, subscribe, listeners } = vi.hoisted(() => {
   const listeners: Array<(event: unknown) => void> = [];
@@ -25,22 +23,6 @@ const { sendCommand, subscribe, listeners } = vi.hoisted(() => {
         if (index >= 0) listeners.splice(index, 1);
       };
     }),
-  };
-});
-
-vi.mock("@/plugins/api", async () => {
-  const { ref } = await import("vue");
-  return {
-    default: {
-      players: {},
-      sendCommand,
-      subscribe,
-      state: ref("initialized"),
-    },
-    ConnectionState: {
-      INITIALIZED: "initialized",
-      RECONNECTING: "reconnecting",
-    },
   };
 });
 
@@ -64,13 +46,6 @@ vi.mock("@/plugins/eventbus", () => ({
   eventbus: { emit: vi.fn() },
 }));
 
-// the store must be reactive here: the prefetch hangs off a watch on the
-// enabled plugins, which is exactly what this test exercises.
-vi.mock("@/plugins/store", async () => {
-  const { reactive } = await import("vue");
-  return { store: reactive({ enabledPlugins: new Set<string>() }) };
-});
-
 vi.mock("@/helpers/sleep_timer", () => ({
   getSleepTimerMenuItem: vi.fn(),
   sleepTimerActive: () => false,
@@ -86,11 +61,6 @@ vi.mock("@/composables/useAudioOverlay", () => ({
 vi.mock("vue-sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
-
-// the real store computes these; on the mock they are plain writable state
-const store = storeModule as typeof storeModule & {
-  enabledPlugins: ReadonlySet<string>;
-};
 
 // useShows subscribes too, so every hint goes to all listeners
 function emit(event: string) {
@@ -115,11 +85,53 @@ const host: AIRadioHost = {
   merge_section_id: "",
 };
 
-sendCommand.mockImplementation(async (command: string) => {
-  if (command === "ai_radio/hosts/list") return [host];
-  if (command === "ai_radio/queue_dj/status") return { kitchen: "host-1" };
-  return undefined;
-});
+/** Imports the composables with fresh module state; ai_radio is not available yet. */
+async function setup() {
+  vi.resetModules();
+  sendCommand.mockReset();
+  sendCommand.mockImplementation(async (command: string) => {
+    if (command === "ai_radio/hosts/list") return [host];
+    if (command === "ai_radio/queue_dj/status") return { kitchen: "host-1" };
+    return undefined;
+  });
+  subscribe.mockClear();
+  listeners.length = 0;
+  // fresh api and store objects, so modules imported by earlier tests stop reacting
+  vi.doMock("@/plugins/api", () => ({
+    default: {
+      players: {},
+      sendCommand,
+      subscribe,
+      state: ref("initialized"),
+    },
+    ConnectionState: {
+      INITIALIZED: "initialized",
+      RECONNECTING: "reconnecting",
+    },
+  }));
+  // the store must be reactive here: the prefetch hangs off a watch on the
+  // enabled plugins, which is exactly what these tests exercise.
+  vi.doMock("@/plugins/store", () => ({
+    store: reactive({ enabledPlugins: new Set<string>() }),
+  }));
+  // the real store computes these; on the mock they are plain writable state
+  const store = (await import("@/plugins/store"))
+    .store as typeof storeModule & {
+    enabledPlugins: ReadonlySet<string>;
+  };
+  const { default: api, ConnectionState } = await import("@/plugins/api");
+  const { useHosts } = await import("@/composables/ai-radio/useHosts");
+  return { useHosts, store, api, ConnectionState };
+}
+
+/** Like setup, with ai_radio available and the prefetch settled. */
+async function setupLoaded() {
+  const context = await setup();
+  context.store.enabledPlugins = new Set(["ai_radio"]);
+  await flushPromises();
+  sendCommand.mockClear();
+  return context;
+}
 
 const player = {
   player_id: "kitchen",
@@ -138,8 +150,17 @@ const queue = {
   items: 0,
 } as PlayerQueue;
 
+// the menu helper's module graph takes seconds to transform the first time, so
+// do that once here instead of inside a test's timeout
+beforeAll(async () => {
+  await setup();
+  await import("@/helpers/player_menu_items");
+}, 30_000);
+
 describe("useHosts queue dj prefetch", () => {
   it("warms the ai dj caches on provider availability, so the first menu open lists the hosts", async () => {
+    const { useHosts, store } = await setup();
+    const { getPlayerMenuItems } = await import("@/helpers/player_menu_items");
     // Nothing is seeded: whatever the menu renders comes from the prefetch.
     expect(useHosts().hosts.value).toEqual([]);
     expect(sendCommand).not.toHaveBeenCalled();
@@ -168,14 +189,12 @@ describe("useHosts queue dj prefetch", () => {
 
 describe("useHosts provider events", () => {
   it("refetches the queue dj map on a queue_dj_updated hint, so the menu shows another client's change", async () => {
-    store.enabledPlugins = new Set(["ai_radio"]);
-    await flushPromises();
+    const { useHosts } = await setupLoaded();
     expect(subscribe).toHaveBeenCalledWith(
       EventType.PROVIDER_EVENT,
       expect.any(Function),
       "ai_radio",
     );
-    sendCommand.mockClear();
 
     sendCommand.mockImplementation(async (command: string) => {
       if (command === "ai_radio/hosts/list") return [host];
@@ -191,7 +210,7 @@ describe("useHosts provider events", () => {
   });
 
   it("refetches the hosts on a hosts_updated hint", async () => {
-    sendCommand.mockClear();
+    await setupLoaded();
 
     emit("hosts_updated");
     await flushPromises();
@@ -201,7 +220,7 @@ describe("useHosts provider events", () => {
   });
 
   it("ignores hints it has no cache for", async () => {
-    sendCommand.mockClear();
+    await setupLoaded();
 
     emit("sessions_updated");
     emit("stations_updated");
@@ -213,6 +232,7 @@ describe("useHosts provider events", () => {
   });
 
   it("refetches the loaded caches once after a reconnect", async () => {
+    const { api, ConnectionState } = await setupLoaded();
     api.state.value = ConnectionState.RECONNECTING;
     await flushPromises();
     sendCommand.mockClear();
@@ -227,6 +247,8 @@ describe("useHosts provider events", () => {
   });
 
   it("drops the subscription when the plugin goes away", async () => {
+    const { store } = await setupLoaded();
+    expect(listeners.length).toBeGreaterThan(0);
     store.enabledPlugins = new Set();
     await flushPromises();
 
