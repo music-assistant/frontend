@@ -94,7 +94,7 @@ describe("trackAIRadioCache", () => {
   });
 
   it("refetches every tracked cache after a reconnect, through the latest loader", async () => {
-    const { trackAIRadioCache, state } = await setup();
+    const { trackAIRadioCache, state, store } = await setup();
     const staleLoader = loader();
     const loadHosts = loader();
     const loadStatus = vi.fn(async () => {
@@ -114,5 +114,13 @@ describe("trackAIRadioCache", () => {
     expect(staleLoader).not.toHaveBeenCalled();
     expect(loadHosts).toHaveBeenCalledTimes(1);
     expect(loadStatus).toHaveBeenCalledTimes(1);
+
+    // the plugin was disabled while the socket was down: its commands no longer exist
+    store.enabledPlugins = new Set();
+    state.value = "reconnecting";
+    await flushPromises();
+    state.value = "initialized";
+    await flushPromises();
+    expect(loadHosts).toHaveBeenCalledTimes(1);
   });
 });

@@ -36,11 +36,15 @@ export function trackAIRadioCache(
     { immediate: true },
   );
 
-  // hints emitted while the socket was down are lost
+  // hints emitted while the socket was down are lost; the plugin may be gone too
   watch(
     () => api.state.value,
     (state) => {
-      if (state === ConnectionState.INITIALIZED) refetchAll();
+      if (
+        state === ConnectionState.INITIALIZED &&
+        store.enabledPlugins.has("ai_radio")
+      )
+        refetchAll();
     },
   );
 }
