@@ -264,7 +264,7 @@
 
 <script setup lang="ts">
 import { Copy, Key, Monitor, Plus, Trash2 } from "@lucide/vue";
-import type { AnyFieldApi } from "@tanstack/form-core";
+import type { AnyFieldApi } from "@tanstack/vue-form";
 import { useForm } from "@tanstack/vue-form";
 import { useVModel } from "@vueuse/core";
 import { computed, ref } from "vue";

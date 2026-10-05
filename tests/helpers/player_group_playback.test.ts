@@ -29,6 +29,7 @@ const { apiMock, callbacks, storeMock, unsubscribe } = vi.hoisted(() => ({
   callbacks: [] as CallableFunction[],
   storeMock: {
     activePlayerId: undefined as string | undefined,
+    companionPlayerId: undefined as string | undefined,
   },
   unsubscribe: vi.fn(),
 }));
@@ -52,6 +53,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     group_members: ["leader", "child"],
     synced_to: null,
     active_source: "leader",
+    output_protocols: [],
     ...overrides,
   } as Player;
 }
@@ -96,6 +98,7 @@ describe("player group playback", () => {
       return unsubscribe;
     });
     storeMock.activePlayerId = undefined;
+    storeMock.companionPlayerId = undefined;
     dialogEvent = undefined;
     eventbus.on("playerGroupPlaybackDialog", captureDialog);
   });
@@ -115,9 +118,20 @@ describe("player group playback", () => {
       expect(dialogEvent).toMatchObject({
         change: "remove",
         playerName: leader.name,
+        isThisDevice: false,
       });
     },
   );
+
+  it("tells the dialog when the player is this device", () => {
+    const { leader } = setActiveGroup();
+    storeMock.companionPlayerId = leader.player_id;
+
+    expect(requestGroupPlaybackConfirmation(leader, "remove", vi.fn())).toBe(
+      true,
+    );
+    expect(dialogEvent).toMatchObject({ isThisDevice: true });
+  });
 
   it("does not ask when the server cannot transfer playback", () => {
     const { child, leader } = setActiveGroup(PlaybackState.IDLE);

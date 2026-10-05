@@ -66,7 +66,6 @@
     "playlist": "Wiedergabeliste",
     "playlist_tracks": "Wiedergabelisten-Titel",
     "playlists": "Wiedergabelisten",
-    "provider_details": "Anbieterdetails",
     "queue": "Warteschlange",
     "queue_clear": "Warteschlange leeren",
     "queue_delete": "Titel entfernen",
@@ -821,7 +820,6 @@
         "explicit": "Explizit",
         "filter_library": "Nach Elementen in Bibliothek\/Favoriten filtern",
         "library": "Bibliothek\/Favorit umschalten",
-        "linked": "Dieser Anbieter ist mit den aktuellen Details des Elements verknüpft",
         "refresh": "Liste aktualisieren",
         "refresh_new_content": "Neue Inhalte verfügbar. Zum Aktualisieren, hier klicken.",
         "search": "Sucheingabe ein-\/ausblenden",
@@ -911,7 +909,6 @@
     "check_item_on_provider": "Prüfe {0} auf {1}",
     "check_item_in_library": "{0} in Bibliothek prüfen",
     "media_details": "Mediendetails",
-    "mapped_providers": "Anbieterdetails",
     "item_in_library": "Dieses Element ist in der Bibliothek vorhanden",
     "back": "Zurück",
     "recently_played": "Zuletzt gespielt",
@@ -1822,7 +1819,9 @@
                 "new_show": "Neue Sendung",
                 "refresh": "Aktualisieren",
                 "title": "Sendungen",
-                "add_show": "Sendung hinzufügen"
+                "add_show": "Sendung hinzufügen",
+                "empty_title_listener": "Bisher keine Shows",
+                "empty_description_listener": "Es sind noch keine Radiosendungen eingerichtet. Schaue wieder vorbei, sobald jemand eine erstellt hat."
             },
             "card": {
                 "play": "Abspielen",
@@ -2391,7 +2390,6 @@
     },
     "sidebar": {
         "title": "Seitenleiste",
-        "description": "Zeigt die mobile Seitenleiste an.",
         "toggle": "Seitenleiste ein-\/ausblenden",
         "expand": "Seitenleiste erweitern",
         "collapse": "Seitenleiste ausblenden"
@@ -2474,12 +2472,10 @@
         "other": "Andere"
     },
     "singles_eps": "Singles & EPs",
-    "latest_release": "Neueste Version",
     "view_all": "Alle anzeigen",
     "play_on_player": "Weiter spielen {player}",
     "artist_radio": "Endloser Mix des Interpreten",
     "newest_first": "Neueste zuerst",
-    "via_provider": "über {provider}",
     "appears_on_hint": "In einem Titel genannt, nicht als Interpret des Albums",
     "edit_rows": "Zeilen bearbeiten",
     "edit_rows_subtitle": "Gilt für jede Interpretenseite",
@@ -2717,5 +2713,12 @@
                 "description": "Füge dem von dir ausgewählten Wiedergabegerät weitere Wiedergabegeräte hinzu, damit sie gemeinsam in mehreren Räumen dieselbe Musik abspielen. Wiedergabegeräte, die nicht teilnehmen können, werden nicht angeboten."
             }
         }
-    }
+    },
+    "command_center_press_enter": "Drücke die Eingabetaste, um zu suchen",
+    "command_center_search": "suchen",
+    "artist_no_library_singles": "In deiner Mediathek befinden sich keine Singles oder EPs dieses Interpreten.",
+    "artist_view_tracks": "{count} Titel anzeigen | {count} Titel anzeigen",
+    "artist_no_tracks": "Dieser Interpret hat keine Titel.",
+    "artist_row_empty": "Hier gibt es nichts zu sehen.",
+    "show_results_on": "Ergebnisse anzeigen auf {0}"
 }

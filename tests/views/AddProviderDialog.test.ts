@@ -320,8 +320,7 @@ describe("AddProviderDialog provider dependencies", () => {
       ?.click();
     await flushPromises();
     const request = emitted("deleteConfirmationDialog") as
-      | DeleteConfirmationDialogEvent
-      | undefined;
+      DeleteConfirmationDialogEvent | undefined;
 
     expect(nativeConfirm).not.toHaveBeenCalled();
     expect(request?.message).toBe("settings.provider_depends_on_confirm");

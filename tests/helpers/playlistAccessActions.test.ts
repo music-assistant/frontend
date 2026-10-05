@@ -84,6 +84,8 @@ const shareAction = (items: ContextMenuItem[]): ContextMenuItem | undefined =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // the menu resolves the library counterpart before building its items
+  apiMock.getLibraryItem.mockResolvedValue(null);
   // a member, who may change the library but does not manage all of it
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
   storeMock.currentUser = user({ user_id: "me" });
@@ -177,6 +179,7 @@ describe("edit and remove for a personal playlist", () => {
 
   it("are offered to the owner on the details page", async () => {
     const item = maPlaylist("me");
+    apiMock.getLibraryItem.mockResolvedValue(item);
     const labels_ = labels(await getContextMenuItems([item], item));
 
     expect(labels_).toContain("edit_playlist");
@@ -193,6 +196,7 @@ describe("edit and remove for a personal playlist", () => {
 
   it("are not offered to another member it is shared with", async () => {
     const item = maPlaylist("other");
+    apiMock.getLibraryItem.mockResolvedValue(item);
     const labels_ = labels(await getContextMenuItems([item], item));
 
     expect(labels_).not.toContain("edit_playlist");

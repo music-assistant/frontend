@@ -1,70 +1,30 @@
 <template>
-  <!-- reka owns the open state; mirroring it here keeps the trigger's hover
-       suppression in step with it -->
-  <DropdownMenu v-if="canEditLibrary" @update:open="menuOpen = $event">
-    <DropdownMenuTrigger as-child>
-      <Button
-        variant="ghost"
-        size="icon-lg"
-        v-bind="$attrs"
-        :disabled="!currentItem"
-        :data-suppress-hover="suppressHover"
-        :title="$t('tooltip.favorite')"
-        :aria-label="$t('tooltip.favorite')"
-        @pointerenter="onPointerEnter"
-      >
-        <Heart :size="size" :fill="isFavorite ? 'currentColor' : 'none'" />
-      </Button>
-    </DropdownMenuTrigger>
-    <!-- the button sits low on both surfaces it is used on, so the menu hangs
-         above it rather than over the volume slider under it -->
-    <DropdownMenuContent side="top" align="center" class="z-[100001]">
-      <DropdownMenuItem @click="toggleFavorite">
-        <Heart class="size-4" :fill="isFavorite ? 'currentColor' : 'none'" />
-        {{ isFavorite ? $t("favorites_remove") : $t("favorites_add") }}
-      </DropdownMenuItem>
-      <DropdownMenuItem @click="addToPlaylist">
-        <PlusCircle class="size-4" />
-        {{ $t("add_playlist") }}
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
+  <!-- the state lives outside the queue item, so the menu is told what to show
+       rather than reading it from the item itself -->
+  <FavoriteMenu
+    v-bind="$attrs"
+    v-model:favorite="favorite"
+    :item="currentItem"
+    variant="ghost"
+    size="icon-lg"
+    :icon-class="iconClass"
+    side="top"
+  />
 </template>
 
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import FavoriteMenu from "@/components/FavoriteMenu.vue";
 import { useCurrentItemFavorite } from "@/composables/useCurrentItemFavorite";
-import { usePopoutTriggerHover } from "@/composables/usePopoutTriggerHover";
-import { Scope } from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
-import { Heart, PlusCircle } from "@lucide/vue";
-import { computed, ref } from "vue";
 
 export interface Props {
-  /** glyph size in px; the button box comes from the call site */
-  size?: number;
+  /** size class of the glyph; the button box comes from the call site */
+  iconClass?: string;
 }
 
 withDefaults(defineProps<Props>(), {
-  size: 20,
+  iconClass: "size-5",
 });
 
-const { currentItem, isFavorite, toggleFavorite, addToPlaylist } =
-  useCurrentItemFavorite();
-// favouring and adding to a playlist both change the library
-const canEditLibrary = computed(() =>
-  authManager.hasScope(Scope.LIBRARY_WRITE),
-);
-
-const menuOpen = ref(false);
-const { suppressHover, onPointerEnter } = usePopoutTriggerHover(
-  () => menuOpen.value,
-);
+const { currentItem, favorite } = useCurrentItemFavorite();
 </script>

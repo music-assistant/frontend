@@ -2,6 +2,7 @@
   <MenuButton
     ref="playButton"
     :text="playButtonText"
+    :truncate="shrinkLabel"
     :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
     :loading="playActionInProgress"
     @click="playButtonClick()"
@@ -12,25 +13,41 @@
 <script setup lang="ts">
 import MenuButton from "@/components/MenuButton.vue";
 import { handlePlayBtnClick } from "@/helpers/media_item_actions";
-import { getPlayerName } from "@/helpers/utils";
+import { getPlayerName, isBuiltinPlayer } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import type { MediaItemType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import { computed, useTemplateRef, type ComponentPublicInstance } from "vue";
 
 export interface Props {
   item: MediaItemType;
+  // container the item belongs to, which gives the play menu its options for
+  // playing on from the item (e.g. the podcast an episode belongs to)
+  parentItem?: MediaItemType;
+  // let the button shrink and ellipsis its label to fit; for a row that cannot
+  // wrap, so its other buttons keep their place as the header narrows
+  shrinkLabel?: boolean;
 }
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  parentItem: undefined,
+  shrinkLabel: false,
+});
 
 const playButton = useTemplateRef<ComponentPublicInstance>("playButton");
 
-const playButtonText = computed(() =>
-  store.activePlayer
-    ? $t("play_on_player", { player: getPlayerName(store.activePlayer, 20) })
-    : $t("play"),
-);
+const isPhone = computed(() => isPhoneSizedScreen());
+
+// a phone has little room, so the player name is trimmed harder there
+const playButtonText = computed(() => {
+  const player = store.activePlayer;
+  if (!player) return $t("play");
+  if (isBuiltinPlayer(player)) return $t("play_on_this_device");
+  return $t("play_on_player", {
+    player: getPlayerName(player, isPhone.value ? 12 : 20),
+  });
+});
 
 // The queue playMedia targets are resolved directly, since activePlayerQueue is
 // undefined while an external source is active.
@@ -55,7 +72,7 @@ const playButtonClick = function (forceMenu = false) {
     props.item,
     rect?.right ?? 0,
     rect?.bottom ?? 0,
-    undefined,
+    props.parentItem,
     forceMenu,
   );
 };

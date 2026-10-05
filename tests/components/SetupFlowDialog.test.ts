@@ -31,6 +31,8 @@ const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
         },
       },
       reconfigureProvider: vi.fn<MusicAssistantApi["reconfigureProvider"]>(),
+      setupProvider: vi.fn<MusicAssistantApi["setupProvider"]>(),
+      getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
       setupPlayer: vi.fn<MusicAssistantApi["setupPlayer"]>(),
       state: {
         value: "authenticated",
@@ -55,8 +57,7 @@ const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
 );
 
 let launchSetupFlow:
-  | ((event: SetupFlowDialogEvent) => Promise<void>)
-  | undefined;
+  ((event: SetupFlowDialogEvent) => Promise<void>) | undefined;
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
@@ -208,6 +209,30 @@ describe("SetupFlowDialog", () => {
       "Enter the pairing code",
     );
   });
+
+  it.each([
+    ["form", { ...formStep(), description: "Register https://example.com/cb" }],
+    ["external", { ...terminalStep(FlowStepType.EXTERNAL), description: "Go" }],
+    ["progress", progressStep("Waiting for the device")],
+    ["finish", { ...terminalStep(FlowStepType.FINISH), description: "Done" }],
+    ["abort", { ...terminalStep(FlowStepType.ABORT), reason: "Token expired" }],
+  ] as [string, SetupFlowStep][])(
+    "lets the user select the text of a %s step",
+    async (_type, step) => {
+      const wrapper = await mountHeader(
+        { kind: "reconfigure", instanceId: "spotify--test" },
+        step,
+      );
+      const text = step.description ?? step.progress_text ?? step.reason;
+
+      const body = wrapper
+        .findAll("div")
+        .find((el) => el.element.childElementCount === 0 && el.text() === text);
+      expect(body?.classes()).toEqual(
+        expect.arrayContaining(["select-text", "[&_*]:select-text"]),
+      );
+    },
+  );
 
   it("leaves the subtitle out when the step brings no title", async () => {
     const wrapper = await mountHeader({ kind: "player", playerId: "player-1" });
@@ -484,6 +509,133 @@ describe("SetupFlowDialog", () => {
     expect(apiMock.submitSetupFlow).not.toHaveBeenCalled();
   });
 });
+
+describe("SetupFlowDialog launched with initial values", () => {
+  const localFilesEntries = () => [
+    entry({
+      key: "content_type",
+      type: ConfigEntryType.STRING,
+      required: true,
+      expanded_options: true,
+      options: [
+        { title: "Music", value: "music" },
+        { title: "Audiobooks", value: "audiobooks" },
+      ],
+      value: "music",
+    }),
+    entry({
+      key: "path",
+      type: ConfigEntryType.FOLDER,
+      default_value: "/media",
+    }),
+  ];
+
+  async function launchLocalFiles() {
+    const wrapper = shallowMount(SetupFlowDialog, {
+      global: { renderStubDefaultSlot: true },
+    });
+    await launchSetupFlow?.({
+      kind: "provider",
+      domain: "filesystem_local",
+      initialValues: { path: "/media/nas_music", not_in_step: "ignored" },
+    });
+    await flushPromises();
+    return wrapper;
+  }
+
+  it("fills the first form step in by entry key, leaving the rest as served", async () => {
+    apiMock.setupProvider.mockResolvedValue(formStep(localFilesEntries()));
+
+    const wrapper = await launchLocalFiles();
+
+    expect(apiMock.setupProvider).toHaveBeenCalledWith("filesystem_local");
+    expect(entryValues(wrapper)).toEqual({
+      content_type: "music",
+      path: "/media/nas_music",
+    });
+    // shown for the user to confirm, not sent on their behalf
+    expect(apiMock.submitSetupFlow).not.toHaveBeenCalled();
+  });
+
+  it("leaves a later form step as the server serves it", async () => {
+    apiMock.setupProvider.mockResolvedValue(formStep(localFilesEntries()));
+    apiMock.submitSetupFlow.mockResolvedValue({
+      ...formStep([
+        entry({ key: "path", type: ConfigEntryType.STRING, value: "/music" }),
+      ]),
+      step_id: "second",
+    });
+    const wrapper = await launchLocalFiles();
+
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+
+    expect(apiMock.submitSetupFlow).toHaveBeenCalledWith("flow-1", {
+      content_type: "music",
+      path: "/media/nas_music",
+    });
+    expect(entryValues(wrapper)).toEqual({ path: "/music" });
+  });
+
+  it.each([
+    ["that showed its form", true],
+    ["whose form is still on its way", false],
+  ])(
+    "shows the server's values to a launch without values, right after one with values %s",
+    async (_case, firstAnswered) => {
+      apiMock.abortSetupFlow.mockResolvedValue();
+      apiMock.setupProvider
+        .mockReturnValueOnce(
+          firstAnswered
+            ? Promise.resolve(formStep(localFilesEntries()))
+            : new Promise<SetupFlowStep>(() => undefined),
+        )
+        .mockResolvedValueOnce(formStep(localFilesEntries()));
+      const wrapper = shallowMount(SetupFlowDialog, {
+        global: { renderStubDefaultSlot: true },
+      });
+      void launchSetupFlow?.({
+        kind: "provider",
+        domain: "filesystem_local",
+        initialValues: { path: "/media/nas_music" },
+      });
+      await flushPromises();
+
+      await launchSetupFlow?.({ kind: "provider", domain: "filesystem_local" });
+      await flushPromises();
+
+      expect(entryValues(wrapper)).toEqual({
+        content_type: "music",
+        path: "/media",
+      });
+    },
+  );
+
+  it("tells a provider flow that it finished", async () => {
+    apiMock.setupProvider.mockResolvedValue(terminalStep(FlowStepType.FINISH));
+    const onFlowEnded = vi.fn();
+    shallowMount(SetupFlowDialog);
+
+    await launchSetupFlow?.({
+      kind: "provider",
+      domain: "filesystem_local",
+      onFlowEnded,
+    });
+    await flushPromises();
+
+    expect(onFlowEnded).toHaveBeenCalledExactlyOnceWith(true);
+  });
+});
+
+/** The values of the form's entries by key, as the dialog hands them to the rows. */
+function entryValues(wrapper: VueWrapper) {
+  return Object.fromEntries(
+    wrapper.findAllComponents({ name: "ConfigEntryRow" }).map((row) => {
+      const confEntry = row.props("confEntry") as ConfigEntry;
+      return [confEntry.key, confEntry.value];
+    }),
+  );
+}
 
 async function pickOption(wrapper: VueWrapper, value: string) {
   const row = wrapper

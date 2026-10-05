@@ -9,58 +9,24 @@
           <FieldGroup>
             <form.Field name="username">
               <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.username") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    autofocus
-                    autocomplete="username"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
+                <FormTextField
+                  :field="field"
+                  :label="$t('auth.username')"
+                  autofocus
+                  autocomplete="username"
+                />
               </template>
             </form.Field>
 
             <form.Field name="displayName">
               <template #default="{ field }">
-                <Field>
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.display_name") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    :model-value="field.state.value"
-                    autocomplete="name"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldDescription>
-                    {{ $t("optional") }}
-                  </FieldDescription>
-                </Field>
+                <FormTextField
+                  :field="field"
+                  :label="$t('auth.display_name')"
+                  autocomplete="name"
+                  :description="$t('optional')"
+                  :show-validation="false"
+                />
               </template>
             </form.Field>
 
@@ -95,61 +61,23 @@
 
             <form.Field name="password">
               <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.password") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    type="password"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    autocomplete="new-password"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
+                <FormTextField
+                  :field="field"
+                  :label="$t('auth.password')"
+                  type="password"
+                  autocomplete="new-password"
+                />
               </template>
             </form.Field>
 
             <form.Field name="confirmPassword">
               <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.confirm_password") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    type="password"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    autocomplete="new-password"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
+                <FormTextField
+                  :field="field"
+                  :label="$t('auth.confirm_password')"
+                  type="password"
+                  autocomplete="new-password"
+                />
               </template>
             </form.Field>
 
@@ -187,13 +115,13 @@
 </template>
 
 <script setup lang="ts">
-import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
 import { useVModel } from "@vueuse/core";
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
+import FormTextField from "@/components/forms/FormTextField.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -205,11 +133,9 @@ import {
 import {
   Field,
   FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -324,10 +250,6 @@ const form = useForm({
     }
   },
 });
-
-const isInvalid = (field: AnyFieldApi) => {
-  return field.state.meta.errors.length > 0;
-};
 
 const handleClose = () => {
   form.reset();

@@ -135,6 +135,7 @@ import {
 import { api } from "@/plugins/api";
 import { requireServerVersion } from "@/plugins/api/helpers";
 import { CoreConfig } from "@/plugins/api/interfaces";
+import { HardDrive } from "@lucide/vue";
 import {
   computed,
   inject,
@@ -197,6 +198,13 @@ const extraSystemEntries = computed<SystemConfigExtraEntry[]>(() =>
       icon: "mdi-waveform",
       route: "/settings/audio-analysis",
       minServerVersion: "2.9.0",
+    },
+    {
+      domain: "storage",
+      name: "settings.storage.title",
+      description: "settings.storage.description",
+      icon: HardDrive,
+      route: "/settings/storage",
     },
   ].filter(
     (entry) =>

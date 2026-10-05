@@ -37,6 +37,18 @@ describe("getProviderName", () => {
     expect(api.getProviderName("tidal")).toBe("Tidal");
   });
 
+  // the server converts SMB and NFS sources into Local files, keeping their ids
+  it.each(["filesystem_smb--fyQZakP3", "filesystem_nfs--k2Lm9xQa"])(
+    "names a converted source %s that isn't loaded after Local files",
+    (id) => {
+      api.providerManifests["filesystem_local"] = manifest(
+        "filesystem_local",
+        "Local files",
+      );
+      expect(api.getProviderName(id)).toBe("Local files");
+    },
+  );
+
   it("returns the raw id when neither instance nor domain is known", () => {
     expect(api.getProviderName("tidal--abc")).toBe("tidal--abc");
   });

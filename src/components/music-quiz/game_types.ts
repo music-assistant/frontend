@@ -31,12 +31,10 @@ import { markRaw, type Component } from "vue";
 export const DEFAULT_MUSIC_QUIZ_GAME_TYPE: MusicQuizType = "guess_the_song";
 
 export type MusicQuizCapabilityState =
-  | MusicQuizSupportedInfo
-  | MusicQuizSupportedPublicState;
+  MusicQuizSupportedInfo | MusicQuizSupportedPublicState;
 
 export type MusicQuizStateCapability =
-  | boolean
-  | ((state: MusicQuizCapabilityState) => boolean);
+  boolean | ((state: MusicQuizCapabilityState) => boolean);
 
 export interface MusicQuizGameDefinition<
   TGame extends MusicQuizType = MusicQuizType,

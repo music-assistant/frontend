@@ -150,7 +150,6 @@ const POPULAR_PROVIDERS = [
   "tidal",
   "qobuz",
   "filesystem_local",
-  "filesystem_smb",
   "sonos",
   "chromecast",
   "airplay",

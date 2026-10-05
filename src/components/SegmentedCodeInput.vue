@@ -4,8 +4,7 @@ import { computed, nextTick, ref, type ComponentPublicInstance } from "vue";
 
 /** A code box holding `length` characters, or a literal rendered between boxes. */
 export type SegmentedCodeCell =
-  | string
-  | { length: number; digitsOnly?: boolean };
+  string | { length: number; digitsOnly?: boolean };
 
 const props = defineProps<{
   /** one entry per code box, in box order */

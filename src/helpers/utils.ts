@@ -13,8 +13,6 @@ import {
   MediaItemType,
   MediaType,
   Player,
-  PlayerConfig,
-  PlayerType,
   ProviderMapping,
   QueueItem,
 } from "@/plugins/api/interfaces";
@@ -234,19 +232,6 @@ export const getBrowseFolderName = function (browseItem: BrowseFolder) {
   // translation_key from the wire, so the client can no longer localize it itself: use the
   // server-provided name directly, falling back to the path for unnamed folders.
   return browseItem?.name || browseItem?.path || "";
-};
-
-export const getPlayerName = function (player: Player, truncate = 26) {
-  if (!player) return "";
-  const availableChildPlayers = player.group_members.filter(
-    (x) => api.players[x]?.available && x != player.player_id,
-  );
-  if (player.type != PlayerType.GROUP && availableChildPlayers.length) {
-    return `${truncateString(player.name, truncate - 3)} +${
-      availableChildPlayers.length
-    }`;
-  }
-  return truncateString(player.name, truncate);
 };
 
 export const getStreamingProviderMappings = function (
@@ -785,30 +770,6 @@ const legacyCopy = function (text: string): boolean {
   }
 
   return copied;
-};
-
-/**
- * Check if a player config should be hidden from settings due to being a
- * Sendspin web player that is currently unavailable.
- *
- * This prevents users from being confused by a lot of auto-generated players
- * in the Players and Providers settings pages.
- */
-export const isHiddenSendspinWebPlayer = function (
-  playerConfig: PlayerConfig,
-): boolean {
-  if (playerConfig.provider !== "sendspin") return false;
-
-  const name = playerConfig.default_name || "";
-  if (
-    !name.startsWith("Music Assistant (") && // PWA app
-    !name.startsWith("Music Assistant Web (") // Regular web interface
-  ) {
-    return false;
-  }
-
-  const player = api.players[playerConfig.player_id];
-  return !player?.available;
 };
 
 export const getVolumeIconComponent = function (

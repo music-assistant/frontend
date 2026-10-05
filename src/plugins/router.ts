@@ -2,6 +2,7 @@ import { canOpenAIRadio } from "@/helpers/ai_radio_access";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
+import { returnedByHistory } from "@/helpers/navigation";
 import { $t } from "@/plugins/i18n";
 import { nextTick, watch } from "vue";
 import {
@@ -14,7 +15,7 @@ import { toast } from "vue-sonner";
 import { api, ConnectionState } from "./api";
 import { Scope } from "./api/interfaces";
 import { authManager } from "./auth";
-import { notifyHARouteChange } from "./homeassistant";
+import { createHAHistory, isInHAAppPanel } from "./homeassistant_history";
 import { store } from "./store";
 
 declare module "vue-router" {
@@ -375,6 +376,17 @@ export const routes: RouteRecordRaw[] = [
               ),
             props: true,
           },
+          {
+            // the name must stay equal to MediaType.PODCAST_EPISODE: navigation
+            // to a details view pushes the media type as the route name
+            path: ":provider/episode/:itemId",
+            name: "podcast_episode",
+            component: () =>
+              import(
+                /* webpackChunkName: "podcast_episode" */ "@/views/PodcastEpisodeDetails.vue"
+              ),
+            props: true,
+          },
         ],
       },
       {
@@ -494,6 +506,17 @@ export const routes: RouteRecordRaw[] = [
             // whoever may read the source settings opens the page; a member
             // manages the sources it owns from it
             meta: { requiresScope: Scope.CONFIG_PROVIDERS_READ },
+          },
+          {
+            path: "storage",
+            name: "storagesettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "storagesettings" */ "@/views/settings/StorageSettings.vue"
+              ),
+            props: true,
+            // managing the storage is admin work; members pick folders in the picker
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
           },
           {
             path: "players",
@@ -678,8 +701,10 @@ export const routes: RouteRecordRaw[] = [
   },
 ];
 
+const inHAAppPanel = isInHAAppPanel();
+
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: inHAAppPanel ? createHAHistory() : createWebHashHistory(),
   routes,
 });
 
@@ -716,7 +741,12 @@ router.onError((error, to) => {
     // moving the hash stays on the same document and the reload is what fetches
     // fresh HTML and assets. Moving only the hash also keeps the rest of the
     // URL (e.g. Home Assistant ingress query params) intact.
-    window.location.hash = to.fullPath;
+    if (inHAAppPanel) {
+      // A new entry would land in the history Home Assistant keeps.
+      window.history.replaceState(window.history.state, "", `#${to.fullPath}`);
+    } else {
+      window.location.hash = to.fullPath;
+    }
     window.location.reload();
   }
 });
@@ -799,19 +829,13 @@ router.beforeEach(async (to) => {
   }
 });
 
-router.afterEach((to) => {
-  if (store.isIngressSession) {
-    notifyHARouteChange(to.fullPath);
-  }
-});
-
 // Most views share the .content-section scroll container which stays mounted across route changes
 // Prevent the scroll position from staying the same when changing route
 router.afterEach((to, from, failure) => {
   if (failure) return;
   // Don't reset on same route
   if (to.path === from.path) return;
-  if (router.options.history.state.forward != null) return;
+  if (returnedByHistory(router)) return;
   // nextTick needed because afterEach fires before Vue unmounts the page
   // Resetting here would wipe its scroll position before it's saved
   nextTick(() => {

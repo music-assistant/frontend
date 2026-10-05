@@ -66,6 +66,7 @@ const dependencies: AudioProcessingDetailsDependencies = {
   getPresetName: (presetId) =>
     presetId ? presetNames.get(presetId) : undefined,
   getIRName: (irId) => (irId ? irNames.get(irId) : undefined),
+  getPlayerName: (player) => player.name,
   players: makePlayers(),
 };
 
@@ -73,6 +74,7 @@ beforeEach(() => {
   i18n.global.locale.value = "en";
   dependencies.locale = "en-US";
   dependencies.players = makePlayers();
+  dependencies.getPlayerName = (player) => player.name;
   presetNames.clear();
   presetNames.set("preset-1", "Living room");
   irNames.clear();
@@ -232,6 +234,21 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       });
     },
   );
+
+  it("names the destination with the injected player name", () => {
+    dependencies.getPlayerName = (player) => `Shown ${player.name}`;
+
+    const destination = buildDisplay({
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["office"],
+          output_format: makeFormat(),
+        }),
+      ],
+    }).outputPaths[0].destination;
+
+    expect(destination.title).toBe("Shown Office");
+  });
 
   it("keeps a missing protocol ID generic without an exact parent mapping", () => {
     dependencies.players.kitchen.output_protocols = [];

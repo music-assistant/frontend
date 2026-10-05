@@ -7,6 +7,7 @@ import {
   Scope,
   type PlayerConfig,
 } from "@/plugins/api/interfaces";
+import { webPlayer } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,6 +24,7 @@ const { apiMock, emitEvent, getPlayerSettingsMenuItems, hasScope, routerPush } =
       players: {} as Record<
         string,
         {
+          player_id: string;
           available: boolean;
           needs_setup: boolean;
           output_protocols: [];
@@ -63,7 +65,6 @@ vi.mock("@/helpers/player_settings_actions", () => ({
 }));
 
 vi.mock("@/helpers/utils", () => ({
-  isHiddenSendspinWebPlayer: () => false,
   openLinkInNewTab: vi.fn(),
 }));
 
@@ -77,6 +78,10 @@ vi.mock("vue-router", () => ({
   useRouter: () => ({
     push: routerPush,
   }),
+}));
+
+vi.mock("@/plugins/router", () => ({
+  default: { push: vi.fn() },
 }));
 
 const playerConfig = {
@@ -96,7 +101,9 @@ const ListItemStub = {
       class="player-list-item"
       @click="$emit('click')"
       @contextmenu="$emit('menu', $event)"
-    />
+    >
+      <slot name="title" />
+    </button>
   `,
 };
 
@@ -120,8 +127,10 @@ describe("Players", () => {
     vi.clearAllMocks();
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     playerConfig.enabled = true;
+    webPlayer.player_id = null;
     apiMock.players = {
       kitchen: {
+        player_id: "kitchen",
         available: false,
         needs_setup: true,
         output_protocols: [],
@@ -220,6 +229,34 @@ describe("Players", () => {
       "contextmenu",
       expect.objectContaining({ items: [{ label: "settings.delete" }] }),
     );
+  });
+
+  it("opens the menu at the touch position for a long-press", async () => {
+    const wrapper = await mountPlayers("list");
+
+    await wrapper.get(".player-list-item").trigger("contextmenu", {
+      touches: [{ clientX: 11, clientY: 22 }],
+    });
+
+    expect(emitEvent).toHaveBeenCalledWith(
+      "contextmenu",
+      expect.objectContaining({ posX: 11, posY: 22 }),
+    );
+  });
+
+  it("labels the player of this device next to its real name", async () => {
+    webPlayer.player_id = "kitchen";
+    const wrapper = await mountPlayers("list");
+    const row = wrapper.get(".player-list-item");
+
+    expect(row.text()).toContain("Kitchen");
+    expect(row.get(".player-device-badge-label").text()).toBe("this_device");
+  });
+
+  it("does not label the player of another device", async () => {
+    const wrapper = await mountPlayers("list");
+
+    expect(wrapper.find(".player-device-badge").exists()).toBe(false);
   });
 
   it("filters the list by player status", async () => {

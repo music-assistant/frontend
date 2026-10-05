@@ -49,7 +49,7 @@ const asSheet = computed(() => store.mobileLayout);
     :description="props.description"
     :show-close-button="false"
     :focus-input-on-open="true"
-    content-class="top-[10%] flex translate-y-0 flex-col gap-0 sm:max-w-2xl"
+    content-class="top-[8%] flex translate-y-0 flex-col gap-0 sm:max-w-5xl"
   >
     <slot></slot>
   </CommandDialog>
@@ -65,7 +65,7 @@ const asSheet = computed(() => store.mobileLayout);
   width: auto !important;
   height: calc(
     100dvh - var(--mobile-navigation-height) - var(--player-bar-popout-gap) -
-      var(--player-bar-popout-top-gap)
+      var(--player-bar-popout-top-gap) - var(--device-inset-top)
   ) !important;
 }
 

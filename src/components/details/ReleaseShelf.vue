@@ -12,7 +12,15 @@
         @click.capture="swallowClickAfterHold"
       >
         <h2 class="release-shelf__title">{{ title }}</h2>
-        <span v-if="meta" class="release-shelf__meta">{{ meta }}</span>
+        <RowSourceBadge
+          v-if="sourceLabel"
+          :label="sourceLabel"
+          :domain="sourceDomain"
+          :options="sourceOptions"
+          :selected="sourceValue"
+          @select="(source) => emit('select-source', source)"
+        />
+        <span v-else-if="meta" class="release-shelf__meta">{{ meta }}</span>
       </div>
     </template>
     <template v-if="viewAllTo" #actions>
@@ -35,12 +43,23 @@
       >
         <template #art-overlay>
           <span class="release-shelf__art-scrim"></span>
+          <ExplicitBadge
+            v-if="isExplicit(item)"
+            overlay
+            class="release-shelf__explicit"
+          />
           <span v-if="item.year" class="release-shelf__year">{{
             item.year
           }}</span>
         </template>
         <template #subtitle>{{ subtitle(item) }}</template>
       </EditorialMediaCard>
+      <div
+        v-if="items.length === 0 && emptyMessage"
+        class="release-shelf__empty"
+      >
+        {{ emptyMessage }}
+      </div>
     </template>
     <template v-else>
       <EditorialCardSkeleton v-for="index in SKELETONS" :key="index" />
@@ -49,12 +68,16 @@
 </template>
 
 <script setup lang="ts">
+import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
+import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
+import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
+import { parseBool } from "@/helpers/parse";
 import { panelViewItemResponsive } from "@/helpers/utils";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   AlbumType,
   type Album,
@@ -68,22 +91,38 @@ import { RouterLink, type RouteLocationRaw } from "vue-router";
 
 export interface Props {
   title: string;
-  // the line beside the title, e.g. "11 · newest first"
+  // the line beside the title, e.g. the "appears on" hint
   meta?: string;
+  // the row's source, shown as a badge instead of `meta` (e.g. "In your library")
+  sourceLabel?: string;
+  // provider domain behind `sourceLabel`, for its icon
+  sourceDomain?: string;
+  // the sources the row can switch to; makes the badge a picker when >1 offered
+  sourceOptions?: SourceOption[];
+  // the source currently feeding the row, highlighted in the picker
+  sourceValue?: RowSource;
   // undefined while the row is still loading
   items?: Array<Album | ItemMapping>;
   viewAllTo?: RouteLocationRaw;
+  // shown in place of the tiles when the row loaded nothing
+  emptyMessage?: string;
   parentItem?: MediaItemType;
 }
 const props = withDefaults(defineProps<Props>(), {
   meta: undefined,
+  sourceLabel: undefined,
+  sourceDomain: undefined,
+  sourceOptions: undefined,
+  sourceValue: undefined,
   items: undefined,
   viewAllTo: undefined,
+  emptyMessage: undefined,
   parentItem: undefined,
 });
 
 const emit = defineEmits<{
   (e: "edit-rows"): void;
+  (e: "select-source", source: RowSource): void;
 }>();
 
 const SKELETONS = 6;
@@ -94,13 +133,23 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
   emit("edit-rows"),
 );
 
+// the item's type, so every card says what it is; the year already sits on the
+// artwork, so it isn't repeated here. A release that is not in the library says
+// that instead, which is the more useful thing to know about it.
 const subtitle = function (item: Album | ItemMapping): string {
-  const parts: string[] = [];
+  if (isMusicBrainzItem(item)) return $t("not_in_library");
   if ("album_type" in item && item.album_type !== AlbumType.UNKNOWN) {
-    parts.push($t(`album_type.${item.album_type}`));
+    return $t(`album_type.${item.album_type}`);
   }
-  if (item.year) parts.push(String(item.year));
-  return parts.join(" · ");
+  return $t(item.media_type);
+};
+
+const isExplicit = function (item: Album | ItemMapping): boolean {
+  return (
+    "metadata" in item &&
+    !!item.metadata &&
+    parseBool(item.metadata.explicit || false)
+  );
 };
 
 /**
@@ -117,7 +166,7 @@ function shelfTilesPerView(): number {
 <style scoped>
 .release-shelf__titles {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
   min-width: 0;
 }
@@ -165,6 +214,17 @@ function shelfTilesPerView(): number {
   font-size: 12px;
   font-weight: 500;
   color: #fff;
+}
+.release-shelf__explicit {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+.release-shelf__empty {
+  align-self: center;
+  padding: 8px 4px;
+  font-size: 14px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 
 @media (max-width: 768px) {

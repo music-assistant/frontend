@@ -16,7 +16,7 @@ export function album(overrides: Partial<Album> = {}): Album {
     media_type: MediaType.ALBUM,
     provider_mappings: [],
     metadata: {},
-    favorite: false,
+    favorite: null,
     album_type: AlbumType.ALBUM,
     artists: [],
     ...overrides,

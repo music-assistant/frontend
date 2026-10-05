@@ -48,7 +48,7 @@
         </span>
         <FavouriteButton
           v-if="
-            getBreakpointValue('bp3') && 'favorite' in item && canEditLibrary
+            getBreakpointValue('bp3') && canHoldFavorite(item) && canEditLibrary
           "
           :item="item"
         />
@@ -68,6 +68,7 @@
 import MAButton from "@/components/Button.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
+import { canHoldFavorite } from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
 import {

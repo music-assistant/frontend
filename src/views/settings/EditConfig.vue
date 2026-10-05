@@ -377,6 +377,9 @@ const onEntryAction = function (entry: ConfigEntryUI) {
 const resetToDefaults = function () {
   if (!entries.value) return;
   for (const entry of entries.value) {
+    // a hidden entry carries state the user never sees, such as housekeeping the
+    // server keeps in the config, so a reset leaves it as it is
+    if (entry.hidden) continue;
     entry.value = entry.default_value;
   }
 };

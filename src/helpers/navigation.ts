@@ -32,6 +32,16 @@ export function backFromMediaDetails(router: Router): void {
   goBack(router, { name: LISTING_ROUTES[routeName] ?? "discover" });
 }
 
+/**
+ * Whether the current view was reached by going back through history rather
+ * than by a new navigation: going back lands on an entry that still has the
+ * one that was left ahead of it, a new navigation starts one with nothing
+ * ahead.
+ */
+export function returnedByHistory(router: Router): boolean {
+  return router.options.history.state.forward != null;
+}
+
 // Details route name -> the library listing it sits under. Collections are
 // browsed from the audiobooks listing, which is where their route nests too.
 const LISTING_ROUTES: Record<string, string | undefined> = {
@@ -43,6 +53,7 @@ const LISTING_ROUTES: Record<string, string | undefined> = {
   genre: "genres",
   playlist: "playlists",
   podcast: "podcasts",
+  podcast_episode: "podcasts",
   radio: "radios",
   track: "tracks",
   tracklisting: "tracks",

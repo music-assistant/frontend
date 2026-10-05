@@ -66,12 +66,15 @@
           </div>
 
           <div class="album-hero__actions">
-            <DetailHeroPlayButton class="album-hero__play" :item="item" />
+            <DetailHeroPlayButton
+              class="album-hero__play"
+              shrink-label
+              :item="item"
+            />
             <DetailHeroButton
               v-if="api.supportsPlayMediaShuffle"
               :icon="Shuffle"
               :label="$t('shuffle')"
-              :icon-only="isPhone"
               :disabled="!store.activePlayer"
               @click="api.playMedia(item, undefined, { shuffle: true })"
             />
@@ -79,7 +82,6 @@
               v-if="radioRelevant(item)"
               :icon="Orbit"
               :label="$t('album_radio')"
-              :icon-only="isPhone"
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />
@@ -90,18 +92,7 @@
 
     <template v-if="item" #aside>
       <DetailHeroGenres :item="item" />
-      <div v-if="providers.length" class="album-hero__chips">
-        <span class="album-hero__chip">
-          <template
-            v-for="(provider, index) in providers"
-            :key="provider.domain"
-          >
-            <span v-if="index > 0" class="album-hero__chip-sep">·</span>
-            <ProviderIcon :domain="provider.domain" :size="14" />
-            {{ provider.name }}
-          </template>
-        </span>
-      </div>
+      <DetailHeroProviders :item="item" />
     </template>
   </DetailHero>
 </template>
@@ -112,12 +103,11 @@ import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { mappedServices } from "@/plugins/api/helpers";
 import {
   AlbumType,
   type Album,
@@ -153,11 +143,6 @@ const router = useRouter();
 const isPhone = computed(() => isPhoneSizedScreen());
 
 const coverSize = computed(() => (isPhone.value ? 132 : 200));
-
-// one chip per music service, however many accounts of it hold the album
-const providers = computed(() =>
-  props.item ? mappedServices(props.item) : [],
-);
 
 // "Album · 2011 · 12 tracks · 48:21", without whatever the album does not have
 const facts = computed(() => {
@@ -295,31 +280,13 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
 .album-hero__actions {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  min-width: 0;
 }
-
-.album-hero__chips {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.album-hero__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.45);
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.album-hero__chip-sep {
-  opacity: 0.4;
+/* the play button gives way so Shuffle and Endless keep their place on the row */
+.album-hero__play {
+  min-width: 0;
 }
 
 @media (max-width: 768px) {
@@ -345,9 +312,6 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   }
   .album-hero__actions .album-hero__play {
     flex: 1;
-  }
-  .album-hero--phone .album-hero__chips {
-    justify-content: flex-start;
   }
 }
 </style>

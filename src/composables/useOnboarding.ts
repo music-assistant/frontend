@@ -32,7 +32,6 @@ import {
   providerDisplayName,
 } from "@/helpers/provider_config";
 import { isSystemUser } from "@/helpers/users";
-import { isHiddenSendspinWebPlayer } from "@/helpers/utils";
 import { api, type CommandOptions } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
@@ -379,15 +378,11 @@ function playerProviderLabel(config: PlayerConfig, player?: Player): string {
 
 /**
  * The configurations the wizard lists. A protocol player is one output of
- * another player and is set up as part of it, so it is not listed on its own;
- * and the web players this app spawns come and go with every browser tab, so
- * one that is not around is nothing anyone set up.
+ * another player and is set up as part of it, so it is not listed on its own.
  */
 function listedPlayerConfigs(): PlayerConfig[] {
   return (playerConfigs.value ?? []).filter(
-    (config) =>
-      config.player_type !== PlayerType.PROTOCOL &&
-      !isHiddenSendspinWebPlayer(config),
+    (config) => config.player_type !== PlayerType.PROTOCOL,
   );
 }
 

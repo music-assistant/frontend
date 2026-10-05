@@ -332,6 +332,19 @@ describe("MusicAssistantApi error handling", () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
+  it("leaves a failing provider removal to its caller", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const result = api.removeProviderConfig("spotify--1");
+    const rejection = expect(result).rejects.toMatchObject({ message: "Boom" });
+
+    expect(transport.lastCommand.command).toBe("config/providers/remove");
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    await rejection;
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
   it("lists the share candidates from schema 72 on", () => {
     api.serverInfo.value = { ...SERVER_INFO, schema_version: 71 };
     expect(api.supportsShareCandidates).toBe(false);
@@ -450,6 +463,29 @@ describe("MusicAssistantApi error handling", () => {
 
     api.serverInfo.value = { ...SERVER_INFO, schema_version: 75 };
     expect(api.supportsAIRadioPlaybackScopes).toBe(true);
+  });
+
+  it("asks the library for an artist's discography", () => {
+    api.getArtistDiscography("artist-1");
+
+    expect(transport.lastCommand.command).toBe("music/artists/discography");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+    });
+  });
+
+  it("asks the library for the albums an artist appears on", () => {
+    api.getArtistAppearsOn("artist-1", "library", "spotify--abc");
+
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/artist_appears_on",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      provider_filter: "spotify--abc",
+    });
   });
 
   describe("a refused ordering command", () => {

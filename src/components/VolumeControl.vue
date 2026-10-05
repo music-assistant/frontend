@@ -48,6 +48,7 @@
 import PlayerChildVolumes from "@/components/PlayerChildVolumes.vue";
 import PlayerGroupMembers from "@/components/PlayerGroupMembers.vue";
 import { Button } from "@/components/ui/button";
+import { getPlayerDisplayName } from "@/helpers/players";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import { api } from "@/plugins/api";
 import {
@@ -88,9 +89,13 @@ const volumePlayers = computed(() => {
     .map((playerId) => api.players[playerId])
     .filter((player): player is Player => player?.available === true);
   return players.sort((left, right) =>
-    left.name.localeCompare(right.name, undefined, {
-      sensitivity: "base",
-    }),
+    getPlayerDisplayName(left).localeCompare(
+      getPlayerDisplayName(right),
+      undefined,
+      {
+        sensitivity: "base",
+      },
+    ),
   );
 });
 

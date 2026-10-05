@@ -170,6 +170,14 @@ describe("ConfigEntryField", () => {
     expect(wrapper.text()).toContain("Not supported by this player.");
   });
 
+  it("marks the option the entry holds", () => {
+    const wrapper = mountField({ ...expandedOptionsEntry(), value: "flac" });
+
+    expect(
+      optionButtons(wrapper).map((el) => el.attributes("aria-pressed")),
+    ).toEqual(["true", "false"]);
+  });
+
   it("emits the value of the option behind the pressed button", async () => {
     const wrapper = mountField(expandedOptionsEntry());
 

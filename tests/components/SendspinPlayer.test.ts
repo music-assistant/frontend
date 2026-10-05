@@ -1,9 +1,10 @@
 import SendspinPlayer from "@/components/SendspinPlayer.vue";
 import { BrowserMediaControlsMode } from "@/helpers/device_settings";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { PlaybackState } from "@/plugins/api/interfaces";
+import { PlaybackState, type User } from "@/plugins/api/interfaces";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
+import { user } from "../fixtures/user";
 import { nextTick } from "vue";
 import {
   afterAll,
@@ -55,6 +56,7 @@ const {
   authState,
   apiMock,
   storeMock,
+  mockGetWebPlayerName,
   mockPlayerCommandNext,
   mockPlayerCommandPause,
   mockPlayerCommandPlay,
@@ -81,6 +83,7 @@ const {
   return {
     authState: {
       guest: null as "music_quiz" | "party" | null,
+      dashboardViewer: false,
     },
     // Mutable so tests can drive the players/queues the seek handlers read.
     apiMock: {
@@ -100,7 +103,9 @@ const {
     storeMock: {
       activePlayerId: "active-player",
       activePlayer: undefined as MockPlayer | undefined,
+      currentUser: undefined as User | undefined,
     },
+    mockGetWebPlayerName: vi.fn<(owner?: User) => string>(() => "Browser"),
     mockPlayerCommandNext,
     mockPlayerCommandPause,
     mockPlayerCommandPlay,
@@ -115,6 +120,7 @@ const {
     sendspinState: {
       pairingToken: null as string | null,
       lastOptions: null as {
+        clientName?: string;
         reconnect?: { onReconnected?: () => void };
       } | null,
     },
@@ -134,6 +140,7 @@ vi.mock("@/plugins/auth", () => ({
     isGuestAccessSession: () => authState.guest !== null,
     isMusicQuizGuest: () => authState.guest === "music_quiz",
     isPartyGuest: () => authState.guest === "party",
+    isDashboardViewer: () => authState.dashboardViewer,
   },
 }));
 
@@ -181,9 +188,9 @@ vi.mock("@/plugins/sendspin-connection", () => ({
   prepareSendspinSession: mockPrepareSendspinSession,
 }));
 
-vi.mock("@/plugins/api/helpers", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/plugins/api/helpers")>()),
-  getDeviceName: () => "Browser",
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/players")>()),
+  getWebPlayerName: mockGetWebPlayerName,
 }));
 
 vi.mock("@sendspin/sendspin-js", () => ({
@@ -233,6 +240,7 @@ const ANCHOR = 1_700_000_000;
 describe("SendspinPlayer MediaSession", () => {
   beforeEach(() => {
     authState.guest = null;
+    authState.dashboardViewer = false;
     handlers.clear();
     mediaSession.metadata = {} as MediaMetadata;
     mediaSession.playbackState = "playing";
@@ -284,6 +292,7 @@ describe("SendspinPlayer MediaSession", () => {
       playback_state: PlaybackState.PLAYING,
       group_members: [],
     };
+    storeMock.currentUser = undefined;
   });
 
   afterEach(() => {
@@ -364,6 +373,36 @@ describe("SendspinPlayer MediaSession", () => {
       { pairing_token: "SP:0TESTTOKEN" },
       { suppressGlobalError: true },
     );
+    wrapper.unmount();
+  });
+
+  it("registers under the name of the signed-in user", async () => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    storeMock.currentUser = user({ display_name: "Marcel" });
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    expect(mockGetWebPlayerName).toHaveBeenCalledWith(storeMock.currentUser);
+    expect(sendspinState.lastOptions?.clientName).toBe("Browser");
+    wrapper.unmount();
+  });
+
+  it.each([
+    ["a party guest", () => (authState.guest = "party")],
+    ["a music quiz guest", () => (authState.guest = "music_quiz")],
+    ["a dashboard viewer", () => (authState.dashboardViewer = true)],
+  ])("registers without an owner name for %s", async (_label, signIn) => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    storeMock.currentUser = user({ display_name: "Party Guest" });
+    signIn();
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    expect(mockGetWebPlayerName).toHaveBeenCalledWith(undefined);
     wrapper.unmount();
   });
 

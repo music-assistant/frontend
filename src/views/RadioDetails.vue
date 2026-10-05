@@ -39,6 +39,7 @@ import {
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import ProviderDetails from "@/components/ProviderDetails.vue";
+import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import { getStreamingProviderMappings } from "@/helpers/utils";
 
@@ -68,11 +69,21 @@ onMounted(() => {
     (evt: EventMessage) => {
       const updatedItem = evt.data as MediaItemType;
       if (itemDetails.value?.uri == updatedItem.uri) {
-        itemDetails.value = updatedItem as Radio;
+        itemDetails.value = keepOwnFavorite(
+          updatedItem,
+          itemDetails.value,
+        ) as Radio;
       }
     },
   );
   onBeforeUnmount(unsub);
+
+  // the user's own like or dislike, wherever they made it
+  const unsubFavorite = subscribeOwnFavorites((update) => {
+    const item = itemDetails.value;
+    if (item?.uri == update.uri) item.favorite = update.favorite;
+  });
+  onBeforeUnmount(unsubFavorite);
 });
 
 const loadRadioVersions = async function (params: LoadDataParams) {

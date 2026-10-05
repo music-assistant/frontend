@@ -1,6 +1,6 @@
 import InfoHeader from "@/components/InfoHeader.vue";
 import type { Scope, Track } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
@@ -9,7 +9,6 @@ import { track } from "../fixtures/track";
 
 const { apiMock, authMock, storeMock, eventbusMock } = vi.hoisted(() => ({
   apiMock: {
-    toggleFavorite: vi.fn(),
     subscribe: vi.fn(() => () => {}),
     getGenresForMediaItem: vi.fn(() => Promise.resolve([])),
   },
@@ -63,6 +62,8 @@ vi.mock("@/components/MenuButton.vue", () => ({
 
 const vuetify = createVuetify({ components, directives });
 
+const TRIGGER = "button[type='button']";
+
 function mountHeader(item: Track) {
   return mount(InfoHeader, {
     props: { item },
@@ -73,7 +74,7 @@ function mountHeader(item: Track) {
   });
 }
 
-describe("InfoHeader favorite toggle", () => {
+describe("InfoHeader favorite menu", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     apiMock.subscribe.mockReturnValue(() => {});
@@ -82,40 +83,53 @@ describe("InfoHeader favorite toggle", () => {
     authMock.hasScope.mockReturnValue(true);
   });
 
-  it("renders the favorite toggle as a labelled shadcn button", () => {
-    const wrapper = mountHeader(track({ favorite: false }));
+  it("renders the favorite menu as a labelled shadcn trigger", () => {
+    const wrapper = mountHeader(track({ favorite: null }));
 
-    const favBtn = wrapper.find('button[aria-label="tooltip.favorite"]');
+    const favBtn = wrapper.find(TRIGGER);
     expect(favBtn.exists()).toBe(true);
     expect(favBtn.attributes("type")).toBe("button");
-    expect(favBtn.attributes("aria-pressed")).toBe("false");
     // size-6 keeps the icon at 24px, defeating the Button base svg shrink
     expect(favBtn.find("svg").classes()).toContain("size-6");
   });
 
-  it("reflects the favorite state through aria-pressed", () => {
-    const wrapper = mountHeader(track({ favorite: true }));
+  it("shows the state on the trigger", () => {
+    const favBtn = mountHeader(track({ favorite: true })).get(TRIGGER);
 
-    const favBtn = wrapper.find('button[aria-label="tooltip.favorite"]');
-    expect(favBtn.attributes("aria-pressed")).toBe("true");
-    expect(favBtn.find("svg").classes()).toContain("size-6");
+    expect(favBtn.attributes("data-active")).toBe("true");
+    expect(favBtn.get("svg").attributes("fill")).toBe("currentColor");
   });
 
-  it("toggles the favorite state on click", async () => {
-    const item = track({ favorite: false });
-    const wrapper = mountHeader(item);
+  // one slot, three looks: a dislike takes the heart's place in the same button
+  it("shows a dislike in the heart's own slot", () => {
+    const favBtn = mountHeader(track({ favorite: false })).get(TRIGGER);
 
-    await wrapper
-      .find('button[aria-label="tooltip.favorite"]')
-      .trigger("click");
-    expect(apiMock.toggleFavorite).toHaveBeenCalledTimes(1);
-    expect(apiMock.toggleFavorite.mock.calls[0][0]).toMatchObject({
-      item_id: item.item_id,
-    });
+    expect(favBtn.findAll("svg")).toHaveLength(1);
+    expect(favBtn.get("svg").classes()).toContain("lucide-thumbs-down");
+    expect(favBtn.get("svg").classes()).toContain("size-6");
+  });
+
+  it("opens the favorite menu on click", async () => {
+    const wrapper = mountHeader(track({ favorite: null }));
+
+    await wrapper.get(TRIGGER).trigger("click", { button: 0, ctrlKey: false });
+    await flushPromises();
+
+    expect(wrapper.get(TRIGGER).attributes("data-state")).toBe("open");
+  });
+
+  it("is not offered to a role that may not change the library", () => {
+    authMock.hasScope.mockReturnValue(false);
+
+    expect(
+      mountHeader(track({ favorite: null }))
+        .find(TRIGGER)
+        .exists(),
+    ).toBe(false);
   });
 
   it("no longer renders the old native favorite button", () => {
-    const wrapper = mountHeader(track({ favorite: false }));
+    const wrapper = mountHeader(track({ favorite: null }));
 
     expect(wrapper.find(".favorite-icon-button").exists()).toBe(false);
   });

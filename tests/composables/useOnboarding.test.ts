@@ -1018,28 +1018,6 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       ).toEqual(["kitchen"]);
     });
 
-    it("leaves out a web player of a tab that is gone", async () => {
-      addPlayerConfig({
-        player_id: "tab-1",
-        provider: "sendspin",
-        default_name: "Music Assistant Web (Firefox)",
-      });
-      addPlayerConfig({
-        player_id: "tab-2",
-        provider: "sendspin",
-        default_name: "Music Assistant (Chrome)",
-      });
-      registerPlayer("tab-2");
-
-      const module = await loadOnboardingModule();
-
-      // the web players this app spawns come and go with every browser tab, so
-      // one that is not around is nothing anyone set up
-      expect(
-        module.discoveredPlayers().map((player) => player.player_id),
-      ).toEqual(["tab-2"]);
-    });
-
     it("cannot switch a player whose provider is not running", async () => {
       addPlayerConfig({ player_id: "living", provider: "sonos--1" });
 

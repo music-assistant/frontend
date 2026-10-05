@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type ProviderConfig,
+  ProviderFeature,
   ProviderSharing,
   ProviderStage,
   ProviderStatus,
@@ -360,10 +361,12 @@ describe("Providers", () => {
     const removeCall = eventbusMock.emit.mock.calls.find(
       ([event]) => event === "deleteConfirmationDialog",
     );
-    expect(removeCall?.[1].message).toBe("settings.remove_provider_confirm");
+    expect(removeCall?.[1].message).toBe(
+      "settings.remove_provider_confirm_music",
+    );
     // the stubbed $t returns the key, so the name is checked where it is passed
     expect(i18nMock.$t).toHaveBeenCalledWith(
-      "settings.remove_provider_confirm",
+      "settings.remove_provider_confirm_music",
       ["My Spotify"],
     );
     expect(apiMock.removeProviderConfig).not.toHaveBeenCalled();
@@ -613,6 +616,34 @@ describe("Providers", () => {
     expect(onlyRow(wrapper).props("accessSummary")).toBeNull();
   });
 
+  it("lists remove as the last menu item, marked as destructive", async () => {
+    // a player provider also gets its conditional items, which must stay above
+    routeMock.query.types = "player";
+    apiMock.getProvider.mockReturnValue({
+      available: true,
+      domain: "spotify",
+      instance_id: "spotify--test",
+      is_streaming_provider: false,
+      name: "Spotify",
+      supported_features: [ProviderFeature.CREATE_GROUP_PLAYER],
+      type: ProviderType.PLAYER,
+    });
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
+      type: ProviderType.PLAYER,
+    });
+
+    const menuItems = await openMenu(wrapper);
+    expect(
+      menuItems.slice(-3).map((item: { label: string }) => item.label),
+    ).toEqual([
+      "settings.view_players",
+      "settings.add_group_player",
+      "settings.remove_provider",
+    ]);
+    expect(menuItems.at(-1).color).toBe("error");
+  });
+
   it("leaves the offered provider types to the route for an admin", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
@@ -804,8 +835,8 @@ describe("Providers for a member", () => {
       "settings.options",
       "settings.source_access.share_action",
       "settings.documentation",
-      "settings.remove_provider",
       "settings.reload",
+      "settings.remove_provider",
     ]);
     expect(
       menuItems.map((item: { label: string }) => item.label),

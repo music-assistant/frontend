@@ -427,6 +427,8 @@ export enum EventType {
   MEDIA_ITEM_PLAYED = "media_item_played",
   // an item's playlog entry changed; object_id is the item uri
   PLAYLOG_UPDATED = "playlog_updated",
+  // a user's like, dislike or unset on an item changed; object_id is the item uri
+  FAVORITE_UPDATED = "favorite_updated",
   PROVIDERS_UPDATED = "providers_updated",
   TASKS_UPDATED = "tasks_updated",
   MUSIC_SYNC_COMPLETED = "music_sync_completed",
@@ -528,6 +530,8 @@ export enum ConfigEntryType {
   IMAGE = "image",
   // url: clickable link; in an invoke_action response the frontend opens it (one-shot)
   URL = "url",
+  // folder: absolute path of a folder on the server, picked from the storage locations
+  FOLDER = "folder",
 
   // Only used in the frontend
   OPTIONS = "options",
@@ -637,6 +641,19 @@ export interface PlaylogUpdate {
   seconds_played: number;
   // the user the change applies to, null when it applies to all users
   userid?: string | null;
+}
+
+// data of the FAVORITE_UPDATED event
+export interface FavoriteUpdate {
+  uri: string;
+  media_type: MediaType;
+  // the library (database) id of the item
+  item_id: string;
+  // true is a like, false a dislike, null nothing at all
+  favorite: boolean | null;
+  // the user the change applies to; the server only sends the event to that
+  // user, but it is checked anyway
+  user_id: string;
 }
 
 export interface ServerInfoMessage {
@@ -958,6 +975,14 @@ export interface MediaItemCollection {
   sequence: number | string | null;
 }
 
+// one timed line of a transcript, as spoken
+export interface TranscriptCue {
+  start: number;
+  end?: number | null;
+  text: string;
+  speaker?: string | null;
+}
+
 export interface MediaItemMetadata {
   description?: string | null;
   // ISO 639-1 language code of `description`
@@ -971,6 +996,10 @@ export interface MediaItemMetadata {
   copyright?: string | null;
   lyrics?: string | null;
   lrc_lyrics?: string | null;
+  transcript?: string | null;
+  transcript_cues?: TranscriptCue[] | null;
+  // whether a transcript can be fetched, null when the provider cannot tell
+  has_transcript?: boolean | null;
   label?: string | null;
   links?: MediaItemLink[] | null;
   performers?: string[] | null;
@@ -1003,8 +1032,12 @@ interface _MediaItemBase {
 export interface MediaItem extends _MediaItemBase {
   provider_mappings: ProviderMapping[];
   metadata: MediaItemMetadata;
-  favorite: boolean;
+  // the signed-in user's own state: true is a like, false a dislike, null
+  // nothing at all. Every user has their own. A summary listing leaves the key
+  // out of the items it returns when there is no state, so absent reads as null.
+  favorite?: boolean | null;
   position?: number | null; //required for playlist tracks, optional for all other
+  date_added?: string | null;
 }
 
 export interface ItemMapping extends _MediaItemBase {
@@ -1179,11 +1212,7 @@ export type MediaItemType =
   | BrowseFolder;
 
 export type PlayableMediaItemType =
-  | Track
-  | Radio
-  | AudioSource
-  | Audiobook
-  | PodcastEpisode;
+  Track | Radio | AudioSource | Audiobook | PodcastEpisode;
 export type MediaItemTypeOrItemMapping = MediaItemType | ItemMapping;
 
 export interface SearchResults {
@@ -1865,6 +1894,102 @@ export interface StreamServerInfo {
   base_url: string;
 }
 
+// Storage interfaces
+
+export enum StorageUsage {
+  // anything a music source can use
+  MEDIA = "media",
+  // the server's own data and cache directories
+  DATA = "data",
+  CACHE = "cache",
+}
+
+export enum StorageKind {
+  BUILTIN_MEDIA = "builtin_media",
+  CONTAINER_VOLUME = "container_volume",
+  NETWORK_SHARE = "network_share",
+  REMOVABLE = "removable",
+  LOCAL_DISK = "local_disk",
+  // a folder an admin registered on the Storage page
+  MANUAL = "manual",
+}
+
+export enum ShareType {
+  CIFS = "cifs",
+  NFS = "nfs",
+}
+
+export enum MountBackend {
+  SUPERVISOR = "supervisor",
+  LOCAL_MOUNT = "local_mount",
+}
+
+/** A folder or volume the server can see, identified by its path. */
+export interface StorageLocation {
+  // absolute path inside the server process
+  path: string;
+  name: string;
+  usage: StorageUsage;
+  kind: StorageKind;
+  // usable right now (mounted and a directory)
+  available: boolean;
+  read_only: boolean;
+  // created by Music Assistant; only managed locations can be edited or removed
+  managed: boolean;
+  backend: MountBackend | null;
+  fstype: string | null;
+  mountpoint: string | null;
+  // key of a managed network share, used to update, reload or remove it
+  share_name: string | null;
+  share_type: ShareType | null;
+  server: string | null;
+  // cifs share name or nfs export path
+  share: string | null;
+  username: string | null;
+  // protocol version the user picked; null is automatic
+  version: string | null;
+  free_space_gb: number | null;
+  total_space_gb: number | null;
+  // size of the directory itself; data and cache locations only
+  used_space_gb: number | null;
+  // localized reason why the location is not available
+  error: string | null;
+  // names of the music sources that read from the location; empty for a caller that
+  // does not manage every source. A location in use can not be removed
+  used_by: string[];
+  // names of the music sources whose own folder holds this location, so they read its
+  // files as part of their folder; they do not keep the location from being removed
+  read_by: string[];
+}
+
+export interface StorageInfo {
+  // filtered by what the caller may see
+  locations: StorageLocation[];
+  // a backend that can mount a network share is available
+  can_mount_shares: boolean;
+  mount_backend: MountBackend | null;
+  supported_share_types: ShareType[];
+  // the protocol versions the mount backend can honour per share type, next to
+  // automatic; an empty or missing list means the version can not be chosen
+  supported_share_versions: Partial<Record<ShareType, string[]>>;
+  // a folder on the server itself can be registered
+  can_add_local_folder: boolean;
+}
+
+/** The connection settings of a network share, as the add and update commands take them. */
+export interface NetworkShareSettings {
+  server: string;
+  // cifs share name or nfs export path
+  share: string;
+  // null is a guest
+  username?: string | null;
+  // omitted keeps the stored one on an update
+  password?: string | null;
+  // null is automatic
+  version?: string | null;
+  read_only?: boolean;
+}
+
 // Party interfaces
 
 export interface PartyConfig {
@@ -1979,14 +2104,10 @@ export interface AIRadioFlowOptional {
 }
 
 export type AIRadioFlowItem =
-  | AIRadioFlowMust
-  | AIRadioFlowAlternative
-  | AIRadioFlowOptional;
+  AIRadioFlowMust | AIRadioFlowAlternative | AIRadioFlowOptional;
 
 export type AIRadioPlacement =
-  | "start_of_playlist"
-  | "between_songs"
-  | "end_of_playlist";
+  "start_of_playlist" | "between_songs" | "end_of_playlist";
 
 export interface AIRadioSectionOrderRule {
   when: AIRadioPlacement;
@@ -2045,3 +2166,11 @@ export interface AIRadioSession {
 export interface AIRadioStatus {
   sessions: AIRadioSession[];
 }
+
+/** Refetch hints the ai_radio plugin broadcasts as PROVIDER_EVENT payloads; they carry no state. */
+export type AIRadioEventName =
+  | "hosts_updated"
+  | "stations_updated"
+  | "sections_updated"
+  | "queue_dj_updated"
+  | "sessions_updated";
