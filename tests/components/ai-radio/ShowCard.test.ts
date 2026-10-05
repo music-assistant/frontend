@@ -28,6 +28,7 @@ vi.mock("@/plugins/api", () => ({
     getLibraryPlaylists: vi.fn<MusicAssistantApi["getLibraryPlaylists"]>(
       async () => [],
     ),
+    state: { value: "initialized" },
   },
 }));
 

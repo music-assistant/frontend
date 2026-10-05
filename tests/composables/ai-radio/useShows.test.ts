@@ -1,4 +1,5 @@
 import { useShows } from "@/composables/ai-radio/useShows";
+import api, { ConnectionState } from "@/plugins/api";
 import { store as storeModule } from "@/plugins/store";
 import { flushPromises } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
@@ -18,9 +19,21 @@ const { sendCommand, subscribe, listeners } = vi.hoisted(() => {
   };
 });
 
-vi.mock("@/plugins/api", () => ({
-  default: { sendCommand, subscribe, getLibraryPlaylists: vi.fn() },
-}));
+vi.mock("@/plugins/api", async () => {
+  const { ref } = await import("vue");
+  return {
+    default: {
+      sendCommand,
+      subscribe,
+      getLibraryPlaylists: vi.fn(),
+      state: ref("initialized"),
+    },
+    ConnectionState: {
+      INITIALIZED: "initialized",
+      RECONNECTING: "reconnecting",
+    },
+  };
+});
 
 // a role without the queue DJ menu, so nothing prefetches on availability
 vi.mock("@/plugins/auth", async () => {
@@ -97,6 +110,22 @@ describe("useShows provider events", () => {
     expect(useShows().sessions.value.map((s) => s.session_id)).toEqual(["s1"]);
   });
 
+  it("refetches only the loaded caches after a reconnect", async () => {
+    sendCommand.mockClear();
+    sendCommand.mockResolvedValue({ sessions: [] });
+
+    api.state.value = ConnectionState.RECONNECTING;
+    await flushPromises();
+    expect(sendCommand).not.toHaveBeenCalled();
+
+    api.state.value = ConnectionState.INITIALIZED;
+    await flushPromises();
+
+    expect(sendCommand.mock.calls.map((call) => call[0])).toEqual([
+      "ai_radio/status",
+    ]);
+  });
+
   it("refetches shows and sections on their hints, each on its own", async () => {
     sendCommand.mockResolvedValue([]);
     await useShows().loadShows();
@@ -122,8 +151,15 @@ describe("useShows provider events", () => {
     await flushPromises();
     expect(listeners).toHaveLength(0);
 
+    sendCommand.mockClear();
     store.enabledPlugins = new Set(["ai_radio"]);
     await flushPromises();
     expect(listeners).toHaveLength(1);
+    // the hints sent while the plugin was gone are refetched once it is back
+    expect(sendCommand.mock.calls.map((call) => call[0]).sort()).toEqual([
+      "ai_radio/sections/list",
+      "ai_radio/stations/list",
+      "ai_radio/status",
+    ]);
   });
 });

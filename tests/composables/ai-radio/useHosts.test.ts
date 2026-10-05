@@ -1,5 +1,6 @@
 import { useHosts } from "@/composables/ai-radio/useHosts";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import api, { ConnectionState } from "@/plugins/api";
 import {
   EventType,
   PLAYER_CONTROL_NONE,
@@ -27,13 +28,21 @@ const { sendCommand, subscribe, listeners } = vi.hoisted(() => {
   };
 });
 
-vi.mock("@/plugins/api", () => ({
-  default: {
-    players: {},
-    sendCommand,
-    subscribe,
-  },
-}));
+vi.mock("@/plugins/api", async () => {
+  const { ref } = await import("vue");
+  return {
+    default: {
+      players: {},
+      sendCommand,
+      subscribe,
+      state: ref("initialized"),
+    },
+    ConnectionState: {
+      INITIALIZED: "initialized",
+      RECONNECTING: "reconnecting",
+    },
+  };
+});
 
 // signed in as a member
 vi.mock("@/plugins/auth", async () => {
@@ -201,6 +210,20 @@ describe("useHosts provider events", () => {
 
     expect(callsOf("ai_radio/hosts/list")).toHaveLength(0);
     expect(callsOf("ai_radio/queue_dj/status")).toHaveLength(0);
+  });
+
+  it("refetches the loaded caches once after a reconnect", async () => {
+    api.state.value = ConnectionState.RECONNECTING;
+    await flushPromises();
+    sendCommand.mockClear();
+
+    api.state.value = ConnectionState.INITIALIZED;
+    await flushPromises();
+
+    expect(callsOf("ai_radio/hosts/list")).toHaveLength(1);
+    expect(callsOf("ai_radio/queue_dj/status")).toHaveLength(1);
+    // nothing loaded the sections here, so a reconnect leaves them alone
+    expect(callsOf("ai_radio/sections/list")).toHaveLength(0);
   });
 
   it("drops the subscription when the plugin goes away", async () => {

@@ -1,4 +1,4 @@
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ProviderInstance } from "@/plugins/api/interfaces";
 import { ProviderType } from "@/plugins/api/interfaces";
@@ -41,9 +41,15 @@ async function mockApiAndAuth(
     },
   );
 
+  const state = ref("initialized");
+
   vi.doMock("@/plugins/api", () => ({
-    api: { providers, sendCommand, subscribe },
-    default: { providers, sendCommand, subscribe },
+    api: { providers, sendCommand, subscribe, state },
+    default: { providers, sendCommand, subscribe, state },
+    ConnectionState: {
+      INITIALIZED: "initialized",
+      RECONNECTING: "reconnecting",
+    },
   }));
   const hasScope = scopeChecker(scopes);
   vi.doMock("@/plugins/auth", () => ({
@@ -105,6 +111,10 @@ describe("ai_radio prefetch gating", () => {
         listener({ object_id: "ai_radio", data: { event } });
       }
     }
+    const { default: api, ConnectionState } = await import("@/plugins/api");
+    api.state.value = ConnectionState.RECONNECTING;
+    await flushMicrotasks();
+    api.state.value = ConnectionState.INITIALIZED;
     await flushMicrotasks();
 
     expect(sendCommand).not.toHaveBeenCalled();

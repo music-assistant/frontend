@@ -1,7 +1,7 @@
 import { useShows } from "@/composables/ai-radio/useShows";
 import { canUseQueueDj } from "@/helpers/ai_radio_access";
 import { subscribeAIRadioEvents } from "@/helpers/ai_radio_events";
-import api from "@/plugins/api";
+import api, { ConnectionState } from "@/plugins/api";
 import type {
   AIRadioEventName,
   AIRadioHost,
@@ -67,8 +67,17 @@ watch(
     unsubscribeEvents = available
       ? subscribeAIRadioEvents(onAIRadioEvent)
       : undefined;
+    if (available) refreshLoaded();
   },
   { immediate: true },
+);
+
+// hints emitted while the socket was down are lost, so catch up after a reconnect
+watch(
+  () => api.state.value,
+  (state) => {
+    if (state === ConnectionState.INITIALIZED) refreshLoaded();
+  },
 );
 
 function onAIRadioEvent(name: AIRadioEventName): void {
@@ -76,6 +85,13 @@ function onAIRadioEvent(name: AIRadioEventName): void {
     void loadHosts().catch(() => undefined);
   } else if (name === "queue_dj_updated" && queueDjLoadedOnce) {
     void loadQueueDjStatus().catch(() => undefined);
+  }
+}
+
+/** Refetches every cache loaded before. */
+function refreshLoaded(): void {
+  for (const name of ["hosts_updated", "queue_dj_updated"] as const) {
+    onAIRadioEvent(name);
   }
 }
 

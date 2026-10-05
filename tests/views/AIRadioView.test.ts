@@ -34,6 +34,7 @@ vi.mock("@/plugins/api", () => {
     sendCommand,
     getLibraryPlaylists,
     subscribe: vi.fn(() => () => {}),
+    state: { value: "initialized" },
   };
   return { default: mockApi, api: mockApi };
 });

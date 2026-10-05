@@ -1,6 +1,6 @@
 import { canUseQueueDj } from "@/helpers/ai_radio_access";
 import { subscribeAIRadioEvents } from "@/helpers/ai_radio_events";
-import api from "@/plugins/api";
+import api, { ConnectionState } from "@/plugins/api";
 import type {
   AIRadioEventName,
   AIRadioSection,
@@ -40,8 +40,6 @@ const noAiProviderAlert = ref(false);
 // Dynamic-mode runs fail asynchronously (the session starts fine and errors
 // during generation), so failed sessions must raise the banner too.
 const seenFailedSessionIds = new Set<string>();
-// refetch hints only refresh what was loaded before: the first load proves the
-// role may call the endpoint, and a cache nobody filled has no reader yet
 let statusLoadedOnce = false;
 let showsLoadedOnce = false;
 let sectionsLoadedOnce = false;
@@ -69,10 +67,21 @@ watch(
     unsubscribeEvents = available
       ? subscribeAIRadioEvents(onAIRadioEvent)
       : undefined;
+    if (available) refreshLoaded();
   },
   { immediate: true },
 );
 
+// hints emitted while the socket was down are lost, so catch up after a reconnect
+watch(
+  () => api.state.value,
+  (state) => {
+    if (state === ConnectionState.INITIALIZED) refreshLoaded();
+  },
+);
+
+// refetch hints only refresh what was loaded before: the first load proves the
+// role may call the endpoint, and a cache nobody filled has no reader yet
 function onAIRadioEvent(name: AIRadioEventName): void {
   if (name === "sessions_updated" && statusLoadedOnce) {
     void loadStatus().catch(() => undefined);
@@ -80,6 +89,17 @@ function onAIRadioEvent(name: AIRadioEventName): void {
     void loadShows().catch(() => undefined);
   } else if (name === "sections_updated" && sectionsLoadedOnce) {
     void loadSections().catch(() => undefined);
+  }
+}
+
+/** Refetches every cache loaded before. */
+function refreshLoaded(): void {
+  for (const name of [
+    "sessions_updated",
+    "stations_updated",
+    "sections_updated",
+  ] as const) {
+    onAIRadioEvent(name);
   }
 }
 
