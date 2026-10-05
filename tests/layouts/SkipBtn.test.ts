@@ -118,6 +118,14 @@ describe("SkipBtn", () => {
     { reason: "there is no queue", queue: undefined },
     { reason: "the queue is inactive", queue: playingQueue({ active: false }) },
     { reason: "nothing is playing", queue: playerQueue() },
+    {
+      reason: "the item has no duration",
+      queue: playingQueue({ current_item: queueItem({ duration: null }) }),
+    },
+    {
+      reason: "the item duration is zero",
+      queue: playingQueue({ current_item: queueItem({ duration: 0 }) }),
+    },
   ])("is disabled when $reason", async ({ queue }) => {
     const wrapper = mountButton({ direction: "forward", playerQueue: queue });
 
