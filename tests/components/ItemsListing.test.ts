@@ -158,9 +158,6 @@ vi.mock("@/components/skeletons/PanelViewSkeleton.vue", () =>
 );
 vi.mock("@/components/ListviewItem.vue", () => stubComponent("ListviewItem"));
 vi.mock("@/components/PanelviewItem.vue", () => stubComponent("PanelviewItem"));
-vi.mock("@/components/PanelviewItemCompact.vue", () =>
-  stubComponent("PanelviewItemCompact"),
-);
 
 // the real store computes these; on the mock they are plain writable state
 const store = storeModule as typeof storeModule & { mobileLayout: boolean };
