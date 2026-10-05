@@ -1080,7 +1080,6 @@
         "list": "List view",
         "card": "Card view",
         "panel": "Thumbs view",
-        "panel_compact": "Compact thumbs view",
         "discovery": "Discovery"
     },
     "play_replace": "Play Now (clear queue)",

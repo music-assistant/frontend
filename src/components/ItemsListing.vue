@@ -104,16 +104,6 @@
             <PanelViewSkeleton />
           </v-col>
         </v-row>
-        <v-row v-else-if="viewMode === 'panel_compact'">
-          <v-col
-            v-for="n in 12"
-            :key="'skeleton-compact-' + n"
-            cols="12"
-            :class="`col-${gridColumnCount}`"
-          >
-            <PanelViewSkeleton />
-          </v-col>
-        </v-row>
       </template>
 
       <v-infinite-scroll
@@ -150,28 +140,6 @@
                 ].includes(itemtype)
               "
               :show-track-number="showTrackNumber"
-              :is-available="itemIsAvailable(item)"
-              :is-playing="isPlaying(item, itemtype)"
-              :disable-play-button="isPlayActionInProgress"
-              :parent-item="parentItem"
-              :sort-by="params.sortBy"
-              @select="onSelect"
-            />
-          </v-col>
-        </v-row>
-
-        <!-- compact panel view -->
-        <v-row v-if="viewMode == 'panel_compact'">
-          <v-col
-            v-for="item in pagedItems"
-            :key="item.uri"
-            cols="12"
-            :class="`col-${gridColumnCount}`"
-          >
-            <PanelviewItemCompact
-              :item="item"
-              :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
@@ -402,7 +370,6 @@ import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
-import PanelviewItemCompact from "./PanelviewItemCompact.vue";
 
 type LoadPagedDataFn = (params: LoadDataParams) => Promise<MediaItemType[]>;
 
@@ -493,7 +460,7 @@ export interface Props {
   restoreState?: boolean;
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
-  forcedViewMode?: "list" | "panel" | "panel_compact";
+  forcedViewMode?: "list" | "panel";
   toolBarTabs?: ToolBarTab[];
 }
 const props = withDefaults(defineProps<Props>(), {
@@ -1610,14 +1577,6 @@ const menuItems = computed(() => {
           },
         },
         {
-          label: "view.panel_compact",
-          icon: LayoutGrid,
-          selected: viewMode.value == "panel_compact",
-          action: () => {
-            selectViewMode("panel_compact");
-          },
-        },
-        {
           label: "grid_size",
           hide: viewMode.value == "list",
           // markRaw: the menu items land in a reactive array; a bare component
@@ -1767,16 +1726,12 @@ const restoreSettings = async function () {
   if (props.forcedViewMode) {
     viewMode.value = props.forcedViewMode;
   } else if (prefs.viewMode) {
-    viewMode.value = prefs.viewMode;
+    viewMode.value =
+      prefs.viewMode == "panel_compact" ? "panel" : prefs.viewMode;
   } else if (
-    props.itemtype == "artists" ||
-    props.itemtype == "similarartists"
+    ["artists", "similarartists", "albums", "genres"].includes(props.itemtype)
   ) {
     viewMode.value = "panel";
-  } else if (props.itemtype == "albums") {
-    viewMode.value = "panel";
-  } else if (props.itemtype == "genres") {
-    viewMode.value = "panel_compact";
   } else {
     viewMode.value = "list";
   }

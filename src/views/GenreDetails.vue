@@ -234,18 +234,20 @@ const canManageLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_MANAGE),
 );
 
-type GenreViewMode = "discovery" | "list" | "panel" | "panel_compact";
+type GenreViewMode = "discovery" | "list" | "panel";
 
 const { getPreference, setPreference } = useUserPreferences();
 const savedViewMode = getPreference<GenreViewMode>(
   "genre_detail_view",
   "discovery",
 );
-const viewMode = ref<GenreViewMode>(savedViewMode.value);
+const viewMode = ref<GenreViewMode>(
+  (savedViewMode.value as string) === "panel_compact"
+    ? "panel"
+    : savedViewMode.value,
+);
 const itemsViewMode = computed(() =>
-  viewMode.value !== "discovery"
-    ? (viewMode.value as "list" | "panel" | "panel_compact")
-    : undefined,
+  viewMode.value !== "discovery" ? viewMode.value : undefined,
 );
 
 watch(viewMode, (newVal) => {
@@ -262,7 +264,6 @@ const tilesPerView = computed(() => panelViewItemResponsive(0) + 0.5);
 const viewModeIcon = computed(() => {
   if (viewMode.value === "discovery") return "mdi-view-dashboard";
   if (viewMode.value === "panel") return "mdi-grid";
-  if (viewMode.value === "panel_compact") return "mdi-view-comfy";
   return "mdi-view-list";
 });
 
@@ -299,14 +300,6 @@ const openViewModeMenu = (e: MouseEvent) => {
         selected: viewMode.value === "panel",
         action: () => {
           viewMode.value = "panel";
-        },
-      },
-      {
-        label: "view.panel_compact",
-        icon: "mdi-view-comfy",
-        selected: viewMode.value === "panel_compact",
-        action: () => {
-          viewMode.value = "panel_compact";
         },
       },
     ],
