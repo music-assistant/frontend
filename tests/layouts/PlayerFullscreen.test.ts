@@ -24,7 +24,6 @@ vi.mock("@/plugins/api", async () => {
       vi.fn<MusicAssistantApi["getPodcastEpisodeTranscript"]>(),
     playerCommandSeek: vi.fn<MusicAssistantApi["playerCommandSeek"]>(),
     playMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
-    state: { value: "initialized" },
   });
   return { api, default: api };
 });

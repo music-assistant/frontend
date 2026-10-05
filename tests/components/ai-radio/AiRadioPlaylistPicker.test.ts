@@ -19,7 +19,6 @@ vi.mock("@/plugins/api", () => ({
   default: {
     sendCommand: vi.fn(async () => []),
     getLibraryPlaylists: vi.fn(async () => []),
-    state: { value: "initialized" },
   },
 }));
 

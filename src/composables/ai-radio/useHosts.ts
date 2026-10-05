@@ -1,12 +1,8 @@
 import { useShows } from "@/composables/ai-radio/useShows";
 import { canUseQueueDj } from "@/helpers/ai_radio_access";
-import { subscribeAIRadioEvents } from "@/helpers/ai_radio_events";
-import api, { ConnectionState } from "@/plugins/api";
-import type {
-  AIRadioEventName,
-  AIRadioHost,
-  AIRadioSection,
-} from "@/plugins/api/interfaces";
+import { trackAIRadioCache } from "@/helpers/ai_radio_events";
+import api from "@/plugins/api";
+import type { AIRadioHost, AIRadioSection } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -39,11 +35,6 @@ const savingHost = ref(false);
 const deletingHostId = ref("");
 
 let queueDjStatePrefetched = false;
-// refetch hints only refresh what was loaded before: the first load proves the
-// role may call the endpoint, and a cache nobody filled has no reader yet
-let hostsLoadedOnce = false;
-let queueDjLoadedOnce = false;
-let unsubscribeEvents: (() => void) | undefined;
 
 // Submenu only shown when the ai_radio provider is loaded.
 const aiRadioAvailable = computed(() => store.enabledPlugins.has("ai_radio"));
@@ -60,41 +51,6 @@ watch(
   { immediate: true },
 );
 
-watch(
-  aiRadioAvailable,
-  (available) => {
-    unsubscribeEvents?.();
-    unsubscribeEvents = available
-      ? subscribeAIRadioEvents(onAIRadioEvent)
-      : undefined;
-    if (available) refreshLoaded();
-  },
-  { immediate: true },
-);
-
-// hints emitted while the socket was down are lost, so catch up after a reconnect
-watch(
-  () => api.state.value,
-  (state) => {
-    if (state === ConnectionState.INITIALIZED) refreshLoaded();
-  },
-);
-
-function onAIRadioEvent(name: AIRadioEventName): void {
-  if (name === "hosts_updated" && hostsLoadedOnce) {
-    void loadHosts().catch(() => undefined);
-  } else if (name === "queue_dj_updated" && queueDjLoadedOnce) {
-    void loadQueueDjStatus().catch(() => undefined);
-  }
-}
-
-/** Refetches every cache loaded before. */
-function refreshLoaded(): void {
-  for (const name of ["hosts_updated", "queue_dj_updated"] as const) {
-    onAIRadioEvent(name);
-  }
-}
-
 const sortByName = <T extends { name: string }>(items: T[]): T[] => {
   return [...items].sort((a, b) => a.name.localeCompare(b.name));
 };
@@ -104,7 +60,7 @@ async function loadHosts(): Promise<AIRadioHost[]> {
   try {
     const result = await api.sendCommand<AIRadioHost[]>("ai_radio/hosts/list");
     hosts.value = sortByName(result || []);
-    hostsLoadedOnce = true;
+    trackAIRadioCache("hosts_updated", loadHosts);
     return hosts.value;
   } finally {
     loadingHosts.value = false;
@@ -193,7 +149,7 @@ async function setQueueDj(
     { queue_id: queueId, host_id: hostId },
   );
   queueDjStatus.value = result || {};
-  queueDjLoadedOnce = true;
+  trackAIRadioCache("queue_dj_updated", loadQueueDjStatus);
   return queueDjStatus.value;
 }
 
@@ -217,7 +173,7 @@ async function loadQueueDjStatus(): Promise<Record<string, string>> {
       "ai_radio/queue_dj/status",
     );
     queueDjStatus.value = result || {};
-    queueDjLoadedOnce = true;
+    trackAIRadioCache("queue_dj_updated", loadQueueDjStatus);
     return queueDjStatus.value;
   } finally {
     loadingQueueDjStatus.value = false;

@@ -1,4 +1,4 @@
-import { reactive, ref } from "vue";
+import { reactive } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ProviderInstance } from "@/plugins/api/interfaces";
 import { ProviderType } from "@/plugins/api/interfaces";
@@ -28,29 +28,20 @@ const aiRadioProvider: ProviderInstance = {
 async function mockApiAndAuth(
   guestSessionKind: string | null,
   scopes: Parameters<typeof scopeChecker>[0] = BUILTIN_ROLE_SCOPES.user,
-  listeners: Array<(event: unknown) => void> = [],
 ) {
   const providers = reactive<Record<string, ProviderInstance>>({
     ai_radio: aiRadioProvider,
   });
   const sendCommand = vi.fn().mockResolvedValue({});
-  const subscribe = vi.fn(
-    (_event: unknown, callback: (event: unknown) => void) => {
-      listeners.push(callback);
-      return () => undefined;
-    },
-  );
+  // a successful load registers its cache for provider events, which reads these
+  const api = {
+    providers,
+    sendCommand,
+    subscribe: vi.fn(() => () => {}),
+    state: { value: "initialized" },
+  };
 
-  const state = ref("initialized");
-
-  vi.doMock("@/plugins/api", () => ({
-    api: { providers, sendCommand, subscribe, state },
-    default: { providers, sendCommand, subscribe, state },
-    ConnectionState: {
-      INITIALIZED: "initialized",
-      RECONNECTING: "reconnecting",
-    },
-  }));
+  vi.doMock("@/plugins/api", () => ({ api, default: api }));
   const hasScope = scopeChecker(scopes);
   vi.doMock("@/plugins/auth", () => ({
     authManager: { guestSessionKind: () => guestSessionKind, hasScope },
@@ -81,40 +72,6 @@ describe("ai_radio prefetch gating", () => {
 
     await import("@/composables/ai-radio/useShows");
     await import("@/composables/ai-radio/useHosts");
-    await flushMicrotasks();
-
-    expect(sendCommand).not.toHaveBeenCalled();
-  });
-
-  it("does not refetch on a hint before anything was loaded", async () => {
-    vi.resetModules();
-    const listeners: Array<(event: unknown) => void> = [];
-    const sendCommand = await mockApiAndAuth(
-      "dashboard",
-      BUILTIN_ROLE_SCOPES.user,
-      listeners,
-    );
-
-    await import("@/composables/ai-radio/useShows");
-    await import("@/composables/ai-radio/useHosts");
-    await flushMicrotasks();
-    expect(listeners.length).toBeGreaterThan(0);
-
-    for (const listener of listeners) {
-      for (const event of [
-        "hosts_updated",
-        "stations_updated",
-        "sections_updated",
-        "queue_dj_updated",
-        "sessions_updated",
-      ]) {
-        listener({ object_id: "ai_radio", data: { event } });
-      }
-    }
-    const { default: api, ConnectionState } = await import("@/plugins/api");
-    api.state.value = ConnectionState.RECONNECTING;
-    await flushMicrotasks();
-    api.state.value = ConnectionState.INITIALIZED;
     await flushMicrotasks();
 
     expect(sendCommand).not.toHaveBeenCalled();

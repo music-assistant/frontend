@@ -1,38 +1,56 @@
-import api from "@/plugins/api";
-import {
-  EventType,
-  type AIRadioEventName,
-  type AIRadioProviderEvent,
-} from "@/plugins/api/interfaces";
+import api, { ConnectionState } from "@/plugins/api";
+import { EventType, type AIRadioEventName } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import { watch } from "vue";
 
 // the plugin is single instance, so the server uses its domain as instance id
-export const AI_RADIO_INSTANCE_ID = "ai_radio";
+const AI_RADIO_INSTANCE_ID = "ai_radio";
 
-const EVENT_NAMES: ReadonlySet<string> = new Set<AIRadioEventName>([
-  "hosts_updated",
-  "stations_updated",
-  "sections_updated",
-  "queue_dj_updated",
-  "sessions_updated",
-]);
+const loaders = new Map<AIRadioEventName, () => Promise<unknown>>();
+let watching = false;
 
-export function isAIRadioProviderEvent(
-  data: unknown,
-): data is AIRadioProviderEvent {
-  if (typeof data !== "object" || data === null) return false;
-  const event = (data as { event?: unknown }).event;
-  return typeof event === "string" && EVENT_NAMES.has(event);
+/** The hint named `name`, a reconnect, or the plugin coming back refetches through `loader`. */
+export function trackAIRadioCache(
+  name: AIRadioEventName,
+  loader: () => Promise<unknown>,
+): void {
+  loaders.set(name, loader);
+  if (watching) return;
+  watching = true;
+
+  let unsubscribe: (() => void) | undefined;
+  watch(
+    () => store.enabledPlugins.has("ai_radio"),
+    (available, wasAvailable) => {
+      unsubscribe?.();
+      unsubscribe = available
+        ? api.subscribe(
+            EventType.PROVIDER_EVENT,
+            onProviderEvent,
+            AI_RADIO_INSTANCE_ID,
+          )
+        : undefined;
+      // not on the first run: the loader that got us here has just fetched
+      if (available && wasAvailable === false) refetchAll();
+    },
+    { immediate: true },
+  );
+
+  // hints emitted while the socket was down are lost
+  watch(
+    () => api.state.value,
+    (state) => {
+      if (state === ConnectionState.INITIALIZED) refetchAll();
+    },
+  );
 }
 
-/** Calls onEvent with the hint name for every ai_radio provider event; returns the unsubscribe handle. */
-export function subscribeAIRadioEvents(
-  onEvent: (name: AIRadioEventName) => void,
-): () => void {
-  return api.subscribe(
-    EventType.PROVIDER_EVENT,
-    (event: { data?: unknown }) => {
-      if (isAIRadioProviderEvent(event.data)) onEvent(event.data.event);
-    },
-    AI_RADIO_INSTANCE_ID,
-  );
+function onProviderEvent(event: { data?: unknown }): void {
+  const name = (event.data as { event?: string } | undefined)?.event;
+  const loader = name && loaders.get(name as AIRadioEventName);
+  if (loader) void loader().catch(() => undefined);
+}
+
+function refetchAll(): void {
+  for (const loader of loaders.values()) void loader().catch(() => undefined);
 }

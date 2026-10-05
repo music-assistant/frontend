@@ -16,12 +16,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 
 vi.mock("@/plugins/api", () => {
-  const api = {
-    subscribe: vi.fn(() => () => {}),
-    providers: {},
-    players: {},
-    state: { value: "initialized" },
-  };
+  const api = { subscribe: vi.fn(() => () => {}), providers: {}, players: {} };
   return { api, default: api };
 });
 

@@ -13,7 +13,6 @@ vi.mock("@/plugins/api", () => ({
     // useHosts derives ai_radio availability from the provider list.
     providers: {},
     sendCommand,
-    state: { value: "initialized" },
   },
 }));
 

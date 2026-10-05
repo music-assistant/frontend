@@ -1,8 +1,7 @@
 import { canUseQueueDj } from "@/helpers/ai_radio_access";
-import { subscribeAIRadioEvents } from "@/helpers/ai_radio_events";
-import api, { ConnectionState } from "@/plugins/api";
+import { trackAIRadioCache } from "@/helpers/ai_radio_events";
+import api from "@/plugins/api";
 import type {
-  AIRadioEventName,
   AIRadioSection,
   AIRadioSession,
   AIRadioStation,
@@ -41,9 +40,6 @@ const noAiProviderAlert = ref(false);
 // during generation), so failed sessions must raise the banner too.
 const seenFailedSessionIds = new Set<string>();
 let statusLoadedOnce = false;
-let showsLoadedOnce = false;
-let sectionsLoadedOnce = false;
-let unsubscribeEvents: (() => void) | undefined;
 
 let showSessionStatePrefetched = false;
 
@@ -59,49 +55,6 @@ watch(
   },
   { immediate: true },
 );
-
-watch(
-  () => store.enabledPlugins.has("ai_radio"),
-  (available) => {
-    unsubscribeEvents?.();
-    unsubscribeEvents = available
-      ? subscribeAIRadioEvents(onAIRadioEvent)
-      : undefined;
-    if (available) refreshLoaded();
-  },
-  { immediate: true },
-);
-
-// hints emitted while the socket was down are lost, so catch up after a reconnect
-watch(
-  () => api.state.value,
-  (state) => {
-    if (state === ConnectionState.INITIALIZED) refreshLoaded();
-  },
-);
-
-// refetch hints only refresh what was loaded before: the first load proves the
-// role may call the endpoint, and a cache nobody filled has no reader yet
-function onAIRadioEvent(name: AIRadioEventName): void {
-  if (name === "sessions_updated" && statusLoadedOnce) {
-    void loadStatus().catch(() => undefined);
-  } else if (name === "stations_updated" && showsLoadedOnce) {
-    void loadShows().catch(() => undefined);
-  } else if (name === "sections_updated" && sectionsLoadedOnce) {
-    void loadSections().catch(() => undefined);
-  }
-}
-
-/** Refetches every cache loaded before. */
-function refreshLoaded(): void {
-  for (const name of [
-    "sessions_updated",
-    "stations_updated",
-    "sections_updated",
-  ] as const) {
-    onAIRadioEvent(name);
-  }
-}
 
 interface StartShowOptions {
   playerIdOverride?: string;
@@ -125,7 +78,7 @@ async function loadShows(): Promise<AIRadioStation[]> {
       "ai_radio/stations/list",
     );
     shows.value = sortByName(result || []);
-    showsLoadedOnce = true;
+    trackAIRadioCache("stations_updated", loadShows);
     return shows.value;
   } finally {
     loadingShows.value = false;
@@ -139,7 +92,7 @@ async function loadSections(): Promise<AIRadioSection[]> {
       "ai_radio/sections/list",
     );
     sections.value = sortByName(result || []);
-    sectionsLoadedOnce = true;
+    trackAIRadioCache("sections_updated", loadSections);
     return sections.value;
   } finally {
     loadingSections.value = false;
@@ -247,6 +200,7 @@ async function loadStatus(): Promise<AIRadioSession[]> {
       reportStartError(session.error || "");
     }
     statusLoadedOnce = true;
+    trackAIRadioCache("sessions_updated", loadStatus);
     return sessions.value;
   } finally {
     loadingStatus.value = false;

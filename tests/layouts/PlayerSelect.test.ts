@@ -35,7 +35,6 @@ vi.mock("@/plugins/api", async () => {
     players: {} as Record<string, Player>,
     // the menu's ai dj entry derives availability from the provider list
     providers: {},
-    state: { value: "initialized" },
   });
   return { api, default: api };
 });

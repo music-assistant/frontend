@@ -2174,7 +2174,3 @@ export type AIRadioEventName =
   | "sections_updated"
   | "queue_dj_updated"
   | "sessions_updated";
-
-export interface AIRadioProviderEvent {
-  event: AIRadioEventName;
-}
