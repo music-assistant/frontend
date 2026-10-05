@@ -10,7 +10,7 @@
 -->
 <template>
   <div
-    class="grid-size-row"
+    class="flex min-w-52 items-center gap-3 px-2 py-1.5"
     @pointerdown.stop
     @click.stop
     @keydown.up.stop
@@ -22,7 +22,7 @@
     @keydown.page-up.stop
     @keydown.page-down.stop
   >
-    <Grid3x3 :size="18" class="grid-size-row__icon" aria-hidden="true" />
+    <Grid3x3 :size="18" class="shrink-0 opacity-70" aria-hidden="true" />
     <Slider
       :model-value="[value]"
       :min="GRID_SIZE_MIN"
@@ -30,11 +30,11 @@
       :step="1"
       :thumb-label="$t('grid_size')"
       :thumb-value-text="valueText"
-      class="grid-size-row__slider"
+      class="flex-auto"
       @update:model-value="onUpdate"
       @value-commit="onCommit"
     />
-    <Grid2x2 :size="18" class="grid-size-row__icon" aria-hidden="true" />
+    <Grid2x2 :size="18" class="shrink-0 opacity-70" aria-hidden="true" />
   </div>
 </template>
 
@@ -81,22 +81,3 @@ const onCommit = (values: number[]) => {
   emit("commit", values[0]);
 };
 </script>
-
-<style scoped>
-.grid-size-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 6px 8px;
-  min-width: 13rem;
-}
-
-.grid-size-row__icon {
-  flex: 0 0 auto;
-  opacity: 0.7;
-}
-
-.grid-size-row__slider {
-  flex: 1 1 auto;
-}
-</style>

@@ -751,10 +751,6 @@ const commitGridSize = function (size: number) {
   );
 };
 
-const getViewModeLabel = function (mode: string) {
-  return t(`view.${mode}`);
-};
-
 watch(
   () => props.forcedViewMode,
   (newMode) => {
@@ -1555,8 +1551,7 @@ const menuItems = computed(() => {
   // toggle view mode (hidden when view mode is controlled externally)
   if (!props.forcedViewMode)
     items.push({
-      label: "tooltip.view_mode_current",
-      labelArgs: [getViewModeLabel(viewMode.value)],
+      label: "tooltip.view_mode",
       icon: viewMode.value == "list" ? LayoutList : LayoutGrid,
       overflowAllowed: true,
       subItems: [
@@ -1564,6 +1559,7 @@ const menuItems = computed(() => {
           label: "view.list",
           icon: LayoutList,
           selected: viewMode.value == "list",
+          close_on_click: false,
           action: () => {
             selectViewMode("list");
           },
@@ -1572,6 +1568,7 @@ const menuItems = computed(() => {
           label: "view.panel",
           icon: LayoutGrid,
           selected: viewMode.value == "panel",
+          close_on_click: false,
           action: () => {
             selectViewMode("panel");
           },
@@ -1590,6 +1587,7 @@ const menuItems = computed(() => {
             onCommit: commitGridSize,
           },
         },
+        { label: "done" },
       ],
     });
 
@@ -1726,8 +1724,7 @@ const restoreSettings = async function () {
   if (props.forcedViewMode) {
     viewMode.value = props.forcedViewMode;
   } else if (prefs.viewMode) {
-    viewMode.value =
-      prefs.viewMode == "panel_compact" ? "panel" : prefs.viewMode;
+    viewMode.value = prefs.viewMode;
   } else if (
     ["artists", "similarartists", "albums", "genres"].includes(props.itemtype)
   ) {
