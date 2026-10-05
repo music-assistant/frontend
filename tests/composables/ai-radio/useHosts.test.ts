@@ -1,6 +1,7 @@
 import { useHosts } from "@/composables/ai-radio/useHosts";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
+  EventType,
   PLAYER_CONTROL_NONE,
   PlayerType,
   type AIRadioHost,
@@ -11,14 +12,26 @@ import { store as storeModule } from "@/plugins/store";
 import { flushPromises } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
-const { sendCommand } = vi.hoisted(() => ({
-  sendCommand: vi.fn(),
-}));
+const { sendCommand, subscribe, listeners } = vi.hoisted(() => {
+  const listeners: Array<(event: unknown) => void> = [];
+  return {
+    sendCommand: vi.fn(),
+    listeners,
+    subscribe: vi.fn((_event: unknown, callback: (event: unknown) => void) => {
+      listeners.push(callback);
+      return () => {
+        const index = listeners.indexOf(callback);
+        if (index >= 0) listeners.splice(index, 1);
+      };
+    }),
+  };
+});
 
 vi.mock("@/plugins/api", () => ({
   default: {
     players: {},
     sendCommand,
+    subscribe,
   },
 }));
 
@@ -69,6 +82,17 @@ vi.mock("vue-sonner", () => ({
 const store = storeModule as typeof storeModule & {
   enabledPlugins: ReadonlySet<string>;
 };
+
+// useShows subscribes too, so every hint goes to all listeners
+function emit(event: string) {
+  for (const listener of listeners) {
+    listener({ object_id: "ai_radio", data: { event } });
+  }
+}
+
+function callsOf(command: string) {
+  return sendCommand.mock.calls.filter((call) => call[0] === command);
+}
 
 const host: AIRadioHost = {
   id: "host-1",
@@ -133,5 +157,59 @@ describe("useHosts queue dj prefetch", () => {
 
     // Let the menu's own refresh calls settle before the test ends.
     await flushPromises();
+  });
+});
+
+describe("useHosts provider events", () => {
+  it("refetches the queue dj map on a queue_dj_updated hint, so the menu shows another client's change", async () => {
+    store.enabledPlugins = new Set(["ai_radio"]);
+    await flushPromises();
+    expect(subscribe).toHaveBeenCalledWith(
+      EventType.PROVIDER_EVENT,
+      expect.any(Function),
+      "ai_radio",
+    );
+    sendCommand.mockClear();
+
+    sendCommand.mockImplementation(async (command: string) => {
+      if (command === "ai_radio/hosts/list") return [host];
+      if (command === "ai_radio/queue_dj/status") return {};
+      return undefined;
+    });
+    emit("queue_dj_updated");
+    await flushPromises();
+
+    expect(callsOf("ai_radio/queue_dj/status")).toHaveLength(1);
+    expect(callsOf("ai_radio/hosts/list")).toHaveLength(0);
+    expect(useHosts().queueDjStatus.value).toEqual({});
+  });
+
+  it("refetches the hosts on a hosts_updated hint", async () => {
+    sendCommand.mockClear();
+
+    emit("hosts_updated");
+    await flushPromises();
+
+    expect(callsOf("ai_radio/hosts/list")).toHaveLength(1);
+    expect(callsOf("ai_radio/queue_dj/status")).toHaveLength(0);
+  });
+
+  it("ignores hints it has no cache for", async () => {
+    sendCommand.mockClear();
+
+    emit("sessions_updated");
+    emit("stations_updated");
+    emit("sections_updated");
+    await flushPromises();
+
+    expect(callsOf("ai_radio/hosts/list")).toHaveLength(0);
+    expect(callsOf("ai_radio/queue_dj/status")).toHaveLength(0);
+  });
+
+  it("drops the subscription when the plugin goes away", async () => {
+    store.enabledPlugins = new Set();
+    await flushPromises();
+
+    expect(listeners).toHaveLength(0);
   });
 });
