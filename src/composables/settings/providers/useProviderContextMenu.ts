@@ -20,7 +20,7 @@ interface UseProviderContextMenuOptions {
   onToggleEnabled: (item: ProviderConfig) => void;
   onRemove: (item: ProviderConfig) => void;
   onReload: (instanceId: string) => void;
-  onReconfigure: (instanceId: string) => void;
+  onReconfigure: (item: ProviderConfig) => void;
 }
 
 /**
@@ -106,7 +106,7 @@ export function useProviderContextMenu(options: UseProviderContextMenuOptions) {
         label: "settings.reconfigure",
         labelArgs: [],
         action: () => {
-          options.onReconfigure(item.instance_id);
+          options.onReconfigure(item);
         },
         icon: "mdi-cog-refresh",
       });

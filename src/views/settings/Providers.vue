@@ -66,7 +66,7 @@
             :stage-label="stageLabelFor(item)"
             @open="openProvider(item)"
             @menu="openMenu($event, item)"
-            @reconfigure="reconfigureProvider(item.instance_id)"
+            @reconfigure="reconfigureProvider(item)"
           />
         </component>
       </section>
@@ -358,10 +358,11 @@ const openProviderOptions = function (providerInstanceId: string) {
   router.push(`/settings/editprovider/${providerInstanceId}`);
 };
 
-const reconfigureProvider = function (providerInstanceId: string) {
+const reconfigureProvider = function (provider: ProviderConfig) {
   eventbus.emit("setupFlowDialog", {
     kind: "reconfigure",
-    instanceId: providerInstanceId,
+    instanceId: provider.instance_id,
+    name: getProviderName(provider),
     onFlowEnded: () => {
       void loadItems();
     },
@@ -377,7 +378,7 @@ const openProvider = function (provider: ProviderConfig) {
       provider.enabled,
     )
   ) {
-    reconfigureProvider(provider.instance_id);
+    reconfigureProvider(provider);
     return;
   }
   openProviderOptions(provider.instance_id);

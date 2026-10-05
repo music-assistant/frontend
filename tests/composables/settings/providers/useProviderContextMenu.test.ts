@@ -104,7 +104,7 @@ function createCallbacks() {
   return {
     onAccess: vi.fn<(item: ProviderConfig) => void>(),
     onOptions: vi.fn<(instanceId: string) => void>(),
-    onReconfigure: vi.fn<(instanceId: string) => void>(),
+    onReconfigure: vi.fn<(item: ProviderConfig) => void>(),
     onReload: vi.fn<(instanceId: string) => void>(),
     onRemove: vi.fn<(item: ProviderConfig) => void>(),
     onToggleEnabled: vi.fn<(item: ProviderConfig) => void>(),
@@ -478,15 +478,16 @@ describe("menu item actions", () => {
     expect(callbacks.onReload).toHaveBeenCalledWith("spotify--1");
   });
 
-  it("reconfigure action calls onReconfigure with the instance id", () => {
+  it("reconfigure action calls onReconfigure with the source", () => {
     const { result } = mountMenu({ canReconfigure: true });
+    const item = providerConfig({
+      domain: "spotify",
+      instance_id: "spotify--1",
+    });
 
-    result.openMenu(
-      pointerEvent(),
-      providerConfig({ domain: "spotify", instance_id: "spotify--1" }),
-    );
+    result.openMenu(pointerEvent(), item);
     findItem("settings.reconfigure").action?.();
 
-    expect(callbacks.onReconfigure).toHaveBeenCalledWith("spotify--1");
+    expect(callbacks.onReconfigure).toHaveBeenCalledWith(item);
   });
 });
