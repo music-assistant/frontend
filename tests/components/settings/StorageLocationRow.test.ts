@@ -36,12 +36,12 @@ describe("StorageLocationRow", () => {
       [],
     );
 
-    expect(wrapper.find('[data-testid="storage-used-by"]').exists()).toBe(
-      false,
-    );
     const remove = wrapper.get('[data-testid="storage-remove"]');
     expect(remove.attributes("disabled")).toBeDefined();
     // the row does not name the source, so the reason does
+    expect(wrapper.get('[data-testid="storage-used-by"]').text()).toBe(
+      "Local files uses this location. Disable or remove that music source first.",
+    );
     expect(removeHint(wrapper)).toBe(
       "Local files uses this location. Disable or remove that music source first.",
     );
@@ -49,6 +49,31 @@ describe("StorageLocationRow", () => {
       wrapper.get(`#${remove.attributes("aria-describedby")}`).text(),
     ).toBe(
       "Local files uses this location. Disable or remove that music source first.",
+    );
+  });
+
+  it("says on the row why a location in use can not be removed", () => {
+    const wrapper = mountRow(managedShare({ used_by: ["Local files"] }));
+
+    const usedBy = wrapper.get('[data-testid="storage-used-by"]');
+    expect(usedBy.text()).toBe(
+      "Local files uses this location. Disable or remove that music source first.",
+    );
+    expect(
+      wrapper
+        .get('[data-testid="storage-remove"]')
+        .attributes("aria-describedby"),
+    ).toBe(usedBy.attributes("id"));
+  });
+
+  it("names the users of a location that can not be removed at all", () => {
+    const wrapper = mountRow(
+      storageLocation({ path: "/media", used_by: ["Local files"] }),
+    );
+
+    expect(wrapper.find('[data-testid="storage-remove"]').exists()).toBe(false);
+    expect(wrapper.get('[data-testid="storage-used-by"]').text()).toBe(
+      "Used by Local files",
     );
   });
 
