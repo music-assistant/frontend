@@ -1,9 +1,12 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
-    <!-- dynamic station: content is generated on the fly, so show a sample instead of "other versions" -->
+    <!-- tracklisted station (dynamic or finite): show its tracks instead of "other versions" -->
     <DynamicItemSample
-      v-if="itemDetails && itemDetails.is_dynamic"
+      v-if="
+        itemDetails &&
+        (itemDetails.is_dynamic || itemDetails.is_endless === false)
+      "
       :item-details="itemDetails"
       :provider="props.provider"
     />
