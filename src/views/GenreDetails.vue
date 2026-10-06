@@ -241,7 +241,11 @@ const savedViewMode = getPreference<GenreViewMode>(
   "genre_detail_view",
   "discovery",
 );
-const viewMode = ref<GenreViewMode>(savedViewMode.value);
+const viewMode = ref<GenreViewMode>(
+  (savedViewMode.value as string) === "panel_compact"
+    ? "panel"
+    : savedViewMode.value,
+);
 const itemsViewMode = computed(() =>
   viewMode.value !== "discovery" ? viewMode.value : undefined,
 );

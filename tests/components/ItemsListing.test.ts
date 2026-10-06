@@ -778,6 +778,13 @@ describe("ItemsListing cover size", () => {
 
     expect(slider(listing)?.hide).toBe(true);
   });
+
+  it("shows the thumbs view for a saved compact thumbs view", async () => {
+    signInWithSavedGrid({ viewMode: "panel_compact" });
+    const listing = await mountGrid();
+
+    expect(columns(listing)).toBe("col-2");
+  });
 });
 
 describe("ItemsListing source selector", () => {

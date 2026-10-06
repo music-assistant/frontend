@@ -1723,7 +1723,8 @@ const restoreSettings = async function () {
   if (props.forcedViewMode) {
     viewMode.value = props.forcedViewMode;
   } else if (prefs.viewMode) {
-    viewMode.value = prefs.viewMode;
+    viewMode.value =
+      prefs.viewMode === "panel_compact" ? "panel" : prefs.viewMode;
   } else if (
     ["artists", "similarartists", "albums", "genres"].includes(props.itemtype)
   ) {
