@@ -166,20 +166,6 @@ describe("PlayerBrowserMediaControls seek handling", () => {
     wrapper.unmount();
   });
 
-  it("keeps the 10 second jump for a track", () => {
-    seedPlayingQueue({ elapsed_time: 30, secondsAgo: 0, playback_speed: 1 });
-    storeMock.curQueueItem = {
-      media_item: { media_type: MediaType.TRACK },
-    };
-
-    const wrapper = mount(PlayerBrowserMediaControls);
-    invokeAction("seekforward");
-
-    expect(mockPlayerCommandSeek).toHaveBeenCalledWith("player-1", 40);
-    expect(mockQueueCommandSkip).not.toHaveBeenCalled();
-    wrapper.unmount();
-  });
-
   // audiobooks and podcasts skip the same amounts as the skip buttons
   it.each([
     { mediaType: MediaType.AUDIOBOOK, action: "seekforward", seconds: 30 },
@@ -232,7 +218,7 @@ describe("PlayerBrowserMediaControls seek handling", () => {
     },
   );
 
-  it("keeps seeking a track by 10 seconds on a server with accurate skip", () => {
+  it("keeps seeking a track by 10 seconds", () => {
     seedSkipCapableQueue(MediaType.TRACK);
 
     const wrapper = mount(PlayerBrowserMediaControls);
