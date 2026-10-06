@@ -234,6 +234,24 @@ export const getBrowseFolderName = function (browseItem: BrowseFolder) {
   return browseItem?.name || browseItem?.path || "";
 };
 
+/** Return the year a track was released, unless it repeats the year of the album it is listed under. */
+export const getTrackReleaseYear = function (
+  item: MediaItemType,
+  parentItem?: MediaItemType,
+): number | undefined {
+  if (item.media_type != MediaType.TRACK || !item.metadata?.release_date)
+    return undefined;
+  // release dates arrive as midnight UTC, so read the year in UTC
+  const year = new Date(item.metadata.release_date).getUTCFullYear();
+  if (
+    parentItem?.media_type == MediaType.ALBUM &&
+    "year" in parentItem &&
+    parentItem.year == year
+  )
+    return undefined;
+  return year;
+};
+
 export const getStreamingProviderMappings = function (
   itemDetails: MediaItemType,
 ) {

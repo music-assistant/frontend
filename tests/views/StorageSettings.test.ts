@@ -192,8 +192,9 @@ describe("StorageSettings", () => {
     const wrapper = await mountPage();
 
     const inUseRow = row(wrapper, inUse);
+    // the line naming the sources also says why the location can not be removed
     expect(inUseRow.get('[data-testid="storage-used-by"]').text()).toBe(
-      "settings.storage.used_by",
+      "settings.storage.remove_in_use",
     );
     const remove = inUseRow.get('[data-testid="storage-remove"]');
     expect(remove.attributes("disabled")).toBeDefined();
@@ -201,7 +202,7 @@ describe("StorageSettings", () => {
     expect(remove.element.parentElement?.getAttribute("title")).toBe(
       "settings.storage.remove_in_use",
     );
-    // and screen readers hear the same reason
+    // and screen readers hear it with the button
     const describedBy = remove.attributes("aria-describedby");
     expect(inUseRow.get(`#${describedBy}`).text()).toBe(
       "settings.storage.remove_in_use",
@@ -248,7 +249,7 @@ describe("StorageSettings", () => {
 
     const shareRow = row(wrapper, both);
     expect(shareRow.get('[data-testid="storage-used-by"]').text()).toBe(
-      "settings.storage.used_by",
+      "settings.storage.remove_in_use",
     );
     expect(shareRow.get('[data-testid="storage-read-by"]').text()).toBe(
       "settings.storage.read_by",

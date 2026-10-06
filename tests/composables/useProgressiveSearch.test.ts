@@ -10,6 +10,7 @@ import { effectScope, nextTick, ref, type EffectScope } from "vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { track } from "../fixtures/track";
 import { genre } from "../fixtures/genre";
+import { providerMapping } from "../fixtures/providerMapping";
 
 const { mockSearch, mockGetLibraryGenres, mockProviders, mockManifests } =
   vi.hoisted(() => {
@@ -62,6 +63,26 @@ const trackFixture = (
     item_id: itemId,
     provider,
     name,
+  });
+
+// a track mapped to the given spotify item id
+const spotifyMappedTrack = (
+  itemId: string,
+  name: string,
+  provider: string,
+  spotifyItemId: string,
+): Track =>
+  track({
+    item_id: itemId,
+    provider,
+    name,
+    provider_mappings: [
+      providerMapping({
+        item_id: spotifyItemId,
+        provider_domain: "spotify",
+        provider_instance: "spotify-a",
+      }),
+    ],
   });
 
 const genreFixture = (itemId: string, name: string): Genre =>
@@ -207,6 +228,46 @@ describe("useProgressiveSearch", () => {
       "Spotify 1",
       "Fs 2",
       "Fs 3",
+    ]);
+  });
+
+  it("leaves out provider items that are already in the library results", async () => {
+    mockSearch.mockImplementation(
+      (_query, _mediaTypes, _limit, providers: string[] = []) => {
+        if (providers[0] === LIBRARY_SEARCH_TARGET)
+          return Promise.resolve(
+            results({
+              tracks: [spotifyMappedTrack("l1", "Lib hit", "library", "s1")],
+            }),
+          );
+        if (providers[0] === "spotify")
+          return Promise.resolve(
+            results({
+              tracks: [
+                spotifyMappedTrack("s1", "Spotify hit", "spotify-a", "s1"),
+                spotifyMappedTrack("s2", "Spotify other", "spotify-a", "s2"),
+              ],
+            }),
+          );
+        return Promise.resolve(emptyResults());
+      },
+    );
+    const providers = ref<string[]>([]);
+    const { search, searchResult } = setup({ providers });
+
+    await search("hit");
+    await flush();
+    expect(searchResult.value?.tracks.map((item) => item.name)).toEqual([
+      "Lib hit",
+      "Spotify other",
+    ]);
+
+    // without the library in the selection, its provider item is listed
+    providers.value = ["spotify"];
+    await nextTick();
+    expect(searchResult.value?.tracks.map((item) => item.name)).toEqual([
+      "Spotify hit",
+      "Spotify other",
     ]);
   });
 
