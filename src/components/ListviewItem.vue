@@ -29,6 +29,7 @@
           <ListviewItemTitle
             :display-name="displayName"
             :item="item"
+            :parent-item="parentItem"
             :show-checkboxes="showCheckboxes"
             :is-playing="isPlaying"
           />
@@ -147,6 +148,7 @@
       <ListviewItemTitle
         :display-name="displayName"
         :item="item"
+        :parent-item="parentItem"
         :show-checkboxes="showCheckboxes"
         :is-playing="isPlaying"
       />
