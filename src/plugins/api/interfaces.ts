@@ -1129,6 +1129,9 @@ export interface PodcastEpisode extends MediaItem {
   position: number;
   podcast: Podcast | ItemMapping;
   duration: number;
+  // the publisher's own episode and season number, null when it does not number them
+  episode_number: number | null;
+  season: number | null;
   fully_played: boolean | null;
   resume_position_ms: number | null;
 }
