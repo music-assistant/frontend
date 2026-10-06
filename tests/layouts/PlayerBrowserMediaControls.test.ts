@@ -45,7 +45,8 @@ const {
     },
     storeMock: {
       activePlayer: undefined as MockPlayer | undefined,
-      activePlayerQueue: undefined as { queue_id: string } | undefined,
+      activePlayerQueue: undefined as
+        { queue_id: string; current_item?: { duration?: number } } | undefined,
       curQueueItem: undefined as
         { media_item: { media_type: MediaType } } | undefined,
     },
@@ -212,6 +213,25 @@ describe("PlayerBrowserMediaControls seek handling", () => {
     wrapper.unmount();
   });
 
+  // the server rejects a skip in an item without a duration
+  it.each([
+    { label: "missing", currentItem: {} },
+    { label: "zero", currentItem: { duration: 0 } },
+  ])(
+    "does not skip or seek an audiobook with a $label duration",
+    ({ currentItem }) => {
+      seedSkipCapableQueue(MediaType.AUDIOBOOK, currentItem);
+
+      const wrapper = mount(PlayerBrowserMediaControls);
+      invokeAction("seekforward");
+      invokeAction("seekbackward");
+
+      expect(mockQueueCommandSkip).not.toHaveBeenCalled();
+      expect(mockPlayerCommandSeek).not.toHaveBeenCalled();
+      wrapper.unmount();
+    },
+  );
+
   it("keeps seeking a track by 10 seconds on a server with accurate skip", () => {
     seedSkipCapableQueue(MediaType.TRACK);
 
@@ -256,9 +276,15 @@ function seedPlayingQueue(timing: {
   };
 }
 
-function seedSkipCapableQueue(mediaType: MediaType): void {
+function seedSkipCapableQueue(
+  mediaType: MediaType,
+  currentItem: { duration?: number } = { duration: 3600 },
+): void {
   seedPlayingQueue({ elapsed_time: 30, secondsAgo: 0, playback_speed: 1 });
-  storeMock.activePlayerQueue = { queue_id: "queue" };
+  storeMock.activePlayerQueue = {
+    queue_id: "queue",
+    current_item: currentItem,
+  };
   storeMock.curQueueItem = { media_item: { media_type: mediaType } };
 }
 

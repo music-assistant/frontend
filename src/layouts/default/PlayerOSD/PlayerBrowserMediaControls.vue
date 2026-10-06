@@ -115,11 +115,13 @@ const seekHandler = function (
     to = evt.seekTime;
   } else if (evt.action === "seekforward" || evt.action === "seekbackward") {
     const offset = evt.seekOffset || defaultSeekOffset(evt.action);
-    const queueId = store.activePlayerQueue?.queue_id;
+    const queue = store.activePlayerQueue;
     // the server adds up quick presses and keeps the jump within the item
-    if (showSkip.value && queueId) {
+    if (showSkip.value && queue) {
+      // the server can not skip within an item without a duration
+      if (!queue.current_item?.duration) return;
       api.queueCommandSkip(
-        queueId,
+        queue.queue_id,
         evt.action === "seekbackward" ? -offset : offset,
       );
       return;
