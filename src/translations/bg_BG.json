@@ -259,10 +259,12 @@
                 "description": "Конфигурация на основния модул за управление на метаданни"
             },
             "music": {
-                "name": "Музика"
+                "name": "Музика",
+                "description": "Конфигуриране на основния модул за управление на музиката (библиотеката)"
             },
             "players": {
-                "name": "Плейъри"
+                "name": "Плейъри",
+                "description": "Конфигуриране на основния модул за управление на плейърите"
             },
             "remote_access": {
                 "name": "Отдалечен достъп",
@@ -293,6 +295,7 @@
         "remote_access_disabled": "Отдалеченият достъп е дзеактивиран",
         "remote_access_connected": "Свързан",
         "remote_access_connecting": "Свързване...",
+        "remote_access_your_id": "Вашият ID за отдалечен достъп",
         "remote_access_id_explanation": "Използвайте този уникален ID за да се свържете с вашия сървър Music Assistant от отдалечени устройства:",
         "remote_access_how_to_use": "Как да използвате отдалечен достъп",
         "remote_access_step_1": "Отидете на",
@@ -302,6 +305,7 @@
         "remote_access_signaling_server": "Сигнален сървър",
         "remote_access_protocol": "Протокол за свързване",
         "remote_access_encryption": "Криптиране",
+        "remote_access_error_loading": "Неуспешно зареждане на информацията за отдалечен достъп",
         "remote_access_enabled_success": "Отдалеченият достъп е активиран",
         "remote_access_disabled_success": "Отдалеченият достъп е дезактивиран",
         "remote_access_signaling_server_description": "Сигнален сървър в облака, хостван от фондация Open Home.",
@@ -333,10 +337,17 @@
         "provider_requires_attention_detail": "Един или повече доставчици изискват внимание. Моля, проверете настройките на доставчика.",
         "reconfigure": "Преконфигуриране",
         "fix_now": "Поправяне сега",
+        "web_player_enabled": {
+            "label": "Активиране на вградения уеб плейър (Sendspin)"
+        },
         "enable_browser_controls": {
-            "label": "Активиране на медийните контроли на браузъра"
+            "label": "Активиране на медийните контроли на браузъра",
+            "options": {
+                "web_player": "Само вградения уеб плейър"
+            }
         },
         "settings_saved": "Настройките са запазени успешно",
+        "protocol_no_settings": "Този изходен протокол няма допълнителна конфигурация",
         "protocol_no_settings_with_advanced": "Не се виждат настройки. Активирайте разширените настройки, за да видите повече опции за конфигурация.",
         "show_advanced_settings": "Показване на разширени настройки",
         "advanced": "Разширени",
@@ -470,7 +481,84 @@
         "genre_table_page_of": "Страница {0} от {1}",
         "music_sources_own": "Вашите източници",
         "music_sources_shared": "Споделено с вас",
-        "music_sources_shared_empty": "Все още не са споделени с вас музикални източници."
+        "music_sources_shared_empty": "Все още не са споделени с вас музикални източници.",
+        "storage": {
+            "title": "Хранилище",
+            "usage": {
+                "data": "Данни",
+                "cache": "Кеш"
+            },
+            "kind": {
+                "builtin_media": "Папка за мултимедия на Home Assistant",
+                "network_share": "Споделен мрежов ресурс",
+                "removable": "USB устройство",
+                "local_disk": "Локален диск",
+                "manual": "Папка"
+            },
+            "share_type": {
+                "cifs": "SMB",
+                "nfs": "NFS"
+            },
+            "share_summary": "{type} {address}",
+            "share_summary_via_ha": "{type} {address}, чрез Home Assistant",
+            "read_only": "Само за четене",
+            "unavailable": "Не е налично",
+            "free_space": "{0} свободно",
+            "free_of_total": "{0} свободно от {1}",
+            "used_space": "{0} използвано",
+            "add_network_share": "Добавяне на мрежов споделен ресурс",
+            "add_local_folder": "Добавяне на папка на този сървър",
+            "share_added": "Мрежовият споделен ресурс е добавен",
+            "share_saved": "Мрежовият споделен ресурс е записан",
+            "share_reloaded": "Мрежовият споделен ресурс е презареден",
+            "share_removed": "Мрежовият споделен ресурс е премахнат",
+            "share_save_failed": "Неуспешно записване на мрежовия ресурс",
+            "share_reload_failed": "Неуспешно презареждане на мрежовия ресурс",
+            "share_remove_failed": "Неуспешно премахване на мрежовия ресурс",
+            "folder_added": "Папката е добавена",
+            "folder_removed": "Папката е премахната",
+            "folder_add_failed": "Неуспешно добавяне на папката",
+            "folder_remove_failed": "Неуспешно премахване на папката",
+            "remove_share_title": "Премахване на мрежов ресурс",
+            "remove_folder_title": "Премахване на папката",
+            "cannot_mount_container_title": "Добавяне на мрежови ресурси на хоста",
+            "cannot_mount_host_title": "Монтиране на мрежови ресурси на този сървър",
+            "share_dialog": {
+                "edit_title": "Редактиране на мрежов ресурс",
+                "description": "Свързване на споделена папка на NAS или на друг компютър.",
+                "share_type": "Тип на споделяне",
+                "server": "Сървър",
+                "server_hint": "Име или IP адрес на NAS или компютъра, например nas.local или 192.168.1.10",
+                "share_name_hint": "Името на споделената папка, например music",
+                "export_path_hint": "Папката, която сървърът споделя, например \/volume1\/music",
+                "username": "Потребителско име",
+                "password": "Парола",
+                "credentials_hint": "Оставете и двете празни, за да се свържете като гост.",
+                "password_keep": "Оставете празно, за да запазите текущата парола",
+                "version": "Версия на протокола",
+                "version_auto": "Автоматично"
+            },
+            "folder_dialog": {
+                "description": "Направете папка на този сървър достъпна за вашите музикални източници.",
+                "path": "Път до папката",
+                "path_hint": "Пълният път до папката, например \/home\/me\/Music"
+            },
+            "use_as_source": "Използване като източник на музика"
+        },
+        "folder_picker": {
+            "selected": "Избрана папка",
+            "none_selected": "Няма избрана папка",
+            "all_locations": "Всички локации",
+            "breadcrumb": "Път до папката",
+            "open_folder": "Отваряне на {name}",
+            "no_subfolders": "Тази папка няма подпапки.",
+            "use_folder": "Използвайте тази папка",
+            "folder_selected": "Избрана",
+            "holds_selection": "Избраната папка е тук",
+            "browse_failed": "Неуспешно отваряне на папката",
+            "empty_title": "Все още няма нищо за избиране",
+            "manage": "Управление на хранилището"
+        }
     },
     "show_info": "Показване на информация",
     "show_select_boxes": "Показване на полета за избор",
@@ -539,7 +627,9 @@
         "volume_up": "Увеличаване на силата на звука",
         "show_full_path": "Показване на пълния път",
         "show_menu": "Показване\/скриване на менюто",
-        "show_context_menu": "Показване на контекстното меню"
+        "show_context_menu": "Показване на контекстното меню",
+        "mute": "Изключване на звука",
+        "unmute": "Включване на звука"
     },
     "topresult": "Най-добър резултат",
     "track": "Песен",
@@ -1419,8 +1509,11 @@
         "active_player_volume_only": "Показване на плъзгачите за силата на звука само за активните плейъри",
         "and_more": "...и още {0}",
         "disable_player_title": "Деактивиране на {0}?",
+        "display_options": "Опции за показване",
         "rename_player": "Преименуване на плейъра",
-        "rename_player_description": "Въведете ново име за този плейър."
+        "rename_player_description": "Въведете ново име за този плейър.",
+        "show_active_players_first": "Показване на активните плейъри първо",
+        "show_selected_player_first": "Показване на избрания плейър първо"
     },
     "visualizer": {
         "title": "MilkDrop",
@@ -1534,7 +1627,16 @@
                 "connected": "Вашите музикални източници"
             },
             "core_settings": {
-                "internal_address": "Вътрешен адрес"
+                "internal_address": "Вътрешен адрес",
+                "remote": {
+                    "builtin": {
+                        "title": "Вграден отдалечен достъп",
+                        "description": "Сигурна и криптирана връзка, без необходимост от пренасочване на портове или VPN. Просто я активирайте и се свържете отвсякъде чрез своя ID за отдалечен достъп.",
+                        "switch": "Отдалечен достъп",
+                        "id": "Вашият ID за отдалечен достъп",
+                        "copy": "Копиране на ID за отдалечен достъп"
+                    }
+                }
             },
             "your_players": {
                 "title": "Вашите плейъри"
@@ -1567,6 +1669,9 @@
         "end": "Край на обиколката",
         "step_counter": "{current} от {total}",
         "stops": {
+            "menu": {
+                "title": "Менюто"
+            },
             "search": {
                 "title": "Търсене"
             },
@@ -1590,5 +1695,10 @@
     "discography": "Дискография",
     "discography_hint": "От MusicBrainz",
     "not_in_library": "Не е във вашата библиотека",
-    "find_on_music_services": "Намерете във вашите музикални услуги"
+    "find_on_music_services": "Намерете във вашите музикални услуги",
+    "play_on_this_device": "Възпроизвеждане на това устройство",
+    "about_episode": "За този епизод",
+    "next_episode": "Следващ епизод",
+    "other_episodes": "Други епизоди",
+    "previous_episode": "Предишен епизод"
 }
