@@ -1,17 +1,16 @@
-import { canUseQueueDj } from "@/helpers/ai_radio_access";
+import { canPlayShows } from "@/helpers/ai_radio_access";
 import { trackAIRadioCache } from "@/helpers/ai_radio_events";
 import api from "@/plugins/api";
 import type {
+  AIRadioQueueDJStatus,
   AIRadioSection,
-  AIRadioSession,
   AIRadioStation,
-  AIRadioStatus,
   Playlist,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ref, watch } from "vue";
+import { reactive, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
 const PLAYLIST_PAGE_SIZE = 200;
@@ -20,56 +19,39 @@ const NO_AI_PROVIDER_MARKER = /no ai provider/i;
 
 const shows = ref<AIRadioStation[]>([]);
 const sections = ref<AIRadioSection[]>([]);
-const sessions = ref<AIRadioSession[]>([]);
 const playlists = ref<Playlist[]>([]);
+// queue_id -> DJ state; a show is on air on the queue whose station_id is its id.
+const djStatus = ref<AIRadioQueueDJStatus>({});
 
 const loadingShows = ref(false);
 const loadingSections = ref(false);
-const loadingStatus = ref(false);
 const loadingPlaylists = ref(false);
+const loadingDjStatus = ref(false);
 const savingShow = ref(false);
-// Station id currently being deleted/started, so only that card reflects it.
+// Station id currently being deleted, so only that card reflects it.
 const deletingShowId = ref("");
-const startingShowId = ref("");
-const stoppingSessionId = ref("");
+// Station ids with a start or stop in flight; Sets because two shows on two
+// different queues can be started or stopped at once.
+const startingShowIds = reactive(new Set<string>());
+const stoppingShowIds = reactive(new Set<string>());
+// Refreshes can overlap (provider hints, a start, a stop's fresh check): the
+// loading flag follows the in-flight count and only the newest result is applied.
+let djStatusInFlight = 0;
+let djStatusRequestSeq = 0;
+let newestDjStatusRequest: Promise<AIRadioQueueDJStatus> | null = null;
 
 // Set when a start attempt fails with a "No AI provider" error; drives the
 // gallery's persistent prereq banner (a toast alone isn't enough there).
 const noAiProviderAlert = ref(false);
-// Dynamic-mode runs fail asynchronously (the session starts fine and errors
-// during generation), so failed sessions must raise the banner too.
-const seenFailedSessionIds = new Set<string>();
-let statusLoadedOnce = false;
-
-let showSessionStatePrefetched = false;
-
-// Prefetch as soon as the provider is there, for the roles that get the queue DJ
-// menu, so it can resolve an on-air show's host from anywhere in the app, not
-// just this view.
-watch(
-  () => store.enabledPlugins.has("ai_radio") && canUseQueueDj(),
-  (ready) => {
-    // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
-    if (ready && authManager.guestSessionKind() === null)
-      prefetchShowSessionState();
-  },
-  { immediate: true },
-);
-
-interface StartShowOptions {
-  playerIdOverride?: string;
-  sourcePlaylistIdOverride?: string;
-  sourcePlaylistProviderOverride?: string;
-  dynamicSourcePlaytimeCapOverride?: number;
-}
 
 const sortByName = <T extends { name: string }>(items: T[]): T[] => {
   return [...items].sort((a, b) => a.name.localeCompare(b.name));
 };
 
-const sortSessions = (items: AIRadioSession[]): AIRadioSession[] => {
-  return [...items].sort((a, b) => b.created_at.localeCompare(a.created_at));
-};
+/** The dynamic radio media item uri a show plays as. */
+export function showUri(showId: string): string {
+  return `ai_radio://radio/${showId}`;
+}
 
 async function loadShows(): Promise<AIRadioStation[]> {
   loadingShows.value = true;
@@ -177,102 +159,96 @@ async function deleteShow(stationId: string): Promise<void> {
   }
 }
 
-async function loadStatus(): Promise<AIRadioSession[]> {
-  loadingStatus.value = true;
-  try {
-    const result = await api.sendCommand<AIRadioStatus>("ai_radio/status");
-    sessions.value = sortSessions(result.sessions || []);
-    for (const session of sessions.value) {
-      if (
-        session.status !== "failed" ||
-        seenFailedSessionIds.has(session.session_id)
-      ) {
-        continue;
-      }
-      seenFailedSessionIds.add(session.session_id);
-      if (statusLoadedOnce) {
-        toast.error(
-          $t("providers.ai_radio.toast.session_failed", [
-            session.error || $t("providers.ai_radio.card.session_failed"),
-          ]),
-        );
-      }
-      reportStartError(session.error || "");
+function refreshDjStatus(
+  suppressGlobalError = false,
+): Promise<AIRadioQueueDJStatus> {
+  const seq = ++djStatusRequestSeq;
+  djStatusInFlight++;
+  loadingDjStatus.value = true;
+  const request = (async (): Promise<AIRadioQueueDJStatus> => {
+    try {
+      const result = suppressGlobalError
+        ? await api.sendCommand<AIRadioQueueDJStatus>(
+            "ai_radio/queue_dj/status",
+            undefined,
+            { suppressGlobalError: true },
+          )
+        : await api.sendCommand<AIRadioQueueDJStatus>(
+            "ai_radio/queue_dj/status",
+          );
+      // an older request finishing late must not overwrite a newer status; it hands
+      // back the newer request's answer instead so every caller decides on the
+      // newest state (stopShow does)
+      if (seq !== djStatusRequestSeq) return await newestDjStatusRequest!;
+      djStatus.value = result || {};
+      trackAIRadioCache("queue_dj_updated", refetchDjStatus);
+      return djStatus.value;
+    } finally {
+      if (--djStatusInFlight === 0) loadingDjStatus.value = false;
     }
-    statusLoadedOnce = true;
-    trackAIRadioCache("sessions_updated", loadStatus);
-    return sessions.value;
-  } finally {
-    loadingStatus.value = false;
-  }
+  })();
+  newestDjStatusRequest = request;
+  return request;
 }
 
-/**
- * Warms the shows + sessions caches the queue DJ menu reads to resolve an
- * on-air show's host. Without this, opening that menu outside the AI Radio
- * page (which is what normally loads these) would see stale/empty caches.
- */
-function prefetchShowSessionState(): void {
-  if (showSessionStatePrefetched) return;
-  showSessionStatePrefetched = true;
-  Promise.all([loadShows(), loadStatus()]).catch(() => {
-    // Best effort: allow a later availability flip to try again.
-    showSessionStatePrefetched = false;
-  });
+/** The queue a show is currently on air on, if any (drives a show card's "On air" state). */
+function onAirQueueId(showId: string): string | undefined {
+  return Object.keys(djStatus.value).find(
+    (queueId) => djStatus.value[queueId].station_id === showId,
+  );
 }
 
-async function startShow(
-  stationId: string,
-  overrides?: StartShowOptions,
-): Promise<AIRadioSession> {
-  startingShowId.value = stationId;
+/** Whether a start is currently in flight for the given show. */
+function isStarting(showId: string): boolean {
+  return startingShowIds.has(showId);
+}
+
+/** Whether a stop is currently in flight for the given show. */
+function isStopping(showId: string): boolean {
+  return stoppingShowIds.has(showId);
+}
+
+/** Plays a show as its radio media item on the queue the given player plays from. */
+async function startShow(showId: string, playerId: string): Promise<void> {
+  startingShowIds.add(showId);
   dismissNoAiProviderAlert();
   try {
-    const args: Record<string, unknown> = {
-      station_id: stationId,
-    };
-    if (overrides?.playerIdOverride) {
-      args.player_id_override = overrides.playerIdOverride;
-    }
-    if (overrides?.sourcePlaylistIdOverride) {
-      args.source_playlist_id_override = overrides.sourcePlaylistIdOverride;
-    }
-    if (overrides?.sourcePlaylistProviderOverride) {
-      args.source_playlist_provider_override =
-        overrides.sourcePlaylistProviderOverride;
-    }
-    if (typeof overrides?.dynamicSourcePlaytimeCapOverride === "number") {
-      args.dynamic_source_playtime_cap_override =
-        overrides.dynamicSourcePlaytimeCapOverride;
-    }
-    const result = await api.sendCommand<AIRadioSession>(
-      "ai_radio/start",
-      args,
-    );
-    const updated = await loadStatus();
-    const current = updated.find(
-      (item) => item.session_id === result.session_id,
-    );
-    if (current?.status !== "failed") {
-      toast.success($t("providers.ai_radio.toast.live_starting"));
-    }
-    return current || result;
+    await api.playMedia(showUri(showId), undefined, {
+      queue_id: activeQueueId(playerId),
+    });
+    toast.success($t("providers.ai_radio.toast.live_starting"));
+    // Best effort: the server's queue_dj_updated hint reconciles the on-air state
+    // anyway, so a failure here must not add an error toast to the success one.
+    await refreshDjStatus(true).catch(() => undefined);
   } finally {
-    startingShowId.value = "";
+    startingShowIds.delete(showId);
   }
 }
 
-async function stopShow(sessionId: string): Promise<void> {
-  stoppingSessionId.value = sessionId;
+/** Takes a show off air by clearing the queue it plays on; the server detaches the DJ itself. */
+async function stopShow(showId: string): Promise<void> {
+  const queueId = onAirQueueId(showId);
+  if (!queueId) return;
+  stoppingShowIds.add(showId);
   try {
-    await api.sendCommand("ai_radio/stop", { session_id: sessionId });
-    toast.success($t("providers.ai_radio.toast.session_stopped"));
-    await loadStatus();
-  } catch (error) {
-    await loadStatus().catch(() => undefined);
-    throw error;
+    // The queue may have moved on to other content since djStatus was fetched;
+    // re-check right before the destructive clear so that content isn't touched.
+    // This also applies the fresh status.
+    // Failures surface once, through the caller's own error handling.
+    const fresh = await refreshDjStatus(true);
+    if (fresh[queueId]?.station_id !== showId) return;
+    await api.sendCommand(
+      "player_queues/clear",
+      { queue_id: queueId },
+      { suppressGlobalError: true },
+    );
+    // Optimistic: the detach also lands as a queue_dj_updated hint, which refreshes the real state.
+    const remaining = { ...djStatus.value };
+    delete remaining[queueId];
+    djStatus.value = remaining;
+    toast.success($t("providers.ai_radio.toast.show_stopped"));
   } finally {
-    stoppingSessionId.value = "";
+    stoppingShowIds.delete(showId);
   }
 }
 
@@ -287,30 +263,31 @@ function dismissNoAiProviderAlert(): void {
   noAiProviderAlert.value = false;
 }
 
-/** The running session for a station, if any (drives a show card's "On air" state). */
-function runningSessionForStation(
-  stationId: string,
-): AIRadioSession | undefined {
-  return sessions.value.find(
-    (session) =>
-      session.station_id === stationId && session.status === "running",
-  );
+/** The queue a player plays from: its group leader's when synced, else its own (mirrors api.playMedia's default). */
+function activeQueueId(playerId: string): string {
+  const player = api.players[playerId];
+  return player?.active_source && player.active_source in api.queues
+    ? player.active_source
+    : playerId;
+}
+
+/** Background refetch: there is no user action to attach an error toast to. */
+function refetchDjStatus(): Promise<AIRadioQueueDJStatus> {
+  return refreshDjStatus(true);
 }
 
 export function useShows() {
   return {
     shows,
     sections,
-    sessions,
     playlists,
+    djStatus,
     loadingShows,
     loadingSections,
-    loadingStatus,
     loadingPlaylists,
+    loadingDjStatus,
     savingShow,
     deletingShowId,
-    startingShowId,
-    stoppingSessionId,
     noAiProviderAlert,
     loadShows,
     loadSections,
@@ -319,11 +296,26 @@ export function useShows() {
     getShow,
     saveShow,
     deleteShow,
-    loadStatus,
+    refreshDjStatus,
+    onAirQueueId,
+    isStarting,
+    isStopping,
     startShow,
     stopShow,
-    runningSessionForStation,
     reportStartError,
     dismissNoAiProviderAlert,
   };
 }
+
+// Fetch the DJ state as soon as the provider is there, for the roles that may
+// play shows, so the on-air state is right from anywhere in the app.
+// Registered last: the immediate callback reaches everything above.
+watch(
+  () => store.enabledPlugins.has("ai_radio") && canPlayShows(),
+  (ready) => {
+    // Session-scoped sessions never play shows.
+    if (ready && authManager.guestSessionKind() === null)
+      refreshDjStatus(true).catch(() => undefined);
+  },
+  { immediate: true },
+);
