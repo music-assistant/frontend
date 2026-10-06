@@ -1,5 +1,6 @@
 import ItemsListing from "@/components/ItemsListing.vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
+import { QueueOption } from "@/plugins/api/interfaces";
 import type { ProviderInstance, Track } from "@/plugins/api/interfaces";
 import {
   eventbus,
@@ -8,6 +9,7 @@ import {
 import { store as storeModule } from "@/plugins/store";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { album } from "../fixtures/album";
 import { genre } from "../fixtures/genre";
 import { track } from "../fixtures/track";
 
@@ -31,6 +33,7 @@ const mockGetLibraryGenres = vi.hoisted(() =>
   vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
 );
 const mockSubscribeMulti = vi.hoisted(() => vi.fn());
+const mockPlayMedia = vi.hoisted(() => vi.fn<MusicAssistantApi["playMedia"]>());
 
 vi.mock("@/plugins/api", () => {
   const api = {
@@ -38,6 +41,8 @@ vi.mock("@/plugins/api", () => {
     providerManifests: {},
     getLibraryGenres: mockGetLibraryGenres,
     subscribe_multi: mockSubscribeMulti,
+    playMedia: mockPlayMedia,
+    supportsPlayMediaShuffle: true,
   };
   return { api, default: api };
 });
@@ -124,6 +129,10 @@ vi.mock("@/components/PanelviewItemCompact.vue", () =>
 
 // the real store computes these; on the mock they are plain writable state
 const store = storeModule as typeof storeModule & { mobileLayout: boolean };
+const apiMock = api as typeof api & { supportsPlayMediaShuffle: boolean };
+const playerState = storeModule as unknown as {
+  activePlayer: { player_id: string } | undefined;
+};
 
 /**
  * Number of handlers the real eventbus currently holds for the listing's
@@ -665,3 +674,109 @@ function confirmationRequest() {
   ][];
   return calls.find(([event]) => event === "deleteConfirmationDialog")?.[1];
 }
+
+describe("ItemsListing play all", () => {
+  // the oldest first, as a listing sorted by year shows them
+  const oldest = album({ item_id: "a1", name: "Debut", year: 1999 });
+  const middle = album({ item_id: "a2", name: "Follow Up", year: 2005 });
+  const newest = album({ item_id: "a3", name: "Comeback", year: 2010 });
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockPlayMedia.mockReset();
+    mockPlayMedia.mockResolvedValue(undefined);
+    apiMock.supportsPlayMediaShuffle = true;
+    playerState.activePlayer = { player_id: "player1" };
+    store.prevState = undefined;
+  });
+
+  /**
+   * Mount an artist album listing that offers play all.
+   *
+   * The limit is below the number of albums on purpose: the first page holds two of them,
+   * so the action has to load the rest before it can play the whole listing.
+   */
+  async function mountAlbums(albums = [oldest, middle, newest]) {
+    const listing = mountListingRaw({
+      itemtype: "artistalbums",
+      path: "artistalbums",
+      showGenreFilter: false,
+      showPlayAll: true,
+      limit: 2,
+      sortKeys: ["year"],
+      loadPagedData: undefined,
+      loadItems: vi.fn().mockResolvedValue(albums),
+    });
+    await flushPromises();
+    return listing;
+  }
+
+  function playAll(listing: ReturnType<typeof mountListingRaw>) {
+    const menuItems = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as {
+      label: string;
+      disabled?: boolean;
+      action?: () => void;
+    }[];
+    return menuItems.find((item) => item.label === "tooltip.play_all");
+  }
+
+  it("plays every album of the listing, in the order shown, unshuffled", async () => {
+    const listing = await mountAlbums();
+
+    playAll(listing)!.action!();
+    await flushPromises();
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(
+      [oldest.uri, middle.uri, newest.uri],
+      QueueOption.REPLACE,
+      { shuffle: false },
+    );
+  });
+
+  it("leaves out the albums that cannot be played", async () => {
+    const unplayable = album({ item_id: "a4", name: "Bootleg", year: 2001 });
+    unplayable.is_playable = false;
+    const listing = await mountAlbums([oldest, unplayable, newest]);
+
+    playAll(listing)!.action!();
+    await flushPromises();
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(
+      [oldest.uri, newest.uri],
+      QueueOption.REPLACE,
+      { shuffle: false },
+    );
+  });
+
+  it("is not offered when the server cannot be asked to play in order", async () => {
+    apiMock.supportsPlayMediaShuffle = false;
+
+    expect(playAll(await mountAlbums())).toBeUndefined();
+  });
+
+  it("is disabled while no player is selected", async () => {
+    playerState.activePlayer = undefined;
+
+    expect(playAll(await mountAlbums())?.disabled).toBe(true);
+  });
+
+  it("is left out of a listing that does not ask for it", async () => {
+    const listing = mountListingRaw({
+      itemtype: "artistalbums",
+      path: "artistalbums",
+      showGenreFilter: false,
+      loadPagedData: undefined,
+      loadItems: vi.fn().mockResolvedValue([oldest]),
+    });
+    await flushPromises();
+
+    expect(playAll(listing)).toBeUndefined();
+  });
+});

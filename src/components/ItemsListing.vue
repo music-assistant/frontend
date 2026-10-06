@@ -319,6 +319,7 @@ import {
   PodcastEpisode,
   ProviderFeature,
   ProviderType,
+  QueueOption,
   Radio,
   type Album,
   type Genre,
@@ -1248,7 +1249,8 @@ const menuItems = computed(() => {
 
   const items: ToolBarMenuItem[] = [];
 
-  if (props.showPlayAll) {
+  // the order is sent as play_media's shuffle argument, which older servers do not take
+  if (props.showPlayAll && api.supportsPlayMediaShuffle) {
     items.push({
       label: "tooltip.play_all",
       icon: Play,
@@ -2246,7 +2248,10 @@ async function selectEveryItem() {
 async function playAll() {
   await loadAllItems();
   const uris = pagedItems.value.filter((x) => x.is_playable).map((x) => x.uri);
-  if (uris.length) await api.playMedia(uris, undefined, { shuffle: false });
+  // the order only holds for the options that start playing right away, not for the
+  // configured default, which may just add to the queue
+  if (uris.length)
+    await api.playMedia(uris, QueueOption.REPLACE, { shuffle: false });
 }
 </script>
 
