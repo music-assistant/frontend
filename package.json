@@ -27,7 +27,7 @@
         "@mdi/font": "7.4.47",
         "@scure/base": "^2.4.0",
         "@sendspin/sendspin-js": "5.0.0",
-        "@tabler/icons-vue": "^3.46.0",
+        "@tabler/icons-vue": "^3.48.0",
         "@tailwindcss/vite": "^4.3.3",
         "@tanstack/vue-form": "^1.33.5",
         "@tanstack/vue-table": "^8.21.3",
