@@ -11,7 +11,6 @@
 <template>
   <div
     class="flex min-w-52 items-center gap-3 px-2 py-1.5"
-    @pointerdown.stop
     @click.stop
     @keydown.up.stop
     @keydown.down.stop

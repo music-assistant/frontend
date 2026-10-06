@@ -1587,7 +1587,6 @@ const menuItems = computed(() => {
             onCommit: commitGridSize,
           },
         },
-        { label: "done" },
       ],
     });
 
