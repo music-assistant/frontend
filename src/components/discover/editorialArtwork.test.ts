@@ -45,12 +45,11 @@ describe("itemArtwork", () => {
   });
 
   it("treats a genre's custom image as real cover art", () => {
-    const genre = itemWith(MediaType.GENRE, [
-      image("genres/blues.svg"),
-      image("custom_images/abc.png"),
-    ]);
+    // the server replaces the builtin icon when a custom thumb is set, so a
+    // genre carries one thumb or the other, never both
+    const genre = itemWith(MediaType.GENRE, [image("custom_images/abc.png")]);
     const artwork = itemArtwork(genre);
-    expect(artwork.image).toBeTruthy();
+    expect(artwork.image).toContain("custom_images");
     expect(artwork.gradient).toBe(placeholderBackground);
   });
 
