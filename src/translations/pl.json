@@ -695,7 +695,7 @@
         "username_min_length": "Nazwa użytkownika musi mieć co najmniej 3 znaki",
         "username_already_exists": "Nazwa użytkownika już istnieje. Wybierz inną nazwę użytkownika.",
         "invalid_username": "Nieprawidłowa nazwa użytkownika. Wybierz inną nazwę użytkownika.",
-        "password_min_length": "Hasło musi mieć co najmniej 12 znaków",
+        "password_min_length": "Hasło musi mieć co najmniej 8 znaków",
         "passwords_must_match": "Hasła muszą być zgodne",
         "login_failed": "Logowanie nie powiodło się. Sprawdź swoje dane logowania.",
         "login_error": "Wystąpił błąd podczas logowania",

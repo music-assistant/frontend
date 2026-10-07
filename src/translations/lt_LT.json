@@ -625,7 +625,7 @@
         "username_min_length": "Vartotojo vardas turi būti sudarytas iš bent 2 simbolių",
         "username_already_exists": "Vartotojo vardas jau yra. Pasirinkite kitą vartotojo vardą.",
         "invalid_username": "Neteisingas vartotojo vardas. Pasirinkite kitą vartotojo vardą.",
-        "password_min_length": "Slaptažodis turi būti sudarytas iš bent 12 simbolių",
+        "password_min_length": "Slaptažodis turi būti sudarytas iš bent 8 simbolių",
         "passwords_must_match": "Slaptažodžiai turi sutapti",
         "login_failed": "Prisijungti nepavyko. Patikrinkite savo prisijungimo duomenis.",
         "login_error": "Prisijungimo metu įvyko klaida",

@@ -763,7 +763,7 @@
         "username_min_length": "Brukernavnet må være minst 2 tegn",
         "username_already_exists": "Brukernavnet finnes allerede. Vennligst velg et annet brukernavn.",
         "invalid_username": "Ugyldig brukernavn. Vennligst velg et annet brukernavn.",
-        "password_min_length": "Passordet må være minst 12 tegn",
+        "password_min_length": "Passordet må være minst 8 tegn",
         "passwords_must_match": "Passordene må samsvare",
         "login_failed": "Innlogging mislyktes. Vennligst sjekk innloggingsopplysningene dine.",
         "login_error": "Det oppsto en feil under pålogging",

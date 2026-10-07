@@ -1217,7 +1217,7 @@
         "username_min_length": "Korisničko ime mora da sadrži najmanje 2 znaka",
         "username_already_exists": "Korisničko ime već postoji. Molimo izaberite drugo korisničko ime.",
         "invalid_username": "Nevažeće korisničko ime. Molimo izaberite drugo korisničko ime.",
-        "password_min_length": "Lozinka mora imati najmanje 12 karaktera",
+        "password_min_length": "Lozinka mora imati najmanje 8 karaktera",
         "passwords_must_match": "Lozinke moraju da se podudaraju",
         "login_failed": "Prijava nije uspela. Proverite vaše pristupne podatke.",
         "login_error": "Došlo je do greške prilikom prijave",

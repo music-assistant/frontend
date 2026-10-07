@@ -524,7 +524,7 @@
         "username_min_length": "Käyttäjätunnuksen on oltava vähintään 3 merkkiä pitkä",
         "username_already_exists": "Käyttäjätunnus on jo olemassa. Valitse toinen käyttäjänimi.",
         "invalid_username": "Virheellinen käyttäjätunnus. Valitse toinen käyttäjätunnus.",
-        "password_min_length": "Salasanan on oltava vähintään 12 merkkiä pitkä",
+        "password_min_length": "Salasanan on oltava vähintään 8 merkkiä pitkä",
         "passwords_must_match": "Salasanojen on oltava samat",
         "login_failed": "Kirjautuminen epäonnistui. Ole hyvä ja tarkista tunnuksesi.",
         "login_error": "Kirjautumisessa tapahtui virhe",

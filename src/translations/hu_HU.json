@@ -696,7 +696,7 @@
         "username_min_length": "A felhasználónév legalább 2 karakter hosszú legyen",
         "username_already_exists": "A felhasználónév már létezik. Kérjük, válasszon másik felhasználónevet.",
         "invalid_username": "Érvénytelen felhasználónév. Kérjük, válasszon másik felhasználónevet.",
-        "password_min_length": "A jelszó legalább 12 karakter hosszú legyen",
+        "password_min_length": "A jelszó legalább 8 karakter hosszú legyen",
         "passwords_must_match": "A jelszavaknak egyezniük kell",
         "login_failed": "A bejelentkezés sikertelen. Kérjük, ellenőrizze a bejelentkezési adatokat.",
         "login_error": "Hiba történt a bejelentkezés során",

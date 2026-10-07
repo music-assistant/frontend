@@ -1217,7 +1217,7 @@
         "username_min_length": "El nombre de usuario debe tener al menos 2 caracteres.",
         "username_already_exists": "El nombre de usuario ya existe. Elige otro nombre de usuario.",
         "invalid_username": "Nombre de usuario no válido. Elige otro nombre de usuario.",
-        "password_min_length": "La contraseña debe tener al menos 12 caracteres.",
+        "password_min_length": "La contraseña debe tener al menos 8 caracteres.",
         "passwords_must_match": "Las contraseñas deben coincidir.",
         "login_failed": "Error al iniciar sesión. Comprueba tus credenciales.",
         "login_error": "Se produjo un error al iniciar sesión.",

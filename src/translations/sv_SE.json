@@ -1217,7 +1217,7 @@
         "username_min_length": "Användarnamnet måste vara minst 2 tecken långt",
         "username_already_exists": "Användarnamnet finns redan. Välj ett annat användarnamn.",
         "invalid_username": "Ogiltigt användarnamn. Välj ett annat användarnamn.",
-        "password_min_length": "Lösenordet måste vara minst 12 tecken långt",
+        "password_min_length": "Lösenordet måste vara minst 8 tecken långt",
         "passwords_must_match": "Lösenorden måste matcha",
         "login_failed": "Inloggningen misslyckades. Kontrollera dina inloggningsuppgifter.",
         "login_error": "Ett fel uppstod under inloggningen",
