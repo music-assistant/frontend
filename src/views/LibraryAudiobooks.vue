@@ -8,6 +8,7 @@
     :load-paged-data="loadItems"
     :show-library="true"
     :sort-media-type="MediaType.AUDIOBOOK"
+    :sort-option-exclude-fields="audiobookSortOptionExclusions"
     :update-available="updateAvailable"
     :title="$t('audiobooks')"
     :allow-key-hooks="true"
@@ -35,6 +36,7 @@ import {
   EventType,
   MediaType,
   ProviderFeature,
+  SortField,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -171,6 +173,10 @@ const artistTabs = computed(() => {
 
   return tabs.length > 0 ? tabs : undefined;
 });
+
+const audiobookSortOptionExclusions = computed(() =>
+  artistTabs.value && artistTabs.value.length > 1 ? [SortField.DURATION] : [],
+);
 
 const refreshArtistTypes = async function () {
   supportedArtistTypes.value = await api.getLibraryArtistTypes();

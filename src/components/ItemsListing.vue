@@ -23,12 +23,10 @@
           v-if="props.sortMediaType && sortOptionsLoaded && sortOptions.length"
           mode="menu"
           :options="sortOptions"
-          :selected-field="currentSort.field"
-          :selected-direction="currentSort.direction"
+          :sort-by="params.sortBy"
           :disabled="loading"
           :mobile-layout="store.mobileLayout"
-          @sort-option="changeDynamicSort"
-          @sort-direction="changeDynamicDirection"
+          @sort-by="changeSort"
         />
         <Transition v-if="!store.mobileLayout" name="listing-search">
           <div v-if="showSearchInput" class="listing-search-slot">
@@ -47,17 +45,20 @@
       </template>
     </Toolbar>
 
-    <LibrarySortControls
-      v-if="props.sortMediaType && sortOptionsLoaded && sortOptions.length"
-      mode="chips"
-      :options="sortOptions"
-      :selected-field="currentSort.field"
-      :selected-direction="currentSort.direction"
-      :disabled="loading"
-      :mobile-layout="store.mobileLayout"
-      @sort-option="changeDynamicSort"
-      @sort-direction="changeDynamicDirection"
-    />
+    <div
+      v-if="props.sortMediaType && !store.mobileLayout"
+      class="listing-sort-chips-row h-12"
+    >
+      <LibrarySortControls
+        v-if="sortOptionsLoaded && sortOptions.length"
+        mode="chips"
+        :options="sortOptions"
+        :sort-by="params.sortBy"
+        :disabled="loading"
+        :mobile-layout="store.mobileLayout"
+        @sort-by="changeSort"
+      />
+    </div>
 
     <v-divider />
 
@@ -344,6 +345,7 @@ import { SearchInput } from "@/components/ui/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GridSizeSlider from "@/components/GridSizeSlider.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
+import { useLibrarySorting } from "@/composables/useLibrarySorting";
 import { SEARCHABLE_MEDIA_TYPES } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
@@ -378,7 +380,6 @@ import {
   ProviderFeature,
   ProviderType,
   Radio,
-  SortDirection,
   SortField,
   type Album,
   type Genre,
@@ -461,6 +462,7 @@ export interface Props {
   itemtype: string;
   sortKeys?: string[];
   sortMediaType?: LibrarySortMediaType;
+  sortOptionExcludeFields?: SortField[];
   showTrackNumber?: boolean;
   showProvider?: boolean;
   showAlbum?: boolean;
@@ -528,6 +530,7 @@ export interface Props {
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
   sortMediaType: undefined,
+  sortOptionExcludeFields: () => [],
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
@@ -658,8 +661,17 @@ const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
-const sortOptions = ref<SortOptionInfo[]>([]);
+const serverSortOptions = ref<SortOptionInfo[]>([]);
+const sortOptions = computed(() =>
+  serverSortOptions.value.filter(
+    (option) => !props.sortOptionExcludeFields.includes(option.field),
+  ),
+);
 const sortOptionsLoaded = ref(false);
+const librarySorting = useLibrarySorting(
+  sortOptions,
+  computed(() => params.value.sortBy),
+);
 
 // used in tabbed item listings to prevent a timing-race condition, where
 // the selected tab shows items of the initial tab on entering the page
@@ -1018,60 +1030,19 @@ const onRefreshClicked = function () {
   loadData(true, true);
 };
 
-const parseSortBy = (sortBy: string) => {
-  const match = sortBy.match(/^(.+?)(?::|_)(asc|desc)$/);
-  const rawField = match?.[1] ?? sortBy;
-  const legacyFieldAliases: Record<string, SortField> = {
-    album_artist_name: SortField.ARTIST_NAME,
-    track_artist_name: SortField.ARTIST_NAME,
-  };
-  const field = legacyFieldAliases[rawField] ?? rawField;
-  return {
-    field,
-    direction:
-      match?.[2] === SortDirection.ASC || match?.[2] === SortDirection.DESC
-        ? (match[2] as SortDirection)
-        : field === SortField.RANDOM || field === SortField.RANDOM_PLAY_COUNT
-          ? undefined
-          : SortDirection.ASC,
-  };
-};
-
-const makeSortValue = (
-  option: SortOptionInfo,
-  direction = option.default_direction ?? SortDirection.ASC,
-) =>
-  option.supports_direction ? `${option.field}:${direction}` : option.field;
-
-const normalizeDynamicSortBy = (sortBy: string): string => {
-  if (!sortOptions.value.length) return sortBy;
-  const parsed = parseSortBy(sortBy);
-  const option = sortOptions.value.find((item) => item.field === parsed.field);
-  if (!option) return makeSortValue(sortOptions.value[0]);
-  return makeSortValue(option, parsed.direction);
-};
-
-const currentSort = computed(() => {
-  const parsed = parseSortBy(params.value.sortBy);
-  const option = sortOptions.value.find((item) => item.field === parsed.field);
-  return {
-    field: parsed.field,
-    direction:
-      parsed.direction ?? option?.default_direction ?? SortDirection.ASC,
-  };
-});
-
-const changeDynamicSort = (option: SortOptionInfo) => {
-  changeSort(makeSortValue(option));
-};
-
-const changeDynamicDirection = (direction: SortDirection) => {
-  const option = sortOptions.value.find(
-    (item) => item.field === currentSort.value.field,
+watch(sortOptions, () => {
+  if (!sortOptionsLoaded.value || !props.sortMediaType) return;
+  const normalized = librarySorting.normalizeSortBy(params.value.sortBy);
+  if (normalized === params.value.sortBy) return;
+  params.value.sortBy = normalized;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "sortBy",
+    normalized,
   );
-  if (!option?.supports_direction) return;
-  changeSort(makeSortValue(option, direction));
-};
+  loadData(true, undefined, true);
+});
 
 const changeSort = function (sort_key?: string) {
   if (sort_key !== undefined) {
@@ -1873,9 +1844,18 @@ const restoreSettings = async function () {
   // get stored/default sortBy for this itemtype
   if (props.sortMediaType) {
     if (sortOptionsLoaded.value) {
-      params.value.sortBy = normalizeDynamicSortBy(
+      const normalizedSortBy = librarySorting.normalizeSortBy(
         prefs.sortBy || params.value.sortBy,
       );
+      params.value.sortBy = normalizedSortBy;
+      if (prefs.sortBy && normalizedSortBy !== prefs.sortBy) {
+        setItemsListingPreference(
+          props.path || props.itemtype,
+          props.itemtype,
+          "sortBy",
+          normalizedSortBy,
+        );
+      }
     }
   } else if (prefs.sortBy && props.sortKeys.includes(prefs.sortBy)) {
     params.value.sortBy = prefs.sortBy;
@@ -2189,7 +2169,9 @@ onBeforeUnmount(() => {
 onMounted(async () => {
   if (props.sortMediaType) {
     try {
-      sortOptions.value = await api.getLibrarySortOptions(props.sortMediaType);
+      serverSortOptions.value = await api.getLibrarySortOptions(
+        props.sortMediaType,
+      );
     } catch {
       toast.error(t("settings.error_loading_sort_options"));
     }
@@ -2214,7 +2196,7 @@ onMounted(async () => {
     allItemsReceived.value = store.prevState.allItemsReceived;
     initialDataReceived.value = store.prevState.initialDataReceived;
     if (props.sortMediaType) {
-      params.value.sortBy = normalizeDynamicSortBy(params.value.sortBy);
+      params.value.sortBy = librarySorting.normalizeSortBy(params.value.sortBy);
     }
     // what the last visit left behind gives way to a provider carried in by a
     // link, unless it already came from there

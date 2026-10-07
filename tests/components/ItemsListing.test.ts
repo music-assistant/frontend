@@ -1,4 +1,5 @@
 import ItemsListing from "@/components/ItemsListing.vue";
+import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { defineComponent, h } from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
@@ -1589,6 +1590,12 @@ describe("ItemsListing server sort options", () => {
       label_key: "play_count",
     },
     {
+      field: SortField.DURATION,
+      supports_direction: true,
+      default_direction: SortDirection.ASC,
+      label_key: "duration",
+    },
+    {
       field: SortField.RANDOM,
       supports_direction: false,
       default_direction: null,
@@ -1628,6 +1635,23 @@ describe("ItemsListing server sort options", () => {
       expect.objectContaining({ sortBy: "name:desc" }),
     );
 
+    const sortMenu = listing.findComponent(LibrarySortControls);
+    await sortMenu.find("button").trigger("click");
+    await flushPromises();
+    expect(
+      document.body.querySelectorAll('[role="menuitemradio"]'),
+    ).toHaveLength(sortOptions.length + 2);
+    expect(
+      document.body.querySelectorAll(
+        '[role="menuitemradio"][aria-checked="true"]',
+      ),
+    ).toHaveLength(2);
+    expect(
+      document.body.querySelectorAll(
+        '[role="menuitemradio"][aria-checked="true"] svg.lucide-check',
+      ),
+    ).toHaveLength(2);
+
     const playCountChip = listing
       .findAll("button")
       .find((button) => button.text().includes("sort.play_count"));
@@ -1642,6 +1666,33 @@ describe("ItemsListing server sort options", () => {
     await flushPromises();
     expect(loadPagedData).toHaveBeenLastCalledWith(
       expect.objectContaining({ sortBy: "play_count:asc" }),
+    );
+  });
+
+  it("keeps the desktop sort chip row stable while options load", async () => {
+    let resolveSortOptions!: (options: SortOptionInfo[]) => void;
+    mockGetLibrarySortOptions.mockReturnValue(
+      new Promise<SortOptionInfo[]>((resolve) => {
+        resolveSortOptions = resolve;
+      }),
+    );
+
+    const listing = mountListingRaw({
+      sortMediaType: MediaType.TRACK,
+      showGenreFilter: false,
+    });
+    const chipsRow = listing.find(".listing-sort-chips-row");
+
+    expect(chipsRow.exists()).toBe(true);
+    expect(chipsRow.classes()).toContain("h-12");
+    expect(chipsRow.findComponent(LibrarySortControls).exists()).toBe(false);
+
+    resolveSortOptions(sortOptions);
+    await flushPromises();
+
+    expect(chipsRow.exists()).toBe(true);
+    expect(chipsRow.findComponent(LibrarySortControls).props("mode")).toBe(
+      "chips",
     );
   });
 
@@ -1664,6 +1715,31 @@ describe("ItemsListing server sort options", () => {
 
     expect(loadPagedData).toHaveBeenLastCalledWith(
       expect.objectContaining({ sortBy: "timestamp_added:asc" }),
+    );
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "librarytracks",
+      "tracks",
+      "sortBy",
+      "timestamp_added:asc",
+    );
+  });
+
+  it("excludes sort fields not shared by audiobook author tabs", async () => {
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "audiobooks",
+      path: "libraryaudiobooks",
+      sortMediaType: MediaType.AUDIOBOOK,
+      sortOptionExcludeFields: [SortField.DURATION],
+      loadPagedData,
+      showGenreFilter: false,
+    });
+    await flushPromises();
+
+    const controls = listing.findComponent(LibrarySortControls);
+    const options = controls.props("options") as SortOptionInfo[];
+    expect(options.map((option) => option.field)).not.toContain(
+      SortField.DURATION,
     );
   });
 });

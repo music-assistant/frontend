@@ -4,6 +4,7 @@ import {
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
+  MediaType,
   type Player,
   PlaylistMatchPolicy,
   RepeatMode,
@@ -175,6 +176,47 @@ describe("MusicAssistantApi error handling", () => {
     expect(consoleError).toHaveBeenCalledWith("[resultMessage]", error);
     expect(mockToastError).toHaveBeenCalledWith("Visible failure");
     expect(consoleDebug).not.toHaveBeenCalled();
+  });
+
+  it("caches sort options per media type until disconnect", async () => {
+    const firstRequest = api.getLibrarySortOptions(MediaType.GENRE);
+    const concurrentRequest = api.getLibrarySortOptions(MediaType.GENRE);
+
+    expect(transport.sentCommands).toHaveLength(1);
+    expect(transport.lastCommand.command).toBe("music/genres/get_sort_options");
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(
+      Promise.all([firstRequest, concurrentRequest]),
+    ).resolves.toEqual([[], []]);
+
+    await expect(api.getLibrarySortOptions(MediaType.GENRE)).resolves.toEqual(
+      [],
+    );
+    expect(transport.sentCommands).toHaveLength(1);
+
+    api.disconnect();
+    const reconnectTransport = new TestTransport();
+    const initialization = api.initialize(reconnectTransport);
+    reconnectTransport.receive(SERVER_INFO);
+    await initialization;
+
+    const afterDisconnect = api.getLibrarySortOptions(MediaType.GENRE);
+    expect(
+      reconnectTransport.sentCommands.filter(
+        (command) => command.command === "music/genres/get_sort_options",
+      ),
+    ).toHaveLength(1);
+    reconnectTransport.receive({
+      message_id: reconnectTransport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(afterDisconnect).resolves.toEqual([]);
   });
 
   it("lets updateUser suppress the global error toast for the caller", async () => {

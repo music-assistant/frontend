@@ -13,48 +13,58 @@
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" class="min-w-56">
-        <DropdownMenuItem
-          v-for="option in options"
-          :key="option.field"
-          class="gap-3"
-          :disabled="disabled"
-          @select="emit('sort-option', option)"
+        <DropdownMenuRadioGroup
+          :model-value="current.field"
+          @update:model-value="selectSortOption"
         >
-          <span class="min-w-0 flex-1 truncate">{{
-            sortOptionLabel(option)
-          }}</span>
-          <Check v-if="selectedField === option.field" class="ml-auto size-4" />
-        </DropdownMenuItem>
+          <DropdownMenuRadioItem
+            v-for="option in options"
+            :key="option.field"
+            :value="option.field"
+            class="gap-3"
+            :disabled="disabled"
+          >
+            <template #indicator-icon>
+              <Check class="size-3.5" />
+            </template>
+            <span class="min-w-0 flex-1 truncate">{{
+              sortOptionLabel(option)
+            }}</span>
+          </DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
         <template v-if="selectedOption?.supports_direction">
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            class="gap-3"
-            :disabled="disabled"
-            @select="emit('sort-direction', SortDirection.ASC)"
+          <DropdownMenuRadioGroup
+            :model-value="current.direction"
+            @update:model-value="selectSortDirection"
           >
-            <ArrowUp class="size-4" />
-            <span class="min-w-0 flex-1 truncate">{{
-              $t("sort.ascending")
-            }}</span>
-            <Check
-              v-if="selectedDirection === SortDirection.ASC"
-              class="ml-auto size-4"
-            />
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            class="gap-3"
-            :disabled="disabled"
-            @select="emit('sort-direction', SortDirection.DESC)"
-          >
-            <ArrowDown class="size-4" />
-            <span class="min-w-0 flex-1 truncate">{{
-              $t("sort.descending")
-            }}</span>
-            <Check
-              v-if="selectedDirection === SortDirection.DESC"
-              class="ml-auto size-4"
-            />
-          </DropdownMenuItem>
+            <DropdownMenuRadioItem
+              :value="SortDirection.ASC"
+              class="gap-3"
+              :disabled="disabled"
+            >
+              <template #indicator-icon>
+                <Check class="size-3.5" />
+              </template>
+              <ArrowUp class="size-4" />
+              <span class="min-w-0 flex-1 truncate">{{
+                $t("sort.ascending")
+              }}</span>
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem
+              :value="SortDirection.DESC"
+              class="gap-3"
+              :disabled="disabled"
+            >
+              <template #indicator-icon>
+                <Check class="size-3.5" />
+              </template>
+              <ArrowDown class="size-4" />
+              <span class="min-w-0 flex-1 truncate">{{
+                $t("sort.descending")
+              }}</span>
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
         </template>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -74,9 +84,9 @@
       class="shrink-0 gap-2"
       :class="{
         'border-primary bg-accent text-accent-foreground':
-          selectedField === option.field,
+          current.field === option.field,
       }"
-      :aria-pressed="selectedField === option.field"
+      :aria-pressed="current.field === option.field"
       :aria-label="quickSortAriaLabel(option)"
       :title="quickSortAriaLabel(option)"
       :disabled="disabled"
@@ -97,15 +107,13 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  SortDirection,
-  SortField,
-  type SortOptionInfo,
-} from "@/plugins/api/interfaces";
+import { SortDirection, type SortOptionInfo } from "@/plugins/api/interfaces";
+import { useLibrarySorting } from "@/composables/useLibrarySorting";
 import { ArrowDown, ArrowUp, ArrowUpDown, Check } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -113,8 +121,7 @@ import { useI18n } from "vue-i18n";
 interface Props {
   mode: "menu" | "chips";
   options: SortOptionInfo[];
-  selectedField: string;
-  selectedDirection: SortDirection;
+  sortBy: string;
   disabled?: boolean;
   mobileLayout?: boolean;
 }
@@ -125,53 +132,55 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  "sort-option": [option: SortOptionInfo];
-  "sort-direction": [direction: SortDirection];
+  "sort-by": [value: string];
 }>();
 
 const { t } = useI18n();
 
-const QUICK_SORT_FIELDS = [
-  SortField.TIMESTAMP_ADDED,
-  SortField.PLAY_COUNT,
-  SortField.NAME,
-];
+const sorting = useLibrarySorting(
+  computed(() => props.options),
+  computed(() => props.sortBy),
+);
+const {
+  current,
+  quickOptions,
+  sortByOption,
+  sortByDirection,
+  sortByQuickOption,
+} = sorting;
 
 const selectedOption = computed(() =>
-  props.options.find((option) => option.field === props.selectedField),
-);
-
-const quickOptions = computed(() =>
-  QUICK_SORT_FIELDS.flatMap((field) => {
-    const option = props.options.find((item) => item.field === field);
-    return option ? [option] : [];
-  }),
+  props.options.find((option) => option.field === current.value.field),
 );
 
 const sortOptionLabel = (option: SortOptionInfo) =>
   t(`sort.${option.label_key ?? option.field}`);
 
+const selectSortOption = (field: unknown) => {
+  if (typeof field !== "string") return;
+  const option = props.options.find((item) => item.field === field);
+  if (option) emit("sort-by", sortByOption(option));
+};
+
+const selectSortDirection = (direction: unknown) => {
+  if (!selectedOption.value?.supports_direction) return;
+  if (direction === SortDirection.ASC || direction === SortDirection.DESC) {
+    const nextSortBy = sortByDirection(direction);
+    if (nextSortBy) emit("sort-by", nextSortBy);
+  }
+};
+
 const sortDirectionLabel = (direction: SortDirection) =>
   t(direction === SortDirection.ASC ? "sort.ascending" : "sort.descending");
 
 const quickSortDirection = (option: SortOptionInfo) =>
-  props.selectedField === option.field
-    ? props.selectedDirection
+  current.value.field === option.field
+    ? current.value.direction
     : (option.default_direction ?? SortDirection.ASC);
 
 const quickSortAriaLabel = (option: SortOptionInfo) =>
   `${sortOptionLabel(option)}, ${sortDirectionLabel(quickSortDirection(option))}`;
 
-const changeQuickSort = (option: SortOptionInfo) => {
-  if (props.selectedField === option.field && option.supports_direction) {
-    emit(
-      "sort-direction",
-      props.selectedDirection === SortDirection.DESC
-        ? SortDirection.ASC
-        : SortDirection.DESC,
-    );
-    return;
-  }
-  emit("sort-option", option);
-};
+const changeQuickSort = (option: SortOptionInfo) =>
+  emit("sort-by", sortByQuickOption(option));
 </script>

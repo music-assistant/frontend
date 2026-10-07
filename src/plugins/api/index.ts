@@ -176,6 +176,10 @@ export class MusicAssistantApi {
   );
   public providerIcons = reactive<{ [key: string]: string | null }>({});
   private _providerIconRequests = new Map<string, Promise<string | null>>();
+  private _librarySortOptions = new Map<
+    LibrarySortMediaType,
+    Promise<SortOptionInfo[]>
+  >();
   // core config values by "<domain>/<key>", dropped when this client saves a core config
   // and when the full state is (re)fetched, so a change made from another client is
   // picked up on the next (re)connect.
@@ -456,6 +460,7 @@ export class MusicAssistantApi {
       (key) => delete this.providerIcons[key],
     );
     this._providerIconRequests.clear();
+    this._librarySortOptions.clear();
     this._coreConfigValues.clear();
     this.serverInfo.value = undefined;
   }
@@ -616,11 +621,21 @@ export class MusicAssistantApi {
   public getLibrarySortOptions(
     media_type: LibrarySortMediaType,
   ): Promise<SortOptionInfo[]> {
-    return this.sendCommand(
+    const cached = this._librarySortOptions.get(media_type);
+    if (cached) return cached;
+
+    const request = this.sendCommand<SortOptionInfo[]>(
       `music/${media_type}s/get_sort_options`,
       undefined,
       { suppressGlobalError: true },
     );
+    this._librarySortOptions.set(media_type, request);
+    void request.catch(() => {
+      if (this._librarySortOptions.get(media_type) === request) {
+        this._librarySortOptions.delete(media_type);
+      }
+    });
+    return request;
   }
   public getLibraryPlaylistsCount(
     favorite_only: boolean = false,
