@@ -200,7 +200,7 @@
         "password": "密碼",
         "confirm_password": "再次輸入密碼",
         "display_name": "顯示名稱",
-        "password_min_length": "密碼長度至少八位元",
+        "password_min_length": "密碼長度至少十二位元",
         "passwords_must_match": "兩次密碼需要一致",
         "change_password": "修改密碼",
         "update_your_password": "修改您的帳號密碼",

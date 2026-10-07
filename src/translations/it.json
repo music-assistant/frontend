@@ -434,7 +434,7 @@
         "username_min_length": "Il Nome utente deve consistere in almeno 3 caratteri",
         "username_already_exists": "Nome utente esiste già. Per favore scegliere un'altro nome utente.",
         "invalid_username": "Nome utente non valido. Per favore scegliere un'altro nome utente",
-        "password_min_length": "La Password deve consistere in almeno 8 caratteri",
+        "password_min_length": "La Password deve consistere in almeno 12 caratteri",
         "passwords_must_match": "Le Password devono corrispondere",
         "login_failed": "Accesso fallito. Per favore verifica le tue credenziali.",
         "login_error": "Errore durante il login",

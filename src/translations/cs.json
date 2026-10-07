@@ -589,7 +589,7 @@
         "username_min_length": "Uživatelské jméno musí mít alespoň 2 znaky",
         "username_already_exists": "Uživatelské jméno již existuje. Zvolte prosím jiné uživatelské jméno.",
         "invalid_username": "Neplatné uživatelské jméno. Zvolte prosím jiné uživatelské jméno.",
-        "password_min_length": "Heslo musí mít alespoň 8 znaků",
+        "password_min_length": "Heslo musí mít alespoň 12 znaků",
         "passwords_must_match": "Hesla se musí shodovat",
         "login_failed": "Přihlášení se nezdařilo. Zkontrolujte prosím své přihlašovací údaje.",
         "login_error": "Během přihlašování došlo k chybě",

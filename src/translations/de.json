@@ -1217,7 +1217,7 @@
         "username_min_length": "Der Benutzername muss mindestens 2 Zeichen lang sein.",
         "username_already_exists": "Dieser Benutzername ist bereits vergeben. Bitte wähle einen anderen Benutzernamen.",
         "invalid_username": "Ungültiger Benutzername. Bitte wähle einen anderen Benutzernamen.",
-        "password_min_length": "Das Passwort muss mindestens 8 Zeichen lang sein.",
+        "password_min_length": "Das Passwort muss mindestens 12 Zeichen lang sein.",
         "passwords_must_match": "Die Passwörter müssen übereinstimmen",
         "login_failed": "Login fehlgeschlagen. Überprüfe deine Anmeldedaten.",
         "login_error": "Bei der Anmeldung ist ein Fehler aufgetreten",
