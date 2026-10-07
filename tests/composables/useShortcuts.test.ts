@@ -37,8 +37,8 @@ vi.mock("@/plugins/store", () => ({
 
 import {
   getShortcutMoveAvailability,
+  initGlobalShortcutsSync,
   useShortcuts,
-  isShortcutPinned,
   isShortcutPinnedItem,
   moveShortcutStandaloneItem,
   pinShortcutStandalone,
@@ -62,13 +62,22 @@ describe("useShortcuts standalone helpers", () => {
     };
   });
 
-  it("treats encoded and raw podcast URIs as the same pinned shortcut", () => {
+  it("unpins a deleted item whose pin holds its encoded URI", async () => {
     storeMock.currentUser.preferences["sidebar.shortcuts"] = [
       ENCODED_PODCAST_URI,
+      "builtin://radio/1",
     ];
+    initGlobalShortcutsSync();
+    const onDeleted = mockSubscribe.mock.calls.find(
+      ([event]) => event === EventType.MEDIA_ITEM_DELETED,
+    )?.[1];
 
-    expect(isShortcutPinned(RAW_PODCAST_URI)).toBe(true);
-    expect(isShortcutPinned(ENCODED_PODCAST_URI)).toBe(true);
+    onDeleted?.({ object_id: RAW_PODCAST_URI } as EventMessage);
+    await flushPromises();
+
+    expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
+      "builtin://radio/1",
+    ]);
   });
 
   // the server converts SMB and NFS sources into Local files, keeping their ids
