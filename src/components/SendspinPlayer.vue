@@ -48,6 +48,8 @@ const route = useRoute();
 // Versioned: delays saved before sendspin-js 4.0.0 dropped its 200ms default would replay early.
 const SYNC_DELAY_STORAGE_KEY = "frontend.settings.sendspin_static_delay_v2";
 
+const VOLUME_STORAGE_KEY = "frontend.settings.sendspin_volume";
+
 const audioRef = ref<HTMLAudioElement>();
 const silentAudioRef = ref<HTMLAudioElement>();
 
@@ -78,12 +80,14 @@ const primeAudio = () => {
 
 // Reactive state
 const isPlaying = ref(false);
-const volume = ref(100);
+// this browser's last volume, so a new session doesn't start at full volume
+const volume = ref(loadSavedVolume());
 const muted = ref(false);
 const playerState = ref<"synchronized" | "error">("synchronized");
 
 // Watch for volume/mute changes from UI
 watch(volume, (newVolume) => {
+  localStorage.setItem(VOLUME_STORAGE_KEY, String(newVolume));
   if (player) {
     player.setVolume(newVolume);
   }
@@ -361,6 +365,8 @@ onMounted(() => {
               console.warn("Sendspin: reconnect attempts exhausted"),
           },
         });
+        // set before connecting so the server is told the saved volume, not the default
+        player.setVolume(volume.value);
 
         return player.connect().then(registerPairing);
       })
@@ -487,6 +493,11 @@ function registerMediaSessionActionHandlers(): void {
       api.playerCommandSeek(targetId, newPos);
     });
   }
+}
+
+function loadSavedVolume(): number {
+  const saved = parseInt(localStorage.getItem(VOLUME_STORAGE_KEY) ?? "", 10);
+  return isNaN(saved) ? 100 : Math.min(100, Math.max(0, saved));
 }
 </script>
 

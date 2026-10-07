@@ -262,6 +262,7 @@ describe("Providers", () => {
     expect(eventbusMock.emit).toHaveBeenCalledWith("setupFlowDialog", {
       kind: "reconfigure",
       instanceId: "spotify--test",
+      name: "Spotify",
       onFlowEnded: expect.any(Function),
     });
     expect(routerMock.push).not.toHaveBeenCalled();
@@ -300,6 +301,7 @@ describe("Providers", () => {
     expect(eventbusMock.emit).toHaveBeenCalledWith("setupFlowDialog", {
       kind: "reconfigure",
       instanceId: "spotify--test",
+      name: "Spotify",
       onFlowEnded: expect.any(Function),
     });
     expect(routerMock.push).not.toHaveBeenCalled();
@@ -325,6 +327,7 @@ describe("Providers", () => {
     expect(eventbusMock.emit).toHaveBeenCalledWith("setupFlowDialog", {
       kind: "reconfigure",
       instanceId: "spotify--test",
+      name: "Spotify",
       onFlowEnded: expect.any(Function),
     });
 

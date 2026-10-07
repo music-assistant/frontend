@@ -975,6 +975,14 @@ export interface MediaItemCollection {
   sequence: number | string | null;
 }
 
+// one timed line of a transcript, as spoken
+export interface TranscriptCue {
+  start: number;
+  end?: number | null;
+  text: string;
+  speaker?: string | null;
+}
+
 export interface MediaItemMetadata {
   description?: string | null;
   // ISO 639-1 language code of `description`
@@ -988,6 +996,10 @@ export interface MediaItemMetadata {
   copyright?: string | null;
   lyrics?: string | null;
   lrc_lyrics?: string | null;
+  transcript?: string | null;
+  transcript_cues?: TranscriptCue[] | null;
+  // whether a transcript can be fetched, null when the provider cannot tell
+  has_transcript?: boolean | null;
   label?: string | null;
   links?: MediaItemLink[] | null;
   performers?: string[] | null;
@@ -1117,6 +1129,9 @@ export interface PodcastEpisode extends MediaItem {
   position: number;
   podcast: Podcast | ItemMapping;
   duration: number;
+  // the publisher's own episode and season number, null when it does not number them
+  episode_number: number | null;
+  season: number | null;
   fully_played: boolean | null;
   resume_position_ms: number | null;
 }
@@ -2154,3 +2169,11 @@ export interface AIRadioSession {
 export interface AIRadioStatus {
   sessions: AIRadioSession[];
 }
+
+/** Refetch hints the ai_radio plugin broadcasts as PROVIDER_EVENT payloads; they carry no state. */
+export type AIRadioEventName =
+  | "hosts_updated"
+  | "stations_updated"
+  | "sections_updated"
+  | "queue_dj_updated"
+  | "sessions_updated";

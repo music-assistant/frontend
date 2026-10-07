@@ -43,7 +43,7 @@ export interface ProviderSettingsMenuOptions {
   onRemove: (config: ProviderConfig) => void;
   // only offered with includeSections
   onAccess?: (config: ProviderConfig) => void;
-  onReconfigure?: (instanceId: string) => void;
+  onReconfigure?: (config: ProviderConfig) => void;
 }
 
 /** Which settings sections a provider instance has something to show for. */
@@ -87,7 +87,7 @@ export const getProviderSettingsMenuItems = (
     if (canReconfigureSource(config)) {
       menuItems.push({
         label: "settings.reconfigure",
-        action: () => options.onReconfigure?.(instanceId),
+        action: () => options.onReconfigure?.(config),
         icon: markRaw(Wrench),
       });
     }

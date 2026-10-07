@@ -561,6 +561,7 @@ const onReconfigure = function () {
   eventbus.emit("setupFlowDialog", {
     kind: "reconfigure",
     instanceId,
+    name: providerName.value,
     onFlowEnded: () => {
       void refreshProviderConfig(instanceId);
     },

@@ -342,12 +342,12 @@ describe("menu item actions", () => {
     expect(callbacks.onReload).toHaveBeenCalledWith("spotify--1");
   });
 
-  it("reconfigure calls onReconfigure with the instance id", () => {
+  it("reconfigure calls onReconfigure with the source", () => {
     permissionsMock.canReconfigureSource.mockReturnValue(true);
 
     findItem(listMenu(item), "settings.reconfigure").action?.();
 
-    expect(callbacks.onReconfigure).toHaveBeenCalledWith("spotify--1");
+    expect(callbacks.onReconfigure).toHaveBeenCalledWith(item);
   });
 });
 
@@ -423,7 +423,7 @@ describe("getProviderAccessLabel", () => {
 function createCallbacks() {
   return {
     onAccess: vi.fn<(item: ProviderConfig) => void>(),
-    onReconfigure: vi.fn<(instanceId: string) => void>(),
+    onReconfigure: vi.fn<(config: ProviderConfig) => void>(),
     onReload: vi.fn<(instanceId: string) => void>(),
     onRemove: vi.fn<(item: ProviderConfig) => void>(),
     onToggleEnabled: vi.fn<(item: ProviderConfig) => void>(),

@@ -793,6 +793,36 @@ describe("EditProvider", () => {
     );
   });
 
+  it("names the source it launches reconfiguration for", async () => {
+    apiMock.getProviderConfig.mockResolvedValue({
+      ...spotifyConfig(ProviderStatus.AUTH_REQUIRED),
+      name: "My Spotify",
+    });
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+      },
+    });
+    await flushPromises();
+
+    await wrapper.get("button-stub").trigger("click");
+
+    expect(eventbusMock.emit).toHaveBeenCalledWith(
+      "setupFlowDialog",
+      expect.objectContaining({
+        kind: "reconfigure",
+        instanceId: "spotify--test",
+        name: "My Spotify",
+      }),
+    );
+  });
+
   it("renders a markdown link in the provider error banner", async () => {
     // a retired provider's message points at its replacement, so the link has
     // to survive into the banner
