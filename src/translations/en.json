@@ -588,6 +588,7 @@
         "restore_defaults_failed": "Failed to restore genre defaults",
         "full_restore_failed": "Failed to perform full genre restore",
         "error_loading_genres": "Error loading genres",
+        "error_loading_sort_options": "Error loading sort options",
         "player_needs_setup": "This player requires setup",
         "add_music_provider": "Add a music source",
         "add_player_provider": "Add a player provider",

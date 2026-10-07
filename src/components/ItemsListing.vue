@@ -1025,12 +1025,15 @@ const parseSortBy = (sortBy: string) => {
     album_artist_name: SortField.ARTIST_NAME,
     track_artist_name: SortField.ARTIST_NAME,
   };
+  const field = legacyFieldAliases[rawField] ?? rawField;
   return {
-    field: legacyFieldAliases[rawField] ?? rawField,
+    field,
     direction:
       match?.[2] === SortDirection.ASC || match?.[2] === SortDirection.DESC
         ? (match[2] as SortDirection)
-        : undefined,
+        : field === SortField.RANDOM || field === SortField.RANDOM_PLAY_COUNT
+          ? undefined
+          : SortDirection.ASC,
   };
 };
 

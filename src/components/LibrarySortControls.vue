@@ -151,13 +151,16 @@ const quickOptions = computed(() =>
 const sortOptionLabel = (option: SortOptionInfo) =>
   t(`sort.${option.label_key ?? option.field}`);
 
+const sortDirectionLabel = (direction: SortDirection) =>
+  t(direction === SortDirection.ASC ? "sort.ascending" : "sort.descending");
+
 const quickSortDirection = (option: SortOptionInfo) =>
   props.selectedField === option.field
     ? props.selectedDirection
     : (option.default_direction ?? SortDirection.ASC);
 
 const quickSortAriaLabel = (option: SortOptionInfo) =>
-  `${sortOptionLabel(option)}, ${t(`sort.${quickSortDirection(option)}`)}`;
+  `${sortOptionLabel(option)}, ${sortDirectionLabel(quickSortDirection(option))}`;
 
 const changeQuickSort = (option: SortOptionInfo) => {
   if (props.selectedField === option.field && option.supports_direction) {

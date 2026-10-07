@@ -616,7 +616,11 @@ export class MusicAssistantApi {
   public getLibrarySortOptions(
     media_type: LibrarySortMediaType,
   ): Promise<SortOptionInfo[]> {
-    return this.sendCommand(`music/${media_type}s/get_sort_options`);
+    return this.sendCommand(
+      `music/${media_type}s/get_sort_options`,
+      undefined,
+      { suppressGlobalError: true },
+    );
   }
   public getLibraryPlaylistsCount(
     favorite_only: boolean = false,

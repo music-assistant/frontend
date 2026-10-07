@@ -1571,6 +1571,12 @@ function confirmationRequest() {
 describe("ItemsListing server sort options", () => {
   const sortOptions: SortOptionInfo[] = [
     {
+      field: SortField.TIMESTAMP_ADDED,
+      supports_direction: true,
+      default_direction: SortDirection.DESC,
+      label_key: "timestamp_added",
+    },
+    {
       field: SortField.NAME,
       supports_direction: true,
       default_direction: SortDirection.ASC,
@@ -1636,6 +1642,28 @@ describe("ItemsListing server sort options", () => {
     await flushPromises();
     expect(loadPagedData).toHaveBeenLastCalledWith(
       expect.objectContaining({ sortBy: "play_count:asc" }),
+    );
+  });
+
+  it("preserves ascending semantics for unsuffixed legacy sort preferences", async () => {
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.librarytracks.tracks": { sortBy: "timestamp_added" },
+      },
+    });
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+
+    mountListingRaw({
+      itemtype: "tracks",
+      path: "librarytracks",
+      sortMediaType: MediaType.TRACK,
+      loadPagedData,
+      showGenreFilter: false,
+    });
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "timestamp_added:asc" }),
     );
   });
 });
