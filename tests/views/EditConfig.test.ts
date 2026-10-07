@@ -414,6 +414,16 @@ describe("EditConfig", () => {
     expect(wrapper.find(".floating-save-clearance").exists()).toBe(true);
   });
 
+  it("relies on the mobile layout's own room below the page", () => {
+    storeMock.mobileLayout = true;
+
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+    ]);
+
+    expect(wrapper.find(".floating-save-clearance").exists()).toBe(false);
+  });
+
   it("keeps the save action in the flow of the form when asked", () => {
     const wrapper = mountEntries(
       [entry({ key: "server", type: ConfigEntryType.STRING })],
