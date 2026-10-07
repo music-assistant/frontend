@@ -52,7 +52,7 @@
         </Button>
         <Button :disabled="!selectedFile || uploading" @click="upload">
           <Spinner v-if="uploading" />
-          {{ $t("save") }}
+          {{ $t("settings.save") }}
         </Button>
       </DialogFooter>
     </DialogContent>
