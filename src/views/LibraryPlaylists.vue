@@ -8,7 +8,7 @@
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :show-library="true"
-    :sort-keys="sortKeys"
+    :sort-media-type="MediaType.PLAYLIST"
     :update-available="updateAvailable"
     :title="$t('playlists')"
     :allow-key-hooks="true"
@@ -52,21 +52,6 @@ const updateAvailable = ref(false);
 const total = ref(store.libraryPlaylistsCount);
 const extraMenuItems = ref<ToolBarMenuItem[]>([]);
 const listingRef = ref<InstanceType<typeof ItemsListing>>();
-
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "timestamp_modified",
-  "timestamp_modified_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;

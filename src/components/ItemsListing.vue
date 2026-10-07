@@ -36,6 +36,38 @@
       </template>
     </Toolbar>
 
+    <div
+      v-if="
+        props.sortMediaType && quickSortOptions.length && !store.mobileLayout
+      "
+      class="flex gap-2 overflow-x-auto px-3 py-2"
+      role="group"
+      :aria-label="$t('tooltip.sort_options')"
+    >
+      <Button
+        v-for="option in quickSortOptions"
+        :key="option.field"
+        variant="outline"
+        size="sm"
+        class="shrink-0 gap-2"
+        :class="{
+          'border-primary bg-accent text-accent-foreground':
+            currentSort.field === option.field,
+        }"
+        :aria-pressed="currentSort.field === option.field"
+        :aria-label="quickSortAriaLabel(option)"
+        :title="quickSortAriaLabel(option)"
+        @click="changeQuickSort(option)"
+      >
+        {{ sortOptionLabel(option) }}
+        <ArrowDown
+          v-if="quickSortDirection(option) === SortDirection.DESC"
+          class="size-4"
+        />
+        <ArrowUp v-else class="size-4" />
+      </Button>
+    </div>
+
     <v-divider />
 
     <slot name="header"></slot>
@@ -354,16 +386,22 @@ import {
   ProviderFeature,
   ProviderType,
   Radio,
+  SortDirection,
+  SortField,
   type Album,
   type Genre,
+  type LibrarySortMediaType,
   type MediaItem,
   type MediaItemType,
   type ProviderInstance,
+  type SortOptionInfo,
   type Track,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
+  ArrowDown,
+  ArrowUp,
   ArrowUpDown,
   CheckCheck,
   ChevronDown,
@@ -432,6 +470,7 @@ export interface LoadDataParams {
 export interface Props {
   itemtype: string;
   sortKeys?: string[];
+  sortMediaType?: LibrarySortMediaType;
   showTrackNumber?: boolean;
   showProvider?: boolean;
   showAlbum?: boolean;
@@ -498,6 +537,7 @@ export interface Props {
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
+  sortMediaType: undefined,
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
@@ -628,6 +668,8 @@ const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
+const sortOptions = ref<SortOptionInfo[]>([]);
+const sortOptionsLoaded = ref(false);
 
 // used in tabbed item listings to prevent a timing-race condition, where
 // the selected tab shows items of the initial tab on entering the page
@@ -984,6 +1026,94 @@ const toggleCheckboxes = function () {
 
 const onRefreshClicked = function () {
   loadData(true, true);
+};
+
+const QUICK_SORT_FIELDS = [
+  SortField.TIMESTAMP_ADDED,
+  SortField.PLAY_COUNT,
+  SortField.NAME,
+];
+
+const parseSortBy = (sortBy: string) => {
+  const match = sortBy.match(/^(.+?)(?::|_)(asc|desc)$/);
+  const rawField = match?.[1] ?? sortBy;
+  const legacyFieldAliases: Record<string, SortField> = {
+    album_artist_name: SortField.ARTIST_NAME,
+    track_artist_name: SortField.ARTIST_NAME,
+  };
+  return {
+    field: legacyFieldAliases[rawField] ?? rawField,
+    direction:
+      match?.[2] === SortDirection.ASC || match?.[2] === SortDirection.DESC
+        ? (match[2] as SortDirection)
+        : undefined,
+  };
+};
+
+const makeSortValue = (
+  option: SortOptionInfo,
+  direction = option.default_direction ?? SortDirection.ASC,
+) =>
+  option.supports_direction ? `${option.field}:${direction}` : option.field;
+
+const normalizeDynamicSortBy = (sortBy: string): string => {
+  if (!sortOptions.value.length) return sortBy;
+  const parsed = parseSortBy(sortBy);
+  const option = sortOptions.value.find((item) => item.field === parsed.field);
+  if (!option) return makeSortValue(sortOptions.value[0]);
+  return makeSortValue(option, parsed.direction);
+};
+
+const currentSort = computed(() => {
+  const parsed = parseSortBy(params.value.sortBy);
+  const option = sortOptions.value.find((item) => item.field === parsed.field);
+  return {
+    field: parsed.field,
+    direction:
+      parsed.direction ?? option?.default_direction ?? SortDirection.ASC,
+  };
+});
+
+const quickSortOptions = computed(() =>
+  QUICK_SORT_FIELDS.flatMap((field) => {
+    const option = sortOptions.value.find((item) => item.field === field);
+    return option ? [option] : [];
+  }),
+);
+
+const sortOptionLabel = (option: SortOptionInfo) =>
+  t(`sort.${option.label_key ?? option.field}`);
+
+const quickSortDirection = (option: SortOptionInfo) =>
+  currentSort.value.field === option.field
+    ? currentSort.value.direction
+    : (option.default_direction ?? SortDirection.ASC);
+
+const quickSortAriaLabel = (option: SortOptionInfo) =>
+  `${sortOptionLabel(option)}, ${t(`sort.${quickSortDirection(option)}`)}`;
+
+const changeDynamicSort = (option: SortOptionInfo) => {
+  changeSort(makeSortValue(option));
+};
+
+const changeDynamicDirection = (direction: SortDirection) => {
+  const option = sortOptions.value.find(
+    (item) => item.field === currentSort.value.field,
+  );
+  if (!option?.supports_direction) return;
+  changeSort(makeSortValue(option, direction));
+};
+
+const changeQuickSort = (option: SortOptionInfo) => {
+  if (currentSort.value.field === option.field && option.supports_direction) {
+    changeDynamicDirection(
+      currentSort.value.direction === SortDirection.DESC
+        ? SortDirection.ASC
+        : SortDirection.DESC,
+    );
+    return;
+  }
+  changeDynamicSort(option);
 };
 
 const changeSort = function (sort_key?: string) {
@@ -1536,7 +1666,42 @@ const menuItems = computed(() => {
   }
 
   // sort options
-  if (props.sortKeys?.length) {
+  if (props.sortMediaType) {
+    const selectedOption = sortOptions.value.find(
+      (option) => option.field === currentSort.value.field,
+    );
+    if (sortOptionsLoaded.value && sortOptions.value.length) {
+      items.push({
+        label: "tooltip.sort_options",
+        icon: ArrowUpDown,
+        disabled: loading.value,
+        overflowAllowed: false,
+        subItems: [
+          ...sortOptions.value.map((option) => ({
+            label: `sort.${option.label_key ?? option.field}`,
+            selected: currentSort.value.field === option.field,
+            action: () => changeDynamicSort(option),
+          })),
+          ...(selectedOption?.supports_direction
+            ? [
+                {
+                  label: "sort.ascending",
+                  icon: "mdi-sort-ascending",
+                  selected: currentSort.value.direction === SortDirection.ASC,
+                  action: () => changeDynamicDirection(SortDirection.ASC),
+                },
+                {
+                  label: "sort.descending",
+                  icon: "mdi-sort-descending",
+                  selected: currentSort.value.direction === SortDirection.DESC,
+                  action: () => changeDynamicDirection(SortDirection.DESC),
+                },
+              ]
+            : []),
+        ],
+      });
+    }
+  } else if (props.sortKeys?.length) {
     items.push({
       label: "tooltip.sort_options",
       icon: ArrowUpDown,
@@ -1784,7 +1949,13 @@ const restoreSettings = async function () {
   gridSize.value = normalizeGridSize(prefs.gridSize);
 
   // get stored/default sortBy for this itemtype
-  if (prefs.sortBy && props.sortKeys.includes(prefs.sortBy)) {
+  if (props.sortMediaType) {
+    if (sortOptionsLoaded.value) {
+      params.value.sortBy = normalizeDynamicSortBy(
+        prefs.sortBy || params.value.sortBy,
+      );
+    }
+  } else if (prefs.sortBy && props.sortKeys.includes(prefs.sortBy)) {
     params.value.sortBy = prefs.sortBy;
   } else {
     params.value.sortBy = props.sortKeys[0];
@@ -2094,6 +2265,17 @@ onBeforeUnmount(() => {
 });
 
 onMounted(async () => {
+  if (props.sortMediaType) {
+    try {
+      sortOptions.value = await api.getLibrarySortOptions(props.sortMediaType);
+    } catch {
+      toast.error(t("settings.error_loading_sort_options"));
+    }
+    sortOptionsLoaded.value = true;
+    if (unmounted) return;
+    restoreSettings();
+  }
+
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;
@@ -2109,6 +2291,9 @@ onMounted(async () => {
     allItems.value = store.prevState.allItems;
     allItemsReceived.value = store.prevState.allItemsReceived;
     initialDataReceived.value = store.prevState.initialDataReceived;
+    if (props.sortMediaType) {
+      params.value.sortBy = normalizeDynamicSortBy(params.value.sortBy);
+    }
     // what the last visit left behind gives way to a provider carried in by a
     // link, unless it already came from there
     const carried = offeredCarriedProvider();

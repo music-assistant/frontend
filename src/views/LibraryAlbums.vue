@@ -5,7 +5,7 @@
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
-    :sort-keys="sortKeys"
+    :sort-media-type="MediaType.ALBUM"
     :update-available="updateAvailable"
     :title="$t('albums')"
     :allow-key-hooks="true"
@@ -34,23 +34,6 @@ defineOptions({
 
 const updateAvailable = ref<boolean>(false);
 const total = ref(store.libraryAlbumsCount);
-
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "year",
-  "year_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-  "album_artist_name",
-  "album_artist_name_desc",
-];
 
 onMounted(() => {
   // signal if/when items get added within this library

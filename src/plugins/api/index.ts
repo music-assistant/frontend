@@ -27,6 +27,7 @@ import {
   type Genre,
   type MassEvent,
   type MediaItemType,
+  type LibrarySortMediaType,
   type Player,
   type PlayerOptionValueType,
   type PlayerQueue,
@@ -40,6 +41,7 @@ import {
   type SuccessResultMessage,
   type TaskSchedule,
   type Track,
+  type SortOptionInfo,
   type User,
   type UserSummary,
   AlbumType,
@@ -609,6 +611,12 @@ export class MusicAssistantApi {
     favorite_only: boolean = false,
   ): Promise<number> {
     return this.sendCommand("music/tracks/count", { favorite_only });
+  }
+
+  public getLibrarySortOptions(
+    media_type: LibrarySortMediaType,
+  ): Promise<SortOptionInfo[]> {
+    return this.sendCommand(`music/${media_type}s/get_sort_options`);
   }
   public getLibraryPlaylistsCount(
     favorite_only: boolean = false,

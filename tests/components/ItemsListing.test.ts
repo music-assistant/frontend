@@ -5,10 +5,13 @@ import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   EventType,
   MediaType,
+  SortDirection,
+  SortField,
   type Album,
   type EventMessage,
   type ProviderInstance,
   type ProviderManifest,
+  type SortOptionInfo,
   type Track,
 } from "@/plugins/api/interfaces";
 import {
@@ -45,6 +48,7 @@ const events = vi.hoisted(() => {
 const mockGetLibraryGenres = vi.hoisted(() =>
   vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
 );
+const mockGetLibrarySortOptions = vi.hoisted(() => vi.fn());
 const mockSubscribeMulti = vi.hoisted(() => vi.fn());
 const mockSubscribe = vi.hoisted(() => vi.fn());
 
@@ -53,6 +57,7 @@ vi.mock("@/plugins/api", () => {
     providers: {},
     providerManifests: {},
     getLibraryGenres: mockGetLibraryGenres,
+    getLibrarySortOptions: mockGetLibrarySortOptions,
     subscribe_multi: mockSubscribeMulti,
     subscribe: mockSubscribe,
   };
@@ -1562,3 +1567,75 @@ function confirmationRequest() {
   ][];
   return calls.find(([event]) => event === "deleteConfirmationDialog")?.[1];
 }
+
+describe("ItemsListing server sort options", () => {
+  const sortOptions: SortOptionInfo[] = [
+    {
+      field: SortField.NAME,
+      supports_direction: true,
+      default_direction: SortDirection.ASC,
+      label_key: "name",
+    },
+    {
+      field: SortField.PLAY_COUNT,
+      supports_direction: true,
+      default_direction: SortDirection.DESC,
+      label_key: "play_count",
+    },
+    {
+      field: SortField.RANDOM,
+      supports_direction: false,
+      default_direction: null,
+      label_key: "random",
+    },
+  ];
+
+  beforeEach(() => {
+    mockGetLibraryGenres.mockReset().mockResolvedValue([]);
+    mockGetLibrarySortOptions.mockReset().mockResolvedValue(sortOptions);
+    mockSubscribeMulti.mockReset().mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset().mockImplementation(events.subscribe);
+    mockSetItemsListingPreference.mockReset();
+    store.currentUser = undefined;
+    store.prevState = undefined;
+    store.mobileLayout = false;
+  });
+
+  it("loads server options, migrates saved sorts, and toggles a quick sort direction", async () => {
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.librarytracks.tracks": { sortBy: "name_desc" },
+      },
+    });
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "tracks",
+      path: "librarytracks",
+      sortMediaType: MediaType.TRACK,
+      loadPagedData,
+      showGenreFilter: false,
+    });
+    await flushPromises();
+
+    expect(mockGetLibrarySortOptions).toHaveBeenCalledWith(MediaType.TRACK);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "name:desc" }),
+    );
+
+    const playCountChip = listing
+      .findAll("button")
+      .find((button) => button.text().includes("sort.play_count"));
+    expect(playCountChip).toBeDefined();
+    await playCountChip?.trigger("click");
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "play_count:desc" }),
+    );
+
+    await playCountChip?.trigger("click");
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "play_count:asc" }),
+    );
+  });
+});

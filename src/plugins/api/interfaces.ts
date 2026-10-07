@@ -205,6 +205,43 @@ export enum MediaType {
   UNKNOWN = "unknown",
 }
 
+export type LibrarySortMediaType =
+  | MediaType.ARTIST
+  | MediaType.ALBUM
+  | MediaType.TRACK
+  | MediaType.PLAYLIST
+  | MediaType.RADIO
+  | MediaType.AUDIOBOOK
+  | MediaType.PODCAST
+  | MediaType.GENRE;
+
+export enum SortField {
+  NAME = "name",
+  SORT_NAME = "sort_name",
+  TIMESTAMP_ADDED = "timestamp_added",
+  TIMESTAMP_MODIFIED = "timestamp_modified",
+  LAST_PLAYED = "last_played",
+  PLAY_COUNT = "play_count",
+  DURATION = "duration",
+  YEAR = "year",
+  POSITION = "position",
+  ARTIST_NAME = "artist_name",
+  RANDOM = "random",
+  RANDOM_PLAY_COUNT = "random_play_count",
+}
+
+export enum SortDirection {
+  ASC = "asc",
+  DESC = "desc",
+}
+
+export interface SortOptionInfo {
+  field: SortField;
+  supports_direction: boolean;
+  default_direction: SortDirection | null;
+  label_key: string | null;
+}
+
 export enum LinkType {
   WEBSITE = "website",
   FACEBOOK = "facebook",
