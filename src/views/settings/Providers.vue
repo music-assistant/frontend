@@ -3,7 +3,7 @@
     <ProviderFilters v-if="showSearch" @update:search="searchQuery = $event" />
     <!-- the empty state below carries the add button while there is nothing to list -->
     <Button
-      v-if="canOwnSources && !showMusicEmptyState"
+      v-if="canOwnSources() && !showMusicEmptyState"
       class="add-provider-btn"
       data-testid="add-provider"
       @click="showAddProviderDialog = true"
@@ -52,12 +52,12 @@
             :variant="viewMode"
             :config="item"
             :manageable="canManageSource(item)"
-            :reconfigurable="canReconfigure(item)"
+            :reconfigurable="canReconfigureSource(item)"
             :syncing="isProviderSyncing(item.instance_id)"
             :name="getProviderName(item)"
             :description="api.providerManifests[item.domain]?.description"
             :access-summary="
-              canConfigureAccess(item) ? accessSummary(item) : null
+              canConfigureSourceAccess(item) ? accessSummary(item) : null
             "
             :status-variant="statusVariant(item.status)"
             :status-label="statusLabel(item)"
@@ -66,7 +66,7 @@
             :stage-label="stageLabelFor(item)"
             @open="openProvider(item)"
             @menu="openMenu($event, item)"
-            @reconfigure="reconfigureProvider(item.instance_id)"
+            @reconfigure="reconfigureProvider(item)"
           />
         </component>
       </section>
@@ -84,13 +84,13 @@
       <EmptyDescription>
         {{
           $t(
-            canOwnSources
+            canOwnSources()
               ? "settings.music_sources_empty"
               : "settings.music_sources_shared_empty",
           )
         }}
       </EmptyDescription>
-      <EmptyContent v-if="canOwnSources">
+      <EmptyContent v-if="canOwnSources()">
         <Button
           data-testid="add-provider-empty"
           @click="showAddProviderDialog = true"
@@ -130,16 +130,16 @@
   </div>
   <AddProviderDialog
     v-model:show="showAddProviderDialog"
-    :provider-type="managesAllSources ? undefined : ProviderType.MUSIC"
-    :multi-instance-only="!managesAllSources"
-    :self-service-only="!managesAllSources"
+    :provider-type="managesAllSources() ? undefined : ProviderType.MUSIC"
+    :multi-instance-only="!managesAllSources()"
+    :self-service-only="!managesAllSources()"
   />
   <ProviderAccessDialog
     v-model:open="showAccessDialog"
     :config="accessDialogConfig"
-    :users="managesAllSources ? users : null"
+    :users="managesAllSources() ? users : null"
     :share-candidates="accessShareCandidates"
-    :can-change-owner="managesAllSources"
+    :can-change-owner="managesAllSources()"
     @saved="loadItems"
   />
 </template>
@@ -160,20 +160,24 @@ import {
 import { ItemGroup } from "@/components/ui/item";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
 import { useProviderAccess } from "@/composables/settings/providers/useProviderAccess";
-import { useProviderContextMenu } from "@/composables/settings/providers/useProviderContextMenu";
 import { useProviderSources } from "@/composables/settings/providers/useProviderSources";
+import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import {
-  isOwnMusicSource,
-  isSelfServiceProvider,
-} from "@/helpers/provider_access";
-import {
-  canReconfigureProvider,
   getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
   providerDisplayName,
   providerRequiresReconfiguration,
   shouldShowStageBadge,
 } from "@/helpers/provider_config";
+import {
+  canConfigureSourceAccess,
+  canManageSource,
+  canOwnSources,
+  canReconfigureSource,
+  managesAllSources,
+  maySetUpSource,
+} from "@/helpers/provider_permissions";
+import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
 import { api } from "@/plugins/api";
 import { requireServerVersion } from "@/plugins/api/helpers";
 import {
@@ -181,17 +185,13 @@ import {
   ProviderStage,
   ProviderStatus,
   ProviderType,
-  Scope,
 } from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { store } from "@/plugins/store";
 import { Info, Music, Plus } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, inject, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import { toast } from "vue-sonner";
 import AddProviderDialog from "./AddProviderDialog.vue";
 
 const router = useRouter();
@@ -204,20 +204,8 @@ const providersViewMode = inject<{
 
 const viewMode = computed(() => providersViewMode.viewMode.value);
 
-// an admin manages every source, a member only the music sources it owns
-const managesAllSources = computed(() =>
-  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
-);
-
-// owning (and so adding) a music source takes the own-sources scope; a role
-// without it only reads the sources it may use
-const canOwnSources = computed(
-  () =>
-    managesAllSources.value || authManager.hasScope(Scope.CONFIG_PROVIDERS_OWN),
-);
-
 const currentType = computed(() =>
-  managesAllSources.value
+  managesAllSources()
     ? (route.query.types as string | undefined)
     : ProviderType.MUSIC,
 );
@@ -260,37 +248,6 @@ const isErrorStatus = function (status?: ProviderStatus | null) {
     status === ProviderStatus.AUTH_REQUIRED ||
     status === ProviderStatus.INCOMPATIBLE ||
     status === ProviderStatus.ERROR
-  );
-};
-
-// a member manages the sources it owns while its role may own sources; the
-// ones shared with it are read-only
-const canManageSource = function (provider: ProviderConfig) {
-  return (
-    managesAllSources.value ||
-    (canOwnSources.value &&
-      isOwnMusicSource(provider, store.currentUser?.user_id))
-  );
-};
-
-// reconfiguring a source sets it up again, which a member may only do for a
-// source it owns of a provider it may set up itself
-const maySetUp = function (provider: ProviderConfig) {
-  return (
-    canManageSource(provider) &&
-    (managesAllSources.value ||
-      isSelfServiceProvider(api.providerManifests[provider.domain]))
-  );
-};
-
-const canReconfigure = function (provider: ProviderConfig) {
-  return (
-    maySetUp(provider) &&
-    canReconfigureProvider(
-      provider.status,
-      api.providerManifests[provider.domain]?.has_setup_flow,
-      provider.enabled,
-    )
   );
 };
 
@@ -349,19 +306,19 @@ const {
   accessShareCandidates,
   accessDialogConfig,
   showAccessDialog,
-  canConfigureAccess,
   accessSummary,
   openAccessDialog,
-} = useProviderAccess({ managesAllSources, canOwnSources, canManageSource });
+} = useProviderAccess({ managesAllSources, canOwnSources });
 
 const openProviderOptions = function (providerInstanceId: string) {
   router.push(`/settings/editprovider/${providerInstanceId}`);
 };
 
-const reconfigureProvider = function (providerInstanceId: string) {
+const reconfigureProvider = function (provider: ProviderConfig) {
   eventbus.emit("setupFlowDialog", {
     kind: "reconfigure",
-    instanceId: providerInstanceId,
+    instanceId: provider.instance_id,
+    name: getProviderName(provider),
     onFlowEnded: () => {
       void loadItems();
     },
@@ -370,49 +327,56 @@ const reconfigureProvider = function (providerInstanceId: string) {
 
 const openProvider = function (provider: ProviderConfig) {
   if (
-    maySetUp(provider) &&
+    maySetUpSource(provider) &&
     providerRequiresReconfiguration(
       provider.status,
       api.providerManifests[provider.domain]?.has_setup_flow,
       provider.enabled,
     )
   ) {
-    reconfigureProvider(provider.instance_id);
+    reconfigureProvider(provider);
     return;
   }
   openProviderOptions(provider.instance_id);
 };
 
 const toggleEnabled = function (config: ProviderConfig) {
-  config.enabled = !config.enabled;
+  const enabled = !config.enabled;
+  config.enabled = enabled;
   api
-    .saveProviderConfig(
-      config.domain,
-      {
-        enabled: config.enabled,
-      },
-      config.instance_id,
-    )
-    .catch((err) => toast.error(String(err)));
+    .saveProviderConfig(config.domain, { enabled }, config.instance_id)
+    .catch(() => {
+      // the api already reports the failure; the server kept the previous
+      // state, so the row has to show it again
+      config.enabled = !enabled;
+    });
 };
 
 const reloadProvider = function (providerInstanceId: string) {
-  api
-    .reloadProvider(providerInstanceId)
-    .catch((err) => toast.error(String(err)));
+  // the api reports a failing reload itself
+  api.reloadProvider(providerInstanceId).catch(() => {});
 };
 
-const { openMenu } = useProviderContextMenu({
-  managesAllSources,
-  canConfigureAccess,
-  canReconfigure,
-  onOptions: openProviderOptions,
-  onAccess: openAccessDialog,
-  onToggleEnabled: toggleEnabled,
-  onRemove: removeSource,
-  onReload: reloadProvider,
-  onReconfigure: reconfigureProvider,
-});
+const openMenu = function (evt: Event, item: ProviderConfig) {
+  // Guard against race condition where providerManifests aren't loaded yet
+  if (!api.providerManifests[item.domain]) {
+    console.warn("Provider manifest not yet loaded for:", item.domain);
+    return;
+  }
+  const { x, y } = getEventPosition(evt);
+  eventbus.emit("contextmenu", {
+    items: getProviderSettingsMenuItems(item, {
+      includeSections: true,
+      onAccess: openAccessDialog,
+      onToggleEnabled: toggleEnabled,
+      onReconfigure: reconfigureProvider,
+      onReload: reloadProvider,
+      onRemove: removeSource,
+    }),
+    posX: x,
+    posY: y,
+  });
+};
 </script>
 
 <style scoped>

@@ -49,6 +49,17 @@
         :show-badge="false"
         icon-style="position: absolute; right: 6px; bottom: 6px; z-index: 2"
       />
+      <!-- the now playing bars take this corner while the item plays -->
+      <span
+        v-if="playedStateLabel && !isPlaying"
+        class="ed-card__played"
+        role="img"
+        :title="playedStateLabel"
+        :aria-label="playedStateLabel"
+      >
+        <Check v-if="isFullyPlayed" :size="16" />
+        <ClockFading v-else :size="16" />
+      </span>
       <slot name="art-overlay"></slot>
       <div
         v-if="showCheckboxes"
@@ -113,6 +124,7 @@ import {
   getListItemProviderIconDomain,
   getProviderRootDomain,
   isMusicBrainzItem,
+  itemSupportsPlayLog,
 } from "@/plugins/api/helpers";
 import {
   type Album,
@@ -121,9 +133,10 @@ import {
   type MediaItemType,
   MediaType,
   type MediaCollection,
+  type PodcastEpisode,
   type Track,
 } from "@/plugins/api/interfaces";
-import { Play } from "@lucide/vue";
+import { Check, ClockFading, Play } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import MediaCollectionThumb from "../MediaCollectionThumb.vue";
@@ -224,6 +237,18 @@ const providerDomain = computed<string | undefined>(() => {
   return getListItemProviderIconDomain(it);
 });
 
+const isFullyPlayed = computed(
+  () => itemSupportsPlayLog(props.item) && !!props.item.fully_played,
+);
+const isInProgress = computed(
+  () => itemSupportsPlayLog(props.item) && !!props.item.resume_position_ms,
+);
+// undefined while unplayed, when the cover shows no played state
+const playedStateLabel = computed(() => {
+  if (isFullyPlayed.value) return t("item_fully_played");
+  return isInProgress.value ? t("item_in_progress") : undefined;
+});
+
 const displayName = computed(() => {
   const it = props.item;
   if (it.media_type === MediaType.FOLDER) {
@@ -237,7 +262,8 @@ const displayName = computed(() => {
 const subtitle = computed(() => {
   const it = props.item as Partial<
     Album &
-      Track & {
+      Track &
+      PodcastEpisode & {
         authors?: string[];
         publisher?: string;
         owner?: string;
@@ -249,6 +275,9 @@ const subtitle = computed(() => {
     return getAuthorsNarratorsArray(it.authors).join(" / ");
   if (it.publisher) return it.publisher;
   if (it.owner) return it.owner;
+  // inside its own podcast the podcast name would only repeat on every episode
+  if (it.podcast?.name && props.parentItem?.media_type !== MediaType.PODCAST)
+    return it.podcast.name;
   return t(props.item.media_type);
 });
 
@@ -383,6 +412,20 @@ const onMenu = (e: MouseEvent) => {
   top: 6px;
   left: 6px;
   z-index: 2;
+}
+.ed-card__played {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
 }
 .ed-card__img {
   width: 100%;

@@ -17,6 +17,10 @@ vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
 
+vi.mock("@/helpers/players", () => ({
+  getPlayerDisplayName: (player: { name: string }) => player.name,
+}));
+
 interface TestStore {
   activePlayer?: { name: string };
   showPlayersMenu: boolean;

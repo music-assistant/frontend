@@ -53,7 +53,7 @@
             class="group-popout-row"
           >
             <div class="group-popout-label">
-              {{ truncateString(child.name, 20) }}
+              {{ truncateString(getPlayerDisplayName(child), 20) }}
             </div>
             <PlayerVolume
               :player="child"
@@ -185,6 +185,7 @@
 import { Slider } from "@/components/ui/slider";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { deviceInset } from "@/helpers/device";
+import { getPlayerDisplayName } from "@/helpers/players";
 import { getVolumeIconComponent, truncateString } from "@/helpers/utils";
 import { cn } from "@/lib/utils";
 import { api } from "@/plugins/api";
@@ -339,7 +340,12 @@ const childPlayers = computed(() => {
       items.push(child);
     }
   }
-  items.sort((a, b) => (a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1));
+  items.sort((a, b) =>
+    getPlayerDisplayName(a).toUpperCase() >
+    getPlayerDisplayName(b).toUpperCase()
+      ? 1
+      : -1,
+  );
   return items;
 });
 

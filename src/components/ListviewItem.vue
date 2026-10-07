@@ -29,6 +29,7 @@
           <ListviewItemTitle
             :display-name="displayName"
             :item="item"
+            :parent-item="parentItem"
             :show-checkboxes="showCheckboxes"
             :is-playing="isPlaying"
           />
@@ -147,6 +148,7 @@
       <ListviewItemTitle
         :display-name="displayName"
         :item="item"
+        :parent-item="parentItem"
         :show-checkboxes="showCheckboxes"
         :is-playing="isPlaying"
       />
@@ -205,6 +207,11 @@
       <!-- audiobook publisher -->
       <div v-else-if="'publisher' in item && item.publisher">
         {{ item.publisher }}
+      </div>
+      <!-- podcast episode: the publisher's season and episode number -->
+      <div v-else-if="episodeNumber" :title="episodeNumber.label">
+        <span aria-hidden="true">{{ episodeNumber.short }}</span>
+        <span class="sr-only">{{ episodeNumber.label }}</span>
       </div>
       <div v-else-if="item.media_type == MediaType.COLLECTION">
         {{ $t("collection") }}
@@ -267,17 +274,18 @@
       />
 
       <!-- fully played or in progress icon -->
-      <!-- only used for podcast-episodes and audiobook-chapters -->
-      <v-icon
-        v-if="'fully_played' in item && item.fully_played"
-        :title="$t('item_fully_played')"
-        >mdi-check</v-icon
+      <!-- only used for podcast-episodes and audiobook-chapters; the slot stays
+      when unplayed so the durations line up across rows -->
+      <span
+        v-if="'fully_played' in item"
+        class="listitem-played-state"
+        :role="playedStateLabel ? 'img' : undefined"
+        :title="playedStateLabel"
+        :aria-label="playedStateLabel"
       >
-      <v-icon
-        v-else-if="'resume_position_ms' in item && item.resume_position_ms"
-        :title="$t('item_in_progress')"
-        >mdi-clock-fast</v-icon
-      >
+        <Check v-if="item.fully_played" />
+        <ClockFading v-else-if="isInProgress" />
+      </span>
 
       <!-- favorite (heart) icon -->
       <div
@@ -323,6 +331,7 @@
 import FavouriteButton from "@/components/FavoriteButton.vue";
 import ListItem from "@/components/ListItem.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import { podcastEpisodeNumber } from "@/components/podcast/podcastEpisodeData";
 import { canHoldFavorite } from "@/helpers/favorites";
 import {
   handleMediaItemClick,
@@ -346,12 +355,13 @@ import {
   Scope,
   type MediaCollection,
   type MediaItemType,
+  type PodcastEpisode,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { useMediaQuery } from "@vueuse/core";
-import { Play } from "@lucide/vue";
+import { Check, ClockFading, Play } from "@lucide/vue";
 import { computed } from "vue";
 import { VTooltip } from "vuetify/components";
 import MediaItemThumb from "./MediaItemThumb.vue";
@@ -416,6 +426,12 @@ const compProps = withDefaults(defineProps<Props>(), {
 // since it can be opened and added to the library
 const notInLibrary = computed(() => isMusicBrainzItem(compProps.item));
 
+const episodeNumber = computed(() =>
+  compProps.item.media_type === MediaType.PODCAST_EPISODE
+    ? podcastEpisodeNumber(compProps.item as PodcastEpisode)
+    : undefined,
+);
+
 // a row that is not available has nothing to play, whatever its flag says
 const showPlay = computed(
   () => compProps.item.is_playable && compProps.isAvailable,
@@ -454,6 +470,17 @@ const collabArtists = computed(() => {
     (a) => !albumNames.has(a.name.toLowerCase()),
   );
   return collab.map((a) => a.name).join(" | ");
+});
+const isInProgress = computed(
+  () =>
+    "resume_position_ms" in compProps.item &&
+    !!compProps.item.resume_position_ms,
+);
+// undefined while unplayed, when the played state shows nothing
+const playedStateLabel = computed(() => {
+  if ("fully_played" in compProps.item && compProps.item.fully_played)
+    return $t("item_fully_played");
+  return isInProgress.value ? $t("item_in_progress") : undefined;
 });
 
 const HiResDetails = computed(() => {
@@ -677,6 +704,14 @@ const onPlayClick = function (evt: PointerEvent) {
   margin-inline: 10px;
 }
 
+.listitem-played-state {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
 .track-duration {
   font-size: 0.875rem;
   opacity: 0.7;

@@ -189,7 +189,12 @@
             </span>
           </div>
           <div class="flex min-w-0 flex-col">
-            <span class="truncate">{{ item.name }}</span>
+            <span class="truncate">
+              {{ item.name }}
+              <span v-if="item.version" class="text-muted-foreground"
+                >({{ item.version }})</span
+              >
+            </span>
             <span class="text-muted-foreground truncate text-xs">
               {{ itemSubtitle(item) }}
             </span>
@@ -350,7 +355,8 @@ import {
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
-import { getArtistsString, getPlayerName } from "@/helpers/utils";
+import { getPlayerDisplayName, getPlayerName } from "@/helpers/players";
+import { getArtistsString } from "@/helpers/utils";
 import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
   MediaType,
@@ -589,7 +595,8 @@ const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
   if (!item.name || item.media_type === MediaType.PLAYLIST) return null;
   const artist =
     "artists" in item ? item.artists[0]?.name.toLowerCase() || "" : "";
-  return `${item.media_type}:${item.name.toLowerCase()}:${artist}`;
+  const version = (item.version ?? "").toLowerCase();
+  return `${item.media_type}:${item.name.toLowerCase()}:${version}:${artist}`;
 };
 
 const mediaSections = computed(() => {
@@ -768,7 +775,9 @@ const playerResults = computed(() => {
   const term = query.value.trim().toLowerCase();
   if (!term) return [];
   return orderedPlayers.value
-    .filter((player) => player.name.toLowerCase().includes(term))
+    .filter((player) =>
+      getPlayerDisplayName(player).toLowerCase().includes(term),
+    )
     .slice(0, 6);
 });
 

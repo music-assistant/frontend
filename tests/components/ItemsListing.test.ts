@@ -145,7 +145,10 @@ vi.mock("@/components/Toolbar.vue", () => ({
       '<div class="toolbar-stub"><slot name="title" /><slot name="append" /></div>',
   },
 }));
-vi.mock("@/components/Container.vue", () => stubComponent("Container"));
+// renders what it holds, so the grid inside it can be looked at
+vi.mock("@/components/Container.vue", () => ({
+  default: { name: "Container", template: "<div><slot /></div>" },
+}));
 vi.mock("@/components/icons/GenreIcon.vue", () => stubComponent("GenreIcon"));
 vi.mock("@/components/skeletons/ListViewSkeleton.vue", () =>
   stubComponent("ListViewSkeleton"),
@@ -205,6 +208,13 @@ function mountListingRaw(
         TabsList: true,
         TabsTrigger: true,
         "v-divider": true,
+        // the grid's layout, as plain boxes that keep their column class
+        VInfiniteScroll: { template: "<div><slot /></div>" },
+        VRow: { template: "<div><slot /></div>" },
+        VCol: { template: '<div class="grid-col"><slot /></div>' },
+        VVirtualScroll: true,
+        VSnackbar: true,
+        VBtn: true,
       },
     },
   });
@@ -413,7 +423,9 @@ describe("ItemsListing per-page search", () => {
               return () => h("div");
             },
           }),
-          { global: { stubs: { "v-divider": true } } },
+          // stubs are global in test-utils, so a mount after the listing's
+          // sets the ones its re-renders get: keep its snackbar stubbed
+          { global: { stubs: { "v-divider": true, VSnackbar: true } } },
         );
       if (backFirst) mountBack();
       const listing = mountListingRaw({
@@ -662,6 +674,112 @@ describe("ItemsListing select all", () => {
     await flushPromises();
 
     expect(selection(listing)).toHaveLength(1);
+  });
+});
+
+describe("ItemsListing cover size", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    store.prevState = undefined;
+    store.currentUser = undefined;
+    mockSetItemsListingPreference.mockClear();
+  });
+
+  afterEach(() => {
+    store.currentUser = undefined;
+  });
+
+  /** Signs in a user who saved these settings for the albums grid. */
+  function signInWithSavedGrid(settings: Record<string, unknown>) {
+    store.currentUser = user({
+      preferences: { "itemsListing.libraryalbums.albums": settings },
+    });
+  }
+
+  /** An albums grid, whose window width alone would give it two columns. */
+  async function mountGrid() {
+    const listing = mountListingRaw({
+      itemtype: "albums",
+      path: "libraryalbums",
+      showGenreFilter: false,
+      loadPagedData: vi.fn().mockResolvedValue([album()]),
+    });
+    await flushPromises();
+    return listing;
+  }
+
+  /** The column class the grid's first cover is laid out with. */
+  function columns(listing: ReturnType<typeof mountListingRaw>) {
+    return listing
+      .get(".grid-col")
+      .classes()
+      .find((name) => /^col-\d+$/.test(name));
+  }
+
+  type SliderItem = {
+    label?: string;
+    hide?: boolean;
+    componentProps?: {
+      size: number;
+      onChange: (size: number) => void;
+      onCommit: (size: number) => void;
+    };
+  };
+
+  function slider(listing: ReturnType<typeof mountListingRaw>) {
+    const items = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as { subItems?: SliderItem[] }[];
+    return items
+      .flatMap((item) => item.subItems ?? [])
+      .find((item) => item.label === "grid_size");
+  }
+
+  it("opens at the size the listing was left at", async () => {
+    signInWithSavedGrid({ viewMode: "panel", gridSize: -2 });
+    const listing = await mountGrid();
+
+    expect(slider(listing)?.componentProps?.size).toBe(-2);
+    expect(columns(listing)).toBe("col-4");
+  });
+
+  it("follows the slider while it moves, and saves only once let go", async () => {
+    signInWithSavedGrid({ viewMode: "panel" });
+    const listing = await mountGrid();
+    expect(columns(listing)).toBe("col-2");
+
+    slider(listing)?.componentProps?.onChange(-3);
+    await flushPromises();
+
+    expect(columns(listing)).toBe("col-5");
+    expect(mockSetItemsListingPreference).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      "gridSize",
+      expect.anything(),
+    );
+
+    slider(listing)?.componentProps?.onCommit(-3);
+    await flushPromises();
+
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "libraryalbums",
+      "albums",
+      "gridSize",
+      -3,
+    );
+  });
+
+  it("leaves the slider out of the list view", async () => {
+    signInWithSavedGrid({ viewMode: "list" });
+    const listing = await mountGrid();
+
+    expect(slider(listing)?.hide).toBe(true);
   });
 });
 

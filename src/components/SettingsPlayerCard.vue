@@ -17,7 +17,10 @@
           <PlayerIcon :icon="player?.icon" :size="24" />
         </div>
         <div class="player-info">
-          <div class="player-name">{{ playerName }}</div>
+          <div class="player-name flex items-center gap-1.5">
+            <span class="truncate">{{ playerName }}</span>
+            <PlayerDeviceBadge v-if="isThisDevice" label />
+          </div>
           <div class="provider-name">{{ providerName }}</div>
         </div>
         <v-btn
@@ -68,10 +71,11 @@
 
 <script setup lang="ts">
 import ProtocolChip from "@/components/ProtocolChip.vue";
+import PlayerDeviceBadge from "@/components/PlayerDeviceBadge.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import PlayerSetupWarning from "@/components/PlayerSetupWarning.vue";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
-import { isPlayerUnavailable } from "@/helpers/players";
+import { isBuiltinPlayer, isPlayerUnavailable } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { PlayerConfig } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -89,6 +93,9 @@ const emit = defineEmits<{
 
 const player = computed(() => api.players[props.playerConfig.player_id]);
 const isUnavailable = computed(() => isPlayerUnavailable(player.value));
+const isThisDevice = computed(
+  () => player.value !== undefined && isBuiltinPlayer(player.value),
+);
 const needsSetup = computed(() => player.value?.needs_setup ?? false);
 const providerDomain = computed(
   () =>

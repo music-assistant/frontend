@@ -57,8 +57,9 @@
           </template>
 
           <template #title>
-            <div class="player-name">
-              {{ getPlayerName(item) }}
+            <div class="player-name flex min-w-0 items-center gap-1.5">
+              <span class="truncate">{{ getPlayerName(item) }}</span>
+              <PlayerDeviceBadge v-if="isThisDevice(item)" label />
             </div>
           </template>
 
@@ -150,6 +151,7 @@
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
+import PlayerDeviceBadge from "@/components/PlayerDeviceBadge.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
 import ProtocolChip from "@/components/ProtocolChip.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
@@ -158,11 +160,14 @@ import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
 
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
-import { getPlayerName } from "@/helpers/player_config";
+import {
+  getListedPlayerConfigs,
+  getPlayerName,
+  playerBelongsToProviders,
+} from "@/helpers/player_config";
 import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
-import { isPlayerUnavailable } from "@/helpers/players";
+import { isBuiltinPlayer, isPlayerUnavailable } from "@/helpers/players";
 
-import { isHiddenSendspinWebPlayer } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -226,11 +231,9 @@ const canAddPlayerProviders = computed(() =>
 
 // methods
 const loadItems = async function () {
-  playerConfigs.value = (
-    await api.getPlayerConfigs(undefined, false, false, true)
-  )
-    .filter((x) => !isHiddenSendspinWebPlayer(x))
-    .sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)));
+  playerConfigs.value = (await getListedPlayerConfigs()).sort((a, b) =>
+    getPlayerName(a).localeCompare(getPlayerName(b)),
+  );
 };
 
 const editPlayer = function (playerId: string, provider: string) {
@@ -258,6 +261,11 @@ const handlePlayerClick = function (playerConfig: PlayerConfig) {
 const getOutputProtocols = function (playerId: string) {
   // all output methods for this player, native included
   return api.players[playerId]?.output_protocols || [];
+};
+
+const isThisDevice = function (playerConfig: PlayerConfig) {
+  const player = api.players[playerConfig.player_id];
+  return player !== undefined && isBuiltinPlayer(player);
 };
 
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
@@ -294,32 +302,9 @@ const filteredPlayers = computed(() => {
   }
 
   if (selectedProviders.value.length > 0) {
-    // Build set of provider domains from selected provider instance_ids for efficient lookup
-    const selectedProviderDomains = new Set(
-      selectedProviders.value
-        .map((instanceId) => api.getProvider(instanceId)?.domain)
-        .filter((domain): domain is string => domain !== undefined),
+    filtered = filtered.filter((item) =>
+      playerBelongsToProviders(item, selectedProviders.value),
     );
-
-    filtered = filtered.filter((item) => {
-      const providerInstance = api.getProvider(item.provider);
-      if (!providerInstance) return false;
-
-      // Check if player's provider is selected
-      if (selectedProviders.value.includes(providerInstance.instance_id)) {
-        return true;
-      }
-
-      // Check if any output protocol's domain matches a selected provider domain
-      const player = api.players[item.player_id];
-      if (player) {
-        return player.output_protocols.some((protocol) =>
-          selectedProviderDomains.has(protocol.protocol_domain),
-        );
-      }
-
-      return false;
-    });
   }
 
   if (selectedPlayerTypes.value.length > 0) {

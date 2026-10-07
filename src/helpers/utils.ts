@@ -13,8 +13,6 @@ import {
   MediaItemType,
   MediaType,
   Player,
-  PlayerConfig,
-  PlayerType,
   ProviderMapping,
   QueueItem,
 } from "@/plugins/api/interfaces";
@@ -236,17 +234,22 @@ export const getBrowseFolderName = function (browseItem: BrowseFolder) {
   return browseItem?.name || browseItem?.path || "";
 };
 
-export const getPlayerName = function (player: Player, truncate = 26) {
-  if (!player) return "";
-  const availableChildPlayers = player.group_members.filter(
-    (x) => api.players[x]?.available && x != player.player_id,
-  );
-  if (player.type != PlayerType.GROUP && availableChildPlayers.length) {
-    return `${truncateString(player.name, truncate - 3)} +${
-      availableChildPlayers.length
-    }`;
-  }
-  return truncateString(player.name, truncate);
+/** Return the year a track was released, unless it repeats the year of the album it is listed under. */
+export const getTrackReleaseYear = function (
+  item: MediaItemType,
+  parentItem?: MediaItemType,
+): number | undefined {
+  if (item.media_type != MediaType.TRACK || !item.metadata?.release_date)
+    return undefined;
+  // release dates arrive as midnight UTC, so read the year in UTC
+  const year = new Date(item.metadata.release_date).getUTCFullYear();
+  if (
+    parentItem?.media_type == MediaType.ALBUM &&
+    "year" in parentItem &&
+    parentItem.year == year
+  )
+    return undefined;
+  return year;
 };
 
 export const getStreamingProviderMappings = function (
@@ -785,30 +788,6 @@ const legacyCopy = function (text: string): boolean {
   }
 
   return copied;
-};
-
-/**
- * Check if a player config should be hidden from settings due to being a
- * Sendspin web player that is currently unavailable.
- *
- * This prevents users from being confused by a lot of auto-generated players
- * in the Players and Providers settings pages.
- */
-export const isHiddenSendspinWebPlayer = function (
-  playerConfig: PlayerConfig,
-): boolean {
-  if (playerConfig.provider !== "sendspin") return false;
-
-  const name = playerConfig.default_name || "";
-  if (
-    !name.startsWith("Music Assistant (") && // PWA app
-    !name.startsWith("Music Assistant Web (") // Regular web interface
-  ) {
-    return false;
-  }
-
-  const player = api.players[playerConfig.player_id];
-  return !player?.available;
 };
 
 export const getVolumeIconComponent = function (

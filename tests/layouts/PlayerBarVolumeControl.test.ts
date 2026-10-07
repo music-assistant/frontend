@@ -30,8 +30,12 @@ vi.mock("@/plugins/store", () => ({
   },
 }));
 
-vi.mock("@/helpers/utils", () => ({
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/players")>()),
   getPlayerName: (player: Player) => player.name,
+}));
+
+vi.mock("@/helpers/utils", () => ({
   getVolumeIconComponent: () => ({
     template: "<span class='volume-icon' />",
   }),

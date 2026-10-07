@@ -511,11 +511,11 @@ import {
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
+import { getPlayerName } from "@/helpers/players";
 import {
   getAudiobookCollectionArtists,
   getAuthorsNarratorsArray,
   getImageThumbForItem,
-  getPlayerName,
 } from "@/helpers/utils";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";

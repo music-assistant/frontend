@@ -308,7 +308,7 @@
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter class="flex-row justify-end">
-          <AlertDialogCancel class="mt-0">{{ $t("cancel") }}</AlertDialogCancel>
+          <AlertDialogCancel>{{ $t("cancel") }}</AlertDialogCancel>
           <Button :disabled="guestAccessSaving" @click="toggleGuestAccess">
             {{
               qrAvailable
