@@ -208,6 +208,11 @@
       <div v-else-if="'publisher' in item && item.publisher">
         {{ item.publisher }}
       </div>
+      <!-- podcast episode: the publisher's season and episode number -->
+      <div v-else-if="episodeNumber" :title="episodeNumber.label">
+        <span aria-hidden="true">{{ episodeNumber.short }}</span>
+        <span class="sr-only">{{ episodeNumber.label }}</span>
+      </div>
       <div v-else-if="item.media_type == MediaType.COLLECTION">
         {{ $t("collection") }}
       </div>
@@ -326,6 +331,7 @@
 import FavouriteButton from "@/components/FavoriteButton.vue";
 import ListItem from "@/components/ListItem.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import { podcastEpisodeNumber } from "@/components/podcast/podcastEpisodeData";
 import { canHoldFavorite } from "@/helpers/favorites";
 import {
   handleMediaItemClick,
@@ -349,6 +355,7 @@ import {
   Scope,
   type MediaCollection,
   type MediaItemType,
+  type PodcastEpisode,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -418,6 +425,12 @@ const compProps = withDefaults(defineProps<Props>(), {
 // a release only MusicBrainz knows: muted rather than shown as unavailable,
 // since it can be opened and added to the library
 const notInLibrary = computed(() => isMusicBrainzItem(compProps.item));
+
+const episodeNumber = computed(() =>
+  compProps.item.media_type === MediaType.PODCAST_EPISODE
+    ? podcastEpisodeNumber(compProps.item as PodcastEpisode)
+    : undefined,
+);
 
 // a row that is not available has nothing to play, whatever its flag says
 const showPlay = computed(
