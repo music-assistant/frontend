@@ -160,7 +160,11 @@ import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
 
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
-import { getPlayerName } from "@/helpers/player_config";
+import {
+  getListedPlayerConfigs,
+  getPlayerName,
+  playerBelongsToProviders,
+} from "@/helpers/player_config";
 import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
 import { isBuiltinPlayer, isPlayerUnavailable } from "@/helpers/players";
 
@@ -227,9 +231,9 @@ const canAddPlayerProviders = computed(() =>
 
 // methods
 const loadItems = async function () {
-  playerConfigs.value = (
-    await api.getPlayerConfigs(undefined, false, false, true)
-  ).sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)));
+  playerConfigs.value = (await getListedPlayerConfigs()).sort((a, b) =>
+    getPlayerName(a).localeCompare(getPlayerName(b)),
+  );
 };
 
 const editPlayer = function (playerId: string, provider: string) {
@@ -298,32 +302,9 @@ const filteredPlayers = computed(() => {
   }
 
   if (selectedProviders.value.length > 0) {
-    // Build set of provider domains from selected provider instance_ids for efficient lookup
-    const selectedProviderDomains = new Set(
-      selectedProviders.value
-        .map((instanceId) => api.getProvider(instanceId)?.domain)
-        .filter((domain): domain is string => domain !== undefined),
+    filtered = filtered.filter((item) =>
+      playerBelongsToProviders(item, selectedProviders.value),
     );
-
-    filtered = filtered.filter((item) => {
-      const providerInstance = api.getProvider(item.provider);
-      if (!providerInstance) return false;
-
-      // Check if player's provider is selected
-      if (selectedProviders.value.includes(providerInstance.instance_id)) {
-        return true;
-      }
-
-      // Check if any output protocol's domain matches a selected provider domain
-      const player = api.players[item.player_id];
-      if (player) {
-        return player.output_protocols.some((protocol) =>
-          selectedProviderDomains.has(protocol.protocol_domain),
-        );
-      }
-
-      return false;
-    });
   }
 
   if (selectedPlayerTypes.value.length > 0) {

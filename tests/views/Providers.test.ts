@@ -1,6 +1,6 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { ref } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type ProviderConfig,
   ProviderFeature,
@@ -231,6 +231,11 @@ const ProviderRowStub = {
   template: `<div data-testid="provider-row">{{ name }}</div>`,
 };
 
+// a console spy has to be let go even when its test fails
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getAllUsers.mockResolvedValue([owner, member]);
@@ -344,6 +349,43 @@ describe("Providers", () => {
     expect(apiMock.reloadProvider).toHaveBeenCalledWith("spotify--test");
   });
 
+  it.each([
+    ["pointer", { clientX: 5, clientY: 7 }, 5, 7],
+    [
+      "touch position of a long-press",
+      { touches: [{ clientX: 11, clientY: 22 }], changedTouches: [] },
+      11,
+      22,
+    ],
+  ])("opens the menu at the %s", async (_label, event, posX, posY) => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    onlyRow(wrapper).vm.$emit("menu", event);
+    await flushPromises();
+
+    expect(eventbusMock.emit).toHaveBeenCalledWith("contextmenu", {
+      items: expect.any(Array),
+      posX,
+      posY,
+    });
+  });
+
+  it("opens no menu while the provider manifest has not loaded yet", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
+      domain: "not_loaded",
+    });
+
+    onlyRow(wrapper).vm.$emit("menu", { clientX: 5, clientY: 7 });
+    await flushPromises();
+
+    expect(warnSpy).toHaveBeenCalled();
+    expect(eventbusMock.emit).not.toHaveBeenCalledWith(
+      "contextmenu",
+      expect.anything(),
+    );
+  });
+
   it("asks for confirmation before removing a provider from the row menu", async () => {
     // removing a source cannot be undone, so the row menu has to confirm it
     // just like the provider detail page does
@@ -401,6 +443,24 @@ describe("Providers", () => {
 
     expect(toastMock.error).toHaveBeenCalledWith("Error: nope");
     expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(1);
+  });
+
+  it("shows the previous state again when toggling a provider fails", async () => {
+    apiMock.saveProviderConfig.mockRejectedValue(new Error("nope"));
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    const toggle = async () => {
+      eventbusMock.emit.mockClear();
+      return (await openMenu(wrapper)).find((item: { label: string }) =>
+        ["settings.disable", "settings.enable"].includes(item.label),
+      );
+    };
+    (await toggle()).action();
+    await flushPromises();
+
+    // the api toasts a refused save itself
+    expect(toastMock.error).not.toHaveBeenCalled();
+    expect((await toggle()).label).toBe("settings.disable");
   });
 
   it("omits reconfigure from the menu when no setup flow exists", async () => {
@@ -815,7 +875,7 @@ describe("Providers for a member", () => {
     );
   });
 
-  it("offers the member actions and hides the administrative ones", async () => {
+  it("offers the actions on its own source and hides the administrative ones", async () => {
     apiMock.getProvider.mockReturnValue({
       available: true,
       domain: "spotify",
@@ -837,6 +897,7 @@ describe("Providers for a member", () => {
       "settings.reconfigure",
       "settings.options",
       "settings.source_access.share_action",
+      "settings.disable",
       "settings.documentation",
       "settings.reload",
       "settings.remove_provider",
