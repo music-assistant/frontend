@@ -18,8 +18,19 @@
         <slot name="title">{{ title }}</slot>
       </template>
 
-      <template v-if="!store.mobileLayout" #append>
-        <Transition name="listing-search">
+      <template #append>
+        <LibrarySortControls
+          v-if="props.sortMediaType && sortOptionsLoaded && sortOptions.length"
+          mode="menu"
+          :options="sortOptions"
+          :selected-field="currentSort.field"
+          :selected-direction="currentSort.direction"
+          :disabled="loading"
+          :mobile-layout="store.mobileLayout"
+          @sort-option="changeDynamicSort"
+          @sort-direction="changeDynamicDirection"
+        />
+        <Transition v-if="!store.mobileLayout" name="listing-search">
           <div v-if="showSearchInput" class="listing-search-slot">
             <SearchInput
               ref="searchInputRef"
@@ -36,37 +47,17 @@
       </template>
     </Toolbar>
 
-    <div
-      v-if="
-        props.sortMediaType && quickSortOptions.length && !store.mobileLayout
-      "
-      class="flex gap-2 overflow-x-auto px-3 py-2"
-      role="group"
-      :aria-label="$t('tooltip.sort_options')"
-    >
-      <Button
-        v-for="option in quickSortOptions"
-        :key="option.field"
-        variant="outline"
-        size="sm"
-        class="shrink-0 gap-2"
-        :class="{
-          'border-primary bg-accent text-accent-foreground':
-            currentSort.field === option.field,
-        }"
-        :aria-pressed="currentSort.field === option.field"
-        :aria-label="quickSortAriaLabel(option)"
-        :title="quickSortAriaLabel(option)"
-        @click="changeQuickSort(option)"
-      >
-        {{ sortOptionLabel(option) }}
-        <ArrowDown
-          v-if="quickSortDirection(option) === SortDirection.DESC"
-          class="size-4"
-        />
-        <ArrowUp v-else class="size-4" />
-      </Button>
-    </div>
+    <LibrarySortControls
+      v-if="props.sortMediaType && sortOptionsLoaded && sortOptions.length"
+      mode="chips"
+      :options="sortOptions"
+      :selected-field="currentSort.field"
+      :selected-direction="currentSort.direction"
+      :disabled="loading"
+      :mobile-layout="store.mobileLayout"
+      @sort-option="changeDynamicSort"
+      @sort-direction="changeDynamicDirection"
+    />
 
     <v-divider />
 
@@ -341,6 +332,7 @@ import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -400,8 +392,6 @@ import {
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
-  ArrowDown,
-  ArrowUp,
   ArrowUpDown,
   CheckCheck,
   ChevronDown,
@@ -1028,12 +1018,6 @@ const onRefreshClicked = function () {
   loadData(true, true);
 };
 
-const QUICK_SORT_FIELDS = [
-  SortField.TIMESTAMP_ADDED,
-  SortField.PLAY_COUNT,
-  SortField.NAME,
-];
-
 const parseSortBy = (sortBy: string) => {
   const match = sortBy.match(/^(.+?)(?::|_)(asc|desc)$/);
   const rawField = match?.[1] ?? sortBy;
@@ -1074,24 +1058,6 @@ const currentSort = computed(() => {
   };
 });
 
-const quickSortOptions = computed(() =>
-  QUICK_SORT_FIELDS.flatMap((field) => {
-    const option = sortOptions.value.find((item) => item.field === field);
-    return option ? [option] : [];
-  }),
-);
-
-const sortOptionLabel = (option: SortOptionInfo) =>
-  t(`sort.${option.label_key ?? option.field}`);
-
-const quickSortDirection = (option: SortOptionInfo) =>
-  currentSort.value.field === option.field
-    ? currentSort.value.direction
-    : (option.default_direction ?? SortDirection.ASC);
-
-const quickSortAriaLabel = (option: SortOptionInfo) =>
-  `${sortOptionLabel(option)}, ${t(`sort.${quickSortDirection(option)}`)}`;
-
 const changeDynamicSort = (option: SortOptionInfo) => {
   changeSort(makeSortValue(option));
 };
@@ -1102,18 +1068,6 @@ const changeDynamicDirection = (direction: SortDirection) => {
   );
   if (!option?.supports_direction) return;
   changeSort(makeSortValue(option, direction));
-};
-
-const changeQuickSort = (option: SortOptionInfo) => {
-  if (currentSort.value.field === option.field && option.supports_direction) {
-    changeDynamicDirection(
-      currentSort.value.direction === SortDirection.DESC
-        ? SortDirection.ASC
-        : SortDirection.DESC,
-    );
-    return;
-  }
-  changeDynamicSort(option);
 };
 
 const changeSort = function (sort_key?: string) {
@@ -1666,42 +1620,7 @@ const menuItems = computed(() => {
   }
 
   // sort options
-  if (props.sortMediaType) {
-    const selectedOption = sortOptions.value.find(
-      (option) => option.field === currentSort.value.field,
-    );
-    if (sortOptionsLoaded.value && sortOptions.value.length) {
-      items.push({
-        label: "tooltip.sort_options",
-        icon: ArrowUpDown,
-        disabled: loading.value,
-        overflowAllowed: false,
-        subItems: [
-          ...sortOptions.value.map((option) => ({
-            label: `sort.${option.label_key ?? option.field}`,
-            selected: currentSort.value.field === option.field,
-            action: () => changeDynamicSort(option),
-          })),
-          ...(selectedOption?.supports_direction
-            ? [
-                {
-                  label: "sort.ascending",
-                  icon: "mdi-sort-ascending",
-                  selected: currentSort.value.direction === SortDirection.ASC,
-                  action: () => changeDynamicDirection(SortDirection.ASC),
-                },
-                {
-                  label: "sort.descending",
-                  icon: "mdi-sort-descending",
-                  selected: currentSort.value.direction === SortDirection.DESC,
-                  action: () => changeDynamicDirection(SortDirection.DESC),
-                },
-              ]
-            : []),
-        ],
-      });
-    }
-  } else if (props.sortKeys?.length) {
+  if (!props.sortMediaType && props.sortKeys?.length) {
     items.push({
       label: "tooltip.sort_options",
       icon: ArrowUpDown,
