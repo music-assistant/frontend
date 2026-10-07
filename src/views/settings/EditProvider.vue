@@ -571,10 +571,13 @@ const onReconfigure = function () {
 const onRemove = function () {
   if (!config.value) return;
   const instanceId = config.value.instance_id;
-  confirmProviderRemoval(config.value, providerName.value, async () => {
+  const name = providerName.value;
+  confirmProviderRemoval(config.value, name, async () => {
     try {
       await api.removeProviderConfig(instanceId);
-      toast.success(t("settings.provider_removed", [providerName.value]));
+      toast.success(t("settings.provider_removed", [name]));
+      // another source opened meanwhile keeps its page and its edits
+      if (!isCurrentProvider(instanceId)) return;
       // the source is gone, and with it the page showing its settings; unsaved
       // edits have nothing left to save to, so they must not hold the way out
       editConfig.value?.discardChanges();

@@ -1437,6 +1437,52 @@ describe("EditProvider actions and sections", () => {
     });
   });
 
+  it("leaves another source opened during a removal untouched", async () => {
+    let finishRemoval: () => void = () => {};
+    apiMock.removeProviderConfig.mockReturnValue(
+      new Promise<void>((resolve) => (finishRemoval = resolve)),
+    );
+    const discardChanges = vi.fn();
+    const removed = spotifyConfig(ProviderStatus.LOADED);
+    removed.name = "Old Spotify";
+    const wrapper = await mountProvider(removed, {
+      EditConfig: {
+        name: "EditConfig",
+        methods: { discardChanges },
+        template: "<div />",
+      },
+    });
+
+    (await menuEntry(wrapper, "settings.remove_provider")).action?.();
+    const removeCall = eventbusMock.emit.mock.calls.find(
+      ([event]) => event === "deleteConfirmationDialog",
+    );
+    const removal = removeCall?.[1].onConfirm();
+
+    // the user opens another source before the server confirms the removal
+    const other = spotifyConfig(
+      ProviderStatus.LOADED,
+      "current value",
+      undefined,
+      true,
+      "spotify--other",
+    );
+    other.name = "New Spotify";
+    apiMock.getProviderConfig.mockResolvedValue(other);
+    await wrapper.setProps({ instanceId: "spotify--other" });
+    await flushPromises();
+    finishRemoval();
+    await removal;
+    await flushPromises();
+
+    // the stubbed t returns the key, so the name is checked where it is passed
+    expect(i18nMock.t).toHaveBeenCalledWith("settings.provider_removed", [
+      "Old Spotify",
+    ]);
+    expect(discardChanges).not.toHaveBeenCalled();
+    expect(routerMock.push).not.toHaveBeenCalled();
+  });
+
   it("shows the sections of the source with its access summary", async () => {
     const wrapper = await mountProvider();
 
