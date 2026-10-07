@@ -4,7 +4,10 @@
     ref="form"
     v-model="valid"
     :disabled="disabled"
-    :class="{ 'floating-save-clearance': !disabled && !inlineSave }"
+    :class="{
+      'floating-save-clearance':
+        !inlineSave && !disabled && !store.mobileLayout,
+    }"
   >
     <!-- Generic settings section -->
     <div
@@ -624,7 +627,8 @@ const getCategoryIcon = function (category: string): Component {
   padding: 14px 16px;
 }
 
-/* Room below the last setting, so the floating Save button never covers it. */
+/* Room below the last setting, so the floating Save button never covers it.
+   The mobile layout already leaves room for its bottom bars and the button. */
 .floating-save-clearance {
   padding-bottom: 72px;
 }
