@@ -624,9 +624,9 @@ const getCategoryIcon = function (category: string): Component {
   padding: 14px 16px;
 }
 
-/* Lets the last row scroll clear of the floating Save button. */
+/* Room below the last setting, so the floating Save button never covers it. */
 .floating-save-clearance {
-  padding-bottom: 56px;
+  padding-bottom: 72px;
 }
 
 .floating-save {

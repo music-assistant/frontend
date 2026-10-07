@@ -406,6 +406,14 @@ describe("EditConfig", () => {
     },
   );
 
+  it("leaves room below the last setting for the floating save action", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+    ]);
+
+    expect(wrapper.find(".floating-save-clearance").exists()).toBe(true);
+  });
+
   it("keeps the save action in the flow of the form when asked", () => {
     const wrapper = mountEntries(
       [entry({ key: "server", type: ConfigEntryType.STRING })],
@@ -416,6 +424,7 @@ describe("EditConfig", () => {
     // a form inside a dialog: nothing floats, the button follows the fields
     expect(wrapper.find(".floating-save").exists()).toBe(false);
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(true);
+    expect(wrapper.find(".floating-save-clearance").exists()).toBe(false);
   });
 
   it("leaves room below the last row for the floating save action", () => {
