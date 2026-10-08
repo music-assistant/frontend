@@ -183,12 +183,10 @@ import { Button } from "@/components/ui/button";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
 import { panelViewItemResponsive } from "@/helpers/utils";
-import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
+import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
-  EventMessage,
-  EventType,
   Genre,
   MediaItemType,
   MediaItemTypeOrItemMapping,
@@ -198,14 +196,7 @@ import {
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { SquareArrowRightEnter } from "@lucide/vue";
-import {
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-  type Component,
-} from "vue";
+import { computed, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
@@ -486,28 +477,7 @@ watch(
   },
 );
 
-onMounted(() => {
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_UPDATED,
-    (evt: EventMessage) => {
-      const updatedItem = evt.data as MediaItemType;
-      if (itemDetails.value?.uri == updatedItem.uri) {
-        itemDetails.value = keepOwnFavorite(
-          updatedItem,
-          itemDetails.value,
-        ) as Genre;
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
-
-  // the user's own like or dislike, wherever they made it
-  const unsubFavorite = subscribeOwnFavorites((update) => {
-    const item = itemDetails.value;
-    if (item?.uri == update.uri) item.favorite = update.favorite;
-  });
-  onBeforeUnmount(unsubFavorite);
-});
+useDetailItemUpdates(itemDetails);
 </script>
 
 <style scoped>
