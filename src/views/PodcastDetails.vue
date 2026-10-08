@@ -58,7 +58,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { podcastBackdrop } from "@/components/podcast/podcastData";
 import PodcastHero from "@/components/podcast/PodcastHero.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
-import { type Podcast, type PodcastEpisode } from "@/plugins/api/interfaces";
+import type { Podcast, PodcastEpisode } from "@/plugins/api/interfaces";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
 import { computed, watch, ref } from "vue";

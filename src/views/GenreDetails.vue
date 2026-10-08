@@ -180,15 +180,14 @@ import GenreAliasManager from "@/components/genre/GenreAliasManager.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { Button } from "@/components/ui/button";
+import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
 import { panelViewItemResponsive } from "@/helpers/utils";
-import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   Genre,
-  MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
   Scope,

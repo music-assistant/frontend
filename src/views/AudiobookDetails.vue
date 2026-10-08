@@ -16,7 +16,7 @@ import InfoHeader from "@/components/InfoHeader.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import Chapters from "@/components/Chapters.vue";
 
-import { type Audiobook } from "@/plugins/api/interfaces";
+import type { Audiobook } from "@/plugins/api/interfaces";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
 import { watch, ref } from "vue";
