@@ -406,6 +406,18 @@ describe("EditConfig", () => {
     },
   );
 
+  it("leaves room below the last row for the floating save action", () => {
+    const entries = [entry({ key: "server", type: ConfigEntryType.STRING })];
+    const formClasses = (wrapper: VueWrapper) =>
+      wrapper.get("v-form-stub").classes();
+
+    expect(formClasses(mountEntries(entries))).toContain("pb-20");
+    expect(formClasses(mountEntries(entries, false, true))).not.toContain(
+      "pb-20",
+    );
+    expect(formClasses(mountEntries(entries, true))).not.toContain("pb-20");
+  });
+
   it("keeps the save action in the flow of the form when asked", () => {
     const wrapper = mountEntries(
       [entry({ key: "server", type: ConfigEntryType.STRING })],

@@ -1,5 +1,11 @@
 <template>
-  <v-form v-if="entries" ref="form" v-model="valid" :disabled="disabled">
+  <v-form
+    v-if="entries"
+    ref="form"
+    v-model="valid"
+    :disabled="disabled"
+    :class="{ 'pb-20': !disabled && !inlineSave }"
+  >
     <!-- Generic settings section -->
     <div
       v-for="panel of regularPanels.filter(
@@ -79,6 +85,8 @@
       </div>
     </div>
 
+    <!-- a floating Save button gets room below the last row (pb-20 on the
+         form), so it never covers that row -->
     <div
       v-if="!disabled"
       :class="
