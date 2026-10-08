@@ -553,8 +553,8 @@ export const decompileHost = (
     name: host.name,
     instructions: host.instructions,
     ttsEngine: host.tts_engine,
-    language: host.language || "",
-    options: host.options || {},
+    language: host.language,
+    options: host.options,
     segments,
   };
 };
