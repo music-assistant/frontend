@@ -14,7 +14,6 @@
     <EditConfig
       v-if="config.length > 0"
       ref="editConfig"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :config-entries="config"
       :disabled="false"
       @submit="onSubmit"
@@ -71,9 +70,6 @@ const router = useRouter();
 const config = ref<ConfigEntry[]>([]);
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
-// no entry below is advanced today, so the toggle stays hidden; the wiring is what
-// makes an advanced entry reachable the moment one is added
-const showAdvancedSettings = ref(false);
 
 // the docs of a beta server live on the beta site
 const documentationUrl = computed(() => getExternalLinkUrl(FRONTEND_DOCS_URL));

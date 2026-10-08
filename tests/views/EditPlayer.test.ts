@@ -168,14 +168,14 @@ describe("EditPlayer", () => {
     ).toBe(false);
   });
 
-  it("keeps the advanced settings the form reveals", async () => {
+  it("leaves whether advanced settings show to the user's choice in the form", async () => {
     const wrapper = await mountPlayerPage();
-    const editConfig = wrapper.findComponent({ name: "EditConfig" });
 
-    editConfig.vm.$emit("update:showAdvancedSettings", true);
-    await wrapper.vm.$nextTick();
-
-    expect(editConfig.props("showAdvancedSettings")).toBe(true);
+    expect(
+      wrapper
+        .findComponent({ name: "EditConfig" })
+        .props("showAdvancedSettings"),
+    ).toBeUndefined();
   });
 
   it("hides optional reconfiguration when the player has no setup flow", async () => {

@@ -14,7 +14,6 @@
     <edit-config
       v-if="config"
       ref="editConfig"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :config-entries="allConfigEntries"
       :disabled="false"
       @submit="onSubmit"
@@ -61,7 +60,6 @@ const { t } = useI18n();
 const config = ref<CoreConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
-const showAdvancedSettings = ref(false);
 
 // props
 const props = defineProps<{

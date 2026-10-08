@@ -18,18 +18,29 @@ import {
 } from "@/plugins/api/interfaces";
 import EditConfig from "@/views/settings/EditConfig.vue";
 
-const { apiMock, routerMock, storeMock } = vi.hoisted(() => ({
-  apiMock: {
-    players: {},
-    providers: {},
-  },
-  routerMock: {
-    push: vi.fn(),
-  },
-  storeMock: {
-    frameless: false,
-    mobileLayout: false,
-  },
+const { apiMock, routerMock, setUserPreference, storeMock } = vi.hoisted(
+  () => ({
+    apiMock: {
+      players: {},
+      providers: {},
+    },
+    routerMock: {
+      push: vi.fn(),
+    },
+    setUserPreference: vi.fn(async () => true),
+    storeMock: {
+      frameless: false,
+      mobileLayout: false,
+      currentUser: undefined as
+        | { preferences: Record<string, unknown> }
+        | undefined,
+    },
+  }),
+);
+
+vi.mock("@/composables/userPreferences", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/composables/userPreferences")>()),
+  setUserPreference,
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -59,6 +70,8 @@ describe("EditConfig", () => {
   beforeEach(() => {
     storeMock.frameless = false;
     storeMock.mobileLayout = false;
+    storeMock.currentUser = undefined;
+    setUserPreference.mockClear();
   });
 
   it.each([
@@ -463,7 +476,7 @@ describe("EditConfig", () => {
     expect(save().exists()).toBe(true);
   });
 
-  it("reveals the advanced entries from its own toggle", async () => {
+  it("reveals the advanced entries from its own toggle and remembers the choice", async () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING }),
       entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
@@ -473,8 +486,58 @@ describe("EditConfig", () => {
     advancedToggle(wrapper).vm.$emit("update:showAdvancedSettings", true);
     await nextTick();
 
-    expect(wrapper.emitted("update:showAdvancedSettings")).toEqual([[true]]);
     expect(renderedKeys(wrapper)).toEqual(["server", "port"]);
+    expect(setUserPreference).toHaveBeenCalledWith(
+      "settings.showAdvancedSettings",
+      true,
+    );
+  });
+
+  it("shows the advanced entries the user chose to see before", () => {
+    storeMock.currentUser = {
+      preferences: { "settings.showAdvancedSettings": true },
+    };
+
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["server", "port"]);
+    expect(advancedToggle(wrapper).props("showAdvancedSettings")).toBe(true);
+  });
+
+  it("keeps the choice made here when the profile keeps the old one", async () => {
+    // the profile could not be updated, so it still says to hide them
+    setUserPreference.mockResolvedValueOnce(false);
+    const wrapper = mountEntries([
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+
+    advancedToggle(wrapper).vm.$emit("update:showAdvancedSettings", true);
+    await flushPromises();
+
+    expect(renderedKeys(wrapper)).toEqual(["port"]);
+  });
+
+  it("lets the host decide over the user's choice", () => {
+    storeMock.currentUser = {
+      preferences: { "settings.showAdvancedSettings": true },
+    };
+
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "server", type: ConfigEntryType.STRING }),
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        showAdvancedSettings: false,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(renderedKeys(wrapper)).toEqual(["server"]);
   });
 
   it("hands the advanced state it is given to its toggle", () => {

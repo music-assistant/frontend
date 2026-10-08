@@ -9,8 +9,9 @@
         <CardTitle>{{ $t("settings.options") }}</CardTitle>
         <AdvancedSettingsToggle
           v-if="showAdvancedToggle"
-          v-model:show-advanced-settings="showAdvancedSettings"
+          :show-advanced-settings="showAdvancedSettings"
           test-id="config-advanced-settings"
+          @update:show-advanced-settings="setShowAdvancedSettings"
         />
       </CardHeader>
       <CardContent v-if="hasVisibleSections" class="px-6 pb-5">
@@ -164,12 +165,18 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import {
+  setUserPreference,
+  useUserPreferences,
+} from "@/composables/userPreferences";
 import { Save } from "@lucide/vue";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 import ConfigEntryRow from "./ConfigEntryRow.vue";
 import ProtocolConfigSection from "./ProtocolConfigSection.vue";
+
+const ADVANCED_SETTINGS_PREFERENCE = "settings.showAdvancedSettings";
 
 const router = useRouter();
 const showUnsavedDialog = ref(false);
@@ -193,6 +200,9 @@ export interface Props {
   // Leave out the Options header and its advanced toggle, for a host that names the form and
   // decides which of its entries show.
   hideHeader?: boolean;
+  // Whether the advanced entries show, for a host that decides it; without one, the choice
+  // the user made with the advanced toggle applies.
+  showAdvancedSettings?: boolean;
 }
 
 const emit = defineEmits<{
@@ -215,10 +225,27 @@ const oldValues = ref<Record<string, ConfigValueType>>({});
 const oldValuesInitialized = ref(false);
 
 // props
-const props = defineProps<Props>();
-const showAdvancedSettings = defineModel<boolean>("showAdvancedSettings", {
-  default: false,
+const props = withDefaults(defineProps<Props>(), {
+  outputProtocols: undefined,
+  providerDomain: undefined,
+  // left unset rather than cast to false, so the user's own choice can apply
+  showAdvancedSettings: undefined,
 });
+
+// one choice for every settings form, kept on the user's profile
+const advancedSettingsPreference = useUserPreferences().getPreference(
+  ADVANCED_SETTINGS_PREFERENCE,
+  false,
+);
+// what was chosen here, which holds for this form even when the profile could not
+// be updated
+const advancedSettingsChoice = ref<boolean>();
+const showAdvancedSettings = computed(
+  () =>
+    props.showAdvancedSettings ??
+    advancedSettingsChoice.value ??
+    advancedSettingsPreference.value,
+);
 
 // computed props
 const panels = computed(() => {
@@ -392,6 +419,11 @@ const onEntryValueSet = function (
 
 const onEntryAction = function (entry: ConfigEntryUI) {
   action(entry.action || entry.key, !!entry.immediate_apply);
+};
+
+const setShowAdvancedSettings = function (show: boolean) {
+  advancedSettingsChoice.value = show;
+  void setUserPreference(ADVANCED_SETTINGS_PREFERENCE, show);
 };
 
 const resetToDefaults = function () {
