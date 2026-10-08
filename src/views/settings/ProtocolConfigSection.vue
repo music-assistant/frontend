@@ -1,14 +1,14 @@
 <template>
   <section
     v-if="protocolGeneralEntries.length > 0 || protocolPanels.length > 0"
-    class="py-5"
+    class="pt-7 first:pt-5"
   >
     <!-- Mirrors the category title in EditConfig.vue -->
     <h4
-      class="mb-4 flex items-center gap-2 text-sm font-medium text-muted-foreground"
+      class="mb-5 flex items-center gap-3 text-xs font-medium tracking-wider text-primary uppercase"
     >
-      <Antenna class="size-4" />
-      {{ $t("settings.category.protocol_settings") }}
+      <span>{{ $t("settings.category.protocol_settings") }}</span>
+      <span class="h-px flex-1 bg-border"></span>
     </h4>
     <!-- Explain the multi-protocol setup when more than one is available -->
     <div
@@ -115,7 +115,6 @@ import { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import { api } from "@/plugins/api";
 import { ConfigValueType, OutputProtocol } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Antenna } from "@lucide/vue";
 import { computed } from "vue";
 import ConfigEntryRow from "./ConfigEntryRow.vue";
 

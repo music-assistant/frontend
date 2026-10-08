@@ -13,23 +13,20 @@
           test-id="config-advanced-settings"
         />
       </CardHeader>
-      <CardContent
-        v-if="hasVisibleSections"
-        class="divide-y divide-border px-6"
-      >
+      <CardContent v-if="hasVisibleSections" class="px-6 pb-5">
         <!-- Generic settings section -->
         <section
           v-for="panel of regularPanels.filter(
             (p) => p === 'generic' && entriesForCategory(p).length > 0,
           )"
           :key="panel"
-          class="py-5"
+          class="pt-7 first:pt-5"
         >
           <h4
-            class="mb-4 flex items-center gap-2 text-sm font-medium text-muted-foreground"
+            class="mb-5 flex items-center gap-3 text-xs font-medium tracking-wider text-primary uppercase"
           >
-            <component :is="getCategoryIcon(panel)" class="size-4" />
-            {{ getCategoryTranslation(panel) }}
+            <span>{{ getCategoryTranslation(panel) }}</span>
+            <span class="h-px flex-1 bg-border"></span>
           </h4>
           <ConfigEntryRow
             v-for="conf_entry of entriesForCategory(panel)"
@@ -66,13 +63,13 @@
             (p) => p !== 'generic' && entriesForCategory(p).length > 0,
           )"
           :key="panel"
-          class="py-5"
+          class="pt-7 first:pt-5"
         >
           <h4
-            class="mb-4 flex items-center gap-2 text-sm font-medium text-muted-foreground"
+            class="mb-5 flex items-center gap-3 text-xs font-medium tracking-wider text-primary uppercase"
           >
-            <component :is="getCategoryIcon(panel)" class="size-4" />
-            {{ getCategoryTranslation(panel) }}
+            <span>{{ getCategoryTranslation(panel) }}</span>
+            <span class="h-px flex-1 bg-border"></span>
           </h4>
           <ConfigEntryRow
             v-for="conf_entry of entriesForCategory(panel)"
@@ -167,23 +164,8 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import {
-  Airplay,
-  Cast,
-  Lock,
-  Megaphone,
-  MonitorPlay,
-  Network,
-  PlayCircle,
-  RadioTower,
-  RefreshCw,
-  Save,
-  Settings2,
-  SlidersHorizontal,
-  Speaker,
-  Volume2,
-} from "@lucide/vue";
-import { type Component, computed, onBeforeUnmount, ref, watch } from "vue";
+import { Save } from "@lucide/vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 import ConfigEntryRow from "./ConfigEntryRow.vue";
@@ -584,33 +566,6 @@ const getCurrentValues = function () {
     values[entry.key] = value;
   }
   return values;
-};
-const getCategoryIcon = function (category: string): Component {
-  const iconMap: Record<string, Component> = {
-    generic: Settings2,
-    audio: Volume2,
-    advanced: SlidersHorizontal,
-    network: Network,
-    playback: PlayCircle,
-    announcements: Megaphone,
-    airplay: Airplay,
-    chromecast: Cast,
-    slimproto: RadioTower,
-    snapcast: Speaker,
-    ugp: Speaker,
-    authentication: Lock,
-    sync: RefreshCw,
-    web_player: MonitorPlay,
-    player_controls: SlidersHorizontal,
-    // Protocol-specific categories
-    protocol_sonos: Speaker,
-    protocol_airplay: Airplay,
-    protocol_dlna: Cast,
-    protocol_chromecast: Cast,
-    protocol_slimproto: RadioTower,
-    protocol_snapcast: Speaker,
-  };
-  return iconMap[category] || Settings2;
 };
 </script>
 
