@@ -31,6 +31,7 @@ function player(overrides: Partial<Player> = {}): Player {
     player_id: "player-1",
     active_source: "player-1",
     source_list: [],
+    active_source_audio: null,
     ...overrides,
   } as Player;
 }
