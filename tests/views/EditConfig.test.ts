@@ -586,6 +586,15 @@ describe("EditConfig", () => {
     expect(wrapper.findComponent({ name: "Card" }).exists()).toBe(false);
   });
 
+  it("offers no save action on a form holding only actions", () => {
+    const wrapper = mountEntries([
+      entry({ key: "clear_cache", type: ConfigEntryType.ACTION }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["clear_cache"]);
+    expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
+  });
+
   it("leaves out the card and its save action for a config with nothing to show", () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING, hidden: true }),

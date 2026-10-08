@@ -90,7 +90,7 @@
 
     <!-- with nothing editable in view, only unsaved edits still need saving -->
     <div
-      v-if="!disabled && (hasVisibleSections || hasUnsavedChanges)"
+      v-if="!disabled && (hasEditableEntries || hasUnsavedChanges)"
       :class="
         inlineSave
           ? 'mt-4 flex justify-end'
@@ -293,6 +293,21 @@ const hasVisibleSections = computed(
   () =>
     protocolPanels.value.length > 0 ||
     Object.keys(visibleEntriesByCategory.value).length > 0,
+);
+
+// what the save button can store: a visible entry holding a value, or the enable
+// switch of an optional protocol; actions and labels alone leave nothing to save
+const hasEditableEntries = computed(
+  () =>
+    Object.values(visibleEntriesByCategory.value)
+      .flat()
+      .some(
+        (entry) =>
+          !VALUELESS_ENTRY_TYPES.includes(entry.type) && !isInjected(entry),
+      ) ||
+    (entries.value ?? []).some((entry) =>
+      entry.key.endsWith("||protocol||enabled"),
+    ),
 );
 
 // a config with nothing to show or reveal leaves out the card altogether
