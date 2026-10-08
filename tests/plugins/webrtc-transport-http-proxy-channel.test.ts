@@ -145,6 +145,28 @@ describe("WebRTCTransport http_proxy channel", () => {
     await expect(response).resolves.toMatchObject({ status: 200 });
   });
 
+  it("reassembles a chunked response on the API channel", async () => {
+    const { transport, apiChannel } = makeTransport();
+
+    const response = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    const bytes = new TextEncoder().encode(
+      proxyResponse(sentRequestId(apiChannel), [1, 2, 3, 4, 5]),
+    );
+    // split the way the server splits an oversized message: base64 byte slices
+    const count = Math.ceil(bytes.length / 8);
+    for (let seq = 0; seq < count; seq++) {
+      const b64 = btoa(
+        String.fromCharCode(...bytes.slice(seq * 8, (seq + 1) * 8)),
+      );
+      apiChannel.receive(
+        JSON.stringify({ type: "__chunk__", id: 1, seq, count, b64 }),
+      );
+    }
+
+    const { body } = await response;
+    expect(Array.from(body)).toEqual([1, 2, 3, 4, 5]);
+  });
+
   it("sends proxied requests on the dedicated channel and resolves its responses", async () => {
     const { transport, internals, apiChannel, channels } = makeTransport();
 
