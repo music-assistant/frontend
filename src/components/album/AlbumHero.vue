@@ -72,7 +72,6 @@
               :item="item"
             />
             <DetailHeroButton
-              v-if="api.supportsPlayMediaShuffle"
               :icon="Shuffle"
               :label="$t('shuffle')"
               :disabled="!store.activePlayer"
