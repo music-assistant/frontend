@@ -69,7 +69,6 @@ export const hasConfigurableAccess = (
  * @param manifest - The manifest of the provider.
  */
 export const isSelfServiceProvider = (manifest?: ProviderManifest) =>
-  // an older server sends no flag and lets a member set up any provider
   manifest?.self_service !== false;
 
 /** Whether the music source belongs to the given user. */

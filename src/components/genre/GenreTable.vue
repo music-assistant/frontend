@@ -160,8 +160,6 @@ const loadCounts = async () => {
     allMediaCounts.value = await api.getGenreMediaCounts(
       allGenres.value.map((g) => g.item_id),
     );
-  } catch {
-    // Endpoint not yet available
   } finally {
     countsLoading.value = false;
   }

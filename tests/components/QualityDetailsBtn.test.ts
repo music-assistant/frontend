@@ -162,14 +162,6 @@ describe("QualityDetailsBtn", () => {
 
       expect(mountButton().get("button").attributes("disabled")).toBeFalsy();
     });
-
-    it("does not render on older servers that never send a source snapshot", () => {
-      storeMock.activePlayer = {};
-
-      expect(
-        mountButton().find('[data-testid="quality-popover"]').exists(),
-      ).toBe(false);
-    });
   });
 
   it.each([

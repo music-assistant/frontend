@@ -83,16 +83,6 @@ describe("useActiveAudioPath", () => {
     });
   });
 
-  it("omits the source snapshot on older servers that never send it", () => {
-    // active_source_audio absent entirely, as an older server would send
-    storeMock.activePlayer = player();
-
-    const { activeAudioPath, hasActiveAudioPath } = useActiveAudioPath();
-
-    expect(activeAudioPath.value).toBeUndefined();
-    expect(hasActiveAudioPath.value).toBe(false);
-  });
-
   it("resolves a live source snapshot when no queue item is active", () => {
     const source = playerSource({
       id: "spotify_connect--1://audio_source/main",
