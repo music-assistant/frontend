@@ -279,11 +279,13 @@ const protocolPanels = computed(() => {
 });
 
 // a disabled form cannot be edited, so there is nothing to reveal; without the
-// header there is no place for the toggle
+// header there is no place for the toggle, and a host that decides what shows
+// leaves it nothing to change
 const showAdvancedToggle = computed(
   () =>
     !props.hideHeader &&
     !props.disabled &&
+    props.showAdvancedSettings === undefined &&
     hasAdvancedEntries(entries.value || []),
 );
 

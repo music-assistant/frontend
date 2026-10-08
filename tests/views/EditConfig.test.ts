@@ -540,7 +540,7 @@ describe("EditConfig", () => {
     expect(renderedKeys(wrapper)).toEqual(["server"]);
   });
 
-  it("hands the advanced state it is given to its toggle", () => {
+  it("offers no toggle when the host decides what shows", () => {
     const wrapper = shallowMount(EditConfig, {
       props: {
         configEntries: [
@@ -552,7 +552,7 @@ describe("EditConfig", () => {
       global: { renderStubDefaultSlot: true },
     });
 
-    expect(advancedToggle(wrapper).props("showAdvancedSettings")).toBe(true);
+    expect(advancedToggle(wrapper).exists()).toBe(false);
     expect(renderedKeys(wrapper)).toEqual(["port"]);
   });
 
