@@ -339,4 +339,8 @@ describe("isSelfServiceProvider", () => {
       isSelfServiceProvider(providerManifest({ self_service: false })),
     ).toBe(false);
   });
+
+  it("is false without a manifest", () => {
+    expect(isSelfServiceProvider(undefined)).toBe(false);
+  });
 });

@@ -831,7 +831,10 @@ const loadGenres = async () => {
     .getLibraryGenres({ hide_empty: true })
     .catch(() => [] as Genre[]);
   if (!all.length) return;
-  const counts = await api.getGenreMediaCounts(all.map((g) => g.item_id));
+  // without counts the genres keep the server's (name) order
+  const counts = await api
+    .getGenreMediaCounts(all.map((g) => g.item_id))
+    .catch(() => ({}) as Record<string, Record<string, number>>);
   const total = (id: string) =>
     Object.values(counts[id] ?? {}).reduce((sum, n) => sum + n, 0);
   genres.value = [...all]

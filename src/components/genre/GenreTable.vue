@@ -160,6 +160,8 @@ const loadCounts = async () => {
     allMediaCounts.value = await api.getGenreMediaCounts(
       allGenres.value.map((g) => g.item_id),
     );
+  } catch {
+    // the table shows without counts; the api client reports the error
   } finally {
     countsLoading.value = false;
   }

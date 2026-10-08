@@ -69,7 +69,7 @@ export const hasConfigurableAccess = (
  * @param manifest - The manifest of the provider.
  */
 export const isSelfServiceProvider = (manifest?: ProviderManifest) =>
-  manifest?.self_service !== false;
+  manifest?.self_service === true;
 
 /** Whether the music source belongs to the given user. */
 export const isOwnMusicSource = (
