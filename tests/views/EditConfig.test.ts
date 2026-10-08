@@ -32,8 +32,7 @@ const { apiMock, routerMock, setUserPreference, storeMock } = vi.hoisted(
       frameless: false,
       mobileLayout: false,
       currentUser: undefined as
-        | { preferences: Record<string, unknown> }
-        | undefined,
+        { preferences: Record<string, unknown> } | undefined,
     },
   }),
 );
