@@ -578,7 +578,6 @@
             "label": "Volume haptic feedback",
             "description": "Vibrate while adjusting the volume slider. Touch devices with a vibration motor only."
         },
-        "add_group_player_desc": "Create a permanent player group with {0} players. When you play to this Player Group, the member players will be automatically synchronized.",
         "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronized.",
         "genre_management": "Genre Management",
         "genre_management_description": "Manage default genres and restore genre defaults",

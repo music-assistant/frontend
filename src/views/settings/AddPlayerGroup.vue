@@ -15,18 +15,9 @@
           "
         />
         <v-card-subtitle
-          v-else-if="providerDetails?.domain === 'sync_group'"
-          style="white-space: break-spaces"
-          v-html="markdownToHtml($t('settings.add_group_player_desc_sync'))"
-        />
-        <v-card-subtitle
           v-else
           style="white-space: break-spaces"
-          v-html="
-            markdownToHtml(
-              $t('settings.add_group_player_desc', [providerDetails?.name]),
-            )
-          "
+          v-html="markdownToHtml($t('settings.add_group_player_desc_sync'))"
         />
         <!-- eslint-enable vue/no-v-html -->
         <br />
@@ -133,49 +124,33 @@ const syncPlayers = computed(() => {
           .localeCompare((b.name ?? "").toUpperCase()),
       );
   }
-  if (props.provider === "sync_group") {
-    // for sync groups, show all available non-group players that are sync compatible
-    return Object.values(api.players)
-      .filter((x) => {
-        if (
-          !x.available ||
-          x.type === PlayerType.GROUP ||
-          !groupMemberPickerVisible(x) ||
-          !canBeGroupMember(x)
-        )
-          return false;
-        if (!x.supported_features.includes(PlayerFeature.SET_MEMBERS))
-          return false;
-        // If a player is temporarily synced, can_group_with will be empty.
-        // In that case, use the sync leader's can_group_with as a proxy.
-        let canGroupWith = x.can_group_with;
-        if (
-          canGroupWith.length === 0 &&
-          x.synced_to &&
-          api.players[x.synced_to]
-        ) {
-          canGroupWith = api.players[x.synced_to].can_group_with;
-        }
-        if (canGroupWith.length === 0) return false;
-        if (members.value.length === 0) return true;
-        if (members.value.includes(x.player_id)) return true;
-        return members.value.some((m) => canGroupWith.includes(m));
-      })
-      .sort((a, b) =>
-        (a.name ?? "")
-          .toUpperCase()
-          .localeCompare((b.name ?? "").toUpperCase()),
-      );
-  }
+  // for sync groups, show all available non-group players that are sync compatible
   return Object.values(api.players)
-    .filter(
-      (x) =>
-        x.available &&
-        x.type != PlayerType.GROUP &&
-        groupMemberPickerVisible(x) &&
-        canBeGroupMember(x) &&
-        x.provider == providerDetails.value?.instance_id,
-    )
+    .filter((x) => {
+      if (
+        !x.available ||
+        x.type === PlayerType.GROUP ||
+        !groupMemberPickerVisible(x) ||
+        !canBeGroupMember(x)
+      )
+        return false;
+      if (!x.supported_features.includes(PlayerFeature.SET_MEMBERS))
+        return false;
+      // If a player is temporarily synced, can_group_with will be empty.
+      // In that case, use the sync leader's can_group_with as a proxy.
+      let canGroupWith = x.can_group_with;
+      if (
+        canGroupWith.length === 0 &&
+        x.synced_to &&
+        api.players[x.synced_to]
+      ) {
+        canGroupWith = api.players[x.synced_to].can_group_with;
+      }
+      if (canGroupWith.length === 0) return false;
+      if (members.value.length === 0) return true;
+      if (members.value.includes(x.player_id)) return true;
+      return members.value.some((m) => canGroupWith.includes(m));
+    })
     .sort((a, b) =>
       (a.name ?? "").toUpperCase().localeCompare((b.name ?? "").toUpperCase()),
     );
