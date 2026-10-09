@@ -1,5 +1,11 @@
 <template>
-  <v-form v-if="entries" ref="form" v-model="valid" :disabled="disabled">
+  <v-form
+    v-if="entries"
+    ref="form"
+    v-model="valid"
+    :disabled="disabled"
+    :class="{ 'floating-save-clearance': !disabled && !inlineSave }"
+  >
     <!-- Generic settings section -->
     <div
       v-for="panel of regularPanels.filter(
@@ -616,6 +622,11 @@ const getCategoryIcon = function (category: string): Component {
 
 .category-content {
   padding: 14px 16px;
+}
+
+/* Lets the last row scroll clear of the floating Save button. */
+.floating-save-clearance {
+  padding-bottom: 56px;
 }
 
 .floating-save {
