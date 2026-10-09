@@ -53,6 +53,7 @@ import {
   ApiCommandError,
   ConnectionLostError,
   ConnectionState,
+  DASHBOARD_VISUALIZER_SCHEMA_VERSION,
   MIN_SERVER_SCHEMA_VERSION,
   MusicAssistantApi,
 } from "@/plugins/api";
@@ -370,6 +371,23 @@ describe("MusicAssistantApi error handling", () => {
       schema_version: MIN_SERVER_SCHEMA_VERSION,
     };
     expect(api.serverOutdated).toBe(false);
+  });
+
+  it("enables the dashboard visualizer only from the schema that introduced it", () => {
+    api.serverInfo.value = undefined;
+    expect(api.supportsDashboardVisualizer).toBe(false);
+
+    api.serverInfo.value = {
+      ...SERVER_INFO,
+      schema_version: DASHBOARD_VISUALIZER_SCHEMA_VERSION - 1,
+    };
+    expect(api.supportsDashboardVisualizer).toBe(false);
+
+    api.serverInfo.value = {
+      ...SERVER_INFO,
+      schema_version: DASHBOARD_VISUALIZER_SCHEMA_VERSION,
+    };
+    expect(api.supportsDashboardVisualizer).toBe(true);
   });
 
   it("loads the roles the server lists", async () => {
