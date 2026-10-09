@@ -1200,6 +1200,50 @@ describe("MusicQuizPlayerView routing", () => {
       ).toBe(false);
       wrapper.unmount();
     });
+
+    it("keeps the join form and typed name while a background info refresh is loading", async () => {
+      const loading = ref(false);
+      mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+      mockUseMusicQuizPlayer.mockReturnValue({
+        info: ref({
+          quiz_type: "guess_the_song",
+          answer_type: "multiple_choice",
+          phase: "lobby",
+          name: "Quiz",
+          player_count: 1,
+          round_count: 5,
+          mode: "venue",
+        }),
+        state: ref(null),
+        playerId: ref(null),
+        rememberedName: ref(""),
+        landingSeen: ref(false),
+        gameRemoved: ref(false),
+        busy: ref(false),
+        loading,
+        currentRound: ref(null),
+        join: vi.fn(),
+        submitAnswer: vi.fn(),
+        ready: vi.fn(),
+        markLandingSeen: vi.fn(),
+      });
+
+      const wrapper = mountView();
+      const input = wrapper.get<HTMLInputElement>("#music-quiz-player-name");
+      await input.setValue("Alice");
+
+      // Another player joining triggers a background info refresh that briefly
+      // flips `loading`. The landing — and the half-typed name — must survive
+      // it; otherwise the input is torn down and recreated on every event.
+      loading.value = true;
+      await nextTick();
+
+      expect(wrapper.find("#music-quiz-player-name").exists()).toBe(true);
+      expect(
+        wrapper.get<HTMLInputElement>("#music-quiz-player-name").element.value,
+      ).toBe("Alice");
+      wrapper.unmount();
+    });
   });
 });
 
