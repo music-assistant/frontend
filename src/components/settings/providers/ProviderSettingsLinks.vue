@@ -19,7 +19,14 @@
       <component :is="row.icon" class="text-primary size-5 shrink-0" />
       <div class="min-w-0 flex-1">
         <div class="text-foreground text-sm font-medium">{{ row.label }}</div>
-        <div class="text-muted-foreground truncate text-sm">
+        <!-- a problem wraps instead of being cut off, so its reason stays readable -->
+        <div
+          data-testid="provider-settings-description"
+          class="text-sm"
+          :class="
+            row.error ? 'text-destructive' : 'text-muted-foreground truncate'
+          "
+        >
           {{ row.description }}
         </div>
         <!-- a phone has no room beside the label, so the state gets a line of its own -->
@@ -116,7 +123,7 @@ interface SettingsRow {
   state?: string;
   // the hover text of the state, the state itself by default
   stateTitle?: string;
-  // the state reports a problem
+  // the row reports a problem: the description gives its reason
   error?: boolean;
   // a navigation; a row without one acts on the spot, or only informs when it
   // has no action either
@@ -228,11 +235,11 @@ const rows = computed(() => {
       key: "storage",
       icon: markRaw(location ? STORAGE_KIND_ICONS[location.kind] : HardDrive),
       label: $t("settings.storage_location"),
-      description: $t("settings.storage_location_description"),
-      state: folder && sourceFolderState(folder),
-      stateTitle: unavailable
+      description: unavailable
         ? (location.error ?? $t("settings.storage.unavailable"))
-        : folder?.path,
+        : $t("settings.storage_location_description"),
+      state: folder && sourceFolderState(folder),
+      stateTitle: folder?.path,
       error: unavailable,
       // the Storage page is only open to who manages the storage
       to: authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
@@ -297,6 +304,8 @@ async function loadPlayerConfigs() {
 }
 
 async function loadSourceFolder() {
+  // a reload may still be due after the source changed to one without a folder
+  if (!sections.value.storage) return;
   // provider updates come in bursts, so only the latest request may set the folder
   const requestId = ++sourceFolderRequestId;
   try {

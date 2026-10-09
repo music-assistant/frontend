@@ -383,8 +383,8 @@ describe("ProviderSettingsLinks", () => {
       ["the reason the server gives", "Share is offline", "Share is offline"],
       ["a generic reason", null, "settings.storage.unavailable"],
     ])(
-      "marks an unavailable location and tells %s on hover",
-      async (_label, error, title) => {
+      "marks an unavailable location and tells %s in the description",
+      async (_label, error, reason) => {
         apiMock.getSourceFolder.mockResolvedValue(
           sourceFolder("/media/music/Albums", { available: false, error }),
         );
@@ -392,9 +392,18 @@ describe("ProviderSettingsLinks", () => {
         const wrapper = mountLinks();
         await flushPromises();
         const row = storageRow(wrapper);
+        const description = row.get(
+          '[data-testid="provider-settings-description"]',
+        );
 
         expect(rowState(wrapper, "storage")).toBe("Music NAS › Albums");
-        expect(storageState(wrapper).attributes("title")).toBe(title);
+        expect(storageState(wrapper).attributes("title")).toBe(
+          "/media/music/Albums",
+        );
+        // the reason wraps rather than being cut off
+        expect(description.text()).toBe(reason);
+        expect(description.classes()).toContain("text-destructive");
+        expect(description.classes()).not.toContain("truncate");
         for (const state of row.findAll(
           '[data-testid^="provider-settings-state"]',
         )) {
@@ -511,6 +520,49 @@ describe("ProviderSettingsLinks", () => {
           .find('[data-testid^="provider-settings-state"]')
           .exists(),
       ).toBe(false);
+    });
+
+    it("drops a late folder of the source the page switched away from", async () => {
+      let resolveFirst: (folder: SourceFolder) => void = () => {};
+      apiMock.getSourceFolder.mockReturnValueOnce(
+        new Promise((resolve) => (resolveFirst = resolve)),
+      );
+      const wrapper = mountLinks();
+
+      apiMock.getSourceFolder.mockReturnValue(new Promise(() => {}));
+      await wrapper.setProps({
+        config: providerConfig({ instance_id: "filesystem_local--2" }),
+      });
+      resolveFirst(sourceFolder("/media/music/Albums"));
+      await flushPromises();
+
+      expect(
+        storageRow(wrapper)
+          .find('[data-testid^="provider-settings-state"]')
+          .exists(),
+      ).toBe(false);
+    });
+
+    it("stops following the providers for a source without a folder", async () => {
+      const wrapper = mountLinks();
+      await flushPromises();
+      // a provider update just before the switch still has its reload due
+      apiMock.subscribe.mock.calls[0]?.[1]();
+      apiMock.getSourceFolder.mockClear();
+
+      getProviderSettingsSections.mockReturnValue({
+        access: true,
+        players: false,
+        storage: false,
+        sync: false,
+      });
+      await wrapper.setProps({
+        config: providerConfig({ instance_id: "spotify--1" }),
+      });
+      await vi.runAllTimersAsync();
+
+      expect(unsubscribeProviders).toHaveBeenCalledOnce();
+      expect(apiMock.getSourceFolder).not.toHaveBeenCalled();
     });
 
     it("stops following the providers once the page closes", async () => {
