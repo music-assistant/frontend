@@ -2,18 +2,18 @@
   <section class="p-4">
     <SettingsHeaderCard
       v-if="config && api.providerManifests[config.domain]"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :icon="getCoreIcon(config.domain)"
       :title="getItemTitle(config)"
       :description="getItemDescription(config)"
-      :show-advanced-toggle="hasAdvancedEntries(allConfigEntries)"
+      :documentation-url="
+        getExternalLinkUrl(api.providerManifests[config.domain].documentation)
+      "
       @reset-to-defaults="resetToDefaults"
     />
 
     <edit-config
       v-if="config"
       ref="editConfig"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :config-entries="allConfigEntries"
       :disabled="false"
       @submit="onSubmit"
@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import { Spinner } from "@/components/ui/spinner";
 import { useConfigAction } from "@/composables/useConfigAction";
-import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { ConfigValueType, CoreConfig } from "@/plugins/api/interfaces";
 import {
@@ -60,7 +60,6 @@ const { t } = useI18n();
 const config = ref<CoreConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
-const showAdvancedSettings = ref(false);
 
 // props
 const props = defineProps<{
