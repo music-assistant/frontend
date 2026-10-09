@@ -123,12 +123,6 @@ const {
       pairingToken: null as string | null,
       lastOptions: null as {
         clientName?: string;
-        onStateChange?: (state: {
-          isPlaying: boolean;
-          volume: number;
-          muted: boolean;
-          playerState: "synchronized" | "error";
-        }) => void;
         reconnect?: { onReconnected?: () => void };
       } | null,
     },
