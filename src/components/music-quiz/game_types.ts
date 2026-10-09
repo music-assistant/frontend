@@ -118,7 +118,7 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     icon: markRaw(WandSparkles),
     requiresBackendAvailability: true,
     supportsListenIn: (state) =>
-      state.quiz_type === "trivia" && state.play_reveal_audio === true,
+      state.quiz_type === "trivia" && state.play_reveal_audio,
     usesRevealCountdown: true,
     revealPhaseLabelKey: "providers.music_quiz.phase_answer_revealed",
     adapters: {

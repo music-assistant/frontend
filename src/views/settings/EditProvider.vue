@@ -125,6 +125,7 @@
             <CardDescription class="mt-2 max-w-3xl leading-relaxed">
               {{ providerManifest.description }}
             </CardDescription>
+            <!-- eslint-disable vue/no-v-html -- markdownToHtml sanitizes with DOMPurify -->
             <div
               v-if="providerManifest.codeowners.length"
               class="mt-3 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
@@ -139,6 +140,7 @@
                 markdownToHtml(getCreditsMarkdown(providerManifest.credits))
               "
             ></div>
+            <!-- eslint-enable vue/no-v-html -->
           </div>
           <Button
             data-testid="provider-menu"

@@ -1,5 +1,11 @@
 <template>
-  <v-form v-if="entries" ref="form" v-model="valid" :disabled="disabled">
+  <v-form
+    v-if="entries"
+    ref="form"
+    v-model="valid"
+    :disabled="disabled"
+    :class="{ 'floating-save-clearance': showSaveAction && !inlineSave }"
+  >
     <Card v-if="hasOptions" class="gap-0 py-0">
       <CardHeader
         v-if="!hideHeader"
@@ -88,9 +94,8 @@
       </CardContent>
     </Card>
 
-    <!-- with nothing editable in view, only unsaved edits still need saving -->
     <div
-      v-if="!disabled && (hasEditableEntries || hasUnsavedChanges)"
+      v-if="showSaveAction"
       :class="
         inlineSave
           ? 'mt-4 flex justify-end'
@@ -308,6 +313,12 @@ const hasEditableEntries = computed(
     (entries.value ?? []).some((entry) =>
       entry.key.endsWith("||protocol||enabled"),
     ),
+);
+
+// with nothing editable in view, only unsaved edits still need saving
+const showSaveAction = computed(
+  () =>
+    !props.disabled && (hasEditableEntries.value || hasUnsavedChanges.value),
 );
 
 // a config with nothing to show or reveal leaves out the card altogether
@@ -619,6 +630,11 @@ const getCurrentValues = function () {
 </script>
 
 <style scoped>
+/* Lets the last row scroll clear of the floating Save button. */
+.floating-save-clearance {
+  padding-bottom: 56px;
+}
+
 .floating-save {
   position: fixed;
   /* A landscape phone is wide enough to count as the desktop layout, so this

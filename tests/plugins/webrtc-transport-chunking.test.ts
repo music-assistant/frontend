@@ -16,15 +16,12 @@ type TransportInternals = {
     { resolve: (value: ProxyResult) => void; reject: (error: Error) => void }
   >;
   dispatchMessage: (data: string) => void;
-  handleChunk: (
-    frame: {
-      id: number;
-      seq: number;
-      count: number;
-      b64: string;
-    },
-    dispatch: (data: string) => void,
-  ) => void;
+  handleChunk: (frame: {
+    id: number;
+    seq: number;
+    count: number;
+    b64: string;
+  }) => void;
   on: (event: string, cb: (...args: unknown[]) => void) => void;
 };
 
@@ -43,15 +40,6 @@ function pending(
   return new Promise<ProxyResult>((resolve, reject) => {
     transport.httpProxyCallbacks.set(id, { resolve, reject });
   });
-}
-
-// A chunk group is delivered to the dispatch of the channel it arrived on; these tests
-// drive the API channel.
-function feedChunk(
-  transport: TransportInternals,
-  frame: { id: number; seq: number; count: number; b64: string },
-): void {
-  transport.handleChunk(frame, (data) => transport.dispatchMessage(data));
 }
 
 function toHex(bytes: number[]): string {
@@ -110,7 +98,7 @@ describe("WebRTCTransport chunk reassembly", () => {
       body: toHex([9, 8, 7, 6, 5, 4, 3, 2, 1, 0]),
     });
 
-    for (const frame of makeChunks(msg, 42)) feedChunk(transport, frame);
+    for (const frame of makeChunks(msg, 42)) transport.handleChunk(frame);
 
     const { body } = await result;
     expect(Array.from(body)).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1, 0]);
@@ -128,7 +116,7 @@ describe("WebRTCTransport chunk reassembly", () => {
     });
 
     for (const frame of [...makeChunks(msg, 7)].reverse())
-      feedChunk(transport, frame);
+      transport.handleChunk(frame);
 
     const { body } = await result;
     expect(Array.from(body)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
@@ -140,7 +128,7 @@ describe("WebRTCTransport chunk reassembly", () => {
     transport.on("message", (m) => received.push(m));
 
     const msg = JSON.stringify({ command: "players/all", message_id: 1 });
-    for (const frame of makeChunks(msg, 99)) feedChunk(transport, frame);
+    for (const frame of makeChunks(msg, 99)) transport.handleChunk(frame);
 
     expect(received).toEqual([msg]);
   });
@@ -152,7 +140,7 @@ describe("WebRTCTransport chunk reassembly", () => {
 
     const msg = JSON.stringify({ name: "音楽ライブラリ".repeat(5) });
     // pieceBytes = 5 forces slices to fall inside 3-byte characters
-    for (const frame of makeChunks(msg, 5, 5)) feedChunk(transport, frame);
+    for (const frame of makeChunks(msg, 5, 5)) transport.handleChunk(frame);
 
     expect(received).toEqual([msg]);
   });
@@ -160,7 +148,7 @@ describe("WebRTCTransport chunk reassembly", () => {
   it("does not throw on an unknown/duplicate chunk", () => {
     const transport = makeTransport();
     expect(() =>
-      feedChunk(transport, { id: 123, seq: 0, count: 2, b64: btoa("x") }),
+      transport.handleChunk({ id: 123, seq: 0, count: 2, b64: btoa("x") }),
     ).not.toThrow();
   });
 });

@@ -54,7 +54,6 @@ const {
     removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
     saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
     subscribe: vi.fn(),
-    supportsShareCandidates: true,
   },
   authMock: {
     hasScope: vi.fn<(scope: Scope) => boolean>(),

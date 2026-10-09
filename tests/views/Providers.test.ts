@@ -66,7 +66,6 @@ const {
     saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
     startSync: vi.fn<MusicAssistantApi["startSync"]>(),
     subscribe: vi.fn(),
-    supportsShareCandidates: true,
   },
   authMock: {
     hasScope: vi.fn<(scope: Scope) => boolean>(),
@@ -247,7 +246,6 @@ beforeEach(() => {
   apiMock.providerManifests.spotify.stage = ProviderStage.STABLE;
   apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
-  apiMock.supportsShareCandidates = true;
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   routeMock.query.types = "music";
   storeMock.currentUser = owner;
@@ -933,19 +931,6 @@ describe("Providers for a member", () => {
     await mountWithConfigs([ownSource()]);
 
     expect(apiMock.getAllUsers).not.toHaveBeenCalled();
-  });
-
-  it("does not ask an older server who it may share with", async () => {
-    apiMock.supportsShareCandidates = false;
-
-    const wrapper = await mountWithConfigs([ownSource()]);
-
-    expect(apiMock.getShareCandidates).not.toHaveBeenCalled();
-    expect(
-      wrapper
-        .get('[data-testid="access-dialog"]')
-        .attributes("data-share-candidates"),
-    ).toBe("none");
   });
 
   it("reports a failing lookup of the members it may share with", async () => {

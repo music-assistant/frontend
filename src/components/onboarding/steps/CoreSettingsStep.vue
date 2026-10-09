@@ -305,10 +305,7 @@ const advancedSwitchId = useId();
 // The internal address as the server advertises it right now, which server
 // info reports; the stream server's is asked for, as nothing else carries it.
 const internalUrl = computed(
-  () =>
-    api.serverInfo.value?.internal_url ||
-    api.serverInfo.value?.base_url ||
-    undefined,
+  () => api.serverInfo.value?.internal_url || undefined,
 );
 const streamInfo = ref<StreamServerInfo>();
 // whether the stream server has answered, however that turned out: until then
@@ -377,9 +374,9 @@ const configs = ref<Partial<Record<CoreDomain, CoreConfig>>>({});
 const loaded = ref(false);
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 
-// Only the settings the form is about, and only the ones the server knows: an
-// older or newer server that does not carry one of them leaves it out rather
-// than having the form make one up.
+// Only the settings the form is about, and only the ones the server knows: a
+// newer server that does not carry one of them leaves it out rather than having
+// the form make one up.
 const entries = computed<ConfigEntryUI[]>(() =>
   DOMAINS.flatMap((domain) =>
     ADVANCED_SETTINGS[domain].map((key) => configs.value[domain]?.values[key]),

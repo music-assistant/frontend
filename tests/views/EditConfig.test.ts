@@ -593,6 +593,10 @@ describe("EditConfig", () => {
 
     expect(renderedKeys(wrapper)).toEqual(["clear_cache"]);
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
+    // nothing floats, so no room is kept for it either
+    expect(wrapper.get("v-form-stub").classes()).not.toContain(
+      "floating-save-clearance",
+    );
   });
 
   it("leaves out the card and its save action for a config with nothing to show", () => {
@@ -603,6 +607,34 @@ describe("EditConfig", () => {
     expect(wrapper.findComponent({ name: "Card" }).exists()).toBe(false);
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
   });
+
+  it("leaves room below the last row for the floating save action", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+    ]);
+
+    expect(wrapper.get("v-form-stub").classes()).toContain(
+      "floating-save-clearance",
+    );
+  });
+
+  it.each([
+    ["disabled", true, false],
+    ["inline save", false, true],
+  ] as const)(
+    "leaves no room for a save action that does not float (%s)",
+    (_, disabled, inlineSave) => {
+      const wrapper = mountEntries(
+        [entry({ key: "server", type: ConfigEntryType.STRING })],
+        disabled,
+        inlineSave,
+      );
+
+      expect(wrapper.get("v-form-stub").classes()).not.toContain(
+        "floating-save-clearance",
+      );
+    },
+  );
 });
 
 describe("EditConfig unsaved changes", () => {

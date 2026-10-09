@@ -60,6 +60,8 @@ const HOST_STATE = {
   answer_type: "multiple_choice",
   phase: "lobby",
   name: "Quiz",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   suggestion_count: 4,
   answer_duration: 30,
@@ -70,6 +72,7 @@ const HOST_STATE = {
   join_url: "http://join",
   rounds: [],
   current_round: null,
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizHostState;
 
 let state: Ref<MusicQuizHostState | null>;
