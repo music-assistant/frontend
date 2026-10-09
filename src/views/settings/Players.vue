@@ -214,8 +214,7 @@ const providersWithCreateGroupSupport = computed(() => {
     .filter(
       (x) =>
         x.available &&
-        (x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER) ||
-          x.supported_features.includes(ProviderFeature.SYNC_PLAYERS)),
+        x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER),
     )
     .sort((a, b) =>
       (a.name || api.providerManifests[a.domain].name).toUpperCase() >

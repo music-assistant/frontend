@@ -107,13 +107,7 @@ const availableProviders = computed(() => {
     .filter(
       (x) =>
         x.available &&
-        (x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER) ||
-          // for backwards compatibility - if provider doesn't explicitly support
-          // group players, but does support syncing players,
-          // allow it as well (since that was the old way of doing syncgroup players)
-          // - we can remove this fallback after a few versions
-          (!api.getProvider("sync_group") &&
-            x.supported_features.includes(ProviderFeature.SYNC_PLAYERS))),
+        x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER),
     )
     .map((x) => ({
       instance_id: x.instance_id,
