@@ -218,6 +218,7 @@ describe("viewer preferences", () => {
     // the launched url carries the display's dashboard id in the route query
     const router = (await import("@/plugins/router")).default;
     router.currentRoute.value.query.dashboard_id = "chromecast_abc";
+    router.currentRoute.value.query.viewer_key = "secret-key";
     const { visualizerPresetPref, visualizerOpacityPref } = useVisualizer();
     await flushPromises();
 
@@ -227,6 +228,7 @@ describe("viewer preferences", () => {
         dashboard: "party",
         player_id: undefined,
         dashboard_id: "chromecast_abc",
+        viewer_key: "secret-key",
       },
       // never toasts on a display nobody can reach
       { suppressGlobalError: true },

@@ -50,6 +50,15 @@ describe("stranded viewer route params", () => {
     ).toBe("/now-playing?player=abc&dashboard_id=kiosk1");
   });
 
+  it("restores a stranded viewer key", () => {
+    expect(
+      restoreStrayViewerParams(
+        "/party?dashboard_id=kiosk1",
+        "?dashboard=CODE&path=/party?dashboard_id=kiosk1&viewer_key=a-b_c",
+      ),
+    ).toBe("/party?dashboard_id=kiosk1&viewer_key=a-b_c");
+  });
+
   it("leaves an intact url untouched", () => {
     const path = "/now-playing?player=abc&dashboard_id=kiosk1";
     expect(restoreStrayViewerParams(path, "?dashboard=CODE&path=..")).toBe(

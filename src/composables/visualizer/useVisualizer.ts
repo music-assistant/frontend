@@ -84,9 +84,9 @@ const viewerPreferences = ref<Record<string, unknown>>({});
 let viewerPreferencesSyncStarted = false;
 
 // The viewer identifies its session by the dashboard_id the server put in its
-// launched url (plus what it is showing); re-fetched on the sessions-updated
-// event, which the server also signals when the casting user changes their
-// preferences.
+// launched url (plus what it is showing) and proves it with the url's
+// viewer_key; re-fetched on the sessions-updated event, which the server also
+// signals when the casting user changes their preferences.
 function startViewerPreferencesSync(): void {
   if (viewerPreferencesSyncStarted) return;
   viewerPreferencesSyncStarted = true;
@@ -95,6 +95,7 @@ function startViewerPreferencesSync(): void {
       const dashboard = dashboardKindForPath(router.currentRoute.value.path);
       const playerId = router.currentRoute.value.query.player;
       const dashboardId = router.currentRoute.value.query.dashboard_id;
+      const viewerKey = router.currentRoute.value.query.viewer_key;
       try {
         viewerPreferences.value =
           (await api.sendCommand<Record<string, unknown>>(
@@ -104,6 +105,7 @@ function startViewerPreferencesSync(): void {
               player_id: typeof playerId === "string" ? playerId : undefined,
               dashboard_id:
                 typeof dashboardId === "string" ? dashboardId : undefined,
+              viewer_key: typeof viewerKey === "string" ? viewerKey : undefined,
             },
             // a failing fetch would otherwise toast on a display nobody can reach
             { suppressGlobalError: true },

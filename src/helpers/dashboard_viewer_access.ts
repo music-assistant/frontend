@@ -6,7 +6,7 @@ const DASHBOARD_VIEWER_ROUTES = new Set([
 ]);
 
 // Route params the viewer needs to identify itself and what it is showing.
-const VIEWER_ROUTE_PARAMS = ["player", "dashboard_id"] as const;
+const VIEWER_ROUTE_PARAMS = ["player", "dashboard_id", "viewer_key"] as const;
 
 // The dashboard kind the server knows each route by.
 export type DashboardKind = "now_playing" | "music_quiz" | "party";
