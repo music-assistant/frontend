@@ -666,7 +666,7 @@ export interface ServerInfoMessage {
   onboard_done: boolean;
   name: string | null;
   status: CoreState;
-  // internal_url supersedes base_url; older servers only send base_url
+  // internal_url supersedes base_url
   internal_url: string | null;
   external_url: string | null;
   has_remote_access: boolean;
@@ -956,8 +956,7 @@ export interface MediaItemImage {
   provider: string;
   remotely_accessible: boolean;
   // Opaque sha256(provider+path) id used to address the image via the
-  // canonical /imageproxy/<proxy_id> endpoint. Injected by the server on
-  // schema_version >= 31; null when it issues no id, absent on older servers.
+  // canonical /imageproxy/<proxy_id> endpoint; null when the server issues no id.
   proxy_id?: string | null;
 }
 
@@ -975,6 +974,14 @@ export interface MediaItemCollection {
   sequence: number | string | null;
 }
 
+// one timed line of a transcript, as spoken
+export interface TranscriptCue {
+  start: number;
+  end?: number | null;
+  text: string;
+  speaker?: string | null;
+}
+
 export interface MediaItemMetadata {
   description?: string | null;
   // ISO 639-1 language code of `description`
@@ -988,6 +995,10 @@ export interface MediaItemMetadata {
   copyright?: string | null;
   lyrics?: string | null;
   lrc_lyrics?: string | null;
+  transcript?: string | null;
+  transcript_cues?: TranscriptCue[] | null;
+  // whether a transcript can be fetched, null when the provider cannot tell
+  has_transcript?: boolean | null;
   label?: string | null;
   links?: MediaItemLink[] | null;
   performers?: string[] | null;
@@ -1117,6 +1128,9 @@ export interface PodcastEpisode extends MediaItem {
   position: number;
   podcast: Podcast | ItemMapping;
   duration: number;
+  // the publisher's own episode and season number, null when it does not number them
+  episode_number: number | null;
+  season: number | null;
   fully_played: boolean | null;
   resume_position_ms: number | null;
 }
@@ -1561,8 +1575,8 @@ export interface Player {
 
   // active_source_audio: audio-path snapshot for a live external source (e.g.
   // Spotify Connect) playing on active_source; null while a queue item is
-  // playing instead, or while nothing is known yet. Absent on older servers.
-  active_source_audio?: ActiveSourceAudioDetails | null;
+  // playing instead, or while nothing is known yet.
+  active_source_audio: ActiveSourceAudioDetails | null;
 }
 
 // provider
@@ -1593,9 +1607,8 @@ export interface ProviderManifest {
   // has_setup_flow: whether setup can be run again to reconfigure the provider
   has_setup_flow: boolean;
   // self_service: whether a member may set up (and reconfigure) a music source of
-  // this provider itself, instead of only a user who manages every music source;
-  // an older server does not send it and lets a member set up any provider
-  self_service?: boolean;
+  // this provider itself, instead of only a user who manages every music source
+  self_service: boolean;
   stage: ProviderStage;
   // icon: material design icon
   icon: string | null;
@@ -2000,6 +2013,7 @@ export interface PartyConfig {
   qr_text: string | null;
   hide_back_button: boolean;
   show_progress_bar: boolean;
+  prevent_duplicate_tracks: boolean;
   // Shared-audio experience for guests: "venue" (opt-in) or "remote" (silent disco).
   mode?: "venue" | "remote";
 }
@@ -2154,3 +2168,11 @@ export interface AIRadioSession {
 export interface AIRadioStatus {
   sessions: AIRadioSession[];
 }
+
+/** Refetch hints the ai_radio plugin broadcasts as PROVIDER_EVENT payloads; they carry no state. */
+export type AIRadioEventName =
+  | "hosts_updated"
+  | "stations_updated"
+  | "sections_updated"
+  | "queue_dj_updated"
+  | "sessions_updated";

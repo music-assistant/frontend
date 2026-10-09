@@ -478,6 +478,15 @@ export const showPlayMenuForMediaItem = async function (
   const firstItem = playableItems[0];
 
   let playMenuItems: ContextMenuItem[] = [];
+  // an episode played with its podcast as the parent can play on through the
+  // podcast from there, which the enqueue options below cannot express
+  if (
+    playableItems.length == 1 &&
+    parentItem?.media_type == MediaType.PODCAST &&
+    parentItem.uri != firstItem.uri
+  ) {
+    playMenuItems.push(playPodcastFromHereMenuItem(firstItem, parentItem));
+  }
   const defaultEnqueueOption = await getDefaultEnqueueOption(firstItem);
   if (isAudioSource(firstItem)) {
     playMenuItems.push(
@@ -549,6 +558,7 @@ export const getContextMenuItems = async function (
       MediaType.GENRE,
       MediaType.PLAYLIST,
       MediaType.PODCAST,
+      MediaType.PODCAST_EPISODE,
       MediaType.TRACK,
     ].includes(items[0].media_type) &&
     (itemIsAvailable(items[0]) || isMusicBrainzItem(items[0]))
@@ -1065,11 +1075,14 @@ export const getContextMenuItems = async function (
   }
 
   // update metadata
+  // podcast episodes are never stored in the library, so there is nothing to write to
   if (
     managesLibrary &&
     items.length === 1 &&
     items[0] == parentItem &&
-    items[0].media_type !== MediaType.COLLECTION
+    ![MediaType.COLLECTION, MediaType.PODCAST_EPISODE].includes(
+      items[0].media_type,
+    )
   ) {
     contextMenuItems.push({
       label: "update_metadata",
@@ -1134,12 +1147,16 @@ export const getContextMenuItems = async function (
   }
   // refresh item: a library manager refreshes the page's own item; an item
   // none of the music services has any more is looked up on them again, which
-  // a library writer may do too
+  // a library writer may do too. podcast episodes are left out: they are
+  // fetched from the provider on every view, so there is no stored copy that
+  // could go stale
   const unavailable = items.length === 1 && !itemIsAvailable(items[0]);
   const canFindOnMusicServices = unavailable && canEditLibrary;
   if (
     items.length === 1 &&
-    items[0].media_type !== MediaType.COLLECTION &&
+    ![MediaType.COLLECTION, MediaType.PODCAST_EPISODE].includes(
+      items[0].media_type,
+    ) &&
     !isMusicBrainzItem(items[0]) &&
     ((managesLibrary && items[0] == parentItem) || canFindOnMusicServices)
   ) {
@@ -1442,20 +1459,9 @@ export const getPlaybackContextMenuItems = async function (
         disabled: !store.activePlayer,
       });
     }
-    // Play from here (podcast episode). Episodes are listed newest first, so
-    // playback runs the other way: from the chosen episode forward in time.
+    // Play from here (podcast episode)
     if (parentItem.media_type == MediaType.PODCAST) {
-      playMenuItems.push({
-        label: "play_from_here_to_latest",
-        action: () => {
-          api.playMedia(parentItem.uri, undefined, {
-            start_item: firstItem.item_id,
-          });
-        },
-        icon: PlayCircle,
-        labelArgs: [],
-        disabled: !store.activePlayer,
-      });
+      playMenuItems.push(playPodcastFromHereMenuItem(firstItem, parentItem));
     }
   }
   // Default/configured enqueue option at the top (if play from here is not applicable)
@@ -1654,6 +1660,27 @@ const startAudioSourceMenuItem = function (
 };
 
 /**
+ * Menu entry that plays a podcast from the given episode onwards.
+ *
+ * Episodes are listed newest first, so playback runs the other way, from the
+ * chosen episode forward in time to the latest one.
+ */
+const playPodcastFromHereMenuItem = function (
+  episode: MediaItemTypeOrItemMapping,
+  podcast: MediaItemType,
+): ContextMenuItem {
+  return {
+    label: "play_from_here_to_latest",
+    labelArgs: [],
+    action: () => {
+      api.playMedia(podcast.uri, undefined, { start_item: episode.item_id });
+    },
+    icon: PlayCircle,
+    disabled: !store.activePlayer,
+  };
+};
+
+/**
  * The identity to hand an add command for the given item. Adding a library
  * row whose item no longer exists fails on its dead id, so a library row is
  * sent as one of its provider mappings, which the server resolves back to a
@@ -1729,7 +1756,6 @@ const SHUFFLEABLE_MEDIA_TYPES = [
 const canPlayShuffled = function (
   items: MediaItemTypeOrItemMapping[],
 ): boolean {
-  if (!api.supportsPlayMediaShuffle) return false;
   return (
     items.length > 1 || SHUFFLEABLE_MEDIA_TYPES.includes(items[0].media_type)
   );

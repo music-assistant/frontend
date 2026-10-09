@@ -1,4 +1,3 @@
-import { canOpenAIRadio } from "@/helpers/ai_radio_access";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
@@ -198,7 +197,7 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
-          if (!store.enabledPlugins.has("ai_radio") || !canOpenAIRadio()) {
+          if (!store.enabledPlugins.has("ai_radio")) {
             toast.error($t("providers.ai_radio.toast.unavailable"));
             return { name: "discover" };
           }
@@ -373,6 +372,17 @@ export const routes: RouteRecordRaw[] = [
             component: () =>
               import(
                 /* webpackChunkName: "podcast" */ "@/views/PodcastDetails.vue"
+              ),
+            props: true,
+          },
+          {
+            // the name must stay equal to MediaType.PODCAST_EPISODE: navigation
+            // to a details view pushes the media type as the route name
+            path: ":provider/episode/:itemId",
+            name: "podcast_episode",
+            component: () =>
+              import(
+                /* webpackChunkName: "podcast_episode" */ "@/views/PodcastEpisodeDetails.vue"
               ),
             props: true,
           },

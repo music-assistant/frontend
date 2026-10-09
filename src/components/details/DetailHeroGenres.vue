@@ -1,7 +1,8 @@
 <template>
   <div v-if="genres.length" class="detail-hero-genres">
     <template v-for="(genre, index) in genres" :key="genre.item_id">
-      <span v-if="index > 0">,&nbsp;</span>
+      <!-- a plain space, so the line can wrap between two genres -->
+      <span v-if="index > 0">, </span>
       <button
         v-hold="(e: Event) => onHold(e, genre)"
         type="button"
@@ -113,6 +114,7 @@ const showGenreMenu = function (event: Event, genre: Genre) {
   color: inherit;
   font: inherit;
   vertical-align: baseline;
+  white-space: nowrap;
   cursor: pointer;
 }
 .detail-hero-genres__genre:hover {

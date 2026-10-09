@@ -791,6 +791,29 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
+  it("keeps and labels versions of the same title apart", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      { ...makeTrack("t1", "Waterloo"), provider: "spotify" },
+      {
+        ...makeTrack("t2", "Waterloo"),
+        provider: "spotify",
+        version: "Deluxe Edition",
+      },
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "waterloo");
+    const items = wrapper
+      .findAll('[data-testid="palette-item"]')
+      .filter((item) => item.text().includes("Waterloo"));
+    expect(items).toHaveLength(2);
+    expect(items[1].text()).toContain("Waterloo (Deluxe Edition)");
+
+    wrapper.unmount();
+  });
+
   it("shows a spinner while a submitted search is loading", async () => {
     const wrapper = mountPalette();
     useCommandCenter().open();

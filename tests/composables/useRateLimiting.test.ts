@@ -131,6 +131,7 @@ describe("useRateLimiting", () => {
       qr_text: "Test QR",
       hide_back_button: false,
       show_progress_bar: false,
+      prevent_duplicate_tracks: false,
     };
 
     rateLimiting.configure(config);

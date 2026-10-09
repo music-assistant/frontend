@@ -6,6 +6,7 @@
         <v-card-title>
           {{ $t("settings.add_group_player") }}
         </v-card-title>
+        <!-- eslint-disable vue/no-v-html -- markdownToHtml sanitizes with DOMPurify -->
         <v-card-subtitle
           v-if="providerDetails?.domain === 'universal_group'"
           style="white-space: break-spaces"
@@ -27,6 +28,7 @@
             )
           "
         />
+        <!-- eslint-enable vue/no-v-html -->
         <br />
         <v-divider />
         <br />

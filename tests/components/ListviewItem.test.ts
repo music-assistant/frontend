@@ -1,7 +1,8 @@
 /**
  * The row's own looks for a release that is not in the library: the muted
  * treatment (instead of the unavailable one), its artwork kept, and a subtitle
- * that says where it stands. Also the subtitle of a slim album mapping.
+ * that says where it stands. Also the subtitle of a slim album mapping and of a
+ * podcast episode.
  */
 import ListviewItem from "@/components/ListviewItem.vue";
 import {
@@ -9,11 +10,13 @@ import {
   MediaType,
   type Album,
   type ItemMapping,
+  type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
+import { podcastEpisode } from "../fixtures/podcastEpisode";
 
 vi.mock("@/plugins/api", () => {
   const api = { providers: {} };
@@ -60,7 +63,7 @@ const release = (overrides: Partial<Album> = {}) =>
     ...overrides,
   });
 
-function mountRow(item: Album, isAvailable = true) {
+function mountRow(item: MediaItemType, isAvailable = true) {
   return mount(ListviewItem, {
     props: { item, isSelected: false, isAvailable },
     global: { mocks: { $t: (key: string) => key } },
@@ -141,5 +144,23 @@ describe("ListviewItem for an album mapping", () => {
     const wrapper = mountRow(mapping as unknown as Album);
 
     expect(wrapper.get(".subtitle").text()).toBe("2009");
+  });
+});
+
+describe("ListviewItem for a podcast episode", () => {
+  it("shows the publisher's season and episode number", () => {
+    const wrapper = mountRow(podcastEpisode({ season: 1, episode_number: 53 }));
+
+    const subtitle = wrapper.get(".subtitle");
+    expect(subtitle.get("[aria-hidden='true']").text()).toBe(
+      "season_episode_number_short",
+    );
+    expect(subtitle.get(".sr-only").text()).toBe("season_episode_number");
+  });
+
+  it("shows nothing for an episode without a number", () => {
+    const wrapper = mountRow(podcastEpisode());
+
+    expect(wrapper.get(".subtitle").text()).toBe("");
   });
 });

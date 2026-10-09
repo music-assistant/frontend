@@ -2,8 +2,10 @@ import { api } from "@/plugins/api";
 import { providerServiceName } from "@/plugins/api/helpers";
 import {
   Genre,
+  MediaItem,
   MediaType,
   ProviderFeature,
+  ProviderMapping,
   SearchResults,
 } from "@/plugins/api/interfaces";
 import { computed, onScopeDispose, ref, watch, type Ref } from "vue";
@@ -161,7 +163,8 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
   );
 
   // Merge like the server's combined search: library first, then the providers
-  // round-robin, with exact name matches floated to the top.
+  // round-robin without the items already in the library results, with exact
+  // name matches floated to the top.
   const searchResult = computed<SearchResults | undefined>(() => {
     if (!activeSearchTerm.value) return undefined;
     const query = activeSearchTerm.value.toLowerCase().trim();
@@ -172,7 +175,7 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
       .filter((targetId) => targetId !== LIBRARY_SEARCH_TARGET)
       .map((targetId) => providerResults.value[targetId])
       .filter((result) => !!result);
-    const collect = <T extends { name?: string }>(
+    const collect = <T extends MediaItem>(
       pick: (result: SearchResults) => T[],
     ) => collectField(library, providers, pick, query);
     const merged: SearchResults = {
@@ -395,15 +398,26 @@ const interleave = function <T>(lists: T[][]): T[] {
   return items;
 };
 
-const collectField = function <T extends { name?: string }>(
+const mappingKey = (mapping: ProviderMapping) =>
+  `${mapping.provider_domain}:${mapping.item_id}`;
+
+const collectField = function <T extends MediaItem>(
   library: SearchResults | undefined,
   providers: SearchResults[],
   pick: (result: SearchResults) => T[],
   query: string,
 ): T[] {
-  const items = [
-    ...(library ? pick(library) : []),
-    ...interleave(providers.map(pick)),
-  ];
-  return floatExactMatches(items, query);
+  const libraryItems = library ? pick(library) : [];
+  // the library and each provider are searched separately, so a provider item
+  // that maps to a library item would otherwise be listed twice
+  const libraryMappings = new Set(
+    libraryItems.flatMap((item) => item.provider_mappings.map(mappingKey)),
+  );
+  const providerItems = interleave(providers.map(pick)).filter(
+    (item) =>
+      !item.provider_mappings.some((mapping) =>
+        libraryMappings.has(mappingKey(mapping)),
+      ),
+  );
+  return floatExactMatches([...libraryItems, ...providerItems], query);
 };

@@ -31,6 +31,7 @@ function player(overrides: Partial<Player> = {}): Player {
     player_id: "player-1",
     active_source: "player-1",
     source_list: [],
+    active_source_audio: null,
     ...overrides,
   } as Player;
 }
@@ -81,16 +82,6 @@ describe("useActiveAudioPath", () => {
       audioProcessing: details.audio_processing,
       crossfadeIntent: CrossfadeMode.SMART_CROSSFADE,
     });
-  });
-
-  it("omits the source snapshot on older servers that never send it", () => {
-    // active_source_audio absent entirely, as an older server would send
-    storeMock.activePlayer = player();
-
-    const { activeAudioPath, hasActiveAudioPath } = useActiveAudioPath();
-
-    expect(activeAudioPath.value).toBeUndefined();
-    expect(hasActiveAudioPath.value).toBe(false);
   });
 
   it("resolves a live source snapshot when no queue item is active", () => {

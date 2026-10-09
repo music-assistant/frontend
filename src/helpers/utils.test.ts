@@ -1,4 +1,4 @@
-import { ImageType } from "@/plugins/api/interfaces";
+import { ImageType, MediaType } from "@/plugins/api/interfaces";
 import type {
   MediaItemImage,
   MediaItemType,
@@ -7,19 +7,18 @@ import type {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // `getProvider` decides whether an image is considered fetchable: an
-// unloaded/disabled provider is absent from the map entirely. `schema_version`
-// picks the imageproxy dialect, 31 and up serve the opaque id form only.
+// unloaded/disabled provider is absent from the map entirely.
 vi.mock("@/plugins/api", () => ({
   api: {
     baseUrl: "http://server",
     providers: {},
-    serverInfo: { value: { schema_version: 31 } },
     getProvider: (id: string) =>
       id === "filesystem--loaded" ? { available: true } : undefined,
   },
 }));
 
-const { getMediaItemImage, getMediaItemImageUrl } = await import("./utils");
+const { getMediaItemImage, getMediaItemImageUrl, getTrackReleaseYear } =
+  await import("./utils");
 
 const image = (
   provider: string,
@@ -121,5 +120,44 @@ describe("getMediaItemImageUrl", () => {
     expect(getMediaItemImageUrl(img, 256)).toBe(
       "https://stream.example/cover.jpg",
     );
+  });
+});
+
+describe("getTrackReleaseYear", () => {
+  const track = (release_date?: string) =>
+    ({
+      media_type: MediaType.TRACK,
+      name: "Pressure",
+      metadata: { release_date },
+    }) as MediaItemType;
+  const album = (year?: number) =>
+    ({
+      media_type: MediaType.ALBUM,
+      name: "All We Know",
+      year,
+    }) as MediaItemType;
+
+  it("hides the year when it repeats the album being listed", () => {
+    expect(
+      getTrackReleaseYear(track("2005-07-26"), album(2005)),
+    ).toBeUndefined();
+  });
+
+  it("keeps an original year that differs from the album", () => {
+    // a reissue or compilation: the song came out before this release
+    expect(getTrackReleaseYear(track("1978-06-01"), album(2015))).toBe(1978);
+  });
+
+  it("keeps the year outside an album listing", () => {
+    const playlist = {
+      media_type: MediaType.PLAYLIST,
+      name: "Mix",
+    } as MediaItemType;
+    expect(getTrackReleaseYear(track("2005-07-26"))).toBe(2005);
+    expect(getTrackReleaseYear(track("2005-07-26"), playlist)).toBe(2005);
+  });
+
+  it("returns nothing without a release date", () => {
+    expect(getTrackReleaseYear(track(), album(2005))).toBeUndefined();
   });
 });
