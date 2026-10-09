@@ -1,5 +1,20 @@
 <template>
   <div class="music-quiz-player mx-auto flex w-full max-w-3xl flex-col gap-3">
+    <!-- A single persistent instance spans the landing and the joined game so a
+         guest who skipped the prompt can still start — or stop — listening in
+         mid-game (remote mode shows a Tap to listen / Stop toggle). It must stay
+         mounted across the transition: a per-branch copy would remount and reset
+         its listening state. -->
+    <ListenIn
+      v-if="showListenIn"
+      ref="listenInRef"
+      domain="music_quiz"
+      :mode="mode"
+      :labels="listenInLabels"
+      :recheck-events="listenInRecheckEvents"
+      :get-error-message="getMusicQuizErrorMessage"
+    />
+
     <Card v-if="gameRemoved">
       <CardHeader class="justify-items-center text-center" role="status">
         <CircleStop class="text-muted-foreground size-10" aria-hidden="true" />
@@ -57,16 +72,6 @@
           </div>
         </CardContent>
       </Card>
-
-      <ListenIn
-        v-if="listenInEnabled"
-        ref="listenInRef"
-        domain="music_quiz"
-        :mode="mode"
-        :labels="listenInLabels"
-        :recheck-events="listenInRecheckEvents"
-        :get-error-message="getMusicQuizErrorMessage"
-      />
 
       <Card v-if="!playerId && activeInfo">
         <CardContent>
@@ -263,6 +268,15 @@ const showLanding = computed(
     !!resolvedDefinition.value &&
     ((!!activeInfo.value && !playerId.value && !loading.value) ||
       (!!playerId.value && !!activeState.value && !landingSeen.value)),
+);
+// Render the listen-in prompt across both the landing and the joined game, but
+// not over the "game ended"/unsupported/loading states. listenInEnabled already
+// implies a resolved definition (so unsupported games are excluded).
+const showListenIn = computed(
+  () =>
+    listenInEnabled.value &&
+    !gameRemoved.value &&
+    (showLanding.value || !!activeState.value),
 );
 const landingQuiz = computed(() => activeState.value ?? activeInfo.value);
 const listenInBusy = computed(() => listenInRef.value?.busy ?? false);
