@@ -130,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AnyFieldApi } from "@tanstack/form-core";
+import type { AnyFieldApi } from "@tanstack/vue-form";
 import { useForm } from "@tanstack/vue-form";
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -189,7 +189,7 @@ const form = useForm({
       name: value.name,
       sort_name: value.sortName || value.name,
       provider_mappings: [],
-      favorite: false,
+      favorite: null,
       content_type: value.contentType === "music" ? null : value.contentType,
     };
 

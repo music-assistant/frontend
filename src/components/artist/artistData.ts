@@ -1,7 +1,11 @@
-import type { RowSource } from "@/components/details/rowRegistry";
+import {
+  rowSourceLabel,
+  type RowSource,
+} from "@/components/details/rowRegistry";
 import { api } from "@/plugins/api";
 import {
   AlbumType,
+  ProviderFeature,
   type Album,
   type Artist,
   type ItemMapping,
@@ -10,29 +14,84 @@ import {
 
 /**
  * The artist's releases, from the library or from a single provider's own
- * catalog.
- *
- * `source` follows artistRows.effectiveSource: "library" returns the in-library
- * albums, a provider instance id queries that provider with the artist's id
- * there, so an artist not mapped to it has no releases to show. A provider
- * (non-library) artist always comes from its own provider.
+ * catalog. See artistAlbumsBySource for how `source` selects the provider.
  */
 export async function loadArtistReleases(
   artist: Artist,
   source: RowSource,
 ): Promise<Album[]> {
+  return await artistAlbumsBySource(artist, source);
+}
+
+/**
+ * The releases of an artist from one source: the library, or a single
+ * provider's own catalog.
+ *
+ * `source` follows a row registry's effectiveSource: "library" returns the
+ * in-library albums, a provider instance id queries that provider with the
+ * artist's id there, so an artist not mapped to it has no releases to show. A
+ * provider (non-library) artist always comes from its own provider. A slim
+ * mapping carries no provider mappings, so a provider source yields nothing.
+ */
+export async function artistAlbumsBySource(
+  artist: ItemMapping | Artist,
+  source: RowSource,
+): Promise<Album[]> {
   if (source === "library" || artist.provider !== "library") {
     return await api.getArtistAlbums(artist.item_id, artist.provider);
   }
-  const mapping = artist.provider_mappings.find(
+  const mappings =
+    "provider_mappings" in artist ? artist.provider_mappings : [];
+  const mapping = mappings.find(
     (candidate) => candidate.provider_instance === source,
   );
   if (!mapping) return [];
   return await api.getArtistAlbums(mapping.item_id, mapping.provider_instance);
 }
 
-/** The artist's in-library tracks, optionally limited to a single provider. */
-export async function loadArtistLibraryTracks(
+/**
+ * The artist's discography as MusicBrainz knows it, newest first: the library
+ * albums, and the releases outside the library as MusicBrainz items.
+ *
+ * Only ever called for a library artist, the only kind the server lists.
+ */
+export async function loadArtistDiscography(artist: Artist): Promise<Album[]> {
+  return await api.getArtistDiscography(artist.item_id);
+}
+
+/**
+ * The provider instances the artist is mapped to that support `feature`, sorted
+ * by their source label: the candidate sources for a row fed by the artist's
+ * own provider catalogs. A streaming service is offered once, as the instance
+ * with the lowest id, since all of its accounts share one catalog.
+ */
+export function artistProvidersForFeature(
+  artist: Artist,
+  feature: ProviderFeature,
+): string[] {
+  // keyed by domain for a streaming provider, by instance id for any other
+  const ids = new Map<string, string>();
+  for (const mapping of artist.provider_mappings) {
+    const provider = api.providers[mapping.provider_instance];
+    if (!provider?.supported_features.includes(feature)) continue;
+    const key = provider.is_streaming_provider
+      ? provider.domain
+      : provider.instance_id;
+    const current = ids.get(key);
+    if (!current || provider.instance_id < current) {
+      ids.set(key, provider.instance_id);
+    }
+  }
+  return [...ids.values()].sort((a, b) =>
+    rowSourceLabel(a).localeCompare(rowSourceLabel(b)),
+  );
+}
+
+/**
+ * The artist's tracks, optionally limited to a single provider: those in the
+ * library for a library artist, its provider's own for a provider artist.
+ */
+export async function loadArtistTracks(
   artist: Artist,
   providerFilter?: string,
 ): Promise<Track[]> {
@@ -41,6 +100,15 @@ export async function loadArtistLibraryTracks(
     artist.provider,
     providerFilter,
   );
+}
+
+/**
+ * Albums the artist appears on without being an album artist, newest first.
+ *
+ * Only ever called for a library artist, the only kind the server lists.
+ */
+export async function loadArtistAppearsOn(artist: Artist): Promise<Album[]> {
+  return await api.getArtistAppearsOn(artist.item_id, artist.provider);
 }
 
 /** The artist's most popular tracks, as reported by `source`. */
@@ -86,29 +154,6 @@ export function sortReleasesNewestFirst<T extends Album>(albums: T[]): T[] {
   });
 }
 
-/**
- * Albums the artist appears on without being an album artist, derived from the
- * artist's library tracks.
- *
- * A library track carries its album as a slim mapping without album artists,
- * so pass the artist's own releases as `artistAlbums` to leave those out.
- */
-export function appearsOnAlbums(
-  tracks: Track[],
-  artist: Artist,
-  artistAlbums: Array<Album | ItemMapping> = [],
-): Array<Album | ItemMapping> {
-  const ownAlbums = new Set(artistAlbums.map((album) => album.uri));
-  const albums = new Map<string, Album | ItemMapping>();
-  for (const track of tracks) {
-    const album = track.album;
-    if (!album || ownAlbums.has(album.uri) || albums.has(album.uri)) continue;
-    if (isAlbumArtist(album, artist)) continue;
-    albums.set(album.uri, album);
-  }
-  return [...albums.values()];
-}
-
 /** The provider_filter argument for a source, or undefined for "library"/"all". */
 function providerFilterFor(source: RowSource): string | undefined {
   return source === "library" || source === "all" ? undefined : source;
@@ -134,14 +179,4 @@ function releaseTime(album: Album): number {
     if (!isNaN(parsed)) return parsed;
   }
   return album.year ? Date.UTC(album.year, 0, 1) : 0;
-}
-
-/** Whether the artist is credited as an album artist of the given album. */
-function isAlbumArtist(album: Album | ItemMapping, artist: Artist): boolean {
-  if (!("artists" in album)) return false;
-  return album.artists.some(
-    (albumArtist) =>
-      albumArtist.uri === artist.uri ||
-      albumArtist.name.toLowerCase() === artist.name.toLowerCase(),
-  );
 }

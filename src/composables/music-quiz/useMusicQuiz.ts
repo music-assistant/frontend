@@ -22,9 +22,7 @@ export interface MusicQuizHostPlayback {
 }
 
 export type MusicQuizTimelineBonusMode =
-  | "off"
-  | "free_text"
-  | "multiple_choice";
+  "off" | "free_text" | "multiple_choice";
 export type MusicQuizTimelineBonusType = "artist" | "title";
 
 export interface MusicQuizTimelinePlacementSubmission {
@@ -89,8 +87,7 @@ export type MusicQuizUnsupportedAnswerType = string & {
 };
 export type MusicQuizRuntimeType = MusicQuizType | MusicQuizUnsupportedType;
 export type MusicQuizRuntimeAnswerType =
-  | MusicQuizAnswerType
-  | MusicQuizUnsupportedAnswerType;
+  MusicQuizAnswerType | MusicQuizUnsupportedAnswerType;
 
 interface MusicQuizStateIdentity<
   TQuizType extends MusicQuizRuntimeType = MusicQuizRuntimeType,
@@ -100,10 +97,10 @@ interface MusicQuizStateIdentity<
   answer_type: TAnswerType;
   phase: MusicQuizPhase;
   name: string | null;
-  include_similar_music?: boolean;
-  auto_start_at?: number | null;
-  // public and host state only, and only once the server resolved it: servers
-  // before the dashboard feature omit it, and then a display hides its join QR
+  include_similar_music: boolean;
+  auto_start_at: number | null;
+  // public and host state only, and only once the server resolved it: until
+  // then a display hides its join QR
   join_url?: string;
 }
 
@@ -140,7 +137,7 @@ interface MusicQuizTriviaStateBase extends MusicQuizStateIdentity {
   quiz_type: "trivia";
   answer_type: "multiple_choice";
   language: string;
-  play_reveal_audio?: boolean;
+  play_reveal_audio: boolean;
   round_count: number;
   suggestion_count: number;
   answer_duration: number;
@@ -176,8 +173,7 @@ type MusicQuizFallbackState =
 export type MusicQuizUnsupportedPublicState = MusicQuizFallbackState;
 
 export type MusicQuizPublicState =
-  | MusicQuizSupportedPublicState
-  | MusicQuizUnsupportedPublicState;
+  MusicQuizSupportedPublicState | MusicQuizUnsupportedPublicState;
 
 export interface MusicQuizGuessTheSongPersonalizedState extends MusicQuizGuessTheSongStateBase {
   you: MusicQuizMultipleChoiceYou;
@@ -188,8 +184,7 @@ export interface MusicQuizTriviaPersonalizedState extends MusicQuizTriviaStateBa
 }
 
 export type MusicQuizMultipleChoicePersonalizedState =
-  | MusicQuizGuessTheSongPersonalizedState
-  | MusicQuizTriviaPersonalizedState;
+  MusicQuizGuessTheSongPersonalizedState | MusicQuizTriviaPersonalizedState;
 
 export type MusicQuizSupportedPersonalizedState =
   | MusicQuizGuessTheSongPersonalizedState
@@ -204,15 +199,14 @@ export type MusicQuizUnsupportedPersonalizedState =
   MusicQuizUnsupportedPublicState;
 
 export type MusicQuizPersonalizedState =
-  | MusicQuizSupportedPersonalizedState
-  | MusicQuizUnsupportedPersonalizedState;
+  MusicQuizSupportedPersonalizedState | MusicQuizUnsupportedPersonalizedState;
 
 export interface MusicQuizGuessTheSongHostState extends MusicQuizGuessTheSongStateBase {
   created_at: number;
   sources: MusicQuizSource[];
   join_url: string;
   rounds: MusicQuizGuessTheSongRound[];
-  playback?: MusicQuizHostPlayback;
+  playback: MusicQuizHostPlayback;
 }
 
 export interface MusicQuizTimelineHostState extends MusicQuizTimelineStateBase {
@@ -220,7 +214,7 @@ export interface MusicQuizTimelineHostState extends MusicQuizTimelineStateBase {
   sources: MusicQuizSource[];
   join_url: string;
   rounds: MusicQuizTimelineHostRound[];
-  playback?: MusicQuizHostPlayback;
+  playback: MusicQuizHostPlayback;
 }
 
 export interface MusicQuizTriviaHostState extends MusicQuizTriviaStateBase {
@@ -228,16 +222,14 @@ export interface MusicQuizTriviaHostState extends MusicQuizTriviaStateBase {
   sources: MusicQuizSource[];
   join_url: string;
   rounds: MusicQuizTriviaHostRound[];
-  playback?: MusicQuizHostPlayback;
+  playback: MusicQuizHostPlayback;
 }
 
 export type MusicQuizMultipleChoicePublicState =
-  | MusicQuizGuessTheSongPublicState
-  | MusicQuizTriviaPublicState;
+  MusicQuizGuessTheSongPublicState | MusicQuizTriviaPublicState;
 
 export type MusicQuizMultipleChoiceHostState =
-  | MusicQuizGuessTheSongHostState
-  | MusicQuizTriviaHostState;
+  MusicQuizGuessTheSongHostState | MusicQuizTriviaHostState;
 
 export type MusicQuizSupportedHostState =
   | MusicQuizGuessTheSongHostState
@@ -245,12 +237,11 @@ export type MusicQuizSupportedHostState =
   | MusicQuizTriviaHostState;
 
 export type MusicQuizUnsupportedHostState = MusicQuizUnsupportedPublicState & {
-  playback?: MusicQuizHostPlayback;
+  playback: MusicQuizHostPlayback;
 };
 
 export type MusicQuizHostState =
-  | MusicQuizSupportedHostState
-  | MusicQuizUnsupportedHostState;
+  MusicQuizSupportedHostState | MusicQuizUnsupportedHostState;
 
 export interface MusicQuizGuessTheSongInfo extends MusicQuizStateIdentity {
   quiz_type: "guess_the_song";
@@ -272,16 +263,14 @@ export interface MusicQuizTriviaInfo extends MusicQuizStateIdentity {
   quiz_type: "trivia";
   answer_type: "multiple_choice";
   language: string;
-  play_reveal_audio?: boolean;
+  play_reveal_audio: boolean;
   player_count: number;
   round_count: number;
   mode: MusicQuizMode;
 }
 
 export type MusicQuizSupportedInfo =
-  | MusicQuizGuessTheSongInfo
-  | MusicQuizTimelineInfo
-  | MusicQuizTriviaInfo;
+  MusicQuizGuessTheSongInfo | MusicQuizTimelineInfo | MusicQuizTriviaInfo;
 
 export type MusicQuizUnsupportedInfo = MusicQuizFallbackState;
 
@@ -307,8 +296,7 @@ export interface MusicQuizTimelinePlayer extends MusicQuizPlayerBase {
 }
 
 export type MusicQuizPlayer =
-  | MusicQuizMultipleChoicePlayer
-  | MusicQuizTimelinePlayer;
+  MusicQuizMultipleChoicePlayer | MusicQuizTimelinePlayer;
 
 export interface MusicQuizMultipleChoicePlayerLastAnswer {
   suggestion_id: string;
@@ -335,8 +323,7 @@ export interface MusicQuizTimelinePlayerLastAnswer {
 }
 
 export type MusicQuizPlayerLastAnswer =
-  | MusicQuizMultipleChoicePlayerLastAnswer
-  | MusicQuizTimelinePlayerLastAnswer;
+  MusicQuizMultipleChoicePlayerLastAnswer | MusicQuizTimelinePlayerLastAnswer;
 
 export interface MusicQuizYouBase {
   name: string;
@@ -373,8 +360,7 @@ export interface MusicQuizTimelineBonusChoiceAnswer {
 }
 
 export type MusicQuizTimelineBonusAnswer =
-  | MusicQuizTimelineBonusTextAnswer
-  | MusicQuizTimelineBonusChoiceAnswer;
+  MusicQuizTimelineBonusTextAnswer | MusicQuizTimelineBonusChoiceAnswer;
 
 export interface MusicQuizTimelineYourAnswer {
   previous_entry_id: string | null;
@@ -541,9 +527,7 @@ export interface MusicQuizTriviaHostRound {
 }
 
 export type MusicQuizSupportedRound =
-  | MusicQuizGuessTheSongRound
-  | MusicQuizTimelineRound
-  | MusicQuizTriviaRound;
+  MusicQuizGuessTheSongRound | MusicQuizTimelineRound | MusicQuizTriviaRound;
 export type MusicQuizCurrentRound = MusicQuizSupportedRound;
 export type MusicQuizRound = MusicQuizSupportedRound;
 

@@ -47,6 +47,10 @@ vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
 
+vi.mock("@/helpers/players", () => ({
+  getPlayerDisplayName: (player: { name: string }) => player.name,
+}));
+
 vi.mock("@vueuse/core", () => ({
   useColorMode: () => ({ value: "light" }),
 }));

@@ -23,7 +23,7 @@ import { queueItem } from "../fixtures/queueItem";
 import { streamDetails } from "../fixtures/streamDetails";
 
 const storeMock = vi.hoisted(() => ({
-  activePlayer: undefined as { active_source_audio?: unknown } | undefined,
+  activePlayer: undefined as { active_source_audio: unknown } | undefined,
   activePlayerQueue: undefined as PlayerQueue | undefined,
   curQueueItem: undefined as QueueItem | undefined,
 }));
@@ -163,8 +163,8 @@ describe("QualityDetailsBtn", () => {
       expect(mountButton().get("button").attributes("disabled")).toBeFalsy();
     });
 
-    it("does not render on older servers that never send a source snapshot", () => {
-      storeMock.activePlayer = {};
+    it("does not render without a queue item or source snapshot", () => {
+      storeMock.activePlayer = { active_source_audio: null };
 
       expect(
         mountButton().find('[data-testid="quality-popover"]').exists(),

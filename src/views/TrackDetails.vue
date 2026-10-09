@@ -38,7 +38,6 @@
         <MediaRowList
           v-else-if="rowId === 'other_versions' && showRow(versionItems)"
           :title="$t('other_versions')"
-          :meta="versionItems?.length ? String(versionItems.length) : undefined"
           :items="versionItems"
           show-source
           :parent-item="itemDetails"
@@ -98,6 +97,7 @@ import {
 } from "@/components/track/trackRows";
 import { useTrackRowData } from "@/composables/useTrackRowData";
 import { getArtistsString, getImageThumbForItem } from "@/helpers/utils";
+import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import {
   EventMessage,
@@ -229,7 +229,10 @@ onMounted(() => {
       // check if the updated item is the current item
       if (itemDetails.value?.uri == updatedItem.uri) {
         // update UI with the updated item
-        itemDetails.value = updatedItem as Track;
+        itemDetails.value = keepOwnFavorite(
+          updatedItem,
+          itemDetails.value,
+        ) as Track;
       } else if ("provider_mappings" in updatedItem) {
         for (const provMap of updatedItem.provider_mappings) {
           if (
@@ -238,7 +241,10 @@ onMounted(() => {
               props.provider,
             )
           ) {
-            itemDetails.value = updatedItem as Track;
+            itemDetails.value = keepOwnFavorite(
+              updatedItem,
+              itemDetails.value,
+            ) as Track;
             break;
           }
         }
@@ -246,6 +252,13 @@ onMounted(() => {
     },
   );
   onBeforeUnmount(unsub);
+
+  // the user's own like or dislike, wherever they made it
+  const unsubFavorite = subscribeOwnFavorites((update) => {
+    const item = itemDetails.value;
+    if (item?.uri == update.uri) item.favorite = update.favorite;
+  });
+  onBeforeUnmount(unsubFavorite);
 });
 
 /** Loads the first artist when the track and its album have no wide art of their own. */

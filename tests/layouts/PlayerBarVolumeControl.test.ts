@@ -30,8 +30,12 @@ vi.mock("@/plugins/store", () => ({
   },
 }));
 
-vi.mock("@/helpers/utils", () => ({
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/players")>()),
   getPlayerName: (player: Player) => player.name,
+}));
+
+vi.mock("@/helpers/utils", () => ({
   getVolumeIconComponent: () => ({
     template: "<span class='volume-icon' />",
   }),
@@ -139,6 +143,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     active_group: null,
     synced_to: null,
     sleep_timer_expires_at: null,
+    active_source_audio: null,
     ...overrides,
   };
 }

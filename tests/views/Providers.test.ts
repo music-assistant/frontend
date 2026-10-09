@@ -1,8 +1,9 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { ref } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type ProviderConfig,
+  ProviderFeature,
   ProviderSharing,
   ProviderStage,
   ProviderStatus,
@@ -65,7 +66,6 @@ const {
     saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
     startSync: vi.fn<MusicAssistantApi["startSync"]>(),
     subscribe: vi.fn(),
-    supportsShareCandidates: true,
   },
   authMock: {
     hasScope: vi.fn<(scope: Scope) => boolean>(),
@@ -230,6 +230,11 @@ const ProviderRowStub = {
   template: `<div data-testid="provider-row">{{ name }}</div>`,
 };
 
+// a console spy has to be let go even when its test fails
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getAllUsers.mockResolvedValue([owner, member]);
@@ -241,7 +246,6 @@ beforeEach(() => {
   apiMock.providerManifests.spotify.stage = ProviderStage.STABLE;
   apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
-  apiMock.supportsShareCandidates = true;
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   routeMock.query.types = "music";
   storeMock.currentUser = owner;
@@ -256,6 +260,7 @@ describe("Providers", () => {
     expect(eventbusMock.emit).toHaveBeenCalledWith("setupFlowDialog", {
       kind: "reconfigure",
       instanceId: "spotify--test",
+      name: "Spotify",
       onFlowEnded: expect.any(Function),
     });
     expect(routerMock.push).not.toHaveBeenCalled();
@@ -294,6 +299,7 @@ describe("Providers", () => {
     expect(eventbusMock.emit).toHaveBeenCalledWith("setupFlowDialog", {
       kind: "reconfigure",
       instanceId: "spotify--test",
+      name: "Spotify",
       onFlowEnded: expect.any(Function),
     });
     expect(routerMock.push).not.toHaveBeenCalled();
@@ -319,6 +325,7 @@ describe("Providers", () => {
     expect(eventbusMock.emit).toHaveBeenCalledWith("setupFlowDialog", {
       kind: "reconfigure",
       instanceId: "spotify--test",
+      name: "Spotify",
       onFlowEnded: expect.any(Function),
     });
 
@@ -338,6 +345,43 @@ describe("Providers", () => {
     reloadItem.action();
 
     expect(apiMock.reloadProvider).toHaveBeenCalledWith("spotify--test");
+  });
+
+  it.each([
+    ["pointer", { clientX: 5, clientY: 7 }, 5, 7],
+    [
+      "touch position of a long-press",
+      { touches: [{ clientX: 11, clientY: 22 }], changedTouches: [] },
+      11,
+      22,
+    ],
+  ])("opens the menu at the %s", async (_label, event, posX, posY) => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    onlyRow(wrapper).vm.$emit("menu", event);
+    await flushPromises();
+
+    expect(eventbusMock.emit).toHaveBeenCalledWith("contextmenu", {
+      items: expect.any(Array),
+      posX,
+      posY,
+    });
+  });
+
+  it("opens no menu while the provider manifest has not loaded yet", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
+      domain: "not_loaded",
+    });
+
+    onlyRow(wrapper).vm.$emit("menu", { clientX: 5, clientY: 7 });
+    await flushPromises();
+
+    expect(warnSpy).toHaveBeenCalled();
+    expect(eventbusMock.emit).not.toHaveBeenCalledWith(
+      "contextmenu",
+      expect.anything(),
+    );
   });
 
   it("asks for confirmation before removing a provider from the row menu", async () => {
@@ -360,10 +404,12 @@ describe("Providers", () => {
     const removeCall = eventbusMock.emit.mock.calls.find(
       ([event]) => event === "deleteConfirmationDialog",
     );
-    expect(removeCall?.[1].message).toBe("settings.remove_provider_confirm");
+    expect(removeCall?.[1].message).toBe(
+      "settings.remove_provider_confirm_music",
+    );
     // the stubbed $t returns the key, so the name is checked where it is passed
     expect(i18nMock.$t).toHaveBeenCalledWith(
-      "settings.remove_provider_confirm",
+      "settings.remove_provider_confirm_music",
       ["My Spotify"],
     );
     expect(apiMock.removeProviderConfig).not.toHaveBeenCalled();
@@ -395,6 +441,24 @@ describe("Providers", () => {
 
     expect(toastMock.error).toHaveBeenCalledWith("Error: nope");
     expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(1);
+  });
+
+  it("shows the previous state again when toggling a provider fails", async () => {
+    apiMock.saveProviderConfig.mockRejectedValue(new Error("nope"));
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    const toggle = async () => {
+      eventbusMock.emit.mockClear();
+      return (await openMenu(wrapper)).find((item: { label: string }) =>
+        ["settings.disable", "settings.enable"].includes(item.label),
+      );
+    };
+    (await toggle()).action();
+    await flushPromises();
+
+    // the api toasts a refused save itself
+    expect(toastMock.error).not.toHaveBeenCalled();
+    expect((await toggle()).label).toBe("settings.disable");
   });
 
   it("omits reconfigure from the menu when no setup flow exists", async () => {
@@ -613,6 +677,34 @@ describe("Providers", () => {
     expect(onlyRow(wrapper).props("accessSummary")).toBeNull();
   });
 
+  it("lists remove as the last menu item, marked as destructive", async () => {
+    // a player provider also gets its conditional items, which must stay above
+    routeMock.query.types = "player";
+    apiMock.getProvider.mockReturnValue({
+      available: true,
+      domain: "spotify",
+      instance_id: "spotify--test",
+      is_streaming_provider: false,
+      name: "Spotify",
+      supported_features: [ProviderFeature.CREATE_GROUP_PLAYER],
+      type: ProviderType.PLAYER,
+    });
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
+      type: ProviderType.PLAYER,
+    });
+
+    const menuItems = await openMenu(wrapper);
+    expect(
+      menuItems.slice(-3).map((item: { label: string }) => item.label),
+    ).toEqual([
+      "settings.view_players",
+      "settings.add_group_player",
+      "settings.remove_provider",
+    ]);
+    expect(menuItems.at(-1).color).toBe("error");
+  });
+
   it("leaves the offered provider types to the route for an admin", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
@@ -781,7 +873,7 @@ describe("Providers for a member", () => {
     );
   });
 
-  it("offers the member actions and hides the administrative ones", async () => {
+  it("offers the actions on its own source and hides the administrative ones", async () => {
     apiMock.getProvider.mockReturnValue({
       available: true,
       domain: "spotify",
@@ -803,9 +895,10 @@ describe("Providers for a member", () => {
       "settings.reconfigure",
       "settings.options",
       "settings.source_access.share_action",
+      "settings.disable",
       "settings.documentation",
-      "settings.remove_provider",
       "settings.reload",
+      "settings.remove_provider",
     ]);
     expect(
       menuItems.map((item: { label: string }) => item.label),
@@ -838,19 +931,6 @@ describe("Providers for a member", () => {
     await mountWithConfigs([ownSource()]);
 
     expect(apiMock.getAllUsers).not.toHaveBeenCalled();
-  });
-
-  it("does not ask an older server who it may share with", async () => {
-    apiMock.supportsShareCandidates = false;
-
-    const wrapper = await mountWithConfigs([ownSource()]);
-
-    expect(apiMock.getShareCandidates).not.toHaveBeenCalled();
-    expect(
-      wrapper
-        .get('[data-testid="access-dialog"]')
-        .attributes("data-share-candidates"),
-    ).toBe("none");
   });
 
   it("reports a failing lookup of the members it may share with", async () => {

@@ -210,12 +210,14 @@ import {
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
 import {
+  getPlayerDisplayName,
   isBuiltinPlayer,
   isPlayerActive,
   isSelectablePlayer,
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
-import { PlayerType, type Player } from "@/plugins/api/interfaces";
+import { PlayerType, Scope, type Player } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
@@ -268,10 +270,11 @@ let restoreFocusOnClose = false;
 let autoSelectedPlayerId: string | undefined;
 
 // PlayerSelect is the only surface that lists needs_setup players (a click here
-// launches the setup flow, see selectPlayer) and capture-only audio inputs
-// (informational rows, so the device stays discoverable).
+// launches the setup flow, see selectPlayer), to a role that may set them up.
+// It also lists capture-only audio inputs (informational rows, so the device
+// stays discoverable).
 const orderedPlayers = useOrderedPlayers({
-  allowNeedsSetup: true,
+  allowNeedsSetup: () => authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
   allowSources: true,
   selectedPlayerFirst: showSelectedPlayerFirst,
   activePlayersFirst: showActivePlayersFirst,
@@ -297,7 +300,7 @@ const filteredPlayers = computed(() => {
   const query = playerSearchQuery.value.trim().toLocaleLowerCase();
   if (!query) return orderedPlayers.value;
   return orderedPlayers.value.filter((player) =>
-    player.name.toLocaleLowerCase().includes(query),
+    getPlayerDisplayName(player).toLocaleLowerCase().includes(query),
   );
 });
 
@@ -481,6 +484,8 @@ function resetPanelState() {
 }
 
 function checkDefaultPlayer() {
+  // dashboard viewers never pick players themselves; the hosting view pins one.
+  if (authManager.isDashboardViewer()) return;
   if (store.activePlayer) return;
   const defaultPlayerId = selectDefaultPlayer();
   if (!defaultPlayerId) return;
@@ -498,6 +503,8 @@ function checkDefaultPlayer() {
  * device, which only registers a moment after the app has started.
  */
 function preferBuiltinPlayer() {
+  // a display must never end up showing its own built-in player
+  if (authManager.isDashboardViewer()) return;
   if (store.activePlayerId !== autoSelectedPlayerId) return;
   if (getPreference<string>("activePlayerId").value) return;
   const builtinPlayerId = selectBuiltinPlayer();
@@ -507,6 +514,8 @@ function preferBuiltinPlayer() {
 }
 
 function rememberPlayer(playerId: string) {
+  // dashboard viewer preferences are shared by every dashboard session
+  if (authManager.isDashboardViewer()) return;
   const player = api.players[playerId];
   if (!player) return;
   const rememberedPlayer = isBuiltinPlayer(player)

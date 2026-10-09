@@ -20,10 +20,11 @@ export const DEVICE_TYPE: DeviceType = IS_TABLET_UA
 /**
  * How far in from a side of the screen it is safe to draw, in pixels.
  *
- * The layout viewport spans the cutout and the rounded corners, so anything
- * measured from `window.innerWidth` has to take this off to clear them.
+ * The layout viewport spans the status bar, the cutout and the rounded corners,
+ * so anything measured from the window's own size has to take this off to clear
+ * them.
  */
-export function deviceInset(side: "left" | "right") {
+export function deviceInset(side: "top" | "left" | "right") {
   // read off a padding rather than the custom property itself: WebKit reports 0
   // for a custom property holding env(), while a length it lays a box out with
   // carries the inset the page is actually drawn against

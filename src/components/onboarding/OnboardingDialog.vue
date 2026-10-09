@@ -1,7 +1,10 @@
 <template>
   <Dialog :open="active" @update:open="onOpenChange">
+    <!-- one layer below the other dialogs, so a setup flow or confirmation
+         opened from the wizard shows on top of it -->
     <DialogContent
-      class="max-h-[calc(100dvh-1rem)] gap-0 overflow-y-auto p-4 sm:max-w-[calc(100%-2rem)] sm:p-6 lg:max-w-3xl"
+      class="z-[9998] max-h-[calc(100dvh-1rem)] gap-0 overflow-y-auto p-4 sm:max-w-[calc(100%-2rem)] sm:p-6 lg:max-w-3xl"
+      overlay-class="z-[9998]"
       :show-close-button="ctx.isMember"
       data-testid="onboarding-modal"
       @escape-key-down="onDismissAttempt"

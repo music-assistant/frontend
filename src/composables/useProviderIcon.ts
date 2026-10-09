@@ -1,3 +1,4 @@
+import { resolveProviderDomain } from "@/helpers/provider_domain";
 import { api } from "@/plugins/api";
 import { ProviderIconVariant } from "@/plugins/api/interfaces";
 import { computed, type MaybeRefOrGetter, toValue, watchEffect } from "vue";
@@ -19,17 +20,11 @@ export function useProviderIcon(
 ) {
   const theme = useTheme();
 
+  // a domain or an instance id, also of an instance that is not loaded (e.g. a
+  // source not shared with this user)
   const providerDomain = computed(() => {
     const value = toValue(domain);
-    if (!value) return undefined;
-    // handle case where provider domain is provided as instance id.
-    if (value in api.providers) return api.providers[value].domain;
-    if (value in api.providerManifests) return value;
-    // instance not loaded (e.g. a source not shared with this user): fall back
-    // to the domain embedded in the instance id
-    const embeddedDomain = value.split("--")[0];
-    if (embeddedDomain in api.providerManifests) return embeddedDomain;
-    return undefined;
+    return value ? resolveProviderDomain(value, api) : undefined;
   });
 
   const manifest = computed(() =>

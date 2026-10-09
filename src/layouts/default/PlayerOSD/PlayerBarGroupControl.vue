@@ -111,6 +111,7 @@ import type { PlayerGroupFilter } from "@/helpers/player_group";
 import {
   canBeGroupMember,
   canEditPlayerGroup,
+  getPlayerDisplayName,
   getPlayerGroupMemberCount,
   groupMemberPickerVisible,
   isScreenPlayer,
@@ -165,9 +166,11 @@ const groupMembers = computed(() => {
     .map((playerId) => api.players[playerId])
     .filter((member): member is Player => member?.available === true)
     .sort((left, right) =>
-      left.name.localeCompare(right.name, undefined, {
-        sensitivity: "base",
-      }),
+      getPlayerDisplayName(left).localeCompare(
+        getPlayerDisplayName(right),
+        undefined,
+        { sensitivity: "base" },
+      ),
     );
 });
 
@@ -184,8 +187,7 @@ const groupCandidates = computed(() => {
         candidate.active_group === player.value?.player_id) &&
       (memberIds.has(candidate.player_id) ||
         (candidate.player_id !== player.value?.player_id &&
-          (player.value?.can_group_with.includes(candidate.player_id) ||
-            player.value?.can_group_with.includes(candidate.provider)))),
+          player.value?.can_group_with.includes(candidate.player_id))),
   );
 });
 

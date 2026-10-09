@@ -1,44 +1,60 @@
 <template>
   <Dialog :open="show" @update:open="handleOpenChange">
     <DialogContent
-      class="add-player-group-dialog max-w-[800px] h-[60vh] max-h-[60vh] flex flex-col p-0"
+      class="flex h-[60vh] max-h-[60vh] max-w-[800px] flex-col gap-0 p-0"
     >
-      <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
+      <DialogHeader class="border-b px-5 py-4 pr-12 text-left">
         <DialogTitle>{{ $t("settings.add_group_player") }}</DialogTitle>
       </DialogHeader>
 
       <div
-        class="provider-list-container px-6 pt-2 pb-6 flex-1 min-h-0 overflow-y-auto"
+        class="min-h-0 flex-1 overflow-y-auto px-5 py-4"
+        data-testid="provider-list"
       >
-        <div v-if="availableProviders.length > 0" class="provider-list">
-          <div
+        <ItemGroup v-if="availableProviders.length > 0" class="gap-2">
+          <Item
             v-for="provider in availableProviders"
             :key="provider.instance_id"
-            class="provider-item"
+            variant="outline"
+            size="sm"
+            class="hover:bg-accent/50 cursor-pointer"
+            data-testid="provider-row"
             @click="addPlayerGroup(provider.instance_id)"
           >
-            <provider-icon
-              :domain="provider.domain"
-              :size="40"
-              class="provider-icon"
-            />
-            <div class="provider-content">
-              <div class="provider-name">{{ provider.name }}</div>
-              <div class="provider-description">
-                {{ provider.description }}
-              </div>
-            </div>
-            <ChevronRight class="h-4 w-4 flex-shrink-0" />
-          </div>
-        </div>
+            <ItemMedia>
+              <ProviderIcon :domain="provider.domain" :size="40" />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle>
+                <!-- the name is the focusable control; the row itself only follows the pointer -->
+                <button
+                  type="button"
+                  class="cursor-pointer text-left"
+                  data-testid="provider-open"
+                  @click.stop="addPlayerGroup(provider.instance_id)"
+                >
+                  {{ provider.name }}
+                </button>
+              </ItemTitle>
+              <ItemDescription>{{ provider.description }}</ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <ChevronRight class="text-muted-foreground size-4" />
+            </ItemActions>
+          </Item>
+        </ItemGroup>
 
-        <div v-else class="empty-state">
-          <Users class="empty-icon" />
-          <div class="empty-title">{{ $t("no_content") }}</div>
-          <div class="empty-message">
-            {{ $t("settings.no_group_providers") }}
-          </div>
-        </div>
+        <Empty v-else class="h-full">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Users />
+            </EmptyMedia>
+            <EmptyTitle>{{ $t("no_content") }}</EmptyTitle>
+            <EmptyDescription>
+              {{ $t("settings.no_group_providers") }}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       </div>
     </DialogContent>
   </Dialog>
@@ -52,12 +68,28 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 import { api } from "@/plugins/api";
 import { ProviderFeature } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ChevronRight, Users } from "@lucide/vue";
-import { computed, watch } from "vue";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 const { show = false } = defineProps<{
@@ -75,13 +107,7 @@ const availableProviders = computed(() => {
     .filter(
       (x) =>
         x.available &&
-        (x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER) ||
-          // for backwards compatibility - if provider doesn't explicitly support
-          // group players, but does support syncing players,
-          // allow it as well (since that was the old way of doing syncgroup players)
-          // - we can remove this fallback after a few versions
-          (!api.getProvider("sync_group") &&
-            x.supported_features.includes(ProviderFeature.SYNC_PLAYERS))),
+        x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER),
     )
     .map((x) => ({
       instance_id: x.instance_id,
@@ -107,99 +133,4 @@ const handleOpenChange = (open: boolean) => {
 const close = function () {
   emit("update:show", false);
 };
-
-watch(
-  () => api.providers,
-  () => {},
-  { immediate: true },
-);
 </script>
-
-<style scoped>
-.add-player-group-dialog {
-  display: flex;
-  flex-direction: column;
-}
-
-.provider-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.provider-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 8px;
-  transition:
-    background-color 0.2s ease,
-    transform 0.2s ease;
-  cursor: pointer;
-}
-
-.provider-item:hover {
-  background-color: rgba(var(--v-theme-primary), 0.04);
-  transform: translateY(-1px);
-}
-
-.provider-icon {
-  flex-shrink: 0;
-}
-
-.provider-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.provider-name {
-  font-weight: 500;
-  font-size: 16px;
-  line-height: 1.2;
-  margin-bottom: 4px;
-}
-
-.provider-description {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-height: 2.6em;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  text-align: center;
-  padding: 40px 20px;
-}
-
-.empty-icon {
-  width: 48px;
-  height: 48px;
-  color: rgba(var(--v-theme-on-surface), 0.3);
-  margin-bottom: 16px;
-}
-
-.empty-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-bottom: 8px;
-}
-
-.empty-message {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  line-height: 1.4;
-}
-</style>

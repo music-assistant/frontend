@@ -11,7 +11,7 @@ import {
   Scope,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
-import { isSelectablePlayer } from "@/helpers/players";
+import { getPlayerDisplayName, isSelectablePlayer } from "@/helpers/players";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { resolveExternalSource } from "@/composables/externalSource";
 import { resolveActiveSourceId } from "@/composables/activeSource";
@@ -224,7 +224,7 @@ export const getPlayerMenuItems = (
         )
         .map((p) => {
           return {
-            label: p.name,
+            label: getPlayerDisplayName(p),
             labelArgs: [],
             action: () => {
               api.queueCommandTransfer(playerQueue!.queue_id, p.player_id);
@@ -299,14 +299,8 @@ export const getPlayerMenuItems = (
   // host is that host: render it as a single disabled row rather than the
   // hosts submenu, which would otherwise show the (now irrelevant) sticky
   // queue-DJ assignment.
-  const {
-    hosts,
-    queueDjStatus,
-    aiRadioAvailable,
-    loadHosts,
-    loadQueueDjStatus,
-  } = useHosts();
-  const { sessions, shows, loadStatus } = useShows();
+  const { hosts, queueDjStatus, aiRadioAvailable } = useHosts();
+  const { sessions, shows } = useShows();
   if (isQueue && playerQueue && aiRadioAvailable.value && canUseQueueDj()) {
     const queueId = playerQueue.queue_id;
     const runningSession = sessions.value.find(
@@ -345,11 +339,6 @@ export const getPlayerMenuItems = (
         ],
       });
     }
-    // Best-effort staleness refresh; the menu above is already built from
-    // the prefetched caches, so a failure here has nothing to surface.
-    void loadHosts().catch(() => undefined);
-    void loadQueueDjStatus().catch(() => undefined);
-    void loadStatus().catch(() => undefined);
   }
 
   // select sound mode (player menu only; only when more than one is selectable)

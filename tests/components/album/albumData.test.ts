@@ -22,6 +22,7 @@ import {
 import { ImageType, type ItemMapping } from "@/plugins/api/interfaces";
 import { album } from "../../fixtures/album";
 import { artist } from "../../fixtures/artist";
+import { providerMapping } from "../../fixtures/providerMapping";
 import { track } from "../../fixtures/track";
 
 const ALBUM = album({ item_id: "1", provider: "library", name: "21" });
@@ -84,10 +85,36 @@ describe("albumData", () => {
 
       const releases = await loadArtistReleases(
         album({ ...ALBUM, artists: [artistMapping()] }),
+        "library",
       );
 
       expect(apiMock.getArtistAlbums).toHaveBeenCalledWith("a1", "library");
       expect(releases.map((release) => release.name)).toEqual(["30", "19"]);
+    });
+
+    // the full album artist carries the mapping, so a provider source is queried
+    // by the artist's id on that provider
+    it("follows a provider source through the artist's mapping", async () => {
+      const libraryArtist = artist({
+        item_id: "a1",
+        provider: "library",
+        provider_mappings: [
+          providerMapping({
+            item_id: "sp-a1",
+            provider_instance: "spotify--abc",
+          }),
+        ],
+      });
+
+      await loadArtistReleases(
+        album({ ...ALBUM, artists: [libraryArtist] }),
+        "spotify--abc",
+      );
+
+      expect(apiMock.getArtistAlbums).toHaveBeenCalledWith(
+        "sp-a1",
+        "spotify--abc",
+      );
     });
 
     // the artist's releases come from whichever provider holds the artist, so
@@ -101,13 +128,14 @@ describe("albumData", () => {
 
       const releases = await loadArtistReleases(
         album({ ...ALBUM, artists: [artistMapping()] }),
+        "library",
       );
 
       expect(releases.map((release) => release.name)).toEqual(["19"]);
     });
 
     it("has nothing to show for an album without an artist", async () => {
-      expect(await loadArtistReleases(ALBUM)).toEqual([]);
+      expect(await loadArtistReleases(ALBUM, "library")).toEqual([]);
       expect(apiMock.getArtistAlbums).not.toHaveBeenCalled();
     });
   });

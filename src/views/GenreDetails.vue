@@ -183,6 +183,7 @@ import { Button } from "@/components/ui/button";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
 import { panelViewItemResponsive } from "@/helpers/utils";
+import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
@@ -491,11 +492,21 @@ onMounted(() => {
     (evt: EventMessage) => {
       const updatedItem = evt.data as MediaItemType;
       if (itemDetails.value?.uri == updatedItem.uri) {
-        itemDetails.value = updatedItem as Genre;
+        itemDetails.value = keepOwnFavorite(
+          updatedItem,
+          itemDetails.value,
+        ) as Genre;
       }
     },
   );
   onBeforeUnmount(unsub);
+
+  // the user's own like or dislike, wherever they made it
+  const unsubFavorite = subscribeOwnFavorites((update) => {
+    const item = itemDetails.value;
+    if (item?.uri == update.uri) item.favorite = update.favorite;
+  });
+  onBeforeUnmount(unsubFavorite);
 });
 </script>
 

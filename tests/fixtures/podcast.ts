@@ -16,7 +16,7 @@ export function podcast(overrides: Partial<Podcast> = {}): Podcast {
     media_type: MediaType.PODCAST,
     provider_mappings: [],
     metadata: {},
-    favorite: false,
+    favorite: null,
     publisher: null,
     total_episodes: null,
     ...overrides,

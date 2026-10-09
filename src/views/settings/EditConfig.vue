@@ -1,5 +1,11 @@
 <template>
-  <v-form v-if="entries" ref="form" v-model="valid" :disabled="disabled">
+  <v-form
+    v-if="entries"
+    ref="form"
+    v-model="valid"
+    :disabled="disabled"
+    :class="{ 'floating-save-clearance': !disabled && !inlineSave }"
+  >
     <!-- Generic settings section -->
     <div
       v-for="panel of regularPanels.filter(
@@ -377,6 +383,9 @@ const onEntryAction = function (entry: ConfigEntryUI) {
 const resetToDefaults = function () {
   if (!entries.value) return;
   for (const entry of entries.value) {
+    // a hidden entry carries state the user never sees, such as housekeeping the
+    // server keeps in the config, so a reset leaves it as it is
+    if (entry.hidden) continue;
     entry.value = entry.default_value;
   }
 };
@@ -613,6 +622,11 @@ const getCategoryIcon = function (category: string): Component {
 
 .category-content {
   padding: 14px 16px;
+}
+
+/* Lets the last row scroll clear of the floating Save button. */
+.floating-save-clearance {
+  padding-bottom: 56px;
 }
 
 .floating-save {

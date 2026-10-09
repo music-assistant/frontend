@@ -291,7 +291,7 @@ describe("EditConfig", () => {
     expect(wrapper.text()).not.toContain("settings.reset_to_defaults");
   });
 
-  it("puts every entry back to its default value on request", async () => {
+  it("puts every entry but a hidden one back to its default value on request", async () => {
     const wrapper = mountEntries([
       entry({
         key: "server",
@@ -312,6 +312,36 @@ describe("EditConfig", () => {
       ).value,
     ).toBe("localhost");
     expect(saveDisabled(wrapper)).toBe(false);
+  });
+
+  it("leaves a hidden entry as it is when resetting to defaults", () => {
+    // housekeeping the server keeps in the config, out of the user's sight
+    const cursor = entry({
+      key: "track_reconciliation_cursor",
+      type: ConfigEntryType.STRING,
+      hidden: true,
+      default_value: "",
+      value: "track/1234",
+    });
+    const wrapper = mountEntries([
+      entry({
+        key: "server",
+        type: ConfigEntryType.STRING,
+        default_value: "localhost",
+        value: "elsewhere",
+      }),
+      cursor,
+    ]);
+
+    wrapper.vm.resetToDefaults();
+    // an action hands over the same values a save does
+    wrapper.findAllComponents({ name: "ConfigEntryRow" })[0].vm.$emit("action");
+
+    expect(cursor.value).toBe("track/1234");
+    expect(wrapper.emitted("action")?.[0]?.[1]).toEqual({
+      server: "localhost",
+      track_reconciliation_cursor: "track/1234",
+    });
   });
 
   it("stops offering to save the values the server took", async () => {
@@ -387,6 +417,34 @@ describe("EditConfig", () => {
     expect(wrapper.find(".floating-save").exists()).toBe(false);
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(true);
   });
+
+  it("leaves room below the last row for the floating save action", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+    ]);
+
+    expect(wrapper.get("v-form-stub").classes()).toContain(
+      "floating-save-clearance",
+    );
+  });
+
+  it.each([
+    ["disabled", true, false],
+    ["inline save", false, true],
+  ] as const)(
+    "leaves no room for a save action that does not float (%s)",
+    (_, disabled, inlineSave) => {
+      const wrapper = mountEntries(
+        [entry({ key: "server", type: ConfigEntryType.STRING })],
+        disabled,
+        inlineSave,
+      );
+
+      expect(wrapper.get("v-form-stub").classes()).not.toContain(
+        "floating-save-clearance",
+      );
+    },
+  );
 });
 
 describe("EditConfig unsaved changes", () => {

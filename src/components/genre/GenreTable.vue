@@ -161,7 +161,7 @@ const loadCounts = async () => {
       allGenres.value.map((g) => g.item_id),
     );
   } catch {
-    // Endpoint not yet available
+    // the table shows without counts; the api client reports the error
   } finally {
     countsLoading.value = false;
   }

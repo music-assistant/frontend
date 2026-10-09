@@ -3,6 +3,7 @@ import { store } from "../store";
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
 import { resolveActiveSourceId } from "@/composables/activeSource";
+import { resolveProviderDomain } from "@/helpers/provider_domain";
 import {
   resetServerTime,
   serverNow,
@@ -25,7 +26,6 @@ import {
   type EventMessage,
   type Genre,
   type MassEvent,
-  type MediaItem,
   type MediaItemType,
   type Player,
   type PlayerOptionValueType,
@@ -73,40 +73,29 @@ import {
   RepeatMode,
   Role,
   Scope,
+  NetworkShareSettings,
   SearchResults,
+  ShareType,
   SmartPlaylistRules,
   SoundEffect,
+  StorageInfo,
+  StorageLocation,
   StreamServerInfo,
+  TranscriptCue,
   MediaCollection,
   ArtistType,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
 
-// Server-side string localization + the translations/set_locale command landed in API schema 32.
-const TRANSLATIONS_SCHEMA_VERSION = 32;
-
-// The shuffle argument on player_queues/play_media landed in API schema 51.
-const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
-
-// The player_id argument on music/browse landed in API schema 61.
-const BROWSE_PLAYER_ID_SCHEMA_VERSION = 61;
+// The oldest server API schema this frontend works with. Only the public web app
+// (app.music-assistant.io) can meet an older server, the bundled frontend always
+// matches its own. Raise it when a change would break the previous stable server.
+export const MIN_SERVER_SCHEMA_VERSION = 75;
 
 // dashboard/viewer_preferences and the milkdrop_visualizer config/report_capability
 // commands landed in API schema 78.
 const DASHBOARD_VISUALIZER_SCHEMA_VERSION = 78;
-
-// Repeat one/all masking the effective autoplay flag landed in API schema 69.
-const REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION = 69;
-
-// The config/providers/share_candidates command landed in API schema 72.
-const SHARE_CANDIDATES_SCHEMA_VERSION = 72;
-
-// The auth/roles command and custom user roles landed in API schema 74.
-const ROLES_SCHEMA_VERSION = 74;
-
-// Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
-const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
 
 export interface CommandOptions {
   /**
@@ -725,6 +714,18 @@ export class MusicAssistantApi {
     });
   }
 
+  public getArtistAppearsOn(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+  ): Promise<Album[]> {
+    return this.sendCommand("music/artists/artist_appears_on", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+    });
+  }
+
   public getArtistTopAlbums(
     item_id: string,
     provider_instance_id_or_domain: string,
@@ -734,6 +735,21 @@ export class MusicAssistantApi {
       item_id,
       provider_instance_id_or_domain,
       provider_filter,
+    });
+  }
+
+  /**
+   * Every album, EP and single MusicBrainz credits to a library artist, newest first.
+   *
+   * Only library artists are supported; the list is empty when MusicBrainz doesn't know
+   * the artist. The releases that are not in the library come back as MusicBrainz items
+   * (provider "musicbrainz", without provider mappings), which the server resolves to a
+   * real album when one is opened or added.
+   */
+  public getArtistDiscography(item_id: string): Promise<Album[]> {
+    return this.sendCommand("music/artists/discography", {
+      item_id,
+      provider_instance_id_or_domain: "library",
     });
   }
 
@@ -1420,6 +1436,17 @@ export class MusicAssistantApi {
     });
   }
 
+  public getPodcastEpisode(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<PodcastEpisode> {
+    // Get a single podcast episode.
+    return this.sendCommand("music/podcasts/podcast_episode", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
   public getItemByUri(uri: string): Promise<MediaItemType> {
     // Get single music item providing a mediaitem uri.
     return this.sendCommand("music/item_by_uri", {
@@ -1444,6 +1471,17 @@ export class MusicAssistantApi {
     return this.sendCommand("metadata/update_metadata", {
       item,
       force_refresh,
+    });
+  }
+
+  public getPodcastEpisodeTranscript(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<[string | null, TranscriptCue[] | null]> {
+    // Get a podcast episode's transcript as plain text plus timed lines.
+    return this.sendCommand("music/podcasts/podcast_episode_transcript", {
+      item_id,
+      provider_instance_id_or_domain,
     });
   }
 
@@ -1522,8 +1560,10 @@ export class MusicAssistantApi {
   public async addItemToFavorites(
     item: string | MediaItemType | ItemMapping,
   ): Promise<void> {
-    // optimistically set the value
-    if (typeof item !== "string" && "favorite" in item) {
+    // optimistically set the value on the caller's copy. Only a media item
+    // holds one: a summary item leaves the key out when there is no state, but
+    // its provider mappings are always there
+    if (typeof item !== "string" && "provider_mappings" in item) {
       item.favorite = true;
     }
     // Add an item (uri or mediaitem) to the favorites.
@@ -1542,30 +1582,35 @@ export class MusicAssistantApi {
     });
   }
 
-  public toggleFavorite(item: MediaItem) {
-    // Toggle favorite for a media item
-    if (item.favorite) {
-      this.removeItemFromFavorites(item.media_type, item.item_id);
-      // optimistically set the value
-      item.favorite = false;
-    } else {
-      this.addItemToFavorites(item);
-      // optimistically set the value
-      item.favorite = true;
+  /**
+   * Set the signed-in user's state on a media item.
+   *
+   * :param item: The item (uri or media item) to set the state on.
+   * :param favorite: true to like, false to dislike, null to clear the state.
+   */
+  public async setFavorite(
+    item: string | MediaItemType | ItemMapping,
+    favorite: boolean | null,
+  ): Promise<void> {
+    // optimistically set the value on the caller's copy, which only a media
+    // item holds (see addItemToFavorites)
+    if (typeof item !== "string" && "provider_mappings" in item) {
+      item.favorite = favorite;
     }
+    return this.sendCommand("music/favorites/set_item", {
+      item,
+      favorite,
+    });
   }
 
-  public browse(path?: string, player_id?: string): Promise<MediaItemType[]> {
+  public browse(
+    path?: string,
+    player_id?: string,
+    options?: CommandOptions,
+  ): Promise<MediaItemType[]> {
     // Browse Music providers.
-    // player_id scopes player-bound audio sources to that player;
-    // older servers (schema < 61) don't accept the argument, so omit it there.
-    const supportsPlayerId =
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      BROWSE_PLAYER_ID_SCHEMA_VERSION;
-    return this.sendCommand("music/browse", {
-      path,
-      player_id: supportsPlayerId ? player_id : undefined,
-    });
+    // player_id scopes player-bound audio sources to that player.
+    return this.sendCommand("music/browse", { path, player_id }, options);
   }
 
   public search(
@@ -2298,10 +2343,15 @@ export class MusicAssistantApi {
   }
 
   public removeProviderConfig(instance_id: string): Promise<void> {
-    // Remove ProviderConfig.
-    return this.sendCommand("config/providers/remove", {
-      instance_id,
-    });
+    // Remove ProviderConfig. Callers report a failed removal themselves, so
+    // opt out of the global error toast.
+    return this.sendCommand(
+      "config/providers/remove",
+      {
+        instance_id,
+      },
+      { suppressGlobalError: true },
+    );
   }
 
   public reloadProvider(instance_id: string): Promise<void> {
@@ -2333,7 +2383,7 @@ export class MusicAssistantApi {
 
   public getShareCandidates(): Promise<UserSummary[]> {
     // Get the users a music source or playlist can be shared with, the caller
-    // included; check supportsShareCandidates first.
+    // included.
     return this.sendCommand("config/providers/share_candidates", undefined, {
       // callers show their own error toast; avoid a duplicate global one
       suppressGlobalError: true,
@@ -2799,12 +2849,11 @@ export class MusicAssistantApi {
       return this.providerManifests[provider_domain_or_instance_id].name;
     }
     // instance not loaded (e.g. a source not shared with this user): fall back
-    // to the generic provider name derived from the domain in the instance id
-    const domain = provider_domain_or_instance_id.split("--")[0];
-    if (domain in this.providerManifests) {
-      return this.providerManifests[domain].name;
-    }
-    return provider_domain_or_instance_id;
+    // to the generic name of the provider the instance id belongs to
+    const domain = resolveProviderDomain(provider_domain_or_instance_id, this);
+    return domain
+      ? this.providerManifests[domain].name
+      : provider_domain_or_instance_id;
   }
 
   public getProvider(
@@ -3081,40 +3130,11 @@ export class MusicAssistantApi {
     });
   }
 
-  /** Whether the connected server accepts an explicit shuffle on play_media (schema >= 51). */
-  public get supportsPlayMediaShuffle(): boolean {
+  /** Whether the connected server is too old for this frontend and needs an update. */
+  public get serverOutdated(): boolean {
+    const schemaVersion = this.serverInfo.value?.schema_version;
     return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server masks autoplay while repeat one/all is on (schema >= 69). */
-  public get supportsRepeatAutoplayLock(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server lists who a music source can be shared with (schema >= 72). */
-  public get supportsShareCandidates(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      SHARE_CANDIDATES_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server lists the user roles and has custom ones (schema >= 74). */
-  public get supportsRoles(): boolean {
-    return (this.serverInfo.value?.schema_version ?? 0) >= ROLES_SCHEMA_VERSION;
-  }
-
-  /** Whether the connected server lets a role with queues.control play AI Radio stations (schema >= 75). */
-  public get supportsAIRadioPlaybackScopes(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
+      schemaVersion !== undefined && schemaVersion < MIN_SERVER_SCHEMA_VERSION
     );
   }
 
@@ -3126,25 +3146,13 @@ export class MusicAssistantApi {
     );
   }
 
-  /** Whether the connected server localizes server-provided strings (schema >= 32). */
-  public get supportsServerSideTranslations(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      TRANSLATIONS_SCHEMA_VERSION
-    );
-  }
-
   /**
    * Declare the connection's UI locale to the server (translations/set_locale).
    *
-   * The server resolves server-provided strings for this locale at serialization. Older servers
-   * (schema < 32) don't implement the command, so it is skipped there and they keep serving their
-   * default-locale strings.
+   * The server resolves server-provided strings for this locale at serialization.
    */
   public async setLocale(locale: string): Promise<void> {
-    if (!locale || locale === "auto" || !this.supportsServerSideTranslations) {
-      return;
-    }
+    if (!locale || locale === "auto") return;
     await this.sendCommand("translations/set_locale", { locale });
   }
 
@@ -3309,23 +3317,9 @@ export class MusicAssistantApi {
     return users;
   }
 
-  public async getRoles(options?: CommandOptions): Promise<Role[]> {
+  public getRoles(options?: CommandOptions): Promise<Role[]> {
     // Get all user roles: the builtin roles first, then the custom roles by name
-    if (this.supportsRoles) {
-      return await this.sendCommand<Role[]>("auth/roles", undefined, options);
-    }
-    // an older server only has the builtin roles, of which it lists the scopes
-    const roleScopes = await this.sendCommand<Record<string, string[]>>(
-      "auth/scopes",
-      undefined,
-      options,
-    );
-    return Object.entries(roleScopes).map(([role_id, scopes]) => ({
-      role_id,
-      name: role_id,
-      scopes,
-      builtin: true,
-    }));
+    return this.sendCommand<Role[]>("auth/roles", undefined, options);
   }
 
   public createRole(name: string, scopes: string[]): Promise<Role> {
@@ -3607,6 +3601,86 @@ export class MusicAssistantApi {
       "streams/info",
       undefined,
       options,
+    );
+  }
+
+  // Storage methods
+  // Every caller reports a failure itself (a toast or inline in its dialog), so the
+  // storage commands skip the global error toast.
+
+  public getStorageInfo(): Promise<StorageInfo> {
+    // Get the storage locations the caller may see and what this install can mount
+    return this.sendCommand<StorageInfo>("storage/info", undefined, {
+      suppressGlobalError: true,
+    });
+  }
+
+  public getStorageFolders(path: string): Promise<string[]> {
+    // Get the names of the subfolders of a media location, or of a folder inside one
+    return this.sendCommand<string[]>(
+      "storage/folders",
+      { path },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public addNetworkShare(
+    share_type: ShareType,
+    settings: NetworkShareSettings,
+  ): Promise<StorageLocation> {
+    // Mount a network share as a new media location
+    return this.sendCommand<StorageLocation>(
+      "storage/network_shares/add",
+      { share_type, ...settings },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public updateNetworkShare(
+    name: string,
+    settings: NetworkShareSettings,
+  ): Promise<StorageLocation> {
+    // Replace the settings of a network share; an omitted password keeps the stored one
+    return this.sendCommand<StorageLocation>(
+      "storage/network_shares/update",
+      { name, ...settings },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public removeNetworkShare(name: string): Promise<void> {
+    // Unmount and forget a network share; refused while a music source uses it
+    return this.sendCommand(
+      "storage/network_shares/remove",
+      { name },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public reloadNetworkShare(name: string): Promise<StorageLocation> {
+    // Mount a network share again
+    return this.sendCommand<StorageLocation>(
+      "storage/network_shares/reload",
+      { name },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public addLocalFolder(path: string): Promise<StorageLocation> {
+    // Register a folder on the server itself as a media location
+    return this.sendCommand<StorageLocation>(
+      "storage/local_folders/add",
+      { path },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public removeLocalFolder(path: string): Promise<void> {
+    // Forget a registered folder; refused while a music source uses it
+    return this.sendCommand(
+      "storage/local_folders/remove",
+      { path },
+      { suppressGlobalError: true },
     );
   }
 

@@ -111,7 +111,7 @@
                   :key="player.player_id"
                   :value="player.player_id"
                 >
-                  {{ player.name }}
+                  {{ getPlayerDisplayName(player) }}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -208,6 +208,7 @@ import {
   NONE_SELECT_VALUE,
   type ShowDraft,
 } from "@/helpers/ai_radio";
+import { getPlayerDisplayName } from "@/helpers/players";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft } from "@lucide/vue";

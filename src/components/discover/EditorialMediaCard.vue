@@ -5,7 +5,8 @@
     role="button"
     tabindex="0"
     :class="{
-      'ed-card--unavailable': !isAvailable,
+      'ed-card--unavailable': !isAvailable && !notInLibrary,
+      'ed-card--not-in-library': notInLibrary,
       'ed-card--fluid': fluid,
       'ed-card--disabled': disabled,
       'ed-card--round': round,
@@ -26,7 +27,8 @@
         }"
         loading="lazy"
         :src="artImage"
-        :alt="item.name"
+        alt=""
+        @error="artFailed = true"
       />
       <MediaCollectionThumb
         v-else-if="props.item.media_type == MediaType.COLLECTION"
@@ -47,6 +49,17 @@
         :show-badge="false"
         icon-style="position: absolute; right: 6px; bottom: 6px; z-index: 2"
       />
+      <!-- the now playing bars take this corner while the item plays -->
+      <span
+        v-if="playedStateLabel && !isPlaying"
+        class="ed-card__played"
+        role="img"
+        :title="playedStateLabel"
+        :aria-label="playedStateLabel"
+      >
+        <Check v-if="isFullyPlayed" :size="16" />
+        <ClockFading v-else :size="16" />
+      </span>
       <slot name="art-overlay"></slot>
       <div
         v-if="showCheckboxes"
@@ -78,7 +91,7 @@
           :size="18"
           fill="currentColor"
           :stroke-width="0"
-          class="ed-card__play-icon"
+          class="ed-card__play-icon play-icon-centered"
         />
       </span>
     </div>
@@ -90,6 +103,7 @@
 <script setup lang="ts">
 import {
   itemArtwork,
+  placeholderArtwork,
   placeholderBackground,
 } from "@/components/discover/editorialArtwork";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
@@ -108,6 +122,8 @@ import {
 import {
   getListItemProviderIconDomain,
   getProviderRootDomain,
+  isMusicBrainzItem,
+  itemSupportsPlayLog,
 } from "@/plugins/api/helpers";
 import {
   type Album,
@@ -116,10 +132,11 @@ import {
   type MediaItemType,
   MediaType,
   type MediaCollection,
+  type PodcastEpisode,
   type Track,
 } from "@/plugins/api/interfaces";
-import { Play } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { Check, ClockFading, Play } from "@lucide/vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import MediaCollectionThumb from "../MediaCollectionThumb.vue";
 
@@ -158,9 +175,26 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const art = computed(() => itemArtwork(props.item, 320));
+const resolvedArt = computed(() => itemArtwork(props.item, 320));
+
+// a proxied cover can 404 (e.g. a release the Cover Art Archive has none for),
+// which leaves the item on the placeholder treatment instead of a broken image;
+// the next item, or this one refreshed with another cover, gets its own attempt
+const artFailed = ref(false);
+watch(
+  () => [props.item.uri, resolvedArt.value.image],
+  () => (artFailed.value = false),
+);
+
+const art = computed(() =>
+  artFailed.value ? placeholderArtwork(props.item) : resolvedArt.value,
+);
 
 const isGenre = computed(() => props.item.media_type === MediaType.GENRE);
+
+// a release only MusicBrainz knows: muted rather than shown as unavailable,
+// since it can be opened and added to the library
+const notInLibrary = computed(() => isMusicBrainzItem(props.item));
 
 // provider entries in the browse root show the provider icon
 const { iconDataUri: providerRootIcon } = useProviderIcon(() =>
@@ -178,7 +212,11 @@ const getStyle = computed(() => {
 
 const isPlayable = computed(() => props.item.is_playable !== false);
 const showPlay = computed(
-  () => isPlayable.value && props.isAvailable && !props.showCheckboxes,
+  () =>
+    isPlayable.value &&
+    props.isAvailable &&
+    !notInLibrary.value &&
+    !props.showCheckboxes,
 );
 
 // Provider badge on the cover — always for playlists (to show the source),
@@ -190,6 +228,18 @@ const providerDomain = computed<string | undefined>(() => {
     return undefined;
   }
   return getListItemProviderIconDomain(it);
+});
+
+const isFullyPlayed = computed(
+  () => itemSupportsPlayLog(props.item) && !!props.item.fully_played,
+);
+const isInProgress = computed(
+  () => itemSupportsPlayLog(props.item) && !!props.item.resume_position_ms,
+);
+// undefined while unplayed, when the cover shows no played state
+const playedStateLabel = computed(() => {
+  if (isFullyPlayed.value) return t("item_fully_played");
+  return isInProgress.value ? t("item_in_progress") : undefined;
 });
 
 const displayName = computed(() => {
@@ -205,17 +255,22 @@ const displayName = computed(() => {
 const subtitle = computed(() => {
   const it = props.item as Partial<
     Album &
-      Track & {
+      Track &
+      PodcastEpisode & {
         authors?: string[];
         publisher?: string;
         owner?: string;
       }
   >;
+  if (notInLibrary.value) return t("not_in_library");
   if (it.artists?.length) return getArtistsString(it.artists, 1);
   if (it.authors?.length)
     return getAuthorsNarratorsArray(it.authors).join(" / ");
   if (it.publisher) return it.publisher;
   if (it.owner) return it.owner;
+  // inside its own podcast the podcast name would only repeat on every episode
+  if (it.podcast?.name && props.parentItem?.media_type !== MediaType.PODCAST)
+    return it.podcast.name;
   return t(props.item.media_type);
 });
 
@@ -310,6 +365,11 @@ const onMenu = (e: MouseEvent) => {
 .ed-card--unavailable {
   opacity: 0.3;
 }
+/* a release that is not in the library: muted artwork, readable title */
+.ed-card--not-in-library .ed-card__art {
+  opacity: 0.55;
+  filter: grayscale(1);
+}
 .ed-card--disabled {
   pointer-events: none;
 }
@@ -345,6 +405,20 @@ const onMenu = (e: MouseEvent) => {
   top: 6px;
   left: 6px;
   z-index: 2;
+}
+.ed-card__played {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
 }
 .ed-card__img {
   width: 100%;
@@ -416,7 +490,6 @@ const onMenu = (e: MouseEvent) => {
   z-index: 4;
 }
 .ed-card__play-icon {
-  margin-left: 2px;
   /* guarantee a solid white triangle regardless of lucide's default fill */
   fill: currentColor;
   stroke: none;

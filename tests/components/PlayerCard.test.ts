@@ -7,13 +7,14 @@ import {
   PlayerFeature,
   type PlayerMedia,
   PlayerType,
+  type Scope,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, emitContextMenu } = vi.hoisted(() => ({
+const { apiMock, emitContextMenu, hasScope } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, Player>,
     queues: {} as Record<
@@ -32,10 +33,15 @@ const { apiMock, emitContextMenu } = vi.hoisted(() => ({
       vi.fn<MusicAssistantApi["playerCommandPowerToggle"]>(),
   },
   emitContextMenu: vi.fn(),
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
 }));
 
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope },
 }));
 
 vi.mock("@/plugins/store", () => ({
@@ -74,24 +80,31 @@ vi.mock("@/helpers/player_menu_items", () => ({
   getPlayerMenuItems: () => [],
 }));
 
+vi.mock("@/helpers/player_settings_actions", () => ({
+  getSetupRequiredPlayerMenuItems: () => [{ label: "configure_player" }],
+}));
+
 vi.mock("@/helpers/utils", () => ({
   getMediaImageUrl: (url: string) => url,
-  getPlayerName: (player: Player) => {
-    const childCount = player.group_members.filter(
-      (playerId) =>
-        playerId !== player.player_id && apiMock.players[playerId]?.available,
-    ).length;
-    return player.type !== PlayerType.GROUP && childCount > 0
-      ? `${player.name} +${childCount}`
-      : player.name;
-  },
 }));
 
 vi.mock("@/helpers/players", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/helpers/players")>();
+  const getPlayerDisplayName = (player: Player) =>
+    player.player_id === "builtin" ? "this_device" : player.name;
   return {
     ...actual,
     isBuiltinPlayer: (player: Player) => player.player_id === "builtin",
+    getPlayerDisplayName,
+    getPlayerName: (player: Player) => {
+      const childCount = player.group_members.filter(
+        (playerId) =>
+          playerId !== player.player_id && apiMock.players[playerId]?.available,
+      ).length;
+      return player.type !== PlayerType.GROUP && childCount > 0
+        ? `${getPlayerDisplayName(player)} +${childCount}`
+        : getPlayerDisplayName(player);
+    },
   };
 });
 
@@ -192,6 +205,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     active_group: null,
     synced_to: null,
     sleep_timer_expires_at: null,
+    active_source_audio: null,
     ...overrides,
   };
 }
@@ -247,6 +261,7 @@ describe("PlayerCard", () => {
     apiMock.players = {};
     apiMock.queues = {};
     store.deviceType = "desktop";
+    hasScope.mockReturnValue(true);
   });
 
   it("uses a primary border for the active player", () => {
@@ -321,11 +336,36 @@ describe("PlayerCard", () => {
       wrapper.find(".player-select-action").attributes("disabled"),
     ).toBeUndefined();
     expect(wrapper.find('[aria-label="play"]').attributes("disabled")).toBe("");
-    expect(
-      wrapper
-        .find('[aria-label="tooltip.more_options"]')
-        .attributes("disabled"),
-    ).toBe("");
+  });
+
+  it("offers the setup menu for a player that needs setup", async () => {
+    vi.clearAllMocks();
+    const wrapper = mountPlayerCard(
+      createPlayer({ available: false, needs_setup: true }),
+    );
+    const menuButton = wrapper.find('[aria-label="tooltip.more_options"]');
+
+    expect(menuButton.attributes("disabled")).toBeUndefined();
+    await menuButton.trigger("click");
+
+    expect(emitContextMenu).toHaveBeenCalledWith(
+      "contextmenu",
+      expect.objectContaining({ items: [{ label: "configure_player" }] }),
+    );
+  });
+
+  it("keeps the menu of a player that needs setup from a role that may not set it up", async () => {
+    vi.clearAllMocks();
+    hasScope.mockReturnValue(false);
+    const wrapper = mountPlayerCard(
+      createPlayer({ available: false, needs_setup: true }),
+    );
+    const menuButton = wrapper.find('[aria-label="tooltip.more_options"]');
+
+    expect(menuButton.attributes("disabled")).toBeDefined();
+    await wrapper.trigger("contextmenu");
+
+    expect(emitContextMenu).not.toHaveBeenCalled();
   });
 
   it("lists every player name in a manual group", () => {
@@ -371,6 +411,30 @@ describe("PlayerCard", () => {
         .text()
         .match(/Kitchen/g),
     ).toHaveLength(1);
+  });
+
+  it("names a built-in group member after this device", () => {
+    const builtin = createPlayer({
+      player_id: "builtin",
+      name: "Marcel's Mac (Chrome)",
+    });
+    const parent = createPlayer({
+      group_members: ["player", "builtin"],
+    });
+    apiMock.players = {
+      [parent.player_id]: parent,
+      [builtin.player_id]: builtin,
+    };
+
+    const wrapper = mountPlayerCard(parent, {
+      showGroupMemberNames: true,
+      groupMemberLayout: "subtitle-list",
+    });
+
+    expect(wrapper.find(".player-card-name").text()).toBe("Kitchen");
+    expect(wrapper.find(".player-card-group-members").text()).toBe(
+      "this_device",
+    );
   });
 
   it("can render grouped players as separate title lines", () => {
@@ -474,18 +538,37 @@ describe("PlayerCard", () => {
     expect(visibleNames()).toEqual(["Child 1", "Child 2"]);
   });
 
-  it("keeps the this-device badge accessible on phones", () => {
-    store.deviceType = "phone";
+  it("names the built-in player after this device, with an icon-only badge", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        player_id: "builtin",
+        name: "Marcel's Mac (Chrome)",
+      }),
+    );
+    const badge = wrapper.get(".player-device-badge");
+
+    expect(wrapper.get(".player-card-name").text()).toBe("this_device");
+    expect(wrapper.text()).not.toContain("Marcel's Mac (Chrome)");
+    expect(badge.attributes("aria-hidden")).toBe("true");
+    expect(badge.find(".player-device-badge-label").exists()).toBe(false);
+  });
+
+  it.each([
+    ["desktop", "lucide-monitor"],
+    ["phone", "lucide-smartphone"],
+    ["tablet", "lucide-tablet"],
+  ] as const)("shows the %s form factor on the badge", (deviceType, icon) => {
+    store.deviceType = deviceType;
 
     const wrapper = mountPlayerCard(
       createPlayer({
         player_id: "builtin",
       }),
     );
-    const badgeLabel = wrapper.find(".player-device-badge-label");
 
-    expect(badgeLabel.text()).toBe("this_device");
-    expect(badgeLabel.classes()).toContain("sr-only");
+    expect(wrapper.get(".player-device-badge").find(`.${icon}`).exists()).toBe(
+      true,
+    );
   });
 
   it("uses a neutral outline for the this-device badge", () => {
@@ -494,12 +577,11 @@ describe("PlayerCard", () => {
         player_id: "builtin",
       }),
     );
-    const badge = wrapper.get(".player-device-badge-label").element
-      .parentElement;
+    const badge = wrapper.get(".player-device-badge");
 
-    expect(badge?.classList).toContain("border-foreground/25");
-    expect(badge?.classList).toContain("text-muted-foreground");
-    expect(badge?.classList).toContain("shadow-none");
+    expect(badge.classes()).toContain("border-foreground/25");
+    expect(badge.classes()).toContain("text-muted-foreground");
+    expect(badge.classes()).toContain("shadow-none");
   });
 
   it("shows member names beneath a dedicated group title", () => {

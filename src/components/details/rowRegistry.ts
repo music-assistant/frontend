@@ -7,6 +7,7 @@ import {
   writeRowsConfig,
 } from "@/helpers/rowsConfig";
 import { api } from "@/plugins/api";
+import { providerServiceName } from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 
@@ -149,23 +150,69 @@ export function createRowRegistry<Id extends string, Item>(
       const candidates = sourceCandidates(id, item);
       const saved = getSource(id);
       if (saved && candidates.includes(saved)) return saved;
+      // a streaming service is offered once, through one of its accounts
+      const sameService =
+        saved && candidates.find((c) => isSameStreamingService(c, saved));
+      if (sameService) return sameService;
       return defaultSource(id, item, candidates);
     },
   };
+}
+
+/** A source as a picker option: its value, label and (for a provider) icon domain. */
+export interface SourceOption {
+  value: RowSource;
+  label: string;
+  // provider domain, for the icon beside a provider option
+  domain?: string;
+}
+
+/** The sources offered for a row of this item, as picker options in list order. */
+export function rowSourceOptions<Id extends string, Item>(
+  registry: RowRegistry<Id, Item>,
+  id: Id,
+  item: Item,
+): SourceOption[] {
+  return registry.sources(id, item).map((source) => ({
+    value: source,
+    label: rowSourceLabel(source),
+    domain: api.providers[source]?.domain,
+  }));
 }
 
 /** The label of a source: the library, every provider, or one of them. */
 export function rowSourceLabel(source: RowSource): string {
   if (source === "library") return $t("source_library");
   if (source === "all") return $t("source_all");
-  return api.providers[source]?.name ?? source;
+  const provider = api.providers[source];
+  return provider ? providerServiceName(provider) : source;
 }
 
-/** The provider behind a row's source, when a single one feeds it (undefined for "library"/"all"). */
-export function rowSourceProvider(
+/**
+ * A row's source as a reader-facing badge: "In your library", "All sources", or
+ * "On <Provider>", with the provider's domain for its icon. Undefined when the
+ * source is unknown.
+ */
+export function rowSourceDisplay(
   source?: RowSource,
-): { name: string; domain: string } | undefined {
-  if (!source || source === "all" || source === "library") return undefined;
+): { label: string; domain?: string } | undefined {
+  if (!source) return undefined;
+  if (source === "library") return { label: $t("in_library") };
+  if (source === "all") return { label: $t("source_all") };
   const provider = api.getProvider(source);
-  return provider && { name: provider.name, domain: provider.domain };
+  return {
+    label: $t("on_provider", [
+      provider ? providerServiceName(provider) : source,
+    ]),
+    domain: provider?.domain,
+  };
+}
+
+/** Whether two sources are accounts of the same streaming service. */
+function isSameStreamingService(a: RowSource, b: RowSource): boolean {
+  const provider = api.providers[a];
+  return (
+    !!provider?.is_streaming_provider &&
+    provider.domain === api.providers[b]?.domain
+  );
 }

@@ -5,7 +5,7 @@ import {
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   BrowseFolder,
   MediaItemType,
@@ -100,6 +100,19 @@ export const handleMediaItemClick = async function (
   posY: number,
   parentItem?: MediaItemType,
 ) {
+  // a MusicBrainz release has nothing to play: the server resolves it to the
+  // same album on one of the user's music services when its page opens
+  if (isMusicBrainzItem(item)) {
+    router.push({
+      name: item.media_type,
+      params: {
+        itemId: item.item_id,
+        provider: item.provider,
+      },
+    });
+    return;
+  }
+
   // open menu when item is unavailable so the user has a way to remove/refresh the item
   if (!itemIsAvailable(item)) {
     handleMenuBtnClick(item, posX, posY, undefined, false);
@@ -115,12 +128,6 @@ export const handleMediaItemClick = async function (
       },
     });
     return;
-  }
-
-  // podcast episode has no details view so show play menu directly
-  // TODO: revisit this once we have a proper podcast episode details view
-  if (item.media_type == MediaType.PODCAST_EPISODE) {
-    return handlePlayBtnClick(item, posX, posY, parentItem, true);
   }
 
   // audio sources (e.g. Spotify Connect, AirPlay) have no browse view: always play them

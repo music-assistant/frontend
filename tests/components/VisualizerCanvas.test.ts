@@ -261,15 +261,13 @@ describe("VisualizerCanvas artwork recoloring", () => {
   // Tint/scrim only show once streaming, like the relay's real onState.
   function emitStreaming() {
     const onState = relayConstructor.mock.calls.at(-1)?.[0]?.onState as
-      | ((state: string) => void)
-      | undefined;
+      ((state: string) => void) | undefined;
     onState?.("streaming");
   }
 
   function emitColor(palette: Record<string, unknown>) {
     const onColor = relayConstructor.mock.calls.at(-1)?.[0]?.onColor as
-      | ((palette: unknown) => void)
-      | undefined;
+      ((palette: unknown) => void) | undefined;
     onColor?.(palette);
   }
 

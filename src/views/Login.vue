@@ -748,10 +748,7 @@ const tryConnect = async (
 };
 
 type StoredTokenAuthResult =
-  | "authenticated"
-  | "failed"
-  | "guest-session-ended"
-  | "reloading";
+  "authenticated" | "failed" | "guest-session-ended" | "reloading";
 
 /**
  * Try to authenticate with stored token after connection

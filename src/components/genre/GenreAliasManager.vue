@@ -26,7 +26,7 @@
             :disabled="operationInProgress"
             @click.stop="confirmPromoteAlias(alias)"
           >
-            <ArrowUpFromLine :size="20" />
+            <ArrowUpFromLine class="size-5" />
           </Button>
           <Button
             variant="ghost"
@@ -35,7 +35,7 @@
             :disabled="operationInProgress"
             @click.stop="confirmRemoveAlias(alias)"
           >
-            <Trash2 :size="20" />
+            <Trash2 class="size-5" />
           </Button>
         </template>
       </ListItem>

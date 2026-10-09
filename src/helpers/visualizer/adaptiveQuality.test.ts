@@ -230,7 +230,7 @@ describe("the adaptive quality controller", () => {
     // hopeless lateness marches straight down; each verdict passes because
     // fps improves by more than the payoff factor after every step
     let fps = 10;
-    for (let level = ADAPTIVE_START_LEVEL; level < ADAPTIVE_LADDER.length; ) {
+    for (let level = ADAPTIVE_START_LEVEL; level < ADAPTIVE_LADDER.length;) {
       controller.onPerfSample(sample({ lateRatio: 0.6, fps }));
       fps *= 1.2;
       level += 1;

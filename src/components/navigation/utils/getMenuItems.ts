@@ -1,7 +1,6 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { setUserPreference } from "@/composables/userPreferences";
-import { canOpenAIRadio } from "@/helpers/ai_radio_access";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
@@ -203,7 +202,7 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     path: "/ai-radio",
     isLibraryNode: false,
     group: "plugins",
-    available: () => store.enabledPlugins.has("ai_radio") && canOpenAIRadio(),
+    available: () => store.enabledPlugins.has("ai_radio"),
   },
   {
     id: "milkdrop_visualizer",
@@ -263,8 +262,7 @@ export const getMenuItems = function (): MenuItem[] {
 export function resolveMenuConfig(): ResolvedMenuConfig {
   const knownIds = DEFAULT_MENU_ITEMS;
   const pref = store.currentUser?.preferences?.[MENU_PREFERENCE_KEY] as
-    | MenuConfig
-    | undefined;
+    MenuConfig | undefined;
   if (pref && typeof pref === "object") {
     const known = new Set(knownIds);
     const hidden = new Set(

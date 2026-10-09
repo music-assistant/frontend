@@ -38,12 +38,7 @@ const ALBUM_TYPE_VALUE_TO_ID: Record<string, number> = Object.fromEntries(
 );
 
 export type RuleOperator =
-  | "is"
-  | "is_not"
-  | "allowed"
-  | "greater_than"
-  | "less_than"
-  | "between";
+  "is" | "is_not" | "allowed" | "greater_than" | "less_than" | "between";
 
 export interface RuleValue {
   id: number;

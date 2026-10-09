@@ -39,7 +39,7 @@
           class="help-btn"
           :aria-label="$t('tooltip.help')"
         >
-          <HelpCircle :size="20" />
+          <HelpCircle class="size-5" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -70,7 +70,7 @@
       class="help-btn"
       :aria-label="$t('tooltip.help')"
     >
-      <HelpCircle :size="20" />
+      <HelpCircle class="size-5" />
     </Button>
   </div>
 </template>

@@ -1,13 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockLoadAlbumVersions, mockLoadArtistReleases } = vi.hoisted(() => ({
-  mockLoadAlbumVersions: vi.fn(),
-  mockLoadArtistReleases: vi.fn(),
-}));
+const { mockLoadAlbumVersions, mockLoadArtistReleases, mockEffectiveSource } =
+  vi.hoisted(() => ({
+    mockLoadAlbumVersions: vi.fn(),
+    mockLoadArtistReleases: vi.fn(),
+    mockEffectiveSource: vi.fn(() => "library" as string),
+  }));
 
 vi.mock("@/components/album/albumData", () => ({
   loadAlbumVersions: mockLoadAlbumVersions,
   loadArtistReleases: mockLoadArtistReleases,
+}));
+
+// the effective source is the row registry's job (tested there); here it is
+// mocked so the composable's per-source loading can be driven directly
+vi.mock("@/components/album/albumRows", () => ({
+  albumRows: { effectiveSource: mockEffectiveSource },
 }));
 
 import type { AlbumRowId } from "@/components/album/albumRows";
@@ -46,6 +54,7 @@ describe("useAlbumRowData", () => {
     mockLoadAlbumVersions.mockResolvedValue([album({ item_id: "2" })]);
     mockLoadArtistReleases.mockReset();
     mockLoadArtistReleases.mockResolvedValue([album({ item_id: "3" })]);
+    mockEffectiveSource.mockReset().mockReturnValue("library");
   });
 
   afterEach(() => {
@@ -63,7 +72,54 @@ describe("useAlbumRowData", () => {
     await flushPromises();
 
     expect(page.versionItems.value).toHaveLength(1);
-    expect(page.artistReleases.value).toHaveLength(1);
+    expect(page.artistReleaseItems.value).toHaveLength(1);
+  });
+
+  it("loads the artist releases from the effective source", async () => {
+    mockEffectiveSource.mockReturnValue("spotify--abc");
+    const page = setupRowData();
+    await showAlbum(page);
+
+    expect(mockLoadArtistReleases).toHaveBeenLastCalledWith(
+      expect.anything(),
+      "spotify--abc",
+    );
+    expect(page.moreFromArtistSource.value).toBe("spotify--abc");
+    expect(page.artistReleaseItems.value).toHaveLength(1);
+  });
+
+  it("loads a new source on switch and reuses the first on return", async () => {
+    // a reactive source, so the composable's watcher fires when it changes
+    const source = ref("library");
+    mockEffectiveSource.mockImplementation(() => source.value);
+    mockLoadArtistReleases.mockImplementation(async (_album, from) => [
+      album({ item_id: from as string }),
+    ]);
+
+    const page = setupRowData();
+    await showAlbum(page);
+    expect(page.artistReleaseItems.value).toEqual([
+      album({ item_id: "library" }),
+    ]);
+
+    source.value = "spotify--abc";
+    await flushPromises();
+    expect(mockLoadArtistReleases).toHaveBeenLastCalledWith(
+      expect.anything(),
+      "spotify--abc",
+    );
+    expect(page.artistReleaseItems.value).toEqual([
+      album({ item_id: "spotify--abc" }),
+    ]);
+
+    // switching back serves the first load from the cache, without re-fetching
+    const calls = mockLoadArtistReleases.mock.calls.length;
+    source.value = "library";
+    await flushPromises();
+    expect(mockLoadArtistReleases).toHaveBeenCalledTimes(calls);
+    expect(page.artistReleaseItems.value).toEqual([
+      album({ item_id: "library" }),
+    ]);
   });
 
   it("asks for each row once, however often the rows are resolved again", async () => {
@@ -94,6 +150,6 @@ describe("useAlbumRowData", () => {
     const page = setupRowData();
     await showAlbum(page);
 
-    expect(page.artistReleases.value).toEqual([]);
+    expect(page.artistReleaseItems.value).toEqual([]);
   });
 });

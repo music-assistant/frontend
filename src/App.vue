@@ -1,12 +1,15 @@
 <template>
   <Toaster rich-colors close-button />
 
+  <!-- Only the public web app can reach a server older than this frontend supports -->
+  <ServerOutdated v-if="api.serverOutdated" />
+
   <!-- Login screen (when not authenticated). On a fresh server's first run
        there is no account to sign in with until the setup wizard has made
        one, so the sign-in waits for that account and stays out of sight
        behind the wizard while it runs. -->
   <Login
-    v-if="showLogin && !awaitingAccount"
+    v-else-if="showLogin && !awaitingAccount"
     v-show="!firstRun"
     ref="loginComponent"
     @connected="handleRemoteConnected"
@@ -46,6 +49,7 @@
 
 <script setup lang="ts">
 import HomeAssistantMenuButton from "@/components/HomeAssistantMenuButton.vue";
+import ServerOutdated from "@/components/ServerOutdated.vue";
 import { Toaster } from "@/components/ui/sonner";
 import { loadRoles } from "@/composables/roles";
 import { useReconnectGrace } from "@/composables/useReconnectGrace";
@@ -344,7 +348,7 @@ const completeInitialization = async () => {
   }
 
   // Guard against multiple initializations
-  if (initializationCompleted) {
+  if (initializationCompleted || api.serverOutdated) {
     return;
   }
 
@@ -565,9 +569,6 @@ onMounted(async () => {
   watch(
     () => i18n.global.locale.value,
     async (locale) => {
-      // Only relevant for servers that localize server-provided strings; older servers can't
-      // re-localize, so there's nothing to push or re-fetch.
-      if (!api.supportsServerSideTranslations) return;
       try {
         await api.setLocale(locale as string);
         if (
