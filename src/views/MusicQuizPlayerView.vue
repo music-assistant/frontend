@@ -1,20 +1,5 @@
 <template>
   <div class="music-quiz-player mx-auto flex w-full max-w-3xl flex-col gap-3">
-    <!-- A single persistent instance spans the landing and the joined game so a
-         guest who skipped the prompt can still start — or stop — listening in
-         mid-game (remote mode shows a Tap to listen / Stop toggle). It must stay
-         mounted across the transition: a per-branch copy would remount and reset
-         its listening state. -->
-    <ListenIn
-      v-if="showListenIn"
-      ref="listenInRef"
-      domain="music_quiz"
-      :mode="mode"
-      :labels="listenInLabels"
-      :recheck-events="listenInRecheckEvents"
-      :get-error-message="getMusicQuizErrorMessage"
-    />
-
     <Card v-if="gameRemoved">
       <CardHeader class="justify-items-center text-center" role="status">
         <CircleStop class="text-muted-foreground size-10" aria-hidden="true" />
@@ -157,6 +142,21 @@
         </Button>
       </CardContent>
     </Card>
+
+    <!-- A single persistent instance spans the landing and the joined game so a
+         guest who skipped the prompt can still start — or stop — listening in
+         mid-game (remote mode shows a Tap to listen / Stop toggle). It sits below
+         the content and must stay mounted across the landing→game transition: a
+         per-branch copy would remount and reset its listening state. -->
+    <ListenIn
+      v-if="showListenIn"
+      ref="listenInRef"
+      domain="music_quiz"
+      :mode="mode"
+      :labels="listenInLabels"
+      :recheck-events="listenInRecheckEvents"
+      :get-error-message="getMusicQuizErrorMessage"
+    />
   </div>
 </template>
 
