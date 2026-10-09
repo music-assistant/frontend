@@ -146,6 +146,8 @@
         "sync_in_progress": "Synchronizing...",
         "library_sync": "Library sync",
         "library_sync_description": "Brings the library up to date with this music source",
+        "storage_location": "Storage location",
+        "storage_location_description": "Where this music source reads its files from",
         "server_info": "Server information",
         "server_name": "Server name",
         "server_version": "Server version",

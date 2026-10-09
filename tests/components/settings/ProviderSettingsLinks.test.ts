@@ -6,29 +6,46 @@ import {
   type Player,
   type PlayerConfig,
   ProviderType,
+  Scope,
+  type SourceFolder,
+  StorageKind,
+  type StorageLocation,
 } from "@/plugins/api/interfaces";
+import { ChevronRight, HardDrive, Network } from "@lucide/vue";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { outputProtocol } from "../../fixtures/outputProtocol";
 import { playerConfig } from "../../fixtures/playerConfig";
 import { providerConfig } from "../../fixtures/providerConfig";
 import { providerInstance } from "../../fixtures/providerInstance";
+import { storageLocation } from "../../fixtures/storage";
 
-const { apiMock, getProviderSettingsSections, isProviderSyncing, unsubscribe } =
-  vi.hoisted(() => ({
-    apiMock: {
-      getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
-      getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
-      players: {} as Record<string, Player>,
-      startSync: vi.fn<MusicAssistantApi["startSync"]>(),
-      subscribe_multi: vi.fn<MusicAssistantApi["subscribe_multi"]>(),
-    },
-    getProviderSettingsSections: vi.fn<typeof readProviderSettingsSections>(),
-    isProviderSyncing: vi.fn<(instanceId: string) => boolean>(),
-    unsubscribe: vi.fn(),
-  }));
+const {
+  apiMock,
+  getProviderSettingsSections,
+  hasScope,
+  isProviderSyncing,
+  unsubscribe,
+  unsubscribeProviders,
+} = vi.hoisted(() => ({
+  apiMock: {
+    getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    getSourceFolder: vi.fn<MusicAssistantApi["getSourceFolder"]>(),
+    players: {} as Record<string, Player>,
+    startSync: vi.fn<MusicAssistantApi["startSync"]>(),
+    subscribe: vi.fn<MusicAssistantApi["subscribe"]>(),
+    subscribe_multi: vi.fn<MusicAssistantApi["subscribe_multi"]>(),
+  },
+  getProviderSettingsSections: vi.fn<typeof readProviderSettingsSections>(),
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
+  isProviderSyncing: vi.fn<(instanceId: string) => boolean>(),
+  unsubscribe: vi.fn(),
+  unsubscribeProviders: vi.fn(),
+}));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 // the rules deciding which sections apply to a source are covered where they live
 vi.mock("@/helpers/provider_settings_actions", () => ({
@@ -59,14 +76,20 @@ describe("ProviderSettingsLinks", () => {
         : providerInstance({ domain: "airplay", type: ProviderType.PLAYER }),
     );
     apiMock.getPlayerConfigs.mockResolvedValue([]);
+    apiMock.getSourceFolder.mockResolvedValue(
+      sourceFolder("/media/music/Albums"),
+    );
     apiMock.players = {};
     apiMock.startSync.mockResolvedValue([]);
+    apiMock.subscribe.mockReturnValue(unsubscribeProviders);
     apiMock.subscribe_multi.mockReturnValue(unsubscribe);
     getProviderSettingsSections.mockReturnValue({
       access: true,
       players: true,
+      storage: true,
       sync: true,
     });
+    hasScope.mockReturnValue(true);
     isProviderSyncing.mockReturnValue(false);
   });
 
@@ -76,6 +99,7 @@ describe("ProviderSettingsLinks", () => {
     expect(rowLabels(wrapper)).toEqual([
       "settings.source_access.action",
       "settings.players",
+      "settings.storage_location",
       "settings.library_sync",
     ]);
   });
@@ -84,6 +108,7 @@ describe("ProviderSettingsLinks", () => {
     getProviderSettingsSections.mockReturnValue({
       access: false,
       players: true,
+      storage: false,
       sync: false,
     });
 
@@ -94,6 +119,7 @@ describe("ProviderSettingsLinks", () => {
     getProviderSettingsSections.mockReturnValue({
       access: false,
       players: false,
+      storage: false,
       sync: false,
     });
 
@@ -293,6 +319,7 @@ describe("ProviderSettingsLinks", () => {
       getProviderSettingsSections.mockReturnValue({
         access: true,
         players: false,
+        storage: false,
         sync: false,
       });
 
@@ -301,6 +328,213 @@ describe("ProviderSettingsLinks", () => {
 
       expect(apiMock.getPlayerConfigs).not.toHaveBeenCalled();
       expect(apiMock.subscribe_multi).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("storage location row", () => {
+    // provider updates reach the row debounced; flushPromises still runs on setImmediate
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("names the storage location and the subfolders leading to the folder", async () => {
+      const wrapper = mountLinks();
+      await flushPromises();
+      const row = storageRow(wrapper);
+
+      expect(apiMock.getSourceFolder).toHaveBeenCalledWith("sonos--1");
+      expect(rowState(wrapper, "storage")).toBe("Music NAS › Albums");
+      expect(storageState(wrapper).attributes("title")).toBe(
+        "/media/music/Albums",
+      );
+      expect(storageState(wrapper).classes()).toContain(
+        "text-muted-foreground",
+      );
+      expect(row.findComponent(Network).exists()).toBe(true);
+    });
+
+    it("names just the location for a folder that is the location itself", async () => {
+      apiMock.getSourceFolder.mockResolvedValue(sourceFolder("/media/music"));
+
+      const wrapper = mountLinks();
+      await flushPromises();
+
+      expect(rowState(wrapper, "storage")).toBe("Music NAS");
+    });
+
+    it("shows the path when no known location holds the folder", async () => {
+      apiMock.getSourceFolder.mockResolvedValue({
+        path: "/srv/music",
+        location: null,
+      });
+
+      const wrapper = mountLinks();
+      await flushPromises();
+
+      expect(rowState(wrapper, "storage")).toBe("/srv/music");
+      expect(storageState(wrapper).attributes("title")).toBe("/srv/music");
+      expect(storageRow(wrapper).findComponent(HardDrive).exists()).toBe(true);
+    });
+
+    it.each([
+      ["the reason the server gives", "Share is offline", "Share is offline"],
+      ["a generic reason", null, "settings.storage.unavailable"],
+    ])(
+      "marks an unavailable location and tells %s on hover",
+      async (_label, error, title) => {
+        apiMock.getSourceFolder.mockResolvedValue(
+          sourceFolder("/media/music/Albums", { available: false, error }),
+        );
+
+        const wrapper = mountLinks();
+        await flushPromises();
+        const row = storageRow(wrapper);
+
+        expect(rowState(wrapper, "storage")).toBe("Music NAS › Albums");
+        expect(storageState(wrapper).attributes("title")).toBe(title);
+        for (const state of row.findAll(
+          '[data-testid^="provider-settings-state"]',
+        )) {
+          expect(state.classes()).toContain("text-destructive");
+        }
+      },
+    );
+
+    it("opens the Storage page for who manages the storage", async () => {
+      const wrapper = mountLinks();
+      await flushPromises();
+      const row = storageRow(wrapper);
+
+      expect(hasScope).toHaveBeenCalledWith(Scope.CONFIG_PROVIDERS_WRITE);
+      expect(JSON.parse(row.attributes("href") ?? "")).toEqual({
+        name: "storagesettings",
+      });
+      expect(row.findComponent(ChevronRight).exists()).toBe(true);
+    });
+
+    it("only informs who may not manage the storage", async () => {
+      hasScope.mockReturnValue(false);
+
+      const wrapper = mountLinks();
+      await flushPromises();
+      const row = storageRow(wrapper);
+
+      expect(row.element.tagName).toBe("DIV");
+      expect(row.attributes("tabindex")).toBeUndefined();
+      expect(row.classes()).not.toContain("hover:bg-accent/50");
+      expect(row.findComponent(ChevronRight).exists()).toBe(false);
+      expect(rowState(wrapper, "storage")).toBe("Music NAS › Albums");
+    });
+
+    it("shows no folder while it loads", () => {
+      apiMock.getSourceFolder.mockReturnValue(new Promise(() => {}));
+
+      const row = storageRow(mountLinks());
+
+      expect(
+        row.find('[data-testid^="provider-settings-state"]').exists(),
+      ).toBe(false);
+      expect(row.findComponent(HardDrive).exists()).toBe(true);
+    });
+
+    it("leaves the folder out when it does not load", async () => {
+      apiMock.getSourceFolder.mockRejectedValue(new Error("refused"));
+      vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const wrapper = mountLinks();
+      await flushPromises();
+
+      expect(
+        storageRow(wrapper)
+          .find('[data-testid^="provider-settings-state"]')
+          .exists(),
+      ).toBe(false);
+      expect(console.error).toHaveBeenCalled();
+    });
+
+    it("follows a reconfigure pointing the source at another folder", async () => {
+      const wrapper = mountLinks();
+      await flushPromises();
+
+      apiMock.getSourceFolder.mockResolvedValue(
+        sourceFolder("/media/music/Singles"),
+      );
+      providersUpdated();
+      await flushPromises();
+
+      expect(apiMock.subscribe).toHaveBeenCalledWith(
+        EventType.PROVIDERS_UPDATED,
+        expect.any(Function),
+      );
+      expect(rowState(wrapper, "storage")).toBe("Music NAS › Singles");
+    });
+
+    it("keeps the folder of the latest refresh when responses cross", async () => {
+      let resolveFirst: (folder: SourceFolder) => void = () => {};
+      const wrapper = mountLinks();
+      await flushPromises();
+
+      apiMock.getSourceFolder.mockReturnValueOnce(
+        new Promise((resolve) => (resolveFirst = resolve)),
+      );
+      providersUpdated();
+      apiMock.getSourceFolder.mockResolvedValueOnce(
+        sourceFolder("/media/music/Singles"),
+      );
+      providersUpdated();
+      await flushPromises();
+      expect(rowState(wrapper, "storage")).toBe("Music NAS › Singles");
+
+      // the older request answers last, with a folder that is out of date
+      resolveFirst(sourceFolder("/media/music/Albums"));
+      await flushPromises();
+      expect(rowState(wrapper, "storage")).toBe("Music NAS › Singles");
+    });
+
+    it("loads the folder of another source the page switches to", async () => {
+      const wrapper = mountLinks();
+      await flushPromises();
+
+      apiMock.getSourceFolder.mockReturnValue(new Promise(() => {}));
+      await wrapper.setProps({
+        config: providerConfig({ instance_id: "filesystem_local--2" }),
+      });
+
+      expect(apiMock.getSourceFolder).toHaveBeenLastCalledWith(
+        "filesystem_local--2",
+      );
+      expect(
+        storageRow(wrapper)
+          .find('[data-testid^="provider-settings-state"]')
+          .exists(),
+      ).toBe(false);
+    });
+
+    it("stops following the providers once the page closes", async () => {
+      const wrapper = mountLinks();
+      await flushPromises();
+
+      wrapper.unmount();
+
+      expect(unsubscribeProviders).toHaveBeenCalledOnce();
+    });
+
+    it("asks nothing of the server for a source without a folder", async () => {
+      getProviderSettingsSections.mockReturnValue({
+        access: true,
+        players: false,
+        storage: false,
+        sync: false,
+      });
+
+      mountLinks();
+      await flushPromises();
+
+      expect(apiMock.getSourceFolder).not.toHaveBeenCalled();
+      expect(apiMock.subscribe).not.toHaveBeenCalled();
     });
   });
 
@@ -368,6 +602,15 @@ function playersState(wrapper: LinksWrapper): string {
   return rowState(wrapper, "players");
 }
 
+function storageRow(wrapper: LinksWrapper) {
+  return wrapper.get('[data-testid="provider-settings-link-storage"]');
+}
+
+// the state beside the label, which carries the hover text
+function storageState(wrapper: LinksWrapper) {
+  return storageRow(wrapper).get('[data-testid="provider-settings-state"]');
+}
+
 /**
  * The state of a row, which it shows beside the label and, on a phone, below
  * it; the two have to agree.
@@ -403,6 +646,17 @@ function playersChanged() {
   vi.runAllTimers();
 }
 
+/**
+ * Deliver the provider update the storage location row keeps up with, once its
+ * debounce has passed.
+ */
+function providersUpdated() {
+  for (const [, callback] of apiMock.subscribe.mock.calls) {
+    callback();
+  }
+  vi.runAllTimers();
+}
+
 function announcePlayerChange() {
   for (const [, callback] of apiMock.subscribe_multi.mock.calls) {
     callback();
@@ -414,4 +668,23 @@ function announcePlayerChange() {
  */
 function player(overrides: Partial<Player> = {}): Player {
   return { output_protocols: [], ...overrides } as Player;
+}
+
+/**
+ * The folder of a Local files source inside the "Music NAS" network share at
+ * `/media/music`.
+ */
+function sourceFolder(
+  path: string,
+  location: Partial<StorageLocation> = {},
+): SourceFolder {
+  return {
+    path,
+    location: storageLocation({
+      path: "/media/music",
+      name: "Music NAS",
+      kind: StorageKind.NETWORK_SHARE,
+      ...location,
+    }),
+  };
 }
