@@ -11,6 +11,7 @@
       align="end"
       :side-offset="0"
       class="z-[999999] min-w-[300px] max-w-[350px] max-h-[85vh] overflow-y-auto"
+      @close-auto-focus="onCloseAutoFocus"
     >
       <!-- play menu header -->
       <template v-if="showPlayMenuHeader">
@@ -205,6 +206,11 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
 // clearing it for the dialog underneath
 let dialogActiveBeforeOpen = false;
 
+// the menu opens without a trigger element, so on close focus goes back to
+// whatever held it when the menu opened (unless the user interacted elsewhere)
+let focusBeforeOpen: HTMLElement | null = null;
+let interactedOutside = false;
+
 onMounted(() => {
   eventbus.on("contextmenu", async (evt: ContextMenuDialogEvent) => {
     items.value = evt.items;
@@ -212,7 +218,14 @@ onMounted(() => {
     posY.value = evt.posY || 0;
     showPlayMenuHeader.value = evt.showPlayMenuHeader || false;
     nextTick(() => {
-      if (!show.value) dialogActiveBeforeOpen = store.dialogActive;
+      if (!show.value) {
+        dialogActiveBeforeOpen = store.dialogActive;
+        focusBeforeOpen =
+          document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
+        interactedOutside = false;
+      }
       show.value = true;
       store.dialogActive = true;
     });
@@ -230,6 +243,20 @@ const onOpenChange = function (value: boolean) {
   // the dialog underneath may have closed on its own in the meantime, so
   // only a flag that is still set is restored
   store.dialogActive = value || (dialogActiveBeforeOpen && store.dialogActive);
+};
+
+const onCloseAutoFocus = function (event: Event) {
+  event.preventDefault();
+  const target = focusBeforeOpen;
+  focusBeforeOpen = null;
+  if (interactedOutside || !target) return;
+  // deferred like reka's own restore, so the closing interaction settles first
+  setTimeout(() => {
+    // an action may have moved focus on purpose (e.g. into a dialog)
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    if (target.isConnected) target.focus();
+  }, 0);
 };
 
 function closeOnOutsidePointer(event: PointerEvent) {
@@ -250,6 +277,12 @@ function closeOnOutsidePointer(event: PointerEvent) {
   // consume the press so a dialog underneath (such as the search popup)
   // does not treat it as an outside press and close as well
   if (modal.value) event.stopPropagation();
+
+  // same rule as reka: a modal menu blocks the page, so only a right-click
+  // (which may open another menu) or a non-modal press goes somewhere else
+  const rightClick =
+    event.button === 2 || (event.button === 0 && event.ctrlKey);
+  if (!modal.value || rightClick) interactedOutside = true;
 
   show.value = false;
   queueMicrotask(() => {
