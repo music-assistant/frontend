@@ -2,9 +2,9 @@
  * Capability reporting gates.
  *
  * These reports go out from cast receivers and TVs, so every one of them has to
- * stay silent on a session that should not report at all, on a server too old
- * to know the command, and in the global error toast: a display with nobody in
- * front of it cannot dismiss one, and the render report repeats every minute.
+ * stay silent on a session that should not report at all, and in the global
+ * error toast: a display with nobody in front of it cannot dismiss one, and
+ * the render report repeats every minute.
  */
 import {
   reportVisualizerCapability,
@@ -21,7 +21,6 @@ const apiMock = vi.hoisted(() => ({
       _options?: { suppressGlobalError?: boolean },
     ) => ({}),
   ),
-  supportsDashboardVisualizer: true,
   baseUrl: "http://ma.local:8095",
   providers: {},
   isRemoteConnection: { value: false },
@@ -54,7 +53,6 @@ const sample = {
 describe("visualizer capability reporting", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiMock.supportsDashboardVisualizer = true;
     authMock.isDashboardViewer.mockReturnValue(true);
   });
 
@@ -70,15 +68,6 @@ describe("visualizer capability reporting", () => {
 
   it("says nothing on a session that is not a dashboard viewer", async () => {
     authMock.isDashboardViewer.mockReturnValue(false);
-
-    await reportVisualizerCapability("butterchurn");
-    await reportVisualizerRender(sample, 1, "settled");
-
-    expect(apiMock.sendCommand).not.toHaveBeenCalled();
-  });
-
-  it("says nothing to a server without the command", async () => {
-    apiMock.supportsDashboardVisualizer = false;
 
     await reportVisualizerCapability("butterchurn");
     await reportVisualizerRender(sample, 1, "settled");

@@ -99,10 +99,14 @@ vi.mock("@/helpers/visualizer/presetLibrary", () => ({
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await import("vue");
   return {
+    ConnectionState: {
+      AUTHENTICATED: "authenticated",
+      INITIALIZED: "initialized",
+    },
     default: {
+      state: { value: "authenticated" },
       isRemoteConnection: { value: false },
       players: reactive({}),
-      supportsDashboardVisualizer: true,
       sendCommand: vi.fn(async () => ({})),
       subscribe: vi.fn(),
     },

@@ -34,7 +34,7 @@ import {
 import { isVisualizerSupported } from "@/composables/visualizer/useVisualizerEngine";
 import { dashboardKindForPath } from "@/helpers/dashboard_viewer_access";
 import { expertModeSetting } from "@/helpers/expert_mode";
-import api from "@/plugins/api";
+import api, { ConnectionState } from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
@@ -92,7 +92,6 @@ function startViewerPreferencesSync(): void {
   viewerPreferencesSyncStarted = true;
   effectScope(true).run(() => {
     const fetchViewerPreferences = async () => {
-      if (!api.supportsDashboardVisualizer) return;
       const dashboard = dashboardKindForPath(router.currentRoute.value.path);
       const playerId = router.currentRoute.value.query.player;
       const dashboardId = router.currentRoute.value.query.dashboard_id;
@@ -114,15 +113,16 @@ function startViewerPreferencesSync(): void {
       }
     };
     // Watched rather than fetched once, for the same reason the plugin default
-    // is: a cast receiver boots straight into a dashboard route, so serverInfo
-    // (and with it the schema version this command needs) is often still
-    // loading when the hosting view mounts. A plain call here would no-op and
-    // the viewer would sit on fallbacks until some unrelated session event
-    // happened along.
+    // is: a cast receiver boots straight into a dashboard route, so the
+    // connection is often still coming up when the hosting view mounts. A plain
+    // call here would be rejected and the viewer would sit on fallbacks until
+    // some unrelated session event happened along.
     watch(
-      () => api.supportsDashboardVisualizer,
-      (supported) => {
-        if (supported) void fetchViewerPreferences();
+      () =>
+        api.state.value === ConnectionState.AUTHENTICATED ||
+        api.state.value === ConnectionState.INITIALIZED,
+      (ready) => {
+        if (ready) void fetchViewerPreferences();
       },
       { immediate: true },
     );

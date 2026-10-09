@@ -43,12 +43,22 @@ vi.mock("@/composables/userPreferences", () => ({
   }),
 }));
 
-const apiMocks = vi.hoisted(() => ({
-  sendCommand: vi.fn(async (): Promise<Record<string, unknown>> => ({})),
-  subscribe: vi.fn((_event: string, _callback: () => void) => () => {}),
-  supportsDashboardVisualizer: true,
+const apiMocks = await vi.hoisted(async () => {
+  const { ref } = await import("vue");
+  return {
+    sendCommand: vi.fn(async (): Promise<Record<string, unknown>> => ({})),
+    subscribe: vi.fn((_event: string, _callback: () => void) => () => {}),
+    state: ref("authenticated"),
+  };
+});
+vi.mock("@/plugins/api", () => ({
+  default: apiMocks,
+  ConnectionState: {
+    CONNECTING: "connecting",
+    AUTHENTICATED: "authenticated",
+    INITIALIZED: "initialized",
+  },
 }));
-vi.mock("@/plugins/api", () => ({ default: apiMocks }));
 
 vi.mock("@/plugins/router", async () => {
   // Imported inside the factory: the hoisted mock runs before this module's
@@ -196,7 +206,7 @@ describe("viewer preferences", () => {
     authMocks.authManager.isDashboardViewer.mockReturnValue(true);
     relayMocks.visualizerShownOnDashboards.mockResolvedValue(false);
     apiMocks.sendCommand.mockResolvedValue({});
-    apiMocks.supportsDashboardVisualizer = true;
+    apiMocks.state.value = "authenticated";
   });
 
   it("renders with the casting user's preferences", async () => {
@@ -225,14 +235,22 @@ describe("viewer preferences", () => {
     expect(visualizerOpacityPref.value).toBe(55);
   });
 
-  it("skips the fetch on servers without the command", async () => {
-    apiMocks.supportsDashboardVisualizer = false;
+  it("waits for the connection before fetching", async () => {
+    apiMocks.state.value = "connecting";
     const { useVisualizer } = await importComposable();
     useVisualizer();
     await flushPromises();
-
     expect(apiMocks.sendCommand).not.toHaveBeenCalledWith(
       "dashboard/viewer_preferences",
+      expect.anything(),
+      expect.anything(),
+    );
+
+    apiMocks.state.value = "authenticated";
+    await flushPromises();
+    expect(apiMocks.sendCommand).toHaveBeenCalledWith(
+      "dashboard/viewer_preferences",
+      expect.anything(),
       expect.anything(),
     );
   });

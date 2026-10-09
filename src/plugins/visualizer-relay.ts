@@ -105,7 +105,6 @@ async function sendCapabilityReport(
   fields: Record<string, unknown>,
 ): Promise<void> {
   if (!authManager.isDashboardViewer()) return;
-  if (!api.supportsDashboardVisualizer) return;
   try {
     await api.sendCommand(
       "milkdrop_visualizer/report_capability",
@@ -232,7 +231,6 @@ export async function reportVisualizerRender(
  */
 export async function visualizerShownOnDashboards(): Promise<boolean> {
   if (!visualizerProviderAvailable()) return false;
-  if (!api.supportsDashboardVisualizer) return false;
   try {
     const config = await api.sendCommand<Record<string, boolean>>(
       "milkdrop_visualizer/config",

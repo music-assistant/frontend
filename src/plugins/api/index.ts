@@ -93,10 +93,6 @@ const DEBUG = process.env.NODE_ENV === "development";
 // matches its own. Raise it when a change would break the previous stable server.
 export const MIN_SERVER_SCHEMA_VERSION = 75;
 
-// dashboard/viewer_preferences and the milkdrop_visualizer config/report_capability
-// commands landed in API schema 86.
-export const DASHBOARD_VISUALIZER_SCHEMA_VERSION = 86;
-
 export interface CommandOptions {
   /**
    * Skip the global console.error + error toast for an error result. Use for a
@@ -3135,14 +3131,6 @@ export class MusicAssistantApi {
     const schemaVersion = this.serverInfo.value?.schema_version;
     return (
       schemaVersion !== undefined && schemaVersion < MIN_SERVER_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server implements the dashboard visualizer commands (schema >= 86). */
-  public get supportsDashboardVisualizer(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      DASHBOARD_VISUALIZER_SCHEMA_VERSION
     );
   }
 
