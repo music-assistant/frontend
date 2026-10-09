@@ -89,7 +89,7 @@ import { ProviderFeature } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ChevronRight, Users } from "@lucide/vue";
-import { computed, watch } from "vue";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 const { show = false } = defineProps<{
@@ -133,10 +133,4 @@ const handleOpenChange = (open: boolean) => {
 const close = function () {
   emit("update:show", false);
 };
-
-watch(
-  () => api.providers,
-  () => {},
-  { immediate: true },
-);
 </script>
