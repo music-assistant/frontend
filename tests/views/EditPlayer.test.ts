@@ -40,6 +40,7 @@ const {
     providerManifests: {} as Record<string, unknown>,
     providers: {} as Record<string, unknown>,
     savePlayerConfig: vi.fn<MusicAssistantApi["savePlayerConfig"]>(),
+    serverInfo: { value: undefined as { server_version: string } | undefined },
     subscribe: vi.fn(),
   },
   editConfigDiscardMock: vi.fn(),
@@ -144,6 +145,7 @@ describe("EditPlayer", () => {
     apiMock.providers = {
       "hass--1": { instance_id: "hass--1", domain: "hass", available: true },
     };
+    apiMock.serverInfo.value = undefined;
     routerMock.push.mockResolvedValue(undefined);
     // a fresh array per call, since the page appends its own entry to it
     getPlayerSettingsMenuItems.mockImplementation(() => [
@@ -213,6 +215,39 @@ describe("EditPlayer", () => {
     const wrapper = await mountPlayerPage();
 
     expect(wrapper.find('[data-testid="player-setup"]').exists()).toBe(false);
+  });
+
+  it("links the player settings documentation", async () => {
+    const wrapper = await mountPlayerPage();
+
+    expect(
+      wrapper.get('[data-testid="player-documentation"]').attributes(),
+    ).toMatchObject({
+      href: "https://music-assistant.io/settings/individual-player/",
+      rel: "noopener noreferrer",
+      target: "_blank",
+    });
+  });
+
+  it("links the beta documentation from a beta server", async () => {
+    apiMock.serverInfo.value = { server_version: "2.9.0b1" };
+
+    const wrapper = await mountPlayerPage();
+
+    expect(
+      wrapper.get('[data-testid="player-documentation"]').attributes("href"),
+    ).toBe("https://beta.music-assistant.io/settings/individual-player/");
+  });
+
+  it("keeps the documentation link without any setup action", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(playerConfig({ enabled: false }));
+
+    const wrapper = await mountPlayerPage();
+
+    expect(wrapper.find('[data-testid="player-setup"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="player-documentation"]').exists()).toBe(
+      true,
+    );
   });
 
   it("reports a player that cannot be reached", async () => {

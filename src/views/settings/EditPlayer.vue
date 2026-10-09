@@ -96,12 +96,26 @@
           </Button>
         </CardHeader>
         <CardContent
-          v-if="playerSetupLabel"
           class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
         >
-          <Button data-testid="player-setup" @click="startPlayerSetup">
+          <Button
+            v-if="playerSetupLabel"
+            data-testid="player-setup"
+            @click="startPlayerSetup"
+          >
             <RefreshCw class="size-4" />
             {{ $t(playerSetupLabel) }}
+          </Button>
+          <Button
+            as="a"
+            data-testid="player-documentation"
+            variant="outline"
+            :href="documentationUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <BookOpen class="size-4" />
+            {{ $t("settings.documentation") }}
           </Button>
         </CardContent>
       </Card>
@@ -225,12 +239,23 @@ import { getHassProviderInstance } from "@/helpers/hass_controls";
 import { goBack } from "@/helpers/navigation";
 import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
 import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { MoreVertical, Pencil, RefreshCw, RotateCcw } from "@lucide/vue";
+import {
+  BookOpen,
+  MoreVertical,
+  Pencil,
+  RefreshCw,
+  RotateCcw,
+} from "@lucide/vue";
 import EditConfig from "./EditConfig.vue";
 import PlayerSettingsLinks from "./PlayerSettingsLinks.vue";
+
+const PLAYER_DOCS_URL =
+  "https://music-assistant.io/settings/individual-player/";
+
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
@@ -271,6 +296,9 @@ const player = computed(() =>
 const playerSetupLabel = computed(() =>
   config.value?.enabled ? getPlayerSetupLabel(player.value) : undefined,
 );
+
+// the docs of a beta server live on the beta site
+const documentationUrl = computed(() => getExternalLinkUrl(PLAYER_DOCS_URL));
 
 const config_entries = computed(() => {
   if (!config.value) return [];
