@@ -11,6 +11,7 @@
       align="end"
       :side-offset="0"
       class="z-[999999] min-w-[300px] max-w-[350px] max-h-[85vh] overflow-y-auto"
+      @close-auto-focus="onCloseAutoFocus"
     >
       <!-- play menu header -->
       <template v-if="showPlayMenuHeader">
@@ -205,6 +206,13 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
 // clearing it for the dialog underneath
 let dialogActiveBeforeOpen = false;
 
+// the menu opens without a trigger element, so on close focus goes back to
+// whatever held it when the menu opened. Only for keyboard users: a touch
+// long-press (or a click in Safari) leaves focus where it was, which may be an
+// unrelated input that would scroll the page or bring up the on-screen keyboard
+let focusBeforeOpen: HTMLElement | null = null;
+let usingKeyboard = false;
+
 onMounted(() => {
   eventbus.on("contextmenu", async (evt: ContextMenuDialogEvent) => {
     items.value = evt.items;
@@ -212,16 +220,26 @@ onMounted(() => {
     posY.value = evt.posY || 0;
     showPlayMenuHeader.value = evt.showPlayMenuHeader || false;
     nextTick(() => {
-      if (!show.value) dialogActiveBeforeOpen = store.dialogActive;
+      if (!show.value) {
+        dialogActiveBeforeOpen = store.dialogActive;
+        focusBeforeOpen =
+          document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
+      }
       show.value = true;
       store.dialogActive = true;
     });
   });
+  document.addEventListener("keydown", markKeyboardInteraction, true);
+  document.addEventListener("pointerdown", markPointerInteraction, true);
   document.addEventListener("pointerdown", closeOnOutsidePointer, true);
 });
 
 onBeforeUnmount(() => {
   eventbus.off("contextmenu");
+  document.removeEventListener("keydown", markKeyboardInteraction, true);
+  document.removeEventListener("pointerdown", markPointerInteraction, true);
   document.removeEventListener("pointerdown", closeOnOutsidePointer, true);
 });
 
@@ -230,6 +248,20 @@ const onOpenChange = function (value: boolean) {
   // the dialog underneath may have closed on its own in the meantime, so
   // only a flag that is still set is restored
   store.dialogActive = value || (dialogActiveBeforeOpen && store.dialogActive);
+};
+
+const onCloseAutoFocus = function (event: Event) {
+  event.preventDefault();
+  const target = focusBeforeOpen;
+  focusBeforeOpen = null;
+  if (!usingKeyboard || !target) return;
+  // deferred like reka's own restore, so the closing interaction settles first
+  setTimeout(() => {
+    // an action may have moved focus on purpose (e.g. into a dialog)
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    if (target.isConnected) target.focus();
+  }, 0);
 };
 
 function closeOnOutsidePointer(event: PointerEvent) {
@@ -256,6 +288,14 @@ function closeOnOutsidePointer(event: PointerEvent) {
     if (!show.value)
       store.dialogActive = dialogActiveBeforeOpen && store.dialogActive;
   });
+}
+
+function markKeyboardInteraction() {
+  usingKeyboard = true;
+}
+
+function markPointerInteraction() {
+  usingKeyboard = false;
 }
 
 const onSelect = function (evt: Event, menuItem: ContextMenuItem) {
