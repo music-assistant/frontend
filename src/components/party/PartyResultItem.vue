@@ -141,7 +141,10 @@ const onItemClick = () => {
 };
 
 const imageUrl = computed(() => {
-  const img = props.item.metadata?.images?.[0];
+  // prefer the album artwork, as the rest of the app does for tracks
+  const album = "album" in props.item ? props.item.album : undefined;
+  const albumImage = album && "image" in album ? album.image : undefined;
+  const img = albumImage ?? props.item.metadata?.images?.[0];
   return img ? getMediaItemImageUrl(img) : "";
 });
 
