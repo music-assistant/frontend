@@ -50,6 +50,8 @@ const HOST_STATE = {
   answer_type: "multiple_choice",
   phase: "lobby",
   name: "Quiz",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   suggestion_count: 4,
   answer_duration: 30,
@@ -60,6 +62,7 @@ const HOST_STATE = {
   join_url: "http://join",
   rounds: [],
   current_round: null,
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizGuessTheSongHostState;
 const HOST_ROUND = {
   question: "Which song is playing?",
@@ -133,14 +136,6 @@ describe("MusicQuizHostPanel", () => {
       wrapper.find('[data-testid="music-quiz-playback-summary"]').exists(),
     ).toBe(false);
     expect(wrapper.text()).not.toContain("Living Room");
-  });
-
-  it("keeps legacy lobbies usable without a playback summary", () => {
-    const wrapper = mountPanel("lobby");
-
-    expect(
-      wrapper.find('[data-testid="music-quiz-playback-summary"]').exists(),
-    ).toBe(false);
   });
 
   it.each([
@@ -342,7 +337,7 @@ function mountPanel(
       state: {
         ...HOST_STATE,
         phase,
-        auto_start_at: options.autoStartAt,
+        auto_start_at: options.autoStartAt ?? null,
         current_round:
           phase === "answering" || phase === "reveal"
             ? {

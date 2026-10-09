@@ -177,8 +177,8 @@ export const groupMemberPickerVisible = function (player: Player): boolean {
 /**
  * Check if the player can take part in grouping.
  *
- * Capture-only devices (audio inputs, or an unknown type from an older server)
- * render nothing, so they are never offered as a group member.
+ * Capture-only devices (audio inputs, or a player of an unknown type) render
+ * nothing, so they are never offered as a group member.
  */
 export const canBeGroupMember = function (player: Player): boolean {
   return (

@@ -69,6 +69,7 @@ const {
   mockSendCommand,
   mockSendspinConnect,
   mockSendspinDisconnect,
+  mockSendspinSetVolume,
   mockSendspinUnlock,
   mockUseMediaBrowserMetaData,
   routeState,
@@ -118,6 +119,7 @@ const {
     mockSendCommand,
     mockSendspinConnect: vi.fn<() => Promise<void>>(),
     mockSendspinDisconnect: vi.fn<(reason?: string) => void>(),
+    mockSendspinSetVolume: vi.fn<(volume: number) => void>(),
     mockSendspinUnlock: vi.fn<() => Promise<void>>(),
     sendspinState: {
       pairingToken: null as string | null,
@@ -130,6 +132,12 @@ const {
           playerState: "synchronized" | "error";
         }) => void;
         reconnect?: { onReconnected?: () => void };
+        onStateChange?: (state: {
+          isPlaying: boolean;
+          volume: number;
+          muted: boolean;
+          playerState: "synchronized" | "error";
+        }) => void;
       } | null,
     },
     mockUseMediaBrowserMetaData: vi.fn(() => vi.fn()),
@@ -213,7 +221,7 @@ vi.mock("@sendspin/sendspin-js", () => ({
     disconnect = mockSendspinDisconnect;
     setCorrectionMode = vi.fn();
     setMuted = vi.fn();
-    setVolume = vi.fn();
+    setVolume = mockSendspinSetVolume;
     unlock = mockSendspinUnlock;
   },
 }));
@@ -271,6 +279,7 @@ describe("SendspinPlayer MediaSession", () => {
     mockSendspinConnect.mockReset();
     mockSendspinConnect.mockResolvedValue(undefined);
     mockSendspinDisconnect.mockReset();
+    mockSendspinSetVolume.mockReset();
     sendspinState.pairingToken = "SP:0TESTTOKEN";
     sendspinState.lastOptions = null;
     mockSendspinUnlock.mockReset();
@@ -479,6 +488,65 @@ describe("SendspinPlayer MediaSession", () => {
 
     // A player connected here would never be disconnected again.
     expect(mockSendspinConnect).not.toHaveBeenCalled();
+  });
+
+  it("starts the player at the volume this browser last used", async () => {
+    localStorage.setItem("frontend.settings.sendspin_volume", "35");
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    expect(mockSendspinSetVolume).toHaveBeenCalledWith(35);
+    // before connecting, so the server never hears the default volume
+    expect(mockSendspinSetVolume.mock.invocationCallOrder[0]).toBeLessThan(
+      mockSendspinConnect.mock.invocationCallOrder[0],
+    );
+    wrapper.unmount();
+  });
+
+  it.each([
+    { saved: null, volume: 100 },
+    { saved: "not a number", volume: 100 },
+    { saved: "250", volume: 100 },
+    { saved: "-5", volume: 0 },
+  ])(
+    "starts at $volume when the saved volume is $saved",
+    async ({ saved, volume }) => {
+      if (saved !== null) {
+        localStorage.setItem("frontend.settings.sendspin_volume", saved);
+      }
+      mockPrepareSendspinSession.mockResolvedValue(undefined);
+      const wrapper = mount(SendspinPlayer, {
+        props: { playerId: "web-player" },
+      });
+      await flushPromises();
+
+      expect(mockSendspinSetVolume).toHaveBeenCalledWith(volume);
+      wrapper.unmount();
+    },
+  );
+
+  it("remembers volume changes for the next session", async () => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    sendspinState.lastOptions?.onStateChange?.({
+      isPlaying: true,
+      volume: 20,
+      muted: false,
+      playerState: "synchronized",
+    });
+    await nextTick();
+
+    expect(localStorage.getItem("frontend.settings.sendspin_volume")).toBe(
+      "20",
+    );
+    wrapper.unmount();
   });
 
   it("skips pairing when the client has no pairing token", async () => {

@@ -75,6 +75,8 @@ const playerState = {
   answer_type: "timeline",
   phase: "reveal",
   name: "Music Timeline",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 2,
   answer_duration: 30,
   artist_bonus_mode: "off",
@@ -94,6 +96,8 @@ const hostState = {
   answer_type: "timeline",
   phase: "reveal",
   name: "Music Timeline",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 1,
   answer_duration: 30,
   artist_bonus_mode: "off",
@@ -105,6 +109,7 @@ const hostState = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizTimelineHostState;
 
 describe("Music Timeline game adapters", () => {
@@ -409,6 +414,8 @@ describe("Music Timeline game adapters", () => {
       answer_type: "timeline",
       phase: "answering",
       name: "Music Timeline",
+      include_similar_music: false,
+      auto_start_at: null,
       round_count: 1,
       answer_duration: 30,
       artist_bonus_mode: "off",
@@ -420,6 +427,11 @@ describe("Music Timeline game adapters", () => {
       sources: [],
       join_url: "https://example.test/join",
       rounds: [protectedRound],
+      playback: {
+        mode: "venue",
+        venue_player_id: null,
+        venue_player_name: null,
+      },
     } satisfies MusicQuizTimelineHostState;
     const wrapper = mount(MusicTimelineHostPanel, {
       props: {

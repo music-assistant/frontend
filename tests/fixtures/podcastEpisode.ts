@@ -23,6 +23,8 @@ export function podcastEpisode(
     position: 1,
     podcast: podcast(),
     duration: 200,
+    episode_number: null,
+    season: null,
     fully_played: false,
     resume_position_ms: 0,
     ...overrides,

@@ -98,12 +98,6 @@ describe("language field round-trip", () => {
     const draft = decompileHost(makeHost({ language: "fr" }), []);
     expect(draft.language).toBe("fr");
   });
-
-  it("defaults to the empty string (follow the server language) when absent", () => {
-    const { language: _omitted, ...hostWithoutLanguage } = makeHost();
-    const draft = decompileHost(hostWithoutLanguage as AIRadioHost, []);
-    expect(draft.language).toBe("");
-  });
 });
 
 describe("coerceOptionValue", () => {
@@ -199,11 +193,5 @@ describe("options field round-trip", () => {
   it("carries a host's options through decompileHost", () => {
     const draft = decompileHost(makeHost({ options: { speed: 0.9 } }), []);
     expect(draft.options).toEqual({ speed: 0.9 });
-  });
-
-  it("defaults to an empty object when a host from an older server has no options key at all", () => {
-    const { options: _omitted, ...hostWithoutOptions } = makeHost();
-    const draft = decompileHost(hostWithoutOptions as AIRadioHost, []);
-    expect(draft.options).toEqual({});
   });
 });

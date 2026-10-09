@@ -1,7 +1,6 @@
 import {
   effectiveProviderAccess,
   getProviderSharingTranslationKey,
-  hasConfigurableAccess,
   isOwnMusicSource,
   servesNobody,
   shareCandidates,
@@ -16,18 +15,20 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { computed, type MaybeRefOrGetter, onMounted, ref, toValue } from "vue";
+import { computed, type MaybeRefOrGetter, ref, toValue, watch } from "vue";
 import { toast } from "vue-sonner";
 
 interface UseProviderAccessOptions {
   managesAllSources: MaybeRefOrGetter<boolean>;
   canOwnSources: MaybeRefOrGetter<boolean>;
-  canManageSource: (item: ProviderConfig) => boolean;
+  // whether the users to name and share with are needed yet; they are listed
+  // once it holds, right away when left out
+  needsUsers?: MaybeRefOrGetter<boolean>;
 }
 
 /**
- * The owner and sharing of the listed music sources: who they may be shared
- * with, the compact access summary shown per source, and the access dialog.
+ * The owner and sharing of music sources: who they may be shared with, the
+ * compact access summary shown per source, and the access dialog.
  */
 export function useProviderAccess(options: UseProviderAccessOptions) {
   const users = ref<User[]>([]);
@@ -46,15 +47,6 @@ export function useProviderAccess(options: UseProviderAccessOptions) {
       ? shareCandidates(users.value)
       : memberShareCandidates.value,
   );
-
-  // only a music source carries an owner and sharing, and only whoever manages
-  // the source may change them
-  const canConfigureAccess = function (item: ProviderConfig) {
-    return (
-      options.canManageSource(item) &&
-      hasConfigurableAccess(item, api.providerManifests[item.domain])
-    );
-  };
 
   // the access record in its compact form: "<owner> · <who it is shared with>",
   // without the owner for a member, which only summarizes its own sources; a
@@ -109,21 +101,25 @@ export function useProviderAccess(options: UseProviderAccessOptions) {
     return user ? userDisplayName(user) : userId;
   };
 
-  onMounted(() => {
-    // listing the users is an admin call, so a member picks from the share
-    // candidates; the server lists them to whoever may own a source, older
-    // servers not at all
-    if (toValue(options.managesAllSources)) loadUsers();
-    else if (toValue(options.canOwnSources) && api.supportsShareCandidates)
-      loadShareCandidates();
-  });
+  let usersRequested = false;
+  watch(
+    () => toValue(options.needsUsers ?? true),
+    (needed) => {
+      if (!needed || usersRequested) return;
+      usersRequested = true;
+      // listing the users is an admin call, so a member picks from the share
+      // candidates; the server lists them to whoever may own a source
+      if (toValue(options.managesAllSources)) loadUsers();
+      else if (toValue(options.canOwnSources)) loadShareCandidates();
+    },
+    { immediate: true },
+  );
 
   return {
     users,
     accessShareCandidates,
     accessDialogConfig,
     showAccessDialog,
-    canConfigureAccess,
     accessSummary,
     openAccessDialog,
   };

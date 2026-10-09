@@ -417,6 +417,34 @@ describe("EditConfig", () => {
     expect(wrapper.find(".floating-save").exists()).toBe(false);
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(true);
   });
+
+  it("leaves room below the last row for the floating save action", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+    ]);
+
+    expect(wrapper.get("v-form-stub").classes()).toContain(
+      "floating-save-clearance",
+    );
+  });
+
+  it.each([
+    ["disabled", true, false],
+    ["inline save", false, true],
+  ] as const)(
+    "leaves no room for a save action that does not float (%s)",
+    (_, disabled, inlineSave) => {
+      const wrapper = mountEntries(
+        [entry({ key: "server", type: ConfigEntryType.STRING })],
+        disabled,
+        inlineSave,
+      );
+
+      expect(wrapper.get("v-form-stub").classes()).not.toContain(
+        "floating-save-clearance",
+      );
+    },
+  );
 });
 
 describe("EditConfig unsaved changes", () => {

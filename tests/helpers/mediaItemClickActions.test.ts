@@ -93,6 +93,7 @@ import { artist } from "../fixtures/artist";
 import { audioSource } from "../fixtures/audioSource";
 import { genre } from "../fixtures/genre";
 import { playlist } from "../fixtures/playlist";
+import { podcastEpisode } from "../fixtures/podcastEpisode";
 import { radio } from "../fixtures/radio";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { track } from "../fixtures/track";
@@ -281,6 +282,21 @@ describe("handleMediaItemClick honours default_click_action_*", () => {
         itemId: theArtist.item_id,
         provider: theArtist.provider,
       },
+    });
+    expect(mockPlayMedia).not.toHaveBeenCalled();
+  });
+});
+
+describe("handleMediaItemClick on a podcast episode", () => {
+  it("opens the episode page without reading a click-action setting", async () => {
+    const episode = podcastEpisode({ item_id: "ep1", provider: "rss" });
+
+    await handleMediaItemClick(episode, 0, 0);
+
+    expect(mockGetCoreConfigValue).not.toHaveBeenCalled();
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      name: "podcast_episode",
+      params: { itemId: "ep1", provider: "rss" },
     });
     expect(mockPlayMedia).not.toHaveBeenCalled();
   });

@@ -68,6 +68,8 @@ const playerState = {
   play_reveal_audio: true,
   phase: "answering",
   name: "Music Trivia",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 1,
   suggestion_count: 2,
   answer_duration: 30,
@@ -88,6 +90,7 @@ const hostState = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [protectedHostRound],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizTriviaHostState;
 
 const triviaSurfaces: Array<{
@@ -138,7 +141,6 @@ describe("Trivia adapters", () => {
   it.each([
     [true, "providers.music_quiz.reveal_audio_on"],
     [false, "providers.music_quiz.reveal_audio_off"],
-    [undefined, "providers.music_quiz.reveal_audio_off"],
   ] as const)(
     "shows the reveal-audio setting after reconnect when set to %s",
     (playRevealAudio, expectedLabel) => {
