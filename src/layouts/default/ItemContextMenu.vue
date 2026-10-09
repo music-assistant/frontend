@@ -207,9 +207,11 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
 let dialogActiveBeforeOpen = false;
 
 // the menu opens without a trigger element, so on close focus goes back to
-// whatever held it when the menu opened (unless the user interacted elsewhere)
+// whatever held it when the menu opened. Only for keyboard users: a touch
+// long-press (or a click in Safari) leaves focus where it was, which may be an
+// unrelated input that would scroll the page or bring up the on-screen keyboard
 let focusBeforeOpen: HTMLElement | null = null;
-let interactedOutside = false;
+let usingKeyboard = false;
 
 onMounted(() => {
   eventbus.on("contextmenu", async (evt: ContextMenuDialogEvent) => {
@@ -224,17 +226,20 @@ onMounted(() => {
           document.activeElement instanceof HTMLElement
             ? document.activeElement
             : null;
-        interactedOutside = false;
       }
       show.value = true;
       store.dialogActive = true;
     });
   });
+  document.addEventListener("keydown", markKeyboardInteraction, true);
+  document.addEventListener("pointerdown", markPointerInteraction, true);
   document.addEventListener("pointerdown", closeOnOutsidePointer, true);
 });
 
 onBeforeUnmount(() => {
   eventbus.off("contextmenu");
+  document.removeEventListener("keydown", markKeyboardInteraction, true);
+  document.removeEventListener("pointerdown", markPointerInteraction, true);
   document.removeEventListener("pointerdown", closeOnOutsidePointer, true);
 });
 
@@ -249,7 +254,7 @@ const onCloseAutoFocus = function (event: Event) {
   event.preventDefault();
   const target = focusBeforeOpen;
   focusBeforeOpen = null;
-  if (interactedOutside || !target) return;
+  if (!usingKeyboard || !target) return;
   // deferred like reka's own restore, so the closing interaction settles first
   setTimeout(() => {
     // an action may have moved focus on purpose (e.g. into a dialog)
@@ -278,17 +283,19 @@ function closeOnOutsidePointer(event: PointerEvent) {
   // does not treat it as an outside press and close as well
   if (modal.value) event.stopPropagation();
 
-  // same rule as reka: a modal menu blocks the page, so only a right-click
-  // (which may open another menu) or a non-modal press goes somewhere else
-  const rightClick =
-    event.button === 2 || (event.button === 0 && event.ctrlKey);
-  if (!modal.value || rightClick) interactedOutside = true;
-
   show.value = false;
   queueMicrotask(() => {
     if (!show.value)
       store.dialogActive = dialogActiveBeforeOpen && store.dialogActive;
   });
+}
+
+function markKeyboardInteraction() {
+  usingKeyboard = true;
+}
+
+function markPointerInteraction() {
+  usingKeyboard = false;
 }
 
 const onSelect = function (evt: Event, menuItem: ContextMenuItem) {

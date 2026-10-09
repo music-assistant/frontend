@@ -51,20 +51,40 @@ enableAutoUnmount(afterEach);
 
 let opener: HTMLButtonElement;
 
-/** Reka restores focus a macrotask after the menu content unmounts. */
+/** The menu hands focus back a macrotask after its content unmounts. */
 async function settle() {
   await flushPromises();
   await new Promise((resolve) => setTimeout(resolve, 0));
   await flushPromises();
 }
 
-async function openMenu(items: ContextMenuDialogEvent["items"]) {
+function press(target: Element | null, key: string) {
+  target?.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+}
+
+function pointerDown(target: Element, button = 0) {
+  target.dispatchEvent(
+    new PointerEvent("pointerdown", { bubbles: true, button }),
+  );
+}
+
+function emitContextMenu(items: ContextMenuDialogEvent["items"]) {
+  eventHandlers.get("contextmenu")?.({ items, posX: 10, posY: 20 });
+}
+
+/** Opens the menu from the focused opener, as a keyboard or pointer user. */
+async function openMenu(
+  items: ContextMenuDialogEvent["items"],
+  via: "keyboard" | "pointer" = "keyboard",
+) {
   const wrapper = mount(ItemContextMenu, {
     attachTo: document.body,
     global: { mocks: { $t: (key: string) => key } },
   });
   opener.focus();
-  eventHandlers.get("contextmenu")?.({ items, posX: 10, posY: 20 });
+  if (via === "keyboard") press(opener, "Enter");
+  else pointerDown(opener);
+  emitContextMenu(items);
   await settle();
   expect(document.querySelector("[data-item-context-menu]")).not.toBeNull();
   return wrapper;
@@ -76,6 +96,10 @@ function menuItem(label: string) {
   ].find((el) => el.textContent?.includes(label));
   if (!item) throw new Error(`no menu item ${label}`);
   return item;
+}
+
+function menuIsOpen() {
+  return document.querySelector("[data-item-context-menu]") !== null;
 }
 
 describe("ItemContextMenu focus on close", () => {
@@ -91,110 +115,122 @@ describe("ItemContextMenu focus on close", () => {
     opener.remove();
   });
 
-  it("hands focus back to the opener when closed with Escape", async () => {
-    await openMenu([{ label: "rename" }]);
-    expect(document.activeElement).not.toBe(opener);
+  describe("keyboard", () => {
+    it("hands focus back to the opener when closed with Escape", async () => {
+      await openMenu([{ label: "rename" }]);
+      expect(document.activeElement).not.toBe(opener);
 
-    document.activeElement?.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
-    );
-    await settle();
+      press(document.activeElement, "Escape");
+      await settle();
 
-    expect(document.querySelector("[data-item-context-menu]")).toBeNull();
-    expect(document.activeElement).toBe(opener);
+      expect(menuIsOpen()).toBe(false);
+      expect(document.activeElement).toBe(opener);
+    });
+
+    it("hands focus back to the opener after selecting an item", async () => {
+      const action = vi.fn();
+      await openMenu([{ label: "rename", action }]);
+
+      press(menuItem("rename"), "Enter");
+      await settle();
+
+      expect(action).toHaveBeenCalledTimes(1);
+      expect(menuIsOpen()).toBe(false);
+      expect(document.activeElement).toBe(opener);
+    });
+
+    it("hands focus back to the opener after selecting a submenu item", async () => {
+      const action = vi.fn();
+      await openMenu([
+        { label: "more", subItems: [{ label: "sub_action", action }] },
+      ]);
+
+      const subTrigger = menuItem("more");
+      subTrigger.focus();
+      press(subTrigger, "ArrowRight");
+      await settle();
+      press(menuItem("sub_action"), "Enter");
+      await settle();
+
+      expect(action).toHaveBeenCalledTimes(1);
+      expect(menuIsOpen()).toBe(false);
+      expect(document.activeElement).toBe(opener);
+    });
+
+    it("keeps the first opener when the menu is opened again while open", async () => {
+      await openMenu([{ label: "rename" }]);
+
+      emitContextMenu([{ label: "other" }]);
+      await settle();
+      press(document.activeElement, "Escape");
+      await settle();
+
+      expect(menuIsOpen()).toBe(false);
+      expect(document.activeElement).toBe(opener);
+    });
+
+    it("leaves focus where the selected action moved it", async () => {
+      const field = document.createElement("input");
+      document.body.appendChild(field);
+      // like a dialog that focuses itself once the menu has gone
+      const openDialog = () => setTimeout(() => field.focus(), 0);
+      await openMenu([{ label: "rename", action: openDialog }]);
+
+      press(menuItem("rename"), "Enter");
+      await settle();
+
+      expect(document.activeElement).toBe(field);
+      field.remove();
+    });
+
+    it("skips an opener the selected action removed", async () => {
+      await openMenu([{ label: "drop_opener", action: () => opener.remove() }]);
+      const focus = vi.spyOn(opener, "focus");
+
+      press(menuItem("drop_opener"), "Enter");
+      await settle();
+
+      expect(focus).not.toHaveBeenCalled();
+    });
   });
 
-  it("hands focus back to the opener after selecting an item", async () => {
-    const action = vi.fn();
-    await openMenu([{ label: "rename", action }]);
+  describe("pointer", () => {
+    it("leaves focus alone after selecting an item", async () => {
+      const action = vi.fn();
+      await openMenu([{ label: "rename", action }], "pointer");
+      const focus = vi.spyOn(opener, "focus");
 
-    menuItem("rename").click();
-    await settle();
+      const item = menuItem("rename");
+      pointerDown(item);
+      item.click();
+      await settle();
 
-    expect(action).toHaveBeenCalledTimes(1);
-    expect(document.querySelector("[data-item-context-menu]")).toBeNull();
-    expect(document.activeElement).toBe(opener);
-  });
+      expect(action).toHaveBeenCalledTimes(1);
+      expect(menuIsOpen()).toBe(false);
+      expect(focus).not.toHaveBeenCalled();
+    });
 
-  it("hands focus back to the opener after selecting a submenu item", async () => {
-    const action = vi.fn();
-    await openMenu([
-      { label: "more", subItems: [{ label: "sub_action", action }] },
-    ]);
+    it("leaves focus alone after a click outside a modal menu", async () => {
+      await openMenu([{ label: "rename" }]);
+      const focus = vi.spyOn(opener, "focus");
 
-    const subTrigger = menuItem("more");
-    subTrigger.focus();
-    subTrigger.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
-    );
-    await settle();
-    menuItem("sub_action").click();
-    await settle();
+      pointerDown(document.body);
+      await settle();
 
-    expect(action).toHaveBeenCalledTimes(1);
-    expect(document.querySelector("[data-item-context-menu]")).toBeNull();
-    expect(document.activeElement).toBe(opener);
-  });
+      expect(menuIsOpen()).toBe(false);
+      expect(focus).not.toHaveBeenCalled();
+    });
 
-  it("leaves focus where the selected action moved it", async () => {
-    const field = document.createElement("input");
-    document.body.appendChild(field);
-    // like a dialog that focuses itself once the menu has gone
-    const openDialog = () => setTimeout(() => field.focus(), 0);
-    await openMenu([{ label: "rename", action: openDialog }]);
+    it("leaves focus alone after a click outside a non-modal menu", async () => {
+      storeMock.showPlayersMenu = true;
+      await openMenu([{ label: "rename" }]);
+      const focus = vi.spyOn(opener, "focus");
 
-    menuItem("rename").click();
-    await settle();
+      pointerDown(document.body);
+      await settle();
 
-    expect(document.activeElement).toBe(field);
-  });
-
-  it("skips an opener the selected action removed", async () => {
-    await openMenu([{ label: "drop_opener", action: () => opener.remove() }]);
-    const focus = vi.spyOn(opener, "focus");
-
-    menuItem("drop_opener").click();
-    await settle();
-
-    expect(focus).not.toHaveBeenCalled();
-  });
-
-  it("hands focus back after a left click outside a modal menu", async () => {
-    await openMenu([{ label: "rename" }]);
-
-    document.body.dispatchEvent(
-      new PointerEvent("pointerdown", { bubbles: true, button: 0 }),
-    );
-    await settle();
-
-    expect(document.querySelector("[data-item-context-menu]")).toBeNull();
-    expect(document.activeElement).toBe(opener);
-  });
-
-  it("leaves focus alone after a right click outside", async () => {
-    await openMenu([{ label: "rename" }]);
-    const focus = vi.spyOn(opener, "focus");
-
-    document.body.dispatchEvent(
-      new PointerEvent("pointerdown", { bubbles: true, button: 2 }),
-    );
-    await settle();
-
-    expect(document.querySelector("[data-item-context-menu]")).toBeNull();
-    expect(focus).not.toHaveBeenCalled();
-  });
-
-  it("leaves focus alone after a click outside a non-modal menu", async () => {
-    storeMock.showPlayersMenu = true;
-    await openMenu([{ label: "rename" }]);
-    const focus = vi.spyOn(opener, "focus");
-
-    document.body.dispatchEvent(
-      new PointerEvent("pointerdown", { bubbles: true, button: 0 }),
-    );
-    await settle();
-
-    expect(document.querySelector("[data-item-context-menu]")).toBeNull();
-    expect(focus).not.toHaveBeenCalled();
+      expect(menuIsOpen()).toBe(false);
+      expect(focus).not.toHaveBeenCalled();
+    });
   });
 });
