@@ -71,8 +71,9 @@ export function pacedIntervalMs(
 
 /**
  * The slowest standard panel rate whose whole multiples explain every gap in
- * the window, or null when no standard rate fits. Gaps must be positive; the
- * estimator drops the rest before they reach here.
+ * the window and which at least one gap matches exactly once, or null when no
+ * standard rate fits. Gaps must be positive; the estimator drops the rest
+ * before they reach here.
  */
 export function fitStandardTick(gaps: Float64Array): number | null {
   // slowest rate first: every gap trivially fits a fast-enough tick's
@@ -81,8 +82,10 @@ export function fitStandardTick(gaps: Float64Array): number | null {
     const tick = STANDARD_TICKS_MS[i];
     let residual = 0;
     let ok = true;
+    let minK = Infinity;
     for (const gap of gaps) {
       const k = Math.max(1, Math.round(gap / tick));
+      minK = Math.min(minK, k);
       const err = Math.abs(gap - k * tick) / gap;
       if (err > TICK_FIT_OUTLIER_TOLERANCE) {
         ok = false;
@@ -90,7 +93,11 @@ export function fitStandardTick(gaps: Float64Array): number | null {
       }
       residual += err;
     }
-    if (ok && residual / gaps.length <= TICK_FIT_TOLERANCE) return tick;
+    // a real tick shows up as the shortest gap; a too-fast tick would
+    // otherwise explain any long, irregular gaps as large multiples
+    if (ok && minK === 1 && residual / gaps.length <= TICK_FIT_TOLERANCE) {
+      return tick;
+    }
   }
   return null;
 }
