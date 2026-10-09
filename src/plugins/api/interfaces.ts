@@ -1977,6 +1977,15 @@ export interface StorageInfo {
   can_add_local_folder: boolean;
 }
 
+/** The folder a Local files source reads its music from. */
+export interface SourceFolder {
+  // absolute path inside the server process
+  path: string;
+  // innermost storage location holding the folder, as last known; null when there is
+  // none or the caller may not see it
+  location: StorageLocation | null;
+}
+
 /** The connection settings of a network share, as the add and update commands take them. */
 export interface NetworkShareSettings {
   server: string;

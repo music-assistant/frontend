@@ -78,6 +78,7 @@ import {
   ShareType,
   SmartPlaylistRules,
   SoundEffect,
+  SourceFolder,
   StorageInfo,
   StorageLocation,
   StreamServerInfo,
@@ -3593,14 +3594,23 @@ export class MusicAssistantApi {
   }
 
   // Storage methods
-  // Every caller reports a failure itself (a toast or inline in its dialog), so the
-  // storage commands skip the global error toast.
+  // Every caller reports a failure itself (a toast or inline in its dialog) or does
+  // without what failed, so the storage commands skip the global error toast.
 
   public getStorageInfo(): Promise<StorageInfo> {
     // Get the storage locations the caller may see and what this install can mount
     return this.sendCommand<StorageInfo>("storage/info", undefined, {
       suppressGlobalError: true,
     });
+  }
+
+  public getSourceFolder(instance_id: string): Promise<SourceFolder> {
+    // Get the folder a Local files source reads from and the storage location holding it
+    return this.sendCommand<SourceFolder>(
+      "storage/source_folder",
+      { instance_id },
+      { suppressGlobalError: true },
+    );
   }
 
   public getStorageFolders(path: string): Promise<string[]> {
