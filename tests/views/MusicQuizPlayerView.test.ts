@@ -421,6 +421,24 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
+  it.each([
+    ["remote", true],
+    ["venue", false],
+  ])("shows the volume control in a %s game: %s", (mode, expected) => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      ...mockUseMusicQuizPlayer(),
+      state: ref({ ...playerState, mode }),
+    });
+
+    const wrapper = mountView();
+
+    expect(wrapper.find('[data-testid="music-quiz-volume"]').exists()).toBe(
+      expected,
+    );
+    wrapper.unmount();
+  });
+
   it("warns the player when the connection degrades mid-game", async () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
 
@@ -1254,7 +1272,13 @@ function mountView() {
       stubs: {
         MusicQuizConnectionBanners: true,
         MusicQuizLeaderboard: true,
-        MusicQuizPlayerHeader: true,
+        MusicQuizPlayerHeader: {
+          props: ["playerName", "rank", "score", "scoreDelta", "roundResults"],
+          template: '<div><slot name="actions" /></div>',
+        },
+        MusicQuizVolumeControl: {
+          template: '<div data-testid="music-quiz-volume" />',
+        },
         MusicQuizSessionHeader: {
           props: ["listenInEnabled", "mode", "roundLabel"],
           template:

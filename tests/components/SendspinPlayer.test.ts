@@ -190,6 +190,7 @@ vi.mock("@/plugins/web_player", async () => {
       mode: "sendspin_only",
       tabMode: "sendspin_only",
     }),
+    webPlayerOutput: reactive({ volume: 100, muted: false }),
   };
 });
 
