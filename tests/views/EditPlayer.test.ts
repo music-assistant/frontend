@@ -220,11 +220,13 @@ describe("EditPlayer", () => {
   it("links the player settings documentation", async () => {
     const wrapper = await mountPlayerPage();
 
-    const link = wrapper.get('[data-testid="player-documentation"]');
-    expect(link.attributes("href")).toBe(
-      "https://music-assistant.io/settings/individual-player/",
-    );
-    expect(link.attributes("target")).toBe("_blank");
+    expect(
+      wrapper.get('[data-testid="player-documentation"]').attributes(),
+    ).toMatchObject({
+      href: "https://music-assistant.io/settings/individual-player/",
+      rel: "noopener noreferrer",
+      target: "_blank",
+    });
   });
 
   it("links the beta documentation from a beta server", async () => {
