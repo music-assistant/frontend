@@ -2,7 +2,11 @@ import SendspinPlayer from "@/components/SendspinPlayer.vue";
 import { BrowserMediaControlsMode } from "@/helpers/device_settings";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { PlaybackState, type User } from "@/plugins/api/interfaces";
-import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import {
+  webPlayer,
+  webPlayerOutput,
+  WebPlayerMode,
+} from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { user } from "../fixtures/user";
 import { nextTick } from "vue";
@@ -69,6 +73,7 @@ const {
   mockSendCommand,
   mockSendspinConnect,
   mockSendspinDisconnect,
+  mockSendspinSetMuted,
   mockSendspinSetVolume,
   mockSendspinUnlock,
   mockUseMediaBrowserMetaData,
@@ -119,6 +124,7 @@ const {
     mockSendCommand,
     mockSendspinConnect: vi.fn<() => Promise<void>>(),
     mockSendspinDisconnect: vi.fn<(reason?: string) => void>(),
+    mockSendspinSetMuted: vi.fn<(muted: boolean) => void>(),
     mockSendspinSetVolume: vi.fn<(volume: number) => void>(),
     mockSendspinUnlock: vi.fn<() => Promise<void>>(),
     sendspinState: {
@@ -215,7 +221,7 @@ vi.mock("@sendspin/sendspin-js", () => ({
     }
     disconnect = mockSendspinDisconnect;
     setCorrectionMode = vi.fn();
-    setMuted = vi.fn();
+    setMuted = mockSendspinSetMuted;
     setVolume = mockSendspinSetVolume;
     unlock = mockSendspinUnlock;
   },
@@ -274,7 +280,9 @@ describe("SendspinPlayer MediaSession", () => {
     mockSendspinConnect.mockReset();
     mockSendspinConnect.mockResolvedValue(undefined);
     mockSendspinDisconnect.mockReset();
+    mockSendspinSetMuted.mockReset();
     mockSendspinSetVolume.mockReset();
+    webPlayerOutput.muted = false;
     sendspinState.pairingToken = "SP:0TESTTOKEN";
     sendspinState.lastOptions = null;
     mockSendspinUnlock.mockReset();
@@ -540,6 +548,42 @@ describe("SendspinPlayer MediaSession", () => {
 
     expect(localStorage.getItem("frontend.settings.sendspin_volume")).toBe(
       "20",
+    );
+    wrapper.unmount();
+  });
+
+  it("applies a mute set before the player connects", async () => {
+    webPlayerOutput.muted = true;
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    expect(mockSendspinSetMuted).toHaveBeenCalledWith(true);
+    expect(mockSendspinSetMuted.mock.invocationCallOrder[0]).toBeLessThan(
+      mockSendspinConnect.mock.invocationCallOrder[0],
+    );
+    wrapper.unmount();
+  });
+
+  it("passes shared volume and mute changes to the player", async () => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+    mockSendspinSetVolume.mockClear();
+    mockSendspinSetMuted.mockClear();
+
+    webPlayerOutput.volume = 30;
+    webPlayerOutput.muted = true;
+    await nextTick();
+
+    expect(mockSendspinSetVolume).toHaveBeenCalledWith(30);
+    expect(mockSendspinSetMuted).toHaveBeenCalledWith(true);
+    expect(localStorage.getItem("frontend.settings.sendspin_volume")).toBe(
+      "30",
     );
     wrapper.unmount();
   });
