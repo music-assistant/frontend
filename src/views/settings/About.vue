@@ -441,11 +441,7 @@ const canEditServerConfig = computed(() =>
   authManager.hasScope(Scope.CONFIG_CORE_WRITE),
 );
 
-// older servers only report the (now deprecated) base_url
-const internalUrl = computed(
-  () =>
-    api.serverInfo.value?.internal_url || api.serverInfo.value?.base_url || "",
-);
+const internalUrl = computed(() => api.serverInfo.value?.internal_url || "");
 
 const editWebserverConfig = () => {
   router.push({ name: "editcore", params: { domain: "webserver" } });

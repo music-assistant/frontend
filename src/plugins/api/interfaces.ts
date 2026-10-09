@@ -666,7 +666,7 @@ export interface ServerInfoMessage {
   onboard_done: boolean;
   name: string | null;
   status: CoreState;
-  // internal_url supersedes base_url; older servers only send base_url
+  // internal_url supersedes base_url
   internal_url: string | null;
   external_url: string | null;
   has_remote_access: boolean;
@@ -956,8 +956,7 @@ export interface MediaItemImage {
   provider: string;
   remotely_accessible: boolean;
   // Opaque sha256(provider+path) id used to address the image via the
-  // canonical /imageproxy/<proxy_id> endpoint. Injected by the server on
-  // schema_version >= 31; null when it issues no id, absent on older servers.
+  // canonical /imageproxy/<proxy_id> endpoint; null when the server issues no id.
   proxy_id?: string | null;
 }
 
@@ -1576,8 +1575,8 @@ export interface Player {
 
   // active_source_audio: audio-path snapshot for a live external source (e.g.
   // Spotify Connect) playing on active_source; null while a queue item is
-  // playing instead, or while nothing is known yet. Absent on older servers.
-  active_source_audio?: ActiveSourceAudioDetails | null;
+  // playing instead, or while nothing is known yet.
+  active_source_audio: ActiveSourceAudioDetails | null;
 }
 
 // provider
@@ -1608,9 +1607,8 @@ export interface ProviderManifest {
   // has_setup_flow: whether setup can be run again to reconfigure the provider
   has_setup_flow: boolean;
   // self_service: whether a member may set up (and reconfigure) a music source of
-  // this provider itself, instead of only a user who manages every music source;
-  // an older server does not send it and lets a member set up any provider
-  self_service?: boolean;
+  // this provider itself, instead of only a user who manages every music source
+  self_service: boolean;
   stage: ProviderStage;
   // icon: material design icon
   icon: string | null;

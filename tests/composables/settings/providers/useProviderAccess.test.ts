@@ -11,7 +11,6 @@ const { apiMock, i18nMock, storeMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
     getAllUsers: vi.fn<MusicAssistantApi["getAllUsers"]>(),
     getShareCandidates: vi.fn<MusicAssistantApi["getShareCandidates"]>(),
-    supportsShareCandidates: true,
   },
   i18nMock: { $t: vi.fn((key: string) => key) },
   storeMock: { currentUser: undefined as User | undefined },
@@ -61,7 +60,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getAllUsers.mockResolvedValue([]);
   apiMock.getShareCandidates.mockResolvedValue([]);
-  apiMock.supportsShareCandidates = true;
   storeMock.currentUser = undefined;
 });
 

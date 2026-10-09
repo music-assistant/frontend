@@ -128,6 +128,8 @@ const playerState = {
   answer_type: "multiple_choice",
   phase: "answering",
   name: "Quiz",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 1,
   suggestion_count: 1,
   answer_duration: 30,
@@ -148,12 +150,14 @@ const hostState = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [currentRound],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizGuessTheSongHostState;
 const triviaHostState = {
   ...hostState,
   quiz_type: "trivia",
   name: "Trivia",
   language: "en",
+  play_reveal_audio: true,
   rounds: [],
 } satisfies MusicQuizTriviaHostState;
 const triviaGameDefinition = {

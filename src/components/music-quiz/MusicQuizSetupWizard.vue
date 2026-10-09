@@ -155,14 +155,12 @@ const props = withDefaults(
     availableQuizTypes?: string[];
     playbackOptions?: MusicQuizPlaybackOptions | null;
     playbackOptionsLoading?: boolean;
-    playbackOptionsLegacy?: boolean;
     playbackOptionsError?: boolean;
   }>(),
   {
     availableQuizTypes: () => [],
     playbackOptions: null,
     playbackOptionsLoading: false,
-    playbackOptionsLegacy: true,
     playbackOptionsError: false,
   },
 );
@@ -196,16 +194,15 @@ const headingText = computed(() =>
       ? $t(selectedType.value.labelKey)
       : $t("providers.music_quiz.configure_game"),
 );
-const sharedConfigValid = computed(() => {
-  if (props.playbackOptionsLoading) return false;
-  if (props.playbackOptions) {
-    return isMusicQuizPlaybackSelectionValid(
+const sharedConfigValid = computed(
+  () =>
+    !props.playbackOptionsLoading &&
+    !!props.playbackOptions &&
+    isMusicQuizPlaybackSelectionValid(
       playbackSelection.value,
       props.playbackOptions,
-    );
-  }
-  return props.playbackOptionsLegacy && !props.playbackOptionsError;
-});
+    ),
+);
 
 watch(
   () => props.playbackOptions,
@@ -238,18 +235,11 @@ async function back() {
 }
 
 function onConfigCreate(request: MusicQuizCreateRequest) {
-  if (!sharedConfigValid.value) return;
-  const playbackFields = props.playbackOptions
-    ? getMusicQuizPlaybackCreateFields(
-        playbackSelection.value,
-        props.playbackOptions,
-      )
-    : null;
-  if (props.playbackOptions && !playbackFields) return;
-  if (playbackFields) {
-    emit("create", { ...request, ...playbackFields });
-    return;
-  }
-  emit("create", request);
+  if (!sharedConfigValid.value || !props.playbackOptions) return;
+  const playbackFields = getMusicQuizPlaybackCreateFields(
+    playbackSelection.value,
+    props.playbackOptions,
+  );
+  if (playbackFields) emit("create", { ...request, ...playbackFields });
 }
 </script>
