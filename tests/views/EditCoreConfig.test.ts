@@ -1,8 +1,16 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ConfigEntryType, type CoreConfig } from "@/plugins/api/interfaces";
+import { createVuetify } from "vuetify";
+import * as components from "vuetify/components";
+import * as directives from "vuetify/directives";
+import {
+  ConfigEntryType,
+  type ConfigEntry,
+  type CoreConfig,
+} from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import EditCoreConfig from "@/views/settings/EditCoreConfig.vue";
+import ServerUrlsCard from "@/views/settings/ServerUrlsCard.vue";
 
 const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
@@ -17,6 +25,14 @@ const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
         documentation: undefined as string | undefined,
         has_setup_flow: false,
         name: "Cache",
+      },
+      webserver: {
+        codeowners: [],
+        credits: [],
+        description: "Web server",
+        documentation: undefined,
+        has_setup_flow: false,
+        name: "Web server",
       },
     },
     saveCoreConfig: vi.fn<MusicAssistantApi["saveCoreConfig"]>(),
@@ -289,7 +305,131 @@ describe("EditCoreConfig", () => {
       clear_on_start: "current value",
     });
   });
+
+  it("shows the URL card on the webserver page only", async () => {
+    apiMock.getCoreConfig.mockResolvedValueOnce(coreConfig());
+
+    const wrapper = shallowMount(EditCoreConfig, {
+      props: { domain: "cache" },
+      global: { mocks: { $t: (key: string) => key } },
+    });
+    await flushPromises();
+
+    expect(wrapper.findComponent(ServerUrlsCard).exists()).toBe(false);
+  });
+
+  it("edits the webserver URLs in their own card and saves them with the form", async () => {
+    apiMock.getCoreConfig.mockResolvedValueOnce(webserverConfig());
+    apiMock.saveCoreConfig.mockResolvedValueOnce(webserverConfig());
+
+    const wrapper = mountWithForm("webserver");
+    await flushPromises();
+
+    const card = wrapper.findComponent(ServerUrlsCard);
+    expect(card.props("baseUrl")).toMatchObject({ key: "base_url" });
+    expect(card.props("externalUrl")).toMatchObject({ key: "external_url" });
+    // the card shows them, so the form leaves them out
+    expect(renderedKeys(wrapper)).toEqual(["server_name"]);
+    expect(saveDisabled(wrapper)).toBe(true);
+
+    await card.vm.$emit(
+      "update:value",
+      "external_url",
+      "https://music.example",
+    );
+
+    expect(saveDisabled(wrapper)).toBe(false);
+
+    await wrapper.find('[data-testid="config-save"]').trigger("click");
+    await flushPromises();
+
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("webserver", {
+      server_name: "My server",
+      base_url: "auto",
+      external_url: "https://music.example",
+    });
+  });
+
+  it("resets the webserver URLs from the header menu too", async () => {
+    apiMock.getCoreConfig.mockResolvedValueOnce(
+      webserverConfig({
+        base_url: "https://ma.lan",
+        external_url: "https://music.example",
+      }),
+    );
+
+    const wrapper = mountWithForm("webserver");
+    await flushPromises();
+
+    await wrapper
+      .findComponent({ name: "SettingsHeaderCard" })
+      .vm.$emit("resetToDefaults");
+
+    const card = wrapper.findComponent(ServerUrlsCard);
+    expect(card.props("baseUrl").value).toBe("auto");
+    expect(card.props("externalUrl")?.value).toBeNull();
+  });
 });
+
+// with the real form, so what it saves and guards can be read
+function mountWithForm(domain: string) {
+  return shallowMount(EditCoreConfig, {
+    props: { domain },
+    global: {
+      plugins: [createVuetify({ components, directives })],
+      renderStubDefaultSlot: true,
+      mocks: { $t: (key: string) => key },
+      stubs: {
+        EditConfig: false,
+        VForm: {
+          template: "<form><slot /></form>",
+          methods: { validate: async () => ({ valid: true }) },
+        },
+      },
+    },
+  });
+}
+
+function renderedKeys(wrapper: ReturnType<typeof mountWithForm>) {
+  return wrapper
+    .findAllComponents({ name: "ConfigEntryRow" })
+    .map((row) => (row.props("confEntry") as ConfigEntry).key);
+}
+
+function saveDisabled(wrapper: ReturnType<typeof mountWithForm>) {
+  return (
+    wrapper.find('[data-testid="config-save"]').attributes("disabled") ===
+    "true"
+  );
+}
+
+function webserverConfig(
+  values: { base_url?: string; external_url?: string | null } = {},
+): CoreConfig {
+  const entry = (
+    key: string,
+    value: string | null,
+    default_value: string | null,
+  ): ConfigEntry => ({
+    category: "generic",
+    default_value,
+    key,
+    label: key,
+    options: [],
+    required: false,
+    type: ConfigEntryType.STRING,
+    value,
+  });
+  return {
+    domain: "webserver",
+    last_error: null,
+    values: {
+      server_name: entry("server_name", "My server", ""),
+      base_url: entry("base_url", values.base_url ?? "auto", "auto"),
+      external_url: entry("external_url", values.external_url ?? null, null),
+    },
+  };
+}
 
 function coreConfig(): CoreConfig {
   return {
