@@ -1490,6 +1490,8 @@
         "reconnecting_message": "Attempting to reconnect to the server...",
         "error_ingress_failed": "Couldn't sign in through Home Assistant",
         "error_invalid_credentials": "Couldn't sign you in. Please check your username and password.",
+        "error_account_disabled": "This account is disabled. Ask an admin to enable it.",
+        "error_too_many_attempts": "Too many failed sign-in attempts. Please try again in {0} seconds.",
         "guest_ended_party_title": "Your party session has ended",
         "guest_ended_party_message": "Ask the host to share the party link or QR code again to rejoin.",
         "guest_ended_quiz_title": "Your quiz session has ended",
