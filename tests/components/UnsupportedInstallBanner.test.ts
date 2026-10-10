@@ -55,10 +55,10 @@ describe("UnsupportedInstallBanner", () => {
     );
   });
 
-  it.each([false, undefined])(
-    "stays hidden when unsupported_install is %s",
-    (unsupported_install) => {
-      apiMock.serverInfo.value = serverInfo(unsupported_install);
+  it.each([serverInfo(false), serverInfo(undefined), undefined])(
+    "stays hidden for server info %o",
+    (info) => {
+      apiMock.serverInfo.value = info;
 
       const wrapper = mountBanner();
 

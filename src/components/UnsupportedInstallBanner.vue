@@ -2,7 +2,7 @@
   <Alert
     v-if="api.serverInfo.value?.unsupported_install"
     variant="destructive"
-    role="alert"
+    role="note"
   >
     <TriangleAlert />
     <AlertTitle>{{ $t("settings.unsupported_install_title") }}</AlertTitle>
