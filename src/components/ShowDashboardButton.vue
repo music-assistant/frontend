@@ -80,6 +80,7 @@ import {
 import { Button, type ButtonVariants } from "@/components/ui/button";
 import DashboardDeviceIcon from "@/components/DashboardDeviceIcon.vue";
 import api from "@/plugins/api";
+import { ApiCommandError } from "@/plugins/api/errors";
 import { waitForApiInitialization } from "@/plugins/api/helpers";
 import {
   type DashboardDevice,
@@ -116,6 +117,7 @@ const props = withDefaults(
 );
 
 const open = ref(false);
+const apiReady = ref(false);
 const loading = ref(false);
 const dashboards = ref<DashboardDevice[]>([]);
 const sessions = ref<DashboardSession[]>([]);
@@ -125,12 +127,13 @@ const canShowDashboards = computed(() =>
   authManager.hasScope(Scope.USERS_INVITE),
 );
 
-// A dashboard viewer can't cast a dashboard itself; only show once one is registered.
+// A dashboard viewer can't cast a dashboard itself. Shown without registered
+// devices too, so the dashboard url stays reachable.
 const showButton = computed(
   () =>
+    apiReady.value &&
     canShowDashboards.value &&
-    !authManager.isDashboardViewer?.() &&
-    dashboards.value.length > 0,
+    !authManager.isDashboardViewer?.(),
 );
 
 // The overlay variant styles its own active state; elsewhere an active session
@@ -163,13 +166,14 @@ onMounted(async () => {
   await waitForApiInitialization();
   if (unmounted || !canShowDashboards.value) return;
 
+  apiReady.value = true;
   fetchSessions();
   loadDashboards();
   unsubscribers.push(
     api.subscribe(EventType.DASHBOARD_SESSIONS_UPDATED, (evt: EventMessage) => {
       sessions.value = evt.data as DashboardSession[];
     }),
-    // Keep the list live - clients connect/disconnect, and it also drives this button's visibility.
+    // Keep the list live - clients connect/disconnect.
     api.subscribe(EventType.DASHBOARDS_UPDATED, () => loadDashboards()),
   );
 });
@@ -251,17 +255,13 @@ async function disconnect() {
   }
 }
 
-async function getDashboardUrl(): Promise<string> {
-  try {
-    const url = await api.sendCommand<string>("dashboard/get_url", {
-      dashboard: props.dashboard,
-      player_id: props.playerId ?? null,
-    });
-    return url ?? "";
-  } catch (error) {
-    console.error("Failed to get dashboard URL:", error);
-    return "";
-  }
+async function getDashboardUrl(): Promise<string | null> {
+  // The caller reports a failure itself, with the server's reason.
+  return api.sendCommand<string | null>(
+    "dashboard/get_url",
+    { dashboard: props.dashboard, player_id: props.playerId ?? null },
+    { suppressGlobalError: true },
+  );
 }
 
 function compareDashboards(left: DashboardDevice, right: DashboardDevice) {
@@ -284,7 +284,19 @@ function isActiveDevice(device: DashboardDevice): boolean {
 }
 
 const copyDashboardUrlToClipboard = async function () {
-  const url = await getDashboardUrl();
+  let url: string | null;
+  try {
+    url = await getDashboardUrl();
+  } catch (error) {
+    // e.g. neither remote access nor an https base url is configured
+    console.error("Failed to get dashboard URL:", error);
+    toast.error(
+      error instanceof ApiCommandError
+        ? String(error)
+        : $t("dashboard.uri_copy_failed"),
+    );
+    return;
+  }
   if (!url) {
     toast.error($t("dashboard.uri_copy_failed"));
     return;

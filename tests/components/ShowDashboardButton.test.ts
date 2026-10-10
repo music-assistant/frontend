@@ -5,6 +5,7 @@ import {
   type EventMessage,
   type Scope,
 } from "@/plugins/api/interfaces";
+import { ApiCommandError } from "@/plugins/api/errors";
 import { Check } from "@lucide/vue";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -147,13 +148,20 @@ describe("ShowDashboardButton", () => {
     copyToClipboardMock.mockResolvedValue(true);
   });
 
-  it("renders nothing when no dashboards are registered", async () => {
+  it("still offers the dashboard url when no dashboards are registered", async () => {
     mockCommands({ "dashboard/dashboards": () => [] });
 
     const wrapper = mountButton();
     await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
 
-    expect(wrapper.find("button").exists()).toBe(false);
+    expect(wrapper.find('[data-testid="cast-dashboard-empty"]').exists()).toBe(
+      true,
+    );
+    expect(
+      wrapper.find('[data-testid="cast-dashboard-get-url"]').exists(),
+    ).toBe(true);
   });
 
   it("renders once at least one dashboard is registered", async () => {
@@ -705,10 +713,11 @@ describe("ShowDashboardButton", () => {
       .trigger("click");
     await flushAsync();
 
-    expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/get_url", {
-      dashboard: "party",
-      player_id: null,
-    });
+    expect(apiMock.sendCommand).toHaveBeenCalledWith(
+      "dashboard/get_url",
+      { dashboard: "party", player_id: null },
+      { suppressGlobalError: true },
+    );
     expect(copyToClipboardMock).toHaveBeenCalledWith(
       "https://example.com/dashboard?token=abc123",
     );
@@ -733,10 +742,11 @@ describe("ShowDashboardButton", () => {
       .trigger("click");
     await flushAsync();
 
-    expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/get_url", {
-      dashboard: "now_playing",
-      player_id: "player-1",
-    });
+    expect(apiMock.sendCommand).toHaveBeenCalledWith(
+      "dashboard/get_url",
+      { dashboard: "now_playing", player_id: "player-1" },
+      { suppressGlobalError: true },
+    );
   });
 
   it("shows error toast when get_url returns empty string", async () => {
@@ -795,6 +805,33 @@ describe("ShowDashboardButton", () => {
     await flushAsync();
 
     expect(toastMock.error).toHaveBeenCalledWith("dashboard.uri_copy_failed");
+    expect(copyToClipboardMock).not.toHaveBeenCalled();
+  });
+
+  it("shows the server's reason once when get_url is refused", async () => {
+    mockCommands({
+      "dashboard/get_url": () => {
+        throw new ApiCommandError(
+          "Remote access or an HTTPS base URL is required to cast dashboards",
+          1,
+        );
+      },
+    });
+
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(toastMock.error).toHaveBeenCalledOnce();
+    expect(toastMock.error).toHaveBeenCalledWith(
+      "Remote access or an HTTPS base URL is required to cast dashboards",
+    );
     expect(copyToClipboardMock).not.toHaveBeenCalled();
   });
 
