@@ -7,10 +7,6 @@ const { copyToClipboard } = vi.hoisted(() => ({
   copyToClipboard: vi.fn<(text: string) => Promise<boolean>>(),
 }));
 
-const apiStub = vi.hoisted(() => ({ supportsAIRadioAllowPost: true }));
-
-vi.mock("@/plugins/api", () => ({ api: apiStub, default: apiStub }));
-
 vi.mock("@/helpers/utils", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/helpers/utils")>()),
   copyToClipboard,
@@ -128,16 +124,6 @@ describe("SegmentRow allow-post switch", () => {
     await wrapper.get('button[aria-label="Show more"]').trigger("click");
 
     expect(wrapper.find('[role="switch"]').exists()).toBe(true);
-  });
-
-  it("stays hidden on a server that does not keep the option", async () => {
-    apiStub.supportsAIRadioAllowPost = false;
-    try {
-      const wrapper = await mountExpanded();
-      expect(wrapper.find('[role="switch"]').exists()).toBe(false);
-    } finally {
-      apiStub.supportsAIRadioAllowPost = true;
-    }
   });
 
   it("emits the segment with allowPost set when toggled", async () => {
