@@ -4,6 +4,7 @@ import {
   type DashboardType,
   type EventMessage,
   type Scope,
+  type ServerInfoMessage,
 } from "@/plugins/api/interfaces";
 import { ApiCommandError } from "@/plugins/api/errors";
 import { Check } from "@lucide/vue";
@@ -22,6 +23,10 @@ const {
   apiMock: {
     sendCommand: vi.fn(),
     subscribe: vi.fn(),
+    serverInfo: {
+      value: undefined as
+        Pick<ServerInfoMessage, "base_url" | "has_remote_access"> | undefined,
+    },
   },
   mockWaitForApiInitialization: vi.fn(),
   isDashboardViewerMock: vi.fn(() => false),
@@ -146,23 +151,49 @@ describe("ShowDashboardButton", () => {
     toastMock.error.mockReset();
     copyToClipboardMock.mockReset();
     copyToClipboardMock.mockResolvedValue(true);
+    apiMock.serverInfo.value = {
+      base_url: "http://192.168.1.2:8095",
+      has_remote_access: false,
+    };
   });
 
-  it("still offers the dashboard url when no dashboards are registered", async () => {
+  it("renders nothing without dashboards when the server can't make a dashboard url", async () => {
     mockCommands({ "dashboard/dashboards": () => [] });
 
     const wrapper = mountButton();
     await flushAsync();
-    await wrapper.get("button").trigger("click");
-    await flushAsync();
 
-    expect(wrapper.find('[data-testid="cast-dashboard-empty"]').exists()).toBe(
-      true,
-    );
-    expect(
-      wrapper.find('[data-testid="cast-dashboard-get-url"]').exists(),
-    ).toBe(true);
+    expect(wrapper.find("button").exists()).toBe(false);
   });
+
+  it.each([
+    [
+      "remote access",
+      { base_url: "http://192.168.1.2:8095", has_remote_access: true },
+    ],
+    [
+      "an https base url",
+      { base_url: "https://ma.example.com", has_remote_access: false },
+    ],
+  ])(
+    "still offers the dashboard url without dashboards when the server has %s",
+    async (_, serverInfo) => {
+      apiMock.serverInfo.value = serverInfo;
+      mockCommands({ "dashboard/dashboards": () => [] });
+
+      const wrapper = mountButton();
+      await flushAsync();
+      await wrapper.get("button").trigger("click");
+      await flushAsync();
+
+      expect(
+        wrapper.find('[data-testid="cast-dashboard-empty"]').exists(),
+      ).toBe(true);
+      expect(
+        wrapper.find('[data-testid="cast-dashboard-get-url"]').exists(),
+      ).toBe(true);
+    },
+  );
 
   it("renders once at least one dashboard is registered", async () => {
     const wrapper = mountButton();
@@ -814,6 +845,7 @@ describe("ShowDashboardButton", () => {
         throw new ApiCommandError(
           "Remote access or an HTTPS base URL is required to cast dashboards",
           1,
+          "Remote access or an HTTPS base URL is required to cast dashboards",
         );
       },
     });

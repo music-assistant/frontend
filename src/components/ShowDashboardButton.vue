@@ -127,13 +127,21 @@ const canShowDashboards = computed(() =>
   authManager.hasScope(Scope.USERS_INVITE),
 );
 
-// A dashboard viewer can't cast a dashboard itself. Shown without registered
-// devices too, so the dashboard url stays reachable.
+// Same requirement the server applies in dashboard/get_url.
+const canGetUrl = computed(() => {
+  const info = api.serverInfo.value;
+  return (
+    !!info && (info.has_remote_access || info.base_url.startsWith("https://"))
+  );
+});
+
+// A dashboard viewer can't cast a dashboard itself.
 const showButton = computed(
   () =>
     apiReady.value &&
     canShowDashboards.value &&
-    !authManager.isDashboardViewer?.(),
+    !authManager.isDashboardViewer?.() &&
+    (dashboards.value.length > 0 || canGetUrl.value),
 );
 
 // The overlay variant styles its own active state; elsewhere an active session
@@ -173,7 +181,7 @@ onMounted(async () => {
     api.subscribe(EventType.DASHBOARD_SESSIONS_UPDATED, (evt: EventMessage) => {
       sessions.value = evt.data as DashboardSession[];
     }),
-    // Keep the list live - clients connect/disconnect.
+    // Keep the list live - clients connect/disconnect, and it also drives this button's visibility.
     api.subscribe(EventType.DASHBOARDS_UPDATED, () => loadDashboards()),
   );
 });
@@ -291,8 +299,8 @@ const copyDashboardUrlToClipboard = async function () {
     // e.g. neither remote access nor an https base url is configured
     console.error("Failed to get dashboard URL:", error);
     toast.error(
-      error instanceof ApiCommandError
-        ? String(error)
+      error instanceof ApiCommandError && error.details
+        ? error.details
         : $t("dashboard.uri_copy_failed"),
     );
     return;
