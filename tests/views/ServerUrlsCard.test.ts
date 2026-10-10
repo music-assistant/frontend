@@ -85,10 +85,15 @@ describe("ServerUrlsCard", () => {
         external_url: "https://music.example.com",
       });
 
+      // the link is not shown, so not asked for yet
+      expect(apiMock.getRemoteAccessInfo).not.toHaveBeenCalled();
+
       await remoteSwitch(wrapper).trigger("click");
+      await flushPromises();
 
       expect(values.external_url).toBe("");
-      expect(wrapper.find(REMOTE_LINK).exists()).toBe(true);
+      expect(wrapper.find(REMOTE_LINK).text()).toContain(REMOTE_URL);
+      expect(apiMock.getRemoteAccessInfo).toHaveBeenCalledOnce();
 
       await remoteSwitch(wrapper).trigger("click");
 

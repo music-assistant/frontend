@@ -176,7 +176,7 @@ import { Scope, type ConfigEntry } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { Copy } from "@lucide/vue";
-import { computed, ref, useId } from "vue";
+import { computed, ref, useId, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { toast } from "vue-sonner";
 
@@ -301,5 +301,12 @@ const loadRemoteId = async function () {
   }
 };
 
-if (offersRemoteAccess.value) void loadRemoteId();
+// the link is only asked for once it is shown
+watch(
+  useRemoteAccess,
+  (shown) => {
+    if (shown && !remoteId.value && !loadingRemoteId.value) void loadRemoteId();
+  },
+  { immediate: true },
+);
 </script>
