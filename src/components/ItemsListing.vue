@@ -2189,7 +2189,9 @@ onMounted(async () => {
         props.sortMediaType,
       );
     } catch {
-      toast.error(t("settings.error_loading_sort_options"));
+      toast.error(t("settings.error_loading_sort_options"), {
+        id: "library-sort-options-error",
+      });
     }
     sortOptionsLoaded.value = true;
     if (unmounted) return;

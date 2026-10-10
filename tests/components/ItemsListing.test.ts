@@ -50,6 +50,7 @@ const mockGetLibraryGenres = vi.hoisted(() =>
   vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
 );
 const mockGetLibrarySortOptions = vi.hoisted(() => vi.fn());
+const mockToastError = vi.hoisted(() => vi.fn());
 const mockSubscribeMulti = vi.hoisted(() => vi.fn());
 const mockSubscribe = vi.hoisted(() => vi.fn());
 
@@ -135,7 +136,9 @@ vi.mock("vue-router", () => ({
   }),
 }));
 
-vi.mock("vue-sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock("vue-sonner", () => ({
+  toast: { error: mockToastError, success: vi.fn() },
+}));
 
 const stubComponent = vi.hoisted(() => (name: string) => ({
   default: { name, template: "<div />" },
@@ -1606,6 +1609,7 @@ describe("ItemsListing server sort options", () => {
   beforeEach(() => {
     mockGetLibraryGenres.mockReset().mockResolvedValue([]);
     mockGetLibrarySortOptions.mockReset().mockResolvedValue(sortOptions);
+    mockToastError.mockReset();
     mockSubscribeMulti.mockReset().mockImplementation(events.subscribeMulti);
     mockSubscribe.mockReset().mockImplementation(events.subscribe);
     mockSetItemsListingPreference.mockReset();
@@ -1694,6 +1698,29 @@ describe("ItemsListing server sort options", () => {
     expect(chipsRow.findComponent(LibrarySortControls).props("mode")).toBe(
       "chips",
     );
+  });
+
+  it("uses one toast ID when shared genre sort options fail in multiple listings", async () => {
+    mockGetLibrarySortOptions.mockRejectedValue(new Error("request failed"));
+
+    const listings = ["music", "podcasts", "audiobooks"].map((contentType) =>
+      mountListingRaw({
+        itemtype: "genres",
+        path: `librarygenres.${contentType}`,
+        sortMediaType: MediaType.GENRE,
+        showGenreFilter: false,
+      }),
+    );
+    await flushPromises();
+
+    expect(mockToastError).toHaveBeenCalledTimes(3);
+    for (const call of mockToastError.mock.calls) {
+      expect(call).toEqual([
+        "settings.error_loading_sort_options",
+        { id: "library-sort-options-error" },
+      ]);
+    }
+    listings.forEach((listing) => listing.unmount());
   });
 
   it("preserves ascending semantics for unsuffixed legacy sort preferences", async () => {

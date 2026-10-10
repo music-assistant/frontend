@@ -183,8 +183,12 @@ describe("MusicAssistantApi error handling", () => {
   it("caches sort options per media type until disconnect", async () => {
     const firstRequest = api.getLibrarySortOptions(MediaType.GENRE);
     const concurrentRequest = api.getLibrarySortOptions(MediaType.GENRE);
+    const sortOptionsRequests = () =>
+      transport.sentCommands.filter(
+        (command) => command.command === "music/sort_options",
+      );
 
-    expect(transport.sentCommands).toHaveLength(1);
+    expect(sortOptionsRequests()).toHaveLength(1);
     expect(transport.lastCommand.command).toBe("music/sort_options");
     expect(transport.lastCommand.args).toEqual({ listing: "library_genres" });
 
@@ -200,7 +204,7 @@ describe("MusicAssistantApi error handling", () => {
     await expect(api.getLibrarySortOptions(MediaType.GENRE)).resolves.toEqual(
       [],
     );
-    expect(transport.sentCommands).toHaveLength(1);
+    expect(sortOptionsRequests()).toHaveLength(1);
 
     api.disconnect();
     const reconnectTransport = new TestTransport();
