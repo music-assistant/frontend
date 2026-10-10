@@ -547,6 +547,25 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     },
   );
 
+  it("shows a reported voice-over whatever the crossfade intent", () => {
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          crossfade_mode: CrossfadeMode.VOICE_OVER,
+        }),
+      },
+      makeFormat(),
+      CrossfadeMode.DISABLED,
+    );
+
+    expect(
+      display.processingStages.find((stage) => stage.key === "crossfade"),
+    ).toMatchObject({
+      title: "Crossfade",
+      subtitleParts: ["Voice-over, music ducked under it"],
+    });
+  });
+
   it("prefers crossfade intent over the reported fallback mode", () => {
     const display = buildDisplay(
       {

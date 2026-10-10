@@ -269,9 +269,11 @@ function buildProcessingStages(
     serverAltersAudio = true;
   }
   const reportedCrossfadeMode = processing?.crossfade_mode;
-  // Keep source attribution; otherwise show the queue's current intent.
+  // Keep source attribution and a voice-over the server applied; otherwise show
+  // the queue's current intent.
   const crossfadeMode =
-    reportedCrossfadeMode === CrossfadeMode.SOURCE
+    reportedCrossfadeMode === CrossfadeMode.SOURCE ||
+    reportedCrossfadeMode === CrossfadeMode.VOICE_OVER
       ? reportedCrossfadeMode
       : (crossfadeIntent ?? reportedCrossfadeMode);
   serverAltersAudio ||= crossfadeAppliedByServer(reportedCrossfadeMode);
