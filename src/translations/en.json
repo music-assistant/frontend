@@ -171,6 +171,8 @@
             "copy_failed": "Couldn't copy URL"
         },
         "server_as_addon": "Home Assistant app",
+        "unsupported_install_title": "Unsupported installation",
+        "unsupported_install_description": "This server does not run from the official Music Assistant container or Home Assistant app. Issues reported from this installation may be closed without support.",
         "artists_in_library": "Artists in library",
         "albums_in_library": "Albums in library",
         "tracks_in_library": "Tracks in library",

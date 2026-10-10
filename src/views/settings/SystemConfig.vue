@@ -1,5 +1,6 @@
 <template>
   <Container variant="comfortable" class="settings-overview">
+    <UnsupportedInstallBanner class="mb-4" />
     <div v-if="viewMode === 'card'" class="settings-grid">
       <Card
         v-for="item in sortedCoreConfigs"
@@ -126,6 +127,7 @@ import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import UnsupportedInstallBanner from "@/components/UnsupportedInstallBanner.vue";
 import {
   Card,
   CardDescription,
