@@ -131,7 +131,11 @@ const canShowDashboards = computed(() =>
 const canGetUrl = computed(() => {
   const info = api.serverInfo.value;
   return (
-    !!info && (info.has_remote_access || info.base_url.startsWith("https://"))
+    !!info &&
+    (info.has_remote_access ||
+      [info.base_url, info.external_url].some((url) =>
+        url?.startsWith("https://"),
+      ))
   );
 });
 

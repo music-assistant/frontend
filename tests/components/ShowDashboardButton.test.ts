@@ -25,7 +25,11 @@ const {
     subscribe: vi.fn(),
     serverInfo: {
       value: undefined as
-        Pick<ServerInfoMessage, "base_url" | "has_remote_access"> | undefined,
+        | Pick<
+            ServerInfoMessage,
+            "base_url" | "external_url" | "has_remote_access"
+          >
+        | undefined,
     },
   },
   mockWaitForApiInitialization: vi.fn(),
@@ -153,6 +157,7 @@ describe("ShowDashboardButton", () => {
     copyToClipboardMock.mockResolvedValue(true);
     apiMock.serverInfo.value = {
       base_url: "http://192.168.1.2:8095",
+      external_url: null,
       has_remote_access: false,
     };
   });
@@ -169,11 +174,27 @@ describe("ShowDashboardButton", () => {
   it.each([
     [
       "remote access",
-      { base_url: "http://192.168.1.2:8095", has_remote_access: true },
+      {
+        base_url: "http://192.168.1.2:8095",
+        external_url: null,
+        has_remote_access: true,
+      },
     ],
     [
       "an https base url",
-      { base_url: "https://ma.example.com", has_remote_access: false },
+      {
+        base_url: "https://ma.example.com",
+        external_url: null,
+        has_remote_access: false,
+      },
+    ],
+    [
+      "an https external url",
+      {
+        base_url: "http://192.168.1.2:8095",
+        external_url: "https://ma.example.com",
+        has_remote_access: false,
+      },
     ],
   ])(
     "still offers the dashboard url without dashboards when the server has %s",
