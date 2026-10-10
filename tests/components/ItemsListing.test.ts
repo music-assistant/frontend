@@ -1,6 +1,6 @@
 import ItemsListing from "@/components/ItemsListing.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
-import { defineComponent, h } from "vue";
+import { defineComponent, h, type SetupContext } from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   EventType,
@@ -182,6 +182,7 @@ function clearSelectionHandlers() {
 
 function mountListingRaw(
   props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+  stubs: Record<string, unknown> = {},
 ) {
   return mount(ItemsListing, {
     attachTo: document.body,
@@ -215,6 +216,7 @@ function mountListingRaw(
         VVirtualScroll: true,
         VSnackbar: true,
         VBtn: true,
+        ...stubs,
       },
     },
   });
@@ -674,6 +676,136 @@ describe("ItemsListing select all", () => {
     await flushPromises();
 
     expect(selection(listing)).toHaveLength(1);
+  });
+});
+
+describe("ItemsListing failed load", () => {
+  type LoadStatus = "ok" | "empty" | "loading" | "error";
+  type LoadItems = NonNullable<
+    InstanceType<typeof ItemsListing>["$props"]["loadItems"]
+  >;
+  type OnLoad = (options: {
+    side: string;
+    done: (status: LoadStatus) => void;
+  }) => Promise<void>;
+
+  // the infinite scroller as a box that hands out its load callback and shows its
+  // error slot, so a test can stand in for it loading the next page
+  const InfiniteScrollStub = {
+    name: "VInfiniteScroll",
+    props: { onLoad: { type: Function, default: undefined } },
+    setup(props: { onLoad?: OnLoad }, { slots }: SetupContext) {
+      return () =>
+        h("div", [
+          slots.default?.(),
+          slots.error?.({
+            side: "end",
+            props: {
+              onClick: () => props.onLoad?.({ side: "end", done: () => {} }),
+            },
+          }),
+        ]);
+    },
+  };
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
+    store.prevState = undefined;
+    store.currentUser = undefined;
+  });
+
+  function mountFailingListing(loadItems: LoadItems) {
+    return mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.apple_music",
+        showGenreFilter: false,
+        loadPagedData: undefined,
+        loadItems,
+      },
+      { VInfiniteScroll: InfiniteScrollStub },
+    );
+  }
+
+  async function scrollerLoads(listing: ReturnType<typeof mountListingRaw>) {
+    const done = vi.fn();
+    const onLoad = listing
+      .findComponent({ name: "VInfiniteScroll" })
+      .props("onLoad") as OnLoad;
+    await onLoad({ side: "end", done });
+    await flushPromises();
+    return done;
+  }
+
+  function retryButton(listing: ReturnType<typeof mountListingRaw>) {
+    return listing
+      .findAll("button")
+      .find((button) => button.text() === "settings.retry");
+  }
+
+  it("does not load again on its own after a load failed", async () => {
+    const loadItems = vi
+      .fn<LoadItems>()
+      .mockRejectedValue(new Error("rate limited"));
+    const listing = mountFailingListing(loadItems);
+    await flushPromises();
+
+    // a new scroller loads as soon as it shows up, which is what kept retrying
+    const done = await scrollerLoads(listing);
+    await scrollerLoads(listing);
+    await scrollerLoads(listing);
+
+    expect(loadItems).toHaveBeenCalledTimes(1);
+    expect(done).toHaveBeenCalledWith("error");
+  });
+
+  it("loads from the start again when the user retries", async () => {
+    const loadItems = vi
+      .fn<LoadItems>()
+      .mockRejectedValueOnce(new Error("rate limited"))
+      .mockResolvedValue([track()]);
+    const listing = mountFailingListing(loadItems);
+    await flushPromises();
+
+    await retryButton(listing)!.trigger("click");
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenCalledTimes(2);
+    expect(loadItems.mock.calls[1][0]).toMatchObject({ offset: 0 });
+    // loaded, so the scroller finds the end instead of the failure
+    expect(await scrollerLoads(listing)).toHaveBeenCalledWith("empty");
+  });
+
+  it("retries the page that failed, not the one after it", async () => {
+    const offsets: number[] = [];
+    let fail = false;
+    const loadPagedData = vi.fn(async (params: { offset: number }) => {
+      offsets.push(params.offset);
+      if (fail) {
+        fail = false;
+        throw new Error("rate limited");
+      }
+      return [track(), track()];
+    });
+    const listing = mountListingRaw(
+      { showGenreFilter: false, loadPagedData, limit: 2 },
+      { VInfiniteScroll: InfiniteScrollStub },
+    );
+    await flushPromises();
+
+    fail = true;
+    expect(await scrollerLoads(listing)).toHaveBeenCalledWith("error");
+    await retryButton(listing)!.trigger("click");
+    await flushPromises();
+
+    expect(offsets).toEqual([0, 2, 2]);
   });
 });
 

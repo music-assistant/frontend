@@ -128,6 +128,17 @@
         :empty-text="''"
         style="overflow: hidden"
       >
+        <template #error="{ props: errorProps }">
+          <div class="flex justify-center py-4">
+            <Button
+              variant="outline"
+              size="sm"
+              @click="retryLoad(errorProps.onClick)"
+            >
+              {{ $t("settings.retry") }}
+            </Button>
+          </div>
+        </template>
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'">
           <v-col
@@ -221,7 +232,7 @@
 
       <!-- subtle message shown when there are no items to display -->
       <Empty
-        v-if="!loading && pagedItems.length == 0"
+        v-if="!loading && !loadError && pagedItems.length == 0"
         class="border-none gap-3 py-8"
       >
         <EmptyMedia variant="icon">
@@ -625,6 +636,8 @@ const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const expanded = ref(true);
 const allItemsReceived = ref(false);
+// set when the last load failed; scrolling does not retry it, the user does
+const loadError = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
@@ -1124,6 +1137,12 @@ const loadNextPage = async function ({
     done("empty");
     return;
   }
+  // the infinite scroller is re-created whenever a load starts and ends, and a new one
+  // loads right away, so a failed load would otherwise be retried as fast as it fails
+  if (loadError.value) {
+    done("error");
+    return;
+  }
 
   await loadData(
     undefined,
@@ -1132,11 +1151,21 @@ const loadNextPage = async function ({
     params.value.offset + props.limit,
   );
 
-  done("ok");
+  done(loadError.value ? "error" : "ok");
+};
+
+const retryLoad = function (loadNext: () => void) {
+  loadError.value = false;
+  if (pagedItems.value.length === 0) {
+    // nothing loaded yet, so the failed load was the first one
+    loadData(true);
+  } else {
+    loadNext();
+  }
 };
 
 const loadAllItems = async function () {
-  while (!allItemsReceived.value) {
+  while (!allItemsReceived.value && !loadError.value) {
     // the paging can outlast the listing, so stop fetching once it is gone
     if (unmounted) return;
 
@@ -1679,6 +1708,10 @@ const loadData = async function (
   }
   loading.value = true;
   loadingTabId = currentTabId;
+  if (clear || refresh || FilterParamsChanged) {
+    // a reload the user asked for gets a fresh attempt
+    loadError.value = false;
+  }
 
   if (FilterParamsChanged && loadPagedData != null) {
     // on paged server listings, we need to clear the list on filter params change
@@ -1698,6 +1731,7 @@ const loadData = async function (
     newContentAvailable.value = false;
   }
 
+  const previousOffset = params.value.offset;
   try {
     params.value.offset = offset;
     params.value.limit = props.limit;
@@ -1731,6 +1765,10 @@ const loadData = async function (
       // mark allItemsReceived if we have all items
       allItemsReceived.value = nextItems.length < props.limit;
     }
+  } catch {
+    // the api already reports the failure to the user; the failed page is loaded next
+    params.value.offset = previousOffset;
+    loadError.value = true;
   } finally {
     params.value.refresh = false;
     loading.value = false;
