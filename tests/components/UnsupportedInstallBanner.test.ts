@@ -32,6 +32,9 @@ describe("UnsupportedInstallBanner", () => {
     const wrapper = mount(UnsupportedInstallBanner);
 
     expect(wrapper.text()).toContain("settings.unsupported_install_title");
+    expect(wrapper.get("a").attributes("href")).toBe(
+      "https://music-assistant.io/installation/",
+    );
   });
 
   it.each([false, undefined])(
