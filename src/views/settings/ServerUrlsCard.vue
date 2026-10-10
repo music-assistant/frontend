@@ -12,8 +12,12 @@
         class="gap-3"
         data-testid="server-urls-internet"
       >
-        <FieldLegend class="mb-0">
-          {{ $t("settings.server_url.internet") }}
+        <!-- styled like the section headings of the settings form below -->
+        <FieldLegend
+          class="mb-2 flex w-full items-center gap-3 text-xs tracking-wider text-primary uppercase"
+        >
+          <span>{{ $t("settings.server_url.internet") }}</span>
+          <span class="h-px flex-1 bg-border"></span>
         </FieldLegend>
         <Field v-if="offersRemoteAccess" orientation="horizontal">
           <Switch
@@ -78,6 +82,7 @@
             <RouterLink
               v-if="canManageSystem"
               :to="{ name: 'remoteaccesssettings' }"
+              class="text-primary"
             >
               {{ $t("settings.server_url.set_up_remote_access") }}
             </RouterLink>
@@ -86,8 +91,11 @@
       </FieldSet>
 
       <FieldSet class="gap-3" data-testid="server-urls-local">
-        <FieldLegend class="mb-0">
-          {{ $t("settings.server_url.local_network") }}
+        <FieldLegend
+          class="mb-2 flex w-full items-center gap-3 text-xs tracking-wider text-primary uppercase"
+        >
+          <span>{{ $t("settings.server_url.local_network") }}</span>
+          <span class="h-px flex-1 bg-border"></span>
         </FieldLegend>
         <Field orientation="horizontal">
           <Switch
