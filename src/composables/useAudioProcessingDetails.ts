@@ -1104,6 +1104,10 @@ function crossfadeModeLabel(
       return translate(
         "streamdetails.audio_processing.crossfade_mode.standard",
       );
+    case CrossfadeMode.VOICE_OVER:
+      return translate(
+        "streamdetails.audio_processing.crossfade_mode.voice_over",
+      );
     case CrossfadeMode.DISABLED:
       return translate(
         "streamdetails.audio_processing.crossfade_mode.disabled",

@@ -1236,6 +1236,7 @@
             "crossfade_mode": {
                 "smart": "Smart",
                 "standard": "Standard",
+                "voice_over": "Voice-over, music ducked under it",
                 "disabled": "Disabled",
                 "source": "Applied by {0}"
             },
