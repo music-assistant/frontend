@@ -18,7 +18,7 @@
     :show-search-button="true"
     :allow-collapse="true"
     :hide-on-empty="false"
-    :sort-keys="sortKeys"
+    :sort-media-type="MediaType.GENRE"
     :limit="50"
     :infinite-scroll="false"
     :load-paged-data="section.load"
@@ -51,17 +51,6 @@ defineOptions({
 const showAddGenreDialog = ref(false);
 const refreshKey = ref(0);
 
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "play_count",
-  "play_count_desc",
-];
-
 // one collapsible section per taxonomy, scoped server-side via content_type. Server-paged so
 // each section's own filters (favorites / default-non-empty-all / search) re-fetch.
 const loadSection = (contentType: MediaType | "music") => {
@@ -72,7 +61,8 @@ const loadSection = (contentType: MediaType | "music") => {
       search: params.search,
       limit: params.limit,
       offset: params.offset,
-      order_by: params.sortBy,
+      sort_field: params.sort_field,
+      sort_direction: params.sort_direction,
       hide_empty: params.hideEmptyFilter,
     });
   };

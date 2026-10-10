@@ -7,7 +7,7 @@
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
-    :sort-keys="sortKeys"
+    :sort-media-type="MediaType.RADIO"
     :update-available="updateAvailable"
     :title="$t('radios')"
     :show-search-button="true"
@@ -67,19 +67,6 @@ const extraMenuItems = computed<ToolBarMenuItem[]>(() =>
     : [],
 );
 
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
-
 onMounted(() => {
   // signal if/when items get added within this library
   const unsub = api.subscribe(
@@ -108,7 +95,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
   );

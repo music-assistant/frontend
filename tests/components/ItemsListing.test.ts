@@ -1,14 +1,18 @@
 import ItemsListing from "@/components/ItemsListing.vue";
+import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { defineComponent, h } from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   EventType,
   MediaType,
+  SortDirection,
+  SortField,
   type Album,
   type EventMessage,
   type ProviderInstance,
   type ProviderManifest,
+  type SortOptionInfo,
   type Track,
 } from "@/plugins/api/interfaces";
 import {
@@ -45,6 +49,8 @@ const events = vi.hoisted(() => {
 const mockGetLibraryGenres = vi.hoisted(() =>
   vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
 );
+const mockGetLibrarySortOptions = vi.hoisted(() => vi.fn());
+const mockToastError = vi.hoisted(() => vi.fn());
 const mockSubscribeMulti = vi.hoisted(() => vi.fn());
 const mockSubscribe = vi.hoisted(() => vi.fn());
 
@@ -53,6 +59,7 @@ vi.mock("@/plugins/api", () => {
     providers: {},
     providerManifests: {},
     getLibraryGenres: mockGetLibraryGenres,
+    getLibrarySortOptions: mockGetLibrarySortOptions,
     subscribe_multi: mockSubscribeMulti,
     subscribe: mockSubscribe,
   };
@@ -129,7 +136,9 @@ vi.mock("vue-router", () => ({
   }),
 }));
 
-vi.mock("vue-sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock("vue-sonner", () => ({
+  toast: { error: mockToastError, success: vi.fn() },
+}));
 
 const stubComponent = vi.hoisted(() => (name: string) => ({
   default: { name, template: "<div />" },
@@ -1562,3 +1571,202 @@ function confirmationRequest() {
   ][];
   return calls.find(([event]) => event === "deleteConfirmationDialog")?.[1];
 }
+
+describe("ItemsListing server sort options", () => {
+  const sortOptions: SortOptionInfo[] = [
+    {
+      field: SortField.TIMESTAMP_ADDED,
+      supports_direction: true,
+      default_direction: SortDirection.DESC,
+      label_key: "timestamp_added",
+    },
+    {
+      field: SortField.NAME,
+      supports_direction: true,
+      default_direction: SortDirection.ASC,
+      label_key: "name",
+    },
+    {
+      field: SortField.PLAY_COUNT,
+      supports_direction: true,
+      default_direction: SortDirection.DESC,
+      label_key: "play_count",
+    },
+    {
+      field: SortField.DURATION,
+      supports_direction: true,
+      default_direction: SortDirection.ASC,
+      label_key: "duration",
+    },
+    {
+      field: SortField.RANDOM,
+      supports_direction: false,
+      default_direction: null,
+      label_key: "random",
+    },
+  ];
+
+  beforeEach(() => {
+    mockGetLibraryGenres.mockReset().mockResolvedValue([]);
+    mockGetLibrarySortOptions.mockReset().mockResolvedValue(sortOptions);
+    mockToastError.mockReset();
+    mockSubscribeMulti.mockReset().mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset().mockImplementation(events.subscribe);
+    mockSetItemsListingPreference.mockReset();
+    store.currentUser = undefined;
+    store.prevState = undefined;
+    store.mobileLayout = false;
+  });
+
+  it("loads server options, migrates saved sorts, and toggles a quick sort direction", async () => {
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.librarytracks.tracks": { sortBy: "name_desc" },
+      },
+    });
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "tracks",
+      path: "librarytracks",
+      sortMediaType: MediaType.TRACK,
+      loadPagedData,
+      showGenreFilter: false,
+    });
+    await flushPromises();
+
+    expect(mockGetLibrarySortOptions).toHaveBeenCalledWith(MediaType.TRACK);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "name:desc" }),
+    );
+
+    const sortMenu = listing.findComponent(LibrarySortControls);
+    await sortMenu.find("button").trigger("click");
+    await flushPromises();
+    expect(
+      document.body.querySelectorAll('[role="menuitemradio"]'),
+    ).toHaveLength(sortOptions.length + 2);
+    expect(
+      document.body.querySelectorAll(
+        '[role="menuitemradio"][aria-checked="true"]',
+      ),
+    ).toHaveLength(2);
+    expect(
+      document.body.querySelectorAll(
+        '[role="menuitemradio"][aria-checked="true"] svg.lucide-check',
+      ),
+    ).toHaveLength(2);
+
+    const playCountChip = listing
+      .findAll("button")
+      .find((button) => button.text().includes("sort.play_count"));
+    expect(playCountChip).toBeDefined();
+    await playCountChip?.trigger("click");
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "play_count:desc" }),
+    );
+
+    await playCountChip?.trigger("click");
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "play_count:asc" }),
+    );
+  });
+
+  it("keeps the desktop sort chip row stable while options load", async () => {
+    let resolveSortOptions!: (options: SortOptionInfo[]) => void;
+    mockGetLibrarySortOptions.mockReturnValue(
+      new Promise<SortOptionInfo[]>((resolve) => {
+        resolveSortOptions = resolve;
+      }),
+    );
+
+    const listing = mountListingRaw({
+      sortMediaType: MediaType.TRACK,
+      showGenreFilter: false,
+    });
+    const chipsRow = listing.find(".listing-sort-chips-row");
+
+    expect(chipsRow.exists()).toBe(true);
+    expect(chipsRow.classes()).toContain("h-12");
+    expect(chipsRow.findComponent(LibrarySortControls).exists()).toBe(false);
+
+    resolveSortOptions(sortOptions);
+    await flushPromises();
+
+    expect(chipsRow.exists()).toBe(true);
+    expect(chipsRow.findComponent(LibrarySortControls).props("mode")).toBe(
+      "chips",
+    );
+  });
+
+  it("uses one toast ID when shared genre sort options fail in multiple listings", async () => {
+    mockGetLibrarySortOptions.mockRejectedValue(new Error("request failed"));
+
+    const listings = ["music", "podcasts", "audiobooks"].map((contentType) =>
+      mountListingRaw({
+        itemtype: "genres",
+        path: `librarygenres.${contentType}`,
+        sortMediaType: MediaType.GENRE,
+        showGenreFilter: false,
+      }),
+    );
+    await flushPromises();
+
+    expect(mockToastError).toHaveBeenCalledTimes(3);
+    for (const call of mockToastError.mock.calls) {
+      expect(call).toEqual([
+        "settings.error_loading_sort_options",
+        { id: "library-sort-options-error" },
+      ]);
+    }
+    listings.forEach((listing) => listing.unmount());
+  });
+
+  it("preserves ascending semantics for unsuffixed legacy sort preferences", async () => {
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.librarytracks.tracks": { sortBy: "timestamp_added" },
+      },
+    });
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+
+    mountListingRaw({
+      itemtype: "tracks",
+      path: "librarytracks",
+      sortMediaType: MediaType.TRACK,
+      loadPagedData,
+      showGenreFilter: false,
+    });
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "timestamp_added:asc" }),
+    );
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "librarytracks",
+      "tracks",
+      "sortBy",
+      "timestamp_added:asc",
+    );
+  });
+
+  it("excludes sort fields not shared by audiobook author tabs", async () => {
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "audiobooks",
+      path: "libraryaudiobooks",
+      sortMediaType: MediaType.AUDIOBOOK,
+      sortOptionExcludeFields: [SortField.DURATION],
+      loadPagedData,
+      showGenreFilter: false,
+    });
+    await flushPromises();
+
+    const controls = listing.findComponent(LibrarySortControls);
+    const options = controls.props("options") as SortOptionInfo[];
+    expect(options.map((option) => option.field)).not.toContain(
+      SortField.DURATION,
+    );
+  });
+});

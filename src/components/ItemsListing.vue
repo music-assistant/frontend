@@ -18,8 +18,17 @@
         <slot name="title">{{ title }}</slot>
       </template>
 
-      <template v-if="!store.mobileLayout" #append>
-        <Transition name="listing-search">
+      <template #append>
+        <LibrarySortControls
+          v-if="props.sortMediaType && sortOptionsLoaded && sortOptions.length"
+          mode="menu"
+          :options="sortOptions"
+          :sort-by="params.sortBy"
+          :disabled="loading"
+          :mobile-layout="store.mobileLayout"
+          @sort-by="changeSort"
+        />
+        <Transition v-if="!store.mobileLayout" name="listing-search">
           <div v-if="showSearchInput" class="listing-search-slot">
             <SearchInput
               ref="searchInputRef"
@@ -35,6 +44,21 @@
         </Transition>
       </template>
     </Toolbar>
+
+    <div
+      v-if="props.sortMediaType && !store.mobileLayout"
+      class="listing-sort-chips-row h-12"
+    >
+      <LibrarySortControls
+        v-if="sortOptionsLoaded && sortOptions.length"
+        mode="chips"
+        :options="sortOptions"
+        :sort-by="params.sortBy"
+        :disabled="loading"
+        :mobile-layout="store.mobileLayout"
+        @sort-by="changeSort"
+      />
+    </div>
 
     <v-divider />
 
@@ -309,6 +333,7 @@ import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -320,6 +345,7 @@ import { SearchInput } from "@/components/ui/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GridSizeSlider from "@/components/GridSizeSlider.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
+import { useLibrarySorting } from "@/composables/useLibrarySorting";
 import { SEARCHABLE_MEDIA_TYPES } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
@@ -354,11 +380,15 @@ import {
   ProviderFeature,
   ProviderType,
   Radio,
+  SortDirection,
+  SortField,
   type Album,
   type Genre,
+  type LibrarySortMediaType,
   type MediaItem,
   type MediaItemType,
   type ProviderInstance,
+  type SortOptionInfo,
   type Track,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -416,6 +446,8 @@ export interface LoadDataParams {
   offset: number;
   limit: number;
   sortBy: string;
+  sort_field?: SortField;
+  sort_direction?: SortDirection;
   search: string;
   genreIds?: number | number[];
   favoritesOnly?: boolean;
@@ -432,6 +464,8 @@ export interface LoadDataParams {
 export interface Props {
   itemtype: string;
   sortKeys?: string[];
+  sortMediaType?: LibrarySortMediaType;
+  sortOptionExcludeFields?: SortField[];
   showTrackNumber?: boolean;
   showProvider?: boolean;
   showAlbum?: boolean;
@@ -498,6 +532,8 @@ export interface Props {
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
+  sortMediaType: undefined,
+  sortOptionExcludeFields: () => [],
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
@@ -628,6 +664,17 @@ const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
+const serverSortOptions = ref<SortOptionInfo[]>([]);
+const sortOptions = computed(() =>
+  serverSortOptions.value.filter(
+    (option) => !props.sortOptionExcludeFields.includes(option.field),
+  ),
+);
+const sortOptionsLoaded = ref(false);
+const librarySorting = useLibrarySorting(
+  sortOptions,
+  computed(() => params.value.sortBy),
+);
 
 // used in tabbed item listings to prevent a timing-race condition, where
 // the selected tab shows items of the initial tab on entering the page
@@ -985,6 +1032,20 @@ const toggleCheckboxes = function () {
 const onRefreshClicked = function () {
   loadData(true, true);
 };
+
+watch(sortOptions, () => {
+  if (!sortOptionsLoaded.value || !props.sortMediaType) return;
+  const normalized = librarySorting.normalizeSortBy(params.value.sortBy);
+  if (normalized === params.value.sortBy) return;
+  params.value.sortBy = normalized;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "sortBy",
+    normalized,
+  );
+  loadData(true, undefined, true);
+});
 
 const changeSort = function (sort_key?: string) {
   if (sort_key !== undefined) {
@@ -1536,7 +1597,7 @@ const menuItems = computed(() => {
   }
 
   // sort options
-  if (props.sortKeys?.length) {
+  if (!props.sortMediaType && props.sortKeys?.length) {
     items.push({
       label: "tooltip.sort_options",
       icon: ArrowUpDown,
@@ -1702,6 +1763,19 @@ const loadData = async function (
     params.value.offset = offset;
     params.value.limit = props.limit;
     params.value.refresh = refresh;
+    const currentSort = librarySorting.current.value;
+    const sortField = currentSort.field as SortField;
+    const selectedSortOption = sortOptions.value.find(
+      (option) => option.field === sortField,
+    );
+    params.value.sort_field = sortField;
+    params.value.sort_direction =
+      selectedSortOption?.supports_direction === false ||
+      sortField === SortField.RANDOM ||
+      sortField === SortField.RANDOM_PLAY_COUNT ||
+      sortField === SortField.ORIGINAL
+        ? undefined
+        : currentSort.direction;
 
     if (loadPagedData != null) {
       // server side paged listing (with filter support)
@@ -1784,7 +1858,22 @@ const restoreSettings = async function () {
   gridSize.value = normalizeGridSize(prefs.gridSize);
 
   // get stored/default sortBy for this itemtype
-  if (prefs.sortBy && props.sortKeys.includes(prefs.sortBy)) {
+  if (props.sortMediaType) {
+    if (sortOptionsLoaded.value) {
+      const normalizedSortBy = librarySorting.normalizeSortBy(
+        prefs.sortBy || params.value.sortBy,
+      );
+      params.value.sortBy = normalizedSortBy;
+      if (prefs.sortBy && normalizedSortBy !== prefs.sortBy) {
+        setItemsListingPreference(
+          props.path || props.itemtype,
+          props.itemtype,
+          "sortBy",
+          normalizedSortBy,
+        );
+      }
+    }
+  } else if (prefs.sortBy && props.sortKeys.includes(prefs.sortBy)) {
     params.value.sortBy = prefs.sortBy;
   } else {
     params.value.sortBy = props.sortKeys[0];
@@ -2055,7 +2144,7 @@ const loadGenreOptions = async () => {
       page = await api.getLibraryGenres({
         limit: pageSize,
         offset,
-        order_by: "name",
+        sort_field: SortField.NAME,
         hide_empty: true, // always hide empty genres in the filter dropdown
         media_type: mediaType, // filter to genres relevant for this media type
       });
@@ -2094,6 +2183,21 @@ onBeforeUnmount(() => {
 });
 
 onMounted(async () => {
+  if (props.sortMediaType) {
+    try {
+      serverSortOptions.value = await api.getLibrarySortOptions(
+        props.sortMediaType,
+      );
+    } catch {
+      toast.error(t("settings.error_loading_sort_options"), {
+        id: "library-sort-options-error",
+      });
+    }
+    sortOptionsLoaded.value = true;
+    if (unmounted) return;
+    restoreSettings();
+  }
+
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;
@@ -2109,6 +2213,9 @@ onMounted(async () => {
     allItems.value = store.prevState.allItems;
     allItemsReceived.value = store.prevState.allItemsReceived;
     initialDataReceived.value = store.prevState.initialDataReceived;
+    if (props.sortMediaType) {
+      params.value.sortBy = librarySorting.normalizeSortBy(params.value.sortBy);
+    }
     // what the last visit left behind gives way to a provider carried in by a
     // link, unless it already came from there
     const carried = offeredCarriedProvider();

@@ -27,6 +27,7 @@ import {
   type Genre,
   type MassEvent,
   type MediaItemType,
+  type LibrarySortMediaType,
   type Player,
   type PlayerOptionValueType,
   type PlayerQueue,
@@ -40,6 +41,7 @@ import {
   type SuccessResultMessage,
   type TaskSchedule,
   type Track,
+  type SortOptionInfo,
   type User,
   type UserSummary,
   AlbumType,
@@ -76,6 +78,8 @@ import {
   NetworkShareSettings,
   SearchResults,
   ShareType,
+  SortDirection,
+  SortField,
   SmartPlaylistRules,
   SoundEffect,
   SourceFolder,
@@ -93,6 +97,17 @@ const DEBUG = process.env.NODE_ENV === "development";
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
 export const MIN_SERVER_SCHEMA_VERSION = 75;
+
+const LIBRARY_SORT_LISTINGS: Record<LibrarySortMediaType, string> = {
+  [MediaType.ARTIST]: "library_artists",
+  [MediaType.ALBUM]: "library_albums",
+  [MediaType.TRACK]: "library_tracks",
+  [MediaType.PLAYLIST]: "library_playlists",
+  [MediaType.RADIO]: "library_radios",
+  [MediaType.AUDIOBOOK]: "library_audiobooks",
+  [MediaType.PODCAST]: "library_podcasts",
+  [MediaType.GENRE]: "library_genres",
+};
 
 export interface CommandOptions {
   /**
@@ -159,6 +174,10 @@ export class MusicAssistantApi {
   );
   public providerIcons = reactive<{ [key: string]: string | null }>({});
   private _providerIconRequests = new Map<string, Promise<string | null>>();
+  private _librarySortOptions = new Map<
+    LibrarySortMediaType,
+    Promise<SortOptionInfo[]>
+  >();
   // core config values by "<domain>/<key>", dropped when this client saves a core config
   // and when the full state is (re)fetched, so a change made from another client is
   // picked up on the next (re)connect.
@@ -439,6 +458,7 @@ export class MusicAssistantApi {
       (key) => delete this.providerIcons[key],
     );
     this._providerIconRequests.clear();
+    this._librarySortOptions.clear();
     this._coreConfigValues.clear();
     this.serverInfo.value = undefined;
   }
@@ -490,7 +510,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of tracks
    */
@@ -499,7 +520,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
   ): Promise<Track[]> {
@@ -508,7 +530,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       provider,
       genre,
     });
@@ -595,6 +618,26 @@ export class MusicAssistantApi {
   ): Promise<number> {
     return this.sendCommand("music/tracks/count", { favorite_only });
   }
+
+  public getLibrarySortOptions(
+    media_type: LibrarySortMediaType,
+  ): Promise<SortOptionInfo[]> {
+    const cached = this._librarySortOptions.get(media_type);
+    if (cached) return cached;
+
+    const request = this.sendCommand<SortOptionInfo[]>(
+      "music/sort_options",
+      { listing: LIBRARY_SORT_LISTINGS[media_type] },
+      { suppressGlobalError: true },
+    );
+    this._librarySortOptions.set(media_type, request);
+    void request.catch(() => {
+      if (this._librarySortOptions.get(media_type) === request) {
+        this._librarySortOptions.delete(media_type);
+      }
+    });
+    return request;
+  }
   public getLibraryPlaylistsCount(
     favorite_only: boolean = false,
   ): Promise<number> {
@@ -636,7 +679,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param album_artists_only - Only return artists that have albums
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of artists
@@ -646,7 +690,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     album_artists_only?: boolean,
     provider?: string | string[],
     genre?: number | number[],
@@ -657,7 +702,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       album_artists_only,
       provider,
       genre,
@@ -790,7 +836,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param album_types - Filter by album types
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of albums
@@ -800,7 +847,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     album_types?: Array<AlbumType | string>,
     provider?: string | string[],
     genre?: number | number[],
@@ -810,7 +858,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       album_types,
       provider,
       genre,
@@ -855,7 +904,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of playlists
    */
@@ -864,7 +914,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
   ): Promise<Playlist[]> {
@@ -873,7 +924,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       provider,
       genre,
     });
@@ -1062,7 +1114,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of radio stations
    */
@@ -1071,7 +1124,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
   ): Promise<Radio[]> {
@@ -1080,7 +1134,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       provider,
       genre,
     });
@@ -1123,7 +1178,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of audiobooks
    */
@@ -1132,7 +1188,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
     collapse_collections?: boolean,
@@ -1142,7 +1199,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       provider,
       genre,
       collapse_collections,
@@ -1184,7 +1242,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of podcasts
    */
@@ -1193,7 +1252,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
   ): Promise<Podcast[]> {
@@ -1202,7 +1262,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       provider,
       genre,
     });
@@ -1214,7 +1275,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @param genre - Filter by genre ID(s)
    * @param hide_empty - Hide genres with no associated media items
@@ -1227,7 +1289,8 @@ export class MusicAssistantApi {
       search?: string;
       limit?: number;
       offset?: number;
-      order_by?: string;
+      sort_field?: SortField;
+      sort_direction?: SortDirection;
       provider?: string | string[];
       genre?: number | number[];
       hide_empty?: boolean | null;
@@ -1393,13 +1456,15 @@ export class MusicAssistantApi {
     item_id: string | number,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Track[]> {
     return this.sendCommand("music/genres/tracks", {
       item_id,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
     });
   }
 
