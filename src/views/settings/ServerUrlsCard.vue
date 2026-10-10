@@ -39,8 +39,8 @@
                 variant="ghost"
                 size="icon"
                 class="size-7 shrink-0"
-                :aria-label="$t('settings.server_url.copy')"
-                :title="$t('settings.server_url.copy')"
+                :aria-label="$t('settings.server_url.copy_remote')"
+                :title="$t('settings.server_url.copy_remote')"
                 data-testid="server-urls-remote-copy"
                 @click="copyUrl(remoteUrl)"
               >
@@ -111,8 +111,8 @@
               variant="ghost"
               size="icon"
               class="size-7 shrink-0"
-              :aria-label="$t('settings.server_url.copy')"
-              :title="$t('settings.server_url.copy')"
+              :aria-label="$t('settings.server_url.copy_detected')"
+              :title="$t('settings.server_url.copy_detected')"
               data-testid="server-urls-detected-copy"
               @click="copyUrl(detectedUrl)"
             >
@@ -199,11 +199,13 @@ const formId = useId();
 const canManageSystem = authManager.hasScope(Scope.SYSTEM_MANAGE);
 const remoteId = ref<string>();
 const loadingRemoteId = ref(false);
+// the server reads an empty internal URL as auto
+const isAutomatic = (value: unknown) => !value || value === AUTO;
 // the URL the server reports is only the detected one while the stored value is auto
-const storedAutomatic =
-  (props.baseUrl.value ?? props.baseUrl.default_value) === AUTO;
-// the input is in use, so emptying it to type another URL keeps it open
+const storedAutomatic = isAutomatic(props.baseUrl.value);
+// the inputs are in use, so emptying one to type another URL keeps it open
 const enteringExternalUrl = ref(!!props.externalUrl?.value);
+const enteringBaseUrl = ref(!storedAutomatic);
 // what the inputs held before their switch took over, given back when it is
 // switched off again
 let typedExternalUrl = "";
@@ -231,7 +233,9 @@ const remoteUrl = computed(() =>
     : undefined,
 );
 const baseUrlValue = computed(() => String(props.baseUrl.value ?? ""));
-const automatic = computed(() => baseUrlValue.value === AUTO);
+const automatic = computed(
+  () => isAutomatic(baseUrlValue.value) && !enteringBaseUrl.value,
+);
 const detectedUrl = computed(() =>
   storedAutomatic ? api.serverInfo.value?.internal_url || undefined : undefined,
 );
@@ -247,6 +251,7 @@ const setUseRemoteAccess = function (value: boolean) {
 };
 
 const setAutomatic = function (value: boolean) {
+  enteringBaseUrl.value = !value;
   if (value) {
     typedBaseUrl = baseUrlValue.value;
     emit("update:value", props.baseUrl.key, AUTO);

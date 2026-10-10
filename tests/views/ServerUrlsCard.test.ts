@@ -250,6 +250,27 @@ describe("ServerUrlsCard", () => {
       expect(values.base_url).toBe("https://ma.lan");
     });
 
+    it("reads an empty stored value as automatic, like the server", async () => {
+      const { wrapper } = await mountCard({ base_url: "" });
+
+      expect(automaticSwitch(wrapper).attributes("data-state")).toBe("checked");
+      expect(wrapper.find(DETECTED).text()).toContain(DETECTED_URL);
+    });
+
+    it("keeps the input open while the internal URL is emptied", async () => {
+      const { wrapper, values } = await mountCard({
+        base_url: "https://ma.lan",
+      });
+
+      await internalInput(wrapper).setValue("");
+
+      expect(values.base_url).toBe("");
+      expect(automaticSwitch(wrapper).attributes("data-state")).toBe(
+        "unchecked",
+      );
+      expect(internalInput(wrapper).exists()).toBe(true);
+    });
+
     it("writes what is typed as the internal URL", async () => {
       const { wrapper, values } = await mountCard({
         base_url: "https://ma.lan",

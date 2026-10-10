@@ -165,7 +165,8 @@
             "set_up_remote_access": "Set up remote access",
             "automatic": "Automatic",
             "detected_after_save": "Detected automatically after saving",
-            "copy": "Copy URL",
+            "copy_remote": "Copy remote access link",
+            "copy_detected": "Copy local network URL",
             "copied": "URL copied",
             "copy_failed": "Couldn't copy URL"
         },
