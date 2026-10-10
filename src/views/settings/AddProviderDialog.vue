@@ -7,7 +7,7 @@
       class="flex h-[calc(100dvh-2rem)] flex-col gap-0 p-0 sm:h-[85dvh] sm:max-w-[calc(100%-2rem)] lg:max-w-[900px]"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
-      <DialogHeader class="border-b px-5 py-4 pr-12 text-left">
+      <DialogHeader class="border-b px-5 py-4 pr-12">
         <DialogTitle>{{ dialogTitle }}</DialogTitle>
       </DialogHeader>
 

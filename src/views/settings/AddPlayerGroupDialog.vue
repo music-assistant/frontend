@@ -3,7 +3,7 @@
     <DialogContent
       class="flex h-[60vh] max-h-[60vh] max-w-[800px] flex-col gap-0 p-0"
     >
-      <DialogHeader class="border-b px-5 py-4 pr-12 text-left">
+      <DialogHeader class="border-b px-5 py-4 pr-12">
         <DialogTitle>{{ $t("settings.add_group_player") }}</DialogTitle>
       </DialogHeader>
 
