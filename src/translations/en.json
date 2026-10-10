@@ -1942,7 +1942,7 @@
                 "default_playback_device": "Default Playback Device (optional)",
                 "web_search_mode": "Web Search Mode",
                 "character_limit": "Character Limit",
-                "allow_post": "Talk Over Intro",
+                "allow_post": "Talk over the intro",
                 "prompt": "Prompt",
                 "instructions": "Host and Program Instructions",
                 "shuffle_playlist_tracks": "Shuffle Playlist Tracks",
@@ -1954,7 +1954,7 @@
                 "source_playtime_cap": "Maximum total playing time of the source music, in minutes. Tracks are taken in the order the show plays them until the cap is reached. Leave at 0 for no limit.",
                 "instructions": "Describes the host's personality and how segments should be written. This is sent to the AI with every segment.",
                 "shuffle_playlist_tracks": "Play the source playlist in random order. Turn this off to follow the playlist's own order.",
-                "allow_post": "Let this segment keep talking over the start of the next song, ending just before the singing starts. Only happens when the intro is long enough and the song's vocal onset is known, from Music Assistant's audio analysis or synced lyrics."
+                "allow_post": "The end of this segment plays over the start of the next song, with the music turned down under the voice, ending just before the singing starts. Only happens when Music Assistant knows where the singing starts and the intro is long enough."
             },
             "web_search": {
                 "disabled": "disabled (no web tool)",
