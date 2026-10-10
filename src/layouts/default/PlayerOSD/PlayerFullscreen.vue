@@ -1094,7 +1094,6 @@ const onAlbumClick = async function () {
   } else {
     // Radio or non-library item - try to find in library first
     try {
-      // Call with positional parameters: (favorite, search, limit, offset, order_by, album_types, provider)
       const results = await api.getLibraryAlbums(
         undefined, // favorite
         albumSubtitle.value, // search
@@ -1177,7 +1176,6 @@ const onArtistClick = async function () {
   } else {
     // Radio or non-library item - try to find in library first
     try {
-      // Call with positional parameters: (favorite, search, limit, offset, order_by, album_artists_only, provider)
       const results = await api.getLibraryArtists(
         undefined, // favorite
         currentMedia.artist, // search

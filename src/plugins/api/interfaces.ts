@@ -228,6 +228,11 @@ export enum SortField {
   ARTIST_NAME = "artist_name",
   RANDOM = "random",
   RANDOM_PLAY_COUNT = "random_play_count",
+  TRACK_NUMBER = "track_number",
+  ALBUM_NAME = "album_name",
+  PROVIDER = "provider",
+  FAVORITE_TIMESTAMP = "favorite_timestamp",
+  ORIGINAL = "original",
 }
 
 export enum SortDirection {

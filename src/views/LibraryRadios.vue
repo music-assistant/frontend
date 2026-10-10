@@ -95,7 +95,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
   );

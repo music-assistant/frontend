@@ -380,6 +380,7 @@ import {
   ProviderFeature,
   ProviderType,
   Radio,
+  SortDirection,
   SortField,
   type Album,
   type Genre,
@@ -445,6 +446,8 @@ export interface LoadDataParams {
   offset: number;
   limit: number;
   sortBy: string;
+  sort_field?: SortField;
+  sort_direction?: SortDirection;
   search: string;
   genreIds?: number | number[];
   favoritesOnly?: boolean;
@@ -1760,6 +1763,19 @@ const loadData = async function (
     params.value.offset = offset;
     params.value.limit = props.limit;
     params.value.refresh = refresh;
+    const currentSort = librarySorting.current.value;
+    const sortField = currentSort.field as SortField;
+    const selectedSortOption = sortOptions.value.find(
+      (option) => option.field === sortField,
+    );
+    params.value.sort_field = sortField;
+    params.value.sort_direction =
+      selectedSortOption?.supports_direction === false ||
+      sortField === SortField.RANDOM ||
+      sortField === SortField.RANDOM_PLAY_COUNT ||
+      sortField === SortField.ORIGINAL
+        ? undefined
+        : currentSort.direction;
 
     if (loadPagedData != null) {
       // server side paged listing (with filter support)
@@ -2128,7 +2144,7 @@ const loadGenreOptions = async () => {
       page = await api.getLibraryGenres({
         limit: pageSize,
         offset,
-        order_by: "name",
+        sort_field: SortField.NAME,
         hide_empty: true, // always hide empty genres in the filter dropdown
         media_type: mediaType, // filter to genres relevant for this media type
       });

@@ -8,6 +8,8 @@ import {
   type Player,
   PlaylistMatchPolicy,
   RepeatMode,
+  SortDirection,
+  SortField,
   type Scope,
   type ServerInfoMessage,
   type SuccessResultMessage,
@@ -183,7 +185,8 @@ describe("MusicAssistantApi error handling", () => {
     const concurrentRequest = api.getLibrarySortOptions(MediaType.GENRE);
 
     expect(transport.sentCommands).toHaveLength(1);
-    expect(transport.lastCommand.command).toBe("music/genres/get_sort_options");
+    expect(transport.lastCommand.command).toBe("music/sort_options");
+    expect(transport.lastCommand.args).toEqual({ listing: "library_genres" });
 
     transport.receive({
       message_id: transport.lastCommand.message_id!,
@@ -208,7 +211,7 @@ describe("MusicAssistantApi error handling", () => {
     const afterDisconnect = api.getLibrarySortOptions(MediaType.GENRE);
     expect(
       reconnectTransport.sentCommands.filter(
-        (command) => command.command === "music/genres/get_sort_options",
+        (command) => command.command === "music/sort_options",
       ),
     ).toHaveLength(1);
     reconnectTransport.receive({
@@ -217,6 +220,57 @@ describe("MusicAssistantApi error handling", () => {
       partial: false,
     });
     await expect(afterDisconnect).resolves.toEqual([]);
+  });
+
+  it.each([
+    [MediaType.ARTIST, "library_artists"],
+    [MediaType.ALBUM, "library_albums"],
+    [MediaType.TRACK, "library_tracks"],
+    [MediaType.PLAYLIST, "library_playlists"],
+    [MediaType.RADIO, "library_radios"],
+    [MediaType.AUDIOBOOK, "library_audiobooks"],
+    [MediaType.PODCAST, "library_podcasts"],
+    [MediaType.GENRE, "library_genres"],
+  ] as const)(
+    "requests sort options for %s using listing %s",
+    async (mediaType, listing) => {
+      const request = api.getLibrarySortOptions(mediaType);
+
+      expect(transport.lastCommand.command).toBe("music/sort_options");
+      expect(transport.lastCommand.args).toEqual({ listing });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it("sends typed sort fields for library listings", async () => {
+    const sortedRequest = api.getLibraryTracks(
+      false,
+      undefined,
+      20,
+      10,
+      SortField.NAME,
+      SortDirection.DESC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/tracks/library_items");
+    expect(transport.lastCommand.args).toMatchObject({
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.DESC,
+    });
+    expect(transport.lastCommand.args).not.toHaveProperty("order_by");
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(sortedRequest).resolves.toEqual([]);
   });
 
   it("lets updateUser suppress the global error toast for the caller", async () => {

@@ -920,6 +920,7 @@
         "name_desc": "Alphabetically (descending)",
         "year_desc": "Release year (descending)",
         "duration_desc": "Duration (descending)",
+        "favorite_timestamp": "Date favorited",
         "original": "Original",
         "sort_name_desc": "Sort name (descending)",
         "timestamp_added": "Date added",

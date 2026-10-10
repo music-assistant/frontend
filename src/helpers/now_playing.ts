@@ -41,7 +41,6 @@ export const openCurrentTrackDetails = async function () {
     : currentMedia.title || "";
 
   try {
-    // Call with positional parameters: (favorite, search, limit, offset, order_by, provider)
     const results = await api.getLibraryTracks(
       undefined, // favorite
       searchTerm, // search

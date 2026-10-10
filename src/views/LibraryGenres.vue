@@ -61,7 +61,8 @@ const loadSection = (contentType: MediaType | "music") => {
       search: params.search,
       limit: params.limit,
       offset: params.offset,
-      order_by: params.sortBy,
+      sort_field: params.sort_field,
+      sort_direction: params.sort_direction,
       hide_empty: params.hideEmptyFilter,
     });
   };
