@@ -7,15 +7,20 @@
     <TriangleAlert />
     <AlertTitle>{{ $t("settings.unsupported_install_title") }}</AlertTitle>
     <AlertDescription>
-      <p>{{ $t("settings.unsupported_install_description") }}</p>
-      <a
-        :href="installationDocsUrl"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="font-medium underline underline-offset-4"
+      <i18n-t
+        keypath="settings.unsupported_install_description"
+        tag="p"
+        scope="global"
       >
-        {{ $t("settings.unsupported_install_link") }}
-      </a>
+        <a
+          :href="installationDocsUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="font-medium text-current underline underline-offset-4"
+        >
+          {{ $t("settings.unsupported_install_link") }}
+        </a>
+      </i18n-t>
     </AlertDescription>
   </Alert>
 </template>
