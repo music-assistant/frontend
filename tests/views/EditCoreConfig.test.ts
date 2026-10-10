@@ -1,5 +1,9 @@
-import { flushPromises, shallowMount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  enableAutoUnmount,
+  flushPromises,
+  shallowMount,
+} from "@vue/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
@@ -81,6 +85,8 @@ vi.mock("vue-router", async (importOriginal) => {
     useRouter: () => routerMock,
   };
 });
+
+enableAutoUnmount(afterEach);
 
 beforeEach(() => {
   vi.clearAllMocks();
