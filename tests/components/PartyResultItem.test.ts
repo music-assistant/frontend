@@ -9,7 +9,18 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// a local image can only be shown while its music source is loaded
+vi.mock("@/plugins/api", () => {
+  const api = {
+    baseUrl: "http://server",
+    providers: {},
+    getProvider: (id: string) =>
+      id === "filesystem--loaded" ? { available: true } : undefined,
+  };
+  return { api, default: api };
+});
 
 const thumb = (path: string): MediaItemImage => ({
   type: ImageType.THUMB,
@@ -96,17 +107,28 @@ describe("PartyResultItem", () => {
     expect(imageSrc(track(null))).toContain("track.jpg");
   });
 
-  it("shows the track's own image when its album cover cannot be loaded", () => {
+  it.each([
+    [
+      "shows a local album cover of a loaded music source",
+      "filesystem--loaded",
+      "cover-id",
+    ],
+    [
+      "shows the track's own image when its album cover cannot be loaded",
+      "filesystem--gone",
+      "track.jpg",
+    ],
+  ])("%s", (_label, provider, expected) => {
     const album = {
       ...ALBUM_REFERENCE,
-      // a local cover of a music source that is not loaded
       image: {
         type: ImageType.THUMB,
         path: "Album/folder.jpg",
-        provider: "filesystem--gone",
+        provider,
         remotely_accessible: false,
+        proxy_id: "cover-id",
       },
     } as ItemMapping;
-    expect(imageSrc(track(album))).toContain("track.jpg");
+    expect(imageSrc(track(album))).toContain(expected);
   });
 });
