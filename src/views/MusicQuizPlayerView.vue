@@ -261,7 +261,11 @@ const unsupportedGame = computed(() => {
 const showLanding = computed(
   () =>
     !!resolvedDefinition.value &&
-    ((!!activeInfo.value && !playerId.value && !loading.value) ||
+    // `loading` toggles on every background info/state refresh (each player
+    // event triggers one). Gating the landing on it would tear down and
+    // remount the join form — losing the half-typed name and stealing focus —
+    // whenever anyone else joins. `activeInfo` already gates the initial load.
+    ((!!activeInfo.value && !playerId.value) ||
       (!!playerId.value && !!activeState.value && !landingSeen.value)),
 );
 const landingQuiz = computed(() => activeState.value ?? activeInfo.value);
