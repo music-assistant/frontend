@@ -358,7 +358,15 @@ describe("EditCoreConfig", () => {
       }),
     );
 
-    const wrapper = mountWithForm("webserver");
+    const reset = vi.fn();
+    const wrapper = mountWithForm("webserver", {
+      ServerUrlsCard: {
+        name: "ServerUrlsCard",
+        props: ["baseUrl", "externalUrl"],
+        template: "<div />",
+        methods: { reset },
+      },
+    });
     await flushPromises();
 
     await wrapper
@@ -368,11 +376,13 @@ describe("EditCoreConfig", () => {
     const card = wrapper.findComponent(ServerUrlsCard);
     expect(card.props("baseUrl").value).toBe("auto");
     expect(card.props("externalUrl")?.value).toBeNull();
+    // the card's switches follow the reset values rather than earlier choices
+    expect(reset).toHaveBeenCalledOnce();
   });
 });
 
 // with the real form, so what it saves and guards can be read
-function mountWithForm(domain: string) {
+function mountWithForm(domain: string, stubs: Record<string, object> = {}) {
   return shallowMount(EditCoreConfig, {
     props: { domain },
     global: {
@@ -385,6 +395,7 @@ function mountWithForm(domain: string) {
           template: "<form><slot /></form>",
           methods: { validate: async () => ({ valid: true }) },
         },
+        ...stubs,
       },
     },
   });

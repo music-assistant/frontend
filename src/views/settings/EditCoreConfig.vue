@@ -13,6 +13,7 @@
 
     <ServerUrlsCard
       v-if="config?.domain === 'webserver' && config.values.base_url"
+      ref="urlCard"
       :base-url="config.values.base_url"
       :external-url="config.values.external_url"
       @update:value="onUrlUpdate"
@@ -71,6 +72,7 @@ const router = useRouter();
 const { t } = useI18n();
 const config = ref<CoreConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
+const urlCard = ref<InstanceType<typeof ServerUrlsCard>>();
 const loading = ref(false);
 
 // props
@@ -149,6 +151,7 @@ const resetToDefaults = function () {
   // the form's reset skips hidden entries, and these are hidden only because
   // the URL card shows them
   for (const entry of urlCardEntries.value) entry.value = entry.default_value;
+  urlCard.value?.reset();
 };
 
 const onUrlUpdate = function (key: string, value: string) {

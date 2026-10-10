@@ -272,6 +272,19 @@ const copyUrl = async function (url: string) {
   }
 };
 
+/**
+ * Forget the choices made with the switches here, for when both URLs are set
+ * back to their defaults.
+ */
+const reset = function () {
+  enteringExternalUrl.value = false;
+  enteringBaseUrl.value = false;
+  typedExternalUrl = "";
+  typedBaseUrl = "";
+};
+
+defineExpose({ reset });
+
 const loadRemoteId = async function () {
   loadingRemoteId.value = true;
   try {
@@ -284,5 +297,6 @@ const loadRemoteId = async function () {
   }
 };
 
-if (offersRemoteAccess.value) void loadRemoteId();
+// the link is only shown in the internet section, which needs the external URL
+if (props.externalUrl && offersRemoteAccess.value) void loadRemoteId();
 </script>

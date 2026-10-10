@@ -194,6 +194,30 @@ describe("ServerUrlsCard", () => {
       expect(wrapper.find("[data-testid=server-urls-local]").exists()).toBe(
         true,
       );
+      // there is nowhere to show the remote access link
+      expect(apiMock.getRemoteAccessInfo).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("reset", () => {
+    it("lets the switches follow the default values again", async () => {
+      const { wrapper, set } = await mountCard({
+        base_url: "https://ma.lan",
+        external_url: "https://music.example.com",
+      });
+
+      // what the settings page does on reset to defaults
+      set("base_url", "auto");
+      set("external_url", null);
+      (wrapper.vm as unknown as { reset: () => void }).reset();
+      await flushPromises();
+
+      expect(remoteSwitch(wrapper).attributes("data-state")).toBe("checked");
+      expect(automaticSwitch(wrapper).attributes("data-state")).toBe("checked");
+      // the URL the server reports is the custom one until this is saved
+      expect(wrapper.find(DETECTED).text()).toContain(
+        "settings.server_url.detected_after_save",
+      );
     });
   });
 
@@ -314,6 +338,9 @@ async function mountCard(
   await flushPromises();
   return {
     wrapper,
+    set: (key: keyof typeof entries, value: string | null) => {
+      entries[key].value = value;
+    },
     values: {
       get base_url() {
         return entries.base_url.value;
