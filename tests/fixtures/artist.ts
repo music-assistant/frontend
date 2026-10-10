@@ -16,7 +16,7 @@ export function artist(overrides: Partial<Artist> = {}): Artist {
     media_type: MediaType.ARTIST,
     provider_mappings: [],
     metadata: {},
-    favorite: false,
+    favorite: null,
     artist_type: ArtistType.SINGER,
     ...overrides,
   });

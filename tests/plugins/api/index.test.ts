@@ -53,6 +53,7 @@ import {
   ApiCommandError,
   ConnectionLostError,
   ConnectionState,
+  MIN_SERVER_SCHEMA_VERSION,
   MusicAssistantApi,
 } from "@/plugins/api";
 
@@ -122,6 +123,14 @@ describe("MusicAssistantApi error handling", () => {
     transport.receive(SERVER_INFO);
     await initialization;
     expect(api.state.value).toBe(ConnectionState.CONNECTED);
+    // answer what the api sends on connect, so no command is left in flight
+    for (const command of transport.sentCommands) {
+      transport.receive({
+        message_id: command.message_id!,
+        result: null,
+        partial: false,
+      });
+    }
   });
 
   afterEach(() => {
@@ -332,24 +341,38 @@ describe("MusicAssistantApi error handling", () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
-  it("lists the share candidates from schema 72 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 71 };
-    expect(api.supportsShareCandidates).toBe(false);
+  it("leaves a failing provider removal to its caller", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const result = api.removeProviderConfig("spotify--1");
+    const rejection = expect(result).rejects.toMatchObject({ message: "Boom" });
 
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 72 };
-    expect(api.supportsShareCandidates).toBe(true);
+    expect(transport.lastCommand.command).toBe("config/providers/remove");
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    await rejection;
+    expect(mockToastError).not.toHaveBeenCalled();
   });
 
-  it("lists the roles from schema 74 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 73 };
-    expect(api.supportsRoles).toBe(false);
+  it("flags a server below the minimum schema version as outdated", () => {
+    // before server_info arrives there is nothing to judge yet
+    api.serverInfo.value = undefined;
+    expect(api.serverOutdated).toBe(false);
 
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
-    expect(api.supportsRoles).toBe(true);
+    api.serverInfo.value = {
+      ...SERVER_INFO,
+      schema_version: MIN_SERVER_SCHEMA_VERSION - 1,
+    };
+    expect(api.serverOutdated).toBe(true);
+
+    api.serverInfo.value = {
+      ...SERVER_INFO,
+      schema_version: MIN_SERVER_SCHEMA_VERSION,
+    };
+    expect(api.serverOutdated).toBe(false);
   });
 
   it("loads the roles the server lists", async () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
     const roles = [
       {
         role_id: UserRole.ADMIN,
@@ -368,32 +391,6 @@ describe("MusicAssistantApi error handling", () => {
       partial: false,
     });
     await expect(result).resolves.toEqual(roles);
-  });
-
-  it("builds the builtin roles from their scopes on an older server", async () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 73 };
-    const result = api.getRoles();
-
-    expect(transport.lastCommand.command).toBe("auth/scopes");
-    transport.receive({
-      message_id: transport.lastCommand.message_id!,
-      result: { [UserRole.ADMIN]: ["*"], [UserRole.GUEST]: ["library.read"] },
-      partial: false,
-    });
-    await expect(result).resolves.toEqual([
-      {
-        role_id: UserRole.ADMIN,
-        name: UserRole.ADMIN,
-        scopes: ["*"],
-        builtin: true,
-      },
-      {
-        role_id: UserRole.GUEST,
-        name: UserRole.GUEST,
-        scopes: ["library.read"],
-        builtin: true,
-      },
-    ]);
   });
 
   it("sends the role commands and leaves their errors to the caller", async () => {
@@ -444,12 +441,27 @@ describe("MusicAssistantApi error handling", () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
-  it("lets a role with queues.control play AI Radio from schema 75 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
-    expect(api.supportsAIRadioPlaybackScopes).toBe(false);
+  it("asks the library for an artist's discography", () => {
+    api.getArtistDiscography("artist-1");
 
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 75 };
-    expect(api.supportsAIRadioPlaybackScopes).toBe(true);
+    expect(transport.lastCommand.command).toBe("music/artists/discography");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+    });
+  });
+
+  it("asks the library for the albums an artist appears on", () => {
+    api.getArtistAppearsOn("artist-1", "library", "spotify--abc");
+
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/artist_appears_on",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      provider_filter: "spotify--abc",
+    });
   });
 
   describe("a refused ordering command", () => {

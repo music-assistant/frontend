@@ -167,9 +167,10 @@ describe("Settings breadcrumbs on the options of a player", () => {
  */
 async function providerTrail(
   providerPage: Component | boolean,
+  instanceId = "spotify--kitchen",
 ): Promise<ToolbarHeadingItem[]> {
   routeState.name = "editprovider";
-  routeState.params = { instanceId: "spotify--kitchen" };
+  routeState.params = { instanceId };
   const wrapper = mount(Settings, {
     global: {
       stubs: {
@@ -219,6 +220,79 @@ describe("Settings breadcrumbs on the settings of a provider", () => {
     const trail = await providerTrail(true);
 
     expect(trail.at(-1)).toEqual({ title: "Spotify", disabled: true });
+  });
+});
+
+describe("Settings breadcrumbs on the storage page", () => {
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it("names the storage page as a page of the System settings", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    routeState.name = "storagesettings";
+    routeState.params = {};
+
+    const wrapper = mount(Settings, {
+      global: {
+        stubs: {
+          Toolbar: {
+            template: '<div><slot name="title" /><slot name="append" /></div>',
+          },
+          ToolbarHeading: ToolbarHeadingStub,
+          RouterView: true,
+          VBtn: true,
+          VDivider: true,
+        },
+      },
+    });
+
+    expect(wrapper.getComponent(ToolbarHeadingStub).props("items")).toEqual([
+      {
+        title: "settings.system",
+        disabled: false,
+        to: { name: "systemsettings" },
+      },
+      { title: "settings.storage.title", disabled: true },
+    ]);
+  });
+});
+
+describe("Settings breadcrumbs on the settings of a provider that is not loaded", () => {
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    apiMock.getProvider.mockReturnValue(undefined);
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+    delete apiMock.providerManifests.fanarttv;
+    delete apiMock.providerManifests.filesystem_local;
+  });
+
+  it("lead to the sources of the type of its provider", async () => {
+    apiMock.providerManifests.fanarttv = {
+      name: "fanart.tv",
+      type: ProviderType.METADATA,
+    };
+
+    const trail = await providerTrail(true, "fanarttv--kitchen");
+
+    expect(trail[0].title).toBe("settings.metadataproviders");
+  });
+
+  // the server converts SMB and NFS sources into Local files, keeping their ids
+  it("lead a converted source to the music sources, by Local files", async () => {
+    apiMock.providerManifests.filesystem_local = {
+      name: "Local files",
+      type: ProviderType.MUSIC,
+    };
+
+    const trail = await providerTrail(true, "filesystem_nfs--k2Lm9xQa");
+
+    expect(trail[0].title).toBe("settings.music_sources");
   });
 });
 

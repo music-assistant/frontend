@@ -47,6 +47,7 @@
 import Toolbar from "@/components/Toolbar.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { useEscapeBack } from "@/composables/useEscapeBack";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
@@ -66,6 +67,8 @@ export interface Props {
   blurBackdrop?: boolean;
   height?: number;
   phoneHeight?: number;
+  // off for a page with a fixed layout, which leaves "Edit rows" out of the menu
+  editableRows?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   item: undefined,
@@ -73,6 +76,7 @@ const props = withDefaults(defineProps<Props>(), {
   blurBackdrop: false,
   height: 440,
   phoneHeight: 340,
+  editableRows: true,
 });
 
 const emit = defineEmits<{
@@ -99,7 +103,9 @@ const backButtonClick = function () {
   backFromMediaDetails(router);
 };
 
-/** The item's overflow menu, with the page's own "Edit rows" entry last. */
+useEscapeBack(backButtonClick);
+
+/** The item's overflow menu, plus "Edit rows" last on an editable page. */
 async function buildMenu(item?: MediaItemType) {
   if (!item) {
     menuItems.value = [];
@@ -108,10 +114,12 @@ async function buildMenu(item?: MediaItemType) {
   const items = await getContextMenuItems([item], item);
   // a slower response for a previous item must not replace the current one
   if (props.item?.uri !== item.uri) return;
-  menuItems.value = [
-    ...items,
-    { label: "edit_rows", icon: Rows3, action: () => emit("edit-rows") },
-  ];
+  menuItems.value = props.editableRows
+    ? [
+        ...items,
+        { label: "edit_rows", icon: Rows3, action: () => emit("edit-rows") },
+      ]
+    : items;
 }
 </script>
 
@@ -201,7 +209,8 @@ async function buildMenu(item?: MediaItemType) {
   opacity: 1;
 }
 
-/* sits at the bottom of the hero, above the artwork layers */
+/* sits at the bottom of the hero, above the artwork layers. A container so its
+   controls collapse to the room the hero actually has, which the sidebar narrows */
 .detail-hero__body {
   position: relative;
   margin: auto 28px 24px;
@@ -209,6 +218,7 @@ async function buildMenu(item?: MediaItemType) {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
+  container: detail-hero / inline-size;
 }
 .detail-hero__main {
   display: flex;
@@ -218,14 +228,15 @@ async function buildMenu(item?: MediaItemType) {
   gap: 14px;
   min-width: 0;
 }
-/* the facts about the item line up on the right, bottom-aligned with the buttons */
+/* the facts about the item line up on the right, bottom-aligned with the buttons;
+   a long title never squeezes them narrower than their widest name */
 .detail-hero__aside {
   display: flex;
   flex: 0 1 auto;
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
-  min-width: 0;
+  min-width: min-content;
   text-align: right;
 }
 /* an aside whose only child rendered nothing (Vue leaves a comment node there,

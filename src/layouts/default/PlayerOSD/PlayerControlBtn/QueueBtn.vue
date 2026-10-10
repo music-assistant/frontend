@@ -10,7 +10,10 @@
     :class="{ 'text-primary': active }"
     @click="togglePlayerQueue"
   >
-    <ListVideo :size="size" />
+    <ListVideo
+      class="size-(--icon-size)"
+      :style="{ '--icon-size': `${size}px` }"
+    />
   </Button>
 </template>
 

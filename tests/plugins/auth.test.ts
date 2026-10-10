@@ -238,6 +238,26 @@ describe("AuthManager guest sessions", () => {
 
     reloadSpy.mockRestore();
   });
+
+  it("resets the route on logout so the next user starts at discover", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/?remote_id=REMOTE#/artists/library/1",
+    );
+    const authManager = new AuthManager();
+    const reloadSpy = vi
+      .spyOn(window.location, "reload")
+      .mockImplementation(() => {});
+
+    await authManager.logout();
+
+    expect(window.location.hash).toBe("#/discover");
+    expect(window.location.search).toContain("remote_id=REMOTE");
+    expect(reloadSpy).toHaveBeenCalledOnce();
+
+    reloadSpy.mockRestore();
+  });
 });
 
 describe("AuthManager scopes", () => {

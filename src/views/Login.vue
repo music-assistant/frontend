@@ -604,8 +604,12 @@ const loginError = ref<string | null>(null);
 
 // Auth providers state
 const authProviders = ref<AuthProvider[]>([]);
-const hasHomeAssistantAuth = computed(() =>
-  authProviders.value.some((p) => p.provider_id === "homeassistant"),
+// Home Assistant redirects back to the server itself, which a remote connection
+// can only reach through the server's External URL.
+const hasHomeAssistantAuth = computed(
+  () =>
+    authProviders.value.some((p) => p.provider_id === "homeassistant") &&
+    (!isRemoteConnection.value || !!api.serverInfo.value?.external_url),
 );
 
 // Computed
@@ -745,10 +749,7 @@ const tryConnect = async (
 };
 
 type StoredTokenAuthResult =
-  | "authenticated"
-  | "failed"
-  | "guest-session-ended"
-  | "reloading";
+  "authenticated" | "failed" | "guest-session-ended" | "reloading";
 
 /**
  * Try to authenticate with stored token after connection

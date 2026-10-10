@@ -1,7 +1,7 @@
 <template>
   <section style="margin-bottom: 10px">
     <Toolbar
-      :title="$t('mapped_providers')"
+      :title="$t('source_details')"
       :menu-items="toolbarMenuItems"
       @title-clicked="toggleExpand"
     />

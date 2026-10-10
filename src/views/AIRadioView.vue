@@ -129,10 +129,22 @@
           <Sparkles class="h-10 w-10 text-muted-foreground" />
           <div>
             <h2 class="text-lg font-semibold">
-              {{ $t("providers.ai_radio.gallery.empty_title") }}
+              {{
+                $t(
+                  canEdit
+                    ? "providers.ai_radio.gallery.empty_title"
+                    : "providers.ai_radio.gallery.empty_title_listener",
+                )
+              }}
             </h2>
             <p class="mt-1 max-w-md text-sm text-muted-foreground">
-              {{ $t("providers.ai_radio.gallery.empty_description") }}
+              {{
+                $t(
+                  canEdit
+                    ? "providers.ai_radio.gallery.empty_description"
+                    : "providers.ai_radio.gallery.empty_description_listener",
+                )
+              }}
             </p>
           </div>
           <Button v-if="canEdit" @click="openCreateDialog()">
@@ -212,8 +224,6 @@ const {
   loadSections,
   loadStatus,
   loadPlaylists,
-  startStatusPolling,
-  stopStatusPolling,
   noAiProviderAlert,
   dismissNoAiProviderAlert,
 } = useShows();
@@ -351,20 +361,19 @@ onMounted(async () => {
       ...(canEdit.value ? [loadHosts()] : []),
       loadShows(),
       loadSections(),
+      loadStatus(),
       loadPlaylists(),
     ]);
   } catch (error) {
     toast.error(errorMessage(error));
   }
   // Leaving the view while the loads are in flight runs the unmount hook first,
-  // so bail out rather than start a poll loop nothing will stop and rewrite the
-  // query of a route this view no longer owns.
+  // so bail out rather than rewrite the query of a route this view no longer owns.
   if (unmounted) return;
   if (canEdit.value) {
     // Best effort: the "Add host" menu still works with just "Blank host" if this fails.
     void loadPresets().catch(() => {});
   }
-  startStatusPolling();
   applyRouteQuery();
 });
 
@@ -372,6 +381,5 @@ watch(() => route.query, applyRouteQuery);
 
 onUnmounted(() => {
   unmounted = true;
-  stopStatusPolling();
 });
 </script>

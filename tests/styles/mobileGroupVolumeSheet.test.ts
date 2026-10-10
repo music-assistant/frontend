@@ -15,6 +15,7 @@ const NAV_HEIGHT = "111px";
 const GAP = "7px";
 const INSET_X = "9px";
 const TOP_GAP = "33px";
+const INSET_TOP = "55px";
 
 // the equally-!important utilities the sheet and its backdrop carry, with the
 // property each of them sets
@@ -116,6 +117,7 @@ describe("mobile grouped volume sheet", () => {
       ["--player-bar-popout-gap", GAP],
       ["--player-bar-popout-inset-x", INSET_X],
       ["--player-bar-popout-top-gap", TOP_GAP],
+      ["--device-inset-top", INSET_TOP],
     ]) {
       document.documentElement.style.setProperty(token, value);
     }
@@ -145,7 +147,7 @@ describe("mobile grouped volume sheet", () => {
     // a sheet has no popper measuring the free space for it, so its ceiling is
     // composed from the tokens instead
     expect(normalize(getComputedStyle(sheet()).maxHeight)).toBe(
-      `calc(100dvh-${NAV_HEIGHT}-${GAP}-${TOP_GAP})`,
+      `calc(100dvh-${NAV_HEIGHT}-${GAP}-${TOP_GAP}-${INSET_TOP})`,
     );
   });
 

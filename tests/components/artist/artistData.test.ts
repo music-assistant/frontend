@@ -3,30 +3,42 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     getArtistAlbums: vi.fn().mockResolvedValue([]),
+    getArtistAppearsOn: vi.fn().mockResolvedValue([]),
     getArtistTracks: vi.fn().mockResolvedValue([]),
     getArtistTopTracks: vi.fn().mockResolvedValue([]),
     getSimilarArtists: vi.fn().mockResolvedValue([]),
+    providers: {} as Record<string, ProviderInstance>,
+    providerManifests: {} as Record<string, ProviderManifest>,
   },
 }));
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
+  default: apiMock,
 }));
 
 import {
-  appearsOnAlbums,
+  artistProvidersForFeature,
   isSingleOrEp,
-  loadArtistLibraryTracks,
+  loadArtistAppearsOn,
   loadArtistReleases,
   loadArtistTopTracks,
+  loadArtistTracks,
   loadSimilarArtists,
   sortReleasesNewestFirst,
 } from "@/components/artist/artistData";
-import { AlbumType, type ItemMapping } from "@/plugins/api/interfaces";
+import {
+  AlbumType,
+  ProviderFeature,
+  type ItemMapping,
+  type ProviderInstance,
+  type ProviderManifest,
+} from "@/plugins/api/interfaces";
 import { album } from "../../fixtures/album";
 import { artist } from "../../fixtures/artist";
+import { providerInstance } from "../../fixtures/providerInstance";
+import { providerManifest } from "../../fixtures/providerManifest";
 import { providerMapping } from "../../fixtures/providerMapping";
-import { track } from "../../fixtures/track";
 
 // the artist's own id on Spotify differs from its library id, so the provider
 // source can only be queried through the mapping
@@ -60,6 +72,7 @@ describe("artistData", () => {
     apiMock.getArtistTopTracks.mockClear();
     apiMock.getSimilarArtists.mockClear();
     apiMock.getArtistTracks.mockClear();
+    apiMock.getArtistAppearsOn.mockClear();
   });
 
   describe("loadArtistReleases", () => {
@@ -92,6 +105,19 @@ describe("artistData", () => {
     });
   });
 
+  describe("loadArtistAppearsOn", () => {
+    it("asks the server for a library artist's appearances", async () => {
+      const appearances = [album({ item_id: "guest" })];
+      apiMock.getArtistAppearsOn.mockResolvedValueOnce(appearances);
+
+      expect(await loadArtistAppearsOn(LIBRARY_ARTIST)).toEqual(appearances);
+      expect(apiMock.getArtistAppearsOn).toHaveBeenLastCalledWith(
+        "1",
+        "library",
+      );
+    });
+  });
+
   describe("loadArtistTopTracks / loadSimilarArtists", () => {
     it("passes a provider source as the filter for a library artist", async () => {
       await loadArtistTopTracks(LIBRARY_ARTIST, "spotify--abc");
@@ -119,14 +145,98 @@ describe("artistData", () => {
     });
   });
 
-  describe("loadArtistLibraryTracks", () => {
+  describe("loadArtistTracks", () => {
     it("passes the provider filter through", async () => {
-      await loadArtistLibraryTracks(LIBRARY_ARTIST, "spotify--abc");
+      await loadArtistTracks(LIBRARY_ARTIST, "spotify--abc");
       expect(apiMock.getArtistTracks).toHaveBeenLastCalledWith(
         "1",
         "library",
         "spotify--abc",
       );
+    });
+  });
+
+  describe("artistProvidersForFeature", () => {
+    // registers a loaded provider instance that lists artist albums
+    function addProvider(overrides: Partial<ProviderInstance>) {
+      const provider = providerInstance({
+        supported_features: [ProviderFeature.ARTIST_ALBUMS],
+        ...overrides,
+      });
+      apiMock.providers[provider.instance_id] = provider;
+    }
+
+    function mappedTo(...providerInstances: string[]) {
+      return artist({
+        provider_mappings: providerInstances.map((provider_instance) =>
+          providerMapping({ provider_instance }),
+        ),
+      });
+    }
+
+    beforeEach(() => {
+      apiMock.providers = {};
+      apiMock.providerManifests = {
+        spotify: providerManifest({ domain: "spotify", name: "Spotify" }),
+      };
+    });
+
+    it("offers each account of a streaming service once, as its lowest instance id", () => {
+      for (const [instanceId, name] of [
+        ["spotify--b", "Spotify [marcelveldt3]"],
+        ["spotify--a", "Spotify [marcelveldt2]"],
+      ]) {
+        addProvider({
+          instance_id: instanceId,
+          name,
+          domain: "spotify",
+          is_streaming_provider: true,
+        });
+      }
+
+      expect(
+        artistProvidersForFeature(
+          mappedTo("spotify--b", "spotify--a"),
+          ProviderFeature.ARTIST_ALBUMS,
+        ),
+      ).toEqual(["spotify--a"]);
+    });
+
+    it("keeps every other instance, sorted by the name each source shows", () => {
+      addProvider({
+        instance_id: "spotify--a",
+        name: "Zoe's Spotify",
+        domain: "spotify",
+        is_streaming_provider: true,
+      });
+      addProvider({
+        instance_id: "filesystem_local--x",
+        name: "Vinyl rips",
+        domain: "filesystem_local",
+      });
+      addProvider({
+        instance_id: "filesystem_local--y",
+        name: "Archive",
+        domain: "filesystem_local",
+      });
+
+      expect(
+        artistProvidersForFeature(
+          mappedTo("spotify--a", "filesystem_local--x", "filesystem_local--y"),
+          ProviderFeature.ARTIST_ALBUMS,
+        ),
+      ).toEqual(["filesystem_local--y", "spotify--a", "filesystem_local--x"]);
+    });
+
+    it("leaves out a provider without the feature", () => {
+      addProvider({ instance_id: "tidal--a", supported_features: [] });
+
+      expect(
+        artistProvidersForFeature(
+          mappedTo("tidal--a"),
+          ProviderFeature.ARTIST_ALBUMS,
+        ),
+      ).toEqual([]);
     });
   });
 
@@ -162,37 +272,6 @@ describe("artistData", () => {
       const releases = [album({ year: 2000 }), album({ year: 2010 })];
       sortReleasesNewestFirst(releases);
       expect(releases[0].year).toBe(2000);
-    });
-  });
-
-  describe("appearsOnAlbums", () => {
-    it("keeps the albums the artist is not an album artist of, once each", () => {
-      const compilation = albumMapping();
-      const ownAlbum = albumMapping({
-        item_id: "11",
-        name: "Own",
-        uri: "library://album/11",
-      });
-      const tracks = [
-        track({ item_id: "1", album: compilation }),
-        track({ item_id: "2", album: compilation }),
-        track({ item_id: "3", album: ownAlbum }),
-        track({ item_id: "4", album: null }),
-      ];
-
-      expect(appearsOnAlbums(tracks, LIBRARY_ARTIST, [ownAlbum])).toEqual([
-        compilation,
-      ]);
-    });
-
-    it("drops an album that credits the artist as album artist", () => {
-      const ownAlbum = album({
-        item_id: "12",
-        artists: [{ ...LIBRARY_ARTIST }],
-      });
-      expect(
-        appearsOnAlbums([track({ album: ownAlbum })], LIBRARY_ARTIST),
-      ).toEqual([]);
     });
   });
 });

@@ -59,7 +59,6 @@
     "playlist": "Afspilningsliste",
     "playlist_tracks": "Sange i playlisten",
     "playlists": "Afspilningslister",
-    "provider_details": "Udbyderoplysninger",
     "queue": "Kø",
     "queue_clear": "Ryd alle emner i køen",
     "queue_delete": "Slet emne",
@@ -381,7 +380,6 @@
         "explicit": "Eksplicit",
         "filter_library": "Skift bibliotek-favorit-filter",
         "library": "Skift bibliotek-favorit",
-        "linked": "Denne udbyder er knyttet til de aktuelle detaljer",
         "refresh": "Opdater listen",
         "refresh_new_content": "Der er nyt indhold tilgængeligt, klik for at opdatere listen",
         "search": "Vis\/skjul søgefelt",
@@ -430,7 +428,6 @@
     "check_item_on_provider": "Tjek {0} på {1}",
     "check_item_in_library": "Tjek {0} i biblioteket",
     "media_details": "Mediedetaljer",
-    "mapped_providers": "Udbyderoplysninger",
     "item_in_library": "Dette element er tilgængeligt i biblioteket",
     "back": "Tilbage",
     "recently_played": "Nyligt afspillet",
@@ -771,7 +768,6 @@
     },
     "sidebar": {
         "title": "Sidepanel",
-        "description": "Viser sidepanelet på mobilen.",
         "toggle": "Vis\/skjul sidepanelet",
         "expand": "Vis sidepanelet",
         "collapse": "Skjul sidepanelet"

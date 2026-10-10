@@ -19,7 +19,7 @@ export const TRACK_ROWS: readonly RowDefinition<TrackRowId>[] = [
   { id: "appears_on", labelKey: "appears_on" },
   { id: "other_versions", labelKey: "other_versions" },
   { id: "similar_tracks", labelKey: "similar_tracks" },
-  { id: "provider_mappings", labelKey: "mapped_providers" },
+  { id: "provider_mappings", labelKey: "source_details" },
 ];
 
 export const TRACK_ROWS_PREFERENCE_KEY = "track.rows";

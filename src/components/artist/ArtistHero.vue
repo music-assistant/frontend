@@ -24,12 +24,14 @@
       </h1>
 
       <div class="artist-hero__actions">
-        <DetailHeroPlayButton :item="item" />
+        <DetailHeroPlayButton
+          class="artist-hero__play"
+          shrink-label
+          :item="item"
+        />
         <DetailHeroButton
-          v-if="api.supportsPlayMediaShuffle"
           :icon="Shuffle"
           :label="$t('shuffle')"
-          :icon-only="isPhone"
           :disabled="!store.activePlayer"
           @click="api.playMedia(item, undefined, { shuffle: true })"
         />
@@ -37,7 +39,6 @@
           v-if="radioRelevant(item)"
           :icon="Orbit"
           :label="$t('artist_radio')"
-          :icon-only="isPhone"
           :disabled="!radioSupported(item)"
           @click="gotoRadio(item)"
         />
@@ -46,18 +47,7 @@
 
     <template v-if="item" #aside>
       <DetailHeroGenres :item="item" />
-      <div v-if="chipsShown" class="artist-hero__chips">
-        <span class="artist-hero__chip">
-          <template
-            v-for="(provider, index) in providers"
-            :key="provider.domain"
-          >
-            <span v-if="index > 0" class="artist-hero__chip-sep">·</span>
-            <ProviderIcon :domain="provider.domain" :size="14" />
-            {{ provider.name }}
-          </template>
-        </span>
-      </div>
+      <DetailHeroProviders :item="item" />
     </template>
   </DetailHero>
 </template>
@@ -68,11 +58,10 @@ import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { mappedServices } from "@/plugins/api/helpers";
 import { ImageType, type Artist } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
@@ -105,38 +94,9 @@ const backdrop = computed(() => {
 const artistLogo = computed(() =>
   props.item ? getImageThumbForItem(props.item, ImageType.LOGO) : undefined,
 );
-
-// one chip per music service, however many accounts of it the artist is on
-const providers = computed(() =>
-  props.item ? mappedServices(props.item) : [],
-);
-
-const chipsShown = computed(() => providers.value.length > 0);
 </script>
 
 <style scoped>
-.artist-hero__chips {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.artist-hero__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.45);
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.artist-hero__chip-sep {
-  opacity: 0.4;
-}
 .artist-hero__logo {
   height: 80px;
   width: auto;
@@ -160,13 +120,18 @@ const chipsShown = computed(() => providers.value.length > 0);
 .artist-hero__actions {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  /* the shared main column aligns its items to the start, so claim the full
+     width here to give the shrinking play button room to work within */
+  align-self: stretch;
+  min-width: 0;
+}
+/* the play button gives way so Shuffle and Endless keep their place on the row */
+.artist-hero__play {
+  min-width: 0;
 }
 
-.artist-hero--phone .artist-hero__chips {
-  justify-content: flex-start;
-}
 .artist-hero--phone .artist-hero__name {
   font-size: 34px;
   letter-spacing: -0.8px;
@@ -176,5 +141,8 @@ const chipsShown = computed(() => providers.value.length > 0);
 }
 .artist-hero--phone .artist-hero__actions {
   gap: 10px;
+}
+.artist-hero--phone .artist-hero__play {
+  flex: 1;
 }
 </style>

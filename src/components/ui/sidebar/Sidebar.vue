@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import SheetDescription from "@/components/ui/sheet/SheetDescription.vue";
 import SheetHeader from "@/components/ui/sheet/SheetHeader.vue";
 import SheetTitle from "@/components/ui/sheet/SheetTitle.vue";
 import { useMobileSidebarSide } from "@/composables/useMobileSidebarSide";
@@ -48,6 +47,7 @@ const mobileSheetSide = useMobileSidebarSide();
       data-sidebar="sidebar"
       data-slot="sidebar"
       data-mobile="true"
+      :aria-describedby="undefined"
       :side="mobileSheetSide"
       :class="[
         'sidebar-mobile-sheet bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden',
@@ -59,7 +59,6 @@ const mobileSheetSide = useMobileSidebarSide();
     >
       <SheetHeader class="sr-only">
         <SheetTitle>{{ $t("sidebar.title") }}</SheetTitle>
-        <SheetDescription>{{ $t("sidebar.description") }}</SheetDescription>
       </SheetHeader>
       <div class="flex h-full w-full flex-col">
         <slot></slot>

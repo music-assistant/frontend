@@ -31,14 +31,10 @@
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import DynamicItemSample from "@/components/DynamicItemSample.vue";
-import { ref, watch, onMounted, onBeforeUnmount } from "vue";
-import {
-  EventType,
-  type Radio,
-  type EventMessage,
-  type MediaItemType,
-} from "@/plugins/api/interfaces";
+import { ref, watch } from "vue";
+import { type Radio } from "@/plugins/api/interfaces";
 import ProviderDetails from "@/components/ProviderDetails.vue";
+import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
 import { getStreamingProviderMappings } from "@/helpers/utils";
 
@@ -61,19 +57,7 @@ watch(
   { immediate: true },
 );
 
-onMounted(() => {
-  //signal if/when item updates
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_UPDATED,
-    (evt: EventMessage) => {
-      const updatedItem = evt.data as MediaItemType;
-      if (itemDetails.value?.uri == updatedItem.uri) {
-        itemDetails.value = updatedItem as Radio;
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
-});
+useDetailItemUpdates(itemDetails);
 
 const loadRadioVersions = async function (params: LoadDataParams) {
   const allVersions: Radio[] = [];

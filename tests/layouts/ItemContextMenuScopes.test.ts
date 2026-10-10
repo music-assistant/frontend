@@ -4,14 +4,17 @@
  */
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import {
+  type ItemMapping,
   type MediaItemType,
   type MediaItemTypeOrItemMapping,
+  MediaType,
   ProviderFeature,
   type Scope,
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { genre } from "../fixtures/genre";
 import { playlist } from "../fixtures/playlist";
+import { podcastEpisode } from "../fixtures/podcastEpisode";
 import { providerMapping } from "../fixtures/providerMapping";
 import { radio } from "../fixtures/radio";
 import {
@@ -25,9 +28,11 @@ const { apiMock, hasScope, storeMock } = vi.hoisted(() => ({
   apiMock: {
     providers: {
       "test_provider--1": { available: true, supported_features: [] },
+      builtin: { available: true, supported_features: [] },
     } as Record<string, unknown>,
     getProvider: vi.fn(),
     getLibraryItem: vi.fn(),
+    sendCommand: vi.fn(),
     players: {},
   },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
@@ -72,10 +77,17 @@ async function offeredLabels(
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // the menu resolves the library counterpart before building its items
+  apiMock.getLibraryItem.mockResolvedValue(null);
   storeMock.enabledPlugins.clear();
 });
 
 describe("library changes in the item context menu", () => {
+  // the menu verifies membership against the library copy of the item
+  beforeEach(() => {
+    apiMock.getLibraryItem.mockResolvedValue(listedTrack);
+  });
+
   it("are offered to a member", async () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
 
@@ -187,6 +199,59 @@ describe("library management in the item context menu", () => {
     hasScope.mockImplementation(scopeChecker(scopes));
 
     expect(await offeredManagement()).toEqual([]);
+  });
+
+  // episodes are fetched from the provider on every view, never stored
+  it("leaves the metadata and refresh entries off an episode's own page", async () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    const episode = podcastEpisode({
+      provider: "test_provider--1",
+      provider_mappings: [providerMapping()],
+    });
+
+    const offered = await offeredLabels([episode], episode);
+
+    expect(offered).not.toContain("update_metadata");
+    expect(offered).not.toContain("refresh_item");
+  });
+});
+
+describe("mapping a source item onto a library item", () => {
+  const libraryTrack = track({ item_id: "5" });
+
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    apiMock.getProvider.mockReturnValue({ supported_features: [] });
+  });
+
+  // the server converts SMB and NFS sources into Local files, keeping their ids
+  it("maps an item of a converted source that is not loaded as Local files", async () => {
+    const sourceItem = {
+      item_id: "Artist/track.flac",
+      provider: "filesystem_smb--fyQZakP3",
+      name: "Track",
+      media_type: MediaType.TRACK,
+      available: true,
+    } as ItemMapping;
+
+    const entry = (await getContextMenuItems([sourceItem], libraryTrack)).find(
+      (item) => item.label === "map_provider_mapping",
+    );
+    await entry?.action?.();
+
+    expect(apiMock.sendCommand).toHaveBeenCalledWith(
+      "music/add_provider_mapping",
+      {
+        media_type: MediaType.TRACK,
+        db_id: "5",
+        mapping: {
+          provider_instance: "filesystem_smb--fyQZakP3",
+          provider_domain: "filesystem_local",
+          item_id: "Artist/track.flac",
+          available: true,
+        },
+      },
+    );
   });
 });
 

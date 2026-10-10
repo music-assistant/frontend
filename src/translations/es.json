@@ -66,7 +66,6 @@
     "playlist": "Lista de reproducción",
     "playlist_tracks": "Canciones de la lista de reproducción",
     "playlists": "Listas de reproducción",
-    "provider_details": "Detalles del proveedor",
     "queue": "Cola",
     "queue_clear": "Limpiar todos los elementos de la cola",
     "queue_delete": "Eliminar elemento",
@@ -106,10 +105,10 @@
         "save": "Guardar",
         "settings": "Ajustes",
         "sync": "Sincronizar ahora",
-        "sync_running": "Esta fuente de música se está sincronizando ahora",
+        "sync_running": "Este origen de música se está sincronizando ahora",
         "server_info": "Información del servidor",
         "server_version": "Versión del servidor",
-        "server_as_addon": "Complemento de Home Assistant",
+        "server_as_addon": "Aplicación de Home Assistant",
         "artists_in_library": "Artistas en biblioteca",
         "albums_in_library": "Álbumes en biblioteca",
         "tracks_in_library": "Canciones en biblioteca",
@@ -485,7 +484,7 @@
         "stay": "Permanecer",
         "discard": "Descartar cambios",
         "provider_requires_attention": "Requiere atención",
-        "provider_requires_attention_detail": "Una o varias de tus fuentes de música, reproductores o complementos no funcionan.",
+        "provider_requires_attention_detail": "Una o varias de tus orígenes de música, reproductores o complementos no funcionan.",
         "reconfigure": "Reconfigurar",
         "fix_now": "Corregir ahora",
         "web_player_enabled": {
@@ -537,11 +536,11 @@
         "full_restore_failed": "No se pudo restaurar por completo los géneros",
         "error_loading_genres": "Error al cargar los géneros",
         "player_needs_setup": "Este reproductor requiere configuración",
-        "add_music_provider": "Añadir una fuente de música",
+        "add_music_provider": "Añadir un origen de música",
         "add_player_provider": "Añadir un proveedor de reproductor",
         "add_metadata_provider": "Añadir un proveedor de metadatos",
         "add_plugin_provider": "Añadir plugin",
-        "music_sources": "Fuentes de música",
+        "music_sources": "Orígenes de música",
         "plugins": "Complementos",
         "music_providers_description": "Gestiona tus servicios de streaming de música y bibliotecas locales",
         "player_providers_description": "Configura los proveedores de reproductores para tus dispositivos de salida de audio",
@@ -731,42 +730,151 @@
         "server_remote_access": "Acceso remoto",
         "audio_analysis_status_hint": "Consulta cómo avanza el análisis de cada proveedor y cualquier fallo en la página de estado.",
         "audio_analysis_status_link": "Abrir estado del análisis de audio",
-        "music_sources_empty_title": "Todavía no hay fuentes de música",
+        "music_sources_empty_title": "Todavía no hay orígenes de música",
         "music_sources_empty": "Conecta una cuenta de un servicio de música o añade una biblioteca local para empezar a escuchar.",
         "source_access": {
             "action": "Acceso",
             "share_action": "Compartición",
             "title": "Acceso a {name}",
-            "description": "A quién pertenece esta fuente de música y quién más puede utilizarla.",
+            "description": "A quién pertenece este origen de música y quién más puede utilizarla.",
             "owner": "Propietario",
-            "owner_hint": "El historial de reproducción y de escucha utiliza la cuenta del propietario. Una fuente sin propietario es administrada por los administradores.",
+            "owner_hint": "El historial de reproducción y de escucha utiliza la cuenta del propietario. Un origen sin propietario es administrada por los administradores.",
             "household": "Compartida (sin propietario)",
             "sharing": "Compartición",
             "shared_users": "Compartido con",
-            "select_members": "Seleccionar miembros",
-            "shared_with_count": "Compartido con {count} miembro | Compartido con {count} miembros",
+            "select_members": "Seleccionar usuarios",
+            "shared_with_count": "Compartido con {count} usuario | Compartido con {count} usuarios",
             "options": {
                 "private": "Solo yo",
-                "selected": "Miembros seleccionados",
-                "members": "Todos los miembros",
+                "selected": "Usuarios seleccionados",
+                "members": "Todos los usuarios excepto los invitados",
                 "everyone": "Todos, incluidos los invitados.",
                 "not_shared": "No compartida"
             },
             "hints": {
-                "private": "Solo el propietario puede utilizar esta fuente.",
-                "selected": "El propietario y los miembros seleccionados a continuación.",
-                "members": "Todos los miembros con sesión iniciada, excepto los invitados.",
-                "everyone": "Cualquier usuario puede utilizar esta fuente.",
-                "selected_no_owner": "Solo los miembros seleccionados a continuación.",
-                "nobody": "Nadie puede usar esta fuente hasta que tenga un propietario o se comparta con alguien."
+                "private": "Solo el propietario puede utilizar este origen.",
+                "selected": "El propietario y los usuarios seleccionados a continuación.",
+                "members": "Todos los usuarios que hayan iniciado sesión, excepto los invitados.",
+                "everyone": "Cualquier usuario puede utilizar este origen.",
+                "selected_no_owner": "Solo los usuarios seleccionados a continuación.",
+                "nobody": "Nadie puede usar este origen hasta que tenga un propietario o se comparta con alguien."
             },
             "updated": "Acceso actualizado",
             "share_title": "Compartir {name}",
-            "nobody": "Nadie puede usar esta fuente."
+            "nobody": "Nadie puede usar este origen."
         },
         "set_custom_name": "Establecer un nombre personalizado",
         "genre_table_page_of": "Página {0} de {1}",
-        "genre_table_rows_selected": "{selected} de {total} fila seleccionada. | {selected} de {total} filas seleccionadas."
+        "genre_table_rows_selected": "{selected} de {total} fila seleccionada. | {selected} de {total} filas seleccionadas.",
+        "music_sources_own": "Tus orígenes",
+        "music_sources_shared": "Compartido contigo",
+        "music_sources_shared_empty": "Aún no se ha compartido ningún origen de música contigo.",
+        "storage": {
+            "title": "Almacenamiento",
+            "description": "Las carpetas, unidades y recursos compartidos de red de los que puede proceder tu música",
+            "load_failed": "No se ha podido cargar el almacenamiento",
+            "music_locations": "Ubicaciones de música",
+            "music_locations_empty_title": "Todavía no hay ubicaciones de música",
+            "music_locations_empty": "Todavía no hay ninguna carpeta, unidad ni recurso compartido de red con música.",
+            "server_storage": "Almacenamiento del servidor",
+            "usage": {
+                "data": "Datos",
+                "cache": "Caché"
+            },
+            "kind": {
+                "builtin_media": "Carpeta multimedia de Home Assistant",
+                "container_volume": "Volumen de Docker",
+                "network_share": "Recurso compartido de red",
+                "removable": "Dispositivo USB",
+                "local_disk": "Disco local",
+                "manual": "Carpeta"
+            },
+            "share_type": {
+                "cifs": "SMB",
+                "nfs": "NFS"
+            },
+            "share_summary": "{type} {address}",
+            "share_summary_via_ha": "{type} {address}, a través de Home Assistant",
+            "read_only": "Solo lectura",
+            "unavailable": "No disponible",
+            "free_space": "{0} libre",
+            "free_of_total": "{0} libre de {1}",
+            "used_space": "{0} usado",
+            "used_by": "Usado por {sources}",
+            "read_by": "También leído por {sources}",
+            "remove_in_use": "{sources} usa esta ubicación. Desactiva o elimina primero ese origen de música. | {sources} usan esta ubicación. Desactiva o elimina primero esos orígenes de música.",
+            "add_network_share": "Añadir recurso compartido de red",
+            "add_local_folder": "Añadir una carpeta en este servidor",
+            "share_added": "Recurso compartido de red añadido",
+            "share_saved": "Recurso compartido de red guardado",
+            "share_reloaded": "Recurso compartido de red vuelto a cargar",
+            "share_removed": "Recurso compartido de red eliminado",
+            "share_save_failed": "No se ha podido guardar el recurso compartido de red",
+            "share_reload_failed": "No se ha podido volver a cargar el recurso compartido de red",
+            "share_remove_failed": "No se ha podido eliminar el recurso compartido de red",
+            "folder_added": "Carpeta añadida",
+            "folder_removed": "Carpeta eliminada",
+            "folder_add_failed": "No se ha podido añadir la carpeta",
+            "folder_remove_failed": "No se ha podido eliminar la carpeta",
+            "remove_share_title": "Eliminar recurso compartido de red",
+            "remove_share_confirm": "¿Eliminar {name}? Music Assistant desconectará el recurso compartido. Los archivos que contiene no se eliminarán.",
+            "remove_share_read_by": "{sources} también lee este recurso compartido. Sus elementos de este recurso compartido dejarán de estar en la biblioteca en la próxima sincronización. | {sources} también leen este recurso compartido. Sus elementos de este recurso compartido dejarán de estar en la biblioteca en la próxima sincronización.",
+            "remove_folder_title": "Eliminar carpeta",
+            "remove_folder_confirm": "¿Eliminar {name} de la lista? La carpeta y sus archivos no se eliminarán.",
+            "cannot_mount_container_title": "Añadir recursos compartidos de red en el host",
+            "cannot_mount_container_text": "Esta instalación se ejecuta en un contenedor y no puede conectarse directamente a un recurso compartido de red. Monta el recurso compartido en el host y asigna su carpeta al contenedor de Music Assistant; entonces aparecerá aquí.",
+            "cannot_mount_host_title": "Montar recursos compartidos de red",
+            "cannot_mount_host_text": "Este servidor no puede conectarse directamente a un recurso compartido de red. Monta el recurso compartido en el servidor y, a continuación, añade su carpeta con «{button}».",
+            "cannot_mount_ha_title": "Los recursos compartidos de red no se pueden añadir en este momento",
+            "cannot_mount_ha_text": "Home Assistant no conecta recursos compartidos de red para Music Assistant en este momento. Actualiza la aplicación de Music Assistant en Home Assistant y reiníciala. Los recursos compartidos de red que añadas en Home Assistant en Ajustes › Sistema › Almacenamiento, con el uso «Multimedia», también aparecerán aquí.",
+            "cannot_mount_link": "Cómo configurar esto",
+            "share_dialog": {
+                "edit_title": "Editar recurso compartido de red",
+                "description": "Conecta una carpeta compartida en un NAS u otro ordenador.",
+                "share_type": "Tipo de recurso compartido",
+                "server": "Servidor",
+                "server_hint": "Nombre o dirección IP del NAS o del ordenador, por ejemplo nas.local o 192.168.1.10",
+                "share_name": "Nombre del recurso compartido",
+                "share_name_hint": "El nombre de la carpeta compartida, por ejemplo music",
+                "export_path": "Ruta de exportación",
+                "export_path_hint": "La carpeta que comparte el servidor, por ejemplo \/volume1\/music",
+                "username": "Nombre de usuario",
+                "password": "Contraseña",
+                "credentials_hint": "Deja ambos campos vacíos para conectarte como invitado.",
+                "password_keep": "Déjalo vacío para mantener la contraseña actual.",
+                "read_only_hint": "Music Assistant puede leer del recurso compartido, pero no modificarlo.",
+                "version": "Versión del protocolo",
+                "version_auto": "Automático",
+                "version_hint": "Cambia esto solo si el recurso compartido no se conecta."
+            },
+            "folder_dialog": {
+                "description": "Haz que una carpeta de este servidor esté disponible para tus orígenes de música.",
+                "path": "Ruta de la carpeta",
+                "path_hint": "La ruta completa de la carpeta, por ejemplo \/home\/me\/Music"
+            },
+            "use_as_source": "Usar como origen de música"
+        },
+        "folder_picker": {
+            "selected": "Carpeta seleccionada",
+            "none_selected": "No se ha seleccionado ninguna carpeta.",
+            "outside_locations": "Esta carpeta no se encuentra en ninguna de las ubicaciones de almacenamiento. Seguirá seleccionada hasta que elijas otra.",
+            "locations": "Ubicaciones de almacenamiento",
+            "all_locations": "Todas las ubicaciones",
+            "breadcrumb": "Ruta de la carpeta",
+            "open_folder": "Abrir {name}",
+            "no_subfolders": "Esta carpeta no tiene subcarpetas.",
+            "use_folder": "Usar esta carpeta",
+            "folder_selected": "Seleccionado",
+            "holds_selection": "La carpeta seleccionada está aquí",
+            "browse_failed": "No se ha podido abrir la carpeta",
+            "empty_title": "Todavía no hay nada que seleccionar",
+            "empty_text": "Todavía no hay ninguna carpeta, unidad o recurso compartido de red que seleccionar. Selecciona «Gestionar almacenamiento» para añadir uno.",
+            "empty_text_member": "Todavía no hay ninguna carpeta, unidad o recurso compartido de red que seleccionar. Pide a un administrador que añada uno.",
+            "manage": "Gestionar almacenamiento"
+        },
+        "remove_provider_confirm_music": "¿Eliminar «{0}»? Toda la música que proporciona esta origen se eliminará de tu biblioteca, junto con su historial de reproducción. Esta acción no se puede deshacer.",
+        "remove_provider_confirm_player": "¿Eliminar «{0}»? Sus reproductores y sus ajustes también se eliminarán. Esta acción no se puede deshacer.",
+        "remove_provider_acknowledge": "Entiendo que esto elimina música de mi biblioteca."
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
@@ -774,7 +882,7 @@
     "sort": {
         "duration": "Duración",
         "position": "Posición",
-        "provider": "Proveedor",
+        "provider": "Origen",
         "sort_name": "Alfabéticamente",
         "track_number": "Número de canción",
         "year": "Año de lanzamiento",
@@ -812,13 +920,12 @@
         "playing": "reproduciendo"
     },
     "sync_now": "Sincronizar ahora",
-    "sync_running": "Uno o más proveedores de música están siendo sincronizados.",
+    "sync_running": "Se están sincronizando uno o varios orígenes de música.",
     "tooltip": {
         "album_artist_filter": "Alternar filtro de álbum-artista",
         "explicit": "Explícito",
         "filter_library": "Alternar filtro en la biblioteca\/favorito",
         "library": "Alternar en biblioteca\/favorito",
-        "linked": "Este elemento del proveedor está vinculado a los detalles del elemento actual.",
         "refresh": "Actualizar la lista de elementos",
         "refresh_new_content": "Hay nuevo contenido disponible, haga clic para actualizar la lista",
         "search": "Mostrar\/ocultar entrada de búsqueda",
@@ -827,7 +934,7 @@
         "toggle_view_mode": "Alternar modo de vista lista\/miniaturas",
         "filter_favorites": "Mostrar solo favoritos",
         "favorite": "Marcar\/desmarcar como favorito",
-        "open_provider_link": "Abrir este elemento en el sitio web del proveedor",
+        "open_provider_link": "Abrir este elemento en el sitio web del origen de música",
         "collapse_expand": "Contraer\/expandir este listado",
         "back": "Atrás",
         "search_filter_active": "La búsqueda está filtrando resultados actualmente",
@@ -837,15 +944,15 @@
         "primary_image": "Esta es la imagen primario para este tipo de imagen",
         "copy_uri": "Copiar URI al portapapeles",
         "select_all": "Seleccionar todos los elementos",
-        "filter_provider": "Filtrar por fuente",
-        "in_provider_library": "Este elemento está en la librería del proveedor",
+        "filter_provider": "Filtrar por origen",
+        "in_provider_library": "Este elemento está en la biblioteca del origen de música",
         "hide_empty_genres": "Ocultar géneros vacíos",
         "show_empty_genres": "Mostrar géneros vacíos",
         "filter_genre": "Filtrar por género",
         "show_only_default_genres": "Mostrar solo los géneros predeterminados",
         "show_all_genres": "Mostrar todos los géneros",
         "filter_hide_fully_played": "Ocultar episodios reproducidos por completo",
-        "select_provider": "Seleccionar fuente",
+        "select_provider": "Seleccionar origen",
         "genre_content_type": "Tipo de medios",
         "previous_page": "Página anterior",
         "next_page": "Página siguiente",
@@ -886,12 +993,14 @@
         "show_context_menu": "Mostrar menú contextual",
         "scroll_left": "Desplazar hacia la izquierda",
         "scroll_right": "Desplazar hacia la derecha",
-        "hide_provider": "Ocultar fuente de música",
+        "hide_provider": "Ocultar origen de música",
         "exit_select_items": "Salir de la selección múltiple",
         "playing_from": "Reproduciendo desde {0}",
         "open_documentation": "Abrir la documentación de {provider}",
         "view_mode_current": "Vista actual: {0}. Cambiar modo de vista",
-        "view_mode_switch": "Vista actual: {0}. Cambiar a {1}"
+        "view_mode_switch": "Vista actual: {0}. Cambiar a {1}",
+        "mute": "Silenciar",
+        "unmute": "Activar sonido"
     },
     "topresult": "Resultados más importantes",
     "track": "Canción",
@@ -908,7 +1017,6 @@
     "check_item_on_provider": "Comprueba {0} en {1}",
     "check_item_in_library": "Comprueba {0} en la biblioteca",
     "media_details": "Detalles de los medios",
-    "mapped_providers": "Detalles del proveedor",
     "item_in_library": "Este elemento está disponible en la biblioteca",
     "back": "Atrás",
     "recently_played": "Reproducido recientemente",
@@ -990,7 +1098,7 @@
             "unknown": "Desconocido",
             "unknown_format": "Formato desconocido",
             "provider": "Proveedor: {0}",
-            "source_format": "Fuente: {0}",
+            "source_format": "Origen: {0}",
             "pcm_format": "Procesamiento compartido: {0}",
             "output_format": "Salida final: {0}",
             "sample_rate": "{0} kHz",
@@ -1008,7 +1116,7 @@
             "playback_speed": "Velocidad de reproducción: {0}x",
             "crossfade": "transición entre canciones: {0}",
             "overlay_active": "Superposición de audio activa",
-            "source_channel": "Canal de fuente: {0}",
+            "source_channel": "Canal de origen: {0}",
             "source_channel_left": "Izquierda",
             "source_channel_right": "Derecha",
             "dsp_preset": "Preajuste DSP: {0}",
@@ -1071,7 +1179,7 @@
             "dsp_preset_label": "Preajuste DSP",
             "dsp_title": "DSP",
             "bit_perfect_badge": "Bit-perfect",
-            "bit_perfect_detail": "Bit-perfect: las muestras de la fuente decodificada llegan a la salida sin cambios.",
+            "bit_perfect_detail": "Bit-perfect: las muestras de los orígenes decodificada llegan a la salida sin cambios.",
             "samples_changed_detail": "El procesamiento de audio o la conversión a un formato sin pérdidas han cambiado las muestras de audio. Esto no es bit-perfect, pero no debería causar una pérdida de calidad audible.",
             "lossy_output_detail": "La salida está codificada con un codec con pérdidas. Esto no es bit-perfect y puede reducir la calidad del sonido.",
             "bit_perfect_unknown_detail": "El estado de bit-perfect no está disponible.",
@@ -1213,7 +1321,7 @@
         "no_custom_roles": "Aún no hay roles personalizados.",
         "no_custom_roles_hint": "Crea un rol para elegir exactamente qué puede hacer una persona.",
         "admin_role_permissions": "Las administradoras pueden hacer todo.",
-        "admin_only_permissions": "La gestión de usuarios, de toda la biblioteca, de todas las fuentes de música, de la configuración del servidor y del mantenimiento del sistema queda reservada a los administradores.",
+        "admin_only_permissions": "La gestión de usuarios, de toda la biblioteca, de todas los orígenes de música, de la configuración del servidor y del mantenimiento del sistema queda reservada a los administradores.",
         "builtin_role_hint": "Los roles integrados no se pueden cambiar.",
         "custom_role_readonly_hint": "Solo los administradores pueden cambiar los roles.",
         "confirm_delete_role": "¿Seguro que quieres eliminar el rol {name}? Esta acción no se puede deshacer",
@@ -1232,14 +1340,14 @@
             "browse_library": "Explorar la biblioteca",
             "play_music": "Reproducir música y controlar los reproductores",
             "change_queue": "Ver y cambiar la cola de reproducción",
-            "see_sources_and_players": "Ver las fuentes de música y la configuración de los reproductores",
+            "see_sources_and_players": "Ver los orígenes de música y la configuración de los reproductores",
             "library": "Biblioteca",
             "library_write": "Añadir y eliminar elementos de la biblioteca y favoritos",
             "players": "Reproductores",
             "config_players_write": "Cambiar la configuración de los reproductores y crear grupos de reproductores",
-            "music_sources": "Fuentes de música",
-            "config_providers_read": "Ver la configuración de las fuentes de música",
-            "config_providers_own": "Añadir y gestionar sus propias fuentes de música",
+            "music_sources": "Orígenes de música",
+            "config_providers_read": "Ver la configuración de los orígenes de música",
+            "config_providers_own": "Añadir y gestionar sus propios orígenes de música",
             "users": "Usuarios",
             "users_read": "Ver los demás usuarios",
             "users_invite": "Mostrar paneles y organizar un quiz musical",
@@ -1247,7 +1355,10 @@
             "server": "Servidor",
             "config_core_read": "Consulta la configuración del servidor",
             "system_read": "Consulta las tareas en segundo plano y sus registros"
-        }
+        },
+        "username_max_length": "El nombre de usuario debe tener como máximo 50 caracteres",
+        "display_name_max_length": "El nombre para mostrar debe tener como máximo 100 caracteres",
+        "password_max_length": "La contraseña debe tener como máximo 128 caracteres"
     },
     "login": {
         "subtitle": "Conéctate a tu servidor de música",
@@ -1320,11 +1431,11 @@
     "no": "No",
     "uri_copied": "URI copiado en el portapapeles",
     "uri_copy_failed": "Error al copiar URI al portapapeles",
-    "search_all_providers": "Buscar coincidencias en todos los proveedores",
-    "search_all_providers_confirm": "¿Estás seguro de que quieres buscar coincidencias en todos los proveedores? Esto puede tardar algún tiempo en completarse y se ejecutará en segundo plano.",
-    "remove_provider_mapping": "Eliminar asignación de proveedor",
-    "remove_provider_mapping_confirm": "¿Está seguro de que desea eliminar esta asignación de proveedor? Esto desvinculará el elemento de los detalles del elemento actual. Es posible que vuelva a aparecer si vuelve a buscar todas las coincidencias de proveedores.",
-    "map_provider_mapping": "Asignar esta entrada del proveedor al elemento actual",
+    "search_all_providers": "Buscar coincidencias en todas los orígenes de música",
+    "search_all_providers_confirm": "¿Seguro que quieres buscar coincidencias en todas los orígenes de música? Puede tardar un poco en completarse y se ejecutará en segundo plano.",
+    "remove_provider_mapping": "Desvincular esta origen",
+    "remove_provider_mapping_confirm": "¿Seguro que quieres desvincular esta origen del elemento? Puede volver a aparecer si vuelves a buscar coincidencias en todas los orígenes de música.",
+    "map_provider_mapping": "Vincular esta entrada del origen al elemento actual",
     "player_tip": {
         "selected_player": "Reproductor seleccionado",
         "currently_playing": "Reproduciéndose actualmente en",
@@ -1408,10 +1519,10 @@
         "replace_next": "Reproducir siguiente (reemplazar cola)",
         "add": "Añadir a la cola"
     },
-    "playlist_create_media_types": "La fuente de música {0} admite los siguientes tipos de medios:",
+    "playlist_create_media_types": "El origen de música {0} admite los siguientes tipos de medios:",
     "playlist_mix_allowed": "Estos tipos de contenido se pueden mezclar.",
-    "playlist_mix_not_allowed": "Esta fuente de música no admite la mezcla de tipos de contenido multimedia en las listas de reproducción. \nPor favor, seleccione el tipo de contenido multimedia para el que desea crear una lista de reproducción:",
-    "playlist_create_provider_error": "No se pudo encontrar esa fuente de música.",
+    "playlist_mix_not_allowed": "Esta origen de música no admite la mezcla de tipos de contenido multimedia en las listas de reproducción. \nPor favor, seleccione el tipo de contenido multimedia para el que desea crear una lista de reproducción:",
+    "playlist_create_provider_error": "No se pudo encontrar ese origen de música.",
     "playlist_create_no_type_selected": "No se ha seleccionado ningún tipo de contenido.",
     "exclude_genre": "Excluir género",
     "genre_exclusions": "Exclusiones de géneros",
@@ -1539,8 +1650,8 @@
             "searching": "Buscando...",
             "no_sources_found": "No se han encontrado canciones ni listas de reproducción.",
             "selected_music": "Música seleccionada",
-            "pick_at_least_one_source": "Selecciona al menos una fuente",
-            "source_search_failed": "No se pudieron buscar fuentes de música",
+            "pick_at_least_one_source": "Selecciona al menos un origen",
+            "source_search_failed": "No se pudieron buscar orígenes de música",
             "playlist": "Lista de reproducción",
             "track_with_artist": "Canción • {0}",
             "track": "Canción",
@@ -1633,7 +1744,7 @@
             "timeline_correct_placement": "Posición correcta",
             "timeline_incorrect_placement": "Posición incorrecta",
             "timeline_round_results": "Resultados de la ronda",
-            "add_music_sources": "Añadir fuentes de música",
+            "add_music_sources": "Añadir orígenes de música",
             "genre": "Género",
             "album": "Álbum",
             "artist": "Artista",
@@ -1677,7 +1788,7 @@
             "reveal_audio_on": "Encendido",
             "reveal_audio_off": "Apagado",
             "include_similar_music": "Incluir música similar",
-            "include_similar_music_help": "Añade canciones recomendadas más allá de tus fuentes seleccionadas para obtener más variedad.",
+            "include_similar_music_help": "Añade canciones recomendadas más allá de tus orígenes seleccionadas para obtener más variedad.",
             "playback": "Reproducción",
             "playback_help": "Elige dónde se reproduce la música.",
             "playback_mode": "Modo de reproducción",
@@ -1736,7 +1847,7 @@
                 "remove": "Quitar"
             },
             "fields": {
-                "source_playtime_cap": "Límite de tiempo de reproducción de la fuente (minutos)",
+                "source_playtime_cap": "Límite de tiempo de reproducción del origen (minutos)",
                 "default_playback_device": "Dispositivo de reproducción predeterminado (opcional)",
                 "web_search_mode": "Modo de búsqueda web",
                 "character_limit": "Límite de caracteres",
@@ -1748,9 +1859,9 @@
                 "language": "Idioma"
             },
             "field_descriptions": {
-                "source_playtime_cap": "Tiempo total máximo de reproducción de la música de la fuente, en minutos. Las canciones se toman en el orden en que el programa las reproduce hasta alcanzar el límite. Deja el valor en 0 para no establecer ningún límite.",
+                "source_playtime_cap": "Duración total máxima de reproducción de la música de origen, en minutos. Las canciones se toman en el orden en que las reproduce el programa hasta alcanzar el límite. Déjalo en 0 para no establecer ningún límite.",
                 "instructions": "Describe la personalidad del host y cómo deben escribirse los segmentos. Esto se envía a la IA con cada segmento.",
-                "shuffle_playlist_tracks": "Reproduce la lista de reproducción de fuente en orden aleatorio. Desactiva esta opción para seguir el orden original de la lista de reproducción."
+                "shuffle_playlist_tracks": "Reproduce la lista de reproducción de origen en orden aleatorio. Desactívalo para seguir el orden propio de la lista."
             },
             "web_search": {
                 "disabled": "desactivado (sin herramienta web)",
@@ -1769,7 +1880,7 @@
             "validation": {
                 "invalid_import_file": "El archivo no es una exportación válida de AI Radio.",
                 "station_name_required": "El nombre de la emisora es obligatorio",
-                "station_source_playlist_required": "La lista de reproducción de origen de la estación es obligatoria",
+                "station_source_playlist_required": "Se requiere una lista de reproducción de origen de la emisora",
                 "select_section": "Selecciona al menos una sección",
                 "section_order_required": "El orden de las secciones requiere al menos una regla",
                 "rule_requires_flow": "La regla {0} requiere al menos un elemento de flujo",
@@ -1811,12 +1922,14 @@
             },
             "gallery": {
                 "empty_title": "Crea tu primer programa",
-                "empty_description": "AI Radio convierte una de tus listas de reproducción en un programa de radio con una AI host. AI Radio necesita un proveedor compatible con IA (por ejemplo, Home Assistant) para generar la AI host; configura uno en Settings → Complementos.",
+                "empty_description": "AI Radio convierte una de tus listas de reproducción en un programa de radio con un presentador de IA. AI Radio necesita un proveedor con capacidades de IA (por ejemplo, Home Assistant) para generar al presentador; configura uno en Ajustes › Complementos.",
                 "create_cta": "Crear programa",
                 "new_show": "Nuevo programa",
                 "refresh": "Actualizar",
                 "title": "Programas",
-                "add_show": "Añadir programa"
+                "add_show": "Añadir programa",
+                "empty_title_listener": "Todavía no hay programas",
+                "empty_description_listener": "Todavía no se ha configurado ningún programa de radio. Vuelve a consultar cuando alguien cree uno."
             },
             "card": {
                 "play": "Play",
@@ -1839,7 +1952,7 @@
             "create": {
                 "title": "Crear un programa",
                 "description": "Selecciona una lista de reproducción y un host para tu programa.",
-                "playlist_label": "Fuente de la lista de reproducción",
+                "playlist_label": "Lista de reproducción de origen",
                 "playlist_placeholder": "Elige una lista de reproducción",
                 "playlist_empty": "No se han encontrado listas de reproducción",
                 "name_label": "Nombre del programa",
@@ -1848,7 +1961,7 @@
                 "create_and_play": "Crear y reproducir",
                 "creating": "Creando...",
                 "validation": {
-                    "playlist_required": "Elige una fuente de la lista de reproducción",
+                    "playlist_required": "Elige una lista de reproducción de origen",
                     "name_required": "El nombre del programa es obligatorio",
                     "host_required": "Elige un host"
                 },
@@ -1857,7 +1970,7 @@
             "prereq": {
                 "title": "Se necesita un proveedor de IA",
                 "description": "AI Radio necesita un proveedor compatible con IA (por ejemplo, Home Assistant) para generar la AI host.",
-                "action": "Ve a Ajustes → Complementos"
+                "action": "Ve a Ajustes › Complementos"
             },
             "customize": {
                 "title": "Personalizar programa",
@@ -2039,7 +2152,7 @@
         "report_title": "Informe de tareas"
     },
     "not_found_headline": "Vaya, esta página no está en la lista de reproducción.",
-    "not_found_subtext": "La canción que buscas se ha perdido entre las fuentes de música. Vuelve atrás o busca algo nuevo.",
+    "not_found_subtext": "La canción que buscas se ha perdido entre los orígenes de música. Vuelve atrás o busca algo nuevo.",
     "restore_genre": "Restaurar",
     "genre_name": "Nombre del género",
     "export_playlist": "Explorar lista de reproducción",
@@ -2055,7 +2168,7 @@
     "lyrics_offset": "Desfase de letras",
     "similar_tracks": "Canciones similares",
     "similar_artists": "Artistas Similares",
-    "audio_source": "Fuente de audio",
+    "audio_source": "Origen de audio",
     "change_playback_speed": "Cambiar la velocidad de reproducción",
     "shortcut": {
         "add_to": "Añadir a accesos directos",
@@ -2107,14 +2220,14 @@
         "picker_empty_search": "Escribe al menos 2 caracteres para buscar un {label}.",
         "op_is": "es",
         "op_is_not": "no es",
-        "seed_count_hint": "Hasta 50 canciones de tu proveedor de streaming, actualizadas en cada reproducción.",
-        "seed_filters_hint": "Los filtros se aplican en la medida de lo posible. Algunos proveedores de música no proporcionan los metadatos necesarios para aplicarlos.",
+        "seed_count_hint": "Hasta 50 canciones de tus orígenes de música, actualizadas en cada reproducción.",
+        "seed_filters_hint": "Los filtros se aplican en la medida de lo posible. Algunos orígenes de música no proporcionan los metadatos necesarios para aplicarlos.",
         "seed_heading": "Descubre música similar a las siguientes canciones, artistas, álbumes o listas de reproducción.",
-        "seed_no_provider": "Ningún proveedor de streaming admite canciones similares.",
+        "seed_no_provider": "Ninguno de tus orígenes de música admite canciones similares",
         "type_library": "Desde mi biblioteca",
         "type_library_desc": "Créala a partir de la música que ya tienes en tu biblioteca.",
         "type_seed": "Descubrir",
-        "type_seed_desc": "Descubre música a través de tus proveedores de streaming.",
+        "type_seed_desc": "Descubre música a través de tus orígenes de música.",
         "add_seed": "Añadir seed",
         "seed_label": "Seed",
         "seed_album_pick": "Selecciona un álbum",
@@ -2231,7 +2344,7 @@
     "audio_overlay_sound": "Sonido",
     "audio_overlay_select_sound": "Selecciona un sonido",
     "audio_overlay_volume": "Volumen",
-    "audio_overlay_no_sounds": "No hay sonidos de superposición disponibles. Añade una fuente de música que ofrezca efectos de sonido.",
+    "audio_overlay_no_sounds": "No hay sonidos de superposición disponibles. Añade un origen de música que ofrezca efectos de sonido.",
     "menu_edit_enable": "Menú de edición",
     "menu_edit_disable": "Salir del modo edición",
     "menu_item_hide": "Ocultar elemento del menú",
@@ -2299,7 +2412,7 @@
         "toggle": "Activar o desactivar el visualizador MilkDrop",
         "preset_random_favorites": "Aleatorio entre los favoritos",
         "toggle_favorite": "Añadir este ajuste predefinido a favoritos",
-        "provider_missing": "El complemento MilkDrop Visualizer no está disponible. Compruébalo en Ajustes → Complementos para usar el visualizador.",
+        "provider_missing": "El complemento MilkDrop Visualizer no está disponible. Compruébalo en Ajustes › Complementos para usar el visualizador.",
         "section_general": "Apariencia",
         "section_presets": "Ajustes predefinidos",
         "quality": "Calidad de renderizado",
@@ -2385,7 +2498,6 @@
     },
     "sidebar": {
         "title": "Barra lateral",
-        "description": "Muestra la barra lateral para dispositivos móviles.",
         "toggle": "Mostrar\/ocultar barra lateral",
         "expand": "Expandir barra lateral",
         "collapse": "Contraer barra lateral"
@@ -2396,7 +2508,9 @@
         "remove_message": "La reproducción está activa en {0}. Quitar este reproductor del grupo moverá la sesión de reproducción a los reproductores restantes.",
         "power_off_message": "La reproducción está activa en {0}. Apagarlo moverá la sesión de reproducción a los reproductores restantes.",
         "keep_playing": "Seguir reproduciendo",
-        "stop_and_ungroup": "Detener y desagrupar"
+        "stop_and_ungroup": "Detener y desagrupar",
+        "remove_message_this_device": "Hay una reproducción activa en este dispositivo. Al quitarlo del grupo, la sesión de reproducción pasará a los reproductores restantes.",
+        "power_off_message_this_device": "La reproducción está activa en este dispositivo. Al apagarlo, la sesión de reproducción pasará a los reproductores restantes."
     },
     "play_shuffled": "Reproducir en orden aleatorio",
     "players_in_group": "Reproductores del grupo",
@@ -2416,7 +2530,7 @@
     "play_from_here_to_latest": "Reproducir desde aquí hasta la más reciente",
     "players_need_setup": "Se ha descubierto un dispositivo nuevo que requiere configuración | Se han descubierto {count} dispositivos nuevos que requieren configuración",
     "review": "Revisión",
-    "import_playlist_search_providers_description": "Las fuentes de música seleccionadas se utilizan como alternativa cuando la fuente original de una pista no está disponible.",
+    "import_playlist_search_providers_description": "Los orígenes de música seleccionadas se utilizan como alternativa cuando la fuente original de una pista no está disponible.",
     "import_playlist_match_policy_label": "Coincidencia de canciones",
     "import_playlist_match_policy_exact_title": "Edición exacta",
     "import_playlist_match_policy_exact_description": "Compara las canciones únicamente con la misma edición exacta.",
@@ -2427,7 +2541,7 @@
     "migrate_playlist": {
         "action": "Migrar lista de reproducción",
         "title": "Migrar lista de reproducción",
-        "description": "Copia «{0}» a otra fuente de música, haciendo coincidir sus pistas durante el proceso.",
+        "description": "Copia «{0}» a otro origen de música, haciendo coincidir sus pistas durante el proceso.",
         "destination_label": "Destino",
         "destination_placeholder": "Elige un destino",
         "name_label": "Nombre de la lista de reproducción",
@@ -2447,7 +2561,7 @@
             }
         },
         "submit": "Migrar",
-        "no_destinations_error": "No hay ninguna fuente de música de destino válida disponible para esta lista de reproducción."
+        "no_destinations_error": "No hay ningún origen de música de destino válida disponible para esta lista de reproducción."
     },
     "increase_value": "Aumentar valor",
     "decrease_value": "Disminuir valor",
@@ -2468,25 +2582,23 @@
         "other": "Otro"
     },
     "singles_eps": "Singles y EP",
-    "latest_release": "Último lanzamiento",
     "view_all": "Ver todo",
     "play_on_player": "Reproducir en {player}",
-    "artist_radio": "Mezcla continua del artista",
+    "artist_radio": "Reproducción continua del artista",
     "newest_first": "Primero los más recientes",
-    "via_provider": "vía {provider}",
     "appears_on_hint": "Acreditado en una canción, no como artista del álbum",
     "edit_rows": "Editar filas",
     "edit_rows_subtitle": "Se aplica a todas las páginas de artistas",
     "reset_to_default": "Restablecer valores predeterminados",
     "rows_shown": "{shown} de {total} filas mostradas",
-    "row_source": "Fuente",
+    "row_source": "Origen",
     "source_library": "Tu biblioteca",
-    "source_all": "Todas las fuentes",
+    "source_all": "Todas los orígenes",
     "row_hidden": "Oculta",
     "reorder_row": "Reordenar fila",
     "hide_row": "Ocultar fila",
     "show_row": "Mostrar fila",
-    "edit_rows_hint": "Arrastra para reordenar y oculta lo que no quieras. «Fuente» selecciona qué alimenta una fila (tu biblioteca, un origen específico o todos ellos).",
+    "edit_rows_hint": "Arrastra para reordenar y oculta lo que no quieras. «Origen» selecciona qué alimenta una fila (tu biblioteca, un origen específico o todos ellos).",
     "admin_only": "Solo administradores",
     "done": "Hecho",
     "onboarding": {
@@ -2496,21 +2608,17 @@
         "skip": "Omitir por ahora.",
         "finish": "Finalizar",
         "finish_failed": "No se pudo completar. Por favor, inténtelo de nuevo.",
-        "getting_started": "Primeros pasos",
-        "getting_started_hint": "Terminar de configurar Music Assistant.",
-        "hide_for_now": "Ocultar por ahora.",
         "nothing_configured": "Aún no hay nada configurado.",
         "needs_attention": "Requiere atención.",
-        "set_up": "Configurado.",
+        "set_up": "Listo",
         "still_to_do": "Pendiente",
         "all_done": "Todo lo de la lista está configurado.",
         "players_count": "{count} reproductor | {count} reproductores",
-        "steps_to_go": "Queda {count} paso | Quedan {count} pasos",
         "run_again": "Volver a ejecutar el asistente de configuración.",
         "steps": {
             "intent": {
-                "title": "Elige cómo escuchar.",
-                "description": "Esto solo determina qué te sugerimos primero. Todo seguirá disponible, elijas lo que elijas.",
+                "title": "Elige cómo quieres usar Music Assistant",
+                "description": "Esto establece qué hace primero Music Assistant. Todo seguirá estando disponible, elijas lo que elijas.",
                 "phone_apps": {
                     "label": "Desde las aplicaciones de mi teléfono.",
                     "description": "Transmite contenido desde Spotify, AirPlay y otras aplicaciones a los altavoces de tu hogar."
@@ -2518,97 +2626,131 @@
                 "music_hub": {
                     "label": "Como mi centro de música.",
                     "description": "Reúne tus servicios de streaming y tu música local en una sola biblioteca."
-                }
+                },
+                "settings_note": "Puedes cambiar esto más adelante desde los ajustes."
             },
             "music_sources": {
-                "title": "Añadir fuentes de música",
+                "title": "Añadir orígenes de música",
                 "description": "Conecta un servicio de streaming o tus archivos de música locales para que Music Assistant tenga algo que reproducir."
             },
             "players": {
-                "title": "Añadir proveedores de reproductores",
-                "description": "Un proveedor de reproductores incorpora tus altavoces a Music Assistant, como Sonos, Chromecast o AirPlay."
+                "title": "Añade tus reproductores",
+                "description": "Los reproductores que Music Assistant ya ha encontrado. Desactiva los que no quieras utilizar y cambia su nombre como prefieras.",
+                "description_empty": "Music Assistant encuentra tus altavoces mediante proveedores de reproductores, como Sonos, Chromecast o AirPlay.",
+                "empty": "Todavía no se han encontrado reproductores",
+                "no_provider_hint": "Añade un proveedor de reproductores y sus reproductores aparecerán aquí.",
+                "discovering_hint": "Encontrar reproductores puede tardar un momento. Asegúrate de que los altavoces estén encendidos y en la misma red que Music Assistant.",
+                "add_more": "Añadir más reproductores",
+                "rename": "Cambiar el nombre de {name}"
             },
             "plugins": {
                 "title": "Añadir complementos",
-                "description": "Los complementos añaden funciones adicionales a Music Assistant. Siempre puedes añadirlos más adelante."
+                "description": "Los complementos añaden funciones adicionales a Music Assistant, como Party, Spotify Connect y un receptor AirPlay. Siempre puedes añadirlos más adelante."
             },
             "finish": {
                 "title": "Finalizar configuración",
-                "description": "Aquí es donde te has quedado. Puedes cambiar cualquiera de estas opciones más adelante desde los ajustes."
+                "description": "Buen trabajo configurándolo todo. Aquí tienes un breve resumen, y puedes cambiar cualquiera de estas opciones más adelante desde los ajustes."
             },
             "core_settings": {
                 "title": "Comprueba la configuración de tu servidor",
-                "description": "El nombre con el que se conoce este servidor, la dirección desde la que se accede a él en casa y la dirección que se debe usar desde fuera de casa",
-                "load_failed": "No se pudieron cargar los ajustes del servidor. Puedes cambiarlos más tarde desde los ajustes."
+                "load_failed": "No se pudieron cargar los ajustes del servidor. Puedes cambiarlos más tarde desde los ajustes.",
+                "intro": "Las direcciones que Music Assistant está utilizando ahora mismo. Se calculan automáticamente y normalmente son correctas, así que puedes continuar sin más.",
+                "internal_address": "Dirección interna",
+                "internal_address_hint": "Desde dónde acceden a Music Assistant las aplicaciones y dispositivos de tu casa.",
+                "stream_address": "Dirección del servidor de streaming",
+                "stream_address_hint": "De dónde obtienen el audio tus reproductores.",
+                "address_unknown": "No disponible",
+                "check": {
+                    "checking": "Comprobando...",
+                    "reachable": "Se puede acceder desde este dispositivo",
+                    "unreachable": "No se puede acceder desde este dispositivo",
+                    "unchecked": "No se ha podido comprobar desde este dispositivo"
+                },
+                "unreachable_hint": "Una dirección que no responde aquí puede que tampoco responda para tus reproductores. Si la reproducción falla, establécela en los ajustes avanzados.",
+                "override_hint": "Solo necesitas cambiar estos ajustes en una red más compleja, por ejemplo detrás de un proxy inverso o entre VLAN. Más adelante puedes encontrarlos en Ajustes › {system}, en {webserver} y {streams}.",
+                "remote": {
+                    "title": "Escucha desde fuera de casa",
+                    "description": "Dos formas de acceder a Music Assistant cuando estás fuera de casa. Ambas también se pueden configurar más adelante.",
+                    "builtin": {
+                        "title": "Acceso remoto integrado",
+                        "easiest": "La opción más sencilla",
+                        "description": "Seguro y cifrado, sin redirección de puertos ni VPN. Actívalo y conéctate desde cualquier lugar con tu ID de acceso remoto.",
+                        "switch": "Acceso remoto",
+                        "id": "Tu ID de acceso remoto",
+                        "copy": "Copiar el ID de acceso remoto",
+                        "hint": "Úsala en la aplicación Music Assistant o en app.music-assistant.io. El código QR está en Ajustes › {remote_access}."
+                    },
+                    "proxy": {
+                        "title": "Tu propio proxy inverso",
+                        "description": "Ejecuta un proxy inverso delante del servidor e introduce como dirección externa la dirección desde la que se puede acceder a él desde fuera.",
+                        "set_external": "Establecer la dirección externa"
+                    }
+                }
             },
             "invite_members": {
-                "title": "Añade tu hogar",
-                "description": "Cada persona con la que vives tiene su propia cuenta, con acceso a los reproductores y fuentes de música que tú elijas.",
-                "load_failed": "No se pudo cargar tu hogar. Puedes agregar miembros más tarde desde la configuración."
+                "title": "Añadir usuarios",
+                "description": "Cada persona de tu hogar tiene su propia cuenta, con acceso a los reproductores y los orígenes de música que le proporciones.",
+                "load_failed": "No se han podido cargar los usuarios. Puedes añadirlos más adelante desde los ajustes."
             },
             "welcome": {
                 "title": "Siéntete como en casa",
-                "description": "Hola, {name}, aquí es donde vive la música de tu hogar. Elige cuánto quieres ver mientras se reproduce algo",
-                "enthusiast": {
-                    "label": "Todos los detalles",
-                    "description": "Progreso en forma de onda y un visualizador de fondo mientras se reproduce música"
-                },
-                "regular": {
-                    "label": "Solo reproducir música",
-                    "description": "Un reproductor limpio, sin nada adicional"
-                },
+                "description": "Hola {name}, aquí es donde se encuentra la música de tu casa. Elige cuánta quieres ver.",
                 "defaults_hint": "Esto solo establece algunos valores predeterminados. Puedes cambiar todos los ajustes",
-                "save_failed": "No se ha podido guardar tu selección. Inténtalo de nuevo"
-            },
-            "whats_here": {
-                "title": "Lo que tienes aquí",
-                "description": "La música que ha reunido tu hogar y los reproductores a los que puedes enviarla",
-                "more_count": "+{count} más",
-                "listen": {
-                    "title": "Lo que puedes escuchar",
-                    "empty": "Todavía no se ha compartido ninguna fuente de música contigo",
-                    "browse": "Explora tu música"
+                "save_failed": "No se ha podido guardar tu selección. Inténtalo de nuevo",
+                "standard": {
+                    "label": "Estándar",
+                    "description": "Una interfaz limpia con solo lo esencial."
                 },
-                "players": {
-                    "title": "Tus reproductores",
-                    "empty": "Todavía no hay ningún reproductor. Pide a tu administrador que añada uno",
-                    "hint": "Selecciona un reproductor en la barra de la parte inferior, pulsa reproducir y abre el reproductor completo para ver lo que viene a continuación",
-                    "pick": "Selecciona un reproductor"
-                }
-            },
-            "tour": {
-                "title": "Un recorrido rápido",
-                "description": "Los lugares que más utilizarás",
-                "open": "Abrir",
-                "open_named": "Abrir {title}",
-                "library": {
-                    "title": "Tu biblioteca",
-                    "description": "Artistas, álbumes, canciones y listas de reproducción, todo junto en la barra lateral. Aquí encontrarás todo lo que haya añadido tu hogar"
-                },
-                "search": {
-                    "title": "Buscar",
-                    "description": "Abre la búsqueda desde la barra lateral para buscar un artista, un álbum o una canción entre todo lo que puedes escuchar"
-                },
-                "player_bar": {
-                    "title": "La barra del reproductor",
-                    "description": "La barra de la parte inferior permite seleccionar el reproductor y reproducir o pausar. Ábrela para acceder al reproductor completo y a la cola de reproducción"
-                },
-                "profile": {
-                    "title": "Tu perfil y configuración",
-                    "description": "Tu nombre, avatar y contraseña, y el tema y el idioma que utiliza esta aplicación"
+                "expert": {
+                    "label": "Experto",
+                    "description": "Muestra opciones avanzadas y detalles adicionales para quienes quieran verlo todo."
                 }
             },
             "all_set": {
                 "title": "Todo listo",
                 "description": "Eso es todo. Puedes cambiar cualquiera de estos ajustes más adelante desde la configuración"
+            },
+            "own_sources": {
+                "title": "Conecta tus propias cuentas",
+                "description": "Añade tus propios servicios de música para que tus listas de reproducción y tu biblioteca aparezcan junto a las de los demás. Siempre puedes hacerlo más tarde desde los ajustes.",
+                "add": "Añadir un origen de música",
+                "empty": "Todavía no has conectado ningún origen de música propia.",
+                "connected": "Tus orígenes de música"
+            },
+            "your_players": {
+                "title": "Tus reproductores",
+                "description": "Los reproductores a los que puedes enviar música.",
+                "empty": "Todavía no hay reproductores. Pide a tu administrador que añada uno."
+            },
+            "your_music": {
+                "title": "Lo que puedes escuchar",
+                "description": "Los orígenes de música que todos han reunido aquí.",
+                "empty": "Aún no se ha compartido ningún origen de música contigo."
+            },
+            "account": {
+                "title": "Crea tu cuenta",
+                "description": "Esta es la cuenta de administrador de este servidor de Music Assistant. \nLas cuentas de los demás usuarios de tu hogar se pueden añadir más adelante.",
+                "create": "Crear cuenta",
+                "creating": "Creando tu cuenta...",
+                "signing_in": "Iniciando sesión...",
+                "failed": "No se ha podido crear la cuenta. Inténtalo de nuevo.",
+                "sign_in_failed": "Tu cuenta se ha creado, pero no se ha podido iniciar sesión. Recarga la página para continuar.",
+                "handed_back": "Tu cuenta está lista. Puedes volver a la aplicación de la que procedías.",
+                "account_exists": "Este servidor ya tiene una cuenta, por lo que no hay nada que crear aquí.",
+                "sign_in_here": "Inicia sesión aquí en su lugar",
+                "reload": "Recargar la página",
+                "ready": "Has iniciado sesión como {name}."
             }
         },
-        "add_member": "Añadir un miembro del hogar",
+        "add_member": "Añadir un usuario",
         "just_you_so_far": "De momento, solo tú.",
         "welcome_title": "Te damos la bienvenida a Music Assistant",
         "welcome_again": "Mostrar de nuevo la bienvenida",
-        "welcome_hint": "Echa un vistazo rápido",
-        "what_you_picked": "Lo que has elegido"
+        "what_you_picked": "Lo que has elegido",
+        "description": "Configura Music Assistant paso a paso.",
+        "step_completed": "{step}, completado",
+        "welcome_description": "Un breve recorrido por Music Assistant",
+        "more_count": "+{count} más"
     },
     "share_playlist": "Compartir lista de reproducción.",
     "playlist_access": {
@@ -2621,15 +2763,106 @@
         "collaborative_hint": "Todos aquellos con quienes se haya compartido la lista de reproducción también pueden añadir y eliminar elementos.",
         "hints": {
             "private": "Solo el propietario puede ver esta lista de reproducción.",
-            "selected": "El propietario y los miembros seleccionados a continuación.",
-            "members": "Todos los miembros que hayan iniciado sesión, excepto los invitados.",
+            "selected": "El propietario y los usuarios seleccionados a continuación.",
+            "members": "Todos los usuarios que hayan iniciado sesión, excepto los invitados.",
             "everyone": "Cualquier usuario puede ver esta lista de reproducción.",
-            "selected_no_owner": "Solo los miembros seleccionados a continuación.",
+            "selected_no_owner": "Solo los usuarios seleccionados a continuación.",
             "nobody": "Nadie podrá ver esta lista de reproducción hasta que tenga un propietario o se comparta con alguien."
         },
         "updated": "Compartición actualizada."
     },
     "n_in_library": "{count} en la biblioteca",
-    "search_sources": "Fuentes",
-    "all_sources": "Todas las fuentes"
+    "search_sources": "Orígenes",
+    "all_sources": "Todos los orígenes",
+    "track_radio": "Reproducción continua de canciones",
+    "edit_rows_subtitle_track": "Se aplica a todas las páginas de canciones",
+    "n_releases": "{count} lanzamiento | {count} lanzamientos",
+    "artist_view_library_tracks": "Ver {count} canción de la biblioteca | Ver {count} canciones de la biblioteca",
+    "album_radio": "Reproducción continua de canciones del álbum",
+    "n_tracks": "{count} canción | {count} canciones",
+    "more_from_artist": "Más de este artista",
+    "more_from_artist_name": "Más de {name}",
+    "edit_rows_subtitle_album": "Se aplica a todas las páginas de álbumes",
+    "recommended": "Recomendado",
+    "tour": {
+        "start": "Hacer un recorrido",
+        "end": "Finalizar el recorrido",
+        "next": "Siguiente",
+        "step_counter": "{current} de {total}",
+        "offer": {
+            "title": "¿Quieres echar un vistazo rápido?",
+            "description": "Un breve recorrido señala las partes principales de la aplicación. Puedes volver a hacerlo en cualquier momento desde el menú de tu perfil."
+        },
+        "stops": {
+            "menu": {
+                "title": "El menú",
+                "description": "Todo empieza aquí: Descubre y Explora para encontrar algo que reproducir, tu biblioteca de artistas, álbumes, canciones y listas de reproducción, y los ajustes y tu perfil en la parte inferior."
+            },
+            "search": {
+                "title": "Buscar",
+                "description": "Busca un artista, álbum, canción o lista de reproducción entre todo lo que puedes escuchar."
+            },
+            "settings": {
+                "title": "Ajustes",
+                "description": "Donde está configurado Music Assistant: los orígenes de música y los reproductores, y cómo se ve y se comporta la aplicación."
+            },
+            "profile": {
+                "title": "Tu perfil",
+                "description": "Aquí se encuentran tu nombre, avatar y contraseña. En este menú también puedes reorganizar el menú, cerrar sesión o volver a hacer este recorrido."
+            },
+            "player_bar": {
+                "title": "La barra del reproductor",
+                "description": "Lo que se está reproduciendo ahora y los controles disponibles. Ábrelo para ver el reproductor completo y lo que viene a continuación."
+            },
+            "player_select": {
+                "title": "Selecciona un reproductor",
+                "description": "Elige dónde se reproduce la música. Selecciona un reproductor y pulsa reproducir."
+            },
+            "player_group": {
+                "title": "Grupo de reproductores",
+                "description": "Añade otros reproductores al que has seleccionado para que reproduzcan juntos la misma música en varias habitaciones. Los reproductores que no pueden unirse no se ofrecen."
+            }
+        }
+    },
+    "command_center_press_enter": "Pulsa Intro para buscar",
+    "command_center_search": "Buscar",
+    "artist_no_library_singles": "No tienes ningún sencillo ni EP de este artista en tu biblioteca.",
+    "artist_view_tracks": "Ver {count} canción | Ver {count} canciones",
+    "artist_no_tracks": "Este artista no tiene canciones.",
+    "artist_row_empty": "Nada que mostrar aquí.",
+    "show_results_on": "Mostrar resultados en {0}",
+    "source_details": "Detalles del origen",
+    "favorites_dislike": "No me gusta",
+    "favorites_dislike_remove": "Quitar «no me gusta»",
+    "favorites_menu": "Opciones de favoritos",
+    "favorites_menu_liked": "Opciones de favoritos, me gusta",
+    "favorites_menu_disliked": "Opciones de favoritos, no me gusta",
+    "discography": "Discografía",
+    "discography_hint": "De MusicBrainz",
+    "not_in_library": "No está en tu biblioteca",
+    "find_on_music_services": "Buscar en tus servicios de música",
+    "audio_overlay_remove_custom": "Eliminar sonido personalizado",
+    "audio_overlay_remove_custom_confirm": "¿Quieres eliminar «{0}» de tus sonidos personalizados? Puedes volver a añadirlo más adelante con su URL de transmisión.",
+    "web_player_name": "{owner}'s {device} ({client})",
+    "play_on_this_device": "Reproducir en este dispositivo",
+    "play_announcement_explanation_this_device": "Pronuncia un mensaje en voz alta en este dispositivo.",
+    "play_announcement_sent_this_device": "Anuncio enviado a este dispositivo",
+    "transcript_offset": "Desfase de la transcripción",
+    "transcript": "Transcripción",
+    "transcript_show": "Mostrar la transcripción de este episodio",
+    "transcript_hide": "Ocultar la transcripción de este episodio",
+    "transcript_loading": "Obteniendo la transcripción…",
+    "transcript_unavailable": "Todavía no hay ninguna transcripción disponible para este episodio.",
+    "transcript_sync_disable": "Desactivar el desplazamiento automático",
+    "transcript_sync_enable": "Activar el desplazamiento automático",
+    "about_episode": "Información sobre este episodio",
+    "next_episode": "Siguiente episodio",
+    "other_episodes": "Otros episodios",
+    "previous_episode": "Episodio anterior",
+    "about_podcast": "Acerca de este podcast",
+    "n_episodes": "{count} episodio | {count} episodios",
+    "grid_size": "Tamaño de la carátula",
+    "grid_size_default": "Tamaño predeterminado",
+    "grid_size_smaller": "{count} paso más pequeño | {count} pasos más pequeños",
+    "grid_size_larger": "{count} paso más grande | {count} pasos más grandes"
 }

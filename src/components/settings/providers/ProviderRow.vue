@@ -2,10 +2,14 @@
   <!-- list view: a horizontal row -->
   <Item
     v-if="variant === 'list'"
+    v-hold="onManageableHold"
     variant="outline"
     :class="{ 'cursor-pointer': manageable, 'opacity-60': !config.enabled }"
     data-testid="provider-row"
+    @click.capture="swallowClickAfterHold"
     @click="onRootClick"
+    @click.right="onContextMenu"
+    @touchstart.passive="onTouchStart"
   >
     <ItemMedia>
       <ProviderIcon :domain="config.domain" :size="40" />
@@ -83,6 +87,7 @@
   <!-- card view: a vertical card carrying the same information -->
   <Card
     v-else
+    v-hold="onManageableHold"
     class="provider-card flex h-full min-h-[200px] flex-col gap-3 py-4"
     :class="{
       'cursor-pointer transition duration-200 hover:-translate-y-0.5 hover:shadow-lg':
@@ -90,7 +95,10 @@
       'opacity-60': !config.enabled,
     }"
     data-testid="provider-row"
+    @click.capture="swallowClickAfterHold"
     @click="onRootClick"
+    @click.right="onContextMenu"
+    @touchstart.passive="onTouchStart"
   >
     <div class="flex items-start gap-3 px-4">
       <ProviderIcon :domain="config.domain" :size="50" />
@@ -199,6 +207,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
+import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import type { ProviderConfig } from "@/plugins/api/interfaces";
 import { MoreVertical, RefreshCw, TriangleAlert } from "@lucide/vue";
 import { computed } from "vue";
@@ -245,5 +254,19 @@ const menuLabel = computed(() => `${t("more_options")}: ${props.name}`);
 
 const onRootClick = function () {
   if (props.manageable) emit("open");
+};
+
+const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(
+  (evt: Event) => emit("menu", evt),
+);
+
+const onManageableHold = function (evt: Event) {
+  if (props.manageable) onHold(evt);
+};
+
+const onContextMenu = function (evt: Event) {
+  if (!props.manageable) return;
+  evt.preventDefault();
+  emit("menu", evt);
 };
 </script>

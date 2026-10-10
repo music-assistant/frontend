@@ -70,7 +70,7 @@
       <Button
         type="submit"
         form="form-password-settings"
-        :disabled="!canChangePassword || changing"
+        :disabled="!canChangePassword"
         :loading="changing"
       >
         {{ $t("auth.update_password") || "Update password" }}
@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AnyFieldApi } from "@tanstack/form-core";
+import type { AnyFieldApi } from "@tanstack/vue-form";
 import { useForm } from "@tanstack/vue-form";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";

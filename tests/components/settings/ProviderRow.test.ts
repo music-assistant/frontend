@@ -1,5 +1,6 @@
 import ProviderRow from "@/components/settings/providers/ProviderRow.vue";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
+import type { DirectiveBinding } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { providerConfig } from "../../fixtures/providerConfig";
 
@@ -80,6 +81,70 @@ describe("ProviderRow", () => {
       expect(emitted).toBeTruthy();
       expect(emitted?.[0]).toHaveLength(1);
       expect(emitted?.[0]?.[0]).toBeInstanceOf(Event);
+    },
+  );
+
+  it.each(VARIANTS)(
+    "emits menu and suppresses the native menu on right-click when manageable (%s)",
+    async (variant) => {
+      const wrapper = mountRow({ variant, manageable: true });
+      const event = new MouseEvent("contextmenu", {
+        bubbles: true,
+        cancelable: true,
+        button: 2,
+      });
+
+      wrapper.get('[data-testid="provider-row"]').element.dispatchEvent(event);
+
+      expect(wrapper.emitted("menu")).toEqual([[event]]);
+      expect(event.defaultPrevented).toBe(true);
+    },
+  );
+
+  it.each(VARIANTS)(
+    "leaves the native menu alone on right-click when not manageable (%s)",
+    async (variant) => {
+      const wrapper = mountRow({ variant, manageable: false });
+      const event = new MouseEvent("contextmenu", {
+        bubbles: true,
+        cancelable: true,
+        button: 2,
+      });
+
+      wrapper.get('[data-testid="provider-row"]').element.dispatchEvent(event);
+
+      expect(wrapper.emitted("menu")).toBeUndefined();
+      expect(event.defaultPrevented).toBe(false);
+    },
+  );
+
+  it.each(VARIANTS)(
+    "emits menu on long-press when manageable and not otherwise (%s)",
+    (variant) => {
+      const event = new Event("touchstart");
+
+      const manageable = mountRow({ variant, manageable: true });
+      holdHandler(event);
+      expect(manageable.emitted("menu")).toEqual([[event]]);
+
+      const readOnly = mountRow({ variant, manageable: false });
+      holdHandler(event);
+      expect(readOnly.emitted("menu")).toBeUndefined();
+    },
+  );
+
+  it.each(VARIANTS)(
+    "swallows the click that follows a long-press instead of opening (%s)",
+    async (variant) => {
+      const wrapper = mountRow({ variant, manageable: true });
+      const row = wrapper.get('[data-testid="provider-row"]');
+
+      holdHandler(new Event("touchstart"));
+      await row.trigger("click");
+      expect(wrapper.emitted("open")).toBeUndefined();
+
+      await row.trigger("click");
+      expect(wrapper.emitted("open")).toHaveLength(1);
     },
   );
 
@@ -344,6 +409,10 @@ describe("ProviderRow", () => {
   });
 });
 
+// the long-press directive is registered by a plugin the test skips, so a
+// stand-in captures the handler bound to it
+let holdHandler: (event: Event) => void;
+
 function mountRow(
   overrides: Partial<InstanceType<typeof ProviderRow>["$props"]> = {},
 ) {
@@ -357,6 +426,15 @@ function mountRow(
       name: "Spotify",
       ...overrides,
     },
-    global: { stubs: { ProviderIcon: true } },
+    global: {
+      stubs: { ProviderIcon: true },
+      directives: {
+        hold: {
+          mounted: (_el: Element, binding: DirectiveBinding) => {
+            holdHandler = binding.value;
+          },
+        },
+      },
+    },
   });
 }

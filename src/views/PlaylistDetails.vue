@@ -76,6 +76,8 @@
     :sort-keys="[
       'position',
       'position_desc',
+      'timestamp_added',
+      'timestamp_added_desc',
       'name',
       'artist',
       'album',
@@ -113,12 +115,10 @@ import {
   isMusicAssistantPlaylist,
 } from "@/helpers/playlist_access";
 import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
+import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
 import {
-  EventType,
   Scope,
-  type EventMessage,
-  type MediaItemType,
   type Playlist,
   type SmartPlaylistRules,
 } from "@/plugins/api/interfaces";
@@ -126,7 +126,7 @@ import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { Settings2, Share2 } from "@lucide/vue";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 export interface Props {
   itemId: string;
@@ -183,20 +183,8 @@ watch(
   { immediate: true },
 );
 
-onMounted(() => {
-  //signal if/when item updates
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_UPDATED,
-    (evt: EventMessage) => {
-      // signal user that there might be updated info available for this item
-      const updatedItem = evt.data as MediaItemType;
-      if (itemDetails.value?.uri == updatedItem.uri) {
-        itemDetails.value = updatedItem as Playlist;
-        updateAvailable.value = true;
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
+useDetailItemUpdates(itemDetails, {
+  onUpdate: () => (updateAvailable.value = true),
 });
 
 const loadPlaylistTracks = async function (params: LoadDataParams) {

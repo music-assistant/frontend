@@ -94,7 +94,8 @@ html {
      the player card stays the only thing set in from it. */
   --player-bar-popout-inset-x: var(--mobile-dock-inset-x);
   /* Room a tall popout leaves at the top of the screen, so it keeps reading as a
-     card floating above the player bar instead of a full-height panel. */
+     card floating above the player bar instead of a full-height panel. Measured
+     below the status bar: each consumer adds --device-inset-top itself. */
   --player-bar-popout-top-gap: 24px;
 }
 
@@ -132,6 +133,7 @@ html {
        9000  fullscreen player
        9001  player select backdrop, opened from the fullscreen player
        9002  player select popout, opened from the fullscreen player
+       9998  onboarding wizard, below the dialogs it opens
        9999  dialogs
       10000  popovers, select menus, and their backdrops
       10001  anything that has to clear those, whatever it is

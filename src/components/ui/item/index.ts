@@ -1,5 +1,14 @@
 import type { VariantProps } from "class-variance-authority";
+import type { InjectionKey } from "vue";
 import { cva } from "class-variance-authority";
+
+/**
+ * Marks that an Item is rendered inside an ItemGroup (role="list"), so the
+ * Item can expose role="listitem" and give assistive technology valid list
+ * semantics. Standalone Items leave it unset and stay role-free.
+ */
+export const itemGroupInjectionKey: InjectionKey<boolean> =
+  Symbol("item-group");
 
 export { default as Item } from "./Item.vue";
 export { default as ItemActions } from "./ItemActions.vue";

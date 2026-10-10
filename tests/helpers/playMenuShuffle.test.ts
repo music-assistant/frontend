@@ -16,7 +16,6 @@ const { mockApi, mockStore, mockEventbusEmit } = vi.hoisted(() => ({
     playMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
     getLibraryItem: vi.fn(),
     players: {},
-    supportsPlayMediaShuffle: true,
   },
   mockStore: {
     activePlayer: undefined as Record<string, unknown> | undefined,
@@ -78,6 +77,9 @@ vi.mock("@/helpers/icon", () => ({
 
 vi.mock("@/plugins/api/helpers", () => ({
   isAudioSource: vi.fn(() => false),
+  // what the real helper does, which this module-wide mock would otherwise hide
+  isMusicBrainzItem: (item: { provider: string }) =>
+    item.provider === "musicbrainz",
   isItemInLibrary: vi.fn(() => true),
   itemIsAvailable: vi.fn(() => true),
   itemSupportsPlayLog: vi.fn(() => false),
@@ -104,7 +106,6 @@ beforeEach(() => {
   mockApi.playMedia.mockReset();
   mockApi.playMedia.mockResolvedValue(undefined);
   mockApi.getLibraryItem.mockReset();
-  mockApi.supportsPlayMediaShuffle = true;
   mockStore.activePlayer = { available: true, player_id: "test_player" };
   mockStore.activePlayerQueue = playerQueue({ shuffle_enabled: false });
   mockEventbusEmit.mockReset();
@@ -135,12 +136,6 @@ describe("play shuffled action presence", () => {
 
   it("is not offered for spoken-word content, meant to be heard in order", async () => {
     await showPlayMenuForMediaItem(podcast({ item_id: "pc1" }));
-    expect(shuffleAction()).toBeUndefined();
-  });
-
-  it("is not offered when the server does not accept a shuffle request", async () => {
-    mockApi.supportsPlayMediaShuffle = false;
-    await showPlayMenuForMediaItem(album({ item_id: "a1" }));
     expect(shuffleAction()).toBeUndefined();
   });
 

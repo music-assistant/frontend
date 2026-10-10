@@ -7,7 +7,7 @@
       class="flex h-[calc(100dvh-2rem)] flex-col gap-0 p-0 sm:h-[85dvh] sm:max-w-[calc(100%-2rem)] lg:max-w-[900px]"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
-      <DialogHeader class="border-b px-5 py-4 pr-12 text-left">
+      <DialogHeader class="border-b px-5 py-4 pr-12">
         <DialogTitle>{{ dialogTitle }}</DialogTitle>
       </DialogHeader>
 
@@ -150,7 +150,6 @@ const POPULAR_PROVIDERS = [
   "tidal",
   "qobuz",
   "filesystem_local",
-  "filesystem_smb",
   "sonos",
   "chromecast",
   "airplay",
@@ -340,11 +339,12 @@ const close = function () {
   emit("update:show", false);
 };
 
-// Load items initially and when providers change
+// keep the configs in step with the providers, but only while the dialog is
+// open; a hidden dialog must not fetch
 watch(
   () => api.providers,
   () => {
-    loadItems();
+    if (props.show) loadItems();
   },
   { immediate: true, deep: true },
 );

@@ -369,20 +369,13 @@
               v-if="item.media_type != MediaType.COLLECTION"
               class="flex items-center gap-2"
             >
-              <!-- favorite (heart) icon -->
-              <Button
-                v-if="canEditLibrary"
-                type="button"
+              <!-- favorite (heart) menu -->
+              <FavoriteMenu
+                :item="item"
                 variant="ghost-icon"
                 size="icon-xs"
-                :aria-label="$t('tooltip.favorite')"
-                :aria-pressed="item.favorite ? 'true' : 'false'"
-                :title="favoriteButtonLabel"
-                @click="api.toggleFavorite(item)"
-              >
-                <IconHeartFilled v-if="item.favorite" class="size-6" />
-                <IconHeart v-else :stroke-width="2" class="size-6" />
-              </Button>
+                icon-class="size-6"
+              />
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
               <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
@@ -494,6 +487,7 @@
 
 <script setup lang="ts">
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
+import FavoriteMenu from "@/components/FavoriteMenu.vue";
 import MarkdownText from "@/components/MarkdownText.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
@@ -517,11 +511,11 @@ import {
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
+import { getPlayerName } from "@/helpers/players";
 import {
   getAudiobookCollectionArtists,
   getAuthorsNarratorsArray,
   getImageThumbForItem,
-  getPlayerName,
 } from "@/helpers/utils";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
@@ -550,7 +544,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
-import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
+import { useEscapeBack } from "@/composables/useEscapeBack";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
@@ -709,6 +703,8 @@ const playButtonText = computed(() => {
   return getPlayerName(store.activePlayer, 20);
 });
 
+useEscapeBack(backButtonClick);
+
 const playButtonClick = function (forceMenu = false) {
   const playButton = document.getElementById("playbutton") as HTMLElement;
   const rect = playButton.getBoundingClientRect();
@@ -762,18 +758,12 @@ const artistLogo = computed(() => {
 const canManageLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_MANAGE),
 );
-const canEditLibrary = computed(() =>
-  authManager.hasScope(Scope.LIBRARY_WRITE),
-);
 // merging and deleting a genre is limited to library genres and library managers
 const canManageGenre = computed(
   () =>
     compProps.item?.media_type === MediaType.GENRE &&
     compProps.item.provider === "library" &&
     canManageLibrary.value,
-);
-const favoriteButtonLabel = computed(() =>
-  compProps.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
 );
 
 const mergeGenre = () => {

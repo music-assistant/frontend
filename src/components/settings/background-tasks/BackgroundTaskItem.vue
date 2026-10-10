@@ -8,7 +8,7 @@
     @click.right.prevent="(event: Event) => emit('menu', event, task)"
   >
     <ItemMedia class="self-start">
-      <div :class="statusIndicatorClass" class="task-status-indicator">
+      <div :class="statusIndicatorClass" class="me-0.5">
         <component :is="statusIcon" :class="statusIconClass" />
       </div>
     </ItemMedia>
@@ -108,7 +108,7 @@
     @click="emit('click', task)"
   >
     <div class="flex items-start gap-3 px-4">
-      <div :class="statusIndicatorClass" class="task-status-indicator">
+      <div :class="statusIndicatorClass" class="me-0.5">
         <component :is="statusIcon" :class="statusIconClass" />
       </div>
 
@@ -141,24 +141,37 @@
       </Button>
     </div>
 
-    <div v-if="showProgressText" class="task-progress-text px-4">
+    <div
+      v-if="showProgressText"
+      class="text-muted-foreground px-4 text-sm leading-normal"
+    >
       {{ task.progress_text }}
     </div>
 
     <div v-if="showProgressBar" class="flex flex-col gap-2 px-4">
-      <div class="task-progress-header">
+      <div
+        class="text-muted-foreground flex items-center justify-between gap-4 text-xs"
+      >
         <span class="truncate">
           {{ task.progress_text || t("background_tasks.progress") }}
         </span>
-        <span class="task-progress-value">{{ task.progress }}%</span>
+        <span class="text-foreground shrink-0 font-medium">
+          {{ task.progress }}%
+        </span>
       </div>
       <Progress :model-value="task.progress ?? 0" class="h-2" />
     </div>
 
-    <div v-if="task.last_error" class="task-error px-4">
+    <div
+      v-if="task.last_error"
+      class="text-destructive px-4 text-sm leading-normal"
+    >
       {{ task.last_error }}
     </div>
-    <div v-else-if="failureSummary" class="task-failure px-4">
+    <div
+      v-else-if="failureSummary"
+      class="px-4 text-sm leading-normal text-amber-600 dark:text-amber-400"
+    >
       {{ failureSummary }}
     </div>
 
@@ -230,42 +243,3 @@ const {
   taskSummary,
 } = useBackgroundTaskDisplay(() => props.task);
 </script>
-
-<style scoped>
-.task-status-indicator {
-  margin-inline-end: 2px;
-}
-
-.task-progress-text {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  line-height: 1.45;
-}
-
-.task-progress-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  font-size: 12px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
-
-.task-progress-value {
-  flex-shrink: 0;
-  font-weight: 500;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.task-error {
-  font-size: 13px;
-  color: rgb(var(--v-theme-error));
-  line-height: 1.45;
-}
-
-.task-failure {
-  font-size: 13px;
-  color: rgb(var(--v-theme-warning));
-  line-height: 1.45;
-}
-</style>

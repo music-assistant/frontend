@@ -99,37 +99,6 @@ export const itemSupportsPlayLog = function (
 };
 
 /**
- * Check if the connected server meets a minimum version requirement.
- * Returns true if server version >= the required version, or if the server
- * reports version 0.0.0 (development builds).
- */
-export function requireServerVersion(minVersion: string): boolean {
-  const serverVersion = api.serverInfo.value?.server_version;
-  if (!serverVersion) return false;
-
-  const parseVersion = (v: string): number[] => {
-    // Strip any suffix like "beta1", "b2", "dev", etc.
-    return v
-      .replace(/[-].*/g, "")
-      .split(".")
-      .map((n) => parseInt(n, 10) || 0);
-  };
-
-  const server = parseVersion(serverVersion);
-  // Development builds (0.0.0) always pass
-  if (server[0] === 0 && server[1] === 0 && server[2] === 0) return true;
-
-  const required = parseVersion(minVersion);
-  for (let i = 0; i < Math.max(server.length, required.length); i++) {
-    const s = server[i] || 0;
-    const r = required[i] || 0;
-    if (s > r) return true;
-    if (s < r) return false;
-  }
-  return true; // equal
-}
-
-/**
  * Whether the item is a member of the user's library.
  *
  * Membership is derived from the per-provider-mapping in_library flag, NOT from
@@ -140,13 +109,14 @@ export function requireServerVersion(minVersion: string): boolean {
 export const isItemInLibrary = function (
   item: MediaItemType | ItemMapping | null | undefined,
 ): boolean {
-  if (!item) return false;
+  // an item mapping or a browse folder carries no membership of its own
+  if (!item || !("provider_mappings" in item)) return false;
   // favoriting forces an item into the library, so favorite implies membership
-  if ("favorite" in item && item.favorite === true) return true;
-  if ("provider_mappings" in item && Array.isArray(item.provider_mappings)) {
-    return item.provider_mappings.some((pm) => !!pm.in_library);
-  }
-  return false;
+  if (item.favorite === true) return true;
+  return (
+    Array.isArray(item.provider_mappings) &&
+    item.provider_mappings.some((pm) => !!pm.in_library)
+  );
 };
 
 /**
@@ -195,6 +165,16 @@ export function mappedServices(item: {
 }
 
 /**
+ * The name to show for a provider instance: the service's own name for a
+ * streaming provider, whose accounts all offer the same catalog, else the
+ * instance's name.
+ */
+export function providerServiceName(provider: ProviderInstance): string {
+  if (!provider.is_streaming_provider) return provider.name;
+  return api.providerManifests[provider.domain]?.name || provider.name;
+}
+
+/**
  * Provider icon domain for media listing tiles. Playlists always surface their
  * source provider icon: a playlist listing is library-only by definition, so a
  * bookshelf icon would be redundant and the source is the useful signal. Every
@@ -228,6 +208,23 @@ export const getProviderRootDomain = function (
   return "path" in item && item.path.endsWith("://")
     ? item.provider
     : undefined;
+};
+
+// the provider a discography release carries while it is on none of the user's
+// music services
+export const MUSICBRAINZ_PROVIDER = "musicbrainz";
+
+/**
+ * Whether the item is a MusicBrainz entry rather than one of a music service.
+ *
+ * The server resolves such an item to the same album on one of the user's
+ * music services when it is opened or added to the library, so it can be shown
+ * and added but not played as it is.
+ */
+export const isMusicBrainzItem = function (
+  item: MediaItemType | ItemMapping,
+): boolean {
+  return item.provider === MUSICBRAINZ_PROVIDER;
 };
 
 export const itemIsAvailable = function (
@@ -334,10 +331,25 @@ export const getPlaylistMigrationProviders = function (
 };
 
 /**
- * Generate a friendly device name from the user agent and browser APIs.
- * Uses User-Agent Client Hints API when available for more accurate detection.
+ * Generate a friendly device name, such as "Web (Chrome on Mac)".
  */
 export function getDeviceName(): string {
+  const { browser, device, isPwa } = getDeviceInfo();
+  const appType = isPwa ? "PWA" : "Web";
+
+  return `${appType} (${browser} on ${device})`;
+}
+
+/**
+ * Detect the browser and device this app runs on, and whether it runs as an
+ * installed app (PWA).
+ * Uses User-Agent Client Hints API when available for more accurate detection.
+ */
+export function getDeviceInfo(): {
+  browser: string;
+  device: string;
+  isPwa: boolean;
+} {
   const ua = navigator.userAgent;
   let browser = "Browser";
   let device = "";
@@ -468,9 +480,7 @@ export function getDeviceName(): string {
     ("standalone" in navigator &&
       (navigator as Navigator & { standalone: boolean }).standalone);
 
-  const appType = isPwa ? "PWA" : "Web";
-
-  return `${appType} (${browser} on ${device})`;
+  return { browser, device, isPwa };
 }
 
 interface NavigatorUAData {

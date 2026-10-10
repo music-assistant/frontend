@@ -264,6 +264,27 @@ describe("AddProviderDialog", () => {
 
     expect(providerNames()).toEqual(["Spotify"]);
   });
+
+  it("does not fetch the provider configs while hidden", async () => {
+    const wrapper = mount(AddProviderDialog, {
+      props: { show: false },
+      attachTo: document.body,
+      global: {
+        mocks: { $t: (key: string) => key },
+        stubs: { FacetedFilter: true, ProviderIcon: true },
+      },
+    });
+    await flushPromises();
+
+    // a dialog nobody opened must not issue a config/providers request
+    expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+
+    await wrapper.setProps({ show: true });
+    await flushPromises();
+
+    // opening it loads the configs the list needs
+    expect(apiMock.getProviderConfigs).toHaveBeenCalled();
+  });
 });
 
 describe("AddProviderDialog provider dependencies", () => {
@@ -299,8 +320,7 @@ describe("AddProviderDialog provider dependencies", () => {
       ?.click();
     await flushPromises();
     const request = emitted("deleteConfirmationDialog") as
-      | DeleteConfirmationDialogEvent
-      | undefined;
+      DeleteConfirmationDialogEvent | undefined;
 
     expect(nativeConfirm).not.toHaveBeenCalled();
     expect(request?.message).toBe("settings.provider_depends_on_confirm");

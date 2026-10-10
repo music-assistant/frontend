@@ -88,7 +88,6 @@
               v-if="radioRelevant(item)"
               :icon="Orbit"
               :label="$t('track_radio')"
-              :icon-only="isPhone"
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />
@@ -163,9 +162,6 @@ const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
 const releaseYear = computed(() => props.item && trackReleaseYear(props.item));
 
-const favoriteButtonLabel = computed(() =>
-  props.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
-);
 const providerDomain = computed(() =>
   props.item ? getProviderIconDomain(props.item) : "",
 );

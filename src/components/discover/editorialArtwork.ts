@@ -46,16 +46,34 @@ export function itemArtwork(
     ? (getImageThumbForItem(item, ImageType.FANART, size) ??
       getImageThumbForItem(item, ImageType.THUMB, size))
     : getImageThumbForItem(item, ImageType.THUMB, size);
-  // For artists/albums with no artwork, surface the initials over the banner.
-  const showInitials =
-    !image &&
-    (item.media_type === MediaType.ARTIST ||
-      item.media_type === MediaType.ALBUM);
-  const useBanner = !image || item.media_type === MediaType.GENRE;
+  if (!image) return placeholderArtwork(item);
 
   return {
     image,
-    gradient: useBanner ? bannerBackground : placeholderBackground,
+    gradient:
+      item.media_type === MediaType.GENRE
+        ? bannerBackground
+        : placeholderBackground,
+  };
+}
+
+/**
+ * The look of an item whose artwork can not be shown: the banner background,
+ * with the item's initials over it where there are any. Use it when the real
+ * artwork turns out to be unloadable.
+ */
+export function placeholderArtwork(item: AnyItem): {
+  image: undefined;
+  gradient: string;
+  initials?: string;
+} {
+  // For artists/albums with no artwork, surface the initials over the banner.
+  const showInitials =
+    item.media_type === MediaType.ARTIST || item.media_type === MediaType.ALBUM;
+
+  return {
+    image: undefined,
+    gradient: bannerBackground,
     initials: showInitials ? itemInitials(item.name) : undefined,
   };
 }

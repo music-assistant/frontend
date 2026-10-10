@@ -96,7 +96,6 @@
           </Button>
         </CardHeader>
         <CardContent
-          v-if="playerSetupLabel || showAdvancedToggle"
           class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
         >
           <Button
@@ -107,11 +106,17 @@
             <RefreshCw class="size-4" />
             {{ $t(playerSetupLabel) }}
           </Button>
-          <AdvancedSettingsToggle
-            v-if="showAdvancedToggle"
-            v-model:show-advanced-settings="showAdvancedSettings"
-            test-id="player-advanced-settings"
-          />
+          <Button
+            as="a"
+            data-testid="player-documentation"
+            variant="outline"
+            :href="documentationUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <BookOpen class="size-4" />
+            {{ $t("settings.documentation") }}
+          </Button>
         </CardContent>
       </Card>
     </div>
@@ -183,7 +188,6 @@
     <edit-config
       v-if="config"
       ref="editConfig"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
       :output-protocols="api.players[config.player_id]?.output_protocols || []"
@@ -228,7 +232,6 @@ import {
   HassControlPickerEntry,
   HassControlPlayerKey,
   UI_ENTRY_TYPE,
-  hasAdvancedEntries,
   isInjected,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
@@ -236,19 +239,28 @@ import { getHassProviderInstance } from "@/helpers/hass_controls";
 import { goBack } from "@/helpers/navigation";
 import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
 import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { MoreVertical, Pencil, RefreshCw, RotateCcw } from "@lucide/vue";
-import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
+import {
+  BookOpen,
+  MoreVertical,
+  Pencil,
+  RefreshCw,
+  RotateCcw,
+} from "@lucide/vue";
 import EditConfig from "./EditConfig.vue";
 import PlayerSettingsLinks from "./PlayerSettingsLinks.vue";
+
+const PLAYER_DOCS_URL =
+  "https://music-assistant.io/settings/individual-player/";
+
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
-const showAdvancedSettings = ref(false);
 const enabling = ref(false);
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
@@ -284,6 +296,9 @@ const player = computed(() =>
 const playerSetupLabel = computed(() =>
   config.value?.enabled ? getPlayerSetupLabel(player.value) : undefined,
 );
+
+// the docs of a beta server live on the beta site
+const documentationUrl = computed(() => getExternalLinkUrl(PLAYER_DOCS_URL));
 
 const config_entries = computed(() => {
   if (!config.value) return [];
@@ -359,10 +374,6 @@ const config_entries = computed(() => {
   }
   return entries;
 });
-
-const showAdvancedToggle = computed(
-  () => !!config.value?.enabled && hasAdvancedEntries(config_entries.value),
-);
 
 // watchers
 
@@ -546,7 +557,6 @@ function isCurrentPlayer(playerId: string) {
 function resetPlayerState(playerId?: string) {
   if (config.value?.player_id === playerId) return;
   config.value = undefined;
-  showAdvancedSettings.value = false;
   enabling.value = false;
   enableRequestId++;
 }

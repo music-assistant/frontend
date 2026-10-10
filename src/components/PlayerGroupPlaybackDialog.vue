@@ -60,11 +60,14 @@ const open = ref(false);
 const loading = ref(false);
 const change = ref<PlayerGroupPlaybackDialogEvent["change"]>("remove");
 const playerName = ref("");
+const isThisDevice = ref(false);
 let onKeepPlaying: (() => void | Promise<void>) | undefined;
 let onStopAndUngroup: (() => void | Promise<void>) | undefined;
 
 const message = computed(() =>
-  t(`player_group_playback.${change.value}_message`, [playerName.value]),
+  isThisDevice.value
+    ? t(`player_group_playback.${change.value}_message_this_device`)
+    : t(`player_group_playback.${change.value}_message`, [playerName.value]),
 );
 
 watch(open, (value) => {
@@ -105,6 +108,7 @@ function close() {
 function onPlaybackChangeRequested(evt: PlayerGroupPlaybackDialogEvent) {
   change.value = evt.change;
   playerName.value = evt.playerName;
+  isThisDevice.value = evt.isThisDevice;
   onKeepPlaying = evt.onKeepPlaying;
   onStopAndUngroup = evt.onStopAndUngroup;
   loading.value = false;

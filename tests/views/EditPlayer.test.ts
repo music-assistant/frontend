@@ -40,6 +40,7 @@ const {
     providerManifests: {} as Record<string, unknown>,
     providers: {} as Record<string, unknown>,
     savePlayerConfig: vi.fn<MusicAssistantApi["savePlayerConfig"]>(),
+    serverInfo: { value: undefined as { server_version: string } | undefined },
     subscribe: vi.fn(),
   },
   editConfigDiscardMock: vi.fn(),
@@ -62,8 +63,6 @@ const SlotStub = {
 };
 
 const playerDetailsStubs = {
-  // rendered for real so this screen's advanced toggle stays assertable
-  AdvancedSettingsToggle: false,
   Button: SlotStub,
   Card: SlotStub,
   CardContent: SlotStub,
@@ -146,6 +145,7 @@ describe("EditPlayer", () => {
     apiMock.providers = {
       "hass--1": { instance_id: "hass--1", domain: "hass", available: true },
     };
+    apiMock.serverInfo.value = undefined;
     routerMock.push.mockResolvedValue(undefined);
     // a fresh array per call, since the page appends its own entry to it
     getPlayerSettingsMenuItems.mockImplementation(() => [
@@ -159,39 +159,25 @@ describe("EditPlayer", () => {
     expect(wrapper.get("h2").text()).toBe("Kitchen");
   });
 
-  it("offers the setup and the advanced toggle in the header", async () => {
+  it("offers the setup in the header and leaves the advanced toggle to the form", async () => {
     const wrapper = await mountPlayerPage();
 
     expect(wrapper.get('[data-testid="player-setup"]').text()).toContain(
       "reconfigure_player",
     );
     expect(
-      wrapper.find('[data-testid="player-advanced-settings"]').exists(),
-    ).toBe(true);
-  });
-
-  it("leaves out the advanced toggle without advanced settings to reveal", async () => {
-    const config = playerConfig();
-    delete config.values.sample_rates;
-    apiMock.getPlayerConfig.mockResolvedValue(config);
-
-    const wrapper = await mountPlayerPage();
-
-    expect(
-      wrapper.find('[data-testid="player-advanced-settings"]').exists(),
+      wrapper.findComponent({ name: "AdvancedSettingsToggle" }).exists(),
     ).toBe(false);
   });
 
-  it("controls advanced settings from the header", async () => {
+  it("leaves whether advanced settings show to the user's choice in the form", async () => {
     const wrapper = await mountPlayerPage();
-    const editConfig = wrapper.findComponent({ name: "EditConfig" });
 
-    wrapper
-      .findComponent({ name: "Switch" })
-      .vm.$emit("update:modelValue", true);
-    await wrapper.vm.$nextTick();
-
-    expect(editConfig.props("showAdvancedSettings")).toBe(true);
+    expect(
+      wrapper
+        .findComponent({ name: "EditConfig" })
+        .props("showAdvancedSettings"),
+    ).toBeUndefined();
   });
 
   it("hides optional reconfiguration when the player has no setup flow", async () => {
@@ -229,6 +215,39 @@ describe("EditPlayer", () => {
     const wrapper = await mountPlayerPage();
 
     expect(wrapper.find('[data-testid="player-setup"]').exists()).toBe(false);
+  });
+
+  it("links the player settings documentation", async () => {
+    const wrapper = await mountPlayerPage();
+
+    expect(
+      wrapper.get('[data-testid="player-documentation"]').attributes(),
+    ).toMatchObject({
+      href: "https://music-assistant.io/settings/individual-player/",
+      rel: "noopener noreferrer",
+      target: "_blank",
+    });
+  });
+
+  it("links the beta documentation from a beta server", async () => {
+    apiMock.serverInfo.value = { server_version: "2.9.0b1" };
+
+    const wrapper = await mountPlayerPage();
+
+    expect(
+      wrapper.get('[data-testid="player-documentation"]').attributes("href"),
+    ).toBe("https://beta.music-assistant.io/settings/individual-player/");
+  });
+
+  it("keeps the documentation link without any setup action", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(playerConfig({ enabled: false }));
+
+    const wrapper = await mountPlayerPage();
+
+    expect(wrapper.find('[data-testid="player-setup"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="player-documentation"]').exists()).toBe(
+      true,
+    );
   });
 
   it("reports a player that cannot be reached", async () => {

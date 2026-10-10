@@ -107,6 +107,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     active_group: null,
     synced_to: null,
     sleep_timer_expires_at: null,
+    active_source_audio: null,
     ...overrides,
   };
 }
@@ -133,18 +134,21 @@ function mountGroupVolume(player: Player) {
       requestExpandOnGroupTap: true,
     },
     global: {
+      mocks: { $t: (key: string) => key },
       stubs: sliderStub,
     },
   });
 }
 
-function mountPopoutVolume(player: Player) {
+function mountPopoutVolume(player: Player, allowWheel = false) {
   return mount(PlayerVolume, {
     props: {
       player,
       preferGroupVolume: true,
+      allowWheel,
     },
     global: {
+      mocks: { $t: (key: string) => key },
       stubs: sliderStub,
     },
   });
@@ -286,7 +290,7 @@ describe("PlayerVolume group expansion", () => {
     expect(wrapper.emitted("toggle-group-expansion")).toBeUndefined();
   });
 
-  it("uses group mute state for the group volume icon", () => {
+  it("uses group mute state for the group volume icon and button label", async () => {
     const child = createPlayer({
       player_id: "child",
       name: "Office",
@@ -301,9 +305,46 @@ describe("PlayerVolume group expansion", () => {
       [child.player_id]: child,
     };
 
-    mountGroupVolume(parent);
+    const wrapper = mountGroupVolume(parent);
 
     expect(getVolumeIconComponent).toHaveBeenCalledWith(parent, 25, false);
+    expect(wrapper.get(".volume-icon-btn").attributes("aria-label")).toBe(
+      "tooltip.mute",
+    );
+
+    await wrapper.setProps({
+      player: { ...parent, group_volume_muted: true, volume_muted: false },
+    });
+
+    expect(wrapper.get(".volume-icon-btn").attributes("aria-label")).toBe(
+      "tooltip.unmute",
+    );
+    await wrapper.get(".volume-icon-btn").trigger("click");
+    expect(api.playerCommandGroupVolumeMute).toHaveBeenCalledWith(
+      parent.player_id,
+      false,
+    );
+    expect(api.playerCommandMuteToggle).not.toHaveBeenCalled();
+  });
+
+  it("labels an individual player's mute action using its own state", async () => {
+    const player = createPlayer({ group_volume_muted: true });
+    const wrapper = mountGroupVolume(player);
+
+    expect(wrapper.get(".volume-icon-btn").attributes("aria-label")).toBe(
+      "tooltip.mute",
+    );
+
+    await wrapper.setProps({
+      player: { ...player, volume_muted: true, group_volume_muted: false },
+    });
+
+    expect(wrapper.get(".volume-icon-btn").attributes("aria-label")).toBe(
+      "tooltip.unmute",
+    );
+    await wrapper.get(".volume-icon-btn").trigger("click");
+    expect(api.playerCommandMuteToggle).toHaveBeenCalledWith(player.player_id);
+    expect(api.playerCommandGroupVolumeMute).not.toHaveBeenCalled();
   });
 
   it("allows a muted group slider tap to expand child volumes", async () => {
@@ -369,7 +410,7 @@ describe("PlayerVolume group popout", () => {
   // room it has above it and the point it grows up from
   const SLIDER_BOTTOM = 700;
 
-  function mountLargeGroup() {
+  function mountLargeGroup(allowWheel = false) {
     const children = ["Office", "Kitchen", "Bedroom", "Bathroom", "Study"].map(
       (name) => createPlayer({ player_id: name.toLowerCase(), name }),
     );
@@ -380,7 +421,7 @@ describe("PlayerVolume group popout", () => {
     api.players = Object.fromEntries(
       [parent, ...children].map((player) => [player.player_id, player]),
     );
-    return { children, wrapper: mountPopoutVolume(parent) };
+    return { children, wrapper: mountPopoutVolume(parent, allowWheel) };
   }
 
   const originalInnerHeight = Object.getOwnPropertyDescriptor(
@@ -572,19 +613,31 @@ describe("PlayerVolume group popout", () => {
     expect(popout.scrollTop).toBe(900);
   });
 
-  it("leaves the wheel to scroll the popout rows", async () => {
-    const { wrapper } = mountLargeGroup();
-    const popout = await openPopout(wrapper);
-    const row = popout.querySelector<HTMLElement>(".player-volume-container")!;
+  function wheelEvent(deltaY: number) {
+    return new WheelEvent("wheel", { deltaY, bubbles: true, cancelable: true });
+  }
 
-    const event = new WheelEvent("wheel", {
-      deltaY: 120,
-      bubbles: true,
-      cancelable: true,
-    });
-    row.dispatchEvent(event);
+  it("changes a popout row's volume with the wheel on its slider", async () => {
+    const { wrapper } = mountLargeGroup(true);
+    const row = firstRow(await openPopout(wrapper));
+
+    const event = wheelEvent(-120);
+    row.container.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(api.playerCommandVolumeUp).toHaveBeenCalledWith(row.playerId);
+  });
+
+  it("leaves the wheel off the sliders to scroll the popout", async () => {
+    const { wrapper } = mountLargeGroup(true);
+    const popout = await openPopout(wrapper);
+
+    const event = wheelEvent(120);
+    popout.querySelector(".group-popout-label")!.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(false);
+    expect(api.playerCommandVolumeDown).not.toHaveBeenCalled();
+    expect(api.playerCommandGroupVolumeDown).not.toHaveBeenCalled();
   });
 
   it("nests the rows the way the touch-action override selects them", async () => {
@@ -630,7 +683,7 @@ describe("PlayerVolume group popout", () => {
     api.players = { [player.player_id]: player };
     const wrapper = mount(PlayerVolume, {
       props: { player, allowWheel: true },
-      global: { stubs: sliderStub },
+      global: { mocks: { $t: (key: string) => key }, stubs: sliderStub },
     });
 
     const event = new WheelEvent("wheel", {
@@ -713,7 +766,7 @@ describe("PlayerVolume touch expansion", () => {
     api.players = { [player.player_id]: player };
     wrapper = mount(PlayerVolume, {
       props: { player },
-      global: { stubs: sliderStub },
+      global: { mocks: { $t: (key: string) => key }, stubs: sliderStub },
     });
 
     expect(wrapper.findAll(".volume-step-btn")).toHaveLength(0);

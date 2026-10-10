@@ -88,8 +88,7 @@ updateMediaState(store.activePlayer?.playback_state);
 // This allows for correct seeking on repeated seek forward/backward presses
 let lastSeekPos = undefined as undefined | number;
 let lastSeekPosTimeoutHandle = undefined as
-  | undefined
-  | ReturnType<typeof setTimeout>;
+  undefined | ReturnType<typeof setTimeout>;
 
 const lastSeekPosTimeout = function () {
   clearTimeout(lastSeekPosTimeoutHandle);

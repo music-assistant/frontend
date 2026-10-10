@@ -2,18 +2,26 @@
   <section class="p-4">
     <SettingsHeaderCard
       v-if="config && api.providerManifests[config.domain]"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :icon="getCoreIcon(config.domain)"
       :title="getItemTitle(config)"
       :description="getItemDescription(config)"
-      :show-advanced-toggle="hasAdvancedEntries(allConfigEntries)"
+      :documentation-url="
+        getExternalLinkUrl(api.providerManifests[config.domain].documentation)
+      "
       @reset-to-defaults="resetToDefaults"
+    />
+
+    <ServerUrlsCard
+      v-if="config?.domain === 'webserver'"
+      ref="urlCard"
+      :base-url="config.values.base_url"
+      :external-url="config.values.external_url"
+      @update:value="onUrlUpdate"
     />
 
     <edit-config
       v-if="config"
       ref="editConfig"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :config-entries="allConfigEntries"
       :disabled="false"
       @submit="onSubmit"
@@ -35,7 +43,7 @@
 <script setup lang="ts">
 import { Spinner } from "@/components/ui/spinner";
 import { useConfigAction } from "@/composables/useConfigAction";
-import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { ConfigValueType, CoreConfig } from "@/plugins/api/interfaces";
 import {
@@ -52,6 +60,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import EditConfig from "./EditConfig.vue";
+import ServerUrlsCard from "./ServerUrlsCard.vue";
 import SettingsHeaderCard from "./SettingsHeaderCard.vue";
 
 // global refs
@@ -59,8 +68,8 @@ const router = useRouter();
 const { t } = useI18n();
 const config = ref<CoreConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
+const urlCard = ref<InstanceType<typeof ServerUrlsCard>>();
 const loading = ref(false);
-const showAdvancedSettings = ref(false);
 
 // props
 const props = defineProps<{
@@ -75,6 +84,13 @@ const allConfigEntries = computed(() => {
   return Object.values(config.value.values);
 });
 
+// the webserver entries the URL card edits in place of the form
+const urlCardEntries = computed(() => {
+  if (config.value?.domain !== "webserver") return [];
+  const { base_url, external_url } = config.value.values;
+  return [base_url, external_url];
+});
+
 // watchers
 watch(
   () => props.domain,
@@ -82,6 +98,15 @@ watch(
     if (val) {
       config.value = await api.getCoreConfig(val);
     }
+  },
+  { immediate: true },
+);
+
+// hidden from the form, while EditConfig still saves and guards their values
+watch(
+  urlCardEntries,
+  (entries) => {
+    for (const entry of entries) entry.hidden = true;
   },
   { immediate: true },
 );
@@ -117,6 +142,14 @@ const getCoreIcon = (domain: string): Component => {
 
 const resetToDefaults = function () {
   editConfig.value?.resetToDefaults();
+  // the form's reset skips hidden entries, and these are hidden only because
+  // the URL card shows them
+  for (const entry of urlCardEntries.value) entry.value = entry.default_value;
+  urlCard.value?.reset();
+};
+
+const onUrlUpdate = function (key: string, value: string) {
+  config.value!.values[key].value = value;
 };
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {

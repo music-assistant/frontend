@@ -12,3 +12,14 @@ export function withUri<T extends Omit<MediaItem, "uri">>(
     uri: item.uri ?? `${item.provider}://${item.media_type}/${item.item_id}`,
   };
 }
+
+/**
+ * Returns the item as a listing sends it when the user has no favorite state on
+ * it: the summary serialization leaves the key out altogether.
+ */
+export function withoutFavorite<T extends { favorite?: boolean | null }>(
+  item: T,
+): T {
+  delete item.favorite;
+  return item;
+}

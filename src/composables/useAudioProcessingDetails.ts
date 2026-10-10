@@ -18,6 +18,7 @@ import {
   type QualityTier,
 } from "@/composables/useStreamQuality";
 import { dspFilterIcon, dspFilterText } from "@/helpers/audioProcessing";
+import { getPlayerDisplayName } from "@/helpers/players";
 import api from "@/plugins/api";
 import {
   AudioChannel,
@@ -95,6 +96,7 @@ export interface AudioProcessingDetailsDependencies {
   getProviderDomain: (providerId: string) => string | undefined;
   getPresetName: (presetId: string | null | undefined) => string | undefined;
   getIRName: (irId: string | null | undefined) => string | undefined;
+  getPlayerName: (player: AudioProcessingDisplayPlayer) => string;
   players: Record<string, AudioProcessingDisplayPlayer>;
 }
 
@@ -167,6 +169,7 @@ export function useAudioProcessingDetails(
           api.getProviderManifest(providerId)?.domain,
         getPresetName,
         getIRName,
+        getPlayerName: getPlayerDisplayName,
         players: api.players,
       },
       toValue(crossfadeIntent),
@@ -266,9 +269,11 @@ function buildProcessingStages(
     serverAltersAudio = true;
   }
   const reportedCrossfadeMode = processing?.crossfade_mode;
-  // Keep source attribution; otherwise show the queue's current intent.
+  // Keep source attribution and a voice-over the server applied; otherwise show
+  // the queue's current intent.
   const crossfadeMode =
-    reportedCrossfadeMode === CrossfadeMode.SOURCE
+    reportedCrossfadeMode === CrossfadeMode.SOURCE ||
+    reportedCrossfadeMode === CrossfadeMode.VOICE_OVER
       ? reportedCrossfadeMode
       : (crossfadeIntent ?? reportedCrossfadeMode);
   serverAltersAudio ||= crossfadeAppliedByServer(reportedCrossfadeMode);
@@ -439,12 +444,12 @@ function resolveDestinations(
     seenPlayerIds.add(resolvedPlayerId);
     destinations.push({
       playerId: resolvedPlayerId,
-      name:
-        resolved?.player.name ??
-        dependencies.translate(
-          "streamdetails.audio_processing.destination_unknown",
-          [playerId],
-        ),
+      name: resolved
+        ? dependencies.getPlayerName(resolved.player)
+        : dependencies.translate(
+            "streamdetails.audio_processing.destination_unknown",
+            [playerId],
+          ),
       providerDomain: resolved?.providerDomain,
     });
   }
@@ -1100,6 +1105,10 @@ function crossfadeModeLabel(
     case CrossfadeMode.STANDARD_CROSSFADE:
       return translate(
         "streamdetails.audio_processing.crossfade_mode.standard",
+      );
+    case CrossfadeMode.VOICE_OVER:
+      return translate(
+        "streamdetails.audio_processing.crossfade_mode.voice_over",
       );
     case CrossfadeMode.DISABLED:
       return translate(
