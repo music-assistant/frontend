@@ -122,6 +122,7 @@ vi.mock("@/composables/userPreferences", async () => {
 });
 
 vi.mock("@/helpers/players", () => ({
+  canEditPlayerGroup: (player: Player) => player.can_group_with.length > 0,
   getPlayerDisplayName: (player: Player) =>
     player.player_id === "builtin" ? "This device" : player.name,
   groupMemberPickerVisible: () => true,
@@ -1169,6 +1170,43 @@ describe("PlayerSelect", () => {
     expect(
       wrapper.find(".player-card").attributes("data-member-controls"),
     ).toBe("true");
+  });
+
+  it("opens the grouping controls of the active player from the fullscreen player", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen", PlaybackState.PLAYING);
+    kitchen.can_group_with = ["attic"];
+    api.players = {
+      kitchen,
+      attic: createPlayer("attic", "Attic"),
+    };
+    store.activePlayerId = kitchen.player_id;
+    store.showFullscreenPlayer = true;
+    store.showPlayersMenu = false;
+    const wrapper = mountPlayerSelect();
+    const card = (playerId: string) =>
+      wrapper.find(`.player-card[data-player-id="${playerId}"]`);
+
+    store.showPlayersMenu = true;
+    await nextTick();
+
+    expect(card("kitchen").attributes("data-member-controls")).toBe("true");
+    expect(card("attic").attributes("data-member-controls")).toBe("false");
+  });
+
+  it("keeps the grouping controls closed when opened from the player bar", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen", PlaybackState.PLAYING);
+    kitchen.can_group_with = ["attic"];
+    api.players = { kitchen };
+    store.activePlayerId = kitchen.player_id;
+    store.showPlayersMenu = false;
+    const wrapper = mountPlayerSelect();
+
+    store.showPlayersMenu = true;
+    await nextTick();
+
+    expect(
+      wrapper.find(".player-card").attributes("data-member-controls"),
+    ).toBe("false");
   });
 
   it("scrolls the selected player into view when it is not pinned", async () => {
