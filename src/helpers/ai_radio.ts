@@ -7,8 +7,9 @@ import type {
   AIRadioSectionOrderRule,
   AIRadioStation,
   AIRadioWebSearchMode,
+  Player,
 } from "@/plugins/api/interfaces";
-import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
+import { $t } from "@/plugins/i18n";
 
 // Sentinel for "no selection" in shadcn Select components, which do not
 // allow SelectItem values to be empty strings.
@@ -52,35 +53,6 @@ export const formatTimestamp = (value?: string) => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleString();
-};
-
-/**
- * Localized relative label ("2 hours ago") for an ISO timestamp.
- * `nowMs` is injectable for tests; callers rely on the 5s session polling
- * to keep displayed values fresh, so no ticking is needed.
- */
-export const relativeTimeFromIso = (
-  value?: string | null,
-  nowMs = Date.now(),
-): string => {
-  if (!value) return "";
-  const thenMs = new Date(value).getTime();
-  if (Number.isNaN(thenMs)) return "";
-  const diffSeconds = Math.round((thenMs - nowMs) / 1000);
-  const absSeconds = Math.abs(diffSeconds);
-  const rtf = new Intl.RelativeTimeFormat(
-    canonicalizeLocale(i18n.global.locale.value),
-    {
-      numeric: "auto",
-      style: "narrow",
-    },
-  );
-  if (absSeconds < 60) return rtf.format(0, "second");
-  if (absSeconds < 3600)
-    return rtf.format(Math.trunc(diffSeconds / 60), "minute");
-  if (absSeconds < 86400)
-    return rtf.format(Math.trunc(diffSeconds / 3600), "hour");
-  return rtf.format(Math.trunc(diffSeconds / 86400), "day");
 };
 
 // -----------------------------------------------------------------------
@@ -580,12 +552,18 @@ export const playsRuleLabel = (rule: PlaysRule): string => {
   return $t(key);
 };
 
-/** Player to start a show on: its own default, else the currently active player, else none. */
+/**
+ * The player a show starts on: its default playback device while that device is
+ * known and available, otherwise the player the user has selected.
+ */
 export const resolveShowPlayerId = (
   station: Pick<AIRadioStation, "default_player_id">,
   activePlayerId: string | undefined,
+  players: Record<string, Pick<Player, "available">>,
 ): string => {
-  return station.default_player_id || activePlayerId || "";
+  const preferred = station.default_player_id;
+  if (preferred && players[preferred]?.available) return preferred;
+  return activePlayerId || "";
 };
 
 export const getQueryValue = (value: unknown) => {

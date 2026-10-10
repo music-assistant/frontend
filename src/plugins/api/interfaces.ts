@@ -1096,6 +1096,9 @@ export enum PlaylistMatchPolicy {
 
 export interface Radio extends MediaItem {
   is_dynamic: boolean;
+  // false: the station is finite (an AI Radio show) and the queue plays it out and
+  // ends, instead of streaming or refilling forever
+  is_endless?: boolean;
 }
 
 export interface SoundEffect extends MediaItem {
@@ -2151,37 +2154,18 @@ export interface AIRadioStation {
   host_id: string;
 }
 
-export interface AIRadioSession {
-  session_id: string;
-  station_id: string;
-  queue_id: string | null;
-  status: "running" | "completed" | "failed" | "stopped";
-  created_at: string;
-  started_at: string | null;
-  ended_at: string | null;
-  error: string | null;
-  skipped_sections?: number;
-  last_render_error: string | null;
-  progress?: {
-    phase?: string;
-    [key: string]: unknown;
-  };
-  result?: {
-    queue_entries?: number;
-    planned_sections?: number;
-    skipped_sections?: number;
-    [key: string]: unknown;
-  };
-}
-
-export interface AIRadioStatus {
-  sessions: AIRadioSession[];
-}
+/**
+ * Per-queue AI DJ state. `station_id` is "" for a manually armed DJ and the
+ * show's id when the DJ was auto-armed by playing that show (i.e. it's on air).
+ */
+export type AIRadioQueueDJStatus = Record<
+  string,
+  { host_id: string; station_id: string }
+>;
 
 /** Refetch hints the ai_radio plugin broadcasts as PROVIDER_EVENT payloads; they carry no state. */
 export type AIRadioEventName =
   | "hosts_updated"
   | "stations_updated"
   | "sections_updated"
-  | "queue_dj_updated"
-  | "sessions_updated";
+  | "queue_dj_updated";

@@ -6,8 +6,8 @@ import {
   errorMessage,
   GENERIC_SEGMENT_TEMPLATES,
   MERGE_SECTION_PROMPT,
-  relativeTimeFromIso,
   slugify,
+  resolveShowPlayerId,
 } from "@/helpers/ai_radio";
 import type { HostDraft, ShowDraft } from "@/helpers/ai_radio";
 import type {
@@ -77,26 +77,6 @@ describe("errorMessage", () => {
     expect(errorMessage({ detail: "not found" })).toBe("not found");
     expect(errorMessage("plain")).toBe("plain");
     expect(errorMessage({ code: 42 })).toBe('{"code":42}');
-  });
-});
-
-describe("relativeTimeFromIso", () => {
-  const NOW = Date.parse("2026-07-16T12:00:00Z");
-  const at = (iso: string) => relativeTimeFromIso(iso, NOW);
-
-  it("returns empty for missing or invalid input", () => {
-    expect(relativeTimeFromIso(undefined, NOW)).toBe("");
-    expect(relativeTimeFromIso("not-a-date", NOW)).toBe("");
-  });
-
-  it("formats sub-minute differences as now", () => {
-    expect(at("2026-07-16T11:59:30Z")).toBe("now");
-  });
-
-  it("formats minutes, hours and days ago", () => {
-    expect(at("2026-07-16T11:45:00Z")).toBe("15m ago");
-    expect(at("2026-07-16T10:00:00Z")).toBe("2h ago");
-    expect(at("2026-07-13T12:00:00Z")).toBe("3d ago");
   });
 });
 
@@ -360,5 +340,33 @@ describe("decompileHost", () => {
     expect(
       item && "OPTIONAL" in item ? item.OPTIONAL.chance : undefined,
     ).toBeCloseTo(2 / 3);
+  });
+});
+
+describe("resolveShowPlayerId", () => {
+  const players = { kitchen: { available: true }, bath: { available: false } };
+
+  it("prefers the show's default device while it is available", () => {
+    expect(
+      resolveShowPlayerId({ default_player_id: "kitchen" }, "living", players),
+    ).toBe("kitchen");
+  });
+
+  it("falls back to the selected player when the default device is unavailable or unknown", () => {
+    expect(
+      resolveShowPlayerId({ default_player_id: "bath" }, "living", players),
+    ).toBe("living");
+    expect(
+      resolveShowPlayerId({ default_player_id: "gone" }, "living", players),
+    ).toBe("living");
+  });
+
+  it("uses the selected player when no default device is set", () => {
+    expect(
+      resolveShowPlayerId({ default_player_id: "" }, "living", players),
+    ).toBe("living");
+    expect(
+      resolveShowPlayerId({ default_player_id: "" }, undefined, players),
+    ).toBe("");
   });
 });
