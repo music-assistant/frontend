@@ -184,19 +184,6 @@ describe("ServerUrlsCard", () => {
         "settings.server_url.copied",
       );
     });
-
-    it("leaves the section out on a server without an external URL", async () => {
-      const { wrapper } = await mountCard({}, { withExternalUrl: false });
-
-      expect(wrapper.find("[data-testid=server-urls-internet]").exists()).toBe(
-        false,
-      );
-      expect(wrapper.find("[data-testid=server-urls-local]").exists()).toBe(
-        true,
-      );
-      // there is nowhere to show the remote access link
-      expect(apiMock.getRemoteAccessInfo).not.toHaveBeenCalled();
-    });
   });
 
   describe("reset", () => {
@@ -319,7 +306,6 @@ const DETECTED = "[data-testid=server-urls-detected]";
  */
 async function mountCard(
   values: { base_url?: string; external_url?: string | null } = {},
-  { withExternalUrl = true } = {},
 ) {
   const entries = reactive({
     base_url: entry("base_url", values.base_url ?? "auto", "auto"),
@@ -328,7 +314,7 @@ async function mountCard(
   const wrapper = mount(ServerUrlsCard, {
     props: {
       baseUrl: entries.base_url,
-      externalUrl: withExternalUrl ? entries.external_url : undefined,
+      externalUrl: entries.external_url,
       "onUpdate:value": (key: string, value: string) => {
         entries[key as keyof typeof entries].value = value;
       },

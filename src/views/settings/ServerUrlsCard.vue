@@ -7,11 +7,7 @@
       </CardDescription>
     </CardHeader>
     <CardContent class="flex flex-col gap-6">
-      <FieldSet
-        v-if="externalUrl"
-        class="gap-3"
-        data-testid="server-urls-internet"
-      >
+      <FieldSet class="gap-3" data-testid="server-urls-internet">
         <!-- styled like the section headings of the settings form below -->
         <FieldLegend
           class="mb-2 flex w-full items-center gap-3 text-xs tracking-wider text-primary uppercase"
@@ -195,8 +191,8 @@ const AUTO = "auto";
 const props = defineProps<{
   // the webserver's `base_url` entry
   baseUrl: ConfigEntry;
-  // the webserver's `external_url` entry, absent on servers without one
-  externalUrl?: ConfigEntry;
+  // the webserver's `external_url` entry
+  externalUrl: ConfigEntry;
 }>();
 
 const emit = defineEmits<{
@@ -212,7 +208,7 @@ const isAutomatic = (value: unknown) => !value || value === AUTO;
 // the URL the server reports is only the detected one while the stored value is auto
 const storedAutomatic = isAutomatic(props.baseUrl.value);
 // the inputs are in use, so emptying one to type another URL keeps it open
-const enteringExternalUrl = ref(!!props.externalUrl?.value);
+const enteringExternalUrl = ref(!!props.externalUrl.value);
 const enteringBaseUrl = ref(!storedAutomatic);
 // what the inputs held before their switch took over, given back when it is
 // switched off again
@@ -226,7 +222,7 @@ const hasRemoteAccess = computed(
 const offersRemoteAccess = computed(
   () => hasRemoteAccess.value && canManageSystem,
 );
-const externalUrlValue = computed(() => String(props.externalUrl?.value ?? ""));
+const externalUrlValue = computed(() => String(props.externalUrl.value ?? ""));
 // the server prefers a set external URL over remote access, so an empty one
 // is what lets remote access be used
 const useRemoteAccess = computed(
@@ -252,9 +248,9 @@ const setUseRemoteAccess = function (value: boolean) {
   enteringExternalUrl.value = !value;
   if (value) {
     typedExternalUrl = externalUrlValue.value;
-    if (typedExternalUrl) emit("update:value", props.externalUrl!.key, "");
+    if (typedExternalUrl) emit("update:value", props.externalUrl.key, "");
   } else if (typedExternalUrl) {
-    emit("update:value", props.externalUrl!.key, typedExternalUrl);
+    emit("update:value", props.externalUrl.key, typedExternalUrl);
   }
 };
 
@@ -305,6 +301,5 @@ const loadRemoteId = async function () {
   }
 };
 
-// the link is only shown in the internet section, which needs the external URL
-if (props.externalUrl && offersRemoteAccess.value) void loadRemoteId();
+if (offersRemoteAccess.value) void loadRemoteId();
 </script>

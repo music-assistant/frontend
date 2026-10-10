@@ -12,7 +12,7 @@
     />
 
     <ServerUrlsCard
-      v-if="config?.domain === 'webserver' && config.values.base_url"
+      v-if="config?.domain === 'webserver'"
       ref="urlCard"
       :base-url="config.values.base_url"
       :external-url="config.values.external_url"
@@ -45,11 +45,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import {
-  ConfigEntry,
-  ConfigValueType,
-  CoreConfig,
-} from "@/plugins/api/interfaces";
+import { ConfigValueType, CoreConfig } from "@/plugins/api/interfaces";
 import {
   Database,
   Globe,
@@ -92,9 +88,7 @@ const allConfigEntries = computed(() => {
 const urlCardEntries = computed(() => {
   if (config.value?.domain !== "webserver") return [];
   const { base_url, external_url } = config.value.values;
-  return [base_url, external_url].filter(
-    (entry): entry is ConfigEntry => !!entry,
-  );
+  return [base_url, external_url];
 });
 
 // watchers
