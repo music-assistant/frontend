@@ -553,6 +553,8 @@ export enum VolumeNormalizationMode {
 export enum CrossfadeMode {
   SMART_CROSSFADE = "smart_crossfade",
   STANDARD_CROSSFADE = "standard_crossfade",
+  // a spoken tail mixed over the next track's start, with the track ducked under it
+  VOICE_OVER = "voice_over",
   DISABLED = "disabled",
   // the source crossfades its own playback, so the server does not
   SOURCE = "source",
