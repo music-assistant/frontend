@@ -12,6 +12,13 @@
             <Badge v-if="rank" class="shrink-0">#{{ rank }}</Badge>
           </div>
         </div>
+        <template v-if="$slots.actions">
+          <slot name="actions"></slot>
+          <Separator
+            orientation="vertical"
+            class="bg-muted-foreground/65 data-[orientation=vertical]:h-6"
+          />
+        </template>
         <span class="flex shrink-0 items-center gap-1 tabular-nums">
           <span class="text-xl leading-none font-bold">{{ score }}</span>
           <span
@@ -66,6 +73,7 @@
 import MusicQuizAvatar from "@/components/music-quiz/MusicQuizAvatar.vue";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { $t } from "@/plugins/i18n";
 import { CircleCheck, CircleX } from "@lucide/vue";
 

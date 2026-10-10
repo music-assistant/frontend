@@ -112,7 +112,14 @@
         :score="activeState.you.score"
         :score-delta="playerRoundScoreLabel"
         :round-results="playerRoundResults"
-      />
+      >
+        <template
+          v-if="listenInEnabled && activeState.mode === 'remote'"
+          #actions
+        >
+          <MusicQuizVolumeControl />
+        </template>
+      </MusicQuizPlayerHeader>
 
       <MusicQuizPlayerStage
         :state="activeState"
@@ -172,6 +179,7 @@ import MusicQuizPlayerHeader, {
 import MusicQuizPlayerStage from "@/components/music-quiz/MusicQuizPlayerStage.vue";
 import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
 import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
+import MusicQuizVolumeControl from "@/components/music-quiz/MusicQuizVolumeControl.vue";
 import { Button } from "@/components/ui/button";
 import {
   Card,
