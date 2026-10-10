@@ -3,6 +3,7 @@ import type {
   AIRadioFlowItem,
   AIRadioHost,
   AIRadioOptionalGuards,
+  AIRadioRssFeed,
   AIRadioSection,
   AIRadioSectionOrderRule,
   AIRadioStation,
@@ -88,6 +89,12 @@ export const relativeTimeFromIso = (
 // and the compiler/decompiler for the backend host+section contract.
 // -----------------------------------------------------------------------
 
+/** Default article count for a newly added RSS feed entry. */
+export const DEFAULT_RSS_MAX_ARTICLES = 5;
+/** Bounds for the per-feed article count in the segment editor. */
+export const RSS_MAX_ARTICLES_MIN = 1;
+export const RSS_MAX_ARTICLES_MAX = 20;
+
 /** One spoken segment a host can play, edited as a single row in the host editor. */
 export interface ShowSegment {
   id: string;
@@ -96,7 +103,36 @@ export interface ShowSegment {
   webSearch: AIRadioWebSearchMode;
   maxChars: number;
   plays: PlaysRule;
+  // RSS/Atom feeds injected into the <rss_feed> placeholder at render time.
+  rssFeeds?: AIRadioRssFeed[];
 }
+
+/**
+ * Drops feeds without a URL, trims URLs and clamps each article count into the
+ * editor's bounds, so only valid feed entries reach the backend payload.
+ */
+export const normalizeRssFeeds = (
+  feeds: AIRadioRssFeed[] | undefined,
+): AIRadioRssFeed[] => {
+  if (!Array.isArray(feeds)) return [];
+  const normalized: AIRadioRssFeed[] = [];
+  for (const feed of feeds) {
+    const url = (feed?.url || "").trim();
+    if (!url) continue;
+    const rawCount = Number(feed?.max_articles);
+    const count = Number.isFinite(rawCount)
+      ? Math.round(rawCount)
+      : DEFAULT_RSS_MAX_ARTICLES;
+    normalized.push({
+      url,
+      max_articles: Math.min(
+        RSS_MAX_ARTICLES_MAX,
+        Math.max(RSS_MAX_ARTICLES_MIN, count),
+      ),
+    });
+  }
+  return normalized;
+};
 
 /**
  * When a segment plays, expressed in UI-friendly terms.
@@ -145,6 +181,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     name: "Intro",
     prompt:
       "The next track is <next_songinfo>. Open the program like a polished radio host: brief welcome, confident energy, one concrete hook about the song or artist, and a clean handoff into the music.",
+    rssFeeds: [],
     webSearch: "disabled",
     maxChars: 650,
     plays: { kind: "start" },
@@ -153,6 +190,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     id: "transition",
     name: "Transition",
     prompt: SONG_TRANSITION_PROMPT,
+    rssFeeds: [],
     webSearch: "allow",
     maxChars: 650,
     plays: { kind: "every_song" },
@@ -162,6 +200,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     name: "Weather",
     prompt:
       "Using <weather_hourly> and <timestamp>, deliver a short spoken weather update with the current outlook, a useful next-hours summary, and smooth radio phrasing.",
+    rssFeeds: [],
     webSearch: "disabled",
     maxChars: 500,
     plays: { kind: "every_n_min", n: 60 },
@@ -171,6 +210,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     name: "News",
     prompt:
       "Create a short global news bulletin anchored to <timestamp>. Use web search. Include two or three current items that are broadly relevant, clearly separated, fact-focused, and written for spoken delivery.",
+    rssFeeds: [],
     webSearch: "force",
     maxChars: 700,
     plays: { kind: "every_n_min", n: 60 },
@@ -180,6 +220,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     name: "Artist fact",
     prompt:
       "The next track is <next_songinfo>. Share one genuinely interesting fact about the track or its artist, keeping it precise, engaging, and free of generic trivia.",
+    rssFeeds: [],
     webSearch: "allow",
     maxChars: 500,
     plays: { kind: "every_n_songs", n: 3 },
@@ -189,6 +230,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     name: "Sign-off",
     prompt:
       "The last track played was <prev_songinfo>. Close the program with a memorable sign-off: brief reflection, warm farewell, and language that sounds like the end of a real radio segment.",
+    rssFeeds: [],
     webSearch: "disabled",
     maxChars: 650,
     plays: { kind: "end" },
@@ -299,14 +341,19 @@ const compileSegments = (
     const prefix = `${hostId}_`;
     const namespacedId = rawId.startsWith(prefix) ? rawId : `${prefix}${rawId}`;
     const id = dedupeId(slugify(namespacedId), usedIds);
-    sections.push({
+    const section: AIRadioSection = {
       id,
       name: segment.name,
       type: "ai_text",
       web_search: segment.webSearch,
       prompt: segment.prompt,
       constraints: { max_chars: segment.maxChars },
-    });
+    };
+    const rssFeeds = normalizeRssFeeds(segment.rssFeeds);
+    if (rssFeeds.length) {
+      section.rss_feeds = rssFeeds;
+    }
+    sections.push(section);
     return { ...segment, id };
   });
 
@@ -543,6 +590,7 @@ export const decompileHost = (
       webSearch: section.web_search || "disabled",
       maxChars: section.constraints?.max_chars || 0,
       plays,
+      rssFeeds: normalizeRssFeeds(section.rss_feeds),
     };
   };
 
