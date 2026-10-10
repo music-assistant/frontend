@@ -95,4 +95,18 @@ describe("PartyResultItem", () => {
   it("shows the track's own image when it has no album", () => {
     expect(imageSrc(track(null))).toContain("track.jpg");
   });
+
+  it("shows the track's own image when its album cover cannot be loaded", () => {
+    const album = {
+      ...ALBUM_REFERENCE,
+      // a local cover of a music source that is not loaded
+      image: {
+        type: ImageType.THUMB,
+        path: "Album/folder.jpg",
+        provider: "filesystem--gone",
+        remotely_accessible: false,
+      },
+    } as ItemMapping;
+    expect(imageSrc(track(album))).toContain("track.jpg");
+  });
 });
