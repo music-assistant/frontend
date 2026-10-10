@@ -91,8 +91,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
 import { getMediaItemImageUrl } from "@/helpers/utils";
-import type { Artist, Track } from "@/plugins/api/interfaces";
-import { MediaType } from "@/plugins/api/interfaces";
+import type {
+  Album,
+  Artist,
+  ItemMapping,
+  MediaItemImage,
+  Track,
+} from "@/plugins/api/interfaces";
+import { ImageType, MediaType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { CircleCheck, ListPlus, Music, Rocket } from "@lucide/vue";
 import { computed } from "vue";
@@ -140,11 +146,17 @@ const onItemClick = () => {
   }
 };
 
+const albumThumb = (
+  album: Album | ItemMapping,
+): MediaItemImage | null | undefined =>
+  "metadata" in album
+    ? album.metadata.images?.find((img) => img.type === ImageType.THUMB)
+    : album.image;
+
 const imageUrl = computed(() => {
   // prefer the album artwork, as the rest of the app does for tracks
   const album = "album" in props.item ? props.item.album : undefined;
-  const albumImage = album && "image" in album ? album.image : undefined;
-  const img = albumImage ?? props.item.metadata?.images?.[0];
+  const img = (album && albumThumb(album)) ?? props.item.metadata?.images?.[0];
   return img ? getMediaItemImageUrl(img) : "";
 });
 
