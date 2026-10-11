@@ -672,6 +672,7 @@ export interface ServerInfoMessage {
   internal_url: string | null;
   external_url: string | null;
   has_remote_access: boolean;
+  unsupported_install: boolean;
 }
 
 export type MessageType =
