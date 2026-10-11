@@ -1,6 +1,7 @@
 <template>
   <EditorialShelf
     :title="title"
+    :title-to="titleTo"
     :provider="provider"
     :dimmed="dimmed"
     :tiles-per-view="tilesPerView"
@@ -31,6 +32,7 @@
 
 <script setup lang="ts">
 import { computed, type Component } from "vue";
+import type { RouteLocationRaw } from "vue-router";
 import type {
   Artist,
   MediaItemTypeOrItemMapping,
@@ -49,6 +51,7 @@ const props = defineProps<{
   tilesPerView?: number;
   maxDays?: number;
   gap?: number;
+  titleTo?: RouteLocationRaw;
 }>();
 
 const MAX_DAYS = computed(() => props.maxDays ?? 15);

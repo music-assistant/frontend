@@ -49,6 +49,7 @@ const knownFolders = new Map<string, BrowseFolder>();
 
 <script setup lang="ts">
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import { DISCOVER_BROWSE_SCHEME } from "@/components/discover/utils/rowBrowse";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import ToolbarHeading, {
   type ToolbarHeadingItem,
@@ -88,20 +89,25 @@ const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
     : ["", path];
   const prefix = providerPart ? `${providerPart}://` : "";
   const folders = folderPart.split("/").filter((folder) => folder.length > 0);
+  // Discover rows are listed per provider: discover://<provider>/<row>
+  const isDiscover = providerPart === DISCOVER_BROWSE_SCHEME;
 
   const items: ToolbarHeadingItem[] = [];
   if (providerPart) {
     items.push({
-      title: api.getProviderName(providerPart),
+      title: isDiscover ? t("discover") : api.getProviderName(providerPart),
       disabled: folders.length === 0,
       to: browseRoute(prefix),
     });
   }
   folders.forEach((folder, index) => {
+    const folderPath = prefix + folders.slice(0, index + 1).join("/");
+    const fallback =
+      isDiscover && index === 0 ? api.getProviderName(folder) : folder;
     items.push({
-      title: folder,
+      title: folderName(folderPath) ?? fallback,
       disabled: index === folders.length - 1,
-      to: browseRoute(prefix + folders.slice(0, index + 1).join("/")),
+      to: browseRoute(folderPath),
     });
   });
   return items;
@@ -144,6 +150,13 @@ const loadItems = async function (params: LoadDataParams) {
       : hasOnlyFolders.value && pageHasOnlyFolders;
   return items;
 };
+
+// the name of a folder listed so far; reads the current folder reactively so
+// the breadcrumbs pick up its name once a deep link has looked it up
+const folderName = (path: string): string | undefined =>
+  currentFolder.value?.path === path
+    ? currentFolder.value.name
+    : knownFolders.get(path)?.name;
 
 const browseRoute = (path: string) => ({
   name: "browse",
