@@ -518,6 +518,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     ];
 
     expect(stages.some((stage) => stage.link !== undefined)).toBe(false);
+    expect(display.outputPaths[0].destination.title).toBe("Kitchen");
   });
 
   it("resolves presets and protocol-parent destinations", () => {

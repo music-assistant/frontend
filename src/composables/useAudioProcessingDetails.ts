@@ -43,7 +43,9 @@ import {
 type TranslationValue = string | number;
 type Translate = (key: string, values?: TranslationValue[]) => string;
 
-/** The settings page that controls a stage, with a label naming it. */
+/**
+ * The settings page that controls a stage, with a label naming it.
+ */
 export interface AudioProcessingStageLink {
   to: RouteLocationRaw;
   label: string;
@@ -441,7 +443,6 @@ function destinationStage(
       ),
     };
   }
-  if (!dependencies.canOpenSettings) return undefined;
   const destinations = resolveDestinations(playerIds, dependencies);
   const primary = destinations[0];
   const additionalDestinationCount = destinations.length - 1;
@@ -468,6 +469,7 @@ function dspSettingsLink(
   playerIds: string[],
   dependencies: AudioProcessingDetailsDependencies,
 ): AudioProcessingStageLink | undefined {
+  if (!dependencies.canOpenSettings) return undefined;
   const destinations = resolveDestinations(playerIds, dependencies);
   if (destinations.length !== 1) return undefined;
   const { playerId } = destinations[0];

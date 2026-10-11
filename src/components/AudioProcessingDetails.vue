@@ -341,8 +341,8 @@ const {
 }
 
 .audio-processing-details .audio-processing-stage-link:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
   border-radius: 2px;
 }
 
