@@ -1769,4 +1769,54 @@ describe("ItemsListing server sort options", () => {
       SortField.DURATION,
     );
   });
+
+  it("reloads with the normalized sort when options change during a request", async () => {
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.libraryaudiobooks.audiobooks": { sortBy: "duration:asc" },
+      },
+    });
+    let resolveFirstPage!: (items: Track[]) => void;
+    const firstPage = new Promise<Track[]>((resolve) => {
+      resolveFirstPage = resolve;
+    });
+    const loadPagedData = vi
+      .fn()
+      .mockReturnValueOnce(firstPage)
+      .mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "audiobooks",
+      path: "libraryaudiobooks",
+      sortMediaType: MediaType.AUDIOBOOK,
+      loadPagedData,
+      showGenreFilter: false,
+    });
+
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+    expect(loadPagedData).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        sort_field: SortField.DURATION,
+        sort_direction: SortDirection.ASC,
+      }),
+    );
+
+    await listing.setProps({
+      sortOptionExcludeFields: [SortField.DURATION],
+    });
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+
+    resolveFirstPage([]);
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        sort_field: SortField.TIMESTAMP_ADDED,
+        sort_direction: SortDirection.DESC,
+      }),
+    );
+  });
 });

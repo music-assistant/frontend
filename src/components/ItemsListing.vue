@@ -680,6 +680,7 @@ const librarySorting = useLibrarySorting(
 // the selected tab shows items of the initial tab on entering the page
 let loadingTabId: string | undefined;
 let pendingTabLoad = false;
+let pendingSortReload = false;
 
 // below this item count, the per-listing search option is hidden to reduce
 // clutter (consumers can force it on/off via the showSearchButton prop).
@@ -1044,6 +1045,10 @@ watch(sortOptions, () => {
     "sortBy",
     normalized,
   );
+  if (loading.value) {
+    pendingSortReload = true;
+    return;
+  }
   loadData(true, undefined, true);
 });
 
@@ -1811,8 +1816,9 @@ const loadData = async function (
     tempHide.value = false;
   }
 
-  if (pendingTabLoad) {
+  if (pendingTabLoad || pendingSortReload) {
     pendingTabLoad = false;
+    pendingSortReload = false;
     await loadData(true);
   }
 };
