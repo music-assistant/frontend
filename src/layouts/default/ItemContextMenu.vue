@@ -392,6 +392,7 @@ import {
   Heart,
   History,
   Image,
+  ImagePlus,
   Info,
   LibraryBig,
   Link,
@@ -1383,6 +1384,25 @@ export const getContextMenuItems = async function (
         eventbus.emit("clearSelection");
       },
       icon: GenreIcon,
+    });
+  }
+  // change genre image (library managers only, single library genre on its details page)
+  if (
+    items.length === 1 &&
+    items[0] === parentItem &&
+    items[0].media_type === MediaType.GENRE &&
+    items[0].provider === "library" &&
+    managesLibrary
+  ) {
+    contextMenuItems.push({
+      label: "custom_image",
+      labelArgs: [],
+      action: () => {
+        eventbus.emit("genreImageDialog", {
+          genre: items[0] as Genre,
+        });
+      },
+      icon: ImagePlus,
     });
   }
   // merge genres (admin only, all items must be library genres of the same taxonomy)
