@@ -1,11 +1,11 @@
 <template>
-  <section class="flex flex-col gap-4">
+  <section class="flex min-h-0 flex-col gap-4">
     <p class="text-muted-foreground text-sm">
       {{ $t("onboarding.steps.own_sources.description") }}
     </p>
 
     <!-- fixed minimum height so the step does not jump once configs load -->
-    <div class="min-h-24">
+    <div class="min-h-24 overflow-y-auto">
       <div v-if="ownedMusicSources.length > 0" class="flex flex-col gap-2">
         <h3 class="text-sm font-semibold">
           {{ $t("onboarding.steps.own_sources.connected") }}
@@ -18,8 +18,8 @@
             size="sm"
             data-testid="onboarding-own-source"
           >
-            <ItemMedia>
-              <ProviderIcon :domain="source.domain" :size="32" />
+            <ItemMedia variant="icon">
+              <ProviderIcon :domain="source.domain" :size="20" />
             </ItemMedia>
             <ItemContent>
               <ItemTitle>{{ sourceName(source) }}</ItemTitle>

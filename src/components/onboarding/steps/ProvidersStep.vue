@@ -1,9 +1,8 @@
 <template>
-  <section class="flex flex-col gap-4">
+  <section class="flex min-h-0 flex-col gap-4">
     <p class="text-muted-foreground text-sm">{{ $t(descriptionKey) }}</p>
 
-    <!-- fixed minimum height so the step does not jump once providers load -->
-    <div class="min-h-24">
+    <ScrollFade>
       <ItemGroup v-if="configured.length > 0" class="gap-2">
         <Item
           v-for="provider in configured"
@@ -12,8 +11,8 @@
           size="sm"
           data-testid="onboarding-configured-provider"
         >
-          <ItemMedia>
-            <ProviderIcon :domain="provider.domain" :size="32" />
+          <ItemMedia variant="icon">
+            <ProviderIcon :domain="provider.domain" :size="20" />
           </ItemMedia>
           <ItemContent>
             <ItemTitle>{{ provider.name }}</ItemTitle>
@@ -25,12 +24,23 @@
               class="text-primary size-4"
               aria-hidden="true"
             />
-            <TriangleAlert
-              v-else
-              class="text-muted-foreground size-4"
-              :aria-label="$t('onboarding.needs_attention')"
-              :title="$t('onboarding.needs_attention')"
-            />
+            <template v-else>
+              <Button
+                v-if="needsReconfigure(provider)"
+                variant="secondary"
+                size="sm"
+                data-testid="onboarding-provider-reconfigure"
+                @click="reconfigure(provider.instance_id)"
+              >
+                {{ $t("settings.reconfigure") }}
+              </Button>
+              <span :title="$t(attentionLabelKey(provider.status))">
+                <TriangleAlert
+                  class="text-muted-foreground size-4"
+                  :aria-label="$t(attentionLabelKey(provider.status))"
+                />
+              </span>
+            </template>
           </ItemActions>
         </Item>
       </ItemGroup>
@@ -43,7 +53,7 @@
           <EmptyTitle>{{ $t("onboarding.nothing_configured") }}</EmptyTitle>
         </EmptyHeader>
       </Empty>
-    </div>
+    </ScrollFade>
 
     <div>
       <Button
@@ -64,6 +74,7 @@
 </template>
 
 <script setup lang="ts">
+import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -80,9 +91,15 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
-import { configuredProviders } from "@/composables/useOnboarding";
-import type { OnboardingStepId } from "@/helpers/onboarding";
+import {
+  configuredProviders,
+  type ConfiguredProvider,
+} from "@/composables/useOnboarding";
+import { attentionLabelKey, type OnboardingStepId } from "@/helpers/onboarding";
+import { providerRequiresReconfiguration } from "@/helpers/provider_config";
+import { api } from "@/plugins/api";
 import { ProviderType } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
 import { Check, Music, Plus, Puzzle, TriangleAlert } from "@lucide/vue";
 import { match } from "ts-pattern";
@@ -101,6 +118,16 @@ defineEmits<{
 }>();
 
 const showAddProviderDialog = ref(false);
+
+const needsReconfigure = (provider: ConfiguredProvider) =>
+  providerRequiresReconfiguration(
+    provider.status,
+    api.providerManifests[provider.domain]?.has_setup_flow,
+  );
+
+const reconfigure = function (instanceId: string) {
+  eventbus.emit("setupFlowDialog", { kind: "reconfigure", instanceId });
+};
 
 const configured = computed(() => configuredProviders(props.providerType));
 

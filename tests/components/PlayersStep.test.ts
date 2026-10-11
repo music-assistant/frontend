@@ -64,6 +64,7 @@ function addProvider(overrides: Partial<ConfiguredProvider> = {}) {
     name: "Sonos",
     domain: "sonos",
     needsAttention: false,
+    status: null,
     ...overrides,
   });
 }
@@ -452,14 +453,14 @@ describe("PlayersStep", () => {
   });
 
   describe("what a row says about a player", () => {
-    it("says a player still has to be set up", () => {
+    it("offers to set up a player that still has to be set up", () => {
       addPlayer({ needsSetup: true, available: false });
 
       const wrapper = mountStep();
 
       // its setup is why it is not reachable, so that is what the row says
       expect(
-        wrapper.find("[aria-label=settings\\.player_needs_setup]").exists(),
+        wrapper.find("[data-testid=onboarding-player-setup]").exists(),
       ).toBe(true);
       expect(
         wrapper.find("[aria-label=settings\\.player_not_available]").exists(),

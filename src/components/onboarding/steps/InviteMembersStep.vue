@@ -1,12 +1,12 @@
 <template>
-  <section class="flex flex-col gap-4">
+  <section class="flex min-h-0 flex-col gap-4">
     <p class="text-muted-foreground text-sm">
       {{ $t("onboarding.steps.invite_members.description") }}
     </p>
 
     <!-- fixed minimum height so the step does not jump once the users load, and
          a live region so a member who was just added is announced -->
-    <div class="flex min-h-24 flex-col gap-2" aria-live="polite">
+    <ScrollFade class="flex min-h-24 flex-col gap-2" aria-live="polite">
       <ItemGroup v-if="members.length > 0" class="gap-2">
         <Item
           v-for="member in members"
@@ -51,7 +51,7 @@
           </EmptyTitle>
         </EmptyHeader>
       </Empty>
-    </div>
+    </ScrollFade>
 
     <div>
       <Button
@@ -71,6 +71,7 @@
 </template>
 
 <script setup lang="ts">
+import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,

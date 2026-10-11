@@ -2718,6 +2718,8 @@
         "still_to_do": "Still to do",
         "all_done": "Everything on the list is set up.",
         "players_count": "{count} player | {count} players",
+        "music_sources_count": "{count} music source | {count} music sources",
+        "plugins_count": "{count} plugin | {count} plugins",
         "run_again": "Run the setup wizard again",
         "add_member": "Add a user",
         "just_you_so_far": "Just you so far.",
@@ -2766,6 +2768,7 @@
                 "no_provider_hint": "Add a player provider and its players show up here.",
                 "discovering_hint": "Finding players can take a moment. Make sure your speakers are switched on and on the same network as Music Assistant.",
                 "add_more": "Add more players",
+                "discovered_by": "Discovered by",
                 "rename": "Rename {name}"
             },
             "plugins": {
