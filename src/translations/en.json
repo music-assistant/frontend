@@ -1002,6 +1002,7 @@
         "select_items": "Select multiple items",
         "sort_options": "Sort options",
         "toggle_view_mode": "Toggle view mode list\/thumbs",
+        "view_mode": "View mode",
         "view_mode_current": "Current view: {0}. Change view mode",
         "view_mode_switch": "Current view: {0}. Switch to {1}",
         "filter_favorites": "Only show favorites",
@@ -1109,7 +1110,6 @@
         "list": "List view",
         "card": "Card view",
         "panel": "Thumbs view",
-        "panel_compact": "Compact thumbs view",
         "discovery": "Discovery"
     },
     "play_replace": "Play Now (clear queue)",

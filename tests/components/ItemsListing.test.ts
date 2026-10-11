@@ -158,9 +158,6 @@ vi.mock("@/components/skeletons/PanelViewSkeleton.vue", () =>
 );
 vi.mock("@/components/ListviewItem.vue", () => stubComponent("ListviewItem"));
 vi.mock("@/components/PanelviewItem.vue", () => stubComponent("PanelviewItem"));
-vi.mock("@/components/PanelviewItemCompact.vue", () =>
-  stubComponent("PanelviewItemCompact"),
-);
 
 // the real store computes these; on the mock they are plain writable state
 const store = storeModule as typeof storeModule & { mobileLayout: boolean };
@@ -780,6 +777,13 @@ describe("ItemsListing cover size", () => {
     const listing = await mountGrid();
 
     expect(slider(listing)?.hide).toBe(true);
+  });
+
+  it("shows the thumbs view for a saved compact thumbs view", async () => {
+    signInWithSavedGrid({ viewMode: "panel_compact" });
+    const listing = await mountGrid();
+
+    expect(columns(listing)).toBe("col-2");
   });
 });
 
