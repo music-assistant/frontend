@@ -39,6 +39,7 @@ vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
 
+vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 vi.mock("vue-router", async () => {
   const { reactive } = await import("vue");
   state.route = reactive(state.route);

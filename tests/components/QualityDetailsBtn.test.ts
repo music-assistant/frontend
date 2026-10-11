@@ -265,18 +265,17 @@ describe("QualityDetailsBtn", () => {
     const wrapper = mount(QualityDetailsBtn, {
       attachTo: document.body,
     });
-    await wrapper.get("button").trigger("click");
+    const trigger = wrapper.get("button");
+    await trigger.trigger("click");
     await nextTick();
-    const contentSelector = '[data-testid="audio-processing-popover-content"]';
-    expect(document.body.querySelector(contentSelector)).not.toBeNull();
+    expect(trigger.attributes("data-state")).toBe("open");
 
     document.body
       .querySelector<HTMLElement>('[data-testid="details-navigate"]')
       ?.click();
     await nextTick();
-    await nextTick();
 
-    expect(document.body.querySelector(contentSelector)).toBeNull();
+    expect(trigger.attributes("data-state")).toBe("closed");
     wrapper.unmount();
   });
 });

@@ -59,10 +59,11 @@ describe("useActiveAudioPath", () => {
       },
     });
     storeMock.curQueueItem = queueItem({ streamdetails: details });
-    storeMock.activePlayerQueue = playerQueue({
+    const queue = playerQueue({
       crossfade_enabled: true,
       smart_fades_active: true,
     });
+    storeMock.activePlayerQueue = queue;
     // a source snapshot is present too, but the queue item must win
     storeMock.activePlayer = player({
       active_source_audio: {
@@ -81,6 +82,7 @@ describe("useActiveAudioPath", () => {
       streamDetails: details,
       audioProcessing: details.audio_processing,
       crossfadeIntent: CrossfadeMode.SMART_CROSSFADE,
+      queueId: queue.queue_id,
     });
   });
 
