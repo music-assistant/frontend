@@ -2326,17 +2326,22 @@ export class MusicAssistantApi {
     provider_domain: string,
     values: Record<string, ConfigValueType>,
     instance_id?: string,
+    options?: CommandOptions,
   ): Promise<ProviderConfig> {
     // Save Provider(instance) Config.
     // provider_domain: (mandatory) domain of the provider.
     // values: the raw values for config entries that need to be stored/updated.
     // instance_id: id of an existing provider instance (None for new instance setup).
     // action: [optional] action key called from config entries UI.
-    return this.sendCommand("config/providers/save", {
-      provider_domain,
-      values,
-      instance_id,
-    });
+    return this.sendCommand(
+      "config/providers/save",
+      {
+        provider_domain,
+        values,
+        instance_id,
+      },
+      options,
+    );
   }
 
   public removeProviderConfig(instance_id: string): Promise<void> {

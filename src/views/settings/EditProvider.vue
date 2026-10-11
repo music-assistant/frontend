@@ -595,8 +595,14 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   loading.value = true;
   lastSubmitValues.value = values;
   values["enabled"] = config.value!.enabled;
+  // the save error dialog shows the server's reason, so skip the global toast
   api
-    .saveProviderConfig(config.value!.domain, values, config.value!.instance_id)
+    .saveProviderConfig(
+      config.value!.domain,
+      values,
+      config.value!.instance_id,
+      { suppressGlobalError: true },
+    )
     .then(() => {
       toast.success(t("settings.provider_saved"));
       router.push({
@@ -684,9 +690,9 @@ const saveRename = async function () {
     // was typed
     renamedConfig.name = savedConfig.name;
     toast.success(t("settings.provider_saved"));
-  } catch (err) {
+  } catch {
+    // the api reports the failure itself
     renamedConfig.name = previousName;
-    toast.error(String(err));
   } finally {
     renameLoading.value = false;
     showRenameDialog.value = false;

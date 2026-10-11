@@ -276,6 +276,22 @@ describe("EditPlayer", () => {
     ).toBe(false);
   });
 
+  it("shows what the server kept when enabling fails", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(playerConfig({ enabled: false }));
+    apiMock.savePlayerConfig.mockRejectedValueOnce(new Error("Enable failed"));
+    const wrapper = await mountPlayerPage();
+
+    await wrapper.get(".v-btn").trigger("click");
+    await flushPromises();
+
+    expect(apiMock.getPlayerConfig).toHaveBeenCalledTimes(2);
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
+    ).toBe(true);
+    // the api toasts a refused save itself
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
   it("opens the shared player menu from the kebab", async () => {
     const wrapper = await mountPlayerPage();
 

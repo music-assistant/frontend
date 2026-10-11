@@ -356,6 +356,26 @@ describe("EditCoreConfig", () => {
     });
   });
 
+  it("stays on the page when the server refuses the save", async () => {
+    apiMock.getCoreConfig.mockResolvedValueOnce(webserverConfig());
+    apiMock.saveCoreConfig.mockRejectedValueOnce(
+      new Error("The value for Published IP address is not valid."),
+    );
+
+    const wrapper = mountWithForm("webserver");
+    await flushPromises();
+    await wrapper
+      .findComponent(ServerUrlsCard)
+      .vm.$emit("update:value", "external_url", "https://music.example");
+    await wrapper.find('[data-testid="config-save"]').trigger("click");
+    await flushPromises();
+
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
+    expect(routerMock.push).not.toHaveBeenCalled();
+    // the api toasts a refused save itself
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
   it("resets the webserver URLs from the header menu too", async () => {
     apiMock.getCoreConfig.mockResolvedValueOnce(
       webserverConfig({
