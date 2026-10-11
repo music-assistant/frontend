@@ -8,6 +8,11 @@ import { ref } from "vue";
 
 export const currentVisualizerPreset = ref<string | null>(null);
 
+// A preset tapped in the fullscreen menu, to show on the running canvas right
+// away; the menu persists the preference separately (deferred). Wrapped in an
+// object so re-auditioning the same name still triggers the canvas watcher.
+export const visualizerAuditionRequest = ref<{ name: string } | null>(null);
+
 // Defaults for the blur/opacity preferences. Every reader goes through these
 // (settings page, fullscreen menu, useVisualizer, and the canvas prop
 // fallbacks) so the four cannot drift apart.
