@@ -31,6 +31,7 @@ const segment: ShowSegment = {
   name: "Intro",
   prompt: "Say hello, <next_songinfo>.",
   webSearch: "disabled",
+  allowPost: false,
   maxChars: 500,
   plays: { kind: "start" },
 };
@@ -109,5 +110,42 @@ describe("SegmentRow placeholder chips", () => {
     );
     expect(toast.success).not.toHaveBeenCalled();
     expect(chip?.find(".lucide-check").exists()).toBe(false);
+  });
+});
+
+describe("SegmentRow allow-post switch", () => {
+  it("stays out of the collapsed row and appears once expanded", async () => {
+    const wrapper = mount(SegmentRow, {
+      props: { segment, canMoveUp: false, canMoveDown: false },
+    });
+
+    expect(wrapper.find('[role="switch"]').exists()).toBe(false);
+
+    await wrapper.get('button[aria-label="Show more"]').trigger("click");
+
+    expect(wrapper.find('[role="switch"]').exists()).toBe(true);
+  });
+
+  it("has no switch on a closing segment", async () => {
+    const wrapper = mount(SegmentRow, {
+      props: {
+        segment: { ...segment, plays: { kind: "end" } },
+        canMoveUp: false,
+        canMoveDown: false,
+      },
+    });
+    await wrapper.get('button[aria-label="Show more"]').trigger("click");
+
+    expect(wrapper.find('[role="switch"]').exists()).toBe(false);
+  });
+
+  it("emits the segment with allowPost set when toggled", async () => {
+    const wrapper = await mountExpanded();
+
+    await wrapper.get('[role="switch"]').trigger("click");
+
+    expect(wrapper.emitted("update")?.[0]).toEqual([
+      { ...segment, allowPost: true },
+    ]);
   });
 });
