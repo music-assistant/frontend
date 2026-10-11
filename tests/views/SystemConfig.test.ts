@@ -55,6 +55,7 @@ async function mountPage(viewMode: "card" | "list") {
             '<div class="list-item" @click="$emit(\'click\')"><slot name="title" /></div>',
         },
         ProviderIcon: true,
+        UnsupportedInstallBanner: true,
       },
     },
   });

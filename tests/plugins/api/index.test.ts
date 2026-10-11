@@ -70,6 +70,7 @@ const SERVER_INFO: ServerInfoMessage = {
   internal_url: "http://test.local",
   external_url: null,
   has_remote_access: false,
+  unsupported_install: false,
 };
 
 class TestTransport extends BaseTransport {
