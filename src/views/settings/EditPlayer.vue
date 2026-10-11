@@ -445,10 +445,10 @@ const enablePlayer = async function () {
 
     applyPlayerConfig(updatedConfig);
     toast.success($t("settings.player_saved"));
-  } catch (err) {
+  } catch {
+    // the api reports the failure itself; the page shows what the server kept
     if (!isCurrentPlayer(playerId)) return;
 
-    toast.error(String(err));
     await refreshPlayerConfig(playerId);
   } finally {
     if (requestId === enableRequestId) enabling.value = false;

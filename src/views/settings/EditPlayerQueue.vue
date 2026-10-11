@@ -53,7 +53,6 @@ import { getExternalLinkUrl } from "@/helpers/utils";
 import { Info, SlidersHorizontal } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
-import { toast } from "vue-sonner";
 import EditConfig from "./EditConfig.vue";
 import SettingsHeaderCard from "./SettingsHeaderCard.vue";
 
@@ -107,8 +106,8 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     .then(() => {
       goBack(router, { name: "playersettings" });
     })
-    .catch((err) => {
-      toast.error(err.message || err);
+    .catch(() => {
+      // the api reports the failure itself
       editConfig.value?.saveFailed();
     })
     .finally(() => {
@@ -127,8 +126,7 @@ const onImmediateApply = async function (
         config.value!.values[key] = entry;
       }
     })
-    .catch((err) => {
-      toast.error(err.message || err);
-    });
+    // the api reports the failure itself
+    .catch(() => {});
 };
 </script>

@@ -58,7 +58,6 @@ import {
 import { computed, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import { toast } from "vue-sonner";
 import EditConfig from "./EditConfig.vue";
 import ServerUrlsCard from "./ServerUrlsCard.vue";
 import SettingsHeaderCard from "./SettingsHeaderCard.vue";
@@ -160,8 +159,8 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     .then(() => {
       router.push({ name: "systemsettings" });
     })
-    .catch((err) => {
-      toast.error(err.message || err);
+    .catch(() => {
+      // the api reports the failure itself
       editConfig.value?.saveFailed();
     })
     .finally(() => {

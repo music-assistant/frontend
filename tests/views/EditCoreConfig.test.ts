@@ -13,6 +13,7 @@ import {
   type CoreConfig,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
+import { ApiCommandError } from "@/plugins/api/errors";
 import EditCoreConfig from "@/views/settings/EditCoreConfig.vue";
 import ServerUrlsCard from "@/views/settings/ServerUrlsCard.vue";
 
@@ -354,6 +355,27 @@ describe("EditCoreConfig", () => {
       base_url: "auto",
       external_url: "https://music.example",
     });
+  });
+
+  it("stays on the page when the server refuses the save", async () => {
+    const reason = "The value for Published IP address is not valid.";
+    apiMock.getCoreConfig.mockResolvedValueOnce(webserverConfig());
+    apiMock.saveCoreConfig.mockRejectedValueOnce(
+      new ApiCommandError(reason, 1, reason),
+    );
+
+    const wrapper = mountWithForm("webserver");
+    await flushPromises();
+    await wrapper
+      .findComponent(ServerUrlsCard)
+      .vm.$emit("update:value", "external_url", "https://music.example");
+    await wrapper.find('[data-testid="config-save"]').trigger("click");
+    await flushPromises();
+
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
+    expect(routerMock.push).not.toHaveBeenCalled();
+    // the api toasts a refused save itself
+    expect(toastMock.error).not.toHaveBeenCalled();
   });
 
   it("resets the webserver URLs from the header menu too", async () => {

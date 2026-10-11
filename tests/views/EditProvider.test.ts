@@ -1,3 +1,4 @@
+import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,6 +15,7 @@ import {
   type Scope,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
+import { ApiCommandError } from "@/plugins/api/errors";
 import { store } from "@/plugins/store";
 import EditProvider from "@/views/settings/EditProvider.vue";
 import { providerConfig } from "../fixtures/providerConfig";
@@ -996,7 +998,8 @@ describe("EditProvider", () => {
     await flushPromises();
 
     expect(wrapper.get("h2").text()).toBe("My Spotify");
-    expect(toastMock.error).toHaveBeenCalledWith("Error: Rename failed");
+    // the api toasts a refused save itself
+    expect(toastMock.error).not.toHaveBeenCalled();
   });
 
   it("ignores a second submission while a rename is still saving", async () => {
@@ -1202,6 +1205,53 @@ describe("EditProvider", () => {
       query: { types: ProviderType.MUSIC },
     });
     expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
+  });
+
+  it("shows a refused save in the save error dialog only", async () => {
+    const reason = "The value for Username is not valid.";
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+    apiMock.saveProviderConfig.mockRejectedValue(
+      new ApiCommandError(reason, 1, reason),
+    );
+    const saveFailed = vi.fn();
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: {
+          ...providerDetailsStubs,
+          EditConfig: {
+            name: "EditConfig",
+            template: "<div />",
+            methods: { saveFailed },
+          },
+        },
+      },
+    });
+    await flushPromises();
+
+    wrapper.findComponent({ name: "EditConfig" }).vm.$emit("submit", {});
+    await flushPromises();
+
+    expect(apiMock.saveProviderConfig).toHaveBeenCalledWith(
+      "spotify",
+      { enabled: true },
+      "spotify--test",
+      { suppressGlobalError: true },
+    );
+    const dialog = wrapper.findComponent(ProviderSaveErrorDialog);
+    expect(dialog.props("open")).toBe(true);
+    expect(dialog.props("message")).toBe(reason);
+    expect(saveFailed).toHaveBeenCalledOnce();
+    expect(toastMock.error).not.toHaveBeenCalled();
+    expect(routerMock.push).not.toHaveBeenCalled();
   });
 
   it("sends a member back to the music sources page after saving", async () => {
