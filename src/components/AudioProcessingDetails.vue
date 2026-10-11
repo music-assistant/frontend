@@ -30,6 +30,7 @@
               processingStages.length === 0 &&
               stageIndex === inputStages.length - 1,
           }"
+          @navigate="emit('navigate')"
         />
       </div>
     </section>
@@ -58,6 +59,7 @@
               outputPaths.length === 0 &&
               stageIndex === processingStages.length - 1,
           }"
+          @navigate="emit('navigate')"
         />
       </div>
     </section>
@@ -89,6 +91,7 @@
           v-for="stage in output.stages"
           :key="stage.key"
           :stage="stage"
+          @navigate="emit('navigate')"
         />
         <AudioProcessingStage
           :stage="output.destination"
@@ -96,6 +99,7 @@
             'audio-processing-stage--terminal':
               outputIndex === outputPaths.length - 1,
           }"
+          @navigate="emit('navigate')"
         />
       </div>
     </section>
@@ -118,6 +122,13 @@ const props = defineProps<{
   chain: AudioProcessingChain;
   streamDetails: StreamDetails;
   crossfadeIntent?: CrossfadeMode;
+  // the queue the audio plays through, so its settings can be linked
+  queueId?: string;
+}>();
+
+const emit = defineEmits<{
+  // a stage opened its settings page, so the details can be closed
+  (e: "navigate"): void;
 }>();
 
 const {
@@ -130,6 +141,7 @@ const {
   toRef(props, "chain"),
   toRef(props, "streamDetails"),
   toRef(props, "crossfadeIntent"),
+  toRef(props, "queueId"),
 );
 </script>
 
@@ -308,6 +320,30 @@ const {
   min-width: 0;
   font-weight: 500;
   overflow-wrap: anywhere;
+}
+
+/* a title that opens its settings page, keeping the title's look */
+.audio-processing-details .audio-processing-stage-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  text-align: left;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.audio-processing-details .audio-processing-stage-link:hover {
+  text-decoration: underline;
+}
+
+.audio-processing-details .audio-processing-stage-link:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .audio-processing-details .audio-processing-stage-badge {
