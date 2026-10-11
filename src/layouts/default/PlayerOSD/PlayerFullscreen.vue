@@ -393,16 +393,28 @@
           <div class="media-controls-item favorite-btn-wrapper">
             <FavoriteMenuBtn
               style="max-height: 30px; min-height: 0; min-width: 0"
-              icon-class="size-4.5"
+              icon-class="size-5.5"
             />
           </div>
-          <ShuffleBtn
-            v-if="$vuetify.display.mdAndUp"
-            :player="store.activePlayer"
-            :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            max-height="30px"
-          />
+          <!-- side slots keep their width when empty so the row never shifts -->
+          <div class="media-controls-item side-slot">
+            <!-- stroke scaled so lines match the 28px previous/next icons -->
+            <SkipBtn
+              v-if="showSkip"
+              :player-queue="store.activePlayerQueue"
+              direction="back"
+              max-height="45px"
+              :size="30"
+              :stroke-width="(2 * 28) / 30"
+            />
+            <ShuffleBtn
+              v-else-if="$vuetify.display.mdAndUp"
+              :player="store.activePlayer"
+              :player-queue="store.activePlayerQueue"
+              max-height="30px"
+              :size="24"
+            />
+          </div>
           <PreviousBtn
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
@@ -427,17 +439,27 @@
             max-height="45px"
             :size="28"
           />
-          <RepeatBtn
-            v-if="$vuetify.display.mdAndUp"
-            :player="store.activePlayer"
-            :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            max-height="35px"
-          />
+          <div class="media-controls-item side-slot">
+            <SkipBtn
+              v-if="showSkip"
+              :player-queue="store.activePlayerQueue"
+              direction="forward"
+              max-height="45px"
+              :size="30"
+              :stroke-width="(2 * 28) / 30"
+            />
+            <RepeatBtn
+              v-else-if="$vuetify.display.mdAndUp"
+              :player="store.activePlayer"
+              :player-queue="store.activePlayerQueue"
+              max-height="35px"
+              :size="26"
+            />
+          </div>
           <div class="media-controls-item queue-btn-wrapper">
             <QueueBtn
               style="max-height: 30px; min-height: 0; min-width: 0"
-              :size="18"
+              :size="22"
             />
           </div>
         </div>
@@ -526,6 +548,7 @@ import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import SkipBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBtn.vue";
 import NowPlayingSourceBadge from "@/layouts/default/PlayerOSD/NowPlayingSourceBadge.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
@@ -533,6 +556,7 @@ import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
 import { useNowPlayingSource } from "@/composables/nowPlayingSource";
+import { useSkipControls } from "@/composables/useSkipControls";
 import {
   resolveActiveElapsedTime,
   resolveQueueElapsedTime,
@@ -573,6 +597,7 @@ import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 
 const { name, mdAndUp } = useDisplay();
+const { showSkip } = useSkipControls();
 const { open: openCommandCenter } = useCommandCenter();
 
 const MIN_HEIGHT_SHOW_FULL_DETAILS = 750;
@@ -1244,7 +1269,7 @@ const openQueueMenu = function (evt: Event) {
     store.activePlayerQueue,
     {
       context: "queue",
-      hideShuffleRepeat: mdAndUp.value,
+      hideShuffleRepeat: mdAndUp.value && !showSkip.value,
     },
   );
   // playback speed only means something for spoken-word content, which is also
@@ -1728,7 +1753,8 @@ onBeforeUnmount(() => {
 }
 
 .queue-btn-wrapper,
-.favorite-btn-wrapper {
+.favorite-btn-wrapper,
+.side-slot {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1777,6 +1803,28 @@ onBeforeUnmount(() => {
 .media-controls > .queue-btn-wrapper,
 .media-controls > .favorite-btn-wrapper {
   margin: 0;
+}
+
+/* phones: buttons keep their natural size and share the spare room evenly */
+@media (max-width: 539px) {
+  .media-controls {
+    justify-content: space-between;
+    padding: 15px 10px;
+  }
+
+  .media-controls > div {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  .media-controls-item {
+    margin: 0;
+  }
+
+  /* reserve a button's width when empty so the row never shifts */
+  .side-slot {
+    min-width: 44px;
+  }
 }
 
 .mediacontrols-right {

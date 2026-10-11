@@ -5,7 +5,15 @@
       v-if="visibleComponents && visibleComponents.shuffle?.isVisible"
       class="player-controls-elements"
     >
+      <SkipBtn
+        v-if="showSkip"
+        :player-queue="store.activePlayerQueue"
+        direction="back"
+        class="media-controls-item"
+        :icon="visibleComponents.shuffle.icon"
+      />
       <ShuffleBtn
+        v-else
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
         class="media-controls-item"
@@ -55,7 +63,16 @@
       v-if="visibleComponents && visibleComponents.repeat?.isVisible"
       class="player-controls-elements"
     >
+      <SkipBtn
+        v-if="showSkip"
+        :player-queue="store.activePlayerQueue"
+        direction="forward"
+        :icon="visibleComponents.repeat.icon"
+        static-height="24px"
+        static-width="24px"
+      />
       <RepeatBtn
+        v-else
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
         :icon="visibleComponents.repeat.icon"
@@ -68,12 +85,14 @@
 
 <script setup lang="ts">
 import { IconProps } from "@/components/Icon.vue";
+import { useSkipControls } from "@/composables/useSkipControls";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import { store } from "@/plugins/store";
 import NextBtn from "./PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "./PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "./PlayerControlBtn/PreviousBtn.vue";
 import ShuffleBtn from "./PlayerControlBtn/ShuffleBtn.vue";
+import SkipBtn from "./PlayerControlBtn/SkipBtn.vue";
 
 // properties
 export interface Props {
@@ -112,6 +131,8 @@ withDefaults(defineProps<Props>(), {
     next: { isVisible: true },
   }),
 });
+
+const { showSkip } = useSkipControls();
 </script>
 
 <style>
