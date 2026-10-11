@@ -6,6 +6,7 @@ const { routeMock, storeMock } = vi.hoisted(() => ({
   routeMock: { query: {} as Record<string, string> },
   storeMock: {
     activePlayerId: undefined as string | undefined,
+    enabledPlugins: new Set<string>(),
     activePlayer: undefined as
       | {
           icon?: string | null;
@@ -38,7 +39,7 @@ vi.mock("@/plugins/router", () => ({
   default: {},
 }));
 vi.mock("@/plugins/auth", () => ({
-  authManager: {},
+  authManager: { isDashboardViewer: () => false },
   default: {},
 }));
 
