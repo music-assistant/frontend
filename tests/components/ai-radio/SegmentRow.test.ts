@@ -126,6 +126,19 @@ describe("SegmentRow allow-post switch", () => {
     expect(wrapper.find('[role="switch"]').exists()).toBe(true);
   });
 
+  it("has no switch on a closing segment", async () => {
+    const wrapper = mount(SegmentRow, {
+      props: {
+        segment: { ...segment, plays: { kind: "end" } },
+        canMoveUp: false,
+        canMoveDown: false,
+      },
+    });
+    await wrapper.get('button[aria-label="Show more"]').trigger("click");
+
+    expect(wrapper.find('[role="switch"]').exists()).toBe(false);
+  });
+
   it("emits the segment with allowPost set when toggled", async () => {
     const wrapper = await mountExpanded();
 

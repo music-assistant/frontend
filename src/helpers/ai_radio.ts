@@ -311,7 +311,8 @@ const compileSegments = (
       name: segment.name,
       type: "ai_text",
       web_search: segment.webSearch,
-      allow_post: segment.allowPost,
+      // a closing segment has nothing after it to talk over
+      allow_post: segment.allowPost && segment.plays.kind !== "end",
       prompt: segment.prompt,
       constraints: { max_chars: segment.maxChars },
     });

@@ -382,6 +382,15 @@ describe("allowPost", () => {
     );
   });
 
+  it("drops the switch for a closing segment, which has nothing to talk over", () => {
+    const draft = makeHostDraft(true);
+    draft.segments[0] = { ...draft.segments[0], plays: { kind: "end" } };
+    const { sections } = compileHost(draft);
+    expect(sections.find((s) => s.id === "rick_artist_fact")?.allow_post).toBe(
+      false,
+    );
+  });
+
   it("decompiles a section the server stored without allow_post as off", () => {
     // the server only stores the key when it is on
     const { host, sections } = compileHost(makeHostDraft(false));

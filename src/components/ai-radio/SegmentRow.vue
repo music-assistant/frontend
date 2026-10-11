@@ -156,7 +156,8 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-3">
+      <!-- nothing follows a closing segment, so it has no intro to talk over -->
+      <div v-if="segment.plays.kind !== 'end'" class="flex items-center gap-3">
         <FieldLabel
           :html-for="`allow-post-${segment.id}`"
           :label="$t('providers.ai_radio.fields.allow_post')"
