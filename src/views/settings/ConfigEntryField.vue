@@ -85,10 +85,7 @@
     <!-- int/float value in range: slider control -->
     <div
       v-else-if="
-        (confEntry.type == ConfigEntryType.INTEGER ||
-          confEntry.type == ConfigEntryType.FLOAT) &&
-        confEntry.range &&
-        confEntry.range.length == 2
+        isNumberEntry && confEntry.range && confEntry.range.length == 2
       "
       class="config-slider-wrapper"
     >
@@ -226,10 +223,7 @@
 
     <!-- int value without range -->
     <v-text-field
-      v-else-if="
-        confEntry.type == ConfigEntryType.INTEGER ||
-        confEntry.type == ConfigEntryType.FLOAT
-      "
+      v-else-if="isNumberEntry"
       :model-value="confEntry.value"
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
@@ -352,6 +346,12 @@ const isFieldDisabled = computed(() => {
   return props.disabled || props.confEntry.read_only;
 });
 
+const isNumberEntry = computed(
+  () =>
+    props.confEntry.type == ConfigEntryType.INTEGER ||
+    props.confEntry.type == ConfigEntryType.FLOAT,
+);
+
 // Only surface an <img> when a source is actually available; otherwise the
 // element would render as a broken image (both value and default missing).
 const imageSrc = computed(
@@ -384,7 +384,7 @@ const displayActionLabel = () =>
 
 const onUpdateValue = (value: ConfigValueType) => {
   // When value is cleared (null/undefined/empty array), emit the default value instead
-  // For non-required fields, allow empty strings as a valid value
+  // For non-required text fields, allow empty strings as a valid value
   if (
     value === null ||
     value === undefined ||
@@ -392,6 +392,9 @@ const onUpdateValue = (value: ConfigValueType) => {
     (Array.isArray(value) && value.length === 0)
   ) {
     emit("update:value", props.confEntry.default_value);
+  } else if (value === "" && isNumberEntry.value) {
+    // an emptied number field has no value, so the server falls back to the default
+    emit("update:value", null);
   } else {
     emit("update:value", value);
   }
