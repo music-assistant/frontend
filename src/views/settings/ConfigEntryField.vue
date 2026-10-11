@@ -85,10 +85,7 @@
     <!-- int/float value in range: slider control -->
     <div
       v-else-if="
-        (confEntry.type == ConfigEntryType.INTEGER ||
-          confEntry.type == ConfigEntryType.FLOAT) &&
-        confEntry.range &&
-        confEntry.range.length == 2
+        isNumberEntry && confEntry.range && confEntry.range.length == 2
       "
       class="config-slider-wrapper"
     >
@@ -226,10 +223,7 @@
 
     <!-- int value without range -->
     <v-text-field
-      v-else-if="
-        confEntry.type == ConfigEntryType.INTEGER ||
-        confEntry.type == ConfigEntryType.FLOAT
-      "
+      v-else-if="isNumberEntry"
       :model-value="confEntry.value"
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"

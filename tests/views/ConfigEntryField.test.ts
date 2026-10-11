@@ -307,6 +307,7 @@ describe("ConfigEntryField", () => {
     const wrapper = mountField({
       ...numberEntry(ConfigEntryType.INTEGER),
       required: true,
+      value: 9000,
     });
 
     await wrapper.get("input").setValue("");
