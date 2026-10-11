@@ -14,6 +14,7 @@ import {
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
+import { ApiCommandError } from "@/plugins/api/errors";
 import EditPlayer from "@/views/settings/EditPlayer.vue";
 import {
   enableAutoUnmount,
@@ -278,7 +279,9 @@ describe("EditPlayer", () => {
 
   it("shows what the server kept when enabling fails", async () => {
     apiMock.getPlayerConfig.mockResolvedValue(playerConfig({ enabled: false }));
-    apiMock.savePlayerConfig.mockRejectedValueOnce(new Error("Enable failed"));
+    apiMock.savePlayerConfig.mockRejectedValueOnce(
+      new ApiCommandError("Enable failed", 1, "Enable failed"),
+    );
     const wrapper = await mountPlayerPage();
 
     await wrapper.get(".v-btn").trigger("click");

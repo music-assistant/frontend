@@ -13,6 +13,7 @@ import {
   type CoreConfig,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
+import { ApiCommandError } from "@/plugins/api/errors";
 import EditCoreConfig from "@/views/settings/EditCoreConfig.vue";
 import ServerUrlsCard from "@/views/settings/ServerUrlsCard.vue";
 
@@ -357,9 +358,10 @@ describe("EditCoreConfig", () => {
   });
 
   it("stays on the page when the server refuses the save", async () => {
+    const reason = "The value for Published IP address is not valid.";
     apiMock.getCoreConfig.mockResolvedValueOnce(webserverConfig());
     apiMock.saveCoreConfig.mockRejectedValueOnce(
-      new Error("The value for Published IP address is not valid."),
+      new ApiCommandError(reason, 1, reason),
     );
 
     const wrapper = mountWithForm("webserver");
