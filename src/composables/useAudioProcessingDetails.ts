@@ -1,5 +1,6 @@
 import { computed, toValue, type Component, type MaybeRefOrGetter } from "vue";
 import { useI18n } from "vue-i18n";
+import type { RouteLocationRaw } from "vue-router";
 import {
   AudioLines,
   File as FileIcon,
@@ -20,6 +21,7 @@ import {
 import { dspFilterIcon, dspFilterText } from "@/helpers/audioProcessing";
 import { getPlayerDisplayName } from "@/helpers/players";
 import api from "@/plugins/api";
+import { authManager } from "@/plugins/auth";
 import {
   AudioChannel,
   type AudioDSPDetails,
@@ -33,12 +35,21 @@ import {
   DSPFilterType,
   DSPState,
   type Player,
+  Scope,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
 
 type TranslationValue = string | number;
 type Translate = (key: string, values?: TranslationValue[]) => string;
+
+/**
+ * The settings page that controls a stage, with a label naming it.
+ */
+export interface AudioProcessingStageLink {
+  to: RouteLocationRaw;
+  label: string;
+}
 
 interface AudioProcessingDisplayStageBase {
   key: string;
@@ -47,6 +58,8 @@ interface AudioProcessingDisplayStageBase {
   atomicSubtitleParts?: boolean;
   badge?: string;
   details?: string[];
+  // set when one settings page controls the stage
+  link?: AudioProcessingStageLink;
 }
 
 export type AudioProcessingDisplayStage = AudioProcessingDisplayStageBase &
@@ -98,6 +111,8 @@ export interface AudioProcessingDetailsDependencies {
   getIRName: (irId: string | null | undefined) => string | undefined;
   getPlayerName: (player: AudioProcessingDisplayPlayer) => string;
   players: Record<string, AudioProcessingDisplayPlayer>;
+  // whether the user may open the settings pages the stages link to
+  canOpenSettings: boolean;
 }
 
 const KNOWN_CONTENT_TYPES = new Set<string>(Object.values(ContentType));
@@ -150,6 +165,7 @@ export function useAudioProcessingDetails(
   chain: MaybeRefOrGetter<AudioProcessingChain>,
   streamDetails: MaybeRefOrGetter<StreamDetails>,
   crossfadeIntent: MaybeRefOrGetter<CrossfadeMode | undefined> = undefined,
+  queueId: MaybeRefOrGetter<string | undefined> = undefined,
 ) {
   const { t, locale } = useI18n({ useScope: "global" });
   const { getPresetName } = useDSPPresets({ optional: true });
@@ -171,8 +187,10 @@ export function useAudioProcessingDetails(
         getIRName,
         getPlayerName: getPlayerDisplayName,
         players: api.players,
+        canOpenSettings: authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
       },
       toValue(crossfadeIntent),
+      toValue(queueId),
     );
   });
 
@@ -190,6 +208,9 @@ export function buildAudioProcessingDetailsDisplay(
   streamDetails: StreamDetails,
   dependencies: AudioProcessingDetailsDependencies,
   crossfadeIntent?: CrossfadeMode,
+  // the queue the audio plays through; its normalization and crossfade rows
+  // then link to its settings
+  queueId?: string,
 ): AudioProcessingDetailsDisplay {
   return {
     inputQualityTier: audioQualityToTier(chain.input_fidelity.quality),
@@ -203,6 +224,7 @@ export function buildAudioProcessingDetailsDisplay(
       chain,
       dependencies,
       crossfadeIntent,
+      queueId,
     ),
     outputPaths: chain.outputs.map((output, index) =>
       buildOutputDisplay(output, index, dependencies),
@@ -234,9 +256,17 @@ function buildProcessingStages(
   chain: AudioProcessingChain,
   dependencies: AudioProcessingDetailsDependencies,
   crossfadeIntent?: CrossfadeMode,
+  queueId?: string,
 ): AudioProcessingDisplayStage[] {
   const { translate } = dependencies;
   const stages: AudioProcessingDisplayStage[] = [];
+  const queueLink: AudioProcessingStageLink | undefined =
+    queueId && dependencies.canOpenSettings
+      ? {
+          to: { name: "editqueue", params: { queueId } },
+          label: translate("open_queue_settings"),
+        }
+      : undefined;
   const processing = chain.queue_processing;
   // a step the source performed is named after the service that did it
   const sourceName = dependencies.getProviderName(streamDetails.provider);
@@ -246,14 +276,15 @@ function buildProcessingStages(
     processing?.normalization &&
     processing.normalization.mode !== VolumeNormalizationMode.DISABLED
   ) {
-    stages.push(
-      normalizationStage(
+    stages.push({
+      ...normalizationStage(
         processing.normalization,
         translate,
         dependencies.locale,
         sourceName,
       ),
-    );
+      link: queueLink,
+    });
     serverAltersAudio ||= normalizationAppliedByServer(
       processing.normalization,
     );
@@ -283,6 +314,7 @@ function buildProcessingStages(
       icon: CrossfadeIcon,
       title: translate("streamdetails.audio_processing.crossfade_title"),
       subtitleParts: [crossfadeModeLabel(crossfadeMode, translate, sourceName)],
+      link: queueLink,
     });
   }
   if (processing?.overlay_active) {
@@ -315,12 +347,14 @@ function buildOutputDisplay(
   const { translate, getPresetName, getIRName } = dependencies;
   const { dsp, player_ids: playerIds } = output;
   const stages: AudioProcessingDisplayStage[] = [];
+  const dspLink = dspSettingsLink(playerIds, dependencies);
 
   if (shouldShowDSPState(dsp)) {
     stages.push({
       key: `dsp-state-${index}`,
       icon: SlidersHorizontal,
       title: dspStateLabel(dsp.state, translate),
+      link: dspLink,
     });
   }
   if (dsp.preset_id) {
@@ -333,6 +367,7 @@ function buildOutputDisplay(
       subtitleParts: [
         translate("streamdetails.audio_processing.dsp_preset_label"),
       ],
+      link: dspLink,
     });
   }
   if (dsp.input_gain) {
@@ -342,6 +377,7 @@ function buildOutputDisplay(
       title: translate("streamdetails.input_gain", [
         formatNumber(dsp.input_gain, 1, dependencies.locale),
       ]),
+      link: dspLink,
     });
   }
   for (const [filterIndex, filter] of dsp.filters.entries()) {
@@ -354,6 +390,7 @@ function buildOutputDisplay(
       icon: dspFilterIcon(filter),
       title: dspFilterText(filter),
       subtitleParts: irName ? [irName] : undefined,
+      link: dspLink,
     });
   }
   if (dsp.output_gain) {
@@ -363,6 +400,7 @@ function buildOutputDisplay(
       title: translate("streamdetails.output_gain", [
         formatNumber(dsp.output_gain, 1, dependencies.locale),
       ]),
+      link: dspLink,
     });
   }
 
@@ -423,6 +461,24 @@ function destinationStage(
   return providerIconDomain
     ? { ...stage, providerIconDomain }
     : { ...stage, icon: Speaker };
+}
+
+// DSP is set per speaker, so an output that feeds several speakers has no
+// single settings page to open
+function dspSettingsLink(
+  playerIds: string[],
+  dependencies: AudioProcessingDetailsDependencies,
+): AudioProcessingStageLink | undefined {
+  if (!dependencies.canOpenSettings) return undefined;
+  const destinations = resolveDestinations(playerIds, dependencies);
+  if (destinations.length !== 1) return undefined;
+  const { playerId } = destinations[0];
+  // a player the frontend does not know has no settings page to open
+  if (!dependencies.players[playerId]) return undefined;
+  return {
+    to: { name: "editplayerdsp", params: { playerId } },
+    label: dependencies.translate("open_dsp_settings"),
+  };
 }
 
 interface ResolvedDestination {
