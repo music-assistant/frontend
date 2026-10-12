@@ -2,36 +2,33 @@
   <div
     v-hold="onHold"
     class="chart-item ma-tap"
-    role="button"
-    tabindex="0"
-    @click="handleClick"
-    @keydown.enter.self="handleClick"
-    @keydown.space.self.prevent="handleClick"
     @contextmenu.prevent="onMenu"
     @touchstart.passive="holdFired = false"
   >
-    <div class="chart-item__position">{{ position }}</div>
-    <div class="chart-item__art" :style="artStyle">
-      <img
-        v-if="art.image"
-        class="chart-item__img"
-        loading="lazy"
-        :src="art.image"
-        :alt="item.name"
-      />
-    </div>
-    <div class="chart-item__info">
-      <div class="chart-item__name">{{ item.name }}</div>
-      <div class="chart-item__meta">
-        <span v-if="artistName" class="chart-item__artist">{{
-          artistName
-        }}</span>
-        <span class="chart-item__plays">
-          <Play :size="12" />
-          <span>{{ formattedPlays }}</span>
+    <button type="button" class="chart-item__main" @click="handleClick">
+      <span class="chart-item__position">{{ position }}</span>
+      <span class="chart-item__art" :style="artStyle">
+        <img
+          v-if="art.image"
+          class="chart-item__img"
+          loading="lazy"
+          :src="art.image"
+          :alt="item.name"
+        />
+      </span>
+      <span class="chart-item__info">
+        <span class="chart-item__name">{{ item.name }}</span>
+        <span class="chart-item__meta">
+          <span v-if="artistName" class="chart-item__artist">{{
+            artistName
+          }}</span>
+          <span class="chart-item__plays">
+            <Play :size="12" />
+            <span>{{ formattedPlays }}</span>
+          </span>
         </span>
-      </div>
-    </div>
+      </span>
+    </button>
     <button
       type="button"
       class="chart-item__play"
@@ -95,7 +92,7 @@ const formattedPlays = computed(() => {
 
 const holdFired = ref(false);
 
-function handleClick(e: MouseEvent | KeyboardEvent) {
+function handleClick(e: MouseEvent) {
   if (holdFired.value) {
     holdFired.value = false;
     return;
@@ -125,12 +122,9 @@ function onMenu(e: MouseEvent) {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
   width: 280px;
   flex-shrink: 0;
-  padding: 8px;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.15s ease;
 }
 
@@ -146,6 +140,26 @@ function onMenu(e: MouseEvent) {
   width: 28px;
   text-align: right;
   flex-shrink: 0;
+}
+
+.chart-item__main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chart-item__main:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
 }
 
 .chart-item__art {

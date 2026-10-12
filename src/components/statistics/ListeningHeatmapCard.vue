@@ -4,36 +4,53 @@
     :loading="loading"
     :is-empty="data.length === 0"
   >
-    <div class="heatmap-scroll">
-      <div class="activity-heatmap" role="img" :aria-label="title">
-        <div class="activity-heatmap__axis">
-          <span aria-hidden="true"></span>
-          <div class="activity-heatmap__hours" aria-hidden="true">
-            <span v-for="hour in hourLabels" :key="hour">{{ hour }}:00</span>
-          </div>
-        </div>
-        <div
-          v-for="(weekday, weekdayIndex) in weekdays"
-          :key="weekdayIndex"
-          class="activity-heatmap__row"
-        >
-          <span class="activity-heatmap__weekday">{{ weekday }}</span>
-          <div class="activity-heatmap__cells">
-            <span
+    <div class="w-full overflow-x-auto">
+      <table class="w-full min-w-[360px] border-separate border-spacing-y-1">
+        <caption class="sr-only">
+          {{
+            title
+          }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" class="w-8"></th>
+            <th
               v-for="hour in hours"
               :key="hour"
-              class="activity-heatmap__cell"
+              scope="col"
+              :aria-label="`${hour}:00`"
+              class="text-[10px] font-normal text-muted-foreground"
+            >
+              <span aria-hidden="true">{{
+                hour % 6 === 0 ? `${hour}:00` : ""
+              }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(weekday, weekdayIndex) in weekdays" :key="weekdayIndex">
+            <th
+              scope="row"
+              class="pr-2 text-left text-[11px] font-normal text-muted-foreground"
+            >
+              {{ weekday }}
+            </th>
+            <td
+              v-for="hour in hours"
+              :key="hour"
+              class="h-3 min-w-2 rounded-[2px]"
               :style="cellStyle(activity[weekdayIndex][hour])"
               :title="
                 activityLabel(weekday, hour, activity[weekdayIndex][hour])
               "
-              :aria-label="
-                activityLabel(weekday, hour, activity[weekdayIndex][hour])
-              "
-            ></span>
-          </div>
-        </div>
-      </div>
+            >
+              <span class="sr-only">
+                {{ activityLabel(weekday, hour, activity[weekdayIndex][hour]) }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </BaseChartCard>
 </template>
@@ -59,7 +76,6 @@ const props = withDefaults(
 );
 
 const hours = Array.from({ length: 24 }, (_, hour) => hour);
-const hourLabels = [0, 6, 12, 18];
 const weekdays = Array.from({ length: 7 }, (_, weekday) =>
   new Intl.DateTimeFormat(undefined, {
     weekday: "short",
@@ -94,57 +110,3 @@ const cellStyle = (value: number) => ({
 const activityLabel = (weekday: string, hour: number, plays: number): string =>
   $t("statistics_activity_cell", { weekday, hour: `${hour}:00`, plays });
 </script>
-
-<style scoped>
-.heatmap-scroll {
-  width: 100%;
-  overflow-x: auto;
-}
-
-.activity-heatmap {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  min-width: 360px;
-  width: 100%;
-}
-
-.activity-heatmap__axis,
-.activity-heatmap__row {
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr);
-  align-items: center;
-  gap: 8px;
-}
-
-.activity-heatmap__hours {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  font-size: 10px;
-}
-
-.activity-heatmap__hours span:not(:first-child) {
-  text-align: center;
-}
-
-.activity-heatmap__hours span:last-child {
-  text-align: right;
-}
-
-.activity-heatmap__weekday {
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  font-size: 11px;
-}
-
-.activity-heatmap__cells {
-  display: grid;
-  grid-template-columns: repeat(24, minmax(8px, 1fr));
-  gap: 3px;
-}
-
-.activity-heatmap__cell {
-  aspect-ratio: 1;
-  border-radius: 2px;
-}
-</style>

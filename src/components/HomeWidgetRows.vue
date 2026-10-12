@@ -306,18 +306,20 @@
           <!-- Statistics/Charts row -->
           <section
             v-else-if="row.kind === 'statistics'"
-            class="ed-section ed-statistics"
+            class="ed-section space-y-4 px-7"
             :class="{ 'ed-dimmed': editMode && row.hidden }"
           >
-            <div class="ed-statistics__head">
-              <div class="ed-statistics__titles">
-                <h2 class="ed-statistics__title">
+            <div class="mb-3.5 flex items-start justify-between">
+              <div class="flex flex-col gap-2">
+                <h2
+                  class="m-0 text-[22px] font-bold text-[rgb(var(--v-theme-on-background))]"
+                >
                   {{ $t("statistics_charts") }}
                 </h2>
-                <div class="ed-statistics__controls">
+                <div class="flex flex-wrap items-center gap-4">
                   <Tabs
                     :model-value="activeStatTab"
-                    class="ed-statistics__tabs"
+                    class="mt-1 flex-1"
                     @update:model-value="
                       (v) => (activeStatTab = v as MediaType)
                     "
@@ -333,9 +335,13 @@
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
+                  <label class="sr-only" for="statistics-period">
+                    {{ $t("statistics_period") }}
+                  </label>
                   <select
+                    id="statistics-period"
                     v-model="activeStatPeriod"
-                    class="ed-statistics__period-select"
+                    class="h-9 cursor-pointer rounded-md border border-border bg-background px-3 text-[13px] text-foreground transition-colors hover:border-foreground/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <option value="today">{{ $t("period_today") }}</option>
                     <option value="week">{{ $t("period_week") }}</option>
@@ -368,14 +374,16 @@
               </div>
             </div>
 
-            <div class="ed-statistics__scroll ma-scroll">
+            <div
+              class="ma-scroll overflow-x-auto overflow-y-hidden overscroll-x-contain"
+            >
               <div
                 v-if="statisticsItems.length === 0"
-                class="ed-statistics__empty"
+                class="p-10 text-center text-sm text-muted-foreground"
               >
                 {{ $t("no_statistics_data") }}
               </div>
-              <div v-else class="ed-statistics__track">
+              <div v-else class="flex gap-2 pb-1">
                 <ChartItem
                   v-for="(statItem, statIdx) in statisticsItems"
                   :key="statItem.item.uri"
@@ -387,40 +395,54 @@
             </div>
 
             <!-- Charts Grid -->
-            <div class="ed-charts__scroll ma-scroll">
-              <div class="ed-charts__grid">
-                <div class="ed-charts__item--wide">
+            <div
+              class="ma-scroll mt-6 overflow-x-auto overscroll-x-contain pb-2"
+            >
+              <div
+                class="grid grid-cols-[repeat(2,minmax(320px,1fr))] gap-4 p-1 min-[1401px]:grid-cols-[repeat(4,minmax(320px,1fr))] max-[768px]:flex max-[768px]:gap-3"
+              >
+                <div class="col-span-2 min-w-[320px] max-[768px]:col-span-1">
                   <PieChartCard
                     :title="$t('artist_distribution')"
                     :data="artistDistribution"
                     :loading="chartsLoading"
                   />
                 </div>
-                <LineChartCard
-                  :title="$t('plays_over_time')"
-                  :data="playsOverTime"
-                  :loading="chartsLoading"
-                />
-                <BarChartCard
-                  :title="$t('listening_time')"
-                  :data="listeningTime"
-                  :loading="chartsLoading"
-                />
-                <ListeningClockCard
-                  :title="$t('listening_clock')"
-                  :data="listeningActivity"
-                  :loading="chartsLoading"
-                />
-                <ListeningHeatmapCard
-                  :title="$t('listening_activity')"
-                  :data="listeningActivity"
-                  :loading="chartsLoading"
-                />
-                <DecadeBarChartCard
-                  :title="$t('music_by_decade')"
-                  :data="decadeDistribution"
-                  :loading="chartsLoading"
-                />
+                <div class="min-w-[320px]">
+                  <LineChartCard
+                    :title="$t('plays_over_time')"
+                    :data="playsOverTime"
+                    :loading="chartsLoading"
+                  />
+                </div>
+                <div class="min-w-[320px]">
+                  <BarChartCard
+                    :title="$t('listening_time')"
+                    :data="listeningTime"
+                    :loading="chartsLoading"
+                  />
+                </div>
+                <div class="min-w-[320px]">
+                  <ListeningClockCard
+                    :title="$t('listening_clock')"
+                    :data="listeningActivity"
+                    :loading="chartsLoading"
+                  />
+                </div>
+                <div class="min-w-[320px]">
+                  <ListeningHeatmapCard
+                    :title="$t('listening_activity')"
+                    :data="listeningActivity"
+                    :loading="chartsLoading"
+                  />
+                </div>
+                <div class="min-w-[320px]">
+                  <DecadeBarChartCard
+                    :title="$t('music_by_decade')"
+                    :data="decadeDistribution"
+                    :loading="chartsLoading"
+                  />
+                </div>
               </div>
             </div>
           </section>
@@ -469,6 +491,10 @@ import ListeningClockCard from "@/components/statistics/ListeningClockCard.vue";
 import ListeningHeatmapCard from "@/components/statistics/ListeningHeatmapCard.vue";
 import LineChartCard from "@/components/statistics/LineChartCard.vue";
 import PieChartCard from "@/components/statistics/PieChartCard.vue";
+import {
+  createLatestRequestGate,
+  loadStatisticsChartData,
+} from "@/components/statistics/statisticsRequests";
 import ChartItem from "@/components/discover/ChartItem.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialGenreTile from "@/components/discover/EditorialGenreTile.vue";
@@ -557,10 +583,8 @@ const statisticsItems = ref<
   { item: MediaItemTypeOrItemMapping; play_count: number }[]
 >([]);
 const statisticsLoading = ref(false);
-const statisticsInitialized = ref(false);
 
 // Statistics charts state
-const genreDistribution = ref<Array<{ name: string; value: number }>>([]);
 const artistDistribution = ref<TopItemResult[]>([]);
 const playsOverTime = ref<Array<{ timestamp: string; value: number }>>([]);
 const listeningActivity = ref<
@@ -569,8 +593,8 @@ const listeningActivity = ref<
 const listeningTime = ref<Array<{ name: string; minutes: number }>>([]);
 const decadeDistribution = ref<Array<{ name: string; value: number }>>([]);
 const chartsLoading = ref(false);
-let statisticsRequestGeneration = 0;
-let statisticsChartsRequestGeneration = 0;
+const statisticsRequests = createLatestRequestGate();
+const chartRequests = createLatestRequestGate();
 
 const statisticsTabs = computed(() => [
   { type: MediaType.TRACK, label: $t("tracks") },
@@ -640,11 +664,6 @@ watch(
     nextTick(alignPlayersShelf);
   },
 );
-
-watch([activeStatTab, activeStatPeriod], () => {
-  loadStatistics();
-  loadStatisticsCharts();
-});
 
 // The provider whose icon labels a row. Builtin recommendation plugins (e.g.
 // Library Recommendations) aggregate the whole library, so their plugin logo
@@ -818,7 +837,7 @@ const availableRowIds = computed<string[]>(() => {
   for (const uri of recUris) {
     if (!ids.includes(uri)) ids.push(uri);
   }
-  if (statisticsInitialized.value) ids.push(STATISTICS_ROW_ID);
+  ids.push(STATISTICS_ROW_ID);
   if (genres.value.length > 0) ids.push(GENRES_ROW_ID);
   return ids;
 });
@@ -886,6 +905,12 @@ const displayedRows = computed(() =>
       : props.editMode || !row.hidden,
   ),
 );
+
+const statisticsRowVisible = computed(() => {
+  const rowIds = [...new Set([...availableRowIds.value, STATISTICS_ROW_ID])];
+  const { hidden } = resolveDiscoverRowsConfig(rowIds, defaultHiddenIds.value);
+  return props.editMode || !hidden.has(STATISTICS_ROW_ID);
+});
 
 // The recommendation rows currently visible to the user (not hidden). The Top
 // Picks hero draws only from these, so an opted-out row never feeds it.
@@ -1020,7 +1045,7 @@ const loadGenres = async () => {
 };
 
 const loadStatistics = async () => {
-  const requestGeneration = ++statisticsRequestGeneration;
+  const requestGeneration = statisticsRequests.begin();
   const mediaType = activeStatTab.value;
   const period = activeStatPeriod.value;
   statisticsLoading.value = true;
@@ -1028,9 +1053,10 @@ const loadStatistics = async () => {
     const result = await api.getTopItems(mediaType, period, 50);
     if (
       unmounted ||
-      requestGeneration !== statisticsRequestGeneration ||
+      !statisticsRequests.isCurrent(requestGeneration) ||
       mediaType !== activeStatTab.value ||
-      period !== activeStatPeriod.value
+      period !== activeStatPeriod.value ||
+      !statisticsRowVisible.value
     ) {
       return;
     }
@@ -1038,9 +1064,10 @@ const loadStatistics = async () => {
   } catch (err) {
     if (
       unmounted ||
-      requestGeneration !== statisticsRequestGeneration ||
+      !statisticsRequests.isCurrent(requestGeneration) ||
       mediaType !== activeStatTab.value ||
-      period !== activeStatPeriod.value
+      period !== activeStatPeriod.value ||
+      !statisticsRowVisible.value
     ) {
       return;
     }
@@ -1048,80 +1075,79 @@ const loadStatistics = async () => {
     statisticsItems.value = [];
   } finally {
     if (
-      requestGeneration === statisticsRequestGeneration &&
+      statisticsRequests.isCurrent(requestGeneration) &&
       !unmounted &&
       mediaType === activeStatTab.value &&
-      period === activeStatPeriod.value
+      period === activeStatPeriod.value &&
+      statisticsRowVisible.value
     ) {
       statisticsLoading.value = false;
-      statisticsInitialized.value = true;
     }
   }
 };
 
 const loadStatisticsCharts = async () => {
-  const requestGeneration = ++statisticsChartsRequestGeneration;
+  const requestGeneration = chartRequests.begin();
   const period = activeStatPeriod.value;
   chartsLoading.value = true;
   try {
-    const [
-      genreData,
-      artistData,
-      playsData,
-      activityData,
-      listeningTimeData,
-      decadeData,
-    ] = await Promise.allSettled([
-      api.getGenreDistribution(period, 10),
-      api.getArtistDistribution(period, 10),
-      api.getPlaysOverTime(period, "day"),
-      api.getListeningActivity(period),
-      api.getListeningTime(period, "artist", 10),
-      api.getDecadeDistribution(period, 10),
-    ]);
+    const { data, hasFailures } = await loadStatisticsChartData({
+      artistDistribution: api.getArtistDistribution(period, 10),
+      playsOverTime: api.getPlaysOverTime(period, "day"),
+      listeningActivity: api.getListeningActivity(period),
+      listeningTime: api.getListeningTime(period, "artist", 10),
+      decadeDistribution: api.getDecadeDistribution(period, 10),
+    });
     if (
       unmounted ||
-      requestGeneration !== statisticsChartsRequestGeneration ||
-      period !== activeStatPeriod.value
+      !chartRequests.isCurrent(requestGeneration) ||
+      period !== activeStatPeriod.value ||
+      !statisticsRowVisible.value
     ) {
       return;
     }
 
-    genreDistribution.value =
-      genreData.status === "fulfilled" ? genreData.value : [];
-    artistDistribution.value =
-      artistData.status === "fulfilled" ? artistData.value : [];
-    playsOverTime.value =
-      playsData.status === "fulfilled" ? playsData.value : [];
-    listeningActivity.value =
-      activityData.status === "fulfilled" ? activityData.value : [];
-    listeningTime.value =
-      listeningTimeData.status === "fulfilled" ? listeningTimeData.value : [];
-    decadeDistribution.value =
-      decadeData.status === "fulfilled" ? decadeData.value : [];
+    artistDistribution.value = data.artistDistribution;
+    playsOverTime.value = data.playsOverTime;
+    listeningActivity.value = data.listeningActivity;
+    listeningTime.value = data.listeningTime;
+    decadeDistribution.value = data.decadeDistribution;
 
-    const failedRequest = [
-      genreData,
-      artistData,
-      playsData,
-      activityData,
-      listeningTimeData,
-      decadeData,
-    ].find((result) => result.status === "rejected");
-    if (failedRequest?.status === "rejected") {
-      console.error("Failed to load statistics charts:", failedRequest.reason);
+    if (hasFailures) {
+      console.error("One or more statistics chart requests failed.");
       toast.error($t("statistics_load_failed"));
     }
   } finally {
     if (
-      requestGeneration === statisticsChartsRequestGeneration &&
+      chartRequests.isCurrent(requestGeneration) &&
       !unmounted &&
-      period === activeStatPeriod.value
+      period === activeStatPeriod.value &&
+      statisticsRowVisible.value
     ) {
       chartsLoading.value = false;
     }
   }
 };
+
+watch(
+  [statisticsRowVisible, activeStatTab, activeStatPeriod],
+  ([visible, mediaType, period], previous) => {
+    const [wasVisible, previousMediaType, previousPeriod] = previous ?? [
+      false,
+      undefined,
+      undefined,
+    ];
+    if (!visible) {
+      statisticsRequests.invalidate();
+      chartRequests.invalidate();
+      statisticsLoading.value = false;
+      chartsLoading.value = false;
+      return;
+    }
+    if (!wasVisible || mediaType !== previousMediaType) loadStatistics();
+    if (!wasVisible || period !== previousPeriod) loadStatisticsCharts();
+  },
+);
 
 let unmounted = false;
 let refreshRecommendationsTimer: ReturnType<typeof setTimeout> | undefined;
@@ -1207,8 +1233,10 @@ onMounted(async () => {
   // Genres is its own row and isn't part of the fast catalog call, so it
   // doesn't gate the page spinner.
   loadGenres();
-  loadStatistics();
-  loadStatisticsCharts();
+  if (statisticsRowVisible.value) {
+    loadStatistics();
+    loadStatisticsCharts();
+  }
 
   // the page comes up as it was left only when gone back to; a fresh
   // navigation loads it anew
@@ -1247,8 +1275,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   unmounted = true;
-  statisticsRequestGeneration++;
-  statisticsChartsRequestGeneration++;
+  statisticsRequests.invalidate();
+  chartRequests.invalidate();
   unsubscribeRecommendations();
   unsubscribeProviderEvents();
   unsubscribePlaylog();
@@ -1468,151 +1496,6 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-}
-
-.ed-statistics {
-  padding: 0 28px;
-}
-
-.ed-statistics__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.ed-statistics__titles {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ed-statistics__controls {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.ed-statistics__title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-  color: rgb(var(--v-theme-on-background));
-}
-
-.ed-statistics__tabs {
-  margin-top: 4px;
-  flex: 1;
-}
-
-.ed-statistics__period-select {
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  background: rgb(var(--v-theme-surface));
-  color: rgb(var(--v-theme-on-surface));
-  font-size: 13px;
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.ed-statistics__period-select:hover {
-  border-color: rgba(var(--v-theme-on-surface), 0.24);
-}
-
-.ed-statistics__period-select:focus {
-  outline: none;
-  border-color: rgb(var(--v-theme-primary));
-}
-
-.ed-statistics__scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-}
-
-.ed-statistics__track {
-  display: flex;
-  gap: 8px;
-  padding-bottom: 4px;
-}
-
-.ed-statistics__empty {
-  padding: 40px 20px;
-  text-align: center;
-  color: rgb(var(--v-theme-on-background));
-  opacity: 0.5;
-  font-size: 14px;
-}
-
-.ed-statistics .ed-charts__scroll {
-  margin-top: 24px;
-}
-
-.ed-charts {
-  padding: 0 28px;
-  margin-bottom: 32px;
-}
-
-.ed-charts__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.ed-charts__title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-  color: rgb(var(--v-theme-on-background));
-}
-
-.ed-charts__scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  padding-bottom: 8px;
-}
-
-.ed-charts__grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(320px, 1fr));
-  gap: 16px;
-  padding: 4px;
-}
-
-.ed-charts__item--wide {
-  grid-column: span 2;
-}
-
-@media (max-width: 1400px) {
-  .ed-charts__grid {
-    grid-template-columns: repeat(2, minmax(320px, 1fr));
-  }
-
-  .ed-charts__item--wide {
-    grid-column: span 2;
-  }
-}
-
-@media (max-width: 768px) {
-  .ed-charts__grid {
-    display: flex;
-    gap: 12px;
-  }
-
-  .ed-charts__item--wide {
-    grid-column: auto;
-  }
 }
 
 .ed-footer-space {

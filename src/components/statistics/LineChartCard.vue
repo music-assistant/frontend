@@ -24,6 +24,7 @@ import {
   type ChartOptions,
 } from "chart.js";
 import BaseChartCard from "./BaseChartCard.vue";
+import { $t } from "@/plugins/i18n";
 import {
   createTooltipConfig,
   createAxisConfig,
@@ -60,7 +61,7 @@ const chartData = computed<ChartData<"line">>(() => {
     labels: props.data.map((item) => item.timestamp),
     datasets: [
       {
-        label: "Plays",
+        label: $t("plays"),
         data: props.data.map((item) => item.value),
         borderColor: CHART_COLORS[0],
         backgroundColor: "rgba(3, 169, 244, 0.15)",

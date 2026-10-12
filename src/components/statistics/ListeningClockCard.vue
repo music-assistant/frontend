@@ -22,6 +22,7 @@ import {
 } from "chart.js";
 import BaseChartCard from "./BaseChartCard.vue";
 import { createTooltipConfig } from "./chartConfig";
+import { $t } from "@/plugins/i18n";
 
 ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 
@@ -97,7 +98,7 @@ const chartOptions = computed<ChartOptions<"polarArea">>(() => ({
     tooltip: createTooltipConfig({
       label: (context) => {
         const value = context.parsed.r ?? context.parsed;
-        return `${value} plays`;
+        return `${value} ${$t("plays")}`;
       },
     }),
   },

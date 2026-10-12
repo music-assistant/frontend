@@ -1753,20 +1753,6 @@ export class MusicAssistantApi {
     });
   }
 
-  public async getGenreDistribution(
-    period = "week",
-    limit = 10,
-  ): Promise<Array<{ name: string; value: number }>> {
-    return this.sendCommand(
-      "statistics/genre_distribution",
-      {
-        period,
-        limit,
-      },
-      { suppressGlobalError: true },
-    );
-  }
-
   public async getArtistDistribution(
     period = "week",
     limit = 10,

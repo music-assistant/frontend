@@ -22,6 +22,7 @@ import {
   type ChartOptions,
 } from "chart.js";
 import BaseChartCard from "./BaseChartCard.vue";
+import { $t } from "@/plugins/i18n";
 import {
   createTooltipConfig,
   createAxisConfig,
@@ -50,7 +51,7 @@ const chartData = computed<ChartData<"bar">>(() => {
     labels: props.data.map((item) => item.name),
     datasets: [
       {
-        label: "Minutes",
+        label: $t("statistics_minutes"),
         data: props.data.map((item) => item.minutes),
         backgroundColor: CHART_COLORS[0],
         borderRadius: 6,
@@ -73,7 +74,9 @@ const chartOptions = computed<ChartOptions<"bar">>(() => ({
         const minutes = context.parsed.x ?? 0;
         const hours = Math.floor(minutes / 60);
         const mins = Math.round(minutes % 60);
-        return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+        return hours > 0
+          ? $t("duration_hours_minutes", { hours, minutes: mins })
+          : $t("duration_minutes", { minutes: mins });
       },
     }),
   },
@@ -86,7 +89,9 @@ const chartOptions = computed<ChartOptions<"bar">>(() => ({
         callback: (value) => {
           const minutes = Number(value);
           const hours = Math.floor(minutes / 60);
-          return hours > 0 ? `${hours}h` : `${minutes}m`;
+          return hours > 0
+            ? $t("duration_hours", { hours })
+            : $t("duration_minutes", { minutes });
         },
       },
     },

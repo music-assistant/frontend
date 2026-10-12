@@ -4,7 +4,7 @@
       <h3 class="chart-card__title">{{ title }}</h3>
     </div>
     <div v-if="loading" class="chart-card__loading">
-      <v-progress-circular indeterminate size="32" />
+      <Spinner class="size-8" />
     </div>
     <div v-else-if="isEmpty" class="chart-card__empty">
       {{ emptyMessage || $t("no_data") }}
@@ -16,6 +16,8 @@
 </template>
 
 <script setup lang="ts">
+import Spinner from "@/components/ui/spinner/Spinner.vue";
+
 interface Props {
   title: string;
   loading?: boolean;

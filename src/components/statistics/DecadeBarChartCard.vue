@@ -22,6 +22,7 @@ import {
   type ChartOptions,
 } from "chart.js";
 import BaseChartCard from "./BaseChartCard.vue";
+import { $t } from "@/plugins/i18n";
 import {
   createTooltipConfig,
   createAxisConfig,
@@ -50,7 +51,7 @@ const chartData = computed<ChartData<"bar">>(() => {
     labels: props.data.map((item) => item.name),
     datasets: [
       {
-        label: "Plays",
+        label: $t("plays"),
         data: props.data.map((item) => item.value),
         backgroundColor: CHART_COLORS[0],
         borderRadius: 6,
@@ -71,7 +72,7 @@ const chartOptions = computed<ChartOptions<"bar">>(() => ({
     tooltip: createTooltipConfig({
       label: (context) => {
         const plays = context.parsed.x;
-        return `${plays} plays`;
+        return `${plays} ${$t("plays")}`;
       },
     }),
   },

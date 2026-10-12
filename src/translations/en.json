@@ -2412,6 +2412,8 @@
     "added_to_library": "\"{0}\" added to library",
     "browse_by_genre": "Browse by Genre",
     "statistics_charts": "Charts",
+    "statistics_period": "Statistics period",
+    "statistics_minutes": "Minutes",
     "statistics_overview": "Statistics Overview",
     "no_statistics_data": "No listening history yet",
     "no_data": "No data available",
