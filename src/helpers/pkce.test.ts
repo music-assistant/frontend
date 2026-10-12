@@ -1,4 +1,4 @@
-import { createCodeChallenge, createCodeVerifier } from "@/helpers/pkce";
+import { createCodeChallenge, createCodeVerifier } from "./pkce";
 import { describe, expect, it } from "vitest";
 
 describe("pkce", () => {

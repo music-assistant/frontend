@@ -1,10 +1,11 @@
 import {
+  canReturnExternalLogin,
   getExternalLoginReturnPath,
   listenForExternalLogin,
   type PendingExternalLogin,
   savePendingExternalLogin,
   takeExternalLoginReturn,
-} from "@/helpers/external_login";
+} from "./external_login";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const STATE = "w.0123456789abcdefghijABCDEFGHIJ";
@@ -23,8 +24,11 @@ function pending(
   };
 }
 
-function setLocation(path: string) {
-  window.history.replaceState({}, "", `http://localhost:3000${path}`);
+function setLocation(path: string, origin = "http://localhost:3000") {
+  // setURL, as replaceState can not change the origin
+  (
+    window as unknown as { happyDOM: { setURL(url: string): void } }
+  ).happyDOM.setURL(`${origin}${path}`);
 }
 
 beforeEach(() => {
@@ -36,6 +40,16 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
+});
+
+describe("canReturnExternalLogin", () => {
+  it("only allows the origin of the callback page", () => {
+    expect(canReturnExternalLogin()).toBe(false);
+
+    setLocation("/stable/", "https://app.music-assistant.io");
+
+    expect(canReturnExternalLogin()).toBe(true);
+  });
 });
 
 describe("savePendingExternalLogin", () => {

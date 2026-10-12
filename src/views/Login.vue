@@ -456,6 +456,7 @@ import {
 } from "@/helpers/guest_session";
 import { sanitizeDashboardViewerPath } from "@/helpers/dashboard_viewer_access";
 import {
+  canReturnExternalLogin,
   type ExternalLoginResult,
   getExternalLoginReturnPath,
   listenForExternalLogin,
@@ -616,14 +617,21 @@ const authProviders = ref<AuthProvider[]>([]);
 const homeAssistantProvider = computed(() =>
   authProviders.value.find((p) => p.provider_id === "homeassistant"),
 );
-// On a remote connection Home Assistant returns to the remote app when it is
-// reachable from the internet, else to the server itself, which a remote
-// connection can only reach through the server's External URL.
+// Home Assistant can return to the remote app itself when it is reachable from
+// the internet, which then completes the sign-in (completeExternalLogin).
+const canReturnToRemoteApp = computed(
+  () =>
+    isRemoteConnection.value &&
+    !!homeAssistantProvider.value?.supports_remote_app &&
+    canReturnExternalLogin(),
+);
+// Otherwise it returns to the server itself, which a remote connection can only
+// reach through the server's External URL.
 const hasHomeAssistantAuth = computed(
   () =>
     !!homeAssistantProvider.value &&
     (!isRemoteConnection.value ||
-      !!homeAssistantProvider.value.supports_remote_app ||
+      canReturnToRemoteApp.value ||
       !!api.serverInfo.value?.external_url),
 );
 
@@ -1971,13 +1979,9 @@ const loginWithHomeAssistant = async () => {
   loginError.value = null;
 
   try {
-    // Home Assistant then returns to the remote app, which completes the
-    // sign-in itself (completeExternalLogin)
-    const remoteId =
-      isRemoteConnection.value &&
-      homeAssistantProvider.value?.supports_remote_app
-        ? remoteConnectionManager.currentRemoteId.value
-        : null;
+    const remoteId = canReturnToRemoteApp.value
+      ? remoteConnectionManager.currentRemoteId.value
+      : null;
     const verifier = remoteId ? createCodeVerifier() : undefined;
     const response = await api.startAuthorization(
       "homeassistant",

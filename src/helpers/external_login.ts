@@ -6,6 +6,8 @@
  * (music-assistant/app.music-assistant.io, public/auth/callback/index.html).
  */
 
+// the callback page hands a sign-in back only to an app on its own origin
+const CALLBACK_ORIGIN = "https://app.music-assistant.io";
 const STORAGE_KEY_PREFIX = "ma.external_login.";
 const CHANNEL_NAME = "ma-external-login";
 const PENDING_LIFETIME_MS = 10 * 60 * 1000;
@@ -23,6 +25,13 @@ export type ExternalLoginResult = {
   state: string;
   pending: PendingExternalLogin;
 } & ({ code: string } | { error: string });
+
+/**
+ * Return whether a sign-in can return to this app through the callback page.
+ */
+export function canReturnExternalLogin(): boolean {
+  return window.location.origin === CALLBACK_ORIGIN;
+}
 
 /**
  * Remember a started sign-in until the identity provider returns.

@@ -1946,7 +1946,6 @@ export interface AuthorizationStart {
 export interface AuthExchangeResult {
   success: boolean;
   access_token?: string;
-  user?: User;
   error?: string;
   translation_key?: string;
 }
