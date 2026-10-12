@@ -5,7 +5,7 @@
     </p>
 
     <!-- fixed minimum height so the step does not jump once configs load -->
-    <div class="min-h-24 overflow-y-auto">
+    <ScrollFade class="min-h-24">
       <div v-if="ownedMusicSources.length > 0" class="flex flex-col gap-2">
         <h3 class="text-sm font-semibold">
           {{ $t("onboarding.steps.own_sources.connected") }}
@@ -38,7 +38,7 @@
           }}</EmptyTitle>
         </EmptyHeader>
       </Empty>
-    </div>
+    </ScrollFade>
 
     <div>
       <Button
@@ -61,6 +61,7 @@
 </template>
 
 <script setup lang="ts">
+import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
