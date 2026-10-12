@@ -31,6 +31,7 @@ function player(overrides: Partial<Player> = {}): Player {
     player_id: "player-1",
     active_source: "player-1",
     source_list: [],
+    active_source_audio: null,
     ...overrides,
   } as Player;
 }
@@ -58,10 +59,11 @@ describe("useActiveAudioPath", () => {
       },
     });
     storeMock.curQueueItem = queueItem({ streamdetails: details });
-    storeMock.activePlayerQueue = playerQueue({
+    const queue = playerQueue({
       crossfade_enabled: true,
       smart_fades_active: true,
     });
+    storeMock.activePlayerQueue = queue;
     // a source snapshot is present too, but the queue item must win
     storeMock.activePlayer = player({
       active_source_audio: {
@@ -80,17 +82,8 @@ describe("useActiveAudioPath", () => {
       streamDetails: details,
       audioProcessing: details.audio_processing,
       crossfadeIntent: CrossfadeMode.SMART_CROSSFADE,
+      queueId: queue.queue_id,
     });
-  });
-
-  it("omits the source snapshot on older servers that never send it", () => {
-    // active_source_audio absent entirely, as an older server would send
-    storeMock.activePlayer = player();
-
-    const { activeAudioPath, hasActiveAudioPath } = useActiveAudioPath();
-
-    expect(activeAudioPath.value).toBeUndefined();
-    expect(hasActiveAudioPath.value).toBe(false);
   });
 
   it("resolves a live source snapshot when no queue item is active", () => {

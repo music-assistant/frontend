@@ -2,7 +2,9 @@
 <template>
   <section v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)">
     <!-- eslint-disable vue/no-template-shadow -->
+    <!-- inset so the title lines up with the row artwork and the menu with the rows' menu -->
     <Toolbar
+      class="ps-[5px] pe-[7px]"
       :icon="icon"
       :icon-action="iconAction"
       :title="title"
@@ -18,8 +20,17 @@
         <slot name="title">{{ title }}</slot>
       </template>
 
-      <template v-if="!store.mobileLayout" #append>
-        <Transition name="listing-search">
+      <template #append>
+        <LibrarySortControls
+          v-if="props.sortMediaType && sortOptionsLoaded && sortOptions.length"
+          mode="menu"
+          :options="sortOptions"
+          :sort-by="params.sortBy"
+          :disabled="loading"
+          :mobile-layout="store.mobileLayout"
+          @sort-by="changeSort"
+        />
+        <Transition v-if="!store.mobileLayout" name="listing-search">
           <div v-if="showSearchInput" class="listing-search-slot">
             <SearchInput
               ref="searchInputRef"
@@ -35,6 +46,21 @@
         </Transition>
       </template>
     </Toolbar>
+
+    <div
+      v-if="props.sortMediaType && !store.mobileLayout"
+      class="listing-sort-chips-row h-12"
+    >
+      <LibrarySortControls
+        v-if="sortOptionsLoaded && sortOptions.length"
+        mode="chips"
+        :options="sortOptions"
+        :sort-by="params.sortBy"
+        :disabled="loading"
+        :mobile-layout="store.mobileLayout"
+        @sort-by="changeSort"
+      />
+    </div>
 
     <v-divider />
 
@@ -99,7 +125,7 @@
             v-for="n in 12"
             :key="'skeleton-panel-' + n"
             cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${gridColumnCount}`"
           >
             <PanelViewSkeleton />
           </v-col>
@@ -109,7 +135,7 @@
             v-for="n in 12"
             :key="'skeleton-compact-' + n"
             cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${gridColumnCount}`"
           >
             <PanelViewSkeleton />
           </v-col>
@@ -128,13 +154,24 @@
         :empty-text="''"
         style="overflow: hidden"
       >
+        <template #error="{ props: errorProps }">
+          <div class="flex justify-center py-4">
+            <Button
+              variant="outline"
+              size="sm"
+              @click="retryLoad(errorProps.onClick)"
+            >
+              {{ $t("settings.retry") }}
+            </Button>
+          </div>
+        </template>
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'">
           <v-col
             v-for="item in pagedItems"
             :key="item.uri"
             cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${gridColumnCount}`"
           >
             <PanelviewItem
               :item="item"
@@ -166,7 +203,7 @@
             v-for="item in pagedItems"
             :key="item.uri"
             cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${gridColumnCount}`"
           >
             <PanelviewItemCompact
               :item="item"
@@ -221,7 +258,7 @@
 
       <!-- subtle message shown when there are no items to display -->
       <Empty
-        v-if="!loading && pagedItems.length == 0"
+        v-if="!loading && !loadError && pagedItems.length == 0"
         class="border-none gap-3 py-8"
       >
         <EmptyMedia variant="icon">
@@ -309,6 +346,7 @@ import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -318,7 +356,9 @@ import {
 } from "@/components/ui/empty";
 import { SearchInput } from "@/components/ui/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import GridSizeSlider from "@/components/GridSizeSlider.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
+import { useLibrarySorting } from "@/composables/useLibrarySorting";
 import { SEARCHABLE_MEDIA_TYPES } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
@@ -328,6 +368,11 @@ import {
   subscribeOwnFavorites,
 } from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
+import {
+  GRID_SIZE_DEFAULT,
+  gridColumns,
+  normalizeGridSize,
+} from "@/helpers/grid_size";
 import { returnedByHistory } from "@/helpers/navigation";
 import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -348,11 +393,15 @@ import {
   ProviderFeature,
   ProviderType,
   Radio,
+  SortDirection,
+  SortField,
   type Album,
   type Genre,
+  type LibrarySortMediaType,
   type MediaItem,
   type MediaItemType,
   type ProviderInstance,
+  type SortOptionInfo,
   type Track,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -383,6 +432,7 @@ import {
 } from "@lucide/vue";
 import {
   computed,
+  markRaw,
   nextTick,
   onBeforeUnmount,
   onMounted,
@@ -409,6 +459,8 @@ export interface LoadDataParams {
   offset: number;
   limit: number;
   sortBy: string;
+  sort_field?: SortField;
+  sort_direction?: SortDirection;
   search: string;
   genreIds?: number | number[];
   favoritesOnly?: boolean;
@@ -425,6 +477,8 @@ export interface LoadDataParams {
 export interface Props {
   itemtype: string;
   sortKeys?: string[];
+  sortMediaType?: LibrarySortMediaType;
+  sortOptionExcludeFields?: SortField[];
   showTrackNumber?: boolean;
   showProvider?: boolean;
   showAlbum?: boolean;
@@ -491,6 +545,8 @@ export interface Props {
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
+  sortMediaType: undefined,
+  sortOptionExcludeFields: () => [],
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
@@ -599,6 +655,7 @@ const params = ref<LoadDataParams>({
   genreIds: undefined,
 });
 const viewMode = ref("list");
+const gridSize = ref(GRID_SIZE_DEFAULT);
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
 const searchInputRef = ref<InstanceType<typeof SearchInput>>();
@@ -617,14 +674,28 @@ const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const expanded = ref(true);
 const allItemsReceived = ref(false);
+// set when the last load failed; scrolling does not retry it, the user does
+const loadError = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
+const serverSortOptions = ref<SortOptionInfo[]>([]);
+const sortOptions = computed(() =>
+  serverSortOptions.value.filter(
+    (option) => !props.sortOptionExcludeFields.includes(option.field),
+  ),
+);
+const sortOptionsLoaded = ref(false);
+const librarySorting = useLibrarySorting(
+  sortOptions,
+  computed(() => params.value.sortBy),
+);
 
 // used in tabbed item listings to prevent a timing-race condition, where
 // the selected tab shows items of the initial tab on entering the page
 let loadingTabId: string | undefined;
 let pendingTabLoad = false;
+let pendingSortReload = false;
 
 // below this item count, the per-listing search option is hidden to reduce
 // clutter (consumers can force it on/off via the showSearchButton prop).
@@ -759,6 +830,21 @@ const selectViewMode = function (newMode: string) {
       newMode,
     );
   }
+};
+
+// follows resizes: the breakpoints it looks up are reactive
+const gridColumnCount = computed(() =>
+  gridColumns(panelViewItemResponsive(0), gridSize.value),
+);
+
+const commitGridSize = function (size: number) {
+  gridSize.value = size;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "gridSize",
+    size,
+  );
 };
 
 const getViewModeLabel = function (mode: string) {
@@ -963,6 +1049,24 @@ const onRefreshClicked = function () {
   loadData(true, true);
 };
 
+watch(sortOptions, () => {
+  if (!sortOptionsLoaded.value || !props.sortMediaType) return;
+  const normalized = librarySorting.normalizeSortBy(params.value.sortBy);
+  if (normalized === params.value.sortBy) return;
+  params.value.sortBy = normalized;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "sortBy",
+    normalized,
+  );
+  if (loading.value) {
+    pendingSortReload = true;
+    return;
+  }
+  loadData(true, undefined, true);
+});
+
 const changeSort = function (sort_key?: string) {
   if (sort_key !== undefined) {
     params.value.sortBy = sort_key;
@@ -1101,6 +1205,12 @@ const loadNextPage = async function ({
     done("empty");
     return;
   }
+  // the infinite scroller is re-created whenever a load starts and ends, and a new one
+  // loads right away, so a failed load would otherwise be retried as fast as it fails
+  if (loadError.value) {
+    done("error");
+    return;
+  }
 
   await loadData(
     undefined,
@@ -1109,11 +1219,21 @@ const loadNextPage = async function ({
     params.value.offset + props.limit,
   );
 
-  done("ok");
+  done(loadError.value ? "error" : "ok");
+};
+
+const retryLoad = function (loadNext: () => void) {
+  loadError.value = false;
+  if (pagedItems.value.length === 0) {
+    // nothing loaded yet, so the failed load was the first one
+    loadData(true);
+  } else {
+    loadNext();
+  }
 };
 
 const loadAllItems = async function () {
-  while (!allItemsReceived.value) {
+  while (!allItemsReceived.value && !loadError.value) {
     // the paging can outlast the listing, so stop fetching once it is gone
     if (unmounted) return;
 
@@ -1513,7 +1633,7 @@ const menuItems = computed(() => {
   }
 
   // sort options
-  if (props.sortKeys?.length) {
+  if (!props.sortMediaType && props.sortKeys?.length) {
     items.push({
       label: "tooltip.sort_options",
       icon: ArrowUpDown,
@@ -1594,6 +1714,20 @@ const menuItems = computed(() => {
             selectViewMode("panel_compact");
           },
         },
+        {
+          label: "grid_size",
+          hide: viewMode.value == "list",
+          // markRaw: the menu items land in a reactive array; a bare component
+          // definition there would be needlessly made reactive.
+          component: markRaw(GridSizeSlider),
+          componentProps: {
+            size: gridSize.value,
+            onChange: (size: number) => {
+              gridSize.value = size;
+            },
+            onCommit: commitGridSize,
+          },
+        },
       ],
     });
 
@@ -1642,6 +1776,10 @@ const loadData = async function (
   }
   loading.value = true;
   loadingTabId = currentTabId;
+  if (clear || refresh || FilterParamsChanged) {
+    // a reload the user asked for gets a fresh attempt
+    loadError.value = false;
+  }
 
   if (FilterParamsChanged && loadPagedData != null) {
     // on paged server listings, we need to clear the list on filter params change
@@ -1661,10 +1799,24 @@ const loadData = async function (
     newContentAvailable.value = false;
   }
 
+  const previousOffset = params.value.offset;
   try {
     params.value.offset = offset;
     params.value.limit = props.limit;
     params.value.refresh = refresh;
+    const currentSort = librarySorting.current.value;
+    const sortField = currentSort.field as SortField;
+    const selectedSortOption = sortOptions.value.find(
+      (option) => option.field === sortField,
+    );
+    params.value.sort_field = sortField;
+    params.value.sort_direction =
+      selectedSortOption?.supports_direction === false ||
+      sortField === SortField.RANDOM ||
+      sortField === SortField.RANDOM_PLAY_COUNT ||
+      sortField === SortField.ORIGINAL
+        ? undefined
+        : currentSort.direction;
 
     if (loadPagedData != null) {
       // server side paged listing (with filter support)
@@ -1694,14 +1846,19 @@ const loadData = async function (
       // mark allItemsReceived if we have all items
       allItemsReceived.value = nextItems.length < props.limit;
     }
+  } catch {
+    // the api already reports the failure to the user; the failed page is loaded next
+    params.value.offset = previousOffset;
+    loadError.value = true;
   } finally {
     params.value.refresh = false;
     loading.value = false;
     tempHide.value = false;
   }
 
-  if (pendingTabLoad) {
+  if (pendingTabLoad || pendingSortReload) {
     pendingTabLoad = false;
+    pendingSortReload = false;
     await loadData(true);
   }
 };
@@ -1744,8 +1901,25 @@ const restoreSettings = async function () {
     viewMode.value = "list";
   }
 
+  gridSize.value = normalizeGridSize(prefs.gridSize);
+
   // get stored/default sortBy for this itemtype
-  if (prefs.sortBy && props.sortKeys.includes(prefs.sortBy)) {
+  if (props.sortMediaType) {
+    if (sortOptionsLoaded.value) {
+      const normalizedSortBy = librarySorting.normalizeSortBy(
+        prefs.sortBy || params.value.sortBy,
+      );
+      params.value.sortBy = normalizedSortBy;
+      if (prefs.sortBy && normalizedSortBy !== prefs.sortBy) {
+        setItemsListingPreference(
+          props.path || props.itemtype,
+          props.itemtype,
+          "sortBy",
+          normalizedSortBy,
+        );
+      }
+    }
+  } else if (prefs.sortBy && props.sortKeys.includes(prefs.sortBy)) {
     params.value.sortBy = prefs.sortBy;
   } else {
     params.value.sortBy = props.sortKeys[0];
@@ -2016,7 +2190,7 @@ const loadGenreOptions = async () => {
       page = await api.getLibraryGenres({
         limit: pageSize,
         offset,
-        order_by: "name",
+        sort_field: SortField.NAME,
         hide_empty: true, // always hide empty genres in the filter dropdown
         media_type: mediaType, // filter to genres relevant for this media type
       });
@@ -2055,6 +2229,21 @@ onBeforeUnmount(() => {
 });
 
 onMounted(async () => {
+  if (props.sortMediaType) {
+    try {
+      serverSortOptions.value = await api.getLibrarySortOptions(
+        props.sortMediaType,
+      );
+    } catch {
+      toast.error(t("settings.error_loading_sort_options"), {
+        id: "library-sort-options-error",
+      });
+    }
+    sortOptionsLoaded.value = true;
+    if (unmounted) return;
+    restoreSettings();
+  }
+
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;
@@ -2070,6 +2259,9 @@ onMounted(async () => {
     allItems.value = store.prevState.allItems;
     allItemsReceived.value = store.prevState.allItemsReceived;
     initialDataReceived.value = store.prevState.initialDataReceived;
+    if (props.sortMediaType) {
+      params.value.sortBy = librarySorting.normalizeSortBy(params.value.sortBy);
+    }
     // what the last visit left behind gives way to a provider carried in by a
     // link, unless it already came from there
     const carried = offeredCarriedProvider();
@@ -2482,6 +2674,18 @@ async function selectEveryItem() {
   width: 10%;
   max-width: 10%;
   flex-basis: 10%;
+  padding: 8px;
+}
+.col-11 {
+  width: 9.09%;
+  max-width: 9.09%;
+  flex-basis: 9.09%;
+  padding: 8px;
+}
+.col-12 {
+  width: 8.33%;
+  max-width: 8.33%;
+  flex-basis: 8.33%;
   padding: 8px;
 }
 .content-tabs {

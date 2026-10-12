@@ -86,7 +86,13 @@ const saveSucceeded = vi.fn((_values: Record<string, unknown>) => {
  */
 const editConfigStub = {
   name: "EditConfig",
-  props: ["configEntries", "disabled", "inlineSave", "showAdvancedSettings"],
+  props: [
+    "configEntries",
+    "disabled",
+    "inlineSave",
+    "showAdvancedSettings",
+    "hideHeader",
+  ],
   emits: ["submit"],
   setup(
     _props: unknown,
@@ -420,8 +426,9 @@ describe("CoreSettingsStep", () => {
           .map((configEntry: ConfigEntry) => configEntry.key),
       ).toEqual(["server_name", "base_url", "external_url", "publish_ip"]);
       // the switch above the form is what hides the entries, not the form's
-      // own advanced toggle, which it does not offer
+      // own advanced toggle, which its hidden header leaves out
       expect(form(wrapper).props("showAdvancedSettings")).toBe(true);
+      expect(form(wrapper).props("hideHeader")).toBe(true);
       // inside the wizard's dialog the form's save button stays with the form
       expect(form(wrapper).props("inlineSave")).toBe(true);
     });

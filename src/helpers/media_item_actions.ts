@@ -41,7 +41,8 @@ const CLICK_ACTION_CONFIG_KEYS: Partial<Record<MediaType, string>> = {
  * when there is no usable active player or when forceMenu is set. sortBy is the
  * sort order of the list the item was played from. A track within an album or
  * playlist follows the configured play action: continue from that track, or
- * play only the track itself.
+ * play only the track itself. tracksSortBy is the order the item's own tracks
+ * are shown in, so an album or playlist played from its page plays that way.
  */
 export const handlePlayBtnClick = async function (
   item: MediaItemTypeOrItemMapping,
@@ -50,6 +51,7 @@ export const handlePlayBtnClick = async function (
   parentItem?: MediaItemType,
   forceMenu?: boolean,
   sortBy?: string,
+  tracksSortBy?: string,
 ) {
   // a failed play action must never be silent: without feedback the play
   // button appears dead (e.g. while the connection is re-establishing)
@@ -83,10 +85,15 @@ export const handlePlayBtnClick = async function (
       }
     }
     // else: play the item directly
-    api.playMedia(item).catch(onPlayError);
+    const playAction = tracksSortBy
+      ? api.playMedia(item, undefined, { sort_by: tracksSortBy })
+      : api.playMedia(item);
+    playAction.catch(onPlayError);
     return;
   }
-  showPlayMenuForMediaItem(item, parentItem, posX, posY).catch(onPlayError);
+  showPlayMenuForMediaItem(item, parentItem, posX, posY, tracksSortBy).catch(
+    onPlayError,
+  );
 };
 
 /**

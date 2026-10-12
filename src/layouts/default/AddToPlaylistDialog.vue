@@ -5,10 +5,23 @@
 -->
 <template>
   <Sheet v-model:open="show">
-    <SheetContent side="bottom" class="h-[85vh] flex flex-col p-0">
-      <SheetHeader class="flex-row items-center gap-3 border-b px-4 py-3">
+    <SheetContent
+      side="bottom"
+      class="h-[85vh] flex flex-col p-0"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
+    >
+      <!-- right padding keeps the search box clear of the sheet's close button -->
+      <SheetHeader class="flex-row items-center gap-3 border-b py-3 pl-4 pr-12">
         <ListPlus class="size-5 shrink-0 opacity-80" />
-        <SheetTitle>{{ $t("add_playlist") }}</SheetTitle>
+        <SheetTitle class="truncate">{{ $t("add_playlist") }}</SheetTitle>
+        <SearchInput
+          v-model="search"
+          clearable
+          autocomplete="off"
+          class="ml-auto w-40 shrink-0 sm:w-64"
+          :placeholder="$t('search')"
+          :aria-label="$t('search')"
+        />
       </SheetHeader>
       <SheetDescription class="sr-only">
         {{ $t("add_playlist") }}
@@ -17,7 +30,7 @@
       <ScrollArea class="h-full max-h-full overflow-hidden flex-1">
         <div class="playlist-list pt-2">
           <button
-            v-for="playlist of playlists"
+            v-for="playlist of filteredPlaylists"
             :key="playlist.item_id"
             type="button"
             class="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent"
@@ -41,6 +54,12 @@
               class="shrink-0"
             />
           </button>
+          <p
+            v-if="search.trim() && !filteredPlaylists.length"
+            class="px-4 py-2.5 text-sm text-muted-foreground"
+          >
+            {{ $t("no_content_filter") }}
+          </p>
 
           <div class="py-4">
             <Separator />
@@ -129,6 +148,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SearchInput } from "@/components/ui/search-input";
 import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
@@ -137,6 +157,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { canEditPlaylistItems } from "@/helpers/playlist_access";
 import api from "@/plugins/api";
 import type {
@@ -151,7 +172,7 @@ import { eventbus, PlaylistDialogEvent } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ListPlus } from "@lucide/vue";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const show = ref<boolean>(false);
 const playlists = ref<Playlist[]>([]);
@@ -161,6 +182,17 @@ const selectedItems = ref<MediaItemTypeOrItemMapping[]>([]);
 const showNameDialog = ref(false);
 const newPlaylistName = ref("");
 const newPlaylistProvider = ref<ProviderInstance>();
+const search = ref("");
+
+const filteredPlaylists = computed(() => {
+  const query = search.value.trim().toLowerCase();
+  if (!query) return playlists.value;
+  return playlists.value.filter((playlist) =>
+    [playlist.name, playlist.owner].some((text) =>
+      text.toLowerCase().includes(query),
+    ),
+  );
+});
 
 watch(show, (open) => {
   store.dialogActive = open;
@@ -169,6 +201,7 @@ watch(show, (open) => {
 onMounted(() => {
   eventbus.on("playlistdialog", async (evt: PlaylistDialogEvent) => {
     show.value = true;
+    search.value = "";
     selectedItems.value = evt.items;
     parentItem.value = evt.parentItem;
     await fetchPlaylists();

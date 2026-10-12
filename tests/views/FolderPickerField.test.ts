@@ -107,6 +107,23 @@ describe("FolderPickerField", () => {
     );
   });
 
+  it("marks a read-only location", async () => {
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({
+        locations: [media, managedShare({ read_only: true })],
+      }),
+    );
+    const wrapper = await mountPicker();
+
+    const [mediaRow, shareRow] = locationButtons(wrapper);
+    expect(
+      mediaRow.find('[data-testid="folder-picker-read-only"]').exists(),
+    ).toBe(false);
+    expect(shareRow.get('[data-testid="folder-picker-read-only"]').text()).toBe(
+      "settings.storage.read_only",
+    );
+  });
+
   it("marks the location that holds the selected folder", async () => {
     const wrapper = await mountPicker(folderEntry("/media/Albums/Jazz"));
 

@@ -224,8 +224,6 @@ const {
   loadSections,
   loadStatus,
   loadPlaylists,
-  startStatusPolling,
-  stopStatusPolling,
   noAiProviderAlert,
   dismissNoAiProviderAlert,
 } = useShows();
@@ -363,20 +361,19 @@ onMounted(async () => {
       ...(canEdit.value ? [loadHosts()] : []),
       loadShows(),
       loadSections(),
+      loadStatus(),
       loadPlaylists(),
     ]);
   } catch (error) {
     toast.error(errorMessage(error));
   }
   // Leaving the view while the loads are in flight runs the unmount hook first,
-  // so bail out rather than start a poll loop nothing will stop and rewrite the
-  // query of a route this view no longer owns.
+  // so bail out rather than rewrite the query of a route this view no longer owns.
   if (unmounted) return;
   if (canEdit.value) {
     // Best effort: the "Add host" menu still works with just "Blank host" if this fails.
     void loadPresets().catch(() => {});
   }
-  startStatusPolling();
   applyRouteQuery();
 });
 
@@ -384,6 +381,5 @@ watch(() => route.query, applyRouteQuery);
 
 onUnmounted(() => {
   unmounted = true;
-  stopStatusPolling();
 });
 </script>

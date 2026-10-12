@@ -39,6 +39,7 @@ vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
 
+vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 vi.mock("vue-router", async () => {
   const { reactive } = await import("vue");
   state.route = reactive(state.route);
@@ -787,6 +788,29 @@ describe("CommandCenter", () => {
       .findAll('[data-testid="palette-item"]')
       .filter((item) => item.text().includes("Bohemian Rhapsody"));
     expect(items).toHaveLength(2);
+
+    wrapper.unmount();
+  });
+
+  it("keeps and labels versions of the same title apart", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      { ...makeTrack("t1", "Waterloo"), provider: "spotify" },
+      {
+        ...makeTrack("t2", "Waterloo"),
+        provider: "spotify",
+        version: "Deluxe Edition",
+      },
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "waterloo");
+    const items = wrapper
+      .findAll('[data-testid="palette-item"]')
+      .filter((item) => item.text().includes("Waterloo"));
+    expect(items).toHaveLength(2);
+    expect(items[1].text()).toContain("Waterloo (Deluxe Edition)");
 
     wrapper.unmount();
   });

@@ -33,6 +33,8 @@ vi.mock("@/plugins/api", () => {
     players: {},
     sendCommand,
     getLibraryPlaylists,
+    subscribe: vi.fn(() => () => {}),
+    state: { value: "initialized" },
   };
   return { default: mockApi, api: mockApi };
 });
@@ -148,11 +150,11 @@ function trackDocumentListeners() {
 }
 
 /**
- * Records the status poll timers armed while a view runs.
+ * Records the long-running timers armed while a view runs.
  *
- * `pending()` reports the ones not cleared again, which is what a poll loop
- * still running boils down to. Poll delays start at 5s, well clear of the
- * short timeouts the components and the test harness arm themselves.
+ * `pending()` reports the ones not cleared again, i.e. what the view left
+ * behind. Only delays of 5s and up count, well clear of the short timeouts the
+ * components and the test harness arm themselves.
  */
 function trackPollTimers() {
   const POLL_DELAY_FLOOR_MS = 5000;
@@ -199,9 +201,6 @@ afterEach(() => {
   useShows().shows.value = [];
   useShows().sessions.value = [];
   useShows().playlists.value = [];
-  // Polling state lives in the composable's module scope, so a run left behind
-  // here would decide what the next test sees.
-  useShows().stopStatusPolling();
   document.body.replaceChildren();
 });
 
@@ -286,8 +285,8 @@ describe("AIRadioView host editor / show editor interplay", () => {
   });
 });
 
-describe("AIRadioView status polling lifecycle", () => {
-  it("polls while the page is open and stops once it is closed", async () => {
+describe("AIRadioView status loading", () => {
+  it("fetches the status once on mount and leaves no timers behind", async () => {
     routeMock.query = {};
     setupSendCommand([]);
     const listeners = trackDocumentListeners();
@@ -295,39 +294,24 @@ describe("AIRadioView status polling lifecycle", () => {
 
     const view = mountViewRaw();
     await flushPromises();
-    const listeningWhileOpen = listeners.live();
-    const pendingWhileOpen = timers.pending();
-
     view.unmount();
-    const listeningAfterClose = listeners.stop();
-    const pendingAfterClose = timers.pending();
+    const remainingListeners = listeners.stop();
+    const pending = timers.pending();
     timers.stop();
 
-    expect(listeningWhileOpen).toContain("visibilitychange");
-    expect(pendingWhileOpen).toHaveLength(1);
-    expect(getStatusFetchCount()).toBeGreaterThan(0);
-    expect(listeningAfterClose).not.toContain("visibilitychange");
-    expect(pendingAfterClose).toHaveLength(0);
+    expect(getStatusFetchCount()).toBe(1);
+    expect(remainingListeners).not.toContain("visibilitychange");
+    expect(pending).toHaveLength(0);
   });
 
-  it("sets nothing up when the page is closed while still loading", async () => {
-    // leaving before the loads resolve runs the unmount hook first, so anything
-    // starting afterwards would poll on for the lifetime of the page
+  it("does not rewrite the route when the page is closed while still loading", async () => {
     routeMock.query = { station_id: STATION_ID };
     setupSendCommand([]);
-    const listeners = trackDocumentListeners();
-    const timers = trackPollTimers();
 
     const view = mountViewRaw();
     view.unmount();
     await flushPromises();
-    const remaining = listeners.stop();
-    const pending = timers.pending();
-    timers.stop();
 
-    expect(remaining).not.toContain("visibilitychange");
-    expect(pending).toHaveLength(0);
-    expect(getStatusFetchCount()).toBe(0);
     // by now the query belongs to whatever route replaced this one
     expect(routerMock.replace).not.toHaveBeenCalled();
   });
@@ -366,7 +350,7 @@ describe("AIRadioView editing rights", () => {
     expect(headings(wrapper)).toEqual(["Hosts", "Shows"]);
     expect(findButtonByText(wrapper, "Add host")).toBeTruthy();
     expect(findButtonByText(wrapper, "Add show")).toBeTruthy();
-    expect(findButtonByText(wrapper, "Go to Settings → Plugins")).toBeTruthy();
+    expect(findButtonByText(wrapper, "Go to Settings › Plugins")).toBeTruthy();
     expect(wrapper.find('[aria-label="More options"]').exists()).toBe(true);
     expect(requested("ai_radio/hosts/list")).toBe(true);
     expect(requested("ai_radio/hosts/presets/list")).toBe(true);
@@ -388,7 +372,7 @@ describe("AIRadioView editing rights", () => {
       expect(headings(wrapper)).toEqual(["Shows"]);
       expect(findButtonByText(wrapper, "Add show")).toBeUndefined();
       expect(
-        findButtonByText(wrapper, "Go to Settings → Plugins"),
+        findButtonByText(wrapper, "Go to Settings › Plugins"),
       ).toBeUndefined();
       expect(wrapper.find('[aria-label="More options"]').exists()).toBe(false);
       expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);

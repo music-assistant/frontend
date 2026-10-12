@@ -26,7 +26,11 @@ const mocks = vi.hoisted(() => ({
     value: {
       homeassistant_addon: false,
       server_id: "server-id",
-    } as { homeassistant_addon: boolean; server_id: string } | null,
+    } as {
+      homeassistant_addon: boolean;
+      server_id: string;
+      external_url?: string | null;
+    } | null,
   },
   setToken: vi.fn(),
 }));
@@ -886,6 +890,54 @@ describe("connection state changes", () => {
     expect(wrapper.text()).toContain("Your party session has ended");
     expect(wrapper.text()).not.toContain("Reconnecting");
     wrapper.unmount();
+  });
+});
+
+describe("Home Assistant sign in", () => {
+  const remoteId = "ABCDEFGH1234512345ABCDEFGH";
+
+  beforeEach(() => {
+    mocks.sendCommand.mockImplementation((command: string) =>
+      Promise.resolve(
+        command === "auth/providers" ? [{ provider_id: "homeassistant" }] : [],
+      ),
+    );
+  });
+
+  it("hides the button for a remote connection without an External URL", async () => {
+    setLocation(`?remote=1&remote_id=${remoteId}`);
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Username");
+    expect(wrapper.text()).not.toContain("Sign in with Home Assistant");
+  });
+
+  it("shows the button for a remote connection with an External URL", async () => {
+    setLocation(`?remote=1&remote_id=${remoteId}`);
+    mocks.serverInfo.value = {
+      homeassistant_addon: false,
+      server_id: "server-id",
+      external_url: "https://music.example.com",
+    };
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Sign in with Home Assistant");
+  });
+
+  it("shows the button for a local connection without an External URL", async () => {
+    mockStandaloneFrontend();
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    await wrapper.find("input").setValue("http://music-assistant.local:8095");
+    await wrapper.find("button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Sign in with Home Assistant");
   });
 });
 

@@ -1,14 +1,8 @@
 import { useProviderAccess } from "@/composables/settings/providers/useProviderAccess";
 import type { MusicAssistantApi } from "@/plugins/api";
-import {
-  type ProviderConfig,
-  ProviderSharing,
-  ProviderType,
-  type User,
-  UserRole,
-} from "@/plugins/api/interfaces";
+import { ProviderSharing, type User, UserRole } from "@/plugins/api/interfaces";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
-import { defineComponent } from "vue";
+import { defineComponent, type Ref, ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { providerConfig } from "../../../fixtures/providerConfig";
 import { user, userSummary } from "../../../fixtures/user";
@@ -17,8 +11,6 @@ const { apiMock, i18nMock, storeMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
     getAllUsers: vi.fn<MusicAssistantApi["getAllUsers"]>(),
     getShareCandidates: vi.fn<MusicAssistantApi["getShareCandidates"]>(),
-    providerManifests: {} as Record<string, { builtin: boolean }>,
-    supportsShareCandidates: true,
   },
   i18nMock: { $t: vi.fn((key: string) => key) },
   storeMock: { currentUser: undefined as User | undefined },
@@ -48,16 +40,16 @@ function withComposable<T>(setup: () => T): { result: T; unmount: () => void } {
 
 async function mountAccess(
   overrides: {
-    canManageSource?: (item: ProviderConfig) => boolean;
     canOwnSources?: boolean;
     managesAllSources?: boolean;
+    needsUsers?: Ref<boolean>;
   } = {},
 ) {
   const mounted = withComposable(() =>
     useProviderAccess({
-      canManageSource: overrides.canManageSource ?? (() => true),
       canOwnSources: () => overrides.canOwnSources ?? true,
       managesAllSources: () => overrides.managesAllSources ?? true,
+      needsUsers: overrides.needsUsers,
     }),
   );
   await flushPromises();
@@ -68,12 +60,25 @@ beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getAllUsers.mockResolvedValue([]);
   apiMock.getShareCandidates.mockResolvedValue([]);
-  apiMock.providerManifests = { spotify: { builtin: false } };
-  apiMock.supportsShareCandidates = true;
   storeMock.currentUser = undefined;
 });
 
-describe("onMounted", () => {
+describe("listing the users", () => {
+  it("waits until the users are needed, and lists them only once", async () => {
+    const needsUsers = ref(false);
+    await mountAccess({ managesAllSources: true, needsUsers });
+    expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+
+    needsUsers.value = true;
+    await flushPromises();
+    needsUsers.value = false;
+    await flushPromises();
+    needsUsers.value = true;
+    await flushPromises();
+
+    expect(apiMock.getAllUsers).toHaveBeenCalledOnce();
+  });
+
   it("lists the users for a role that manages all sources", async () => {
     await mountAccess({ managesAllSources: true });
 
@@ -139,49 +144,6 @@ describe("accessShareCandidates", () => {
     expect(
       result.accessShareCandidates.value?.map((candidate) => candidate.user_id),
     ).toEqual(["user-a", "user-b"]);
-  });
-});
-
-describe("canConfigureAccess", () => {
-  it("is false when the caller may not manage the source", async () => {
-    const { result } = await mountAccess({ canManageSource: () => false });
-    const config = providerConfig({
-      domain: "spotify",
-      type: ProviderType.MUSIC,
-    });
-
-    expect(result.canConfigureAccess(config)).toBe(false);
-  });
-
-  it("is true for a music source with an access-capable manifest", async () => {
-    const { result } = await mountAccess({ canManageSource: () => true });
-    const config = providerConfig({
-      domain: "spotify",
-      type: ProviderType.MUSIC,
-    });
-
-    expect(result.canConfigureAccess(config)).toBe(true);
-  });
-
-  it("is false for a builtin provider", async () => {
-    apiMock.providerManifests = { spotify: { builtin: true } };
-    const { result } = await mountAccess({ canManageSource: () => true });
-    const config = providerConfig({
-      domain: "spotify",
-      type: ProviderType.MUSIC,
-    });
-
-    expect(result.canConfigureAccess(config)).toBe(false);
-  });
-
-  it("is false for a source that is not a music source", async () => {
-    const { result } = await mountAccess({ canManageSource: () => true });
-    const config = providerConfig({
-      domain: "spotify",
-      type: ProviderType.PLAYER,
-    });
-
-    expect(result.canConfigureAccess(config)).toBe(false);
   });
 });
 

@@ -206,12 +206,6 @@ function _getPinnedUris(): string[] {
   return (store.currentUser?.preferences?.[PREF_KEY] as string[]) ?? [];
 }
 
-export function isShortcutPinned(uri: string): boolean {
-  return _getPinnedUris().some((pinnedUri) =>
-    isSameShortcutUri(pinnedUri, uri),
-  );
-}
-
 export function isShortcutCapReached(): boolean {
   return _getPinnedUris().length >= MAX_SHORTCUTS;
 }
@@ -382,12 +376,6 @@ export function useShortcuts() {
     }
   }
 
-  function isPinned(uri: string): boolean {
-    return pinnedUris.value.some((pinnedUri) =>
-      isSameShortcutUri(pinnedUri, uri),
-    );
-  }
-
   async function pinItem(item: ShortcutItem) {
     const maUri = getShortcutUri(item);
     const alreadyPinned = pinnedUris.value.some((pinnedUri) =>
@@ -398,16 +386,6 @@ export function useShortcuts() {
     // Add immediately for instant sidebar feedback; watch won't re-add (already present)
     resolvedItems.value = [...resolvedItems.value, item];
     await setPreference(PREF_KEY, [...pinnedUris.value, maUri]);
-  }
-
-  async function unpinItem(uri: string) {
-    resolvedItems.value = resolvedItems.value.filter(
-      (item) => !isUriMatchingItem(uri, item),
-    );
-    await setPreference(
-      PREF_KEY,
-      pinnedUris.value.filter((u) => !isSameShortcutUri(u, uri)),
-    );
   }
 
   // React to external changes (e.g. pinShortcutStandalone from the context menu)
@@ -507,8 +485,6 @@ export function useShortcuts() {
     }),
     isLoading,
     pinnedCount: computed(() => pinnedUris.value.length),
-    isPinned,
     pinItem,
-    unpinItem,
   };
 }

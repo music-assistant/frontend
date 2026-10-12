@@ -95,13 +95,11 @@ import {
   trackRows,
   type TrackRowId,
 } from "@/components/track/trackRows";
+import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { useTrackRowData } from "@/composables/useTrackRowData";
 import { getArtistsString, getImageThumbForItem } from "@/helpers/utils";
-import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import {
-  EventMessage,
-  EventType,
   ImageType,
   MediaItemType,
   type Artist,
@@ -110,7 +108,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
 export interface Props {
@@ -220,46 +218,7 @@ watch(
   },
 );
 
-onMounted(() => {
-  //signal if/when item updates
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_UPDATED,
-    (evt: EventMessage) => {
-      const updatedItem = evt.data as MediaItemType;
-      // check if the updated item is the current item
-      if (itemDetails.value?.uri == updatedItem.uri) {
-        // update UI with the updated item
-        itemDetails.value = keepOwnFavorite(
-          updatedItem,
-          itemDetails.value,
-        ) as Track;
-      } else if ("provider_mappings" in updatedItem) {
-        for (const provMap of updatedItem.provider_mappings) {
-          if (
-            provMap.item_id == props.itemId &&
-            [provMap.provider_instance, provMap.provider_domain].includes(
-              props.provider,
-            )
-          ) {
-            itemDetails.value = keepOwnFavorite(
-              updatedItem,
-              itemDetails.value,
-            ) as Track;
-            break;
-          }
-        }
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
-
-  // the user's own like or dislike, wherever they made it
-  const unsubFavorite = subscribeOwnFavorites((update) => {
-    const item = itemDetails.value;
-    if (item?.uri == update.uri) item.favorite = update.favorite;
-  });
-  onBeforeUnmount(unsubFavorite);
-});
+useDetailItemUpdates(itemDetails, { providerItem: props });
 
 /** Loads the first artist when the track and its album have no wide art of their own. */
 async function loadBackdropArtist() {
