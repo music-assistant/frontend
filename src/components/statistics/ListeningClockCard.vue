@@ -97,8 +97,7 @@ const chartOptions = computed<ChartOptions<"polarArea">>(() => ({
     },
     tooltip: createTooltipConfig({
       label: (context) => {
-        const value = context.parsed.r ?? context.parsed;
-        return `${value} ${$t("plays")}`;
+        return `${context.parsed} ${$t("plays")}`;
       },
     }),
   },

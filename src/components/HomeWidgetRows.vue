@@ -1048,6 +1048,7 @@ const loadStatistics = async () => {
   const requestGeneration = statisticsRequests.begin();
   const mediaType = activeStatTab.value;
   const period = activeStatPeriod.value;
+  statisticsItems.value = [];
   statisticsLoading.value = true;
   try {
     const result = await api.getTopItems(mediaType, period, 50);

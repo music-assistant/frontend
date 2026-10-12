@@ -1,28 +1,45 @@
 <template>
   <div
     v-hold="onHold"
-    class="chart-item ma-tap"
+    class="group relative flex w-[280px] shrink-0 items-center rounded-lg transition-colors duration-150 hover:bg-[rgba(var(--v-theme-on-surface),0.08)] ma-tap"
     @contextmenu.prevent="onMenu"
     @touchstart.passive="holdFired = false"
   >
-    <button type="button" class="chart-item__main" @click="handleClick">
-      <span class="chart-item__position">{{ position }}</span>
-      <span class="chart-item__art" :style="artStyle">
+    <button
+      type="button"
+      class="flex w-full min-w-0 items-center gap-3 rounded-lg border-0 bg-transparent p-2 text-left text-inherit [font:inherit] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      @click="handleClick"
+    >
+      <span
+        class="w-7 shrink-0 text-right text-lg font-bold text-[rgb(var(--v-theme-on-background))] opacity-60"
+        >{{ position }}</span
+      >
+      <span
+        class="relative size-14 shrink-0 overflow-hidden rounded"
+        :style="artStyle"
+      >
         <img
           v-if="art.image"
-          class="chart-item__img"
+          class="absolute inset-0 z-[1] size-full object-cover"
           loading="lazy"
           :src="art.image"
           :alt="item.name"
         />
       </span>
-      <span class="chart-item__info">
-        <span class="chart-item__name">{{ item.name }}</span>
-        <span class="chart-item__meta">
-          <span v-if="artistName" class="chart-item__artist">{{
-            artistName
-          }}</span>
-          <span class="chart-item__plays">
+      <span class="flex min-w-0 flex-1 flex-col gap-1">
+        <span
+          class="overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium text-[rgb(var(--v-theme-on-background))]"
+          >{{ item.name }}</span
+        >
+        <span class="flex items-center gap-1.5 overflow-hidden text-xs">
+          <span
+            v-if="artistName"
+            class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[rgb(var(--v-theme-on-background))] opacity-60"
+            >{{ artistName }}</span
+          >
+          <span
+            class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-xl bg-[rgba(var(--v-theme-primary),0.15)] px-2 py-0.5 text-[11px] tabular-nums text-[rgb(var(--v-theme-primary))]"
+          >
             <Play :size="12" />
             <span>{{ formattedPlays }}</span>
           </span>
@@ -31,7 +48,7 @@
     </button>
     <button
       type="button"
-      class="chart-item__play"
+      class="absolute right-2 bottom-2 z-[4] inline-flex size-8 translate-y-1.5 items-center justify-center rounded-full border-0 bg-primary p-0 text-white opacity-0 shadow-lg transition-all group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:translate-y-0 focus-visible:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100"
       :aria-label="$t('play')"
       @click.stop="handlePlay"
     >
@@ -39,7 +56,7 @@
         :size="18"
         fill="currentColor"
         :stroke-width="0"
-        class="chart-item__play-icon"
+        class="ml-px fill-current stroke-none"
       />
     </button>
   </div>
@@ -116,162 +133,3 @@ function onMenu(e: MouseEvent) {
   handleMenuBtnClick(props.item, e.clientX, e.clientY);
 }
 </script>
-
-<style scoped>
-.chart-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 280px;
-  flex-shrink: 0;
-  border-radius: 8px;
-  transition: background 0.15s ease;
-}
-
-.chart-item:hover {
-  background: rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.chart-item__position {
-  font-size: 18px;
-  font-weight: 700;
-  color: rgb(var(--v-theme-on-background));
-  opacity: 0.6;
-  width: 28px;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.chart-item__main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-width: 0;
-  padding: 8px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.chart-item__main:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
-}
-
-.chart-item__art {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  border-radius: 4px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.chart-item__img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 1;
-}
-
-.chart-item__info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.chart-item__play {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  background: rgb(var(--v-theme-primary));
-  color: #fff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(6px);
-  transition:
-    opacity 0.18s,
-    transform 0.18s;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
-  z-index: 4;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-}
-
-.chart-item__play-icon {
-  margin-left: 1px;
-  fill: currentColor;
-  stroke: none;
-}
-
-.chart-item:hover .chart-item__play,
-.chart-item__play:focus-visible {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
-}
-
-@media (hover: none) {
-  .chart-item__play {
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
-  }
-}
-
-.chart-item__name {
-  font-size: 14px;
-  font-weight: 500;
-  color: rgb(var(--v-theme-on-background));
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.chart-item__meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  overflow: hidden;
-}
-
-.chart-item__artist {
-  color: rgb(var(--v-theme-on-background));
-  opacity: 0.6;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex-shrink: 1;
-}
-
-.chart-item__plays {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-variant-numeric: tabular-nums;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  background: rgba(var(--v-theme-primary), 0.15);
-  color: rgb(var(--v-theme-primary));
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-</style>

@@ -98,7 +98,7 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 75;
+export const MIN_SERVER_SCHEMA_VERSION = 88;
 
 const LIBRARY_SORT_LISTINGS: Record<LibrarySortMediaType, string> = {
   [MediaType.ARTIST]: "library_artists",
@@ -1746,11 +1746,15 @@ export class MusicAssistantApi {
     period = "week",
     limit = 50,
   ): Promise<TopItemResult[]> {
-    return this.sendCommand("statistics/top_items", {
-      media_type,
-      period,
-      limit,
-    });
+    return this.sendCommand(
+      "statistics/top_items",
+      {
+        media_type,
+        period,
+        limit,
+      },
+      { suppressGlobalError: true },
+    );
   }
 
   public async getArtistDistribution(

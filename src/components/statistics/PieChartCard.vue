@@ -5,36 +5,47 @@
     :is-empty="!data || data.length === 0"
     :clickable="!!navigateTo"
   >
-    <div class="pie-chart-wrapper">
-      <div class="pie-chart-canvas">
+    <div class="flex h-full w-full items-center gap-6 max-[600px]:flex-col">
+      <div class="size-[180px] shrink-0 max-[600px]:self-center">
         <Doughnut :data="chartData" :options="chartOptions" />
       </div>
-      <div class="pie-chart-legend">
+      <div
+        class="flex max-h-[240px] min-w-0 flex-1 flex-col gap-3 overflow-y-auto pr-2"
+      >
         <button
           v-for="(topItem, index) in data"
           :key="topItem.item.item_id"
           type="button"
-          class="legend-item"
+          class="flex w-full cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent p-2 text-left text-inherit transition-colors hover:bg-[rgba(var(--v-theme-on-surface),0.05)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-default disabled:hover:bg-transparent"
           :aria-label="topItem.item.name"
           :disabled="!navigateTo"
           @click="handleLegendClick(topItem)"
         >
           <div
-            class="legend-color"
+            class="size-3 shrink-0 rounded-full"
             :style="{
               backgroundColor: CHART_COLORS[index % CHART_COLORS.length],
             }"
           ></div>
-          <div class="legend-image">
+          <div
+            class="size-10 shrink-0 overflow-hidden rounded-full bg-[rgba(var(--v-theme-on-surface),0.1)]"
+          >
             <img
+              class="size-full object-cover"
               :src="getImageThumbForItem(topItem.item) || placeholderImage"
               :alt="topItem.item.name"
               loading="lazy"
             />
           </div>
-          <div class="legend-text">
-            <div class="legend-name">{{ topItem.item.name }}</div>
-            <div class="legend-value">
+          <div class="min-w-0 flex-1">
+            <div
+              class="truncate text-[13px] font-semibold text-[rgb(var(--v-theme-on-surface))]"
+            >
+              {{ topItem.item.name }}
+            </div>
+            <div
+              class="mt-0.5 flex items-center gap-1 text-[11px] text-[rgba(var(--v-theme-on-surface),0.6)]"
+            >
               <Play :size="14" />
               <span>{{ topItem.play_count }}</span>
             </div>
@@ -165,96 +176,3 @@ const chartOptions = computed<ChartOptions<"doughnut">>(() => ({
   },
 }));
 </script>
-
-<style scoped>
-.pie-chart-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  width: 100%;
-  height: 100%;
-}
-
-.pie-chart-canvas {
-  flex: 0 0 180px;
-  height: 180px;
-}
-
-.pie-chart-legend {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
-  max-height: 240px;
-  padding-right: 8px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-}
-
-.legend-item:hover:not(:disabled) {
-  background-color: rgba(var(--v-theme-on-surface), 0.05);
-}
-
-.legend-item:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
-}
-
-.legend-color {
-  flex: 0 0 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
-.legend-image {
-  flex: 0 0 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: rgba(var(--v-theme-on-surface), 0.1);
-}
-
-.legend-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.legend-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.legend-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgb(var(--v-theme-on-surface));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.legend-value {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  margin-top: 2px;
-}
-</style>
