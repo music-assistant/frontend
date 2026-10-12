@@ -67,6 +67,8 @@ This project is migrating from **Vuetify** to **[shadcn-vue](https://www.shadcn-
 - **Use shadcn-vue**: All new UI should use [shadcn-vue](https://www.shadcn-vue.com/) components located in `src/components/ui/`. Do not introduce new Vuetify components.
 - **Extend, don't override**: If a shadcn-vue component needs customization, extend it via props or slots rather than overriding styles globally.
 - **Avoid inline styles**: Use Tailwind utility classes for styling. Avoid `style=""` attributes except for dynamic values that cannot be expressed as classes.
+- **Tailwind first**: Style with Tailwind utility classes rather than a scoped `<style>` block. Arbitrary values (`text-[44px]`) and variants (`max-md:`, `[&>.v-divider]:hidden`) cover most cases; keep scoped CSS for what Tailwind cannot express, such as keyframes or `:deep()` rules reaching into a child component.
+- **Override utilities with utilities**: Every Tailwind utility is `!important` (`src/styles/style.css`), so scoped CSS cannot override one. Pass a competing utility instead; `cn()` (`src/lib/utils.ts`) drops the one it replaces.
 
 ### TypeScript
 
