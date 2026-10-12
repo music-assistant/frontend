@@ -23,7 +23,7 @@
           class="skip-btn"
           @click="$emit('skip')"
         >
-          <Spinner v-if="skippingSong" :size="16" />
+          <Spinner v-if="skippingSong" class="size-4" />
           <SkipForward v-else :size="16" />
           {{ $t("providers.party.guest_page.skip") }}
           <span

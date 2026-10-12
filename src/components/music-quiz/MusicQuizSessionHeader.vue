@@ -33,12 +33,7 @@
           class="flex flex-wrap items-center"
           :class="present ? 'mt-0.5 gap-1.5' : 'mt-1 gap-2'"
         >
-          <Badge
-            variant="secondary"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-          >
+          <Badge role="status" aria-live="polite" aria-atomic="true">
             {{ phaseLabel }}
           </Badge>
           <Badge v-if="roundLabel" variant="outline">{{ roundLabel }}</Badge>

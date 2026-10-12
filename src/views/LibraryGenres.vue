@@ -18,7 +18,7 @@
     :show-search-button="true"
     :allow-collapse="true"
     :hide-on-empty="false"
-    :sort-keys="sortKeys"
+    :sort-media-type="MediaType.GENRE"
     :limit="50"
     :infinite-scroll="false"
     :load-paged-data="section.load"
@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import { Plus } from "@lucide/vue";
 import AddGenreDialog from "@/components/AddGenreDialog.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
@@ -38,6 +39,7 @@ import {
   EventType,
   Genre,
   MediaType,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
@@ -49,17 +51,6 @@ defineOptions({
 const showAddGenreDialog = ref(false);
 const refreshKey = ref(0);
 
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "play_count",
-  "play_count_desc",
-];
-
 // one collapsible section per taxonomy, scoped server-side via content_type. Server-paged so
 // each section's own filters (favorites / default-non-empty-all / search) re-fetch.
 const loadSection = (contentType: MediaType | "music") => {
@@ -70,7 +61,8 @@ const loadSection = (contentType: MediaType | "music") => {
       search: params.search,
       limit: params.limit,
       offset: params.offset,
-      order_by: params.sortBy,
+      sort_field: params.sort_field,
+      sort_direction: params.sort_direction,
       hide_empty: params.hideEmptyFilter,
     });
   };
@@ -98,12 +90,12 @@ const sections = [
 ];
 
 const menuItems = computed<ToolBarMenuItem[]>(() => {
-  if (!authManager.isAdmin()) return [];
+  if (!authManager.hasScope(Scope.LIBRARY_MANAGE)) return [];
   return [
     {
       label: "add_genre",
       labelArgs: [],
-      icon: "mdi-plus",
+      icon: Plus,
       action: () => {
         showAddGenreDialog.value = true;
       },

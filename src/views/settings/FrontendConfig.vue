@@ -2,12 +2,11 @@
   <div class="p-4">
     <!-- Header card -->
     <SettingsHeaderCard
-      v-model:show-advanced-settings="showAdvancedSettings"
       :icon="Palette"
       icon-class="text-orange-500"
       :title="$t('settings.frontend')"
       :description="$t('settings.frontend_description')"
-      :show-advanced-toggle="hasAdvancedEntries(config)"
+      :documentation-url="documentationUrl"
       @reset-to-defaults="resetToDefaults"
     />
 
@@ -15,7 +14,6 @@
     <EditConfig
       v-if="config.length > 0"
       ref="editConfig"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :config-entries="config"
       :disabled="false"
       @submit="onSubmit"
@@ -36,18 +34,22 @@
 
 <script setup lang="ts">
 import { Palette } from "@lucide/vue";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { Spinner } from "@/components/ui/spinner";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { DEVICE_SETTING_KEYS } from "@/constants";
-import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
 import {
+  BROWSER_MEDIA_CONTROLS,
+  BrowserMediaControlsMode,
+  getBrowserMediaControlsMode,
   MOBILE_SIDEBAR_SIDE,
   readDeviceSetting,
   saveDeviceSetting,
 } from "@/helpers/device_settings";
+import { expertMode, expertModeSetting } from "@/helpers/expert_mode";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -61,14 +63,35 @@ import { store } from "@/plugins/store";
 import EditConfig from "./EditConfig.vue";
 import SettingsHeaderCard from "./SettingsHeaderCard.vue";
 
+const FRONTEND_DOCS_URL = "https://music-assistant.io/settings/user-interface/";
+
 // global refs
 const router = useRouter();
 const config = ref<ConfigEntry[]>([]);
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
-// no entry below is advanced today, so the toggle stays hidden; the wiring is what
-// makes an advanced entry reachable the moment one is added
-const showAdvancedSettings = ref(false);
+
+// the docs of a beta server live on the beta site
+const documentationUrl = computed(() => getExternalLinkUrl(FRONTEND_DOCS_URL));
+
+// The form hands back every entry on save, not just the edited ones, so the
+// values it submits are compared against these to tell a real change from a
+// re-save of what was already there. Held serialized: the form edits entry.value
+// in place, which an array or object snapshot would follow.
+let initialValues: Record<string, string> = {};
+
+const serializeValue = (value: ConfigValueType | undefined): string =>
+  JSON.stringify(value ?? null);
+
+const valueChanged = (key: string, value: ConfigValueType): boolean =>
+  serializeValue(value) !== initialValues[key];
+
+// The volume slider reads these as computed refs, so saving one takes effect
+// immediately and the reload below would achieve nothing.
+const RELOAD_EXEMPT_PREFERENCE_KEYS = new Set([
+  "volume_slider_mode",
+  "volume_haptics",
+]);
 
 onMounted(() => {
   // TODO: Remove localStorage fallbacks below once migration period is over
@@ -127,18 +150,29 @@ onMounted(() => {
       value: null,
     },
     {
-      key: "enable_browser_controls",
-      type: ConfigEntryType.BOOLEAN,
+      key: BROWSER_MEDIA_CONTROLS,
+      type: ConfigEntryType.STRING,
       label: "enable_browser_controls",
-      default_value: true,
+      default_value: BrowserMediaControlsMode.WEB_PLAYER,
       required: false,
-      options: [],
+      options: [
+        {
+          title: "active_player",
+          value: BrowserMediaControlsMode.ACTIVE_PLAYER,
+        },
+        {
+          title: "web_player",
+          value: BrowserMediaControlsMode.WEB_PLAYER,
+        },
+        {
+          title: "disabled",
+          value: BrowserMediaControlsMode.DISABLED,
+        },
+      ],
       multi_value: false,
       category: "display_settings",
       hidden: companionMode.value,
-      value:
-        localStorage.getItem("frontend.settings.enable_browser_controls") !==
-        "false",
+      value: getBrowserMediaControlsMode(),
     },
     {
       key: "force_mobile_layout",
@@ -157,12 +191,25 @@ onMounted(() => {
       key: "show_waveform",
       type: ConfigEntryType.BOOLEAN,
       label: "show_waveform",
-      default_value: true,
+      default_value: expertMode(),
       required: false,
       options: [],
       multi_value: false,
       category: "display_settings",
-      value: (store.currentUser?.preferences?.show_waveform as boolean) ?? true,
+      value: expertModeSetting("show_waveform"),
+    },
+    {
+      key: "audiobook_chapter_progress",
+      type: ConfigEntryType.BOOLEAN,
+      label: "audiobook_chapter_progress",
+      default_value: true,
+      required: false,
+      options: [],
+      multi_value: false,
+      category: "audiobooks",
+      value:
+        (store.currentUser?.preferences
+          ?.audiobook_chapter_progress as boolean) ?? true,
     },
     {
       key: "mobile_sidebar_side",
@@ -192,6 +239,34 @@ onMounted(() => {
       hidden: !store.isIngressSession,
       value: getKioskModePreference(),
     },
+    {
+      key: "volume_slider_mode",
+      type: ConfigEntryType.STRING,
+      label: "volume_slider_mode",
+      default_value: "absolute",
+      required: false,
+      options: [
+        { title: "absolute", value: "absolute" },
+        { title: "relative", value: "relative" },
+      ],
+      multi_value: false,
+      category: "volume_control",
+      value:
+        (store.currentUser?.preferences?.volume_slider_mode as string) ||
+        "absolute",
+    },
+    {
+      key: "volume_haptics",
+      type: ConfigEntryType.BOOLEAN,
+      label: "volume_haptics",
+      default_value: true,
+      required: false,
+      options: [],
+      multi_value: false,
+      category: "volume_control",
+      value:
+        (store.currentUser?.preferences?.volume_haptics as boolean) ?? true,
+    },
   ];
 
   // Add web player settings (if not running in companion mode)
@@ -211,8 +286,8 @@ onMounted(() => {
   }
 
   // These are frontend-only settings, so the frontend owns their translations (server-provided
-  // entries are localized server-side and arrive pre-resolved). ConfigEntryField renders the
-  // label/option titles directly, so resolve the frontend-owned ones here from the settings.* keys.
+  // entries are localized server-side and arrive pre-resolved). ConfigEntryField renders labels
+  // and option content directly, so resolve the frontend-owned ones here from the settings.* keys.
   for (const entry of configEntries) {
     // fall back to the in-code label/category if a locale is missing the string, so we never
     // surface a raw i18n key in the UI.
@@ -227,15 +302,24 @@ onMounted(() => {
     }
     const desc = $t(`settings.${entry.key}.description`);
     if (desc !== `settings.${entry.key}.description`) entry.description = desc;
-    entry.options = entry.options.map((opt) => ({
-      ...opt,
-      title: $t(
-        `settings.${entry.key}.options.${opt.value}`,
-        opt.title ?? String(opt.value),
-      ),
-    }));
+    entry.options = entry.options.map((opt) => {
+      const descriptionKey = `settings.${entry.key}.option_descriptions.${opt.value}`;
+      const description = $t(descriptionKey);
+      return {
+        ...opt,
+        title: $t(
+          `settings.${entry.key}.options.${opt.value}`,
+          opt.title ?? String(opt.value),
+        ),
+        description:
+          description === descriptionKey ? opt.description : description,
+      };
+    });
   }
   config.value = configEntries;
+  initialValues = Object.fromEntries(
+    configEntries.map((entry) => [entry.key, serializeValue(entry.value)]),
+  );
 });
 
 // methods
@@ -261,9 +345,13 @@ const saveValues = async function (values: Record<string, ConfigValueType>) {
         const value = values[key];
         saveDeviceSetting(key, value != null ? value.toString() : null);
       } else {
+        // an entry left as it was is not written: a default that is only
+        // derived, like the waveform's from the expert mode, must not turn
+        // into a choice on the account by way of an unrelated save
+        if (!valueChanged(key, values[key])) continue;
         // Save to backend via user preferences
         await setPreference(key, values[key]);
-        hasPerUserChanges = true;
+        if (!RELOAD_EXEMPT_PREFERENCE_KEYS.has(key)) hasPerUserChanges = true;
       }
     }
 

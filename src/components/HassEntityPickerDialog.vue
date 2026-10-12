@@ -4,7 +4,7 @@
       class="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-[560px]"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
-      <DialogHeader class="border-b px-5 py-4 pr-12 text-left">
+      <DialogHeader class="border-b px-5 py-4 pr-12">
         <DialogTitle>
           {{ $t(`settings.hass_controls.title.${controlType}`) }}
         </DialogTitle>
@@ -28,7 +28,7 @@
           v-if="loading && groups.length === 0"
           class="flex justify-center py-10"
         >
-          <Spinner :size="32" class="text-primary" />
+          <Spinner class="text-primary size-8" />
         </div>
         <p v-else-if="error" class="text-destructive py-8 text-center text-sm">
           {{ error }}

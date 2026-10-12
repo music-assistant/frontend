@@ -2,18 +2,7 @@
   <GuessTheSongReveal
     v-if="state.phase === 'reveal'"
     :round="currentRound"
-    :busy="true"
-    :is-ready="true"
-    :ready-label="$t('providers.music_quiz.ready')"
     :image-url="currentRoundImageUrl"
-    :show-lyrics="false"
-    :has-lyrics="false"
-    :lyrics="''"
-    :lrc-lyrics="''"
-    :lyrics-position="0"
-    lyrics-text-color="var(--foreground)"
-    :show-ready-button="false"
-    @ready="noop"
     @copy-title="copyCurrentRoundTitle"
   />
 </template>
@@ -48,9 +37,5 @@ async function copyCurrentRoundTitle() {
   if (!copied) {
     toast.error($t("providers.music_quiz.copy_music_name_failed"));
   }
-}
-
-function noop() {
-  // Read-only interaction.
 }
 </script>

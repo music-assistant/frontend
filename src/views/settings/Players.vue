@@ -5,6 +5,7 @@
         @update:search="searchQuery = $event"
         @update:providers="selectedProviders = $event"
         @update:types="selectedPlayerTypes = $event"
+        @update:statuses="selectedStatuses = $event"
       />
       <div class="header-actions">
         <Button
@@ -20,8 +21,8 @@
 
     <div class="pl-5 font-weight-medium">
       {{
-        $t("settings.players_total", getAllFilteredPlayers().length, {
-          named: { count: getAllFilteredPlayers().length },
+        $t("settings.players_total", filteredPlayers.length, {
+          named: { count: filteredPlayers.length },
         })
       }}
     </div>
@@ -31,15 +32,16 @@
     >
       <v-list v-if="viewMode === 'list'" class="players-list">
         <ListItem
-          v-for="item in getAllFilteredPlayers()"
+          v-for="item in filteredPlayers"
           :key="item.player_id"
           link
           :show-menu-btn="true"
+          :menu-button-label="`${$t('more_options')}: ${getPlayerName(item)}`"
           :class="{
             'player-disabled': !item.enabled,
-            'player-unavailable': !api.players[item.player_id]?.available,
-            'player-needs-setup':
-              item.enabled && api.players[item.player_id]?.needs_setup,
+            'player-unavailable': isPlayerUnavailable(
+              api.players[item.player_id],
+            ),
           }"
           @click="handlePlayerClick(item)"
           @menu="(evt) => onMenu(evt, item)"
@@ -55,32 +57,19 @@
           </template>
 
           <template #title>
-            <div class="player-name">
-              {{ getPlayerName(item) }}
+            <div class="player-name flex min-w-0 items-center gap-1.5">
+              <span class="truncate">{{ getPlayerName(item) }}</span>
+              <PlayerDeviceBadge v-if="isThisDevice(item)" label />
             </div>
           </template>
 
           <template #subtitle>
             <div class="player-meta">
               <!-- Player needs setup warning -->
-              <div
+              <PlayerSetupWarning
                 v-if="item.enabled && api.players[item.player_id]?.needs_setup"
-                class="player-warning-inline"
-              >
-                <v-icon icon="mdi-alert-circle" size="16" color="warning" />
-                <span class="player-warning-text">{{
-                  $t("settings.player_needs_setup")
-                }}</span>
-                <v-btn
-                  size="x-small"
-                  color="warning"
-                  variant="flat"
-                  class="ml-2"
-                  @click.stop="startPlayerSetup(item.player_id)"
-                >
-                  {{ $t("settings.start_setup") }}
-                </v-btn>
-              </div>
+                @setup="startPlayerSetup(item.player_id)"
+              />
               <span v-else class="provider-name">
                 {{
                   api.players[item.player_id]?.device_info
@@ -90,26 +79,11 @@
                 }}
               </span>
               <span class="protocol-chips">
-                <v-chip
+                <ProtocolChip
                   v-for="protocol in getOutputProtocols(item.player_id)"
                   :key="protocol.output_protocol_id"
-                  size="x-small"
-                  variant="tonal"
-                  class="protocol-chip"
-                  :class="{ 'protocol-chip--unavailable': !protocol.available }"
-                >
-                  <template #prepend>
-                    <ProviderIcon
-                      :domain="protocol.protocol_domain"
-                      :size="14"
-                      class="chip-icon"
-                    />
-                  </template>
-                  {{
-                    api.getProviderManifest(protocol.protocol_domain)?.name ||
-                    protocol.protocol_domain
-                  }}
-                </v-chip>
+                  :protocol="protocol"
+                />
               </span>
             </div>
           </template>
@@ -123,15 +97,13 @@
                 color="grey"
                 :title="$t('settings.player_disabled')"
               />
-              <v-icon
+              <CircleAlert
                 v-else-if="api.players[item.player_id]?.needs_setup"
-                icon="mdi-alert-circle"
-                size="20"
-                color="warning"
+                class="size-5 text-warning"
                 :title="$t('settings.player_needs_setup')"
               />
               <v-icon
-                v-else-if="!api.players[item.player_id]?.available"
+                v-else-if="isPlayerUnavailable(api.players[item.player_id])"
                 icon="mdi-timer-sand"
                 size="20"
                 color="grey"
@@ -142,25 +114,18 @@
         </ListItem>
       </v-list>
 
-      <v-row v-else>
-        <v-col
-          v-for="item in getAllFilteredPlayers()"
+      <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <SettingsPlayerCard
+          v-for="item in filteredPlayers"
           :key="item.player_id"
-          cols="12"
-          md="6"
-          lg="4"
-          class="d-flex"
-        >
-          <SettingsPlayerCard
-            :player-config="item"
-            @click="handlePlayerClick"
-            @menu="(evt, config) => onMenu(evt, config)"
-            @setup="(config) => startPlayerSetup(config.player_id)"
-          />
-        </v-col>
-      </v-row>
+          :player-config="item"
+          @click="handlePlayerClick"
+          @menu="(evt, config) => onMenu(evt, config)"
+          @setup="(config) => startPlayerSetup(config.player_id)"
+        />
+      </div>
 
-      <div v-if="getAllFilteredPlayers().length === 0" class="empty-state">
+      <div v-if="filteredPlayers.length === 0" class="empty-state">
         <v-icon icon="mdi-speaker-off" size="64" class="empty-icon" />
         <div class="empty-title">{{ $t("no_content") }}</div>
         <div class="empty-message">
@@ -168,7 +133,7 @@
         </div>
       </div>
     </Container>
-    <div class="missing-players-hint">
+    <div v-if="canAddPlayerProviders" class="missing-players-hint">
       <v-icon icon="mdi-information-outline" size="16" class="hint-icon" />
       <i18n-t keypath="settings.missing_players_hint" tag="span" scope="global">
         <router-link
@@ -186,25 +151,34 @@
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
+import PlayerDeviceBadge from "@/components/PlayerDeviceBadge.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import ProtocolChip from "@/components/ProtocolChip.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import PlayerSetupWarning from "@/components/PlayerSetupWarning.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
+
+import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import {
+  getListedPlayerConfigs,
   getPlayerName,
-  getPlayerSettingsMenuItems,
-} from "@/helpers/player_settings_actions";
-import { isHiddenSendspinWebPlayer } from "@/helpers/utils";
+  playerBelongsToProviders,
+} from "@/helpers/player_config";
+import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import { isBuiltinPlayer, isPlayerUnavailable } from "@/helpers/players";
+
 import { api } from "@/plugins/api";
 import {
   EventType,
   PlayerConfig,
   PlayerType,
   ProviderFeature,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { Plus } from "@lucide/vue";
+import { CircleAlert, Plus } from "@lucide/vue";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";
@@ -224,6 +198,7 @@ const playerConfigs = ref<PlayerConfig[]>([]);
 const searchQuery = ref<string>("");
 const selectedProviders = ref<string[]>([]);
 const selectedPlayerTypes = ref<string[]>([]);
+const selectedStatuses = ref<string[]>([]);
 const showAddPlayerGroupDialog = ref<boolean>(false);
 
 // listen for item updates to refresh items when that happens
@@ -239,8 +214,7 @@ const providersWithCreateGroupSupport = computed(() => {
     .filter(
       (x) =>
         x.available &&
-        (x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER) ||
-          x.supported_features.includes(ProviderFeature.SYNC_PLAYERS)),
+        x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER),
     )
     .sort((a, b) =>
       (a.name || api.providerManifests[a.domain].name).toUpperCase() >
@@ -249,14 +223,16 @@ const providersWithCreateGroupSupport = computed(() => {
         : -1,
     );
 });
+// the hint leads to adding player providers, which takes config.providers.write
+const canAddPlayerProviders = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+);
 
 // methods
 const loadItems = async function () {
-  playerConfigs.value = (
-    await api.getPlayerConfigs(undefined, false, false, true)
-  )
-    .filter((x) => !isHiddenSendspinWebPlayer(x))
-    .sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)));
+  playerConfigs.value = (await getListedPlayerConfigs()).sort((a, b) =>
+    getPlayerName(a).localeCompare(getPlayerName(b)),
+  );
 };
 
 const editPlayer = function (playerId: string, provider: string) {
@@ -286,6 +262,11 @@ const getOutputProtocols = function (playerId: string) {
   return api.players[playerId]?.output_protocols || [];
 };
 
+const isThisDevice = function (playerConfig: PlayerConfig) {
+  const player = api.players[playerConfig.player_id];
+  return player !== undefined && isBuiltinPlayer(player);
+};
+
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
   // the list has no PLAYER_REMOVED/PLAYER_CONFIG_REMOVED subscription, so a
   // deleted player has to be dropped from it here
@@ -297,14 +278,15 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
       );
     },
   });
+  const position = getEventPosition(evt);
   eventbus.emit("contextmenu", {
     items: menuItems,
-    posX: (evt as PointerEvent).clientX,
-    posY: (evt as PointerEvent).clientY,
+    posX: position.x,
+    posY: position.y,
   });
 };
 
-const getAllFilteredPlayers = function () {
+const filteredPlayers = computed(() => {
   let filtered = [...playerConfigs.value];
 
   if (searchQuery.value) {
@@ -319,32 +301,9 @@ const getAllFilteredPlayers = function () {
   }
 
   if (selectedProviders.value.length > 0) {
-    // Build set of provider domains from selected provider instance_ids for efficient lookup
-    const selectedProviderDomains = new Set(
-      selectedProviders.value
-        .map((instanceId) => api.getProvider(instanceId)?.domain)
-        .filter((domain): domain is string => domain !== undefined),
+    filtered = filtered.filter((item) =>
+      playerBelongsToProviders(item, selectedProviders.value),
     );
-
-    filtered = filtered.filter((item) => {
-      const providerInstance = api.getProvider(item.provider);
-      if (!providerInstance) return false;
-
-      // Check if player's provider is selected
-      if (selectedProviders.value.includes(providerInstance.instance_id)) {
-        return true;
-      }
-
-      // Check if any output protocol's domain matches a selected provider domain
-      const player = api.players[item.player_id];
-      if (player) {
-        return player.output_protocols.some((protocol) =>
-          selectedProviderDomains.has(protocol.protocol_domain),
-        );
-      }
-
-      return false;
-    });
   }
 
   if (selectedPlayerTypes.value.length > 0) {
@@ -355,10 +314,29 @@ const getAllFilteredPlayers = function () {
     });
   }
 
+  if (selectedStatuses.value.length > 0) {
+    filtered = filtered.filter((item) => {
+      const player = api.players[item.player_id];
+      return selectedStatuses.value.some((status) => {
+        if (status === "available") {
+          // serialized available is false while a player needs setup
+          return item.enabled && player?.available;
+        }
+        if (status === "needs_setup") {
+          return item.enabled && player?.needs_setup;
+        }
+        if (status === "unavailable") {
+          return item.enabled && !player?.available && !player?.needs_setup;
+        }
+        return status === "disabled" && !item.enabled;
+      });
+    });
+  }
+
   return filtered.sort((a, b) =>
     getPlayerName(a).localeCompare(getPlayerName(b)),
   );
-};
+});
 
 // watchers
 watch(
@@ -492,38 +470,6 @@ watch(
   flex-wrap: wrap;
 }
 
-.protocol-chip {
-  text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: 0.3px;
-}
-
-.protocol-chip--unavailable {
-  opacity: 0.4;
-}
-
-.chip-icon {
-  margin: 0 !important;
-  width: auto !important;
-}
-
-.chip-icon :deep(div) {
-  margin-left: 0 !important;
-  margin-right: 4px !important;
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper) {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper svg) {
-  width: 14px !important;
-  height: 14px !important;
-}
-
 @media (max-width: 960px) {
   .protocol-chips {
     display: none;
@@ -552,22 +498,6 @@ watch(
 
 .player-unavailable {
   opacity: 0.7;
-}
-
-.player-needs-setup {
-  border-left: 3px solid rgb(var(--v-theme-warning));
-}
-
-.player-warning-inline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: rgb(var(--v-theme-warning));
-}
-
-.player-warning-text {
-  font-size: 13px;
-  font-weight: 500;
 }
 
 .missing-players-hint {

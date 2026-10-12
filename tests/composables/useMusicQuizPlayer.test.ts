@@ -18,8 +18,11 @@ const {
   mockGetMusicQuizErrorMessage,
   mockMarkJoinedGameEnded,
   mockWaitForApiInitialization,
+  mockHasSeenMusicQuizLanding,
+  mockStoreMusicQuizLandingSeen,
   storedPlayerId,
   storedPlayerName,
+  seenLandingPlayerIds,
   providerHandlers,
   unmountHandlers,
   participantContext,
@@ -40,8 +43,11 @@ const {
   mockGetMusicQuizErrorMessage: vi.fn(),
   mockMarkJoinedGameEnded: vi.fn(),
   mockWaitForApiInitialization: vi.fn(),
+  mockHasSeenMusicQuizLanding: vi.fn(),
+  mockStoreMusicQuizLandingSeen: vi.fn(),
   storedPlayerId: { value: null as string | null },
   storedPlayerName: { value: "" },
+  seenLandingPlayerIds: new Set<string>(),
   providerHandlers: [] as Array<
     (event: { object_id?: string; data?: unknown }) => void
   >,
@@ -125,6 +131,8 @@ vi.mock("@/helpers/music_quiz", () => ({
   getStoredMusicQuizPlayerName: mockGetStoredPlayerName,
   clearStoredMusicQuizPlayerId: mockClearStoredPlayerId,
   getMusicQuizErrorMessage: mockGetMusicQuizErrorMessage,
+  hasSeenMusicQuizLanding: mockHasSeenMusicQuizLanding,
+  storeMusicQuizLandingSeen: mockStoreMusicQuizLandingSeen,
   isNoActiveGameError: (err: unknown) =>
     err instanceof ApiCommandError && err.error_code === 1001,
   isUnknownPlayerError: (err: unknown) =>
@@ -374,6 +382,15 @@ describe("useMusicQuizPlayer", () => {
     mockMarkJoinedGameEnded.mockReset();
     mockWaitForApiInitialization.mockReset();
     mockWaitForApiInitialization.mockResolvedValue(undefined);
+    mockHasSeenMusicQuizLanding.mockReset();
+    mockStoreMusicQuizLandingSeen.mockReset();
+    seenLandingPlayerIds.clear();
+    mockHasSeenMusicQuizLanding.mockImplementation((_context, playerId) =>
+      seenLandingPlayerIds.has(playerId),
+    );
+    mockStoreMusicQuizLandingSeen.mockImplementation((_context, playerId) => {
+      seenLandingPlayerIds.add(playerId);
+    });
     mockHeartbeatMusicQuiz.mockResolvedValue(true);
     mockGetStoredPlayerId.mockImplementation(() => storedPlayerId.value);
     mockGetStoredPlayerName.mockImplementation(() => storedPlayerName.value);
@@ -1566,6 +1583,60 @@ describe("useMusicQuizPlayer", () => {
     expect(player.currentRound.value).toBeNull();
     expect(player.players.value).toEqual([]);
     expect(player.yourName.value).toBe("");
+  });
+
+  it("starts with the landing unseen when there is no active player", async () => {
+    mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(player.landingSeen.value).toBe(false);
+  });
+
+  it("reflects the stored landing-seen flag for a reconnecting player", async () => {
+    storedPlayerId.value = "stored-player";
+    seenLandingPlayerIds.add("stored-player");
+    mockGetMusicQuizState.mockResolvedValue(PLAYER_STATE);
+
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(player.landingSeen.value).toBe(true);
+    expect(mockHasSeenMusicQuizLanding).toHaveBeenCalledWith(
+      participantContext,
+      "stored-player",
+    );
+  });
+
+  it("marks the landing seen for the joined player and persists it", async () => {
+    mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
+    mockJoinMusicQuiz.mockResolvedValue({
+      player_id: "player-id",
+      state: PLAYER_STATE,
+    });
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+    await player.join("Player");
+
+    expect(player.landingSeen.value).toBe(false);
+
+    player.markLandingSeen();
+
+    expect(player.landingSeen.value).toBe(true);
+    expect(mockStoreMusicQuizLandingSeen).toHaveBeenCalledWith(
+      participantContext,
+      "player-id",
+    );
+  });
+
+  it("does not mark the landing seen without an active player", async () => {
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    player.markLandingSeen();
+
+    expect(mockStoreMusicQuizLandingSeen).not.toHaveBeenCalled();
+    expect(player.landingSeen.value).toBe(false);
   });
 
   it("does not expose gameplay for an unknown answer type", async () => {

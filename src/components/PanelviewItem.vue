@@ -47,13 +47,16 @@
           {{ item.position }}
         </span>
         <FavouriteButton
-          v-if="getBreakpointValue('bp3') && 'favorite' in item"
+          v-if="
+            getBreakpointValue('bp3') && canHoldFavorite(item) && canEditLibrary
+          "
           :item="item"
         />
         <v-spacer />
         <MAButton
           variant="list"
           icon="mdi-dots-vertical"
+          :aria-label="menuButtonLabel"
           @click.stop="onMenu"
         />
       </div>
@@ -65,10 +68,17 @@
 import MAButton from "@/components/Button.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
+import { canHoldFavorite } from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
-import { ContentType, type MediaItemType } from "@/plugins/api/interfaces";
+import {
+  ContentType,
+  Scope,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
 
@@ -98,9 +108,18 @@ const compProps = withDefaults(defineProps<Props>(), {
   sortBy: undefined,
 });
 
+// favouring an item changes the library
+const canEditLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE),
+);
+
 const emit = defineEmits<{
   (e: "select", item: MediaItemType, selected: boolean): void;
 }>();
+
+const menuButtonLabel = computed(
+  () => `${$t("more_options")}: ${compProps.item.name}`,
+);
 
 // computed: hi-res audio details (kHz/bit-depth) for lossless formats
 const HiResDetails = computed(() => {

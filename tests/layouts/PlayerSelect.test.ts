@@ -9,18 +9,19 @@ import {
   PlaybackState,
   type Player,
   PlayerType,
+  Scope,
 } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
+import { store as storeModule } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { emitEvent, getPreference, isAdmin, preferenceState, setPreference } =
+const { emitEvent, getPreference, hasScope, preferenceState, setPreference } =
   vi.hoisted(() => ({
     emitEvent: vi.fn(),
     getPreference: vi.fn(),
-    isAdmin: vi.fn(() => true),
+    hasScope: vi.fn((_scope: Scope) => true),
     preferenceState: {
       values: {} as Record<string, unknown>,
       reactiveValues: undefined as Record<string, unknown> | undefined,
@@ -47,14 +48,18 @@ vi.mock("@/plugins/store", async () => {
       // resolved from the player list like the real store, so the guard against
       // overriding an existing selection behaves the same
       activePlayer: computed(() =>
-        store.activePlayerId ? api.players[store.activePlayerId] : undefined,
+        storeModule.activePlayerId
+          ? api.players[storeModule.activePlayerId]
+          : undefined,
       ),
       activePlayerId: undefined as string | undefined,
       companionPlayerId: undefined as string | undefined,
       dialogActive: false,
+      isTouchscreen: false,
       mobileLayout: false,
       showFullscreenPlayer: false,
       showPlayersMenu: true,
+      enabledPlugins: new Set<string>(),
     }),
   };
 });
@@ -74,9 +79,13 @@ vi.mock("@/plugins/eventbus", () => ({
   },
 }));
 
+// plain let read lazily by the mock, so tests can flip it per case
+let isDashboardViewer = false;
+
 vi.mock("@/plugins/auth", () => ({
   authManager: {
-    isAdmin,
+    hasScope,
+    isDashboardViewer: () => isDashboardViewer,
   },
 }));
 
@@ -113,13 +122,30 @@ vi.mock("@/composables/userPreferences", async () => {
 });
 
 vi.mock("@/helpers/players", () => ({
+  canEditPlayerGroup: (player: Player) => player.can_group_with.length > 0,
+  getPlayerDisplayName: (player: Player) =>
+    player.player_id === "builtin" ? "This device" : player.name,
   groupMemberPickerVisible: () => true,
   isBuiltinPlayer: (player: Player) => player.player_id === "builtin",
   isPlayerActive: (player: Player) =>
     player.playback_state === PlaybackState.PLAYING ||
     player.playback_state === PlaybackState.PAUSED,
-  playerVisible: () => true,
+  isSelectablePlayer: (player?: Player) =>
+    Boolean(
+      player?.enabled &&
+      player.available &&
+      !player.needs_setup &&
+      player.type !== PlayerType.SOURCE,
+    ),
+  playerVisible: (
+    player: Player,
+    _allowGroupChilds: boolean,
+    allowNeedsSetup: boolean,
+  ) => !player.needs_setup || allowNeedsSetup,
 }));
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & { mobileLayout: boolean };
 
 const PlayerCardStub = {
   props: [
@@ -197,17 +223,12 @@ const PopoverAnchorStub = {
   props: ["reference"],
   template: `<div><slot /></div>`,
 };
+// deliberately not focusable: where the panel puts its opening focus depends on
+// the markup reka renders around it, so those tests mount the real popover
 const PopoverContentStub = {
   name: "PopoverContent",
-  emits: ["interact-outside", "open-auto-focus"],
-  template: `
-    <div
-      tabindex="-1"
-      @open-auto-focus="$emit('open-auto-focus', $event)"
-    >
-      <slot />
-    </div>
-  `,
+  emits: ["interact-outside"],
+  template: `<div><slot /></div>`,
 };
 
 function createPlayer(
@@ -250,6 +271,7 @@ function createPlayer(
     group_volume: null,
     group_volume_muted: null,
     hide_in_ui: false,
+    private: false,
     icon: "speaker",
     power_control: "power",
     volume_control: "volume",
@@ -266,7 +288,30 @@ function createPlayer(
     active_group: null,
     synced_to: null,
     sleep_timer_expires_at: null,
+    active_source_audio: null,
   };
+}
+
+// enough players for the panel to show its search field
+function manyPlayers(): Record<string, Player> {
+  return Object.fromEntries(
+    Array.from({ length: 11 }, (_, index) => {
+      const player = createPlayer(`player-${index}`, `Player ${index}`);
+      return [player.player_id, player];
+    }),
+  );
+}
+
+// resolves with the panel once reka has mounted it and settled its focus
+function findOpenPanel() {
+  return vi.waitFor(() => {
+    const panel = document.body.querySelector(
+      '[data-testid="player-select-sheet"]',
+    );
+    expect(panel).not.toBeNull();
+    expect(panel!.contains(document.activeElement)).toBe(true);
+    return panel!;
+  });
 }
 
 function setPlayerSelectPreference(key: string, value: boolean | string) {
@@ -335,6 +380,8 @@ describe("PlayerSelect", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    hasScope.mockImplementation(() => true);
+    isDashboardViewer = false;
     const preferenceValues = preferenceState.reactiveValues;
     if (preferenceValues) {
       for (const key of Object.keys(preferenceValues)) {
@@ -345,6 +392,7 @@ describe("PlayerSelect", () => {
     store.activePlayerId = undefined;
     store.companionPlayerId = undefined;
     store.dialogActive = false;
+    store.isTouchscreen = false;
     store.mobileLayout = false;
     store.showFullscreenPlayer = false;
     store.showPlayersMenu = true;
@@ -553,6 +601,29 @@ describe("PlayerSelect", () => {
     expect(setPreference).not.toHaveBeenCalled();
   });
 
+  it("never auto-selects for a dashboard viewer", async () => {
+    isDashboardViewer = true;
+    const attic = createPlayer("attic", "Attic");
+    const builtin = createPlayer("builtin", "This device");
+    api.players = { [attic.player_id]: attic };
+
+    mountPlayerSelect();
+    // no automatic default: the hosting dashboard view pins the player
+    expect(store.activePlayerId).toBeUndefined();
+
+    // the display's own built-in player registering late is not picked either
+    api.players[builtin.player_id] = builtin;
+    store.companionPlayerId = builtin.player_id;
+    await nextTick();
+    expect(store.activePlayerId).toBeUndefined();
+
+    // a view's pin is not persisted as the shared viewer user's choice
+    store.activePlayerId = attic.player_id;
+    await nextTick();
+    expect(store.activePlayerId).toBe(attic.player_id);
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+
   it("keeps the remembered player when it is unavailable at startup", () => {
     const kitchen = createPlayer("kitchen", "Kitchen");
     kitchen.available = false;
@@ -643,6 +714,27 @@ describe("PlayerSelect", () => {
     ).toEqual(["player-7"]);
   });
 
+  it("filters the built-in player by the name it is shown with", async () => {
+    api.players = Object.fromEntries(
+      Array.from({ length: 11 }, (_, index) => {
+        const player =
+          index === 7
+            ? createPlayer("builtin", "Marcel's Mac (Chrome)")
+            : createPlayer(`player-${index}`, `Player ${index}`);
+        return [player.player_id, player];
+      }),
+    );
+    const wrapper = mountPlayerSelect();
+
+    await wrapper.find(".player-search").setValue("this device");
+
+    expect(
+      wrapper
+        .findAll(".player-card")
+        .map((card) => card.attributes("data-player-id")),
+    ).toEqual(["builtin"]);
+  });
+
   it("selects a player and closes the sheet from the card action", async () => {
     const player = createPlayer("kitchen", "Kitchen");
     const other = createPlayer("attic", "Attic");
@@ -656,6 +748,21 @@ describe("PlayerSelect", () => {
 
     expect(store.activePlayerId).toBe(player.player_id);
     expect(store.showPlayersMenu).toBe(false);
+  });
+
+  it("lists an audio input without ever selecting it", async () => {
+    const source = createPlayer("turntable", "Turntable");
+    source.type = PlayerType.SOURCE;
+    api.players = { [source.player_id]: source };
+    const wrapper = mountPlayerSelect();
+
+    // listed for discoverability, but never auto-picked as the default player
+    expect(wrapper.find('[data-player-id="turntable"]').exists()).toBe(true);
+    expect(store.activePlayerId).toBeUndefined();
+
+    await wrapper.find(".select-player").trigger("click");
+
+    expect(store.activePlayerId).toBeUndefined();
   });
 
   it("starts setup instead of selecting a setup-required player", async () => {
@@ -672,7 +779,69 @@ describe("PlayerSelect", () => {
     expect(emitEvent).toHaveBeenCalledWith("setupFlowDialog", {
       kind: "player",
       playerId: player.player_id,
+      onFlowEnded: expect.any(Function),
     });
+  });
+
+  it("leaves setup-required players out for a role that may not set them up", () => {
+    hasScope.mockImplementation(
+      (scope: Scope) => scope !== Scope.CONFIG_PLAYERS_WRITE,
+    );
+    const setupRequired = createPlayer("kitchen", "Kitchen");
+    setupRequired.available = false;
+    setupRequired.needs_setup = true;
+    api.players = {
+      kitchen: setupRequired,
+      office: createPlayer("office", "Office"),
+    };
+
+    const wrapper = mountPlayerSelect();
+
+    expect(
+      wrapper
+        .findAll(".player-card")
+        .map((card) => card.attributes("data-player-id")),
+    ).toEqual(["office"]);
+  });
+
+  it.each([
+    { finished: true, selected: "kitchen" },
+    { finished: false, selected: undefined },
+  ])(
+    "selects $selected when its setup flow reports finished=$finished",
+    async ({ finished, selected }) => {
+      const player = createPlayer("kitchen", "Kitchen");
+      player.available = false;
+      player.needs_setup = true;
+      api.players = { [player.player_id]: player };
+      const wrapper = mountPlayerSelect();
+
+      await wrapper.find(".select-player").trigger("click");
+      const event = emitEvent.mock.calls.at(-1)?.[1] as {
+        onFlowEnded: (finished: boolean) => void;
+      };
+      event.onFlowEnded(finished);
+
+      expect(store.activePlayerId).toBe(selected);
+    },
+  );
+
+  it("remembers the player its setup flow finished on", async () => {
+    const player = createPlayer("kitchen", "Kitchen");
+    player.needs_setup = true;
+    api.players = { [player.player_id]: player };
+    const wrapper = mountPlayerSelect();
+
+    await wrapper.find(".select-player").trigger("click");
+    const event = emitEvent.mock.calls.at(-1)?.[1] as {
+      onFlowEnded: (finished: boolean) => void;
+    };
+    event.onFlowEnded(true);
+
+    expect(setPreference).toHaveBeenCalledWith(
+      "activePlayerId",
+      player.player_id,
+    );
   });
 
   it("enables the detailed card layout only in the selector", () => {
@@ -834,36 +1003,35 @@ describe("PlayerSelect", () => {
     );
   });
 
-  it("focuses the sheet instead of opening the mobile keyboard", () => {
+  // reka reports the opening focus on the wrapper it positions the panel with,
+  // and that wrapper cannot hold focus, so only a real mount shows where focus
+  // ends up. A touchscreen is the gate either way: a phone held sideways gets
+  // the desktop layout and still raises a keyboard.
+  it.each([true, false])(
+    "focuses the panel instead of the search field on touch (mobile layout: %s)",
+    async (mobileLayout) => {
+      store.isTouchscreen = true;
+      store.mobileLayout = mobileLayout;
+      api.players = manyPlayers();
+      const wrapper = mountPlayerSelectWithPopover();
+
+      const panel = await findOpenPanel();
+      expect(document.activeElement).toBe(panel);
+
+      wrapper.unmount();
+    },
+  );
+
+  it("leaves the opening focus alone without a touchscreen", async () => {
     store.mobileLayout = true;
-    api.players = Object.fromEntries(
-      Array.from({ length: 11 }, (_, index) => {
-        const player = createPlayer(`player-${index}`, `Player ${index}`);
-        return [player.player_id, player];
-      }),
-    );
-    const wrapper = mountPlayerSelect();
-    const popover = wrapper.get('[data-testid="player-select-sheet"]');
-    if (!(popover.element instanceof HTMLElement)) {
-      throw new TypeError("Expected popover to render as an HTML element");
-    }
-    const focus = vi.spyOn(popover.element, "focus");
-    const event = new Event("open-auto-focus", { cancelable: true });
+    api.players = manyPlayers();
+    const wrapper = mountPlayerSelectWithPopover();
 
-    popover.element.dispatchEvent(event);
+    const panel = await findOpenPanel();
+    expect(document.activeElement).not.toBe(panel);
+    expect(panel.contains(document.activeElement)).toBe(true);
 
-    expect(event.defaultPrevented).toBe(true);
-    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
-  });
-
-  it("keeps the default focus behavior in desktop layout", () => {
-    const wrapper = mountPlayerSelect();
-    const popover = wrapper.get('[data-testid="player-select-sheet"]');
-    const event = new Event("open-auto-focus", { cancelable: true });
-
-    popover.element.dispatchEvent(event);
-
-    expect(event.defaultPrevented).toBe(false);
+    wrapper.unmount();
   });
 
   it("restores focus to the menu trigger after closing", async () => {
@@ -1002,6 +1170,43 @@ describe("PlayerSelect", () => {
     expect(
       wrapper.find(".player-card").attributes("data-member-controls"),
     ).toBe("true");
+  });
+
+  it("opens the grouping controls of the active player from the fullscreen player", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen", PlaybackState.PLAYING);
+    kitchen.can_group_with = ["attic"];
+    api.players = {
+      kitchen,
+      attic: createPlayer("attic", "Attic"),
+    };
+    store.activePlayerId = kitchen.player_id;
+    store.showFullscreenPlayer = true;
+    store.showPlayersMenu = false;
+    const wrapper = mountPlayerSelect();
+    const card = (playerId: string) =>
+      wrapper.find(`.player-card[data-player-id="${playerId}"]`);
+
+    store.showPlayersMenu = true;
+    await nextTick();
+
+    expect(card("kitchen").attributes("data-member-controls")).toBe("true");
+    expect(card("attic").attributes("data-member-controls")).toBe("false");
+  });
+
+  it("keeps the grouping controls closed when opened from the player bar", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen", PlaybackState.PLAYING);
+    kitchen.can_group_with = ["attic"];
+    api.players = { kitchen };
+    store.activePlayerId = kitchen.player_id;
+    store.showPlayersMenu = false;
+    const wrapper = mountPlayerSelect();
+
+    store.showPlayersMenu = true;
+    await nextTick();
+
+    expect(
+      wrapper.find(".player-card").attributes("data-member-controls"),
+    ).toBe("false");
   });
 
   it("scrolls the selected player into view when it is not pinned", async () => {

@@ -6,9 +6,9 @@ import groupControlSource from "@/layouts/default/PlayerOSD/PlayerBarGroupContro
 import volumeControlSource from "@/layouts/default/PlayerOSD/PlayerBarVolumeControl.vue?raw";
 import playerSelectSource from "@/layouts/default/PlayerSelect.vue?raw";
 import {
-  PLAYER_BAR_POPOUT_COLLISION_PADDING,
   PLAYER_BAR_POPOUT_GAP,
   PLAYER_BAR_POPOUT_INSET_X,
+  PLAYER_BAR_POPOUT_TOP_GAP,
 } from "@/helpers/player_bar";
 import tokens from "@/styles/global.css?inline";
 import css from "@/styles/style.css?inline";
@@ -19,18 +19,27 @@ const OVERLAY_HEIGHT = "--player-bar-overlay-height";
 const OVERLAY_MARKER = "data-player-bar-overlay";
 const BAR_HEIGHT = "72px";
 const DOCK_RIM = "4px";
+// the terms the fallback ceiling composes, each with its own value so one going
+// missing reads as the wrong expression instead of quietly passing
+const TOP_GAP = "33px";
+const GAP = "7px";
+const INSET_TOP = "55px";
 
 let appStyles: HTMLStyleElement;
 let tokenStyles: HTMLStyleElement;
 
 // happy-dom caches an element's computed style from its first read, so every
 // case builds its popout after the document state it measures is in place
-function popoutInset() {
+function popoutStyle() {
   const popout = document.createElement("div");
   // the p-0 every popout passes compiles to an !important padding reset
   popout.className = "player-bar-popout p-0";
   document.body.appendChild(popout);
-  return getComputedStyle(popout).paddingBottom;
+  return getComputedStyle(popout);
+}
+
+function popoutInset() {
+  return popoutStyle().paddingBottom;
 }
 
 function customProperty(name: string) {
@@ -56,7 +65,7 @@ describe("player bar popout inset", () => {
     tokenStyles.remove();
     document.body.innerHTML = "";
     document.documentElement.removeAttribute(OVERLAY_MARKER);
-    document.documentElement.style.removeProperty(OVERLAY_HEIGHT);
+    document.documentElement.removeAttribute("style");
   });
 
   it("clears the whole dock while the mobile bars are on screen", () => {
@@ -91,7 +100,24 @@ describe("player bar popout inset", () => {
       `${PLAYER_BAR_POPOUT_INSET_X}px`,
     );
     expect(customProperty("--player-bar-popout-top-gap")).toBe(
-      `${PLAYER_BAR_POPOUT_COLLISION_PADDING.top}px`,
+      `${PLAYER_BAR_POPOUT_TOP_GAP}px`,
+    );
+  });
+
+  // the popper measures the free space itself, so the ceiling composed from the
+  // tokens only applies where there is none, and the viewport it measures
+  // reaches under the status bar there too
+  it("holds the fallback ceiling below the status bar", () => {
+    for (const [token, value] of [
+      ["--player-bar-popout-top-gap", TOP_GAP],
+      ["--player-bar-popout-gap", GAP],
+      ["--device-inset-top", INSET_TOP],
+    ]) {
+      document.documentElement.style.setProperty(token, value);
+    }
+
+    expect(popoutStyle().maxHeight.replace(/\s+/g, "")).toBe(
+      `var(--reka-popover-content-available-height,calc(100dvh-${TOP_GAP}-${INSET_TOP}-${GAP}))`,
     );
   });
 

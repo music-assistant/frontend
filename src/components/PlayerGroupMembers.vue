@@ -32,13 +32,13 @@
             />
           </span>
           <span class="min-w-0 flex-1 truncate text-xs font-medium">
-            {{ candidate.name }}
+            {{ getPlayerDisplayName(candidate) }}
           </span>
           <Checkbox
             :id="getCheckboxId(candidate)"
             :model-value="isGroupMember(candidate)"
             :disabled="isRequiredMember(candidate)"
-            :aria-label="candidate.name"
+            :aria-label="getPlayerDisplayName(candidate)"
             class="border-muted-foreground/70 bg-background/70 size-5 border-2 shadow-sm"
             @update:model-value="
               updateGroupMember(candidate.player_id, $event === true)
@@ -55,7 +55,13 @@ import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import type { PlayerGroupFilter } from "@/helpers/player_group";
-import { groupMemberPickerVisible } from "@/helpers/players";
+import { requestGroupPlaybackConfirmation } from "@/helpers/player_group_playback";
+import {
+  canBeGroupMember,
+  getPlayerDisplayName,
+  groupMemberPickerVisible,
+  isScreenPlayer,
+} from "@/helpers/players";
 import { api } from "@/plugins/api";
 import {
   type Player,
@@ -99,6 +105,7 @@ const candidates = computed(() => {
       !canGroupWithPlayer(player) ||
       !player.available ||
       !groupMemberPickerVisible(player) ||
+      !canBeGroupMember(player) ||
       player.type === PlayerType.GROUP ||
       (player.active_group && player.active_group !== props.player.player_id)
     ) {
@@ -125,9 +132,7 @@ const candidateSections = computed(() => {
       label: "players",
       translateLabel: true,
       players: availableCandidates.filter(
-        (player) =>
-          player.type !== PlayerType.LIGHT &&
-          player.type !== PlayerType.VISUALIZER,
+        (player) => player.type !== PlayerType.LIGHT && !isScreenPlayer(player),
       ),
     },
     {
@@ -139,18 +144,16 @@ const candidateSections = computed(() => {
       ),
     },
     {
-      type: "visualizers",
-      label: "visualizers",
+      type: "screens",
+      label: "screens",
       translateLabel: true,
-      players: availableCandidates.filter(
-        (player) => player.type === PlayerType.VISUALIZER,
-      ),
+      players: availableCandidates.filter((player) => isScreenPlayer(player)),
     },
   ];
   if (groupedPlayers.length > 0) {
     sections.unshift({
       type: "group",
-      label: props.groupHeading ?? props.player.name,
+      label: props.groupHeading ?? getPlayerDisplayName(props.player),
       translateLabel: false,
       players: groupedPlayers,
     });
@@ -183,33 +186,43 @@ function isRequiredMember(player: Player) {
 }
 
 function canGroupWithPlayer(player: Player) {
-  return (
-    props.player.can_group_with.includes(player.player_id) ||
-    // Providers remain supported until the server always supplies player IDs.
-    props.player.can_group_with.includes(player.provider)
-  );
+  return props.player.can_group_with.includes(player.player_id);
 }
 
 function matchesFilter(player: Player) {
   if (props.filter === "all") return true;
   if (props.filter === "lights") return player.type === PlayerType.LIGHT;
-  if (props.filter === "visualizers") {
-    return player.type === PlayerType.VISUALIZER;
-  }
-  return (
-    player.type !== PlayerType.LIGHT && player.type !== PlayerType.VISUALIZER
-  );
+  if (props.filter === "screens") return isScreenPlayer(player);
+  return player.type !== PlayerType.LIGHT && !isScreenPlayer(player);
 }
 
 function sortPlayers(players: Player[]) {
   return players.sort((left, right) =>
-    left.name.localeCompare(right.name, undefined, {
-      sensitivity: "base",
-    }),
+    getPlayerDisplayName(left).localeCompare(
+      getPlayerDisplayName(right),
+      undefined,
+      {
+        sensitivity: "base",
+      },
+    ),
   );
 }
 
 function updateGroupMember(playerId: string, selected: boolean) {
+  if (
+    !selected &&
+    playerId === props.player.player_id &&
+    requestGroupPlaybackConfirmation(props.player, "remove", () =>
+      applyGroupMemberUpdate(playerId, false),
+    )
+  ) {
+    flushPendingMemberUpdate();
+    return;
+  }
+  applyGroupMemberUpdate(playerId, selected);
+}
+
+function applyGroupMemberUpdate(playerId: string, selected: boolean) {
   const parentPlayerId = props.player.player_id;
 
   if (selected) {

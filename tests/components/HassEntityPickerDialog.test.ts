@@ -224,6 +224,7 @@ function mountPicker(addedEntityIds?: string[]) {
       addedEntityIds,
     },
     global: {
+      mocks: { $t: (key: string) => key },
       stubs: {
         Dialog: passthrough,
         DialogContent: passthrough,

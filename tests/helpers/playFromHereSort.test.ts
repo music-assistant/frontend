@@ -5,19 +5,24 @@
 import type { MusicAssistantApi } from "@/plugins/api";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const { mockPlayMedia, mockShowContextMenu, mockShowPlayMenu } = vi.hoisted(
-  () => ({
-    mockPlayMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
-    mockShowContextMenu: vi.fn(),
-    mockShowPlayMenu: vi.fn(),
-  }),
-);
+const {
+  mockPlayMedia,
+  mockShowContextMenu,
+  mockShowPlayMenu,
+  mockGetCoreConfigValue,
+} = vi.hoisted(() => ({
+  mockPlayMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
+  mockShowContextMenu: vi.fn(),
+  mockShowPlayMenu: vi.fn(),
+  mockGetCoreConfigValue: vi.fn(),
+}));
 
 vi.mock("@/plugins/api", () => ({
   api: {
     serverInfo: { value: null },
     players: {},
     playMedia: mockPlayMedia,
+    getCoreConfigValue: mockGetCoreConfigValue,
   },
 }));
 
@@ -31,6 +36,15 @@ vi.mock("@/plugins/store", () => ({
     },
   },
 }));
+
+// signed in as a member
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
 
 vi.mock("@/plugins/breakpoint", () => ({
   getBreakpointValue: vi.fn(() => false),
@@ -52,6 +66,9 @@ vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
 
 vi.mock("@/plugins/api/helpers", () => ({
   itemIsAvailable: vi.fn(),
+  // what the real helper does, which this module-wide mock would otherwise hide
+  isMusicBrainzItem: (item: { provider: string }) =>
+    item.provider === "musicbrainz",
 }));
 
 vi.mock("colorthief", () => ({
@@ -92,55 +109,49 @@ beforeEach(() => {
   mockPlayMedia.mockResolvedValue(undefined);
   mockShowContextMenu.mockReset();
   mockShowPlayMenu.mockReset();
+  mockShowPlayMenu.mockResolvedValue(undefined);
+  mockGetCoreConfigValue.mockReset();
+  mockGetCoreConfigValue.mockResolvedValue("play_from_here");
 });
 
 describe("handlePlayBtnClick with sortBy", () => {
-  it("passes sortBy to api.playMedia for playlist play-from-here", () => {
+  it("passes sortBy to api.playMedia for playlist play-from-here", async () => {
     const playedTrack = makePlaylistTrack("track1");
     const parentPlaylist = makePlaylist("pl1");
 
-    handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist, false, "name");
+    await handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist, false, "name");
 
-    expect(mockPlayMedia).toHaveBeenCalledWith(
-      parentPlaylist.uri,
-      undefined,
-      playedTrack.item_id,
-      undefined,
-      "name",
-    );
+    expect(mockPlayMedia).toHaveBeenCalledWith(parentPlaylist.uri, undefined, {
+      start_item: playedTrack.item_id,
+      sort_by: "name",
+    });
   });
 
-  it("passes undefined sortBy when not provided", () => {
+  it("passes undefined sortBy when not provided", async () => {
     const playedTrack = makePlaylistTrack("track1");
     const parentPlaylist = makePlaylist("pl1");
 
-    handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist);
+    await handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist);
 
-    expect(mockPlayMedia).toHaveBeenCalledWith(
-      parentPlaylist.uri,
-      undefined,
-      playedTrack.item_id,
-      undefined,
-      undefined,
-    );
+    expect(mockPlayMedia).toHaveBeenCalledWith(parentPlaylist.uri, undefined, {
+      start_item: playedTrack.item_id,
+      sort_by: undefined,
+    });
   });
 
-  it("passes sortBy for album play-from-here", () => {
+  it("passes sortBy for album play-from-here", async () => {
     const playedTrack = makePlaylistTrack("track1");
     const parentAlbum = makeAlbum("alb1");
 
-    handlePlayBtnClick(playedTrack, 0, 0, parentAlbum, false, "name");
+    await handlePlayBtnClick(playedTrack, 0, 0, parentAlbum, false, "name");
 
-    expect(mockPlayMedia).toHaveBeenCalledWith(
-      parentAlbum.uri,
-      undefined,
-      playedTrack.item_id,
-      undefined,
-      "name",
-    );
+    expect(mockPlayMedia).toHaveBeenCalledWith(parentAlbum.uri, undefined, {
+      start_item: playedTrack.item_id,
+      sort_by: "name",
+    });
   });
 
-  it("passes different sort keys correctly", () => {
+  it("passes different sort keys correctly", async () => {
     const playedTrack = makePlaylistTrack("track1");
     const parentPlaylist = makePlaylist("pl1");
 
@@ -152,15 +163,68 @@ describe("handlePlayBtnClick with sortBy", () => {
       "position_desc",
     ]) {
       mockPlayMedia.mockClear();
-      handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist, false, sortKey);
+      await handlePlayBtnClick(
+        playedTrack,
+        0,
+        0,
+        parentPlaylist,
+        false,
+        sortKey,
+      );
       expect(mockPlayMedia).toHaveBeenCalledWith(
         parentPlaylist.uri,
         undefined,
-        playedTrack.item_id,
-        undefined,
-        sortKey,
+        {
+          start_item: playedTrack.item_id,
+          sort_by: sortKey,
+        },
       );
     }
+  });
+});
+
+describe("handlePlayBtnClick with tracksSortBy", () => {
+  it("plays a playlist in the order its page lists the tracks", async () => {
+    const pl = makePlaylist("pl1");
+
+    await handlePlayBtnClick(pl, 0, 0, undefined, false, undefined, "name");
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(pl, undefined, {
+      sort_by: "name",
+    });
+  });
+
+  it("plays an album in the order its page lists the tracks", async () => {
+    const al = makeAlbum("al1");
+
+    await handlePlayBtnClick(al, 0, 0, undefined, false, undefined, "duration");
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(al, undefined, {
+      sort_by: "duration",
+    });
+  });
+
+  it("ignores the sort of the listing the item is shown in", async () => {
+    const pl = makePlaylist("pl1");
+
+    await handlePlayBtnClick(pl, 0, 0, undefined, false, "name");
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(pl);
+  });
+
+  it("hands tracksSortBy to the play menu", async () => {
+    const pl = makePlaylist("pl1");
+
+    await handlePlayBtnClick(pl, 1, 2, undefined, true, undefined, "artist");
+
+    expect(mockShowPlayMenu).toHaveBeenCalledWith(
+      pl,
+      undefined,
+      1,
+      2,
+      "artist",
+    );
+    expect(mockPlayMedia).not.toHaveBeenCalled();
   });
 });
 

@@ -8,7 +8,7 @@
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :show-library="true"
-    :sort-keys="sortKeys"
+    :sort-media-type="MediaType.PLAYLIST"
     :update-available="updateAvailable"
     :title="$t('playlists')"
     :allow-key-hooks="true"
@@ -32,12 +32,15 @@ import {
   EventMessage,
   EventType,
   MediaType,
+  type Playlist,
   ProviderFeature,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ListMusic } from "@lucide/vue";
+import { Import, ListMusic, ListPlus, WandSparkles } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { toast } from "vue-sonner";
 
@@ -50,21 +53,6 @@ const total = ref(store.libraryPlaylistsCount);
 const extraMenuItems = ref<ToolBarMenuItem[]>([]);
 const listingRef = ref<InstanceType<typeof ItemsListing>>();
 
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "timestamp_modified",
-  "timestamp_modified_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
-
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
@@ -73,7 +61,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
   );
@@ -96,6 +85,8 @@ const setTotals = async function (params: LoadDataParams) {
 };
 
 onMounted(() => {
+  // creating and importing playlists changes the library
+  const canEditLibrary = authManager.hasScope(Scope.LIBRARY_WRITE);
   const playListCreateItems: ToolBarMenuItem[] = [];
   for (const prov of Object.values(api.providers).filter(
     (x) =>
@@ -116,42 +107,40 @@ onMounted(() => {
       action: () => {
         newPlaylist(prov.instance_id);
       },
-      icon: "mdi-playlist-plus",
+      icon: ListPlus,
       overflowAllowed: true,
     });
   }
   // Smart Playlist option inside the "Create Playlist" submenu
-  if (
-    Object.values(api.providers).some(
-      (p) => p.available && p.domain === SMART_PLAYLIST_PROVIDER_DOMAIN,
-    )
-  ) {
+  if (store.enabledPlugins.has(SMART_PLAYLIST_PROVIDER_DOMAIN)) {
     playListCreateItems.push({
       label: "smart_playlist.create",
       action: () => {
         eventbus.emit("createSmartPlaylist", {});
       },
-      icon: "mdi-playlist-star",
+      icon: WandSparkles,
       overflowAllowed: true,
     });
   }
-  if (playListCreateItems.length) {
+  if (canEditLibrary && playListCreateItems.length) {
     extraMenuItems.value.push({
       label: "create_playlist_on",
-      icon: "mdi-playlist-plus",
+      icon: ListPlus,
       subItems: playListCreateItems,
       overflowAllowed: true,
     });
   }
   // import playlist from file
-  extraMenuItems.value.push({
-    label: "import_playlist",
-    action: () => {
-      triggerFileImport();
-    },
-    icon: "mdi-file-import",
-    overflowAllowed: true,
-  });
+  if (canEditLibrary) {
+    extraMenuItems.value.push({
+      label: "import_playlist",
+      action: () => {
+        triggerFileImport();
+      },
+      icon: Import,
+      overflowAllowed: true,
+    });
+  }
   // signal if/when items get added/updated/removed within this library
   const unsub = api.subscribe_multi(
     [
@@ -165,6 +154,14 @@ onMounted(() => {
         evt.event === EventType.MEDIA_ITEM_ADDED ||
         evt.event === EventType.MEDIA_ITEM_DELETED
       ) {
+        listingRef.value?.reload?.();
+      } else if (
+        (evt.data as Playlist).access !== null &&
+        listingRef.value?.isMissing((evt.data as Playlist).uri)
+      ) {
+        // the server only announces a playlist to the users who may see it, so
+        // a personal playlist a fully loaded, unfiltered listing lacks was just
+        // shared with the user (losing access arrives as a delete instead)
         listingRef.value?.reload?.();
       } else {
         updateAvailable.value = true;

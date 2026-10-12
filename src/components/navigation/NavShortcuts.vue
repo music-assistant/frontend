@@ -196,12 +196,13 @@ const draggedItem = computed(() =>
                 <SidebarMenuSkeleton :show-icon="true" />
               </SidebarMenuItem>
             </template>
-            <!-- Pinned shortcuts -->
+            <!-- Pinned shortcuts. The row gutter would skew the centred icon
+                 rail, so it lifts when collapsed. -->
             <SidebarMenuItem
               v-for="({ item, url }, index) in pinnedItemsWithUrls"
               :key="item.uri"
               v-hold="(e: Event) => onHold(e, item)"
-              class="mr-1.5"
+              class="mr-1.5 group-data-[collapsible=icon]:mr-0"
               :class="{
                 'shortcut-item': editMode,
                 'shortcut-item-dragging': draggingIndex === index,

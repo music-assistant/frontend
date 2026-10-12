@@ -205,6 +205,48 @@ export enum MediaType {
   UNKNOWN = "unknown",
 }
 
+export type LibrarySortMediaType =
+  | MediaType.ARTIST
+  | MediaType.ALBUM
+  | MediaType.TRACK
+  | MediaType.PLAYLIST
+  | MediaType.RADIO
+  | MediaType.AUDIOBOOK
+  | MediaType.PODCAST
+  | MediaType.GENRE;
+
+export enum SortField {
+  NAME = "name",
+  SORT_NAME = "sort_name",
+  TIMESTAMP_ADDED = "timestamp_added",
+  TIMESTAMP_MODIFIED = "timestamp_modified",
+  LAST_PLAYED = "last_played",
+  PLAY_COUNT = "play_count",
+  DURATION = "duration",
+  YEAR = "year",
+  POSITION = "position",
+  ARTIST_NAME = "artist_name",
+  RANDOM = "random",
+  RANDOM_PLAY_COUNT = "random_play_count",
+  TRACK_NUMBER = "track_number",
+  ALBUM_NAME = "album_name",
+  PROVIDER = "provider",
+  FAVORITE_TIMESTAMP = "favorite_timestamp",
+  ORIGINAL = "original",
+}
+
+export enum SortDirection {
+  ASC = "asc",
+  DESC = "desc",
+}
+
+export interface SortOptionInfo {
+  field: SortField;
+  supports_direction: boolean;
+  default_direction: SortDirection | null;
+  label_key: string | null;
+}
+
 export enum LinkType {
   WEBSITE = "website",
   FACEBOOK = "facebook",
@@ -371,6 +413,7 @@ export enum PlayerType {
   DISPLAY = "display",
   VISUALIZER = "visualizer",
   LIGHT = "light",
+  SOURCE = "source", // A capture-only device that provides audio input.
   UNKNOWN = "unknown",
 }
 
@@ -424,6 +467,10 @@ export enum EventType {
   MEDIA_ITEM_UPDATED = "media_item_updated",
   MEDIA_ITEM_DELETED = "media_item_deleted",
   MEDIA_ITEM_PLAYED = "media_item_played",
+  // an item's playlog entry changed; object_id is the item uri
+  PLAYLOG_UPDATED = "playlog_updated",
+  // a user's like, dislike or unset on an item changed; object_id is the item uri
+  FAVORITE_UPDATED = "favorite_updated",
   PROVIDERS_UPDATED = "providers_updated",
   TASKS_UPDATED = "tasks_updated",
   MUSIC_SYNC_COMPLETED = "music_sync_completed",
@@ -513,6 +560,7 @@ export enum ConfigEntryType {
   BOOLEAN = "boolean",
   STRING = "string",
   SECURE_STRING = "secure_string",
+  PAIRING_CODE = "pairing_code",
   INTEGER = "integer",
   FLOAT = "float",
   LABEL = "label",
@@ -524,6 +572,8 @@ export enum ConfigEntryType {
   IMAGE = "image",
   // url: clickable link; in an invoke_action response the frontend opens it (one-shot)
   URL = "url",
+  // folder: absolute path of a folder on the server, picked from the storage locations
+  FOLDER = "folder",
 
   // Only used in the frontend
   OPTIONS = "options",
@@ -536,13 +586,20 @@ export enum VolumeNormalizationMode {
   FALLBACK_FIXED_GAIN = "fallback_fixed_gain",
   FIXED_GAIN = "fixed_gain",
   FALLBACK_DYNAMIC = "fallback_dynamic",
+  // the source levelled its own audio, so the server left it alone: distinct from
+  // DISABLED, which means nothing normalized it at all
+  SOURCE = "source",
   UNKNOWN = "unknown",
 }
 
 export enum CrossfadeMode {
   SMART_CROSSFADE = "smart_crossfade",
   STANDARD_CROSSFADE = "standard_crossfade",
+  // a spoken tail mixed over the next track's start, with the track ducked under it
+  VOICE_OVER = "voice_over",
   DISABLED = "disabled",
+  // the source crossfades its own playback, so the server does not
+  SOURCE = "source",
   UNKNOWN = "unknown",
 }
 
@@ -620,6 +677,29 @@ export interface EventMessage {
 }
 export type MassEvent = EventMessage;
 
+// data of the PLAYLOG_UPDATED event
+export interface PlaylogUpdate {
+  uri: string;
+  media_type: MediaType;
+  fully_played: boolean;
+  seconds_played: number;
+  // the user the change applies to, null when it applies to all users
+  userid?: string | null;
+}
+
+// data of the FAVORITE_UPDATED event
+export interface FavoriteUpdate {
+  uri: string;
+  media_type: MediaType;
+  // the library (database) id of the item
+  item_id: string;
+  // true is a like, false a dislike, null nothing at all
+  favorite: boolean | null;
+  // the user the change applies to; the server only sends the event to that
+  // user, but it is checked anyway
+  user_id: string;
+}
+
 export interface ServerInfoMessage {
   server_id: string;
   server_version: string;
@@ -630,6 +710,11 @@ export interface ServerInfoMessage {
   onboard_done: boolean;
   name: string | null;
   status: CoreState;
+  // internal_url supersedes base_url
+  internal_url: string | null;
+  external_url: string | null;
+  has_remote_access: boolean;
+  unsupported_install: boolean;
 }
 
 export type MessageType =
@@ -679,7 +764,8 @@ export interface ConfigEntry {
   key: string;
   type: ConfigEntryType;
   // label: localized display label, resolved server-side; null when the entry carries no
-  // in-code label and no translation matches - fall back to `key`
+  // in-code label and no translation matches - fall back to `key`. An empty string is a
+  // deliberate "no label", for entries whose control speaks for itself
   label: string | null;
   default_value: ConfigValueType;
   required: boolean;
@@ -687,6 +773,10 @@ export interface ConfigEntry {
   options: ConfigValueOption[];
   // range [optional]: select values within range
   range?: number[] | null;
+  // format [optional]: for PAIRING_CODE entries — '#' digit box, 'X' alphanumeric
+  // (uppercase) box, any other character a rendered separator; the value is the code
+  // without separators
+  format?: string | null;
   // description [optional]: extended description of the setting.
   description?: string | null;
   // help_link [optional]: link to help article.
@@ -694,7 +784,8 @@ export interface ConfigEntry {
   // multi_value [optional]: allow multiple values from the list
   multi_value?: boolean;
   // expanded_options [optional]: render the options inline - all of them, with their
-  // descriptions, visible at once (e.g. as a radio group) - instead of behind a dropdown.
+  // descriptions, visible at once - instead of behind a dropdown. A setup flow step whose
+  // only entry is a required one of these submits as soon as an option is picked.
   // Ignored when the entry has no options or is multi_value.
   expanded_options?: boolean;
   // depends_on [optional]: key of another entry that gates this one; an unresolved key counts
@@ -759,6 +850,10 @@ export enum FlowStepType {
   UNKNOWN = "unknown",
 }
 
+// step_id a FINISH step carries when there is nothing to report (e.g. a one-click
+// device approval); the setup dialog closes instead of showing a success screen
+export const SILENT_FINISH_STEP_ID = "finish_silent";
+
 export interface SetupFlowStep {
   // A single step of a running setup flow (add/reconfigure a provider or set up a player).
   // Human-readable fields (title/description/progress_text/reason and error values) are
@@ -794,6 +889,35 @@ export interface SetupFlowStep {
   reason?: string | null;
 }
 
+export enum ProviderSharing {
+  // Who, besides its owner, a music source is shared with.
+  // only the owner
+  PRIVATE = "private",
+  // the owner plus the users listed on the access record
+  SELECTED = "selected",
+  // every signed-in household member, guests excluded
+  MEMBERS = "members",
+  // every user, guests included
+  EVERYONE = "everyone",
+}
+
+export interface ProviderAccess {
+  // Who a music source serves: its owner and the users it is shared with.
+  // owner: user_id of the member the source belongs to; null = a household
+  // source managed by admins, and then sharing alone decides who may use it
+  owner: string | null;
+  sharing: ProviderSharing;
+  // shared_users: only consulted with ProviderSharing.SELECTED
+  shared_users: string[];
+}
+
+export interface PlaylistAccess extends ProviderAccess {
+  // Who a Music Assistant playlist serves: its owner, who may see it and who may edit it.
+  // collaborative: everyone the playlist is shared with may also add and remove its
+  // items; otherwise only the owner may
+  collaborative: boolean;
+}
+
 export interface ProviderConfig extends Config {
   // Provider(instance) Configuration.
   type: ProviderType;
@@ -807,6 +931,10 @@ export interface ProviderConfig extends Config {
   default_name: string | null;
   // last_error: structured error if the provider could not be setup with this config
   last_error: ProviderError | null;
+  // access: who this instance serves. null = no record: a legacy config, or a
+  // provider type where ownership is meaningless (player/metadata/...), which
+  // is treated as visible to everyone
+  access: ProviderAccess | null;
   // status: load/lifecycle status, derived server-side
   status: ProviderStatus | null;
 }
@@ -821,6 +949,9 @@ export interface PlayerConfig extends Config {
   name: string | null;
   // default_name: default name to use when there is name available
   default_name: string | null;
+  // player_type: what the player is; a protocol player is one output of
+  // another player, configured as part of it
+  player_type: PlayerType;
 }
 
 export interface CoreConfig extends Config {
@@ -870,8 +1001,7 @@ export interface MediaItemImage {
   provider: string;
   remotely_accessible: boolean;
   // Opaque sha256(provider+path) id used to address the image via the
-  // canonical /imageproxy/<proxy_id> endpoint. Injected by the server on
-  // schema_version >= 31; null when it issues no id, absent on older servers.
+  // canonical /imageproxy/<proxy_id> endpoint; null when the server issues no id.
   proxy_id?: string | null;
 }
 
@@ -889,6 +1019,14 @@ export interface MediaItemCollection {
   sequence: number | string | null;
 }
 
+// one timed line of a transcript, as spoken
+export interface TranscriptCue {
+  start: number;
+  end?: number | null;
+  text: string;
+  speaker?: string | null;
+}
+
 export interface MediaItemMetadata {
   description?: string | null;
   // ISO 639-1 language code of `description`
@@ -902,6 +1040,10 @@ export interface MediaItemMetadata {
   copyright?: string | null;
   lyrics?: string | null;
   lrc_lyrics?: string | null;
+  transcript?: string | null;
+  transcript_cues?: TranscriptCue[] | null;
+  // whether a transcript can be fetched, null when the provider cannot tell
+  has_transcript?: boolean | null;
   label?: string | null;
   links?: MediaItemLink[] | null;
   performers?: string[] | null;
@@ -934,8 +1076,12 @@ interface _MediaItemBase {
 export interface MediaItem extends _MediaItemBase {
   provider_mappings: ProviderMapping[];
   metadata: MediaItemMetadata;
-  favorite: boolean;
+  // the signed-in user's own state: true is a like, false a dislike, null
+  // nothing at all. Every user has their own. A summary listing leaves the key
+  // out of the items it returns when there is no state, so absent reads as null.
+  favorite?: boolean | null;
   position?: number | null; //required for playlist tracks, optional for all other
+  date_added?: string | null;
 }
 
 export interface ItemMapping extends _MediaItemBase {
@@ -982,10 +1128,27 @@ export interface Playlist extends MediaItem {
   is_editable: boolean;
   supported_mediatypes: MediaType[];
   is_dynamic: boolean;
+  // access: only Music Assistant's own (builtin) playlists carry a record. null
+  // means everyone: a playlist without a record, or a playlist of a music
+  // source, which follows the access of that source. Its owner is a user id,
+  // unrelated to the display name in owner
+  access: PlaylistAccess | null;
+}
+
+// track matching tier accepted when matching playlist tracks against a
+// provider's library. matching always cascades exact -> same_recording ->
+// best_effort; the policy only sets the lowest tier that is still accepted.
+export enum PlaylistMatchPolicy {
+  EXACT = "exact",
+  SAME_RECORDING = "same_recording",
+  BEST_EFFORT = "best_effort",
 }
 
 export interface Radio extends MediaItem {
   is_dynamic: boolean;
+  // false: the station is finite (an AI Radio show) and the queue plays it out and
+  // ends, instead of streaming or refilling forever
+  is_endless?: boolean;
 }
 
 export interface SoundEffect extends MediaItem {
@@ -1018,12 +1181,18 @@ export interface PodcastEpisode extends MediaItem {
   position: number;
   podcast: Podcast | ItemMapping;
   duration: number;
+  // the publisher's own episode and season number, null when it does not number them
+  episode_number: number | null;
+  season: number | null;
   fully_played: boolean | null;
   resume_position_ms: number | null;
 }
 
 export interface Genre extends MediaItem {
   genre_aliases?: string[] | null;
+  // mapped alias count (own name excluded), sent on summary listings
+  // instead of the full genre_aliases list
+  genre_alias_count?: number | null;
   // taxonomy this genre belongs to; null/undefined = music/general
   content_type?: MediaType | null;
 }
@@ -1073,6 +1242,7 @@ export interface RecommendationFolder extends BrowseFolder {
   items: MediaItemTypeOrItemMapping[];
   enabled_by_default: boolean;
   type: RecommendationFolderType;
+  supports_provider_filter: boolean;
 }
 
 /** Statistics interfaces */
@@ -1127,11 +1297,7 @@ export type MediaItemType =
   | BrowseFolder;
 
 export type PlayableMediaItemType =
-  | Track
-  | Radio
-  | AudioSource
-  | Audiobook
-  | PodcastEpisode;
+  Track | Radio | AudioSource | Audiobook | PodcastEpisode;
 export type MediaItemTypeOrItemMapping = MediaItemType | ItemMapping;
 
 export interface SearchResults {
@@ -1200,6 +1366,16 @@ export interface AudioOutputDetails {
 export interface AudioProcessingChain {
   input_fidelity: AudioFidelity;
   queue_processing: AudioQueueProcessing | null;
+  outputs: AudioOutputDetails[];
+}
+
+// active_source_audio: a compact audio-path snapshot for a live external source
+// (e.g. Spotify Connect) that has no queue item to carry StreamDetails on.
+export interface ActiveSourceAudioDetails {
+  input_format: AudioFormat;
+  input_fidelity: AudioFidelity;
+  crossfade_mode: CrossfadeMode;
+  volume_normalization_mode: VolumeNormalizationMode;
   outputs: AudioOutputDetails[];
 }
 
@@ -1372,6 +1548,11 @@ export interface PlayerSource {
   can_play_pause: boolean;
   can_seek: boolean;
   can_next_previous: boolean;
+  can_shuffle: boolean;
+  can_repeat: boolean;
+  // the ordering the source reports for itself; null = it has not said
+  shuffle_enabled: boolean | null;
+  repeat_mode: RepeatMode | null;
 }
 
 export interface PlayerSoundMode {
@@ -1450,6 +1631,10 @@ export interface Player {
   group_volume: number | null;
   group_volume_muted: boolean | null;
   hide_in_ui: boolean;
+  // private: the player belongs to a single device (a web/app client) or is an
+  // internal anchor; together with hide_in_ui it keeps the player out of the
+  // pickers on every other device
+  private: boolean;
   icon: string;
   power_control: string;
   volume_control: string;
@@ -1470,6 +1655,11 @@ export interface Player {
   // sleep_timer_expires_at: unix (utc) timestamp at which the active sleep timer
   // will stop playback, or null when no sleep timer is set.
   sleep_timer_expires_at: number | null;
+
+  // active_source_audio: audio-path snapshot for a live external source (e.g.
+  // Spotify Connect) playing on active_source; null while a queue item is
+  // playing instead, or while nothing is known yet.
+  active_source_audio: ActiveSourceAudioDetails | null;
 }
 
 // provider
@@ -1499,6 +1689,9 @@ export interface ProviderManifest {
   allow_disable: boolean;
   // has_setup_flow: whether setup can be run again to reconfigure the provider
   has_setup_flow: boolean;
+  // self_service: whether a member may set up (and reconfigure) a music source of
+  // this provider itself, instead of only a user who manages every music source
+  self_service: boolean;
   stage: ProviderStage;
   // icon: material design icon
   icon: string | null;
@@ -1604,6 +1797,7 @@ export interface BackgroundTask {
   id: string;
   name: string;
   status: TaskStatus;
+  report: string | null;
   logs: string[];
   schedule: TaskSchedule | null;
   last_run: string | null;
@@ -1651,9 +1845,40 @@ export interface ButtonProps {
 // Authentication interfaces
 
 export enum UserRole {
+  // The ids of the builtin user roles; User.role may also hold the id of a
+  // custom role (see Role).
   ADMIN = "admin",
   USER = "user",
   GUEST = "guest",
+  // service accounts, such as the Home Assistant integration
+  SERVICE = "service",
+}
+
+export enum Scope {
+  // Fine grained access to (parts of) the API, granted through the user's role.
+  ALL = "*",
+  LIBRARY_READ = "library.read",
+  LIBRARY_WRITE = "library.write",
+  LIBRARY_MANAGE = "library.manage",
+  PLAYERS_READ = "players.read",
+  PLAYERS_CONTROL = "players.control",
+  QUEUES_READ = "queues.read",
+  QUEUES_CONTROL = "queues.control",
+  PROVIDERS_READ = "providers.read",
+  CONFIG_PLAYERS_READ = "config.players.read",
+  CONFIG_PLAYERS_WRITE = "config.players.write",
+  CONFIG_PROVIDERS_READ = "config.providers.read",
+  CONFIG_PROVIDERS_WRITE = "config.providers.write",
+  // add and manage the music sources you own yourself
+  CONFIG_PROVIDERS_OWN = "config.providers.own",
+  CONFIG_CORE_READ = "config.core.read",
+  CONFIG_CORE_WRITE = "config.core.write",
+  USERS_READ = "users.read",
+  USERS_MANAGE = "users.manage",
+  USERS_IMPERSONATE = "users.impersonate",
+  USERS_INVITE = "users.invite",
+  SYSTEM_READ = "system.read",
+  SYSTEM_MANAGE = "system.manage",
 }
 
 export enum AuthProviderType {
@@ -1664,15 +1889,37 @@ export enum AuthProviderType {
 export interface User {
   user_id: string;
   username: string;
-  role: UserRole;
+  // role: the id of the role assigned to the user, one of UserRole for the builtin roles
+  role: string;
   enabled: boolean;
   created_at: string;
   display_name: string | null;
   avatar_url: string | null;
   preferences: Record<string, unknown>;
+  // provider_filter: the music sources the user may use, derived by the server
+  // from the access records of the sources (read-only)
   provider_filter: string[];
   player_filter: string[];
   // Use authManager.isPartyGuest() to check for party sessions.
+}
+
+export interface UserSummary {
+  // The public face of a user account, safe to serve to every member.
+  user_id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
+export interface Role {
+  // A user role: a named set of scopes.
+  role_id: string;
+  // name: the English name of a builtin role (shown translated by its id), or
+  // the name an admin gave a custom role
+  name: string;
+  scopes: string[];
+  // builtin: a role that ships with Music Assistant and can not be changed or removed
+  builtin: boolean;
 }
 
 export interface AuthToken {
@@ -1726,6 +1973,116 @@ export interface RemoteAccessInfo {
   signaling_url: string;
 }
 
+/** The address the stream server hands to players, as it is in use right now. */
+export interface StreamServerInfo {
+  base_url: string;
+}
+
+// Storage interfaces
+
+export enum StorageUsage {
+  // anything a music source can use
+  MEDIA = "media",
+  // the server's own data and cache directories
+  DATA = "data",
+  CACHE = "cache",
+}
+
+export enum StorageKind {
+  BUILTIN_MEDIA = "builtin_media",
+  CONTAINER_VOLUME = "container_volume",
+  NETWORK_SHARE = "network_share",
+  REMOVABLE = "removable",
+  LOCAL_DISK = "local_disk",
+  // a folder an admin registered on the Storage page
+  MANUAL = "manual",
+}
+
+export enum ShareType {
+  CIFS = "cifs",
+  NFS = "nfs",
+}
+
+export enum MountBackend {
+  SUPERVISOR = "supervisor",
+  LOCAL_MOUNT = "local_mount",
+}
+
+/** A folder or volume the server can see, identified by its path. */
+export interface StorageLocation {
+  // absolute path inside the server process
+  path: string;
+  name: string;
+  usage: StorageUsage;
+  kind: StorageKind;
+  // usable right now (mounted and a directory)
+  available: boolean;
+  read_only: boolean;
+  // created by Music Assistant; only managed locations can be edited or removed
+  managed: boolean;
+  backend: MountBackend | null;
+  fstype: string | null;
+  mountpoint: string | null;
+  // key of a managed network share, used to update, reload or remove it
+  share_name: string | null;
+  share_type: ShareType | null;
+  server: string | null;
+  // cifs share name or nfs export path
+  share: string | null;
+  username: string | null;
+  // protocol version the user picked; null is automatic
+  version: string | null;
+  free_space_gb: number | null;
+  total_space_gb: number | null;
+  // size of the directory itself; data and cache locations only
+  used_space_gb: number | null;
+  // localized reason why the location is not available
+  error: string | null;
+  // names of the music sources that read from the location; empty for a caller that
+  // does not manage every source. A location in use can not be removed
+  used_by: string[];
+  // names of the music sources whose own folder holds this location, so they read its
+  // files as part of their folder; they do not keep the location from being removed
+  read_by: string[];
+}
+
+export interface StorageInfo {
+  // filtered by what the caller may see
+  locations: StorageLocation[];
+  // a backend that can mount a network share is available
+  can_mount_shares: boolean;
+  mount_backend: MountBackend | null;
+  supported_share_types: ShareType[];
+  // the protocol versions the mount backend can honour per share type, next to
+  // automatic; an empty or missing list means the version can not be chosen
+  supported_share_versions: Partial<Record<ShareType, string[]>>;
+  // a folder on the server itself can be registered
+  can_add_local_folder: boolean;
+}
+
+/** The folder a Local files source reads its music from. */
+export interface SourceFolder {
+  // absolute path inside the server process
+  path: string;
+  // innermost storage location holding the folder, as last known; null when there is
+  // none or the caller may not see it
+  location: StorageLocation | null;
+}
+
+/** The connection settings of a network share, as the add and update commands take them. */
+export interface NetworkShareSettings {
+  server: string;
+  // cifs share name or nfs export path
+  share: string;
+  // null is a guest
+  username?: string | null;
+  // omitted keeps the stored one on an update
+  password?: string | null;
+  // null is automatic
+  version?: string | null;
+  read_only?: boolean;
+}
+
 // Party interfaces
 
 export interface PartyConfig {
@@ -1748,6 +2105,7 @@ export interface PartyConfig {
   qr_text: string | null;
   hide_back_button: boolean;
   show_progress_bar: boolean;
+  prevent_duplicate_tracks: boolean;
   // Shared-audio experience for guests: "venue" (opt-in) or "remote" (silent disco).
   mode?: "venue" | "remote";
 }
@@ -1808,6 +2166,8 @@ export interface AIRadioSection {
   web_search?: AIRadioWebSearchMode;
   constraints?: AIRadioSectionConstraints;
   cover_image?: string;
+  /** Whether this segment may carry over the next track's intro. */
+  allow_post?: boolean;
 }
 
 export interface AIRadioOptionalGuards {
@@ -1840,14 +2200,10 @@ export interface AIRadioFlowOptional {
 }
 
 export type AIRadioFlowItem =
-  | AIRadioFlowMust
-  | AIRadioFlowAlternative
-  | AIRadioFlowOptional;
+  AIRadioFlowMust | AIRadioFlowAlternative | AIRadioFlowOptional;
 
 export type AIRadioPlacement =
-  | "start_of_playlist"
-  | "between_songs"
-  | "end_of_playlist";
+  "start_of_playlist" | "between_songs" | "end_of_playlist";
 
 export interface AIRadioSectionOrderRule {
   when: AIRadioPlacement;
@@ -1880,29 +2236,18 @@ export interface AIRadioStation {
   host_id: string;
 }
 
-export interface AIRadioSession {
-  session_id: string;
-  station_id: string;
-  queue_id: string | null;
-  status: "running" | "completed" | "failed" | "stopped";
-  created_at: string;
-  started_at: string | null;
-  ended_at: string | null;
-  error: string | null;
-  skipped_sections?: number;
-  last_render_error: string | null;
-  progress?: {
-    phase?: string;
-    [key: string]: unknown;
-  };
-  result?: {
-    queue_entries?: number;
-    planned_sections?: number;
-    skipped_sections?: number;
-    [key: string]: unknown;
-  };
-}
+/**
+ * Per-queue AI DJ state. `station_id` is "" for a manually armed DJ and the
+ * show's id when the DJ was auto-armed by playing that show (i.e. it's on air).
+ */
+export type AIRadioQueueDJStatus = Record<
+  string,
+  { host_id: string; station_id: string }
+>;
 
-export interface AIRadioStatus {
-  sessions: AIRadioSession[];
-}
+/** Refetch hints the ai_radio plugin broadcasts as PROVIDER_EVENT payloads; they carry no state. */
+export type AIRadioEventName =
+  | "hosts_updated"
+  | "stations_updated"
+  | "sections_updated"
+  | "queue_dj_updated";

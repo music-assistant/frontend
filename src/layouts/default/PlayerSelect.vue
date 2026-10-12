@@ -47,7 +47,7 @@
       ]"
       @keydown="handleSheetKeydown"
       @close-auto-focus="preventAutoFocus"
-      @open-auto-focus="handleSheetOpenAutoFocus"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
       @interact-outside="handleSheetInteractOutside"
     >
       <PanelDragHandle @dismiss="setMenuOpen(false)" />
@@ -202,15 +202,23 @@ import {
 import { SearchInput } from "@/components/ui/search-input";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import {
   PLAYER_BAR_POPOUT_COLLISION_PADDING,
   PLAYER_BAR_POPOUT_GAP,
   fullscreenPlayerSelectAnchor,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
-import { isBuiltinPlayer, isPlayerActive } from "@/helpers/players";
+import {
+  canEditPlayerGroup,
+  getPlayerDisplayName,
+  isBuiltinPlayer,
+  isPlayerActive,
+  isSelectablePlayer,
+} from "@/helpers/players";
 import { api } from "@/plugins/api";
-import type { Player } from "@/plugins/api/interfaces";
+import { PlayerType, Scope, type Player } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
@@ -262,10 +270,13 @@ let lastInteractionWasKeyboard = false;
 let restoreFocusOnClose = false;
 let autoSelectedPlayerId: string | undefined;
 
-// PlayerSelect is the only surface that lists needs_setup players: a click here
-// launches the setup flow (see selectPlayer) instead of selecting/playing them.
+// PlayerSelect is the only surface that lists needs_setup players (a click here
+// launches the setup flow, see selectPlayer), to a role that may set them up.
+// It also lists capture-only audio inputs (informational rows, so the device
+// stays discoverable).
 const orderedPlayers = useOrderedPlayers({
-  allowNeedsSetup: true,
+  allowNeedsSetup: () => authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
+  allowSources: true,
   selectedPlayerFirst: showSelectedPlayerFirst,
   activePlayersFirst: showActivePlayersFirst,
   includePausedAsActive: true,
@@ -290,7 +301,7 @@ const filteredPlayers = computed(() => {
   const query = playerSearchQuery.value.trim().toLocaleLowerCase();
   if (!query) return orderedPlayers.value;
   return orderedPlayers.value.filter((player) =>
-    player.name.toLocaleLowerCase().includes(query),
+    getPlayerDisplayName(player).toLocaleLowerCase().includes(query),
   );
 });
 
@@ -304,6 +315,7 @@ watch(
         activeElement instanceof HTMLElement && activeElement !== document.body
           ? activeElement
           : null;
+      expandActivePlayerGroupControls();
       void scrollSelectedPlayerIntoView();
       return;
     }
@@ -376,14 +388,6 @@ function handleSheetKeydown(event: KeyboardEvent) {
   if (event.key === "Escape") setMenuOpen(false);
 }
 
-function handleSheetOpenAutoFocus(event: Event) {
-  if (!store.mobileLayout) return;
-  event.preventDefault();
-  if (event.target instanceof HTMLElement) {
-    event.target.focus({ preventScroll: true });
-  }
-}
-
 function handleSheetInteractOutside(event: Event) {
   const originalEvent = (event as CustomEvent<{ originalEvent?: Event }>).detail
     ?.originalEvent;
@@ -424,16 +428,27 @@ function selectPlayer(player: Player) {
     eventbus.emit("setupFlowDialog", {
       kind: "player",
       playerId: player.player_id,
+      onFlowEnded: (finished) => {
+        if (finished && player.type !== PlayerType.SOURCE) {
+          activatePlayer(player.player_id);
+        }
+      },
     });
     store.showPlayersMenu = false;
     return;
   }
+  // an audio input can't be a playback target; its row is informational
+  if (player.type === PlayerType.SOURCE) return;
+  activatePlayer(player.player_id);
+  store.showPlayersMenu = false;
+}
+
+function activatePlayer(playerId: string) {
   // remember it here as well: picking the player that was already selected
   // automatically leaves store.activePlayerId untouched
   autoSelectedPlayerId = undefined;
-  rememberPlayer(player.player_id);
-  store.activePlayerId = player.player_id;
-  store.showPlayersMenu = false;
+  rememberPlayer(playerId);
+  store.activePlayerId = playerId;
 }
 
 function showVolumeControl(player: Player) {
@@ -460,6 +475,17 @@ function toggleExpandedPlayer(playerIds: Set<string>, playerId: string) {
   }
 }
 
+/**
+ * Open the group controls of the active player when the panel is opened from
+ * the fullscreen player, where changing the group is the only reason to open it.
+ */
+function expandActivePlayerGroupControls() {
+  const player = store.activePlayer;
+  if (!popoutFromFullscreen.value || !player || !canEditPlayerGroup(player))
+    return;
+  expandedMemberPlayerIds.add(player.player_id);
+}
+
 function getGroupControlsId(playerId: string) {
   return `player-select-group-${encodeURIComponent(playerId)}`;
 }
@@ -471,6 +497,8 @@ function resetPanelState() {
 }
 
 function checkDefaultPlayer() {
+  // dashboard viewers never pick players themselves; the hosting view pins one.
+  if (authManager.isDashboardViewer()) return;
   if (store.activePlayer) return;
   const defaultPlayerId = selectDefaultPlayer();
   if (!defaultPlayerId) return;
@@ -488,6 +516,8 @@ function checkDefaultPlayer() {
  * device, which only registers a moment after the app has started.
  */
 function preferBuiltinPlayer() {
+  // a display must never end up showing its own built-in player
+  if (authManager.isDashboardViewer()) return;
   if (store.activePlayerId !== autoSelectedPlayerId) return;
   if (getPreference<string>("activePlayerId").value) return;
   const builtinPlayerId = selectBuiltinPlayer();
@@ -497,6 +527,8 @@ function preferBuiltinPlayer() {
 }
 
 function rememberPlayer(playerId: string) {
+  // dashboard viewer preferences are shared by every dashboard session
+  if (authManager.isDashboardViewer()) return;
   const player = api.players[playerId];
   if (!player) return;
   const rememberedPlayer = isBuiltinPlayer(player)
@@ -515,30 +547,28 @@ function selectDefaultPlayer() {
   if (lastPlayerId === BUILTIN_PLAYER_PREFERENCE) return selectBuiltinPlayer();
   if (lastPlayerId) {
     if (!(lastPlayerId in api.players)) return;
-    if (isSelectablePlayer(lastPlayerId)) return lastPlayerId;
+    if (isSelectablePlayerId(lastPlayerId)) return lastPlayerId;
   }
   const builtinPlayerId = selectBuiltinPlayer();
   if (builtinPlayerId) return builtinPlayerId;
   const selectablePlayers = orderedPlayers.value.filter((player) =>
-    isSelectablePlayer(player.player_id),
+    isSelectablePlayerId(player.player_id),
   );
   return (selectablePlayers.find(isPlayerActive) ?? selectablePlayers[0])
     ?.player_id;
 }
 
 function selectBuiltinPlayer() {
-  if (isSelectablePlayer(webPlayer.player_id)) {
+  if (isSelectablePlayerId(webPlayer.player_id)) {
     return webPlayer.player_id;
   }
-  if (isSelectablePlayer(store.companionPlayerId)) {
+  if (isSelectablePlayerId(store.companionPlayerId)) {
     return store.companionPlayerId;
   }
 }
 
-function isSelectablePlayer(playerId: string | null | undefined) {
-  if (!playerId) return false;
-  const player = api.players[playerId];
-  return player?.enabled && player.available && !player.needs_setup;
+function isSelectablePlayerId(playerId: string | null | undefined) {
+  return !!playerId && isSelectablePlayer(api.players[playerId]);
 }
 
 async function scrollSelectedPlayerIntoView() {

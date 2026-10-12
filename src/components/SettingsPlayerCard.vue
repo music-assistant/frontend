@@ -1,12 +1,15 @@
 <template>
   <v-card
-    class="flex-fill rounded-lg player-card"
+    v-hold="onHold"
+    class="rounded-lg player-card"
     :class="{
       'player-disabled': !playerConfig.enabled,
-      'player-unavailable': !isAvailable,
-      'player-needs-setup': playerConfig.enabled && needsSetup,
+      'player-unavailable': isUnavailable,
     }"
+    @click.capture="swallowClickAfterHold"
     @click="handleClick"
+    @click.right.prevent="handleMenu"
+    @touchstart.passive="onTouchStart"
   >
     <div class="card-content">
       <div class="card-header">
@@ -14,7 +17,10 @@
           <PlayerIcon :icon="player?.icon" :size="24" />
         </div>
         <div class="player-info">
-          <div class="player-name">{{ playerName }}</div>
+          <div class="player-name flex items-center gap-1.5">
+            <span class="truncate">{{ playerName }}</span>
+            <PlayerDeviceBadge v-if="isThisDevice" label />
+          </div>
           <div class="provider-name">{{ providerName }}</div>
         </div>
         <v-btn
@@ -22,55 +28,25 @@
           size="small"
           variant="text"
           class="menu-btn"
+          :aria-label="`${$t('more_options')}: ${playerName}`"
+          :title="`${$t('more_options')}: ${playerName}`"
           @click.stop="handleMenu"
         />
       </div>
 
       <!-- Player needs setup warning -->
-      <div
+      <PlayerSetupWarning
         v-if="playerConfig.enabled && needsSetup"
-        class="player-warning-card"
-      >
-        <div class="player-warning-inline">
-          <v-icon icon="mdi-alert-circle" size="16" color="warning" />
-          <span class="player-warning-text">{{
-            $t("settings.player_needs_setup")
-          }}</span>
-        </div>
-        <v-btn
-          size="small"
-          color="warning"
-          variant="flat"
-          block
-          class="mt-2"
-          @click.stop="handleSetup"
-        >
-          {{ $t("settings.start_setup") }}
-        </v-btn>
-      </div>
+        @setup="handleSetup"
+      />
 
       <div class="card-footer">
         <div class="protocol-chips">
-          <v-chip
+          <ProtocolChip
             v-for="protocol in outputProtocols"
             :key="protocol.output_protocol_id"
-            size="x-small"
-            variant="tonal"
-            class="protocol-chip"
-            :class="{ 'protocol-chip--unavailable': !protocol.available }"
-          >
-            <template #prepend>
-              <ProviderIcon
-                :domain="protocol.protocol_domain"
-                :size="14"
-                class="chip-icon"
-              />
-            </template>
-            {{
-              api.getProviderManifest(protocol.protocol_domain)?.name ||
-              protocol.protocol_domain
-            }}
-          </v-chip>
+            :protocol="protocol"
+          />
         </div>
         <div class="status-icons">
           <v-icon
@@ -81,14 +57,7 @@
             :title="$t('settings.player_disabled')"
           />
           <v-icon
-            v-else-if="needsSetup"
-            icon="mdi-alert-circle"
-            size="16"
-            color="warning"
-            :title="$t('settings.player_needs_setup')"
-          />
-          <v-icon
-            v-else-if="!isAvailable"
+            v-else-if="isUnavailable"
             icon="mdi-timer-sand"
             size="16"
             color="grey"
@@ -101,8 +70,12 @@
 </template>
 
 <script setup lang="ts">
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import ProtocolChip from "@/components/ProtocolChip.vue";
+import PlayerDeviceBadge from "@/components/PlayerDeviceBadge.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import PlayerSetupWarning from "@/components/PlayerSetupWarning.vue";
+import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
+import { isBuiltinPlayer, isPlayerUnavailable } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { PlayerConfig } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -119,7 +92,10 @@ const emit = defineEmits<{
 }>();
 
 const player = computed(() => api.players[props.playerConfig.player_id]);
-const isAvailable = computed(() => player.value?.available ?? false);
+const isUnavailable = computed(() => isPlayerUnavailable(player.value));
+const isThisDevice = computed(
+  () => player.value !== undefined && isBuiltinPlayer(player.value),
+);
 const needsSetup = computed(() => player.value?.needs_setup ?? false);
 const providerDomain = computed(
   () =>
@@ -158,6 +134,9 @@ const handleMenu = (event: Event) => {
   emit("menu", event, props.playerConfig);
 };
 
+const { onHold, onTouchStart, swallowClickAfterHold } =
+  useHoldToOpenMenu(handleMenu);
+
 const handleSetup = () => {
   emit("setup", props.playerConfig);
 };
@@ -184,35 +163,13 @@ const handleSetup = () => {
   opacity: 0.7;
 }
 
-.player-needs-setup {
-  border-left: 3px solid rgb(var(--v-theme-warning));
-}
-
-.player-warning-card {
-  background: rgba(var(--v-theme-warning), 0.08);
-  border-radius: 8px;
-  margin: 8px 0 0 0;
-  padding: 8px 12px;
-}
-
-.player-warning-inline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: rgb(var(--v-theme-warning));
-}
-
-.player-warning-text {
-  font-size: 13px;
-  font-weight: 500;
-}
-
 .card-content {
   display: flex;
   flex-direction: column;
   padding: 16px;
   height: 100%;
   min-height: 120px;
+  gap: 8px;
 }
 
 .card-header {
@@ -266,7 +223,6 @@ const handleSetup = () => {
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
-  padding-top: 12px;
 }
 
 .protocol-chips {
@@ -276,41 +232,9 @@ const handleSetup = () => {
   flex: 1;
 }
 
-.protocol-chip {
-  text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: 0.3px;
-}
-
-.protocol-chip--unavailable {
-  opacity: 0.4;
-}
-
 .status-icons {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
-}
-
-.chip-icon {
-  margin: 0 !important;
-  width: auto !important;
-}
-
-.chip-icon :deep(div) {
-  margin-left: 0 !important;
-  margin-right: 4px !important;
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper) {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper svg) {
-  width: 14px !important;
-  height: 14px !important;
 }
 </style>

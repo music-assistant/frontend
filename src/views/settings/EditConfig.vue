@@ -1,102 +1,118 @@
 <template>
-  <v-form v-if="entries" ref="form" v-model="valid" :disabled="disabled">
-    <!-- Generic settings section -->
-    <div
-      v-for="panel of regularPanels.filter(
-        (p) => p === 'generic' && entriesForCategory(p).length > 0,
-      )"
-      :key="panel"
-      class="category-section"
-    >
-      <div class="category-header">
-        <span class="category-icon">
-          <component :is="getCategoryIcon(panel)" :size="16" />
-        </span>
-        <span class="category-title">
-          {{ getCategoryTranslation(panel) }}
-        </span>
-      </div>
-      <div class="category-content">
-        <ConfigEntryRow
-          v-for="conf_entry of entriesForCategory(panel)"
-          :key="conf_entry.key"
-          :conf-entry="conf_entry"
-          :show-password-values="showPasswordValues"
-          :disabled="isRowDisabled(conf_entry)"
-          :provider-domain="providerDomain"
-          @update:value="onValueUpdate(conf_entry, $event)"
-          @toggle-password="showPasswordValues = !showPasswordValues"
-          @action="onEntryAction(conf_entry)"
-          @help="onEntryHelp(conf_entry)"
-          @set-entry-value="onEntryValueSet"
+  <v-form
+    v-if="entries"
+    ref="form"
+    v-model="valid"
+    :disabled="disabled"
+    :class="{ 'floating-save-clearance': showSaveAction && !inlineSave }"
+  >
+    <Card v-if="hasOptions" class="gap-0 py-0">
+      <CardHeader
+        v-if="!hideHeader"
+        class="flex flex-wrap items-center gap-3 px-6 py-4 [.border-b]:pb-4"
+        :class="{ 'border-b': hasVisibleSections }"
+      >
+        <CardTitle>{{ $t("settings.options") }}</CardTitle>
+        <AdvancedSettingsToggle
+          v-if="showAdvancedToggle"
+          :show-advanced-settings="showAdvancedSettings"
+          test-id="config-advanced-settings"
+          @update:show-advanced-settings="setShowAdvancedSettings"
         />
-      </div>
-    </div>
+      </CardHeader>
+      <CardContent v-if="hasVisibleSections" class="px-6 pb-5">
+        <!-- Generic settings section -->
+        <section
+          v-for="panel of regularPanels.filter(
+            (p) => p === 'generic' && entriesForCategory(p).length > 0,
+          )"
+          :key="panel"
+          class="pt-7 first:pt-5"
+        >
+          <h4
+            class="mb-5 flex items-center gap-3 text-xs font-medium tracking-wider text-primary uppercase"
+          >
+            <span>{{ getCategoryTranslation(panel) }}</span>
+            <span class="h-px flex-1 bg-border"></span>
+          </h4>
+          <ConfigEntryRow
+            v-for="conf_entry of entriesForCategory(panel)"
+            :key="conf_entry.key"
+            :conf-entry="conf_entry"
+            :show-password-values="showPasswordValues"
+            :disabled="isRowDisabled(conf_entry)"
+            :provider-domain="providerDomain"
+            @update:value="onValueUpdate(conf_entry, $event)"
+            @toggle-password="showPasswordValues = !showPasswordValues"
+            @action="onEntryAction(conf_entry)"
+            @set-entry-value="onEntryValueSet"
+          />
+        </section>
 
-    <!-- No provider-domain: that is only set for a provider config, which carries no protocol
-         categories. No set-entry-value handler: its only emitter is the Home Assistant entity
-         picker, which sits with the player controls on the parent player. -->
-    <ProtocolConfigSection
-      :entries="entries || []"
-      :protocol-panels="protocolPanels"
-      :visible-entries-by-category="visibleEntriesByCategory"
-      :show-password-values="showPasswordValues"
-      :is-disabled="isRowDisabled"
-      :output-protocols="outputProtocols"
-      @update:value="onValueUpdate"
-      @action="onEntryAction"
-      @help="onEntryHelp"
-      @toggle-password="showPasswordValues = !showPasswordValues"
-    />
-
-    <!-- Other regular settings sections -->
-    <div
-      v-for="panel of regularPanels.filter(
-        (p) => p !== 'generic' && entriesForCategory(p).length > 0,
-      )"
-      :key="panel"
-      class="category-section"
-    >
-      <div class="category-header">
-        <span class="category-icon">
-          <component :is="getCategoryIcon(panel)" :size="16" />
-        </span>
-        <span class="category-title">
-          {{ getCategoryTranslation(panel) }}
-        </span>
-      </div>
-      <div class="category-content">
-        <ConfigEntryRow
-          v-for="conf_entry of entriesForCategory(panel)"
-          :key="conf_entry.key"
-          :conf-entry="conf_entry"
+        <!-- No provider-domain: that is only set for a provider config, which carries no protocol
+             categories. No set-entry-value handler: its only emitter is the Home Assistant entity
+             picker, which sits with the player controls on the parent player. -->
+        <ProtocolConfigSection
+          :entries="entries || []"
+          :protocol-panels="protocolPanels"
+          :visible-entries-by-category="visibleEntriesByCategory"
           :show-password-values="showPasswordValues"
-          :disabled="isRowDisabled(conf_entry)"
-          :provider-domain="providerDomain"
-          @update:value="onValueUpdate(conf_entry, $event)"
+          :is-disabled="isRowDisabled"
+          :output-protocols="outputProtocols"
+          @update:value="onValueUpdate"
+          @action="onEntryAction"
           @toggle-password="showPasswordValues = !showPasswordValues"
-          @action="onEntryAction(conf_entry)"
-          @help="onEntryHelp(conf_entry)"
-          @set-entry-value="onEntryValueSet"
         />
-      </div>
-    </div>
+
+        <!-- Other regular settings sections -->
+        <section
+          v-for="panel of regularPanels.filter(
+            (p) => p !== 'generic' && entriesForCategory(p).length > 0,
+          )"
+          :key="panel"
+          class="pt-7 first:pt-5"
+        >
+          <h4
+            class="mb-5 flex items-center gap-3 text-xs font-medium tracking-wider text-primary uppercase"
+          >
+            <span>{{ getCategoryTranslation(panel) }}</span>
+            <span class="h-px flex-1 bg-border"></span>
+          </h4>
+          <ConfigEntryRow
+            v-for="conf_entry of entriesForCategory(panel)"
+            :key="conf_entry.key"
+            :conf-entry="conf_entry"
+            :show-password-values="showPasswordValues"
+            :disabled="isRowDisabled(conf_entry)"
+            :provider-domain="providerDomain"
+            @update:value="onValueUpdate(conf_entry, $event)"
+            @toggle-password="showPasswordValues = !showPasswordValues"
+            @action="onEntryAction(conf_entry)"
+            @set-entry-value="onEntryValueSet"
+          />
+        </section>
+      </CardContent>
+    </Card>
 
     <div
-      v-if="!disabled"
-      :class="[
-        'floating-save',
-        {
-          'floating-save--mobile': store.mobileLayout,
-          'floating-save--frameless': store.frameless,
-        },
-      ]"
+      v-if="showSaveAction"
+      :class="
+        inlineSave
+          ? 'mt-4 flex justify-end'
+          : [
+              'floating-save',
+              {
+                'floating-save--mobile': store.mobileLayout,
+                'floating-save--frameless': store.frameless,
+              },
+            ]
+      "
     >
       <Button
         data-testid="config-save"
         type="button"
         size="lg"
-        class="shadow-lg"
+        :class="{ 'shadow-lg': !inlineSave }"
         :disabled="!requiredValuesPresent || !hasUnsavedChanges"
         @click="submit"
       >
@@ -105,34 +121,6 @@
       </Button>
     </div>
   </v-form>
-  <v-dialog
-    :model-value="showHelpInfo !== undefined"
-    width="auto"
-    @update:model-value="showHelpInfo = undefined"
-  >
-    <v-card>
-      <v-card-text>
-        <h2>
-          {{ showHelpInfo?.label || "" }}
-        </h2>
-      </v-card-text>
-      <v-card-text>
-        <MarkdownText :text="showHelpInfo?.description" />
-      </v-card-text>
-      <v-card-actions>
-        <v-btn
-          v-if="showHelpInfo?.help_link"
-          @click="openLink(showHelpInfo!.help_link!)"
-        >
-          {{ $t("read_more") }}
-        </v-btn>
-        <v-spacer />
-        <v-btn color="primary" @click="showHelpInfo = undefined">
-          {{ $t("close") }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
   <!-- Unsaved changes confirmation dialog -->
   <!-- any way out of this dialog has to answer the navigation it is holding -->
   <v-dialog
@@ -166,13 +154,14 @@
 import {
   allRequiredValuesPresent,
   ConfigEntryUI,
+  hasAdvancedEntries,
   isEntryDisabled,
   isInjected,
   NON_INTERACTIVE_ENTRY_TYPES,
   VALUELESS_ENTRY_TYPES,
 } from "@/helpers/config_entry_ui";
-import MarkdownText from "@/components/MarkdownText.vue";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ConfigEntryType,
   ConfigValueType,
@@ -182,25 +171,17 @@ import {
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import {
-  Airplay,
-  Cast,
-  Lock,
-  Megaphone,
-  MonitorPlay,
-  Network,
-  PlayCircle,
-  RadioTower,
-  RefreshCw,
-  Save,
-  Settings2,
-  SlidersHorizontal,
-  Speaker,
-  Volume2,
-} from "@lucide/vue";
-import { type Component, computed, onBeforeUnmount, ref, watch } from "vue";
+  setUserPreference,
+  useUserPreferences,
+} from "@/composables/userPreferences";
+import { Save } from "@lucide/vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
+import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 import ConfigEntryRow from "./ConfigEntryRow.vue";
 import ProtocolConfigSection from "./ProtocolConfigSection.vue";
+
+const ADVANCED_SETTINGS_PREFERENCE = "settings.showAdvancedSettings";
 
 const router = useRouter();
 const showUnsavedDialog = ref(false);
@@ -218,6 +199,15 @@ export interface Props {
   // Domain of the provider being configured; lets a field recognise the entries of the
   // provider it belongs to. Omitted for player/core configs.
   providerDomain?: string;
+  // Keep the Save button in the flow of the form instead of floating over the page:
+  // inside a dialog, a fixed position is measured from the dialog rather than the screen.
+  inlineSave?: boolean;
+  // Leave out the Options header and its advanced toggle, for a host that names the form and
+  // decides which of its entries show.
+  hideHeader?: boolean;
+  // Whether the advanced entries show, for a host that decides it; without one, the choice
+  // the user made with the advanced toggle applies.
+  showAdvancedSettings?: boolean;
 }
 
 const emit = defineEmits<{
@@ -236,15 +226,31 @@ const entries = ref<ConfigEntryUI[]>();
 const valid = ref(false);
 const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
 const showPasswordValues = ref(false);
-const showHelpInfo = ref<ConfigEntryUI>();
 const oldValues = ref<Record<string, ConfigValueType>>({});
 const oldValuesInitialized = ref(false);
 
 // props
-const props = defineProps<Props>();
-const showAdvancedSettings = defineModel<boolean>("showAdvancedSettings", {
-  default: false,
+const props = withDefaults(defineProps<Props>(), {
+  outputProtocols: undefined,
+  providerDomain: undefined,
+  // left unset rather than cast to false, so the user's own choice can apply
+  showAdvancedSettings: undefined,
 });
+
+// one choice for every settings form, kept on the user's profile
+const advancedSettingsPreference = useUserPreferences().getPreference(
+  ADVANCED_SETTINGS_PREFERENCE,
+  false,
+);
+// what was chosen here, which holds for this form even when the profile could not
+// be updated
+const advancedSettingsChoice = ref<boolean>();
+const showAdvancedSettings = computed(
+  () =>
+    props.showAdvancedSettings ??
+    advancedSettingsChoice.value ??
+    advancedSettingsPreference.value,
+);
 
 // computed props
 const panels = computed(() => {
@@ -276,6 +282,49 @@ const regularPanels = computed(() => {
 const protocolPanels = computed(() => {
   return panels.value.filter((p) => isProtocolCategory(p));
 });
+
+// a disabled form cannot be edited, so there is nothing to reveal; without the
+// header there is no place for the toggle, and a host that decides what shows
+// leaves it nothing to change
+const showAdvancedToggle = computed(
+  () =>
+    !props.hideHeader &&
+    !props.disabled &&
+    props.showAdvancedSettings === undefined &&
+    hasAdvancedEntries(entries.value || []),
+);
+
+const hasVisibleSections = computed(
+  () =>
+    protocolPanels.value.length > 0 ||
+    Object.keys(visibleEntriesByCategory.value).length > 0,
+);
+
+// what the save button can store: a visible entry holding a value, or the enable
+// switch of an optional protocol; actions and labels alone leave nothing to save
+const hasEditableEntries = computed(
+  () =>
+    Object.values(visibleEntriesByCategory.value)
+      .flat()
+      .some(
+        (entry) =>
+          !VALUELESS_ENTRY_TYPES.includes(entry.type) && !isInjected(entry),
+      ) ||
+    (entries.value ?? []).some((entry) =>
+      entry.key.endsWith("||protocol||enabled"),
+    ),
+);
+
+// with nothing editable in view, only unsaved edits still need saving
+const showSaveAction = computed(
+  () =>
+    !props.disabled && (hasEditableEntries.value || hasUnsavedChanges.value),
+);
+
+// a config with nothing to show or reveal leaves out the card altogether
+const hasOptions = computed(
+  () => showAdvancedToggle.value || hasVisibleSections.value,
+);
 
 const requiredValuesPresent = computed(() =>
   entries.value ? allRequiredValuesPresent(entries.value) : false,
@@ -314,6 +363,16 @@ const isProtocolRelated = function (category: string): boolean {
   return category === "protocol_general" || isProtocolCategory(category);
 };
 
+/**
+ * A value as `oldValues` keeps it: an object is copied, so editing the entry
+ * afterwards does not quietly change what it is compared against.
+ */
+const snapshot = function (value: ConfigValueType): ConfigValueType {
+  return typeof value === "object" && value !== null
+    ? JSON.parse(JSON.stringify(value))
+    : value;
+};
+
 // watchers
 watch(
   () => props.configEntries,
@@ -334,10 +393,7 @@ watch(
       // Also update oldValues for immediate_apply entries on subsequent updates,
       // since their values are already saved to the backend.
       if (shouldCaptureOldValues || entry.immediate_apply) {
-        oldValues.value[entry.key] =
-          typeof entry.value === "object" && entry.value !== null
-            ? JSON.parse(JSON.stringify(entry.value))
-            : entry.value;
+        oldValues.value[entry.key] = snapshot(entry.value);
       }
       entries.value.push(entry);
     }
@@ -369,10 +425,7 @@ const onValueUpdate = function (entry: ConfigEntryUI, value: ConfigValueType) {
   // and update oldValues so the form doesn't show as "unsaved"
   if (entry.immediate_apply) {
     emit("immediateApply", { [entry.key]: value });
-    oldValues.value[entry.key] =
-      typeof value === "object" && value !== null
-        ? JSON.parse(JSON.stringify(value))
-        : value;
+    oldValues.value[entry.key] = snapshot(value);
   }
 };
 // a field can fill in another entry of the same form, e.g. the Home Assistant entity
@@ -392,26 +445,21 @@ const onEntryValueSet = function (
   onValueUpdate(entry, value);
 };
 
-const openLink = function (url: string) {
-  // window.open(url, "_blank");
-  const a = document.createElement("a");
-  a.setAttribute("href", url);
-  a.setAttribute("target", "_blank");
-  a.click();
-};
-
 const onEntryAction = function (entry: ConfigEntryUI) {
   action(entry.action || entry.key, !!entry.immediate_apply);
 };
 
-const onEntryHelp = function (entry: ConfigEntryUI) {
-  if (entry.description) showHelpInfo.value = entry;
-  else openLink(entry.help_link!);
+const setShowAdvancedSettings = function (show: boolean) {
+  advancedSettingsChoice.value = show;
+  void setUserPreference(ADVANCED_SETTINGS_PREFERENCE, show);
 };
 
 const resetToDefaults = function () {
   if (!entries.value) return;
   for (const entry of entries.value) {
+    // a hidden entry carries state the user never sees, such as housekeeping the
+    // server keeps in the config, so a reset leaves it as it is
+    if (entry.hidden) continue;
     entry.value = entry.default_value;
   }
 };
@@ -425,6 +473,21 @@ const saveFailed = function () {
 };
 
 /**
+ * Reports a save that landed, for a form that stays on screen afterwards: the
+ * values that went to the server are what is stored now, so they stop counting
+ * as unsaved. Only those — the form stays open while a save is on its way, so
+ * anything typed in the meantime is still an edit nobody saved. Leaving guards
+ * the values again as well: `submit` let the save through, and the next edit
+ * has to be asked about like any other.
+ */
+const saveSucceeded = function (values: Record<string, ConfigValueType>) {
+  for (const [key, value] of Object.entries(values)) {
+    oldValues.value[key] = snapshot(value);
+  }
+  allowNavigation.value = false;
+};
+
+/**
  * Stops guarding the pending edits, for when what they belong to is gone and
  * there is nothing left to save them to.
  */
@@ -432,7 +495,14 @@ const discardChanges = function () {
   allowNavigation.value = true;
 };
 
-defineExpose({ resetToDefaults, saveFailed, discardChanges });
+defineExpose({
+  resetToDefaults,
+  saveFailed,
+  saveSucceeded,
+  discardChanges,
+  hasUnsavedChanges,
+  submit,
+});
 
 const confirmDiscard = function () {
   showUnsavedDialog.value = false;
@@ -557,75 +627,12 @@ const getCurrentValues = function () {
   }
   return values;
 };
-const getCategoryIcon = function (category: string): Component {
-  const iconMap: Record<string, Component> = {
-    generic: Settings2,
-    audio: Volume2,
-    advanced: SlidersHorizontal,
-    network: Network,
-    playback: PlayCircle,
-    announcements: Megaphone,
-    airplay: Airplay,
-    chromecast: Cast,
-    slimproto: RadioTower,
-    snapcast: Speaker,
-    ugp: Speaker,
-    authentication: Lock,
-    sync: RefreshCw,
-    web_player: MonitorPlay,
-    player_controls: SlidersHorizontal,
-    // Protocol-specific categories
-    protocol_sonos: Speaker,
-    protocol_airplay: Airplay,
-    protocol_dlna: Cast,
-    protocol_chromecast: Cast,
-    protocol_slimproto: RadioTower,
-    protocol_snapcast: Speaker,
-  };
-  return iconMap[category] || Settings2;
-};
 </script>
 
 <style scoped>
-/* Category sections (modern card, header aligned with fields) */
-.category-section {
-  margin-bottom: 14px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  border-radius: 14px;
-  background: rgb(var(--v-theme-surface));
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-}
-
-.category-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 16px;
-  background: rgba(var(--v-theme-on-surface), 0.03);
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.category-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: rgba(var(--v-theme-primary), 0.12);
-  color: rgb(var(--v-theme-primary));
-  flex-shrink: 0;
-}
-
-.category-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.category-content {
-  padding: 14px 16px;
+/* Lets the last row scroll clear of the floating Save button. */
+.floating-save-clearance {
+  padding-bottom: 56px;
 }
 
 .floating-save {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import NavUser from "@/components/navigation/NavUser.vue";
+import { $t } from "@/plugins/i18n";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -17,6 +18,9 @@ const props = defineProps<{
 const { toggleSidebar, state } = useSidebar();
 
 const isCollapsed = computed(() => state.value === "collapsed");
+const sidebarToggleLabel = computed(() =>
+  isCollapsed.value ? $t("sidebar.expand") : $t("sidebar.collapse"),
+);
 </script>
 
 <template>
@@ -24,7 +28,7 @@ const isCollapsed = computed(() => state.value === "collapsed");
     :class="[
       'trigger-container',
       'flex w-full min-w-0 flex-col overflow-hidden',
-      isCollapsed && '-mr-2 trigger-container--collapsed',
+      isCollapsed && 'trigger-container--collapsed',
       props.class,
     ]"
   >
@@ -36,20 +40,27 @@ const isCollapsed = computed(() => state.value === "collapsed");
     >
       <Tooltip>
         <TooltipTrigger as-child>
+          <!-- collapsed, the trigger takes the menu buttons' size so the rail
+               reads as one column -->
           <Button
             data-sidebar="trigger"
             data-slot="sidebar-trigger"
             variant="ghost"
             size="icon"
-            :class="['flex-shrink-0', !isCollapsed && 'ml-auto']"
+            :class="[
+              'flex-shrink-0 group-data-[collapsible=icon]:size-8!',
+              !isCollapsed && 'ml-auto',
+            ]"
+            :aria-label="sidebarToggleLabel"
+            :aria-expanded="!isCollapsed"
+            :title="sidebarToggleLabel"
             @click="toggleSidebar"
           >
             <PanelLeft />
-            <span class="sr-only">Toggle Sidebar</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right" align="center" :hidden="!isCollapsed">
-          {{ isCollapsed ? "Expand Sidebar" : "Collapse Sidebar" }}
+          {{ sidebarToggleLabel }}
         </TooltipContent>
       </Tooltip>
     </div>
@@ -67,7 +78,7 @@ const isCollapsed = computed(() => state.value === "collapsed");
   width: 100%;
 }
 
-.navuser-trigger :deep([data-sidebar="menu-button"]) {
+.trigger-container .navuser-trigger :deep([data-sidebar="menu-button"]) {
   margin-left: 0 !important;
   padding-right: 0;
 }
@@ -82,6 +93,7 @@ const isCollapsed = computed(() => state.value === "collapsed");
 .trigger-container--collapsed .navuser-trigger :deep(ul[data-sidebar="menu"]) {
   padding-left: 6px !important;
   padding-right: 6px !important;
+  padding-bottom: 6px !important;
 }
 
 .trigger-container--collapsed
@@ -95,6 +107,15 @@ const isCollapsed = computed(() => state.value === "collapsed");
   :deep([data-sidebar="menu-button"] .rounded-lg) {
   width: 2rem !important;
   height: 2rem !important;
+}
+
+/* the avatar centres on a margin anchored off the rail's final width, less
+   the 6px the menu ul above keeps per side, so it holds still through the
+   collapse animation */
+.trigger-container--collapsed
+  .navuser-trigger
+  :deep([data-sidebar="menu-button"] [data-slot="avatar"]) {
+  margin-left: calc((var(--sidebar-width-icon) - 2rem) / 2 - 6px);
 }
 
 .trigger-container.flex-col {

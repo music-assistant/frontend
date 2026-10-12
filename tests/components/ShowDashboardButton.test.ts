@@ -3,24 +3,40 @@ import {
   EventType,
   type DashboardType,
   type EventMessage,
+  type Scope,
+  type ServerInfoMessage,
 } from "@/plugins/api/interfaces";
+import { ApiCommandError } from "@/plugins/api/errors";
 import { Check } from "@lucide/vue";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 const {
   apiMock,
   mockWaitForApiInitialization,
   isDashboardViewerMock,
+  hasScopeMock,
   toastMock,
+  copyToClipboardMock,
 } = vi.hoisted(() => ({
   apiMock: {
     sendCommand: vi.fn(),
     subscribe: vi.fn(),
+    serverInfo: {
+      value: undefined as
+        | Pick<
+            ServerInfoMessage,
+            "base_url" | "external_url" | "has_remote_access"
+          >
+        | undefined,
+    },
   },
   mockWaitForApiInitialization: vi.fn(),
   isDashboardViewerMock: vi.fn(() => false),
+  hasScopeMock: vi.fn<(scope: Scope) => boolean>(),
   toastMock: { success: vi.fn(), error: vi.fn() },
+  copyToClipboardMock: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -33,6 +49,7 @@ vi.mock("@/plugins/api/helpers", () => ({
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
+    hasScope: hasScopeMock,
     isDashboardViewer: isDashboardViewerMock,
   },
 }));
@@ -44,6 +61,10 @@ vi.mock("vue-sonner", () => ({
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string, values: unknown[] = []) =>
     values.length ? `${key}:${values.join(",")}` : key,
+}));
+
+vi.mock("@/helpers/utils", () => ({
+  copyToClipboard: copyToClipboardMock,
 }));
 
 // Default dashboard so most tests get a visible button without extra setup; empty/hidden-state tests override this.
@@ -113,6 +134,7 @@ function mountButton(
           template:
             '<i data-testid="cast-dashboard-device-icon" :data-icon="providerDomainHint" />',
         },
+        "v-icon": { template: "<i />" },
       },
     },
   });
@@ -128,11 +150,19 @@ describe("ShowDashboardButton", () => {
     mockCommands();
     isDashboardViewerMock.mockReset();
     isDashboardViewerMock.mockReturnValue(false);
+    hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
     toastMock.success.mockReset();
     toastMock.error.mockReset();
+    copyToClipboardMock.mockReset();
+    copyToClipboardMock.mockResolvedValue(true);
+    apiMock.serverInfo.value = {
+      base_url: "http://192.168.1.2:8095",
+      external_url: null,
+      has_remote_access: false,
+    };
   });
 
-  it("renders nothing when no dashboards are registered", async () => {
+  it("renders nothing without dashboards when the server can't make a dashboard url", async () => {
     mockCommands({ "dashboard/dashboards": () => [] });
 
     const wrapper = mountButton();
@@ -140,6 +170,51 @@ describe("ShowDashboardButton", () => {
 
     expect(wrapper.find("button").exists()).toBe(false);
   });
+
+  it.each([
+    [
+      "remote access",
+      {
+        base_url: "http://192.168.1.2:8095",
+        external_url: null,
+        has_remote_access: true,
+      },
+    ],
+    [
+      "an https base url",
+      {
+        base_url: "https://ma.example.com",
+        external_url: null,
+        has_remote_access: false,
+      },
+    ],
+    [
+      "an https external url",
+      {
+        base_url: "http://192.168.1.2:8095",
+        external_url: "https://ma.example.com",
+        has_remote_access: false,
+      },
+    ],
+  ])(
+    "still offers the dashboard url without dashboards when the server has %s",
+    async (_, serverInfo) => {
+      apiMock.serverInfo.value = serverInfo;
+      mockCommands({ "dashboard/dashboards": () => [] });
+
+      const wrapper = mountButton();
+      await flushAsync();
+      await wrapper.get("button").trigger("click");
+      await flushAsync();
+
+      expect(
+        wrapper.find('[data-testid="cast-dashboard-empty"]').exists(),
+      ).toBe(true);
+      expect(
+        wrapper.find('[data-testid="cast-dashboard-get-url"]').exists(),
+      ).toBe(true);
+    },
+  );
 
   it("renders once at least one dashboard is registered", async () => {
     const wrapper = mountButton();
@@ -155,6 +230,17 @@ describe("ShowDashboardButton", () => {
     await flushAsync();
 
     expect(wrapper.find("button").exists()).toBe(false);
+  });
+
+  it("renders nothing and asks for no dashboards for a role that may not invite", async () => {
+    hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
+
+    const wrapper = mountButton();
+    await flushAsync();
+
+    expect(wrapper.find("button").exists()).toBe(false);
+    expect(apiMock.sendCommand).not.toHaveBeenCalled();
+    expect(apiMock.subscribe).not.toHaveBeenCalled();
   });
 
   it("defers fetching until the API connection is initialized", async () => {
@@ -649,6 +735,180 @@ describe("ShowDashboardButton", () => {
       "dashboard/show",
       expect.anything(),
     );
+  });
+
+  it("displays a get-url menu item in the dropdown", async () => {
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    expect(
+      wrapper.find('[data-testid="cast-dashboard-get-url"]').exists(),
+    ).toBe(true);
+  });
+
+  it("retrieves and copies the dashboard URL to clipboard", async () => {
+    mockCommands({
+      "dashboard/get_url": () => "https://example.com/dashboard?token=abc123",
+    });
+
+    const wrapper = mountButton({
+      dashboard: "party",
+    });
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(apiMock.sendCommand).toHaveBeenCalledWith(
+      "dashboard/get_url",
+      { dashboard: "party", player_id: null },
+      { suppressGlobalError: true },
+    );
+    expect(copyToClipboardMock).toHaveBeenCalledWith(
+      "https://example.com/dashboard?token=abc123",
+    );
+    expect(toastMock.success).toHaveBeenCalledWith("dashboard.uri_copied");
+  });
+
+  it("passes player_id to get_url command for now_playing dashboard", async () => {
+    mockCommands({
+      "dashboard/get_url": () => "https://example.com/dashboard?token=xyz",
+    });
+
+    const wrapper = mountButton({
+      dashboard: "now_playing",
+      playerId: "player-1",
+    });
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(apiMock.sendCommand).toHaveBeenCalledWith(
+      "dashboard/get_url",
+      { dashboard: "now_playing", player_id: "player-1" },
+      { suppressGlobalError: true },
+    );
+  });
+
+  it("shows error toast when get_url returns empty string", async () => {
+    mockCommands({
+      "dashboard/get_url": () => "",
+    });
+
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(toastMock.error).toHaveBeenCalledWith("dashboard.uri_copy_failed");
+    expect(copyToClipboardMock).not.toHaveBeenCalled();
+  });
+
+  it("shows error toast when get_url returns null", async () => {
+    mockCommands({
+      "dashboard/get_url": () => null,
+    });
+
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(toastMock.error).toHaveBeenCalledWith("dashboard.uri_copy_failed");
+    expect(copyToClipboardMock).not.toHaveBeenCalled();
+  });
+
+  it("shows error toast when get_url api call fails", async () => {
+    mockCommands({
+      "dashboard/get_url": () => {
+        throw new Error("Failed to generate URL");
+      },
+    });
+
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(toastMock.error).toHaveBeenCalledWith("dashboard.uri_copy_failed");
+    expect(copyToClipboardMock).not.toHaveBeenCalled();
+  });
+
+  it("shows the server's reason once when get_url is refused", async () => {
+    mockCommands({
+      "dashboard/get_url": () => {
+        throw new ApiCommandError(
+          "Remote access or an HTTPS base URL is required to cast dashboards",
+          1,
+          "Remote access or an HTTPS base URL is required to cast dashboards",
+        );
+      },
+    });
+
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(toastMock.error).toHaveBeenCalledOnce();
+    expect(toastMock.error).toHaveBeenCalledWith(
+      "Remote access or an HTTPS base URL is required to cast dashboards",
+    );
+    expect(copyToClipboardMock).not.toHaveBeenCalled();
+  });
+
+  it("shows error toast when copyToClipboard fails", async () => {
+    copyToClipboardMock.mockResolvedValue(false);
+    mockCommands({
+      "dashboard/get_url": () => "https://example.com/dashboard",
+    });
+
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(copyToClipboardMock).toHaveBeenCalledWith(
+      "https://example.com/dashboard",
+    );
+    expect(toastMock.error).toHaveBeenCalledWith("dashboard.uri_copy_failed");
+    expect(toastMock.success).not.toHaveBeenCalled();
   });
 });
 

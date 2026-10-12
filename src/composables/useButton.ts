@@ -47,7 +47,32 @@ export interface ButtonProps {
   stacked?: boolean;
   class?: string | string[] | Record<string, boolean>;
   style?: string | Record<string, string | number>;
+  ariaLabel?: string;
+  ariaLabelledby?: string;
   "aria-label"?: string;
+  "aria-labelledby"?: string;
+  ariaExpanded?: boolean | "true" | "false";
+  ariaHaspopup?:
+    | boolean
+    | "true"
+    | "false"
+    | "menu"
+    | "listbox"
+    | "tree"
+    | "grid"
+    | "dialog";
+  ariaPressed?: boolean | "true" | "false" | "mixed";
+  "aria-expanded"?: boolean | "true" | "false";
+  "aria-haspopup"?:
+    | boolean
+    | "true"
+    | "false"
+    | "menu"
+    | "listbox"
+    | "tree"
+    | "grid"
+    | "dialog";
+  "aria-pressed"?: boolean | "true" | "false" | "mixed";
 }
 
 export interface ButtonEmits {
@@ -56,11 +81,29 @@ export interface ButtonEmits {
 
 export const useButton = (props: ButtonProps) => {
   const buttonProps = computed(() => {
-    const { variant, nav, ...vuetifyProps } = props;
+    const {
+      variant,
+      nav,
+      ariaLabel,
+      ariaLabelledby,
+      "aria-label": ariaLabelAttr,
+      "aria-labelledby": ariaLabelledbyAttr,
+      ariaExpanded,
+      ariaHaspopup,
+      ariaPressed,
+      "aria-expanded": ariaExpandedAttr,
+      "aria-haspopup": ariaHaspopupAttr,
+      "aria-pressed": ariaPressedAttr,
+      ...vuetifyProps
+    } = props;
 
     const baseProps = {
       ...vuetifyProps,
-      "aria-label": props.title || props["aria-label"],
+      "aria-label": props.title || ariaLabel || ariaLabelAttr,
+      "aria-labelledby": ariaLabelledby || ariaLabelledbyAttr,
+      "aria-expanded": ariaExpanded ?? ariaExpandedAttr,
+      "aria-haspopup": ariaHaspopup ?? ariaHaspopupAttr,
+      "aria-pressed": ariaPressed ?? ariaPressedAttr,
     };
 
     return match(variant)

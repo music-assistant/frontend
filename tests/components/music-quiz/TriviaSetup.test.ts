@@ -1,8 +1,14 @@
 import TriviaSetup from "@/components/music-quiz/game-types/trivia/TriviaSetup.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { mount } from "@vue/test-utils";
+import { getLocaleOptions } from "@/plugins/i18n";
+import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  openSelect,
+  pickSelectOption,
+  selectOptions,
+} from "../../fixtures/rekaSelect";
 
 const { mockI18n } = vi.hoisted(() => ({
   mockI18n: {
@@ -39,8 +45,22 @@ vi.mock("@/components/MediaItemThumb.vue", () => ({
   },
 }));
 
+// the select listboxes are portalled out of the wrapper, so tear them down even
+// when an assertion fails
+enableAutoUnmount(afterEach);
+
+// the localized label reka shows for a locale, so a test can pick it by sight
+const localeLabels = () =>
+  getLocaleOptions(
+    mockI18n.global.availableLocales,
+    mockI18n.global.locale.value,
+  );
+const localeLabel = (locale: string) =>
+  localeLabels().find((option) => option.value === locale)!.label;
+
 describe("TriviaSetup", () => {
   beforeEach(() => {
+    document.body.innerHTML = "";
     mockI18n.global.locale.value = "en";
   });
 
@@ -52,8 +72,12 @@ describe("TriviaSetup", () => {
     const wrapper = mountSetup(true);
 
     await wrapper.get('[data-testid="select-sources"]').trigger("click");
-    await wrapper.get("#trivia-difficulty").setValue("hard");
-    await wrapper.get("#trivia-language").setValue("sr_Latn");
+    await pickSelectOption(
+      wrapper,
+      "#trivia-difficulty",
+      "providers.music_quiz.difficulty_hard",
+    );
+    await pickSelectOption(wrapper, "#trivia-language", localeLabel("sr_Latn"));
     await nextTick();
     await wrapper
       .findAll("button")
@@ -150,23 +174,21 @@ describe("TriviaSetup", () => {
 
     const wrapper = mountSetup();
 
-    expect(
-      (wrapper.get("#trivia-language").element as HTMLSelectElement).value,
-    ).toBe("pt_BR");
+    expect(wrapper.get("#trivia-language").text()).toBe(localeLabel("pt_BR"));
   });
 
-  it("offers only shipped locales with localized, predictable labels", () => {
+  it("offers only shipped locales with localized, predictable labels", async () => {
     mockI18n.global.locale.value = "de";
     const wrapper = mountSetup();
-    const options = wrapper
-      .get("#trivia-language")
-      .findAll("option")
-      .map((option) => ({
-        value: option.attributes("value"),
-        label: option.text(),
-      }));
+    const options = localeLabels();
     const labelByValue = Object.fromEntries(
       options.map((option) => [option.value, option.label]),
+    );
+
+    // the listbox renders every option the helper offers, in its order
+    await openSelect(wrapper, "#trivia-language");
+    expect(selectOptions().map((option) => option.textContent?.trim())).toEqual(
+      options.map((option) => option.label),
     );
     const displayNames = new Intl.DisplayNames(["de"], {
       type: "language",

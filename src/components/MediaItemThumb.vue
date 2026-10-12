@@ -5,7 +5,7 @@
     :width="size || '100%'"
     aspect-ratio="1"
     :src="imgData"
-    :alt="item?.name ?? ''"
+    :alt="alt ?? item?.name ?? ''"
     :class="{ rounded: rounded }"
     :style="imageStyle"
     contain
@@ -28,6 +28,8 @@ import {
   iconFolder,
 } from "@/components/QualityDetailsBtn.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
+import { useProviderIcon } from "@/composables/useProviderIcon";
+import { getProviderRootDomain } from "@/plugins/api/helpers";
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
@@ -36,6 +38,7 @@ export interface Props {
   rounded?: boolean;
   thumbnail?: boolean;
   scale?: number;
+  alt?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -45,6 +48,7 @@ const props = withDefaults(defineProps<Props>(), {
   rounded: true,
   thumbnail: true,
   scale: 1,
+  alt: undefined,
 });
 
 const theme = useTheme();
@@ -89,9 +93,15 @@ function getFallbackImage() {
 
 const fallbackImage = getFallbackImage();
 
+// provider entries in the browse root show the provider icon
+const { iconDataUri: providerIcon } = useProviderIcon(() =>
+  getProviderRootDomain(props.item),
+);
+
 const imgData = computed(() =>
   props.item
     ? getImageThumbForItem(props.item, ImageType.THUMB, thumbSize) ||
+      providerIcon.value ||
       fallbackImage
     : fallbackImage,
 );

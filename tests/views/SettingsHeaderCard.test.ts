@@ -8,8 +8,6 @@ const SlotStub = {
 };
 
 const headerStubs = {
-  // rendered for real so this screen's advanced toggle stays assertable
-  AdvancedSettingsToggle: false,
   Button: SlotStub,
   Card: SlotStub,
   CardContent: SlotStub,
@@ -40,20 +38,21 @@ describe("SettingsHeaderCard", () => {
     expect(wrapper.emitted("resetToDefaults")).toHaveLength(1);
   });
 
-  it("leaves out the advanced toggle without advanced settings to reveal", () => {
-    expect(
-      mountHeader().find('[data-testid="settings-advanced-settings"]').exists(),
-    ).toBe(false);
+  it("links the documentation it is given", () => {
+    const link = mountHeader({
+      documentationUrl: "https://music-assistant.io/settings/core/",
+    }).get('[data-testid="settings-documentation"]');
+
+    expect(link.attributes("href")).toBe(
+      "https://music-assistant.io/settings/core/",
+    );
+    expect(link.attributes("target")).toBe("_blank");
   });
 
-  it("reports the advanced toggle being flipped", async () => {
-    const wrapper = mountHeader({ showAdvancedToggle: true });
-
-    await wrapper
-      .findComponent({ name: "Switch" })
-      .vm.$emit("update:modelValue", true);
-
-    expect(wrapper.emitted("update:showAdvancedSettings")).toEqual([[true]]);
+  it("leaves out the documentation row without a link", () => {
+    expect(
+      mountHeader().find('[data-testid="settings-documentation"]').exists(),
+    ).toBe(false);
   });
 });
 

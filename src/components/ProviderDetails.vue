@@ -1,7 +1,7 @@
 <template>
   <section style="margin-bottom: 10px">
     <Toolbar
-      :title="$t('mapped_providers')"
+      :title="$t('source_details')"
       :menu-items="toolbarMenuItems"
       @title-clicked="toggleExpand"
     />
@@ -16,12 +16,14 @@
             !api.getProvider(providerMapping.provider_instance)
           "
           show-menu-btn
+          :menu-button-label="`${$t('more_options')}: ${getProviderName(providerMapping)}`"
           @menu.stop="(evt) => onMenu(evt, providerMapping)"
         >
           <template #prepend>
             <ProviderIcon
               :domain="providerMapping.provider_domain"
               :size="30"
+              class="mx-[10px]"
             />
           </template>
           <template #title>
@@ -94,6 +96,7 @@
         <ListItem
           v-if="itemDetails.provider == 'library'"
           show-menu-btn
+          :menu-button-label="`${$t('more_options')}: ${$t('music_assistant_library')}`"
           @menu.stop="
             (evt) =>
               onMenu(evt, {
@@ -106,7 +109,7 @@
           "
         >
           <template #prepend>
-            <ProviderIcon domain="library" :size="30" />
+            <ProviderIcon domain="library" :size="30" class="mx-[10px]" />
           </template>
           <template #title>{{ $t("music_assistant_library") }}</template>
           <template #subtitle>
@@ -131,6 +134,7 @@
 </template>
 
 <script setup lang="ts">
+import { ChevronDown, ChevronUp, DatabaseSearch } from "@lucide/vue";
 import Container from "@/components/Container.vue";
 import GenreExclusionManager from "@/components/genre/GenreExclusionManager.vue";
 import ListItem from "@/components/ListItem.vue";
@@ -142,6 +146,7 @@ import { api } from "@/plugins/api";
 import {
   MediaType,
   ProviderMapping,
+  Scope,
   type MediaItem,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -172,18 +177,26 @@ const playBtnClick = function (providerMapping: ProviderMapping) {
   if (existing) {
     existing.load();
     delete demoPlayer[key];
-  } else {
-    const audio = new Audio(
-      getPreviewUrl(providerMapping.provider_instance, providerMapping.item_id),
-    );
-    demoPlayer[key] = audio;
-    audio.play();
+    return;
   }
-};
-const getPreviewUrl = function (provider: string, item_id: string) {
-  return `${
-    api.baseUrl
-  }/preview?item_id=${encodeURIComponent(item_id)}&provider=${provider}`;
+  // claim the slot before awaiting the url, so a second click while the request is
+  // in flight cannot start a second clip that the first would then orphan
+  const audio = new Audio();
+  demoPlayer[key] = audio;
+  api
+    .getTrackPreviewUrl(
+      providerMapping.provider_instance,
+      providerMapping.item_id,
+    )
+    .then((url) => {
+      // the stop path clears the slot; do not start playing a clip nobody wants
+      if (demoPlayer[key] !== audio) return;
+      audio.src = url;
+      return audio.play();
+    })
+    .catch(() => {
+      if (demoPlayer[key] === audio) delete demoPlayer[key];
+    });
 };
 
 // just enough of a provider mapping to identify an item: the library entry built for
@@ -252,18 +265,23 @@ const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
   }
   // remove mapping option (only for streaming provider mapping)
   if (
-    authManager.isAdmin() &&
+    authManager.hasScope(Scope.LIBRARY_MANAGE) &&
     api.providers[providerMapping.provider_instance]?.is_streaming_provider
   ) {
     menuItems.push({
       label: t("remove_provider_mapping"),
       icon: "mdi-delete",
-      action: async () => {
-        if (!confirm(t("remove_provider_mapping_confirm"))) return;
-        await api.sendCommand("music/remove_provider_mapping", {
-          media_type: props.itemDetails.media_type,
-          db_id: props.itemDetails.item_id,
-          mapping: providerMapping,
+      action: () => {
+        eventbus.emit("deleteConfirmationDialog", {
+          title: t("remove_provider_mapping"),
+          message: t("remove_provider_mapping_confirm"),
+          confirmLabel: t("remove_provider_mapping"),
+          onConfirm: () =>
+            api.sendCommand("music/remove_provider_mapping", {
+              media_type: props.itemDetails.media_type,
+              db_id: props.itemDetails.item_id,
+              mapping: providerMapping,
+            }),
         });
       },
     });
@@ -278,16 +296,23 @@ const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
 };
 
 const searchAllProviders = function () {
-  if (!confirm(t("search_all_providers_confirm"))) return;
-  mappingSearchInProgress.value = true;
-  api
-    .sendCommand("music/match_providers", {
-      media_type: props.itemDetails.media_type,
-      db_id: props.itemDetails.item_id,
-    })
-    .finally(() => {
-      mappingSearchInProgress.value = false;
-    });
+  eventbus.emit("deleteConfirmationDialog", {
+    title: t("search_all_providers"),
+    message: t("search_all_providers_confirm"),
+    confirmLabel: t("search"),
+    destructive: false,
+    onConfirm: () => {
+      mappingSearchInProgress.value = true;
+      api
+        .sendCommand("music/match_providers", {
+          media_type: props.itemDetails.media_type,
+          db_id: props.itemDetails.item_id,
+        })
+        .finally(() => {
+          mappingSearchInProgress.value = false;
+        });
+    },
+  });
 };
 
 const toolbarMenuItems = computed(() => {
@@ -295,19 +320,19 @@ const toolbarMenuItems = computed(() => {
     // search all providers option (only for library items when streaming providers are available)
     {
       label: "search_all_providers",
-      icon: "mdi-database-search",
+      icon: DatabaseSearch,
       action: searchAllProviders,
       overflowAllowed: false,
       disabled: mappingSearchInProgress.value,
       hide:
         props.itemDetails.provider != "library" ||
         !api.hasStreamingProviders.value ||
-        !authManager.isAdmin(),
+        !authManager.hasScope(Scope.LIBRARY_MANAGE),
     },
     // toggle expand
     {
       label: "tooltip.collapse_expand",
-      icon: expanded.value ? "mdi-chevron-up" : "mdi-chevron-down",
+      icon: expanded.value ? ChevronUp : ChevronDown,
       action: toggleExpand,
       overflowAllowed: false,
     },

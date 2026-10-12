@@ -11,6 +11,10 @@ import {
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const { requestGroupPlaybackConfirmation } = vi.hoisted(() => ({
+  requestGroupPlaybackConfirmation: vi.fn(),
+}));
+
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
@@ -23,8 +27,13 @@ vi.mock("@/plugins/api", async () => {
   return { api, default: api };
 });
 
-vi.mock("@/helpers/players", () => ({
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/players")>()),
   groupMemberPickerVisible: () => true,
+}));
+
+vi.mock("@/helpers/player_group_playback", () => ({
+  requestGroupPlaybackConfirmation,
 }));
 
 const CheckboxStub = {
@@ -74,6 +83,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     group_volume: null,
     group_volume_muted: null,
     hide_in_ui: false,
+    private: false,
     icon: "speaker",
     power_control: "power",
     volume_control: "volume",
@@ -90,6 +100,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     active_group: null,
     synced_to: null,
     sleep_timer_expires_at: null,
+    active_source_audio: null,
     ...overrides,
   };
 }
@@ -130,6 +141,7 @@ describe("PlayerGroupMembers", () => {
     vi.clearAllMocks();
     vi.useRealTimers();
     api.players = {};
+    requestGroupPlaybackConfirmation.mockReturnValue(false);
   });
 
   it("uses aligned icon slots and prominent checkboxes", () => {
@@ -162,7 +174,7 @@ describe("PlayerGroupMembers", () => {
     );
   });
 
-  it("separates players, lights, and visualizers", () => {
+  it("separates players, lights, and screens", () => {
     const speaker = createPlayer({
       player_id: "speaker",
       name: "Office",
@@ -197,7 +209,111 @@ describe("PlayerGroupMembers", () => {
       wrapper
         .findAll(".player-group-section > p")
         .map((section) => section.text()),
-    ).toEqual(["players", "lights", "visualizers"]);
+    ).toEqual(["players", "lights", "screens"]);
+  });
+
+  it("lists a display player under screens", () => {
+    const screen = createPlayer({
+      player_id: "screen",
+      name: "Kitchen screen",
+      type: PlayerType.DISPLAY,
+    });
+    const parent = createPlayer({ can_group_with: [screen.player_id] });
+    api.players = {
+      [parent.player_id]: parent,
+      [screen.player_id]: screen,
+    };
+
+    const wrapper = mountGroupMembers(parent, []);
+
+    expect(
+      wrapper
+        .findAll(".player-group-section > p")
+        .map((section) => section.text()),
+    ).toEqual(["screens"]);
+  });
+
+  it("keeps only screens when filtering on screens", () => {
+    const speaker = createPlayer({
+      player_id: "speaker",
+      name: "Office",
+    });
+    const screen = createPlayer({
+      player_id: "screen",
+      name: "Kitchen screen",
+      type: PlayerType.DISPLAY,
+    });
+    const parent = createPlayer({
+      can_group_with: [speaker.player_id, screen.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [speaker.player_id]: speaker,
+      [screen.player_id]: screen,
+    };
+
+    const wrapper = mountGroupMembers(parent, [], { filter: "screens" });
+
+    expect(
+      wrapper
+        .findAll(".member-checkbox")
+        .map((checkbox) => checkbox.attributes("aria-label")),
+    ).toEqual(["Kitchen screen"]);
+  });
+
+  it("keeps a capture-only device out of the picker", () => {
+    const speaker = createPlayer({
+      player_id: "speaker",
+      name: "Office",
+    });
+    // a line-in device reports an unknown type and renders nothing, but its
+    // provider still advertises it as groupable
+    const captureDevice = createPlayer({
+      player_id: "line-in",
+      name: "Line-in",
+      type: PlayerType.UNKNOWN,
+      supported_features: [],
+    });
+    const parent = createPlayer({
+      can_group_with: [speaker.player_id, captureDevice.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [speaker.player_id]: speaker,
+      [captureDevice.player_id]: captureDevice,
+    };
+
+    const wrapper = mountGroupMembers(parent, []);
+
+    expect(
+      wrapper
+        .findAll(".member-checkbox")
+        .map((checkbox) => checkbox.attributes("aria-label")),
+    ).toEqual(["Office"]);
+  });
+
+  it("keeps an already grouped capture-only device removable", () => {
+    const captureDevice = createPlayer({
+      player_id: "line-in",
+      name: "Line-in",
+      type: PlayerType.UNKNOWN,
+      supported_features: [],
+    });
+    const parent = createPlayer({
+      group_members: ["parent", captureDevice.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [captureDevice.player_id]: captureDevice,
+    };
+
+    const wrapper = mountGroupMembers(parent, [parent, captureDevice]);
+
+    expect(
+      wrapper
+        .findAll(".member-checkbox")
+        .map((checkbox) => checkbox.attributes("aria-label")),
+    ).toEqual(["Kitchen", "Line-in"]);
   });
 
   it("separates current members from available players", () => {
@@ -245,7 +361,7 @@ describe("PlayerGroupMembers", () => {
 
     const wrapper = mountGroupMembers(parent, [parent, child], {
       filter: "lights",
-      groupHeading: "Speakers in group",
+      groupHeading: "Players in group",
     });
 
     expect(
@@ -336,6 +452,49 @@ describe("PlayerGroupMembers", () => {
       parent.player_id,
       undefined,
       [child.player_id],
+    );
+  });
+
+  it("waits for a choice before removing the playing leader", async () => {
+    vi.useFakeTimers();
+    let keepPlaying: (() => void) | undefined;
+    requestGroupPlaybackConfirmation.mockImplementation(
+      (_player, _change, onKeepPlaying) => {
+        keepPlaying = onKeepPlaying;
+        return true;
+      },
+    );
+    const child = createPlayer({
+      player_id: "child",
+      name: "Office",
+    });
+    const parent = createPlayer({
+      playback_state: PlaybackState.PLAYING,
+      group_members: ["parent", child.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [child.player_id]: child,
+    };
+    const wrapper = mountGroupMembers(parent, [parent, child]);
+
+    await wrapper.get('[aria-label="Kitchen"]').trigger("click");
+
+    expect(requestGroupPlaybackConfirmation).toHaveBeenCalledWith(
+      parent,
+      "remove",
+      expect.any(Function),
+    );
+    expect(parent.group_members).toEqual(["parent", child.player_id]);
+    expect(api.playerCommandSetMembers).not.toHaveBeenCalled();
+
+    keepPlaying?.();
+    expect(parent.group_members).toEqual([child.player_id]);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(api.playerCommandSetMembers).toHaveBeenCalledWith(
+      parent.player_id,
+      undefined,
+      [parent.player_id],
     );
   });
 });

@@ -5,7 +5,7 @@
         <Button
           variant="ghost"
           size="icon"
-          :title="$t('tooltip.toggle_view_mode')"
+          :title="viewModeMenuLabel"
           @click="(e: MouseEvent) => openViewModeMenu(e)"
         >
           <v-icon :icon="viewModeIcon" />
@@ -165,7 +165,7 @@
     </template>
 
     <GenreAliasManager
-      v-if="itemDetails && isAdmin"
+      v-if="itemDetails && canManageLibrary"
       :genre="itemDetails"
       :existing-genre-names="existingGenreNames"
       @reload="loadItemDetails"
@@ -180,30 +180,22 @@ import GenreAliasManager from "@/components/genre/GenreAliasManager.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { Button } from "@/components/ui/button";
+import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
-  EventMessage,
-  EventType,
   Genre,
-  MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { SquareArrowRightEnter } from "@lucide/vue";
-import {
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-  type Component,
-} from "vue";
+import { computed, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
@@ -228,7 +220,9 @@ const existingGenreNames = ref<Set<string>>(new Set());
 const { t } = useI18n();
 const router = useRouter();
 
-const isAdmin = computed(() => authManager.isAdmin());
+const canManageLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_MANAGE),
+);
 
 type GenreViewMode = "discovery" | "list" | "panel" | "panel_compact";
 
@@ -261,6 +255,14 @@ const viewModeIcon = computed(() => {
   if (viewMode.value === "panel_compact") return "mdi-view-comfy";
   return "mdi-view-list";
 });
+
+const getViewModeLabel = function (mode: GenreViewMode) {
+  return t(`view.${mode}`);
+};
+
+const viewModeMenuLabel = computed(() =>
+  t("tooltip.view_mode_current", [getViewModeLabel(viewMode.value)]),
+);
 
 const openViewModeMenu = (e: MouseEvent) => {
   eventbus.emit("contextmenu", {
@@ -386,7 +388,8 @@ const loadGenreArtists = async (params: LoadDataParams) => {
     params.search,
     undefined,
     undefined,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     undefined,
     params.provider?.length ? params.provider : undefined,
     genreId(),
@@ -400,7 +403,8 @@ const loadGenreAlbums = async (params: LoadDataParams) => {
     params.search,
     undefined,
     undefined,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     undefined,
     params.provider?.length ? params.provider : undefined,
     genreId(),
@@ -414,7 +418,8 @@ const loadGenreTracks = async (params: LoadDataParams) => {
     params.search,
     undefined,
     undefined,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -427,7 +432,8 @@ const loadGenrePlaylists = async (params: LoadDataParams) => {
     params.search,
     undefined,
     undefined,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -440,7 +446,8 @@ const loadGenrePodcasts = async (params: LoadDataParams) => {
     params.search,
     undefined,
     undefined,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -453,7 +460,8 @@ const loadGenreAudiobooks = async (params: LoadDataParams) => {
     params.search,
     undefined,
     undefined,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -474,18 +482,7 @@ watch(
   },
 );
 
-onMounted(() => {
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_UPDATED,
-    (evt: EventMessage) => {
-      const updatedItem = evt.data as MediaItemType;
-      if (itemDetails.value?.uri == updatedItem.uri) {
-        itemDetails.value = updatedItem as Genre;
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
-});
+useDetailItemUpdates(itemDetails);
 </script>
 
 <style scoped>

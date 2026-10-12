@@ -299,8 +299,14 @@ async function handleHttpProxyRequest(event, proxyScope) {
   try {
     const response = await responsePromise;
 
-    // Cache successful responses (200-299)
-    if (response.status >= 200 && response.status < 300) {
+    // Cache successful responses (200-299). Preview clips are addressed by a token that
+    // is fresh on every request, so they could never be hit again and would only push
+    // reusable entries (images) out of a cache with a fixed entry budget.
+    if (
+      response.status >= 200 &&
+      response.status < 300 &&
+      !url.pathname.startsWith("/preview")
+    ) {
       try {
         // Clone the response before caching (can only read body once). The write
         // keeps the worker alive without holding up the image it just fetched.

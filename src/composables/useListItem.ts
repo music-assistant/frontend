@@ -7,6 +7,7 @@ export interface ListItemProps {
    * Whether to show the context menu button
    */
   showMenuBtn?: boolean;
+  menuButtonLabel?: string;
 
   /**
    * Variant for different list item styles
@@ -52,7 +53,7 @@ export interface ListItemEmits {
 
 export const useListItem = (props: ListItemProps) => {
   const listItemProps = computed(() => {
-    const { variant, showMenuBtn, ...vuetifyProps } = props;
+    const { variant, showMenuBtn, menuButtonLabel, ...vuetifyProps } = props;
 
     const baseProps = {
       ...vuetifyProps,

@@ -76,6 +76,7 @@ import { usePartyConfig } from "@/composables/usePartyConfig";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import { AlertCircle, Check } from "@lucide/vue";
 import QRCode from "qrcode";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
@@ -183,10 +184,7 @@ onMounted(async () => {
   // Subscribe to PROVIDERS_UPDATED to detect when party provider is
   // loaded/unloaded. Config refresh is handled by the composable automatically.
   unsubProviders = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    const hasParty = Object.values(api.providers).some(
-      (p) => p.domain === "party",
-    );
-    if (hasParty) {
+    if (store.enabledPlugins.has("party")) {
       await generateQRCode();
     } else {
       guestAccessEnabled.value = false;
@@ -197,10 +195,7 @@ onMounted(async () => {
   // Subscribe to CORE_STATE_UPDATED to detect when remote access is toggled,
   // which changes the party join URL between local and remote.
   unsubCoreState = api.subscribe(EventType.CORE_STATE_UPDATED, async () => {
-    const hasParty = Object.values(api.providers).some(
-      (p) => p.domain === "party",
-    );
-    if (hasParty) {
+    if (store.enabledPlugins.has("party")) {
       await generateQRCode();
     }
   });

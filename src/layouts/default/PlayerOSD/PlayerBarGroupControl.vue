@@ -38,6 +38,7 @@
           :data-active="open"
           :data-suppress-hover="suppressHover"
           :aria-label="groupMembersLabel"
+          data-tour="player_group"
           @pointerenter="onPointerEnter"
         >
           <span v-if="floating" class="inline-flex">
@@ -83,7 +84,7 @@
           :player="player"
           :members="groupMembers"
           :has-lights="hasLights"
-          :has-visualizers="hasVisualizers"
+          :has-screens="hasScreens"
           @dismiss="handleOpenChange(false)"
         />
       </PopoverContent>
@@ -108,9 +109,12 @@ import {
 } from "@/helpers/player_bar";
 import type { PlayerGroupFilter } from "@/helpers/player_group";
 import {
+  canBeGroupMember,
   canEditPlayerGroup,
+  getPlayerDisplayName,
   getPlayerGroupMemberCount,
   groupMemberPickerVisible,
+  isScreenPlayer,
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { type Player, PlayerType } from "@/plugins/api/interfaces";
@@ -162,9 +166,11 @@ const groupMembers = computed(() => {
     .map((playerId) => api.players[playerId])
     .filter((member): member is Player => member?.available === true)
     .sort((left, right) =>
-      left.name.localeCompare(right.name, undefined, {
-        sensitivity: "base",
-      }),
+      getPlayerDisplayName(left).localeCompare(
+        getPlayerDisplayName(right),
+        undefined,
+        { sensitivity: "base" },
+      ),
     );
 });
 
@@ -175,13 +181,13 @@ const groupCandidates = computed(() => {
     (candidate) =>
       candidate.available &&
       groupMemberPickerVisible(candidate) &&
+      canBeGroupMember(candidate) &&
       candidate.type !== PlayerType.GROUP &&
       (!candidate.active_group ||
         candidate.active_group === player.value?.player_id) &&
       (memberIds.has(candidate.player_id) ||
         (candidate.player_id !== player.value?.player_id &&
-          (player.value?.can_group_with.includes(candidate.player_id) ||
-            player.value?.can_group_with.includes(candidate.provider)))),
+          player.value?.can_group_with.includes(candidate.player_id))),
   );
 });
 
@@ -190,10 +196,8 @@ const hasLights = computed(() =>
     (candidate) => candidate.type === PlayerType.LIGHT,
   ),
 );
-const hasVisualizers = computed(() =>
-  groupCandidates.value.some(
-    (candidate) => candidate.type === PlayerType.VISUALIZER,
-  ),
+const hasScreens = computed(() =>
+  groupCandidates.value.some((candidate) => isScreenPlayer(candidate)),
 );
 
 watch(
@@ -201,10 +205,10 @@ watch(
   () => handleOpenChange(false),
 );
 
-watch([hasLights, hasVisualizers], () => {
+watch([hasLights, hasScreens], () => {
   if (
     (filter.value === "lights" && !hasLights.value) ||
-    (filter.value === "visualizers" && !hasVisualizers.value)
+    (filter.value === "screens" && !hasScreens.value)
   ) {
     filter.value = "all";
   }

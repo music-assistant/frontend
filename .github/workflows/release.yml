@@ -141,7 +141,7 @@ jobs:
 
       - name: Install pnpm
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           version: 11.8.0
 
@@ -188,6 +188,10 @@ jobs:
           rm -rf dist music_assistant_frontend.egg-info
           python3 -m build
 
+      - name: Verify the package ships the frontend
+        if: steps.inspect_release.outputs.already_published != 'true'
+        run: .github/scripts/verify-python-package.sh
+
       - name: Create or verify tag
         if: steps.inspect_release.outputs.already_published != 'true'
         run: |
@@ -211,7 +215,7 @@ jobs:
       - name: Generate release notes with Release Drafter
         id: release_drafter
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: release-drafter/release-drafter@34d80673e067bdc0c24568d3af899c216adcfaa9 # v7.7.0
+        uses: release-drafter/release-drafter@72967cdc98ddd3160f1fc3dff619de365e137dd0 # v7.9.0
         with:
           config-name: release-drafter.yml
           version: ${{ inputs.version }}
@@ -270,20 +274,10 @@ jobs:
         if: steps.inspect_release.outputs.already_published != 'true'
         run: |
           RELEASE_ID="${{ steps.prepare_draft.outputs.release_id }}"
+          # The verify step above already established that dist/ holds exactly
+          # one wheel and one source distribution, both carrying the frontend.
           shopt -s nullglob
-          WHEELS=(dist/*.whl)
-          SDISTS=(dist/*.tar.gz)
-          if (( ${#WHEELS[@]} != 1 || ${#SDISTS[@]} != 1 )); then
-            echo "::error::Expected one wheel and one source distribution."
-            exit 1
-          fi
-          ASSETS=("${WHEELS[@]}" "${SDISTS[@]}")
-          for ASSET in "${ASSETS[@]}"; do
-            if [[ ! -s "$ASSET" ]]; then
-              echo "::error::Release asset $ASSET is empty."
-              exit 1
-            fi
-          done
+          ASSETS=(dist/*.whl dist/*.tar.gz)
 
           read -r RELEASE_TAG IS_DRAFT <<< "$(
             gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \

@@ -7,8 +7,9 @@ import type {
   AIRadioSectionOrderRule,
   AIRadioStation,
   AIRadioWebSearchMode,
+  Player,
 } from "@/plugins/api/interfaces";
-import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
+import { $t } from "@/plugins/i18n";
 
 // Sentinel for "no selection" in shadcn Select components, which do not
 // allow SelectItem values to be empty strings.
@@ -54,35 +55,6 @@ export const formatTimestamp = (value?: string) => {
   return parsed.toLocaleString();
 };
 
-/**
- * Localized relative label ("2 hours ago") for an ISO timestamp.
- * `nowMs` is injectable for tests; callers rely on the 5s session polling
- * to keep displayed values fresh, so no ticking is needed.
- */
-export const relativeTimeFromIso = (
-  value?: string | null,
-  nowMs = Date.now(),
-): string => {
-  if (!value) return "";
-  const thenMs = new Date(value).getTime();
-  if (Number.isNaN(thenMs)) return "";
-  const diffSeconds = Math.round((thenMs - nowMs) / 1000);
-  const absSeconds = Math.abs(diffSeconds);
-  const rtf = new Intl.RelativeTimeFormat(
-    canonicalizeLocale(i18n.global.locale.value),
-    {
-      numeric: "auto",
-      style: "narrow",
-    },
-  );
-  if (absSeconds < 60) return rtf.format(0, "second");
-  if (absSeconds < 3600)
-    return rtf.format(Math.trunc(diffSeconds / 60), "minute");
-  if (absSeconds < 86400)
-    return rtf.format(Math.trunc(diffSeconds / 3600), "hour");
-  return rtf.format(Math.trunc(diffSeconds / 86400), "day");
-};
-
 // -----------------------------------------------------------------------
 // Host model: the UI "segment" representation of a host's spoken content,
 // and the compiler/decompiler for the backend host+section contract.
@@ -94,6 +66,7 @@ export interface ShowSegment {
   name: string;
   prompt: string;
   webSearch: AIRadioWebSearchMode;
+  allowPost: boolean;
   maxChars: number;
   plays: PlaysRule;
 }
@@ -146,6 +119,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     prompt:
       "The next track is <next_songinfo>. Open the program like a polished radio host: brief welcome, confident energy, one concrete hook about the song or artist, and a clean handoff into the music.",
     webSearch: "disabled",
+    allowPost: false,
     maxChars: 650,
     plays: { kind: "start" },
   },
@@ -154,6 +128,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     name: "Transition",
     prompt: SONG_TRANSITION_PROMPT,
     webSearch: "allow",
+    allowPost: false,
     maxChars: 650,
     plays: { kind: "every_song" },
   },
@@ -163,6 +138,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     prompt:
       "Using <weather_hourly> and <timestamp>, deliver a short spoken weather update with the current outlook, a useful next-hours summary, and smooth radio phrasing.",
     webSearch: "disabled",
+    allowPost: false,
     maxChars: 500,
     plays: { kind: "every_n_min", n: 60 },
   },
@@ -172,6 +148,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     prompt:
       "Create a short global news bulletin anchored to <timestamp>. Use web search. Include two or three current items that are broadly relevant, clearly separated, fact-focused, and written for spoken delivery.",
     webSearch: "force",
+    allowPost: false,
     maxChars: 700,
     plays: { kind: "every_n_min", n: 60 },
   },
@@ -181,6 +158,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     prompt:
       "The next track is <next_songinfo>. Share one genuinely interesting fact about the track or its artist, keeping it precise, engaging, and free of generic trivia.",
     webSearch: "allow",
+    allowPost: false,
     maxChars: 500,
     plays: { kind: "every_n_songs", n: 3 },
   },
@@ -190,6 +168,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     prompt:
       "The last track played was <prev_songinfo>. Close the program with a memorable sign-off: brief reflection, warm farewell, and language that sounds like the end of a real radio segment.",
     webSearch: "disabled",
+    allowPost: false,
     maxChars: 650,
     plays: { kind: "end" },
   },
@@ -304,6 +283,8 @@ const compileSegments = (
       name: segment.name,
       type: "ai_text",
       web_search: segment.webSearch,
+      // a closing segment has nothing after it to talk over
+      allow_post: segment.allowPost && segment.plays.kind !== "end",
       prompt: segment.prompt,
       constraints: { max_chars: segment.maxChars },
     });
@@ -541,6 +522,7 @@ export const decompileHost = (
       name: section.name,
       prompt: section.prompt,
       webSearch: section.web_search || "disabled",
+      allowPost: section.allow_post ?? false,
       maxChars: section.constraints?.max_chars || 0,
       plays,
     };
@@ -553,8 +535,8 @@ export const decompileHost = (
     name: host.name,
     instructions: host.instructions,
     ttsEngine: host.tts_engine,
-    language: host.language || "",
-    options: host.options || {},
+    language: host.language,
+    options: host.options,
     segments,
   };
 };
@@ -580,12 +562,18 @@ export const playsRuleLabel = (rule: PlaysRule): string => {
   return $t(key);
 };
 
-/** Player to start a show on: its own default, else the currently active player, else none. */
+/**
+ * The player a show starts on: its default playback device while that device is
+ * known and available, otherwise the player the user has selected.
+ */
 export const resolveShowPlayerId = (
   station: Pick<AIRadioStation, "default_player_id">,
   activePlayerId: string | undefined,
+  players: Record<string, Pick<Player, "available">>,
 ): string => {
-  return station.default_player_id || activePlayerId || "";
+  const preferred = station.default_player_id;
+  if (preferred && players[preferred]?.available) return preferred;
+  return activePlayerId || "";
 };
 
 export const getQueryValue = (value: unknown) => {

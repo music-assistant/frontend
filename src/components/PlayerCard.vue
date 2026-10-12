@@ -29,14 +29,18 @@
         <button
           type="button"
           class="player-select-action focus-visible:ring-ring absolute inset-0 z-0 rounded-md text-left outline-none focus-visible:ring-2"
-          :disabled="!player.available && !player.needs_setup"
+          :disabled="
+            (!player.available && !player.needs_setup) || isInformationalSource
+          "
           @click="emit('click', player)"
         >
           <span class="sr-only">
             {{
               player.needs_setup
                 ? $t("configure_player")
-                : $t("tooltip.select_player")
+                : isInformationalSource
+                  ? $t("player_type.source")
+                  : $t("tooltip.select_player")
             }}:
             {{ accessiblePlayerLabel }}
             <template v-if="player.needs_setup">
@@ -113,6 +117,12 @@
                 {{ $t("settings.setup_required") }}
               </Badge>
               <p
+                v-if="player.type === PlayerType.SOURCE"
+                class="text-muted-foreground truncate text-xs"
+              >
+                {{ $t("player_type.source") }}
+              </p>
+              <p
                 v-if="player.powered !== false && player.current_media?.title"
                 class="truncate text-xs font-medium"
               >
@@ -179,7 +189,11 @@
           :aria-expanded="groupControlsExpanded"
           @click.stop="toggleMemberControls"
         >
-          <PlayerGroupIcon :count="groupMemberCount" class="size-5" />
+          <PlayerGroupIcon
+            :count="groupMemberCount"
+            outset-count
+            class="size-5"
+          />
         </Button>
 
         <Button
@@ -187,7 +201,7 @@
           variant="ghost"
           size="icon-sm"
           :class="{ '-ml-1': showGroupControl || canPlayPause }"
-          :disabled="!player.available"
+          :disabled="menuDisabled"
           :aria-label="$t('tooltip.more_options')"
           @click.stop="openPlayerMenu"
         >
@@ -225,13 +239,16 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { getSetupRequiredPlayerMenuItems } from "@/helpers/player_settings_actions";
 import {
   canEditPlayerGroup,
+  getPlayerDisplayName,
   getPlayerGroupMemberCount,
+  getPlayerName,
   isBuiltinPlayer,
 } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
-import { getMediaImageUrl, getPlayerName } from "@/helpers/utils";
+import { getMediaImageUrl } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { resolvePlayerQueue } from "@/plugins/api/helpers";
 import {
@@ -239,7 +256,9 @@ import {
   type Player,
   PLAYER_CONTROL_NONE,
   PlayerType,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
@@ -281,6 +300,19 @@ const artworkFailed = ref(false);
 const { activeSource } = useActiveSource(toRef(props, "player"));
 
 const playerQueue = computed(() => resolvePlayerQueue(props.player));
+
+// a set-up audio input can't be selected for playback; its row only informs
+const isInformationalSource = computed(
+  () => props.player.type === PlayerType.SOURCE && !props.player.needs_setup,
+);
+
+// a player that still needs setup can't play yet, so its menu only sets it up
+// and manages it, which takes a role that may change player settings
+const menuDisabled = computed(() =>
+  props.player.needs_setup
+    ? !authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)
+    : !props.player.available,
+);
 
 const artworkUrl = computed(() => {
   if (
@@ -348,18 +380,18 @@ const groupMemberNames = computed(() => {
         Boolean(member) &&
         (props.player.type === PlayerType.GROUP || member.available),
     )
-    .map((member) => member.name);
+    .map(getPlayerDisplayName);
 
   if (childNames.length === 0 || props.player.type === PlayerType.GROUP) {
     return childNames;
   }
-  return [props.player.name, ...childNames];
+  return [getPlayerDisplayName(props.player), ...childNames];
 });
 
 const cardPlayerName = computed(() =>
   props.groupMemberLayout === "subtitle-list" &&
   groupMemberNames.value.length > 0
-    ? props.player.name
+    ? getPlayerDisplayName(props.player)
     : getPlayerName(props.player, 27),
 );
 
@@ -382,7 +414,7 @@ const accessibleGroupMemberNames = computed(() =>
 
 const accessiblePlayerLabel = computed(() =>
   [
-    props.player.name,
+    getPlayerDisplayName(props.player),
     ...accessibleGroupMemberNames.value,
     props.player.current_media?.title,
     mediaByline.value,
@@ -407,12 +439,14 @@ watch(
 
 function openPlayerMenu(event: Event) {
   event.stopPropagation();
-  if (!props.player.available) return;
+  if (menuDisabled.value) return;
   const position = getEventPosition(event);
   eventbus.emit("contextmenu", {
-    items: getPlayerMenuItems(props.player, playerQueue.value, {
-      context: "player",
-    }),
+    items: props.player.needs_setup
+      ? getSetupRequiredPlayerMenuItems(props.player)
+      : getPlayerMenuItems(props.player, playerQueue.value, {
+          context: "player",
+        }),
     posX: position.x,
     posY: position.y,
   });

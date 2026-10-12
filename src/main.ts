@@ -42,6 +42,7 @@ import App from "./App.vue";
 import { createApp } from "vue";
 
 // Plugins
+import { isEmbedded } from "@/helpers/embedded";
 import { registerPlugins } from "@/plugins";
 
 // Install Sendspin WebSocket interceptor for authenticated connections
@@ -54,7 +55,7 @@ installSendspinInterceptor();
 // Safari reports the ones belonging to the page around us. A host that hands
 // the safe area over instead reports what it stopped covering, and those
 // values land on the same properties inline, above this.
-if (window.self !== window.top) {
+if (isEmbedded()) {
   document.documentElement.setAttribute("data-embedded-layout", "");
 }
 

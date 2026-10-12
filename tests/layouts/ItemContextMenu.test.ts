@@ -1,7 +1,7 @@
 import ItemContextMenu from "@/layouts/default/ItemContextMenu.vue";
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
 import { mount } from "@vue/test-utils";
-import { nextTick } from "vue";
+import { markRaw, nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { eventHandlers, storeMock } = vi.hoisted(() => ({
@@ -27,6 +27,10 @@ vi.mock("@/plugins/eventbus", () => ({
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope: () => false },
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -100,6 +104,61 @@ describe("ItemContextMenu", () => {
 
     await Promise.resolve();
     expect(storeMock.dialogActive).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("stays open for pointers inside a select dropdown teleported to body", async () => {
+    const wrapper = mountContextMenu();
+    eventHandlers.get("contextmenu")?.({
+      items: [{ label: "visualizer_options" }],
+      posX: 10,
+      posY: 20,
+    });
+    await nextTick();
+    await nextTick();
+    expect(storeMock.dialogActive).toBe(true);
+
+    // A menu row's Select (e.g. the visualizer preset picker) teleports its
+    // list to <body>; touching it to scroll starts with a pointerdown there.
+    const selectContent = document.createElement("div");
+    selectContent.setAttribute("data-slot", "select-content");
+    const selectItem = document.createElement("div");
+    selectContent.appendChild(selectItem);
+    document.body.appendChild(selectContent);
+
+    selectItem.dispatchEvent(
+      new PointerEvent("pointerdown", { bubbles: true }),
+    );
+    await Promise.resolve();
+    expect(storeMock.dialogActive).toBe(true);
+
+    selectContent.remove();
+    wrapper.unmount();
+  });
+
+  it("renders a subComponent item as a popout with its props", async () => {
+    const popout = markRaw({
+      props: ["playerId"],
+      template: "<div data-test-popout>{{ playerId }}</div>",
+    });
+    const wrapper = mountContextMenu();
+    eventHandlers.get("contextmenu")?.({
+      items: [
+        {
+          label: "settings.visualizer_enabled.label",
+          subComponent: popout,
+          componentProps: { playerId: "kitchen" },
+        },
+      ],
+      posX: 10,
+      posY: 20,
+    });
+    await nextTick();
+    await nextTick();
+
+    // menuItemLabel resolves the label through the real i18n catalog
+    expect(wrapper.text()).toContain("MilkDrop visualizer");
+    expect(wrapper.get("[data-test-popout]").text()).toBe("kitchen");
     wrapper.unmount();
   });
 });

@@ -1,10 +1,10 @@
-export type PlayerGroupFilter = "all" | "players" | "lights" | "visualizers";
+export type PlayerGroupFilter = "all" | "players" | "lights" | "screens";
 
 const PLAYER_GROUP_FILTERS: PlayerGroupFilter[] = [
   "all",
   "players",
   "lights",
-  "visualizers",
+  "screens",
 ];
 
 export function isPlayerGroupFilter(

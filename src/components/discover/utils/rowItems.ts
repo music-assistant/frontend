@@ -22,16 +22,20 @@ export function rowIdsNeedingItems(rows: RecommendationRowState[]): string[] {
  * Whether a recommendation row should render, given its resolved items.
  * `items` is `undefined` while the row's fetch hasn't resolved yet.
  * - Edit mode: every row renders (dimmed if hidden) so it stays toggleable.
- * - Normal mode: a hidden row never renders; a shown row renders while its
- *   items are loading, then disappears if they resolved to zero items (same
- *   end state as the previous `items.length > 0` filter).
+ * - Normal mode: a hidden row never renders. A shown row renders while its
+ *   items are loading, then disappears if they resolved to zero items --
+ *   unless the row has an active provider filter, in which case it stays
+ *   visible (showing an empty state) so the filter control remains
+ *   reachable and the user isn't stuck with a permanently hidden row.
  */
 export function isRecommendationRowVisible(
   row: RecommendationRowState,
   items: unknown[] | undefined,
   editMode: boolean,
+  hasActiveFilter: boolean,
 ): boolean {
   if (editMode) return true;
   if (row.hidden) return false;
+  if (hasActiveFilter) return true;
   return items === undefined || items.length > 0;
 }

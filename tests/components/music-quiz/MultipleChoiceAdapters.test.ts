@@ -32,6 +32,8 @@ const playerState = {
   answer_type: "multiple_choice",
   phase: "answering",
   name: "Quiz",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   suggestion_count: 2,
   answer_duration: 30,
@@ -104,7 +106,7 @@ describe("multiple-choice adapters", () => {
     wrapper.unmount();
   });
 
-  it("shows the existing reveal result states", () => {
+  it("renders no result banner on reveal since results live in the player header", () => {
     const state = {
       ...playerState,
       phase: "reveal",
@@ -127,8 +129,10 @@ describe("multiple-choice adapters", () => {
       },
     });
 
-    expect(wrapper.text()).toContain("providers.music_quiz.correct");
-    expect(wrapper.text()).toContain("+7");
+    expect(wrapper.text()).not.toContain("providers.music_quiz.correct");
+    expect(wrapper.text()).not.toContain(
+      "providers.music_quiz.no_answer_submitted",
+    );
     wrapper.unmount();
   });
 
@@ -160,6 +164,11 @@ describe("multiple-choice adapters", () => {
       sources: [],
       join_url: "https://example.test/join",
       rounds: [currentRound],
+      playback: {
+        mode: "venue",
+        venue_player_id: null,
+        venue_player_name: null,
+      },
     } satisfies MusicQuizGuessTheSongHostState;
 
     const wrappers = [

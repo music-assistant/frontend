@@ -74,49 +74,13 @@
               v-if="api.players[config.player_id]?.output_protocols.length"
               class="protocol-chips"
             >
-              <v-chip
+              <ProtocolChip
                 v-for="protocol in api.players[config.player_id]
                   .output_protocols"
                 :key="protocol.output_protocol_id"
-                size="x-small"
-                variant="tonal"
-                class="protocol-chip"
-                :class="{
-                  'protocol-chip--clickable': api.getProviderManifest(
-                    protocol.protocol_domain,
-                  )?.documentation,
-                  'protocol-chip--unavailable': !protocol.available,
-                }"
-                @click="
-                  api.getProviderManifest(protocol.protocol_domain)
-                    ?.documentation &&
-                  openLinkInNewTab(
-                    api.getProviderManifest(protocol.protocol_domain)!
-                      .documentation!,
-                  )
-                "
-              >
-                <template #prepend>
-                  <ProviderIcon
-                    :domain="protocol.protocol_domain"
-                    :size="14"
-                    class="chip-icon"
-                  />
-                </template>
-                {{
-                  api.getProviderManifest(protocol.protocol_domain)?.name ||
-                  protocol.protocol_domain
-                }}
-                <v-icon
-                  v-if="
-                    api.getProviderManifest(protocol.protocol_domain)
-                      ?.documentation
-                  "
-                  size="12"
-                  class="ml-1"
-                  >mdi-open-in-new</v-icon
-                >
-              </v-chip>
+                :protocol="protocol"
+                link-to-docs
+              />
             </div>
           </div>
           <Button
@@ -132,7 +96,6 @@
           </Button>
         </CardHeader>
         <CardContent
-          v-if="playerSetupLabel || showAdvancedToggle"
           class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
         >
           <Button
@@ -143,11 +106,17 @@
             <RefreshCw class="size-4" />
             {{ $t(playerSetupLabel) }}
           </Button>
-          <AdvancedSettingsToggle
-            v-if="showAdvancedToggle"
-            v-model:show-advanced-settings="showAdvancedSettings"
-            test-id="player-advanced-settings"
-          />
+          <Button
+            as="a"
+            data-testid="player-documentation"
+            variant="outline"
+            :href="documentationUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <BookOpen class="size-4" />
+            {{ $t("settings.documentation") }}
+          </Button>
         </CardContent>
       </Card>
     </div>
@@ -219,7 +188,6 @@
     <edit-config
       v-if="config"
       ref="editConfig"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
       :output-protocols="api.players[config.player_id]?.output_protocols || []"
@@ -243,7 +211,7 @@
 import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import ProtocolChip from "@/components/ProtocolChip.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -264,31 +232,35 @@ import {
   HassControlPickerEntry,
   HassControlPlayerKey,
   UI_ENTRY_TYPE,
-  hasAdvancedEntries,
   isInjected,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
 import { getHassProviderInstance } from "@/helpers/hass_controls";
 import { goBack } from "@/helpers/navigation";
-import { getPlayerSetupLabel } from "@/helpers/player_config";
-import {
-  getPlayerName,
-  getPlayerSettingsMenuItems,
-} from "@/helpers/player_settings_actions";
+import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
+import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import { useConfigAction } from "@/composables/useConfigAction";
-import { openLinkInNewTab } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { MoreVertical, Pencil, RefreshCw, RotateCcw } from "@lucide/vue";
-import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
+import {
+  BookOpen,
+  MoreVertical,
+  Pencil,
+  RefreshCw,
+  RotateCcw,
+} from "@lucide/vue";
 import EditConfig from "./EditConfig.vue";
 import PlayerSettingsLinks from "./PlayerSettingsLinks.vue";
+
+const PLAYER_DOCS_URL =
+  "https://music-assistant.io/settings/individual-player/";
+
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
-const showAdvancedSettings = ref(false);
 const enabling = ref(false);
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
@@ -324,6 +296,9 @@ const player = computed(() =>
 const playerSetupLabel = computed(() =>
   config.value?.enabled ? getPlayerSetupLabel(player.value) : undefined,
 );
+
+// the docs of a beta server live on the beta site
+const documentationUrl = computed(() => getExternalLinkUrl(PLAYER_DOCS_URL));
 
 const config_entries = computed(() => {
   if (!config.value) return [];
@@ -400,10 +375,6 @@ const config_entries = computed(() => {
   return entries;
 });
 
-const showAdvancedToggle = computed(
-  () => !!config.value?.enabled && hasAdvancedEntries(config_entries.value),
-);
-
 // watchers
 
 watch(
@@ -474,10 +445,10 @@ const enablePlayer = async function () {
 
     applyPlayerConfig(updatedConfig);
     toast.success($t("settings.player_saved"));
-  } catch (err) {
+  } catch {
+    // the api reports the failure itself; the page shows what the server kept
     if (!isCurrentPlayer(playerId)) return;
 
-    toast.error(String(err));
     await refreshPlayerConfig(playerId);
   } finally {
     if (requestId === enableRequestId) enabling.value = false;
@@ -586,7 +557,6 @@ function isCurrentPlayer(playerId: string) {
 function resetPlayerState(playerId?: string) {
   if (config.value?.player_id === playerId) return;
   config.value = undefined;
-  showAdvancedSettings.value = false;
   enabling.value = false;
   enableRequestId++;
 }
@@ -661,46 +631,6 @@ function resetPlayerState(playerId?: string) {
   gap: 4px;
   flex-wrap: wrap;
   margin-top: 8px;
-}
-
-.protocol-chip {
-  text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: 0.3px;
-}
-
-.protocol-chip--clickable {
-  cursor: pointer;
-}
-
-.protocol-chip--clickable:hover {
-  opacity: 0.85;
-}
-
-.protocol-chip--unavailable {
-  opacity: 0.4;
-}
-
-.chip-icon {
-  margin: 0 !important;
-  width: auto !important;
-}
-
-.chip-icon :deep(div) {
-  margin-left: 0 !important;
-  margin-right: 4px !important;
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper) {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper svg) {
-  width: 14px !important;
-  height: 14px !important;
 }
 
 @media (max-width: 600px) {

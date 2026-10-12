@@ -10,10 +10,13 @@
         <Doughnut :data="chartData" :options="chartOptions" />
       </div>
       <div class="pie-chart-legend">
-        <div
+        <button
           v-for="(topItem, index) in data"
           :key="topItem.item.item_id"
+          type="button"
           class="legend-item"
+          :aria-label="topItem.item.name"
+          :disabled="!navigateTo"
           @click="handleLegendClick(topItem)"
         >
           <div
@@ -24,7 +27,7 @@
           ></div>
           <div class="legend-image">
             <img
-              :src="topItem.item.image?.path || placeholderImage"
+              :src="getImageThumbForItem(topItem.item) || placeholderImage"
               :alt="topItem.item.name"
               loading="lazy"
             />
@@ -36,7 +39,7 @@
               <span>{{ topItem.play_count }}</span>
             </div>
           </div>
-        </div>
+        </button>
       </div>
     </div>
   </BaseChartCard>
@@ -52,6 +55,7 @@ import {
   imgCoverDark,
   imgCoverLight,
 } from "@/components/QualityDetailsBtn.vue";
+import { getImageThumbForItem } from "@/helpers/utils";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -194,10 +198,21 @@ const chartOptions = computed<ChartOptions<"doughnut">>(() => ({
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
 }
 
-.legend-item:hover {
+.legend-item:hover:not(:disabled) {
   background-color: rgba(var(--v-theme-on-surface), 0.05);
+}
+
+.legend-item:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
 }
 
 .legend-color {

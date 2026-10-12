@@ -13,7 +13,7 @@
       ref="cardRef"
       data-player-panel
       class="fullscreen-player-card"
-      :style="{ background: backgroundColor }"
+      :style="[{ background: backgroundColor }, overlayVars]"
     >
       <VisualizerCanvas
         v-if="store.showFullscreenPlayer && visualizerActive"
@@ -21,6 +21,7 @@
         :blur="visualizerBlurPref"
         :opacity="visualizerOpacityPref"
         :player-id="store.activePlayer?.player_id"
+        :force-dark-palette="visualizerOpacityPref > 50"
       />
       <PanelDragHandle
         v-if="store.mobileLayout"
@@ -30,6 +31,7 @@
       <v-toolbar
         data-panel-drag-region
         class="v-toolbar-default"
+        :class="{ 'v-toolbar--compact': store.mobileLayout }"
         color="transparent"
       >
         <template #prepend>
@@ -48,17 +50,20 @@
           <PlayerFullscreenHeaderControls
             :lyrics-state="lyricsState"
             :lyrics-active="showLyrics"
+            :transcript-sync-enabled="transcriptSyncEnabled"
+            :transcript-timed="!!currentLyrics.synced"
             @toggle-lyrics="toggleLyrics"
+            @toggle-transcript-sync="toggleTranscriptSync"
           />
 
           <Button
-            variant="ghost-outline"
-            size="icon-xs"
-            class="ml-2 size-7"
+            variant="overlay"
+            :size="store.mobileLayout ? 'icon-sm' : 'icon'"
+            class="ml-2"
             :aria-label="$t('tooltip.more_options')"
             @click.stop="openQueueMenu"
           >
-            <EllipsisVerticalIcon :size="16" />
+            <EllipsisVerticalIcon />
           </Button>
         </template>
       </v-toolbar>
@@ -98,12 +103,18 @@
             </div>
           </div>
           <div class="main-media-details-track-info">
+            <!-- the external source streaming the media shown below -->
+            <NowPlayingSourceBadge class="main-media-details-source" />
             <!-- player name as title if its powered off-->
             <v-card-title
               v-if="store.activePlayer?.powered == false"
               :style="`font-size: ${titleFontSize};font-weight:600;`"
             >
-              {{ store.activePlayer?.name }}
+              {{
+                store.activePlayer
+                  ? getPlayerDisplayName(store.activePlayer)
+                  : ""
+              }}
             </v-card-title>
             <!-- current media title -->
             <v-card-title
@@ -122,7 +133,11 @@
               @click="store.showPlayersMenu = true"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer?.name || $t("no_player") }}
+                {{
+                  store.activePlayer
+                    ? getPlayerDisplayName(store.activePlayer)
+                    : $t("no_player")
+                }}
               </MarqueeText>
             </v-card-title>
 
@@ -141,12 +156,22 @@
             <v-card-subtitle
               v-else-if="store.activePlayer?.current_media && showAlbumSubtitle"
               :style="`font-size: ${subTitleFontSize};${
-                store.activePlayer.current_media.album ? 'cursor:pointer;' : ''
+                albumSubtitle ? 'cursor:pointer;' : ''
               }`"
               @click="onAlbumClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer.current_media.album || " " }}
+                {{ albumSubtitle || " " }}
+              </MarqueeText>
+            </v-card-subtitle>
+
+            <!-- subtitle: current chapter, followed by the author line -->
+            <v-card-subtitle
+              v-if="currentChapter"
+              :style="`font-size: ${subTitleFontSize};`"
+            >
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ currentChapter.chapter.name }}
               </MarqueeText>
             </v-card-subtitle>
 
@@ -166,21 +191,9 @@
               </MarqueeText>
             </v-card-subtitle>
 
-            <!-- subtitle: queue empty or other source active -->
-            <!-- 3rd party source active -->
-            <v-card-subtitle
-              v-if="
-                !store.activePlayerQueue && store.activePlayer?.active_source
-              "
-              class="caption"
-            >
-              {{
-                $t("external_source_active", [
-                  getSourceName(store.activePlayer),
-                ])
-              }}
-            </v-card-subtitle>
-            <v-card-subtitle v-else-if="queueEnded" class="caption">
+            <!-- subtitle: queue ended or empty; an active third party source
+                 is named by the badge above instead -->
+            <v-card-subtitle v-if="queueEnded" class="caption">
               {{ $t("queue_ended") }}
             </v-card-subtitle>
             <v-card-subtitle
@@ -209,6 +222,7 @@
               :lyrics="currentLyrics.plain"
               :lrc-lyrics="currentLyrics.synced"
               :offset="lyricsOffset"
+              :sync-disabled="isEpisode && !transcriptSyncEnabled"
             />
           </div>
           <!-- Unified queue list: played → now playing → up next (virtualized) -->
@@ -299,6 +313,15 @@
                     :key="chapter.position"
                     type="button"
                     class="queue-chapter"
+                    :class="{
+                      'queue-chapter--active': isActiveChapter(
+                        row.item,
+                        chapter,
+                      ),
+                    }"
+                    :aria-current="
+                      isActiveChapter(row.item, chapter) ? 'true' : undefined
+                    "
                     @click.stop="chapterClicked(row.item.media_item, chapter)"
                   >
                     <span class="queue-chapter__name">{{ chapter.name }}</span>
@@ -370,15 +393,28 @@
           <div class="media-controls-item favorite-btn-wrapper">
             <FavoriteMenuBtn
               style="max-height: 30px; min-height: 0; min-width: 0"
-              :size="18"
+              icon-class="size-5.5"
             />
           </div>
-          <ShuffleBtn
-            v-if="$vuetify.display.mdAndUp"
-            :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            max-height="30px"
-          />
+          <!-- side slots keep their width when empty so the row never shifts -->
+          <div class="media-controls-item side-slot">
+            <!-- stroke scaled so lines match the 28px previous/next icons -->
+            <SkipBtn
+              v-if="showSkip"
+              :player-queue="store.activePlayerQueue"
+              direction="back"
+              max-height="45px"
+              :size="30"
+              :stroke-width="(2 * 28) / 30"
+            />
+            <ShuffleBtn
+              v-else-if="$vuetify.display.mdAndUp"
+              :player="store.activePlayer"
+              :player-queue="store.activePlayerQueue"
+              max-height="30px"
+              :size="24"
+            />
+          </div>
           <PreviousBtn
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
@@ -394,7 +430,6 @@
               :icon="{ staticWidth: '60px', staticHeight: '60px' }"
               :spinner-size="73"
               :size="30"
-              :play-offset="2"
             />
           </div>
           <NextBtn
@@ -404,16 +439,27 @@
             max-height="45px"
             :size="28"
           />
-          <RepeatBtn
-            v-if="$vuetify.display.mdAndUp"
-            :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            max-height="35px"
-          />
+          <div class="media-controls-item side-slot">
+            <SkipBtn
+              v-if="showSkip"
+              :player-queue="store.activePlayerQueue"
+              direction="forward"
+              max-height="45px"
+              :size="30"
+              :stroke-width="(2 * 28) / 30"
+            />
+            <RepeatBtn
+              v-else-if="$vuetify.display.mdAndUp"
+              :player="store.activePlayer"
+              :player-queue="store.activePlayerQueue"
+              max-height="35px"
+              :size="26"
+            />
+          </div>
           <div class="media-controls-item queue-btn-wrapper">
             <QueueBtn
               style="max-height: 30px; min-height: 0; min-width: 0"
-              :size="18"
+              :size="22"
             />
           </div>
         </div>
@@ -445,15 +491,10 @@
             padding-top: 4px;
           "
         >
-          <!-- Without a competing hover:text- here, the outline variant's own
-               hover:text-accent-foreground survives the class merge and recolours
-               the label against the artwork, so the hover colour is pinned to
-               the --text-color the rest of the panel follows. -->
           <Button
             id="fullscreen-player-select-button"
-            variant="outline"
+            variant="overlay"
             size="xs"
-            class="border-transparent bg-background/40 shadow-none backdrop-blur-md hover:bg-background/60 hover:text-[var(--text-color)] dark:border-transparent dark:bg-background/40 dark:hover:bg-background/60"
             :aria-label="playerSelectLabel"
             :aria-expanded="store.showPlayersMenu"
             aria-haspopup="dialog"
@@ -462,7 +503,7 @@
             <PlayerIcon
               :icon="store.activePlayer?.icon"
               :size="20"
-              class="mr-1"
+              class="mr-1 size-5"
             />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
           </Button>
@@ -484,18 +525,20 @@ import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
+import { useCommandCenter } from "@/composables/useCommandCenter";
 import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { playbackSpeedSupported } from "@/helpers/elapsed";
+import { expertModeSetting } from "@/helpers/expert_mode";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { getPlayerDisplayName, getPlayerName } from "@/helpers/players";
 import {
   ImageColorPalette,
   formatDuration,
   getMediaImageUrl,
-  getPlayerName,
 } from "@/helpers/utils";
 import LyricsOffsetMenuControl from "@/layouts/default/PlayerOSD/LyricsOffsetMenuControl.vue";
 import PlaybackSpeedDialog from "@/layouts/default/PlayerOSD/PlaybackSpeedDialog.vue";
@@ -505,15 +548,30 @@ import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import SkipBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBtn.vue";
+import NowPlayingSourceBadge from "@/layouts/default/PlayerOSD/NowPlayingSourceBadge.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
-import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
+import { useNowPlayingSource } from "@/composables/nowPlayingSource";
+import { useSkipControls } from "@/composables/useSkipControls";
+import {
+  resolveActiveElapsedTime,
+  resolveQueueElapsedTime,
+} from "@/helpers/activeElapsedTime";
+import { resolveCurrentChapter } from "@/helpers/chapters";
 import api from "@/plugins/api";
-import { getSourceName } from "@/plugins/api/helpers";
-import { MediaType, PlayerType, Track } from "@/plugins/api/interfaces";
+import {
+  MediaItemChapter,
+  MediaType,
+  PlaybackState,
+  PlayerType,
+  QueueItem,
+  Track,
+  TranscriptCue,
+} from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
@@ -528,6 +586,7 @@ import {
   nextTick,
   onBeforeUnmount,
   onMounted,
+  onUnmounted,
   ref,
   watch,
   watchEffect,
@@ -538,6 +597,8 @@ import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 
 const { name, mdAndUp } = useDisplay();
+const { showSkip } = useSkipControls();
+const { open: openCommandCenter } = useCommandCenter();
 
 const MIN_HEIGHT_SHOW_FULL_DETAILS = 750;
 // The player select button is important enough to keep pinned at the bottom in
@@ -547,6 +608,73 @@ const MIN_HEIGHT_SHOW_PLAYER_SELECT_BUTTON = 480;
 const showAlbumSubtitle = computed(
   () => vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
 );
+
+const { albumSubtitle } = useNowPlayingSource();
+const { getPreference, setPreference } = useUserPreferences();
+const showWaveformPref = computed(() => expertModeSetting("show_waveform"));
+const showChapterProgress = getPreference("audiobook_chapter_progress", true);
+const nowTick = ref(0);
+let chapterTimer: ReturnType<typeof setInterval> | null = null;
+const chapterQueueItem = computed(() => {
+  const queueItem = store.curQueueItem;
+  const media = store.activePlayer?.current_media;
+  if (
+    !queueItem?.media_item?.metadata?.chapters?.length ||
+    !media ||
+    (media.queue_item_id !== null &&
+      media.queue_item_id !== queueItem.queue_item_id)
+  ) {
+    return undefined;
+  }
+  return queueItem;
+});
+
+const currentChapter = computed(() => {
+  void nowTick.value;
+  const media = store.activePlayer?.current_media;
+  const queueItem = chapterQueueItem.value;
+  if (
+    !showChapterProgress.value ||
+    media?.media_type !== MediaType.AUDIOBOOK ||
+    !queueItem
+  ) {
+    return undefined;
+  }
+  return resolveCurrentChapter(
+    queueItem.media_item?.metadata?.chapters,
+    resolveActiveElapsedTime(),
+    media.duration,
+  );
+});
+
+const activeChapter = computed(() => currentChapter.value?.chapter);
+
+const isActiveChapter = (item: QueueItem, chapter: MediaItemChapter) =>
+  item.queue_item_id === chapterQueueItem.value?.queue_item_id &&
+  chapter.position === activeChapter.value?.position;
+
+const updateChapterTimer = (needed: boolean) => {
+  if (needed && chapterTimer === null) {
+    chapterTimer = setInterval(() => {
+      nowTick.value = Date.now();
+    }, 1000);
+  } else if (!needed && chapterTimer !== null) {
+    clearInterval(chapterTimer);
+    chapterTimer = null;
+  }
+};
+
+const chapterTimerNeeded = computed(
+  () =>
+    store.showFullscreenPlayer &&
+    store.showQueueItems &&
+    store.activePlayer?.playback_state === PlaybackState.PLAYING &&
+    !!chapterQueueItem.value &&
+    showChapterProgress.value,
+);
+
+watch(chapterTimerNeeded, updateChapterTimer, { immediate: true });
+onUnmounted(() => updateChapterTimer(false));
 
 interface Props {
   colorPalette: ImageColorPalette;
@@ -588,6 +716,23 @@ watch(
   },
 );
 
+// A podcast episode shows a transcript in the same panel the lyrics use.
+const isEpisode = computed(
+  () =>
+    store.curQueueItem?.media_item?.media_type === MediaType.PODCAST_EPISODE,
+);
+const isTrack = computed(
+  () => store.curQueueItem?.media_item?.media_type === MediaType.TRACK,
+);
+// An episode the provider already marked as having no transcript is skipped
+// outright; null means the provider cannot tell, so we still ask.
+const hasReadableText = computed(
+  () =>
+    isTrack.value ||
+    (isEpisode.value &&
+      store.curQueueItem?.media_item?.metadata?.has_transcript !== false),
+);
+
 // Local reactive state for lyrics
 const currentLyrics = ref<{ plain: string | null; synced: string | null }>({
   plain: null,
@@ -612,9 +757,9 @@ const lyricsState = computed<
   "available" | "loading" | "unavailable-song" | "none"
 >(() => {
   if (!store.curQueueItem) return "none";
-  // Lyrics only make sense for tracks; hide the button entirely otherwise.
-  if (store.curQueueItem.media_item?.media_type !== MediaType.TRACK)
-    return "none";
+  // only tracks have lyrics and only podcast episodes have a transcript, so the
+  // button is hidden for anything else
+  if (!hasReadableText.value) return "none";
   if (lyricsLoading.value) return "loading";
   if (hasLyrics.value) return "available";
   return "unavailable-song";
@@ -623,6 +768,30 @@ const lyricsState = computed<
 // Lyrics are reached through a dedicated button in the header and shown in
 // their own panel, independent of the queue list (which has its own toggle).
 const showLyrics = ref(false);
+
+// Whether the transcript auto-scrolls with playback. Only relevant for episodes;
+// the user can disconnect it when ad insertions drift the position out of sync.
+// When re-linking, the elapsed time that passed while unlinked (the ad) is
+// subtracted from the offset so the transcript stays aligned.
+const transcriptSyncEnabled = ref(true);
+let unlinkedAtPosition: number | null = null;
+
+const toggleTranscriptSync = () => {
+  // Read the queue directly: the panel's own clock only runs while it is open,
+  // and the toggle stays usable while it is closed.
+  const position = resolveQueueElapsedTime();
+  if (position === undefined) return;
+  if (transcriptSyncEnabled.value) {
+    // Unlinking: remember where playback was
+    unlinkedAtPosition = position;
+  } else if (unlinkedAtPosition !== null) {
+    // Re-linking: the difference is the ad duration — shift the offset back
+    const adDuration = position - unlinkedAtPosition;
+    adjustLyricsOffset(-adDuration);
+    unlinkedAtPosition = null;
+  }
+  transcriptSyncEnabled.value = !transcriptSyncEnabled.value;
+};
 
 const toggleLyrics = () => {
   showLyrics.value = !showLyrics.value;
@@ -673,8 +842,8 @@ const showRightColumn = computed(
   () => store.showQueueItems || showLyrics.value,
 );
 
-// The unified queue list (virtualized rows, paging, now-playing focus, per-item
-// menu and chapters) lives in its own composable to keep this component lean.
+// The unified queue list (virtualized rows, paging, now-playing focus and
+// per-item menu) lives in its own composable to keep this component lean.
 const {
   queueScrollRef,
   virtualRows,
@@ -699,30 +868,28 @@ const {
   rowOffset,
 } = useFullscreenQueue(showLyrics);
 
-// Protocols with accurate playback time reporting don't need a latency offset.
-const ACCURATE_TIME_PROTOCOLS = ["airplay"];
-
-const showLyricsOffset = computed(() => {
-  const player = store.activePlayer;
-  if (!player) return false;
-  let domain: string | undefined;
-  if (
-    player.active_output_protocol &&
-    player.active_output_protocol !== "native"
-  ) {
-    domain = player.output_protocols.find(
-      (p) => p.output_protocol_id === player.active_output_protocol,
-    )?.protocol_domain;
-  }
-  if (!domain) {
-    domain = player.provider.split("--")[0];
-  }
-  return !ACCURATE_TIME_PROTOCOLS.includes(domain);
-});
-
 // Shared lyrics sync offset; adjusted from the overflow menu while lyrics are
 // open (see openQueueMenu) and fed to the lyrics viewer.
-const { offset: lyricsOffset } = useLyricsOffset();
+const {
+  offset: lyricsOffset,
+  adjust: adjustLyricsOffset,
+  reset: resetLyricsOffset,
+} = useLyricsOffset();
+
+// Render timed transcript lines the same way synced lyrics arrive. Minutes are not
+// capped at two digits, so episodes longer than 99 minutes still line up.
+const cuesToLrc = (cues: TranscriptCue[]) =>
+  cues
+    .map((cue) => {
+      const minutes = Math.floor(cue.start / 60);
+      const seconds = Math.floor(cue.start % 60);
+      const hundredths = Math.floor((cue.start % 1) * 100);
+      const mm = String(minutes).padStart(2, "0");
+      const ss = String(seconds).padStart(2, "0");
+      const hh = String(hundredths).padStart(2, "0");
+      return `[${mm}:${ss}.${hh}]${cue.text}`;
+    })
+    .join("\n");
 
 // Fetch lyrics for the current track (only when fullscreen player is open)
 let lyricsLoadGeneration = 0;
@@ -732,15 +899,33 @@ const fetchLyrics = async () => {
   currentLyrics.value = { plain: null, synced: null };
 
   const mediaItem = store.curQueueItem?.media_item;
-  const isTrack = mediaItem?.media_type === MediaType.TRACK;
 
-  // Show the loading state right away for tracks so the header button doesn't
-  // flash "unavailable" before we've looked the lyrics up.
-  lyricsLoading.value = isTrack === true && store.showFullscreenPlayer;
+  // Show the loading state right away so the header button doesn't flash
+  // "unavailable" before we've looked anything up.
+  lyricsLoading.value = hasReadableText.value && store.showFullscreenPlayer;
 
-  // Only fetch lyrics when fullscreen player is open and the item is a track.
-  if (!store.showFullscreenPlayer || !isTrack) {
+  if (!store.showFullscreenPlayer || !mediaItem || !hasReadableText.value) {
     lyricsLoading.value = false;
+    return;
+  }
+
+  if (isEpisode.value) {
+    try {
+      const [text, cues] = await api.getPodcastEpisodeTranscript(
+        mediaItem.item_id,
+        mediaItem.provider,
+      );
+      if (generation !== lyricsLoadGeneration) return;
+      currentLyrics.value = {
+        plain: text,
+        synced: cues?.length ? cuesToLrc(cues) : null,
+      };
+    } catch (error) {
+      if (generation !== lyricsLoadGeneration) return;
+      console.error("Failed to fetch podcast transcript:", error);
+    } finally {
+      if (generation === lyricsLoadGeneration) lyricsLoading.value = false;
+    }
     return;
   }
 
@@ -779,10 +964,23 @@ const fetchLyrics = async () => {
   }
 };
 
+// A track's offset makes up for speaker latency and carries over to the next
+// track; an episode's offset corrects that episode's drift, so it is reset when
+// an episode starts or ends.
+let offsetForEpisode = false;
+
 // Watch for track changes and handle lyrics
-watch(() => store.curQueueItem?.media_item?.item_id, fetchLyrics, {
-  immediate: true,
-});
+watch(
+  () => store.curQueueItem?.queue_item_id,
+  () => {
+    if (isEpisode.value || offsetForEpisode) resetLyricsOffset();
+    offsetForEpisode = isEpisode.value;
+    transcriptSyncEnabled.value = true;
+    unlinkedAtPosition = null;
+    fetchLyrics();
+  },
+  { immediate: true },
+);
 
 // Also fetch lyrics when fullscreen player is opened
 watch(
@@ -796,8 +994,6 @@ watch(
 
 // Waveform for the current track — loaded centrally by useActiveTrackWaveform.
 const { waveformBins: waveformData } = useActiveTrackWaveform();
-const { getPreference, setPreference } = useUserPreferences();
-const showWaveformPref = getPreference("show_waveform", true);
 const {
   visualizerPresetPref,
   visualizerBlurPref,
@@ -897,25 +1093,18 @@ const navigateOrSearch = function (searchTerm: string, uri?: string) {
       },
     });
   } else {
-    // No valid URI - open global search
-    store.globalSearchTerm = searchTerm;
-    router.push({ name: "search" });
+    // No valid URI - hand the term to the command center
     store.showFullscreenPlayer = false;
+    openCommandCenter({ query: searchTerm });
   }
 };
 
 const onAlbumClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
-  if (!currentMedia?.album) return;
+  if (!currentMedia || !albumSubtitle.value) return;
 
   // Try to get the album from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
-
-  // Check if "album" is actually the radio station name - if so, do nothing
-  if (mediaItem && currentMedia.album === mediaItem.name) {
-    // Album field contains the station name, not a real album - ignore click
-    return;
-  }
 
   if (mediaItem && "album" in mediaItem && mediaItem.album) {
     // Navigate directly to album detail page
@@ -930,10 +1119,9 @@ const onAlbumClick = async function () {
   } else {
     // Radio or non-library item - try to find in library first
     try {
-      // Call with positional parameters: (favorite, search, limit, offset, order_by, album_types, provider)
       const results = await api.getLibraryAlbums(
         undefined, // favorite
-        currentMedia.album, // search
+        albumSubtitle.value, // search
         5, // limit - get a few results to find best match
         undefined,
         undefined,
@@ -979,13 +1167,12 @@ const onAlbumClick = async function () {
       console.error("Error searching library for album:", error);
     }
 
-    // Not found in library - fall back to global search
+    // Not found in library - fall back to the command center
     const searchTerm = currentMedia.artist
       ? `${currentMedia.artist} - ${currentMedia.album}`
       : currentMedia.album || "";
-    store.globalSearchTerm = searchTerm;
-    router.push({ name: "search" });
     store.showFullscreenPlayer = false;
+    openCommandCenter({ query: searchTerm });
   }
 };
 
@@ -1014,7 +1201,6 @@ const onArtistClick = async function () {
   } else {
     // Radio or non-library item - try to find in library first
     try {
-      // Call with positional parameters: (favorite, search, limit, offset, order_by, album_artists_only, provider)
       const results = await api.getLibraryArtists(
         undefined, // favorite
         currentMedia.artist, // search
@@ -1052,10 +1238,9 @@ const onArtistClick = async function () {
       console.error("Error searching library for artist:", error);
     }
 
-    // Not found in library - fall back to global search
-    store.globalSearchTerm = currentMedia.artist;
-    router.push({ name: "search" });
+    // Not found in library - fall back to the command center
     store.showFullscreenPlayer = false;
+    openCommandCenter({ query: currentMedia.artist });
   }
 };
 
@@ -1082,7 +1267,7 @@ const openQueueMenu = function (evt: Event) {
     store.activePlayerQueue,
     {
       context: "queue",
-      hideShuffleRepeat: mdAndUp.value,
+      hideShuffleRepeat: mdAndUp.value && !showSkip.value,
     },
   );
   // playback speed only means something for spoken-word content, which is also
@@ -1096,10 +1281,8 @@ const openQueueMenu = function (evt: Event) {
       icon: "mdi-speedometer",
     });
   }
-  // The waveform toggle slots in above the visualizer entries, keeping the
-  // visualizer toggle + options grouped at the bottom of the menu. The on/off
-  // toggle itself comes from getPlayerMenuItems (it is a player control,
-  // listed last there).
+  // The waveform toggle slots in above the visualizer popout entry (which
+  // comes from getPlayerMenuItems), keeping the display entries grouped.
   const waveformItem = {
     label: "settings.show_waveform.label",
     action: () => {
@@ -1109,26 +1292,19 @@ const openQueueMenu = function (evt: Event) {
     selected: showWaveformPref.value,
     close_on_click: false,
   };
-  const visualizerToggleIndex = menuItems.findIndex(
+  const visualizerEntryIndex = menuItems.findIndex(
     (item) => item.label === "settings.visualizer_enabled.label",
   );
-  if (visualizerToggleIndex === -1) {
+  if (visualizerEntryIndex === -1) {
     menuItems.push(waveformItem);
   } else {
-    menuItems.splice(visualizerToggleIndex, 0, waveformItem);
-    // Always append the options control directly under the toggle (the menu
-    // item list is a snapshot); it renders nothing while the visualizer is
-    // disabled, so it appears and disappears live as the toggle is flipped.
-    menuItems.push({
-      label: "visualizer_options",
-      component: markRaw(VisualizerMenuControl),
-    });
+    menuItems.splice(visualizerEntryIndex, 0, waveformItem);
   }
-  // While lyrics are open, surface the sync-offset stepper at the top of the
-  // overflow menu (only for players that benefit from a latency offset).
-  if (showLyrics.value && showLyricsOffset.value) {
+  // While lyrics/transcript are open, surface the sync-offset stepper at the
+  // top of the overflow menu.
+  if (showLyrics.value) {
     menuItems.unshift({
-      label: "lyrics_offset",
+      label: isEpisode.value ? "transcript_offset" : "lyrics_offset",
       // markRaw: the menu items land in a reactive array; a bare component
       // definition there would be needlessly made reactive.
       component: markRaw(LyricsOffsetMenuControl),
@@ -1161,6 +1337,31 @@ onMounted(() => {
 
 const sliderColor = ref<string | undefined>(undefined);
 const backgroundColor = ref<string | undefined>(undefined);
+
+// The overlay buttons show a light wash while off and a dark frosted box while
+// on. With dark text on a light palette both mirror: a dark wash and a white
+// frosted box. sliderColor carries the panel's text colour. This is the single
+// source of the --overlay-* values; everything overlay-styled reads them from
+// the card.
+const DARK_OVERLAY_VARS = {
+  "--overlay-bg": "rgba(0, 0, 0, 0.4)",
+  "--overlay-border": "rgba(255, 255, 255, 0.25)",
+  "--overlay-fg": "#ffffff",
+  "--overlay-muted-bg": "rgba(255, 255, 255, 0.1)",
+  "--overlay-muted-hover": "rgba(255, 255, 255, 0.16)",
+  "--overlay-muted-border": "rgba(255, 255, 255, 0.2)",
+};
+const LIGHT_OVERLAY_VARS = {
+  "--overlay-bg": "rgba(255, 255, 255, 0.6)",
+  "--overlay-border": "rgba(0, 0, 0, 0.2)",
+  "--overlay-fg": "#000000",
+  "--overlay-muted-bg": "rgba(0, 0, 0, 0.08)",
+  "--overlay-muted-hover": "rgba(0, 0, 0, 0.12)",
+  "--overlay-muted-border": "rgba(0, 0, 0, 0.15)",
+};
+const overlayVars = computed(() =>
+  sliderColor.value === "#000000" ? LIGHT_OVERLAY_VARS : DARK_OVERLAY_VARS,
+);
 
 watchEffect(() => {
   // With a dominant visualizer the view is effectively dark content: force
@@ -1418,6 +1619,17 @@ onBeforeUnmount(() => {
   );
 }
 
+.queue-chapter--active {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  box-shadow: inset 3px 0 0 var(--primary);
+  font-weight: 600;
+}
+
+.queue-chapter--active:hover {
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
 .queue-chapter__name {
   min-width: 0;
   overflow: hidden;
@@ -1485,8 +1697,15 @@ onBeforeUnmount(() => {
   justify-content: flex-start;
   align-items: center;
   text-align: center;
-  padding: min(5%, 5vh) 0 10px;
+  --track-info-padding-top: min(5%, 5vh);
+  padding: var(--track-info-padding-top) 0 10px;
   overflow: hidden;
+}
+
+/* the badge already fills part of the gap below the artwork and hugs the
+   title, so the block trades half its top padding for it */
+.main-media-details-track-info:has(.main-media-details-source) {
+  --track-info-padding-top: min(2.5%, 2.5vh);
 }
 
 .main-media-details-track-info > * {
@@ -1532,7 +1751,8 @@ onBeforeUnmount(() => {
 }
 
 .queue-btn-wrapper,
-.favorite-btn-wrapper {
+.favorite-btn-wrapper,
+.side-slot {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1583,6 +1803,28 @@ onBeforeUnmount(() => {
   margin: 0;
 }
 
+/* phones: buttons keep their natural size and share the spare room evenly */
+@media (max-width: 539px) {
+  .media-controls {
+    justify-content: space-between;
+    padding: 15px 10px;
+  }
+
+  .media-controls > div {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  .media-controls-item {
+    margin: 0;
+  }
+
+  /* reserve a button's width when empty so the row never shifts */
+  .side-slot {
+    min-width: 44px;
+  }
+}
+
 .mediacontrols-right {
   display: table-cell;
   text-align: right;
@@ -1600,10 +1842,15 @@ onBeforeUnmount(() => {
 
 /* Line the trailing menu button up with the per-row menu buttons in the queue
    list below: those sit 18px from the column's right edge (10px column + 8px
-   row padding) with a 32px button, so this 28px button needs a 20px end margin
-   for the two to share a vertical centre. */
+   row padding) with a 32px button, so this 36px button needs a 16px end margin
+   for the two to share a vertical centre; the compact 32px phone button sits
+   at the same 18px. */
 .v-toolbar :deep(.v-toolbar__append) {
-  margin-inline-end: 20px;
+  margin-inline-end: 16px;
+}
+
+.v-toolbar--compact :deep(.v-toolbar__append) {
+  margin-inline-end: 18px;
 }
 
 div,

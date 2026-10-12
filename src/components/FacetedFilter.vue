@@ -10,16 +10,18 @@
             <Separator orientation="vertical" class="mx-2 h-4" />
             <Badge
               class="lg:hidden font-medium rounded-[6px]"
-              :aria-label="`${selectedCount} selected`"
+              :aria-label="
+                $t('faceted_filter.selected', { count: selectedCount })
+              "
             >
-              {{ selectedCount }}
+              {{ $t("faceted_filter.selected", { count: selectedCount }) }}
             </Badge>
             <div class="hidden space-x-1 lg:flex">
               <Badge v-if="selectedCount > 2" class="rounded-[6px] gap-2">
-                {{ selectedCount }} selected
+                {{ $t("faceted_filter.selected", { count: selectedCount }) }}
                 <button
                   type="button"
-                  :aria-label="`Clear all ${title} filters`"
+                  :aria-label="$t('faceted_filter.clear_all_for', { title })"
                   class="flex items-center justify-center cursor-pointer hover:opacity-70"
                   @click.stop="clear"
                 >
@@ -35,7 +37,9 @@
                   {{ opt.label }}
                   <button
                     type="button"
-                    :aria-label="`Remove ${opt.label} filter`"
+                    :aria-label="
+                      $t('faceted_filter.remove_filter', { label: opt.label })
+                    "
                     class="flex items-center justify-center cursor-pointer hover:opacity-70"
                     @click.stop="removeFilter(opt.value)"
                   >
@@ -58,7 +62,7 @@
           v-if="showSearch"
           v-model="search"
           :placeholder="title"
-          :aria-label="`Search ${title}`"
+          :aria-label="$t('faceted_filter.search_for', { title })"
           class="mb-2 h-8"
         />
         <div class="faceted-filter-list">
@@ -88,10 +92,10 @@
           v-if="selectedCount > 0"
           type="button"
           class="faceted-filter-clear"
-          :aria-label="`Clear ${title} filters`"
+          :aria-label="$t('faceted_filter.clear_for', { title })"
           @click="clear"
         >
-          Clear filters
+          {{ $t("faceted_filter.clear") }}
         </button>
       </div>
     </PopoverContent>

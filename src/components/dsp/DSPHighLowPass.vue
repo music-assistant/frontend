@@ -85,14 +85,7 @@
       </div>
     </div>
 
-    <div class="px-4">
-      <Alert variant="info" class="mb-4">
-        <Info />
-        <AlertDescription>
-          {{ $t("settings.dsp.high_low_pass.help") }}
-        </AlertDescription>
-      </Alert>
-    </div>
+    <DSPHelp :text="$t('settings.dsp.high_low_pass.help')" />
   </div>
 </template>
 
@@ -102,9 +95,8 @@ import {
   HighLowPassMode,
   HighLowPassSlope,
 } from "@/plugins/api/interfaces";
+import DSPHelp from "./DSPHelp.vue";
 import DSPSlider from "./DSPSlider.vue";
-import { Info } from "@lucide/vue";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import {
   HIGH_LOW_PASS_SLOPES,

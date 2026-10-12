@@ -1,4 +1,5 @@
 import {
+  copyToClipboard,
   formatAliasName,
   formatDuration,
   formatRelativeTime,
@@ -38,6 +39,100 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+});
+
+describe("copyToClipboard", () => {
+  const restore: (() => void)[] = [];
+
+  /**
+   * Replace a property for the duration of the test.
+   */
+  const stub = function (target: object, key: string, value: unknown) {
+    const descriptor = Object.getOwnPropertyDescriptor(target, key);
+    Object.defineProperty(target, key, { configurable: true, value });
+    restore.push(() => {
+      if (descriptor) Object.defineProperty(target, key, descriptor);
+      else Reflect.deleteProperty(target, key);
+    });
+  };
+
+  /**
+   * Force the legacy path by hiding the Clipboard API, and run the given
+   * callback in place of the browser's copy command.
+   */
+  const stubBrowser = function (onCommand: () => void) {
+    stub(navigator, "clipboard", undefined);
+    stub(
+      document,
+      "execCommand",
+      vi.fn(() => {
+        onCommand();
+        // browsers report success even when nothing was written
+        return true;
+      }),
+    );
+  };
+
+  /**
+   * The node the helper selects from, while it is still mounted.
+   */
+  const clipboardNode = () =>
+    document.querySelector<HTMLElement>("span[aria-hidden='true']");
+
+  afterEach(() => {
+    for (const undo of restore.splice(0)) undo();
+  });
+
+  it("copies the text when the browser accepts the copy", async () => {
+    const setData = vi.fn();
+    stubBrowser(() => {
+      const event = new Event("copy", { bubbles: true, cancelable: true });
+      Object.defineProperty(event, "clipboardData", { value: { setData } });
+      clipboardNode()?.dispatchEvent(event);
+    });
+
+    await expect(copyToClipboard("provider://artist/id")).resolves.toBe(true);
+    expect(setData).toHaveBeenCalledWith("text/plain", "provider://artist/id");
+    expect(clipboardNode()).toBeNull();
+  });
+
+  it("reports failure when the copy is silently ignored", async () => {
+    stubBrowser(() => {});
+
+    await expect(copyToClipboard("provider://artist/id")).resolves.toBe(false);
+    expect(clipboardNode()).toBeNull();
+  });
+
+  it("reports failure when the copy event carries no clipboard", async () => {
+    stubBrowser(() => {
+      clipboardNode()?.dispatchEvent(
+        new Event("copy", { bubbles: true, cancelable: true }),
+      );
+    });
+
+    await expect(copyToClipboard("provider://artist/id")).resolves.toBe(false);
+  });
+
+  it("keeps the node inside a menu that traps focus", async () => {
+    const menu = document.createElement("div");
+    menu.setAttribute("role", "menu");
+    const menuItem = document.createElement("button");
+    menu.appendChild(menuItem);
+    document.body.appendChild(menu);
+    menuItem.focus();
+
+    let host: HTMLElement | null | undefined;
+    stubBrowser(() => {
+      host = clipboardNode()?.parentElement;
+    });
+
+    try {
+      await copyToClipboard("provider://artist/id");
+      expect(host).toBe(menu);
+    } finally {
+      document.body.removeChild(menu);
+    }
+  });
 });
 
 describe("getExternalLinkUrl", () => {

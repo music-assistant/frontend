@@ -1,5 +1,5 @@
 import type {
-  MusicQuizPhase,
+  MusicQuizDifficulty,
   MusicQuizPlayer,
   MusicQuizSupportedPublicState,
 } from "@/composables/music-quiz/useMusicQuiz";
@@ -15,6 +15,7 @@ export enum MusicQuizErrorCode {
 
 const MUSIC_QUIZ_PLAYER_ID_KEY = "music_quiz_player_id";
 const MUSIC_QUIZ_PLAYER_NAME_KEY = "music_quiz_player_name";
+const MUSIC_QUIZ_LANDING_SEEN_KEY = "music_quiz_landing_seen";
 const MUSIC_QUIZ_STORAGE_VERSION = 1;
 
 export interface MusicQuizParticipantStorageContext {
@@ -30,6 +31,11 @@ interface StoredMusicQuizPlayerId extends MusicQuizParticipantStorageContext {
 interface StoredMusicQuizPlayerName extends MusicQuizParticipantStorageContext {
   version: typeof MUSIC_QUIZ_STORAGE_VERSION;
   playerName: string;
+}
+
+interface StoredMusicQuizLandingSeen extends MusicQuizParticipantStorageContext {
+  version: typeof MUSIC_QUIZ_STORAGE_VERSION;
+  playerId: string;
 }
 
 /**
@@ -121,6 +127,51 @@ export function getStoredMusicQuizPlayerName(
   return "";
 }
 
+/**
+ * Record that the player has seen the landing screen for this quiz session.
+ */
+export function storeMusicQuizLandingSeen(
+  context: MusicQuizParticipantStorageContext | undefined,
+  playerId: string,
+): void {
+  if (!context) {
+    sessionStorage.removeItem(MUSIC_QUIZ_LANDING_SEEN_KEY);
+    return;
+  }
+  const value: StoredMusicQuizLandingSeen = {
+    version: MUSIC_QUIZ_STORAGE_VERSION,
+    ...context,
+    playerId,
+  };
+  sessionStorage.setItem(MUSIC_QUIZ_LANDING_SEEN_KEY, JSON.stringify(value));
+}
+
+/**
+ * Whether the player has already seen the landing screen for this quiz session.
+ */
+export function hasSeenMusicQuizLanding(
+  context: MusicQuizParticipantStorageContext | undefined,
+  playerId: string,
+): boolean {
+  if (!context) {
+    sessionStorage.removeItem(MUSIC_QUIZ_LANDING_SEEN_KEY);
+    return false;
+  }
+  const storedValue = readStoredValue(
+    MUSIC_QUIZ_LANDING_SEEN_KEY,
+    isStoredMusicQuizLandingSeen,
+  );
+  if (
+    storedValue &&
+    isMatchingStorageContext(storedValue, context) &&
+    storedValue.playerId === playerId
+  ) {
+    return true;
+  }
+  sessionStorage.removeItem(MUSIC_QUIZ_LANDING_SEEN_KEY);
+  return false;
+}
+
 export type RankedMusicQuizPlayer = MusicQuizPlayer & { rank: number };
 
 export function rankMusicQuizPlayers(
@@ -200,6 +251,17 @@ export function getMusicQuizRoundScoreLabel(
   return points === undefined ? "" : `(+${points})`;
 }
 
+export function getMusicQuizDifficultyOptions(): {
+  value: MusicQuizDifficulty;
+  label: string;
+}[] {
+  return [
+    { value: "easy", label: $t("providers.music_quiz.difficulty_easy") },
+    { value: "normal", label: $t("providers.music_quiz.difficulty_normal") },
+    { value: "hard", label: $t("providers.music_quiz.difficulty_hard") },
+  ];
+}
+
 export function getMusicQuizErrorMessage(err: unknown, fallback = "") {
   if (err instanceof Error) return err.message;
   if (typeof err === "string") return err;
@@ -264,6 +326,17 @@ function isStoredMusicQuizPlayerName(
     "playerName" in value &&
     typeof value.playerName === "string" &&
     value.playerName.length > 0
+  );
+}
+
+function isStoredMusicQuizLandingSeen(
+  value: unknown,
+): value is StoredMusicQuizLandingSeen {
+  return (
+    isStoredMusicQuizParticipantValue(value) &&
+    "playerId" in value &&
+    typeof value.playerId === "string" &&
+    value.playerId.length > 0
   );
 }
 

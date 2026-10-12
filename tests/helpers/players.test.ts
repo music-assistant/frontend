@@ -1,9 +1,14 @@
 import {
+  canBeGroupMember,
   canEditPlayerGroup,
+  getPlayerDisplayName,
   getPlayerGroupMemberCount,
+  getPlayerName,
+  getWebPlayerName,
   groupMemberPickerVisible,
   isBuiltinPlayer,
   isPlayerGrouped,
+  isSelectablePlayer,
   playerVisible,
 } from "@/helpers/players";
 import {
@@ -16,10 +21,15 @@ import {
   type User,
   UserRole,
 } from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import { user } from "../fixtures/user";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/plugins/api", () => ({
+  api: { players: {} },
+}));
 
 vi.mock("@/plugins/store", () => ({
   store: { companionPlayerId: undefined, currentUser: undefined },
@@ -62,6 +72,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     group_volume: null,
     group_volume_muted: null,
     hide_in_ui: false,
+    private: false,
     icon: "speaker",
     power_control: "power",
     volume_control: "volume",
@@ -82,6 +93,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     active_group: null,
     synced_to: null,
     sleep_timer_expires_at: null,
+    active_source_audio: null,
     ...overrides,
   };
 }
@@ -111,6 +123,7 @@ function createAdminUser(playerFilter: string[]): User {
 }
 
 beforeEach(() => {
+  api.players = {};
   store.companionPlayerId = undefined;
   store.currentUser = undefined;
   webPlayer.player_id = null;
@@ -166,6 +179,109 @@ describe("isBuiltinPlayer", () => {
   });
 });
 
+describe("getPlayerDisplayName", () => {
+  it("names the built-in player after this device", () => {
+    const player = createPlayer({ name: "Marcel's Mac (Chrome)" });
+    webPlayer.player_id = player.player_id;
+
+    expect(getPlayerDisplayName(player)).toBe("This device");
+  });
+
+  it("keeps the name of a player of another device", () => {
+    expect(getPlayerDisplayName(createPlayer({ name: "Kitchen" }))).toBe(
+      "Kitchen",
+    );
+  });
+});
+
+describe("getPlayerName", () => {
+  it("names the built-in player after this device", () => {
+    const player = createPlayer({ name: "Marcel's Mac (Chrome)" });
+    webPlayer.player_id = player.player_id;
+
+    expect(getPlayerName(player)).toBe("This device");
+  });
+
+  it("counts the available players synced to the built-in player", () => {
+    const player = createPlayer({
+      group_members: ["player", "office", "patio"],
+    });
+    api.players = {
+      office: createPlayer({ player_id: "office" }),
+      patio: createPlayer({ player_id: "patio", available: false }),
+    };
+    webPlayer.player_id = player.player_id;
+
+    expect(getPlayerName(player)).toBe("This device +1");
+  });
+
+  it("truncates a long name", () => {
+    expect(getPlayerName(createPlayer({ name: "Living room" }), 6)).toBe(
+      "Living...",
+    );
+  });
+});
+
+describe("getWebPlayerName", () => {
+  const MAC_CHROME =
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
+  const IPHONE_SAFARI =
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+  const originalUserAgent = Object.getOwnPropertyDescriptor(
+    navigator,
+    "userAgent",
+  );
+
+  function emulate(userAgent: string, installed = false) {
+    Object.defineProperty(navigator, "userAgent", {
+      configurable: true,
+      value: userAgent,
+    });
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: installed && query === "(display-mode: standalone)",
+    }));
+  }
+
+  afterEach(() => {
+    if (originalUserAgent) {
+      Object.defineProperty(navigator, "userAgent", originalUserAgent);
+    } else {
+      Reflect.deleteProperty(navigator, "userAgent");
+    }
+    vi.unstubAllGlobals();
+  });
+
+  it("names the player after the first name of its owner", () => {
+    emulate(MAC_CHROME);
+
+    expect(
+      getWebPlayerName(user({ display_name: "Marcel van der Veldt" })),
+    ).toBe("Marcel's Mac (Chrome)");
+  });
+
+  it("falls back to the username without a display name", () => {
+    emulate(MAC_CHROME);
+
+    expect(
+      getWebPlayerName(user({ display_name: null, username: "marcel" })),
+    ).toBe("marcel's Mac (Chrome)");
+  });
+
+  it("names an installed app after the app instead of the browser", () => {
+    emulate(IPHONE_SAFARI, true);
+
+    expect(getWebPlayerName(user({ display_name: "Marcel" }))).toBe(
+      "Marcel's iPhone (App)",
+    );
+  });
+
+  it("keeps the device name without a known owner", () => {
+    emulate(MAC_CHROME);
+
+    expect(getWebPlayerName(undefined)).toBe("Web (Chrome on Mac)");
+  });
+});
+
 describe("playerVisible", () => {
   it("hides a disabled player", () => {
     expect(playerVisible(createPlayer({ enabled: false }))).toBe(false);
@@ -216,6 +332,13 @@ describe("playerVisible", () => {
     expect(playerVisible(createPlayer({ hide_in_ui: true }))).toBe(false);
   });
 
+  it("lists an audio input only where sources are opted in", () => {
+    const player = createPlayer({ type: PlayerType.SOURCE });
+
+    expect(playerVisible(player)).toBe(false);
+    expect(playerVisible(player, false, false, true)).toBe(true);
+  });
+
   it("shows the hidden player of this device", () => {
     const player = createPlayer({
       player_id: "local-web-player",
@@ -254,43 +377,108 @@ describe("playerVisible", () => {
 });
 
 describe("groupMemberPickerVisible", () => {
-  it("shows the hidden web player owned by this browser", () => {
+  it("shows the private web player owned by this browser", () => {
     const player = createPlayer({
       player_id: "local-web-player",
       hide_in_ui: true,
+      private: true,
     });
     webPlayer.player_id = player.player_id;
 
     expect(groupMemberPickerVisible(player)).toBe(true);
   });
 
-  it("shows the hidden companion player owned by this app", () => {
+  it("shows the private companion player owned by this app", () => {
     const player = createPlayer({
       player_id: "local-companion-player",
       hide_in_ui: true,
+      private: true,
     });
     store.companionPlayerId = player.player_id;
 
     expect(groupMemberPickerVisible(player)).toBe(true);
   });
 
-  it.each([PlayerType.LIGHT, PlayerType.VISUALIZER])(
-    "shows a hidden %s player",
-    (type) => {
-      const player = createPlayer({ type, hide_in_ui: true });
+  it("shows a hidden player, so it can still be grouped", () => {
+    expect(groupMemberPickerVisible(createPlayer({ hide_in_ui: true }))).toBe(
+      true,
+    );
+  });
 
-      expect(groupMemberPickerVisible(player)).toBe(true);
-    },
-  );
-
-  it("keeps unrelated hidden players out of the picker", () => {
+  it("keeps another device's private player out of the picker", () => {
     const player = createPlayer({
       player_id: "remote-web-player",
       hide_in_ui: true,
+      private: true,
     });
     webPlayer.player_id = "local-web-player";
 
     expect(groupMemberPickerVisible(player)).toBe(false);
+  });
+
+  it("shows a private player once its owner unhides it", () => {
+    const player = createPlayer({
+      player_id: "remote-web-player",
+      private: true,
+    });
+    webPlayer.player_id = "local-web-player";
+
+    expect(groupMemberPickerVisible(player)).toBe(true);
+  });
+});
+
+describe("canBeGroupMember", () => {
+  it("offers a regular player", () => {
+    expect(canBeGroupMember(createPlayer())).toBe(true);
+  });
+
+  it("offers a light, which joins a group without playing audio", () => {
+    expect(canBeGroupMember(createPlayer({ type: PlayerType.LIGHT }))).toBe(
+      true,
+    );
+  });
+
+  it("offers a visualizer, which joins a group without playing audio", () => {
+    expect(
+      canBeGroupMember(createPlayer({ type: PlayerType.VISUALIZER })),
+    ).toBe(true);
+  });
+
+  it("offers a metadata display, which joins a group without playing audio", () => {
+    expect(canBeGroupMember(createPlayer({ type: PlayerType.DISPLAY }))).toBe(
+      true,
+    );
+  });
+
+  it("keeps a capture-only device out of the picker", () => {
+    expect(canBeGroupMember(createPlayer({ type: PlayerType.UNKNOWN }))).toBe(
+      false,
+    );
+    expect(canBeGroupMember(createPlayer({ type: PlayerType.SOURCE }))).toBe(
+      false,
+    );
+  });
+});
+
+describe("isSelectablePlayer", () => {
+  it("accepts a healthy regular player", () => {
+    expect(isSelectablePlayer(createPlayer())).toBe(true);
+  });
+
+  it("rejects an audio input, even a fully set up one", () => {
+    expect(isSelectablePlayer(createPlayer({ type: PlayerType.SOURCE }))).toBe(
+      false,
+    );
+  });
+
+  it("rejects a player that still needs setup", () => {
+    expect(
+      isSelectablePlayer(createPlayer({ available: false, needs_setup: true })),
+    ).toBe(false);
+  });
+
+  it("rejects a missing player", () => {
+    expect(isSelectablePlayer(undefined)).toBe(false);
   });
 });
 

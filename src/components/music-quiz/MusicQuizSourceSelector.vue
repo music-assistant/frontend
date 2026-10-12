@@ -22,7 +22,7 @@
         <span class="text-muted-foreground">
           {{ $t("providers.music_quiz.selected_music") }}
         </span>
-        <Badge variant="secondary">{{ selectedSummary }}</Badge>
+        <Badge>{{ selectedSummary }}</Badge>
       </div>
       <div
         v-if="selectedSources.length"

@@ -78,12 +78,14 @@
           </EditorialShelf>
 
           <!-- Top picks row -->
-          <section
+          <EditorialShelf
             v-else-if="row.kind === 'top_picks'"
-            class="ed-section ed-hero-row"
-            :class="{ 'ed-dimmed': editMode && row.hidden }"
+            class="ed-hero-row"
+            :nav-center="160"
+            :dimmed="editMode && row.hidden"
+            style="--ed-card-pad: 0px"
           >
-            <div class="ed-hero-row__head">
+            <template #header>
               <div class="ed-hero-row__title-group">
                 <h2 class="ed-hero-row__title">
                   {{ $t("top_picks_for_you") }}
@@ -100,73 +102,45 @@
                   />
                 </Button>
               </div>
-              <div v-if="editMode" class="ed-edit-controls">
-                <button
-                  class="ed-drag-handle"
-                  :aria-label="$t('queue_reorder')"
-                  @pointerdown.stop.prevent="startItemDrag($event, idx)"
-                  @click.stop
-                >
-                  <GripVertical />
-                </button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  :aria-label="$t('tooltip.toggle_top_picks')"
-                  @click="toggleRow(row)"
-                >
-                  <Eye v-if="!row.hidden" />
-                  <EyeOff v-else />
-                </Button>
-              </div>
-            </div>
+            </template>
+            <template v-if="editMode" #actions>
+              <button
+                class="ed-drag-handle"
+                :aria-label="$t('queue_reorder')"
+                @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                @click.stop
+              >
+                <GripVertical />
+              </button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                :aria-label="$t('tooltip.toggle_top_picks')"
+                @click="toggleRow(row)"
+              >
+                <Eye v-if="!row.hidden" />
+                <EyeOff v-else />
+              </Button>
+            </template>
+            <EditorialHeroCard
+              class="ed-hero-grid__lead"
+              :item="heroEntries[0].item"
+              :tag="heroEntries[0].tag"
+              large
+            />
             <div
-              class="ed-hero-row__viewport"
-              @mouseenter="heroHovering = canHover"
-              @mouseleave="heroHovering = false"
+              v-for="(col, i) in heroColumns"
+              :key="i"
+              class="ed-hero-grid__col"
             >
-              <!-- prev -->
-              <button
-                v-show="heroHovering && heroCanLeft"
-                class="ed-hero-nav ed-hero-nav--left"
-                aria-label="Scroll left"
-                @click="scrollHero(-1)"
-              >
-                <ChevronLeft :size="20" />
-              </button>
-
-              <div ref="heroGrid" class="ed-hero-grid" @scroll="updateHeroNav">
-                <EditorialHeroCard
-                  class="ed-hero-grid__lead"
-                  :item="heroEntries[0].item"
-                  :tag="heroEntries[0].tag"
-                  large
-                />
-                <div
-                  v-for="(col, i) in heroColumns"
-                  :key="i"
-                  class="ed-hero-grid__col"
-                >
-                  <EditorialHeroCard
-                    v-for="entry in col"
-                    :key="entry.item.uri"
-                    :item="entry.item"
-                    :tag="entry.tag"
-                  />
-                </div>
-              </div>
-
-              <!-- next -->
-              <button
-                v-show="heroHovering && heroCanRight"
-                class="ed-hero-nav ed-hero-nav--right"
-                aria-label="Scroll right"
-                @click="scrollHero(1)"
-              >
-                <ChevronRight :size="20" />
-              </button>
+              <EditorialHeroCard
+                v-for="entry in col"
+                :key="entry.item.uri"
+                :item="entry.item"
+                :tag="entry.tag"
+              />
             </div>
-          </section>
+          </EditorialShelf>
 
           <!-- Timeline recommendation -->
           <EditorialTimeline
@@ -176,7 +150,7 @@
               rowItemsMap.get(row.id) !== undefined
             "
             :title="row.folder.name"
-            :provider="row.folder.provider"
+            :provider="folderProvider(row.folder)"
             :items="rowItemsMap.get(row.id) ?? []"
             :dimmed="editMode && row.hidden"
             :tiles-per-view="tilesPerView"
@@ -211,24 +185,55 @@
             :dimmed="editMode && row.hidden"
             :tiles-per-view="tilesPerView"
           >
-            <template v-if="editMode" #actions>
-              <button
-                class="ed-drag-handle"
-                :aria-label="$t('queue_reorder')"
-                @pointerdown.stop.prevent="startItemDrag($event, idx)"
-                @click.stop
+            <template
+              v-if="editMode || rowSupportsProviderFilter(row.folder)"
+              #actions
+            >
+              <template v-if="editMode">
+                <button
+                  class="ed-drag-handle"
+                  :aria-label="$t('queue_reorder')"
+                  @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                  @click.stop
+                >
+                  <GripVertical />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :aria-label="$t('tooltip.toggle_row')"
+                  @click="toggleRow(row)"
+                >
+                  <Eye v-if="!row.hidden" />
+                  <EyeOff v-else />
+                </Button>
+              </template>
+              <FacetedFilter
+                v-if="rowSupportsProviderFilter(row.folder)"
+                :model-value="getRowHiddenProviders(row.id)"
+                :title="$t('tooltip.hide_provider')"
+                :options="providerFilterOptions"
+                @update:model-value="
+                  (providerIds) =>
+                    onRowHiddenProvidersChange(row.id, providerIds)
+                "
               >
-                <GripVertical />
-              </button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                :aria-label="$t('tooltip.toggle_row')"
-                @click="toggleRow(row)"
-              >
-                <Eye v-if="!row.hidden" />
-                <EyeOff v-else />
-              </Button>
+                <template #trigger>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    :aria-label="$t('tooltip.hide_provider')"
+                  >
+                    <span class="relative inline-flex">
+                      <ListFilter />
+                      <span
+                        v-if="rowHasActiveFilter(row)"
+                        :class="ACTIVE_DOT_CLASS"
+                      ></span>
+                    </span>
+                  </Button>
+                </template>
+              </FacetedFilter>
             </template>
             <!-- Skeleton tiles while a fetch is in flight - and for hidden rows
                  in edit mode (never fetched until unhidden) - so every row
@@ -238,6 +243,14 @@
                 v-for="n in skeletonTileCount"
                 :key="`skeleton-${n}`"
               />
+            </template>
+            <template
+              v-else-if="
+                (rowItemsMap.get(row.id)?.length ?? 0) === 0 &&
+                rowHasActiveFilter(row)
+              "
+            >
+              <p class="ed-shelf__empty">{{ $t("no_content_filter") }}</p>
             </template>
             <template v-else>
               <EditorialMediaCard
@@ -398,6 +411,11 @@
                   :data="listeningActivity"
                   :loading="chartsLoading"
                 />
+                <ListeningHeatmapCard
+                  :title="$t('listening_activity')"
+                  :data="listeningActivity"
+                  :loading="chartsLoading"
+                />
                 <DecadeBarChartCard
                   :title="$t('music_by_decade')"
                   :data="decadeDistribution"
@@ -424,10 +442,31 @@
   </div>
 </template>
 
+<script lang="ts">
+import type {
+  Genre,
+  ItemMapping,
+  MediaItemTypeOrItemMapping,
+  RecommendationFolder,
+} from "@/plugins/api/interfaces";
+
+// Snapshot taken on unmount so a back/forward navigation back to Discover
+// renders the previous page instantly instead of refetching from empty.
+interface DiscoverSnapshot {
+  recommendations: RecommendationFolder[];
+  recentlyPlayed: ItemMapping[];
+  rowItemsMap: Map<string, MediaItemTypeOrItemMapping[]>;
+  genres: Genre[];
+  scrollPos: number;
+}
+let prevState: DiscoverSnapshot | undefined;
+</script>
+
 <script setup lang="ts">
 import BarChartCard from "@/components/statistics/BarChartCard.vue";
 import DecadeBarChartCard from "@/components/statistics/DecadeBarChartCard.vue";
 import ListeningClockCard from "@/components/statistics/ListeningClockCard.vue";
+import ListeningHeatmapCard from "@/components/statistics/ListeningHeatmapCard.vue";
 import LineChartCard from "@/components/statistics/LineChartCard.vue";
 import PieChartCard from "@/components/statistics/PieChartCard.vue";
 import ChartItem from "@/components/discover/ChartItem.vue";
@@ -442,6 +481,7 @@ import EditorialTimeline from "@/components/discover/EditorialTimeline.vue";
 import {
   DEFAULT_PRIORITY_ROWS,
   GENRES_ROW_ID,
+  IN_PROGRESS_ROW_ID,
   PLAYERS_ROW_ID,
   STATISTICS_ROW_ID,
   TOP_PICKS_ROW_ID,
@@ -453,37 +493,38 @@ import {
   isRecommendationRowVisible,
   rowIdsNeedingItems,
 } from "@/components/discover/utils/rowItems";
+import {
+  eligibleFilterProviders,
+  getRowHiddenProviders,
+  resolveProviderFilterParam,
+  rowSupportsProviderFilter,
+  setRowHiddenProviders,
+} from "@/components/discover/utils/rowProviderFilter";
+import FacetedFilter from "@/components/FacetedFilter.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
+import { returnedByHistory } from "@/helpers/navigation";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import api from "@/plugins/api";
+import { ACTIVE_DOT_CLASS } from "@/constants";
 import {
   EventType,
   MediaType,
   PlaybackState,
   RecommendationFolderType,
   type EventMessage,
-  type Genre,
-  type ItemMapping,
-  type MediaItemTypeOrItemMapping,
   type Player,
-  type RecommendationFolder,
   type TopItemResult,
+  type PlaylogUpdate,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  EyeOff,
-  GripVertical,
-  RefreshCw,
-} from "@lucide/vue";
+import { Eye, EyeOff, GripVertical, ListFilter, RefreshCw } from "@lucide/vue";
+import { toast } from "vue-sonner";
 import {
   computed,
   nextTick,
@@ -492,10 +533,13 @@ import {
   ref,
   watch,
 } from "vue";
+import { useRouter } from "vue-router";
 
 const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
   editMode: false,
 });
+
+const router = useRouter();
 
 const loading = ref(true);
 const playersShelf = ref<EditorialShelfExpose | null>(null);
@@ -525,6 +569,8 @@ const listeningActivity = ref<
 const listeningTime = ref<Array<{ name: string; minutes: number }>>([]);
 const decadeDistribution = ref<Array<{ name: string; value: number }>>([]);
 const chartsLoading = ref(false);
+let statisticsRequestGeneration = 0;
+let statisticsChartsRequestGeneration = 0;
 
 const statisticsTabs = computed(() => [
   { type: MediaType.TRACK, label: $t("tracks") },
@@ -600,7 +646,51 @@ watch([activeStatTab, activeStatPeriod], () => {
   loadStatisticsCharts();
 });
 
-const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
+// The provider whose icon labels a row. Builtin recommendation plugins (e.g.
+// Library Recommendations) aggregate the whole library, so their plugin logo
+// says nothing about the source -- only real music providers get an icon.
+const folderProvider = (folder: RecommendationFolder): string =>
+  api.getProviderManifest(folder.provider)?.builtin
+    ? ""
+    : folder.provider || "";
+
+// Provider instances a user may filter recommendation rows by -- the loaded
+// music providers, which the server limits to the sources the user may use.
+const providerFilterOptions = computed(() =>
+  eligibleFilterProviders(Object.values(api.providers))
+    .map((provider) => ({
+      value: provider.instance_id,
+      label: provider.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label)),
+);
+
+const providerFilterParamForRow = (rowId: string): string[] | undefined =>
+  resolveProviderFilterParam(
+    providerFilterOptions.value.map((option) => option.value),
+    getRowHiddenProviders(rowId),
+  );
+
+// Persists the row's hidden-provider choice and re-fetches just that row so
+// its items reflect the new filter. Clears the row's cached items first: the
+// preference (read by rowHasActiveFilter) updates synchronously, but the
+// refetch is async, so leaving the stale, now-mismatched items in place could
+// drop the row (and its filter control) from view for that gap.
+const onRowHiddenProvidersChange = (
+  rowId: string,
+  hiddenProviderIds: string[],
+): void => {
+  setRowHiddenProviders(rowId, hiddenProviderIds);
+  rowItemsMap.value.delete(rowId);
+  fetchRowItems([rowId]);
+};
+
+// Whether a row currently has eligible provider(s) hidden -- used to keep the
+// row (and its filter control) visible even if that filter empties its results.
+const rowHasActiveFilter = (row: DiscoverRow): boolean =>
+  row.folder !== undefined &&
+  rowSupportsProviderFilter(row.folder) &&
+  providerFilterParamForRow(row.id) !== undefined;
 
 // --- Top Picks (Model B): a balanced interleave of items across the rows the
 // user has enabled. Only shown, non-empty recommendation folders feed it, so
@@ -667,51 +757,6 @@ const heroColumns = computed<HeroEntry[][]>(() => {
   return cols;
 });
 
-// --- Top Picks horizontal scroller (lead + columns that overflow on narrower
-// screens) with hover chevrons, mirroring EditorialShelf's nav affordance. ---
-// Only track hover (for the nav chevrons) on hover-capable devices. On touch
-// devices the emulated mouseenter would mutate the DOM, which makes mobile
-// Safari swallow the first tap as "hover" instead of a click.
-const canHover = window.matchMedia?.("(hover: hover)")?.matches ?? true;
-const heroGrid = ref<HTMLElement | null>(null);
-const heroHovering = ref(false);
-const heroCanLeft = ref(false);
-const heroCanRight = ref(false);
-
-const updateHeroNav = () => {
-  const el = heroGrid.value;
-  if (!el) return;
-  heroCanLeft.value = el.scrollLeft > 1;
-  heroCanRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
-};
-
-const scrollHero = (dir: number) => {
-  const el = heroGrid.value;
-  if (!el) return;
-  el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
-};
-
-let heroRo: ResizeObserver | undefined;
-let observedHeroGrid: HTMLElement | null = null;
-
-const observeHero = () => {
-  const el = heroGrid.value;
-  if (!(el instanceof HTMLElement)) {
-    heroRo?.disconnect();
-    observedHeroGrid = null;
-    return;
-  }
-  updateHeroNav();
-  if (!("ResizeObserver" in window)) return;
-  heroRo ??= new ResizeObserver(updateHeroNav);
-  if (observedHeroGrid === el) return;
-  heroRo.disconnect();
-  heroRo.observe(el);
-  observedHeroGrid = el;
-};
-
-watch(heroEntries, () => nextTick(observeHero), { deep: false });
-
 // Assign heroEntries only when the picks actually changed — cheap insurance
 // against redundant re-renders from repeated builds with identical content.
 const heroEntriesEqual = (a: HeroEntry[], b: HeroEntry[]) =>
@@ -739,11 +784,7 @@ const refreshTopPicks = async () => {
 
 // --- Unified row list: visibility + ordering via the discover.rows pref ---
 type DiscoverRowKind =
-  | "players"
-  | "top_picks"
-  | "recommendation"
-  | "genres"
-  | "statistics";
+  "players" | "top_picks" | "recommendation" | "genres" | "statistics";
 
 interface DiscoverRow {
   id: string;
@@ -840,6 +881,7 @@ const displayedRows = computed(() =>
           row,
           rowItemsMap.value.get(row.id),
           props.editMode,
+          rowHasActiveFilter(row),
         )
       : props.editMode || !row.hidden,
   ),
@@ -906,6 +948,10 @@ const loadRecommendationRows = async () => {
   else console.error("Failed to load recently played:", recent.reason);
 };
 
+// Guards against a slower, superseded fetch overwriting a newer one for the
+// same row (e.g. rapid provider-filter changes).
+const rowFetchGeneration = new Map<string, number>();
+
 // Fetches and stores items for the given recommendation row ids, in parallel.
 // Each row's result lands in `rowItemsMap` as soon as its own fetch resolves.
 const fetchRowItems = async (ids: string[]): Promise<void> => {
@@ -914,8 +960,13 @@ const fetchRowItems = async (ids: string[]): Promise<void> => {
     ids.map(async (id) => {
       const folder = folders.get(id);
       if (!folder) return;
+      const generation = (rowFetchGeneration.get(id) ?? 0) + 1;
+      rowFetchGeneration.set(id, generation);
+      const providers = rowSupportsProviderFilter(folder)
+        ? providerFilterParamForRow(id)
+        : undefined;
       const items = await api
-        .getRecommendationItems(folder.provider, folder.item_id)
+        .getRecommendationItems(folder.provider, folder.item_id, providers)
         .catch((err) => {
           console.error(
             `Failed to load items for recommendation row ${id}:`,
@@ -923,6 +974,7 @@ const fetchRowItems = async (ids: string[]): Promise<void> => {
           );
           return undefined;
         });
+      if (rowFetchGeneration.get(id) !== generation) return;
       if (items !== undefined) {
         rowItemsMap.value.set(id, items);
       } else if (!rowItemsMap.value.has(id)) {
@@ -956,40 +1008,62 @@ const loadGenres = async () => {
     .getLibraryGenres({ hide_empty: true })
     .catch(() => [] as Genre[]);
   if (!all.length) return;
-  let ranked = all;
-  try {
-    const counts = await api.getGenreMediaCounts(all.map((g) => g.item_id));
-    const total = (id: string) =>
-      Object.values(counts[id] ?? {}).reduce((sum, n) => sum + n, 0);
-    ranked = [...all].sort((a, b) => total(b.item_id) - total(a.item_id));
-  } catch {
-    // counts endpoint unavailable on older servers → keep server (name) order
-  }
-  genres.value = ranked.slice(0, 8);
+  // without counts the genres keep the server's (name) order
+  const counts = await api
+    .getGenreMediaCounts(all.map((g) => g.item_id))
+    .catch(() => ({}) as Record<string, Record<string, number>>);
+  const total = (id: string) =>
+    Object.values(counts[id] ?? {}).reduce((sum, n) => sum + n, 0);
+  genres.value = [...all]
+    .sort((a, b) => total(b.item_id) - total(a.item_id))
+    .slice(0, 8);
 };
 
 const loadStatistics = async () => {
+  const requestGeneration = ++statisticsRequestGeneration;
+  const mediaType = activeStatTab.value;
+  const period = activeStatPeriod.value;
   statisticsLoading.value = true;
   try {
-    const result = await api.getTopItems(
-      activeStatTab.value,
-      activeStatPeriod.value,
-      50,
-    );
+    const result = await api.getTopItems(mediaType, period, 50);
+    if (
+      unmounted ||
+      requestGeneration !== statisticsRequestGeneration ||
+      mediaType !== activeStatTab.value ||
+      period !== activeStatPeriod.value
+    ) {
+      return;
+    }
     statisticsItems.value = result.filter((item) => item && item.item);
   } catch (err) {
+    if (
+      unmounted ||
+      requestGeneration !== statisticsRequestGeneration ||
+      mediaType !== activeStatTab.value ||
+      period !== activeStatPeriod.value
+    ) {
+      return;
+    }
     console.error("Failed to load statistics:", err);
     statisticsItems.value = [];
   } finally {
-    statisticsLoading.value = false;
-    statisticsInitialized.value = true;
+    if (
+      requestGeneration === statisticsRequestGeneration &&
+      !unmounted &&
+      mediaType === activeStatTab.value &&
+      period === activeStatPeriod.value
+    ) {
+      statisticsLoading.value = false;
+      statisticsInitialized.value = true;
+    }
   }
 };
 
 const loadStatisticsCharts = async () => {
+  const requestGeneration = ++statisticsChartsRequestGeneration;
+  const period = activeStatPeriod.value;
   chartsLoading.value = true;
   try {
-    const period = activeStatPeriod.value;
     const [
       genreData,
       artistData,
@@ -997,24 +1071,55 @@ const loadStatisticsCharts = async () => {
       activityData,
       listeningTimeData,
       decadeData,
-    ] = await Promise.all([
-      api.getGenreDistribution(period, 10).catch(() => []),
-      api.getArtistDistribution(period, 10).catch(() => []),
-      api.getPlaysOverTime(period, "day").catch(() => []),
-      api.getListeningActivity(period).catch(() => []),
-      api.getListeningTime(period, "artist", 10).catch(() => []),
-      api.getDecadeDistribution("all_time", 10).catch(() => []),
+    ] = await Promise.allSettled([
+      api.getGenreDistribution(period, 10),
+      api.getArtistDistribution(period, 10),
+      api.getPlaysOverTime(period, "day"),
+      api.getListeningActivity(period),
+      api.getListeningTime(period, "artist", 10),
+      api.getDecadeDistribution(period, 10),
     ]);
-    genreDistribution.value = genreData;
-    artistDistribution.value = artistData;
-    playsOverTime.value = playsData;
-    listeningActivity.value = activityData;
-    listeningTime.value = listeningTimeData;
-    decadeDistribution.value = decadeData;
-  } catch (err) {
-    console.error("Failed to load statistics charts:", err);
+    if (
+      unmounted ||
+      requestGeneration !== statisticsChartsRequestGeneration ||
+      period !== activeStatPeriod.value
+    ) {
+      return;
+    }
+
+    genreDistribution.value =
+      genreData.status === "fulfilled" ? genreData.value : [];
+    artistDistribution.value =
+      artistData.status === "fulfilled" ? artistData.value : [];
+    playsOverTime.value =
+      playsData.status === "fulfilled" ? playsData.value : [];
+    listeningActivity.value =
+      activityData.status === "fulfilled" ? activityData.value : [];
+    listeningTime.value =
+      listeningTimeData.status === "fulfilled" ? listeningTimeData.value : [];
+    decadeDistribution.value =
+      decadeData.status === "fulfilled" ? decadeData.value : [];
+
+    const failedRequest = [
+      genreData,
+      artistData,
+      playsData,
+      activityData,
+      listeningTimeData,
+      decadeData,
+    ].find((result) => result.status === "rejected");
+    if (failedRequest?.status === "rejected") {
+      console.error("Failed to load statistics charts:", failedRequest.reason);
+      toast.error($t("statistics_load_failed"));
+    }
   } finally {
-    chartsLoading.value = false;
+    if (
+      requestGeneration === statisticsChartsRequestGeneration &&
+      !unmounted &&
+      period === activeStatPeriod.value
+    ) {
+      chartsLoading.value = false;
+    }
   }
 };
 
@@ -1062,13 +1167,74 @@ const unsubscribeRecommendations = api.subscribe(
   },
 );
 
+// Played or reset items leave the "in progress" row right away; partial progress
+// (pause, another app syncing) belongs in the row, so only the refresh acts on it.
+const unsubscribePlaylog = api.subscribe(
+  EventType.PLAYLOG_UPDATED,
+  (evt: EventMessage) => {
+    const update = evt.data as PlaylogUpdate | undefined;
+    // per-user playlog: ignore changes belonging to another user (null = everyone)
+    if (update?.userid && update.userid !== store.currentUser?.user_id) return;
+    const leavesInProgress =
+      update && (update.fully_played || update.seconds_played === 0);
+    const uri = update?.uri ?? evt.object_id;
+    const items = rowItemsMap.value.get(IN_PROGRESS_ROW_ID);
+    if (leavesInProgress && uri && items) {
+      rowItemsMap.value.set(
+        IN_PROGRESS_ROW_ID,
+        items.filter((item) => item.uri !== uri),
+      );
+    }
+    scheduleRecommendationRefresh();
+  },
+);
+
+const unsubscribeProviderEvents = api.subscribe(
+  EventType.PROVIDER_EVENT,
+  (evt: EventMessage) => {
+    if (
+      evt.data &&
+      typeof evt.data === "object" &&
+      "event" in evt.data &&
+      evt.data.event === "recommendations_updated"
+    ) {
+      scheduleRecommendationRefresh();
+    }
+  },
+);
+
 onMounted(async () => {
   // Genres is its own row and isn't part of the fast catalog call, so it
   // doesn't gate the page spinner.
   loadGenres();
   loadStatistics();
   loadStatisticsCharts();
-  window.addEventListener("resize", updateHeroNav);
+
+  // the page comes up as it was left only when gone back to; a fresh
+  // navigation loads it anew
+  if (prevState && returnedByHistory(router)) {
+    const snapshot = prevState;
+    recommendations.value = snapshot.recommendations;
+    recentlyPlayed.value = snapshot.recentlyPlayed;
+    rowItemsMap.value = snapshot.rowItemsMap;
+    genres.value = snapshot.genres;
+    resolveHeroPicks();
+    loading.value = false;
+    nextTick(() => {
+      const el = document.querySelector(
+        ".content-section",
+      ) as HTMLElement | null;
+      if (el) el.scrollTop = snapshot.scrollPos;
+    });
+
+    // Refresh everything in the background so the restored page stays current.
+    await loadRecommendationRows();
+    if (unmounted) return;
+    await refreshShownRowItems();
+    if (unmounted) return;
+    resolveHeroPicks();
+    return;
+  }
 
   await loadRecommendationRows();
   if (unmounted) return;
@@ -1077,19 +1243,25 @@ onMounted(async () => {
   await fetchMissingRowItems();
   if (unmounted) return;
   resolveHeroPicks();
-  nextTick(() => {
-    if (!unmounted) observeHero();
-  });
 });
 
 onBeforeUnmount(() => {
   unmounted = true;
-  window.removeEventListener("resize", updateHeroNav);
+  statisticsRequestGeneration++;
+  statisticsChartsRequestGeneration++;
   unsubscribeRecommendations();
+  unsubscribeProviderEvents();
+  unsubscribePlaylog();
   cancelScheduledRecommendationRefresh();
-  heroRo?.disconnect();
-  heroRo = undefined;
-  observedHeroGrid = null;
+
+  const el = document.querySelector(".content-section");
+  prevState = {
+    recommendations: recommendations.value,
+    recentlyPlayed: recentlyPlayed.value,
+    rowItemsMap: rowItemsMap.value,
+    genres: genres.value,
+    scrollPos: el?.scrollTop ?? 0,
+  };
 });
 </script>
 
@@ -1176,6 +1348,7 @@ onBeforeUnmount(() => {
 }
 
 .ed-players {
+  --ed-card-pad: 0px;
   margin-top: 4px;
 }
 .ed-players :deep(.ed-shelf__track) {
@@ -1216,18 +1389,14 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.ed-hero-row {
-  padding: 0 28px;
-}
-
 .ed-dimmed {
   opacity: 0.4;
 }
-.ed-hero-row__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 14px;
+.ed-shelf__empty {
+  min-width: 100%;
+  padding: 8px 4px;
+  font-size: 0.875rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 .ed-hero-row__title-group {
   display: flex;
@@ -1253,24 +1422,13 @@ onBeforeUnmount(() => {
     transform: rotate(360deg);
   }
 }
-.ed-hero-row__viewport {
-  position: relative;
-}
 /* Horizontal scroller: fixed-size lead + columns of 2, so cards don't stretch
    on wide screens. The default viewport shows the lead + 2 columns; the
    remaining columns scroll into view (and fit outright on big screens). */
-.ed-hero-grid {
-  display: flex;
-  gap: 14px;
+.ed-hero-row :deep(.ed-shelf__track) {
   height: 320px;
-  position: relative;
-  overflow-x: auto;
   overflow-y: hidden;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-}
-.ed-hero-grid::-webkit-scrollbar {
-  display: none;
+  padding-block: 0;
 }
 .ed-hero-grid__lead {
   flex: 1.5 0 520px;
@@ -1288,38 +1446,6 @@ onBeforeUnmount(() => {
 .ed-hero-grid__col > * {
   flex: 1;
   min-height: 0;
-}
-.ed-hero-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 3;
-  width: 38px;
-  height: 38px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: rgb(var(--v-theme-on-background));
-  background: rgb(var(--v-theme-panel));
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease;
-}
-.ed-hero-nav:hover {
-  background: rgb(var(--v-theme-surface));
-}
-.ed-hero-nav:active {
-  transform: translateY(-50%) scale(0.94);
-}
-.ed-hero-nav--left {
-  left: 12px;
-}
-.ed-hero-nav--right {
-  right: 12px;
 }
 
 .ed-genres {
@@ -1497,38 +1623,26 @@ onBeforeUnmount(() => {
   .ed-genres__grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .ed-hero-grid {
-    display: flex;
+  .ed-hero-row :deep(.ed-shelf__track) {
     height: auto;
     gap: 12px;
-    overflow-x: auto;
     overflow-y: visible;
     scroll-snap-type: x mandatory;
-    /* pan-y too: a vertical swipe starting on a tile must scroll the page */
-    touch-action: pan-x pan-y;
-    scrollbar-width: none;
-    margin-inline: -28px;
-    padding-inline: 28px;
-    /* snap tiles to the gutter so the first tile lines up with the title */
-    scroll-padding-inline: 28px;
-  }
-  .ed-hero-grid::-webkit-scrollbar {
-    display: none;
   }
   .ed-hero-grid__col {
     display: contents;
   }
-  .ed-hero-row .ed-hero-grid :deep(.ed-hero) {
+  .ed-hero-row :deep(.ed-hero) {
     flex: 0 0 44%;
     height: 220px;
     min-height: 0;
     scroll-snap-align: start;
   }
 
-  .ed-hero-row .ed-hero-grid :deep(.ed-hero--large .ed-hero__title) {
+  .ed-hero-row :deep(.ed-hero--large .ed-hero__title) {
     font-size: 18px;
   }
-  .ed-hero-row .ed-hero-grid :deep(.ed-hero--large .ed-hero__content) {
+  .ed-hero-row :deep(.ed-hero--large .ed-hero__content) {
     padding: 16px;
   }
 }
@@ -1537,25 +1651,16 @@ onBeforeUnmount(() => {
   .ed-section {
     margin-bottom: 16px;
   }
-  .ed-hero-row,
   .ed-genres {
     padding-left: 16px;
     padding-right: 16px;
   }
-  .ed-hero-grid {
-    margin-inline: -16px;
-    padding-inline: 16px;
-    scroll-padding-inline: 16px;
-  }
-  .ed-hero-row .ed-hero-grid :deep(.ed-hero) {
+  .ed-hero-row :deep(.ed-hero) {
     flex: 0 0 82%;
     height: 200px;
   }
   .ed-hero-row__title {
     font-size: 22px;
-  }
-  .ed-hero-nav {
-    display: none;
   }
   .ed-drag-ghost {
     left: 16px;

@@ -43,8 +43,8 @@
           <DropdownMenuRadioItem v-if="hasLights" value="lights">
             {{ $t("lights") }}
           </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem v-if="hasVisualizers" value="visualizers">
-            {{ $t("visualizers") }}
+          <DropdownMenuRadioItem v-if="hasScreens" value="screens">
+            {{ $t("screens") }}
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
@@ -57,7 +57,7 @@
       :player="player"
       :members="members"
       :filter="filter"
-      :group-heading="$t('speakers_in_group')"
+      :group-heading="$t('players_in_group')"
       :show-separator="false"
     />
   </div>
@@ -80,7 +80,7 @@ import {
   isPlayerGroupFilter,
   type PlayerGroupFilter,
 } from "@/helpers/player_group";
-import { getPlayerName } from "@/helpers/utils";
+import { getPlayerName } from "@/helpers/players";
 import type { Player } from "@/plugins/api/interfaces";
 import { EllipsisVertical } from "@lucide/vue";
 
@@ -89,7 +89,7 @@ defineProps<{
   members: Player[];
   filter: PlayerGroupFilter;
   hasLights: boolean;
-  hasVisualizers: boolean;
+  hasScreens: boolean;
 }>();
 
 const emit = defineEmits<{

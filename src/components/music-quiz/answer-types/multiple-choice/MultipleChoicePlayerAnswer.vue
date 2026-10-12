@@ -1,15 +1,8 @@
 <template>
   <template v-if="state.phase === 'answering'">
-    <div class="flex flex-col items-center gap-2">
-      <MusicQuizCountdown
-        :size="132"
-        :fraction="remainingFraction"
-        :label="remainingLabel || '…'"
-      />
-      <p class="text-lg font-bold">
-        {{ $t("providers.music_quiz.choose_answer") }}
-      </p>
-    </div>
+    <p class="text-center text-lg font-bold">
+      {{ $t("providers.music_quiz.choose_answer") }}
+    </p>
     <MultipleChoiceGrid
       :suggestions="currentRound.suggestions"
       :disabled="busy || !!state.you.answer"
@@ -30,27 +23,13 @@
   </template>
 
   <template v-else-if="state.phase === 'reveal'">
-    <div
-      v-if="state.you.answer?.correct"
-      class="flex items-center justify-center gap-2 rounded-md bg-green-500/15 py-2 font-semibold text-green-600 dark:text-green-400"
+    <p
+      v-if="!state.you.answer"
+      class="text-destructive text-center font-semibold"
       role="status"
     >
-      <CircleCheck class="size-5" />
-      {{ $t("providers.music_quiz.correct") }}
-      <span>+{{ state.you.answer.points ?? 0 }}</span>
-    </div>
-    <div
-      v-else
-      class="text-destructive flex items-center justify-center gap-2 rounded-md bg-red-500/10 py-2 font-semibold"
-      role="status"
-    >
-      <CircleX class="size-5" />
-      {{
-        state.you.answer
-          ? $t("providers.music_quiz.incorrect")
-          : $t("providers.music_quiz.no_answer_submitted")
-      }}
-    </div>
+      {{ $t("providers.music_quiz.no_answer_submitted") }}
+    </p>
   </template>
 </template>
 
@@ -61,15 +40,12 @@ import type {
 } from "@/components/music-quiz/adapter_contracts";
 import MultipleChoiceGrid from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceGrid.vue";
 import MultipleChoiceProgress from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceProgress.vue";
-import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import type {
   MusicQuizMultipleChoicePersonalizedState,
   MusicQuizMultipleChoiceRound,
 } from "@/composables/music-quiz/useMusicQuiz";
-import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
 import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
-import { CircleCheck, CircleX } from "@lucide/vue";
 import { computed } from "vue";
 
 const props =
@@ -88,11 +64,6 @@ const roundPlayerStatuses = computed(() =>
 const answeredCount = computed(
   () => roundPlayerStatuses.value.filter((player) => player.answered).length,
 );
-const { remainingLabel, remainingFraction } = useMusicQuizAnswerDeadline({
-  active: () => props.state.phase === "answering",
-  deadline: () => props.currentRound.deadline,
-  duration: () => props.state.answer_duration,
-});
 
 function submit(suggestionId: string) {
   emit("submit", {

@@ -45,14 +45,7 @@
 
     <DSPSlider v-model="gain" type="gain" />
 
-    <div class="px-4">
-      <Alert variant="info" class="mb-4">
-        <Info />
-        <AlertDescription>
-          {{ $t("settings.dsp.convolution.help") }}
-        </AlertDescription>
-      </Alert>
-    </div>
+    <DSPHelp :text="$t('settings.dsp.convolution.help')" />
 
     <DSPIRManager
       v-model="showManager"
@@ -66,12 +59,11 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { Info, Library } from "@lucide/vue";
+import { Library } from "@lucide/vue";
 import type {
   ConvolutionFilter,
   DSPIRMetadata,
 } from "@/plugins/api/interfaces";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -83,6 +75,7 @@ import {
 } from "@/components/ui/select";
 import { useDSPIRs } from "@/composables/useDSPIRs";
 import { dspIRDetailText } from "@/helpers/dspIR";
+import DSPHelp from "./DSPHelp.vue";
 import DSPSlider from "./DSPSlider.vue";
 import DSPIRManager from "./DSPIRManager.vue";
 

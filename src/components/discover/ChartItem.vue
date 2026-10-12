@@ -32,14 +32,19 @@
         </span>
       </div>
     </div>
-    <span class="chart-item__play" @click.stop="handlePlay">
+    <button
+      type="button"
+      class="chart-item__play"
+      :aria-label="$t('play')"
+      @click.stop="handlePlay"
+    >
       <Play
         :size="18"
         fill="currentColor"
         :stroke-width="0"
         class="chart-item__play-icon"
       />
-    </span>
+    </button>
   </div>
 </template>
 
@@ -54,6 +59,7 @@ import {
   handleMenuBtnClick,
 } from "@/helpers/media_item_actions";
 import { Play } from "@lucide/vue";
+import { $t } from "@/plugins/i18n";
 
 const props = defineProps<{
   item: MediaItemTypeOrItemMapping;
@@ -189,6 +195,9 @@ function onMenu(e: MouseEvent) {
     transform 0.18s;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
   z-index: 4;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
 }
 
 .chart-item__play-icon {
@@ -197,7 +206,8 @@ function onMenu(e: MouseEvent) {
   stroke: none;
 }
 
-.chart-item:hover .chart-item__play {
+.chart-item:hover .chart-item__play,
+.chart-item__play:focus-visible {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
@@ -205,7 +215,9 @@ function onMenu(e: MouseEvent) {
 
 @media (hover: none) {
   .chart-item__play {
-    display: none;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
   }
 }
 

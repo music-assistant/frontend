@@ -1,6 +1,6 @@
 name: Auto Release
 
-# Automatically creates a release every night at 01:00 UTC if there are 2+ commits since the last release
+# Automatically creates a release every night at 04:00 Europe/Amsterdam time if there is at least 1 commit since the last release
 # Calculates the next version number (patch increment) and triggers the publish release workflow
 
 on:
@@ -54,7 +54,7 @@ jobs:
               echo "has_commits=true" >> $GITHUB_OUTPUT
             else
               echo "has_commits=false" >> $GITHUB_OUTPUT
-              echo "Only $COMMITS_SINCE commit(s) found. Need at least 2 commits for auto-release."
+              echo "Only $COMMITS_SINCE commit(s) found. Need at least 1 commit for auto-release."
             fi
           fi
         env:

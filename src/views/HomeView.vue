@@ -55,6 +55,43 @@
       </Button>
     </Alert>
 
+    <!-- Newly discovered devices that still need setup; Review opens the
+         players list filtered down to them. -->
+    <Alert
+      v-if="
+        canConfigurePlayers && showSetupPrompt && playersNeedingSetup.length > 0
+      "
+      variant="warning"
+      class="mx-7 mb-6 mt-4 flex w-auto items-center gap-3 py-3 pl-4 pr-3 [&>svg]:translate-y-0"
+    >
+      <TriangleAlert class="size-5 shrink-0" />
+      <AlertDescription class="min-w-0 flex-1">
+        {{
+          $t("players_need_setup", playersNeedingSetup.length, {
+            named: { count: playersNeedingSetup.length },
+          })
+        }}
+      </AlertDescription>
+      <Button
+        variant="secondary"
+        size="sm"
+        class="shrink-0"
+        @click="reviewSetupPlayers"
+      >
+        {{ $t("review") }}
+        <ArrowRight class="size-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        class="shrink-0"
+        :aria-label="$t('close')"
+        @click="showSetupPrompt = false"
+      >
+        <X class="size-4" />
+      </Button>
+    </Alert>
+
     <HomeWidgetRows :edit-mode="editMode" />
 
     <!-- Floating exit button while editing the home screen -->
@@ -75,6 +112,7 @@ import Toolbar from "@/components/Toolbar.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { api } from "@/plugins/api";
+import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import {
   ArrowRight,
@@ -82,9 +120,10 @@ import {
   CircleAlert,
   Compass,
   SquarePen,
+  TriangleAlert,
   X,
 } from "@lucide/vue";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -92,6 +131,20 @@ const editMode = ref(false);
 const hasProviderErrors = ref(false);
 const showProviderWarning = ref(true);
 const erroredProviderType = ref<string | null>(null);
+const canConfigurePlayers = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
+);
+const showSetupPrompt = ref(true);
+
+const playersNeedingSetup = computed(() =>
+  Object.values(api.players).filter(
+    (player) => player.enabled && player.needs_setup,
+  ),
+);
+
+const reviewSetupPlayers = () => {
+  router.push({ name: "playersettings", query: { status: "needs_setup" } });
+};
 
 const handleHomescreenEditToggle = () => {
   editMode.value = !editMode.value;
@@ -109,7 +162,8 @@ const navigateToProviders = () => {
 };
 
 onMounted(async () => {
-  if (authManager.isAdmin()) {
+  // the warning leads on to every provider type, not just a member's own music sources
+  if (authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)) {
     try {
       const configs = await api.getProviderConfigs();
       const firstError = configs.find(

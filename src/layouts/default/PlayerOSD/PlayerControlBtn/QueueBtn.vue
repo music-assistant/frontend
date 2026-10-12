@@ -4,11 +4,16 @@
     size="icon-lg"
     :aria-label="$t('tooltip.toggle_queue')"
     v-bind="$attrs"
+    :title="$t('tooltip.toggle_queue')"
+    :aria-expanded="active ? 'true' : 'false'"
     :disabled="disabled"
     :class="{ 'text-primary': active }"
     @click="togglePlayerQueue"
   >
-    <ListVideo :size="size" />
+    <ListVideo
+      class="size-(--icon-size)"
+      :style="{ '--icon-size': `${size}px` }"
+    />
   </Button>
 </template>
 
