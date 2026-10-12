@@ -6,7 +6,7 @@
     :blur-backdrop="blurBackdrop"
     :height="400"
     :phone-height="360"
-    :editable-rows="false"
+    @edit-rows="emit('edit-rows')"
   >
     <template #toolbar-append>
       <DetailHeroFavorite v-if="item" :item="item" />
@@ -86,6 +86,10 @@ export interface Props {
   episodeCount?: number;
 }
 defineProps<Props>();
+
+const emit = defineEmits<{
+  (e: "edit-rows"): void;
+}>();
 
 const coverSize = computed(() => (isPhoneSizedScreen() ? 132 : 200));
 </script>

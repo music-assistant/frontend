@@ -2472,6 +2472,7 @@
     "edit_rows_hint": "Drag to reorder, hide what you don't want. \"Source\" picks what feeds a row (your library, one source, or all of them).",
     "track_radio": "Track endless mix",
     "edit_rows_subtitle_album": "Applies to every album page",
+    "edit_rows_subtitle_podcast": "Applies to every podcast page",
     "edit_rows_subtitle_track": "Applies to every track page",
     "n_releases": "{count} release | {count} releases",
     "admin_only": "Admin only",
