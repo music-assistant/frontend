@@ -30,7 +30,7 @@
                 variant="secondary"
                 size="sm"
                 data-testid="onboarding-provider-reconfigure"
-                @click="reconfigure(provider.instance_id)"
+                @click="reconfigure(provider)"
               >
                 {{ $t("settings.reconfigure") }}
               </Button>
@@ -125,8 +125,12 @@ const needsReconfigure = (provider: ConfiguredProvider) =>
     api.providerManifests[provider.domain]?.has_setup_flow,
   );
 
-const reconfigure = function (instanceId: string) {
-  eventbus.emit("setupFlowDialog", { kind: "reconfigure", instanceId });
+const reconfigure = function (provider: ConfiguredProvider) {
+  eventbus.emit("setupFlowDialog", {
+    kind: "reconfigure",
+    instanceId: provider.instance_id,
+    name: provider.name,
+  });
 };
 
 const configured = computed(() => configuredProviders(props.providerType));

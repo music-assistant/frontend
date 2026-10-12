@@ -37,8 +37,8 @@
         v-if="player.enabled && player.needsSetup && canEdit"
         variant="secondary"
         size="sm"
-:aria-label="$t('settings.start_setup')"
-:title="$t('settings.player_needs_setup')"
+        :aria-label="$t('settings.start_setup')"
+        :title="$t('settings.player_needs_setup')"
         data-testid="onboarding-player-setup"
         @click="startSetup"
       >
@@ -157,8 +157,7 @@ const startSetup = function () {
 // the field closing takes the focus with it, so it goes back to the pencil
 // rather than to the dialog
 const closeRename = async function () {
-  const shouldRestoreFocus =
-    document.activeElement === renameInput.value?.$el;
+  const shouldRestoreFocus = document.activeElement === renameInput.value?.$el;
   renaming.value = false;
   await nextTick();
   if (shouldRestoreFocus)
