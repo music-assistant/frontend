@@ -190,11 +190,16 @@ function refreshDjStatus(
   return request;
 }
 
-/** The queue a show is currently on air on, if any (drives a show card's "On air" state). */
-function onAirQueueId(showId: string): string | undefined {
-  return Object.keys(djStatus.value).find(
+/** Every queue a show is currently on air on. */
+function onAirQueueIds(showId: string): string[] {
+  return Object.keys(djStatus.value).filter(
     (queueId) => djStatus.value[queueId].station_id === showId,
   );
+}
+
+/** The queue a show is currently on air on, if any (drives a show card's "On air" state). */
+function onAirQueueId(showId: string): string | undefined {
+  return onAirQueueIds(showId)[0];
 }
 
 /** Whether a start is currently in flight for the given show. */
@@ -226,26 +231,32 @@ async function startShow(showId: string, playerId: string): Promise<void> {
   }
 }
 
-/** Takes a show off air by clearing the queue it plays on; the server detaches the DJ itself. */
+/** Takes a show off air by clearing every queue it plays on; the server detaches the DJ itself. */
 async function stopShow(showId: string): Promise<void> {
-  const queueId = onAirQueueId(showId);
-  if (!queueId) return;
+  if (onAirQueueIds(showId).length === 0) return;
   stoppingShowIds.add(showId);
   try {
-    // The queue may have moved on to other content since djStatus was fetched;
+    // A queue may have moved on to other content since djStatus was fetched;
     // re-check right before the destructive clear so that content isn't touched.
     // This also applies the fresh status.
     // Failures surface once, through the caller's own error handling.
     const fresh = await refreshDjStatus(true);
-    if (fresh[queueId]?.station_id !== showId) return;
-    await api.sendCommand(
-      "player_queues/clear",
-      { queue_id: queueId },
-      { suppressGlobalError: true },
+    const queueIds = Object.keys(fresh).filter(
+      (queueId) => fresh[queueId].station_id === showId,
+    );
+    if (queueIds.length === 0) return;
+    await Promise.all(
+      queueIds.map((queueId) =>
+        api.sendCommand(
+          "player_queues/clear",
+          { queue_id: queueId },
+          { suppressGlobalError: true },
+        ),
+      ),
     );
     // Optimistic: the detach also lands as a queue_dj_updated hint, which refreshes the real state.
     const remaining = { ...djStatus.value };
-    delete remaining[queueId];
+    for (const queueId of queueIds) delete remaining[queueId];
     djStatus.value = remaining;
     toast.success($t("providers.ai_radio.toast.show_stopped"));
   } finally {
@@ -299,6 +310,7 @@ export function useShows() {
     deleteShow,
     refreshDjStatus,
     onAirQueueId,
+    onAirQueueIds,
     isStarting,
     isStopping,
     startShow,

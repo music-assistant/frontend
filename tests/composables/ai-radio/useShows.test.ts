@@ -224,6 +224,27 @@ describe("useShows stopShow", () => {
     expect(toast.success).toHaveBeenCalled();
   });
 
+  it("clears every queue the show is on air on and drops them all from the status", async () => {
+    const twoQueues = {
+      ...liveStatus,
+      kitchen: { host_id: "host-1", station_id: "show-1" },
+      office: { host_id: "host-2", station_id: "show-2" },
+    };
+    useShows().djStatus.value = { ...twoQueues };
+    mockFreshStatus(twoQueues);
+
+    await useShows().stopShow("show-1");
+
+    const cleared = sendCommand.mock.calls
+      .filter((call) => call[0] === "player_queues/clear")
+      .map((call) => (call[1] as { queue_id: string }).queue_id);
+    expect(cleared.sort()).toEqual(["kitchen", "livingroom"]);
+    expect(useShows().djStatus.value).toEqual({
+      office: { host_id: "host-2", station_id: "show-2" },
+    });
+    expect(toast.success).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps the entry and skips the success toast when the clear command fails", async () => {
     sendCommand.mockImplementation(async (command) => {
       if (command === "ai_radio/queue_dj/status") return liveStatus;
