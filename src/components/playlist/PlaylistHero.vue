@@ -1,7 +1,5 @@
 <template>
   <DetailHero
-    class="playlist-hero"
-    :class="{ 'playlist-hero--phone': isPhone }"
     :item="item"
     :backdrop="backdrop"
     :blur-backdrop="blurBackdrop"
@@ -40,21 +38,31 @@
     </template>
 
     <template v-if="item" #main>
-      <div class="playlist-hero__main">
-        <div class="playlist-hero__cover">
+      <div
+        class="flex w-full min-w-0 items-end gap-6 max-md:flex-col max-md:items-stretch max-md:gap-3"
+      >
+        <div
+          class="size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] max-md:size-[132px]"
+        >
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
 
-        <div class="playlist-hero__text">
-          <h1 class="playlist-hero__name">{{ item.name }}</h1>
+        <div class="flex min-w-0 flex-1 flex-col gap-2.5 pb-1">
+          <h1
+            class="m-0 line-clamp-2 text-[44px] leading-[1.05] font-medium tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] max-md:text-[30px] max-md:leading-[1.1] max-md:tracking-[-0.7px]"
+          >
+            {{ item.name }}
+          </h1>
 
-          <div class="playlist-hero__meta">
+          <div
+            class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] max-md:text-sm"
+          >
             <div
               v-if="isMusicAssistantPlaylist(item) || item.owner"
-              class="playlist-hero__line"
+              class="flex min-w-0 items-center gap-2"
             >
-              <User :size="16" class="playlist-hero__icon" />
-              <span class="playlist-hero__line-text">
+              <User :size="16" class="flex-none" />
+              <span class="min-w-0 truncate">
                 <PlaylistAccessSummary
                   v-if="isMusicAssistantPlaylist(item)"
                   :playlist="item"
@@ -62,20 +70,23 @@
                 <template v-else>{{ item.owner }}</template>
               </span>
             </div>
-            <div class="playlist-hero__line">
-              <ListMusic :size="16" class="playlist-hero__icon" />
-              <span class="playlist-hero__line-text">
+            <div class="flex min-w-0 items-center gap-2">
+              <ListMusic :size="16" class="flex-none" />
+              <span class="min-w-0 truncate">
                 <template v-for="(fact, index) in facts" :key="fact">
-                  <span v-if="index > 0" class="playlist-hero__sep">·</span>
+                  <span v-if="index > 0" class="mx-1 opacity-50">·</span>
                   {{ fact }}
                 </template>
               </span>
             </div>
           </div>
 
-          <div class="playlist-hero__actions">
+          <!-- a phone has no room for every button beside play, so the row wraps there -->
+          <div
+            class="flex min-w-0 flex-nowrap items-center gap-2 max-md:flex-wrap max-md:gap-2.5"
+          >
             <DetailHeroPlayButton
-              class="playlist-hero__play"
+              class="min-w-0 max-md:flex-1"
               shrink-label
               :item="item"
             />
@@ -99,7 +110,10 @@
               :label="$t('smart_playlist.rules_dialog_title')"
               @click="emit('show-rules')"
             />
-            <span class="playlist-hero__badge" :title="providerBadgeTitle">
+            <span
+              class="inline-flex size-9 flex-none items-center justify-center rounded-lg border border-white/25 bg-black/40 max-md:size-11 max-md:rounded-[10px]"
+              :title="providerBadgeTitle"
+            >
               <ProviderIcon :domain="providerDomain" :size="20" />
             </span>
           </div>
@@ -193,128 +207,3 @@ const providerBadgeTitle = computed(() => {
   return api.getProviderManifest(domain)?.name ?? domain;
 });
 </script>
-
-<style scoped>
-.playlist-hero__main {
-  display: flex;
-  align-items: flex-end;
-  gap: 24px;
-  width: 100%;
-  min-width: 0;
-}
-.playlist-hero__cover {
-  width: 200px;
-  height: 200px;
-  flex: none;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
-.playlist-hero__text {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-  padding-bottom: 4px;
-}
-
-.playlist-hero__name {
-  margin: 0;
-  font-size: 44px;
-  font-weight: 500;
-  letter-spacing: -1.1px;
-  line-height: 1.05;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.playlist-hero__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.85);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
-}
-.playlist-hero__line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-.playlist-hero__icon {
-  flex: none;
-}
-.playlist-hero__line-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.playlist-hero__sep {
-  margin: 0 4px;
-  opacity: 0.5;
-}
-
-.playlist-hero__actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  gap: 8px;
-  min-width: 0;
-}
-/* the play button gives way so the other buttons keep their place on the row */
-.playlist-hero__play {
-  min-width: 0;
-}
-/* the same chrome as the hero buttons, for the facts that are not actions */
-.playlist-hero__badge {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.4);
-}
-
-@media (max-width: 768px) {
-  .playlist-hero__main {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-  .playlist-hero__cover {
-    width: 132px;
-    height: 132px;
-  }
-  .playlist-hero__name {
-    font-size: 30px;
-    letter-spacing: -0.7px;
-    line-height: 1.1;
-  }
-  .playlist-hero__meta {
-    font-size: 14px;
-  }
-  /* a phone has no room for every button beside play, so the row wraps */
-  .playlist-hero__actions {
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .playlist-hero__actions .playlist-hero__play {
-    flex: 1;
-  }
-  .playlist-hero__badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-  }
-}
-</style>

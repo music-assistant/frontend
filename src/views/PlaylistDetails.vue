@@ -25,8 +25,10 @@
             :provider="props.provider"
             @edit-rules="showEditDialog = true"
           />
+          <!-- the listing keeps its own toolbar, but takes the title and gutter of the rows around it -->
           <ItemsListing
             v-else
+            class="px-4 pt-3 max-md:px-1 max-md:pt-2 [&>.v-divider]:hidden"
             itemtype="playlisttracks"
             :parent-item="itemDetails"
             :show-provider="false"
@@ -49,12 +51,26 @@
               'duration_desc',
             ]"
             :update-available="updateAvailable"
-            :title="$t('playlist_tracks')"
+            :title="$t('tracks')"
             :allow-key-hooks="true"
             :path="`playlist.${props.itemId}.${props.provider}`"
             :restore-state="true"
             :no-server-side-sorting="true"
-          />
+          >
+            <template #title>
+              <span
+                class="inline-flex items-baseline gap-2.5 text-[22px] font-bold tracking-[-0.4px] max-md:text-[19px]"
+              >
+                {{ $t("tracks") }}
+                <span
+                  v-if="playlistTracks?.length"
+                  class="text-[13px] font-normal tracking-normal text-muted-foreground"
+                >
+                  {{ rowMeta.tracks }}
+                </span>
+              </span>
+            </template>
+          </ItemsListing>
         </template>
 
         <!-- description -->
