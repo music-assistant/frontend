@@ -78,7 +78,6 @@
               class="playlist-hero__play"
               shrink-label
               :item="item"
-              :sort-by="sortBy"
             />
             <DetailHeroButton
               :icon="Shuffle"
@@ -110,7 +109,6 @@
 
     <template v-if="item" #aside>
       <DetailHeroGenres :item="item" />
-      <DetailHeroProviders :item="item" />
     </template>
   </DetailHero>
 </template>
@@ -121,7 +119,6 @@ import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
-import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import PlaylistAccessSummary from "@/components/PlaylistAccessSummary.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
@@ -156,8 +153,6 @@ export interface Props {
   trackCount?: number;
   // their total playing time in seconds, once they are known
   duration?: number;
-  // the order the listing below shows the tracks in, which play follows
-  sortBy?: string;
   // a smart playlist whose rules could be loaded
   hasRules?: boolean;
   canEditRules?: boolean;
@@ -308,7 +303,9 @@ const providerBadgeTitle = computed(() => {
   .playlist-hero__meta {
     font-size: 14px;
   }
+  /* a phone has no room for every button beside play, so the row wraps */
   .playlist-hero__actions {
+    flex-wrap: wrap;
     gap: 10px;
   }
   .playlist-hero__actions .playlist-hero__play {

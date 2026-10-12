@@ -6,7 +6,6 @@
       :blur-backdrop="backdrop.blurred"
       :track-count="playlistTracks?.length"
       :duration="runningTime"
-      :sort-by="listingRef?.sortBy"
       :has-rules="!!smartRules"
       :can-edit-rules="!!smartRules && canEditLibrary"
       :can-share="canShare"
@@ -28,7 +27,6 @@
           />
           <ItemsListing
             v-else
-            :ref="setListingRef"
             itemtype="playlisttracks"
             :parent-item="itemDetails"
             :show-provider="false"
@@ -164,7 +162,6 @@ const rowsEditorOpen = ref(false);
 const canEditLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_WRITE),
 );
-const listingRef = ref<InstanceType<typeof ItemsListing>>();
 
 // the playlist's tracks, as the listing below last loaded them: what the hero
 // counts and times
@@ -182,11 +179,11 @@ const canShare = computed(
 );
 
 // the rows the page can render for this playlist; the editor lists the same set
-const availableRows = computed(() => availablePlaylistRowIds());
+const availableRows = availablePlaylistRowIds();
 
 // reads the user's preferences from the store, so the page follows the editor
 const visibleRows = computed(() => {
-  const { order, hidden } = playlistRows.resolve(availableRows.value);
+  const { order, hidden } = playlistRows.resolve(availableRows);
   return order.filter((rowId) => !hidden.has(rowId));
 });
 
@@ -249,6 +246,9 @@ watch(
       smartRules.value = null;
       playlistTracks.value = undefined;
       updateAvailable.value = false;
+      showRulesDialog.value = false;
+      showEditDialog.value = false;
+      rowsEditorOpen.value = false;
     }
     if (itemId) loadItemDetails();
   },
@@ -267,10 +267,4 @@ const loadPlaylistTracks = async function (params: LoadDataParams) {
   }
   return tracks;
 };
-
-/** The listing renders inside the rows loop, where a plain template ref collects an array. */
-function setListingRef(listing: unknown) {
-  listingRef.value =
-    (listing as InstanceType<typeof ItemsListing> | null) ?? undefined;
-}
 </script>
