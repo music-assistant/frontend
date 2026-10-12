@@ -128,6 +128,8 @@ export interface PlayMediaOptions {
   start_from_beginning?: boolean;
   /** Set playback order for immediate-play options; omit to let the server decide. */
   shuffle?: boolean;
+  /** Keep the global error toast quiet for a caller that reports the failure itself. */
+  suppressGlobalError?: CommandOptions["suppressGlobalError"];
 }
 
 export enum ConnectionState {
@@ -2336,7 +2338,7 @@ export class MusicAssistantApi {
     } else if (!queue_id) {
       queue_id = store.activePlayer?.player_id;
     }
-    return this.sendCommand("player_queues/play_media", {
+    const payload = {
       queue_id,
       media,
       option,
@@ -2344,7 +2346,12 @@ export class MusicAssistantApi {
       sort_by: options.sort_by,
       start_from_beginning: options.start_from_beginning,
       shuffle: options.shuffle,
-    });
+    };
+    return options.suppressGlobalError === undefined
+      ? this.sendCommand("player_queues/play_media", payload)
+      : this.sendCommand("player_queues/play_media", payload, {
+          suppressGlobalError: options.suppressGlobalError,
+        });
   }
 
   // ProviderConfig related functions
