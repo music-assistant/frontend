@@ -16,6 +16,7 @@ export type RuleField =
   | "genre"
   | "artist"
   | "album"
+  | "folder"
   | "album_type"
   | "favorite"
   | "explicit"
@@ -43,6 +44,22 @@ export type RuleOperator =
 export interface RuleValue {
   id: number;
   name: string;
+  // only set for folder values: the browse path (`<provider_instance>://<path>`)
+  path?: string;
+}
+
+// Folder values are keyed by their browse path; the numeric id is UI-only and never persisted.
+export function folderValue(path: string): RuleValue {
+  let id = 0;
+  for (let i = 0; i < path.length; i++) {
+    id = (Math.imul(31, id) + path.charCodeAt(i)) | 0;
+  }
+  const [provider, relPath] = path.split("://", 2);
+  // prefixed with the music source, so equally named folders stay apart
+  const sourceName = api.providers[provider]?.name || provider;
+  const folder = relPath?.replace(/\/+$/, "");
+  const name = folder ? `${sourceName}/${folder}` : sourceName;
+  return { id, name, path };
 }
 
 export interface RuleRow {
@@ -272,6 +289,11 @@ export function useSmartPlaylistRulesForm(
         }
         fresh.push(row);
       }
+      if (initial.folder_paths?.length) {
+        const row = newRule("folder", "is");
+        row.values = initial.folder_paths.map(folderValue);
+        fresh.push(row);
+      }
       if (initial.favorites_only) {
         fresh.push(newRule("favorite", "is"));
       }
@@ -460,6 +482,7 @@ export function useSmartPlaylistRulesForm(
     const artistExclude = isSeed ? [] : pickRuleValues("artist", "is_not");
     const albumInclude = isSeed ? [] : pickRuleValues("album", "is");
     const albumExclude = isSeed ? [] : pickRuleValues("album", "is_not");
+    const folderInclude = isSeed ? [] : pickRuleValues("folder", "is");
     const albumTypeInclude = pickRuleValues("album_type", "is");
     const albumTypeExclude = pickRuleValues("album_type", "is_not");
     const yr = yearRule();
@@ -478,6 +501,7 @@ export function useSmartPlaylistRulesForm(
       genre_ids: genreInclude.map((v) => v.id),
       artist_ids: artistInclude.map((v) => v.id),
       album_ids: albumInclude.map((v) => v.id),
+      folder_paths: folderInclude.flatMap((v) => (v.path ? [v.path] : [])),
       favorites_only: fav,
       excluded_genre_ids: genreExclude.map((v) => v.id),
       excluded_artist_ids: artistExclude.map((v) => v.id),
@@ -568,6 +592,7 @@ export function useSmartPlaylistRulesForm(
         "album_type",
         "artist",
         "album",
+        "folder",
         "favorite",
         "explicit",
         "year",

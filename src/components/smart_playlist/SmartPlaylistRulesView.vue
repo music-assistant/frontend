@@ -92,6 +92,7 @@
 
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
+import { folderValue } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Ban, Library, Sparkles } from "@lucide/vue";
@@ -138,6 +139,7 @@ const hasAnyInclude = computed(() => {
     !!r.genre_ids?.length ||
     !!r.artist_ids?.length ||
     !!r.album_ids?.length ||
+    !!r.folder_paths?.length ||
     !!r.album_types?.length ||
     !!r.favorites_only ||
     r.explicit !== undefined
@@ -211,6 +213,16 @@ const ruleRows = computed<RuleViewRow[]>(() => {
       label: $t("smart_playlist.field_album_is_not"),
       exclude: true,
       tags: exAlbumNames,
+    });
+  }
+
+  if (r.folder_paths?.length) {
+    rows.push({
+      key: "folder-is",
+      icon: fieldIcon("folder"),
+      label: $t("smart_playlist.field_folder_is"),
+      exclude: false,
+      tags: r.folder_paths.map((path) => folderValue(path).name),
     });
   }
 

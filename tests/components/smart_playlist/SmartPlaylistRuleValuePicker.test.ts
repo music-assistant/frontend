@@ -1,6 +1,10 @@
 import SmartPlaylistRuleValuePicker from "@/components/smart_playlist/SmartPlaylistRuleValuePicker.vue";
 import api from "@/plugins/api";
-import type { Artist } from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  type Artist,
+  type BrowseFolder,
+} from "@/plugins/api/interfaces";
 import { artist } from "../../fixtures/artist";
 import {
   enableAutoUnmount,
@@ -13,6 +17,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/plugins/api", () => ({
   default: {
     getLibraryArtists: vi.fn(async () => []),
+    browse: vi.fn(async () => []),
+    providers: {
+      "filesystem_local--music": {
+        domain: "filesystem_local",
+        instance_id: "filesystem_local--music",
+        name: "My Music",
+        available: true,
+      },
+      "spotify--x": {
+        domain: "spotify",
+        instance_id: "spotify--x",
+        name: "Spotify",
+        available: true,
+      },
+    },
   },
 }));
 
@@ -35,8 +54,9 @@ const ARTISTS = [
 ];
 
 const getLibraryArtists = vi.mocked(api.getLibraryArtists);
+const browse = vi.mocked(api.browse);
 
-const mountPicker = (source: "genre" | "artist" = "genre") =>
+const mountPicker = (source: "genre" | "artist" | "folder" = "genre") =>
   mount(SmartPlaylistRuleValuePicker, {
     props: {
       source,
@@ -118,6 +138,9 @@ const holdTheClosingAnimation = () => {
 // an open popover keeps document-level listeners, so tear it down even when an
 // assertion fails
 enableAutoUnmount(afterEach);
+
+const folder = (name: string, path: string) =>
+  ({ media_type: MediaType.FOLDER, name, path }) as BrowseFolder;
 
 describe("SmartPlaylistRuleValuePicker", () => {
   beforeEach(() => {
@@ -226,5 +249,43 @@ describe("SmartPlaylistRuleValuePicker", () => {
 
     expect(isSpinning(reopened)).toBe(false);
     expect(searchTerm(reopened)).toBe("");
+  });
+
+  it("browses filesystem sources and picks the open folder", async () => {
+    browse.mockImplementation(async (path?: string) =>
+      path === "filesystem_local--music://"
+        ? [
+            folder("..", "root"),
+            folder("Rock", "filesystem_local--music://Rock"),
+          ]
+        : [folder("Classic", "filesystem_local--music://Rock/Classic")],
+    );
+    const wrapper = mountPicker("folder");
+    const content = await openPopover(wrapper);
+
+    // only filesystem sources are offered
+    expect(content.textContent).toContain("My Music");
+    expect(content.textContent).not.toContain("Spotify");
+
+    rows(content)[0].click();
+    await flushPromises();
+    expect(browse).toHaveBeenLastCalledWith("filesystem_local--music://");
+    expect(content.textContent).not.toContain("..");
+
+    [...rows(content)].find((b) => b.textContent?.includes("Rock"))!.click();
+    await flushPromises();
+    expect(browse).toHaveBeenLastCalledWith("filesystem_local--music://Rock");
+    expect(content.textContent).toContain("Classic");
+
+    [...rows(content)]
+      .find((b) => b.textContent?.includes("Use this folder"))!
+      .click();
+    await flushPromises();
+
+    const [[picked]] = wrapper.emitted("add") as [
+      [{ path: string; name: string }],
+    ];
+    expect(picked.path).toBe("filesystem_local--music://Rock");
+    expect(picked.name).toBe("My Music/Rock");
   });
 });

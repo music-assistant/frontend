@@ -24,6 +24,31 @@
         class="mb-2 h-8 text-sm"
         @keydown.stop
       />
+      <div
+        v-if="source === 'folder' && folderPath !== null"
+        class="mb-1 flex items-center gap-1"
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          class="h-7 w-7 shrink-0"
+          :aria-label="$t('back')"
+          @click.stop="openFolder(parentPath(folderPath))"
+        >
+          <ChevronLeft class="h-3.5 w-3.5" />
+        </Button>
+        <span class="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+          {{ folderValue(folderPath).name }}
+        </span>
+        <Button
+          size="sm"
+          class="h-7 shrink-0 px-2 text-xs"
+          :disabled="selectedIds.includes(folderValue(folderPath).id)"
+          @click.stop="onPickFolder(folderPath)"
+        >
+          {{ $t("settings.folder_picker.use_folder") }}
+        </Button>
+      </div>
       <div class="max-h-56 overflow-y-auto flex flex-col min-h-[80px]">
         <div v-if="isSearching" class="flex justify-center py-6">
           <Spinner class="text-muted-foreground" />
@@ -31,13 +56,17 @@
         <template v-else-if="displayedOptions.length > 0">
           <button
             v-for="opt in displayedOptions"
-            :key="opt.id"
+            :key="opt.path ?? opt.id"
             type="button"
             class="flex items-center gap-1.5 py-1 px-1.5 text-sm rounded-sm hover:bg-accent text-left"
-            @click.stop="onPick(opt)"
+            @click.stop="opt.path ? openFolder(opt.path) : onPick(opt)"
           >
+            <Folder
+              v-if="opt.path"
+              class="h-4 w-4 flex-none text-muted-foreground"
+            />
             <div
-              v-if="opt.item"
+              v-else-if="opt.item"
               class="h-8 w-8 flex-none overflow-hidden rounded"
             >
               <MediaItemThumb :item="opt.item" :size="32" />
@@ -70,9 +99,19 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import api from "@/plugins/api";
-import type { Album, Artist, Genre } from "@/plugins/api/interfaces";
+import {
+  folderValue,
+  type RuleValue,
+} from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
+import {
+  MediaType,
+  type Album,
+  type Artist,
+  type BrowseFolder,
+  type Genre,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Plus } from "@lucide/vue";
+import { ChevronLeft, Folder, Plus } from "@lucide/vue";
 import { useDebounceFn } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
 
@@ -80,9 +119,11 @@ interface Option {
   id: number;
   name: string;
   item?: Artist | Album | Genre;
+  // folder source only: the browse path to open
+  path?: string;
 }
 
-type Source = "genre" | "artist" | "album" | "album_type";
+type Source = "genre" | "artist" | "album" | "album_type" | "folder";
 
 const props = defineProps<{
   source: Source;
@@ -92,7 +133,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  add: [value: Option];
+  add: [value: RuleValue];
 }>();
 
 const open = ref(false);
@@ -100,11 +141,15 @@ const query = ref("");
 const remoteResults = ref<Option[]>([]);
 const isSearching = ref(false);
 
-// Genre and album_type options are preloaded and filtered client-side; artist/album are
-// fetched remotely as the user types.
+// Genre and album_type options are preloaded and filtered client-side, folders are browsed;
+// artist/album are fetched remotely as the user types.
 const isRemote = computed(
-  () => props.source !== "genre" && props.source !== "album_type",
+  () => props.source === "artist" || props.source === "album",
 );
+
+// null lists the filesystem music sources, otherwise the browse path of the open folder
+const folderPath = ref<string | null>(null);
+const folderOptions = ref<Option[]>([]);
 
 const filteredPreloaded = computed(() => {
   const base = props.preloadedOptions.filter(
@@ -117,6 +162,11 @@ const filteredPreloaded = computed(() => {
 });
 
 const displayedOptions = computed(() => {
+  if (props.source === "folder") {
+    return folderOptions.value.filter((o) =>
+      o.name.toLowerCase().includes(query.value.toLowerCase()),
+    );
+  }
   if (!isRemote.value) return filteredPreloaded.value;
   return remoteResults.value.filter((o) => !props.selectedIds.includes(o.id));
 });
@@ -172,15 +222,58 @@ watch(open, (isOpen) => {
     query.value = "";
     remoteResults.value = [];
     isSearching.value = false;
+    if (props.source === "folder") openFolder(null);
   }
 });
+
+function parentPath(path: string): string | null {
+  const [provider, relPath] = path.split("://", 2);
+  if (!relPath) return null;
+  const parts = relPath.split("/").filter(Boolean);
+  parts.pop();
+  return `${provider}://${parts.join("/")}`;
+}
+
+async function openFolder(path: string | null) {
+  folderPath.value = path;
+  query.value = "";
+  if (path === null) {
+    folderOptions.value = Object.values(api.providers)
+      .filter((p) => p.domain.startsWith("filesystem_") && p.available)
+      .map((p) => ({ id: 0, name: p.name, path: `${p.instance_id}://` }));
+    return;
+  }
+  isSearching.value = true;
+  try {
+    const items = await api.browse(path);
+    if (folderPath.value !== path) return;
+    folderOptions.value = items
+      .filter(
+        (i): i is BrowseFolder =>
+          i.media_type === MediaType.FOLDER && i.name !== "..",
+      )
+      .map((i) => ({ id: 0, name: i.name, path: i.path }));
+  } catch {
+    folderOptions.value = [];
+  } finally {
+    if (folderPath.value === path) isSearching.value = false;
+  }
+}
 
 function onPick(opt: Option) {
   emit("add", { id: opt.id, name: opt.name });
   open.value = false;
 }
 
+function onPickFolder(path: string) {
+  emit("add", folderValue(path));
+  open.value = false;
+}
+
 const emptyStateText = computed(() => {
+  if (props.source === "folder" && !query.value) {
+    return $t("settings.folder_picker.no_subfolders");
+  }
   if (isRemote.value && query.value.length < 2) {
     return $t("smart_playlist.picker_empty_search", {
       label: props.addLabel.toLowerCase(),
