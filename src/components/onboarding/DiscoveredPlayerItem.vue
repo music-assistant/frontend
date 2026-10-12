@@ -37,7 +37,8 @@
         v-if="player.enabled && player.needsSetup && canEdit"
         variant="secondary"
         size="sm"
-        :title="$t('settings.player_needs_setup')"
+:aria-label="$t('settings.start_setup')"
+:title="$t('settings.player_needs_setup')"
         data-testid="onboarding-player-setup"
         @click="startSetup"
       >
