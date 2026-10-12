@@ -70,15 +70,7 @@
                 <template v-else>{{ item.owner }}</template>
               </span>
             </div>
-            <div class="flex min-w-0 items-center gap-2">
-              <ListMusic :size="16" class="flex-none" />
-              <span class="min-w-0 truncate">
-                <template v-for="(fact, index) in facts" :key="fact">
-                  <span v-if="index > 0" class="mx-1 opacity-50">·</span>
-                  {{ fact }}
-                </template>
-              </span>
-            </div>
+            <DetailHeroFacts :icon="ListMusic" :facts="facts" />
           </div>
 
           <!-- a phone has no room for every button beside play, so the row wraps there -->
@@ -130,6 +122,7 @@
 <script setup lang="ts">
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
+import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
@@ -139,7 +132,7 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
 import { isMusicAssistantPlaylist } from "@/helpers/playlist_access";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
-import { formatDuration } from "@/helpers/utils";
+import { formatTotalDuration } from "@/helpers/duration";
 import { api } from "@/plugins/api";
 import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type { Playlist } from "@/plugins/api/interfaces";
@@ -185,7 +178,7 @@ const isPhone = computed(() => isPhoneSizedScreen());
 
 const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
-// "Playlist · 32 tracks · 2:01:15", without whatever is not known yet
+// "Playlist · 32 tracks · 2 h 1 min", without whatever is not known yet
 const facts = computed(() => {
   const parts = [$t("playlist")];
   if (props.trackCount) {
@@ -193,7 +186,7 @@ const facts = computed(() => {
       $t("n_tracks", props.trackCount, { named: { count: props.trackCount } }),
     );
   }
-  if (props.duration) parts.push(formatDuration(props.duration));
+  if (props.duration) parts.push(formatTotalDuration(props.duration));
   return parts;
 });
 
