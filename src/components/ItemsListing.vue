@@ -2,7 +2,9 @@
 <template>
   <section v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)">
     <!-- eslint-disable vue/no-template-shadow -->
+    <!-- inset so the title lines up with the row artwork and the menu with the rows' menu -->
     <Toolbar
+      class="ps-[5px] pe-[7px]"
       :icon="icon"
       :icon-action="iconAction"
       :title="title"
