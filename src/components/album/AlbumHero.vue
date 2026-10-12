@@ -70,6 +70,7 @@
               class="album-hero__play"
               shrink-label
               :item="item"
+              :tracks-sort-by="tracksSortBy"
             />
             <DetailHeroButton
               :icon="Shuffle"
@@ -130,6 +131,8 @@ export interface Props {
   trackCount?: number;
   // their total playing time in seconds, once they are known
   duration?: number;
+  // the order the tracks are listed in below, which the play button follows
+  tracksSortBy?: string;
 }
 const props = defineProps<Props>();
 

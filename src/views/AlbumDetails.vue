@@ -6,6 +6,7 @@
       :blur-backdrop="backdrop.blurred"
       :track-count="albumTracks?.length"
       :duration="runningTime"
+      :tracks-sort-by="tracksListing?.[0]?.sortBy"
       @edit-rows="rowsEditorOpen = true"
     />
 
@@ -14,6 +15,7 @@
         <!-- the album's tracks -->
         <ItemsListing
           v-if="rowId === 'tracks'"
+          ref="tracksListing"
           itemtype="albumtracks"
           :parent-item="itemDetails"
           :show-provider="true"
@@ -167,6 +169,9 @@ const rowsEditorOpen = ref(false);
 // the album's own tracks, as the listing below last loaded them unfiltered:
 // what the hero counts and times
 const albumTracks = ref<Track[]>();
+// the tracks listing (inside the rows loop, so held as an array), whose sort
+// order the play button follows
+const tracksListing = ref<InstanceType<typeof ItemsListing>[]>();
 
 // the full album artist, loaded once the album is shown: its provider mappings
 // feed the "more from this artist" source picker, and its wide art backs the
