@@ -28,13 +28,24 @@ vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: authMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/eventbus", () => ({ eventbus: eventbusMock }));
+// the hero translates in its script, so the keys are what its labels read
+vi.mock("@/plugins/i18n", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/plugins/i18n")>()),
+  $t: (key: string) => key,
+}));
 
-// the header only has to hand through the actions the view appends to it
-vi.mock("@/components/InfoHeader.vue", () => ({
+// the hero only has to hand through the actions it puts in its toolbar
+vi.mock("@/components/details/DetailHero.vue", () => ({
   default: {
-    name: "InfoHeader",
-    template: '<div><slot name="append-actions" /></div>',
+    name: "DetailHero",
+    template: '<div><slot name="toolbar-append" /></div>',
   },
+}));
+vi.mock("@/components/details/DetailHeroFavorite.vue", () => ({
+  default: { name: "DetailHeroFavorite", template: "<div />" },
+}));
+vi.mock("@/components/details/RowsEditor.vue", () => ({
+  default: { name: "RowsEditor", template: "<div />" },
 }));
 // the rest of the page is irrelevant to the actions, so keep the stubs bare
 vi.mock("@/components/ItemsListing.vue", () => ({

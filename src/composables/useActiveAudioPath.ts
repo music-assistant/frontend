@@ -19,6 +19,8 @@ export interface ActiveAudioPath {
   crossfadeIntent?: CrossfadeMode;
   // whether this came from the active queue item or a live external source
   kind: "queue" | "source";
+  // the queue the audio plays through, absent for a live external source
+  queueId?: string;
 }
 
 /**
@@ -69,6 +71,7 @@ export function useActiveAudioPath() {
         streamDetails: queueStreamDetails.value,
         audioProcessing: queueAudioProcessing.value,
         crossfadeIntent: queueCrossfadeIntent.value,
+        queueId: store.activePlayerQueue?.queue_id,
       };
     }
     const source = sourceAudio.value;

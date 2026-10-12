@@ -1,5 +1,6 @@
 import { useShows } from "@/composables/ai-radio/useShows";
 import { canUseQueueDj } from "@/helpers/ai_radio_access";
+import { trackAIRadioCache } from "@/helpers/ai_radio_events";
 import api from "@/plugins/api";
 import type { AIRadioHost, AIRadioSection } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -59,6 +60,7 @@ async function loadHosts(): Promise<AIRadioHost[]> {
   try {
     const result = await api.sendCommand<AIRadioHost[]>("ai_radio/hosts/list");
     hosts.value = sortByName(result || []);
+    trackAIRadioCache("hosts_updated", loadHosts);
     return hosts.value;
   } finally {
     loadingHosts.value = false;
@@ -147,6 +149,7 @@ async function setQueueDj(
     { queue_id: queueId, host_id: hostId },
   );
   queueDjStatus.value = result || {};
+  trackAIRadioCache("queue_dj_updated", loadQueueDjStatus);
   return queueDjStatus.value;
 }
 
@@ -170,6 +173,7 @@ async function loadQueueDjStatus(): Promise<Record<string, string>> {
       "ai_radio/queue_dj/status",
     );
     queueDjStatus.value = result || {};
+    trackAIRadioCache("queue_dj_updated", loadQueueDjStatus);
     return queueDjStatus.value;
   } finally {
     loadingQueueDjStatus.value = false;

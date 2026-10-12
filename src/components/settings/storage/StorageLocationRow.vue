@@ -127,12 +127,20 @@ const canRemove = computed(
 // names all of them, also those the row leaves to a location inside this one
 const removeBlockedReason = computed(() => {
   const names = props.location.used_by;
-  return names.length > 0
+  return canRemove.value && names.length > 0
     ? t("settings.storage.remove_in_use", names.length, {
         named: { sources: formatNames(names, locale.value) },
       })
     : null;
 });
+// a tooltip is not seen on a phone, so the line under the path says why Remove is dimmed
+const usedByText = computed(
+  () =>
+    removeBlockedReason.value ??
+    (usedBy.value
+      ? t("settings.storage.used_by", { sources: usedBy.value })
+      : null),
+);
 </script>
 
 <template>
@@ -173,11 +181,12 @@ const removeBlockedReason = computed(() => {
         {{ location.error }}
       </p>
       <p
-        v-if="usedBy"
+        v-if="usedByText"
+        :id="blockedReasonId"
         class="text-muted-foreground m-0 text-sm leading-normal"
         data-testid="storage-used-by"
       >
-        {{ t("settings.storage.used_by", { sources: usedBy }) }}
+        {{ usedByText }}
       </p>
       <p
         v-if="readBy"
@@ -254,9 +263,6 @@ const removeBlockedReason = computed(() => {
           <Spinner v-if="pending === 'remove'" />
           <Trash2 v-else />
         </Button>
-        <span v-if="removeBlockedReason" :id="blockedReasonId" class="sr-only">
-          {{ removeBlockedReason }}
-        </span>
       </span>
     </ItemActions>
   </Item>

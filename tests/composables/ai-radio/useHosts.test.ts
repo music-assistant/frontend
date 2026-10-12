@@ -19,6 +19,8 @@ vi.mock("@/plugins/api", () => ({
   default: {
     players: {},
     sendCommand,
+    subscribe: vi.fn(() => () => {}),
+    state: { value: "initialized" },
   },
 }));
 
@@ -130,8 +132,5 @@ describe("useHosts queue dj prefetch", () => {
     expect(
       aiDj?.subItems?.find((item) => item.label === "ai_dj_off")?.selected,
     ).toBe(false);
-
-    // Let the menu's own refresh calls settle before the test ends.
-    await flushPromises();
   });
 });

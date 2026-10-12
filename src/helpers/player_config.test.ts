@@ -1,12 +1,24 @@
-import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
-import type { Player } from "@/plugins/api/interfaces";
+import {
+  getListedPlayerConfigs,
+  getPlayerName,
+  getPlayerSetupLabel,
+  playerBelongsToProviders,
+} from "@/helpers/player_config";
+import type { MusicAssistantApi } from "@/plugins/api";
+import { type Player, ProviderType } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { outputProtocol } from "../../tests/fixtures/outputProtocol";
 import { playerConfig } from "../../tests/fixtures/playerConfig";
+import { providerInstance } from "../../tests/fixtures/providerInstance";
 
 const { apiMock } = vi.hoisted(() => ({
-  // the players that registered, which is where a player without a name of
-  // its own gets the one its provider reports
-  apiMock: { players: {} as Record<string, Partial<Player>> },
+  apiMock: {
+    getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    // the players that registered, which is where a player without a name of
+    // its own gets the one its provider reports
+    players: {} as Record<string, Partial<Player>>,
+  },
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
@@ -70,5 +82,64 @@ describe("getPlayerSetupLabel", () => {
         has_setup_flow: false,
       }),
     ).toBeUndefined();
+  });
+});
+
+describe("getListedPlayerConfigs", () => {
+  it("lists every player config, disabled ones included", async () => {
+    const kitchen = playerConfig({ player_id: "kitchen", enabled: false });
+    const office = playerConfig({ player_id: "office" });
+    apiMock.getPlayerConfigs.mockResolvedValue([kitchen, office]);
+
+    expect(await getListedPlayerConfigs()).toEqual([kitchen, office]);
+    expect(apiMock.getPlayerConfigs).toHaveBeenCalledWith(
+      undefined,
+      false,
+      false,
+      true,
+    );
+  });
+});
+
+describe("playerBelongsToProviders", () => {
+  beforeEach(() => {
+    apiMock.players = {};
+    apiMock.getProvider.mockImplementation((id) =>
+      id.startsWith("airplay")
+        ? providerInstance({ domain: "airplay", type: ProviderType.PLAYER })
+        : providerInstance({ domain: "chromecast", type: ProviderType.PLAYER }),
+    );
+  });
+
+  it("claims the players of the given provider instances", () => {
+    const config = playerConfig({ provider: "chromecast--1" });
+
+    expect(playerBelongsToProviders(config, ["chromecast--1"])).toBe(true);
+    expect(playerBelongsToProviders(config, ["airplay--1"])).toBe(false);
+  });
+
+  it("claims the players that play through a protocol a given provider offers", () => {
+    apiMock.players = {
+      kitchen: {
+        output_protocols: [outputProtocol({ protocol_domain: "airplay" })],
+      },
+    };
+
+    expect(
+      playerBelongsToProviders(
+        playerConfig({ player_id: "kitchen", provider: "chromecast--1" }),
+        ["airplay--1"],
+      ),
+    ).toBe(true);
+  });
+
+  it("claims no player whose own provider is not loaded", () => {
+    apiMock.getProvider.mockReturnValue(undefined);
+
+    expect(
+      playerBelongsToProviders(playerConfig({ provider: "chromecast--1" }), [
+        "chromecast--1",
+      ]),
+    ).toBe(false);
   });
 });

@@ -291,7 +291,7 @@
     <!-- Guest Access Toggle Dialog -->
     <AlertDialog v-model:open="showGuestAccessDialog">
       <AlertDialogContent class="sm:max-w-[480px]">
-        <AlertDialogHeader class="text-left">
+        <AlertDialogHeader>
           <AlertDialogTitle>
             {{
               qrAvailable
@@ -308,7 +308,7 @@
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter class="flex-row justify-end">
-          <AlertDialogCancel class="mt-0">{{ $t("cancel") }}</AlertDialogCancel>
+          <AlertDialogCancel>{{ $t("cancel") }}</AlertDialogCancel>
           <Button :disabled="guestAccessSaving" @click="toggleGuestAccess">
             {{
               qrAvailable

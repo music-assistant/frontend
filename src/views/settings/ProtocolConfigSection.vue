@@ -1,108 +1,105 @@
 <template>
-  <div
+  <section
     v-if="protocolGeneralEntries.length > 0 || protocolPanels.length > 0"
-    class="category-section"
+    class="pt-7 first:pt-5"
   >
-    <div class="category-header">
-      <span class="category-icon">
-        <Antenna :size="16" />
-      </span>
-      <span class="category-title">
-        {{ $t("settings.category.protocol_settings") }}
-      </span>
+    <!-- Mirrors the category title in EditConfig.vue -->
+    <h4
+      class="mb-5 flex items-center gap-3 text-xs font-medium tracking-wider text-primary uppercase"
+    >
+      <span>{{ $t("settings.category.protocol_settings") }}</span>
+      <span class="h-px flex-1 bg-border"></span>
+    </h4>
+    <!-- Explain the multi-protocol setup when more than one is available -->
+    <div
+      v-if="protocolPanels.length > 1"
+      class="text-muted-foreground mb-4 rounded-md bg-muted/50 px-3 py-2 text-sm leading-relaxed"
+    >
+      {{ $t("settings.protocol_multi_info") }}
     </div>
-    <div class="category-content">
-      <!-- Explain the multi-protocol setup when more than one is available -->
-      <div
-        v-if="protocolPanels.length > 1"
-        class="text-muted-foreground mb-4 rounded-md bg-muted/50 px-3 py-2 text-sm leading-relaxed"
-      >
-        {{ $t("settings.protocol_multi_info") }}
-      </div>
-      <!-- General protocol settings, shown before the protocol list -->
-      <ConfigEntryRow
-        v-for="conf_entry of protocolGeneralEntries"
-        :key="conf_entry.key"
-        :conf-entry="conf_entry"
-        :show-password-values="showPasswordValues"
-        :disabled="isDisabled(conf_entry)"
-        @update:value="emit('update:value', conf_entry, $event)"
-        @toggle-password="emit('toggle-password')"
-        @action="emit('action', conf_entry)"
-      />
+    <!-- General protocol settings, shown before the protocol list -->
+    <ConfigEntryRow
+      v-for="conf_entry of protocolGeneralEntries"
+      :key="conf_entry.key"
+      :conf-entry="conf_entry"
+      :show-password-values="showPasswordValues"
+      :disabled="isDisabled(conf_entry)"
+      @update:value="emit('update:value', conf_entry, $event)"
+      @toggle-password="emit('toggle-password')"
+      @action="emit('action', conf_entry)"
+    />
 
-      <template v-if="protocolPanels.length > 0">
+    <template v-if="protocolPanels.length > 0">
+      <component
+        :is="hasMultipleProtocols ? Accordion : 'div'"
+        :type="hasMultipleProtocols ? 'single' : undefined"
+        :collapsible="hasMultipleProtocols || undefined"
+        class="space-y-2"
+      >
         <component
-          :is="hasMultipleProtocols ? Accordion : 'div'"
-          :type="hasMultipleProtocols ? 'single' : undefined"
-          :collapsible="hasMultipleProtocols || undefined"
-          class="space-y-2"
+          :is="hasMultipleProtocols ? AccordionItem : 'div'"
+          v-for="panel of protocolPanels"
+          :key="panel"
+          :value="hasMultipleProtocols ? panel : undefined"
+          class="rounded-[6px] border bg-card px-4 shadow-sm"
         >
           <component
-            :is="hasMultipleProtocols ? AccordionItem : 'div'"
-            v-for="panel of protocolPanels"
-            :key="panel"
-            :value="hasMultipleProtocols ? panel : undefined"
-            class="rounded-[6px] border bg-card px-4 shadow-sm"
+            :is="hasMultipleProtocols ? AccordionTrigger : 'div'"
+            :class="
+              hasMultipleProtocols
+                ? 'hover:no-underline'
+                : 'flex items-start py-4 text-left text-sm font-medium'
+            "
           >
-            <component
-              :is="hasMultipleProtocols ? AccordionTrigger : 'div'"
-              :class="
-                hasMultipleProtocols
-                  ? 'hover:no-underline'
-                  : 'flex items-start py-4 text-left text-sm font-medium'
-              "
-            >
-              <span class="flex items-center gap-2">
-                <ProviderIcon
-                  v-if="getProtocolDomain(panel)"
-                  :domain="getProtocolDomain(panel)!"
-                  :size="22"
-                />
-                <span>{{ getProtocolConfigureTitle(panel) }}</span>
-                <Badge
-                  v-if="getOutputProtocol(panel)?.is_native"
-                  variant="secondary"
-                >
-                  {{ $t("settings.protocol_native_badge") }}
-                </Badge>
-              </span>
-            </component>
-            <component
-              :is="hasMultipleProtocols ? AccordionContent : 'div'"
-              :class="['border-t pt-4', { 'pb-4': !hasMultipleProtocols }]"
-            >
-              <div
-                v-if="!isProtocolProviderAvailable(panel)"
-                class="protocol-empty-message"
-              >
-                {{ $t("settings.protocol_provider_unavailable") }}
-              </div>
-              <ConfigEntryRow
-                v-for="conf_entry of protocolEntriesForCategory(panel)"
-                :key="conf_entry.key"
-                :conf-entry="conf_entry"
-                :show-password-values="showPasswordValues"
-                :disabled="isProtocolEntryDisabled(panel, conf_entry)"
-                @update:value="emit('update:value', conf_entry, $event)"
-                @toggle-password="emit('toggle-password')"
-                @action="emit('action', conf_entry)"
+            <span class="flex items-center gap-2">
+              <ProviderIcon
+                v-if="getProtocolDomain(panel)"
+                :domain="getProtocolDomain(panel)!"
+                :size="22"
               />
-              <div
-                v-if="
-                  isProtocolProviderAvailable(panel) &&
-                  entriesForCategory(panel).length === 0
-                "
-                class="protocol-empty-message"
+              <span>{{ getProtocolConfigureTitle(panel) }}</span>
+              <Badge
+                v-if="getOutputProtocol(panel)?.is_native"
+                variant="secondary"
               >
-                {{ getProtocolEmptyMessage(panel) }}
-              </div>
-            </component>
+                {{ $t("settings.protocol_native_badge") }}
+              </Badge>
+            </span>
+          </component>
+          <component
+            :is="hasMultipleProtocols ? AccordionContent : 'div'"
+            :class="['border-t pt-4', { 'pb-4': !hasMultipleProtocols }]"
+          >
+            <div
+              v-if="!isProtocolProviderAvailable(panel)"
+              class="protocol-empty-message"
+            >
+              {{ $t("settings.protocol_provider_unavailable") }}
+            </div>
+            <ConfigEntryRow
+              v-for="conf_entry of protocolEntriesForCategory(panel)"
+              :key="conf_entry.key"
+              :conf-entry="conf_entry"
+              :show-password-values="showPasswordValues"
+              :disabled="isProtocolEntryDisabled(panel, conf_entry)"
+              @update:value="emit('update:value', conf_entry, $event)"
+              @toggle-password="emit('toggle-password')"
+              @action="emit('action', conf_entry)"
+            />
+            <div
+              v-if="
+                isProtocolProviderAvailable(panel) &&
+                entriesForCategory(panel).length === 0
+              "
+              class="protocol-empty-message"
+            >
+              {{ getProtocolEmptyMessage(panel) }}
+            </div>
           </component>
         </component>
-      </template>
-    </div>
-  </div>
+      </component>
+    </template>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -118,7 +115,6 @@ import { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import { api } from "@/plugins/api";
 import { ConfigValueType, OutputProtocol } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Antenna } from "@lucide/vue";
 import { computed } from "vue";
 import ConfigEntryRow from "./ConfigEntryRow.vue";
 
@@ -266,47 +262,6 @@ const getProtocolEmptyMessage = function (category: string): string {
 </script>
 
 <style scoped>
-/* Mirrors the config category card in EditConfig.vue */
-.category-section {
-  margin-bottom: 14px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  border-radius: 14px;
-  background: rgb(var(--v-theme-surface));
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-}
-
-.category-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 16px;
-  background: rgba(var(--v-theme-on-surface), 0.03);
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.category-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: rgba(var(--v-theme-primary), 0.12);
-  color: rgb(var(--v-theme-primary));
-  flex-shrink: 0;
-}
-
-.category-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.category-content {
-  padding: 14px 16px;
-}
-
 .protocol-empty-message {
   padding: 2px 0 6px;
   color: rgba(var(--v-theme-on-surface), 0.6);

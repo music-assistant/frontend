@@ -831,16 +831,15 @@ const loadGenres = async () => {
     .getLibraryGenres({ hide_empty: true })
     .catch(() => [] as Genre[]);
   if (!all.length) return;
-  let ranked = all;
-  try {
-    const counts = await api.getGenreMediaCounts(all.map((g) => g.item_id));
-    const total = (id: string) =>
-      Object.values(counts[id] ?? {}).reduce((sum, n) => sum + n, 0);
-    ranked = [...all].sort((a, b) => total(b.item_id) - total(a.item_id));
-  } catch {
-    // counts endpoint unavailable on older servers → keep server (name) order
-  }
-  genres.value = ranked.slice(0, 8);
+  // without counts the genres keep the server's (name) order
+  const counts = await api
+    .getGenreMediaCounts(all.map((g) => g.item_id))
+    .catch(() => ({}) as Record<string, Record<string, number>>);
+  const total = (id: string) =>
+    Object.values(counts[id] ?? {}).reduce((sum, n) => sum + n, 0);
+  genres.value = [...all]
+    .sort((a, b) => total(b.item_id) - total(a.item_id))
+    .slice(0, 8);
 };
 
 let unmounted = false;

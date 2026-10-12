@@ -45,6 +45,7 @@ const presetRegistryMock = vi.hoisted(() => ({
   names: undefined as Ref<Map<string, string>> | undefined,
 }));
 
+vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
   api: apiMock,

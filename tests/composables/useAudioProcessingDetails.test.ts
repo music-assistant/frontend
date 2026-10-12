@@ -68,6 +68,7 @@ const dependencies: AudioProcessingDetailsDependencies = {
   getIRName: (irId) => (irId ? irNames.get(irId) : undefined),
   getPlayerName: (player) => player.name,
   players: makePlayers(),
+  canOpenSettings: true,
 };
 
 beforeEach(() => {
@@ -75,6 +76,7 @@ beforeEach(() => {
   dependencies.locale = "en-US";
   dependencies.players = makePlayers();
   dependencies.getPlayerName = (player) => player.name;
+  dependencies.canOpenSettings = true;
   presetNames.clear();
   presetNames.set("preset-1", "Living room");
   irNames.clear();
@@ -414,6 +416,111 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     );
   });
 
+  it("links the DSP rows of a single-speaker output to its DSP settings", () => {
+    const display = buildDisplay({
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["airplay-kitchen"],
+          dsp: audioDSPDetails({
+            state: DSPState.ENABLED,
+            preset_id: "preset-1",
+          }),
+          output_format: makeFormat(),
+        }),
+      ],
+    });
+    const dspStages = display.outputPaths[0].stages.filter((stage) =>
+      stage.key.startsWith("dsp-"),
+    );
+
+    expect(dspStages).toHaveLength(2);
+    for (const stage of dspStages) {
+      expect(stage.link).toEqual({
+        to: { name: "editplayerdsp", params: { playerId: "kitchen" } },
+        label: "Open DSP settings",
+      });
+    }
+  });
+
+  it("does not link the DSP rows of an output to several speakers", () => {
+    const display = buildDisplay({
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["airplay-kitchen", "office"],
+          dsp: audioDSPDetails({
+            state: DSPState.ENABLED,
+            preset_id: "preset-1",
+          }),
+          output_format: makeFormat(),
+        }),
+      ],
+    });
+
+    expect(
+      display.outputPaths[0].stages.some((stage) => stage.link !== undefined),
+    ).toBe(false);
+  });
+
+  it.each([
+    ["the queue", "queue-1", true],
+    ["a live source", undefined, false],
+  ])("links normalization and crossfade for %s", (_label, queueId, linked) => {
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.DYNAMIC,
+          }),
+        }),
+      },
+      makeFormat(),
+      CrossfadeMode.STANDARD_CROSSFADE,
+      queueId,
+    );
+    const expected = linked
+      ? {
+          to: { name: "editqueue", params: { queueId: "queue-1" } },
+          label: "Open queue settings",
+        }
+      : undefined;
+
+    for (const key of ["normalization", "crossfade"]) {
+      expect(
+        display.processingStages.find((stage) => stage.key === key)?.link,
+      ).toEqual(expected);
+    }
+  });
+
+  it("links nothing for a user who may not open settings", () => {
+    dependencies.canOpenSettings = false;
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.DYNAMIC,
+          }),
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["airplay-kitchen"],
+            dsp: audioDSPDetails({ state: DSPState.ENABLED }),
+            output_format: makeFormat(),
+          }),
+        ],
+      },
+      makeFormat(),
+      CrossfadeMode.STANDARD_CROSSFADE,
+      "queue-1",
+    );
+    const stages = [
+      ...display.processingStages,
+      ...display.outputPaths[0].stages,
+    ];
+
+    expect(stages.some((stage) => stage.link !== undefined)).toBe(false);
+    expect(display.outputPaths[0].destination.title).toBe("Kitchen");
+  });
+
   it("resolves presets and protocol-parent destinations", () => {
     const chain: Partial<AudioProcessingChain> = {
       input_fidelity: audioFidelity({ quality: AudioQuality.LOSSLESS }),
@@ -546,6 +653,25 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       });
     },
   );
+
+  it("shows a reported voice-over whatever the crossfade intent", () => {
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          crossfade_mode: CrossfadeMode.VOICE_OVER,
+        }),
+      },
+      makeFormat(),
+      CrossfadeMode.DISABLED,
+    );
+
+    expect(
+      display.processingStages.find((stage) => stage.key === "crossfade"),
+    ).toMatchObject({
+      title: "Crossfade",
+      subtitleParts: ["Voice-over, music ducked under it"],
+    });
+  });
 
   it("prefers crossfade intent over the reported fallback mode", () => {
     const display = buildDisplay(
@@ -903,6 +1029,7 @@ function buildDisplay(
   chain: Partial<AudioProcessingChain> = {},
   format = makeFormat(),
   crossfadeIntent?: CrossfadeMode,
+  queueId?: string,
 ) {
   return buildAudioProcessingDetailsDisplay(
     audioProcessingChain(chain),
@@ -913,6 +1040,7 @@ function buildDisplay(
     }),
     dependencies,
     crossfadeIntent,
+    queueId,
   );
 }
 

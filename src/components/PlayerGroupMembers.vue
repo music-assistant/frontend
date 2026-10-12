@@ -186,11 +186,7 @@ function isRequiredMember(player: Player) {
 }
 
 function canGroupWithPlayer(player: Player) {
-  return (
-    props.player.can_group_with.includes(player.player_id) ||
-    // Providers remain supported until the server always supplies player IDs.
-    props.player.can_group_with.includes(player.provider)
-  );
+  return props.player.can_group_with.includes(player.player_id);
 }
 
 function matchesFilter(player: Player) {

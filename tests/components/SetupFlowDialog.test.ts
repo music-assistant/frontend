@@ -199,6 +199,18 @@ describe("SetupFlowDialog", () => {
     );
   });
 
+  it("heads a reconfigure flow with the name it was given when the source is not loaded", async () => {
+    const wrapper = await mountHeader({
+      kind: "reconfigure",
+      instanceId: "spotify--gone",
+      name: "My Spotify",
+    });
+
+    expect(headerText(wrapper, "dialog-title-stub")).toBe(
+      "settings.setup_flow.reconfigure_title:My Spotify",
+    );
+  });
+
   it("puts the step's own title under the flow title", async () => {
     const wrapper = await mountHeader(
       { kind: "player", playerId: "player-1" },

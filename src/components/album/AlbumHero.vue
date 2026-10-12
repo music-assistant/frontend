@@ -70,9 +70,9 @@
               class="album-hero__play"
               shrink-label
               :item="item"
+              :tracks-sort-by="tracksSortBy"
             />
             <DetailHeroButton
-              v-if="api.supportsPlayMediaShuffle"
               :icon="Shuffle"
               :label="$t('shuffle')"
               :disabled="!store.activePlayer"
@@ -131,6 +131,8 @@ export interface Props {
   trackCount?: number;
   // their total playing time in seconds, once they are known
   duration?: number;
+  // the order the tracks are listed in below, which the play button follows
+  tracksSortBy?: string;
 }
 const props = defineProps<Props>();
 

@@ -118,6 +118,8 @@ export type SetupFlowDialogEvent =
   | {
       kind: "reconfigure";
       instanceId: string;
+      // heads the dialog when the instance is not loaded
+      name?: string;
       onFlowEnded?: SetupFlowEndedCallback;
     }
   | { kind: "player"; playerId: string; onFlowEnded?: SetupFlowEndedCallback };

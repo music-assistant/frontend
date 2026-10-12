@@ -10,7 +10,6 @@ export interface SettingsSection {
   route: RouteLocationRaw;
   // only a role granting this scope sees the section
   requiresScope?: Scope;
-  minServerVersion?: string;
 }
 
 // the sections of the settings overview, in display order
@@ -71,7 +70,6 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     color: "blue",
     route: { name: "providersettings", query: { types: "audio_analysis" } },
     requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
-    minServerVersion: "2.9.0",
   },
   {
     name: "profile",
@@ -127,19 +125,14 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
 ];
 
 /**
- * The settings sections the current user may open on the connected server.
+ * The settings sections the current user may open.
  *
  * @param hasScope - Whether the role of the current user grants the given scope.
- * @param serverVersionAtLeast - Whether the connected server runs at least the given version.
  */
 export function availableSettingsSections(
   hasScope: (scope: Scope) => boolean,
-  serverVersionAtLeast: (version: string) => boolean,
 ): SettingsSection[] {
   return SETTINGS_SECTIONS.filter(
-    (section) =>
-      (!section.requiresScope || hasScope(section.requiresScope)) &&
-      (!section.minServerVersion ||
-        serverVersionAtLeast(section.minServerVersion)),
+    (section) => !section.requiresScope || hasScope(section.requiresScope),
   );
 }

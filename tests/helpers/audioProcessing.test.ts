@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { reactive } from "vue";
 import {
   areDSPConfigsEqual,
+  areDSPSettingsEqual,
   sanitizeDSPPresetConfig,
 } from "@/helpers/audioProcessing";
 import { type DSPConfig, DSPFilterType } from "@/plugins/api/interfaces";
@@ -58,6 +59,26 @@ describe("sanitizeDSPPresetConfig", () => {
       expect(areDSPConfigsEqual(left, right)).toBe(true);
       right.filters[1].enabled = false;
       expect(areDSPConfigsEqual(left, right)).toBe(false);
+    });
+  });
+
+  describe("areDSPSettingsEqual", () => {
+    it("ignores the DSP on/off state and preset selection", () => {
+      const left: DSPConfig = {
+        enabled: true,
+        filters: [{ type: DSPFilterType.GAIN, enabled: true, gain: 2 }],
+        input_gain: 0,
+        output_gain: 0,
+        preset_id: "warm",
+      };
+      const right = structuredClone(left);
+      right.enabled = false;
+      right.preset_id = null;
+
+      expect(areDSPSettingsEqual(left, right)).toBe(true);
+      expect(areDSPConfigsEqual(left, right)).toBe(false);
+      right.input_gain = -3;
+      expect(areDSPSettingsEqual(left, right)).toBe(false);
     });
   });
 });

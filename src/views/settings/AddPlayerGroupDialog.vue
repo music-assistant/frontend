@@ -3,7 +3,7 @@
     <DialogContent
       class="flex h-[60vh] max-h-[60vh] max-w-[800px] flex-col gap-0 p-0"
     >
-      <DialogHeader class="border-b px-5 py-4 pr-12 text-left">
+      <DialogHeader class="border-b px-5 py-4 pr-12">
         <DialogTitle>{{ $t("settings.add_group_player") }}</DialogTitle>
       </DialogHeader>
 
@@ -89,7 +89,7 @@ import { ProviderFeature } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ChevronRight, Users } from "@lucide/vue";
-import { computed, watch } from "vue";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 const { show = false } = defineProps<{
@@ -107,13 +107,7 @@ const availableProviders = computed(() => {
     .filter(
       (x) =>
         x.available &&
-        (x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER) ||
-          // for backwards compatibility - if provider doesn't explicitly support
-          // group players, but does support syncing players,
-          // allow it as well (since that was the old way of doing syncgroup players)
-          // - we can remove this fallback after a few versions
-          (!api.getProvider("sync_group") &&
-            x.supported_features.includes(ProviderFeature.SYNC_PLAYERS))),
+        x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER),
     )
     .map((x) => ({
       instance_id: x.instance_id,
@@ -139,10 +133,4 @@ const handleOpenChange = (open: boolean) => {
 const close = function () {
   emit("update:show", false);
 };
-
-watch(
-  () => api.providers,
-  () => {},
-  { immediate: true },
-);
 </script>

@@ -29,9 +29,6 @@ const {
   emitEvent,
   hasScope,
   hostsRef,
-  loadHosts,
-  loadQueueDjStatus,
-  loadStatus,
   openAnnouncementDialog,
   queueDjStatusRef,
   togglePlayerPower,
@@ -46,9 +43,6 @@ const {
   emitEvent: vi.fn(),
   hasScope: vi.fn<(scope: Scope) => boolean>(),
   hostsRef: { value: [] as AIRadioHost[] },
-  loadHosts: vi.fn().mockResolvedValue(undefined),
-  loadQueueDjStatus: vi.fn().mockResolvedValue(undefined),
-  loadStatus: vi.fn().mockResolvedValue(undefined),
   openAnnouncementDialog: vi.fn(),
   queueDjStatusRef: { value: {} as Record<string, string> },
   togglePlayerPower: vi.fn(),
@@ -121,8 +115,6 @@ vi.mock("@/composables/ai-radio/useHosts", () => ({
     hosts: hostsRef,
     queueDjStatus: queueDjStatusRef,
     aiRadioAvailable: aiRadioAvailableRef,
-    loadHosts,
-    loadQueueDjStatus,
     setQueueDj,
   }),
 }));
@@ -131,7 +123,6 @@ vi.mock("@/composables/ai-radio/useShows", () => ({
   useShows: () => ({
     sessions: sessionsRef,
     shows: showsRef,
-    loadStatus,
   }),
 }));
 
@@ -704,35 +695,6 @@ describe("getPlayerMenuItems ai dj", () => {
     expect(labels.indexOf("ai_dj")).toBeGreaterThan(
       labels.indexOf("select_source"),
     );
-  });
-
-  it("refreshes hosts, dj status and session status when the ai_dj entry is built", () => {
-    aiRadioAvailableRef.value = true;
-    hostsRef.value = [makeHost()];
-
-    getPlayerMenuItems(makePlayer(), makeQueue(), { context: "queue" });
-
-    expect(loadHosts).toHaveBeenCalled();
-    expect(loadQueueDjStatus).toHaveBeenCalled();
-    expect(loadStatus).toHaveBeenCalled();
-  });
-
-  it("swallows a failed background refresh instead of rejecting unhandled", async () => {
-    aiRadioAvailableRef.value = true;
-    hostsRef.value = [makeHost()];
-    loadHosts.mockRejectedValueOnce(new Error("Connection lost"));
-    loadQueueDjStatus.mockRejectedValueOnce(new Error("Connection lost"));
-    loadStatus.mockRejectedValueOnce(new Error("Connection lost"));
-
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
-      context: "queue",
-    });
-
-    // The rejections settle on a microtask; flushing here is what would
-    // surface them as unhandled if the call sites didn't catch.
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(menuItems.map((item) => item.label)).toContain("ai_dj");
   });
 });
 

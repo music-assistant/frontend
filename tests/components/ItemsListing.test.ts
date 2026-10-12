@@ -1,14 +1,18 @@
 import ItemsListing from "@/components/ItemsListing.vue";
+import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
-import { defineComponent, h } from "vue";
+import { defineComponent, h, type SetupContext } from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   EventType,
   MediaType,
+  SortDirection,
+  SortField,
   type Album,
   type EventMessage,
   type ProviderInstance,
   type ProviderManifest,
+  type SortOptionInfo,
   type Track,
 } from "@/plugins/api/interfaces";
 import {
@@ -45,6 +49,8 @@ const events = vi.hoisted(() => {
 const mockGetLibraryGenres = vi.hoisted(() =>
   vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
 );
+const mockGetLibrarySortOptions = vi.hoisted(() => vi.fn());
+const mockToastError = vi.hoisted(() => vi.fn());
 const mockSubscribeMulti = vi.hoisted(() => vi.fn());
 const mockSubscribe = vi.hoisted(() => vi.fn());
 
@@ -53,6 +59,7 @@ vi.mock("@/plugins/api", () => {
     providers: {},
     providerManifests: {},
     getLibraryGenres: mockGetLibraryGenres,
+    getLibrarySortOptions: mockGetLibrarySortOptions,
     subscribe_multi: mockSubscribeMulti,
     subscribe: mockSubscribe,
   };
@@ -129,7 +136,9 @@ vi.mock("vue-router", () => ({
   }),
 }));
 
-vi.mock("vue-sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock("vue-sonner", () => ({
+  toast: { error: mockToastError, success: vi.fn() },
+}));
 
 const stubComponent = vi.hoisted(() => (name: string) => ({
   default: { name, template: "<div />" },
@@ -145,7 +154,10 @@ vi.mock("@/components/Toolbar.vue", () => ({
       '<div class="toolbar-stub"><slot name="title" /><slot name="append" /></div>',
   },
 }));
-vi.mock("@/components/Container.vue", () => stubComponent("Container"));
+// renders what it holds, so the grid inside it can be looked at
+vi.mock("@/components/Container.vue", () => ({
+  default: { name: "Container", template: "<div><slot /></div>" },
+}));
 vi.mock("@/components/icons/GenreIcon.vue", () => stubComponent("GenreIcon"));
 vi.mock("@/components/skeletons/ListViewSkeleton.vue", () =>
   stubComponent("ListViewSkeleton"),
@@ -179,6 +191,7 @@ function clearSelectionHandlers() {
 
 function mountListingRaw(
   props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+  stubs: Record<string, unknown> = {},
 ) {
   return mount(ItemsListing, {
     attachTo: document.body,
@@ -205,6 +218,14 @@ function mountListingRaw(
         TabsList: true,
         TabsTrigger: true,
         "v-divider": true,
+        // the grid's layout, as plain boxes that keep their column class
+        VInfiniteScroll: { template: "<div><slot /></div>" },
+        VRow: { template: "<div><slot /></div>" },
+        VCol: { template: '<div class="grid-col"><slot /></div>' },
+        VVirtualScroll: true,
+        VSnackbar: true,
+        VBtn: true,
+        ...stubs,
       },
     },
   });
@@ -413,7 +434,9 @@ describe("ItemsListing per-page search", () => {
               return () => h("div");
             },
           }),
-          { global: { stubs: { "v-divider": true } } },
+          // stubs are global in test-utils, so a mount after the listing's
+          // sets the ones its re-renders get: keep its snackbar stubbed
+          { global: { stubs: { "v-divider": true, VSnackbar: true } } },
         );
       if (backFirst) mountBack();
       const listing = mountListingRaw({
@@ -662,6 +685,242 @@ describe("ItemsListing select all", () => {
     await flushPromises();
 
     expect(selection(listing)).toHaveLength(1);
+  });
+});
+
+describe("ItemsListing failed load", () => {
+  type LoadStatus = "ok" | "empty" | "loading" | "error";
+  type LoadItems = NonNullable<
+    InstanceType<typeof ItemsListing>["$props"]["loadItems"]
+  >;
+  type OnLoad = (options: {
+    side: string;
+    done: (status: LoadStatus) => void;
+  }) => Promise<void>;
+
+  // the infinite scroller as a box that hands out its load callback and shows its
+  // error slot, so a test can stand in for it loading the next page
+  const InfiniteScrollStub = {
+    name: "VInfiniteScroll",
+    props: { onLoad: { type: Function, default: undefined } },
+    setup(props: { onLoad?: OnLoad }, { slots }: SetupContext) {
+      return () =>
+        h("div", [
+          slots.default?.(),
+          slots.error?.({
+            side: "end",
+            props: {
+              onClick: () => props.onLoad?.({ side: "end", done: () => {} }),
+            },
+          }),
+        ]);
+    },
+  };
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
+    store.prevState = undefined;
+    store.currentUser = undefined;
+  });
+
+  function mountFailingListing(loadItems: LoadItems) {
+    return mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.apple_music",
+        showGenreFilter: false,
+        loadPagedData: undefined,
+        loadItems,
+      },
+      { VInfiniteScroll: InfiniteScrollStub },
+    );
+  }
+
+  async function scrollerLoads(listing: ReturnType<typeof mountListingRaw>) {
+    const done = vi.fn();
+    const onLoad = listing
+      .findComponent({ name: "VInfiniteScroll" })
+      .props("onLoad") as OnLoad;
+    await onLoad({ side: "end", done });
+    await flushPromises();
+    return done;
+  }
+
+  function retryButton(listing: ReturnType<typeof mountListingRaw>) {
+    return listing
+      .findAll("button")
+      .find((button) => button.text() === "settings.retry");
+  }
+
+  it("does not load again on its own after a load failed", async () => {
+    const loadItems = vi
+      .fn<LoadItems>()
+      .mockRejectedValue(new Error("rate limited"));
+    const listing = mountFailingListing(loadItems);
+    await flushPromises();
+
+    // a new scroller loads as soon as it shows up, which is what kept retrying
+    const done = await scrollerLoads(listing);
+    await scrollerLoads(listing);
+    await scrollerLoads(listing);
+
+    expect(loadItems).toHaveBeenCalledTimes(1);
+    expect(done).toHaveBeenCalledWith("error");
+  });
+
+  it("loads from the start again when the user retries", async () => {
+    const loadItems = vi
+      .fn<LoadItems>()
+      .mockRejectedValueOnce(new Error("rate limited"))
+      .mockResolvedValue([track()]);
+    const listing = mountFailingListing(loadItems);
+    await flushPromises();
+
+    await retryButton(listing)!.trigger("click");
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenCalledTimes(2);
+    expect(loadItems.mock.calls[1][0]).toMatchObject({ offset: 0 });
+    // loaded, so the scroller finds the end instead of the failure
+    expect(await scrollerLoads(listing)).toHaveBeenCalledWith("empty");
+  });
+
+  it("retries the page that failed, not the one after it", async () => {
+    const offsets: number[] = [];
+    let fail = false;
+    const loadPagedData = vi.fn(async (params: { offset: number }) => {
+      offsets.push(params.offset);
+      if (fail) {
+        fail = false;
+        throw new Error("rate limited");
+      }
+      return [track(), track()];
+    });
+    const listing = mountListingRaw(
+      { showGenreFilter: false, loadPagedData, limit: 2 },
+      { VInfiniteScroll: InfiniteScrollStub },
+    );
+    await flushPromises();
+
+    fail = true;
+    expect(await scrollerLoads(listing)).toHaveBeenCalledWith("error");
+    await retryButton(listing)!.trigger("click");
+    await flushPromises();
+
+    expect(offsets).toEqual([0, 2, 2]);
+  });
+});
+
+describe("ItemsListing cover size", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    store.prevState = undefined;
+    store.currentUser = undefined;
+    mockSetItemsListingPreference.mockClear();
+  });
+
+  afterEach(() => {
+    store.currentUser = undefined;
+  });
+
+  /** Signs in a user who saved these settings for the albums grid. */
+  function signInWithSavedGrid(settings: Record<string, unknown>) {
+    store.currentUser = user({
+      preferences: { "itemsListing.libraryalbums.albums": settings },
+    });
+  }
+
+  /** An albums grid, whose window width alone would give it two columns. */
+  async function mountGrid() {
+    const listing = mountListingRaw({
+      itemtype: "albums",
+      path: "libraryalbums",
+      showGenreFilter: false,
+      loadPagedData: vi.fn().mockResolvedValue([album()]),
+    });
+    await flushPromises();
+    return listing;
+  }
+
+  /** The column class the grid's first cover is laid out with. */
+  function columns(listing: ReturnType<typeof mountListingRaw>) {
+    return listing
+      .get(".grid-col")
+      .classes()
+      .find((name) => /^col-\d+$/.test(name));
+  }
+
+  type SliderItem = {
+    label?: string;
+    hide?: boolean;
+    componentProps?: {
+      size: number;
+      onChange: (size: number) => void;
+      onCommit: (size: number) => void;
+    };
+  };
+
+  function slider(listing: ReturnType<typeof mountListingRaw>) {
+    const items = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as { subItems?: SliderItem[] }[];
+    return items
+      .flatMap((item) => item.subItems ?? [])
+      .find((item) => item.label === "grid_size");
+  }
+
+  it("opens at the size the listing was left at", async () => {
+    signInWithSavedGrid({ viewMode: "panel", gridSize: -2 });
+    const listing = await mountGrid();
+
+    expect(slider(listing)?.componentProps?.size).toBe(-2);
+    expect(columns(listing)).toBe("col-4");
+  });
+
+  it("follows the slider while it moves, and saves only once let go", async () => {
+    signInWithSavedGrid({ viewMode: "panel" });
+    const listing = await mountGrid();
+    expect(columns(listing)).toBe("col-2");
+
+    slider(listing)?.componentProps?.onChange(-3);
+    await flushPromises();
+
+    expect(columns(listing)).toBe("col-5");
+    expect(mockSetItemsListingPreference).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      "gridSize",
+      expect.anything(),
+    );
+
+    slider(listing)?.componentProps?.onCommit(-3);
+    await flushPromises();
+
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "libraryalbums",
+      "albums",
+      "gridSize",
+      -3,
+    );
+  });
+
+  it("leaves the slider out of the list view", async () => {
+    signInWithSavedGrid({ viewMode: "list" });
+    const listing = await mountGrid();
+
+    expect(slider(listing)?.hide).toBe(true);
   });
 });
 
@@ -1444,3 +1703,252 @@ function confirmationRequest() {
   ][];
   return calls.find(([event]) => event === "deleteConfirmationDialog")?.[1];
 }
+
+describe("ItemsListing server sort options", () => {
+  const sortOptions: SortOptionInfo[] = [
+    {
+      field: SortField.TIMESTAMP_ADDED,
+      supports_direction: true,
+      default_direction: SortDirection.DESC,
+      label_key: "timestamp_added",
+    },
+    {
+      field: SortField.NAME,
+      supports_direction: true,
+      default_direction: SortDirection.ASC,
+      label_key: "name",
+    },
+    {
+      field: SortField.PLAY_COUNT,
+      supports_direction: true,
+      default_direction: SortDirection.DESC,
+      label_key: "play_count",
+    },
+    {
+      field: SortField.DURATION,
+      supports_direction: true,
+      default_direction: SortDirection.ASC,
+      label_key: "duration",
+    },
+    {
+      field: SortField.RANDOM,
+      supports_direction: false,
+      default_direction: null,
+      label_key: "random",
+    },
+  ];
+
+  beforeEach(() => {
+    mockGetLibraryGenres.mockReset().mockResolvedValue([]);
+    mockGetLibrarySortOptions.mockReset().mockResolvedValue(sortOptions);
+    mockToastError.mockReset();
+    mockSubscribeMulti.mockReset().mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset().mockImplementation(events.subscribe);
+    mockSetItemsListingPreference.mockReset();
+    store.currentUser = undefined;
+    store.prevState = undefined;
+    store.mobileLayout = false;
+  });
+
+  it("loads server options, migrates saved sorts, and toggles a quick sort direction", async () => {
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.librarytracks.tracks": { sortBy: "name_desc" },
+      },
+    });
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "tracks",
+      path: "librarytracks",
+      sortMediaType: MediaType.TRACK,
+      loadPagedData,
+      showGenreFilter: false,
+    });
+    await flushPromises();
+
+    expect(mockGetLibrarySortOptions).toHaveBeenCalledWith(MediaType.TRACK);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "name:desc" }),
+    );
+
+    const sortMenu = listing.findComponent(LibrarySortControls);
+    await sortMenu.find("button").trigger("click");
+    await flushPromises();
+    expect(
+      document.body.querySelectorAll('[role="menuitemradio"]'),
+    ).toHaveLength(sortOptions.length + 2);
+    expect(
+      document.body.querySelectorAll(
+        '[role="menuitemradio"][aria-checked="true"]',
+      ),
+    ).toHaveLength(2);
+    expect(
+      document.body.querySelectorAll(
+        '[role="menuitemradio"][aria-checked="true"] svg.lucide-check',
+      ),
+    ).toHaveLength(2);
+
+    const playCountChip = listing
+      .findAll("button")
+      .find((button) => button.text().includes("sort.play_count"));
+    expect(playCountChip).toBeDefined();
+    await playCountChip?.trigger("click");
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "play_count:desc" }),
+    );
+
+    await playCountChip?.trigger("click");
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "play_count:asc" }),
+    );
+  });
+
+  it("keeps the desktop sort chip row stable while options load", async () => {
+    let resolveSortOptions!: (options: SortOptionInfo[]) => void;
+    mockGetLibrarySortOptions.mockReturnValue(
+      new Promise<SortOptionInfo[]>((resolve) => {
+        resolveSortOptions = resolve;
+      }),
+    );
+
+    const listing = mountListingRaw({
+      sortMediaType: MediaType.TRACK,
+      showGenreFilter: false,
+    });
+    const chipsRow = listing.find(".listing-sort-chips-row");
+
+    expect(chipsRow.exists()).toBe(true);
+    expect(chipsRow.classes()).toContain("h-12");
+    expect(chipsRow.findComponent(LibrarySortControls).exists()).toBe(false);
+
+    resolveSortOptions(sortOptions);
+    await flushPromises();
+
+    expect(chipsRow.exists()).toBe(true);
+    expect(chipsRow.findComponent(LibrarySortControls).props("mode")).toBe(
+      "chips",
+    );
+  });
+
+  it("uses one toast ID when shared genre sort options fail in multiple listings", async () => {
+    mockGetLibrarySortOptions.mockRejectedValue(new Error("request failed"));
+
+    const listings = ["music", "podcasts", "audiobooks"].map((contentType) =>
+      mountListingRaw({
+        itemtype: "genres",
+        path: `librarygenres.${contentType}`,
+        sortMediaType: MediaType.GENRE,
+        showGenreFilter: false,
+      }),
+    );
+    await flushPromises();
+
+    expect(mockToastError).toHaveBeenCalledTimes(3);
+    for (const call of mockToastError.mock.calls) {
+      expect(call).toEqual([
+        "settings.error_loading_sort_options",
+        { id: "library-sort-options-error" },
+      ]);
+    }
+    listings.forEach((listing) => listing.unmount());
+  });
+
+  it("preserves ascending semantics for unsuffixed legacy sort preferences", async () => {
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.librarytracks.tracks": { sortBy: "timestamp_added" },
+      },
+    });
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+
+    mountListingRaw({
+      itemtype: "tracks",
+      path: "librarytracks",
+      sortMediaType: MediaType.TRACK,
+      loadPagedData,
+      showGenreFilter: false,
+    });
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "timestamp_added:asc" }),
+    );
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "librarytracks",
+      "tracks",
+      "sortBy",
+      "timestamp_added:asc",
+    );
+  });
+
+  it("excludes sort fields not shared by audiobook author tabs", async () => {
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "audiobooks",
+      path: "libraryaudiobooks",
+      sortMediaType: MediaType.AUDIOBOOK,
+      sortOptionExcludeFields: [SortField.DURATION],
+      loadPagedData,
+      showGenreFilter: false,
+    });
+    await flushPromises();
+
+    const controls = listing.findComponent(LibrarySortControls);
+    const options = controls.props("options") as SortOptionInfo[];
+    expect(options.map((option) => option.field)).not.toContain(
+      SortField.DURATION,
+    );
+  });
+
+  it("reloads with the normalized sort when options change during a request", async () => {
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.libraryaudiobooks.audiobooks": { sortBy: "duration:asc" },
+      },
+    });
+    let resolveFirstPage!: (items: Track[]) => void;
+    const firstPage = new Promise<Track[]>((resolve) => {
+      resolveFirstPage = resolve;
+    });
+    const loadPagedData = vi
+      .fn()
+      .mockReturnValueOnce(firstPage)
+      .mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "audiobooks",
+      path: "libraryaudiobooks",
+      sortMediaType: MediaType.AUDIOBOOK,
+      loadPagedData,
+      showGenreFilter: false,
+    });
+
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+    expect(loadPagedData).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        sort_field: SortField.DURATION,
+        sort_direction: SortDirection.ASC,
+      }),
+    );
+
+    await listing.setProps({
+      sortOptionExcludeFields: [SortField.DURATION],
+    });
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+
+    resolveFirstPage([]);
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        sort_field: SortField.TIMESTAMP_ADDED,
+        sort_direction: SortDirection.DESC,
+      }),
+    );
+  });
+});

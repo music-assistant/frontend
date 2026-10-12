@@ -57,9 +57,6 @@ vi.mock("@/plugins/api", () => {
     players: {},
     providers: {},
     queues: {},
-    // schema 31 and up address images by opaque id, which decides how the
-    // background's artwork url gets built
-    serverInfo: { value: { schema_version: 31 } },
     sendCommand: vi.fn().mockResolvedValue(null),
     subscribe: vi.fn(events.subscribe),
     getPlayerQueueItems: vi.fn().mockResolvedValue([]),

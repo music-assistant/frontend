@@ -33,11 +33,15 @@ async function mockApiAndAuth(
     ai_radio: aiRadioProvider,
   });
   const sendCommand = vi.fn().mockResolvedValue({});
+  // a successful load registers its cache for provider events, which reads these
+  const api = {
+    providers,
+    sendCommand,
+    subscribe: vi.fn(() => () => {}),
+    state: { value: "initialized" },
+  };
 
-  vi.doMock("@/plugins/api", () => ({
-    api: { providers, sendCommand },
-    default: { providers, sendCommand },
-  }));
+  vi.doMock("@/plugins/api", () => ({ api, default: api }));
   const hasScope = scopeChecker(scopes);
   vi.doMock("@/plugins/auth", () => ({
     authManager: { guestSessionKind: () => guestSessionKind, hasScope },
