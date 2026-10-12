@@ -157,9 +157,12 @@ const startSetup = function () {
 // the field closing takes the focus with it, so it goes back to the pencil
 // rather than to the dialog
 const closeRename = async function () {
+  const shouldRestoreFocus =
+    document.activeElement === renameInput.value?.$el;
   renaming.value = false;
   await nextTick();
-  (renameButton.value?.$el as HTMLElement | undefined)?.focus();
+  if (shouldRestoreFocus)
+    (renameButton.value?.$el as HTMLElement | undefined)?.focus();
 };
 
 const cancelRename = function () {
