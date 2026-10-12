@@ -62,6 +62,7 @@ describe("useShows startShow", () => {
 
     expect(playMedia).toHaveBeenCalledWith(showUri("show-1"), undefined, {
       queue_id: "kitchen",
+      suppressGlobalError: true,
     });
   });
 
@@ -72,6 +73,7 @@ describe("useShows startShow", () => {
 
     expect(playMedia).toHaveBeenCalledWith(showUri("show-1"), undefined, {
       queue_id: "livingroom",
+      suppressGlobalError: true,
     });
   });
 
@@ -80,6 +82,7 @@ describe("useShows startShow", () => {
 
     expect(playMedia).toHaveBeenCalledWith(showUri("show-1"), undefined, {
       queue_id: "hall",
+      suppressGlobalError: true,
     });
   });
 

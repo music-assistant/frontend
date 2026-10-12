@@ -111,6 +111,7 @@ describe("ShowCard play/stop", () => {
 
     expect(playMedia).toHaveBeenCalledWith(showUri(show.id), undefined, {
       queue_id: "kitchen",
+      suppressGlobalError: true,
     });
   });
 
@@ -123,6 +124,7 @@ describe("ShowCard play/stop", () => {
 
     expect(playMedia).toHaveBeenCalledWith(showUri(show.id), undefined, {
       queue_id: "bedroom",
+      suppressGlobalError: true,
     });
     delete api.players.bedroom;
   });
@@ -136,6 +138,7 @@ describe("ShowCard play/stop", () => {
 
     expect(playMedia).toHaveBeenCalledWith(showUri(show.id), undefined, {
       queue_id: "kitchen",
+      suppressGlobalError: true,
     });
     delete api.players.bedroom;
   });

@@ -213,8 +213,10 @@ async function startShow(showId: string, playerId: string): Promise<void> {
   startingShowIds.add(showId);
   dismissNoAiProviderAlert();
   try {
+    // the card reports the failure itself, so the API's own toast would double it
     await api.playMedia(showUri(showId), undefined, {
       queue_id: activeQueueId(playerId),
+      suppressGlobalError: true,
     });
     toast.success($t("providers.ai_radio.toast.live_starting"));
     // Best effort: the server's queue_dj_updated hint reconciles the on-air state
