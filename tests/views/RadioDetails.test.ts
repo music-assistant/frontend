@@ -64,4 +64,20 @@ describe("RadioDetails", () => {
     expect(wrapper.find(".items-listing-stub").exists()).toBe(true);
     expect(wrapper.find(".dynamic-item-sample-stub").exists()).toBe(false);
   });
+
+  it("shows the tracklist for a finite station", async () => {
+    const wrapper = await mountDetails(radio({ is_endless: false }));
+
+    expect(wrapper.find(".dynamic-item-sample-stub").exists()).toBe(true);
+    expect(wrapper.find(".items-listing-stub").exists()).toBe(false);
+  });
+
+  it("shows other versions for a station that does not report is_endless", async () => {
+    const wrapper = await mountDetails(
+      radio({ is_dynamic: false, is_endless: undefined }),
+    );
+
+    expect(wrapper.find(".items-listing-stub").exists()).toBe(true);
+    expect(wrapper.find(".dynamic-item-sample-stub").exists()).toBe(false);
+  });
 });
