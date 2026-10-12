@@ -1930,6 +1930,25 @@ export interface AuthProvider {
   provider_id: string;
   provider_type: AuthProviderType;
   requires_redirect: boolean;
+  // whether a sign-in can return to the remote app; servers before schema 87 omit it
+  supports_remote_app?: boolean;
+}
+
+export interface AuthorizationStart {
+  // null when the server refused to start the sign-in, with the reason in error
+  authorization_url: string | null;
+  // servers before schema 87 omit state and expires_at
+  state?: string;
+  expires_at?: string;
+  error?: string;
+}
+
+export interface AuthExchangeResult {
+  success: boolean;
+  access_token?: string;
+  user?: User;
+  error?: string;
+  translation_key?: string;
 }
 
 export interface LoginCredentials {
