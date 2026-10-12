@@ -67,6 +67,8 @@
     "next_track": "Next track",
     "previous_chapter": "Previous chapter",
     "next_chapter": "Next chapter",
+    "skip_back_seconds": "Skip back {0} seconds",
+    "skip_forward_seconds": "Skip forward {0} seconds",
     "play_next": "Play Next",
     "play_now": "Play Now",
     "play_on": "Play on: {0}",
