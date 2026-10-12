@@ -1,4 +1,11 @@
+import PartyResultItem from "@/components/party/PartyResultItem.vue";
+import MediaSearch from "@/components/MediaSearch.vue";
 import api from "@/plugins/api";
+import {
+  MediaType,
+  type PartyConfig,
+  type Track,
+} from "@/plugins/api/interfaces";
 import PartyGuestView from "@/views/PartyGuestView.vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -25,6 +32,12 @@ const guest = vi.hoisted(() => ({
   subscribeToEvents: vi.fn(() => vi.fn()),
 }));
 
+// shared so tests can set the party config before mounting the view
+const partyConfig = await vi.hoisted(async () => {
+  const { ref } = await import("vue");
+  return { config: ref<PartyConfig | null>(null) };
+});
+
 vi.mock("@/plugins/api", () => ({
   default: {
     baseUrl: "",
@@ -46,7 +59,7 @@ vi.mock("vue-sonner", () => ({
 
 vi.mock("@/composables/usePartyConfig", () => ({
   usePartyConfig: () => ({
-    config: ref(null),
+    config: partyConfig.config,
     fetchConfig: vi.fn().mockResolvedValue(null),
   }),
 }));
@@ -55,7 +68,7 @@ vi.mock("@/composables/useRateLimiting", () => ({
   useRateLimiting: () => ({
     rateLimitingEnabled: ref(false),
     boostEnabled: ref(false),
-    addQueueEnabled: ref(false),
+    addQueueEnabled: ref(true),
     skipSongEnabled: ref(false),
     requestBadgeColor: ref("#2196F3"),
     boostBadgeColor: ref("#FF5722"),
@@ -219,5 +232,102 @@ describe("PartyGuestView startup cleanup", () => {
     expect(remaining).not.toContain("popstate");
     expect(guest.startCountdown).not.toHaveBeenCalled();
     expect(guest.subscribeToEvents).not.toHaveBeenCalled();
+  });
+});
+
+function trackFixture(): Track {
+  return {
+    item_id: "1",
+    provider: "test",
+    name: "Test Track",
+    version: "",
+    uri: "test://track/1",
+    external_ids: [],
+    is_playable: true,
+    media_type: MediaType.TRACK,
+    provider_mappings: [],
+    metadata: {},
+    duration: 180,
+    artists: [],
+    disc_number: 1,
+    track_number: 1,
+  } as unknown as Track;
+}
+
+describe("PartyGuestView requesting the same track again", () => {
+  beforeEach(() => {
+    partyConfig.config.value = null;
+    vi.mocked(api.sendCommand).mockImplementation(async (command: unknown) =>
+      command === "party/add_to_queue"
+        ? { success: true, boosted: false, started_playback: false }
+        : null,
+    );
+  });
+
+  afterEach(() => {
+    vi.mocked(api.sendCommand).mockResolvedValue(null as never);
+  });
+
+  it("keeps a track requestable after adding it when duplicates are allowed", async () => {
+    partyConfig.config.value = {
+      prevent_duplicate_tracks: false,
+    } as unknown as PartyConfig;
+    const view = mountViewRaw();
+    await flushPromises();
+
+    const track = trackFixture();
+    view.findComponent(MediaSearch).vm.$emit("select", track);
+    await flushPromises();
+
+    let resultItem = view.findComponent(PartyResultItem);
+    expect(resultItem.props("addedItems").has(track.uri)).toBe(false);
+
+    resultItem.vm.$emit("addToQueue", track, "end");
+    await flushPromises();
+
+    resultItem = view.findComponent(PartyResultItem);
+    expect(resultItem.props("addedItems").has(track.uri)).toBe(false);
+  });
+
+  it("marks a track as added after requesting it when duplicates are prevented", async () => {
+    partyConfig.config.value = {
+      prevent_duplicate_tracks: true,
+    } as unknown as PartyConfig;
+    const view = mountViewRaw();
+    await flushPromises();
+
+    const track = trackFixture();
+    view.findComponent(MediaSearch).vm.$emit("select", track);
+    await flushPromises();
+
+    const resultItem = view.findComponent(PartyResultItem);
+    resultItem.vm.$emit("addToQueue", track, "end");
+    await flushPromises();
+
+    expect(
+      view.findComponent(PartyResultItem).props("addedItems").has(track.uri),
+    ).toBe(true);
+  });
+  it("lets a guest request an added track again once duplicates are allowed", async () => {
+    partyConfig.config.value = {
+      prevent_duplicate_tracks: true,
+    } as unknown as PartyConfig;
+    const view = mountViewRaw();
+    await flushPromises();
+
+    const track = trackFixture();
+    view.findComponent(MediaSearch).vm.$emit("select", track);
+    await flushPromises();
+    view.findComponent(PartyResultItem).vm.$emit("addToQueue", track, "end");
+    await flushPromises();
+
+    partyConfig.config.value = {
+      prevent_duplicate_tracks: false,
+    } as unknown as PartyConfig;
+    await flushPromises();
+
+    expect(
+      view.findComponent(PartyResultItem).props("addedItems").has(track.uri),
+    ).toBe(false);
   });
 });

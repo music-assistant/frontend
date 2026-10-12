@@ -13,7 +13,19 @@
     </span>
     <div class="audio-processing-stage-copy">
       <div class="audio-processing-stage-primary">
-        <span class="audio-processing-stage-title">{{ stage.title }}</span>
+        <button
+          v-if="stage.link"
+          type="button"
+          class="audio-processing-stage-title audio-processing-stage-link"
+          :title="stage.link.label"
+          :aria-label="`${stage.title}, ${stage.link.label}`"
+          @click="openLink(stage.link)"
+        >
+          {{ stage.title }}
+        </button>
+        <span v-else class="audio-processing-stage-title">{{
+          stage.title
+        }}</span>
         <span v-if="stage.badge" class="audio-processing-stage-badge">
           {{ stage.badge }}
         </span>
@@ -93,12 +105,29 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import type { AudioProcessingDisplayStage } from "@/composables/useAudioProcessingDetails";
+import type {
+  AudioProcessingDisplayStage,
+  AudioProcessingStageLink,
+} from "@/composables/useAudioProcessingDetails";
 import { $t } from "@/plugins/i18n";
+import router from "@/plugins/router";
+import { store } from "@/plugins/store";
 
 defineProps<{ stage: AudioProcessingDisplayStage }>();
+const emit = defineEmits<{
+  // the stage opened its settings page
+  (e: "navigate"): void;
+}>();
 const detailsId = useId();
 const detailsFocusTarget = ref<HTMLElement>();
+
+// settings would otherwise open behind the fullscreen player or players menu
+function openLink(link: AudioProcessingStageLink): void {
+  store.showFullscreenPlayer = false;
+  store.showPlayersMenu = false;
+  emit("navigate");
+  router.push(link.to);
+}
 
 function focusDetails(event: Event): void {
   event.preventDefault();

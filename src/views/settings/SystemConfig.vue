@@ -1,5 +1,6 @@
 <template>
   <Container variant="comfortable" class="settings-overview">
+    <UnsupportedInstallBanner class="mb-4" />
     <div v-if="viewMode === 'card'" class="settings-grid">
       <Card
         v-for="item in sortedCoreConfigs"
@@ -126,6 +127,7 @@ import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import UnsupportedInstallBanner from "@/components/UnsupportedInstallBanner.vue";
 import {
   Card,
   CardDescription,
@@ -133,7 +135,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { api } from "@/plugins/api";
-import { requireServerVersion } from "@/plugins/api/helpers";
 import { CoreConfig } from "@/plugins/api/interfaces";
 import { HardDrive } from "@lucide/vue";
 import {
@@ -163,54 +164,47 @@ interface SystemConfigExtraEntry {
   name: string;
   description: string;
   icon: string | Component;
-  minServerVersion?: string;
 }
 
 type SystemConfigItem = CoreConfig | SystemConfigExtraEntry;
 
-const extraSystemEntries = computed<SystemConfigExtraEntry[]>(() =>
-  [
-    {
-      domain: "diagnostics",
-      name: "settings.diagnostics",
-      description: "settings.diagnostics_description",
-      icon: "mdi-stethoscope",
-      route: "/settings/diagnostics",
-    },
-    {
-      domain: "tasks",
-      name: "background_tasks.title",
-      description: "background_tasks.description",
-      icon: "mdi-playlist-play",
-      route: "/settings/tasks",
-    },
-    {
-      domain: "genre_management",
-      name: "settings.genre_management",
-      description: "settings.genre_management_description",
-      icon: GenreIcon,
-      route: "/settings/genremanagement",
-    },
-    {
-      domain: "audio_analysis",
-      name: "settings.audio_analysis",
-      description: "settings.audio_analysis_description",
-      icon: "mdi-waveform",
-      route: "/settings/audio-analysis",
-      minServerVersion: "2.9.0",
-    },
-    {
-      domain: "storage",
-      name: "settings.storage.title",
-      description: "settings.storage.description",
-      icon: HardDrive,
-      route: "/settings/storage",
-    },
-  ].filter(
-    (entry) =>
-      !entry.minServerVersion || requireServerVersion(entry.minServerVersion),
-  ),
-);
+const extraSystemEntries: SystemConfigExtraEntry[] = [
+  {
+    domain: "diagnostics",
+    name: "settings.diagnostics",
+    description: "settings.diagnostics_description",
+    icon: "mdi-stethoscope",
+    route: "/settings/diagnostics",
+  },
+  {
+    domain: "tasks",
+    name: "background_tasks.title",
+    description: "background_tasks.description",
+    icon: "mdi-playlist-play",
+    route: "/settings/tasks",
+  },
+  {
+    domain: "genre_management",
+    name: "settings.genre_management",
+    description: "settings.genre_management_description",
+    icon: GenreIcon,
+    route: "/settings/genremanagement",
+  },
+  {
+    domain: "audio_analysis",
+    name: "settings.audio_analysis",
+    description: "settings.audio_analysis_description",
+    icon: "mdi-waveform",
+    route: "/settings/audio-analysis",
+  },
+  {
+    domain: "storage",
+    name: "settings.storage.title",
+    description: "settings.storage.description",
+    icon: HardDrive,
+    route: "/settings/storage",
+  },
+];
 
 const sortedCoreConfigs = computed(() => {
   return [...coreConfigs.value].sort((a, b) =>

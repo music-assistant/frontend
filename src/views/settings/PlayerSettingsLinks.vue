@@ -8,7 +8,7 @@
       :key="link.key"
       :to="link.to"
       :data-testid="`player-settings-link-${link.key}`"
-      class="hover:bg-accent/50 focus-visible:ring-ring flex items-center gap-4 border-b px-4 py-4 no-underline transition-colors last:border-b-0 focus-visible:ring-2 focus-visible:outline-none"
+      class="hover:bg-accent/50 focus-visible:ring-ring flex items-center gap-4 border-b px-6 py-4 no-underline transition-colors last:border-b-0 focus-visible:ring-2 focus-visible:outline-none"
     >
       <component :is="link.icon" class="text-primary size-5 shrink-0" />
       <div class="min-w-0 flex-1">

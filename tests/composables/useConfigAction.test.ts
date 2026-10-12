@@ -123,26 +123,14 @@ describe("useConfigAction", () => {
     openSpy.mockRestore();
   });
 
-  it("reports a failed action and clears loading", async () => {
+  it("leaves reporting a failed action to the api and clears loading", async () => {
     const { loading, invokeAction, onAction } = setup();
-    invokeAction.mockRejectedValueOnce("action failed");
+    invokeAction.mockRejectedValueOnce(new Error("action failed"));
 
     await onAction("do_thing", {}, false);
 
-    expect(toastMock.error).toHaveBeenCalledWith("action failed");
+    expect(toastMock.error).not.toHaveBeenCalled();
     expect(loading.value).toBe(false);
-  });
-
-  it("reports a rejected Error without its class name", async () => {
-    const { invokeAction, onAction } = setup();
-    // a dropped connection rejects in-flight commands with an Error subclass
-    const connectionLost = new Error("Connection lost");
-    connectionLost.name = "ConnectionLostError";
-    invokeAction.mockRejectedValueOnce(connectionLost);
-
-    await onAction("do_thing", {}, false);
-
-    expect(toastMock.error).toHaveBeenCalledWith("Connection lost");
   });
 
   it("holds loading while the action is in flight", async () => {
@@ -165,11 +153,11 @@ describe("useConfigAction", () => {
   it("clears loading when the immediate_apply save fails", async () => {
     const { loading, invokeAction, saveValues, onAction } = setup();
     invokeAction.mockResolvedValueOnce([entry({ key: "fresh", value: "new" })]);
-    saveValues.mockRejectedValueOnce("save failed");
+    saveValues.mockRejectedValueOnce(new Error("save failed"));
 
     await onAction("do_thing", {}, true);
 
-    expect(toastMock.error).toHaveBeenCalledWith("save failed");
+    expect(toastMock.error).not.toHaveBeenCalled();
     expect(loading.value).toBe(false);
   });
 });

@@ -53,6 +53,14 @@ const emit = defineEmits<{ open: [location: StorageLocation] }>();
             >
               {{ $t(STORAGE_KIND_LABEL_KEYS[location.kind]) }}
             </Badge>
+            <Badge
+              v-if="location.read_only"
+              as="span"
+              variant="outline"
+              data-testid="folder-picker-read-only"
+            >
+              {{ $t("settings.storage.read_only") }}
+            </Badge>
             <Badge v-if="!location.available" as="span" variant="destructive">
               {{ $t("settings.storage.unavailable") }}
             </Badge>

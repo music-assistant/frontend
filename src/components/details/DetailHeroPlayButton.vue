@@ -29,10 +29,13 @@ export interface Props {
   // let the button shrink and ellipsis its label to fit; for a row that cannot
   // wrap, so its other buttons keep their place as the header narrows
   shrinkLabel?: boolean;
+  // the order the item's tracks are listed in on its page, to play them that way
+  tracksSortBy?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
   parentItem: undefined,
   shrinkLabel: false,
+  tracksSortBy: undefined,
 });
 
 const playButton = useTemplateRef<ComponentPublicInstance>("playButton");
@@ -74,6 +77,8 @@ const playButtonClick = function (forceMenu = false) {
     rect?.bottom ?? 0,
     props.parentItem,
     forceMenu,
+    undefined,
+    props.tracksSortBy,
   );
 };
 </script>

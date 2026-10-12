@@ -4,9 +4,12 @@ import {
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
+  MediaType,
   type Player,
   PlaylistMatchPolicy,
   RepeatMode,
+  SortDirection,
+  SortField,
   type Scope,
   type ServerInfoMessage,
   type SuccessResultMessage,
@@ -53,6 +56,7 @@ import {
   ApiCommandError,
   ConnectionLostError,
   ConnectionState,
+  MIN_SERVER_SCHEMA_VERSION,
   MusicAssistantApi,
 } from "@/plugins/api";
 
@@ -69,6 +73,7 @@ const SERVER_INFO: ServerInfoMessage = {
   internal_url: "http://test.local",
   external_url: null,
   has_remote_access: false,
+  unsupported_install: false,
 };
 
 class TestTransport extends BaseTransport {
@@ -122,6 +127,14 @@ describe("MusicAssistantApi error handling", () => {
     transport.receive(SERVER_INFO);
     await initialization;
     expect(api.state.value).toBe(ConnectionState.CONNECTED);
+    // answer what the api sends on connect, so no command is left in flight
+    for (const command of transport.sentCommands) {
+      transport.receive({
+        message_id: command.message_id!,
+        result: null,
+        partial: false,
+      });
+    }
   });
 
   afterEach(() => {
@@ -175,6 +188,103 @@ describe("MusicAssistantApi error handling", () => {
     expect(consoleError).toHaveBeenCalledWith("[resultMessage]", error);
     expect(mockToastError).toHaveBeenCalledWith("Visible failure");
     expect(consoleDebug).not.toHaveBeenCalled();
+  });
+
+  it("caches sort options per media type until disconnect", async () => {
+    const firstRequest = api.getLibrarySortOptions(MediaType.GENRE);
+    const concurrentRequest = api.getLibrarySortOptions(MediaType.GENRE);
+    const sortOptionsRequests = () =>
+      transport.sentCommands.filter(
+        (command) => command.command === "music/sort_options",
+      );
+
+    expect(sortOptionsRequests()).toHaveLength(1);
+    expect(transport.lastCommand.command).toBe("music/sort_options");
+    expect(transport.lastCommand.args).toEqual({ listing: "library_genres" });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(
+      Promise.all([firstRequest, concurrentRequest]),
+    ).resolves.toEqual([[], []]);
+
+    await expect(api.getLibrarySortOptions(MediaType.GENRE)).resolves.toEqual(
+      [],
+    );
+    expect(sortOptionsRequests()).toHaveLength(1);
+
+    api.disconnect();
+    const reconnectTransport = new TestTransport();
+    const initialization = api.initialize(reconnectTransport);
+    reconnectTransport.receive(SERVER_INFO);
+    await initialization;
+
+    const afterDisconnect = api.getLibrarySortOptions(MediaType.GENRE);
+    expect(
+      reconnectTransport.sentCommands.filter(
+        (command) => command.command === "music/sort_options",
+      ),
+    ).toHaveLength(1);
+    reconnectTransport.receive({
+      message_id: reconnectTransport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(afterDisconnect).resolves.toEqual([]);
+  });
+
+  it.each([
+    [MediaType.ARTIST, "library_artists"],
+    [MediaType.ALBUM, "library_albums"],
+    [MediaType.TRACK, "library_tracks"],
+    [MediaType.PLAYLIST, "library_playlists"],
+    [MediaType.RADIO, "library_radios"],
+    [MediaType.AUDIOBOOK, "library_audiobooks"],
+    [MediaType.PODCAST, "library_podcasts"],
+    [MediaType.GENRE, "library_genres"],
+  ] as const)(
+    "requests sort options for %s using listing %s",
+    async (mediaType, listing) => {
+      const request = api.getLibrarySortOptions(mediaType);
+
+      expect(transport.lastCommand.command).toBe("music/sort_options");
+      expect(transport.lastCommand.args).toEqual({ listing });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it("sends typed sort fields for library listings", async () => {
+    const sortedRequest = api.getLibraryTracks(
+      false,
+      undefined,
+      20,
+      10,
+      SortField.NAME,
+      SortDirection.DESC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/tracks/library_items");
+    expect(transport.lastCommand.args).toMatchObject({
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.DESC,
+    });
+    expect(transport.lastCommand.args).not.toHaveProperty("order_by");
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(sortedRequest).resolves.toEqual([]);
   });
 
   it("lets updateUser suppress the global error toast for the caller", async () => {
@@ -345,24 +455,25 @@ describe("MusicAssistantApi error handling", () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
-  it("lists the share candidates from schema 72 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 71 };
-    expect(api.supportsShareCandidates).toBe(false);
+  it("flags a server below the minimum schema version as outdated", () => {
+    // before server_info arrives there is nothing to judge yet
+    api.serverInfo.value = undefined;
+    expect(api.serverOutdated).toBe(false);
 
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 72 };
-    expect(api.supportsShareCandidates).toBe(true);
-  });
+    api.serverInfo.value = {
+      ...SERVER_INFO,
+      schema_version: MIN_SERVER_SCHEMA_VERSION - 1,
+    };
+    expect(api.serverOutdated).toBe(true);
 
-  it("lists the roles from schema 74 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 73 };
-    expect(api.supportsRoles).toBe(false);
-
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
-    expect(api.supportsRoles).toBe(true);
+    api.serverInfo.value = {
+      ...SERVER_INFO,
+      schema_version: MIN_SERVER_SCHEMA_VERSION,
+    };
+    expect(api.serverOutdated).toBe(false);
   });
 
   it("loads the roles the server lists", async () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
     const roles = [
       {
         role_id: UserRole.ADMIN,
@@ -381,32 +492,6 @@ describe("MusicAssistantApi error handling", () => {
       partial: false,
     });
     await expect(result).resolves.toEqual(roles);
-  });
-
-  it("builds the builtin roles from their scopes on an older server", async () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 73 };
-    const result = api.getRoles();
-
-    expect(transport.lastCommand.command).toBe("auth/scopes");
-    transport.receive({
-      message_id: transport.lastCommand.message_id!,
-      result: { [UserRole.ADMIN]: ["*"], [UserRole.GUEST]: ["library.read"] },
-      partial: false,
-    });
-    await expect(result).resolves.toEqual([
-      {
-        role_id: UserRole.ADMIN,
-        name: UserRole.ADMIN,
-        scopes: ["*"],
-        builtin: true,
-      },
-      {
-        role_id: UserRole.GUEST,
-        name: UserRole.GUEST,
-        scopes: ["library.read"],
-        builtin: true,
-      },
-    ]);
   });
 
   it("sends the role commands and leaves their errors to the caller", async () => {
@@ -455,14 +540,6 @@ describe("MusicAssistantApi error handling", () => {
     await deleted;
 
     expect(mockToastError).not.toHaveBeenCalled();
-  });
-
-  it("lets a role with queues.control play AI Radio from schema 75 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
-    expect(api.supportsAIRadioPlaybackScopes).toBe(false);
-
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 75 };
-    expect(api.supportsAIRadioPlaybackScopes).toBe(true);
   });
 
   it("asks the library for an artist's discography", () => {

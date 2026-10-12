@@ -109,6 +109,7 @@ beforeEach(() => {
   mockPlayMedia.mockResolvedValue(undefined);
   mockShowContextMenu.mockReset();
   mockShowPlayMenu.mockReset();
+  mockShowPlayMenu.mockResolvedValue(undefined);
   mockGetCoreConfigValue.mockReset();
   mockGetCoreConfigValue.mockResolvedValue("play_from_here");
 });
@@ -179,6 +180,51 @@ describe("handlePlayBtnClick with sortBy", () => {
         },
       );
     }
+  });
+});
+
+describe("handlePlayBtnClick with tracksSortBy", () => {
+  it("plays a playlist in the order its page lists the tracks", async () => {
+    const pl = makePlaylist("pl1");
+
+    await handlePlayBtnClick(pl, 0, 0, undefined, false, undefined, "name");
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(pl, undefined, {
+      sort_by: "name",
+    });
+  });
+
+  it("plays an album in the order its page lists the tracks", async () => {
+    const al = makeAlbum("al1");
+
+    await handlePlayBtnClick(al, 0, 0, undefined, false, undefined, "duration");
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(al, undefined, {
+      sort_by: "duration",
+    });
+  });
+
+  it("ignores the sort of the listing the item is shown in", async () => {
+    const pl = makePlaylist("pl1");
+
+    await handlePlayBtnClick(pl, 0, 0, undefined, false, "name");
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(pl);
+  });
+
+  it("hands tracksSortBy to the play menu", async () => {
+    const pl = makePlaylist("pl1");
+
+    await handlePlayBtnClick(pl, 1, 2, undefined, true, undefined, "artist");
+
+    expect(mockShowPlayMenu).toHaveBeenCalledWith(
+      pl,
+      undefined,
+      1,
+      2,
+      "artist",
+    );
+    expect(mockPlayMedia).not.toHaveBeenCalled();
   });
 });
 

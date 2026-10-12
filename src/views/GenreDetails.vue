@@ -180,17 +180,14 @@ import GenreAliasManager from "@/components/genre/GenreAliasManager.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { Button } from "@/components/ui/button";
+import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
 import { panelViewItemResponsive } from "@/helpers/utils";
-import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
-  EventMessage,
-  EventType,
   Genre,
-  MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
   Scope,
@@ -198,14 +195,7 @@ import {
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { SquareArrowRightEnter } from "@lucide/vue";
-import {
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-  type Component,
-} from "vue";
+import { computed, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
@@ -398,7 +388,8 @@ const loadGenreArtists = async (params: LoadDataParams) => {
     params.search,
     undefined,
     undefined,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     undefined,
     params.provider?.length ? params.provider : undefined,
     genreId(),
@@ -412,7 +403,8 @@ const loadGenreAlbums = async (params: LoadDataParams) => {
     params.search,
     undefined,
     undefined,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     undefined,
     params.provider?.length ? params.provider : undefined,
     genreId(),
@@ -426,7 +418,8 @@ const loadGenreTracks = async (params: LoadDataParams) => {
     params.search,
     undefined,
     undefined,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -439,7 +432,8 @@ const loadGenrePlaylists = async (params: LoadDataParams) => {
     params.search,
     undefined,
     undefined,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -452,7 +446,8 @@ const loadGenrePodcasts = async (params: LoadDataParams) => {
     params.search,
     undefined,
     undefined,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -465,7 +460,8 @@ const loadGenreAudiobooks = async (params: LoadDataParams) => {
     params.search,
     undefined,
     undefined,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -486,28 +482,7 @@ watch(
   },
 );
 
-onMounted(() => {
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_UPDATED,
-    (evt: EventMessage) => {
-      const updatedItem = evt.data as MediaItemType;
-      if (itemDetails.value?.uri == updatedItem.uri) {
-        itemDetails.value = keepOwnFavorite(
-          updatedItem,
-          itemDetails.value,
-        ) as Genre;
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
-
-  // the user's own like or dislike, wherever they made it
-  const unsubFavorite = subscribeOwnFavorites((update) => {
-    const item = itemDetails.value;
-    if (item?.uri == update.uri) item.favorite = update.favorite;
-  });
-  onBeforeUnmount(unsubFavorite);
-});
+useDetailItemUpdates(itemDetails);
 </script>
 
 <style scoped>

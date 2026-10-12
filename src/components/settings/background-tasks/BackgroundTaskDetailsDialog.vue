@@ -3,7 +3,7 @@
     <DialogContent
       class="w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] gap-0 overflow-hidden p-0 sm:max-w-[1120px] xl:max-w-[1280px]"
     >
-      <DialogHeader class="gap-3 px-8 pt-8 pb-4 text-left">
+      <DialogHeader class="gap-3 px-8 pt-8 pb-4">
         <DialogTitle class="truncate pr-8">
           {{ task ? task.name : t("background_tasks.details_title") }}
         </DialogTitle>

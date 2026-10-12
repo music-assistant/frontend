@@ -11,7 +11,7 @@
     :allow-key-hooks="true"
     :show-search-button="true"
     :show-genre-filter="true"
-    :sort-keys="sortKeys"
+    :sort-media-type="MediaType.ARTIST"
     :icon="ArtistIcon"
     :restore-state="true"
     :total="total"
@@ -39,19 +39,6 @@ defineOptions({
 const updateAvailable = ref(false);
 const total = ref<number | undefined>(undefined);
 
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
-
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
@@ -60,7 +47,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sort_field,
+    params.sort_direction,
     params.albumArtistsFilter,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,

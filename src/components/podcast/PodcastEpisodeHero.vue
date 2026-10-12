@@ -31,18 +31,24 @@
               </span>
             </div>
             <div
-              v-if="releaseDate || item.duration"
-              class="podcast-episode-hero__line"
+              v-if="releaseDate || item.duration || episodeNumber"
+              class="podcast-episode-hero__line podcast-episode-hero__facts"
             >
-              <Calendar :size="16" class="podcast-episode-hero__icon" />
-              <span class="podcast-episode-hero__line-text">
+              <span
+                v-if="episodeNumber"
+                class="podcast-episode-hero__fact"
+                :title="episodeNumber.label"
+              >
+                <span aria-hidden="true">{{ episodeNumber.short }}</span>
+                <span class="sr-only">{{ episodeNumber.label }}</span>
+              </span>
+              <span v-if="releaseDate" class="podcast-episode-hero__fact">
+                <Calendar :size="16" class="podcast-episode-hero__icon" />
                 {{ releaseDate }}
-                <template v-if="item.duration">
-                  <span v-if="releaseDate" class="podcast-episode-hero__sep"
-                    >·</span
-                  >
-                  {{ formatDuration(item.duration) }}
-                </template>
+              </span>
+              <span v-if="item.duration" class="podcast-episode-hero__fact">
+                <Timer :size="16" class="podcast-episode-hero__icon" />
+                {{ formatDuration(item.duration) }}
               </span>
             </div>
           </div>
@@ -121,6 +127,7 @@ import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import { podcastEpisodeNumber } from "@/components/podcast/podcastEpisodeData";
 import { formatDuration } from "@/helpers/utils";
 import type { Podcast, PodcastEpisode } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
@@ -132,6 +139,7 @@ import {
   ChevronRight,
   ClockFading,
   PodcastIcon,
+  Timer,
 } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
@@ -173,6 +181,10 @@ const releaseDate = computed(() => {
     ? released.toLocaleDateString(undefined, { dateStyle: "medium" })
     : "";
 });
+
+const episodeNumber = computed(() =>
+  props.item ? podcastEpisodeNumber(props.item) : undefined,
+);
 
 const gotoPodcast = function () {
   const podcast = props.parentPodcast ?? props.item?.podcast;
@@ -265,9 +277,16 @@ const gotoPodcast = function () {
   outline-offset: 2px;
   border-radius: 4px;
 }
-.podcast-episode-hero__sep {
-  margin: 0 4px;
-  opacity: 0.5;
+/* wraps on a narrow phone rather than running past the edge */
+.podcast-episode-hero__facts {
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+.podcast-episode-hero__fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .podcast-episode-hero__actions {

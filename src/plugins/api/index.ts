@@ -27,6 +27,7 @@ import {
   type Genre,
   type MassEvent,
   type MediaItemType,
+  type LibrarySortMediaType,
   type Player,
   type PlayerOptionValueType,
   type PlayerQueue,
@@ -40,6 +41,7 @@ import {
   type SuccessResultMessage,
   type TaskSchedule,
   type Track,
+  type SortOptionInfo,
   type User,
   type UserSummary,
   AlbumType,
@@ -76,8 +78,11 @@ import {
   NetworkShareSettings,
   SearchResults,
   ShareType,
+  SortDirection,
+  SortField,
   SmartPlaylistRules,
   SoundEffect,
+  SourceFolder,
   StorageInfo,
   StorageLocation,
   StreamServerInfo,
@@ -88,26 +93,21 @@ import {
 
 const DEBUG = process.env.NODE_ENV === "development";
 
-// Server-side string localization + the translations/set_locale command landed in API schema 32.
-const TRANSLATIONS_SCHEMA_VERSION = 32;
+// The oldest server API schema this frontend works with. Only the public web app
+// (app.music-assistant.io) can meet an older server, the bundled frontend always
+// matches its own. Raise it when a change would break the previous stable server.
+export const MIN_SERVER_SCHEMA_VERSION = 75;
 
-// The shuffle argument on player_queues/play_media landed in API schema 51.
-const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
-
-// The player_id argument on music/browse landed in API schema 61.
-const BROWSE_PLAYER_ID_SCHEMA_VERSION = 61;
-
-// Repeat one/all masking the effective autoplay flag landed in API schema 69.
-const REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION = 69;
-
-// The config/providers/share_candidates command landed in API schema 72.
-const SHARE_CANDIDATES_SCHEMA_VERSION = 72;
-
-// The auth/roles command and custom user roles landed in API schema 74.
-const ROLES_SCHEMA_VERSION = 74;
-
-// Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
-const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
+const LIBRARY_SORT_LISTINGS: Record<LibrarySortMediaType, string> = {
+  [MediaType.ARTIST]: "library_artists",
+  [MediaType.ALBUM]: "library_albums",
+  [MediaType.TRACK]: "library_tracks",
+  [MediaType.PLAYLIST]: "library_playlists",
+  [MediaType.RADIO]: "library_radios",
+  [MediaType.AUDIOBOOK]: "library_audiobooks",
+  [MediaType.PODCAST]: "library_podcasts",
+  [MediaType.GENRE]: "library_genres",
+};
 
 export interface CommandOptions {
   /**
@@ -174,6 +174,10 @@ export class MusicAssistantApi {
   );
   public providerIcons = reactive<{ [key: string]: string | null }>({});
   private _providerIconRequests = new Map<string, Promise<string | null>>();
+  private _librarySortOptions = new Map<
+    LibrarySortMediaType,
+    Promise<SortOptionInfo[]>
+  >();
   // core config values by "<domain>/<key>", dropped when this client saves a core config
   // and when the full state is (re)fetched, so a change made from another client is
   // picked up on the next (re)connect.
@@ -454,6 +458,7 @@ export class MusicAssistantApi {
       (key) => delete this.providerIcons[key],
     );
     this._providerIconRequests.clear();
+    this._librarySortOptions.clear();
     this._coreConfigValues.clear();
     this.serverInfo.value = undefined;
   }
@@ -505,7 +510,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of tracks
    */
@@ -514,7 +520,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
   ): Promise<Track[]> {
@@ -523,7 +530,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       provider,
       genre,
     });
@@ -610,6 +618,26 @@ export class MusicAssistantApi {
   ): Promise<number> {
     return this.sendCommand("music/tracks/count", { favorite_only });
   }
+
+  public getLibrarySortOptions(
+    media_type: LibrarySortMediaType,
+  ): Promise<SortOptionInfo[]> {
+    const cached = this._librarySortOptions.get(media_type);
+    if (cached) return cached;
+
+    const request = this.sendCommand<SortOptionInfo[]>(
+      "music/sort_options",
+      { listing: LIBRARY_SORT_LISTINGS[media_type] },
+      { suppressGlobalError: true },
+    );
+    this._librarySortOptions.set(media_type, request);
+    void request.catch(() => {
+      if (this._librarySortOptions.get(media_type) === request) {
+        this._librarySortOptions.delete(media_type);
+      }
+    });
+    return request;
+  }
   public getLibraryPlaylistsCount(
     favorite_only: boolean = false,
   ): Promise<number> {
@@ -651,7 +679,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param album_artists_only - Only return artists that have albums
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of artists
@@ -661,7 +690,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     album_artists_only?: boolean,
     provider?: string | string[],
     genre?: number | number[],
@@ -672,7 +702,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       album_artists_only,
       provider,
       genre,
@@ -805,7 +836,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param album_types - Filter by album types
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of albums
@@ -815,7 +847,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     album_types?: Array<AlbumType | string>,
     provider?: string | string[],
     genre?: number | number[],
@@ -825,7 +858,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       album_types,
       provider,
       genre,
@@ -870,7 +904,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of playlists
    */
@@ -879,7 +914,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
   ): Promise<Playlist[]> {
@@ -888,7 +924,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       provider,
       genre,
     });
@@ -1077,7 +1114,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of radio stations
    */
@@ -1086,7 +1124,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
   ): Promise<Radio[]> {
@@ -1095,7 +1134,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       provider,
       genre,
     });
@@ -1138,7 +1178,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of audiobooks
    */
@@ -1147,7 +1188,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
     collapse_collections?: boolean,
@@ -1157,7 +1199,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       provider,
       genre,
       collapse_collections,
@@ -1199,7 +1242,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @returns Promise resolving to array of podcasts
    */
@@ -1208,7 +1252,8 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
   ): Promise<Podcast[]> {
@@ -1217,7 +1262,8 @@ export class MusicAssistantApi {
       search,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
       provider,
       genre,
     });
@@ -1229,7 +1275,8 @@ export class MusicAssistantApi {
    * @param search - Filter by search query
    * @param limit - Maximum number of items to return
    * @param offset - Number of items to skip
-   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param sort_field - Sort field to use
+   * @param sort_direction - Sort direction
    * @param provider - Filter by provider instance ID or domain (single string or list)
    * @param genre - Filter by genre ID(s)
    * @param hide_empty - Hide genres with no associated media items
@@ -1242,7 +1289,8 @@ export class MusicAssistantApi {
       search?: string;
       limit?: number;
       offset?: number;
-      order_by?: string;
+      sort_field?: SortField;
+      sort_direction?: SortDirection;
       provider?: string | string[];
       genre?: number | number[];
       hide_empty?: boolean | null;
@@ -1408,13 +1456,15 @@ export class MusicAssistantApi {
     item_id: string | number,
     limit?: number,
     offset?: number,
-    order_by?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Track[]> {
     return this.sendCommand("music/genres/tracks", {
       item_id,
       limit,
       offset,
-      order_by,
+      sort_field,
+      sort_direction,
     });
   }
 
@@ -1621,19 +1671,8 @@ export class MusicAssistantApi {
     options?: CommandOptions,
   ): Promise<MediaItemType[]> {
     // Browse Music providers.
-    // player_id scopes player-bound audio sources to that player;
-    // older servers (schema < 61) don't accept the argument, so omit it there.
-    const supportsPlayerId =
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      BROWSE_PLAYER_ID_SCHEMA_VERSION;
-    return this.sendCommand(
-      "music/browse",
-      {
-        path,
-        player_id: supportsPlayerId ? player_id : undefined,
-      },
-      options,
-    );
+    // player_id scopes player-bound audio sources to that player.
+    return this.sendCommand("music/browse", { path, player_id }, options);
   }
 
   public search(
@@ -2352,17 +2391,22 @@ export class MusicAssistantApi {
     provider_domain: string,
     values: Record<string, ConfigValueType>,
     instance_id?: string,
+    options?: CommandOptions,
   ): Promise<ProviderConfig> {
     // Save Provider(instance) Config.
     // provider_domain: (mandatory) domain of the provider.
     // values: the raw values for config entries that need to be stored/updated.
     // instance_id: id of an existing provider instance (None for new instance setup).
     // action: [optional] action key called from config entries UI.
-    return this.sendCommand("config/providers/save", {
-      provider_domain,
-      values,
-      instance_id,
-    });
+    return this.sendCommand(
+      "config/providers/save",
+      {
+        provider_domain,
+        values,
+        instance_id,
+      },
+      options,
+    );
   }
 
   public removeProviderConfig(instance_id: string): Promise<void> {
@@ -2406,7 +2450,7 @@ export class MusicAssistantApi {
 
   public getShareCandidates(): Promise<UserSummary[]> {
     // Get the users a music source or playlist can be shared with, the caller
-    // included; check supportsShareCandidates first.
+    // included.
     return this.sendCommand("config/providers/share_candidates", undefined, {
       // callers show their own error toast; avoid a duplicate global one
       suppressGlobalError: true,
@@ -3153,62 +3197,21 @@ export class MusicAssistantApi {
     });
   }
 
-  /** Whether the connected server accepts an explicit shuffle on play_media (schema >= 51). */
-  public get supportsPlayMediaShuffle(): boolean {
+  /** Whether the connected server is too old for this frontend and needs an update. */
+  public get serverOutdated(): boolean {
+    const schemaVersion = this.serverInfo.value?.schema_version;
     return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server masks autoplay while repeat one/all is on (schema >= 69). */
-  public get supportsRepeatAutoplayLock(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server lists who a music source can be shared with (schema >= 72). */
-  public get supportsShareCandidates(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      SHARE_CANDIDATES_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server lists the user roles and has custom ones (schema >= 74). */
-  public get supportsRoles(): boolean {
-    return (this.serverInfo.value?.schema_version ?? 0) >= ROLES_SCHEMA_VERSION;
-  }
-
-  /** Whether the connected server lets a role with queues.control play AI Radio stations (schema >= 75). */
-  public get supportsAIRadioPlaybackScopes(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server localizes server-provided strings (schema >= 32). */
-  public get supportsServerSideTranslations(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      TRANSLATIONS_SCHEMA_VERSION
+      schemaVersion !== undefined && schemaVersion < MIN_SERVER_SCHEMA_VERSION
     );
   }
 
   /**
    * Declare the connection's UI locale to the server (translations/set_locale).
    *
-   * The server resolves server-provided strings for this locale at serialization. Older servers
-   * (schema < 32) don't implement the command, so it is skipped there and they keep serving their
-   * default-locale strings.
+   * The server resolves server-provided strings for this locale at serialization.
    */
   public async setLocale(locale: string): Promise<void> {
-    if (!locale || locale === "auto" || !this.supportsServerSideTranslations) {
-      return;
-    }
+    if (!locale || locale === "auto") return;
     await this.sendCommand("translations/set_locale", { locale });
   }
 
@@ -3373,23 +3376,9 @@ export class MusicAssistantApi {
     return users;
   }
 
-  public async getRoles(options?: CommandOptions): Promise<Role[]> {
+  public getRoles(options?: CommandOptions): Promise<Role[]> {
     // Get all user roles: the builtin roles first, then the custom roles by name
-    if (this.supportsRoles) {
-      return await this.sendCommand<Role[]>("auth/roles", undefined, options);
-    }
-    // an older server only has the builtin roles, of which it lists the scopes
-    const roleScopes = await this.sendCommand<Record<string, string[]>>(
-      "auth/scopes",
-      undefined,
-      options,
-    );
-    return Object.entries(roleScopes).map(([role_id, scopes]) => ({
-      role_id,
-      name: role_id,
-      scopes,
-      builtin: true,
-    }));
+    return this.sendCommand<Role[]>("auth/roles", undefined, options);
   }
 
   public createRole(name: string, scopes: string[]): Promise<Role> {
@@ -3675,14 +3664,23 @@ export class MusicAssistantApi {
   }
 
   // Storage methods
-  // Every caller reports a failure itself (a toast or inline in its dialog), so the
-  // storage commands skip the global error toast.
+  // Every caller reports a failure itself (a toast or inline in its dialog) or does
+  // without what failed, so the storage commands skip the global error toast.
 
   public getStorageInfo(): Promise<StorageInfo> {
     // Get the storage locations the caller may see and what this install can mount
     return this.sendCommand<StorageInfo>("storage/info", undefined, {
       suppressGlobalError: true,
     });
+  }
+
+  public getSourceFolder(instance_id: string): Promise<SourceFolder> {
+    // Get the folder a Local files source reads from and the storage location holding it
+    return this.sendCommand<SourceFolder>(
+      "storage/source_folder",
+      { instance_id },
+      { suppressGlobalError: true },
+    );
   }
 
   public getStorageFolders(path: string): Promise<string[]> {

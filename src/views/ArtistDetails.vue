@@ -227,13 +227,10 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import { useArtistRowData } from "@/composables/useArtistRowData";
-import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
+import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
 import {
   ArtistType,
-  EventMessage,
-  EventType,
-  MediaItemType,
   ProviderFeature,
   Scope,
   type Artist,
@@ -241,7 +238,7 @@ import {
 import { authManager } from "@/plugins/auth";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
 export interface Props {
@@ -417,50 +414,7 @@ watch(
   },
 );
 
-onMounted(() => {
-  //signal if/when item updates
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_UPDATED,
-    (evt: EventMessage) => {
-      const updatedItem = evt.data as MediaItemType;
-      // check if the updated item is the current item
-      if (itemDetails.value?.uri == updatedItem.uri) {
-        // update UI with the updated item
-        loading.value = true;
-        itemDetails.value = keepOwnFavorite(
-          updatedItem,
-          itemDetails.value,
-        ) as Artist;
-        loading.value = false;
-      } else if ("provider_mappings" in updatedItem) {
-        for (const provMap of updatedItem.provider_mappings) {
-          if (
-            provMap.item_id == props.itemId &&
-            [provMap.provider_instance, provMap.provider_domain].includes(
-              props.provider,
-            )
-          ) {
-            loading.value = true;
-            itemDetails.value = keepOwnFavorite(
-              updatedItem,
-              itemDetails.value,
-            ) as Artist;
-            loading.value = false;
-            break;
-          }
-        }
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
-
-  // the user's own like or dislike, wherever they made it
-  const unsubFavorite = subscribeOwnFavorites((update) => {
-    const item = itemDetails.value;
-    if (item?.uri == update.uri) item.favorite = update.favorite;
-  });
-  onBeforeUnmount(unsubFavorite);
-});
+useDetailItemUpdates(itemDetails, { providerItem: props });
 
 const loadArtistAudiobooks = async function (params: LoadDataParams) {
   if (!itemDetails.value) return [];

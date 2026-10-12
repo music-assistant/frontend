@@ -1,4 +1,5 @@
 import { canUseQueueDj } from "@/helpers/ai_radio_access";
+import { trackAIRadioCache } from "@/helpers/ai_radio_events";
 import api from "@/plugins/api";
 import type {
   AIRadioSection,
@@ -13,8 +14,6 @@ import { store } from "@/plugins/store";
 import { ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
-const STATUS_POLL_ACTIVE_MS = 5000;
-const STATUS_POLL_IDLE_MS = 30000;
 const PLAYLIST_PAGE_SIZE = 200;
 const PLAYLIST_FETCH_LIMIT = 5000;
 const NO_AI_PROVIDER_MARKER = /no ai provider/i;
@@ -41,9 +40,6 @@ const noAiProviderAlert = ref(false);
 // during generation), so failed sessions must raise the banner too.
 const seenFailedSessionIds = new Set<string>();
 let statusLoadedOnce = false;
-
-let statusPollTimer: ReturnType<typeof setTimeout> | null = null;
-let statusPollingEnabled = false;
 
 let showSessionStatePrefetched = false;
 
@@ -82,6 +78,7 @@ async function loadShows(): Promise<AIRadioStation[]> {
       "ai_radio/stations/list",
     );
     shows.value = sortByName(result || []);
+    trackAIRadioCache("stations_updated", loadShows);
     return shows.value;
   } finally {
     loadingShows.value = false;
@@ -95,6 +92,7 @@ async function loadSections(): Promise<AIRadioSection[]> {
       "ai_radio/sections/list",
     );
     sections.value = sortByName(result || []);
+    trackAIRadioCache("sections_updated", loadSections);
     return sections.value;
   } finally {
     loadingSections.value = false;
@@ -202,10 +200,10 @@ async function loadStatus(): Promise<AIRadioSession[]> {
       reportStartError(session.error || "");
     }
     statusLoadedOnce = true;
+    trackAIRadioCache("sessions_updated", loadStatus);
     return sessions.value;
   } finally {
     loadingStatus.value = false;
-    rescheduleStatusPoll();
   }
 }
 
@@ -299,55 +297,6 @@ function runningSessionForStation(
   );
 }
 
-function hasActiveSession(): boolean {
-  return sessions.value.some((session) => session.status === "running");
-}
-
-function clearStatusPollTimer(): void {
-  if (statusPollTimer) {
-    clearTimeout(statusPollTimer);
-    statusPollTimer = null;
-  }
-}
-
-/**
- * (Re)arms the poll timer: 5s while a session is running, 30s when idle,
- * suspended entirely while the browser tab is hidden.
- */
-function rescheduleStatusPoll(): void {
-  clearStatusPollTimer();
-  if (!statusPollingEnabled || document.hidden) return;
-  statusPollTimer = setTimeout(
-    () => {
-      void loadStatus();
-    },
-    hasActiveSession() ? STATUS_POLL_ACTIVE_MS : STATUS_POLL_IDLE_MS,
-  );
-}
-
-function onVisibilityChange(): void {
-  if (document.hidden) {
-    clearStatusPollTimer();
-  } else if (statusPollingEnabled) {
-    void loadStatus();
-  }
-}
-
-/** Starts adaptive status polling; the view calls this on mount/activation. */
-function startStatusPolling(): void {
-  if (statusPollingEnabled) return;
-  statusPollingEnabled = true;
-  document.addEventListener("visibilitychange", onVisibilityChange);
-  void loadStatus();
-}
-
-/** Stops status polling; the view calls this on unmount/deactivation. */
-function stopStatusPolling(): void {
-  statusPollingEnabled = false;
-  document.removeEventListener("visibilitychange", onVisibilityChange);
-  clearStatusPollTimer();
-}
-
 export function useShows() {
   return {
     shows,
@@ -374,8 +323,6 @@ export function useShows() {
     startShow,
     stopShow,
     runningSessionForStation,
-    startStatusPolling,
-    stopStatusPolling,
     reportStartError,
     dismissNoAiProviderAlert,
   };

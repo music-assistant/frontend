@@ -1,13 +1,20 @@
 /**
  * The card's own looks: the muted treatment a release that is not in the
- * library gets (instead of the harsh unavailable one), and the placeholder it
- * falls back to when its cover art can not be loaded.
+ * library gets (instead of the harsh unavailable one), the placeholder it
+ * falls back to when its cover art can not be loaded, and the played state of
+ * an episode.
  */
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
-import { ImageType, type Album } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  type Album,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { album } from "../../fixtures/album";
+import { podcast } from "../../fixtures/podcast";
+import { podcastEpisode } from "../../fixtures/podcastEpisode";
 
 vi.mock("@/plugins/api", () => {
   const api = { providers: {}, providerManifests: {} };
@@ -64,9 +71,13 @@ const release = (overrides: Partial<Album> = {}, cover = COVER) =>
     cover,
   );
 
-function mountCard(item: Album, isAvailable = true) {
+function mountCard(
+  item: MediaItemType,
+  isAvailable = true,
+  parentItem?: MediaItemType,
+) {
   return mount(EditorialMediaCard, {
-    props: { item, isAvailable },
+    props: { item, isAvailable, parentItem },
     global: {
       directives: { hold: () => undefined },
       mocks: { $t: (key: string) => key },
@@ -136,5 +147,50 @@ describe("EditorialMediaCard", () => {
 
     expect(wrapper.get("img").attributes("src")).toBe(COVER);
     expect(wrapper.find(".ed-card__initials").exists()).toBe(false);
+  });
+
+  it("marks a fully played episode on its cover", () => {
+    const wrapper = mountCard(podcastEpisode({ fully_played: true }));
+
+    expect(wrapper.get(".ed-card__played").attributes("aria-label")).toBe(
+      "item_fully_played",
+    );
+  });
+
+  it("marks an episode in progress on its cover", () => {
+    const wrapper = mountCard(podcastEpisode({ resume_position_ms: 60000 }));
+
+    expect(wrapper.get(".ed-card__played").attributes("aria-label")).toBe(
+      "item_in_progress",
+    );
+  });
+
+  it("leaves the cover of an unplayed episode unmarked", () => {
+    const wrapper = mountCard(podcastEpisode());
+
+    expect(wrapper.find(".ed-card__played").exists()).toBe(false);
+  });
+
+  it("makes way for the now playing bars while the episode plays", async () => {
+    const wrapper = mountCard(podcastEpisode({ resume_position_ms: 60000 }));
+
+    await wrapper.setProps({ isPlaying: true });
+
+    expect(wrapper.find(".ed-card__played").exists()).toBe(false);
+  });
+
+  it("names the podcast an episode belongs to", () => {
+    const wrapper = mountCard(
+      podcastEpisode({ podcast: podcast({ name: "Daily News" }) }),
+    );
+
+    expect(wrapper.get(".ed-card__sub").text()).toBe("Daily News");
+  });
+
+  it("leaves the podcast name off its episodes on the podcast's own page", () => {
+    const show = podcast({ name: "Daily News" });
+    const wrapper = mountCard(podcastEpisode({ podcast: show }), true, show);
+
+    expect(wrapper.get(".ed-card__sub").text()).toBe("podcast_episode");
   });
 });

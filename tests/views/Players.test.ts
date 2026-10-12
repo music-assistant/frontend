@@ -55,7 +55,8 @@ vi.mock("@/plugins/eventbus", () => ({
   },
 }));
 
-vi.mock("@/helpers/player_config", () => ({
+vi.mock("@/helpers/player_config", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/player_config")>()),
   getPlayerName: (config: PlayerConfig) => config.name ?? config.player_id,
 }));
 

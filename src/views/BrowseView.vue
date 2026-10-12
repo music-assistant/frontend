@@ -28,7 +28,6 @@
             :item="currentFolder"
           />
           <Button
-            v-if="api.supportsPlayMediaShuffle"
             variant="outline"
             :disabled="!store.activePlayer"
             @click="api.playMedia(currentFolder, undefined, { shuffle: true })"
