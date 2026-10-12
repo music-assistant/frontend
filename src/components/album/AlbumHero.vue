@@ -54,11 +54,7 @@
                 </template>
               </span>
             </div>
-            <DetailHeroFacts
-              v-if="facts.length"
-              :icon="Disc"
-              :facts="facts"
-            />
+            <DetailHeroFacts v-if="facts.length" :icon="Disc" :facts="facts" />
           </div>
 
           <div class="album-hero__actions">

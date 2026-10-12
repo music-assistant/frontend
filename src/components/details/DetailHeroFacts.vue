@@ -9,7 +9,9 @@
           aria-hidden="true"
         ></span>
         <!-- the last fact gives way when the line runs out of room -->
-        <span :class="index === facts.length - 1 ? 'min-w-0 truncate' : 'flex-none'">
+        <span
+          :class="index === facts.length - 1 ? 'min-w-0 truncate' : 'flex-none'"
+        >
           {{ fact }}
         </span>
       </template>
