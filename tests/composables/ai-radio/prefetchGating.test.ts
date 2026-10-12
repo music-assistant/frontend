@@ -162,4 +162,25 @@ describe("ai_radio prefetch gating", () => {
       { suppressGlobalError: true },
     );
   });
+
+  it("still refetches the on-air state on a hint after the initial fetch failed", async () => {
+    vi.resetModules();
+    const { sendCommand, emitProviderEvent } = await mockApiAndAuth(
+      null,
+      BUILTIN_ROLE_SCOPES.guest,
+    );
+    sendCommand.mockRejectedValueOnce(new Error("command not registered yet"));
+    await importComposables();
+    sendCommand.mockClear();
+    sendCommand.mockResolvedValue({});
+
+    emitProviderEvent({ event: "queue_dj_updated" });
+    await flushPromises();
+
+    expect(sendCommand).toHaveBeenCalledWith(
+      "ai_radio/queue_dj/status",
+      undefined,
+      { suppressGlobalError: true },
+    );
+  });
 });

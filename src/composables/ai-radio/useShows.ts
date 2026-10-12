@@ -181,7 +181,6 @@ function refreshDjStatus(
       // newest state (stopShow does)
       if (seq !== djStatusRequestSeq) return await newestDjStatusRequest!;
       djStatus.value = result || {};
-      trackAIRadioCache("queue_dj_updated", refetchDjStatus);
       return djStatus.value;
     } finally {
       if (--djStatusInFlight === 0) loadingDjStatus.value = false;
@@ -312,12 +311,15 @@ export function useShows() {
 // Fetch the DJ state as soon as the provider is there, for the roles that may
 // play shows, so the on-air state is right from anywhere in the app.
 // Registered last: the immediate callback reaches everything above.
+// The loader is tracked before the fetch so a failed first fetch can still recover.
 watch(
   () => store.enabledPlugins.has("ai_radio") && canPlayShows(),
   (ready) => {
     // Session-scoped sessions never play shows.
-    if (ready && authManager.guestSessionKind() === null)
+    if (ready && authManager.guestSessionKind() === null) {
+      trackAIRadioCache("queue_dj_updated", refetchDjStatus);
       refreshDjStatus(true).catch(() => undefined);
+    }
   },
   { immediate: true },
 );
