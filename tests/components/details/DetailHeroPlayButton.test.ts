@@ -1,5 +1,6 @@
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import type { MediaItemType, Player } from "@/plugins/api/interfaces";
+import { handlePlayBtnClick } from "@/helpers/media_item_actions";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -27,7 +28,8 @@ vi.mock("@/plugins/i18n", () => ({
 
 const MenuButtonStub = {
   props: ["text"],
-  template: "<button>{{ text }}</button>",
+  emits: ["click"],
+  template: "<button @click=\"$emit('click')\">{{ text }}</button>",
 };
 
 function player(overrides: Partial<Player> = {}): Player {
@@ -81,5 +83,24 @@ describe("DetailHeroPlayButton", () => {
     storeMock.activePlayer = player({ group_members: ["kitchen", "office"] });
 
     expect(mountButton().text()).toBe("play_on_this_device");
+  });
+
+  it("plays in the order of the list the page shows", async () => {
+    const item = {} as MediaItemType;
+    const wrapper = mount(DetailHeroPlayButton, {
+      props: { item, sortBy: "position_desc" },
+      global: { stubs: { MenuButton: MenuButtonStub } },
+    });
+
+    await wrapper.find("button").trigger("click");
+
+    expect(handlePlayBtnClick).toHaveBeenCalledWith(
+      item,
+      0,
+      0,
+      undefined,
+      false,
+      "position_desc",
+    );
   });
 });
