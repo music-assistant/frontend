@@ -264,7 +264,10 @@ function buildInputStages(
       title: dependencies.getProviderName(streamDetails.provider),
       // the item the track was played from, under the source that streams it
       subtitleParts: container
-        ? [translate(container.media_type), container.name]
+        ? [
+            translate("tooltip.playing_from", [container.name]),
+            translate(container.media_type),
+          ]
         : undefined,
       subtitleLink: container ? containerLink(container, translate) : undefined,
     },

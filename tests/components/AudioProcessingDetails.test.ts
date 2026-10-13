@@ -263,7 +263,7 @@ describe("AudioProcessingDetails", () => {
       wrapper
         .get('[data-stage="provider"] .audio-processing-stage-subtitle')
         .text(),
-    ).toBe("Album · Midnight Avenue");
+    ).toBe("Playing from Midnight Avenue · Album");
   });
 
   it("updates a resolved preset name reactively", async () => {

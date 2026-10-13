@@ -221,14 +221,14 @@ describe("AudioProcessingStage subtitle link", () => {
       key: "provider",
       providerIconDomain: "filesystem--music",
       title: "Local files",
-      subtitleParts: ["Album", "Midnight Avenue"],
+      subtitleParts: ["Playing from Midnight Avenue", "Album"],
       subtitleLink: { to, label: "Open Midnight Avenue" },
     });
     const link = wrapper.get(
       ".audio-processing-stage-subtitle button.audio-processing-stage-link",
     );
 
-    expect(link.text()).toBe("Album · Midnight Avenue");
+    expect(link.text()).toBe("Playing from Midnight Avenue · Album");
     expect(link.attributes("title")).toBe("Open Midnight Avenue");
     expect(wrapper.find(".audio-processing-stage-title").element.tagName).toBe(
       "SPAN",

@@ -125,7 +125,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
 
       expect(display.inputStages[0]).toMatchObject({
         title: "Test provider",
-        subtitleParts: [label, "Road Trip"],
+        subtitleParts: ["Playing from Road Trip", label],
         subtitleLink: {
           to: {
             name: mediaType,
@@ -153,7 +153,10 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       container,
     ).inputStages[0];
 
-    expect(stage.subtitleParts).toEqual(["Folder", "Late Night Mix"]);
+    expect(stage.subtitleParts).toEqual([
+      "Playing from Late Night Mix",
+      "Folder",
+    ]);
     expect(stage.subtitleLink).toBeUndefined();
   });
 

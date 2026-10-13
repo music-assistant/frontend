@@ -326,7 +326,7 @@ const {
   overflow-wrap: anywhere;
 }
 
-/* a title that opens its settings page, keeping the title's look */
+/* a title or subtitle that opens the page it links to, keeping its look */
 .audio-processing-details .audio-processing-stage-link {
   padding: 0;
   border: 0;

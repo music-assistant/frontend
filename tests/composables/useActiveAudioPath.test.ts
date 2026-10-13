@@ -87,8 +87,11 @@ describe("useActiveAudioPath", () => {
     });
   });
 
-  it("passes on the item the queue item was played from", () => {
-    const container = itemMapping({ name: "Midnight Avenue" });
+  it.each([
+    ["an item it was played from", itemMapping({ name: "Midnight Avenue" })],
+    // an audiobook or episode played on its own is pinned to its copy only
+    ["no item it was played from", null],
+  ])("passes on %s", (_label, container) => {
     storeMock.curQueueItem = queueItem({
       streamdetails: streamDetails({
         audio_processing: {
@@ -97,12 +100,16 @@ describe("useActiveAudioPath", () => {
           outputs: [],
         },
       }),
-      origin: { container, provider_instance: null, item_id: null },
+      origin: {
+        container,
+        provider_instance: "podcastfeed--1",
+        item_id: "episode-1",
+      },
     });
 
     const { activeAudioPath } = useActiveAudioPath();
 
-    expect(activeAudioPath.value?.container).toEqual(container);
+    expect(activeAudioPath.value?.container).toEqual(container ?? undefined);
   });
 
   it("resolves a live source snapshot when no queue item is active", () => {

@@ -26,7 +26,6 @@
     "artist_toptracks": "Top tracks",
     "artists": "Artists",
     "browse": "Browse",
-    "folder": "Folder",
     "clear_selection": "Clear selection",
     "clear": "Clear",
     "faceted_filter": {
@@ -45,6 +44,7 @@
     "increase_value": "Increase value",
     "decrease_value": "Decrease value",
     "enter_url": "Enter the URL you want to manually add to the database",
+    "folder": "Folder",
     "goto_album": "View album {0}",
     "goto_artist": "View artist {0}",
     "items_selected": "{0} item(s) selected",
