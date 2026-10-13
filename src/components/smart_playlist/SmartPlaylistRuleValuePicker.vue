@@ -25,7 +25,7 @@
         @keydown.stop
       />
       <div
-        v-if="source === 'folder' && folderPath !== null"
+        v-if="source === 'folder' && folderPath !== null && currentFolder"
         class="mb-1 flex items-center gap-1"
       >
         <Button
@@ -33,18 +33,18 @@
           size="icon"
           class="h-7 w-7 shrink-0"
           :aria-label="$t('back')"
-          @click.stop="openFolder(parentPath(folderPath))"
+          @click.stop="openParent(folderPath)"
         >
           <ChevronLeft class="h-3.5 w-3.5" />
         </Button>
         <span class="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-          {{ folderValue(folderPath).name }}
+          {{ currentFolder.name }}
         </span>
         <Button
           size="sm"
           class="h-7 shrink-0 px-2 text-xs"
-          :disabled="selectedIds.includes(folderValue(folderPath).id)"
-          @click.stop="onPickFolder(folderPath)"
+          :disabled="selectedIds.includes(currentFolder.id)"
+          @click.stop="onPickFolder(currentFolder)"
         >
           {{ $t("settings.folder_picker.use_folder") }}
         </Button>
@@ -97,7 +97,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
+import { parentBrowsePath } from "@/helpers/browse_path";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
+import { FILESYSTEM_DOMAIN_PREFIX } from "@/helpers/provider_domain";
 import api from "@/plugins/api";
 import {
   folderValue,
@@ -152,6 +154,9 @@ const isRemote = computed(
 // null lists the filesystem music sources, otherwise the browse path of the open folder
 const folderPath = ref<string | null>(null);
 const folderOptions = ref<Option[]>([]);
+const currentFolder = computed(() =>
+  folderPath.value === null ? null : folderValue(folderPath.value),
+);
 
 const filteredPreloaded = computed(() => {
   const base = props.preloadedOptions.filter(
@@ -228,22 +233,22 @@ watch(open, (isOpen) => {
   }
 });
 
-function parentPath(path: string): string | null {
-  const [provider, relPath] = path.split("://", 2);
-  if (!relPath) return null;
-  const parts = relPath.split("/").filter(Boolean);
-  parts.pop();
-  return `${provider}://${parts.join("/")}`;
+function openParent(path: string) {
+  const parent = parentBrowsePath(path);
+  // a source's own level goes back to the list of sources
+  openFolder(parent === "root" ? null : parent);
 }
 
 async function openFolder(path: string | null) {
   folderPath.value = path;
   query.value = "";
   if (path === null) {
+    // drops the spinner of a folder still loading, its result is ignored
+    isSearching.value = false;
     folderOptions.value = Object.values(api.providers)
       .filter(
         (p) =>
-          p.domain.startsWith("filesystem_") &&
+          p.domain.startsWith(FILESYSTEM_DOMAIN_PREFIX) &&
           p.available &&
           // skips audiobook, podcast and sound effect folders: they hold no tracks
           p.supported_features.includes(ProviderFeature.LIBRARY_TRACKS),
@@ -253,7 +258,10 @@ async function openFolder(path: string | null) {
   }
   isSearching.value = true;
   try {
-    const items = await api.browse(path);
+    // the failure is reported below, so keep the global error toast quiet
+    const items = await api.browse(path, undefined, {
+      suppressGlobalError: true,
+    });
     if (folderPath.value !== path) return;
     folderOptions.value = items
       .filter(
@@ -275,14 +283,16 @@ function onPick(opt: Option) {
   open.value = false;
 }
 
-function onPickFolder(path: string) {
-  emit("add", folderValue(path));
+function onPickFolder(folder: RuleValue) {
+  emit("add", folder);
   open.value = false;
 }
 
 const emptyStateText = computed(() => {
   if (props.source === "folder" && !query.value) {
-    return $t("settings.folder_picker.no_subfolders");
+    return folderPath.value === null
+      ? $t("smart_playlist.picker_empty_folder_sources")
+      : $t("settings.folder_picker.no_subfolders");
   }
   if (isRemote.value && query.value.length < 2) {
     return $t("smart_playlist.picker_empty_search", {

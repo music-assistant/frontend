@@ -39,21 +39,13 @@
         "
         :key="`operator-${rule.field}`"
         :model-value="rule.operator"
-        :disabled="
-          rule.field === 'year' ||
-          rule.field === 'duration' ||
-          rule.field === 'folder'
-        "
+        :disabled="hasFixedOperator"
         @update:model-value="(v) => emit('change-operator', v as RuleOperator)"
       >
         <SelectTrigger
           :class="[
             'h-7 w-[110px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none',
-            rule.field === 'year' ||
-            rule.field === 'duration' ||
-            rule.field === 'folder'
-              ? 'cursor-default opacity-70'
-              : 'hover:bg-accent',
+            hasFixedOperator ? 'cursor-default opacity-70' : 'hover:bg-accent',
           ]"
         >
           <SelectValue />
@@ -66,15 +58,7 @@
                 : $t("smart_playlist.op_is")
             }}
           </SelectItem>
-          <SelectItem
-            v-if="
-              rule.field !== 'year' &&
-              rule.field !== 'duration' &&
-              rule.field !== 'folder'
-            "
-            value="is_not"
-            class="text-xs"
-          >
+          <SelectItem v-if="!hasFixedOperator" value="is_not" class="text-xs">
             {{ $t("smart_playlist.op_is_not") }}
           </SelectItem>
         </SelectContent>
@@ -310,6 +294,11 @@ const emit = defineEmits<{
   "remove-value": [id: number];
   remove: [];
 }>();
+
+// these fields only take "is" (between for a range), so their operator cannot be changed
+const hasFixedOperator = computed(() =>
+  ["year", "duration", "folder"].includes(props.rule.field),
+);
 
 const fieldOptions = computed(() => {
   const all: { value: RuleField; label: string }[] = [

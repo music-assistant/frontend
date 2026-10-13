@@ -54,12 +54,15 @@ export function folderValue(path: string): RuleValue {
   for (let i = 0; i < path.length; i++) {
     id = (Math.imul(31, id) + path.charCodeAt(i)) | 0;
   }
+  return { id, name: folderName(path), path };
+}
+
+// prefixed with the music source, so equally named folders stay apart
+export function folderName(path: string): string {
   const [provider, relPath] = path.split("://", 2);
-  // prefixed with the music source, so equally named folders stay apart
   const sourceName = api.providers[provider]?.name || provider;
   const folder = relPath?.replace(/\/+$/, "");
-  const name = folder ? `${sourceName}/${folder}` : sourceName;
-  return { id, name, path };
+  return folder ? `${sourceName}/${folder}` : sourceName;
 }
 
 export interface RuleRow {

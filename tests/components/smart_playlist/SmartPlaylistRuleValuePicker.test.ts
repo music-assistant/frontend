@@ -282,12 +282,17 @@ describe("SmartPlaylistRuleValuePicker", () => {
 
     rows(content)[0].click();
     await flushPromises();
-    expect(browse).toHaveBeenLastCalledWith("filesystem_local--music://");
+    // the picker reports a failed browse itself
+    expect(browse).toHaveBeenLastCalledWith(
+      "filesystem_local--music://",
+      undefined,
+      { suppressGlobalError: true },
+    );
     expect(content.textContent).not.toContain("..");
 
     [...rows(content)].find((b) => b.textContent?.includes("Rock"))!.click();
     await flushPromises();
-    expect(browse).toHaveBeenLastCalledWith("filesystem_local--music://Rock");
+    expect(browse.mock.lastCall?.[0]).toBe("filesystem_local--music://Rock");
     expect(content.textContent).toContain("Classic");
 
     [...rows(content)]
@@ -310,5 +315,20 @@ describe("SmartPlaylistRuleValuePicker", () => {
     await flushPromises();
 
     expect(toast.error).toHaveBeenCalledWith("Could not open the folder");
+  });
+
+  it("drops the spinner when going back while a folder loads", async () => {
+    browse.mockReturnValueOnce(new Promise(() => {}));
+    const content = await openPopover(mountPicker("folder"));
+
+    rows(content)[0].click();
+    await flushPromises();
+    expect(isSpinning(content)).toBe(true);
+
+    content.querySelector<HTMLButtonElement>("[aria-label='Back']")!.click();
+    await flushPromises();
+
+    expect(isSpinning(content)).toBe(false);
+    expect(content.textContent).toContain("My Music");
   });
 });

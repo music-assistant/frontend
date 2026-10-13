@@ -92,7 +92,7 @@
 
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
-import { folderValue } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
+import { folderName } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Ban, Library, Sparkles } from "@lucide/vue";
@@ -222,7 +222,7 @@ const ruleRows = computed<RuleViewRow[]>(() => {
       icon: fieldIcon("folder"),
       label: $t("smart_playlist.field_folder_is"),
       exclude: false,
-      tags: r.folder_paths.map((path) => folderValue(path).name),
+      tags: r.folder_paths.map(folderName),
     });
   }
 
