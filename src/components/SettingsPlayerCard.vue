@@ -1,7 +1,7 @@
 <template>
   <Card
     v-hold="onHold"
-    class="player-card min-h-[120px] cursor-pointer gap-2 rounded-(--radius-xl) p-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
+    class="player-card min-h-[120px] cursor-pointer gap-3 rounded-(--radius-xl) p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
     :class="{
       'player-disabled opacity-60': !playerConfig.enabled,
       'player-unavailable opacity-70': isUnavailable,
@@ -13,9 +13,9 @@
   >
     <div class="flex items-center gap-3">
       <div
-        class="flex size-10 shrink-0 items-center justify-center rounded-(--radius-lg) bg-primary/15"
+        class="flex size-12 shrink-0 items-center justify-center rounded-(--radius-lg) bg-primary/15"
       >
-        <PlayerIcon :icon="player?.icon" :size="20" />
+        <PlayerIcon :icon="player?.icon" :size="24" />
       </div>
       <div class="min-w-0 flex-1">
         <div

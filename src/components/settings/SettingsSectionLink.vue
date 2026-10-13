@@ -32,7 +32,7 @@
   <Item
     v-else
     as-child
-    class="group min-h-20 rounded-(--radius-xl) border-0 px-6 py-5 hover:bg-accent/50 max-md:min-h-18 max-md:p-4"
+    class="group gap-5 rounded-(--radius-xl) border-0 px-4 py-3.5 hover:bg-accent/50 max-md:gap-4 max-md:px-3"
   >
     <RouterLink :to="section.route" class="text-inherit no-underline">
       <ItemMedia>

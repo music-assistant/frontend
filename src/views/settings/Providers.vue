@@ -101,19 +101,11 @@
       </EmptyContent>
     </Empty>
 
-    <Empty
+    <FilterEmptyState
       v-else-if="loaded && filteredProviders.length === 0"
-      class="rounded-(--radius-xl) border"
+      :icon="Puzzle"
       data-testid="providers-empty"
-    >
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <SearchX />
-        </EmptyMedia>
-        <EmptyTitle>{{ $t("no_content") }}</EmptyTitle>
-        <EmptyDescription>{{ $t("no_content_filter") }}</EmptyDescription>
-      </EmptyHeader>
-    </Empty>
+    />
   </Container>
 
   <!-- Audio analysis status hint -->
@@ -149,6 +141,7 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
+import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
 import ProviderRow from "@/components/settings/providers/ProviderRow.vue";
@@ -157,7 +150,6 @@ import {
   Empty,
   EmptyContent,
   EmptyDescription,
-  EmptyHeader,
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
@@ -191,7 +183,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { Info, Music, Plus, SearchX } from "@lucide/vue";
+import { Info, Music, Plus, Puzzle } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, inject, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";

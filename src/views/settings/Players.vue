@@ -52,19 +52,11 @@
         />
       </div>
 
-      <Empty
+      <FilterEmptyState
         v-if="filteredPlayers.length === 0"
-        class="rounded-(--radius-xl) border"
+        :icon="VolumeOff"
         data-testid="players-empty"
-      >
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <SearchX />
-          </EmptyMedia>
-          <EmptyTitle>{{ $t("no_content") }}</EmptyTitle>
-          <EmptyDescription>{{ $t("no_content_filter") }}</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      />
     </Container>
     <div
       v-if="canAddPlayerProviders"
@@ -86,17 +78,11 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
+import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
 import SettingsPlayerRow from "@/components/settings/players/SettingsPlayerRow.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { ItemGroup } from "@/components/ui/item";
 
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
@@ -117,7 +103,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { Info, Plus, SearchX } from "@lucide/vue";
+import { Info, Plus, VolumeOff } from "@lucide/vue";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";

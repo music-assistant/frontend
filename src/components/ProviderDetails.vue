@@ -13,7 +13,7 @@
           :key="providerMapping.provider_instance"
           v-hold="(evt: Event) => onMenu(evt, providerMapping)"
           size="sm"
-          class="rounded-(--radius-lg) border-0"
+          class="gap-7 rounded-(--radius-lg) border-0 px-2"
           :class="{
             'pointer-events-none opacity-50':
               !isMappingAvailable(providerMapping),
@@ -81,8 +81,22 @@
               :title="$t('tooltip.play_sample')"
               @click="playBtnClick(providerMapping)"
             >
-              <Pause v-if="isSamplePlaying(providerMapping)" class="size-5" />
-              <CirclePlay v-else class="size-5" />
+              <span
+                class="flex size-6 items-center justify-center rounded-full bg-foreground/60 text-background"
+              >
+                <Pause
+                  v-if="isSamplePlaying(providerMapping)"
+                  class="size-3"
+                  fill="currentColor"
+                  :stroke-width="0"
+                />
+                <Play
+                  v-else
+                  class="play-icon-centered size-3"
+                  fill="currentColor"
+                  :stroke-width="0"
+                />
+              </span>
             </Button>
             <Button
               variant="ghost"
@@ -99,7 +113,7 @@
           v-if="itemDetails.provider == 'library'"
           v-hold="(evt: Event) => onMenu(evt, libraryMapping)"
           size="sm"
-          class="rounded-(--radius-lg) border-0"
+          class="gap-7 rounded-(--radius-lg) border-0 px-2"
           @click.right.prevent="onMenu($event, libraryMapping)"
         >
           <ItemMedia>
@@ -141,12 +155,12 @@
 import {
   ChevronDown,
   ChevronUp,
-  CirclePlay,
   DatabaseSearch,
   ExternalLink,
   Link,
   MoreVertical,
   Pause,
+  Play,
   Trash2,
 } from "@lucide/vue";
 import Container from "@/components/Container.vue";

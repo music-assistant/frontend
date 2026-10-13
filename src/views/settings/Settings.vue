@@ -52,7 +52,7 @@
       </div>
 
       <nav v-else :aria-label="t('settings.settings')">
-        <ItemGroup class="gap-1">
+        <ItemGroup>
           <SettingsSectionLink
             v-for="section in listSections"
             :key="section.name"

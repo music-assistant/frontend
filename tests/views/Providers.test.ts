@@ -1281,6 +1281,7 @@ async function mountWithConfigs(
         EmptyHeader: SlotStub,
         EmptyMedia: SlotStub,
         EmptyTitle: SlotStub,
+        FilterEmptyState: false,
         ItemGroup: SlotStub,
         ProviderAccessDialog: AccessDialogStub,
         ProviderRow: ProviderRowStub,
