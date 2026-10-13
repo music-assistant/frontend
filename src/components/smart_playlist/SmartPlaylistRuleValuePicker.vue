@@ -105,6 +105,7 @@ import {
 } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import {
   MediaType,
+  ProviderFeature,
   type Album,
   type Artist,
   type BrowseFolder,
@@ -239,7 +240,13 @@ async function openFolder(path: string | null) {
   query.value = "";
   if (path === null) {
     folderOptions.value = Object.values(api.providers)
-      .filter((p) => p.domain.startsWith("filesystem_") && p.available)
+      .filter(
+        (p) =>
+          p.domain.startsWith("filesystem_") &&
+          p.available &&
+          // skips audiobook, podcast and sound effect folders: they hold no tracks
+          p.supported_features.includes(ProviderFeature.LIBRARY_TRACKS),
+      )
       .map((p) => ({ id: 0, name: p.name, path: `${p.instance_id}://` }));
     return;
   }

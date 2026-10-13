@@ -24,12 +24,21 @@ vi.mock("@/plugins/api", () => ({
         instance_id: "filesystem_local--music",
         name: "My Music",
         available: true,
+        supported_features: ["library_tracks"],
+      },
+      "filesystem_local--books": {
+        domain: "filesystem_local",
+        instance_id: "filesystem_local--books",
+        name: "My Audiobooks",
+        available: true,
+        supported_features: ["library_audiobooks"],
       },
       "spotify--x": {
         domain: "spotify",
         instance_id: "spotify--x",
         name: "Spotify",
         available: true,
+        supported_features: ["library_tracks"],
       },
     },
   },
@@ -263,9 +272,10 @@ describe("SmartPlaylistRuleValuePicker", () => {
     const wrapper = mountPicker("folder");
     const content = await openPopover(wrapper);
 
-    // only filesystem sources are offered
+    // only filesystem sources holding tracks are offered
     expect(content.textContent).toContain("My Music");
     expect(content.textContent).not.toContain("Spotify");
+    expect(content.textContent).not.toContain("My Audiobooks");
 
     rows(content)[0].click();
     await flushPromises();
