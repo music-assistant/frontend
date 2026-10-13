@@ -360,6 +360,9 @@ export interface HostDraft {
   // options: free-form key/value pairs passed straight through to the TTS engine
   options: Record<string, unknown>;
   segments: ShowSegment[];
+  // Carried through unchanged; the server validates them on save
+  presetId?: string;
+  presetHash?: string;
 }
 
 export interface CompiledHost {
@@ -391,6 +394,9 @@ export const compileHost = (draft: HostDraft): CompiledHost => {
       section_ids: sections.map((section) => section.id),
       section_order: sectionOrder,
       merge_section_id: mergeSectionId,
+      ...(draft.presetId && draft.presetHash
+        ? { preset_id: draft.presetId, preset_hash: draft.presetHash }
+        : {}),
     },
     sections,
   };
@@ -538,6 +544,8 @@ export const decompileHost = (
     language: host.language,
     options: host.options,
     segments,
+    presetId: host.preset_id,
+    presetHash: host.preset_hash,
   };
 };
 
