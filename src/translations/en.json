@@ -2453,6 +2453,7 @@
     "album_radio": "Album endless mix",
     "playlist_radio": "Playlist endless mix",
     "n_tracks": "{count} track | {count} tracks",
+    "select_all": "Select all",
     "n_selected": "{count} selected | {count} selected",
     "n_episodes": "{count} episode | {count} episodes",
     "more_from_artist": "More from this artist",

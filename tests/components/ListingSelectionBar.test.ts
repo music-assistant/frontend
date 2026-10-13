@@ -1,6 +1,6 @@
 import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 enableAutoUnmount(afterEach);
 
@@ -51,22 +51,23 @@ describe("ListingSelectionBar", () => {
     const wrapper = mountBar({});
 
     await button(wrapper, "clear_selection").trigger("click");
-    await button(wrapper, "tooltip.select_all").trigger("click");
-    await button(wrapper, "actions").trigger("click", {
-      clientX: 10,
-      clientY: 20,
-    });
+    await button(wrapper, "select_all").trigger("click");
+    const actions = button(wrapper, "actions");
+    vi.spyOn(actions.element, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(100, 500, 80, 32),
+    );
+    await actions.trigger("click");
 
     expect(wrapper.emitted("clear")).toHaveLength(1);
     expect(wrapper.emitted("selectAll")).toHaveLength(1);
-    const [[event]] = wrapper.emitted("actions") as [[MouseEvent]];
-    expect([event.clientX, event.clientY]).toEqual([10, 20]);
+    // the menu hangs above the button's top right corner
+    expect(wrapper.emitted("actions")).toEqual([[{ x: 180, y: 492 }]]);
   });
 
   it("hides select all once everything is selected", () => {
     const wrapper = mountBar({ allSelected: true });
 
-    expect(() => button(wrapper, "tooltip.select_all")).toThrow();
+    expect(() => button(wrapper, "select_all")).toThrow();
     expect(button(wrapper, "actions").exists()).toBe(true);
   });
 });

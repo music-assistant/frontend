@@ -31,12 +31,17 @@
           @sort-by="changeSort"
         />
         <Transition v-if="!store.mobileLayout" name="listing-search">
-          <div v-if="showSearchInput" class="listing-search-slot">
+          <!-- the input follows the slot's edge as it opens, and the padding
+               keeps its 3px focus ring inside the clipped area -->
+          <div
+            v-if="showSearchInput"
+            class="listing-search-slot -m-[3px] box-content p-[3px]"
+          >
             <SearchInput
               ref="searchInputRef"
               v-model="params.search"
               clearable
-              class="listing-search listing-search--inline w-(--listing-search-width) shrink-0"
+              class="listing-search listing-search--inline"
               :placeholder="searchLabel"
               :aria-label="searchLabel"
               @focus="searchHasFocus = true"
@@ -321,11 +326,11 @@
         @clear="clearSelection"
         @select-all="selectAll"
         @actions="
-          (evt: MouseEvent) =>
+          (anchor: { x: number; y: number }) =>
             handleMenuBtnClick(
               selectedItems,
-              evt.clientX,
-              evt.clientY,
+              anchor.x,
+              anchor.y,
               parentItem,
               true,
               params.sortBy,

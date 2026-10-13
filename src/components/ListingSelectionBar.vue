@@ -14,19 +14,10 @@
           v-if="open"
           role="toolbar"
           :aria-label="$t('selection_actions')"
-          class="pointer-events-auto flex max-w-full items-center gap-1 rounded-full border bg-popover p-1.5 text-popover-foreground shadow-lg"
+          class="pointer-events-auto flex max-w-full items-center gap-1 rounded-full border bg-popover py-1.5 pr-1.5 pl-4 text-popover-foreground shadow-lg"
         >
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            class="rounded-full"
-            :aria-label="$t('clear_selection')"
-            @click="emit('clear')"
-          >
-            <X />
-          </Button>
           <span
-            class="truncate px-1 text-sm font-medium tabular-nums"
+            class="me-2 truncate text-sm font-medium tabular-nums"
             aria-live="polite"
           >
             {{
@@ -38,18 +29,26 @@
             variant="ghost"
             size="sm"
             class="rounded-full"
-            :aria-label="$t('tooltip.select_all')"
             @click="emit('selectAll')"
           >
-            <CheckCheck />
-            <span class="max-sm:hidden">{{ $t("tooltip.select_all") }}</span>
+            {{ $t("select_all") }}
           </Button>
-          <Button
-            size="sm"
-            class="rounded-full"
-            @click="(evt: MouseEvent) => emit('actions', evt)"
-          >
+          <Button size="sm" class="rounded-full" @click="onActionsClick">
             {{ $t("actions") }}
+          </Button>
+          <span
+            class="mx-1 h-5 w-px flex-none bg-border"
+            aria-hidden="true"
+          ></span>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            class="rounded-full text-muted-foreground"
+            :aria-label="$t('clear_selection')"
+            :title="$t('clear_selection')"
+            @click="emit('clear')"
+          >
+            <X />
           </Button>
         </div>
       </Transition>
@@ -59,7 +58,7 @@
 
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
-import { CheckCheck, X } from "@lucide/vue";
+import { X } from "@lucide/vue";
 import { reactive, watchEffect } from "vue";
 
 const props = defineProps<{
@@ -68,10 +67,14 @@ const props = defineProps<{
   allSelected: boolean;
 }>();
 
+// space between the bar and the menu opening above it
+const MENU_GAP = 8;
+
 const emit = defineEmits<{
   clear: [];
   selectAll: [];
-  actions: [event: MouseEvent];
+  // the point the menu hangs from: the top right corner of the Actions button
+  actions: [anchor: { x: number; y: number }];
 }>();
 
 // What the bar shows, held while it is closed so the leave animation keeps the
@@ -82,4 +85,10 @@ watchEffect(() => {
   shown.count = props.count;
   shown.allSelected = props.allSelected;
 });
+
+/** Opens the menu above the Actions button, right-aligned with it, clear of the bar. */
+function onActionsClick(evt: MouseEvent) {
+  const rect = (evt.currentTarget as HTMLElement).getBoundingClientRect();
+  emit("actions", { x: rect.right, y: rect.top - MENU_GAP });
+}
 </script>
