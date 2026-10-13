@@ -1369,6 +1369,14 @@ export interface StreamDetails {
 
 // queue_item
 
+export interface QueueItemOrigin {
+  // the album, playlist, folder or other item the queue item was played from
+  container: ItemMapping | null;
+  // the copy of the item in the container's listing, if known
+  provider_instance: string | null;
+  item_id: string | null;
+}
+
 export interface QueueItem {
   queue_id: string;
   queue_item_id: string;
@@ -1380,6 +1388,8 @@ export interface QueueItem {
   media_item: PlayableMediaItemType | null;
   image: MediaItemImage | null;
   available: boolean;
+  // where the item was played from, null when not recorded
+  origin: QueueItemOrigin | null;
   // Party: extra_attributes for guest-added items
   extra_attributes?: {
     party_guest?: boolean; // true if added by party guest
