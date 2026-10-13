@@ -72,7 +72,7 @@ const COLUMN_WIDTH: Record<TrackColumn, string> = {
   album: "minmax(0,3fr)",
   year: "3rem",
   bpm: "3rem",
-  key: "5.5rem",
+  key: "4rem",
   source: "minmax(0,2fr)",
   favorite: "2rem",
   duration: "3.5rem",
