@@ -1687,6 +1687,30 @@ describe("ItemsListing date added sort", () => {
   });
 });
 
+describe("ItemsListing without sort keys", () => {
+  it("lists the items in the order they were loaded", async () => {
+    // a collection's books, in the series order the server sends
+    const listing = mountListingRaw({
+      itemtype: "audiobook",
+      path: undefined,
+      loadPagedData: undefined,
+      loadItems: vi
+        .fn()
+        .mockResolvedValue([
+          track({ item_id: "2", name: "Book 2" }),
+          track({ item_id: "1", name: "Book 1" }),
+        ]),
+      sortKeys: [],
+    });
+    await flushPromises();
+
+    expect(rows(listing).map((item) => item.name)).toEqual([
+      "Book 2",
+      "Book 1",
+    ]);
+  });
+});
+
 /** Mounts a listing of `total` items and asks it to select them all. */
 async function selectAll(total: number) {
   const listing = mountListingRaw({

@@ -1843,8 +1843,11 @@ const loadData = async function (
     params.value.offset = offset;
     params.value.limit = props.limit;
     params.value.refresh = refresh;
-    const currentSort = librarySorting.current.value;
-    const sortField = currentSort.field as SortField;
+    // a listing without sort keys keeps the order its items are loaded in
+    const currentSort = params.value.sortBy
+      ? librarySorting.current.value
+      : undefined;
+    const sortField = currentSort?.field as SortField | undefined;
     const selectedSortOption = sortOptions.value.find(
       (option) => option.field === sortField,
     );
@@ -1855,7 +1858,7 @@ const loadData = async function (
       sortField === SortField.RANDOM_PLAY_COUNT ||
       sortField === SortField.ORIGINAL
         ? undefined
-        : currentSort.direction;
+        : currentSort?.direction;
 
     if (loadPagedData != null) {
       // server side paged listing (with filter support)
