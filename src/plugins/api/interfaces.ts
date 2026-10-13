@@ -205,15 +205,33 @@ export enum MediaType {
   UNKNOWN = "unknown",
 }
 
-export type LibrarySortMediaType =
-  | MediaType.ARTIST
-  | MediaType.ALBUM
-  | MediaType.TRACK
-  | MediaType.PLAYLIST
-  | MediaType.RADIO
-  | MediaType.AUDIOBOOK
-  | MediaType.PODCAST
-  | MediaType.GENRE;
+export enum ListingType {
+  LIBRARY_ARTISTS = "library_artists",
+  LIBRARY_ALBUMS = "library_albums",
+  LIBRARY_TRACKS = "library_tracks",
+  LIBRARY_PLAYLISTS = "library_playlists",
+  LIBRARY_RADIOS = "library_radios",
+  LIBRARY_AUDIOBOOKS = "library_audiobooks",
+  LIBRARY_PODCASTS = "library_podcasts",
+  LIBRARY_GENRES = "library_genres",
+  ALBUM_TRACKS = "album_tracks",
+  ARTIST_ALBUMS = "artist_albums",
+  ARTIST_TRACKS = "artist_tracks",
+  ARTIST_APPEARS_ON = "artist_appears_on",
+  ARTIST_DISCOGRAPHY = "artist_discography",
+  ARTIST_TOP_TRACKS = "artist_top_tracks",
+  ARTIST_TOP_ALBUMS = "artist_top_albums",
+  ARTIST_AUDIOBOOKS = "artist_audiobooks",
+  SIMILAR_ARTISTS = "similar_artists",
+  SIMILAR_TRACKS = "similar_tracks",
+  TRACK_ALBUMS = "track_albums",
+  VERSIONS = "versions",
+  PLAYLIST_TRACKS = "playlist_tracks",
+  PODCAST_EPISODES = "podcast_episodes",
+  GENRE_TRACKS = "genre_tracks",
+  GENRE_ALBUMS = "genre_albums",
+  BROWSE = "browse",
+}
 
 export enum SortField {
   NAME = "name",

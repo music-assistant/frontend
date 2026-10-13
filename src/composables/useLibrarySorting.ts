@@ -99,6 +99,7 @@ export function useLibrarySorting(
 
   return {
     current,
+    selectedOption,
     quickOptions,
     normalizeSortBy,
     sortByOption,

@@ -7,7 +7,7 @@
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :show-library="true"
-    :sort-media-type="MediaType.AUDIOBOOK"
+    :sort-listing="ListingType.LIBRARY_AUDIOBOOKS"
     :sort-option-exclude-fields="audiobookSortOptionExclusions"
     :update-available="updateAvailable"
     :title="$t('audiobooks')"
@@ -34,6 +34,7 @@ import {
   ArtistType,
   EventMessage,
   EventType,
+  ListingType,
   MediaType,
   ProviderFeature,
   SortField,
@@ -59,8 +60,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sort_field,
-    params.sort_direction,
+    params.sortField,
+    params.sortDirection,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
     params.collapseCollections,
@@ -79,8 +80,8 @@ const loadItemsAuthorsNarrators = async (
     params.search,
     params.limit,
     params.offset,
-    params.sort_field,
-    params.sort_direction,
+    params.sortField,
+    params.sortDirection,
     false,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,

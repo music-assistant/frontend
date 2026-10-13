@@ -8,7 +8,7 @@
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :show-library="true"
-    :sort-media-type="MediaType.PLAYLIST"
+    :sort-listing="ListingType.LIBRARY_PLAYLISTS"
     :update-available="updateAvailable"
     :title="$t('playlists')"
     :allow-key-hooks="true"
@@ -31,6 +31,7 @@ import api from "@/plugins/api";
 import {
   EventMessage,
   EventType,
+  ListingType,
   MediaType,
   type Playlist,
   ProviderFeature,
@@ -61,8 +62,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sort_field,
-    params.sort_direction,
+    params.sortField,
+    params.sortDirection,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
   );

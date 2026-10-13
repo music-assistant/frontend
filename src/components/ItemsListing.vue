@@ -22,12 +22,10 @@
 
       <template #append>
         <LibrarySortControls
-          v-if="props.sortMediaType && sortOptionsLoaded && sortOptions.length"
+          v-if="props.sortListing && sortOptionsLoaded && sortOptions.length"
           mode="menu"
           :options="sortOptions"
           :sort-by="params.sortBy"
-          :disabled="loading"
-          :mobile-layout="store.mobileLayout"
           @sort-by="changeSort"
         />
         <Transition v-if="!store.mobileLayout" name="listing-search">
@@ -48,7 +46,7 @@
     </Toolbar>
 
     <div
-      v-if="props.sortMediaType && !store.mobileLayout"
+      v-if="props.sortListing && !store.mobileLayout"
       class="listing-sort-chips-row h-12"
     >
       <LibrarySortControls
@@ -56,8 +54,6 @@
         mode="chips"
         :options="sortOptions"
         :sort-by="params.sortBy"
-        :disabled="loading"
-        :mobile-layout="store.mobileLayout"
         @sort-by="changeSort"
       />
     </div>
@@ -337,6 +333,14 @@
   </section>
 </template>
 
+<script lang="ts">
+export type {
+  LoadDataParams,
+  StoredState,
+  ToolBarTab,
+} from "@/composables/useItemsListing";
+</script>
+
 <script setup lang="ts">
 import type { Component } from "vue";
 
@@ -358,11 +362,15 @@ import { SearchInput } from "@/components/ui/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GridSizeSlider from "@/components/GridSizeSlider.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
-import { useLibrarySorting } from "@/composables/useLibrarySorting";
+import { useItemsListing } from "@/composables/useItemsListing";
+import type {
+  LoadDataParams,
+  LoadPagedDataFn,
+  ToolBarTab,
+} from "@/composables/useItemsListing";
 import { SEARCHABLE_MEDIA_TYPES } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
-  favoriteState,
   keepOwnFavorite,
   setFavoriteState,
   subscribeOwnFavorites,
@@ -393,15 +401,13 @@ import {
   ProviderFeature,
   ProviderType,
   Radio,
-  SortDirection,
   SortField,
   type Album,
   type Genre,
-  type LibrarySortMediaType,
   type MediaItem,
   type MediaItemType,
   type ProviderInstance,
-  type SortOptionInfo,
+  ListingType,
   type Track,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -447,37 +453,11 @@ import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
 
-type LoadPagedDataFn = (params: LoadDataParams) => Promise<MediaItemType[]>;
-
-export interface ToolBarTab {
-  id: string;
-  label: string;
-  loadPagedData?: LoadPagedDataFn;
-}
-
-export interface LoadDataParams {
-  offset: number;
-  limit: number;
-  sortBy: string;
-  sort_field?: SortField;
-  sort_direction?: SortDirection;
-  search: string;
-  genreIds?: number | number[];
-  favoritesOnly?: boolean;
-  albumArtistsFilter?: boolean;
-  libraryOnly?: boolean;
-  hideEmptyFilter?: boolean | null;
-  hideFullyPlayed?: boolean;
-  refresh?: boolean;
-  albumType?: string[];
-  provider?: string[];
-  collapseCollections?: boolean;
-}
 // properties
 export interface Props {
   itemtype: string;
   sortKeys?: string[];
-  sortMediaType?: LibrarySortMediaType;
+  sortListing?: ListingType;
   sortOptionExcludeFields?: SortField[];
   showTrackNumber?: boolean;
   showProvider?: boolean;
@@ -545,7 +525,7 @@ export interface Props {
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
-  sortMediaType: undefined,
+  sortListing: undefined,
   sortOptionExcludeFields: () => [],
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
@@ -606,6 +586,33 @@ const { open: openCommandCenter } = useCommandCenter();
 const { getItemsListingPreferences, setItemsListingPreference } =
   useUserPreferences();
 const activeTabId = ref(props.toolBarTabs?.[0]?.id || "");
+let restoredFromPrevState = false;
+
+const getActiveTab = () => {
+  return props.toolBarTabs?.find((tab) => tab.id === activeTabId.value);
+};
+
+const {
+  allItems,
+  allItemsReceived,
+  initialDataReceived,
+  librarySorting,
+  loadAllItems,
+  loadData,
+  loadError,
+  loadNextPage,
+  loading,
+  newContentAvailable,
+  pagedItems,
+  params,
+  retryLoad,
+  scheduleSortReload,
+  serverSortOptions,
+  sortOptions,
+  sortOptionsLoaded,
+  tempHide,
+} = useItemsListing(props, getActiveTab);
+
 watch(
   () => props.toolBarTabs,
   (tabs) => {
@@ -626,11 +633,6 @@ watch(
     }
   },
 );
-let restoredFromPrevState = false;
-
-const getActiveTab = () => {
-  return props.toolBarTabs?.find((tab) => tab.id === activeTabId.value);
-};
 
 const onTabChange = function (tabId: string) {
   if (!tabId || tabId === activeTabId.value) return;
@@ -645,15 +647,6 @@ const onTabChange = function (tabId: string) {
   loadData(true);
 };
 
-// local refs
-const params = ref<LoadDataParams>({
-  offset: 0,
-  limit: 50,
-  sortBy: "name",
-  search: "",
-  libraryOnly: false,
-  genreIds: undefined,
-});
 const viewMode = ref("list");
 const gridSize = ref(GRID_SIZE_DEFAULT);
 const showSearch = ref(false);
@@ -666,36 +659,10 @@ const searchLabel = computed(() => {
   const labelKey = MEDIA_TYPE_LABEL_KEYS[mediaType] ?? `${mediaType}s`;
   return t("search_in", [t(labelKey)]);
 });
-const pagedItems = ref<MediaItemType[]>([]);
-const allItems = ref<MediaItemType[]>([]);
-const loading = ref(false);
 const selectedItems = ref<MediaItemTypeOrItemMapping[]>([]);
-const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const expanded = ref(true);
-const allItemsReceived = ref(false);
-// set when the last load failed; scrolling does not retry it, the user does
-const loadError = ref(false);
-const initialDataReceived = ref(false);
-const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
-const serverSortOptions = ref<SortOptionInfo[]>([]);
-const sortOptions = computed(() =>
-  serverSortOptions.value.filter(
-    (option) => !props.sortOptionExcludeFields.includes(option.field),
-  ),
-);
-const sortOptionsLoaded = ref(false);
-const librarySorting = useLibrarySorting(
-  sortOptions,
-  computed(() => params.value.sortBy),
-);
-
-// used in tabbed item listings to prevent a timing-race condition, where
-// the selected tab shows items of the initial tab on entering the page
-let loadingTabId: string | undefined;
-let pendingTabLoad = false;
-let pendingSortReload = false;
 
 // below this item count, the per-listing search option is hidden to reduce
 // clutter (consumers can force it on/off via the showSearchButton prop).
@@ -1050,7 +1017,7 @@ const onRefreshClicked = function () {
 };
 
 watch(sortOptions, () => {
-  if (!sortOptionsLoaded.value || !props.sortMediaType) return;
+  if (!sortOptionsLoaded.value || !props.sortListing) return;
   const normalized = librarySorting.normalizeSortBy(params.value.sortBy);
   if (normalized === params.value.sortBy) return;
   params.value.sortBy = normalized;
@@ -1061,7 +1028,7 @@ watch(sortOptions, () => {
     normalized,
   );
   if (loading.value) {
-    pendingSortReload = true;
+    scheduleSortReload();
     return;
   }
   loadData(true, undefined, true);
@@ -1194,51 +1161,6 @@ const redirectSearch = function () {
         ? [mediaType]
         : [],
   });
-};
-
-const loadNextPage = async function ({
-  done,
-}: {
-  done: (status: "ok" | "empty" | "loading" | "error") => void;
-}) {
-  if (allItemsReceived.value) {
-    done("empty");
-    return;
-  }
-  // the infinite scroller is re-created whenever a load starts and ends, and a new one
-  // loads right away, so a failed load would otherwise be retried as fast as it fails
-  if (loadError.value) {
-    done("error");
-    return;
-  }
-
-  await loadData(
-    undefined,
-    undefined,
-    undefined,
-    params.value.offset + props.limit,
-  );
-
-  done(loadError.value ? "error" : "ok");
-};
-
-const retryLoad = function (loadNext: () => void) {
-  loadError.value = false;
-  if (pagedItems.value.length === 0) {
-    // nothing loaded yet, so the failed load was the first one
-    loadData(true);
-  } else {
-    loadNext();
-  }
-};
-
-const loadAllItems = async function () {
-  while (!allItemsReceived.value && !loadError.value) {
-    // the paging can outlast the listing, so stop fetching once it is gone
-    if (unmounted) return;
-
-    await loadNextPage({ done: function () {} });
-  }
 };
 
 // computed properties
@@ -1633,7 +1555,7 @@ const menuItems = computed(() => {
   }
 
   // sort options
-  if (!props.sortMediaType && props.sortKeys?.length) {
+  if (!props.sortListing && props.sortKeys?.length) {
     items.push({
       label: "tooltip.sort_options",
       icon: ArrowUpDown,
@@ -1748,121 +1670,6 @@ const menuItems = computed(() => {
   return items;
 });
 
-const loadData = async function (
-  clear = false,
-  refresh = false,
-  FilterParamsChanged = false,
-  offset = 0,
-) {
-  let loadPagedData: LoadPagedDataFn | undefined = props.loadPagedData;
-  if (props.toolBarTabs !== undefined && props.toolBarTabs.length > 0) {
-    const activeTab = getActiveTab();
-    if (activeTab !== undefined && activeTab.loadPagedData !== undefined) {
-      loadPagedData = activeTab.loadPagedData;
-    }
-  }
-  const currentTabId = props.toolBarTabs?.length
-    ? getActiveTab()?.id
-    : undefined;
-  if (loading.value) {
-    // Record whether the currently requested tab differs from the tab being loaded.
-    // Using assignment (not only setting to true) avoids a redundant reload if the
-    // user switches tabs and then switches back before the current load finishes.
-    pendingTabLoad = currentTabId !== loadingTabId;
-
-    // we could potentially be called multiple times due to multiple watchers
-    // so ignore if we're already loading
-    return;
-  }
-  loading.value = true;
-  loadingTabId = currentTabId;
-  if (clear || refresh || FilterParamsChanged) {
-    // a reload the user asked for gets a fresh attempt
-    loadError.value = false;
-  }
-
-  if (FilterParamsChanged && loadPagedData != null) {
-    // on paged server listings, we need to clear the list on filter params change
-    clear = true;
-  }
-
-  if (clear || refresh) {
-    offset = 0;
-    if (allItemsReceived.value) {
-      // this hack is needed in order to force refresh the infinite scroller
-      // otherwise it will not attempt to load more items if the end was reached
-      // and then we load new items with a different size
-      tempHide.value = true;
-    }
-    allItemsReceived.value = false;
-    initialDataReceived.value = false;
-    newContentAvailable.value = false;
-  }
-
-  const previousOffset = params.value.offset;
-  try {
-    params.value.offset = offset;
-    params.value.limit = props.limit;
-    params.value.refresh = refresh;
-    const currentSort = librarySorting.current.value;
-    const sortField = currentSort.field as SortField;
-    const selectedSortOption = sortOptions.value.find(
-      (option) => option.field === sortField,
-    );
-    params.value.sort_field = sortField;
-    params.value.sort_direction =
-      selectedSortOption?.supports_direction === false ||
-      sortField === SortField.RANDOM ||
-      sortField === SortField.RANDOM_PLAY_COUNT ||
-      sortField === SortField.ORIGINAL
-        ? undefined
-        : currentSort.direction;
-
-    if (loadPagedData != null) {
-      // server side paged listing (with filter support)
-      const nextItems = await loadPagedData(params.value);
-      if (params.value.offset) {
-        pagedItems.value.push(...nextItems);
-      } else {
-        pagedItems.value = nextItems;
-      }
-      if (Math.abs(nextItems.length - props.limit) > 10) {
-        allItemsReceived.value = true;
-      }
-    } else if (props.loadItems != null) {
-      // grab items from loadItems callback
-      if (!initialDataReceived.value || refresh) {
-        // load all items from the callback
-        allItems.value = await props.loadItems(params.value);
-        initialDataReceived.value = true;
-      }
-      // filter items
-      const nextItems = getFilteredItems(allItems.value, params.value);
-      if (params.value.offset) {
-        pagedItems.value.push(...nextItems);
-      } else {
-        pagedItems.value = nextItems;
-      }
-      // mark allItemsReceived if we have all items
-      allItemsReceived.value = nextItems.length < props.limit;
-    }
-  } catch {
-    // the api already reports the failure to the user; the failed page is loaded next
-    params.value.offset = previousOffset;
-    loadError.value = true;
-  } finally {
-    params.value.refresh = false;
-    loading.value = false;
-    tempHide.value = false;
-  }
-
-  if (pendingTabLoad || pendingSortReload) {
-    pendingTabLoad = false;
-    pendingSortReload = false;
-    await loadData(true);
-  }
-};
-
 // Re-derive from the current props.path: browse reuses one ItemsListing
 // instance across folders, so a ref bound to the mount-time path would read
 // and reset the wrong folder's saved sort/view settings.
@@ -1904,10 +1711,13 @@ const restoreSettings = async function () {
   gridSize.value = normalizeGridSize(prefs.gridSize);
 
   // get stored/default sortBy for this itemtype
-  if (props.sortMediaType) {
+  if (props.sortListing) {
     if (sortOptionsLoaded.value) {
+      const defaultSortBy = sortOptions.value[0]
+        ? librarySorting.sortByOption(sortOptions.value[0])
+        : params.value.sortBy;
       const normalizedSortBy = librarySorting.normalizeSortBy(
-        prefs.sortBy || params.value.sortBy,
+        prefs.sortBy || defaultSortBy,
       );
       params.value.sortBy = normalizedSortBy;
       if (prefs.sortBy && normalizedSortBy !== prefs.sortBy) {
@@ -2229,11 +2039,9 @@ onBeforeUnmount(() => {
 });
 
 onMounted(async () => {
-  if (props.sortMediaType) {
+  if (props.sortListing) {
     try {
-      serverSortOptions.value = await api.getLibrarySortOptions(
-        props.sortMediaType,
-      );
+      serverSortOptions.value = await api.getSortOptions(props.sortListing);
     } catch {
       toast.error(t("settings.error_loading_sort_options"), {
         id: "library-sort-options-error",
@@ -2259,7 +2067,7 @@ onMounted(async () => {
     allItems.value = store.prevState.allItems;
     allItemsReceived.value = store.prevState.allItemsReceived;
     initialDataReceived.value = store.prevState.initialDataReceived;
-    if (props.sortMediaType) {
+    if (props.sortListing) {
       params.value.sortBy = librarySorting.normalizeSortBy(params.value.sortBy);
     }
     // what the last visit left behind gives way to a provider carried in by a
@@ -2352,196 +2160,6 @@ watch(
   },
   { deep: true },
 );
-
-export interface StoredState {
-  path: string;
-  // several listings share one path across different parents (e.g. every
-  // artist's albums use "artistalbums"), so the parent's uri scopes the
-  // restore to the item that was actually on screen
-  parentUri?: string;
-  // the listing was left on a provider carried in by a link, one the user has
-  // not picked: only going back shows that visit again
-  carried: boolean;
-  scrollPos: number;
-  pagedItems: MediaItemType[];
-  allItems: MediaItemType[];
-  allItemsReceived: boolean;
-  initialDataReceived: boolean;
-  params: LoadDataParams;
-}
-
-const getSortName = function (
-  item: MediaItemType | ItemMapping | null | undefined,
-  preferSortName = false,
-) {
-  if (!item) return "";
-  // names (incl. translated folder/media names) are resolved server-side, so we sort
-  // by item.name, falling back to sort_name when explicitly preferred.
-  if (preferSortName && "sort_name" in item && item.sort_name)
-    return item.sort_name;
-  return item.name;
-};
-
-const getDateAdded = function (item: MediaItemType): number {
-  // milliseconds since the epoch; items without a (valid) date sort as the oldest
-  const dateAdded = (item as MediaItem).date_added;
-  const time = dateAdded ? Date.parse(dateAdded) : 0;
-  return Number.isNaN(time) ? 0 : time;
-};
-
-const getFilteredItems = function (
-  // In-memory filter for (smaller) item sets that do not have server side paging and filtering
-  items: MediaItemType[],
-  params: LoadDataParams,
-): MediaItemType[] {
-  let result = [];
-
-  // search
-  if (params.search) {
-    const searchStr = params.search.toLowerCase();
-    for (const item of items) {
-      if (item.name.toLowerCase().includes(searchStr)) {
-        result.push(item);
-      } else if (
-        "album" in item &&
-        item.album?.name.toLowerCase().includes(searchStr)
-      ) {
-        result.push(item);
-      } else if (
-        "artists" in item &&
-        item.artists &&
-        item.artists.length &&
-        item.artists[0].name.toLowerCase().includes(searchStr)
-      ) {
-        result.push(item);
-      }
-    }
-  } else {
-    result = [...items];
-  }
-
-  // sort
-  if (params.sortBy == "name") {
-    result.sort((a, b) =>
-      getSortName(a).localeCompare(getSortName(b), undefined, {
-        numeric: true,
-      }),
-    );
-  }
-  if (params.sortBy == "sort_name") {
-    result.sort((a, b) =>
-      getSortName(a, true).localeCompare(getSortName(b, true), undefined, {
-        numeric: true,
-      }),
-    );
-  }
-  if (params.sortBy == "name_desc") {
-    result.sort((a, b) =>
-      getSortName(b).localeCompare(getSortName(a), undefined, {
-        numeric: true,
-      }),
-    );
-  }
-  if (params.sortBy == "sort_name_desc") {
-    result.sort((a, b) =>
-      getSortName(b, true).localeCompare(getSortName(a, true), undefined, {
-        numeric: true,
-      }),
-    );
-  }
-
-  if (params.sortBy == "album" || params.sortBy == "album_sort_name") {
-    const preferSortName = params.sortBy == "album_sort_name";
-    result.sort((a, b) => {
-      const albumCompare = getSortName(
-        (a as Track).album,
-        preferSortName,
-      ).localeCompare(
-        getSortName((b as Track).album, preferSortName),
-        undefined,
-        { numeric: true },
-      );
-      if (albumCompare !== 0) return albumCompare;
-      const discCompare =
-        ((a as Track).disc_number ?? 0) - ((b as Track).disc_number ?? 0);
-      if (discCompare !== 0) return discCompare;
-      return (
-        ((a as Track).track_number ?? 0) - ((b as Track).track_number ?? 0)
-      );
-    });
-  }
-  if (params.sortBy == "artist") {
-    result.sort((a, b) =>
-      getSortName((a as Track).artists[0]).localeCompare(
-        getSortName((b as Track).artists[0]),
-      ),
-    );
-  }
-  if (params.sortBy == "track_number") {
-    result.sort(
-      (a, b) =>
-        ((a as Track).track_number || 0) - ((b as Track).track_number || 0),
-    );
-    result.sort(
-      (a, b) =>
-        ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0),
-    );
-  }
-  if (params.sortBy == "position") {
-    result.sort(
-      (a, b) => ((a as Track).position || 0) - ((b as Track).position || 0),
-    );
-  }
-  if (params.sortBy == "position_desc") {
-    result.sort(
-      (a, b) => ((b as Track).position || 0) - ((a as Track).position || 0),
-    );
-  }
-  // Client-side "date added" sort for playlist tracks (a stable sort, so
-  // tracks added together keep their playlist order).
-  if (params.sortBy == "timestamp_added") {
-    result.sort((a, b) => getDateAdded(a) - getDateAdded(b));
-  }
-  if (params.sortBy == "timestamp_added_desc") {
-    result.sort((a, b) => getDateAdded(b) - getDateAdded(a));
-  }
-  if (params.sortBy == "year") {
-    result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
-  }
-  if (params.sortBy == "year_desc") {
-    result.sort((a, b) => ((b as Album).year || 0) - ((a as Album).year || 0));
-  }
-
-  if (params.sortBy == "duration") {
-    result.sort(
-      (a, b) => ((a as Track).duration || 0) - ((b as Track).duration || 0),
-    );
-  }
-  if (params.sortBy == "duration_desc") {
-    result.sort(
-      (a, b) => ((b as Track).duration || 0) - ((a as Track).duration || 0),
-    );
-  }
-
-  if (params.sortBy == "provider") {
-    result.sort((a, b) => a.provider.localeCompare(b.provider));
-  }
-
-  if (params.favoritesOnly) {
-    result = result.filter((x) => favoriteState(x) === true);
-  }
-
-  if (params.hideFullyPlayed) {
-    result = result.filter((x) => (x as PodcastEpisode).fully_played !== true);
-  }
-
-  if (params.albumType && params.albumType.length > 0) {
-    result = result.filter((x) =>
-      params.albumType?.includes((x as Album).album_type),
-    );
-  }
-  return result.slice(params.offset, params.offset + params.limit);
-};
 
 const selectAll = async function () {
   // We use the total length even when searching, since we can't know
