@@ -124,7 +124,7 @@ const coverSize = computed(() => (isPhoneSizedScreen() ? 132 : 200));
   font-size: 44px;
   font-weight: 500;
   letter-spacing: -1.1px;
-  line-height: 1.05;
+  line-height: 1.2;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -188,7 +188,6 @@ const coverSize = computed(() => (isPhoneSizedScreen() ? 132 : 200));
   .podcast-hero__name {
     font-size: 30px;
     letter-spacing: -0.7px;
-    line-height: 1.1;
   }
   .podcast-hero__meta {
     font-size: 14px;
