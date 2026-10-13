@@ -44,6 +44,7 @@
     "increase_value": "Increase value",
     "decrease_value": "Decrease value",
     "enter_url": "Enter the URL you want to manually add to the database",
+    "folder": "Folder",
     "goto_album": "View album {0}",
     "goto_artist": "View artist {0}",
     "items_selected": "{0} item(s) selected",
@@ -1295,7 +1296,8 @@
             "mixed_to_mono": "Mixed to mono"
         },
         "processing_header": "Processing",
-        "more_info_for": "More information about {item}"
+        "more_info_for": "More information about {item}",
+        "open_played_from": "Open {0}"
     },
     "select_source": "Select source",
     "play_replace_next": "Play Next (clear queue)",
