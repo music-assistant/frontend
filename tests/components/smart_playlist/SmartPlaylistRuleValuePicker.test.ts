@@ -13,6 +13,7 @@ import {
   type VueWrapper,
 } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "vue-sonner";
 
 vi.mock("@/plugins/api", () => ({
   default: {
@@ -43,6 +44,8 @@ vi.mock("@/plugins/api", () => ({
     },
   },
 }));
+
+vi.mock("vue-sonner", () => ({ toast: { error: vi.fn() } }));
 
 vi.mock("@/components/MediaItemThumb.vue", () => ({
   default: {
@@ -297,5 +300,15 @@ describe("SmartPlaylistRuleValuePicker", () => {
     ];
     expect(picked.path).toBe("filesystem_local--music://Rock");
     expect(picked.name).toBe("My Music/Rock");
+  });
+
+  it("reports a folder that cannot be browsed", async () => {
+    browse.mockRejectedValueOnce(new Error("gone"));
+    const content = await openPopover(mountPicker("folder"));
+
+    rows(content)[0].click();
+    await flushPromises();
+
+    expect(toast.error).toHaveBeenCalledWith("Could not open the folder");
   });
 });

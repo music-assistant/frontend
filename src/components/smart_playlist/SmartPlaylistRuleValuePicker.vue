@@ -115,6 +115,7 @@ import { $t } from "@/plugins/i18n";
 import { ChevronLeft, Folder, Plus } from "@lucide/vue";
 import { useDebounceFn } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
+import { toast } from "vue-sonner";
 
 interface Option {
   id: number;
@@ -261,7 +262,9 @@ async function openFolder(path: string | null) {
       )
       .map((i) => ({ id: 0, name: i.name, path: i.path }));
   } catch {
+    if (folderPath.value !== path) return;
     folderOptions.value = [];
+    toast.error($t("settings.folder_picker.browse_failed"));
   } finally {
     if (folderPath.value === path) isSearching.value = false;
   }
