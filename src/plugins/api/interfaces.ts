@@ -1104,6 +1104,8 @@ export interface AudioMetadata {
   // Audio analysis details (e.g. bpm, musical key).
   bpm: number | null;
   musical_key: string | null;
+  // Camelot wheel notation of musical_key, e.g. "11A"
+  camelot_key: string | null;
 }
 
 export interface Track extends MediaItem {

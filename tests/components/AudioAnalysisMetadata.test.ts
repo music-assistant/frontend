@@ -12,7 +12,11 @@ function mountMetadata(audioMetadata: AudioMetadata | null) {
 
 describe("AudioAnalysisMetadata", () => {
   it("renders the trigger as a labelled button", () => {
-    const wrapper = mountMetadata({ bpm: 128, musical_key: null });
+    const wrapper = mountMetadata({
+      bpm: 128,
+      musical_key: "F# minor",
+      camelot_key: "11A",
+    });
 
     // the popover has to be reachable and activatable from the keyboard
     const trigger = wrapper.find('button[aria-label="audio_analysis"]');
@@ -21,7 +25,11 @@ describe("AudioAnalysisMetadata", () => {
   });
 
   it("renders nothing without analysis data", () => {
-    const wrapper = mountMetadata({ bpm: null, musical_key: null });
+    const wrapper = mountMetadata({
+      bpm: null,
+      musical_key: null,
+      camelot_key: null,
+    });
 
     expect(wrapper.find("button").exists()).toBe(false);
   });
