@@ -30,7 +30,8 @@
         <span class="sr-only">{{ $t("track_table.duration") }}</span>
       </span>
       <span v-else-if="column === 'menu'" class="flex justify-center">
-        <DropdownMenu>
+        <!-- not modal, so the page still scrolls when the table sits low on screen -->
+        <DropdownMenu :modal="false">
           <DropdownMenuTrigger as-child>
             <Button
               variant="ghost"
@@ -45,20 +46,6 @@
             <DropdownMenuLabel>{{
               $t("track_table.columns")
             }}</DropdownMenuLabel>
-            <DropdownMenuCheckboxItem
-              v-for="label in alwaysShown"
-              :key="label"
-              :model-value="true"
-              disabled
-            >
-              <span class="flex flex-col">
-                {{ label }}
-                <span class="text-xs text-muted-foreground">
-                  {{ $t("track_table.always_shown") }}
-                </span>
-              </span>
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
               v-for="option in options"
               :key="option.column"
@@ -91,7 +78,6 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { $t } from "@/plugins/i18n";
@@ -119,11 +105,6 @@ const emit = defineEmits<{
 }>();
 
 const gridTemplate = computed(() => trackTableGridTemplate(props.columns));
-
-const alwaysShown = computed(() => [
-  $t("track_table.title"),
-  $t("track_table.duration"),
-]);
 
 const OPTION_LABEL_KEYS: Record<OptionalTrackColumn, string> = {
   album: "album",

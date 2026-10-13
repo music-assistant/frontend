@@ -1089,7 +1089,6 @@
         "duration": "Duration",
         "columns": "Columns",
         "choose_columns": "Choose columns",
-        "always_shown": "Always shown",
         "hidden_at_width": "Hidden at this width"
     },
     "tracks": "Tracks",
