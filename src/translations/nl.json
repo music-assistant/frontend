@@ -642,7 +642,6 @@
             "reconfigure_title": "Configureer {0} opnieuw"
         },
         "options": "Opties",
-        "add_group_player_desc": "Maak een permanente spelersgroep aan met {0} spelers. Wanneer je in deze spelersgroep speelt, worden de spelers die er lid van zijn automatisch gesynchroniseerd.",
         "server_clock_offset": "Klokverschil (server ten opzichte van dit apparaat)",
         "action_completed": "Actie voltooid",
         "hass_controls": {
@@ -761,7 +760,8 @@
             },
             "updated": "Toegang bijgewerkt",
             "share_title": "Deel {name}",
-            "nobody": "Niemand kan deze bron gebruiken"
+            "nobody": "Niemand kan deze bron gebruiken",
+            "section_description": "Wie is de eigenaar van deze muziekbron en wie mag deze nog meer gebruiken?"
         },
         "set_custom_name": "Een eigen naam instellen",
         "genre_table_page_of": "Pagina {0} van de {1}",
@@ -874,7 +874,33 @@
         },
         "remove_provider_confirm_music": "Wil je \"{0}\" verwijderen? Alle muziek die deze bron aanbiedt, wordt uit je bibliotheek verwijderd, samen met de afspeelgeschiedenis. Dit kan niet ongedaan worden gemaakt.",
         "remove_provider_confirm_player": "Wil je \"{0}\" verwijderen? De spelers en hun instellingen worden dan ook verwijderd. Dit kan niet ongedaan worden gemaakt.",
-        "remove_provider_acknowledge": "Ik begrijp dat hierdoor muziek uit mijn bibliotheek wordt verwijderd."
+        "remove_provider_acknowledge": "Ik begrijp dat hierdoor muziek uit mijn bibliotheek wordt verwijderd.",
+        "provider_players_description": "De spelers die deze provider aan Music Assistant toevoegt",
+        "sync_in_progress": "Synchroniseren...",
+        "library_sync": "Bibliotheeksynchronisatie",
+        "library_sync_description": "Hiermee wordt de bibliotheek bijgewerkt met deze muziekbron",
+        "storage_location": "Opslaglocatie",
+        "storage_location_description": "Waar deze muziekbron zijn bestanden vandaan haalt",
+        "server_url": {
+            "title": "URL van Music Assistant",
+            "description": "Waar apparaten en gasten toegang krijgen tot Music Assistant, bijvoorbeeld via de links in uitnodigingen voor party's en quizzen.",
+            "internet": "Internet",
+            "local_network": "Lokaal netwerk",
+            "use_remote_access": "Gebruik externe toegang",
+            "remote_access_description": "Links die met gasten worden gedeeld, worden via externe toegang geopend.",
+            "remote_access_hint": "Niet bereikbaar via internet? Externe toegang werkt ook zonder openbare URL.",
+            "set_up_remote_access": "Externe toegang instellen",
+            "automatic": "Automatisch",
+            "detected_after_save": "Wordt automatisch gedetecteerd na het opslaan",
+            "copy_remote": "Kopieer de link voor externe toegang",
+            "copy_detected": "Lokale netwerk-URL kopiëren",
+            "copied": "URL gekopieerd",
+            "copy_failed": "De URL kon niet worden gekopieerd"
+        },
+        "unsupported_install_title": "Niet-ondersteunde installatie",
+        "unsupported_install_description": "Deze server is niet geïnstalleerd via een van de {0}. Sommige functies werken mogelijk niet zoals verwacht, en problemen die hierover worden gemeld, kunnen zonder ondersteuning worden afgesloten.",
+        "unsupported_install_link": "ondersteunde installatiemethoden",
+        "error_loading_sort_options": "Fout bij het laden van de sorteeropties"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -911,7 +937,11 @@
         "ascending": "Oplopend",
         "ascending_abbreviation": "Opl.",
         "descending": "Aflopend",
-        "descending_abbreviation": "Afl."
+        "descending_abbreviation": "Afl.",
+        "favorite_timestamp": "Datum toegevoegd aan favorieten",
+        "artist_name": "Artiest",
+        "random": "Willekeurig",
+        "random_play_count": "Willekeurig (minst afgespeelde eerst)"
     },
     "state": {
         "idle": "gestopt",
@@ -1150,7 +1180,8 @@
                 "smart": "Slim",
                 "standard": "Standaard",
                 "disabled": "Uitgeschakeld",
-                "source": "Toegepast door {0}"
+                "source": "Toegepast door {0}",
+                "voice_over": "Voice-over, met de muziek eronder"
             },
             "dsp_state": {
                 "enabled": "DSP actief",
@@ -1425,7 +1456,9 @@
         "guest_ended_dashboard_title": "Deze dashboardsessie is beëindigd",
         "guest_ended_dashboard_message": "Cast het dashboard opnieuw vanuit Music Assistant om verder te gaan.",
         "continue_to_app": "Ga verder naar Music Assistant",
-        "scan_qr_hint_guest": "Richt je camera op de QR-code die de host laat zien."
+        "scan_qr_hint_guest": "Richt je camera op de QR-code die de host laat zien.",
+        "server_outdated_title": "De server moet worden bijgewerkt.",
+        "server_outdated_message": "Voor deze app is een nieuwere versie van de Music Assistant-server nodig dan {version}. Probeer het opnieuw zodra de server is bijgewerkt."
     },
     "yes": "Ja",
     "no": "Nee",
@@ -1905,17 +1938,13 @@
                 "playlists_truncated": "Alleen de eerste {0} afspeellijsten werden geladen.",
                 "unavailable": "AI Radio is niet ingeschakeld.",
                 "live_starting": "De live-uitzending is begonnen",
-                "live_start_failed": "Het starten van de live radio-uitzending is mislukt",
-                "session_stopped": "AI Radio-sessie gestopt",
-                "session_stop_failed": "Het is niet gelukt om de AI Radio-sessie te beëindigen",
                 "station_saved": "Station opgeslagen",
-                "station_save_failed": "Het opslaan van het station is mislukt",
                 "station_deleted": "Station verwijderd",
                 "station_duplicated": "Station gedupliceerd",
-                "session_failed": "AI Radio-uitvoering mislukt: {0}",
                 "host_saved": "Presentator opgeslagen",
                 "host_deleted": "Presentator verwijderd",
-                "tts_engines_load_failed": "Het laden van de stemopties is mislukt."
+                "tts_engines_load_failed": "Het laden van de stemopties is mislukt.",
+                "show_stopped": "Programma gestopt"
             },
             "header": {
                 "subtitle": "Verander een afspeellijst in een radioprogramma met een AI-presentator."
@@ -1933,21 +1962,14 @@
             },
             "card": {
                 "play": "Afspelen",
-                "starting": "Starten...",
                 "stop": "Stop",
                 "on_air": "Wordt nu uitgezonden",
                 "customize": "Aanpassen",
                 "duplicate": "Dupliceren",
                 "duplicate_name": "{0} (kopie)",
                 "delete": "Verwijderen",
-                "session_failed": "De laatste poging is mislukt",
-                "status_failed": "Mislukt: {0}",
-                "status_last_on_air": "Laatst uitgezonden {0}",
                 "no_player": "Selecteer eerst een speler",
-                "start_failed": "Starten van {0} mislukt",
-                "switch_show_title": "Van programma wisselen?",
-                "switch_show_confirm": "«{0}» wordt uitgezonden. Wil je deze stoppen en «{1}» afspelen?",
-                "switch_show_confirm_label": "Wisselen"
+                "start_failed": "Starten van {0} mislukt"
             },
             "create": {
                 "title": "Een programma maken",
@@ -2529,7 +2551,7 @@
     "screens": "Beeldschermen",
     "play_from_here_to_latest": "Speel vanaf hier tot de laatste",
     "players_need_setup": "Er is een nieuw apparaat ontdekt dat moet worden ingesteld | er zijn {count} nieuwe apparaten ontdekt die ingesteld moeten worden.",
-    "review": "Recensie",
+    "review": "Beoordeel",
     "import_playlist_search_providers_description": "Geselecteerde muziekbronnen worden gebruikt als alternatieve bronnen wanneer de oorspronkelijke bron van een nummer niet beschikbaar is.",
     "import_playlist_match_policy_label": "Nummer matching",
     "import_playlist_match_policy_exact_title": "Exacte release",
@@ -2864,5 +2886,14 @@
     "grid_size": "Omslagformaat",
     "grid_size_default": "Standaardformaat",
     "grid_size_smaller": "{count} stap kleiner | {count} stappen kleiner",
-    "grid_size_larger": "{count} stap groter | {count} stappen groter"
+    "grid_size_larger": "{count} stap groter | {count} stappen groter",
+    "edit_rows_subtitle_podcast": "Van toepassing op elke podcastpagina",
+    "playlist_radio": "Afspeellijst Endless Mix",
+    "edit_rows_subtitle_playlist": "Van toepassing op elke afspeellijstpagina",
+    "duration_hours_minutes": "{hours} H {minutes} min",
+    "duration_hours": "{hours} H",
+    "duration_minutes": "{minutes} min",
+    "tracklist_heading": "Nummers",
+    "skip_back_seconds": "Spoel {0} seconden terug",
+    "skip_forward_seconds": "Spring {0} seconden vooruit"
 }
