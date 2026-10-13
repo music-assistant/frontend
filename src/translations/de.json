@@ -642,7 +642,6 @@
             "reconfigure_title": "{0} neu konfigurieren"
         },
         "options": "Optionen",
-        "add_group_player_desc": "Erstelle eine permanente Wiedergabegeräte-Gruppe mit {0} Wiedergabegeräten. Wenn du in dieser Wiedergabegeräte-Gruppe abspielst, werden die Mitglieds-Wiedergabegeräte automatisch synchronisiert.",
         "server_clock_offset": "Zeitversatz (Server gegenüber diesem Gerät)",
         "action_completed": "Aktion abgeschlossen",
         "hass_controls": {
@@ -761,7 +760,8 @@
             },
             "updated": "Zugriff aktualisiert",
             "share_title": "{name} teilen",
-            "nobody": "Niemand kann diese Quelle nutzen"
+            "nobody": "Niemand kann diese Quelle nutzen",
+            "section_description": "Wem gehört diese Musikquelle und wer darf sie sonst noch nutzen?"
         },
         "set_custom_name": "Einen benutzerdefinierten Namen festlegen",
         "genre_table_page_of": "Seite {0} von {1}",
@@ -874,7 +874,32 @@
         },
         "remove_provider_confirm_music": "„{0}“ entfernen? Alle Titel, die diese Quelle bereitstellt, werden zusammen mit ihrem Wiedergabeverlauf aus deiner Bibliothek entfernt. Dieser Vorgang kann nicht rückgängig gemacht werden.",
         "remove_provider_confirm_player": "„{0}“ entfernen? Seine Wiedergabegeräte und ihre Einstellungen werden ebenfalls entfernt. Dieser Vorgang kann nicht rückgängig gemacht werden.",
-        "remove_provider_acknowledge": "Mir ist bewusst, dass dadurch Musik aus meiner Bibliothek entfernt wird."
+        "remove_provider_acknowledge": "Mir ist bewusst, dass dadurch Musik aus meiner Bibliothek entfernt wird.",
+        "provider_players_description": "Die Wiedergabegeräte, die dieser Anbieter für Music Assistant bereitstellt",
+        "sync_in_progress": "Wird synchronisiert...",
+        "library_sync": "Bibliothekssynchronisierung",
+        "library_sync_description": "Aktualisiert die Bibliothek mit dieser Musikquelle.",
+        "storage_location": "Speicherort",
+        "storage_location_description": "Woher diese Musikquelle ihre Dateien bezieht",
+        "server_url": {
+            "title": "URL von Music Assistant",
+            "description": "Wenn Geräte und Gäste auf Music Assistant zugreifen, beispielsweise über die Links in Party- und Quiz-Einladungen.",
+            "internet": "Internet",
+            "local_network": "Lokales Netzwerk",
+            "use_remote_access": "Fernzugriff nutzen",
+            "remote_access_description": "Die mit Gästen geteilten Links können per Fernzugriff geöffnet werden.",
+            "remote_access_hint": "Nicht über das Internet erreichbar? Fernzugriff funktioniert auch ohne öffentliche URL.",
+            "set_up_remote_access": "Fernzugriff einrichten",
+            "automatic": "Automatisch",
+            "detected_after_save": "Automatische Erkennung nach dem Speichern",
+            "copy_remote": "Fernzugriffs-Link kopieren",
+            "copy_detected": "Lokale Netzwerk-URL kopieren",
+            "copied": "URL kopiert",
+            "copy_failed": "URL konnte nicht kopiert werden"
+        },
+        "unsupported_install_title": "Nicht unterstützte Installation",
+        "unsupported_install_description": "Dieser Server wurde nicht über eine der {0} installiert. Einige Funktionen funktionieren möglicherweise nicht wie erwartet, und von diesem Server gemeldete Probleme werden möglicherweise ohne Support geschlossen.",
+        "unsupported_install_link": "Unterstützte Installationsmethoden"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -1150,7 +1175,8 @@
                 "smart": "Smart",
                 "standard": "Standard",
                 "disabled": "Deaktiviert",
-                "source": "Angewendet von {0}"
+                "source": "Angewendet von {0}",
+                "voice_over": "Voice-over, Musik im Hintergrund"
             },
             "dsp_state": {
                 "enabled": "DSP aktiv",
@@ -1425,7 +1451,9 @@
         "guest_ended_dashboard_title": "Diese Dashboard-Sitzung ist beendet",
         "guest_ended_dashboard_message": "Rufe das Dashboard erneut über Music Assistant auf, um fortzufahren.",
         "continue_to_app": "Weiter zu Music Assistant",
-        "scan_qr_hint_guest": "Richte deine Kamera auf den QR-Code, den der Gastgeber zeigt."
+        "scan_qr_hint_guest": "Richte deine Kamera auf den QR-Code, den der Gastgeber zeigt.",
+        "server_outdated_title": "Der Server muss aktualisiert werden.",
+        "server_outdated_message": "Diese App benötigt eine neuere Version des Music Assistant-Servers als {version} Sobald der Server aktualisiert ist, versuche es erneut."
     },
     "yes": "Ja",
     "no": "Nein",
@@ -1856,12 +1884,14 @@
                 "shuffle_playlist_tracks": "Wiedergabeliste zufällig abspielen",
                 "voice": "Stimme",
                 "host": "Host",
-                "language": "Sprache"
+                "language": "Sprache",
+                "allow_post": "Gespräch über die Einleitung"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximale Gesamtspielzeit der Hintergrundmusik in Minuten. Die Titel werden in der Reihenfolge abgespielt, in der sie in der Sendung vorkommen, bis die Obergrenze erreicht ist. Für keine Begrenzung den Wert auf 0 setzen.",
                 "instructions": "Beschreibt die Persönlichkeit des Moderators und wie die Beiträge verfasst werden sollen. Diese Beschreibung wird zusammen mit jedem Beitrag an die AI gesendet.",
-                "shuffle_playlist_tracks": "Die Quell-Wiedergabeliste wird in zufälliger Reihenfolge abgespielt. Deaktiviere diese Option, um die Reihenfolge der Wiedergabeliste beizubehalten."
+                "shuffle_playlist_tracks": "Die Quell-Wiedergabeliste wird in zufälliger Reihenfolge abgespielt. Deaktiviere diese Option, um die Reihenfolge der Wiedergabeliste beizubehalten.",
+                "allow_post": "Das Ende dieses Segments wird über den Anfang des nächsten Songs gelegt, wobei die Musik unter der Stimme leiser gestellt wird und kurz vor Beginn des Gesangs endet. Dies geschieht nur, wenn Music Assistant weiß, wo der Gesang beginnt, und das Intro lang genug ist. Wenn mehrere Segmente als eine Pause gesprochen werden, muss diese Funktion bei allen aktiviert sein."
             },
             "web_search": {
                 "disabled": "deaktiviert (kein Web-Tool)",
@@ -1905,14 +1935,9 @@
                 "playlists_truncated": "Es wurden nur die ersten {0} Wiedergabelisten geladen.",
                 "unavailable": "AI-Radio ist nicht aktiviert.",
                 "live_starting": "Live-Radio gestartet",
-                "live_start_failed": "Live-Radio konnte nicht gestartet werden",
-                "session_stopped": "AI-Radio-Sitzung beendet",
-                "session_stop_failed": "AI-Radio-Sitzung konnte nicht gestoppt werden",
                 "station_saved": "Station gespeichert",
-                "station_save_failed": "Station konnte nicht gespeichert werden",
                 "station_deleted": "Station gelöscht",
                 "station_duplicated": "Station dupliziert",
-                "session_failed": "AI Radio-Ausführung fehlgeschlagen: {0}",
                 "host_saved": "Host gespeichert",
                 "host_deleted": "Host gelöscht",
                 "tts_engines_load_failed": "Sprachoptionen konnten nicht geladen werden"
@@ -1933,21 +1958,14 @@
             },
             "card": {
                 "play": "Abspielen",
-                "starting": "Starte...",
                 "stop": "Stopp",
                 "on_air": "Auf Sendung",
                 "customize": "Anpassen",
                 "duplicate": "Duplikat",
                 "duplicate_name": "{0} (Kopie)",
                 "delete": "Löschen",
-                "session_failed": "Letzter Durchlauf fehlgeschlagen",
-                "status_failed": "Fehlgeschlagen {0}",
-                "status_last_on_air": "Zuletzt auf Sendung {0}",
                 "no_player": "Wähle zuerst ein Wiedergabegerät aus.",
-                "start_failed": "Start fehlgeschlagen von: {0}",
-                "switch_show_title": "Sendung wechseln?",
-                "switch_show_confirm": "„{0}“ läuft gerade. Ausschalten und stattdessen „{1}“ abspielen?",
-                "switch_show_confirm_label": "Umschalten"
+                "start_failed": "Start fehlgeschlagen von: {0}"
             },
             "create": {
                 "title": "Eine Sendung erstellen",
