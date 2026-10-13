@@ -10,6 +10,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { audioFidelity, audioOutputDetails } from "../fixtures/audioProcessing";
 import { audioFormat } from "../fixtures/audioFormat";
+import { itemMapping } from "../fixtures/itemMapping";
 import { playerQueue } from "../fixtures/playerQueue";
 import { playerSource } from "../fixtures/playerSource";
 import { queueItem } from "../fixtures/queueItem";
@@ -84,6 +85,24 @@ describe("useActiveAudioPath", () => {
       crossfadeIntent: CrossfadeMode.SMART_CROSSFADE,
       queueId: queue.queue_id,
     });
+  });
+
+  it("passes on the item the queue item was played from", () => {
+    const container = itemMapping({ name: "Midnight Avenue" });
+    storeMock.curQueueItem = queueItem({
+      streamdetails: streamDetails({
+        audio_processing: {
+          input_fidelity: audioFidelity(),
+          queue_processing: null,
+          outputs: [],
+        },
+      }),
+      origin: { container, provider_instance: null, item_id: null },
+    });
+
+    const { activeAudioPath } = useActiveAudioPath();
+
+    expect(activeAudioPath.value?.container).toEqual(container);
   });
 
   it("resolves a live source snapshot when no queue item is active", () => {

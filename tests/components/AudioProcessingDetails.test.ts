@@ -15,6 +15,7 @@ import {
   CrossfadeMode,
   DSPFilterType,
   DSPState,
+  type ItemMapping,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
@@ -27,6 +28,7 @@ import {
   audioQueueProcessing,
 } from "../fixtures/audioProcessing";
 import { audioFormat } from "../fixtures/audioFormat";
+import { itemMapping } from "../fixtures/itemMapping";
 import { providerManifest } from "../fixtures/providerManifest";
 import { streamDetails } from "../fixtures/streamDetails";
 
@@ -247,6 +249,21 @@ describe("AudioProcessingDetails", () => {
       "Bit-perfect: decoded source samples reach the output unchanged.",
     );
     expect(text).not.toContain("Processed output");
+  });
+
+  it("names the item the track was played from under its source", () => {
+    const wrapper = mountDetails(
+      {},
+      makeStreamDetails(),
+      undefined,
+      itemMapping({ name: "Midnight Avenue" }),
+    );
+
+    expect(
+      wrapper
+        .get('[data-stage="provider"] .audio-processing-stage-subtitle')
+        .text(),
+    ).toBe("Album · Midnight Avenue");
   });
 
   it("updates a resolved preset name reactively", async () => {
@@ -937,12 +954,14 @@ function mountDetails(
   chain: Partial<AudioProcessingChain> = {},
   streamDetails = makeStreamDetails(),
   crossfadeIntent?: CrossfadeMode,
+  container?: ItemMapping,
 ) {
   return mount(AudioProcessingDetails, {
     props: {
       chain: audioProcessingChain(chain),
       streamDetails,
       crossfadeIntent,
+      container,
     },
     global: {
       plugins: [i18n],

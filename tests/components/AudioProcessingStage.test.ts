@@ -214,6 +214,35 @@ describe("AudioProcessingStage settings link", () => {
   });
 });
 
+describe("AudioProcessingStage subtitle link", () => {
+  it("opens the page of the item the subtitle names", async () => {
+    const to = { name: "album", params: { provider: "library", itemId: "3" } };
+    const wrapper = mountStage({
+      key: "provider",
+      providerIconDomain: "filesystem--music",
+      title: "Local files",
+      subtitleParts: ["Album", "Midnight Avenue"],
+      subtitleLink: { to, label: "Open Midnight Avenue" },
+    });
+    const link = wrapper.get(
+      ".audio-processing-stage-subtitle button.audio-processing-stage-link",
+    );
+
+    expect(link.text()).toBe("Album · Midnight Avenue");
+    expect(link.attributes("title")).toBe("Open Midnight Avenue");
+    expect(wrapper.find(".audio-processing-stage-title").element.tagName).toBe(
+      "SPAN",
+    );
+
+    await link.trigger("click");
+
+    expect(storeMock.showFullscreenPlayer).toBe(false);
+    expect(storeMock.showPlayersMenu).toBe(false);
+    expect(routerMock.push).toHaveBeenCalledWith(to);
+    expect(wrapper.emitted("navigate")).toHaveLength(1);
+  });
+});
+
 function mountStage(stage: AudioProcessingDisplayStage) {
   return mount(AudioProcessingStage, {
     props: { stage },
