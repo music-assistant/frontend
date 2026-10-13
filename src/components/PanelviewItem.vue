@@ -12,53 +12,65 @@
     @select="(i, selected) => emit('select', i as MediaItemType, selected)"
   >
     <template v-if="showActions" #actions>
-      <div class="panel-item-actions" @click.stop>
-        <v-icon
-          v-if="
-            'metadata' in item && parseBool(item.metadata.explicit || false)
-          "
-          size="30"
-          icon="mdi-alpha-e-box"
-        />
-        <!-- hi res icon -->
-        <span
-          v-if="HiResDetails"
-          :class="
-            $vuetify.theme.current.dark ? 'hiresicon' : 'hiresiconinverted'
-          "
+      <div class="@container">
+        <div
+          class="mt-2 flex h-8 items-center gap-2.5 @max-[150px]:hidden"
+          @click.stop
         >
-          <img :src="iconHiRes" width="30" alt="" />
-          <v-tooltip activator="parent" location="bottom">
-            {{ HiResDetails }}
-          </v-tooltip>
-        </span>
-        <!-- disc/track number-->
-        <span
-          v-if="showTrackNumber && 'track_number' in item && item.track_number"
-          class="track-no"
-        >
-          <v-icon size="small" icon="mdi-music-circle-outline" />
-          <span v-if="item.disc_number">{{ item.disc_number }}/</span
-          >{{ item.track_number }}
-        </span>
-        <!-- position-->
-        <span v-else-if="'position' in item && item.position" class="track-no">
-          <v-icon size="small" icon="mdi-music-circle-outline" />
-          {{ item.position }}
-        </span>
-        <FavouriteButton
-          v-if="
-            getBreakpointValue('bp3') && canHoldFavorite(item) && canEditLibrary
-          "
-          :item="item"
-        />
-        <v-spacer />
-        <MAButton
-          variant="list"
-          icon="mdi-dots-vertical"
-          :aria-label="menuButtonLabel"
-          @click.stop="onMenu"
-        />
+          <v-icon
+            v-if="
+              'metadata' in item && parseBool(item.metadata.explicit || false)
+            "
+            size="30"
+            icon="mdi-alpha-e-box"
+          />
+          <!-- hi res icon -->
+          <span
+            v-if="HiResDetails"
+            :class="
+              $vuetify.theme.current.dark ? 'hiresicon' : 'hiresiconinverted'
+            "
+          >
+            <img :src="iconHiRes" width="30" alt="" />
+            <v-tooltip activator="parent" location="bottom">
+              {{ HiResDetails }}
+            </v-tooltip>
+          </span>
+          <!-- disc/track number-->
+          <span
+            v-if="
+              showTrackNumber && 'track_number' in item && item.track_number
+            "
+            class="track-no"
+          >
+            <v-icon size="small" icon="mdi-music-circle-outline" />
+            <span v-if="item.disc_number">{{ item.disc_number }}/</span
+            >{{ item.track_number }}
+          </span>
+          <!-- position-->
+          <span
+            v-else-if="'position' in item && item.position"
+            class="track-no"
+          >
+            <v-icon size="small" icon="mdi-music-circle-outline" />
+            {{ item.position }}
+          </span>
+          <FavouriteButton
+            v-if="
+              getBreakpointValue('bp3') &&
+              canHoldFavorite(item) &&
+              canEditLibrary
+            "
+            :item="item"
+          />
+          <v-spacer />
+          <MAButton
+            variant="list"
+            icon="mdi-dots-vertical"
+            :aria-label="menuButtonLabel"
+            @click.stop="onMenu"
+          />
+        </div>
       </div>
     </template>
   </EditorialMediaCard>
@@ -160,13 +172,6 @@ const onMenu = function (evt: MouseEvent) {
 </script>
 
 <style scoped>
-.panel-item-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
-  height: 32px;
-}
 .track-no {
   display: inline-flex;
   align-items: center;
