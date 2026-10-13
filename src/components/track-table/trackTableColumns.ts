@@ -3,6 +3,8 @@ export type TrackColumn =
   | "title"
   | "album"
   | "year"
+  | "bpm"
+  | "key"
   | "source"
   | "favorite"
   | "duration"
@@ -10,14 +12,23 @@ export type TrackColumn =
   | "menu";
 
 // the columns the user can switch off in the column picker
-export type OptionalTrackColumn = "album" | "number" | "year" | "source";
+export type OptionalTrackColumn =
+  "album" | "number" | "year" | "bpm" | "key" | "source";
 
 export const OPTIONAL_TRACK_COLUMNS: OptionalTrackColumn[] = [
   "album",
   "number",
   "year",
+  "bpm",
+  "key",
   "source",
 ];
+
+// BPM and key are only known for analysed tracks, so they start switched off
+export const DEFAULT_TRACK_COLUMNS: OptionalTrackColumn[] =
+  OPTIONAL_TRACK_COLUMNS.filter(
+    (column) => column !== "bpm" && column !== "key",
+  );
 
 // shared by the header and the rows; the inset lines the first column up with
 // the listing's title and the menu with the toolbar's right-most button
@@ -33,6 +44,8 @@ const COLUMN_ORDER: TrackColumn[] = [
   "title",
   "album",
   "year",
+  "bpm",
+  "key",
   "source",
   "favorite",
   "duration",
@@ -46,6 +59,9 @@ const MIN_TABLE_WIDTH: Partial<Record<TrackColumn, number>> = {
   album: 600,
   favorite: 600,
   number: 600,
+  // only shown once switched on, so they outrank year and source
+  bpm: 1000,
+  key: 1000,
   year: 1100,
   source: 1200,
 };
@@ -55,6 +71,8 @@ const COLUMN_WIDTH: Record<TrackColumn, string> = {
   title: "minmax(0,4fr)",
   album: "minmax(0,3fr)",
   year: "3rem",
+  bpm: "3rem",
+  key: "4rem",
   source: "minmax(0,2fr)",
   favorite: "2rem",
   duration: "3.5rem",
