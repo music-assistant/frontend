@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_TRACK_COLUMNS,
   isHiddenAtWidth,
   OPTIONAL_TRACK_COLUMNS,
   trackTableGridTemplate,
@@ -27,11 +28,20 @@ describe("visibleTrackColumns", () => {
       "title",
       "album",
       "year",
+      "bpm",
+      "key",
       "source",
       "favorite",
       "duration",
       "menu",
     ]);
+  });
+
+  it("starts with BPM and key switched off", () => {
+    const columns = visibleTrackColumns(DEFAULT_TRACK_COLUMNS, 1400);
+    expect(columns).not.toContain("bpm");
+    expect(columns).not.toContain("key");
+    expect(columns).toContain("source");
   });
 
   it("drops columns by priority as the table narrows", () => {
@@ -40,6 +50,8 @@ describe("visibleTrackColumns", () => {
     expect(at(1199)).not.toContain("source");
     expect(at(1199)).toContain("year");
     expect(at(1099)).not.toContain("year");
+    expect(at(1099)).toEqual(expect.arrayContaining(["bpm", "key"]));
+    expect(at(999)).not.toContain("bpm");
     expect(at(600)).toEqual(
       expect.arrayContaining(["number", "album", "favorite", "title"]),
     );

@@ -18,6 +18,20 @@
       <span v-else-if="column === 'year'" class="truncate">
         {{ $t("track_table.year") }}
       </span>
+      <span
+        v-else-if="column === 'bpm'"
+        class="truncate"
+        :title="$t('tooltip.bpm')"
+      >
+        {{ $t("bpm") }}
+      </span>
+      <span
+        v-else-if="column === 'key'"
+        class="truncate"
+        :title="$t('tooltip.musical_key')"
+      >
+        {{ $t("musical_key") }}
+      </span>
       <span v-else-if="column === 'source'" class="truncate">
         {{ $t("track_table.source") }}
       </span>
@@ -110,6 +124,8 @@ const OPTION_LABEL_KEYS: Record<OptionalTrackColumn, string> = {
   album: "album",
   number: "track_table.track_number",
   year: "track_table.year",
+  bpm: "bpm",
+  key: "musical_key",
   source: "track_table.source",
 };
 

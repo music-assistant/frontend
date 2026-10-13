@@ -86,6 +86,29 @@
       </div>
 
       <div
+        v-else-if="column === 'bpm'"
+        class="text-sm tabular-nums text-muted-foreground"
+      >
+        {{ bpm }}
+      </div>
+
+      <!-- the Camelot code on its wheel colour; the key name is in the tooltip -->
+      <div
+        v-else-if="column === 'key'"
+        class="truncate text-sm text-muted-foreground"
+        :title="audioMetadata?.musical_key ?? undefined"
+      >
+        <span
+          v-if="camelotKey"
+          class="inline-flex h-5 min-w-9 items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums text-black"
+          :style="{ backgroundColor: camelotColor(camelotKey) }"
+        >
+          {{ camelotKey }}
+        </span>
+        <template v-else>{{ audioMetadata?.musical_key }}</template>
+      </div>
+
+      <div
         v-else-if="column === 'source'"
         class="flex min-w-0 items-center gap-2 text-sm text-muted-foreground"
       >
@@ -161,6 +184,7 @@ import {
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
+import { camelotColor } from "@/helpers/camelot";
 import { formatDuration, getArtistsString } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { Scope, type MediaItemType } from "@/plugins/api/interfaces";
@@ -213,6 +237,18 @@ const position = computed(
 
 const album = computed(() =>
   "album" in props.item ? props.item.album : undefined,
+);
+
+const audioMetadata = computed(() =>
+  "audio_metadata" in props.item ? props.item.audio_metadata : undefined,
+);
+
+const bpm = computed(() =>
+  audioMetadata.value?.bpm ? Math.round(audioMetadata.value.bpm) : undefined,
+);
+
+const camelotKey = computed(
+  () => audioMetadata.value?.camelot_key ?? undefined,
 );
 
 const artists = computed(() =>
