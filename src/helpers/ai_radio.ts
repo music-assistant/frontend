@@ -102,11 +102,11 @@ export interface ShowDraft {
 }
 
 const SONG_TRANSITION_PROMPT =
-  "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Create a natural radio transition that connects both songs, sounds informed but concise, and avoids filler or repetition.";
+  "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Bridge the two with one natural link, such as a shared era, scene, mood or a surprising contrast, then hand off by naming the next artist and title once. No filler, and mention the previous track at most in passing.";
 
 /** Neutral starter instructions for a brand-new custom host, mirroring the server's built-in default. */
 export const GENERIC_HOST_INSTRUCTIONS =
-  "Host personality: warm, sharp, music-literate, and slightly premium without sounding formal. Program instructions: write for spoken delivery, keep segments concise, avoid bullet-point phrasing, avoid clichés, mention concrete details when available, and maintain a believable radio flow between sections.";
+  "You are a warm, sharp, music-literate radio host, slightly premium without sounding formal. Keep segments concise, skip cliches and filler, use concrete details when you have them, and keep a believable flow from one segment into the next. Write for spoken delivery: short sentences, no lists, no headings, no emojis, no stage directions. Never invent facts, dates or quotes; when you lack a detail, say less. Never mention being an AI. Name artists, tracks and albums in their original language and never translate them; when unsure of a name's original form, use its English form. Respelling a name for pronunciation is fine.";
 
 /**
  * Persona-neutral segment templates mirroring the server's built-in section
@@ -117,7 +117,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     id: "intro",
     name: "Intro",
     prompt:
-      "The next track is <next_songinfo>. Open the program like a polished radio host: brief welcome, confident energy, one concrete hook about the song or artist, and a clean handoff into the music.",
+      "The next track is <next_songinfo>. Open the program: a brief welcome, one concrete hook about the song or artist, then hand off by naming the artist and title once.",
     webSearch: "disabled",
     allowPost: false,
     maxChars: 650,
@@ -136,7 +136,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     id: "weather",
     name: "Weather",
     prompt:
-      "Using <weather_hourly> and <timestamp>, deliver a short spoken weather update with the current outlook, a useful next-hours summary, and smooth radio phrasing.",
+      "Using <weather_hourly> and <timestamp>, give a short spoken weather update: how it feels right now, what changes over the next few hours, and one practical tip if the forecast calls for it. Pick the two or three numbers that matter instead of reading the whole table.",
     webSearch: "disabled",
     allowPost: false,
     maxChars: 500,
@@ -146,7 +146,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     id: "news",
     name: "News",
     prompt:
-      "Create a short global news bulletin anchored to <timestamp>. Use web search. Include two or three current items that are broadly relevant, clearly separated, fact-focused, and written for spoken delivery.",
+      "Give a short global news bulletin anchored to <timestamp>. Search the web for today's headlines and pick two or three current, broadly relevant items, each in one or two spoken sentences, fact-focused and clearly separated. Lead with the item most listeners care about and skip speculation.",
     webSearch: "force",
     allowPost: false,
     maxChars: 700,
@@ -166,7 +166,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     id: "sign_off",
     name: "Sign-off",
     prompt:
-      "The last track played was <prev_songinfo>. Close the program with a memorable sign-off: brief reflection, warm farewell, and language that sounds like the end of a real radio segment.",
+      "The last track played was <prev_songinfo>. Close the program: one short reflection on the set or that last track, a warm farewell, and a line that sounds like the real end of a radio segment. Do not announce another track.",
     webSearch: "disabled",
     allowPost: false,
     maxChars: 650,
