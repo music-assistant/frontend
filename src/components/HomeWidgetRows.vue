@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="loading" class="ed-loading">
-      <v-progress-circular indeterminate />
+      <Spinner class="size-8" />
     </div>
 
     <template v-else>
@@ -373,6 +373,7 @@ import {
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { returnedByHistory } from "@/helpers/navigation";

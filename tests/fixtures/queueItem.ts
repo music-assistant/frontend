@@ -15,6 +15,7 @@ export function queueItem(overrides: Partial<QueueItem> = {}): QueueItem {
     media_item: null,
     image: null,
     available: true,
+    origin: null,
     ...overrides,
   };
 }

@@ -31,12 +31,17 @@
           @sort-by="changeSort"
         />
         <Transition v-if="!store.mobileLayout" name="listing-search">
-          <div v-if="showSearchInput" class="listing-search-slot">
+          <!-- the input follows the slot's edge as it opens, and the padding
+               keeps its 3px focus ring inside the clipped area -->
+          <div
+            v-if="showSearchInput"
+            class="listing-search-slot -m-[3px] box-content p-[3px]"
+          >
             <SearchInput
               ref="searchInputRef"
               v-model="params.search"
               clearable
-              class="listing-search listing-search--inline w-(--listing-search-width) shrink-0"
+              class="listing-search listing-search--inline"
               :placeholder="searchLabel"
               :aria-label="searchLabel"
               @focus="searchHasFocus = true"
@@ -314,46 +319,24 @@
         </EmptyContent>
       </Empty>
 
-      <!-- box shown when item(s) selected; vuetify writes the overlay z-index inline
-           (default 2000), so it has to be lowered here to stay behind the player bar
-           popouts (998) and their backdrops (997). that also puts it below the mobile
-           scrim, so it clears what covers the bottom rather than just the bars.
-           vuetify pads the snackbar by the measured bar height on its own, so that
-           is taken off, with a 16px floor in case the bar outgrows the offset -->
-      <v-snackbar
-        :model-value="selectedItems.length > 1"
-        :timeout="-1"
-        :z-index="996"
-        style="
-          margin-bottom: max(
-            16px,
-            calc(
-              var(--bottom-obscured-height) + 16px - var(--v-layout-bottom, 0px)
+      <ListingSelectionBar
+        :open="selectedItems.length > 1"
+        :count="selectedItems.length"
+        :all-selected="allSelected"
+        @clear="clearSelection"
+        @select-all="selectAll"
+        @actions="
+          (anchor: { x: number; y: number }) =>
+            handleMenuBtnClick(
+              selectedItems,
+              anchor.x,
+              anchor.y,
+              parentItem,
+              true,
+              params.sortBy,
             )
-          );
         "
-      >
-        <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
-        <template #actions>
-          <v-btn
-            color="primary"
-            variant="text"
-            @click="
-              (evt: PointerEvent) =>
-                handleMenuBtnClick(
-                  selectedItems,
-                  evt.clientX,
-                  evt.clientY,
-                  parentItem,
-                  true,
-                  params.sortBy,
-                )
-            "
-          >
-            {{ $t("actions") }}
-          </v-btn>
-        </template>
-      </v-snackbar>
+      />
     </Container>
   </section>
 </template>
@@ -371,6 +354,7 @@ import TrackTableHeader from "@/components/track-table/TrackTableHeader.vue";
 import TrackTableRow from "@/components/track-table/TrackTableRow.vue";
 import { TRACK_ROW_HEIGHT } from "@/components/track-table/trackTableColumns";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
+import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -2263,6 +2247,14 @@ const clearSelection = () => {
   selectedItems.value = [];
   showCheckboxes.value = false;
 };
+
+// every item is loaded and selected, so select all has nothing left to add
+const allSelected = computed(
+  () =>
+    allItemsReceived.value &&
+    selectedItems.value.length >=
+      pagedItems.value.filter((x) => !isParentDirItem(x)).length,
+);
 
 // Set by the unmount hook, so the async startup can tell that the listing it is
 // working for is already gone.
