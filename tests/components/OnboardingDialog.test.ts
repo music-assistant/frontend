@@ -3,24 +3,31 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { START_LOCATION, type RouteLocationNormalized } from "vue-router";
 
-const { onbState, closeMock, pauseMock, markWelcomedMock, routerState } =
-  vi.hoisted(() => ({
-    onbState: {
-      active: { value: true } as { value: boolean },
-      isMember: true,
-      awaitingAccount: { value: false } as { value: boolean },
-    },
-    closeMock: vi.fn(),
-    pauseMock: vi.fn(),
-    markWelcomedMock: vi.fn(),
-    routerState: {
-      hooks: [] as ((
-        to: { path: string },
-        from: { path: string },
-        failure?: unknown,
-      ) => void)[],
-    },
-  }));
+const {
+  onbState,
+  closeMock,
+  pauseMock,
+  setAsideMock,
+  markWelcomedMock,
+  routerState,
+} = vi.hoisted(() => ({
+  onbState: {
+    active: { value: true } as { value: boolean },
+    isMember: true,
+    awaitingAccount: { value: false } as { value: boolean },
+  },
+  closeMock: vi.fn(),
+  pauseMock: vi.fn(),
+  setAsideMock: vi.fn(),
+  markWelcomedMock: vi.fn(),
+  routerState: {
+    hooks: [] as ((
+      to: { path: string },
+      from: { path: string },
+      failure?: unknown,
+    ) => void)[],
+  },
+}));
 
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
@@ -53,6 +60,7 @@ vi.mock("@/composables/useOnboarding", async () => {
       ctx: computed(() => ({ isMember: onbState.isMember })),
       close: closeMock,
       pause: pauseMock,
+      setAside: setAsideMock,
       markWelcomed: markWelcomedMock,
     }),
   };
@@ -75,10 +83,10 @@ vi.mock("@/components/ui/dialog", () => ({
   },
   DialogContent: {
     name: "DialogContentStub",
-    props: ["showCloseButton"],
+    props: ["showCloseButton", "closeLabel"],
     emits: ["escapeKeyDown", "pointerDownOutside", "interactOutside"],
     template:
-      "<div data-testid='content' :data-show-close='showCloseButton'><slot /></div>",
+      "<div data-testid='content' :data-show-close='showCloseButton' :data-close-label='closeLabel'><slot /></div>",
   },
   DialogHeader: { template: "<div><slot /></div>" },
   DialogTitle: { template: "<h2><slot /></h2>" },
@@ -114,6 +122,7 @@ beforeEach(() => {
   routerState.hooks = [];
   closeMock.mockReset();
   pauseMock.mockReset();
+  setAsideMock.mockReset();
   markWelcomedMock.mockReset();
 });
 
@@ -249,14 +258,34 @@ describe("OnboardingDialog", () => {
     expect(mountDialog().find("h2").text()).toBe("onboarding.welcome_title");
   });
 
-  it("resets the modal state when the shell tears it down", () => {
-    // a sign-out unmounts the dialog; the next session must not inherit an
-    // onboarding that was left open
+  it("closes the welcome when the shell tears it down", () => {
     const wrapper = mountDialog();
 
     wrapper.unmount();
 
     expect(closeMock).toHaveBeenCalled();
     expect(routerState.hooks).toHaveLength(0);
+  });
+
+  it("sets the admin setup aside when a dropped connection tears it down", () => {
+    onbState.isMember = false;
+    const wrapper = mountDialog();
+
+    wrapper.unmount();
+
+    expect(setAsideMock).toHaveBeenCalledOnce();
+    expect(closeMock).not.toHaveBeenCalled();
+  });
+
+  it("names the admin close button after what it does", () => {
+    onbState.isMember = false;
+    expect(content(mountDialog()).attributes("data-close-label")).toBe(
+      "onboarding.pause",
+    );
+
+    onbState.isMember = true;
+    expect(
+      content(mountDialog()).attributes("data-close-label"),
+    ).toBeUndefined();
   });
 });

@@ -6,6 +6,7 @@
       class="z-[9998] max-h-[calc(100dvh-1rem)] gap-0 overflow-y-auto p-4 sm:max-w-[calc(100%-2rem)] sm:p-6 lg:max-w-3xl"
       overlay-class="z-[9998]"
       :show-close-button="canLeave"
+      :close-label="ctx.isMember ? undefined : $t('onboarding.pause')"
       data-testid="onboarding-modal"
       @escape-key-down="onEscape"
       @pointer-down-outside="onOutsideInteraction"
@@ -50,7 +51,7 @@ const OnboardingWizard = defineAsyncComponent({
   },
 });
 
-const { active, ctx, close, pause, markWelcomed } = useOnboarding();
+const { active, ctx, close, pause, setAside, markWelcomed } = useOnboarding();
 const { awaitingAccount } = useFirstRunSetup();
 const router = useRouter();
 
@@ -103,11 +104,12 @@ const removeRouteGuard = router.afterEach((to, from, failure) => {
   else void pause({ force: true });
 });
 
-// The open state is a module singleton. Reset it when the app shell tears the
-// dialog down (a sign-out or a dropped connection), so the next session on the
-// same page load never inherits an onboarding that was left open.
+// The open state is a module singleton, and the app shell tears the dialog down
+// when the connection drops (a sign-out reloads the page). The welcome closes;
+// an admin setup is set aside, so it can be resumed on its step once back.
 onBeforeUnmount(() => {
   removeRouteGuard();
-  close();
+  if (ctx.value.isMember) close();
+  else setAside();
 });
 </script>

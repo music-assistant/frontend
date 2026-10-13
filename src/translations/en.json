@@ -2735,6 +2735,7 @@
         "paused_title": "Setup paused",
         "paused_text": "Pick up where you left off, now or later from the settings.",
         "resume": "Resume",
+        "pause": "Pause setup",
         "add_member": "Add a user",
         "just_you_so_far": "Just you so far.",
         "welcome_title": "Welcome to Music Assistant",

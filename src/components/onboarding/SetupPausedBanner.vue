@@ -24,7 +24,7 @@
       class="shrink-0"
       :aria-label="$t('close')"
       data-testid="setup-paused-dismiss"
-      @click="paused = false"
+      @click="dismissPaused"
     >
       <X class="size-4" />
     </Button>
@@ -40,5 +40,5 @@ import { CirclePause, X } from "@lucide/vue";
 
 // a paused setup stays offered on every page until it is resumed or dismissed;
 // dismissed, it is still picked up again from the settings
-const { paused, open } = useOnboarding();
+const { paused, open, dismissPaused } = useOnboarding();
 </script>

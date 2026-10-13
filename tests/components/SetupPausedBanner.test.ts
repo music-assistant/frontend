@@ -13,7 +13,13 @@ vi.mock("@/composables/useOnboarding", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   onbState.paused = ref(true);
   return {
-    useOnboarding: () => ({ paused: onbState.paused, open: openMock }),
+    useOnboarding: () => ({
+      paused: onbState.paused,
+      open: openMock,
+      dismissPaused: () => {
+        onbState.paused.value = false;
+      },
+    }),
   };
 });
 

@@ -518,6 +518,13 @@ function setStepGuard(guard: (() => Promise<boolean>) | null): void {
   leaveCurrentStep = guard;
 }
 
+/** Hide the open setup and offer to resume it, without asking its step. */
+function setAside(): void {
+  if (!active.value) return;
+  active.value = false;
+  paused.value = true;
+}
+
 /**
  * Put the setup aside, keeping its step for whenever it is resumed. The step on
  * screen saves first, as it does on Next; a step that cannot keeps the wizard
@@ -528,12 +535,15 @@ async function pause(options?: { force?: boolean }): Promise<void> {
   pausing = true;
   try {
     const saved = (await leaveCurrentStep?.()) ?? true;
-    if (!active.value || (!saved && !options?.force)) return;
-    active.value = false;
-    paused.value = true;
+    if (saved || options?.force) setAside();
   } finally {
     pausing = false;
   }
+}
+
+/** Stop offering to resume a paused setup; the settings still resume it. */
+function dismissPaused(): void {
+  paused.value = false;
 }
 
 /** Answer the setup's intent question, and say whether the answer landed. */
@@ -672,7 +682,9 @@ export function useOnboarding() {
     open,
     close,
     pause,
+    setAside,
     paused,
+    dismissPaused,
     setStepGuard,
     intent,
     setIntent,

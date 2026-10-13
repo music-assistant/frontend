@@ -19,6 +19,7 @@ vi.mock("@/composables/useOnboarding", async () => {
       ctx: computed(() => ({ isMember: false })),
       close: vi.fn(),
       pause: vi.fn(),
+      setAside: vi.fn(),
       markWelcomed: vi.fn(),
     }),
   };

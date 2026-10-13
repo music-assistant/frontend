@@ -165,9 +165,14 @@ const moving = ref(false);
 // what stops the players being followed once the wizard is gone
 let stopFollowingPlayers: (() => void) | undefined;
 
+/** How the wizard is being left: moving on, or pausing the setup. */
+interface LeaveOptions {
+  pausing?: boolean;
+}
+
 /** What a step exposes to the wizard, which every step may leave to default. */
 interface StepInstance {
-  beforeLeave?: () => Promise<boolean>;
+  beforeLeave?: (options?: LeaveOptions) => Promise<boolean>;
   // a choice step raises this while its answer is on its way to the server
   busy?: boolean;
   // a step with a submit of its own, which the wizard's Next stands down for
@@ -179,7 +184,8 @@ const stepRef = ref<StepInstance | null>(null);
 // The step on screen gets a say before the wizard moves off it, so a step with
 // something to save is not walked away from. A step that has nothing to hold on
 // to exposes nothing and the wizard simply moves on.
-const leaveStep = async () => (await stepRef.value?.beforeLeave?.()) ?? true;
+const leaveStep = async (options?: LeaveOptions) =>
+  (await stepRef.value?.beforeLeave?.(options)) ?? true;
 
 // whether the step on screen is saving a choice of its own; the wizard's Next
 // stands aside while it is, so a choice and a Next cannot both move on
@@ -337,7 +343,7 @@ watch(currentId, focusStepHeading);
 watch(currentId, (id) => {
   if (id) requestedStep.value = id;
 });
-setStepGuard(leaveStep);
+setStepGuard(() => leaveStep({ pausing: true }));
 
 // Leaving the welcome is what counts as having been welcomed, whether the
 // member answered the question, walked past it or closed the modal: nobody is

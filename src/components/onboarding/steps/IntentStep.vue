@@ -102,9 +102,12 @@ const select = async function (value: OnboardingIntent) {
  * pick the account did not take before. An answer that did not land keeps the
  * wizard here, so the question is never left behind unanswered.
  */
-const beforeLeave = async function (): Promise<boolean> {
+const beforeLeave = async function (options?: {
+  pausing?: boolean;
+}): Promise<boolean> {
   if (pendingSave) return await pendingSave;
-  if (shown.value === intent.value) return true;
+  // pausing is not walking past the question, so it answers nothing
+  if (options?.pausing || shown.value === intent.value) return true;
   pendingSave = save(shown.value);
   return await pendingSave;
 };

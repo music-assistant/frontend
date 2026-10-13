@@ -639,7 +639,7 @@ describe("SetupFlowDialog launched with initial values", () => {
       "/settings/storage",
       true,
     ],
-    ["stays open when only the query of the page changes", "/discover", false],
+    ["stays open while the page stays the same", "/discover", false],
   ])("%s", async (_case, to, ends) => {
     apiMock.abortSetupFlow.mockResolvedValue();
     apiMock.setupProvider.mockResolvedValue(formStep(localFilesEntries()));

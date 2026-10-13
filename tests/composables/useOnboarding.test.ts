@@ -834,6 +834,20 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     expect(requestedStep.value).toBeNull();
   });
 
+  it("keeps the step of a setup set aside, until the banner is dismissed", async () => {
+    const { open, setAside, dismissPaused, active, paused, requestedStep } =
+      await loadOnboarding();
+    open("players");
+
+    setAside();
+    expect(active.value).toBe(false);
+    expect(paused.value).toBe(true);
+
+    dismissPaused();
+    expect(paused.value).toBe(false);
+    expect(requestedStep.value).toBe("players");
+  });
+
   it("lets the step on screen save before it pauses", async () => {
     const { open, pause, setStepGuard, active } = await loadOnboarding();
     const guard = vi.fn().mockResolvedValue(false);
