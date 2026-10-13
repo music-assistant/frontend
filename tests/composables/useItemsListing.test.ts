@@ -147,6 +147,39 @@ describe("useItemsListing", () => {
     ]);
   });
 
+  it.each(["search", "sort"] as const)(
+    "reuses flat items after a pending %s change instead of refetching the source",
+    async (change) => {
+      let resolveItems!: (items: Track[]) => void;
+      const items = [
+        track({ item_id: "track-b", name: "B Side" }),
+        track({ item_id: "track-a", name: "A Side" }),
+      ];
+      const loadItems = vi.fn(
+        () =>
+          new Promise<Track[]>((resolve) => {
+            resolveItems = resolve;
+          }),
+      );
+      const listing = setupItemsListing({ loadItems });
+      const initialLoad = listing.loadData(true);
+
+      if (change === "search") listing.params.value.search = "B Side";
+      else listing.params.value.sortBy = "name_desc";
+      await listing.loadData(false, false, true);
+      expect(loadItems).toHaveBeenCalledTimes(1);
+
+      resolveItems(items);
+      await initialLoad;
+
+      expect(loadItems).toHaveBeenCalledTimes(1);
+      expect(listing.initialDataReceived.value).toBe(true);
+      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual(
+        change === "search" ? ["track-b"] : ["track-b", "track-a"],
+      );
+    },
+  );
+
   it("filters and pages flat listings without reloading their source", async () => {
     const loadItems = vi.fn(async () => [
       track({ item_id: "track-b", name: "B Side" }),

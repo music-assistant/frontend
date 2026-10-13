@@ -357,9 +357,11 @@ export function useItemsListing(
     }
 
     if (pendingTabLoad || pendingSortReload) {
+      const clearPendingItems = pendingTabLoad;
+      const pendingParamsChanged = pendingSortReload;
       pendingTabLoad = false;
       pendingSortReload = false;
-      await loadData(true);
+      await loadData(clearPendingItems, false, pendingParamsChanged);
     }
   };
 
