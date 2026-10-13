@@ -45,7 +45,7 @@ const COLUMN_ORDER: TrackColumn[] = [
 const MIN_TABLE_WIDTH: Partial<Record<TrackColumn, number>> = {
   album: 600,
   favorite: 600,
-  number: 900,
+  number: 600,
   year: 1100,
   source: 1200,
 };

@@ -40,10 +40,8 @@ describe("visibleTrackColumns", () => {
     expect(at(1199)).not.toContain("source");
     expect(at(1199)).toContain("year");
     expect(at(1099)).not.toContain("year");
-    expect(at(1099)).toContain("number");
-    expect(at(899)).not.toContain("number");
-    expect(at(899)).toEqual(
-      expect.arrayContaining(["album", "favorite", "title"]),
+    expect(at(600)).toEqual(
+      expect.arrayContaining(["number", "album", "favorite", "title"]),
     );
     expect(at(599)).toEqual(["title", "duration", "menu"]);
   });

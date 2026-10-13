@@ -60,15 +60,9 @@
           >
             <template #title>
               <span
-                class="inline-flex items-baseline gap-2.5 text-[22px] font-bold tracking-[-0.4px] max-md:text-[19px]"
+                class="text-[22px] font-bold tracking-[-0.4px] max-md:text-[19px]"
               >
                 {{ $t("tracks") }}
-                <span
-                  v-if="playlistTracks?.length"
-                  class="text-[13px] font-normal tracking-normal text-muted-foreground"
-                >
-                  {{ rowMeta.tracks }}
-                </span>
               </span>
             </template>
           </ItemsListing>
