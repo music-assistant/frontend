@@ -642,7 +642,6 @@
             "reconfigure_title": "Ponovno podešavanje: {0}"
         },
         "options": "Opcije",
-        "add_group_player_desc": "Kreirajte trajnu grupu plejera sa {0} plejera. Kada puštate muziku u ovoj grupi plejera, članovi grupe će se automatski sinhronizovati.",
         "server_clock_offset": "Odstupanje sata (server u odnosu na ovaj uređaj)",
         "action_completed": "Radnja je završena",
         "hass_controls": {
@@ -761,7 +760,8 @@
             },
             "updated": "Pristup je ažuriran",
             "share_title": "Deljenje {name}",
-            "nobody": "Niko ne može da koristi ovaj izvor"
+            "nobody": "Niko ne može da koristi ovaj izvor",
+            "section_description": "Ko je vlasnik ovog izvora muzike i ko ga još može koristiti"
         },
         "set_custom_name": "Postavi prilagođeni naziv",
         "genre_table_page_of": "Stranica {0} od {1}",
@@ -874,7 +874,33 @@
         },
         "remove_provider_confirm_music": "Ukloniti {0}? Sva muzika koju ovaj izvor pruža biće uklonjena iz vaše biblioteke, zajedno sa istorijom puštanja. Ovo se ne može poništiti.",
         "remove_provider_confirm_player": "Ukloniti {0}? Njegovi plejeri i njihova podešavanja biće takođe uklonjeni. Ovo se ne može poništiti.",
-        "remove_provider_acknowledge": "Razumem da ovo uklanja muziku iz moje biblioteke"
+        "remove_provider_acknowledge": "Razumem da ovo uklanja muziku iz moje biblioteke",
+        "provider_players_description": "Plejeri koje ovaj servis donosi u Music Assistant",
+        "sync_in_progress": "Sinhronizacija...",
+        "library_sync": "Sinhronizacija biblioteke",
+        "library_sync_description": "Ažurira biblioteku sa ovim izvorom muzike",
+        "storage_location": "Lokacija skladišta",
+        "storage_location_description": "Mesto odakle ovaj izvor muzike čita svoje datoteke",
+        "server_url": {
+            "title": "URL adresa Music Assistant-a",
+            "description": "Mesto gde uređaji i gosti pristupaju Music Assistant-u, na primer putem linkova u pozivnicama za zabave i kvizove.",
+            "internet": "Internet",
+            "local_network": "Lokalna mreža",
+            "use_remote_access": "Koristi udaljeni pristup",
+            "remote_access_description": "Linkovi deljeni sa gostima otvaraju se putem udaljenog pristupa.",
+            "remote_access_hint": "Nije dostupno sa interneta? Udaljeni pristup funkcioniše i bez javne URL adrese.",
+            "set_up_remote_access": "Podesite udaljeni pristup",
+            "automatic": "Automatski",
+            "detected_after_save": "Automatski detektovano nakon čuvanja",
+            "copy_remote": "Kopiraj link za udaljeni pristup",
+            "copy_detected": "Kopiraj URL adresu lokalne mreže",
+            "copied": "URL adresa je kopirana",
+            "copy_failed": "Nije moguće kopirati URL adresu"
+        },
+        "unsupported_install_title": "Nepodržana instalacija",
+        "unsupported_install_description": "Ovaj server nije instaliran preko jednog od {0}. Neke funkcije možda neće raditi kako se očekuje, a problemi prijavljeni sa njega mogu biti zatvoreni bez podrške.",
+        "unsupported_install_link": "podržani načini instalacije",
+        "error_loading_sort_options": "Greška pri učitavanju opcija sortiranja"
     },
     "show_info": "Prikaži informacije",
     "show_select_boxes": "Prikaži polja za potvrdu",
@@ -911,7 +937,11 @@
         "ascending": "Rastuće",
         "ascending_abbreviation": "Rastuće",
         "descending": "Opadajuće",
-        "descending_abbreviation": "Opadajuće"
+        "descending_abbreviation": "Opadajuće",
+        "favorite_timestamp": "Datum dodavanja u omiljeno",
+        "artist_name": "Izvođač",
+        "random": "Nasumično",
+        "random_play_count": "Nasumično (najmanje puštano prvo)"
     },
     "state": {
         "idle": "mirovanje",
@@ -1150,7 +1180,8 @@
                 "smart": "Pametno",
                 "standard": "Standardno",
                 "disabled": "Onemogućeno",
-                "source": "Primenjuje „{0}“"
+                "source": "Primenjuje „{0}“",
+                "voice_over": "Govor preko muzike, muzika se utišava u pozadini"
             },
             "dsp_state": {
                 "enabled": "DSP je aktivan",
@@ -1425,7 +1456,9 @@
         "guest_ended_dashboard_title": "Ova sesija kontrolne table je završena",
         "guest_ended_dashboard_message": "Ponovo strimujte kontrolnu tablu iz Music Assistant-a da biste nastavili.",
         "continue_to_app": "Nastavite ka Music Assistant-u",
-        "scan_qr_hint_guest": "Usmerite kameru prema QR kodu koji domaćin prikazuje."
+        "scan_qr_hint_guest": "Usmerite kameru prema QR kodu koji domaćin prikazuje.",
+        "server_outdated_title": "Potrebno ažuriranje servera",
+        "server_outdated_message": "Aplikacija zahteva noviju verziju Music Assistant servera od {version}. Ažurirajte server i pokušajte ponovo."
     },
     "yes": "Da",
     "no": "Ne",
@@ -1856,12 +1889,14 @@
                 "shuffle_playlist_tracks": "Nasumičan redosled pesama na plejlisti",
                 "voice": "Glas",
                 "host": "Voditelj",
-                "language": "Jezik"
+                "language": "Jezik",
+                "allow_post": "Govor preko uvoda"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maksimalno ukupno vreme puštanja izvorne muzike, u minutima. Pesme se uzimaju redosledom kojim ih emisija pušta sve dok se ne dostigne ograničenje. Ostavite na 0 ako nema ograničenja.",
                 "instructions": "Opisuje ličnost voditelja i način na koji segmenti treba da budu napisani. Ovo se šalje AI-ju uz svaki segment.",
-                "shuffle_playlist_tracks": "Puštaj izvornu plejlistu nasumičnim redosledom. Isključi ovo ako želiš da pratiš njen originalni redosled."
+                "shuffle_playlist_tracks": "Puštaj izvornu plejlistu nasumičnim redosledom. Isključi ovo ako želiš da pratiš njen originalni redosled.",
+                "allow_post": "Kraj ovog segmenta se reprodukuje preko početka sledeće pesme, pri čemu je muzika utišana ispod glasa, a završava se neposredno pre nego što pevanje počne. Ovo se dešava samo kada Music Assistant zna gde pevanje počinje i kada je uvod dovoljno dugačak. Kada se više segmenata govori kao jedna celina, svi moraju imati uključenu ovu opciju."
             },
             "web_search": {
                 "disabled": "onemogućeno (bez veb alata)",
@@ -1905,17 +1940,13 @@
                 "playlists_truncated": "Učitano je samo prvih {0} plejlista.",
                 "unavailable": "AI Radio nije omogućen.",
                 "live_starting": "Radio uživo je pokrenut",
-                "live_start_failed": "Pokretanje radija uživo nije uspelo",
-                "session_stopped": "AI Radio sesija je zaustavljena",
-                "session_stop_failed": "Zaustavljanje AI Radio sesije nije uspelo",
                 "station_saved": "Stanica je sačuvana",
-                "station_save_failed": "Čuvanje stanice nije uspelo",
                 "station_deleted": "Stanica je obrisana",
                 "station_duplicated": "Stanica je duplirana",
-                "session_failed": "Pokretanje AI Radija nije uspelo: {0}",
                 "host_saved": "Voditelj je sačuvan",
                 "host_deleted": "Voditelj je obrisan",
-                "tts_engines_load_failed": "Učitavanje opcija glasa nije uspelo"
+                "tts_engines_load_failed": "Učitavanje opcija glasa nije uspelo",
+                "show_stopped": "Emisija zaustavljena"
             },
             "header": {
                 "subtitle": "Pretvorite plejlistu u radio-emisiju sa AI voditeljem."
@@ -1933,21 +1964,14 @@
             },
             "card": {
                 "play": "Pusti",
-                "starting": "Pokretanje...",
                 "stop": "Zaustavi",
                 "on_air": "Emituje se",
                 "customize": "Prilagodi",
                 "duplicate": "Dupliraj",
                 "duplicate_name": "{0} (kopija)",
                 "delete": "Obriši",
-                "session_failed": "Poslednje pokretanje nije uspelo",
-                "status_failed": "Neuspešno {0}",
-                "status_last_on_air": "Poslednje emitovano {0}",
                 "no_player": "Prvo izaberite plejer",
-                "start_failed": "Pokretanje nije uspelo: {0}",
-                "switch_show_title": "Promeniti emisiju?",
-                "switch_show_confirm": "«{0}» se emituje. Zaustavi i pusti «{1}»?",
-                "switch_show_confirm_label": "Prebaci"
+                "start_failed": "Pokretanje nije uspelo: {0}"
             },
             "create": {
                 "title": "Kreiranje emisije",
@@ -2858,5 +2882,20 @@
     "about_episode": "O ovoj epizodi",
     "next_episode": "Sledeća epizoda",
     "other_episodes": "Ostale epizode",
-    "previous_episode": "Prethodna epizoda"
+    "previous_episode": "Prethodna epizoda",
+    "about_podcast": "O ovom podkastu",
+    "n_episodes": "{count} epizoda | {count} epizode | {count} epizoda",
+    "grid_size": "Veličina omota",
+    "grid_size_default": "Podrazumevana veličina",
+    "grid_size_smaller": "{count} korak manje | {count} koraka manje",
+    "grid_size_larger": "{count} korak veće | {count} koraka veće",
+    "edit_rows_subtitle_podcast": "Primenjuje se na svaku stranicu sa podkastom",
+    "playlist_radio": "Beskonačni miks plejliste",
+    "edit_rows_subtitle_playlist": "Primenjuje se na svaku stranicu sa plejlistom",
+    "duration_hours_minutes": "{hours} h {minutes} min",
+    "duration_hours": "{hours} h",
+    "duration_minutes": "{minutes} min",
+    "tracklist_heading": "Numere",
+    "skip_back_seconds": "Preskoči {0} sekundi unazad",
+    "skip_forward_seconds": "Preskoči {0} sekundi unapred"
 }

@@ -642,7 +642,6 @@
             "reconfigure_title": "Reconfigurar {0}"
         },
         "options": "Opciones",
-        "add_group_player_desc": "Crea un grupo de reproductores permanente con {0} reproductores. Cuando reproduzcas en este grupo de reproductores, los reproductores miembros se sincronizarán automáticamente.",
         "server_clock_offset": "Desfase del reloj (servidor frente a este dispositivo)",
         "action_completed": "Acción completada",
         "hass_controls": {
@@ -761,7 +760,8 @@
             },
             "updated": "Acceso actualizado",
             "share_title": "Compartir {name}",
-            "nobody": "Nadie puede usar este origen."
+            "nobody": "Nadie puede usar este origen.",
+            "section_description": "Quién es el propietario de este origen de música y quién más puede usarlo"
         },
         "set_custom_name": "Establecer un nombre personalizado",
         "genre_table_page_of": "Página {0} de {1}",
@@ -874,7 +874,32 @@
         },
         "remove_provider_confirm_music": "¿Eliminar «{0}»? Toda la música que proporciona esta origen se eliminará de tu biblioteca, junto con su historial de reproducción. Esta acción no se puede deshacer.",
         "remove_provider_confirm_player": "¿Eliminar «{0}»? Sus reproductores y sus ajustes también se eliminarán. Esta acción no se puede deshacer.",
-        "remove_provider_acknowledge": "Entiendo que esto elimina música de mi biblioteca."
+        "remove_provider_acknowledge": "Entiendo que esto elimina música de mi biblioteca.",
+        "provider_players_description": "Los reproductores que este proveedor incorpora a Music Assistant",
+        "sync_in_progress": "Sincronizando...",
+        "library_sync": "Sincronización de la biblioteca",
+        "library_sync_description": "Actualiza la biblioteca con este origen de música",
+        "storage_location": "Ubicación de almacenamiento",
+        "storage_location_description": "Ubicación desde la que este origen de música lee sus archivos",
+        "server_url": {
+            "title": "URL de Music Assistant",
+            "description": "Dónde pueden acceder a Music Assistant los dispositivos y los invitados, por ejemplo, a través de los enlaces de las invitaciones a fiestas y Quiz",
+            "internet": "Internet",
+            "local_network": "Red local",
+            "use_remote_access": "Usar el acceso remoto",
+            "remote_access_description": "Los enlaces compartidos con invitados se abren mediante el acceso remoto.",
+            "remote_access_hint": "¿No se puede acceder desde Internet? El acceso remoto funciona sin una URL pública.",
+            "set_up_remote_access": "Configurar el acceso remoto",
+            "automatic": "Automático",
+            "detected_after_save": "Detectado automáticamente después de guardar",
+            "copy_remote": "Copiar enlace de acceso remoto",
+            "copy_detected": "Copiar URL de la red local",
+            "copied": "URL copiada",
+            "copy_failed": "No se ha podido copiar la URL"
+        },
+        "unsupported_install_title": "Instalación no compatible",
+        "unsupported_install_description": "Este servidor no se ha instalado mediante uno de los {0}. Es posible que algunas funciones no funcionen como se espera y que los problemas notificados se cierren sin ofrecer asistencia.",
+        "unsupported_install_link": "Métodos de instalación compatibles"
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
@@ -1150,7 +1175,8 @@
                 "smart": "Inteligente",
                 "standard": "Estándar",
                 "disabled": "Desactivado",
-                "source": "Aplicado por {0}"
+                "source": "Aplicado por {0}",
+                "voice_over": "Voz superpuesta con la música atenuada"
             },
             "dsp_state": {
                 "enabled": "DSP activo",
@@ -1425,7 +1451,9 @@
         "guest_ended_dashboard_title": "Esta sesión del panel de control ha finalizado",
         "guest_ended_dashboard_message": "Vuelve a transmitir el panel de control desde Music Assistant para continuar.",
         "continue_to_app": "Continuar en Music Assistant",
-        "scan_qr_hint_guest": "Apunta la cámara al código QR que está mostrando el anfitrión."
+        "scan_qr_hint_guest": "Apunta la cámara al código QR que está mostrando el anfitrión.",
+        "server_outdated_title": "El servidor necesita una actualización",
+        "server_outdated_message": "Esta aplicación necesita una versión del servidor de Music Assistant más reciente que {version}. Una vez actualizado el servidor, vuelve a intentarlo."
     },
     "yes": "Si",
     "no": "No",
@@ -1856,12 +1884,14 @@
                 "shuffle_playlist_tracks": "Mezclar canciones de la lista de reproducción",
                 "voice": "Voz",
                 "host": "Host",
-                "language": "Idioma"
+                "language": "Idioma",
+                "allow_post": "Hablar sobre la introducción"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Duración total máxima de reproducción de la música de origen, en minutos. Las canciones se toman en el orden en que las reproduce el programa hasta alcanzar el límite. Déjalo en 0 para no establecer ningún límite.",
                 "instructions": "Describe la personalidad del host y cómo deben escribirse los segmentos. Esto se envía a la IA con cada segmento.",
-                "shuffle_playlist_tracks": "Reproduce la lista de reproducción de origen en orden aleatorio. Desactívalo para seguir el orden propio de la lista."
+                "shuffle_playlist_tracks": "Reproduce la lista de reproducción de origen en orden aleatorio. Desactívalo para seguir el orden propio de la lista.",
+                "allow_post": "El final de este segmento se reproduce sobre el comienzo de la siguiente canción, con la música atenuada mientras se escucha la voz, y termina justo antes de que empiece la parte cantada. Solo ocurre cuando Music Assistant sabe dónde empieza la parte cantada y la introducción es lo suficientemente larga. Cuando se reproducen varios segmentos hablados como una sola pausa, esta opción debe estar activada en todos ellos."
             },
             "web_search": {
                 "disabled": "desactivado (sin herramienta web)",
@@ -1905,14 +1935,9 @@
                 "playlists_truncated": "Solo se cargaron las primeras {0} listas de reproducción.",
                 "unavailable": "AI Radio no está habilitado.",
                 "live_starting": "Radio en directo iniciada",
-                "live_start_failed": "Error al iniciar la radio en directo",
-                "session_stopped": "Sesión de Radio IA detenida",
-                "session_stop_failed": "No se pudo detener la sesión de Radio IA",
                 "station_saved": "Emisora guardada",
-                "station_save_failed": "No se pudo guardar la emisora",
                 "station_deleted": "Emisora eliminada",
                 "station_duplicated": "Emisora duplicada",
-                "session_failed": "Error en la ejecución de Radio IA: {0}",
                 "host_saved": "Host guardado",
                 "host_deleted": "Host eliminado",
                 "tts_engines_load_failed": "No se han podido cargar las opciones de voz"
@@ -1933,21 +1958,14 @@
             },
             "card": {
                 "play": "Play",
-                "starting": "Iniciando...",
                 "stop": "Detener",
                 "on_air": "En emisión",
                 "customize": "Personalizar",
                 "duplicate": "Duplicar",
                 "duplicate_name": "{0} (copia)",
                 "delete": "Eliminar",
-                "session_failed": "La última ejecución ha fallado",
-                "status_failed": "Ha fallado {0}",
-                "status_last_on_air": "Última emisión {0}",
                 "no_player": "Selecciona primero un reproductor",
-                "start_failed": "No se pudo iniciar: {0}",
-                "switch_show_title": "¿Cambiar programa?",
-                "switch_show_confirm": "{0} está reproduciendo. ¿Quieres detenerlo y reproducir {1}?",
-                "switch_show_confirm_label": "Cambiar"
+                "start_failed": "No se pudo iniciar: {0}"
             },
             "create": {
                 "title": "Crear un programa",

@@ -170,6 +170,22 @@ vi.mock("@/components/PanelviewItem.vue", () => stubComponent("PanelviewItem"));
 vi.mock("@/components/PanelviewItemCompact.vue", () =>
   stubComponent("PanelviewItemCompact"),
 );
+vi.mock("@/components/track-table/TrackTableHeader.vue", () =>
+  stubComponent("TrackTableHeader"),
+);
+vi.mock("@/components/track-table/TrackTableRow.vue", () =>
+  stubComponent("TrackTableRow"),
+);
+vi.mock("@/composables/useTrackTableColumns", async () => {
+  const { ref } = await import("vue");
+  return {
+    useTrackTableColumns: () => ({
+      enabledColumns: ref([]),
+      visibleColumns: ref([]),
+      setEnabledColumns: vi.fn(),
+    }),
+  };
+});
 
 // the real store computes these; on the mock they are plain writable state
 const store = storeModule as typeof storeModule & { mobileLayout: boolean };
@@ -1667,6 +1683,30 @@ describe("ItemsListing date added sort", () => {
       "Batch 1",
       "Batch 2",
       "Newer",
+    ]);
+  });
+});
+
+describe("ItemsListing without sort keys", () => {
+  it("lists the items in the order they were loaded", async () => {
+    // a collection's books, in the series order the server sends
+    const listing = mountListingRaw({
+      itemtype: "audiobook",
+      path: undefined,
+      loadPagedData: undefined,
+      loadItems: vi
+        .fn()
+        .mockResolvedValue([
+          track({ item_id: "2", name: "Book 2" }),
+          track({ item_id: "1", name: "Book 1" }),
+        ]),
+      sortKeys: [],
+    });
+    await flushPromises();
+
+    expect(rows(listing).map((item) => item.name)).toEqual([
+      "Book 2",
+      "Book 1",
     ]);
   });
 });
