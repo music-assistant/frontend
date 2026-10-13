@@ -109,7 +109,7 @@ const artistLogo = computed(() =>
   font-size: 48px;
   font-weight: 500;
   letter-spacing: -1.2px;
-  line-height: 1.05;
+  line-height: 1.2;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
   display: -webkit-box;
   -webkit-line-clamp: 2;
