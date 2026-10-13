@@ -6,7 +6,25 @@
         "remote_access_mode_optimized": "Optimised Mode (HA Cloud)",
         "remote_access_protocol_optimized": "WebRTC with optimised STUN\/TURN servers from Home Assistant Cloud (works in all network setups).",
         "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronised.",
-        "audio_analysis_providers_description": "Manage providers that analyae your audio"
+        "audio_analysis_providers_description": "Manage providers that analyae your audio",
+        "customize_menu": {
+            "label": "Customise menu"
+        },
+        "setup_flow": {
+            "external_default_text": "A new browser window will open so you can sign in and authorise Music Assistant. Come back here once you're done — this dialog continues automatically."
+        },
+        "visualizer_description": "Quality, presets and favourites for the MilkDrop music visualiser",
+        "visualizer_enabled": {
+            "label": "MilkDrop visualiser",
+            "description": "Show a MilkDrop visualiser behind the fullscreen player, reacting live to the music. Each player can override this from its fullscreen menu. The waveform is tapped from the Sendspin stream, so it is only offered for players with a Sendspin output."
+        },
+        "visualizer_blur": {
+            "label": "Visualiser blur",
+            "description": "Softens the visualiser for a calmer background. 0 disables blur."
+        },
+        "visualizer_opacity": {
+            "label": "Visualiser opacity"
+        }
     },
     "sync_now": "Synchronise now",
     "sync_running": "One or more music providers are being synchronised.",
@@ -22,5 +40,45 @@
     "sync_player_with": "Synchronise with another player",
     "smart_playlist": {
         "field_favorite": "Favourite"
-    }
+    },
+    "providers": {
+        "ai_radio": {
+            "card": {
+                "customize": "Customise"
+            },
+            "customize": {
+                "title": "Customise show"
+            },
+            "hosts": {
+                "editor": {
+                    "title": "Customise host"
+                }
+            }
+        }
+    },
+    "visualizer": {
+        "toggle": "Toggle the MilkDrop visualiser",
+        "preset_random_favorites": "Random from favourites",
+        "toggle_favorite": "Favourite this preset",
+        "provider_missing": "The MilkDrop Visualiser plugin isn't available. Check it under Settings › Plugins to use the visualiser.",
+        "preset_mode_description": "How the visualiser chooses which MilkDrop preset to show.",
+        "preset_mode_options": {
+            "random_favorites": "Random from favourites"
+        },
+        "favorites": "Favourite presets",
+        "no_favorites": "No favourites yet. Star the current preset in the fullscreen player.",
+        "remove_favorite": "Remove favourite",
+        "credits_milkdrop": "MilkDrop was originally created by Ryan Geiss as a visualiser for Winamp. Presets are the work of the MilkDrop preset community, bundled via butterchurn-presets."
+    },
+    "player_type": {
+        "visualizer": "Visualiser"
+    },
+    "auth": {
+        "permissions": {
+            "library_write": "Add and remove items in the library and favourites"
+        }
+    },
+    "favorites_menu": "Favourite options",
+    "favorites_menu_liked": "Favourite options, liked",
+    "favorites_menu_disliked": "Favourite options, disliked"
 }
