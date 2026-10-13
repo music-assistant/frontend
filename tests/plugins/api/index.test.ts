@@ -190,6 +190,42 @@ describe("MusicAssistantApi error handling", () => {
     expect(consoleDebug).not.toHaveBeenCalled();
   });
 
+  it.each([
+    "top_items",
+    "artist_distribution",
+    "plays_over_time",
+    "listening_activity",
+    "listening_time",
+    "decade_distribution",
+  ])("sends the browser IANA timezone for statistics/%s", async (command) => {
+    const resolvedOptions = Intl.DateTimeFormat().resolvedOptions();
+    vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
+      ...resolvedOptions,
+      timeZone: "Europe/Berlin",
+    });
+    const calls: Record<string, () => Promise<unknown>> = {
+      top_items: () => api.getTopItems(MediaType.TRACK),
+      artist_distribution: () => api.getArtistDistribution(),
+      plays_over_time: () => api.getPlaysOverTime(),
+      listening_activity: () => api.getListeningActivity(),
+      listening_time: () => api.getListeningTime(),
+      decade_distribution: () => api.getDecadeDistribution(),
+    };
+
+    const request = calls[command]();
+
+    expect(transport.lastCommand.command).toBe(`statistics/${command}`);
+    expect(transport.lastCommand.args).toEqual(
+      expect.objectContaining({ timezone: "Europe/Berlin" }),
+    );
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
   it("caches sort options per media type until disconnect", async () => {
     const firstRequest = api.getLibrarySortOptions(MediaType.GENRE);
     const concurrentRequest = api.getLibrarySortOptions(MediaType.GENRE);

@@ -98,7 +98,7 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 88;
+export const MIN_SERVER_SCHEMA_VERSION = 92;
 
 const LIBRARY_SORT_LISTINGS: Record<LibrarySortMediaType, string> = {
   [MediaType.ARTIST]: "library_artists",
@@ -1752,6 +1752,7 @@ export class MusicAssistantApi {
         media_type,
         period,
         limit,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
       { suppressGlobalError: true },
     );
@@ -1766,6 +1767,7 @@ export class MusicAssistantApi {
       {
         period,
         limit,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
       { suppressGlobalError: true },
     );
@@ -1780,6 +1782,7 @@ export class MusicAssistantApi {
       {
         period,
         granularity,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
       { suppressGlobalError: true },
     );
@@ -1792,6 +1795,7 @@ export class MusicAssistantApi {
       "statistics/listening_activity",
       {
         period,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
       { suppressGlobalError: true },
     );
@@ -1808,6 +1812,7 @@ export class MusicAssistantApi {
         period,
         group_by,
         limit,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
       { suppressGlobalError: true },
     );
@@ -1822,6 +1827,7 @@ export class MusicAssistantApi {
       {
         period,
         limit,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
       { suppressGlobalError: true },
     );
