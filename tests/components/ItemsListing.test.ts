@@ -1942,6 +1942,66 @@ describe("ItemsListing server sort options", () => {
     );
   });
 
+  it.each([
+    { tabbed: false, firstLoad: "listing:0" },
+    { tabbed: true, firstLoad: "books:0" },
+  ])(
+    "loads the first page while the sort options are still loading (tabbed: $tabbed)",
+    async ({ tabbed, firstLoad }) => {
+      let resolveSortOptions!: (options: SortOptionInfo[]) => void;
+      mockGetLibrarySortOptions.mockReturnValue(
+        new Promise<SortOptionInfo[]>((resolve) => {
+          resolveSortOptions = resolve;
+        }),
+      );
+      const loads: string[] = [];
+      const pages: ((items: Track[]) => void)[] = [];
+      const loader = (source: string) => (params: { offset: number }) => {
+        loads.push(`${source}:${params.offset}`);
+        return new Promise<Track[]>((resolve) => pages.push(resolve));
+      };
+      // the real scroller loads a page as soon as it shows up
+      const LoadingScroller = {
+        name: "VInfiniteScroll",
+        props: { onLoad: { type: Function, default: undefined } },
+        mounted(this: { onLoad: (options: { done: () => void }) => void }) {
+          this.onLoad({ done: () => {} });
+        },
+        template: "<div><slot /></div>",
+      };
+      const listing = mountListingRaw(
+        {
+          itemtype: "audiobooks",
+          path: "libraryaudiobooks",
+          sortMediaType: MediaType.AUDIOBOOK,
+          loadPagedData: loader("listing"),
+          toolBarTabs: tabbed
+            ? [
+                { id: "books", label: "books", loadPagedData: loader("books") },
+                {
+                  id: "authors",
+                  label: "authors",
+                  loadPagedData: loader("authors"),
+                },
+              ]
+            : undefined,
+        },
+        { VInfiniteScroll: LoadingScroller },
+      );
+      await flushPromises();
+
+      resolveSortOptions(sortOptions);
+      await flushPromises();
+      pages.forEach((resolve) => resolve([track()]));
+      await flushPromises();
+
+      expect(loads).toEqual([firstLoad]);
+      expect(
+        (listing.vm as unknown as { pagedItems: Track[] }).pagedItems,
+      ).toHaveLength(1);
+    },
+  );
+
   it("reloads with the normalized sort when options change during a request", async () => {
     store.currentUser = user({
       preferences: {

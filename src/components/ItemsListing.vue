@@ -117,13 +117,13 @@
       style="overflow: hidden"
     >
       <TrackTableHeader
-        v-if="showTrackTable && (loading || pagedItems.length)"
+        v-if="showTrackTable && (loadPending || pagedItems.length)"
         :columns="trackColumns"
         :enabled="enabledTrackColumns"
         @update:enabled="setEnabledTrackColumns"
       />
       <!-- Skeleton loading states -->
-      <template v-if="loading && pagedItems.length === 0">
+      <template v-if="loadPending && pagedItems.length === 0">
         <div v-if="viewMode === 'list'">
           <ListViewSkeleton v-for="n in 8" :key="'skeleton-list-' + n" />
         </div>
@@ -153,7 +153,7 @@
         v-if="
           !tempHide &&
           !(pagedItems.length == 0 && allItemsReceived) &&
-          !(loading && pagedItems.length === 0)
+          !(loadPending && pagedItems.length === 0)
         "
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
@@ -279,7 +279,7 @@
 
       <!-- subtle message shown when there are no items to display -->
       <Empty
-        v-if="!loading && !loadError && pagedItems.length == 0"
+        v-if="!loadPending && !loadError && pagedItems.length == 0"
         class="border-none gap-3 py-8"
       >
         <EmptyMedia variant="icon">
@@ -725,6 +725,11 @@ const sortOptions = computed(() =>
   ),
 );
 const sortOptionsLoaded = ref(false);
+// the first load waits for the sort options; until then the scroller must not
+// load a page of its own
+const loadPending = computed(
+  () => loading.value || (!!props.sortMediaType && !sortOptionsLoaded.value),
+);
 const librarySorting = useLibrarySorting(
   sortOptions,
   computed(() => params.value.sortBy),
