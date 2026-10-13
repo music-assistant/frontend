@@ -4,6 +4,7 @@
     v-if="variant === 'list'"
     v-hold="onManageableHold"
     variant="outline"
+    class="rounded-(--radius-xl)"
     :class="{ 'cursor-pointer': manageable, 'opacity-60': !config.enabled }"
     data-testid="provider-row"
     @click.capture="swallowClickAfterHold"
@@ -88,7 +89,7 @@
   <Card
     v-else
     v-hold="onManageableHold"
-    class="provider-card flex h-full min-h-[200px] flex-col gap-3 py-4"
+    class="provider-card flex h-full min-h-[200px] flex-col gap-3 rounded-(--radius-xl) py-4"
     :class="{
       'cursor-pointer transition duration-200 hover:-translate-y-0.5 hover:shadow-lg':
         manageable,
@@ -157,7 +158,7 @@
     <div class="flex-1 px-4">
       <div
         v-if="isError"
-        class="bg-destructive/8 rounded-lg px-3 py-2"
+        class="bg-destructive/8 rounded-(--radius-lg) px-3 py-2"
         data-testid="provider-error"
       >
         <!-- the status shows in the badge by the name; the panel adds the reason -->

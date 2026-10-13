@@ -27,8 +27,6 @@ const playerConfig = {
   values: {},
 } as PlayerConfig;
 
-const passthroughStub = { template: "<div><slot /></div>" };
-
 // the long-press directive is registered by a plugin the test skips, so a
 // stand-in captures the handler bound to it
 let holdHandler: (event: Event) => void;
@@ -48,9 +46,6 @@ function mountCard(configOverrides: Partial<PlayerConfig> = {}) {
       stubs: {
         PlayerIcon: true,
         ProtocolChip: true,
-        VCard: passthroughStub,
-        VIcon: true,
-        VBtn: true,
       },
     },
   });

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="players-header w-100">
+    <div class="players-header w-full">
       <PlayerFilters
         @update:search="searchQuery = $event"
         @update:providers="selectedProviders = $event"
@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <div class="pl-5 font-weight-medium">
+    <div class="pl-5 font-medium">
       {{
         $t("settings.players_total", filteredPlayers.length, {
           named: { count: filteredPlayers.length },
@@ -30,89 +30,16 @@
       :variant="viewMode === 'list' ? 'default' : 'panel'"
       class="mt-4 px-5"
     >
-      <v-list v-if="viewMode === 'list'" class="players-list">
-        <ListItem
+      <ItemGroup v-if="viewMode === 'list'" class="gap-2">
+        <SettingsPlayerRow
           v-for="item in filteredPlayers"
           :key="item.player_id"
-          link
-          :show-menu-btn="true"
-          :menu-button-label="`${$t('more_options')}: ${getPlayerName(item)}`"
-          :class="{
-            'player-disabled': !item.enabled,
-            'player-unavailable': isPlayerUnavailable(
-              api.players[item.player_id],
-            ),
-          }"
-          @click="handlePlayerClick(item)"
-          @menu="(evt) => onMenu(evt, item)"
-        >
-          <template #prepend>
-            <div class="player-icon-wrapper">
-              <PlayerIcon
-                :icon="api.players[item.player_id]?.icon"
-                :size="20"
-                style="left: 3px"
-              />
-            </div>
-          </template>
-
-          <template #title>
-            <div class="player-name flex min-w-0 items-center gap-1.5">
-              <span class="truncate">{{ getPlayerName(item) }}</span>
-              <PlayerDeviceBadge v-if="isThisDevice(item)" label />
-            </div>
-          </template>
-
-          <template #subtitle>
-            <div class="player-meta">
-              <!-- Player needs setup warning -->
-              <PlayerSetupWarning
-                v-if="item.enabled && api.players[item.player_id]?.needs_setup"
-                @setup="startPlayerSetup(item.player_id)"
-              />
-              <span v-else class="provider-name">
-                {{
-                  api.players[item.player_id]?.device_info
-                    ? `${api.players[item.player_id].device_info.manufacturer} / ${api.players[item.player_id].device_info.model}`
-                    : api.getProviderManifest(item.provider)?.name ||
-                      item.provider
-                }}
-              </span>
-              <span class="protocol-chips">
-                <ProtocolChip
-                  v-for="protocol in getOutputProtocols(item.player_id)"
-                  :key="protocol.output_protocol_id"
-                  :protocol="protocol"
-                />
-              </span>
-            </div>
-          </template>
-
-          <template #append>
-            <div class="player-status-icons">
-              <v-icon
-                v-if="!item.enabled"
-                icon="mdi-cancel"
-                size="20"
-                color="grey"
-                :title="$t('settings.player_disabled')"
-              />
-              <CircleAlert
-                v-else-if="api.players[item.player_id]?.needs_setup"
-                class="size-5 text-warning"
-                :title="$t('settings.player_needs_setup')"
-              />
-              <v-icon
-                v-else-if="isPlayerUnavailable(api.players[item.player_id])"
-                icon="mdi-timer-sand"
-                size="20"
-                color="grey"
-                :title="$t('settings.player_not_available')"
-              />
-            </div>
-          </template>
-        </ListItem>
-      </v-list>
+          :player-config="item"
+          @click="handlePlayerClick"
+          @menu="(evt, config) => onMenu(evt, config)"
+          @setup="(config) => startPlayerSetup(config.player_id)"
+        />
+      </ItemGroup>
 
       <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         <SettingsPlayerCard
@@ -125,20 +52,29 @@
         />
       </div>
 
-      <div v-if="filteredPlayers.length === 0" class="empty-state">
-        <v-icon icon="mdi-speaker-off" size="64" class="empty-icon" />
-        <div class="empty-title">{{ $t("no_content") }}</div>
-        <div class="empty-message">
-          {{ $t("no_content_filter") }}
-        </div>
-      </div>
+      <Empty
+        v-if="filteredPlayers.length === 0"
+        class="rounded-(--radius-xl) border"
+        data-testid="players-empty"
+      >
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <SearchX />
+          </EmptyMedia>
+          <EmptyTitle>{{ $t("no_content") }}</EmptyTitle>
+          <EmptyDescription>{{ $t("no_content_filter") }}</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     </Container>
-    <div v-if="canAddPlayerProviders" class="missing-players-hint">
-      <v-icon icon="mdi-information-outline" size="16" class="hint-icon" />
+    <div
+      v-if="canAddPlayerProviders"
+      class="missing-players-hint flex items-center justify-center gap-1.5 px-5 py-4 text-[13px] text-muted-foreground"
+    >
+      <Info class="size-4 shrink-0" aria-hidden="true" />
       <i18n-t keypath="settings.missing_players_hint" tag="span" scope="global">
         <router-link
           :to="{ name: 'providersettings', query: { types: 'player' } }"
-          class="hint-link"
+          class="text-primary no-underline hover:underline"
         >
           {{ $t("settings.add_player_providers") }}
         </router-link>
@@ -150,14 +86,18 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
-import ListItem from "@/components/ListItem.vue";
-import PlayerDeviceBadge from "@/components/PlayerDeviceBadge.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
-import ProtocolChip from "@/components/ProtocolChip.vue";
-import PlayerIcon from "@/components/PlayerIcon.vue";
-import PlayerSetupWarning from "@/components/PlayerSetupWarning.vue";
+import SettingsPlayerRow from "@/components/settings/players/SettingsPlayerRow.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { ItemGroup } from "@/components/ui/item";
 
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import {
@@ -166,7 +106,6 @@ import {
   playerBelongsToProviders,
 } from "@/helpers/player_config";
 import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
-import { isBuiltinPlayer, isPlayerUnavailable } from "@/helpers/players";
 
 import { api } from "@/plugins/api";
 import {
@@ -178,7 +117,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { CircleAlert, Plus } from "@lucide/vue";
+import { Info, Plus, SearchX } from "@lucide/vue";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";
@@ -255,16 +194,6 @@ const handlePlayerClick = function (playerConfig: PlayerConfig) {
     return;
   }
   editPlayer(playerConfig.player_id, playerConfig.provider);
-};
-
-const getOutputProtocols = function (playerId: string) {
-  // all output methods for this player, native included
-  return api.players[playerId]?.output_protocols || [];
-};
-
-const isThisDevice = function (playerConfig: PlayerConfig) {
-  const player = api.players[playerConfig.player_id];
-  return player !== undefined && isBuiltinPlayer(player);
 };
 
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
@@ -413,114 +342,5 @@ watch(
   .players-header :deep(.filters-container) {
     align-items: flex-end;
   }
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-  width: 100%;
-}
-
-.empty-icon {
-  color: rgba(var(--v-theme-on-surface), 0.3);
-  margin-bottom: 16px;
-}
-
-.empty-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-bottom: 8px;
-}
-
-.empty-message {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  line-height: 1.4;
-}
-
-.players-list {
-  background: transparent;
-}
-
-.player-name {
-  font-weight: 500;
-  font-size: 16px;
-}
-
-.player-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.provider-name {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-}
-
-.protocol-chips {
-  display: inline-flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-
-@media (max-width: 960px) {
-  .protocol-chips {
-    display: none;
-  }
-}
-
-.player-status-icons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.player-icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(var(--v-theme-primary), 0.15);
-}
-
-.player-disabled {
-  opacity: 0.6;
-}
-
-.player-unavailable {
-  opacity: 0.7;
-}
-
-.missing-players-hint {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 16px 20px;
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-}
-
-.hint-icon {
-  color: rgba(var(--v-theme-on-surface), 0.4);
-  flex-shrink: 0;
-}
-
-.hint-link {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-}
-
-.hint-link:hover {
-  text-decoration: underline;
 }
 </style>

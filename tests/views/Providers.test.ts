@@ -731,7 +731,9 @@ describe("Providers", () => {
     expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
       false,
     );
-    expect(wrapper.get(".empty-state").text()).toContain("no_content");
+    expect(wrapper.get("[data-testid=providers-empty]").text()).toContain(
+      "no_content",
+    );
     expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(true);
   });
 
@@ -1045,7 +1047,7 @@ describe("Providers for a member that may not add sources", () => {
       false,
     );
     expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(false);
-    expect(wrapper.find(".empty-state").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=providers-empty]").exists()).toBe(false);
   });
 });
 
@@ -1096,7 +1098,7 @@ describe("Providers loading", () => {
     expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
       false,
     );
-    expect(wrapper.find(".empty-state").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=providers-empty]").exists()).toBe(false);
     expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(true);
   });
 });
@@ -1149,7 +1151,7 @@ describe("Providers search", () => {
     expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
       false,
     );
-    expect(wrapper.find(".empty-state").exists()).toBe(true);
+    expect(wrapper.find("[data-testid=providers-empty]").exists()).toBe(true);
   });
 });
 
@@ -1276,6 +1278,7 @@ async function mountWithConfigs(
         Empty: SlotStub,
         EmptyContent: SlotStub,
         EmptyDescription: SlotStub,
+        EmptyHeader: SlotStub,
         EmptyMedia: SlotStub,
         EmptyTitle: SlotStub,
         ItemGroup: SlotStub,
