@@ -86,6 +86,20 @@
       </div>
 
       <div
+        v-else-if="column === 'bpm'"
+        class="text-sm tabular-nums text-muted-foreground"
+      >
+        {{ bpm }}
+      </div>
+
+      <div
+        v-else-if="column === 'key'"
+        class="truncate text-sm text-muted-foreground"
+      >
+        {{ audioMetadata?.musical_key }}
+      </div>
+
+      <div
         v-else-if="column === 'source'"
         class="flex min-w-0 items-center gap-2 text-sm text-muted-foreground"
       >
@@ -213,6 +227,14 @@ const position = computed(
 
 const album = computed(() =>
   "album" in props.item ? props.item.album : undefined,
+);
+
+const audioMetadata = computed(() =>
+  "audio_metadata" in props.item ? props.item.audio_metadata : undefined,
+);
+
+const bpm = computed(() =>
+  audioMetadata.value?.bpm ? Math.round(audioMetadata.value.bpm) : undefined,
 );
 
 const artists = computed(() =>

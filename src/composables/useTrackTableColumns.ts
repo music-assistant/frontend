@@ -1,5 +1,5 @@
 import {
-  OPTIONAL_TRACK_COLUMNS,
+  DEFAULT_TRACK_COLUMNS,
   visibleTrackColumns,
   type OptionalTrackColumn,
 } from "@/components/track-table/trackTableColumns";
@@ -25,7 +25,7 @@ export function useTrackTableColumns(table: MaybeComputedElementRef) {
 
   const enabledColumns = getPreference<OptionalTrackColumn[]>(
     COLUMNS_PREF_KEY,
-    OPTIONAL_TRACK_COLUMNS,
+    DEFAULT_TRACK_COLUMNS,
   );
 
   const visibleColumns = computed(() =>
