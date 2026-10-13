@@ -112,9 +112,16 @@
 
     <Container
       v-if="expanded"
+      ref="listContainer"
       :variant="viewMode == 'list' ? 'default' : 'panel'"
       style="overflow: hidden"
     >
+      <TrackTableHeader
+        v-if="showTrackTable && (loading || pagedItems.length)"
+        :columns="trackColumns"
+        :enabled="enabledTrackColumns"
+        @update:enabled="setEnabledTrackColumns"
+      />
       <!-- Skeleton loading states -->
       <template v-if="loading && pagedItems.length === 0">
         <div v-if="viewMode === 'list'">
@@ -222,15 +229,29 @@
         <!-- list view -->
         <v-virtual-scroll
           v-if="viewMode == 'list'"
-          :item-height="70"
+          :item-height="showTrackTable ? TRACK_ROW_HEIGHT : 70"
           height="100%"
           :items="listDisplayItems"
           style="height: 100%; overflow: hidden"
         >
-          <template #default="{ item }">
+          <template #default="{ item, index }">
             <div v-if="'isDiscHeader' in item" class="disc-header">
               {{ $t("disc", { number: item.disc }) }}
             </div>
+            <TrackTableRow
+              v-else-if="showTrackTable"
+              :item="item"
+              :index="index"
+              :columns="trackColumns"
+              :show-checkboxes="showCheckboxes"
+              :is-selected="isSelected(item)"
+              :is-available="itemIsAvailable(item)"
+              :is-playing="isPlaying(item, itemtype)"
+              :disable-play-button="isPlayActionInProgress"
+              :parent-item="parentItem"
+              :sort-by="params.sortBy"
+              @select="onSelect"
+            />
             <ListviewItem
               v-else
               :item="item"
@@ -346,6 +367,9 @@ import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import TrackTableHeader from "@/components/track-table/TrackTableHeader.vue";
+import TrackTableRow from "@/components/track-table/TrackTableRow.vue";
+import { TRACK_ROW_HEIGHT } from "@/components/track-table/trackTableColumns";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -359,6 +383,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GridSizeSlider from "@/components/GridSizeSlider.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import { useLibrarySorting } from "@/composables/useLibrarySorting";
+import { useTrackTableColumns } from "@/composables/useTrackTableColumns";
 import { SEARCHABLE_MEDIA_TYPES } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
@@ -542,6 +567,8 @@ export interface Props {
   refreshOnParentUpdate?: boolean;
   forcedViewMode?: "list" | "panel" | "panel_compact";
   toolBarTabs?: ToolBarTab[];
+  // the list view shows tracks as a table with columns
+  trackTable?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
@@ -590,6 +617,7 @@ const props = withDefaults(defineProps<Props>(), {
   refreshOnParentUpdate: false,
   forcedViewMode: undefined,
   toolBarTabs: undefined,
+  trackTable: false,
 });
 
 const emit = defineEmits<{
@@ -655,6 +683,17 @@ const params = ref<LoadDataParams>({
   genreIds: undefined,
 });
 const viewMode = ref("list");
+const listContainer = ref<InstanceType<typeof Container>>();
+const showTrackTable = computed(
+  () => props.trackTable && viewMode.value == "list",
+);
+const {
+  enabledColumns: enabledTrackColumns,
+  visibleColumns: trackColumns,
+  setEnabledColumns: setEnabledTrackColumns,
+} = useTrackTableColumns(() =>
+  props.trackTable ? listContainer.value : undefined,
+);
 const gridSize = ref(GRID_SIZE_DEFAULT);
 const showSearch = ref(false);
 const searchHasFocus = ref(false);

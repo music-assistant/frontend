@@ -51,6 +51,7 @@
               'duration_desc',
             ]"
             :update-available="updateAvailable"
+            :track-table="true"
             :title="$t('tracks')"
             :allow-key-hooks="true"
             :path="`playlist.${props.itemId}.${props.provider}`"

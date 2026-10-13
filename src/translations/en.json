@@ -1081,6 +1081,17 @@
     "topresult": "Top result",
     "track": "Track",
     "track_number": "Disc {0} Track {1}",
+    "track_table": {
+        "title": "Title",
+        "track_number": "Track number",
+        "year": "Year",
+        "source": "Source",
+        "duration": "Duration",
+        "columns": "Columns",
+        "choose_columns": "Choose columns",
+        "always_shown": "Always shown",
+        "hidden_at_width": "Hidden at this width"
+    },
     "tracks": "Tracks",
     "search_in": "Search in {0}...",
     "try_global_search": "Try global search",
