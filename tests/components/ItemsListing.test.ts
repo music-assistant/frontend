@@ -170,6 +170,22 @@ vi.mock("@/components/PanelviewItem.vue", () => stubComponent("PanelviewItem"));
 vi.mock("@/components/PanelviewItemCompact.vue", () =>
   stubComponent("PanelviewItemCompact"),
 );
+vi.mock("@/components/track-table/TrackTableHeader.vue", () =>
+  stubComponent("TrackTableHeader"),
+);
+vi.mock("@/components/track-table/TrackTableRow.vue", () =>
+  stubComponent("TrackTableRow"),
+);
+vi.mock("@/composables/useTrackTableColumns", async () => {
+  const { ref } = await import("vue");
+  return {
+    useTrackTableColumns: () => ({
+      enabledColumns: ref([]),
+      visibleColumns: ref([]),
+      setEnabledColumns: vi.fn(),
+    }),
+  };
+});
 
 // the real store computes these; on the mock they are plain writable state
 const store = storeModule as typeof storeModule & { mobileLayout: boolean };
