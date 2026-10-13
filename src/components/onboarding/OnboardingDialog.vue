@@ -51,7 +51,7 @@ const OnboardingWizard = defineAsyncComponent({
   },
 });
 
-const { active, ctx, close, pause, setAside, markWelcomed } = useOnboarding();
+const { active, ctx, close, pause, markWelcomed } = useOnboarding();
 const { awaitingAccount } = useFirstRunSetup();
 const router = useRouter();
 
@@ -106,10 +106,9 @@ const removeRouteGuard = router.afterEach((to, from, failure) => {
 
 // The open state is a module singleton, and the app shell tears the dialog down
 // when the connection drops (a sign-out reloads the page). The welcome closes;
-// an admin setup is set aside, so it can be resumed on its step once back.
+// an admin setup is left as it was, so it comes back open or paused on its step.
 onBeforeUnmount(() => {
   removeRouteGuard();
   if (ctx.value.isMember) close();
-  else setAside();
 });
 </script>

@@ -3,31 +3,24 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { START_LOCATION, type RouteLocationNormalized } from "vue-router";
 
-const {
-  onbState,
-  closeMock,
-  pauseMock,
-  setAsideMock,
-  markWelcomedMock,
-  routerState,
-} = vi.hoisted(() => ({
-  onbState: {
-    active: { value: true } as { value: boolean },
-    isMember: true,
-    awaitingAccount: { value: false } as { value: boolean },
-  },
-  closeMock: vi.fn(),
-  pauseMock: vi.fn(),
-  setAsideMock: vi.fn(),
-  markWelcomedMock: vi.fn(),
-  routerState: {
-    hooks: [] as ((
-      to: { path: string },
-      from: { path: string },
-      failure?: unknown,
-    ) => void)[],
-  },
-}));
+const { onbState, closeMock, pauseMock, markWelcomedMock, routerState } =
+  vi.hoisted(() => ({
+    onbState: {
+      active: { value: true } as { value: boolean },
+      isMember: true,
+      awaitingAccount: { value: false } as { value: boolean },
+    },
+    closeMock: vi.fn(),
+    pauseMock: vi.fn(),
+    markWelcomedMock: vi.fn(),
+    routerState: {
+      hooks: [] as ((
+        to: { path: string },
+        from: { path: string },
+        failure?: unknown,
+      ) => void)[],
+    },
+  }));
 
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
@@ -60,7 +53,6 @@ vi.mock("@/composables/useOnboarding", async () => {
       ctx: computed(() => ({ isMember: onbState.isMember })),
       close: closeMock,
       pause: pauseMock,
-      setAside: setAsideMock,
       markWelcomed: markWelcomedMock,
     }),
   };
@@ -122,7 +114,6 @@ beforeEach(() => {
   routerState.hooks = [];
   closeMock.mockReset();
   pauseMock.mockReset();
-  setAsideMock.mockReset();
   markWelcomedMock.mockReset();
 });
 
@@ -267,14 +258,14 @@ describe("OnboardingDialog", () => {
     expect(routerState.hooks).toHaveLength(0);
   });
 
-  it("sets the admin setup aside when a dropped connection tears it down", () => {
+  it("leaves the admin setup as it was when a dropped connection tears it down", () => {
     onbState.isMember = false;
     const wrapper = mountDialog();
 
     wrapper.unmount();
 
-    expect(setAsideMock).toHaveBeenCalledOnce();
     expect(closeMock).not.toHaveBeenCalled();
+    expect(pauseMock).not.toHaveBeenCalled();
   });
 
   it("names the admin close button after what it does", () => {

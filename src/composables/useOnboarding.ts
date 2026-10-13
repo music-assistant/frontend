@@ -514,8 +514,13 @@ function close(): void {
 let leaveCurrentStep: (() => Promise<boolean>) | null = null;
 let pausing = false;
 
-function setStepGuard(guard: (() => Promise<boolean>) | null): void {
+/** Let the step on screen save before a pause; hands back what undoes it. */
+function setStepGuard(guard: () => Promise<boolean>): () => void {
   leaveCurrentStep = guard;
+  return () => {
+    // a wizard that has already taken over keeps its own guard
+    if (leaveCurrentStep === guard) leaveCurrentStep = null;
+  };
 }
 
 /** Hide the open setup and offer to resume it, without asking its step. */
@@ -531,7 +536,13 @@ function setAside(): void {
  * open, unless `force` says the user has already left it.
  */
 async function pause(options?: { force?: boolean }): Promise<void> {
-  if (!active.value || pausing) return;
+  if (!active.value) return;
+  if (pausing) {
+    // the user went to another page while a pause was saving: they have left,
+    // so the wizard goes now, whatever that save turns out to be
+    if (options?.force) setAside();
+    return;
+  }
   pausing = true;
   try {
     const saved = (await leaveCurrentStep?.()) ?? true;
@@ -682,7 +693,6 @@ export function useOnboarding() {
     open,
     close,
     pause,
-    setAside,
     paused,
     dismissPaused,
     setStepGuard,

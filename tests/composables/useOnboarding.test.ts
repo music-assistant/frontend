@@ -834,18 +834,50 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     expect(requestedStep.value).toBeNull();
   });
 
-  it("keeps the step of a setup set aside, until the banner is dismissed", async () => {
-    const { open, setAside, dismissPaused, active, paused, requestedStep } =
+  it("keeps the step of a paused setup once the banner is dismissed", async () => {
+    const { open, pause, dismissPaused, paused, requestedStep } =
       await loadOnboarding();
     open("players");
-
-    setAside();
-    expect(active.value).toBe(false);
-    expect(paused.value).toBe(true);
+    await pause();
 
     dismissPaused();
     expect(paused.value).toBe(false);
     expect(requestedStep.value).toBe("players");
+  });
+
+  it("lets go when the user leaves the page while a pause is still saving", async () => {
+    const { open, pause, setStepGuard, active, paused } =
+      await loadOnboarding();
+    let answer: (saved: boolean) => void = () => undefined;
+    setStepGuard(
+      () =>
+        new Promise<boolean>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    open();
+
+    const closing = pause();
+    await pause({ force: true });
+    expect(active.value).toBe(false);
+
+    // the save that was on its way fails, and the wizard stays gone
+    answer(false);
+    await closing;
+    expect(active.value).toBe(false);
+    expect(paused.value).toBe(true);
+  });
+
+  it("keeps the guard of a wizard that took over from one going away", async () => {
+    const { open, pause, setStepGuard, active } = await loadOnboarding();
+    const removeOld = setStepGuard(async () => true);
+    setStepGuard(async () => false);
+    removeOld();
+    open();
+
+    await pause();
+
+    expect(active.value).toBe(true);
   });
 
   it("lets the step on screen save before it pauses", async () => {

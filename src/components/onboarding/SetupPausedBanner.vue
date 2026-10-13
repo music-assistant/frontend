@@ -22,7 +22,7 @@
       variant="ghost"
       size="icon-sm"
       class="shrink-0"
-      :aria-label="$t('close')"
+      :aria-label="$t('onboarding.dismiss')"
       data-testid="setup-paused-dismiss"
       @click="dismissPaused"
     >
