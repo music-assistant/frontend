@@ -48,3 +48,4 @@ Run the type check, lint and tests before you consider a change done.
 - Fill in `.github/pull_request_template.md` and tick exactly one "Types of changes" box, since it drives the label and the release notes.
 - PRs that change UI need screenshots or a short video.
 - More review precedents are in `.github/instructions/music-assistant-frontend-standards.instructions.md`.
+- Always include before and after screenshots in a PR to the frontend repository

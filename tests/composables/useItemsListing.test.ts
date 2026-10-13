@@ -105,6 +105,48 @@ describe("useItemsListing", () => {
     expect(done).toHaveBeenCalledWith("ok");
   });
 
+  it("coalesces same-tab sort changes into a reload with the latest selection", async () => {
+    let resolveFirstPage!: (items: Track[]) => void;
+    const firstPage = new Promise<Track[]>((resolve) => {
+      resolveFirstPage = resolve;
+    });
+    const requests: LoadDataParams[] = [];
+    const loadPagedData = vi.fn((params: LoadDataParams) => {
+      requests.push({ ...params });
+      return requests.length === 1
+        ? firstPage
+        : Promise.resolve([track({ item_id: "latest-order" })]);
+    });
+    const listing = setupItemsListing({ loadPagedData });
+    listing.serverSortOptions.value = [
+      sortOption(SortField.NAME, SortDirection.ASC),
+      sortOption(SortField.PLAY_COUNT, SortDirection.DESC),
+    ];
+    const initialLoad = listing.loadData(true);
+
+    listing.params.value.sortBy = "play_count:desc";
+    await listing.loadData(false, false, true);
+    listing.params.value.sortBy = "play_count:asc";
+    await listing.loadData(false, false, true);
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+
+    resolveFirstPage([track({ item_id: "old-order" })]);
+    await initialLoad;
+
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
+    expect(requests[0].sortField).toBe(SortField.NAME);
+    expect(requests[1]).toEqual(
+      expect.objectContaining({
+        offset: 0,
+        sortField: SortField.PLAY_COUNT,
+        sortDirection: SortDirection.ASC,
+      }),
+    );
+    expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual([
+      "latest-order",
+    ]);
+  });
+
   it("filters and pages flat listings without reloading their source", async () => {
     const loadItems = vi.fn(async () => [
       track({ item_id: "track-b", name: "B Side" }),

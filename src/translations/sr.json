@@ -1334,7 +1334,6 @@
                 "customize": "Прилагоди",
                 "duplicate": "Дуплирај",
                 "delete": "Обриши",
-                "status_failed": "Неуспешно {0}",
                 "start_failed": "Покретање није успело: {0}"
             },
             "create": {

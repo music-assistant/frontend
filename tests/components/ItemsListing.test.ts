@@ -1,4 +1,5 @@
 import ItemsListing from "@/components/ItemsListing.vue";
+import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { defineComponent, h, type SetupContext } from "vue";
@@ -171,6 +172,22 @@ vi.mock("@/components/PanelviewItem.vue", () => stubComponent("PanelviewItem"));
 vi.mock("@/components/PanelviewItemCompact.vue", () =>
   stubComponent("PanelviewItemCompact"),
 );
+vi.mock("@/components/track-table/TrackTableHeader.vue", () =>
+  stubComponent("TrackTableHeader"),
+);
+vi.mock("@/components/track-table/TrackTableRow.vue", () =>
+  stubComponent("TrackTableRow"),
+);
+vi.mock("@/composables/useTrackTableColumns", async () => {
+  const { ref } = await import("vue");
+  return {
+    useTrackTableColumns: () => ({
+      enabledColumns: ref([]),
+      visibleColumns: ref([]),
+      setEnabledColumns: vi.fn(),
+    }),
+  };
+});
 
 // the real store computes these; on the mock they are plain writable state
 const store = storeModule as typeof storeModule & { mobileLayout: boolean };
@@ -224,7 +241,6 @@ function mountListingRaw(
         VRow: { template: "<div><slot /></div>" },
         VCol: { template: '<div class="grid-col"><slot /></div>' },
         VVirtualScroll: true,
-        VSnackbar: true,
         VBtn: true,
         ...stubs,
       },
@@ -436,8 +452,8 @@ describe("ItemsListing per-page search", () => {
             },
           }),
           // stubs are global in test-utils, so a mount after the listing's
-          // sets the ones its re-renders get: keep its snackbar stubbed
-          { global: { stubs: { "v-divider": true, VSnackbar: true } } },
+          // sets the ones its re-renders get: keep its divider stubbed
+          { global: { stubs: { "v-divider": true } } },
         );
       if (backFirst) mountBack();
       const listing = mountListingRaw({
@@ -686,6 +702,29 @@ describe("ItemsListing select all", () => {
     await flushPromises();
 
     expect(selection(listing)).toHaveLength(1);
+  });
+
+  it("shows the selection bar for a multi-selection and clears it from there", async () => {
+    const listing = mountListingRaw({
+      allowKeyHooks: true,
+      loadPagedData: vi
+        .fn()
+        .mockResolvedValue([track({ item_id: "1" }), track({ item_id: "2" })]),
+    });
+    await flushPromises();
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "a", ctrlKey: true }),
+    );
+    await flushPromises();
+    const bar = listing.getComponent(ListingSelectionBar);
+
+    expect(bar.props()).toEqual({ open: true, count: 2, allSelected: true });
+
+    bar.vm.$emit("clear");
+    await flushPromises();
+
+    expect(selection(listing)).toHaveLength(0);
+    expect(bar.props("open")).toBe(false);
   });
 });
 
@@ -1330,11 +1369,10 @@ describe("ItemsListing empty-state source shortcuts", () => {
         },
         stubs: {
           // the shared Container stub drops its slot; render it so the empty
-          // state inside it shows, while the list/snackbar chrome stays stubbed
+          // state inside it shows, while the list chrome stays stubbed
           Container: { template: "<div><slot /></div>" },
           "v-infinite-scroll": true,
           "v-virtual-scroll": true,
-          "v-snackbar": true,
           Tabs: true,
           TabsList: true,
           TabsTrigger: true,
@@ -1672,6 +1710,30 @@ describe("ItemsListing date added sort", () => {
   });
 });
 
+describe("ItemsListing without sort keys", () => {
+  it("lists the items in the order they were loaded", async () => {
+    // a collection's books, in the series order the server sends
+    const listing = mountListingRaw({
+      itemtype: "audiobook",
+      path: undefined,
+      loadPagedData: undefined,
+      loadItems: vi
+        .fn()
+        .mockResolvedValue([
+          track({ item_id: "2", name: "Book 2" }),
+          track({ item_id: "1", name: "Book 1" }),
+        ]),
+      sortKeys: [],
+    });
+    await flushPromises();
+
+    expect(rows(listing).map((item) => item.name)).toEqual([
+      "Book 2",
+      "Book 1",
+    ]);
+  });
+});
+
 /** Mounts a listing of `total` items and asks it to select them all. */
 async function selectAll(total: number) {
   const listing = mountListingRaw({
@@ -1827,6 +1889,44 @@ describe("ItemsListing server sort options", () => {
     await flushPromises();
     expect(loadPagedData).toHaveBeenLastCalledWith(
       expect.objectContaining({ sortBy: "play_count:asc" }),
+    );
+  });
+
+  it("reloads the selected chip sort after a pending first page finishes", async () => {
+    let resolveFirstPage!: (items: Track[]) => void;
+    const firstPage = new Promise<Track[]>((resolve) => {
+      resolveFirstPage = resolve;
+    });
+    const loadPagedData = vi
+      .fn()
+      .mockReturnValueOnce(firstPage)
+      .mockResolvedValue([]);
+    const listing = mountListingRaw({
+      sortListing: ListingType.LIBRARY_TRACKS,
+      loadPagedData,
+      showGenreFilter: false,
+    });
+    await flushPromises();
+
+    const playCountChip = listing
+      .findAll("button")
+      .find((button) => button.text().includes("sort.play_count"));
+    expect(playCountChip).toBeDefined();
+    expect(playCountChip?.attributes("disabled")).toBeUndefined();
+    await playCountChip!.trigger("click");
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+
+    resolveFirstPage([]);
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        offset: 0,
+        sortField: SortField.PLAY_COUNT,
+        sortDirection: SortDirection.DESC,
+      }),
     );
   });
 

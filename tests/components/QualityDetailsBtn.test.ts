@@ -18,6 +18,7 @@ import {
   audioProcessingChain,
 } from "../fixtures/audioProcessing";
 import { audioFormat } from "../fixtures/audioFormat";
+import { itemMapping } from "../fixtures/itemMapping";
 import { playerQueue } from "../fixtures/playerQueue";
 import { queueItem } from "../fixtures/queueItem";
 import { streamDetails } from "../fixtures/streamDetails";
@@ -33,10 +34,10 @@ vi.mock("@/plugins/store", () => ({
 }));
 vi.mock("@/components/AudioProcessingDetails.vue", () => ({
   default: {
-    props: ["crossfadeIntent", "queueId"],
+    props: ["crossfadeIntent", "queueId", "container"],
     emits: ["navigate"],
     template:
-      '<div data-testid="audio-processing-details" :data-crossfade-intent="crossfadeIntent" :data-queue-id="queueId"><button data-testid="details-navigate" @click="$emit(\'navigate\')" /></div>',
+      '<div data-testid="audio-processing-details" :data-crossfade-intent="crossfadeIntent" :data-queue-id="queueId" :data-container="container?.uri"><button data-testid="details-navigate" @click="$emit(\'navigate\')" /></div>',
   },
 }));
 
@@ -124,6 +125,24 @@ describe("QualityDetailsBtn", () => {
         .get('[data-testid="audio-processing-details"]')
         .attributes("data-queue-id"),
     ).toBe("queue-1");
+  });
+
+  it("passes the item the queue item was played from to the pipeline", () => {
+    storeMock.activePlayerQueue = makeQueue({
+      ...makeStreamDetails(),
+      audio_processing: audioProcessingChain(),
+    });
+    const container = itemMapping({ item_id: "3" });
+    storeMock.curQueueItem = queueItem({
+      ...storeMock.curQueueItem,
+      origin: { container, provider_instance: null, item_id: null },
+    });
+
+    expect(
+      mountButton()
+        .get('[data-testid="audio-processing-details"]')
+        .attributes("data-container"),
+    ).toBe("library://album/3");
   });
 
   describe("live external source, with no active queue item", () => {

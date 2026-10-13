@@ -297,6 +297,7 @@ export function useItemsListing(
       : undefined;
     if (loading.value) {
       pendingTabLoad = currentTabId !== loadingTabId;
+      if (filterParamsChanged) pendingSortReload = true;
       return;
     }
     loading.value = true;
@@ -317,15 +318,17 @@ export function useItemsListing(
       params.value.offset = offset;
       params.value.limit = props.limit ?? 50;
       params.value.refresh = refresh;
-      const currentSort = librarySorting.current.value;
-      const sortField = currentSort.field as SortField;
+      const currentSort = params.value.sortBy
+        ? librarySorting.current.value
+        : undefined;
+      const sortField = currentSort?.field as SortField | undefined;
       const selectedSortOption = librarySorting.selectedOption.value;
       params.value.sortField = sortField;
       params.value.sortDirection =
         selectedSortOption?.supports_direction === false ||
         (!selectedSortOption && sortField === SortField.ORIGINAL)
           ? undefined
-          : currentSort.direction;
+          : currentSort?.direction;
 
       if (loadPagedData) {
         const nextItems = await loadPagedData(params.value);

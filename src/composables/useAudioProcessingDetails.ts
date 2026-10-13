@@ -34,6 +34,8 @@ import {
   CrossfadeMode,
   DSPFilterType,
   DSPState,
+  type ItemMapping,
+  MediaType,
   type Player,
   Scope,
   type StreamDetails,
@@ -44,7 +46,7 @@ type TranslationValue = string | number;
 type Translate = (key: string, values?: TranslationValue[]) => string;
 
 /**
- * The settings page that controls a stage, with a label naming it.
+ * A page a stage links to, with a label naming it.
  */
 export interface AudioProcessingStageLink {
   to: RouteLocationRaw;
@@ -60,6 +62,8 @@ interface AudioProcessingDisplayStageBase {
   details?: string[];
   // set when one settings page controls the stage
   link?: AudioProcessingStageLink;
+  // set when the subtitle names an item with a page of its own
+  subtitleLink?: AudioProcessingStageLink;
 }
 
 export type AudioProcessingDisplayStage = AudioProcessingDisplayStageBase &
@@ -160,12 +164,24 @@ const LOSSY_AUDIO_CODECS = new Set<string>([
   ContentType.WMAPRO,
   ContentType.WMAV2,
 ]);
+// the items a track can be played from that have a details page, routed by
+// their media type
+const CONTAINER_DETAIL_PAGES = new Set<string>([
+  MediaType.ALBUM,
+  MediaType.ARTIST,
+  MediaType.AUDIOBOOK,
+  MediaType.GENRE,
+  MediaType.PLAYLIST,
+  MediaType.PODCAST,
+  MediaType.RADIO,
+]);
 
 export function useAudioProcessingDetails(
   chain: MaybeRefOrGetter<AudioProcessingChain>,
   streamDetails: MaybeRefOrGetter<StreamDetails>,
   crossfadeIntent: MaybeRefOrGetter<CrossfadeMode | undefined> = undefined,
   queueId: MaybeRefOrGetter<string | undefined> = undefined,
+  container: MaybeRefOrGetter<ItemMapping | undefined> = undefined,
 ) {
   const { t, locale } = useI18n({ useScope: "global" });
   const { getPresetName } = useDSPPresets({ optional: true });
@@ -191,6 +207,7 @@ export function useAudioProcessingDetails(
       },
       toValue(crossfadeIntent),
       toValue(queueId),
+      toValue(container),
     );
   });
 
@@ -211,6 +228,8 @@ export function buildAudioProcessingDetailsDisplay(
   // the queue the audio plays through; its normalization and crossfade rows
   // then link to its settings
   queueId?: string,
+  // the album, playlist or other item the track was played from
+  container?: ItemMapping,
 ): AudioProcessingDetailsDisplay {
   return {
     inputQualityTier: audioQualityToTier(chain.input_fidelity.quality),
@@ -218,7 +237,7 @@ export function buildAudioProcessingDetailsDisplay(
       chain.input_fidelity.quality,
       dependencies.translate,
     ),
-    inputStages: buildInputStages(streamDetails, dependencies),
+    inputStages: buildInputStages(streamDetails, dependencies, container),
     processingStages: buildProcessingStages(
       streamDetails,
       chain,
@@ -235,20 +254,45 @@ export function buildAudioProcessingDetailsDisplay(
 function buildInputStages(
   streamDetails: StreamDetails,
   dependencies: AudioProcessingDetailsDependencies,
+  container?: ItemMapping,
 ): AudioProcessingDisplayStage[] {
+  const { translate } = dependencies;
   return [
     {
       key: "provider",
       providerIconDomain: streamDetails.provider,
       title: dependencies.getProviderName(streamDetails.provider),
+      // the item the track was played from, under the source that streams it
+      subtitleParts: container
+        ? [
+            translate("tooltip.playing_from", [container.name]),
+            translate(container.media_type),
+          ]
+        : undefined,
+      subtitleLink: container ? containerLink(container, translate) : undefined,
     },
     formatStage(
       "source-format",
       streamDetails.audio_format,
-      dependencies.translate,
+      translate,
       dependencies.locale,
     ),
   ];
+}
+
+// a folder has no details page, so it is named only
+function containerLink(
+  container: ItemMapping,
+  translate: Translate,
+): AudioProcessingStageLink | undefined {
+  if (!CONTAINER_DETAIL_PAGES.has(container.media_type)) return undefined;
+  return {
+    to: {
+      name: container.media_type,
+      params: { provider: container.provider, itemId: container.item_id },
+    },
+    label: translate("streamdetails.open_played_from", [container.name]),
+  };
 }
 
 function buildProcessingStages(
