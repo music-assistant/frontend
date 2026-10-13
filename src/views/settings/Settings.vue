@@ -435,10 +435,10 @@ const onboardingLinkKey = computed(() =>
   isAdminTrack() ? "onboarding.run_again" : "onboarding.welcome_again",
 );
 const { open: openOnboarding } = useOnboarding();
-// The setup wizard opens on whatever is left to set up. The welcome has been
-// shown by the time this link is any use, so nothing is left to do on it and
-// it would otherwise open on its own summary: showing it again means showing
-// it from the top.
+// The setup wizard opens where a paused setup was left, or else on whatever is
+// left to set up. The welcome has been shown by the time this link is any use,
+// so nothing is left to do on it and it would otherwise open on its own
+// summary: showing it again means showing it from the top.
 const launchOnboarding = () =>
   openOnboarding(isAdminTrack() ? undefined : "welcome");
 

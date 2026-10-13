@@ -868,6 +868,27 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     expect(paused.value).toBe(true);
   });
 
+  it("leaves a wizard resumed while an older pause was saving open", async () => {
+    const { open, pause, setStepGuard, active } = await loadOnboarding();
+    let answer: (saved: boolean) => void = () => undefined;
+    setStepGuard(
+      () =>
+        new Promise<boolean>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    open();
+
+    const closing = pause();
+    await pause({ force: true });
+    open();
+
+    // the older save lands, and the resumed wizard stays
+    answer(true);
+    await closing;
+    expect(active.value).toBe(true);
+  });
+
   it("keeps the guard of a wizard that took over from one going away", async () => {
     const { open, pause, setStepGuard, active } = await loadOnboarding();
     const removeOld = setStepGuard(async () => true);
