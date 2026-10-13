@@ -488,20 +488,52 @@ const steps = computed(() => applicableSteps(ctx.value));
 const pending = computed(() => pendingSteps(ctx.value));
 
 // Whether the onboarding modal is open, and the step it should open on when it
-// is (`null` falls back to the first step still to do). Module-level so the
-// same modal is driven from the app shell, the settings page and the sign-in
-// flow, and stays open across the routes it sits over.
+// is (`null` falls back to the first step still to do). The wizard keeps the
+// step up to date as it moves, so a paused setup opens again where it was.
+// Module-level so the same modal is driven from the app shell, the settings
+// page and the sign-in flow.
 const active = ref(false);
 const requestedStep = ref<OnboardingStepId | null>(null);
+// a setup put aside, which the paused banner offers to resume until dismissed
+const paused = ref(false);
 
 function open(step?: OnboardingStepId): void {
-  requestedStep.value = step ?? null;
+  if (step) requestedStep.value = step;
+  paused.value = false;
   active.value = true;
 }
 
 function close(): void {
   active.value = false;
+  paused.value = false;
   requestedStep.value = null;
+}
+
+// what lets the step on screen save before the setup is put aside; the
+// wizard's to set while it is open
+let leaveCurrentStep: (() => Promise<boolean>) | null = null;
+let pausing = false;
+
+function setStepGuard(guard: (() => Promise<boolean>) | null): void {
+  leaveCurrentStep = guard;
+}
+
+/**
+ * Put the setup aside, keeping its step for whenever it is resumed. The step on
+ * screen saves first, as it does on Next; a step that cannot keeps the wizard
+ * open, unless `force` says the user has already left it.
+ */
+async function pause(options?: { force?: boolean }): Promise<void> {
+  if (!active.value || pausing) return;
+  pausing = true;
+  try {
+    const saved = (await leaveCurrentStep?.()) ?? true;
+    if (!active.value || (!saved && !options?.force)) return;
+    active.value = false;
+    paused.value = true;
+  } finally {
+    pausing = false;
+  }
 }
 
 /** Answer the setup's intent question, and say whether the answer landed. */
@@ -639,6 +671,9 @@ export function useOnboarding() {
     requestedStep,
     open,
     close,
+    pause,
+    paused,
+    setStepGuard,
     intent,
     setIntent,
     expertMode,

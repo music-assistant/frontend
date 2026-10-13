@@ -46,6 +46,9 @@ const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
     },
     routerMock: {
       push: vi.fn(),
+      // the hooks the dialog follows the page with, for a test to call
+      hooks: [] as ((to: { path: string }, from: { path: string }) => void)[],
+      afterEach: vi.fn(),
     },
     storeMock: {
       dialogActive: false,
@@ -117,6 +120,13 @@ afterAll(() => {
 beforeEach(() => {
   vi.clearAllMocks();
   launchSetupFlow = undefined;
+  routerMock.hooks = [];
+  routerMock.afterEach.mockImplementation(
+    (hook: (typeof routerMock.hooks)[number]) => {
+      routerMock.hooks.push(hook);
+      return vi.fn();
+    },
+  );
   apiMock.subscribeSetupFlow.mockReturnValue(vi.fn());
   eventbusMock.on.mockImplementation(
     (event: string, callback: typeof launchSetupFlow) => {
@@ -622,6 +632,27 @@ describe("SetupFlowDialog launched with initial values", () => {
       });
     },
   );
+
+  it.each([
+    [
+      "ends the flow when a link takes the user to another page",
+      "/settings/storage",
+      true,
+    ],
+    ["stays open when only the query of the page changes", "/discover", false],
+  ])("%s", async (_case, to, ends) => {
+    apiMock.abortSetupFlow.mockResolvedValue();
+    apiMock.setupProvider.mockResolvedValue(formStep(localFilesEntries()));
+    shallowMount(SetupFlowDialog);
+    await launchSetupFlow?.({ kind: "provider", domain: "filesystem_local" });
+    await flushPromises();
+
+    for (const hook of routerMock.hooks)
+      hook({ path: to }, { path: "/discover" });
+
+    expect(apiMock.abortSetupFlow).toHaveBeenCalledTimes(ends ? 1 : 0);
+    expect(storeMock.dialogActive).toBe(!ends);
+  });
 
   it("tells a provider flow that it finished", async () => {
     apiMock.setupProvider.mockResolvedValue(terminalStep(FlowStepType.FINISH));

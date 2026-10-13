@@ -118,6 +118,7 @@ const {
   loadProviderConfigs,
   followPlayers,
   markWelcomed,
+  setStepGuard,
   finish,
 } = useOnboarding();
 const { start: startTour } = useTour();
@@ -331,11 +332,19 @@ watch(
 // there, so the keyboard stays inside the wizard as it moves.
 watch(currentId, focusStepHeading);
 
+// the step it is on is where a paused setup opens again, and pausing lets that
+// step save first, as moving on does
+watch(currentId, (id) => {
+  if (id) requestedStep.value = id;
+});
+setStepGuard(leaveStep);
+
 // Leaving the welcome is what counts as having been welcomed, whether the
 // member answered the question, walked past it or closed the modal: nobody is
 // welcomed into the same app twice. Finishing writes this itself, and the
 // marker is only ever written once, so the two never collide.
 onBeforeUnmount(() => {
+  setStepGuard(null);
   stopFollowingPlayers?.();
   if (ctx.value.isMember) void markWelcomed();
 });

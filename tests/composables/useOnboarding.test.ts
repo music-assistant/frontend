@@ -814,6 +814,42 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     },
   );
 
+  it("opens a paused setup again on the step it was on", async () => {
+    const { open, pause, close, active, paused, requestedStep } =
+      await loadOnboarding();
+    open("players");
+
+    await pause();
+    expect(active.value).toBe(false);
+    expect(paused.value).toBe(true);
+
+    open();
+    expect(active.value).toBe(true);
+    expect(paused.value).toBe(false);
+    expect(requestedStep.value).toBe("players");
+
+    // a setup that is closed for good starts over from what is left to do
+    close();
+    open();
+    expect(requestedStep.value).toBeNull();
+  });
+
+  it("lets the step on screen save before it pauses", async () => {
+    const { open, pause, setStepGuard, active } = await loadOnboarding();
+    const guard = vi.fn().mockResolvedValue(false);
+    setStepGuard(guard);
+    open();
+
+    // a step that could not save keeps the wizard open
+    await pause();
+    expect(guard).toHaveBeenCalledOnce();
+    expect(active.value).toBe(true);
+
+    // unless the user has already gone to another page
+    await pause({ force: true });
+    expect(active.value).toBe(false);
+  });
+
   describe("a fresh server's first run", () => {
     it("is the admin track's from before anyone can sign in", async () => {
       const { ctx, steps, pending } = await loadFirstRun();

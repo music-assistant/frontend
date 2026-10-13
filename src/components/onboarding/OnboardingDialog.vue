@@ -5,11 +5,11 @@
     <DialogContent
       class="z-[9998] max-h-[calc(100dvh-1rem)] gap-0 overflow-y-auto p-4 sm:max-w-[calc(100%-2rem)] sm:p-6 lg:max-w-3xl"
       overlay-class="z-[9998]"
-      :show-close-button="ctx.isMember"
+      :show-close-button="canLeave"
       data-testid="onboarding-modal"
-      @escape-key-down="onDismissAttempt"
-      @pointer-down-outside="onDismissAttempt"
-      @interact-outside="onDismissAttempt"
+      @escape-key-down="onEscape"
+      @pointer-down-outside="onOutsideInteraction"
+      @interact-outside="onOutsideInteraction"
     >
       <DialogHeader class="sr-only">
         <DialogTitle>{{ $t(titleKey) }}</DialogTitle>
@@ -29,9 +29,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
+import { useFirstRunSetup } from "@/composables/useFirstRunSetup";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { $t } from "@/plugins/i18n";
 import { computed, defineAsyncComponent, h, onBeforeUnmount } from "vue";
+import { START_LOCATION, useRouter } from "vue-router";
 
 // The wizard pulls in every step and the setup dialogs behind them. Load that
 // chunk only when onboarding opens, so it stays out of the initial app bundle
@@ -48,7 +50,13 @@ const OnboardingWizard = defineAsyncComponent({
   },
 });
 
-const { active, ctx, close, markWelcomed } = useOnboarding();
+const { active, ctx, close, pause, markWelcomed } = useOnboarding();
+const { awaitingAccount } = useFirstRunSetup();
+const router = useRouter();
+
+// the setup can be paused at any point, except before its account exists:
+// without one there is no app to go back to
+const canLeave = computed(() => ctx.value.isMember || !awaitingAccount.value);
 
 // the admin sets the server up; the member is welcomed into it
 const titleKey = computed(() =>
@@ -60,16 +68,7 @@ const descriptionKey = computed(() =>
     : "onboarding.description",
 );
 
-// The admin setup is the fresh install's one required task, so its modal holds
-// until the wizard is finished or skipped through; the member welcome closes
-// freely, and leaving it counts as having been welcomed (the wizard writes that
-// marker as it unmounts).
-const onDismissAttempt = function (event: Event): void {
-  if (!ctx.value.isMember) event.preventDefault();
-};
-
-const onOpenChange = function (value: boolean): void {
-  if (value || !ctx.value.isMember) return;
+const leaveWelcome = function (): void {
   // leaving the welcome counts as having been welcomed; marked here rather than
   // in the wizard, which loads asynchronously and may not have mounted yet when
   // a member closes. The composable deduplicates, so the wizard marking too is
@@ -78,8 +77,37 @@ const onOpenChange = function (value: boolean): void {
   close();
 };
 
+// The admin setup closes by pausing it, through the close button or Escape. A
+// click beside it is too easy to make by accident, so only the welcome closes on
+// that.
+const onOutsideInteraction = function (event: Event): void {
+  if (!ctx.value.isMember) event.preventDefault();
+};
+
+const onEscape = function (event: Event): void {
+  if (!canLeave.value) event.preventDefault();
+};
+
+const onOpenChange = function (value: boolean): void {
+  if (value) return;
+  if (ctx.value.isMember) leaveWelcome();
+  else void pause();
+};
+
+// Anything that takes the user to another page has taken them out of the
+// wizard, so it lets go instead of covering the page they went to.
+const removeRouteGuard = router.afterEach((to, from, failure) => {
+  if (failure || !active.value || !canLeave.value) return;
+  if (from === START_LOCATION || to.path === from.path) return;
+  if (ctx.value.isMember) leaveWelcome();
+  else void pause({ force: true });
+});
+
 // The open state is a module singleton. Reset it when the app shell tears the
 // dialog down (a sign-out or a dropped connection), so the next session on the
 // same page load never inherits an onboarding that was left open.
-onBeforeUnmount(() => close());
+onBeforeUnmount(() => {
+  removeRouteGuard();
+  close();
+});
 </script>
