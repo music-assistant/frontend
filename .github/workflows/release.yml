@@ -215,7 +215,7 @@ jobs:
       - name: Generate release notes with Release Drafter
         id: release_drafter
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: release-drafter/release-drafter@72967cdc98ddd3160f1fc3dff619de365e137dd0 # v7.9.0
+        uses: release-drafter/release-drafter@978bb0b30c5ee8cdd332ced253758157150d43f0 # v7.10.0
         with:
           config-name: release-drafter.yml
           version: ${{ inputs.version }}
