@@ -45,6 +45,8 @@ import {
   type UserSummary,
   AlbumType,
   Audiobook,
+  AuthExchangeResult,
+  AuthorizationStart,
   AuthProvider,
   ConfigActionResult,
   ConfigEntry,
@@ -3354,6 +3356,54 @@ export class MusicAssistantApi {
   public async getAuthProviders(): Promise<AuthProvider[]> {
     // Get list of available authentication providers
     return await this.sendCommand<AuthProvider[]>("auth/providers");
+  }
+
+  /**
+   * Start a sign-in with a provider that redirects the browser.
+   *
+   * :param providerId: The login provider to sign in with.
+   * :param returnUrl: The URL to come back to after signing in.
+   * :param codeChallenge: The S256 challenge of the app's code verifier. With
+   *     it the provider returns to the remote app, which completes the sign-in
+   *     with exchangeAuthCode; only accepted over Remote Access.
+   */
+  public async startAuthorization(
+    providerId: string,
+    returnUrl: string,
+    codeChallenge?: string,
+  ): Promise<AuthorizationStart> {
+    return await this.sendCommand<AuthorizationStart>(
+      "auth/authorization_url",
+      {
+        provider_id: providerId,
+        return_url: returnUrl,
+        ...(codeChallenge && {
+          code_challenge: codeChallenge,
+          code_challenge_method: "S256",
+          redirect_target: "app",
+        }),
+      },
+    );
+  }
+
+  /**
+   * Complete a sign-in that returned to the remote app.
+   *
+   * :param state: The state of the sign-in.
+   * :param code: The authorization code it returned with.
+   * :param codeVerifier: The code verifier of the challenge it started with.
+   */
+  public async exchangeAuthCode(
+    state: string,
+    code: string,
+    codeVerifier: string,
+  ): Promise<AuthExchangeResult> {
+    return await this.sendCommand<AuthExchangeResult>("auth/exchange", {
+      state,
+      code,
+      code_verifier: codeVerifier,
+      device_name: getDeviceName(),
+    });
   }
 
   public async logout(): Promise<boolean> {
