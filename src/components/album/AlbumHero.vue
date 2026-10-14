@@ -137,8 +137,8 @@ const emit = defineEmits<{
 const router = useRouter();
 
 // px, matching .album-hero__cover
-const COVER_SIZE = 240;
-const PHONE_COVER_SIZE = 160;
+const COVER_SIZE = 280;
+const PHONE_COVER_SIZE = 180;
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
@@ -181,8 +181,8 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   min-width: 0;
 }
 .album-hero__cover {
-  width: 240px;
-  height: 240px;
+  width: 280px;
+  height: 280px;
   flex: none;
   border-radius: 8px;
   overflow: hidden;
@@ -294,8 +294,8 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
     gap: 12px;
   }
   .album-hero__cover {
-    width: 160px;
-    height: 160px;
+    width: 180px;
+    height: 180px;
   }
   .album-hero__name {
     font-size: 30px;
