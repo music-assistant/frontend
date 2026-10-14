@@ -121,7 +121,7 @@ const router = useRouter();
 // the wizard for a fresh install and the welcome for a new member both open as
 // a modal over the app; opened here, before the app is shown, so a fresh
 // sign-in never flashes the app behind them first
-const { open: openOnboarding } = useOnboarding();
+const { open: openOnboarding, paused: setupPaused } = useOnboarding();
 const { firstRun, awaitingAccount } = useFirstRunSetup();
 
 // A fresh server without Home Assistant sends the browser to its setup page,
@@ -430,7 +430,9 @@ const completeInitialization = async () => {
   }
 
   if (
-    (onboardRequested || serverInfo.onboard_done === false) &&
+    // a setup the admin paused stays paused when a reconnect runs this again
+    (onboardRequested ||
+      (serverInfo.onboard_done === false && !setupPaused.value)) &&
     // the wizard sets up every kind of provider
     authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
   ) {

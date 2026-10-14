@@ -16,7 +16,10 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
-vi.mock("@/plugins/breakpoint", () => ({ isPhoneSizedScreen: () => false }));
+const screen = vi.hoisted(() => ({ isPhone: false }));
+vi.mock("@/plugins/breakpoint", () => ({
+  isPhoneSizedScreen: () => screen.isPhone,
+}));
 vi.mock("@/helpers/media_item_actions", () => ({
   handlePlayBtnClick: vi.fn(),
 }));
@@ -26,8 +29,9 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 const MenuButtonStub = {
-  props: ["text"],
-  template: "<button>{{ text }}</button>",
+  props: ["text", "label", "truncate"],
+  template:
+    '<button :label="label" :data-truncate="String(truncate)">{{ text }}</button>',
 };
 
 function player(overrides: Partial<Player> = {}): Player {
@@ -52,6 +56,7 @@ describe("DetailHeroPlayButton", () => {
     apiMock.players = {};
     storeMock.activePlayer = undefined;
     storeMock.companionPlayerId = undefined;
+    screen.isPhone = false;
   });
 
   it("plays without naming a player when none is selected", () => {
@@ -81,5 +86,71 @@ describe("DetailHeroPlayButton", () => {
     storeMock.activePlayer = player({ group_members: ["kitchen", "office"] });
 
     expect(mountButton().text()).toBe("play_on_this_device");
+  });
+
+  it("shows only the player's name on a phone", () => {
+    screen.isPhone = true;
+    storeMock.activePlayer = player({ name: "Kitchen speaker" });
+
+    const button = mountButton();
+    expect(button.text()).toBe("Kitchen speaker");
+    // the whole sentence stays for screen readers and the tooltip
+    expect(button.find("button").attributes("label")).toBe(
+      'play_on_player:{"player":"Kitchen speaker"}',
+    );
+  });
+
+  it("calls the player of this device by that name on a phone", () => {
+    screen.isPhone = true;
+    storeMock.companionPlayerId = "kitchen";
+    storeMock.activePlayer = player();
+
+    expect(mountButton().text()).toBe("this_device");
+  });
+
+  it("still just plays on a phone without a player", () => {
+    screen.isPhone = true;
+    expect(mountButton().text()).toBe("play");
+  });
+
+  it("names a long player in full for screen readers on a phone", () => {
+    screen.isPhone = true;
+    storeMock.activePlayer = player({ name: "Kitchen ceiling speaker left" });
+
+    const button = mountButton().find("button");
+    expect(button.text()).toBe("Kitchen ceiling speaker left");
+    expect(button.attributes("label")).toBe(
+      'play_on_player:{"player":"Kitchen ceiling speaker left"}',
+    );
+  });
+
+  it("names a long player in full for screen readers on a wider screen", () => {
+    storeMock.activePlayer = player({ name: "Kitchen ceiling speaker left" });
+
+    const button = mountButton().find("button");
+    // the visible sentence trims the name, the label does not
+    expect(button.text()).toBe(
+      'play_on_player:{"player":"Kitchen ceiling spea..."}',
+    );
+    expect(button.attributes("label")).toBe(
+      'play_on_player:{"player":"Kitchen ceiling speaker left"}',
+    );
+  });
+
+  it("lets the button shrink and ellipsize the name on every phone header", () => {
+    screen.isPhone = true;
+    storeMock.activePlayer = player();
+
+    expect(mountButton().find("button").attributes("data-truncate")).toBe(
+      "true",
+    );
+  });
+
+  it("keeps the label whole where the header doesn't ask it to shrink", () => {
+    storeMock.activePlayer = player();
+
+    expect(mountButton().find("button").attributes("data-truncate")).toBe(
+      "false",
+    );
   });
 });

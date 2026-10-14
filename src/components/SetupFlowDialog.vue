@@ -319,7 +319,7 @@ import {
   ref,
   watch,
 } from "vue";
-import { useRouter } from "vue-router";
+import { START_LOCATION, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import ConfigEntryRow from "@/views/settings/ConfigEntryRow.vue";
 
@@ -467,8 +467,16 @@ onMounted(() => {
   eventbus.on("setupFlowDialog", onLaunch);
 });
 
+// a link inside a step that opens another page in the same tab has taken the
+// user away from the flow, so it ends instead of covering that page
+const removeRouteGuard = router.afterEach((to, from, failure) => {
+  if (failure || !open.value || from === START_LOCATION) return;
+  if (to.path !== from.path) close();
+});
+
 onBeforeUnmount(() => {
   eventbus.off("setupFlowDialog", onLaunch);
+  removeRouteGuard();
   cleanupFlow();
   stopCountdown();
 });

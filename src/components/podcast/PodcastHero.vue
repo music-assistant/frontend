@@ -42,7 +42,7 @@
             <DetailHeroPlayButton :item="item" />
             <!-- outside the library the services listed beside already say where it is from -->
             <span
-              v-if="isItemInLibrary(item)"
+              v-if="isItemInLibrary(item) && !isPhone"
               class="podcast-hero__badge"
               role="img"
               :title="$t('in_library')"
@@ -91,7 +91,9 @@ const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
 
-const coverSize = computed(() => (isPhoneSizedScreen() ? 132 : 200));
+const isPhone = computed(() => isPhoneSizedScreen());
+
+const coverSize = computed(() => (isPhone.value ? 132 : 200));
 </script>
 
 <style scoped>

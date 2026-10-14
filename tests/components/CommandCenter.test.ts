@@ -840,6 +840,29 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
+  it("shows one spinner at a time while results stream in", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    const spinners = () => wrapper.findAll('[data-testid="palette-spinner"]');
+
+    // nothing in yet: only the results area spins
+    state.loading.value = true;
+    await typeQuery(wrapper, "bohemian");
+    expect(spinners()).toHaveLength(1);
+
+    // the first results land while other sources still search
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    state.bumpResults();
+    await flushPromises();
+    expect(spinners()).toHaveLength(1);
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    wrapper.unmount();
+  });
+
   it("shows the submit prompt, not a stale spinner, over a pending search", async () => {
     const wrapper = mountPalette();
     useCommandCenter().open();

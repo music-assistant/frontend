@@ -103,7 +103,8 @@
               @click="emit('show-rules')"
             />
             <span
-              class="inline-flex size-9 flex-none items-center justify-center rounded-lg border border-white/25 bg-black/40 max-md:size-11 max-md:rounded-[10px]"
+              v-if="!isPhone"
+              class="inline-flex size-9 flex-none items-center justify-center rounded-lg border border-white/25 bg-black/40"
               :title="providerBadgeTitle"
             >
               <ProviderIcon :domain="providerDomain" :size="20" />

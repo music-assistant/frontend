@@ -5,15 +5,13 @@ export type TrackColumn =
   | "year"
   | "bpm"
   | "key"
-  | "source"
   | "favorite"
   | "duration"
   | "play"
   | "menu";
 
 // the columns the user can switch off in the column picker
-export type OptionalTrackColumn =
-  "album" | "number" | "year" | "bpm" | "key" | "source";
+export type OptionalTrackColumn = "album" | "number" | "year" | "bpm" | "key";
 
 export const OPTIONAL_TRACK_COLUMNS: OptionalTrackColumn[] = [
   "album",
@@ -21,7 +19,6 @@ export const OPTIONAL_TRACK_COLUMNS: OptionalTrackColumn[] = [
   "year",
   "bpm",
   "key",
-  "source",
 ];
 
 // BPM and key are only known for analysed tracks, so they start switched off
@@ -46,7 +43,6 @@ const COLUMN_ORDER: TrackColumn[] = [
   "year",
   "bpm",
   "key",
-  "source",
   "favorite",
   "duration",
   "play",
@@ -59,11 +55,10 @@ const MIN_TABLE_WIDTH: Partial<Record<TrackColumn, number>> = {
   album: 600,
   favorite: 600,
   number: 600,
-  // only shown once switched on, so they outrank year and source
+  // only shown once switched on, so they outrank year
   bpm: 1000,
   key: 1000,
   year: 1100,
-  source: 1200,
 };
 
 const COLUMN_WIDTH: Record<TrackColumn, string> = {
@@ -73,7 +68,6 @@ const COLUMN_WIDTH: Record<TrackColumn, string> = {
   year: "3rem",
   bpm: "3rem",
   key: "4rem",
-  source: "minmax(0,2fr)",
   favorite: "2rem",
   duration: "3.5rem",
   play: "1.75rem",

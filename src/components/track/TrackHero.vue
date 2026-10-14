@@ -91,7 +91,11 @@
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />
-            <span class="track-hero__badge" :title="providerBadgeTitle">
+            <span
+              v-if="!isPhone"
+              class="track-hero__badge"
+              :title="providerBadgeTitle"
+            >
               <ProviderIcon :domain="providerDomain" :size="20" />
             </span>
             <span
