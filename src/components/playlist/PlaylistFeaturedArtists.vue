@@ -3,6 +3,7 @@
     v-if="ranked.length"
     :title="$t('featured_artists')"
     :items="artists"
+    @edit-rows="emit('edit-rows')"
   />
 </template>
 
@@ -20,6 +21,10 @@ export interface Props {
 }
 const props = defineProps<Props>();
 
+const emit = defineEmits<{
+  (e: "edit-rows"): void;
+}>();
+
 const FEATURED_ARTIST_COUNT = 12;
 
 const ranked = computed(() =>
@@ -31,7 +36,7 @@ const artists = ref<Array<Artist | ItemMapping>>();
 let latestRequest = 0;
 
 // the tracks only name their artists, so the full artists are fetched for their
-// images; one that fails to load still shows by name
+// images; one that fails to load still shows by name, without an error toast
 watch(
   () => ranked.value.map((artist) => artist.uri).join(),
   async () => {
@@ -39,7 +44,11 @@ watch(
     const request = ++latestRequest;
     artists.value = undefined;
     const results = await Promise.allSettled(
-      wanted.map((artist) => api.getArtist(artist.item_id, artist.provider)),
+      wanted.map((artist) =>
+        api.getArtist(artist.item_id, artist.provider, {
+          suppressGlobalError: true,
+        }),
+      ),
     );
     // a newer set of artists replaced these while they loaded
     if (request !== latestRequest) return;

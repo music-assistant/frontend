@@ -11,12 +11,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../fixtures/playlist";
 import { providerMapping } from "../fixtures/providerMapping";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+import { track } from "../fixtures/track";
 import { user } from "../fixtures/user";
 
 const { apiMock, authMock, storeMock, eventbusMock } = vi.hoisted(() => ({
   apiMock: {
     getPlaylist: vi.fn<MusicAssistantApi["getPlaylist"]>(),
     getSmartPlaylistRules: vi.fn<MusicAssistantApi["getSmartPlaylistRules"]>(),
+    getPlaylistTracks: vi.fn<MusicAssistantApi["getPlaylistTracks"]>(),
     subscribe: vi.fn(() => () => {}),
   },
   authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
@@ -45,7 +47,18 @@ vi.mock("@/components/details/DetailHeroFavorite.vue", () => ({
   default: { name: "DetailHeroFavorite", template: "<div />" },
 }));
 vi.mock("@/components/details/RowsEditor.vue", () => ({
-  default: { name: "RowsEditor", template: "<div />" },
+  default: {
+    name: "RowsEditor",
+    props: ["availableIds"],
+    template: "<div />",
+  },
+}));
+vi.mock("@/components/playlist/PlaylistFeaturedArtists.vue", () => ({
+  default: {
+    name: "PlaylistFeaturedArtists",
+    props: ["tracks"],
+    template: "<div />",
+  },
 }));
 // the rest of the page is irrelevant to the actions, so keep the stubs bare
 vi.mock("@/components/ItemsListing.vue", () => ({
@@ -127,5 +140,42 @@ describe("PlaylistDetails", () => {
     expect(eventbusMock.emit).toHaveBeenCalledWith("playlistAccessDialog", {
       playlist: item,
     });
+  });
+
+  it("leaves featured artists out of a dynamic playlist's rows", async () => {
+    const wrapper = await mountDetails(
+      playlist({ ...playlistOf("builtin"), is_dynamic: true }),
+    );
+
+    const rows = wrapper
+      .findComponent({ name: "RowsEditor" })
+      .props("availableIds") as string[];
+    expect(rows).not.toContain("featured_artists");
+    expect(rows).toContain("tracks");
+  });
+
+  it("loads the tracks itself when the track table is hidden", async () => {
+    const tracks = [track()];
+    apiMock.getPlaylistTracks.mockResolvedValue(tracks);
+    storeMock.currentUser = user({
+      preferences: { "playlist.rows": { hidden: ["tracks"] } },
+    });
+    const item = playlistOf("builtin");
+    const wrapper = await mountDetails(item);
+
+    expect(apiMock.getPlaylistTracks).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+    );
+    expect(
+      wrapper
+        .findComponent({ name: "PlaylistFeaturedArtists" })
+        .props("tracks"),
+    ).toEqual(tracks);
+  });
+
+  it("leaves loading the tracks to the track table while it shows", async () => {
+    await mountDetails(playlistOf("builtin"));
+    expect(apiMock.getPlaylistTracks).not.toHaveBeenCalled();
   });
 });

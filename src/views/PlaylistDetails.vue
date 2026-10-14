@@ -60,8 +60,9 @@
         </template>
 
         <PlaylistFeaturedArtists
-          v-else-if="rowId === 'featured_artists' && !itemDetails.is_dynamic"
+          v-else-if="rowId === 'featured_artists'"
           :tracks="playlistTracks"
+          @edit-rows="rowsEditorOpen = true"
         />
 
         <!-- description -->
@@ -186,12 +187,17 @@ const canShare = computed(
     ),
 );
 
-// the rows the page can render for this playlist; the editor lists the same set
-const availableRows = availablePlaylistRowIds();
+// the rows the page can render for this playlist; the editor lists the same set.
+// A dynamic playlist has no fixed tracks to take featured artists from
+const availableRows = computed(() =>
+  availablePlaylistRowIds().filter(
+    (rowId) => !(rowId === "featured_artists" && itemDetails.value?.is_dynamic),
+  ),
+);
 
 // reads the user's preferences from the store, so the page follows the editor
 const visibleRows = computed(() => {
-  const { order, hidden } = playlistRows.resolve(availableRows);
+  const { order, hidden } = playlistRows.resolve(availableRows.value);
   return order.filter((rowId) => !hidden.has(rowId));
 });
 
@@ -275,4 +281,29 @@ const loadPlaylistTracks = async function (params: LoadDataParams) {
   }
   return tracks;
 };
+
+// the track table loads the tracks the hero and the featured artists read, so
+// with that row hidden the page loads them itself
+const tracksRowHidden = computed(
+  () =>
+    !!itemDetails.value &&
+    !itemDetails.value.is_dynamic &&
+    !visibleRows.value.includes("tracks"),
+);
+watch(
+  [tracksRowHidden, () => itemDetails.value?.uri],
+  async ([hidden]) => {
+    if (!hidden || playlistTracks.value) return;
+    const { itemId, provider } = props;
+    try {
+      const tracks = await api.getPlaylistTracks(itemId, provider);
+      if (itemId === props.itemId && provider === props.provider) {
+        playlistTracks.value = tracks;
+      }
+    } catch {
+      // the api already reports the failure to the user
+    }
+  },
+  { immediate: true },
+);
 </script>
