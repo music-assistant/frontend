@@ -204,6 +204,19 @@ describe("Players", () => {
     expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
   });
 
+  it("opens a player from its name, a button the keyboard can reach", async () => {
+    apiMock.players.kitchen.needs_setup = false;
+    apiMock.players.kitchen.available = true;
+    const wrapper = await mountPlayers("list");
+    const name = wrapper.get('.player-row [data-testid="player-open"]');
+
+    expect(name.element.tagName).toBe("BUTTON");
+    await name.trigger("click");
+
+    expect(routerPush).toHaveBeenCalledTimes(1);
+    expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
+  });
+
   it("opens the shared player menu with links to the settings sections", async () => {
     const wrapper = await mountPlayers("list");
 

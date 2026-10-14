@@ -22,7 +22,15 @@
     </ItemMedia>
     <ItemContent class="min-w-0 gap-1">
       <ItemTitle class="player-name w-full min-w-0 gap-1.5 text-base">
-        <span class="truncate">{{ playerName }}</span>
+        <!-- the name is the focusable control; the row itself only follows the pointer -->
+        <button
+          type="button"
+          class="min-w-0 cursor-pointer truncate text-left"
+          data-testid="player-open"
+          @click.stop="emit('click', playerConfig)"
+        >
+          {{ playerName }}
+        </button>
         <PlayerDeviceBadge v-if="isThisDevice" label />
       </ItemTitle>
       <PlayerSetupWarning

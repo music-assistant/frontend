@@ -136,6 +136,19 @@ describe("SettingsPlayerCard", () => {
     expect(wrapper.classes()).toContain("player-disabled");
   });
 
+  it("opens the player from its name, a button the keyboard can reach", async () => {
+    apiMock.players = {
+      kitchen: { available: true, needs_setup: false, output_protocols: [] },
+    };
+    const wrapper = mountCard();
+    const name = wrapper.get('[data-testid="player-open"]');
+
+    expect(name.element.tagName).toBe("BUTTON");
+    await name.trigger("click");
+
+    expect(wrapper.emitted("click")).toEqual([[playerConfig]]);
+  });
+
   it("emits menu and suppresses the native menu on right-click", () => {
     apiMock.players = {
       kitchen: { available: true, needs_setup: false, output_protocols: [] },

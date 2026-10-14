@@ -21,7 +21,15 @@
         <div
           class="player-name flex items-center gap-1.5 text-base leading-snug font-medium"
         >
-          <span class="truncate">{{ playerName }}</span>
+          <!-- the name is the focusable control; the card itself only follows the pointer -->
+          <button
+            type="button"
+            class="min-w-0 cursor-pointer truncate text-left"
+            data-testid="player-open"
+            @click.stop="handleClick"
+          >
+            {{ playerName }}
+          </button>
           <PlayerDeviceBadge v-if="isThisDevice" label />
         </div>
         <div class="mt-0.5 truncate text-[13px] text-muted-foreground">
