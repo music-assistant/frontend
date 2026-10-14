@@ -16,7 +16,10 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
-vi.mock("@/plugins/breakpoint", () => ({ isPhoneSizedScreen: () => false }));
+const screen = vi.hoisted(() => ({ isPhone: false }));
+vi.mock("@/plugins/breakpoint", () => ({
+  isPhoneSizedScreen: () => screen.isPhone,
+}));
 vi.mock("@/helpers/media_item_actions", () => ({
   handlePlayBtnClick: vi.fn(),
 }));
@@ -52,6 +55,7 @@ describe("DetailHeroPlayButton", () => {
     apiMock.players = {};
     storeMock.activePlayer = undefined;
     storeMock.companionPlayerId = undefined;
+    screen.isPhone = false;
   });
 
   it("plays without naming a player when none is selected", () => {
@@ -81,5 +85,12 @@ describe("DetailHeroPlayButton", () => {
     storeMock.activePlayer = player({ group_members: ["kitchen", "office"] });
 
     expect(mountButton().text()).toBe("play_on_this_device");
+  });
+
+  it("just says play on a phone, where the player bar names the player", () => {
+    screen.isPhone = true;
+    storeMock.activePlayer = player();
+
+    expect(mountButton().text()).toBe("play");
   });
 });

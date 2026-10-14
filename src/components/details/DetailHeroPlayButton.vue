@@ -42,14 +42,12 @@ const playButton = useTemplateRef<ComponentPublicInstance>("playButton");
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
-// a phone has little room, so the player name is trimmed harder there
+// a phone has no room for the player's name, which the player bar shows anyway
 const playButtonText = computed(() => {
   const player = store.activePlayer;
-  if (!player) return $t("play");
+  if (!player || isPhone.value) return $t("play");
   if (isBuiltinPlayer(player)) return $t("play_on_this_device");
-  return $t("play_on_player", {
-    player: getPlayerName(player, isPhone.value ? 12 : 20),
-  });
+  return $t("play_on_player", { player: getPlayerName(player, 20) });
 });
 
 // The queue playMedia targets are resolved directly, since activePlayerQueue is
