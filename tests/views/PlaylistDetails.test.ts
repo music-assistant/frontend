@@ -1,12 +1,14 @@
 import type { MusicAssistantApi } from "@/plugins/api";
-import type {
+import {
+  EventType,
+  type EventMessage,
   ListingType,
-  Playlist,
+  type Playlist,
+  type Scope,
   SortDirection,
   SortField,
-  Scope,
-  SmartPlaylistRules,
-  User,
+  type SmartPlaylistRules,
+  type User,
 } from "@/plugins/api/interfaces";
 import PlaylistDetails from "@/views/PlaylistDetails.vue";
 import type { LoadDataParams } from "@/composables/useItemsListing";
@@ -15,6 +17,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../fixtures/playlist";
 import { providerMapping } from "../fixtures/providerMapping";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+import { track } from "../fixtures/track";
 import { user } from "../fixtures/user";
 
 const { apiMock, authMock, storeMock, eventbusMock } = vi.hoisted(() => ({
@@ -50,7 +53,18 @@ vi.mock("@/components/details/DetailHeroFavorite.vue", () => ({
   default: { name: "DetailHeroFavorite", template: "<div />" },
 }));
 vi.mock("@/components/details/RowsEditor.vue", () => ({
-  default: { name: "RowsEditor", template: "<div />" },
+  default: {
+    name: "RowsEditor",
+    props: ["availableIds"],
+    template: "<div />",
+  },
+}));
+vi.mock("@/components/playlist/PlaylistFeaturedArtists.vue", () => ({
+  default: {
+    name: "PlaylistFeaturedArtists",
+    props: ["tracks"],
+    template: "<div />",
+  },
 }));
 // the rest of the page is irrelevant to the actions, so keep the stubs bare
 vi.mock("@/components/ItemsListing.vue", () => ({
@@ -106,8 +120,8 @@ describe("PlaylistDetails", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     apiMock.subscribe.mockReturnValue(() => {});
-    apiMock.getSmartPlaylistRules.mockResolvedValue(rules);
     apiMock.getPlaylistTracks.mockResolvedValue([]);
+    apiMock.getSmartPlaylistRules.mockResolvedValue(rules);
     // a library manager may edit the rules and share the playlist
     authMock.hasScope.mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.admin),
@@ -168,6 +182,66 @@ describe("PlaylistDetails", () => {
       40,
       "name",
       "asc",
+    );
+  });
+
+  it("leaves featured artists out of a dynamic playlist's rows", async () => {
+    const wrapper = await mountDetails(
+      playlist({ ...playlistOf("builtin"), is_dynamic: true }),
+    );
+
+    const rows = wrapper
+      .findComponent({ name: "RowsEditor" })
+      .props("availableIds") as string[];
+    expect(rows).not.toContain("featured_artists");
+    expect(rows).toContain("tracks");
+  });
+
+  // the listing is a stub that never loads, as when it restores its tracks
+  // from a previous visit of the playlist
+  it("loads the tracks for the page even when the listing does not", async () => {
+    const tracks = [track()];
+    apiMock.getPlaylistTracks.mockResolvedValue(tracks);
+    const item = playlistOf("builtin");
+    const wrapper = await mountDetails(item);
+
+    expect(apiMock.getPlaylistTracks).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+      false,
+    );
+    expect(
+      wrapper
+        .findComponent({ name: "PlaylistFeaturedArtists" })
+        .props("tracks"),
+    ).toEqual(tracks);
+  });
+
+  it("reloads the tracks on an update while the track table is hidden", async () => {
+    const onUpdated: Array<(evt: EventMessage) => void> = [];
+    apiMock.subscribe.mockImplementation(((
+      type: EventType,
+      callback: (evt: EventMessage) => void,
+    ) => {
+      if (type === EventType.MEDIA_ITEM_UPDATED) onUpdated.push(callback);
+      return () => {};
+    }) as never);
+    storeMock.currentUser = user({
+      preferences: { "playlist.rows": { hidden: ["tracks"] } },
+    });
+    const item = playlistOf("builtin");
+    await mountDetails(item);
+    apiMock.getPlaylistTracks.mockClear();
+
+    onUpdated.forEach((callback) =>
+      callback({ data: { ...item, name: "Renamed" } } as EventMessage),
+    );
+    await flushPromises();
+
+    expect(apiMock.getPlaylistTracks).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+      true,
     );
   });
 });

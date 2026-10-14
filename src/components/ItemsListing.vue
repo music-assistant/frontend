@@ -122,13 +122,13 @@
       style="overflow: hidden"
     >
       <TrackTableHeader
-        v-if="showTrackTable && (loading || pagedItems.length)"
+        v-if="showTrackTable && (loadPending || pagedItems.length)"
         :columns="trackColumns"
         :enabled="enabledTrackColumns"
         @update:enabled="setEnabledTrackColumns"
       />
       <!-- Skeleton loading states -->
-      <template v-if="loading && pagedItems.length === 0">
+      <template v-if="loadPending && pagedItems.length === 0">
         <div v-if="viewMode === 'list'">
           <ListViewSkeleton v-for="n in 8" :key="'skeleton-list-' + n" />
         </div>
@@ -174,7 +174,7 @@
           !tempHide &&
           !firstLoadFailed &&
           !(pagedItems.length == 0 && allItemsReceived) &&
-          !(loading && pagedItems.length === 0)
+          !(loadPending && pagedItems.length === 0)
         "
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
@@ -656,6 +656,11 @@ const {
   sortOptionsLoaded,
   tempHide,
 } = useItemsListing(props, getActiveTab);
+// the first load waits for the sort options; until then the scroller must not
+// load a page of its own
+const loadPending = computed(
+  () => loading.value || (!!props.sortListing && !sortOptionsLoaded.value),
+);
 watch(
   () => props.toolBarTabs,
   (tabs) => {
@@ -1180,7 +1185,7 @@ const saveProviderFilter = () =>
   );
 
 const showEmptyState = computed(
-  () => !loading.value && !loadError.value && pagedItems.value.length == 0,
+  () => !loadPending.value && !loadError.value && pagedItems.value.length == 0,
 );
 
 const firstLoadFailed = computed(

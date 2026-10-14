@@ -2,7 +2,9 @@
   <ButtonGroup>
     <Button
       :disabled="disabled || loading"
-      :class="[truncate ? 'min-w-0 shrink' : 'min-w-40', 'justify-start']"
+      :class="[truncate ? 'min-w-0 shrink' : 'min-w-40', 'grow justify-start']"
+      :aria-label="label"
+      :title="label"
       @click="emit('click')"
     >
       <Spinner v-if="loading" class="size-5" />
@@ -36,6 +38,8 @@ import { ChevronDown, Play } from "@lucide/vue";
 // properties
 export interface Props {
   text?: string;
+  // what the main button does, for a text that only hints at it
+  label?: string;
   menuButtonLabel?: string;
   disabled?: boolean;
   loading?: boolean;
@@ -44,6 +48,7 @@ export interface Props {
 }
 withDefaults(defineProps<Props>(), {
   text: undefined,
+  label: undefined,
   menuButtonLabel: undefined,
   disabled: false,
   loading: false,

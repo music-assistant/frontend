@@ -62,11 +62,19 @@
           </button>
         </div>
         <div class="min-w-0">
-          <div class="truncate" :class="{ 'text-primary': isPlaying }">
+          <div
+            class="truncate text-sm font-medium"
+            :class="{ 'text-primary': isPlaying }"
+          >
             {{ item.name }}
           </div>
           <div class="truncate text-sm text-muted-foreground">
-            {{ subtitle }}
+            <TrackTableLinks :targets="artists" route-name="artist" />
+            <!-- the album moves under the title when its own column is hidden -->
+            <template v-if="albumInSubtitle">
+              <span v-if="artists.length"> • </span>
+              <TrackTableLinks :targets="[album!]" route-name="album" />
+            </template>
           </div>
         </div>
       </div>
@@ -75,7 +83,7 @@
         v-else-if="column === 'album'"
         class="truncate text-sm text-muted-foreground"
       >
-        {{ album?.name }}
+        <TrackTableLinks v-if="album" :targets="[album]" route-name="album" />
       </div>
 
       <div
@@ -106,16 +114,6 @@
           {{ camelotKey }}
         </span>
         <template v-else>{{ audioMetadata?.musical_key }}</template>
-      </div>
-
-      <div
-        v-else-if="column === 'source'"
-        class="flex min-w-0 items-center gap-2 text-sm text-muted-foreground"
-      >
-        <template v-if="sourceDomain">
-          <ProviderIcon :domain="sourceDomain" :size="18" class="shrink-0" />
-          <span class="truncate">{{ sourceName }}</span>
-        </template>
       </div>
 
       <!-- on hover-capable devices only a favorite shows its heart until the row is hovered -->
@@ -175,7 +173,6 @@
 import FavoriteButton from "@/components/FavoriteButton.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { canHoldFavorite, favoriteState } from "@/helpers/favorites";
@@ -185,19 +182,19 @@ import {
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
 import { camelotColor } from "@/helpers/camelot";
-import { formatDuration, getArtistsString } from "@/helpers/utils";
-import { api } from "@/plugins/api";
+import { formatDuration } from "@/helpers/utils";
 import {
   Scope,
-  SortDirection,
-  SortField,
   type MediaItemType,
+  type SortDirection,
+  type SortField,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { EllipsisVertical, Play } from "@lucide/vue";
 import { useMediaQuery } from "@vueuse/core";
 import { computed } from "vue";
+import TrackTableLinks from "./TrackTableLinks.vue";
 import {
   TRACK_TABLE_GRID_CLASS,
   trackTableGridTemplate,
@@ -261,27 +258,11 @@ const camelotKey = computed(
 );
 
 const artists = computed(() =>
-  "artists" in props.item ? getArtistsString(props.item.artists) : "",
+  "artists" in props.item ? props.item.artists : [],
 );
 
-// the album moves under the title when its own column is hidden
-const subtitle = computed(() => {
-  if (props.columns.includes("album") || !album.value) return artists.value;
-  return [artists.value, album.value.name].filter(Boolean).join(" • ");
-});
-
-// the service that plays the track: its first available mapping
-const sourceDomain = computed(() =>
-  "provider_mappings" in props.item
-    ? props.item.provider_mappings.find((mapping) => mapping.available)
-        ?.provider_domain
-    : undefined,
-);
-
-const sourceName = computed(() =>
-  sourceDomain.value
-    ? api.getProviderManifest(sourceDomain.value)?.name
-    : undefined,
+const albumInSubtitle = computed(
+  () => !!album.value && !props.columns.includes("album"),
 );
 
 // favouring an item changes the library

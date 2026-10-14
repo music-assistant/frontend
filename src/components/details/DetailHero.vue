@@ -12,11 +12,19 @@
         v-if="backdropStyle"
         :key="backdrop"
         class="detail-hero__backdrop"
-        :class="{ 'detail-hero__backdrop--blurred': blurBackdrop }"
+        :class="[
+          { 'detail-hero__backdrop--blurred': blurBackdrop },
+          { 'scale-[1.04] blur-[6px]': softenBackdrop && !blurBackdrop },
+        ]"
         :style="backdropStyle"
       ></div>
     </Transition>
     <div class="detail-hero__scrim"></div>
+    <!-- marks where the toolbar sits, to know when it has scrolled away -->
+    <div
+      ref="toolbarSentinel"
+      class="pointer-events-none absolute inset-x-0 top-0 h-16"
+    ></div>
     <Toolbar
       class="detail-hero__toolbar"
       :icon="ArrowLeft"
@@ -32,7 +40,7 @@
     <div v-if="!item" class="detail-hero__body">
       <Skeleton class="h-12 w-80 max-w-[60%]" />
     </div>
-    <div v-else class="detail-hero__body">
+    <div v-else ref="heroBody" class="detail-hero__body">
       <div class="detail-hero__main">
         <slot name="main"></slot>
       </div>
@@ -40,10 +48,25 @@
         <slot name="aside"></slot>
       </div>
     </div>
+
+    <!-- on a phone the back button and menu stay in reach while scrolling -->
+    <DetailHeroStickyBar
+      v-if="isPhone"
+      :show="!toolbarInView"
+      :show-title="!titleInView"
+      :title="item?.name"
+      :menu-items="menuItems"
+      @back="backButtonClick"
+    >
+      <template #append>
+        <slot name="toolbar-append"></slot>
+      </template>
+    </DetailHeroStickyBar>
   </header>
 </template>
 
 <script setup lang="ts">
+import DetailHeroStickyBar from "@/components/details/DetailHeroStickyBar.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserPreferences } from "@/composables/userPreferences";
@@ -54,6 +77,7 @@ import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import type { MediaItemType } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { ArrowLeft, Rows3 } from "@lucide/vue";
+import { useIntersectionObserver } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -65,6 +89,8 @@ export interface Props {
   // for a backdrop that only stands in for missing wide art, so it reads as
   // colour rather than a picture
   blurBackdrop?: boolean;
+  // a light blur for a real picture, so the artwork and text in front stand out
+  softenBackdrop?: boolean;
   height?: number;
   phoneHeight?: number;
   // off for a page with a fixed layout, which leaves "Edit rows" out of the menu
@@ -74,6 +100,7 @@ const props = withDefaults(defineProps<Props>(), {
   item: undefined,
   backdrop: undefined,
   blurBackdrop: false,
+  softenBackdrop: false,
   height: 440,
   phoneHeight: 340,
   editableRows: true,
@@ -83,10 +110,38 @@ const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
 
+// px, the pinned bar's h-14
+const STICKY_BAR_HEIGHT = 56;
+
 const router = useRouter();
 const menuItems = ref<ContextMenuItem[]>([]);
 
 const isPhone = computed(() => isPhoneSizedScreen());
+
+const toolbarSentinel = ref<HTMLElement>();
+const heroBody = ref<HTMLElement>();
+const toolbarInView = ref(true);
+const titleInView = ref(true);
+// every hero puts its item name in the one h1 of its body
+const heroTitle = computed(
+  () => heroBody.value?.querySelector<HTMLElement>("h1") ?? undefined,
+);
+
+useIntersectionObserver(toolbarSentinel, ([entry]) => {
+  toolbarInView.value = entry?.isIntersecting ?? true;
+});
+// the page scroller starts below the safe area, as the pinned bar's content
+// does, so the title counts as gone once it is under the bar
+const pageScroller = computed(
+  () => heroBody.value?.closest<HTMLElement>(".content-section") ?? undefined,
+);
+useIntersectionObserver(
+  heroTitle,
+  ([entry]) => {
+    titleInView.value = entry?.isIntersecting ?? true;
+  },
+  { root: pageScroller, rootMargin: `-${STICKY_BAR_HEIGHT}px 0px 0px 0px` },
+);
 
 const backdropStyle = computed(() =>
   props.backdrop ? { backgroundImage: `url("${props.backdrop}")` } : undefined,
@@ -202,8 +257,8 @@ async function buildMenu(item?: MediaItemType) {
 
 /* the toolbar controls sit on the artwork, so they get their own backdrop
    instead of the toolbar's transparent one */
-.detail-hero :deep(.v-toolbar__prepend .v-btn),
-.detail-hero :deep(.v-toolbar__append > button) {
+.detail-hero__toolbar :deep(.v-toolbar__prepend .v-btn),
+.detail-hero__toolbar :deep(.v-toolbar__append > button) {
   background-color: rgba(0, 0, 0, 0.35);
   border-radius: 8px;
   opacity: 1;
