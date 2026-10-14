@@ -52,11 +52,20 @@
             ]"
             :update-available="updateAvailable"
             :track-table="true"
+            :title="$t('tracks')"
             :allow-key-hooks="true"
             :path="`playlist.${props.itemId}.${props.provider}`"
             :restore-state="true"
             :no-server-side-sorting="true"
-          />
+          >
+            <template #title>
+              <span
+                class="text-[22px] font-bold tracking-[-0.4px] max-md:text-[19px]"
+              >
+                {{ $t("tracks") }}
+              </span>
+            </template>
+          </ItemsListing>
         </template>
 
         <PlaylistFeaturedArtists
