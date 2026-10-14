@@ -124,6 +124,80 @@
         </v-card-item>
       </v-card>
 
+      <!-- Custom TURN server (self-hosted alternative to Nabu Casa) -->
+      <v-card
+        v-if="remoteAccessInfo.enabled && !remoteAccessInfo.using_ha_cloud"
+        class="turn-card mb-6"
+        elevation="0"
+        rounded="lg"
+      >
+        <v-card-item class="turn-header">
+          <v-card-title class="turn-title">
+            {{ $t("settings.remote_access_custom_turn_title") }}
+          </v-card-title>
+          <p class="turn-description">
+            {{ $t("settings.remote_access_custom_turn_description") }}
+          </p>
+        </v-card-item>
+        <v-card-text class="turn-content">
+          <v-text-field
+            v-model="turnForm.url"
+            :label="$t('settings.remote_access_custom_turn_url')"
+            placeholder="turn:turn.example.com:3478"
+            variant="outlined"
+            density="comfortable"
+            class="mb-3"
+            hide-details
+          />
+          <v-text-field
+            v-model="turnForm.username"
+            :label="$t('settings.remote_access_custom_turn_username')"
+            variant="outlined"
+            density="comfortable"
+            class="mb-3"
+            hide-details
+          />
+          <v-text-field
+            v-model="turnForm.credential"
+            :label="$t('settings.remote_access_custom_turn_credential')"
+            type="password"
+            variant="outlined"
+            density="comfortable"
+            class="mb-3"
+            hide-details
+          />
+          <div class="turn-actions">
+            <v-btn
+              color="primary"
+              variant="elevated"
+              :loading="savingTurn"
+              :disabled="savingTurn || !turnForm.url"
+              @click="saveCustomTurn"
+            >
+              {{ $t("settings.remote_access_custom_turn_save") }}
+            </v-btn>
+            <v-btn
+              v-if="remoteAccessInfo.custom_turn_url"
+              variant="text"
+              :loading="savingTurn"
+              :disabled="savingTurn"
+              @click="clearCustomTurn"
+            >
+              {{ $t("settings.remote_access_custom_turn_clear") }}
+            </v-btn>
+          </div>
+          <v-chip
+            v-if="remoteAccessInfo.using_custom_turn"
+            color="success"
+            size="default"
+            variant="outlined"
+            class="mt-3"
+          >
+            {{ $t("settings.remote_access_custom_turn_active") }}
+          </v-chip>
+        </v-card-text>
+      </v-card>
+
       <!-- Two-card layout for ID and QR code -->
       <div
         v-if="remoteAccessInfo.enabled && remoteAccessInfo.remote_id"
@@ -357,7 +431,9 @@ const { t } = useI18n();
 
 const loading = ref(true);
 const switching = ref(false);
+const savingTurn = ref(false);
 const remoteAccessInfo = ref<RemoteAccessInfo | null>(null);
+const turnForm = ref({ url: "", username: "", credential: "" });
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 
 // Set by the unmount hook, so the startup below can tell that the view it is
@@ -394,6 +470,15 @@ const loadRemoteAccessInfo = async (silent = false) => {
   }
   try {
     remoteAccessInfo.value = await api.getRemoteAccessInfo();
+    // seed the TURN form from the loaded config, but only on a real (non-silent)
+    // load - the background poll must never clobber what the user is typing
+    if (!silent) {
+      turnForm.value = {
+        url: remoteAccessInfo.value.custom_turn_url,
+        username: remoteAccessInfo.value.custom_turn_username,
+        credential: remoteAccessInfo.value.custom_turn_credential,
+      };
+    }
   } catch (error) {
     console.error("Error loading remote access info:", error);
     if (!silent) {
@@ -403,6 +488,52 @@ const loadRemoteAccessInfo = async (silent = false) => {
     if (!silent) {
       loading.value = false;
     }
+  }
+};
+
+const saveCustomTurn = async () => {
+  if (!remoteAccessInfo.value) return;
+
+  savingTurn.value = true;
+  try {
+    remoteAccessInfo.value = await api.configureRemoteAccess(
+      remoteAccessInfo.value.enabled,
+      turnForm.value.url,
+      turnForm.value.username,
+      turnForm.value.credential,
+    );
+    turnForm.value = {
+      url: remoteAccessInfo.value.custom_turn_url,
+      username: remoteAccessInfo.value.custom_turn_username,
+      credential: remoteAccessInfo.value.custom_turn_credential,
+    };
+    toast.success(t("settings.remote_access_custom_turn_saved_success"));
+  } catch (error) {
+    console.error("Error saving custom TURN server:", error);
+    toast.error(t("settings.remote_access_custom_turn_error_save"));
+  } finally {
+    savingTurn.value = false;
+  }
+};
+
+const clearCustomTurn = async () => {
+  if (!remoteAccessInfo.value) return;
+
+  savingTurn.value = true;
+  try {
+    remoteAccessInfo.value = await api.configureRemoteAccess(
+      remoteAccessInfo.value.enabled,
+      "",
+      "",
+      "",
+    );
+    turnForm.value = { url: "", username: "", credential: "" };
+    toast.success(t("settings.remote_access_custom_turn_cleared_success"));
+  } catch (error) {
+    console.error("Error clearing custom TURN server:", error);
+    toast.error(t("settings.remote_access_custom_turn_error_save"));
+  } finally {
+    savingTurn.value = false;
   }
 };
 
@@ -607,6 +738,35 @@ watch(
 
 .upgrade-button {
   margin-top: 8px;
+}
+
+.turn-card {
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+}
+
+.turn-header {
+  padding: 24px 24px 0 24px;
+}
+
+.turn-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.turn-description {
+  font-size: 0.9rem;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.turn-content {
+  padding: 20px 24px 24px 24px;
+}
+
+.turn-actions {
+  display: flex;
+  gap: 12px;
 }
 
 .remote-id-grid {

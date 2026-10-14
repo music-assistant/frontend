@@ -3650,10 +3650,16 @@ export class MusicAssistantApi {
 
   public async configureRemoteAccess(
     enabled: boolean,
+    customTurnUrl?: string,
+    customTurnUsername?: string,
+    customTurnCredential?: string,
   ): Promise<RemoteAccessInfo> {
     // Configure remote access (admin only)
     return this.sendCommand<RemoteAccessInfo>("remote_access/configure", {
       enabled,
+      custom_turn_url: customTurnUrl,
+      custom_turn_username: customTurnUsername,
+      custom_turn_credential: customTurnCredential,
     });
   }
 

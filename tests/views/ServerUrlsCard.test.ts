@@ -395,6 +395,10 @@ function remoteAccessInfo(): RemoteAccessInfo {
     connected: true,
     remote_id: REMOTE_ID,
     using_ha_cloud: false,
+    using_custom_turn: false,
     signaling_url: "wss://signaling.example",
+    custom_turn_url: "",
+    custom_turn_username: "",
+    custom_turn_credential: "",
   };
 }

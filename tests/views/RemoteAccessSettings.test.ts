@@ -57,7 +57,11 @@ function remoteAccessInfo(): RemoteAccessInfo {
     connected: true,
     remote_id: "abcdefgh12345678901234ab",
     using_ha_cloud: true,
+    using_custom_turn: false,
     signaling_url: "https://signaling.example.com",
+    custom_turn_url: "",
+    custom_turn_username: "",
+    custom_turn_credential: "",
   };
 }
 

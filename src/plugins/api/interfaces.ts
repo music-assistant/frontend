@@ -1947,7 +1947,12 @@ export interface RemoteAccessInfo {
   connected: boolean;
   remote_id: string;
   using_ha_cloud: boolean;
+  using_custom_turn: boolean;
   signaling_url: string;
+  custom_turn_url: string;
+  custom_turn_username: string;
+  // masked with a placeholder when set; never the real credential
+  custom_turn_credential: string;
 }
 
 /** The address the stream server hands to players, as it is in use right now. */
