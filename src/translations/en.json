@@ -2307,6 +2307,7 @@
     "grid_size_larger": "{count} step larger | {count} steps larger",
     "similar_tracks": "Similar tracks",
     "similar_artists": "Similar artists",
+    "featured_artists": "Featured artists",
     "audio_source": "Audio source",
     "change_playback_speed": "Change playback speed",
     "shortcut": {

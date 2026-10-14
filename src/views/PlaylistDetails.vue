@@ -59,6 +59,11 @@
           />
         </template>
 
+        <PlaylistFeaturedArtists
+          v-else-if="rowId === 'featured_artists' && !itemDetails.is_dynamic"
+          :tracks="playlistTracks"
+        />
+
         <!-- description -->
         <DetailTextRow
           v-else-if="rowId === 'description' && !!description"
@@ -119,6 +124,7 @@ import {
   playlistDuration,
   type PlaylistItem,
 } from "@/components/playlist/playlistData";
+import PlaylistFeaturedArtists from "@/components/playlist/PlaylistFeaturedArtists.vue";
 import PlaylistHero from "@/components/playlist/PlaylistHero.vue";
 import {
   availablePlaylistRowIds,
