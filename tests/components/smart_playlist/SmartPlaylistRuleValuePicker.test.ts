@@ -1,4 +1,8 @@
 import SmartPlaylistRuleValuePicker from "@/components/smart_playlist/SmartPlaylistRuleValuePicker.vue";
+import {
+  folderPath,
+  type RuleValue,
+} from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import api from "@/plugins/api";
 import {
   MediaType,
@@ -300,10 +304,8 @@ describe("SmartPlaylistRuleValuePicker", () => {
       .click();
     await flushPromises();
 
-    const [[picked]] = wrapper.emitted("add") as [
-      [{ path: string; name: string }],
-    ];
-    expect(picked.path).toBe("filesystem_local--music://Rock");
+    const [[picked]] = wrapper.emitted("add") as [[RuleValue]];
+    expect(folderPath(picked.id)).toBe("filesystem_local--music://Rock");
     expect(picked.name).toBe("My Music/Rock");
   });
 

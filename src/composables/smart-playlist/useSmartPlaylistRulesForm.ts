@@ -44,21 +44,20 @@ export type RuleOperator =
 export interface RuleValue {
   id: number;
   name: string;
-  // only set for folder values: the browse path (`<provider_instance>://<path>`)
-  path?: string;
 }
 
-// Folder values are keyed by their browse path; the numeric id is UI-only and never persisted.
-// Numbered per path rather than hashed, so no two folders can share an id.
-const folderIds = new Map<string, number>();
+// Like album types, folder values carry a UI-only id that is never persisted: the
+// browse path (`<provider_instance>://<path>`) at that index, so no two folders share one.
+const folderPaths: string[] = [];
 
 export function folderValue(path: string): RuleValue {
-  let id = folderIds.get(path);
-  if (id === undefined) {
-    id = folderIds.size + 1;
-    folderIds.set(path, id);
-  }
-  return { id, name: folderName(path), path };
+  let id = folderPaths.indexOf(path);
+  if (id === -1) id = folderPaths.push(path) - 1;
+  return { id, name: folderName(path) };
+}
+
+export function folderPath(id: number): string {
+  return folderPaths[id];
 }
 
 // prefixed with the music source, so equally named folders stay apart
@@ -508,7 +507,7 @@ export function useSmartPlaylistRulesForm(
       genre_ids: genreInclude.map((v) => v.id),
       artist_ids: artistInclude.map((v) => v.id),
       album_ids: albumInclude.map((v) => v.id),
-      folder_paths: folderInclude.flatMap((v) => (v.path ? [v.path] : [])),
+      folder_paths: folderInclude.map((v) => folderPath(v.id)),
       favorites_only: fav,
       excluded_genre_ids: genreExclude.map((v) => v.id),
       excluded_artist_ids: artistExclude.map((v) => v.id),
