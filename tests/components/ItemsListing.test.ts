@@ -6,6 +6,7 @@ import { defineComponent, h, type SetupContext } from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   EventType,
+  ListingType,
   MediaType,
   SortDirection,
   SortField,
@@ -50,7 +51,7 @@ const events = vi.hoisted(() => {
 const mockGetLibraryGenres = vi.hoisted(() =>
   vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
 );
-const mockGetLibrarySortOptions = vi.hoisted(() => vi.fn());
+const mockGetSortOptions = vi.hoisted(() => vi.fn());
 const mockToastError = vi.hoisted(() => vi.fn());
 const mockSubscribeMulti = vi.hoisted(() => vi.fn());
 const mockSubscribe = vi.hoisted(() => vi.fn());
@@ -60,7 +61,7 @@ vi.mock("@/plugins/api", () => {
     providers: {},
     providerManifests: {},
     getLibraryGenres: mockGetLibraryGenres,
-    getLibrarySortOptions: mockGetLibrarySortOptions,
+    getSortOptions: mockGetSortOptions,
     subscribe_multi: mockSubscribeMulti,
     subscribe: mockSubscribe,
   };
@@ -1769,6 +1770,12 @@ function confirmationRequest() {
 describe("ItemsListing server sort options", () => {
   const sortOptions: SortOptionInfo[] = [
     {
+      field: SortField.SORT_NAME,
+      supports_direction: true,
+      default_direction: SortDirection.ASC,
+      label_key: "sort_name",
+    },
+    {
       field: SortField.TIMESTAMP_ADDED,
       supports_direction: true,
       default_direction: SortDirection.DESC,
@@ -1798,11 +1805,17 @@ describe("ItemsListing server sort options", () => {
       default_direction: null,
       label_key: "random",
     },
+    {
+      field: SortField.RANDOM_PLAY_COUNT,
+      supports_direction: false,
+      default_direction: null,
+      label_key: "random_play_count",
+    },
   ];
 
   beforeEach(() => {
     mockGetLibraryGenres.mockReset().mockResolvedValue([]);
-    mockGetLibrarySortOptions.mockReset().mockResolvedValue(sortOptions);
+    mockGetSortOptions.mockReset().mockResolvedValue(sortOptions);
     mockToastError.mockReset();
     mockSubscribeMulti.mockReset().mockImplementation(events.subscribeMulti);
     mockSubscribe.mockReset().mockImplementation(events.subscribe);
@@ -1822,23 +1835,35 @@ describe("ItemsListing server sort options", () => {
     const listing = mountListingRaw({
       itemtype: "tracks",
       path: "librarytracks",
-      sortMediaType: MediaType.TRACK,
+      sortListing: ListingType.LIBRARY_TRACKS,
       loadPagedData,
       showGenreFilter: false,
     });
     await flushPromises();
 
-    expect(mockGetLibrarySortOptions).toHaveBeenCalledWith(MediaType.TRACK);
+    expect(mockGetSortOptions).toHaveBeenCalledWith(ListingType.LIBRARY_TRACKS);
     expect(loadPagedData).toHaveBeenLastCalledWith(
       expect.objectContaining({ sortBy: "name:desc" }),
     );
+    const sortControls = listing.findComponent(LibrarySortControls);
+    const visibleFields = (
+      sortControls.props("options") as SortOptionInfo[]
+    ).map((option) => option.field);
+    expect(visibleFields).not.toContain(SortField.RANDOM);
+    expect(visibleFields).not.toContain(SortField.RANDOM_PLAY_COUNT);
 
     const sortMenu = listing.findComponent(LibrarySortControls);
     await sortMenu.find("button").trigger("click");
     await flushPromises();
     expect(
       document.body.querySelectorAll('[role="menuitemradio"]'),
-    ).toHaveLength(sortOptions.length + 2);
+    ).toHaveLength(
+      sortOptions.filter(
+        (option) =>
+          option.field !== SortField.RANDOM &&
+          option.field !== SortField.RANDOM_PLAY_COUNT,
+      ).length + 2,
+    );
     expect(
       document.body.querySelectorAll(
         '[role="menuitemradio"][aria-checked="true"]',
@@ -1867,16 +1892,81 @@ describe("ItemsListing server sort options", () => {
     );
   });
 
+  it("reloads the selected chip sort after a pending first page finishes", async () => {
+    let resolveFirstPage!: (items: Track[]) => void;
+    const firstPage = new Promise<Track[]>((resolve) => {
+      resolveFirstPage = resolve;
+    });
+    const loadPagedData = vi
+      .fn()
+      .mockReturnValueOnce(firstPage)
+      .mockResolvedValue([]);
+    const listing = mountListingRaw({
+      sortListing: ListingType.LIBRARY_TRACKS,
+      loadPagedData,
+      showGenreFilter: false,
+    });
+    await flushPromises();
+
+    const playCountChip = listing
+      .findAll("button")
+      .find((button) => button.text().includes("sort.play_count"));
+    expect(playCountChip).toBeDefined();
+    expect(playCountChip?.attributes("disabled")).toBeUndefined();
+    await playCountChip!.trigger("click");
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+
+    resolveFirstPage([]);
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        offset: 0,
+        sortField: SortField.PLAY_COUNT,
+        sortDirection: SortDirection.DESC,
+      }),
+    );
+  });
+
+  it("defaults to the first server sort option when no preference is saved", async () => {
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+
+    const listing = mountListingRaw({
+      itemtype: "tracks",
+      path: "librarytracks",
+      sortListing: ListingType.LIBRARY_TRACKS,
+      loadPagedData,
+      showGenreFilter: false,
+    });
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        sortBy: "sort_name:asc",
+        sortField: SortField.SORT_NAME,
+        sortDirection: SortDirection.ASC,
+      }),
+    );
+    expect(
+      listing
+        .find(".listing-sort-chips-row")
+        .findAll('button[aria-pressed="true"]')
+        .map((chip) => chip.text()),
+    ).toEqual(["sort.sort_name"]);
+  });
+
   it("keeps the desktop sort chip row stable while options load", async () => {
     let resolveSortOptions!: (options: SortOptionInfo[]) => void;
-    mockGetLibrarySortOptions.mockReturnValue(
+    mockGetSortOptions.mockReturnValue(
       new Promise<SortOptionInfo[]>((resolve) => {
         resolveSortOptions = resolve;
       }),
     );
 
     const listing = mountListingRaw({
-      sortMediaType: MediaType.TRACK,
+      sortListing: ListingType.LIBRARY_TRACKS,
       showGenreFilter: false,
     });
     const chipsRow = listing.find(".listing-sort-chips-row");
@@ -1895,13 +1985,13 @@ describe("ItemsListing server sort options", () => {
   });
 
   it("uses one toast ID when shared genre sort options fail in multiple listings", async () => {
-    mockGetLibrarySortOptions.mockRejectedValue(new Error("request failed"));
+    mockGetSortOptions.mockRejectedValue(new Error("request failed"));
 
     const listings = ["music", "podcasts", "audiobooks"].map((contentType) =>
       mountListingRaw({
         itemtype: "genres",
         path: `librarygenres.${contentType}`,
-        sortMediaType: MediaType.GENRE,
+        sortListing: ListingType.LIBRARY_GENRES,
         showGenreFilter: false,
       }),
     );
@@ -1928,7 +2018,7 @@ describe("ItemsListing server sort options", () => {
     mountListingRaw({
       itemtype: "tracks",
       path: "librarytracks",
-      sortMediaType: MediaType.TRACK,
+      sortListing: ListingType.LIBRARY_TRACKS,
       loadPagedData,
       showGenreFilter: false,
     });
@@ -1950,7 +2040,7 @@ describe("ItemsListing server sort options", () => {
     const listing = mountListingRaw({
       itemtype: "audiobooks",
       path: "libraryaudiobooks",
-      sortMediaType: MediaType.AUDIOBOOK,
+      sortListing: ListingType.LIBRARY_AUDIOBOOKS,
       sortOptionExcludeFields: [SortField.DURATION],
       loadPagedData,
       showGenreFilter: false,
@@ -1981,18 +2071,24 @@ describe("ItemsListing server sort options", () => {
     const listing = mountListingRaw({
       itemtype: "audiobooks",
       path: "libraryaudiobooks",
-      sortMediaType: MediaType.AUDIOBOOK,
+      sortListing: ListingType.LIBRARY_AUDIOBOOKS,
       loadPagedData,
       showGenreFilter: false,
     });
 
     await flushPromises();
     expect(loadPagedData).toHaveBeenCalledTimes(1);
+    expect(
+      listing
+        .findComponent(LibrarySortControls)
+        .find("button")
+        .attributes("disabled"),
+    ).toBeUndefined();
     expect(loadPagedData).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
-        sort_field: SortField.DURATION,
-        sort_direction: SortDirection.ASC,
+        sortField: SortField.DURATION,
+        sortDirection: SortDirection.ASC,
       }),
     );
 
@@ -2008,8 +2104,8 @@ describe("ItemsListing server sort options", () => {
     expect(loadPagedData).toHaveBeenCalledTimes(2);
     expect(loadPagedData).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        sort_field: SortField.TIMESTAMP_ADDED,
-        sort_direction: SortDirection.DESC,
+        sortField: SortField.SORT_NAME,
+        sortDirection: SortDirection.ASC,
       }),
     );
   });

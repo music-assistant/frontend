@@ -12,7 +12,7 @@
     :allow-key-hooks="true"
     :show-search-button="true"
     :show-genre-filter="true"
-    :sort-media-type="MediaType.ARTIST"
+    :sort-listing="ListingType.LIBRARY_ARTISTS"
     :icon="ArtistIcon"
     :restore-state="true"
     :total="total"
@@ -29,6 +29,7 @@ import {
   ArtistType,
   EventMessage,
   EventType,
+  ListingType,
   MediaType,
 } from "@/plugins/api/interfaces";
 import { onBeforeUnmount, onMounted, ref } from "vue";
@@ -48,8 +49,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sort_field,
-    params.sort_direction,
+    params.sortField,
+    params.sortDirection,
     params.albumArtistsFilter,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
