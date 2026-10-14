@@ -31,6 +31,11 @@ export type OnboardingStepId =
 
 export type OnboardingIntent = "phone_apps" | "music_hub";
 
+/** How the wizard leaves a step: moving on, or pausing the setup. */
+export interface StepLeaveOptions {
+  pausing?: boolean;
+}
+
 /** How much of the app a member wants to see, as the welcome asks it. */
 export type OnboardingExperience = "standard" | "expert";
 

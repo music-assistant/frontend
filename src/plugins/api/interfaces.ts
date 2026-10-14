@@ -205,15 +205,33 @@ export enum MediaType {
   UNKNOWN = "unknown",
 }
 
-export type LibrarySortMediaType =
-  | MediaType.ARTIST
-  | MediaType.ALBUM
-  | MediaType.TRACK
-  | MediaType.PLAYLIST
-  | MediaType.RADIO
-  | MediaType.AUDIOBOOK
-  | MediaType.PODCAST
-  | MediaType.GENRE;
+export enum ListingType {
+  LIBRARY_ARTISTS = "library_artists",
+  LIBRARY_ALBUMS = "library_albums",
+  LIBRARY_TRACKS = "library_tracks",
+  LIBRARY_PLAYLISTS = "library_playlists",
+  LIBRARY_RADIOS = "library_radios",
+  LIBRARY_AUDIOBOOKS = "library_audiobooks",
+  LIBRARY_PODCASTS = "library_podcasts",
+  LIBRARY_GENRES = "library_genres",
+  ALBUM_TRACKS = "album_tracks",
+  ARTIST_ALBUMS = "artist_albums",
+  ARTIST_TRACKS = "artist_tracks",
+  ARTIST_APPEARS_ON = "artist_appears_on",
+  ARTIST_DISCOGRAPHY = "artist_discography",
+  ARTIST_TOP_TRACKS = "artist_top_tracks",
+  ARTIST_TOP_ALBUMS = "artist_top_albums",
+  ARTIST_AUDIOBOOKS = "artist_audiobooks",
+  SIMILAR_ARTISTS = "similar_artists",
+  SIMILAR_TRACKS = "similar_tracks",
+  TRACK_ALBUMS = "track_albums",
+  VERSIONS = "versions",
+  PLAYLIST_TRACKS = "playlist_tracks",
+  PODCAST_EPISODES = "podcast_episodes",
+  GENRE_TRACKS = "genre_tracks",
+  GENRE_ALBUMS = "genre_albums",
+  BROWSE = "browse",
+}
 
 export enum SortField {
   NAME = "name",
@@ -1912,6 +1930,24 @@ export interface AuthProvider {
   provider_id: string;
   provider_type: AuthProviderType;
   requires_redirect: boolean;
+  // whether a sign-in can return to the remote app; servers before schema 87 omit it
+  supports_remote_app?: boolean;
+}
+
+export interface AuthorizationStart {
+  // null when the server refused to start the sign-in, with the reason in error
+  authorization_url: string | null;
+  // servers before schema 87 omit state and expires_at
+  state?: string;
+  expires_at?: string;
+  error?: string;
+}
+
+export interface AuthExchangeResult {
+  success: boolean;
+  access_token?: string;
+  error?: string;
+  translation_key?: string;
 }
 
 export interface LoginCredentials {

@@ -4,6 +4,7 @@ import {
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
+  ListingType,
   MediaType,
   type Player,
   PlaylistMatchPolicy,
@@ -190,9 +191,9 @@ describe("MusicAssistantApi error handling", () => {
     expect(consoleDebug).not.toHaveBeenCalled();
   });
 
-  it("caches sort options per media type until disconnect", async () => {
-    const firstRequest = api.getLibrarySortOptions(MediaType.GENRE);
-    const concurrentRequest = api.getLibrarySortOptions(MediaType.GENRE);
+  it("caches sort options per listing until disconnect", async () => {
+    const firstRequest = api.getSortOptions(ListingType.LIBRARY_GENRES);
+    const concurrentRequest = api.getSortOptions(ListingType.LIBRARY_GENRES);
     const sortOptionsRequests = () =>
       transport.sentCommands.filter(
         (command) => command.command === "music/sort_options",
@@ -211,9 +212,9 @@ describe("MusicAssistantApi error handling", () => {
       Promise.all([firstRequest, concurrentRequest]),
     ).resolves.toEqual([[], []]);
 
-    await expect(api.getLibrarySortOptions(MediaType.GENRE)).resolves.toEqual(
-      [],
-    );
+    await expect(
+      api.getSortOptions(ListingType.LIBRARY_GENRES),
+    ).resolves.toEqual([]);
     expect(sortOptionsRequests()).toHaveLength(1);
 
     api.disconnect();
@@ -222,7 +223,7 @@ describe("MusicAssistantApi error handling", () => {
     reconnectTransport.receive(SERVER_INFO);
     await initialization;
 
-    const afterDisconnect = api.getLibrarySortOptions(MediaType.GENRE);
+    const afterDisconnect = api.getSortOptions(ListingType.LIBRARY_GENRES);
     expect(
       reconnectTransport.sentCommands.filter(
         (command) => command.command === "music/sort_options",
@@ -237,18 +238,18 @@ describe("MusicAssistantApi error handling", () => {
   });
 
   it.each([
-    [MediaType.ARTIST, "library_artists"],
-    [MediaType.ALBUM, "library_albums"],
-    [MediaType.TRACK, "library_tracks"],
-    [MediaType.PLAYLIST, "library_playlists"],
-    [MediaType.RADIO, "library_radios"],
-    [MediaType.AUDIOBOOK, "library_audiobooks"],
-    [MediaType.PODCAST, "library_podcasts"],
-    [MediaType.GENRE, "library_genres"],
+    [ListingType.LIBRARY_ARTISTS, "library_artists"],
+    [ListingType.LIBRARY_ALBUMS, "library_albums"],
+    [ListingType.LIBRARY_TRACKS, "library_tracks"],
+    [ListingType.LIBRARY_PLAYLISTS, "library_playlists"],
+    [ListingType.LIBRARY_RADIOS, "library_radios"],
+    [ListingType.LIBRARY_AUDIOBOOKS, "library_audiobooks"],
+    [ListingType.LIBRARY_PODCASTS, "library_podcasts"],
+    [ListingType.LIBRARY_GENRES, "library_genres"],
   ] as const)(
     "requests sort options for %s using listing %s",
-    async (mediaType, listing) => {
-      const request = api.getLibrarySortOptions(mediaType);
+    async (listingType, listing) => {
+      const request = api.getSortOptions(listingType);
 
       expect(transport.lastCommand.command).toBe("music/sort_options");
       expect(transport.lastCommand.args).toEqual({ listing });

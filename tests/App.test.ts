@@ -39,6 +39,7 @@ const {
   mockRememberCurrentRemoteConnection,
   mockRunAfterPreferenceWrites,
   mockOnboardingOpen,
+  onboardingPaused,
   mockRouterPush,
   mockRouterReplace,
   mockSetPreference,
@@ -121,6 +122,8 @@ const {
     mockRememberCurrentRemoteConnection: vi.fn(),
     mockRunAfterPreferenceWrites: vi.fn(),
     mockOnboardingOpen: vi.fn(),
+    // whether the admin paused the setup, which a reconnect leaves paused
+    onboardingPaused: { value: false },
     mockRouterPush: vi.fn(),
     mockRouterReplace: vi.fn(),
     mockSetPreference: vi.fn(),
@@ -203,7 +206,10 @@ vi.mock("@/composables/useShortcuts", () => ({
 }));
 
 vi.mock("@/composables/useOnboarding", () => ({
-  useOnboarding: () => ({ open: mockOnboardingOpen }),
+  useOnboarding: () => ({
+    open: mockOnboardingOpen,
+    paused: onboardingPaused,
+  }),
 }));
 
 vi.mock("@/plugins/web_player", () => ({
@@ -327,6 +333,7 @@ describe("App initialization", () => {
     vi.resetAllMocks();
     vi.resetModules();
     guestType.value = null;
+    onboardingPaused.value = false;
     i18nMock.global.locale.value = "en";
     apiMock.state.value = "authenticated";
     apiMock.isRemoteConnection.value = false;
@@ -540,6 +547,16 @@ describe("App initialization", () => {
         expect(mockOnboardingOpen).not.toHaveBeenCalled();
       },
     );
+
+    it("leaves a setup the admin paused alone when it runs again", async () => {
+      asAdmin();
+      apiMock.serverInfo.value.onboard_done = false;
+      onboardingPaused.value = true;
+
+      wrapper = await mountApp();
+
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
+    });
 
     it("stays out of the way once the server is set up", async () => {
       asAdmin();
