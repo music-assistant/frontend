@@ -63,9 +63,8 @@ interface ItemsListingDataOptions {
   sortOptionExcludeFields?: SortField[];
   loadPagedData?: LoadPagedDataFn;
   loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
-  limit?: number;
+  limit: number;
   toolBarTabs?: ToolBarTab[];
-  itemtype: string;
 }
 
 export function useItemsListing(
@@ -74,7 +73,7 @@ export function useItemsListing(
 ) {
   const params = ref<LoadDataParams>({
     offset: 0,
-    limit: props.limit ?? 50,
+    limit: props.limit,
     sortBy: "name",
     search: "",
     libraryOnly: false,
@@ -115,15 +114,14 @@ export function useItemsListing(
   let pendingClear = false;
   let pendingRefresh = false;
   let pendingSortReload = false;
+  // lets async work tell that the listing it is working for is already gone
   let disposed = false;
 
   onScopeDispose(() => {
     disposed = true;
   });
 
-  const scheduleSortReload = () => {
-    pendingSortReload = true;
-  };
+  const isDisposed = () => disposed;
 
   const loadData = async function (
     clear = false,
@@ -175,7 +173,7 @@ export function useItemsListing(
     const previousOffset = params.value.offset;
     try {
       params.value.offset = offset;
-      params.value.limit = props.limit ?? 50;
+      params.value.limit = props.limit;
       params.value.refresh = refresh;
       // a listing without sort keys keeps the order its items are loaded in
       const currentSort = params.value.sortBy
@@ -193,7 +191,7 @@ export function useItemsListing(
         const nextItems = await loadPagedData(params.value);
         if (params.value.offset) pagedItems.value.push(...nextItems);
         else pagedItems.value = nextItems;
-        if (Math.abs(nextItems.length - (props.limit ?? 50)) > 10) {
+        if (Math.abs(nextItems.length - props.limit) > 10) {
           allItemsReceived.value = true;
         }
       } else if (props.loadItems) {
@@ -204,7 +202,7 @@ export function useItemsListing(
         const nextItems = filterAndSortItems(allItems.value, params.value);
         if (params.value.offset) pagedItems.value.push(...nextItems);
         else pagedItems.value = nextItems;
-        allItemsReceived.value = nextItems.length < (props.limit ?? 50);
+        allItemsReceived.value = nextItems.length < props.limit;
       }
     } catch {
       // the api already reports the failure to the user; the failed page is
@@ -255,7 +253,7 @@ export function useItemsListing(
       undefined,
       undefined,
       undefined,
-      params.value.offset + (props.limit ?? 50),
+      params.value.offset + props.limit,
     );
     done(loadError.value ? "error" : "ok");
   };
@@ -279,6 +277,7 @@ export function useItemsListing(
     allItems,
     allItemsReceived,
     initialDataReceived,
+    isDisposed,
     librarySorting,
     loadAllItems,
     loadData,
@@ -289,7 +288,6 @@ export function useItemsListing(
     pagedItems,
     params,
     retryLoad,
-    scheduleSortReload,
     serverSortOptions,
     sortOptions,
     sortOptionsLoaded,

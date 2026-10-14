@@ -613,6 +613,7 @@ const {
   allItems,
   allItemsReceived,
   initialDataReceived,
+  isDisposed,
   librarySorting,
   loadAllItems,
   loadData,
@@ -623,7 +624,6 @@ const {
   pagedItems,
   params,
   retryLoad,
-  scheduleSortReload,
   serverSortOptions,
   sortOptions,
   sortOptionsLoaded,
@@ -1055,10 +1055,6 @@ watch(sortOptions, () => {
     "sortBy",
     normalized,
   );
-  if (loading.value) {
-    scheduleSortReload();
-    return;
-  }
   loadData(true, undefined, true);
 });
 
@@ -1968,12 +1964,6 @@ watch(
   { deep: true },
 );
 watch(
-  () => props.limit,
-  (newVal) => {
-    params.value.limit = newVal;
-  },
-);
-watch(
   () => props.updateAvailable,
   (newVal) => {
     if (loading.value) return;
@@ -2031,7 +2021,7 @@ const loadGenreOptions = async () => {
 
     do {
       // the paging can outlast the listing, so stop fetching once it is gone
-      if (unmounted) return;
+      if (isDisposed()) return;
 
       page = await api.getLibraryGenres({
         limit: pageSize,
@@ -2071,12 +2061,7 @@ const allSelected = computed(
       pagedItems.value.filter((x) => !isParentDirItem(x)).length,
 );
 
-// Set by the unmount hook, so the async startup can tell that the listing it is
-// working for is already gone.
-let unmounted = false;
-
 onBeforeUnmount(() => {
-  unmounted = true;
   eventbus.off("clearSelection", clearSelection);
   _unsubscribeMediaEvents?.();
   _unsubscribeFavorites?.();
@@ -2092,7 +2077,7 @@ onMounted(async () => {
       });
     }
     sortOptionsLoaded.value = true;
-    if (unmounted) return;
+    if (isDisposed()) return;
     restoreSettings();
   }
 
@@ -2143,7 +2128,7 @@ onMounted(async () => {
   await loadGenreOptions();
   // The await can outlast the listing, and the unmount hook only reaches what
   // was already set up by the time it ran.
-  if (unmounted) return;
+  if (isDisposed()) return;
 
   // Listen for selection clearing events
   eventbus.on("clearSelection", clearSelection);

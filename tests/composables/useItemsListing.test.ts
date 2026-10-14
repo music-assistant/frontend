@@ -30,13 +30,7 @@ function setupItemsListing(
   const scope = effectScope();
   scopes.push(scope);
   const listing = scope.run(() =>
-    useItemsListing(
-      {
-        itemtype: "tracks",
-        ...options,
-      },
-      getActiveTab,
-    ),
+    useItemsListing({ limit: 50, ...options }, getActiveTab),
   )!;
   return { scope, ...listing };
 }
