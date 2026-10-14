@@ -1108,6 +1108,7 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number | null;
 }
 
+/** A ranked media item and its completed-play count from statistics endpoints. */
 export interface TopItemResult {
   item: ItemMapping;
   play_count: number;
@@ -1263,17 +1264,6 @@ export interface RecommendationFolder extends BrowseFolder {
   enabled_by_default: boolean;
   type: RecommendationFolderType;
   supports_provider_filter: boolean;
-}
-
-/** Statistics interfaces */
-export interface TopItem {
-  item_id: string;
-  provider: string;
-  media_type: MediaType;
-  play_count: number;
-  total_seconds: number;
-  first_played: string | null;
-  last_played: string | null;
 }
 
 export interface DailyStats {
