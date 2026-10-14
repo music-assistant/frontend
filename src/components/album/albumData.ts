@@ -9,6 +9,8 @@ import {
   ImageType,
   type Album,
   type Artist,
+  type SortDirection,
+  type SortField,
   type Track,
 } from "@/plugins/api/interfaces";
 
@@ -16,8 +18,36 @@ import {
 export async function loadAlbumTracks(
   album: Album,
   inLibraryOnly = false,
+  search?: string,
+  limit?: number,
+  offset?: number,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
 ): Promise<Track[]> {
-  return await api.getAlbumTracks(album.item_id, album.provider, inLibraryOnly);
+  if (
+    search === undefined &&
+    limit === undefined &&
+    offset === undefined &&
+    sortField === undefined &&
+    sortDirection === undefined
+  ) {
+    return await api.getAlbumTracks(
+      album.item_id,
+      album.provider,
+      inLibraryOnly,
+    );
+  }
+
+  return await api.getAlbumTracks(
+    album.item_id,
+    album.provider,
+    inLibraryOnly,
+    search,
+    limit,
+    offset,
+    sortField,
+    sortDirection,
+  );
 }
 
 /** The same album elsewhere: other editions, and the copies other sources hold. */

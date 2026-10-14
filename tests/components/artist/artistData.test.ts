@@ -131,7 +131,7 @@ describe("artistData", () => {
       expect(apiMock.getSimilarArtists).toHaveBeenLastCalledWith(
         "1",
         "library",
-        undefined,
+        25,
       );
     });
 
@@ -140,7 +140,6 @@ describe("artistData", () => {
       expect(apiMock.getArtistTopTracks).toHaveBeenLastCalledWith(
         "sp1",
         "spotify--abc",
-        undefined,
       );
     });
   });

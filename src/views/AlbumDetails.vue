@@ -4,9 +4,10 @@
       :item="itemDetails"
       :backdrop="backdrop.url"
       :blur-backdrop="backdrop.blurred"
-      :track-count="albumTracks?.length"
-      :duration="runningTime"
-      :tracks-sort-by="tracksListing?.[0]?.sortBy"
+      :track-count="allAlbumTracksLoaded ? albumTracks?.length : undefined"
+      :duration="allAlbumTracksLoaded ? runningTime : undefined"
+      :tracks-sort-field="tracksListing?.[0]?.sortField"
+      :tracks-sort-direction="tracksListing?.[0]?.sortDirection"
       @edit-rows="rowsEditorOpen = true"
     />
 
@@ -20,20 +21,14 @@
           :parent-item="itemDetails"
           :show-provider="true"
           :show-track-number="true"
-          :show-favorites-only-filter="true"
+          :show-favorites-only-filter="false"
           :show-library-only-filter="
             itemDetails.provider == 'library' && api.hasStreamingProviders.value
           "
           :show-refresh-button="false"
           :allow-key-hooks="true"
-          :load-items="loadTracks"
-          :sort-keys="[
-            'track_number',
-            'name',
-            'sort_name',
-            'duration',
-            'duration_desc',
-          ]"
+          :load-paged-data="loadTracks"
+          :sort-listing="ListingType.ALBUM_TRACKS"
           :title="$t('tracks')"
           :refresh-on-parent-update="true"
         />
@@ -142,6 +137,7 @@ import { api } from "@/plugins/api";
 import { MUSICBRAINZ_PROVIDER } from "@/plugins/api/helpers";
 import {
   AlbumType,
+  ListingType,
   MediaItemType,
   MediaType,
   Scope,
@@ -169,6 +165,7 @@ const rowsEditorOpen = ref(false);
 // the album's own tracks, as the listing below last loaded them unfiltered:
 // what the hero counts and times
 const albumTracks = ref<Track[]>();
+const allAlbumTracksLoaded = ref(false);
 // the tracks listing (inside the rows loop, so held as an array), whose sort
 // order the play button follows
 const tracksListing = ref<InstanceType<typeof ItemsListing>[]>();
@@ -288,6 +285,7 @@ const loadItemDetails = async function () {
   // the previous album must not stay actionable under the new route
   itemDetails.value = undefined;
   albumTracks.value = undefined;
+  allAlbumTracksLoaded.value = false;
   const album =
     provider === MUSICBRAINZ_PROVIDER
       ? await resolveMusicBrainzAlbum(itemId)
@@ -336,10 +334,24 @@ watch(
 useDetailItemUpdates(itemDetails, { providerItem: props });
 
 const loadTracks = async function (params: LoadDataParams) {
-  if (!itemDetails.value) return [];
-  const tracks = await loadAlbumTracks(itemDetails.value, params.libraryOnly);
-  // the hero counts the whole album, not the library half of it
-  if (!params.libraryOnly) albumTracks.value = tracks;
+  const album = itemDetails.value;
+  if (!album) return [];
+  const tracks = await loadAlbumTracks(
+    album,
+    !!params.libraryOnly,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+  );
+  if (itemDetails.value?.uri !== album.uri) return [];
+  if (!params.libraryOnly && !params.search) {
+    albumTracks.value = params.offset
+      ? [...(albumTracks.value ?? []), ...tracks]
+      : tracks;
+    allAlbumTracksLoaded.value = tracks.length < params.limit;
+  }
   return tracks;
 };
 

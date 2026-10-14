@@ -32,20 +32,13 @@
           :show-hide-fully-played-filter="true"
           :show-track-number="true"
           :show-refresh-button="true"
-          :load-items="loadPodcastEpisodes"
-          :sort-keys="[
-            'position_desc',
-            'position',
-            'name',
-            'duration',
-            'duration_desc',
-          ]"
+          :sort-listing="ListingType.PODCAST_EPISODES"
+          :load-paged-data="loadPodcastEpisodes"
           :update-available="updateAvailable"
           :title="$t('podcast_episodes')"
           :allow-key-hooks="true"
           :path="`podcast.${itemDetails.item_id}.${itemDetails.provider}`"
           :restore-state="true"
-          :no-server-side-sorting="true"
         />
 
         <!-- provider mapping details -->
@@ -80,9 +73,13 @@ import {
   type PodcastRowId,
 } from "@/components/podcast/podcastRows";
 import ProviderDetails from "@/components/ProviderDetails.vue";
-import type { Podcast, PodcastEpisode } from "@/plugins/api/interfaces";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
+import {
+  ListingType,
+  type Podcast,
+  type PodcastEpisode,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed, watch, ref } from "vue";
 
@@ -96,9 +93,7 @@ const itemDetails = ref<Podcast>();
 // how many episodes the podcast holds, counted from the loaded episodes since
 // the stored total_episodes of a library podcast is never updated
 const episodeCount = ref<number>();
-// fetched along with the podcast, so the hero gets its count even when the
-// listing restores its episodes from a previous visit
-let prefetchedEpisodes: Promise<PodcastEpisode[]> | undefined;
+const countedEpisodes = ref<PodcastEpisode[]>([]);
 const rowsEditorOpen = ref(false);
 
 // every row applies to every user; the editor lists the same set
@@ -131,9 +126,9 @@ const loadItemDetails = async function () {
   // the previous podcast must not stay actionable under the new route
   itemDetails.value = undefined;
   episodeCount.value = undefined;
+  countedEpisodes.value = [];
   updateAvailable.value = false;
   rowsEditorOpen.value = false;
-  prefetchedEpisodes = fetchEpisodes();
   const podcast = await api.getPodcast(itemId, provider);
   // a slower response for a previous podcast must not replace the current one
   if (itemId !== props.itemId || provider !== props.provider) return;
@@ -153,25 +148,29 @@ useDetailItemUpdates(itemDetails, {
 });
 
 const loadPodcastEpisodes = async function (params: LoadDataParams) {
-  // only a first load takes the prefetch, later ones need fresh played states
-  const request = (!params.refresh && prefetchedEpisodes) || fetchEpisodes();
-  prefetchedEpisodes = undefined;
-  return await request;
-};
-
-// a declaration, since the immediate route watcher calls it during setup
-function fetchEpisodes() {
   const { itemId, provider } = props;
-  const request = api.getPodcastEpisodes(itemId, provider);
-  request.then(
-    (episodes) => {
-      if (itemId === props.itemId && provider === props.provider) {
-        episodeCount.value = episodes.length;
-      }
-    },
-    // the prefetch may go unused, so its failure must not go unhandled
-    () => undefined,
+  const episodes = await api.getPodcastEpisodes(
+    itemId,
+    provider,
+    params.hideFullyPlayed ? false : undefined,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
   );
-  return request;
-}
+  if (
+    itemId === props.itemId &&
+    provider === props.provider &&
+    !params.search &&
+    !params.hideFullyPlayed
+  ) {
+    countedEpisodes.value = params.offset
+      ? [...countedEpisodes.value, ...episodes]
+      : episodes;
+    episodeCount.value =
+      episodes.length < params.limit ? countedEpisodes.value.length : undefined;
+  }
+  return episodes;
+};
 </script>

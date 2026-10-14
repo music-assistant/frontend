@@ -14,8 +14,8 @@
       :show-favorites-only-filter="false"
       :show-track-number="false"
       :show-refresh-button="false"
-      :sort-keys="config.sortKeys"
-      :load-items="config.loadItems"
+      :sort-listing="config.sortListing"
+      :load-paged-data="config.loadPagedData"
       :restore-state="true"
     />
   </section>
@@ -23,11 +23,16 @@
 
 <script setup lang="ts">
 import ItemsListing from "@/components/ItemsListing.vue";
-import { loadSimilarTracks } from "@/components/track/trackData";
+import { tracksShareMapping } from "@/components/track/trackData";
+import type { LoadDataParams } from "@/composables/useItemsListing";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { goBack } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
-import type { MediaItemType, Track } from "@/plugins/api/interfaces";
+import {
+  ListingType,
+  type MediaItemType,
+  type Track,
+} from "@/plugins/api/interfaces";
 import { ArrowLeft } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -46,12 +51,13 @@ interface ListingConfig {
   labelKey: string;
   itemtype: string;
   path: string;
-  sortKeys: string[];
-  loadItems: () => Promise<MediaItemType[]>;
+  sortListing: ListingType;
+  loadPagedData: (params: LoadDataParams) => Promise<MediaItemType[]>;
 }
 
 const router = useRouter();
 const itemDetails = ref<Track>();
+let skippedSimilarTracks = 0;
 
 watch(
   () => [props.itemId, props.provider, props.album] as const,
@@ -79,14 +85,38 @@ const config = computed<ListingConfig | undefined>(() => {
         labelKey: "similar_tracks",
         itemtype: "similartracks",
         path: "tracksimilar",
-        sortKeys: ["name", "sort_name", "artist", "duration"],
-        loadItems: async () =>
-          itemDetails.value ? await loadSimilarTracks(itemDetails.value) : [],
+        sortListing: ListingType.SIMILAR_TRACKS,
+        loadPagedData: loadSimilarTrackPage,
       };
     default:
       return undefined;
   }
 });
+
+async function loadSimilarTrackPage(
+  params: LoadDataParams,
+): Promise<MediaItemType[]> {
+  const track = itemDetails.value;
+  if (!track) return [];
+  if (params.offset === 0) skippedSimilarTracks = 0;
+
+  const tracks = await api.getSimilarTracks(
+    track.item_id,
+    track.provider,
+    params.limit,
+    params.search,
+    params.offset + skippedSimilarTracks,
+    params.sortField,
+    params.sortDirection,
+  );
+  if (itemDetails.value?.uri !== track.uri) return [];
+
+  const visibleTracks = tracks.filter(
+    (candidate) => !tracksShareMapping(candidate, track),
+  );
+  skippedSimilarTracks += tracks.length - visibleTracks.length;
+  return visibleTracks;
+}
 
 const backToTrack = function () {
   goBack(router, {

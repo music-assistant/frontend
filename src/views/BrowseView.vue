@@ -8,8 +8,8 @@
       :show-favorites-only-filter="false"
       :show-track-number="false"
       :show-select-button="!isRoot && !hasOnlyFolders"
-      :load-items="loadItems"
-      :sort-keys="['original', 'name', 'name_desc']"
+      :sort-listing="ListingType.BROWSE"
+      :load-paged-data="loadItems"
       :path="path"
       :allow-key-hooks="true"
       :icon="Folder"
@@ -58,7 +58,11 @@ import ToolbarHeading, {
 } from "@/components/ToolbarHeading.vue";
 import { Button } from "@/components/ui/button";
 import api from "@/plugins/api";
-import { MediaItemType, MediaType } from "@/plugins/api/interfaces";
+import {
+  ListingType,
+  MediaItemType,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { Folder, Shuffle } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -122,11 +126,21 @@ const loadItems = async function (params: LoadDataParams) {
   const items: Array<MediaItemType> = await api.browse(
     props.path,
     store.activePlayerId,
+    undefined,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
   );
   rememberFolders(items);
-  hasOnlyFolders.value = items.every(
+  const pageHasOnlyFolders = items.every(
     (item) => item.media_type === MediaType.FOLDER,
   );
+  hasOnlyFolders.value =
+    params.offset === 0
+      ? pageHasOnlyFolders
+      : hasOnlyFolders.value && pageHasOnlyFolders;
   return items;
 };
 
@@ -149,9 +163,18 @@ async function findInParentListing(
 ): Promise<BrowseFolder | undefined> {
   try {
     rememberFolders(
-      await api.browse(parentBrowsePath(path), store.activePlayerId, {
-        suppressGlobalError: true,
-      }),
+      await api.browse(
+        parentBrowsePath(path),
+        store.activePlayerId,
+        {
+          suppressGlobalError: true,
+        },
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      ),
     );
   } catch {
     return undefined;

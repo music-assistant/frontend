@@ -1,11 +1,15 @@
 import type { MusicAssistantApi } from "@/plugins/api";
 import type {
+  ListingType,
   Playlist,
+  SortDirection,
+  SortField,
   Scope,
   SmartPlaylistRules,
   User,
 } from "@/plugins/api/interfaces";
 import PlaylistDetails from "@/views/PlaylistDetails.vue";
+import type { LoadDataParams } from "@/composables/useItemsListing";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../fixtures/playlist";
@@ -16,6 +20,7 @@ import { user } from "../fixtures/user";
 const { apiMock, authMock, storeMock, eventbusMock } = vi.hoisted(() => ({
   apiMock: {
     getPlaylist: vi.fn<MusicAssistantApi["getPlaylist"]>(),
+    getPlaylistTracks: vi.fn<MusicAssistantApi["getPlaylistTracks"]>(),
     getSmartPlaylistRules: vi.fn<MusicAssistantApi["getSmartPlaylistRules"]>(),
     subscribe: vi.fn(() => () => {}),
   },
@@ -49,7 +54,11 @@ vi.mock("@/components/details/RowsEditor.vue", () => ({
 }));
 // the rest of the page is irrelevant to the actions, so keep the stubs bare
 vi.mock("@/components/ItemsListing.vue", () => ({
-  default: { name: "ItemsListing", template: "<div />" },
+  default: {
+    name: "ItemsListing",
+    props: ["loadPagedData", "sortListing"],
+    template: "<div />",
+  },
 }));
 vi.mock("@/components/ProviderDetails.vue", () => ({
   default: { name: "ProviderDetails", template: "<div />" },
@@ -98,6 +107,7 @@ describe("PlaylistDetails", () => {
     vi.clearAllMocks();
     apiMock.subscribe.mockReturnValue(() => {});
     apiMock.getSmartPlaylistRules.mockResolvedValue(rules);
+    apiMock.getPlaylistTracks.mockResolvedValue([]);
     // a library manager may edit the rules and share the playlist
     authMock.hasScope.mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.admin),
@@ -127,5 +137,37 @@ describe("PlaylistDetails", () => {
     expect(eventbusMock.emit).toHaveBeenCalledWith("playlistAccessDialog", {
       playlist: item,
     });
+  });
+
+  it("loads playlist tracks through the server-paged listing API", async () => {
+    const item = playlistOf("builtin");
+    const wrapper = await mountDetails(item);
+    const listing = wrapper.findComponent({ name: "ItemsListing" });
+    const loadPagedData = listing.props("loadPagedData") as (
+      params: LoadDataParams,
+    ) => Promise<unknown[]>;
+    const params: LoadDataParams = {
+      offset: 40,
+      limit: 20,
+      sortBy: "name",
+      sortField: "name" as SortField,
+      sortDirection: "asc" as SortDirection,
+      search: "live",
+    };
+
+    await loadPagedData(params);
+
+    expect(listing.props("sortListing")).toBe("playlist_tracks" as ListingType);
+    expect(apiMock.getPlaylistTracks).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+      undefined,
+      undefined,
+      "live",
+      20,
+      40,
+      "name",
+      "asc",
+    );
   });
 });

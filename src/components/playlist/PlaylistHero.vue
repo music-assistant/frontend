@@ -81,6 +81,8 @@
               class="min-w-0 max-md:flex-1"
               shrink-label
               :item="item"
+              :tracks-sort-field="tracksSortField"
+              :tracks-sort-direction="tracksSortDirection"
             />
             <DetailHeroButton
               :icon="Shuffle"
@@ -135,7 +137,11 @@ import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatTotalDuration } from "@/helpers/duration";
 import { api } from "@/plugins/api";
 import { getProviderIconDomain } from "@/plugins/api/helpers";
-import type { Playlist } from "@/plugins/api/interfaces";
+import type {
+  Playlist,
+  SortDirection,
+  SortField,
+} from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -160,6 +166,8 @@ export interface Props {
   trackCount?: number;
   // their total playing time in seconds, once they are known
   duration?: number;
+  tracksSortField?: SortField;
+  tracksSortDirection?: SortDirection;
   // a smart playlist whose rules could be loaded
   hasRules?: boolean;
   canEditRules?: boolean;

@@ -219,7 +219,9 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
-              :sort-by="params.sortBy"
+              :sort-by="props.sortListing ? undefined : params.sortBy"
+              :sort-field="params.sortField"
+              :sort-direction="params.sortDirection"
               @select="onSelect"
             />
           </v-col>
@@ -241,7 +243,9 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
-              :sort-by="params.sortBy"
+              :sort-by="props.sortListing ? undefined : params.sortBy"
+              :sort-field="params.sortField"
+              :sort-direction="params.sortDirection"
               @select="onSelect"
             />
           </v-col>
@@ -270,7 +274,9 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
-              :sort-by="params.sortBy"
+              :sort-by="props.sortListing ? undefined : params.sortBy"
+              :sort-field="params.sortField"
+              :sort-direction="params.sortDirection"
               @select="onSelect"
             />
             <ListviewItem
@@ -291,7 +297,9 @@
               :show-details="itemtype.includes('versions')"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
-              :sort-by="params.sortBy"
+              :sort-by="props.sortListing ? undefined : params.sortBy"
+              :sort-field="params.sortField"
+              :sort-direction="params.sortDirection"
               @select="onSelect"
             />
           </template>
@@ -345,7 +353,9 @@
               anchor.y,
               parentItem,
               true,
-              params.sortBy,
+              undefined,
+              params.sortField,
+              params.sortDirection,
             )
         "
       />
@@ -646,7 +656,6 @@ const {
   sortOptionsLoaded,
   tempHide,
 } = useItemsListing(props, getActiveTab);
-
 watch(
   () => props.toolBarTabs,
   (tabs) => {
@@ -2236,6 +2245,8 @@ const selectAll = async function () {
 
 defineExpose({
   sortBy: computed(() => params.value.sortBy),
+  sortField: computed(() => params.value.sortField),
+  sortDirection: computed(() => params.value.sortDirection),
   reload: () => loadData(true, true),
   // whether the item is absent while every item of the unfiltered listing is
   // loaded; a filter leaves items out on purpose

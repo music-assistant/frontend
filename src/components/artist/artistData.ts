@@ -9,6 +9,8 @@ import {
   type Album,
   type Artist,
   type ItemMapping,
+  type SortDirection,
+  type SortField,
   type Track,
 } from "@/plugins/api/interfaces";
 
@@ -55,8 +57,22 @@ export async function artistAlbumsBySource(
  *
  * Only ever called for a library artist, the only kind the server lists.
  */
-export async function loadArtistDiscography(artist: Artist): Promise<Album[]> {
-  return await api.getArtistDiscography(artist.item_id);
+export async function loadArtistDiscography(
+  artist: Artist,
+  search?: string,
+  limit?: number,
+  offset?: number,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
+): Promise<Album[]> {
+  return await api.getArtistDiscography(
+    artist.item_id,
+    search,
+    limit,
+    offset,
+    sortField,
+    sortDirection,
+  );
 }
 
 /**
@@ -94,11 +110,37 @@ export function artistProvidersForFeature(
 export async function loadArtistTracks(
   artist: Artist,
   providerFilter?: string,
+  search?: string,
+  limit?: number,
+  offset?: number,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
 ): Promise<Track[]> {
+  if (
+    search === undefined &&
+    limit === undefined &&
+    offset === undefined &&
+    sortField === undefined &&
+    sortDirection === undefined
+  ) {
+    return providerFilter === undefined
+      ? await api.getArtistTracks(artist.item_id, artist.provider)
+      : await api.getArtistTracks(
+          artist.item_id,
+          artist.provider,
+          providerFilter,
+        );
+  }
+
   return await api.getArtistTracks(
     artist.item_id,
     artist.provider,
     providerFilter,
+    search,
+    limit,
+    offset,
+    sortField,
+    sortDirection,
   );
 }
 
@@ -107,8 +149,46 @@ export async function loadArtistTracks(
  *
  * Only ever called for a library artist, the only kind the server lists.
  */
-export async function loadArtistAppearsOn(artist: Artist): Promise<Album[]> {
-  return await api.getArtistAppearsOn(artist.item_id, artist.provider);
+export async function loadArtistAppearsOn(
+  artist: Artist,
+  search?: string,
+  limit?: number,
+  offset?: number,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
+): Promise<Album[]> {
+  if (
+    search === undefined &&
+    limit === undefined &&
+    offset === undefined &&
+    sortField === undefined &&
+    sortDirection === undefined
+  ) {
+    return await api.getArtistAppearsOn(artist.item_id, artist.provider);
+  }
+
+  if (sortDirection === undefined) {
+    return await api.getArtistAppearsOn(
+      artist.item_id,
+      artist.provider,
+      undefined,
+      search,
+      limit,
+      offset,
+      sortField,
+    );
+  }
+
+  return await api.getArtistAppearsOn(
+    artist.item_id,
+    artist.provider,
+    undefined,
+    search,
+    limit,
+    offset,
+    sortField,
+    sortDirection,
+  );
 }
 
 /** The artist's most popular tracks, as reported by `source`. */
@@ -116,11 +196,14 @@ export async function loadArtistTopTracks(
   artist: Artist,
   source: RowSource,
 ): Promise<Track[]> {
-  return await api.getArtistTopTracks(
-    artist.item_id,
-    artist.provider,
-    aggregatedProviderFilter(artist, source),
-  );
+  const providerFilter = aggregatedProviderFilter(artist, source);
+  return providerFilter === undefined
+    ? await api.getArtistTopTracks(artist.item_id, artist.provider)
+    : await api.getArtistTopTracks(
+        artist.item_id,
+        artist.provider,
+        providerFilter,
+      );
 }
 
 /** Artists similar to this one, as reported by `source`. */
@@ -128,11 +211,15 @@ export async function loadSimilarArtists(
   artist: Artist,
   source: RowSource,
 ): Promise<Artist[]> {
-  return await api.getSimilarArtists(
-    artist.item_id,
-    artist.provider,
-    aggregatedProviderFilter(artist, source),
-  );
+  const providerFilter = aggregatedProviderFilter(artist, source);
+  return providerFilter === undefined
+    ? await api.getSimilarArtists(artist.item_id, artist.provider, 25)
+    : await api.getSimilarArtists(
+        artist.item_id,
+        artist.provider,
+        25,
+        providerFilter,
+      );
 }
 
 /** Whether the release belongs in the "Singles & EPs" shelf instead of "Albums". */

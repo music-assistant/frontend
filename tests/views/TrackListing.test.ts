@@ -1,17 +1,26 @@
 import type { MusicAssistantApi } from "@/plugins/api";
-import type { Track } from "@/plugins/api/interfaces";
+import type { LoadDataParams } from "@/composables/useItemsListing";
+import {
+  ListingType,
+  SortDirection,
+  SortField,
+  type Track,
+} from "@/plugins/api/interfaces";
 import TrackListing, { type Props } from "@/views/TrackListing.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { track } from "../fixtures/track";
+import { providerMapping } from "../fixtures/providerMapping";
 
-const { mockGetTrack } = vi.hoisted(() => ({
+const { mockGetTrack, mockGetSimilarTracks } = vi.hoisted(() => ({
   mockGetTrack: vi.fn<MusicAssistantApi["getTrack"]>(),
+  mockGetSimilarTracks: vi.fn<MusicAssistantApi["getSimilarTracks"]>(),
 }));
 
 vi.mock("@/plugins/api", () => ({
   api: {
     getTrack: mockGetTrack,
+    getSimilarTracks: mockGetSimilarTracks,
     providers: {},
   },
 }));
@@ -25,7 +34,7 @@ vi.mock("vue-router", () => ({
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["path", "itemtype"],
+    props: ["path", "itemtype", "loadPagedData", "sortListing"],
     template:
       '<div class="items-listing-stub" :data-path="path" :data-itemtype="itemtype" />',
   },
@@ -62,6 +71,7 @@ function listingAttributes(wrapper: VueWrapper) {
 describe("TrackListing", () => {
   beforeEach(() => {
     mockGetTrack.mockReset();
+    mockGetSimilarTracks.mockReset().mockResolvedValue([]);
   });
 
   it("renders the similar tracks as their own listing", async () => {
@@ -74,6 +84,73 @@ describe("TrackListing", () => {
       path: "tracksimilar",
       itemtype: "similartracks",
     });
+    expect(
+      wrapper.findComponent({ name: "ItemsListing" }).props("sortListing"),
+    ).toBe(ListingType.SIMILAR_TRACKS);
+  });
+
+  it("pages similar tracks and advances past hidden mapping matches", async () => {
+    const sharedMapping = providerMapping({
+      item_id: "shared-track-id",
+      provider_domain: "spotify",
+      provider_instance: "spotify--abc",
+    });
+    const current = track({
+      item_id: "7",
+      provider: "spotify--abc",
+      provider_mappings: [sharedMapping],
+    });
+    const selfMatch = track({
+      item_id: "same-recording",
+      provider: current.provider,
+      provider_mappings: [sharedMapping],
+    });
+    const firstVisible = track({ item_id: "similar-a", provider_mappings: [] });
+    const secondVisible = track({
+      item_id: "similar-b",
+      provider_mappings: [],
+    });
+    mockGetSimilarTracks
+      .mockResolvedValueOnce([selfMatch, firstVisible])
+      .mockResolvedValueOnce([secondVisible]);
+    const wrapper = await mountListing("similar", current);
+    const loadPagedData = wrapper
+      .findComponent({ name: "ItemsListing" })
+      .props("loadPagedData") as (params: LoadDataParams) => Promise<Track[]>;
+    const params: LoadDataParams = {
+      offset: 0,
+      limit: 2,
+      sortBy: "name:asc",
+      sortField: SortField.NAME,
+      sortDirection: SortDirection.ASC,
+      search: "live",
+    };
+
+    await expect(loadPagedData(params)).resolves.toEqual([firstVisible]);
+    await expect(loadPagedData({ ...params, offset: 1 })).resolves.toEqual([
+      secondVisible,
+    ]);
+
+    expect(mockGetSimilarTracks).toHaveBeenNthCalledWith(
+      1,
+      current.item_id,
+      current.provider,
+      2,
+      "live",
+      0,
+      SortField.NAME,
+      SortDirection.ASC,
+    );
+    expect(mockGetSimilarTracks).toHaveBeenNthCalledWith(
+      2,
+      current.item_id,
+      current.provider,
+      2,
+      "live",
+      2,
+      SortField.NAME,
+      SortDirection.ASC,
+    );
   });
 
   it("asks for the track on the album it was opened from", async () => {

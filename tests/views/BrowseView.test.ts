@@ -1,7 +1,12 @@
 import ToolbarHeading from "@/components/ToolbarHeading.vue";
 import BrowseView from "@/views/BrowseView.vue";
 import { flushPromises, mount } from "@vue/test-utils";
-import { MediaType } from "@/plugins/api/interfaces";
+import {
+  ListingType,
+  MediaType,
+  SortDirection,
+  SortField,
+} from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 
@@ -27,7 +32,7 @@ vi.mock("@/plugins/store", () => ({ store: { activePlayerId: "player" } }));
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["showSelectButton", "loadItems"],
+    props: ["showSelectButton", "loadPagedData", "sortListing"],
     template: '<div><slot name="title" /><slot name="header" /></div>',
   },
 }));
@@ -142,12 +147,36 @@ describe("BrowseView", () => {
     const wrapper = mountBrowse("filesystem://Music");
     browsed.items = [{ media_type: MediaType.FOLDER }];
 
-    await wrapper.findComponent({ name: "ItemsListing" }).props("loadItems")(
-      {},
-    );
+    await loadListing(wrapper);
     await nextTick();
 
     expect(selectButtonShown(wrapper)).toBe(false);
+  });
+
+  it("loads each folder page with server search and sort parameters", async () => {
+    const wrapper = mountBrowse("filesystem://Music");
+    const listing = wrapper.findComponent({ name: "ItemsListing" });
+
+    await listing.props("loadPagedData")({
+      offset: 20,
+      limit: 20,
+      sortBy: "name:desc",
+      sortField: SortField.NAME,
+      sortDirection: SortDirection.DESC,
+      search: "live",
+    });
+
+    expect(listing.props("sortListing")).toBe(ListingType.BROWSE);
+    expect(browse).toHaveBeenCalledWith(
+      "filesystem://Music",
+      "player",
+      undefined,
+      "live",
+      20,
+      20,
+      SortField.NAME,
+      SortDirection.DESC,
+    );
   });
 });
 
@@ -192,9 +221,18 @@ describe("BrowseView folder header", () => {
     const wrapper = mountBrowse("radio://");
     await flushPromises();
 
-    expect(browse).toHaveBeenCalledWith("root", "player", {
-      suppressGlobalError: true,
-    });
+    expect(browse).toHaveBeenCalledWith(
+      "root",
+      "player",
+      {
+        suppressGlobalError: true,
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    );
     expect(playedFolder(wrapper)).toBeUndefined();
   });
 
@@ -235,7 +273,13 @@ describe("BrowseView folder header", () => {
 });
 
 async function loadListing(wrapper: ReturnType<typeof mountBrowse>) {
-  await wrapper.findComponent({ name: "ItemsListing" }).props("loadItems")({});
+  await wrapper.findComponent({ name: "ItemsListing" }).props("loadPagedData")({
+    offset: 0,
+    limit: 50,
+    sortBy: "original",
+    sortField: SortField.ORIGINAL,
+    search: "",
+  });
 }
 
 function playedFolder(wrapper: ReturnType<typeof mountBrowse>) {

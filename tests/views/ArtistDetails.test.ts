@@ -2,9 +2,13 @@ import type { MusicAssistantApi } from "@/plugins/api";
 import {
   AlbumType,
   ArtistType,
+  ListingType,
+  SortDirection,
+  SortField,
   type Artist,
   type Album,
 } from "@/plugins/api/interfaces";
+import type { LoadDataParams } from "@/components/ItemsListing.vue";
 import ArtistDetails from "@/views/ArtistDetails.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,6 +18,7 @@ import { track } from "../fixtures/track";
 
 const {
   mockGetArtist,
+  mockGetArtistAudiobooks,
   mockSubscribe,
   mockAvailableArtistRowIds,
   mockResolveArtistRows,
@@ -26,6 +31,7 @@ const {
   mockLoadArtistAppearsOn,
 } = vi.hoisted(() => ({
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
+  mockGetArtistAudiobooks: vi.fn<MusicAssistantApi["getArtistAudiobooks"]>(),
   mockSubscribe: vi.fn(() => () => {}),
   mockAvailableArtistRowIds: vi.fn(),
   mockResolveArtistRows: vi.fn(),
@@ -41,6 +47,7 @@ const {
 vi.mock("@/plugins/api", () => ({
   api: {
     getArtist: mockGetArtist,
+    getArtistAudiobooks: mockGetArtistAudiobooks,
     subscribe: mockSubscribe,
     subscribe_multi: mockSubscribe,
     providers: {},
@@ -121,7 +128,13 @@ vi.mock("@/components/MediaItemImages.vue", () => ({
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["path", "itemtype"],
+    props: [
+      "path",
+      "itemtype",
+      "loadPagedData",
+      "sortListing",
+      "showFavoritesOnlyFilter",
+    ],
     template:
       '<div class="items-listing-stub" :data-path="path" :data-itemtype="itemtype" />',
   },
@@ -172,6 +185,7 @@ function pathFor(wrapper: VueWrapper, itemtype: string) {
 describe("ArtistDetails", () => {
   beforeEach(() => {
     mockGetArtist.mockReset();
+    mockGetArtistAudiobooks.mockReset().mockResolvedValue([]);
     mockSubscribe.mockReset().mockReturnValue(() => {});
     mockAvailableArtistRowIds
       .mockReset()
@@ -338,5 +352,41 @@ describe("ArtistDetails", () => {
     // own view mode/sort/filter preferences instead of sharing one
     expect(audiobooksPathA).not.toContain("author-a");
     expect(audiobooksPathA).toBe(pathFor(wrapperB, "artistaudiobooks"));
+  });
+
+  it("loads library audiobooks with server paging and collapse settings", async () => {
+    const item = artist({
+      item_id: "author-1",
+      provider: "library",
+      artist_type: ArtistType.AUTHOR,
+    });
+    const wrapper = await mountDetails(item);
+    const listing = wrapper.findComponent({ name: "ItemsListing" });
+    const params: LoadDataParams = {
+      offset: 40,
+      limit: 20,
+      sortBy: "name:asc",
+      sortField: SortField.NAME,
+      sortDirection: SortDirection.ASC,
+      search: "story",
+      collapseCollections: true,
+    };
+
+    await listing.props("loadPagedData")(params);
+
+    expect(listing.props("sortListing")).toBe(ListingType.ARTIST_AUDIOBOOKS);
+    expect(listing.props("showFavoritesOnlyFilter")).toBe(false);
+    expect(mockGetArtistAudiobooks).toHaveBeenCalledWith(
+      "author-1",
+      "library",
+      ArtistType.AUTHOR,
+      undefined,
+      true,
+      "story",
+      20,
+      40,
+      SortField.NAME,
+      SortDirection.ASC,
+    );
   });
 });

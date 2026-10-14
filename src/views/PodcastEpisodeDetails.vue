@@ -249,6 +249,12 @@ watch(
         api.getPodcastEpisodes(
           episode.podcast.item_id,
           episode.podcast.provider,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
         ),
       )
       // an episode listing we cannot fetch leaves the steppers and the listing

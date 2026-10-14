@@ -4,8 +4,12 @@
       :item="itemDetails"
       :backdrop="backdrop.url"
       :blur-backdrop="backdrop.blurred"
-      :track-count="playlistTracks?.length"
-      :duration="runningTime"
+      :track-count="
+        allPlaylistTracksLoaded ? playlistTracks?.length : undefined
+      "
+      :duration="allPlaylistTracksLoaded ? runningTime : undefined"
+      :tracks-sort-field="tracksListing?.[0]?.sortField"
+      :tracks-sort-direction="tracksListing?.[0]?.sortDirection"
       :has-rules="!!smartRules"
       :can-edit-rules="!!smartRules && canEditLibrary"
       :can-share="canShare"
@@ -28,6 +32,7 @@
           <!-- the listing keeps its own toolbar, but takes the title and gutter of the rows around it -->
           <ItemsListing
             v-else
+            ref="tracksListing"
             class="px-4 pt-3 max-md:px-1 max-md:pt-2 [&>.v-divider]:hidden"
             itemtype="playlisttracks"
             :parent-item="itemDetails"
@@ -38,25 +43,14 @@
             :show-track-number="false"
             :show-refresh-button="true"
             :refresh-on-parent-update="true"
-            :load-items="loadPlaylistTracks"
-            :sort-keys="[
-              'position',
-              'position_desc',
-              'timestamp_added',
-              'timestamp_added_desc',
-              'name',
-              'artist',
-              'album',
-              'duration',
-              'duration_desc',
-            ]"
+            :sort-listing="ListingType.PLAYLIST_TRACKS"
+            :load-paged-data="loadPlaylistTracks"
             :update-available="updateAvailable"
             :track-table="true"
             :title="$t('tracks')"
             :allow-key-hooks="true"
             :path="`playlist.${props.itemId}.${props.provider}`"
             :restore-state="true"
-            :no-server-side-sorting="true"
           >
             <template #title>
               <span
@@ -149,6 +143,7 @@ import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.v
 import { api } from "@/plugins/api";
 import {
   Scope,
+  ListingType,
   type Playlist,
   type SmartPlaylistRules,
 } from "@/plugins/api/interfaces";
@@ -177,6 +172,8 @@ const canEditLibrary = computed(() =>
 // the playlist's tracks, as the listing below last loaded them: what the hero
 // counts and times
 const playlistTracks = ref<PlaylistItem[]>();
+const allPlaylistTracksLoaded = ref(false);
+const tracksListing = ref<InstanceType<typeof ItemsListing>[]>();
 
 const canShare = computed(
   () =>
@@ -256,6 +253,7 @@ watch(
       itemDetails.value = undefined;
       smartRules.value = null;
       playlistTracks.value = undefined;
+      allPlaylistTracksLoaded.value = false;
       updateAvailable.value = false;
       showRulesDialog.value = false;
       showEditDialog.value = false;
@@ -272,9 +270,24 @@ useDetailItemUpdates(itemDetails, {
 
 const loadPlaylistTracks = async function (params: LoadDataParams) {
   const { itemId, provider } = props;
-  const tracks = await api.getPlaylistTracks(itemId, provider, params.refresh);
+  const tracks = await api.getPlaylistTracks(
+    itemId,
+    provider,
+    params.refresh,
+    undefined,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+  );
   if (itemId === props.itemId && provider === props.provider) {
-    playlistTracks.value = tracks;
+    if (!params.search && !params.favoritesOnly) {
+      playlistTracks.value = params.offset
+        ? [...(playlistTracks.value ?? []), ...tracks]
+        : tracks;
+      allPlaylistTracksLoaded.value = tracks.length < params.limit;
+    }
   }
   return tracks;
 };

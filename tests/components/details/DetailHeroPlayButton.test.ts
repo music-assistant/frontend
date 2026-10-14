@@ -1,9 +1,14 @@
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
-import type { MediaItemType, Player } from "@/plugins/api/interfaces";
+import {
+  SortDirection,
+  SortField,
+  type MediaItemType,
+  type Player,
+} from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, storeMock } = vi.hoisted(() => ({
+const { apiMock, storeMock, mockHandlePlayBtnClick } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, Player>,
     queues: {},
@@ -12,13 +17,14 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
     activePlayer: undefined as Player | undefined,
     companionPlayerId: undefined as string | undefined,
   },
+  mockHandlePlayBtnClick: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/breakpoint", () => ({ isPhoneSizedScreen: () => false }));
 vi.mock("@/helpers/media_item_actions", () => ({
-  handlePlayBtnClick: vi.fn(),
+  handlePlayBtnClick: mockHandlePlayBtnClick,
 }));
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string, values?: Record<string, string>) =>
@@ -27,7 +33,7 @@ vi.mock("@/plugins/i18n", () => ({
 
 const MenuButtonStub = {
   props: ["text"],
-  template: "<button>{{ text }}</button>",
+  template: "<button @click=\"$emit('click')\">{{ text }}</button>",
 };
 
 function player(overrides: Partial<Player> = {}): Player {
@@ -40,9 +46,9 @@ function player(overrides: Partial<Player> = {}): Player {
   } as unknown as Player;
 }
 
-function mountButton() {
+function mountButton(props: Record<string, unknown> = {}) {
   return mount(DetailHeroPlayButton, {
-    props: { item: {} as MediaItemType },
+    props: { item: {} as MediaItemType, ...props },
     global: { stubs: { MenuButton: MenuButtonStub } },
   });
 }
@@ -52,6 +58,7 @@ describe("DetailHeroPlayButton", () => {
     apiMock.players = {};
     storeMock.activePlayer = undefined;
     storeMock.companionPlayerId = undefined;
+    mockHandlePlayBtnClick.mockClear();
   });
 
   it("plays without naming a player when none is selected", () => {
@@ -81,5 +88,30 @@ describe("DetailHeroPlayButton", () => {
     storeMock.activePlayer = player({ group_members: ["kitchen", "office"] });
 
     expect(mountButton().text()).toBe("play_on_this_device");
+  });
+
+  it("passes its tracks sort as typed fields to the play handler", async () => {
+    const item = {} as MediaItemType;
+    await mountButton({
+      item,
+      tracksSortField: SortField.DURATION,
+      tracksSortDirection: SortDirection.DESC,
+    })
+      .get("button")
+      .trigger("click");
+
+    expect(mockHandlePlayBtnClick).toHaveBeenCalledWith(
+      item,
+      expect.any(Number),
+      expect.any(Number),
+      undefined,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      SortField.DURATION,
+      SortDirection.DESC,
+    );
   });
 });

@@ -1,5 +1,13 @@
 import type { MusicAssistantApi } from "@/plugins/api";
-import { ImageType, MediaType, type Album } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  ListingType,
+  MediaType,
+  SortDirection,
+  SortField,
+  type Album,
+} from "@/plugins/api/interfaces";
+import type { LoadDataParams } from "@/composables/useItemsListing";
 import AlbumDetails from "@/views/AlbumDetails.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -130,7 +138,12 @@ vi.mock("@/components/details/RowsEditor.vue", () => ({
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["itemtype", "loadItems"],
+    props: [
+      "itemtype",
+      "loadPagedData",
+      "showFavoritesOnlyFilter",
+      "sortListing",
+    ],
     template: '<div data-row="tracks" :data-itemtype="itemtype" />',
   },
 }));
@@ -173,13 +186,21 @@ function hero(wrapper: VueWrapper) {
 }
 
 /** Runs the loader the tracks listing was handed, the way the listing does. */
-async function loadTracks(wrapper: VueWrapper, libraryOnly = false) {
+async function loadTracks(
+  wrapper: VueWrapper,
+  overrides: Partial<LoadDataParams> = {},
+) {
   const listing = wrapper.findComponent({ name: "ItemsListing" });
-  await (
-    listing.props("loadItems") as (
-      params: Record<string, unknown>,
-    ) => Promise<unknown>
-  )({ libraryOnly });
+  const loadPagedData = listing.props("loadPagedData") as (
+    params: LoadDataParams,
+  ) => Promise<unknown>;
+  await loadPagedData({
+    offset: 0,
+    limit: 50,
+    sortBy: "track_number",
+    search: "",
+    ...overrides,
+  });
   await flushPromises();
 }
 
@@ -256,9 +277,55 @@ describe("AlbumDetails", () => {
     mockLoadAlbumTracks.mockResolvedValue([
       track({ item_id: "1", duration: 5 }),
     ]);
-    await loadTracks(wrapper, true);
+    await loadTracks(wrapper, { libraryOnly: true });
 
     expect(hero(wrapper).props("trackCount")).toBe(2);
+  });
+
+  it("pages album tracks with the server sort and completes the hero count", async () => {
+    mockLoadAlbumTracks
+      .mockResolvedValueOnce([track({ item_id: "1" }), track({ item_id: "2" })])
+      .mockResolvedValueOnce([track({ item_id: "3" })]);
+    const wrapper = await mountDetails();
+    const listing = wrapper.findComponent({ name: "ItemsListing" });
+    const loadPagedData = listing.props("loadPagedData") as (
+      params: LoadDataParams,
+    ) => Promise<unknown>;
+    const params: LoadDataParams = {
+      offset: 0,
+      limit: 2,
+      sortBy: "duration:desc",
+      sortField: SortField.DURATION,
+      sortDirection: SortDirection.DESC,
+      search: "",
+    };
+
+    expect(listing.props("sortListing")).toBe(ListingType.ALBUM_TRACKS);
+    await loadPagedData(params);
+    expect(hero(wrapper).props("trackCount")).toBeUndefined();
+    await loadPagedData({ ...params, offset: 2 });
+    await flushPromises();
+
+    expect(hero(wrapper).props("trackCount")).toBe(3);
+    expect(mockLoadAlbumTracks).toHaveBeenNthCalledWith(
+      1,
+      ALBUM_WITH_REVIEW,
+      false,
+      "",
+      2,
+      0,
+      SortField.DURATION,
+      SortDirection.DESC,
+    );
+  });
+
+  it("hides the unsupported favorite filter for album tracks", async () => {
+    const wrapper = await mountDetails();
+    expect(
+      wrapper
+        .findComponent({ name: "ItemsListing" })
+        .props("showFavoritesOnlyFilter"),
+    ).toBe(false);
   });
 
   it("sends the artist shelf to the artist's own albums listing", async () => {

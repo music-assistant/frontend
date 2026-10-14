@@ -25,6 +25,8 @@
       :show-refresh-button="false"
       :sort-keys="config.sortKeys"
       :load-items="config.loadItems"
+      :sort-listing="config.sortListing"
+      :load-paged-data="config.loadPagedData"
       :empty-message="config.emptyMessage"
       :restore-state="true"
       @provider-change="onProviderChange"
@@ -49,7 +51,11 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { goBack } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
-import { type Artist, type MediaItemType } from "@/plugins/api/interfaces";
+import {
+  ListingType,
+  type Artist,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -68,7 +74,9 @@ interface ListingConfig {
   itemtype: string;
   path: string;
   sortKeys: string[];
-  loadItems: (params: LoadDataParams) => Promise<MediaItemType[]>;
+  loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
+  loadPagedData?: (params: LoadDataParams) => Promise<MediaItemType[]>;
+  sortListing?: ListingType;
   showAlbumTypeFilter: boolean;
   showFavoritesOnlyFilter: boolean;
   showProviderFilter: boolean;
@@ -196,19 +204,15 @@ const config = computed<ListingConfig | undefined>(() => {
         itemtype: "artisttracks",
         path: "artisttracks",
         sortKeys: TRACK_SORT_KEYS,
+        sortListing: ListingType.ARTIST_TRACKS,
         showProviderFilter: mappingProviderIds.value.length > 1,
+        showFavoritesOnlyFilter: false,
         showTrackNumber: false,
         emptyMessage:
           itemDetails.value?.provider === "library"
             ? $t("artist_no_library_tracks")
             : $t("artist_no_tracks"),
-        loadItems: async (params: LoadDataParams) => {
-          if (!itemDetails.value) return [];
-          return await loadArtistTracks(
-            itemDetails.value,
-            params.provider?.[0],
-          );
-        },
+        loadPagedData: loadArtistTrackPage,
       };
     case "appears_on":
       return {
@@ -217,20 +221,20 @@ const config = computed<ListingConfig | undefined>(() => {
         path: "artistappearson",
         showFavoritesOnlyFilter: false,
         showProviderFilter: false,
-        loadItems: loadAppearsOn,
+        sortListing: ListingType.ARTIST_APPEARS_ON,
+        loadPagedData: loadAppearsOn,
       };
     case "discography":
       return {
         ...listingDefaults(),
         labelKey: artistRows.definition("discography").labelKey,
         path: "artistdiscography",
-        // the server sends the releases newest first, which "original" keeps
-        sortKeys: ["original", ...ALBUM_SORT_KEYS],
-        showAlbumTypeFilter: true,
+        sortListing: ListingType.ARTIST_DISCOGRAPHY,
+        showAlbumTypeFilter: false,
         showFavoritesOnlyFilter: false,
         showProviderFilter: false,
         emptyMessage: $t("artist_row_empty"),
-        loadItems: loadDiscography,
+        loadPagedData: loadDiscography,
       };
     default:
       return undefined;
@@ -243,6 +247,22 @@ const backToArtist = function () {
     params: { provider: props.provider, itemId: props.itemId },
   });
 };
+
+async function loadArtistTrackPage(
+  params: LoadDataParams,
+): Promise<MediaItemType[]> {
+  const artist = itemDetails.value;
+  if (!artist) return [];
+  return await loadArtistTracks(
+    artist,
+    params.provider?.[0],
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+  );
+}
 
 useEscapeBack(backToArtist);
 
@@ -328,15 +348,31 @@ async function loadReleases(
 }
 
 /** Everything MusicBrainz credits to the artist; only a library artist has one. */
-async function loadDiscography(): Promise<MediaItemType[]> {
+async function loadDiscography(
+  params: LoadDataParams,
+): Promise<MediaItemType[]> {
   const artist = itemDetails.value;
   if (artist?.provider !== "library") return [];
-  return await loadArtistDiscography(artist);
+  return await loadArtistDiscography(
+    artist,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+  );
 }
 
 /** Albums the artist is credited on without being the album artist. */
-async function loadAppearsOn(): Promise<MediaItemType[]> {
+async function loadAppearsOn(params: LoadDataParams): Promise<MediaItemType[]> {
   if (!itemDetails.value) return [];
-  return await loadArtistAppearsOn(itemDetails.value);
+  return await loadArtistAppearsOn(
+    itemDetails.value,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+  );
 }
 </script>
