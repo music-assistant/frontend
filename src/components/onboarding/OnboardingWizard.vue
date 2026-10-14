@@ -95,7 +95,11 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { useTour } from "@/composables/useTour";
-import { firstStep, type OnboardingStepId } from "@/helpers/onboarding";
+import {
+  firstStep,
+  type OnboardingStepId,
+  type StepLeaveOptions,
+} from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft } from "@lucide/vue";
@@ -118,6 +122,7 @@ const {
   loadProviderConfigs,
   followPlayers,
   markWelcomed,
+  setStepGuard,
   finish,
 } = useOnboarding();
 const { start: startTour } = useTour();
@@ -166,7 +171,7 @@ let stopFollowingPlayers: (() => void) | undefined;
 
 /** What a step exposes to the wizard, which every step may leave to default. */
 interface StepInstance {
-  beforeLeave?: () => Promise<boolean>;
+  beforeLeave?: (options?: StepLeaveOptions) => Promise<boolean>;
   // a choice step raises this while its answer is on its way to the server
   busy?: boolean;
   // a step with a submit of its own, which the wizard's Next stands down for
@@ -178,7 +183,8 @@ const stepRef = ref<StepInstance | null>(null);
 // The step on screen gets a say before the wizard moves off it, so a step with
 // something to save is not walked away from. A step that has nothing to hold on
 // to exposes nothing and the wizard simply moves on.
-const leaveStep = async () => (await stepRef.value?.beforeLeave?.()) ?? true;
+const leaveStep = async (options?: StepLeaveOptions) =>
+  (await stepRef.value?.beforeLeave?.(options)) ?? true;
 
 // whether the step on screen is saving a choice of its own; the wizard's Next
 // stands aside while it is, so a choice and a Next cannot both move on
@@ -331,11 +337,19 @@ watch(
 // there, so the keyboard stays inside the wizard as it moves.
 watch(currentId, focusStepHeading);
 
+// the step it is on is where a paused setup opens again, and pausing lets that
+// step save first, as moving on does
+watch(currentId, (id) => {
+  if (id) requestedStep.value = id;
+});
+const removeStepGuard = setStepGuard(() => leaveStep({ pausing: true }));
+
 // Leaving the welcome is what counts as having been welcomed, whether the
 // member answered the question, walked past it or closed the modal: nobody is
 // welcomed into the same app twice. Finishing writes this itself, and the
 // marker is only ever written once, so the two never collide.
 onBeforeUnmount(() => {
+  removeStepGuard();
   stopFollowingPlayers?.();
   if (ctx.value.isMember) void markWelcomed();
 });
