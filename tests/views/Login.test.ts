@@ -20,6 +20,7 @@ import { createCodeChallenge } from "@/helpers/pkce";
 import { user } from "../fixtures/user";
 
 const mocks = vi.hoisted(() => ({
+  apiDisconnect: vi.fn<MusicAssistantApi["disconnect"]>(),
   apiState: { value: "disconnected" as string },
   authenticateWithToken: vi.fn<MusicAssistantApi["authenticateWithToken"]>(),
   clearAuth: vi.fn(),
@@ -69,7 +70,7 @@ vi.mock("@/plugins/api", async () => {
     },
     api: {
       authenticateWithToken: mocks.authenticateWithToken,
-      disconnect: vi.fn<MusicAssistantApi["disconnect"]>(),
+      disconnect: mocks.apiDisconnect,
       exchangeAuthCode: mocks.exchangeAuthCode,
       getCurrentUserInfo: mocks.getCurrentUserInfo,
       sendCommand: mocks.sendCommand,
@@ -1251,6 +1252,37 @@ describe("Home Assistant sign in over Remote Access", () => {
     callbackPage.close();
 
     expect(mocks.connectRemote).toHaveBeenCalledOnce();
+    expect(mocks.exchangeAuthCode).toHaveBeenCalledWith(
+      state,
+      haCode,
+      verifier,
+    );
+  });
+
+  it("leaves another server before completing a sign-in handed over for its own", async () => {
+    const otherRemoteId = "ZYXWVUTS9876598765ZYXWVUTS";
+    mockProviders(true);
+    setLocation(`?remote_id=${otherRemoteId}`, portal);
+    const wrapper = mountLogin();
+    await flushPromises();
+    savePending();
+    mocks.disconnectRemote.mockClear();
+    mocks.apiDisconnect.mockClear();
+
+    const callbackPage = new BroadcastChannel("ma-external-login");
+    callbackPage.postMessage({
+      type: "ma-external-login",
+      state,
+      code: haCode,
+    });
+    await vi.waitFor(() =>
+      expect(wrapper.emitted("authenticated")).toBeDefined(),
+    );
+    callbackPage.close();
+
+    expect(mocks.disconnectRemote).toHaveBeenCalledOnce();
+    expect(mocks.apiDisconnect).toHaveBeenCalledOnce();
+    expect(mocks.connectRemote).toHaveBeenLastCalledWith(remoteId);
     expect(mocks.exchangeAuthCode).toHaveBeenCalledWith(
       state,
       haCode,

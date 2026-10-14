@@ -2037,6 +2037,9 @@ const completeExternalLogin = async (result: ExternalLoginResult) => {
       !api.serverInfo.value ||
       remoteConnectionManager.currentRemoteId.value !== remoteId
     ) {
+      // a tab still on another server lets go of it first, like goBack
+      remoteConnectionManager.disconnect();
+      api.disconnect();
       step.value = "connecting";
       connectionStatusMessage.value = t(
         "login.connecting_remote",
