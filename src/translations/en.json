@@ -949,6 +949,7 @@
         "year": "Release year",
         "position_desc": "Position (descending)",
         "album": "Album (alphabetical)",
+        "album_name": "Album",
         "artist": "Artist",
         "name": "Alphabetically",
         "name_desc": "Alphabetically (descending)",
