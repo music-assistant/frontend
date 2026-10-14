@@ -116,16 +116,6 @@
         <template v-else>{{ audioMetadata?.musical_key }}</template>
       </div>
 
-      <div
-        v-else-if="column === 'source'"
-        class="flex min-w-0 items-center gap-2 text-sm text-muted-foreground"
-      >
-        <template v-if="sourceDomain">
-          <ProviderIcon :domain="sourceDomain" :size="18" class="shrink-0" />
-          <span class="truncate">{{ sourceName }}</span>
-        </template>
-      </div>
-
       <!-- on hover-capable devices only a favorite shows its heart until the row is hovered -->
       <div
         v-else-if="column === 'favorite'"
@@ -183,7 +173,6 @@
 import FavoriteButton from "@/components/FavoriteButton.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { canHoldFavorite, favoriteState } from "@/helpers/favorites";
@@ -194,7 +183,6 @@ import {
 } from "@/helpers/media_item_actions";
 import { camelotColor } from "@/helpers/camelot";
 import { formatDuration } from "@/helpers/utils";
-import { api } from "@/plugins/api";
 import { Scope, type MediaItemType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
@@ -266,20 +254,6 @@ const artists = computed(() =>
 
 const albumInSubtitle = computed(
   () => !!album.value && !props.columns.includes("album"),
-);
-
-// the service that plays the track: its first available mapping
-const sourceDomain = computed(() =>
-  "provider_mappings" in props.item
-    ? props.item.provider_mappings.find((mapping) => mapping.available)
-        ?.provider_domain
-    : undefined,
-);
-
-const sourceName = computed(() =>
-  sourceDomain.value
-    ? api.getProviderManifest(sourceDomain.value)?.name
-    : undefined,
 );
 
 // favouring an item changes the library
