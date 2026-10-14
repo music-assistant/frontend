@@ -254,36 +254,45 @@ describe("useItemsListing", () => {
     },
   );
 
-  it("does not reload when the loading tab is selected again during its load", async () => {
+  it.each([
+    {
+      name: "loads the tab switched to",
+      switchedTo: ["authors"],
+      loadedTabs: ["books", "authors"],
+    },
+    {
+      name: "does not reload when switched back to the loading tab",
+      switchedTo: ["authors", "books"],
+      loadedTabs: ["books"],
+    },
+  ])("$name during a load", async ({ switchedTo, loadedTabs }) => {
     let resolveFirstPage!: (items: Track[]) => void;
-    const loadPagedData = vi
-      .fn()
-      .mockReturnValueOnce(
-        new Promise<Track[]>((resolve) => {
-          resolveFirstPage = resolve;
-        }),
-      )
-      .mockResolvedValue([]);
-    const toolBarTabs = [
-      { id: "books", label: "books" },
-      { id: "authors", label: "authors" },
-    ];
+    const loadedTabIds: string[] = [];
+    const makeTab = (id: string): ToolBarTab => ({
+      id,
+      label: id,
+      loadPagedData: () => {
+        loadedTabIds.push(id);
+        return loadedTabIds.length === 1
+          ? new Promise<Track[]>((resolve) => {
+              resolveFirstPage = resolve;
+            })
+          : Promise.resolve([]);
+      },
+    });
+    const toolBarTabs = [makeTab("books"), makeTab("authors")];
     let activeTab = toolBarTabs[0];
-    const listing = setupItemsListing(
-      { loadPagedData, toolBarTabs },
-      () => activeTab,
-    );
+    const listing = setupItemsListing({ toolBarTabs }, () => activeTab);
     const initialLoad = listing.loadData(true);
 
-    activeTab = toolBarTabs[1];
-    await listing.loadData(true);
-    activeTab = toolBarTabs[0];
-    await listing.loadData(true);
-
-    resolveFirstPage([track({ item_id: "book-1" })]);
+    for (const tabId of switchedTo) {
+      activeTab = toolBarTabs.find((tab) => tab.id === tabId)!;
+      await listing.loadData(true);
+    }
+    resolveFirstPage([]);
     await initialLoad;
 
-    expect(loadPagedData).toHaveBeenCalledTimes(1);
+    expect(loadedTabIds).toEqual(loadedTabs);
   });
 
   it("filters and pages flat listings without reloading their source", async () => {

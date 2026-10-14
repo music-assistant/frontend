@@ -1950,7 +1950,10 @@ describe("ItemsListing server sort options", () => {
       }),
     );
     expect(
-      listing.findAll('button[aria-pressed="true"]').map((chip) => chip.text()),
+      listing
+        .find(".listing-sort-chips-row")
+        .findAll('button[aria-pressed="true"]')
+        .map((chip) => chip.text()),
     ).toEqual(["sort.sort_name"]);
   });
 

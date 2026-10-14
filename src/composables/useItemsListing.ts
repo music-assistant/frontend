@@ -111,9 +111,10 @@ export function useItemsListing(
   // the selected tab shows items of the initial tab on entering the page
   let loadingTabId: string | undefined;
   let pendingTabLoad = false;
+
   let pendingClear = false;
   let pendingRefresh = false;
-  let pendingSortReload = false;
+  let pendingParamsChange = false;
   // lets async work tell that the listing it is working for is already gone
   let disposed = false;
 
@@ -147,7 +148,7 @@ export function useItemsListing(
       // only a parameter change queues its clear: a tab change is left to
       // pendingTabLoad, so switching back to the loading tab does not reload
       if (filterParamsChanged) {
-        pendingSortReload = true;
+        pendingParamsChange = true;
         pendingClear ||= clear;
       }
       return;
@@ -217,19 +218,15 @@ export function useItemsListing(
 
     if (disposed) return;
 
-    if (pendingTabLoad || pendingClear || pendingRefresh || pendingSortReload) {
-      const clearPendingItems = pendingTabLoad || pendingClear;
-      const refreshPendingItems = pendingRefresh;
-      const pendingParamsChanged = pendingSortReload;
+    if (pendingTabLoad || pendingRefresh || pendingParamsChange) {
+      const replayClear = pendingTabLoad || pendingClear;
+      const replayRefresh = pendingRefresh;
+      const replayParamsChange = pendingParamsChange;
       pendingTabLoad = false;
       pendingClear = false;
       pendingRefresh = false;
-      pendingSortReload = false;
-      await loadData(
-        clearPendingItems,
-        refreshPendingItems,
-        pendingParamsChanged,
-      );
+      pendingParamsChange = false;
+      await loadData(replayClear, replayRefresh, replayParamsChange);
     }
   };
 
