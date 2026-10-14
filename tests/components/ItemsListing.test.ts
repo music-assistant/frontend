@@ -821,6 +821,26 @@ describe("ItemsListing failed load", () => {
     expect(loadItems).toHaveBeenCalledTimes(1);
   });
 
+  it("centres the failure like the empty state on full-page listings", async () => {
+    const loadItems = vi
+      .fn<LoadItems>()
+      .mockRejectedValue(new Error("rate limited"));
+    const listing = mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.apple_music",
+        showGenreFilter: false,
+        loadPagedData: undefined,
+        loadItems,
+        fillHeight: true,
+      },
+      { VInfiniteScroll: InfiniteScrollStub },
+    );
+    await flushPromises();
+
+    expect(listing.classes()).toContain("min-h-full");
+  });
+
   it("loads from the start again when the user retries", async () => {
     const loadItems = vi
       .fn<LoadItems>()
