@@ -779,7 +779,14 @@ describe("ItemsListing failed load", () => {
         loadPagedData: undefined,
         loadItems,
       },
-      { VInfiniteScroll: InfiniteScrollStub },
+      {
+        VInfiniteScroll: InfiniteScrollStub,
+        // the first load's retry lives in the empty state
+        Empty: false,
+        EmptyContent: false,
+        EmptyHeader: false,
+        EmptyTitle: false,
+      },
     );
   }
 
@@ -806,13 +813,32 @@ describe("ItemsListing failed load", () => {
     const listing = mountFailingListing(loadItems);
     await flushPromises();
 
-    // a new scroller loads as soon as it shows up, which is what kept retrying
-    const done = await scrollerLoads(listing);
-    await scrollerLoads(listing);
-    await scrollerLoads(listing);
-
+    // a scroller loads as soon as it shows up, so none is shown until the user retries
+    expect(listing.findComponent({ name: "VInfiniteScroll" }).exists()).toBe(
+      false,
+    );
+    expect(retryButton(listing)).toBeDefined();
     expect(loadItems).toHaveBeenCalledTimes(1);
-    expect(done).toHaveBeenCalledWith("error");
+  });
+
+  it("centres the failure like the empty state on full-page listings", async () => {
+    const loadItems = vi
+      .fn<LoadItems>()
+      .mockRejectedValue(new Error("rate limited"));
+    const listing = mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.apple_music",
+        showGenreFilter: false,
+        loadPagedData: undefined,
+        loadItems,
+        fillHeight: true,
+      },
+      { VInfiniteScroll: InfiniteScrollStub },
+    );
+    await flushPromises();
+
+    expect(listing.classes()).toContain("min-h-full");
   });
 
   it("loads from the start again when the user retries", async () => {
