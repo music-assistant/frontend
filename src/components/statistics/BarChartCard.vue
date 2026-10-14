@@ -3,6 +3,7 @@
     :title="title"
     :loading="loading"
     :is-empty="!data || data.length === 0"
+    :empty-message="$t('statistics_listening_time_empty')"
     :accessible-summary="accessibleSummary"
   >
     <Bar :data="chartData" :options="chartOptions" />

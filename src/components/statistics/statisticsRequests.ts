@@ -18,6 +18,10 @@ export interface StatisticsChartRequests {
   decadeDistribution: Promise<Array<{ name: string; value: number }>>;
 }
 
+export function getPlaysOverTimeGranularity(period: string): "hour" | "day" {
+  return period === "today" ? "hour" : "day";
+}
+
 export function createLatestRequestGate() {
   let generation = 0;
 

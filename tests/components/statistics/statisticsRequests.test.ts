@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
   createLatestRequestGate,
+  getPlaysOverTimeGranularity,
   loadStatisticsChartData,
 } from "@/components/statistics/statisticsRequests";
 
 describe("statistics requests", () => {
+  it("uses hourly buckets for today and daily buckets for longer periods", () => {
+    expect(getPlaysOverTimeGranularity("today")).toBe("hour");
+    expect(getPlaysOverTimeGranularity("week")).toBe("day");
+    expect(getPlaysOverTimeGranularity("all_time")).toBe("day");
+  });
+
   it("marks earlier requests stale and invalidates requests when hidden", () => {
     const gate = createLatestRequestGate();
     const previous = gate.begin();

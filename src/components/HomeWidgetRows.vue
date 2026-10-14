@@ -505,6 +505,7 @@ import LineChartCard from "@/components/statistics/LineChartCard.vue";
 import PieChartCard from "@/components/statistics/PieChartCard.vue";
 import {
   createLatestRequestGate,
+  getPlaysOverTimeGranularity,
   loadStatisticsChartData,
 } from "@/components/statistics/statisticsRequests";
 import ChartItem from "@/components/discover/ChartItem.vue";
@@ -1110,7 +1111,10 @@ const loadStatisticsCharts = async () => {
   try {
     const { data, hasFailures } = await loadStatisticsChartData({
       artistDistribution: api.getArtistDistribution(period, 10),
-      playsOverTime: api.getPlaysOverTime(period, "day"),
+      playsOverTime: api.getPlaysOverTime(
+        period,
+        getPlaysOverTimeGranularity(period),
+      ),
       listeningActivity: api.getListeningActivity(period),
       listeningTime: api.getListeningTime(period, "artist", 10),
       decadeDistribution: api.getDecadeDistribution(period, 10),
@@ -1233,6 +1237,10 @@ const unsubscribePlaylog = api.subscribe(
         IN_PROGRESS_ROW_ID,
         items.filter((item) => item.uri !== uri),
       );
+    }
+    if (update?.fully_played && statisticsRowVisible.value) {
+      loadStatistics();
+      loadStatisticsCharts();
     }
     scheduleRecommendationRefresh();
   },
