@@ -6,6 +6,7 @@ import {
   AudioNormalizationMeasurementSource,
   type AudioProcessingChain,
   CrossfadeMode,
+  type ItemMapping,
   MediaType,
   type StreamDetails,
   VolumeNormalizationMode,
@@ -21,6 +22,8 @@ export interface ActiveAudioPath {
   kind: "queue" | "source";
   // the queue the audio plays through, absent for a live external source
   queueId?: string;
+  // the album, playlist or other item the queue item was played from
+  container?: ItemMapping;
 }
 
 /**
@@ -72,6 +75,7 @@ export function useActiveAudioPath() {
         audioProcessing: queueAudioProcessing.value,
         crossfadeIntent: queueCrossfadeIntent.value,
         queueId: store.activePlayerQueue?.queue_id,
+        container: store.curQueueItem?.origin?.container ?? undefined,
       };
     }
     const source = sourceAudio.value;

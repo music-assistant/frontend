@@ -34,17 +34,28 @@
         v-if="stage.subtitleParts?.length"
         class="audio-processing-stage-subtitle"
       >
-        <span
-          v-for="(part, index) in stage.subtitleParts"
-          :key="`${index}-${part}`"
-          class="audio-processing-stage-subtitle-part"
-          :class="{
-            'audio-processing-stage-subtitle-part--atomic':
-              stage.atomicSubtitleParts,
-          }"
+        <button
+          v-if="stage.subtitleLink"
+          type="button"
+          class="audio-processing-stage-link"
+          :title="stage.subtitleLink.label"
+          @click="openLink(stage.subtitleLink)"
         >
-          {{ index === 0 ? part : ` · ${part}` }}
-        </span>
+          {{ stage.subtitleParts.join(" · ") }}
+        </button>
+        <template v-else>
+          <span
+            v-for="(part, index) in stage.subtitleParts"
+            :key="`${index}-${part}`"
+            class="audio-processing-stage-subtitle-part"
+            :class="{
+              'audio-processing-stage-subtitle-part--atomic':
+                stage.atomicSubtitleParts,
+            }"
+          >
+            {{ index === 0 ? part : ` · ${part}` }}
+          </span>
+        </template>
       </div>
     </div>
     <Popover v-if="stage.details?.length">
@@ -115,13 +126,13 @@ import { store } from "@/plugins/store";
 
 defineProps<{ stage: AudioProcessingDisplayStage }>();
 const emit = defineEmits<{
-  // the stage opened its settings page
+  // the stage opened the page it links to
   (e: "navigate"): void;
 }>();
 const detailsId = useId();
 const detailsFocusTarget = ref<HTMLElement>();
 
-// settings would otherwise open behind the fullscreen player or players menu
+// the page would otherwise open behind the fullscreen player or players menu
 function openLink(link: AudioProcessingStageLink): void {
   store.showFullscreenPlayer = false;
   store.showPlayersMenu = false;

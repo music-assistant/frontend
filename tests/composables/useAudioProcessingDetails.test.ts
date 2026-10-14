@@ -17,6 +17,8 @@ import {
   ContentType,
   CrossfadeMode,
   DSPState,
+  type ItemMapping,
+  MediaType,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
@@ -29,6 +31,7 @@ import {
   audioQueueProcessing,
 } from "../fixtures/audioProcessing";
 import { audioFormat } from "../fixtures/audioFormat";
+import { itemMapping } from "../fixtures/itemMapping";
 import { outputProtocol } from "../fixtures/outputProtocol";
 import { streamDetails } from "../fixtures/streamDetails";
 
@@ -95,6 +98,66 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       title: "FLAC",
       icon: FileIcon,
     });
+    expect(display.inputStages[0].subtitleParts).toBeUndefined();
+    expect(display.inputStages[0].subtitleLink).toBeUndefined();
+  });
+
+  it.each([
+    [MediaType.ALBUM, "Album"],
+    [MediaType.PLAYLIST, "Playlist"],
+  ])(
+    "names the %s the track was played from under its source",
+    (mediaType, label) => {
+      const container = itemMapping({
+        item_id: "7",
+        provider: "tidal--1",
+        media_type: mediaType,
+        name: "Road Trip",
+      });
+
+      const display = buildDisplay(
+        {},
+        makeFormat(),
+        undefined,
+        undefined,
+        container,
+      );
+
+      expect(display.inputStages[0]).toMatchObject({
+        title: "Test provider",
+        subtitleParts: ["Playing from Road Trip", label],
+        subtitleLink: {
+          to: {
+            name: mediaType,
+            params: { provider: "tidal--1", itemId: "7" },
+          },
+          label: "Open Road Trip",
+        },
+      });
+    },
+  );
+
+  it("names a folder the track was played from without a link", () => {
+    const container = itemMapping({
+      item_id: "Late Night Mix",
+      provider: "filesystem_local--1",
+      media_type: MediaType.FOLDER,
+      name: "Late Night Mix",
+    });
+
+    const stage = buildDisplay(
+      {},
+      makeFormat(),
+      undefined,
+      undefined,
+      container,
+    ).inputStages[0];
+
+    expect(stage.subtitleParts).toEqual([
+      "Playing from Late Night Mix",
+      "Folder",
+    ]);
+    expect(stage.subtitleLink).toBeUndefined();
   });
 
   it.each([
@@ -1030,6 +1093,7 @@ function buildDisplay(
   format = makeFormat(),
   crossfadeIntent?: CrossfadeMode,
   queueId?: string,
+  container?: ItemMapping,
 ) {
   return buildAudioProcessingDetailsDisplay(
     audioProcessingChain(chain),
@@ -1041,6 +1105,7 @@ function buildDisplay(
     dependencies,
     crossfadeIntent,
     queueId,
+    container,
   );
 }
 
