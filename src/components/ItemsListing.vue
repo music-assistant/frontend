@@ -437,6 +437,7 @@ import {
   PodcastEpisode,
   ProviderFeature,
   ProviderType,
+  SortDirection,
   Radio,
   SortField,
   type Album,
@@ -767,8 +768,11 @@ const discNumber = (i: MediaItemType) =>
 const listDisplayItems = computed<(MediaItemType | DiscHeader)[]>(() => {
   const multiDisc =
     props.itemtype === "albumtracks" &&
-    allItems.value.some((i) => (discNumber(i) ?? 0) > 1);
-  if (!multiDisc || params.value.sortBy !== "track_number") {
+    pagedItems.value.some((i) => (discNumber(i) ?? 0) > 1);
+  const isTrackNumberAscending =
+    params.value.sortField === SortField.TRACK_NUMBER &&
+    params.value.sortDirection === SortDirection.ASC;
+  if (!multiDisc || !isTrackNumberAscending) {
     return pagedItems.value;
   }
   const result: (MediaItemType | DiscHeader)[] = [];

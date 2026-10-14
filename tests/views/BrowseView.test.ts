@@ -229,7 +229,7 @@ describe("BrowseView folder header", () => {
       },
       undefined,
       undefined,
-      undefined,
+      0,
       undefined,
       undefined,
     );

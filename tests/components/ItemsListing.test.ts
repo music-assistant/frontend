@@ -2140,6 +2140,45 @@ describe("ItemsListing server sort options", () => {
     },
   );
 
+  it("shows multi-disc headers for paged album tracks in track order", async () => {
+    mockGetSortOptions.mockResolvedValueOnce([
+      {
+        field: SortField.TRACK_NUMBER,
+        supports_direction: true,
+        default_direction: SortDirection.ASC,
+        label_key: "track_number",
+      },
+    ]);
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.albumtracks.albumtracks": { sortBy: "track_number" },
+      },
+    });
+    const listing = mountListingRaw(
+      {
+        itemtype: "albumtracks",
+        path: "albumtracks",
+        sortListing: ListingType.ALBUM_TRACKS,
+        loadPagedData: vi
+          .fn()
+          .mockResolvedValue([
+            track({ item_id: "disc-1", disc_number: 1, track_number: 1 }),
+            track({ item_id: "disc-2", disc_number: 2, track_number: 1 }),
+          ]),
+      },
+      {
+        VVirtualScroll: {
+          props: ["items"],
+          template:
+            '<div><slot v-for="(item, index) in items" :key="index" :item="item" :index="index" /></div>',
+        },
+      },
+    );
+    await flushPromises();
+
+    expect(listing.findAll(".disc-header")).toHaveLength(2);
+  });
+
   it("reloads with the normalized sort when options change during a request", async () => {
     store.currentUser = user({
       preferences: {

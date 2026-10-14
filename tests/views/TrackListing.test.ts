@@ -89,7 +89,7 @@ describe("TrackListing", () => {
     ).toBe(ListingType.SIMILAR_TRACKS);
   });
 
-  it("pages similar tracks and advances past hidden mapping matches", async () => {
+  it("keeps the server page offset when hiding mapping matches", async () => {
     const sharedMapping = providerMapping({
       item_id: "shared-track-id",
       provider_domain: "spotify",
@@ -127,7 +127,7 @@ describe("TrackListing", () => {
     };
 
     await expect(loadPagedData(params)).resolves.toEqual([firstVisible]);
-    await expect(loadPagedData({ ...params, offset: 1 })).resolves.toEqual([
+    await expect(loadPagedData({ ...params, offset: 2 })).resolves.toEqual([
       secondVisible,
     ]);
 

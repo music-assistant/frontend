@@ -57,7 +57,6 @@ interface ListingConfig {
 
 const router = useRouter();
 const itemDetails = ref<Track>();
-let skippedSimilarTracks = 0;
 
 watch(
   () => [props.itemId, props.provider, props.album] as const,
@@ -98,14 +97,13 @@ async function loadSimilarTrackPage(
 ): Promise<MediaItemType[]> {
   const track = itemDetails.value;
   if (!track) return [];
-  if (params.offset === 0) skippedSimilarTracks = 0;
 
   const tracks = await api.getSimilarTracks(
     track.item_id,
     track.provider,
     params.limit,
     params.search,
-    params.offset + skippedSimilarTracks,
+    params.offset,
     params.sortField,
     params.sortDirection,
   );
@@ -114,7 +112,6 @@ async function loadSimilarTrackPage(
   const visibleTracks = tracks.filter(
     (candidate) => !tracksShareMapping(candidate, track),
   );
-  skippedSimilarTracks += tracks.length - visibleTracks.length;
   return visibleTracks;
 }
 
