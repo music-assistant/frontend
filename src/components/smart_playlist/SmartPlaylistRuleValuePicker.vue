@@ -239,7 +239,12 @@ function openParent(path: string) {
   openFolder(parent === "root" ? null : parent);
 }
 
+// counts every navigation, so only the latest one applies its listing, even when
+// the same folder is opened again while its first request is still running
+let folderRequest = 0;
+
 async function openFolder(path: string | null) {
+  const request = ++folderRequest;
   folderPath.value = path;
   query.value = "";
   if (path === null) {
@@ -262,7 +267,7 @@ async function openFolder(path: string | null) {
     const items = await api.browse(path, undefined, {
       suppressGlobalError: true,
     });
-    if (folderPath.value !== path) return;
+    if (request !== folderRequest) return;
     folderOptions.value = items
       .filter(
         (i): i is BrowseFolder =>
@@ -270,11 +275,11 @@ async function openFolder(path: string | null) {
       )
       .map((i) => ({ id: 0, name: i.name, path: i.path }));
   } catch {
-    if (folderPath.value !== path) return;
+    if (request !== folderRequest) return;
     folderOptions.value = [];
     toast.error($t("settings.folder_picker.browse_failed"));
   } finally {
-    if (folderPath.value === path) isSearching.value = false;
+    if (request === folderRequest) isSearching.value = false;
   }
 }
 

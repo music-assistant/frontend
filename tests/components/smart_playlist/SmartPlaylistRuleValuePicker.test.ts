@@ -331,4 +331,31 @@ describe("SmartPlaylistRuleValuePicker", () => {
     expect(isSpinning(content)).toBe(false);
     expect(content.textContent).toContain("My Music");
   });
+
+  it("keeps a folder reopened while its first listing loads on the latest one", async () => {
+    let deliverFirst!: (items: BrowseFolder[]) => void;
+    browse
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          deliverFirst = resolve;
+        }),
+      )
+      .mockResolvedValueOnce([folder("New", "filesystem_local--music://New")]);
+    const content = await openPopover(mountPicker("folder"));
+
+    rows(content)[0].click();
+    await flushPromises();
+    content.querySelector<HTMLButtonElement>("[aria-label='Back']")!.click();
+    await flushPromises();
+    rows(content)[0].click();
+    await flushPromises();
+    expect(content.textContent).toContain("New");
+
+    deliverFirst([folder("Old", "filesystem_local--music://Old")]);
+    await flushPromises();
+
+    expect(content.textContent).toContain("New");
+    expect(content.textContent).not.toContain("Old");
+    expect(isSpinning(content)).toBe(false);
+  });
 });

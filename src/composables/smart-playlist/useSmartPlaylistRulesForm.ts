@@ -49,10 +49,14 @@ export interface RuleValue {
 }
 
 // Folder values are keyed by their browse path; the numeric id is UI-only and never persisted.
+// Numbered per path rather than hashed, so no two folders can share an id.
+const folderIds = new Map<string, number>();
+
 export function folderValue(path: string): RuleValue {
-  let id = 0;
-  for (let i = 0; i < path.length; i++) {
-    id = (Math.imul(31, id) + path.charCodeAt(i)) | 0;
+  let id = folderIds.get(path);
+  if (id === undefined) {
+    id = folderIds.size + 1;
+    folderIds.set(path, id);
   }
   return { id, name: folderName(path), path };
 }
