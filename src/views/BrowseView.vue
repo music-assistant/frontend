@@ -1,6 +1,7 @@
 <template>
-  <section>
+  <section class="flex min-h-full flex-col">
     <ItemsListing
+      fill-height
       itemtype="browse"
       :show-provider="false"
       :show-library="false"

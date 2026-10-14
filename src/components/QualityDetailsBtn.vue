@@ -42,6 +42,7 @@
           :stream-details="activeAudioPath.streamDetails"
           :crossfade-intent="activeAudioPath.crossfadeIntent"
           :queue-id="activeAudioPath.queueId"
+          :container="activeAudioPath.container"
           @navigate="open = false"
         />
       </div>

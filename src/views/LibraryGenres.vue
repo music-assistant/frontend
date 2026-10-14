@@ -18,7 +18,7 @@
     :show-search-button="true"
     :allow-collapse="true"
     :hide-on-empty="false"
-    :sort-media-type="MediaType.GENRE"
+    :sort-listing="ListingType.LIBRARY_GENRES"
     :limit="50"
     :infinite-scroll="false"
     :load-paged-data="section.load"
@@ -38,6 +38,7 @@ import {
   EventMessage,
   EventType,
   Genre,
+  ListingType,
   MediaType,
   Scope,
 } from "@/plugins/api/interfaces";
@@ -61,8 +62,8 @@ const loadSection = (contentType: MediaType | "music") => {
       search: params.search,
       limit: params.limit,
       offset: params.offset,
-      sort_field: params.sort_field,
-      sort_direction: params.sort_direction,
+      sort_field: params.sortField,
+      sort_direction: params.sortDirection,
       hide_empty: params.hideEmptyFilter,
     });
   };

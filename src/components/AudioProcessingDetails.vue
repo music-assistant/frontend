@@ -115,6 +115,7 @@ import { $t } from "@/plugins/i18n";
 import type {
   AudioProcessingChain,
   CrossfadeMode,
+  ItemMapping,
   StreamDetails,
 } from "@/plugins/api/interfaces";
 
@@ -124,10 +125,12 @@ const props = defineProps<{
   crossfadeIntent?: CrossfadeMode;
   // the queue the audio plays through, so its settings can be linked
   queueId?: string;
+  // the album, playlist or other item the track was played from
+  container?: ItemMapping;
 }>();
 
 const emit = defineEmits<{
-  // a stage opened its settings page, so the details can be closed
+  // a stage opened the page it links to, so the details can be closed
   (e: "navigate"): void;
 }>();
 
@@ -142,6 +145,7 @@ const {
   toRef(props, "streamDetails"),
   toRef(props, "crossfadeIntent"),
   toRef(props, "queueId"),
+  toRef(props, "container"),
 );
 </script>
 
@@ -322,7 +326,7 @@ const {
   overflow-wrap: anywhere;
 }
 
-/* a title that opens its settings page, keeping the title's look */
+/* a title or subtitle that opens the page it links to, keeping its look */
 .audio-processing-details .audio-processing-stage-link {
   padding: 0;
   border: 0;

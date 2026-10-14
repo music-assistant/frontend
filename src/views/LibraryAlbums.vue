@@ -1,11 +1,12 @@
 <template>
   <ItemsListing
+    fill-height
     itemtype="albums"
     path="libraryalbums"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
-    :sort-media-type="MediaType.ALBUM"
+    :sort-listing="ListingType.LIBRARY_ALBUMS"
     :update-available="updateAvailable"
     :title="$t('albums')"
     :allow-key-hooks="true"
@@ -23,7 +24,12 @@
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import api from "@/plugins/api";
-import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
+import {
+  EventMessage,
+  EventType,
+  ListingType,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { Disc3 } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
@@ -63,8 +69,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sort_field,
-    params.sort_direction,
+    params.sortField,
+    params.sortDirection,
     params.albumType,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
