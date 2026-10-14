@@ -27,7 +27,6 @@ import {
   type Genre,
   type MassEvent,
   type MediaItemType,
-  type LibrarySortMediaType,
   type Player,
   type PlayerOptionValueType,
   type PlayerQueue,
@@ -56,6 +55,7 @@ import {
   DSPIRMetadata,
   EventType,
   ItemMapping,
+  ListingType,
   MediaItemTypeOrItemMapping,
   MediaType,
   PlayableMediaItemType,
@@ -97,18 +97,7 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 75;
-
-const LIBRARY_SORT_LISTINGS: Record<LibrarySortMediaType, string> = {
-  [MediaType.ARTIST]: "library_artists",
-  [MediaType.ALBUM]: "library_albums",
-  [MediaType.TRACK]: "library_tracks",
-  [MediaType.PLAYLIST]: "library_playlists",
-  [MediaType.RADIO]: "library_radios",
-  [MediaType.AUDIOBOOK]: "library_audiobooks",
-  [MediaType.PODCAST]: "library_podcasts",
-  [MediaType.GENRE]: "library_genres",
-};
+export const MIN_SERVER_SCHEMA_VERSION = 86;
 
 export interface CommandOptions {
   /**
@@ -178,7 +167,7 @@ export class MusicAssistantApi {
   public providerIcons = reactive<{ [key: string]: string | null }>({});
   private _providerIconRequests = new Map<string, Promise<string | null>>();
   private _librarySortOptions = new Map<
-    LibrarySortMediaType,
+    ListingType,
     Promise<SortOptionInfo[]>
   >();
   // core config values by "<domain>/<key>", dropped when this client saves a core config
@@ -622,21 +611,19 @@ export class MusicAssistantApi {
     return this.sendCommand("music/tracks/count", { favorite_only });
   }
 
-  public getLibrarySortOptions(
-    media_type: LibrarySortMediaType,
-  ): Promise<SortOptionInfo[]> {
-    const cached = this._librarySortOptions.get(media_type);
+  public getSortOptions(listing: ListingType): Promise<SortOptionInfo[]> {
+    const cached = this._librarySortOptions.get(listing);
     if (cached) return cached;
 
     const request = this.sendCommand<SortOptionInfo[]>(
       "music/sort_options",
-      { listing: LIBRARY_SORT_LISTINGS[media_type] },
+      { listing },
       { suppressGlobalError: true },
     );
-    this._librarySortOptions.set(media_type, request);
+    this._librarySortOptions.set(listing, request);
     void request.catch(() => {
-      if (this._librarySortOptions.get(media_type) === request) {
-        this._librarySortOptions.delete(media_type);
+      if (this._librarySortOptions.get(listing) === request) {
+        this._librarySortOptions.delete(listing);
       }
     });
     return request;
