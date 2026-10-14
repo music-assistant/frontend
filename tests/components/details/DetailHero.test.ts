@@ -110,3 +110,32 @@ describe("DetailHero pinned bar", () => {
     expect(pinnedTitle()?.inert).toBe(false);
   });
 });
+
+describe("DetailHero backdrop", () => {
+  beforeEach(() => {
+    vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const backdropOf = (props: Record<string, unknown>) =>
+    mount(DetailHero, {
+      props: { item: track(), backdrop: "fanart.jpg", ...props },
+      global: { mocks: { $t: (key: string) => key } },
+    }).get(".detail-hero__backdrop");
+
+  it("softens a picture when asked", () => {
+    expect(backdropOf({ softenBackdrop: true }).classes()).toContain(
+      "blur-[6px]",
+    );
+    expect(backdropOf({}).classes()).not.toContain("blur-[6px]");
+  });
+
+  it("keeps the heavy blur alone for art that only stands in", () => {
+    const backdrop = backdropOf({ softenBackdrop: true, blurBackdrop: true });
+    expect(backdrop.classes()).toContain("detail-hero__backdrop--blurred");
+    expect(backdrop.classes()).not.toContain("blur-[6px]");
+  });
+});
