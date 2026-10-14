@@ -11,14 +11,19 @@
         <Item
           v-for="providerMapping in itemDetails?.provider_mappings"
           :key="providerMapping.provider_instance"
-          v-hold="(evt: Event) => onMenu(evt, providerMapping)"
+          v-hold="
+            (evt: Event) =>
+              openMappingMenu(evt, providerMapping.provider_instance)
+          "
           size="sm"
           class="gap-7 rounded-(--radius-lg) border-0 px-2"
           :class="{
             'pointer-events-none opacity-50':
               !isMappingAvailable(providerMapping),
           }"
-          @click.right.prevent="onMenu($event, providerMapping)"
+          @click.right.prevent="
+            openMappingMenu($event, providerMapping.provider_instance)
+          "
         >
           <ItemMedia>
             <ProviderIcon
@@ -79,6 +84,7 @@
               size="icon-sm"
               :aria-label="$t('tooltip.play_sample')"
               :title="$t('tooltip.play_sample')"
+              :disabled="!isMappingAvailable(providerMapping)"
               @click="playBtnClick(providerMapping)"
             >
               <span
@@ -102,7 +108,10 @@
               variant="ghost"
               size="icon-sm"
               :aria-label="`${$t('more_options')}: ${getProviderName(providerMapping)}`"
-              @click.stop="onMenu($event, providerMapping)"
+              :disabled="!isMappingAvailable(providerMapping)"
+              @click.stop="
+                openMappingMenu($event, providerMapping.provider_instance)
+              "
             >
               <MoreVertical class="size-4" />
             </Button>
@@ -111,10 +120,10 @@
         <!-- virtual mapping for library -->
         <Item
           v-if="itemDetails.provider == 'library'"
-          v-hold="(evt: Event) => onMenu(evt, libraryMapping)"
+          v-hold="(evt: Event) => openMappingMenu(evt, LIBRARY_INSTANCE)"
           size="sm"
           class="gap-7 rounded-(--radius-lg) border-0 px-2"
-          @click.right.prevent="onMenu($event, libraryMapping)"
+          @click.right.prevent="openMappingMenu($event, LIBRARY_INSTANCE)"
         >
           <ItemMedia>
             <ProviderIcon domain="library" :size="30" class="mx-[10px]" />
@@ -132,7 +141,7 @@
               variant="ghost"
               size="icon-sm"
               :aria-label="`${$t('more_options')}: ${$t('music_assistant_library')}`"
-              @click.stop="onMenu($event, libraryMapping)"
+              @click.stop="openMappingMenu($event, LIBRARY_INSTANCE)"
             >
               <MoreVertical class="size-4" />
             </Button>
@@ -273,13 +282,28 @@ const copyUriToClipboard = async function (uri: string) {
   }
 };
 
+const LIBRARY_INSTANCE = "library";
+
 const libraryMapping = computed<ProviderMappingRef>(() => ({
-  provider_instance: "library",
-  provider_domain: "library",
+  provider_instance: LIBRARY_INSTANCE,
+  provider_domain: LIBRARY_INSTANCE,
   item_id: props.itemDetails.item_id,
   available: true,
   url: null,
 }));
+
+// v-hold keeps its first handler, so look the mapping up when the menu opens
+const openMappingMenu = function (evt: Event, providerInstance: string) {
+  if (providerInstance === LIBRARY_INSTANCE) {
+    onMenu(evt, libraryMapping.value);
+    return;
+  }
+  const mapping = props.itemDetails.provider_mappings.find(
+    (x) => x.provider_instance === providerInstance,
+  );
+  if (!mapping || !isMappingAvailable(mapping)) return;
+  onMenu(evt, mapping);
+};
 
 const getProviderName = function (providerMapping: ProviderMapping) {
   const providerInstance = api.getProvider(providerMapping.provider_instance);
