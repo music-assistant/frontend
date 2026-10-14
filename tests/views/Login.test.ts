@@ -1018,6 +1018,8 @@ describe("Home Assistant sign in over Remote Access", () => {
       .findAll("button")
       .find((b) => b.text().includes("Sign in with Home Assistant"));
     await button!.trigger("click");
+    // the challenge comes from crypto.subtle, which flushPromises doesn't wait for
+    await vi.waitFor(() => expect(mocks.startAuthorization).toHaveBeenCalled());
     await flushPromises();
   }
 
