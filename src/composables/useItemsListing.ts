@@ -167,8 +167,7 @@ export function useItemsListing(
       const selectedSortOption = librarySorting.selectedOption.value;
       params.value.sortField = sortField;
       params.value.sortDirection =
-        selectedSortOption?.supports_direction === false ||
-        (!selectedSortOption && sortField === SortField.ORIGINAL)
+        selectedSortOption?.supports_direction === false
           ? undefined
           : currentSort?.direction;
 

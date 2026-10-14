@@ -1954,26 +1954,6 @@ describe("ItemsListing server sort options", () => {
     ).toEqual(["sort.sort_name"]);
   });
 
-  it("keeps legacy original ordering directionless", async () => {
-    const loadPagedData = vi.fn().mockResolvedValue([]);
-
-    mountListingRaw({
-      itemtype: "albums",
-      sortKeys: ["original"],
-      loadPagedData,
-      showGenreFilter: false,
-    });
-    await flushPromises();
-
-    expect(loadPagedData).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        sortBy: "original",
-        sortField: SortField.ORIGINAL,
-        sortDirection: undefined,
-      }),
-    );
-  });
-
   it("keeps the desktop sort chip row stable while options load", async () => {
     let resolveSortOptions!: (options: SortOptionInfo[]) => void;
     mockGetSortOptions.mockReturnValue(

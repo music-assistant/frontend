@@ -110,6 +110,24 @@ describe("useItemsListing", () => {
     expect(done).toHaveBeenCalledWith("ok");
   });
 
+  it("sends no direction for a sort option without one", async () => {
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = setupItemsListing({ loadPagedData });
+    listing.serverSortOptions.value = [
+      sortOption(SortField.ORIGINAL, null, false),
+    ];
+    listing.params.value.sortBy = "original";
+
+    await listing.loadData(true);
+
+    expect(loadPagedData).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sortField: SortField.ORIGINAL,
+        sortDirection: undefined,
+      }),
+    );
+  });
+
   it("coalesces same-tab sort changes into a reload with the latest selection", async () => {
     let resolveFirstPage!: (items: Track[]) => void;
     const firstPage = new Promise<Track[]>((resolve) => {

@@ -25,9 +25,7 @@ function parseSortBy(sortBy: string) {
     direction:
       match?.[2] === SortDirection.ASC || match?.[2] === SortDirection.DESC
         ? (match[2] as SortDirection)
-        : field === SortField.RANDOM || field === SortField.RANDOM_PLAY_COUNT
-          ? undefined
-          : SortDirection.ASC,
+        : SortDirection.ASC,
   };
 }
 
@@ -47,15 +45,7 @@ export function useLibrarySorting(
   const options = computed(() => toValue(optionsSource));
   const sortBy = computed(() => toValue(sortBySource));
 
-  const current = computed(() => {
-    const parsed = parseSortBy(sortBy.value);
-    const option = options.value.find((item) => item.field === parsed.field);
-    return {
-      field: parsed.field,
-      direction:
-        parsed.direction ?? option?.default_direction ?? SortDirection.ASC,
-    };
-  });
+  const current = computed(() => parseSortBy(sortBy.value));
 
   const selectedOption = computed(() =>
     options.value.find((option) => option.field === current.value.field),
