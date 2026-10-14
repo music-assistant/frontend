@@ -19,7 +19,7 @@
         :placeholder="$t('type_to_search')"
         class="placeholder:text-muted-foreground flex h-12 w-full rounded-md bg-transparent py-3 text-base outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
       />
-      <Spinner v-if="isSearching" class="size-4 shrink-0" />
+      <Spinner v-if="showInputSpinner" class="size-4 shrink-0" />
       <button
         v-if="query"
         type="button"
@@ -663,6 +663,12 @@ useIntersectionObserver(
 
 const hasMediaResults = computed(() =>
   mediaSections.value.some((section) => section.items.length),
+);
+
+// one spinner at a time: the results area shows its own until the first results
+// land, and a single type keeps loading behind the spinner below its results
+const showInputSpinner = computed(
+  () => isSearching.value && hasMediaResults.value && !singleType.value,
 );
 
 const itemSubtitle = function (item: MediaItemTypeOrItemMapping) {

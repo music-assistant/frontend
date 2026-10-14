@@ -7,7 +7,7 @@
           size="icon-lg"
           :title="$t('tooltip.sort_options')"
           :aria-label="$t('tooltip.sort_options')"
-          :disabled="disabled || !options.length"
+          :disabled="!options.length"
         >
           <ArrowUpDown class="size-[22px]" />
         </Button>
@@ -22,7 +22,6 @@
             :key="option.field"
             :value="option.field"
             class="gap-3"
-            :disabled="disabled"
           >
             <template #indicator-icon>
               <Check class="size-3.5" />
@@ -38,11 +37,7 @@
             :model-value="current.direction"
             @update:model-value="selectSortDirection"
           >
-            <DropdownMenuRadioItem
-              :value="SortDirection.ASC"
-              class="gap-3"
-              :disabled="disabled"
-            >
+            <DropdownMenuRadioItem :value="SortDirection.ASC" class="gap-3">
               <template #indicator-icon>
                 <Check class="size-3.5" />
               </template>
@@ -51,11 +46,7 @@
                 $t("sort.ascending")
               }}</span>
             </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem
-              :value="SortDirection.DESC"
-              class="gap-3"
-              :disabled="disabled"
-            >
+            <DropdownMenuRadioItem :value="SortDirection.DESC" class="gap-3">
               <template #indicator-icon>
                 <Check class="size-3.5" />
               </template>
@@ -71,7 +62,7 @@
   </div>
 
   <div
-    v-else-if="!mobileLayout && quickOptions.length"
+    v-else-if="quickOptions.length"
     class="flex gap-2 overflow-x-auto px-3 py-2"
     role="group"
     :aria-label="$t('tooltip.sort_options')"
@@ -89,7 +80,6 @@
       :aria-pressed="current.field === option.field"
       :aria-label="quickSortAriaLabel(option)"
       :title="quickSortAriaLabel(option)"
-      :disabled="disabled"
       @click="changeQuickSort(option)"
     >
       {{ sortOptionLabel(option) }}
@@ -122,14 +112,9 @@ interface Props {
   mode: "menu" | "chips";
   options: SortOptionInfo[];
   sortBy: string;
-  disabled?: boolean;
-  mobileLayout?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  disabled: false,
-  mobileLayout: false,
-});
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   "sort-by": [value: string];
@@ -143,15 +128,12 @@ const sorting = useLibrarySorting(
 );
 const {
   current,
+  selectedOption,
   quickOptions,
   sortByOption,
   sortByDirection,
   sortByQuickOption,
 } = sorting;
-
-const selectedOption = computed(() =>
-  props.options.find((option) => option.field === current.value.field),
-);
 
 const sortOptionLabel = (option: SortOptionInfo) =>
   t(`sort.${option.label_key ?? option.field}`);

@@ -48,7 +48,7 @@ export const openCurrentTrackDetails = async function () {
       undefined,
       undefined,
       undefined,
-      undefined, // genre_ids
+      undefined, // provider
     );
 
     if (results.length > 0) {

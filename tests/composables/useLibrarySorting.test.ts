@@ -44,6 +44,12 @@ const options: SortOptionInfo[] = [
     default_direction: null,
     label_key: "random_play_count",
   },
+  {
+    field: SortField.SORT_NAME,
+    supports_direction: true,
+    default_direction: SortDirection.ASC,
+    label_key: "sort_name",
+  },
 ];
 
 describe("useLibrarySorting", () => {
@@ -85,7 +91,7 @@ describe("useLibrarySorting", () => {
 
     expect(sorting.quickOptions.value.map((option) => option.field)).toEqual([
       SortField.PLAY_COUNT,
-      SortField.NAME,
+      SortField.SORT_NAME,
     ]);
   });
 
