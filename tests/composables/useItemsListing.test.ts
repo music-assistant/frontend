@@ -147,6 +147,31 @@ describe("useItemsListing", () => {
     ]);
   });
 
+  it("does not process a queued sort reload after its scope is disposed", async () => {
+    let resolveFirstPage!: (items: Track[]) => void;
+    const loadPagedData = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<Track[]>((resolve) => {
+            resolveFirstPage = resolve;
+          }),
+      )
+      .mockResolvedValueOnce([]);
+    const listing = setupItemsListing({ loadPagedData });
+    const initialLoad = listing.loadData(true);
+
+    listing.params.value.sortBy = "duration";
+    await listing.loadData(false, false, true);
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+
+    listing.scope.stop();
+    resolveFirstPage([track({ item_id: "track-1" })]);
+    await initialLoad;
+
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+  });
+
   it.each(["search", "sort"] as const)(
     "reuses flat items after a pending %s change instead of refetching the source",
     async (change) => {
