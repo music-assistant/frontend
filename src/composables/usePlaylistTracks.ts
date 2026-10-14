@@ -30,7 +30,10 @@ export function usePlaylistTracks(playlist: () => PlaylistRef) {
     // only the latest request may set the tracks; a failed one can be retried
     current.then(
       (loaded) => {
-        if (request === current) tracks.value = loaded;
+        if (request === current) {
+          tracks.value = loaded;
+          request = undefined;
+        }
       },
       () => {
         if (request === current) request = undefined;
