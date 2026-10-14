@@ -1,9 +1,11 @@
 import type { MusicAssistantApi } from "@/plugins/api";
-import type {
-  Playlist,
-  Scope,
-  SmartPlaylistRules,
-  User,
+import {
+  EventType,
+  type EventMessage,
+  type Playlist,
+  type Scope,
+  type SmartPlaylistRules,
+  type User,
 } from "@/plugins/api/interfaces";
 import PlaylistDetails from "@/views/PlaylistDetails.vue";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -110,6 +112,7 @@ describe("PlaylistDetails", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     apiMock.subscribe.mockReturnValue(() => {});
+    apiMock.getPlaylistTracks.mockResolvedValue([]);
     apiMock.getSmartPlaylistRules.mockResolvedValue(rules);
     // a library manager may edit the rules and share the playlist
     authMock.hasScope.mockImplementation(
@@ -154,18 +157,18 @@ describe("PlaylistDetails", () => {
     expect(rows).toContain("tracks");
   });
 
-  it("loads the tracks itself when the track table is hidden", async () => {
+  // the listing is a stub that never loads, as when it restores its tracks
+  // from a previous visit of the playlist
+  it("loads the tracks for the page even when the listing does not", async () => {
     const tracks = [track()];
     apiMock.getPlaylistTracks.mockResolvedValue(tracks);
-    storeMock.currentUser = user({
-      preferences: { "playlist.rows": { hidden: ["tracks"] } },
-    });
     const item = playlistOf("builtin");
     const wrapper = await mountDetails(item);
 
     expect(apiMock.getPlaylistTracks).toHaveBeenCalledWith(
       item.item_id,
       item.provider,
+      false,
     );
     expect(
       wrapper
@@ -174,8 +177,31 @@ describe("PlaylistDetails", () => {
     ).toEqual(tracks);
   });
 
-  it("leaves loading the tracks to the track table while it shows", async () => {
-    await mountDetails(playlistOf("builtin"));
-    expect(apiMock.getPlaylistTracks).not.toHaveBeenCalled();
+  it("reloads the tracks on an update while the track table is hidden", async () => {
+    const onUpdated: Array<(evt: EventMessage) => void> = [];
+    apiMock.subscribe.mockImplementation(((
+      type: EventType,
+      callback: (evt: EventMessage) => void,
+    ) => {
+      if (type === EventType.MEDIA_ITEM_UPDATED) onUpdated.push(callback);
+      return () => {};
+    }) as never);
+    storeMock.currentUser = user({
+      preferences: { "playlist.rows": { hidden: ["tracks"] } },
+    });
+    const item = playlistOf("builtin");
+    await mountDetails(item);
+    apiMock.getPlaylistTracks.mockClear();
+
+    onUpdated.forEach((callback) =>
+      callback({ data: { ...item, name: "Renamed" } } as EventMessage),
+    );
+    await flushPromises();
+
+    expect(apiMock.getPlaylistTracks).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+      true,
+    );
   });
 });

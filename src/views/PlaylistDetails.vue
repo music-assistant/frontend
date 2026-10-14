@@ -123,7 +123,6 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import {
   playlistBackdrop,
   playlistDuration,
-  type PlaylistItem,
 } from "@/components/playlist/playlistData";
 import PlaylistFeaturedArtists from "@/components/playlist/PlaylistFeaturedArtists.vue";
 import PlaylistHero from "@/components/playlist/PlaylistHero.vue";
@@ -142,6 +141,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
+import { usePlaylistTracks } from "@/composables/usePlaylistTracks";
 import { canSharePlaylist } from "@/helpers/playlist_access";
 import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
 import { api } from "@/plugins/api";
@@ -172,9 +172,13 @@ const canEditLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_WRITE),
 );
 
-// the playlist's tracks, as the listing below last loaded them: what the hero
-// counts and times
-const playlistTracks = ref<PlaylistItem[]>();
+// what the hero counts and times, the featured artists rank and the listing
+// below shows
+const {
+  tracks: playlistTracks,
+  load: loadTracks,
+  reset: resetTracks,
+} = usePlaylistTracks(() => props);
 
 const canShare = computed(
   () =>
@@ -245,6 +249,8 @@ const loadItemDetails = async function () {
   }
   // a slower response for a previous playlist must not replace the current one
   if (itemId !== props.itemId || provider !== props.provider) return;
+  // started before the listing mounts, so it reuses this request
+  if (!playlist.is_dynamic) loadTracksQuietly();
   itemDetails.value = playlist;
   smartRules.value = rules;
 };
@@ -258,7 +264,7 @@ watch(
       document.querySelector(".content-section")?.scrollTo({ top: 0 });
       itemDetails.value = undefined;
       smartRules.value = null;
-      playlistTracks.value = undefined;
+      resetTracks();
       updateAvailable.value = false;
       showRulesDialog.value = false;
       showEditDialog.value = false;
@@ -270,40 +276,18 @@ watch(
 );
 
 useDetailItemUpdates(itemDetails, {
-  onUpdate: () => (updateAvailable.value = true),
+  onUpdate: () => {
+    updateAvailable.value = true;
+    // the listing reloads its own tracks; without it the page keeps them current
+    if (!visibleRows.value.includes("tracks")) loadTracksQuietly(true);
+  },
 });
 
-const loadPlaylistTracks = async function (params: LoadDataParams) {
-  const { itemId, provider } = props;
-  const tracks = await api.getPlaylistTracks(itemId, provider, params.refresh);
-  if (itemId === props.itemId && provider === props.provider) {
-    playlistTracks.value = tracks;
-  }
-  return tracks;
-};
+const loadPlaylistTracks = (params: LoadDataParams) =>
+  loadTracks(params.refresh);
 
-// the track table loads the tracks the hero and the featured artists read, so
-// with that row hidden the page loads them itself
-const tracksRowHidden = computed(
-  () =>
-    !!itemDetails.value &&
-    !itemDetails.value.is_dynamic &&
-    !visibleRows.value.includes("tracks"),
-);
-watch(
-  [tracksRowHidden, () => itemDetails.value?.uri],
-  async ([hidden]) => {
-    if (!hidden || playlistTracks.value) return;
-    const { itemId, provider } = props;
-    try {
-      const tracks = await api.getPlaylistTracks(itemId, provider);
-      if (itemId === props.itemId && provider === props.provider) {
-        playlistTracks.value = tracks;
-      }
-    } catch {
-      // the api already reports the failure to the user
-    }
-  },
-  { immediate: true },
-);
+/** Loads the tracks for the page; a failure is reported by the api. */
+function loadTracksQuietly(refresh = false) {
+  loadTracks(refresh).catch(() => {});
+}
 </script>
