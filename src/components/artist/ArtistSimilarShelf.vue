@@ -11,7 +11,9 @@
         @touchstart.passive="onTouchStart"
         @click.capture="swallowClickAfterHold"
       >
-        <h2 class="artist-similar__title">{{ $t("similar_artists") }}</h2>
+        <h2 class="artist-similar__title">
+          {{ title ?? $t("similar_artists") }}
+        </h2>
         <RowSourceBadge
           v-if="sourceLabel"
           :label="sourceLabel"
@@ -55,13 +57,15 @@ import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { itemIsAvailable } from "@/plugins/api/helpers";
-import type { Artist } from "@/plugins/api/interfaces";
+import type { Artist, ItemMapping } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { computed } from "vue";
 
 export interface Props {
   // undefined while the row is still loading
-  items?: Artist[];
+  items?: Array<Artist | ItemMapping>;
+  // the row heading, "Similar artists" unless set
+  title?: string;
   // source label for the row's badge, e.g. "All sources" or "On Spotify"
   sourceLabel?: string;
   // provider domain behind `sourceLabel`, for its icon

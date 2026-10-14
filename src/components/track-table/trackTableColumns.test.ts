@@ -30,7 +30,6 @@ describe("visibleTrackColumns", () => {
       "year",
       "bpm",
       "key",
-      "source",
       "favorite",
       "duration",
       "menu",
@@ -41,14 +40,13 @@ describe("visibleTrackColumns", () => {
     const columns = visibleTrackColumns(DEFAULT_TRACK_COLUMNS, 1400);
     expect(columns).not.toContain("bpm");
     expect(columns).not.toContain("key");
-    expect(columns).toContain("source");
+    expect(columns).toContain("year");
   });
 
   it("drops columns by priority as the table narrows", () => {
     const at = (width: number) =>
       visibleTrackColumns(OPTIONAL_TRACK_COLUMNS, width);
-    expect(at(1199)).not.toContain("source");
-    expect(at(1199)).toContain("year");
+    expect(at(1100)).toContain("year");
     expect(at(1099)).not.toContain("year");
     expect(at(1099)).toEqual(expect.arrayContaining(["bpm", "key"]));
     expect(at(999)).not.toContain("bpm");
@@ -70,7 +68,7 @@ describe("visibleTrackColumns", () => {
   it("keeps a column the user switched off hidden, even with room", () => {
     const columns = visibleTrackColumns(["number", "year"], 1600);
     expect(columns).not.toContain("album");
-    expect(columns).not.toContain("source");
+    expect(columns).not.toContain("bpm");
     expect(columns).toContain("year");
   });
 });
@@ -82,8 +80,8 @@ describe("isHiddenAtWidth", () => {
   });
 
   it("hides a column below its width", () => {
-    expect(isHiddenAtWidth("source", 1000)).toBe(true);
-    expect(isHiddenAtWidth("source", 1200)).toBe(false);
+    expect(isHiddenAtWidth("year", 1000)).toBe(true);
+    expect(isHiddenAtWidth("year", 1100)).toBe(false);
   });
 });
 

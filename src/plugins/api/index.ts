@@ -705,11 +705,13 @@ export class MusicAssistantApi {
   public getArtist(
     item_id: string,
     provider_instance_id_or_domain: string,
+    options?: CommandOptions,
   ): Promise<Artist> {
-    return this.sendCommand("music/artists/get_artist", {
-      item_id,
-      provider_instance_id_or_domain,
-    });
+    return this.sendCommand(
+      "music/artists/get_artist",
+      { item_id, provider_instance_id_or_domain },
+      options,
+    );
   }
 
   public getArtistTracks(
