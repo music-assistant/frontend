@@ -8,7 +8,7 @@ import { computed, toValue, type MaybeRefOrGetter } from "vue";
 const QUICK_SORT_FIELDS = [
   SortField.TIMESTAMP_ADDED,
   SortField.PLAY_COUNT,
-  SortField.NAME,
+  SortField.SORT_NAME,
 ];
 
 function parseSortBy(sortBy: string) {

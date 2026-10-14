@@ -1933,7 +1933,7 @@ describe("ItemsListing server sort options", () => {
   it("defaults to the first server sort option when no preference is saved", async () => {
     const loadPagedData = vi.fn().mockResolvedValue([]);
 
-    mountListingRaw({
+    const listing = mountListingRaw({
       itemtype: "tracks",
       path: "librarytracks",
       sortListing: ListingType.LIBRARY_TRACKS,
@@ -1949,6 +1949,9 @@ describe("ItemsListing server sort options", () => {
         sortDirection: SortDirection.ASC,
       }),
     );
+    expect(
+      listing.findAll('button[aria-pressed="true"]').map((chip) => chip.text()),
+    ).toEqual(["sort.sort_name"]);
   });
 
   it("keeps legacy original ordering directionless", async () => {
