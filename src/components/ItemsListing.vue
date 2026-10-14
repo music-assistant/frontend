@@ -1195,7 +1195,7 @@ const showEmptyState = computed(
 );
 
 const emptyDescription = computed(() =>
-  hasActiveFilters.value ? t("no_content_filter") : props.emptyMessage,
+  hasActiveFilters.value ? t("no_content_filter_hint") : props.emptyMessage,
 );
 
 // a listing scoped to the library (its own "library" option selected) that comes
