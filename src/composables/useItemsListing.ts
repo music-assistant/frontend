@@ -104,6 +104,8 @@ export function useItemsListing(
 
   let loadingTabId: string | undefined;
   let pendingTabLoad = false;
+  let pendingClear = false;
+  let pendingRefresh = false;
   let pendingSortReload = false;
   let disposed = false;
 
@@ -131,7 +133,13 @@ export function useItemsListing(
       : undefined;
     if (loading.value) {
       pendingTabLoad = currentTabId !== loadingTabId;
-      if (filterParamsChanged) pendingSortReload = true;
+      pendingRefresh ||= refresh;
+      // only a parameter change queues its clear: a tab change is left to
+      // pendingTabLoad, so switching back to the loading tab does not reload
+      if (filterParamsChanged) {
+        pendingSortReload = true;
+        pendingClear ||= clear;
+      }
       return;
     }
     loading.value = true;
@@ -192,12 +200,19 @@ export function useItemsListing(
 
     if (disposed) return;
 
-    if (pendingTabLoad || pendingSortReload) {
-      const clearPendingItems = pendingTabLoad;
+    if (pendingTabLoad || pendingClear || pendingRefresh || pendingSortReload) {
+      const clearPendingItems = pendingTabLoad || pendingClear;
+      const refreshPendingItems = pendingRefresh;
       const pendingParamsChanged = pendingSortReload;
       pendingTabLoad = false;
+      pendingClear = false;
+      pendingRefresh = false;
       pendingSortReload = false;
-      await loadData(clearPendingItems, false, pendingParamsChanged);
+      await loadData(
+        clearPendingItems,
+        refreshPendingItems,
+        pendingParamsChanged,
+      );
     }
   };
 

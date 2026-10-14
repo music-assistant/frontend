@@ -2,6 +2,7 @@ import {
   useItemsListing,
   type LoadDataParams,
   type LoadPagedDataFn,
+  type ToolBarTab,
 } from "@/composables/useItemsListing";
 import {
   ListingType,
@@ -16,12 +17,16 @@ import { track } from "../fixtures/track";
 
 const scopes: EffectScope[] = [];
 
-function setupItemsListing(options: {
-  limit?: number;
-  loadItems?: (params: LoadDataParams) => Promise<Track[]>;
-  loadPagedData?: LoadPagedDataFn;
-  sortListing?: ListingType;
-}) {
+function setupItemsListing(
+  options: {
+    limit?: number;
+    loadItems?: (params: LoadDataParams) => Promise<Track[]>;
+    loadPagedData?: LoadPagedDataFn;
+    sortListing?: ListingType;
+    toolBarTabs?: ToolBarTab[];
+  },
+  getActiveTab: () => ToolBarTab | undefined = () => undefined,
+) {
   const scope = effectScope();
   scopes.push(scope);
   const listing = scope.run(() =>
@@ -30,7 +35,7 @@ function setupItemsListing(options: {
         itemtype: "tracks",
         ...options,
       },
-      () => undefined,
+      getActiveTab,
     ),
   )!;
   return { scope, ...listing };
@@ -204,6 +209,70 @@ describe("useItemsListing", () => {
       );
     },
   );
+
+  it.each([
+    ["a clearing parameter change", [true, false, true]],
+    ["a refresh", [true, true, false]],
+  ] as const)(
+    "fetches a flat source again for %s queued during a load",
+    async (_change, args) => {
+      let resolveItems!: (items: Track[]) => void;
+      const loadItems = vi
+        .fn()
+        .mockImplementationOnce(
+          () =>
+            new Promise<Track[]>((resolve) => {
+              resolveItems = resolve;
+            }),
+        )
+        .mockResolvedValueOnce([track({ item_id: "fresh" })]);
+      const listing = setupItemsListing({ loadItems });
+      const initialLoad = listing.loadData(true);
+
+      await listing.loadData(...args);
+      expect(loadItems).toHaveBeenCalledTimes(1);
+
+      resolveItems([track({ item_id: "stale" })]);
+      await initialLoad;
+
+      expect(loadItems).toHaveBeenCalledTimes(2);
+      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual([
+        "fresh",
+      ]);
+    },
+  );
+
+  it("does not reload when the loading tab is selected again during its load", async () => {
+    let resolveFirstPage!: (items: Track[]) => void;
+    const loadPagedData = vi
+      .fn()
+      .mockReturnValueOnce(
+        new Promise<Track[]>((resolve) => {
+          resolveFirstPage = resolve;
+        }),
+      )
+      .mockResolvedValue([]);
+    const toolBarTabs = [
+      { id: "books", label: "books" },
+      { id: "authors", label: "authors" },
+    ];
+    let activeTab = toolBarTabs[0];
+    const listing = setupItemsListing(
+      { loadPagedData, toolBarTabs },
+      () => activeTab,
+    );
+    const initialLoad = listing.loadData(true);
+
+    activeTab = toolBarTabs[1];
+    await listing.loadData(true);
+    activeTab = toolBarTabs[0];
+    await listing.loadData(true);
+
+    resolveFirstPage([track({ item_id: "book-1" })]);
+    await initialLoad;
+
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+  });
 
   it("filters and pages flat listings without reloading their source", async () => {
     const loadItems = vi.fn(async () => [
