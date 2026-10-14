@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     ref="itemsListing"
+    fill-height
     itemtype="tracks"
     path="librarytracks"
     :show-provider="false"

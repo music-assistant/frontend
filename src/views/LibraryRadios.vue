@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     ref="itemsListing"
+    fill-height
     itemtype="radios"
     path="libraryradios"
     :show-duration="false"

@@ -1,7 +1,8 @@
 <template>
-  <section>
+  <section class="flex min-h-full flex-col">
     <ItemsListing
       v-if="itemDetails && config"
+      fill-height
       :icon="ArrowLeft"
       :icon-action="backToTrack"
       :title="$t(config.labelKey)"

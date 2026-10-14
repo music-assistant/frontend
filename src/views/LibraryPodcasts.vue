@@ -1,5 +1,6 @@
 <template>
   <ItemsListing
+    fill-height
     itemtype="podcasts"
     path="librarypodcasts"
     :show-duration="false"

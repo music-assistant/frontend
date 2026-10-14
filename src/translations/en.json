@@ -57,6 +57,7 @@
     "next_episode": "Next episode",
     "no_content": "No items found.",
     "no_content_filter": "No items found for the current filter\/search conditions.",
+    "no_content_filter_hint": "Try a different search or change the filters.",
     "no_player": "No player selected",
     "off": "Off",
     "on": "On",

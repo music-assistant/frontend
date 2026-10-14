@@ -1,5 +1,6 @@
 <template>
   <ItemsListing
+    fill-height
     itemtype="audiobooks"
     path="libraryaudiobooks"
     :show-duration="false"
