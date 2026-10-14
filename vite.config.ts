@@ -77,6 +77,10 @@ export default defineConfig({
     port: 3000,
     host: true,
   },
+  optimizeDeps: {
+    // Avoid dev reloads on new vuetify imports. VOverflowBtn has no CSS.
+    include: ["vuetify/components/!(VOverflowBtn)", "vuetify/directives/*"],
+  },
   build: {
     outDir: "./music_assistant_frontend",
     rollupOptions: {
