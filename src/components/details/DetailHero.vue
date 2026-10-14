@@ -50,7 +50,7 @@
     <DetailHeroStickyBar
       v-if="isPhone"
       :show="!toolbarInView"
-      :show-title="!bodyInView"
+      :show-title="!titleInView"
       :title="item?.name"
       :menu-items="menuItems"
       @back="backButtonClick"
@@ -104,7 +104,8 @@ const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
 
-const STICKY_BAR_HEIGHT = 64;
+// px, the pinned bar's h-14
+const STICKY_BAR_HEIGHT = 56;
 
 const router = useRouter();
 const menuItems = ref<ContextMenuItem[]>([]);
@@ -114,16 +115,20 @@ const isPhone = computed(() => isPhoneSizedScreen());
 const toolbarSentinel = ref<HTMLElement>();
 const heroBody = ref<HTMLElement>();
 const toolbarInView = ref(true);
-const bodyInView = ref(true);
+const titleInView = ref(true);
+// every hero puts its item name in the one h1 of its body
+const heroTitle = computed(
+  () => heroBody.value?.querySelector<HTMLElement>("h1") ?? undefined,
+);
 
 useIntersectionObserver(toolbarSentinel, ([entry]) => {
   toolbarInView.value = entry?.isIntersecting ?? true;
 });
 // the title counts as gone once it is under the pinned bar
 useIntersectionObserver(
-  heroBody,
+  heroTitle,
   ([entry]) => {
-    bodyInView.value = entry?.isIntersecting ?? true;
+    titleInView.value = entry?.isIntersecting ?? true;
   },
   { rootMargin: `-${STICKY_BAR_HEIGHT}px 0px 0px 0px` },
 );
