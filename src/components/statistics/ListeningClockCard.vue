@@ -3,6 +3,7 @@
     :title="title"
     :loading="loading"
     :is-empty="!data || data.length === 0"
+    :accessible-summary="accessibleSummary"
   >
     <PolarArea :data="chartData" :options="chartOptions" />
   </BaseChartCard>
@@ -11,6 +12,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { PolarArea } from "vue-chartjs";
+import { useTheme } from "vuetify";
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -41,6 +43,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
 });
+const theme = useTheme();
 
 // Aggregate by hour across all days
 const hourlyData = computed(() => {
@@ -55,24 +58,34 @@ const hourlyData = computed(() => {
   return hourCounts;
 });
 
+const accessibleSummary = computed(() =>
+  $t("statistics_chart_accessible_summary", {
+    title: props.title,
+    values: hourlyData.value
+      .map((plays, hour) => `${hour}:00: ${plays} ${$t("plays")}`)
+      .join(", "),
+  }),
+);
+
 const chartData = computed<ChartData<"polarArea">>(() => {
   const hours = Array.from({ length: 24 }, (_, i) => `${i}:00`);
 
   // Create gradient colors from midnight to midnight (MA color palette)
   const colors = hourlyData.value.map((_, index) => {
     const ratio = index / 24;
+    const alpha = (value: number) => Math.min(1, Math.max(0, value));
     if (ratio < 0.25) {
       // Night (0-6): Purple to Indigo
-      return `rgba(156, 39, 176, ${0.6 + ratio * 1.6})`;
+      return `rgba(156, 39, 176, ${alpha(0.6 + ratio * 1.6)})`;
     } else if (ratio < 0.5) {
       // Morning (6-12): Primary Blue to Light Green
-      return `rgba(3, 169, 244, ${0.6 + ratio})`;
+      return `rgba(3, 169, 244, ${alpha(0.6 + ratio)})`;
     } else if (ratio < 0.75) {
       // Afternoon (12-18): Green to Amber
-      return `rgba(76, 175, 80, ${0.6 + ratio})`;
+      return `rgba(76, 175, 80, ${alpha(0.6 + ratio)})`;
     } else {
       // Evening (18-24): Amber to Teal
-      return `rgba(0, 150, 136, ${0.6 + ratio * 0.4})`;
+      return `rgba(0, 150, 136, ${alpha(0.6 + ratio * 0.4)})`;
     }
   });
 
@@ -108,10 +121,12 @@ const chartOptions = computed<ChartOptions<"polarArea">>(() => ({
         display: false,
       },
       grid: {
-        color: "rgba(var(--v-theme-on-surface), 0.1)",
+        color: theme.current.value.dark
+          ? "rgba(255, 255, 255, 0.16)"
+          : "rgba(0, 0, 0, 0.12)",
       },
       pointLabels: {
-        color: "rgb(var(--v-theme-on-surface))",
+        color: theme.current.value.colors.fg,
         font: {
           size: 11,
           family: "system-ui, -apple-system, sans-serif",

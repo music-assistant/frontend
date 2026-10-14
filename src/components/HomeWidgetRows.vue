@@ -378,7 +378,19 @@
               class="ma-scroll overflow-x-auto overflow-y-hidden overscroll-x-contain"
             >
               <div
-                v-if="statisticsItems.length === 0"
+                v-if="statisticsLoading"
+                class="flex min-h-40 items-center justify-center p-10"
+              >
+                <Spinner class="size-8" />
+              </div>
+              <div
+                v-else-if="statisticsError"
+                class="p-10 text-center text-sm text-muted-foreground"
+              >
+                {{ $t("statistics_load_failed") }}
+              </div>
+              <div
+                v-else-if="statisticsItems.length === 0"
                 class="p-10 text-center text-sm text-muted-foreground"
               >
                 {{ $t("no_statistics_data") }}
@@ -583,6 +595,7 @@ const statisticsItems = ref<
   { item: MediaItemTypeOrItemMapping; play_count: number }[]
 >([]);
 const statisticsLoading = ref(false);
+const statisticsError = ref(false);
 
 // Statistics charts state
 const artistDistribution = ref<TopItemResult[]>([]);
@@ -1049,6 +1062,7 @@ const loadStatistics = async () => {
   const mediaType = activeStatTab.value;
   const period = activeStatPeriod.value;
   statisticsItems.value = [];
+  statisticsError.value = false;
   statisticsLoading.value = true;
   try {
     const result = await api.getTopItems(mediaType, period, 50);
@@ -1074,6 +1088,7 @@ const loadStatistics = async () => {
     }
     console.error("Failed to load statistics:", err);
     statisticsItems.value = [];
+    statisticsError.value = true;
   } finally {
     if (
       statisticsRequests.isCurrent(requestGeneration) &&
@@ -1145,7 +1160,13 @@ watch(
       chartsLoading.value = false;
       return;
     }
-    if (!wasVisible || mediaType !== previousMediaType) loadStatistics();
+    if (
+      !wasVisible ||
+      mediaType !== previousMediaType ||
+      period !== previousPeriod
+    ) {
+      loadStatistics();
+    }
     if (!wasVisible || period !== previousPeriod) loadStatisticsCharts();
   },
 );

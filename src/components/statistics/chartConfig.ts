@@ -45,16 +45,20 @@ export const createTooltipConfig = <
 };
 
 // Gemeinsame Achsen-Konfiguration
-export const createAxisConfig = (axis: "x" | "y") => ({
+export const createAxisConfig = (
+  axis: "x" | "y",
+  foregroundColor: string,
+  isDark: boolean,
+) => ({
   ticks: {
-    color: "rgb(var(--v-theme-on-surface))",
+    color: foregroundColor,
     font: {
       size: 11,
       family: "system-ui, -apple-system, sans-serif",
     },
   },
   grid: {
-    color: "rgba(var(--v-theme-on-surface), 0.05)",
+    color: isDark ? "rgba(255, 255, 255, 0.16)" : "rgba(0, 0, 0, 0.12)",
     display: axis === "x",
   },
 });

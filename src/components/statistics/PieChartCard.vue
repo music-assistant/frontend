@@ -4,6 +4,7 @@
     :loading="loading"
     :is-empty="!data || data.length === 0"
     :clickable="!!navigateTo"
+    :accessible-summary="accessibleSummary"
   >
     <div class="flex h-full w-full items-center gap-6 max-[600px]:flex-col">
       <div class="size-[180px] shrink-0 max-[600px]:self-center">
@@ -14,7 +15,7 @@
       >
         <button
           v-for="(topItem, index) in data"
-          :key="topItem.item.item_id"
+          :key="topItem.item.uri"
           type="button"
           class="flex w-full cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent p-2 text-left text-inherit transition-colors hover:bg-[rgba(var(--v-theme-on-surface),0.05)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-default disabled:hover:bg-transparent"
           :aria-label="topItem.item.name"
@@ -60,6 +61,7 @@
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { Doughnut } from "vue-chartjs";
+import { $t } from "@/plugins/i18n";
 import { useTheme } from "vuetify";
 import { Play } from "@lucide/vue";
 import {
@@ -98,6 +100,18 @@ const theme = useTheme();
 
 const placeholderImage = computed(() =>
   theme.current.value.dark ? imgCoverDark : imgCoverLight,
+);
+
+const accessibleSummary = computed(() =>
+  $t("statistics_chart_accessible_summary", {
+    title: props.title,
+    values: props.data
+      .map(
+        (topItem) =>
+          `${topItem.item.name}: ${topItem.play_count} ${$t("plays")}`,
+      )
+      .join(", "),
+  }),
 );
 
 const handleChartClick = (

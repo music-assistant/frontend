@@ -3,6 +3,7 @@
     :title="title"
     :loading="loading"
     :is-empty="!data || data.length === 0"
+    :accessible-summary="accessibleSummary"
   >
     <Bar :data="chartData" :options="chartOptions" />
   </BaseChartCard>
@@ -11,6 +12,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { Bar } from "vue-chartjs";
+import { useTheme } from "vuetify";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -45,6 +47,16 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
 });
+const theme = useTheme();
+
+const accessibleSummary = computed(() =>
+  $t("statistics_chart_accessible_summary", {
+    title: props.title,
+    values: props.data
+      .map((item) => `${item.name}: ${item.value} ${$t("plays")}`)
+      .join(", "),
+  }),
+);
 
 const chartData = computed<ChartData<"bar">>(() => {
   return {
@@ -79,10 +91,18 @@ const chartOptions = computed<ChartOptions<"bar">>(() => ({
   scales: {
     x: {
       beginAtZero: true,
-      ...createAxisConfig("x"),
+      ...createAxisConfig(
+        "x",
+        theme.current.value.colors.fg,
+        theme.current.value.dark,
+      ),
     },
     y: {
-      ...createAxisConfig("y"),
+      ...createAxisConfig(
+        "y",
+        theme.current.value.colors.fg,
+        theme.current.value.dark,
+      ),
       grid: {
         display: false,
       },

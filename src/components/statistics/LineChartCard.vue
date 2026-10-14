@@ -3,6 +3,7 @@
     :title="title"
     :loading="loading"
     :is-empty="!data || data.length === 0"
+    :accessible-summary="accessibleSummary"
   >
     <Line :data="chartData" :options="chartOptions" />
   </BaseChartCard>
@@ -11,6 +12,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { Line } from "vue-chartjs";
+import { useTheme } from "vuetify";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -55,6 +57,16 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
 });
+const theme = useTheme();
+
+const accessibleSummary = computed(() =>
+  $t("statistics_chart_accessible_summary", {
+    title: props.title,
+    values: props.data
+      .map((point) => `${point.timestamp}: ${point.value} ${$t("plays")}`)
+      .join(", "),
+  }),
+);
 
 const chartData = computed<ChartData<"line">>(() => {
   return {
@@ -94,21 +106,37 @@ const chartOptions = computed<ChartOptions<"line">>(() => ({
   },
   scales: {
     x: {
-      ...createAxisConfig("x"),
+      ...createAxisConfig(
+        "x",
+        theme.current.value.colors.fg,
+        theme.current.value.dark,
+      ),
       grid: {
         display: false,
       },
       ticks: {
-        ...createAxisConfig("x").ticks,
+        ...createAxisConfig(
+          "x",
+          theme.current.value.colors.fg,
+          theme.current.value.dark,
+        ).ticks,
         maxRotation: 45,
         minRotation: 0,
       },
     },
     y: {
       beginAtZero: true,
-      ...createAxisConfig("y"),
+      ...createAxisConfig(
+        "y",
+        theme.current.value.colors.fg,
+        theme.current.value.dark,
+      ),
       ticks: {
-        ...createAxisConfig("y").ticks,
+        ...createAxisConfig(
+          "y",
+          theme.current.value.colors.fg,
+          theme.current.value.dark,
+        ).ticks,
         precision: 0,
       },
     },

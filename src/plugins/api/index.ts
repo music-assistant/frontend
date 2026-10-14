@@ -83,7 +83,6 @@ import {
   SmartPlaylistRules,
   SoundEffect,
   TopItemResult,
-  UserRole,
   SourceFolder,
   StorageInfo,
   StorageLocation,
