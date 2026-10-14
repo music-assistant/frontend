@@ -279,7 +279,12 @@ useDetailItemUpdates(itemDetails, {
   onUpdate: () => {
     updateAvailable.value = true;
     // the listing reloads its own tracks; without it the page keeps them current
-    if (!visibleRows.value.includes("tracks")) loadTracksQuietly(true);
+    if (
+      !itemDetails.value?.is_dynamic &&
+      !visibleRows.value.includes("tracks")
+    ) {
+      loadTracksQuietly(true);
+    }
   },
 });
 
