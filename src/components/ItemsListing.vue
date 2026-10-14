@@ -2,7 +2,7 @@
 <template>
   <section
     v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)"
-    :class="{ 'flex min-h-full flex-1 flex-col': fillHeight && showEmptyState }"
+    :class="{ 'flex min-h-full flex-1 flex-col': fillsHeight }"
   >
     <!-- eslint-disable vue/no-template-shadow -->
     <!-- inset so the title lines up with the row artwork and the menu with the rows' menu -->
@@ -118,7 +118,7 @@
       v-if="expanded"
       ref="listContainer"
       :variant="viewMode == 'list' ? 'default' : 'panel'"
-      :class="{ 'flex flex-1 flex-col': fillHeight && showEmptyState }"
+      :class="{ 'flex flex-1 flex-col': fillsHeight }"
       style="overflow: hidden"
     >
       <TrackTableHeader
@@ -154,9 +154,25 @@
         </v-row>
       </template>
 
+      <!-- the infinite scroller can't show its own retry before any item is loaded -->
+      <Empty v-if="firstLoadFailed" class="border-none">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <TriangleAlert />
+          </EmptyMedia>
+          <EmptyTitle>{{ $t("items_load_failed") }}</EmptyTitle>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button variant="outline" size="sm" @click="loadData(true)">
+            {{ $t("settings.retry") }}
+          </Button>
+        </EmptyContent>
+      </Empty>
+
       <v-infinite-scroll
         v-if="
           !tempHide &&
+          !firstLoadFailed &&
           !(pagedItems.length == 0 && allItemsReceived) &&
           !(loading && pagedItems.length === 0)
         "
@@ -445,6 +461,7 @@ import {
   Package,
   RefreshCw,
   Search,
+  TriangleAlert,
   X,
 } from "@lucide/vue";
 import {
@@ -1155,6 +1172,14 @@ const saveProviderFilter = () =>
 
 const showEmptyState = computed(
   () => !loading.value && !loadError.value && pagedItems.value.length == 0,
+);
+
+const firstLoadFailed = computed(
+  () => loadError.value && !loading.value && pagedItems.value.length === 0,
+);
+
+const fillsHeight = computed(
+  () => props.fillHeight && (showEmptyState.value || firstLoadFailed.value),
 );
 
 const emptyDescription = computed(() =>
