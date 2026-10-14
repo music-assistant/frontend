@@ -17,6 +17,11 @@
       ></div>
     </Transition>
     <div class="detail-hero__scrim"></div>
+    <!-- marks where the toolbar sits, to know when it has scrolled away -->
+    <div
+      ref="toolbarSentinel"
+      class="pointer-events-none absolute inset-x-0 top-0 h-16"
+    ></div>
     <Toolbar
       class="detail-hero__toolbar"
       :icon="ArrowLeft"
@@ -32,7 +37,7 @@
     <div v-if="!item" class="detail-hero__body">
       <Skeleton class="h-12 w-80 max-w-[60%]" />
     </div>
-    <div v-else class="detail-hero__body">
+    <div v-else ref="heroBody" class="detail-hero__body">
       <div class="detail-hero__main">
         <slot name="main"></slot>
       </div>
@@ -40,10 +45,25 @@
         <slot name="aside"></slot>
       </div>
     </div>
+
+    <!-- on a phone the back button and menu stay in reach while scrolling -->
+    <DetailHeroStickyBar
+      v-if="isPhone"
+      :show="!toolbarInView"
+      :show-title="!bodyInView"
+      :title="item?.name"
+      :menu-items="menuItems"
+      @back="backButtonClick"
+    >
+      <template #append>
+        <slot name="toolbar-append"></slot>
+      </template>
+    </DetailHeroStickyBar>
   </header>
 </template>
 
 <script setup lang="ts">
+import DetailHeroStickyBar from "@/components/details/DetailHeroStickyBar.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserPreferences } from "@/composables/userPreferences";
@@ -54,6 +74,7 @@ import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import type { MediaItemType } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { ArrowLeft, Rows3 } from "@lucide/vue";
+import { useIntersectionObserver } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -83,10 +104,29 @@ const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
 
+const STICKY_BAR_HEIGHT = 64;
+
 const router = useRouter();
 const menuItems = ref<ContextMenuItem[]>([]);
 
 const isPhone = computed(() => isPhoneSizedScreen());
+
+const toolbarSentinel = ref<HTMLElement>();
+const heroBody = ref<HTMLElement>();
+const toolbarInView = ref(true);
+const bodyInView = ref(true);
+
+useIntersectionObserver(toolbarSentinel, ([entry]) => {
+  toolbarInView.value = entry?.isIntersecting ?? true;
+});
+// the title counts as gone once it is under the pinned bar
+useIntersectionObserver(
+  heroBody,
+  ([entry]) => {
+    bodyInView.value = entry?.isIntersecting ?? true;
+  },
+  { rootMargin: `-${STICKY_BAR_HEIGHT}px 0px 0px 0px` },
+);
 
 const backdropStyle = computed(() =>
   props.backdrop ? { backgroundImage: `url("${props.backdrop}")` } : undefined,
@@ -202,8 +242,8 @@ async function buildMenu(item?: MediaItemType) {
 
 /* the toolbar controls sit on the artwork, so they get their own backdrop
    instead of the toolbar's transparent one */
-.detail-hero :deep(.v-toolbar__prepend .v-btn),
-.detail-hero :deep(.v-toolbar__append > button) {
+.detail-hero__toolbar :deep(.v-toolbar__prepend .v-btn),
+.detail-hero__toolbar :deep(.v-toolbar__append > button) {
   background-color: rgba(0, 0, 0, 0.35);
   border-radius: 8px;
   opacity: 1;
