@@ -1,6 +1,7 @@
 <template>
   <div
     class="flex h-80 flex-col rounded-2xl bg-[rgb(var(--v-theme-surface))] p-6 shadow-sm transition-shadow duration-200 hover:shadow-lg"
+    :class="mobileExpanded && 'max-[600px]:h-[600px]'"
   >
     <div class="mb-4">
       <h3 class="m-0 text-base font-bold text-[rgb(var(--v-theme-on-surface))]">
@@ -38,6 +39,7 @@ interface Props {
   emptyMessage?: string;
   clickable?: boolean;
   accessibleSummary?: string;
+  mobileExpanded?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
@@ -46,5 +48,6 @@ withDefaults(defineProps<Props>(), {
   emptyMessage: "",
   clickable: false,
   accessibleSummary: "",
+  mobileExpanded: false,
 });
 </script>

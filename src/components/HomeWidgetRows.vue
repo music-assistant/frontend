@@ -1090,6 +1090,7 @@ const loadStatistics = async () => {
       return;
     }
     console.error("Failed to load statistics:", err);
+    toast.error($t("statistics_load_failed"));
     statisticsItems.value = [];
     statisticsError.value = true;
   } finally {

@@ -5,13 +5,18 @@
     :is-empty="!data || data.length === 0"
     :clickable="!!navigateTo"
     :accessible-summary="accessibleSummary"
+    mobile-expanded
   >
-    <div class="flex h-full w-full items-center gap-6 max-[600px]:flex-col">
-      <div class="size-[180px] shrink-0 max-[600px]:self-center">
+    <div
+      class="flex h-full w-full items-center gap-6 max-[600px]:flex-col max-[600px]:justify-start"
+    >
+      <div
+        class="size-[180px] shrink-0 max-[600px]:size-[132px] max-[600px]:self-center"
+      >
         <Doughnut :data="chartData" :options="chartOptions" />
       </div>
       <div
-        class="flex max-h-[240px] min-w-0 flex-1 flex-col gap-3 overflow-y-auto pr-2"
+        class="flex max-h-[240px] min-w-0 flex-1 flex-col gap-3 overflow-y-auto pr-2 max-[600px]:max-h-[420px] max-[600px]:w-full"
       >
         <button
           v-for="(topItem, index) in data"

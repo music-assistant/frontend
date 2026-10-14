@@ -97,7 +97,7 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 92;
+export const MIN_SERVER_SCHEMA_VERSION = 75;
 
 const LIBRARY_SORT_LISTINGS: Record<LibrarySortMediaType, string> = {
   [MediaType.ARTIST]: "library_artists",

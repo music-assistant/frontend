@@ -5,6 +5,7 @@
     :is-empty="!data || data.length === 0"
     :empty-message="$t('statistics_listening_time_empty')"
     :accessible-summary="accessibleSummary"
+    mobile-expanded
   >
     <Bar :data="chartData" :options="chartOptions" />
   </BaseChartCard>
@@ -78,7 +79,10 @@ const chartData = computed<ChartData<"bar">>(() => {
 
 const chartOptions = computed<ChartOptions<"bar">>(() => ({
   responsive: true,
-  maintainAspectRatio: true,
+  maintainAspectRatio: false,
+  layout: {
+    padding: { left: 12, right: 8 },
+  },
   indexAxis: "y",
   plugins: {
     legend: {
@@ -124,8 +128,20 @@ const chartOptions = computed<ChartOptions<"bar">>(() => ({
         theme.current.value.colors.fg,
         theme.current.value.dark,
       ),
+      afterFit: (scale) => {
+        scale.width = Math.max(scale.width, 160);
+      },
       grid: {
         display: false,
+      },
+      ticks: {
+        ...createAxisConfig(
+          "y",
+          theme.current.value.colors.fg,
+          theme.current.value.dark,
+        ).ticks,
+        autoSkip: false,
+        padding: 8,
       },
     },
   },
