@@ -49,7 +49,7 @@
 
         <div class="flex min-w-0 flex-1 flex-col gap-2.5 pb-1">
           <h1
-            class="m-0 line-clamp-2 text-[44px] leading-[1.05] font-medium tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] max-md:text-[30px] max-md:leading-[1.1] max-md:tracking-[-0.7px]"
+            class="m-0 line-clamp-2 text-[44px] leading-[1.2] font-medium tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] max-md:text-[30px] max-md:tracking-[-0.7px]"
           >
             {{ item.name }}
           </h1>

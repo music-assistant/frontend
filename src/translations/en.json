@@ -44,10 +44,12 @@
     "increase_value": "Increase value",
     "decrease_value": "Decrease value",
     "enter_url": "Enter the URL you want to manually add to the database",
+    "folder": "Folder",
     "goto_album": "View album {0}",
     "goto_artist": "View artist {0}",
     "items_selected": "{0} item(s) selected",
     "items_total": "{0} total item(s)",
+    "selection_actions": "Selection actions",
     "library": "Library",
     "loading": "Data is being retrieved from the server.",
     "mass": "Music Assistant",
@@ -1081,6 +1083,16 @@
     "topresult": "Top result",
     "track": "Track",
     "track_number": "Disc {0} Track {1}",
+    "track_table": {
+        "title": "Title",
+        "track_number": "Track number",
+        "year": "Year",
+        "source": "Source",
+        "duration": "Duration",
+        "columns": "Columns",
+        "choose_columns": "Choose columns",
+        "hidden_at_width": "Hidden at this width"
+    },
     "tracks": "Tracks",
     "search_in": "Search in {0}...",
     "try_global_search": "Try global search",
@@ -1284,7 +1296,8 @@
             "mixed_to_mono": "Mixed to mono"
         },
         "processing_header": "Processing",
-        "more_info_for": "More information about {item}"
+        "more_info_for": "More information about {item}",
+        "open_played_from": "Open {0}"
     },
     "select_source": "Select source",
     "play_replace_next": "Play Next (clear queue)",
@@ -2457,6 +2470,8 @@
     "album_radio": "Album endless mix",
     "playlist_radio": "Playlist endless mix",
     "n_tracks": "{count} track | {count} tracks",
+    "select_all": "Select all",
+    "n_selected": "{count} selected | {count} selected",
     "n_episodes": "{count} episode | {count} episodes",
     "more_from_artist": "More from this artist",
     "more_from_artist_name": "More from {name}",
