@@ -1,11 +1,26 @@
 import { Scope } from "@/plugins/api/interfaces";
+import {
+  AudioWaveform,
+  CloudCog,
+  FileCode,
+  Info,
+  Music,
+  Palette,
+  Puzzle,
+  Server,
+  SlidersHorizontal,
+  Speaker,
+  UserCog,
+  Users,
+} from "@lucide/vue";
+import type { Component } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
 export interface SettingsSection {
   name: string;
   label: string;
   description: string;
-  icon: string;
+  icon: Component;
   color: string;
   route: RouteLocationRaw;
   // only a role granting this scope sees the section
@@ -18,7 +33,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     name: "music_providers",
     label: "settings.music_sources",
     description: "settings.music_providers_description",
-    icon: "mdi-music",
+    icon: Music,
     color: "blue",
     route: { name: "providersettings", query: { types: "music" } },
     // a member sees the music sources it may use here, and manages its own
@@ -28,7 +43,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     name: "player_providers",
     label: "settings.playerproviders",
     description: "settings.player_providers_description",
-    icon: "mdi-speaker-multiple",
+    icon: Speaker,
     color: "green",
     route: { name: "providersettings", query: { types: "player" } },
     // the provider types share the route a member opens for its own music
@@ -39,7 +54,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     name: "metadata_providers",
     label: "settings.metadataproviders",
     description: "settings.metadata_providers_description",
-    icon: "mdi-file-code",
+    icon: FileCode,
     color: "indigo",
     route: { name: "providersettings", query: { types: "metadata" } },
     requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
@@ -48,7 +63,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     name: "plugin_providers",
     label: "settings.plugins",
     description: "settings.plugin_providers_description",
-    icon: "mdi-puzzle",
+    icon: Puzzle,
     color: "deep-purple",
     route: { name: "providersettings", query: { types: "plugin" } },
     requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
@@ -57,7 +72,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     name: "players",
     label: "settings.players",
     description: "settings.players_description",
-    icon: "mdi-tune",
+    icon: SlidersHorizontal,
     color: "teal",
     route: { name: "playersettings" },
     requiresScope: Scope.CONFIG_PLAYERS_WRITE,
@@ -66,7 +81,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     name: "audio_analysis_providers",
     label: "settings.audio_analysis_providers",
     description: "settings.audio_analysis_providers_description",
-    icon: "mdi-waveform",
+    icon: AudioWaveform,
     color: "blue",
     route: { name: "providersettings", query: { types: "audio_analysis" } },
     requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
@@ -75,7 +90,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     name: "profile",
     label: "auth.profile",
     description: "settings.profile_description",
-    icon: "mdi-account-cog",
+    icon: UserCog,
     color: "indigo",
     route: { name: "profile" },
   },
@@ -83,7 +98,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     name: "frontend",
     label: "settings.frontend",
     description: "settings.frontend_description",
-    icon: "mdi-palette",
+    icon: Palette,
     color: "orange",
     route: { name: "frontendsettings" },
   },
@@ -91,7 +106,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     name: "users",
     label: "auth.user_management",
     description: "settings.users_description",
-    icon: "mdi-account-multiple",
+    icon: Users,
     color: "teal",
     route: { name: "usersettings" },
     requiresScope: Scope.USERS_READ,
@@ -100,7 +115,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     name: "remote_access",
     label: "settings.remote_access",
     description: "settings.remote_access_description",
-    icon: "mdi-cloud-lock",
+    icon: CloudCog,
     color: "deep-purple",
     route: { name: "remoteaccesssettings" },
     requiresScope: Scope.SYSTEM_MANAGE,
@@ -109,7 +124,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     name: "system",
     label: "settings.system",
     description: "settings.system_description",
-    icon: "mdi-server",
+    icon: Server,
     color: "purple",
     route: { name: "systemsettings" },
     requiresScope: Scope.CONFIG_CORE_WRITE,
@@ -118,7 +133,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     name: "about",
     label: "settings.about",
     description: "settings.about_description",
-    icon: "mdi-information-outline",
+    icon: Info,
     color: "grey-darken-1",
     route: { name: "aboutsettings" },
   },

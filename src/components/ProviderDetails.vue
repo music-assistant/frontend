@@ -5,122 +5,149 @@
       :menu-items="toolbarMenuItems"
       @title-clicked="toggleExpand"
     />
-    <v-divider />
+    <Separator />
     <Container v-if="expanded">
-      <v-list>
-        <ListItem
+      <ItemGroup>
+        <Item
           v-for="providerMapping in itemDetails?.provider_mappings"
           :key="providerMapping.provider_instance"
-          :disabled="
-            !providerMapping.available ||
-            !api.getProvider(providerMapping.provider_instance)
+          v-hold="
+            (evt: Event) =>
+              openMappingMenu(evt, providerMapping.provider_instance)
           "
-          show-menu-btn
-          :menu-button-label="`${$t('more_options')}: ${getProviderName(providerMapping)}`"
-          @menu.stop="(evt) => onMenu(evt, providerMapping)"
+          size="sm"
+          class="gap-7 rounded-(--radius-lg) border-0 px-2"
+          :class="{
+            'pointer-events-none opacity-50':
+              !isMappingAvailable(providerMapping),
+          }"
+          @click.right.prevent="
+            openMappingMenu($event, providerMapping.provider_instance)
+          "
         >
-          <template #prepend>
+          <ItemMedia>
             <ProviderIcon
               :domain="providerMapping.provider_domain"
               :size="30"
               class="mx-[10px]"
             />
-          </template>
-          <template #title>
-            {{ getProviderName(providerMapping) }}
-            <v-chip
-              v-if="providerMapping.in_library"
-              size="x-small"
-              density="compact"
-              class="ml-2"
-              :title="$t('tooltip.in_provider_library')"
-            >
-              {{ $t("library") }}
-            </v-chip>
-          </template>
-          <template #subtitle>
-            <span v-if="itemDetails.media_type == MediaType.TRACK"
-              >{{ providerMapping.audio_format.content_type }} |
-              {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{
-                providerMapping.audio_format.bit_depth
-              }}
-              bits |
-            </span>
-            <a
-              v-if="
-                providerMapping.url &&
-                !providerMapping.provider_domain.startsWith('file')
-              "
-              style="opacity: 0.4"
-              :title="$t('tooltip.open_provider_link')"
-              @click.prevent="openLinkInNewTab(providerMapping.url)"
-              >{{ getProviderUri(providerMapping) }}</a
-            >
-            <span v-else style="opacity: 0.4" :title="$t('tooltip.copy_uri')">{{
-              getProviderUri(providerMapping)
-            }}</span>
-          </template>
-          <template #append>
-            <!-- hi res icon -->
-            <v-img
+          </ItemMedia>
+          <ItemContent class="min-w-0 gap-0.5">
+            <ItemTitle class="text-base">
+              {{ getProviderName(providerMapping) }}
+              <Badge
+                v-if="providerMapping.in_library"
+                variant="secondary"
+                class="border-0 bg-muted px-1.5 text-[10px] text-muted-foreground uppercase"
+                :title="$t('tooltip.in_provider_library')"
+              >
+                {{ $t("library") }}
+              </Badge>
+            </ItemTitle>
+            <ItemDescription class="truncate">
+              <span v-if="itemDetails.media_type == MediaType.TRACK"
+                >{{ providerMapping.audio_format.content_type }} |
+                {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{
+                  providerMapping.audio_format.bit_depth
+                }}
+                bits |
+              </span>
+              <a
+                v-if="
+                  providerMapping.url &&
+                  !providerMapping.provider_domain.startsWith('file')
+                "
+                class="cursor-pointer opacity-60"
+                :title="$t('tooltip.open_provider_link')"
+                @click.prevent="openLinkInNewTab(providerMapping.url)"
+                >{{ getProviderUri(providerMapping) }}</a
+              >
+              <span v-else class="opacity-60" :title="$t('tooltip.copy_uri')">{{
+                getProviderUri(providerMapping)
+              }}</span>
+            </ItemDescription>
+          </ItemContent>
+          <ItemActions class="gap-1">
+            <img
               v-if="providerMapping.audio_format.bit_depth > 16"
               :src="iconHiRes"
               width="30"
               alt=""
-              :class="
-                $vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'
-              "
+              class="mx-2 invert dark:invert-0"
             />
-            <!-- play sample button -->
-            <div class="d-flex align-center ga-2">
-              <v-btn
-                v-if="
-                  getBreakpointValue('bp1') &&
-                  itemDetails.media_type == MediaType.TRACK
-                "
-                variant="plain"
-                :icon="
-                  demoPlayer[
-                    `${providerMapping.provider_instance}.${providerMapping.item_id}`
-                  ]
-                    ? 'mdi-pause'
-                    : 'mdi-play-circle'
-                "
-                :title="$t('tooltip.play_sample')"
-                @click="playBtnClick(providerMapping)"
-              />
-            </div>
-          </template>
-        </ListItem>
-        <!-- virtual mapping for library -->
-        <ListItem
-          v-if="itemDetails.provider == 'library'"
-          show-menu-btn
-          :menu-button-label="`${$t('more_options')}: ${$t('music_assistant_library')}`"
-          @menu.stop="
-            (evt) =>
-              onMenu(evt, {
-                provider_instance: 'library',
-                provider_domain: 'library',
-                item_id: itemDetails.item_id,
-                available: true,
-                url: null,
-              })
-          "
-        >
-          <template #prepend>
-            <ProviderIcon domain="library" :size="30" class="mx-[10px]" />
-          </template>
-          <template #title>{{ $t("music_assistant_library") }}</template>
-          <template #subtitle>
-            <span
-              >library://{{ itemDetails.media_type }}/{{
-                itemDetails.item_id
-              }}</span
+            <Button
+              v-if="
+                getBreakpointValue('bp1') &&
+                itemDetails.media_type == MediaType.TRACK
+              "
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('tooltip.play_sample')"
+              :title="$t('tooltip.play_sample')"
+              :disabled="!isMappingAvailable(providerMapping)"
+              @click="playBtnClick(providerMapping)"
             >
-          </template>
-        </ListItem>
-      </v-list>
+              <span
+                class="flex size-6 items-center justify-center rounded-full bg-foreground/60 text-background"
+              >
+                <Pause
+                  v-if="isSamplePlaying(providerMapping)"
+                  class="size-3"
+                  fill="currentColor"
+                  :stroke-width="0"
+                />
+                <Play
+                  v-else
+                  class="play-icon-centered size-3"
+                  fill="currentColor"
+                  :stroke-width="0"
+                />
+              </span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="`${$t('more_options')}: ${getProviderName(providerMapping)}`"
+              :disabled="!isMappingAvailable(providerMapping)"
+              @click.stop="
+                openMappingMenu($event, providerMapping.provider_instance)
+              "
+            >
+              <MoreVertical class="size-4" />
+            </Button>
+          </ItemActions>
+        </Item>
+        <!-- virtual mapping for library -->
+        <Item
+          v-if="itemDetails.provider == 'library'"
+          v-hold="(evt: Event) => openMappingMenu(evt, LIBRARY_INSTANCE)"
+          size="sm"
+          class="gap-7 rounded-(--radius-lg) border-0 px-2"
+          @click.right.prevent="openMappingMenu($event, LIBRARY_INSTANCE)"
+        >
+          <ItemMedia>
+            <ProviderIcon domain="library" :size="30" class="mx-[10px]" />
+          </ItemMedia>
+          <ItemContent class="min-w-0 gap-0.5">
+            <ItemTitle class="text-base">
+              {{ $t("music_assistant_library") }}
+            </ItemTitle>
+            <ItemDescription class="truncate">
+              library://{{ itemDetails.media_type }}/{{ itemDetails.item_id }}
+            </ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="`${$t('more_options')}: ${$t('music_assistant_library')}`"
+              @click.stop="openMappingMenu($event, LIBRARY_INSTANCE)"
+            >
+              <MoreVertical class="size-4" />
+            </Button>
+          </ItemActions>
+        </Item>
+      </ItemGroup>
     </Container>
   </section>
   <GenreExclusionManager
@@ -134,13 +161,36 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, ChevronUp, DatabaseSearch } from "@lucide/vue";
+import {
+  ChevronDown,
+  ChevronUp,
+  DatabaseSearch,
+  ExternalLink,
+  Link,
+  MoreVertical,
+  Pause,
+  Play,
+  Trash2,
+} from "@lucide/vue";
 import Container from "@/components/Container.vue";
 import GenreExclusionManager from "@/components/genre/GenreExclusionManager.vue";
-import ListItem from "@/components/ListItem.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { iconHiRes } from "@/components/QualityDetailsBtn.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
+import { Separator } from "@/components/ui/separator";
+import { getEventPosition } from "@/composables/useHoldToOpenMenu";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { copyToClipboard } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -206,6 +256,19 @@ type ProviderMappingRef = Pick<
   "provider_instance" | "provider_domain" | "item_id" | "available" | "url"
 >;
 
+const isSamplePlaying = function (providerMapping: ProviderMapping) {
+  return !!demoPlayer[
+    `${providerMapping.provider_instance}.${providerMapping.item_id}`
+  ];
+};
+
+const isMappingAvailable = function (providerMapping: ProviderMapping) {
+  return (
+    providerMapping.available &&
+    !!api.getProvider(providerMapping.provider_instance)
+  );
+};
+
 const getProviderUri = function (mapping: ProviderMappingRef) {
   return `${mapping.provider_instance}://${props.itemDetails.media_type}/${mapping.item_id}`;
 };
@@ -217,6 +280,29 @@ const copyUriToClipboard = async function (uri: string) {
   } else {
     toast.error(t("uri_copy_failed"));
   }
+};
+
+const LIBRARY_INSTANCE = "library";
+
+const libraryMapping = computed<ProviderMappingRef>(() => ({
+  provider_instance: LIBRARY_INSTANCE,
+  provider_domain: LIBRARY_INSTANCE,
+  item_id: props.itemDetails.item_id,
+  available: true,
+  url: null,
+}));
+
+// v-hold keeps its first handler, so look the mapping up when the menu opens
+const openMappingMenu = function (evt: Event, providerInstance: string) {
+  if (providerInstance === LIBRARY_INSTANCE) {
+    onMenu(evt, libraryMapping.value);
+    return;
+  }
+  const mapping = props.itemDetails.provider_mappings.find(
+    (x) => x.provider_instance === providerInstance,
+  );
+  if (!mapping || !isMappingAvailable(mapping)) return;
+  onMenu(evt, mapping);
 };
 
 const getProviderName = function (providerMapping: ProviderMapping) {
@@ -238,11 +324,10 @@ const toggleExpand = function () {
 };
 
 const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
-  const mouseEvt = evt as MouseEvent;
-  const menuItems = [
+  const menuItems: ContextMenuItem[] = [
     {
       label: t("tooltip.copy_uri"),
-      icon: "mdi-link",
+      icon: Link,
       action: () => {
         if (providerMapping) {
           copyUriToClipboard(getProviderUri(providerMapping));
@@ -257,7 +342,7 @@ const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
   ) {
     menuItems.push({
       label: t("tooltip.open_provider_link"),
-      icon: "mdi-open-in-new",
+      icon: ExternalLink,
       action: () => {
         openLinkInNewTab(providerMapping.url!);
       },
@@ -270,7 +355,7 @@ const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
   ) {
     menuItems.push({
       label: t("remove_provider_mapping"),
-      icon: "mdi-delete",
+      icon: Trash2,
       action: () => {
         eventbus.emit("deleteConfirmationDialog", {
           title: t("remove_provider_mapping"),
@@ -288,10 +373,11 @@ const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
   }
 
   // open the contextmenu by emitting the event
+  const position = getEventPosition(evt);
   eventbus.emit("contextmenu", {
     items: menuItems,
-    posX: mouseEvt.clientX,
-    posY: mouseEvt.clientY,
+    posX: position.x,
+    posY: position.y,
   });
 };
 
