@@ -3,7 +3,8 @@
     ref="playButton"
     :text="playButtonText"
     :label="playButtonLabel"
-    :truncate="shrinkLabel"
+    :class="{ 'min-w-0 max-w-full': isPhone }"
+    :truncate="shrinkLabel || isPhone"
     :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
     :loading="playActionInProgress"
     @click="playButtonClick()"
@@ -43,20 +44,28 @@ const playButton = useTemplateRef<ComponentPublicInstance>("playButton");
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
-// what the button does, naming the player it plays on
-const playButtonLabel = computed(() => {
+// the longest player name the play sentence shows on a wider screen
+const SENTENCE_NAME_LENGTH = 20;
+
+/** "Play on <player>", with the player's name cut at `nameLength`. */
+const playSentence = function (nameLength: number) {
   const player = store.activePlayer;
   if (!player) return $t("play");
   if (isBuiltinPlayer(player)) return $t("play_on_this_device");
-  return $t("play_on_player", { player: getPlayerName(player, 20) });
-});
+  return $t("play_on_player", { player: getPlayerName(player, nameLength) });
+};
 
-// a phone has room for the player's name only, which the play icon leads
+// what the button does, with the player's full name for screen readers and the
+// tooltip
+const playButtonLabel = computed(() => playSentence(Infinity));
+
+// a phone has room for the player's name only, which the play icon leads and
+// the button ellipsizes when it is long
 const playButtonText = computed(() => {
   const player = store.activePlayer;
-  if (!player || !isPhone.value) return playButtonLabel.value;
+  if (!player || !isPhone.value) return playSentence(SENTENCE_NAME_LENGTH);
   if (isBuiltinPlayer(player)) return $t("this_device");
-  return getPlayerName(player);
+  return getPlayerName(player, Infinity);
 });
 
 // The queue playMedia targets are resolved directly, since activePlayerQueue is

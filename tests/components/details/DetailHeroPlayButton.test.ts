@@ -29,8 +29,9 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 const MenuButtonStub = {
-  props: ["text", "label"],
-  template: '<button :label="label">{{ text }}</button>',
+  props: ["text", "label", "truncate"],
+  template:
+    '<button :label="label" :data-truncate="String(truncate)">{{ text }}</button>',
 };
 
 function player(overrides: Partial<Player> = {}): Player {
@@ -110,5 +111,46 @@ describe("DetailHeroPlayButton", () => {
   it("still just plays on a phone without a player", () => {
     screen.isPhone = true;
     expect(mountButton().text()).toBe("play");
+  });
+
+  it("names a long player in full for screen readers on a phone", () => {
+    screen.isPhone = true;
+    storeMock.activePlayer = player({ name: "Kitchen ceiling speaker left" });
+
+    const button = mountButton().find("button");
+    expect(button.text()).toBe("Kitchen ceiling speaker left");
+    expect(button.attributes("label")).toBe(
+      'play_on_player:{"player":"Kitchen ceiling speaker left"}',
+    );
+  });
+
+  it("names a long player in full for screen readers on a wider screen", () => {
+    storeMock.activePlayer = player({ name: "Kitchen ceiling speaker left" });
+
+    const button = mountButton().find("button");
+    // the visible sentence trims the name, the label does not
+    expect(button.text()).toBe(
+      'play_on_player:{"player":"Kitchen ceiling spea..."}',
+    );
+    expect(button.attributes("label")).toBe(
+      'play_on_player:{"player":"Kitchen ceiling speaker left"}',
+    );
+  });
+
+  it("lets the button shrink and ellipsize the name on every phone header", () => {
+    screen.isPhone = true;
+    storeMock.activePlayer = player();
+
+    expect(mountButton().find("button").attributes("data-truncate")).toBe(
+      "true",
+    );
+  });
+
+  it("keeps the label whole where the header doesn't ask it to shrink", () => {
+    storeMock.activePlayer = player();
+
+    expect(mountButton().find("button").attributes("data-truncate")).toBe(
+      "false",
+    );
   });
 });
