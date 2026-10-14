@@ -2,7 +2,8 @@
   <span>
     <template v-for="(target, index) in targets" :key="target.uri">
       <span v-if="index > 0">{{ separator }}</span>
-      <!-- stopped so the row underneath doesn't open the track as well -->
+      <!-- stopped so the row underneath doesn't open the track or its menu as
+           well; a right click keeps the browser's own link menu -->
       <RouterLink
         :to="{
           name: routeName,
@@ -10,6 +11,7 @@
         }"
         class="text-inherit no-underline hover:text-foreground hover:underline focus-visible:underline focus-visible:outline-none"
         @click.stop
+        @contextmenu.stop
       >
         {{ target.name }}
       </RouterLink>

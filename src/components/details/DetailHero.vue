@@ -124,13 +124,17 @@ const heroTitle = computed(
 useIntersectionObserver(toolbarSentinel, ([entry]) => {
   toolbarInView.value = entry?.isIntersecting ?? true;
 });
-// the title counts as gone once it is under the pinned bar
+// the page scroller starts below the safe area, as the pinned bar's content
+// does, so the title counts as gone once it is under the bar
+const pageScroller = computed(
+  () => heroBody.value?.closest<HTMLElement>(".content-section") ?? undefined,
+);
 useIntersectionObserver(
   heroTitle,
   ([entry]) => {
     titleInView.value = entry?.isIntersecting ?? true;
   },
-  { rootMargin: `-${STICKY_BAR_HEIGHT}px 0px 0px 0px` },
+  { root: pageScroller, rootMargin: `-${STICKY_BAR_HEIGHT}px 0px 0px 0px` },
 );
 
 const backdropStyle = computed(() =>
