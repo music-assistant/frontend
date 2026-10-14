@@ -834,15 +834,26 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     expect(requestedStep.value).toBeNull();
   });
 
-  it("keeps the step of a paused setup once the banner is dismissed", async () => {
-    const { open, pause, dismissPaused, paused, requestedStep } =
-      await loadOnboarding();
+  it("keeps a paused setup aside once the banner is dismissed", async () => {
+    const {
+      open,
+      pause,
+      dismissPaused,
+      paused,
+      showPausedBanner,
+      requestedStep,
+    } = await loadOnboarding();
     open("players");
     await pause();
 
     dismissPaused();
-    expect(paused.value).toBe(false);
+    expect(showPausedBanner.value).toBe(false);
+    expect(paused.value).toBe(true);
     expect(requestedStep.value).toBe("players");
+
+    open();
+    await pause();
+    expect(showPausedBanner.value).toBe(true);
   });
 
   it("lets go when the user leaves the page while a pause is still saving", async () => {

@@ -494,8 +494,13 @@ const pending = computed(() => pendingSteps(ctx.value));
 // page and the sign-in flow.
 const active = ref(false);
 const requestedStep = ref<OnboardingStepId | null>(null);
-// a setup put aside, which the paused banner offers to resume until dismissed
+// a setup put aside, which a reconnect leaves aside
 const paused = ref(false);
+// the paused banner was dismissed, which hides it but keeps the setup aside
+const pausedBannerDismissed = ref(false);
+const showPausedBanner = computed(
+  () => paused.value && !pausedBannerDismissed.value,
+);
 // counts each time the wizard opens, so a pause only acts on the opening it
 // started on and never on a wizard resumed while its save was on its way
 let opening = 0;
@@ -503,6 +508,7 @@ let opening = 0;
 function open(step?: OnboardingStepId): void {
   if (step) requestedStep.value = step;
   paused.value = false;
+  pausedBannerDismissed.value = false;
   if (!active.value) opening++;
   active.value = true;
 }
@@ -510,6 +516,7 @@ function open(step?: OnboardingStepId): void {
 function close(): void {
   active.value = false;
   paused.value = false;
+  pausedBannerDismissed.value = false;
   requestedStep.value = null;
 }
 
@@ -560,7 +567,7 @@ async function pause(options?: { force?: boolean }): Promise<void> {
 
 /** Stop offering to resume a paused setup; the settings still resume it. */
 function dismissPaused(): void {
-  paused.value = false;
+  pausedBannerDismissed.value = true;
 }
 
 /** Answer the setup's intent question, and say whether the answer landed. */
@@ -700,6 +707,7 @@ export function useOnboarding() {
     close,
     pause,
     paused,
+    showPausedBanner,
     dismissPaused,
     setStepGuard,
     intent,

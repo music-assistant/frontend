@@ -3,7 +3,7 @@ import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { onbState, openMock } = vi.hoisted(() => ({
-  onbState: { paused: { value: true } as { value: boolean } },
+  onbState: { showPausedBanner: { value: true } as { value: boolean } },
   openMock: vi.fn(),
 }));
 
@@ -11,13 +11,13 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 vi.mock("@/composables/useOnboarding", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
-  onbState.paused = ref(true);
+  onbState.showPausedBanner = ref(true);
   return {
     useOnboarding: () => ({
-      paused: onbState.paused,
+      showPausedBanner: onbState.showPausedBanner,
       open: openMock,
       dismissPaused: () => {
-        onbState.paused.value = false;
+        onbState.showPausedBanner.value = false;
       },
     }),
   };
@@ -27,7 +27,7 @@ const banner = (wrapper: ReturnType<typeof mount>) =>
   wrapper.find("[data-testid=setup-paused-banner]");
 
 beforeEach(() => {
-  onbState.paused.value = true;
+  onbState.showPausedBanner.value = true;
   openMock.mockReset();
 });
 
@@ -35,7 +35,7 @@ describe("SetupPausedBanner", () => {
   it("shows only while the setup is paused", () => {
     expect(banner(mount(SetupPausedBanner)).exists()).toBe(true);
 
-    onbState.paused.value = false;
+    onbState.showPausedBanner.value = false;
     expect(banner(mount(SetupPausedBanner)).exists()).toBe(false);
   });
 
@@ -52,7 +52,7 @@ describe("SetupPausedBanner", () => {
 
     await wrapper.get("[data-testid=setup-paused-dismiss]").trigger("click");
 
-    expect(onbState.paused.value).toBe(false);
+    expect(onbState.showPausedBanner.value).toBe(false);
     expect(banner(wrapper).exists()).toBe(false);
   });
 });

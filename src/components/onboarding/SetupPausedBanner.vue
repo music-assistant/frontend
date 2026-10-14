@@ -1,6 +1,6 @@
 <template>
   <Alert
-    v-if="paused"
+    v-if="showPausedBanner"
     role="status"
     class="fixed right-(--device-inset-right) bottom-(--bottom-bars-height) z-2002 m-4 flex w-auto max-w-md items-center gap-3 py-3 pr-3 pl-4 shadow-lg max-sm:left-(--device-inset-left) [&>svg]:translate-y-0"
     data-testid="setup-paused-banner"
@@ -40,5 +40,5 @@ import { CirclePause, X } from "@lucide/vue";
 
 // a paused setup stays offered on every page until it is resumed or dismissed;
 // dismissed, it is still picked up again from the settings
-const { paused, open, dismissPaused } = useOnboarding();
+const { showPausedBanner, open, dismissPaused } = useOnboarding();
 </script>
