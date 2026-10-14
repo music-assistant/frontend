@@ -1,6 +1,9 @@
 <!-- eslint-disable vue/no-v-for-template-key-on-child -->
 <template>
-  <section v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)">
+  <section
+    v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)"
+    :class="{ 'flex min-h-full flex-1 flex-col': fillHeight && showEmptyState }"
+  >
     <!-- eslint-disable vue/no-template-shadow -->
     <!-- inset so the title lines up with the row artwork and the menu with the rows' menu -->
     <Toolbar
@@ -119,6 +122,7 @@
       v-if="expanded"
       ref="listContainer"
       :variant="viewMode == 'list' ? 'default' : 'panel'"
+      :class="{ 'flex flex-1 flex-col': fillHeight && showEmptyState }"
       style="overflow: hidden"
     >
       <TrackTableHeader
@@ -283,21 +287,17 @@
       </v-infinite-scroll>
 
       <!-- subtle message shown when there are no items to display -->
-      <Empty
-        v-if="!loading && !loadError && pagedItems.length == 0"
-        class="border-none gap-3 py-8"
-      >
-        <EmptyMedia variant="icon">
-          <FilterX v-if="hasActiveFilters" class="h-5 w-5" />
-          <ListMusic v-else class="h-5 w-5" />
-        </EmptyMedia>
-        <EmptyDescription>
-          {{
-            hasActiveFilters
-              ? $t("no_content_filter")
-              : emptyMessage || $t("no_content")
-          }}
-        </EmptyDescription>
+      <Empty v-if="showEmptyState" class="border-none">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <FilterX v-if="hasActiveFilters" />
+            <ListMusic v-else />
+          </EmptyMedia>
+          <EmptyTitle>{{ $t("no_content") }}</EmptyTitle>
+          <EmptyDescription v-if="emptyDescription">
+            {{ emptyDescription }}
+          </EmptyDescription>
+        </EmptyHeader>
         <EmptyContent v-if="hasActiveFilters && params.search">
           <Button variant="outline" size="sm" @click="redirectSearch">
             {{ $t("try_global_search") }}
@@ -360,7 +360,9 @@ import {
   Empty,
   EmptyContent,
   EmptyDescription,
+  EmptyHeader,
   EmptyMedia,
+  EmptyTitle,
 } from "@/components/ui/empty";
 import { SearchInput } from "@/components/ui/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -528,6 +530,8 @@ export interface Props {
   hideOnEmpty?: boolean;
   // custom message shown when the listing has no items and no active filters
   emptyMessage?: string;
+  // the listing is the whole view, so the empty state centres in the page height
+  fillHeight?: boolean;
   showLibraryOnlyFilter?: boolean;
   showGenreFilter?: boolean;
   showHideEmptyFilter?: boolean;
@@ -567,6 +571,7 @@ const props = withDefaults(defineProps<Props>(), {
   parentItem: undefined,
   hideOnEmpty: false,
   emptyMessage: undefined,
+  fillHeight: false,
   showSearchButton: undefined,
   showRefreshButton: undefined,
   showSelectButton: undefined,
@@ -1184,6 +1189,14 @@ const saveProviderFilter = () =>
     "providerFilter",
     params.value.provider,
   );
+
+const showEmptyState = computed(
+  () => !loading.value && !loadError.value && pagedItems.value.length == 0,
+);
+
+const emptyDescription = computed(() =>
+  hasActiveFilters.value ? t("no_content_filter_hint") : props.emptyMessage,
+);
 
 // a listing scoped to the library (its own "library" option selected) that comes
 // up empty gives no hint that a provider's catalog is one filter switch away —

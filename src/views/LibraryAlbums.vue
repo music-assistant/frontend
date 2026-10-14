@@ -1,5 +1,6 @@
 <template>
   <ItemsListing
+    fill-height
     itemtype="albums"
     path="libraryalbums"
     :show-provider="false"

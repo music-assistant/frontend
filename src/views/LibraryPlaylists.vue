@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     ref="listingRef"
+    fill-height
     itemtype="playlists"
     path="libraryplaylists"
     :show-duration="false"
