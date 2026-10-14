@@ -23,6 +23,8 @@ function getSortName(
   preferSortName = false,
 ): string {
   if (!item) return "";
+  // names (incl. translated folder/media names) are resolved server-side, so we sort
+  // by item.name, falling back to sort_name when explicitly preferred.
   if (preferSortName && "sort_name" in item && item.sort_name) {
     return item.sort_name;
   }
@@ -30,11 +32,16 @@ function getSortName(
 }
 
 function getDateAdded(item: MediaItemType): number {
+  // milliseconds since the epoch; items without a (valid) date sort as the oldest
   const dateAdded = (item as MediaItem).date_added;
   const time = dateAdded ? Date.parse(dateAdded) : 0;
   return Number.isNaN(time) ? 0 : time;
 }
 
+/**
+ * In-memory filter for (smaller) item sets that do not have server side paging
+ * and filtering.
+ */
 export function filterAndSortItems(
   items: MediaItemType[],
   params: ItemListingFilterParams,
@@ -137,6 +144,8 @@ export function filterAndSortItems(
       (a, b) => ((b as Track).position || 0) - ((a as Track).position || 0),
     );
   }
+  // Client-side "date added" sort for playlist tracks (a stable sort, so
+  // tracks added together keep their playlist order).
   if (params.sortBy === "timestamp_added") {
     result.sort((a, b) => getDateAdded(a) - getDateAdded(b));
   }
