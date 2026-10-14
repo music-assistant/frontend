@@ -29,8 +29,8 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 const MenuButtonStub = {
-  props: ["text"],
-  template: "<button>{{ text }}</button>",
+  props: ["text", "label"],
+  template: '<button :label="label">{{ text }}</button>',
 };
 
 function player(overrides: Partial<Player> = {}): Player {
@@ -87,10 +87,28 @@ describe("DetailHeroPlayButton", () => {
     expect(mountButton().text()).toBe("play_on_this_device");
   });
 
-  it("just says play on a phone, where the player bar names the player", () => {
+  it("shows only the player's name on a phone", () => {
     screen.isPhone = true;
+    storeMock.activePlayer = player({ name: "Kitchen speaker" });
+
+    const button = mountButton();
+    expect(button.text()).toBe("Kitchen speaker");
+    // the whole sentence stays for screen readers and the tooltip
+    expect(button.find("button").attributes("label")).toBe(
+      'play_on_player:{"player":"Kitchen speaker"}',
+    );
+  });
+
+  it("calls the player of this device by that name on a phone", () => {
+    screen.isPhone = true;
+    storeMock.companionPlayerId = "kitchen";
     storeMock.activePlayer = player();
 
+    expect(mountButton().text()).toBe("this_device");
+  });
+
+  it("still just plays on a phone without a player", () => {
+    screen.isPhone = true;
     expect(mountButton().text()).toBe("play");
   });
 });

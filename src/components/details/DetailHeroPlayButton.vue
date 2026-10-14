@@ -2,6 +2,7 @@
   <MenuButton
     ref="playButton"
     :text="playButtonText"
+    :label="playButtonLabel"
     :truncate="shrinkLabel"
     :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
     :loading="playActionInProgress"
@@ -42,12 +43,20 @@ const playButton = useTemplateRef<ComponentPublicInstance>("playButton");
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
-// a phone has no room for the player's name, which the player bar shows anyway
-const playButtonText = computed(() => {
+// what the button does, naming the player it plays on
+const playButtonLabel = computed(() => {
   const player = store.activePlayer;
-  if (!player || isPhone.value) return $t("play");
+  if (!player) return $t("play");
   if (isBuiltinPlayer(player)) return $t("play_on_this_device");
   return $t("play_on_player", { player: getPlayerName(player, 20) });
+});
+
+// a phone has room for the player's name only, which the play icon leads
+const playButtonText = computed(() => {
+  const player = store.activePlayer;
+  if (!player || !isPhone.value) return playButtonLabel.value;
+  if (isBuiltinPlayer(player)) return $t("this_device");
+  return getPlayerName(player);
 });
 
 // The queue playMedia targets are resolved directly, since activePlayerQueue is
