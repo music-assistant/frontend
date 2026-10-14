@@ -12,7 +12,10 @@
         v-if="backdropStyle"
         :key="backdrop"
         class="detail-hero__backdrop"
-        :class="{ 'detail-hero__backdrop--blurred': blurBackdrop }"
+        :class="[
+          { 'detail-hero__backdrop--blurred': blurBackdrop },
+          { 'scale-[1.04] blur-[6px]': softenBackdrop && !blurBackdrop },
+        ]"
         :style="backdropStyle"
       ></div>
     </Transition>
@@ -86,6 +89,8 @@ export interface Props {
   // for a backdrop that only stands in for missing wide art, so it reads as
   // colour rather than a picture
   blurBackdrop?: boolean;
+  // a light blur for a real picture, so the artwork and text in front stand out
+  softenBackdrop?: boolean;
   height?: number;
   phoneHeight?: number;
   // off for a page with a fixed layout, which leaves "Edit rows" out of the menu
@@ -95,6 +100,7 @@ const props = withDefaults(defineProps<Props>(), {
   item: undefined,
   backdrop: undefined,
   blurBackdrop: false,
+  softenBackdrop: false,
   height: 440,
   phoneHeight: 340,
   editableRows: true,
