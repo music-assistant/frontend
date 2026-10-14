@@ -424,6 +424,7 @@
                   <LineChartCard
                     :title="$t('plays_over_time')"
                     :data="playsOverTime"
+                    :period="activeStatPeriod"
                     :loading="chartsLoading"
                   />
                 </div>

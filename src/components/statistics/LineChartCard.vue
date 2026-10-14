@@ -32,6 +32,7 @@ import {
   createAxisConfig,
   CHART_COLORS,
 } from "./chartConfig";
+import { formatPlaysOverTimeLabel } from "./statisticsRequests";
 
 ChartJS.register(
   CategoryScale,
@@ -51,6 +52,7 @@ interface TimeSeriesPoint {
 interface Props {
   title: string;
   data: TimeSeriesPoint[];
+  period: string;
   loading?: boolean;
 }
 
@@ -63,14 +65,19 @@ const accessibleSummary = computed(() =>
   $t("statistics_chart_accessible_summary", {
     title: props.title,
     values: props.data
-      .map((point) => `${point.timestamp}: ${point.value} ${$t("plays")}`)
+      .map(
+        (point) =>
+          `${formatPlaysOverTimeLabel(point.timestamp, props.period)}: ${point.value} ${$t("plays")}`,
+      )
       .join(", "),
   }),
 );
 
 const chartData = computed<ChartData<"line">>(() => {
   return {
-    labels: props.data.map((item) => item.timestamp),
+    labels: props.data.map((item) =>
+      formatPlaysOverTimeLabel(item.timestamp, props.period),
+    ),
     datasets: [
       {
         label: $t("plays"),

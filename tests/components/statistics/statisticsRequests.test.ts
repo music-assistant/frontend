@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createLatestRequestGate,
+  formatPlaysOverTimeLabel,
   getPlaysOverTimeGranularity,
   loadStatisticsChartData,
 } from "@/components/statistics/statisticsRequests";
@@ -10,6 +11,13 @@ describe("statistics requests", () => {
     expect(getPlaysOverTimeGranularity("today")).toBe("hour");
     expect(getPlaysOverTimeGranularity("week")).toBe("day");
     expect(getPlaysOverTimeGranularity("all_time")).toBe("day");
+  });
+
+  it("shows only the hour for today and keeps dates for longer periods", () => {
+    const timestamp = "2026-10-14 09:00:00";
+
+    expect(formatPlaysOverTimeLabel(timestamp, "today")).toBe("09:00");
+    expect(formatPlaysOverTimeLabel(timestamp, "week")).toBe(timestamp);
   });
 
   it("marks earlier requests stale and invalidates requests when hidden", () => {

@@ -22,6 +22,15 @@ export function getPlaysOverTimeGranularity(period: string): "hour" | "day" {
   return period === "today" ? "hour" : "day";
 }
 
+export function formatPlaysOverTimeLabel(
+  timestamp: string,
+  period: string,
+): string {
+  if (period !== "today") return timestamp;
+  const time = timestamp.split(" ")[1];
+  return time ? time.slice(0, 5) : timestamp;
+}
+
 export function createLatestRequestGate() {
   let generation = 0;
 
