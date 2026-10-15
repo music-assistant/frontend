@@ -2220,6 +2220,9 @@ defineExpose({
   sortBy: computed(() => params.value.sortBy),
   sortField: computed(() => params.value.sortField),
   sortDirection: computed(() => params.value.sortDirection),
+  pagedItems,
+  allItemsReceived,
+  hasActiveFilters,
   reload: () => loadData(true, true),
   // whether the item is absent while every item of the unfiltered listing is
   // loaded; a filter leaves items out on purpose

@@ -347,7 +347,7 @@ const loadTracks = async function (params: LoadDataParams) {
     params.favoritesOnly,
   );
   if (itemDetails.value?.uri !== album.uri) return [];
-  if (!params.libraryOnly && !params.search) {
+  if (!params.libraryOnly && !params.search && !params.favoritesOnly) {
     albumTracks.value = params.offset
       ? [...(albumTracks.value ?? []), ...tracks]
       : tracks;

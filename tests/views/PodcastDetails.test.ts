@@ -61,6 +61,11 @@ vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
     props: ["parentItem", "loadPagedData", "path", "sortListing"],
+    data: () => ({
+      pagedItems: [] as PodcastEpisode[],
+      allItemsReceived: false,
+      hasActiveFilters: false,
+    }),
     template: '<div data-listing data-row="episodes" />',
   },
 }));
@@ -228,6 +233,44 @@ describe("PodcastDetails", () => {
     expect(listing(wrapper).props("sortListing")).toBe(
       "podcast_episodes" as ListingType,
     );
+  });
+
+  it("includes restored pages when counting the final episode page", async () => {
+    const wrapper = await mountDetails();
+    const restoredListing = listing(wrapper).vm as unknown as {
+      pagedItems: PodcastEpisode[];
+      allItemsReceived: boolean;
+    };
+    restoredListing.pagedItems = EPISODES.slice(0, 2);
+    mockGetPodcastEpisodes.mockResolvedValueOnce([EPISODES[2]]);
+
+    await loadEpisodes(wrapper, {
+      offset: 2,
+      limit: 2,
+      sortBy: "position:desc",
+      search: "",
+    });
+    await flushPromises();
+
+    expect(hero(wrapper).props("episodeCount")).toBe(EPISODES.length);
+  });
+
+  it("uses a completed restored total but not a completed filtered page", async () => {
+    const wrapper = await mountDetails();
+    const restoredListing = listing(wrapper).vm as unknown as {
+      pagedItems: PodcastEpisode[];
+      allItemsReceived: boolean;
+      hasActiveFilters: boolean;
+    };
+    restoredListing.pagedItems = EPISODES;
+    restoredListing.allItemsReceived = true;
+    await flushPromises();
+
+    expect(hero(wrapper).props("episodeCount")).toBe(EPISODES.length);
+
+    restoredListing.hasActiveFilters = true;
+    await flushPromises();
+    expect(hero(wrapper).props("episodeCount")).toBeUndefined();
   });
 
   it("loads episode pages with the server-side played filter and sort", async () => {

@@ -53,6 +53,7 @@ describe("CollectionDetails", () => {
       limit: 20,
       sortBy: "original",
       search: "chapter",
+      favoritesOnly: true,
     };
 
     await (
@@ -66,6 +67,7 @@ describe("CollectionDetails", () => {
       "chapter",
       20,
       40,
+      true,
     );
     expect(listing.props("parentItem")).toMatchObject({
       item_id: "audiobook___Test Collection",

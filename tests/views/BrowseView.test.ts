@@ -228,8 +228,8 @@ describe("BrowseView folder header", () => {
         suppressGlobalError: true,
       },
       undefined,
-      undefined,
       0,
+      undefined,
       undefined,
       undefined,
     );

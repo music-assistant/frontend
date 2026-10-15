@@ -1376,12 +1376,14 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
+    favorite_only?: boolean,
   ): Promise<MediaCollection<Audiobook>> {
     return this.sendCommand("music/audiobooks/get_collection", {
       item_id,
       search,
       limit,
       offset,
+      favorite_only,
     });
   }
 
@@ -2544,6 +2546,7 @@ export class MusicAssistantApi {
       media,
       option,
       start_item: options.start_item,
+      sort_by: options.sort_by,
       sort_field: options.sort_field,
       sort_direction: options.sort_direction,
       start_from_beginning: options.start_from_beginning,

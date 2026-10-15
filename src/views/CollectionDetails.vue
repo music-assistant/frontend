@@ -58,6 +58,7 @@ const loadCollectionItems = async function (params: LoadDataParams) {
       params.search,
       params.limit,
       params.offset,
+      params.favoritesOnly,
     );
     return itemDetails.value.items;
   }

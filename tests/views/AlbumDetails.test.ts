@@ -348,6 +348,25 @@ describe("AlbumDetails", () => {
     );
   });
 
+  it("keeps the album total when the listing is filtered to favorites", async () => {
+    const wrapper = await mountDetails();
+    const albumTracks = [
+      track({ item_id: "1", duration: 120 }),
+      track({ item_id: "2", duration: 180 }),
+    ];
+    mockLoadAlbumTracks.mockResolvedValue(albumTracks);
+
+    await loadTracks(wrapper);
+    expect(hero(wrapper).props("trackCount")).toBe(2);
+    expect(hero(wrapper).props("duration")).toBe(300);
+
+    mockLoadAlbumTracks.mockResolvedValue([albumTracks[0]]);
+    await loadTracks(wrapper, { favoritesOnly: true, limit: 1 });
+
+    expect(hero(wrapper).props("trackCount")).toBe(2);
+    expect(hero(wrapper).props("duration")).toBe(300);
+  });
+
   it("sends the artist shelf to the artist's own albums listing", async () => {
     const wrapper = await mountDetails(
       album({

@@ -536,6 +536,7 @@ describe("MusicAssistantApi error handling", () => {
       SortField.NAME,
       SortDirection.ASC,
       [AlbumType.SINGLE, AlbumType.EP],
+      true,
     );
 
     expect(transport.lastCommand.command).toBe("music/artists/artist_albums");
@@ -549,6 +550,7 @@ describe("MusicAssistantApi error handling", () => {
       sort_field: SortField.NAME,
       sort_direction: SortDirection.ASC,
       album_types: [AlbumType.SINGLE, AlbumType.EP],
+      favorite_only: true,
     });
 
     transport.receive({
@@ -565,6 +567,7 @@ describe("MusicAssistantApi error handling", () => {
       "chapter 2",
       20,
       40,
+      true,
     );
 
     expect(transport.lastCommand.command).toBe(
@@ -575,6 +578,7 @@ describe("MusicAssistantApi error handling", () => {
       search: "chapter 2",
       limit: 20,
       offset: 40,
+      favorite_only: true,
     });
 
     transport.receive({

@@ -210,6 +210,9 @@ describe("PlaylistDetails", () => {
       item.item_id,
       item.provider,
       true,
+      undefined,
+      undefined,
+      0,
     );
     expect(
       wrapper
@@ -242,6 +245,9 @@ describe("PlaylistDetails", () => {
       item.item_id,
       item.provider,
       false,
+      undefined,
+      undefined,
+      0,
     );
     expect(
       wrapper
@@ -275,6 +281,9 @@ describe("PlaylistDetails", () => {
       item.item_id,
       item.provider,
       true,
+      undefined,
+      undefined,
+      0,
     );
   });
 });

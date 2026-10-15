@@ -24,6 +24,7 @@
         <!-- the podcast's episodes -->
         <ItemsListing
           v-else-if="rowId === 'episodes'"
+          ref="episodesListing"
           itemtype="podcastepisodes"
           :parent-item="itemDetails"
           :show-provider="false"
@@ -92,8 +93,15 @@ const updateAvailable = ref(false);
 const itemDetails = ref<Podcast>();
 // how many episodes the podcast holds, counted from the loaded episodes since
 // the stored total_episodes of a library podcast is never updated
-const episodeCount = ref<number>();
+const countedEpisodeCount = ref<number>();
 const countedEpisodes = ref<PodcastEpisode[]>([]);
+const episodesListing = ref<InstanceType<typeof ItemsListing>[]>();
+const episodeCount = computed(() => {
+  const listing = episodesListing.value?.[0];
+  return listing?.allItemsReceived && !listing.hasActiveFilters
+    ? listing.pagedItems.length
+    : countedEpisodeCount.value;
+});
 const rowsEditorOpen = ref(false);
 
 // every row applies to every user; the editor lists the same set
@@ -125,7 +133,7 @@ const loadItemDetails = async function () {
   const { itemId, provider } = props;
   // the previous podcast must not stay actionable under the new route
   itemDetails.value = undefined;
-  episodeCount.value = undefined;
+  countedEpisodeCount.value = undefined;
   countedEpisodes.value = [];
   updateAvailable.value = false;
   rowsEditorOpen.value = false;
@@ -165,10 +173,17 @@ const loadPodcastEpisodes = async function (params: LoadDataParams) {
     !params.search &&
     !params.hideFullyPlayed
   ) {
+    const restoredItems =
+      (episodesListing.value?.[0]?.pagedItems as
+        PodcastEpisode[] | undefined) ?? [];
+    const previousItems =
+      restoredItems.length > countedEpisodes.value.length
+        ? restoredItems
+        : countedEpisodes.value;
     countedEpisodes.value = params.offset
-      ? [...countedEpisodes.value, ...episodes]
+      ? [...previousItems, ...episodes]
       : episodes;
-    episodeCount.value =
+    countedEpisodeCount.value =
       episodes.length < params.limit ? countedEpisodes.value.length : undefined;
   }
   return episodes;
