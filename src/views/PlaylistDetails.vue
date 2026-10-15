@@ -68,8 +68,10 @@
           </ItemsListing>
         </template>
 
+        <!-- spaced from the track list above as the shelf is from the row below -->
         <PlaylistFeaturedArtists
           v-else-if="rowId === 'featured_artists'"
+          class="mt-[32px] max-md:mt-[16px]"
           :tracks="playlistTracks"
           @edit-rows="rowsEditorOpen = true"
         />
