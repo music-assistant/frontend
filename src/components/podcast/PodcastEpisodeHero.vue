@@ -54,11 +54,7 @@
           </div>
 
           <div class="podcast-episode-hero__actions">
-            <DetailHeroPlayButton
-              class="podcast-episode-hero__play"
-              :item="item"
-              :parent-item="parentPodcast"
-            />
+            <DetailHeroPlayButton :item="item" :parent-item="parentPodcast" />
             <template v-if="showSteppers">
               <DetailHeroButton
                 :icon="ChevronLeft"
@@ -329,9 +325,6 @@ const gotoPodcast = function () {
   }
   .podcast-episode-hero__actions {
     gap: 10px;
-  }
-  .podcast-episode-hero__actions .podcast-episode-hero__play {
-    flex: 1;
   }
   .podcast-episode-hero__badge {
     width: 44px;

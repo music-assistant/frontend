@@ -1,72 +1,97 @@
 <template>
-  <MenuButton
-    ref="playButton"
-    :text="playButtonText"
-    :label="playButtonLabel"
-    :class="{ 'min-w-0 max-w-full': isPhone }"
-    :truncate="shrinkLabel || isPhone"
-    :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
-    :loading="playActionInProgress"
-    @click="playButtonClick()"
-    @menu="playButtonClick(true)"
-  />
+  <div ref="wrapper" class="relative flex max-w-full min-w-0">
+    <MenuButton
+      ref="playButton"
+      class="max-w-full min-w-0"
+      truncate
+      :text="playButtonText"
+      :label="playSentence"
+      :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
+      :loading="playActionInProgress"
+      @click="playButtonClick()"
+      @menu="playButtonClick(true)"
+    />
+    <!-- the full sentence, out of sight, to know whether it fits the row -->
+    <MenuButton
+      ref="sentenceProbe"
+      class="pointer-events-none invisible absolute top-0 left-0 w-max"
+      aria-hidden="true"
+      inert
+      :text="playSentence"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
 import MenuButton from "@/components/MenuButton.vue";
 import { handlePlayBtnClick } from "@/helpers/media_item_actions";
 import { getPlayerName, isBuiltinPlayer } from "@/helpers/players";
+import { roomInRow } from "@/helpers/room_in_row";
 import { api } from "@/plugins/api";
 import type { MediaItemType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
-import { computed, useTemplateRef, type ComponentPublicInstance } from "vue";
+import { useResizeObserver } from "@vueuse/core";
+import {
+  computed,
+  nextTick,
+  onMounted,
+  ref,
+  useTemplateRef,
+  watch,
+  type ComponentPublicInstance,
+} from "vue";
 
 export interface Props {
   item: MediaItemType;
   // container the item belongs to, which gives the play menu its options for
   // playing on from the item (e.g. the podcast an episode belongs to)
   parentItem?: MediaItemType;
-  // let the button shrink and ellipsis its label to fit; for a row that cannot
-  // wrap, so its other buttons keep their place as the header narrows
-  shrinkLabel?: boolean;
   // the order the item's tracks are listed in on its page, to play them that way
   tracksSortBy?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
   parentItem: undefined,
-  shrinkLabel: false,
   tracksSortBy: undefined,
 });
 
+const wrapper = useTemplateRef<HTMLElement>("wrapper");
 const playButton = useTemplateRef<ComponentPublicInstance>("playButton");
+const sentenceProbe = useTemplateRef<ComponentPublicInstance>("sentenceProbe");
 
-const isPhone = computed(() => isPhoneSizedScreen());
-
-// the longest player name the play sentence shows on a wider screen
-const SENTENCE_NAME_LENGTH = 20;
-
-/** "Play on <player>", with the player's name cut at `nameLength`. */
-const playSentence = function (nameLength: number) {
+// what the button does, naming the player in full; also its label for screen
+// readers and the tooltip
+const playSentence = computed(() => {
   const player = store.activePlayer;
   if (!player) return $t("play");
   if (isBuiltinPlayer(player)) return $t("play_on_this_device");
-  return $t("play_on_player", { player: getPlayerName(player, nameLength) });
-};
+  return $t("play_on_player", { player: getPlayerName(player, Infinity) });
+});
 
-// what the button does, with the player's full name for screen readers and the
-// tooltip
-const playButtonLabel = computed(() => playSentence(Infinity));
-
-// a phone has room for the player's name only, which the play icon leads and
-// the button ellipsizes when it is long
-const playButtonText = computed(() => {
+// the player's name alone, for a row without room for the whole sentence
+const playerName = computed(() => {
   const player = store.activePlayer;
-  if (!player || !isPhone.value) return playSentence(SENTENCE_NAME_LENGTH);
+  if (!player) return $t("play");
   if (isBuiltinPlayer(player)) return $t("this_device");
   return getPlayerName(player, Infinity);
 });
+
+const sentenceFits = ref(true);
+
+const playButtonText = computed(() =>
+  sentenceFits.value ? playSentence.value : playerName.value,
+);
+
+/** Whether the whole sentence fits the room the row leaves the button. */
+const measure = function () {
+  const probe = sentenceProbe.value?.$el as HTMLElement | undefined;
+  if (!wrapper.value || !probe) return;
+  sentenceFits.value = probe.offsetWidth <= roomInRow(wrapper.value);
+};
+
+onMounted(measure);
+useResizeObserver(() => wrapper.value?.parentElement, measure);
+watch(playSentence, () => nextTick(measure));
 
 // The queue playMedia targets are resolved directly, since activePlayerQueue is
 // undefined while an external source is active.

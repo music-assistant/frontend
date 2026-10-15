@@ -16,10 +16,9 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
-const screen = vi.hoisted(() => ({ isPhone: false }));
-vi.mock("@/plugins/breakpoint", () => ({
-  isPhoneSizedScreen: () => screen.isPhone,
-}));
+// jsdom does no layout, so the probe measures 0px wide: any room fits it
+const row = vi.hoisted(() => ({ room: 0 }));
+vi.mock("@/helpers/room_in_row", () => ({ roomInRow: () => row.room }));
 vi.mock("@/helpers/media_item_actions", () => ({
   handlePlayBtnClick: vi.fn(),
 }));
@@ -29,9 +28,8 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 const MenuButtonStub = {
-  props: ["text", "label", "truncate"],
-  template:
-    '<button :label="label" :data-truncate="String(truncate)">{{ text }}</button>',
+  props: ["text", "label"],
+  template: '<button :label="label">{{ text }}</button>',
 };
 
 function player(overrides: Partial<Player> = {}): Player {
@@ -51,22 +49,28 @@ function mountButton() {
   });
 }
 
+/** The button people see; the other one only measures the sentence. */
+const visible = (wrapper: ReturnType<typeof mountButton>) =>
+  wrapper.findAll("button")[0];
+
 describe("DetailHeroPlayButton", () => {
   beforeEach(() => {
     apiMock.players = {};
     storeMock.activePlayer = undefined;
     storeMock.companionPlayerId = undefined;
-    screen.isPhone = false;
+    row.room = 0;
   });
 
   it("plays without naming a player when none is selected", () => {
-    expect(mountButton().text()).toBe("play");
+    expect(visible(mountButton()).text()).toBe("play");
   });
 
-  it("names the selected player", () => {
+  it("names the selected player when the sentence fits", () => {
     storeMock.activePlayer = player();
 
-    expect(mountButton().text()).toBe('play_on_player:{"player":"Kitchen"}');
+    expect(visible(mountButton()).text()).toBe(
+      'play_on_player:{"player":"Kitchen"}',
+    );
   });
 
   it("names the selected player with the players synced to it", () => {
@@ -75,82 +79,46 @@ describe("DetailHeroPlayButton", () => {
     };
     storeMock.activePlayer = player({ group_members: ["kitchen", "office"] });
 
-    expect(mountButton().text()).toBe('play_on_player:{"player":"Kitchen +1"}');
+    expect(visible(mountButton()).text()).toBe(
+      'play_on_player:{"player":"Kitchen +1"}',
+    );
   });
 
   it("uses its own sentence for the player of this device", () => {
-    apiMock.players = {
-      office: player({ player_id: "office", available: true }),
-    };
     storeMock.companionPlayerId = "kitchen";
-    storeMock.activePlayer = player({ group_members: ["kitchen", "office"] });
+    storeMock.activePlayer = player();
 
-    expect(mountButton().text()).toBe("play_on_this_device");
+    expect(visible(mountButton()).text()).toBe("play_on_this_device");
   });
 
-  it("shows only the player's name on a phone", () => {
-    screen.isPhone = true;
-    storeMock.activePlayer = player({ name: "Kitchen speaker" });
+  it("keeps a long player's name whole in the sentence", () => {
+    storeMock.activePlayer = player({ name: "Kitchen ceiling speaker left" });
 
-    const button = mountButton();
-    expect(button.text()).toBe("Kitchen speaker");
+    expect(visible(mountButton()).text()).toBe(
+      'play_on_player:{"player":"Kitchen ceiling speaker left"}',
+    );
+  });
+
+  it("shows only the player's name when the row has no room for the sentence", async () => {
+    row.room = -1;
+    storeMock.activePlayer = player({ name: "Kitchen ceiling speaker left" });
+    const wrapper = mountButton();
+    await wrapper.vm.$nextTick();
+
+    expect(visible(wrapper).text()).toBe("Kitchen ceiling speaker left");
     // the whole sentence stays for screen readers and the tooltip
-    expect(button.find("button").attributes("label")).toBe(
-      'play_on_player:{"player":"Kitchen speaker"}',
+    expect(visible(wrapper).attributes("label")).toBe(
+      'play_on_player:{"player":"Kitchen ceiling speaker left"}',
     );
   });
 
-  it("calls the player of this device by that name on a phone", () => {
-    screen.isPhone = true;
+  it("calls the player of this device by that name when space is short", async () => {
+    row.room = -1;
     storeMock.companionPlayerId = "kitchen";
     storeMock.activePlayer = player();
+    const wrapper = mountButton();
+    await wrapper.vm.$nextTick();
 
-    expect(mountButton().text()).toBe("this_device");
-  });
-
-  it("still just plays on a phone without a player", () => {
-    screen.isPhone = true;
-    expect(mountButton().text()).toBe("play");
-  });
-
-  it("names a long player in full for screen readers on a phone", () => {
-    screen.isPhone = true;
-    storeMock.activePlayer = player({ name: "Kitchen ceiling speaker left" });
-
-    const button = mountButton().find("button");
-    expect(button.text()).toBe("Kitchen ceiling speaker left");
-    expect(button.attributes("label")).toBe(
-      'play_on_player:{"player":"Kitchen ceiling speaker left"}',
-    );
-  });
-
-  it("names a long player in full for screen readers on a wider screen", () => {
-    storeMock.activePlayer = player({ name: "Kitchen ceiling speaker left" });
-
-    const button = mountButton().find("button");
-    // the visible sentence trims the name, the label does not
-    expect(button.text()).toBe(
-      'play_on_player:{"player":"Kitchen ceiling spea..."}',
-    );
-    expect(button.attributes("label")).toBe(
-      'play_on_player:{"player":"Kitchen ceiling speaker left"}',
-    );
-  });
-
-  it("lets the button shrink and ellipsize the name on every phone header", () => {
-    screen.isPhone = true;
-    storeMock.activePlayer = player();
-
-    expect(mountButton().find("button").attributes("data-truncate")).toBe(
-      "true",
-    );
-  });
-
-  it("keeps the label whole where the header doesn't ask it to shrink", () => {
-    storeMock.activePlayer = player();
-
-    expect(mountButton().find("button").attributes("data-truncate")).toBe(
-      "false",
-    );
+    expect(visible(wrapper).text()).toBe("this_device");
   });
 });

@@ -83,7 +83,7 @@
           </div>
 
           <div class="track-hero__actions">
-            <DetailHeroPlayButton class="track-hero__play" :item="item" />
+            <DetailHeroPlayButton :item="item" />
             <DetailHeroButton
               v-if="radioRelevant(item)"
               :icon="Orbit"
@@ -348,9 +348,6 @@ const gotoItem = function (
   }
   .track-hero__actions {
     gap: 10px;
-  }
-  .track-hero__actions .track-hero__play {
-    flex: 1;
   }
   .track-hero__badge {
     width: 44px;
