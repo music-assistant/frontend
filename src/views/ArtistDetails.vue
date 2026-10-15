@@ -422,6 +422,7 @@ const loadArtistAudiobooks = async function (params: LoadDataParams) {
     params.offset,
     params.sortField,
     params.sortDirection,
+    params.provider?.[0],
   );
 };
 
@@ -442,6 +443,7 @@ const loadAllAudiobooks = async function (params: LoadDataParams) {
     params.offset,
     params.sortField,
     params.sortDirection,
+    providerId,
   );
 };
 

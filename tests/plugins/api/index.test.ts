@@ -606,6 +606,7 @@ describe("MusicAssistantApi error handling", () => {
       40,
       SortField.NAME,
       SortDirection.ASC,
+      "qobuz_1",
     );
 
     expect(transport.lastCommand.command).toBe(
@@ -622,6 +623,7 @@ describe("MusicAssistantApi error handling", () => {
       offset: 40,
       sort_field: SortField.NAME,
       sort_direction: SortDirection.ASC,
+      provider_filter: "qobuz_1",
     });
 
     transport.receive({

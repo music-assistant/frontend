@@ -1855,6 +1855,54 @@ describe("ItemsListing server sort options", () => {
     );
   });
 
+  it("keeps row and hero playback sort after a failed sort and a cached restore", async () => {
+    const loadPagedData = vi
+      .fn()
+      .mockResolvedValueOnce([track({ item_id: "track-1" })])
+      .mockRejectedValueOnce(new Error("sort failed"));
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.librarytracks.tracks": { viewMode: "panel" },
+      },
+    });
+    const props = {
+      itemtype: "tracks",
+      path: "librarytracks",
+      sortListing: ListingType.LIBRARY_TRACKS,
+      loadPagedData,
+      showGenreFilter: false,
+      restoreState: true,
+    };
+    const listing = mountListingRaw(props);
+    await flushPromises();
+    const playCountChip = listing
+      .findAll("button")
+      .find((button) => button.text().includes("sort.play_count"));
+    await playCountChip!.trigger("click");
+    await flushPromises();
+
+    const expectDisplayedSort = (
+      wrapper: ReturnType<typeof mountListingRaw>,
+    ) => {
+      const playback = wrapper.vm as unknown as {
+        sortField: SortField;
+        sortDirection: SortDirection;
+      };
+      expect(playback.sortField).toBe(SortField.SORT_NAME);
+      expect(playback.sortDirection).toBe(SortDirection.ASC);
+      const row = wrapper.findComponent({ name: "PanelviewItem" });
+      expect(row.attributes("sort-field")).toBe(SortField.SORT_NAME);
+      expect(row.attributes("sort-direction")).toBe(SortDirection.ASC);
+    };
+    expectDisplayedSort(listing);
+    listing.unmount();
+
+    const restored = mountListingRaw(props);
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
+    expectDisplayedSort(restored);
+  });
+
   it("reloads the selected chip sort after a pending first page finishes", async () => {
     let resolveFirstPage!: (items: Track[]) => void;
     const firstPage = new Promise<Track[]>((resolve) => {

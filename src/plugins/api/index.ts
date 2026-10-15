@@ -926,6 +926,7 @@ export class MusicAssistantApi {
     offset?: number,
     sort_field?: SortField,
     sort_direction?: SortDirection,
+    provider_filter?: string,
   ): Promise<(Audiobook | MediaCollection<Audiobook>)[]> {
     return this.sendCommand("music/artists/artist_audiobooks", {
       item_id,
@@ -938,6 +939,7 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+      provider_filter,
     });
   }
 

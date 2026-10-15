@@ -15,6 +15,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
 import { track } from "../fixtures/track";
+import { providerMapping } from "../fixtures/providerMapping";
 
 const {
   mockGetArtist,
@@ -387,6 +388,46 @@ describe("ArtistDetails", () => {
       40,
       SortField.NAME,
       SortDirection.ASC,
+      undefined,
+    );
+  });
+
+  it("forwards the selected audiobook source as a server filter", async () => {
+    const item = artist({
+      item_id: "author-1",
+      provider: "library",
+      artist_type: ArtistType.AUTHOR,
+      provider_mappings: [
+        providerMapping({
+          item_id: "provider-author",
+          provider_domain: "qobuz",
+          provider_instance: "qobuz_1",
+        }),
+      ],
+    });
+    const wrapper = await mountDetails(item);
+    await wrapper
+      .findComponent({ name: "ItemsListing" })
+      .props("loadPagedData")({
+      offset: 0,
+      limit: 20,
+      sortBy: "name:asc",
+      search: "",
+      provider: ["qobuz_1"],
+    });
+
+    expect(mockGetArtistAudiobooks).toHaveBeenCalledWith(
+      "provider-author",
+      "qobuz_1",
+      ArtistType.AUTHOR,
+      undefined,
+      undefined,
+      "",
+      20,
+      0,
+      undefined,
+      undefined,
+      "qobuz_1",
     );
   });
 });

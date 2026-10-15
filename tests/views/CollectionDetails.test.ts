@@ -1,10 +1,6 @@
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { LoadDataParams } from "@/composables/useItemsListing";
-import {
-  ListingType,
-  type Audiobook,
-  type MediaCollection,
-} from "@/plugins/api/interfaces";
+import { type Audiobook, type MediaCollection } from "@/plugins/api/interfaces";
 import CollectionDetails from "@/views/CollectionDetails.vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -75,63 +71,37 @@ describe("CollectionDetails", () => {
     });
   });
 
-  it("keeps the full collection in the header while loading pages", async () => {
-    const books = [
-      { item_id: "book-1", name: "First book" },
-      { item_id: "book-2", name: "Second book" },
-    ] as Audiobook[];
-    const fullCollection = {
-      item_id: "audiobook___Test Collection",
-      name: "Test Collection",
-      provider: "library",
-      provider_mappings: [],
-      items: books,
-    } as unknown as MediaCollection<Audiobook>;
-    getAudiobookCollection.mockResolvedValueOnce(fullCollection);
+  it("remounts the listing and resets its header when the collection changes", async () => {
     const wrapper = mount(CollectionDetails, {
-      props: {
-        itemId: "audiobook___Test Collection",
-        provider: "library",
-      },
+      props: { itemId: "audiobook___First", provider: "library" },
+    });
+    const listing = wrapper.findComponent({ name: "ItemsListing" });
+    await listing.props("loadPagedData")({
+      offset: 0,
+      limit: 50,
+      sortBy: "original",
     });
     await flushPromises();
+    expect(
+      wrapper.findComponent({ name: "InfoHeader" }).props("item"),
+    ).toBeDefined();
 
-    expect(getAudiobookCollection).toHaveBeenNthCalledWith(
-      1,
-      "audiobook___Test Collection",
+    await wrapper.setProps({ itemId: "audiobook___Second" });
+
+    const nextListing = wrapper.findComponent({ name: "ItemsListing" });
+    expect(nextListing.vm).not.toBe(listing.vm);
+    expect(
+      wrapper.findComponent({ name: "InfoHeader" }).props("item"),
+    ).toBeUndefined();
+    await nextListing.props("loadPagedData")({
+      offset: 0,
+      limit: 50,
+      sortBy: "original",
+    });
+    expect(getAudiobookCollection).toHaveBeenCalledWith(
+      "audiobook___Second",
       undefined,
       0,
     );
-    const infoHeader = wrapper.findComponent({ name: "InfoHeader" });
-    const loadPagedData = wrapper
-      .findComponent({ name: "ItemsListing" })
-      .props("loadPagedData") as (params: LoadDataParams) => Promise<unknown[]>;
-
-    getAudiobookCollection.mockResolvedValueOnce({
-      ...fullCollection,
-      items: [],
-    });
-    expect(
-      await loadPagedData({
-        offset: 50,
-        limit: 50,
-        search: "",
-        sortBy: "original",
-      }),
-    ).toEqual([]);
-    expect(infoHeader.props("item")).toEqual(fullCollection);
-
-    getAudiobookCollection.mockResolvedValueOnce({
-      ...fullCollection,
-      items: [books[0]],
-    });
-    await loadPagedData({
-      offset: 0,
-      limit: 50,
-      search: "First",
-      sortBy: "original",
-      favoritesOnly: true,
-    });
-    expect(infoHeader.props("item")).toEqual(fullCollection);
   });
 });

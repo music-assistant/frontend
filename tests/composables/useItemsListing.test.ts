@@ -103,6 +103,38 @@ describe("useItemsListing", () => {
     expect(done).toHaveBeenCalledWith("ok");
   });
 
+  it("keeps the displayed sort when a new sort request fails", async () => {
+    const items = [track({ item_id: "track-1" })];
+    const loadPagedData = vi
+      .fn()
+      .mockResolvedValueOnce(items)
+      .mockRejectedValueOnce(new Error("sort failed"))
+      .mockResolvedValueOnce(items);
+    const listing = setupItemsListing({ loadPagedData });
+    listing.serverSortOptions.value = [
+      sortOption(SortField.NAME, SortDirection.ASC),
+      sortOption(SortField.DURATION, SortDirection.DESC),
+    ];
+    listing.params.value.sortBy = "name:asc";
+    await listing.loadData(true);
+
+    listing.params.value.sortBy = "duration:desc";
+    await listing.loadData(true, false, true);
+
+    expect(listing.loadError.value).toBe(true);
+    expect(listing.pagedItems.value).toEqual(items);
+    expect(listing.displayedSort.value).toEqual({
+      sortField: SortField.NAME,
+      sortDirection: SortDirection.ASC,
+    });
+
+    await listing.loadData(true);
+    expect(listing.displayedSort.value).toEqual({
+      sortField: SortField.DURATION,
+      sortDirection: SortDirection.DESC,
+    });
+  });
+
   it("sends no direction for a sort option without one", async () => {
     const loadPagedData = vi.fn().mockResolvedValue([]);
     const listing = setupItemsListing({ loadPagedData });

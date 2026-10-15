@@ -220,8 +220,8 @@
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
               :sort-by="props.sortListing ? undefined : params.sortBy"
-              :sort-field="params.sortField"
-              :sort-direction="params.sortDirection"
+              :sort-field="displayedSort.sortField"
+              :sort-direction="displayedSort.sortDirection"
               @select="onSelect"
             />
           </v-col>
@@ -244,8 +244,8 @@
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
               :sort-by="props.sortListing ? undefined : params.sortBy"
-              :sort-field="params.sortField"
-              :sort-direction="params.sortDirection"
+              :sort-field="displayedSort.sortField"
+              :sort-direction="displayedSort.sortDirection"
               @select="onSelect"
             />
           </v-col>
@@ -275,8 +275,8 @@
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
               :sort-by="props.sortListing ? undefined : params.sortBy"
-              :sort-field="params.sortField"
-              :sort-direction="params.sortDirection"
+              :sort-field="displayedSort.sortField"
+              :sort-direction="displayedSort.sortDirection"
               @select="onSelect"
             />
             <ListviewItem
@@ -298,8 +298,8 @@
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
               :sort-by="props.sortListing ? undefined : params.sortBy"
-              :sort-field="params.sortField"
-              :sort-direction="params.sortDirection"
+              :sort-field="displayedSort.sortField"
+              :sort-direction="displayedSort.sortDirection"
               @select="onSelect"
             />
           </template>
@@ -354,8 +354,8 @@
               parentItem,
               true,
               undefined,
-              params.sortField,
-              params.sortDirection,
+              displayedSort.sortField,
+              displayedSort.sortDirection,
             )
         "
       />
@@ -634,6 +634,7 @@ const getActiveTab = () => {
 
 const {
   allItemsReceived,
+  displayedSort,
   isDisposed,
   librarySorting,
   loadAllItems,
@@ -763,8 +764,8 @@ const listDisplayItems = computed<(MediaItemType | DiscHeader)[]>(() => {
     props.itemtype === "albumtracks" &&
     pagedItems.value.some((i) => (discNumber(i) ?? 0) > 1);
   const isTrackNumberAscending =
-    params.value.sortField === SortField.TRACK_NUMBER &&
-    params.value.sortDirection === SortDirection.ASC;
+    displayedSort.value.sortField === SortField.TRACK_NUMBER &&
+    displayedSort.value.sortDirection === SortDirection.ASC;
   if (!multiDisc || !isTrackNumberAscending) {
     return pagedItems.value;
   }
@@ -1924,6 +1925,7 @@ if (props.restoreState) {
       pagedItems: pagedItems.value,
       allItemsReceived: allItemsReceived.value,
       params: params.value,
+      displayedSort: displayedSort.value,
     };
   });
 }
@@ -2099,6 +2101,7 @@ onMounted(async () => {
     restoredFromPrevState = true;
     params.value = store.prevState.params;
     pagedItems.value = store.prevState.pagedItems;
+    displayedSort.value = store.prevState.displayedSort;
     allItemsReceived.value = store.prevState.allItemsReceived;
     if (props.sortListing) {
       params.value.sortBy = librarySorting.normalizeSortBy(params.value.sortBy);
@@ -2218,8 +2221,8 @@ const selectAll = async function () {
 
 defineExpose({
   sortBy: computed(() => params.value.sortBy),
-  sortField: computed(() => params.value.sortField),
-  sortDirection: computed(() => params.value.sortDirection),
+  sortField: computed(() => displayedSort.value.sortField),
+  sortDirection: computed(() => displayedSort.value.sortDirection),
   pagedItems,
   allItemsReceived,
   hasActiveFilters,

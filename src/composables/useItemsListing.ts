@@ -53,6 +53,7 @@ export interface StoredState {
   pagedItems: MediaItemType[];
   allItemsReceived: boolean;
   params: LoadDataParams;
+  displayedSort: Pick<LoadDataParams, "sortField" | "sortDirection">;
 }
 
 interface ItemsListingDataOptions {
@@ -76,6 +77,9 @@ export function useItemsListing(
     genreIds: undefined,
   });
   const pagedItems = ref<MediaItemType[]>([]);
+  const displayedSort = ref<
+    Pick<LoadDataParams, "sortField" | "sortDirection">
+  >({});
   const loading = ref(false);
   const newContentAvailable = ref(false);
   const allItemsReceived = ref(false);
@@ -182,9 +186,14 @@ export function useItemsListing(
           : currentSort?.direction;
 
       if (loadPagedData) {
+        const requestedSort = {
+          sortField: params.value.sortField,
+          sortDirection: params.value.sortDirection,
+        };
         const nextItems = await loadPagedData(params.value);
         if (params.value.offset) pagedItems.value.push(...nextItems);
         else pagedItems.value = nextItems;
+        displayedSort.value = requestedSort;
         if (Math.abs(nextItems.length - props.limit) > 10) {
           allItemsReceived.value = true;
         }
@@ -256,6 +265,7 @@ export function useItemsListing(
 
   return {
     allItemsReceived,
+    displayedSort,
     isDisposed,
     librarySorting,
     loadAllItems,
