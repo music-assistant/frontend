@@ -535,6 +535,9 @@ export enum ProviderFeature {
   ARTIST_TOPALBUMS = "artist_topalbums",
   AUTHOR_AUDIOBOOKS = "author_audiobooks",
   NARRATOR_AUDIOBOOKS = "narrator_audiobooks",
+  // audiobook bookmarks of the user: read, and add/rename/remove
+  AUDIOBOOK_BOOKMARKS = "audiobook_bookmarks",
+  AUDIOBOOK_BOOKMARKS_EDIT = "audiobook_bookmarks_edit",
   // library edit (=add/remove) feature per mediatype
   LIBRARY_ARTISTS_EDIT = "library_artists_edit",
   LIBRARY_ALBUMS_EDIT = "library_albums_edit",
@@ -1028,6 +1031,15 @@ export interface MediaItemChapter {
   name: string;
   start: number;
   end: number | null;
+}
+
+// a user's bookmark on one provider copy of a media item
+export interface MediaItemBookmark {
+  name: string;
+  start: number;
+  provider_instance_id: string;
+  provider_item_id: string;
+  stored_by_music_assistant: boolean;
 }
 
 // a collection groups related items, most commonly an audiobook series

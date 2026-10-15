@@ -144,6 +144,7 @@ export type Events = {
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;
   genreExcluded: void;
+  bookmarksChanged: void;
   "mobile-sidebar-open": void;
 };
 

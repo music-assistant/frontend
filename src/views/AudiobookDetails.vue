@@ -7,6 +7,9 @@
     :item-details="itemDetails"
   />
 
+  <!-- the user's bookmarks, per copy of the audiobook -->
+  <Bookmarks v-if="itemDetails" :item-details="itemDetails" />
+
   <!-- provider mapping details -->
   <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
 </template>
@@ -15,6 +18,7 @@
 import InfoHeader from "@/components/InfoHeader.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import Chapters from "@/components/Chapters.vue";
+import Bookmarks from "@/components/Bookmarks.vue";
 
 import type { Audiobook } from "@/plugins/api/interfaces";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";

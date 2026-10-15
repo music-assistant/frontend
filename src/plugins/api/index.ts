@@ -58,6 +58,7 @@ import {
   EventType,
   ItemMapping,
   ListingType,
+  MediaItemBookmark,
   MediaItemTypeOrItemMapping,
   MediaType,
   PlayableMediaItemType,
@@ -121,6 +122,8 @@ export interface PlayMediaOptions {
   queue_id?: string;
   sort_by?: string;
   start_from_beginning?: boolean;
+  /** Seconds to start an audiobook at, e.g. a bookmark, instead of its resume position. */
+  start_position?: number;
   /** Set playback order for immediate-play options; omit to let the server decide. */
   shuffle?: boolean;
   /** Keep the global error toast quiet for a caller that reports the failure itself. */
@@ -1233,6 +1236,42 @@ export class MusicAssistantApi {
     });
   }
 
+  public getAudiobookBookmarks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<MediaItemBookmark[]> {
+    return this.sendCommand("music/audiobooks/bookmarks", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public setAudiobookBookmark(
+    provider_instance_id: string,
+    provider_item_id: string,
+    start: number,
+    name: string,
+  ): Promise<void> {
+    return this.sendCommand("music/audiobooks/set_bookmark", {
+      provider_instance_id,
+      provider_item_id,
+      start,
+      name,
+    });
+  }
+
+  public removeAudiobookBookmark(
+    provider_instance_id: string,
+    provider_item_id: string,
+    start: number,
+  ): Promise<void> {
+    return this.sendCommand("music/audiobooks/remove_bookmark", {
+      provider_instance_id,
+      provider_item_id,
+      start,
+    });
+  }
+
   // Podcast related endpoints
   /**
    * Get Podcasts listing from the server.
@@ -2342,6 +2381,7 @@ export class MusicAssistantApi {
       sort_by: options.sort_by,
       start_from_beginning: options.start_from_beginning,
       shuffle: options.shuffle,
+      start_position: options.start_position,
     };
     return options.suppressGlobalError === undefined
       ? this.sendCommand("player_queues/play_media", payload)
