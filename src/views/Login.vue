@@ -821,9 +821,9 @@ const tryStoredTokenAuth = async (
  * Try to authenticate with a guest code (exchange for JWT)
  * This is the new short code system for party guest access
  *
- * The `error` of a rejected exchange is the server's plain-English reason
- * (rate limited, invalid or expired code); callers surface it as detail
- * alongside their own localized message.
+ * The `error` of a rejected exchange is the server's reason (rate limited,
+ * invalid or expired code), localized to the connection's locale; callers
+ * surface it as detail alongside their own message.
  */
 const tryGuestCodeAuth = async (
   code: string,
@@ -844,6 +844,7 @@ const tryGuestCodeAuth = async (
       access_token?: string;
       user?: { user_id: string; username: string; role: string };
       error?: string;
+      translation_key?: string;
     }>("auth/join_code/exchange", { code: code.toUpperCase() });
 
     if (!result.success || !result.access_token) {
@@ -1942,26 +1943,6 @@ const handleAuthenticationError = (error: unknown) => {
     errorMessage = t(
       "login.error_login_failed",
       "Login failed. Please check your credentials.",
-    );
-  }
-
-  // Transform technical error messages into user-friendly ones
-  if (
-    errorMessage.includes("Invalid credentials") ||
-    errorMessage.includes("Invalid username") ||
-    errorMessage.includes("Invalid password") ||
-    errorMessage.includes("Authentication failed") ||
-    errorMessage.toLowerCase().includes("unauthorized")
-  ) {
-    errorMessage = t(
-      "login.error_invalid_credentials",
-      "Couldn't sign you in. Please check your username and password.",
-    );
-  } else if (errorMessage.includes("Authentication required")) {
-    // This happens when subsequent API calls fail due to auth issues
-    errorMessage = t(
-      "login.error_invalid_credentials",
-      "Couldn't sign you in. Please check your username and password.",
     );
   }
 

@@ -23,11 +23,7 @@
       </template>
       <template v-if="currentFolder?.is_playable" #header>
         <div class="flex items-center gap-2 px-4 py-3">
-          <DetailHeroPlayButton
-            class="min-w-0"
-            shrink-label
-            :item="currentFolder"
-          />
+          <DetailHeroPlayButton :item="currentFolder" />
           <Button
             variant="outline"
             :disabled="!store.activePlayer"

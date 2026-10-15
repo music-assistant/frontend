@@ -195,3 +195,18 @@ describe("options field round-trip", () => {
     expect(draft.options).toEqual({ speed: 0.9 });
   });
 });
+
+describe("preset tags round-trip", () => {
+  it("keeps preset_id and preset_hash through decompileHost then compileHost", () => {
+    const host = makeHost({ preset_id: "rick", preset_hash: "abc123" });
+    const { host: compiled } = compileHost(decompileHost(host, []));
+    expect(compiled.preset_id).toBe("rick");
+    expect(compiled.preset_hash).toBe("abc123");
+  });
+
+  it("omits the preset keys for a draft without them", () => {
+    const { host } = compileHost(makeDraft());
+    expect(host).not.toHaveProperty("preset_id");
+    expect(host).not.toHaveProperty("preset_hash");
+  });
+});

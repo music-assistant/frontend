@@ -14,7 +14,7 @@
 
     <template v-if="item" #main>
       <div class="podcast-hero__main">
-        <div class="podcast-hero__cover">
+        <div class="podcast-hero__cover detail-hero-cover">
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
 

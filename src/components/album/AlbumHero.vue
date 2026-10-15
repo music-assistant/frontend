@@ -16,7 +16,7 @@
 
     <template v-if="item" #main>
       <div class="album-hero__main">
-        <div class="album-hero__cover">
+        <div class="album-hero__cover detail-hero-cover">
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
 
@@ -60,8 +60,6 @@
 
           <div class="album-hero__actions">
             <DetailHeroPlayButton
-              class="album-hero__play"
-              shrink-label
               :item="item"
               :tracks-sort-field="tracksSortField"
               :tracks-sort-direction="tracksSortDirection"
@@ -286,10 +284,6 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   gap: 8px;
   min-width: 0;
 }
-/* the play button gives way so Shuffle and Endless keep their place on the row */
-.album-hero__play {
-  min-width: 0;
-}
 
 @media (max-width: 768px) {
   .album-hero__main {
@@ -310,9 +304,6 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   }
   .album-hero__actions {
     gap: 10px;
-  }
-  .album-hero__actions .album-hero__play {
-    flex: 1;
   }
 }
 </style>
