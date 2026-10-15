@@ -100,6 +100,10 @@ const DEBUG = process.env.NODE_ENV === "development";
 // matches its own. Raise it when a change would break the previous stable server.
 export const MIN_SERVER_SCHEMA_VERSION = 86;
 
+// Server error codes of a missing or rejected sign-in; the login UI reports these itself
+const AUTHENTICATION_REQUIRED_ERROR_CODE = 20;
+const AUTHENTICATION_FAILED_ERROR_CODE = 21;
+
 export interface CommandOptions {
   /**
    * Skip the global console.error + error toast for an error result. Use for a
@@ -358,6 +362,7 @@ export class MusicAssistantApi {
       user?: User;
       success?: boolean;
       error?: string;
+      translation_key?: string;
     }>("auth/login", {
       username,
       password,
@@ -3108,14 +3113,9 @@ export class MusicAssistantApi {
         console.error("[resultMessage]", msg);
 
         // Don't show toast for authentication errors - they're handled by the login UI
-        const errorMsg = msg.details || "";
         const isAuthError =
-          errorMsg.includes("Invalid credentials") ||
-          errorMsg.includes("Invalid username") ||
-          errorMsg.includes("Invalid password") ||
-          errorMsg.includes("Authentication failed") ||
-          errorMsg.includes("Authentication required") ||
-          errorMsg.toLowerCase().includes("unauthorized");
+          msg.error_code === AUTHENTICATION_REQUIRED_ERROR_CODE ||
+          msg.error_code === AUTHENTICATION_FAILED_ERROR_CODE;
 
         if (!isAuthError) {
           toast.error(msg.details || String(msg.error_code));
