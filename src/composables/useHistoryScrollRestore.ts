@@ -5,10 +5,10 @@ import {
   onBeforeRouteUpdate,
   useRoute,
   useRouter,
-  type RouteLocationNormalized,
 } from "vue-router";
 
-// gives up when the page never grows tall enough, e.g. a row failed to load
+// how long the restore holds the page in place while rows load, or gives up
+// when the page never grows tall enough, e.g. a row failed to load
 const RESTORE_TIMEOUT_MS = 5000;
 
 const savedPositions = new Map<string, number>();
@@ -26,19 +26,24 @@ export function useHistoryScrollRestore(content: Ref<HTMLElement | undefined>) {
   let stopRestore: (() => void) | undefined;
   let returning = false;
 
-  const save = (from: RouteLocationNormalized) => {
+  // a history entry, so a later visit to the same URL keeps its own position;
+  // taken on arrival because going back has already moved history on leave
+  let entryKey = "";
+
+  const save = () => {
     const scroller = getScroller();
-    if (scroller) savedPositions.set(from.fullPath, scroller.scrollTop);
+    if (scroller) savedPositions.set(entryKey, scroller.scrollTop);
   };
-  onBeforeRouteLeave((_to, from) => save(from));
-  onBeforeRouteUpdate((_to, from) => save(from));
+  onBeforeRouteLeave(save);
+  onBeforeRouteUpdate(save);
 
   watch(
     () => route.fullPath,
     (fullPath) => {
       stopRestore?.();
       returning = false;
-      const top = savedPositions.get(fullPath);
+      entryKey = `${router.options.history.state.position}:${fullPath}`;
+      const top = savedPositions.get(entryKey);
       if (top && returnedByHistory(router)) {
         returning = true;
         startRestore(top);
@@ -54,8 +59,8 @@ export function useHistoryScrollRestore(content: Ref<HTMLElement | undefined>) {
     if (!scroller) return;
     const tryRestore = () => {
       if (scroller.scrollHeight - scroller.clientHeight < top) return;
+      // keeps going until the timeout, as rows above can still shrink once loaded
       scroller.scrollTop = top;
-      stopRestore?.();
     };
     const observer = new ResizeObserver(tryRestore);
     // the view's root may not be rendered yet when the route changes

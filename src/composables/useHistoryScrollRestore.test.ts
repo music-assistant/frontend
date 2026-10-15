@@ -5,7 +5,7 @@ import { useHistoryScrollRestore } from "./useHistoryScrollRestore";
 type Guard = (to: unknown, from: { fullPath: string }) => void;
 
 const { routerMock, guards, historyMock } = vi.hoisted(() => ({
-  routerMock: {},
+  routerMock: { options: { history: { state: { position: 1 } } } },
   guards: { leave: [] as Guard[] },
   historyMock: { returned: false },
 }));
@@ -45,6 +45,7 @@ describe("useHistoryScrollRestore", () => {
     guards.leave = [];
     resize = () => {};
     historyMock.returned = false;
+    routerMock.options.history.state.position = 1;
   });
 
   afterEach(() => {
@@ -68,6 +69,7 @@ describe("useHistoryScrollRestore", () => {
   }
 
   function leaveAt(top: number) {
+    guards.leave = [];
     const { scope } = mount();
     scroller.scrollTop = top;
     guards.leave.forEach((guard) => guard({}, { fullPath: route.fullPath }));
@@ -118,6 +120,35 @@ describe("useHistoryScrollRestore", () => {
     setContentHeight(2000);
     resize();
     expect(scroller.scrollTop).toBe(0);
+  });
+
+  it("keeps correcting the position while rows above shrink after loading", async () => {
+    leaveAt(1200);
+    historyMock.returned = true;
+    setContentHeight(2000);
+    mount();
+    await nextTick();
+
+    resize();
+    // scroll anchoring moves the page when a placeholder row shrinks
+    scroller.scrollTop = 1100;
+    setContentHeight(1900);
+    resize();
+    expect(scroller.scrollTop).toBe(1200);
+  });
+
+  it("keeps a separate position per visit to the same URL", async () => {
+    leaveAt(1200);
+    routerMock.options.history.state.position = 3;
+    leaveAt(0);
+    routerMock.options.history.state.position = 1;
+    historyMock.returned = true;
+    setContentHeight(2000);
+    mount();
+    await nextTick();
+
+    resize();
+    expect(scroller.scrollTop).toBe(1200);
   });
 
   it("leaves a fresh navigation alone", async () => {
