@@ -1,7 +1,10 @@
 <template>
   <header
     class="detail-hero"
-    :class="{ 'detail-hero--phone': isPhone }"
+    :class="{
+      'detail-hero--phone': isPhone,
+      'min-h-[calc(100vw+8rem)]': artworkLayout,
+    }"
     :style="{
       '--detail-hero-height': `${height}px`,
       '--detail-hero-phone-height': `${phoneHeight}px`,
@@ -10,12 +13,16 @@
     <Transition name="detail-hero-backdrop">
       <div
         v-if="backdropStyle"
-        :key="backdrop"
+        :key="shownBackdrop"
         class="detail-hero__backdrop"
-        :class="[
-          { 'detail-hero__backdrop--blurred': blurBackdrop },
-          { 'scale-[1.04] blur-[6px]': softenBackdrop && !blurBackdrop },
-        ]"
+        :class="
+          artworkLayout
+            ? 'bottom-auto aspect-square bg-top [mask-image:linear-gradient(to_bottom,black_55%,transparent)]'
+            : [
+                { 'detail-hero__backdrop--blurred': blurBackdrop },
+                { 'scale-[1.04] blur-[6px]': softenBackdrop && !blurBackdrop },
+              ]
+        "
         :style="backdropStyle"
       ></div>
     </Transition>
@@ -41,10 +48,22 @@
       <Skeleton class="h-12 w-80 max-w-[60%]" />
     </div>
     <div v-else ref="heroBody" class="detail-hero__body">
-      <div class="detail-hero__main">
+      <!-- over full-width artwork the page's own cover goes, and the rest is
+           centred beneath it -->
+      <div
+        class="detail-hero__main"
+        :class="{
+          'items-center text-center [&_*]:justify-center [&_.detail-hero-cover]:hidden':
+            artworkLayout,
+        }"
+      >
         <slot name="main"></slot>
       </div>
-      <div v-if="$slots.aside" class="detail-hero__aside">
+      <div
+        v-if="$slots.aside"
+        class="detail-hero__aside"
+        :class="{ 'items-center text-center': artworkLayout }"
+      >
         <slot name="aside"></slot>
       </div>
     </div>
@@ -74,7 +93,8 @@ import { useEscapeBack } from "@/composables/useEscapeBack";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
-import type { MediaItemType } from "@/plugins/api/interfaces";
+import { getImageThumbForItem } from "@/helpers/utils";
+import { ImageType, type MediaItemType } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { ArrowLeft, Rows3 } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
@@ -143,8 +163,18 @@ useIntersectionObserver(
   { root: pageScroller, rootMargin: `-${STICKY_BAR_HEIGHT}px 0px 0px 0px` },
 );
 
+// a phone shows the item's own artwork across the top, faded into the page
+const phoneArtwork = computed(() =>
+  isPhone.value ? getImageThumbForItem(props.item, ImageType.THUMB) : undefined,
+);
+const artworkLayout = computed(() => !!phoneArtwork.value);
+
+const shownBackdrop = computed(() => phoneArtwork.value ?? props.backdrop);
+
 const backdropStyle = computed(() =>
-  props.backdrop ? { backgroundImage: `url("${props.backdrop}")` } : undefined,
+  shownBackdrop.value
+    ? { backgroundImage: `url("${shownBackdrop.value}")` }
+    : undefined,
 );
 
 watch(() => props.item, buildMenu, { immediate: true });

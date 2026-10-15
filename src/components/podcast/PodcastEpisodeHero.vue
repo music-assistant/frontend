@@ -10,7 +10,7 @@
   >
     <template v-if="item" #main>
       <div class="podcast-episode-hero__main">
-        <div class="podcast-episode-hero__cover">
+        <div class="podcast-episode-hero__cover detail-hero-cover">
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
 
