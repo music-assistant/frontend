@@ -2236,6 +2236,9 @@ export interface AIRadioHost {
   section_ids: string[];
   section_order: AIRadioSectionOrderRule[];
   merge_section_id: string;
+  // set on an untouched copy of a bundled preset, which the server keeps in sync
+  preset_id?: string;
+  preset_hash?: string;
 }
 
 export interface AIRadioStation {
