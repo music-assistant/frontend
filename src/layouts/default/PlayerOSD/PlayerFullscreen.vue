@@ -300,58 +300,70 @@
                     ></div>
                   </div>
                 </div>
-                <!-- chapters for the current audiobook item -->
+                <!-- chapters of the current audiobook item, each followed by
+                     the bookmarks inside it -->
                 <div
                   v-if="
                     row.state === 'playing' &&
-                    row.item?.media_item?.metadata?.chapters?.length
+                    row.item?.media_item &&
+                    queueChapterGroups.length
                   "
                   class="queue-chapters"
                 >
-                  <button
-                    v-for="chapter in row.item.media_item.metadata.chapters"
-                    :key="chapter.position"
-                    type="button"
-                    class="queue-chapter"
-                    :class="{
-                      'queue-chapter--active': isActiveChapter(
-                        row.item,
-                        chapter,
-                      ),
-                    }"
-                    :aria-current="
-                      isActiveChapter(row.item, chapter) ? 'true' : undefined
-                    "
-                    @click.stop="chapterClicked(row.item.media_item, chapter)"
+                  <template
+                    v-for="group in queueChapterGroups"
+                    :key="group.chapter?.position ?? 'bookmarks'"
                   >
-                    <span class="queue-chapter__name">{{ chapter.name }}</span>
-                    <span v-if="chapter.end" class="queue-chapter__time">
-                      {{ formatDuration(chapter.end - chapter.start) }}
-                    </span>
-                  </button>
-                </div>
-                <!-- bookmarks of the copy that is playing -->
-                <div
-                  v-if="row.state === 'playing' && playingBookmarks.length"
-                  class="queue-chapters"
-                >
-                  <button
-                    v-for="bookmark in playingBookmarks"
-                    :key="bookmark.start"
-                    type="button"
-                    class="queue-chapter"
-                    @click.stop="bookmarkClicked(bookmark)"
-                  >
-                    <span class="queue-bookmark__label">
-                      <BookmarkIcon :size="14" class="queue-bookmark__icon" />
+                    <button
+                      v-if="group.chapter"
+                      type="button"
+                      class="queue-chapter"
+                      :class="{
+                        'queue-chapter--active': isActiveChapter(
+                          row.item,
+                          group.chapter,
+                        ),
+                      }"
+                      :aria-current="
+                        isActiveChapter(row.item, group.chapter)
+                          ? 'true'
+                          : undefined
+                      "
+                      @click.stop="
+                        chapterClicked(row.item.media_item, group.chapter)
+                      "
+                    >
                       <span class="queue-chapter__name">{{
-                        bookmark.name
+                        group.chapter.name
                       }}</span>
-                    </span>
-                    <span class="queue-chapter__time">
-                      {{ formatDuration(bookmark.start) }}
-                    </span>
-                  </button>
+                      <span
+                        v-if="group.chapter.end"
+                        class="queue-chapter__time"
+                      >
+                        {{
+                          formatDuration(
+                            group.chapter.end - group.chapter.start,
+                          )
+                        }}
+                      </span>
+                    </button>
+                    <button
+                      v-for="bookmark in group.bookmarks"
+                      :key="`bookmark-${bookmark.start}`"
+                      type="button"
+                      class="queue-chapter"
+                      :class="{ 'queue-bookmark--in-chapter': group.chapter }"
+                      @click.stop="bookmarkClicked(bookmark)"
+                    >
+                      <!-- no time: the chapters beside it show durations, not positions -->
+                      <span class="queue-bookmark__label">
+                        <BookmarkIcon :size="14" class="queue-bookmark__icon" />
+                        <span class="queue-chapter__name">{{
+                          bookmark.name
+                        }}</span>
+                      </span>
+                    </button>
+                  </template>
                 </div>
               </div>
               <!-- floating ghost of the dragged item; tracks the pointer -->
@@ -592,7 +604,10 @@ import {
   resolveActiveElapsedTime,
   resolveQueueElapsedTime,
 } from "@/helpers/activeElapsedTime";
-import { resolveCurrentChapter } from "@/helpers/chapters";
+import {
+  groupBookmarksByChapter,
+  resolveCurrentChapter,
+} from "@/helpers/chapters";
 import api from "@/plugins/api";
 import {
   MediaItemBookmark,
@@ -1361,6 +1376,13 @@ const bookmarkClicked = function (bookmark: MediaItemBookmark) {
   api.playerCommandSeek(player.player_id, bookmark.start);
 };
 
+const queueChapterGroups = computed(() =>
+  groupBookmarksByChapter(
+    store.curQueueItem?.media_item?.metadata?.chapters,
+    playingBookmarks.value,
+  ),
+);
+
 const speedSupported = computed(() =>
   playbackSpeedSupported(store.curQueueItem),
 );
@@ -1779,6 +1801,10 @@ onBeforeUnmount(() => {
 .queue-bookmark__icon {
   flex: 0 0 auto;
   opacity: 0.6;
+}
+
+.queue-bookmark--in-chapter {
+  padding-left: 24px;
 }
 
 .queue-empty {

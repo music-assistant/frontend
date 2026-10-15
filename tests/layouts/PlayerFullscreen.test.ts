@@ -371,19 +371,20 @@ describe("PlayerFullscreen chapter queue", () => {
   });
 
   // a bookmark of another copy of the book does not fit the one playing
-  it("lists the bookmarks of the playing copy and seeks to one", async () => {
+  it("lists the playing copy's bookmarks under their chapters and seeks to one", async () => {
     const api = (await import("@/plugins/api")).default as unknown as {
       playerCommandSeek: ReturnType<typeof vi.fn>;
       getAudiobookBookmarks: ReturnType<typeof vi.fn>;
     };
     const bookmark = {
-      name: "Arrakis",
-      start: 754,
+      name: "In the second",
+      start: 90,
       provider_instance_id: "audiobookshelf--1",
       provider_item_id: "book1",
       stored_by_music_assistant: false,
     };
     api.getAudiobookBookmarks.mockResolvedValue([
+      { ...bookmark, name: "In the first", start: 30 },
       bookmark,
       { ...bookmark, name: "Other copy", provider_item_id: "dune.m4b" },
     ]);
@@ -404,15 +405,21 @@ describe("PlayerFullscreen chapter queue", () => {
     // the clock is faked here, so let the fetch settle through it
     await vi.advanceTimersByTimeAsync(0);
     await nextTick();
-    const bookmarks = fullscreen
-      .findAll(".queue-chapter")
-      .filter((x) => x.find(".queue-bookmark__label").exists());
+    const rows = fullscreen.findAll(".queue-chapter");
 
-    expect(bookmarks.map((x) => x.get(".queue-chapter__name").text())).toEqual([
-      "Arrakis",
+    expect(
+      rows.map((x) => [
+        x.get(".queue-chapter__name").text(),
+        x.classes().includes("queue-bookmark--in-chapter"),
+      ]),
+    ).toEqual([
+      ["First", false],
+      ["In the first", true],
+      ["Second", false],
+      ["In the second", true],
     ]);
-    await bookmarks[0].trigger("click");
-    expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 754);
+    await rows[3].trigger("click");
+    expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 90);
   });
 });
 

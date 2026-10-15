@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { computeChapterTicks, resolveCurrentChapter } from "@/helpers/chapters";
-import type { MediaItemChapter } from "@/plugins/api/interfaces";
+import {
+  computeChapterTicks,
+  groupBookmarksByChapter,
+  resolveCurrentChapter,
+} from "@/helpers/chapters";
+import type {
+  MediaItemBookmark,
+  MediaItemChapter,
+} from "@/plugins/api/interfaces";
 
 const chapters: MediaItemChapter[] = [
   { position: 1, name: "Intro", start: 0, end: null },
@@ -103,5 +110,40 @@ describe("computeChapterTicks", () => {
     expect(computeChapterTicks(stray, 120).map((t) => t.percent)).toEqual([
       0, 100,
     ]);
+  });
+});
+
+describe("groupBookmarksByChapter", () => {
+  const bookmark = (start: number): MediaItemBookmark => ({
+    name: `at ${start}`,
+    start,
+    provider_instance_id: "abs--1",
+    provider_item_id: "book1",
+    stored_by_music_assistant: false,
+  });
+
+  // the first chapter takes what lies before it, the last what lies past it
+  it.each([
+    [
+      chapters,
+      [
+        ["Intro", [-5, 0, 59]],
+        ["Middle", [60]],
+        ["End", [120, 500]],
+      ],
+    ],
+    [[], [[undefined, [-5, 0, 59, 60, 120, 500]]]],
+  ])("places each bookmark in its chapter", (bookChapters, expected) => {
+    const groups = groupBookmarksByChapter(
+      bookChapters,
+      [500, 60, 0, 120, 59, -5].map(bookmark),
+    );
+    expect(
+      groups.map((x) => [x.chapter?.name, x.bookmarks.map((b) => b.start)]),
+    ).toEqual(expected);
+  });
+
+  it("has nothing to show for a book without chapters or bookmarks", () => {
+    expect(groupBookmarksByChapter(null, [])).toEqual([]);
   });
 });
