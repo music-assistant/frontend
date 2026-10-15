@@ -1855,11 +1855,13 @@ describe("ItemsListing server sort options", () => {
     );
   });
 
-  it("keeps row and hero playback sort after a failed sort and a cached restore", async () => {
+  it("reloads instead of restoring rows from a failed sort", async () => {
+    const reloadedTrack = track({ item_id: "play-count-first" });
     const loadPagedData = vi
       .fn()
       .mockResolvedValueOnce([track({ item_id: "track-1" })])
-      .mockRejectedValueOnce(new Error("sort failed"));
+      .mockRejectedValueOnce(new Error("sort failed"))
+      .mockResolvedValueOnce([reloadedTrack]);
     store.currentUser = user({
       preferences: {
         "itemsListing.librarytracks.tracks": { viewMode: "panel" },
@@ -1883,24 +1885,42 @@ describe("ItemsListing server sort options", () => {
 
     const expectDisplayedSort = (
       wrapper: ReturnType<typeof mountListingRaw>,
+      field = SortField.SORT_NAME,
+      direction = SortDirection.ASC,
     ) => {
       const playback = wrapper.vm as unknown as {
         sortField: SortField;
         sortDirection: SortDirection;
       };
-      expect(playback.sortField).toBe(SortField.SORT_NAME);
-      expect(playback.sortDirection).toBe(SortDirection.ASC);
+      expect(playback.sortField).toBe(field);
+      expect(playback.sortDirection).toBe(direction);
       const row = wrapper.findComponent({ name: "PanelviewItem" });
-      expect(row.attributes("sort-field")).toBe(SortField.SORT_NAME);
-      expect(row.attributes("sort-direction")).toBe(SortDirection.ASC);
+      expect(row.attributes("sort-field")).toBe(field);
+      expect(row.attributes("sort-direction")).toBe(direction);
     };
     expectDisplayedSort(listing);
     listing.unmount();
 
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.librarytracks.tracks": {
+          viewMode: "panel",
+          sortBy: "play_count:desc",
+        },
+      },
+    });
     const restored = mountListingRaw(props);
     await flushPromises();
-    expect(loadPagedData).toHaveBeenCalledTimes(2);
-    expectDisplayedSort(restored);
+    expect(loadPagedData).toHaveBeenCalledTimes(3);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        offset: 0,
+        sortField: SortField.PLAY_COUNT,
+        sortDirection: SortDirection.DESC,
+      }),
+    );
+    expect(restored.vm.pagedItems).toEqual([reloadedTrack]);
+    expectDisplayedSort(restored, SortField.PLAY_COUNT, SortDirection.DESC);
   });
 
   it("reloads the selected chip sort after a pending first page finishes", async () => {

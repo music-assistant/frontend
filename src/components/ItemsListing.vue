@@ -2096,6 +2096,10 @@ onMounted(async () => {
     props.restoreState &&
     store.prevState?.path == key &&
     store.prevState.parentUri == props.parentItem?.uri &&
+    store.prevState.params.sortField ===
+      store.prevState.displayedSort.sortField &&
+    store.prevState.params.sortDirection ===
+      store.prevState.displayedSort.sortDirection &&
     cachedVisitApplies()
   ) {
     restoredFromPrevState = true;
