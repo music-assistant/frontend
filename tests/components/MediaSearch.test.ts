@@ -292,6 +292,27 @@ describe("MediaSearch", () => {
     vi.useRealTimers();
   });
 
+  it("keeps equally named artists apart", async () => {
+    mockSearch.mockResolvedValue(
+      searchResults({
+        artists: [
+          artistFixture({ uri: "spotify://artist/1", name: "Genesis" }),
+          artistFixture({ uri: "spotify://artist/2", name: "Genesis" }),
+        ],
+      }),
+    );
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.ARTIST] });
+
+    await wrapper.find("input").setValue("genesis");
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
+
+    expect(
+      resultRows().filter((row) => row.textContent?.includes("Genesis")),
+    ).toHaveLength(2);
+    vi.useRealTimers();
+  });
+
   it("reopens a dismissed panel when the field is focused again", async () => {
     mockSearch.mockResolvedValue(
       searchResults({

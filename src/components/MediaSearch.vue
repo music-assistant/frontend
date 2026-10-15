@@ -224,9 +224,15 @@ function onPointerDownOutside(event: CustomEvent<{ originalEvent: Event }>) {
 // multiple providers reads as a plain duplicate: collapse by name (and
 // artist), keeping the first occurrence - the library one, as the engine
 // merges library results first. Same-named playlists are genuinely
-// different lists and are never collapsed.
+// different lists and same-named artists are different people, so neither
+// is ever collapsed.
+const NAME_DEDUPE_EXEMPT_TYPES = new Set<MediaType>([
+  MediaType.PLAYLIST,
+  MediaType.ARTIST,
+]);
+
 const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
-  if (!item.name || item.media_type === MediaType.PLAYLIST) return null;
+  if (!item.name || NAME_DEDUPE_EXEMPT_TYPES.has(item.media_type)) return null;
   const artist =
     "artists" in item ? item.artists[0]?.name.toLowerCase() || "" : "";
   return `${item.media_type}:${item.name.toLowerCase()}:${artist}`;
