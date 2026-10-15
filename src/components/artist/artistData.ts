@@ -152,11 +152,19 @@ export async function loadArtistTracks(
     !favoriteOnly
   ) {
     return providerFilter === undefined
-      ? await api.getArtistTracks(artist.item_id, artist.provider)
+      ? await api.getArtistTracks(
+          artist.item_id,
+          artist.provider,
+          undefined,
+          undefined,
+          0,
+        )
       : await api.getArtistTracks(
           artist.item_id,
           artist.provider,
           providerFilter,
+          undefined,
+          0,
         );
   }
 

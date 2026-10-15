@@ -157,12 +157,25 @@ describe("artistData", () => {
   });
 
   describe("loadArtistTracks", () => {
+    it("requests all tracks when no page parameters are given", async () => {
+      await loadArtistTracks(LIBRARY_ARTIST);
+      expect(apiMock.getArtistTracks).toHaveBeenLastCalledWith(
+        "1",
+        "library",
+        undefined,
+        undefined,
+        0,
+      );
+    });
+
     it("passes the provider filter through", async () => {
       await loadArtistTracks(LIBRARY_ARTIST, "spotify--abc");
       expect(apiMock.getArtistTracks).toHaveBeenLastCalledWith(
         "1",
         "library",
         "spotify--abc",
+        undefined,
+        0,
       );
     });
   });
