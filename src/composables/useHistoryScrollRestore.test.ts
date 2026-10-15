@@ -24,11 +24,13 @@ vi.mock("@/helpers/navigation", () => ({
 
 let resize: () => void = () => {};
 class ResizeObserverMock {
-  constructor(callback: () => void) {
-    resize = callback;
+  constructor(private callback: () => void) {}
+  observe() {
+    resize = this.callback;
   }
-  observe() {}
-  disconnect() {}
+  disconnect() {
+    if (resize === this.callback) resize = () => {};
+  }
 }
 
 describe("useHistoryScrollRestore", () => {
@@ -82,12 +84,25 @@ describe("useHistoryScrollRestore", () => {
 
     resize();
     expect(scroller.scrollTop).toBe(0);
-    expect(restore.restoring()).toBe(true);
 
     setContentHeight(2000);
     resize();
     expect(scroller.scrollTop).toBe(1200);
-    expect(restore.restoring()).toBe(false);
+    // stays set after the restore so a late item load doesn't reset the page
+    expect(restore.returning()).toBe(true);
+  });
+
+  it("gives up when the user grabs the page before the content is tall enough", async () => {
+    leaveAt(1200);
+    historyMock.returned = true;
+    setContentHeight(800);
+    mount();
+    await nextTick();
+
+    scroller.dispatchEvent(new Event("pointerdown"));
+    setContentHeight(2000);
+    resize();
+    expect(scroller.scrollTop).toBe(0);
   });
 
   it("leaves a fresh navigation alone", async () => {
@@ -99,6 +114,6 @@ describe("useHistoryScrollRestore", () => {
 
     resize();
     expect(scroller.scrollTop).toBe(0);
-    expect(restore.restoring()).toBe(false);
+    expect(restore.returning()).toBe(false);
   });
 });

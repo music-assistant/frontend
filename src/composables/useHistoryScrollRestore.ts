@@ -17,13 +17,14 @@ const savedPositions = new Map<string, number>();
  * Brings a view back to where it was scrolled when the user returns to it
  * through history, once its content has loaded far enough to get there.
  *
- * `restoring()` is true until that position is reached, so the view can skip
- * its own reset to the top in the meantime.
+ * `returning()` is true for the whole visit that came back through history,
+ * so the view can skip its own reset to the top, also after the restore.
  */
 export function useHistoryScrollRestore(content: Ref<HTMLElement | undefined>) {
   const route = useRoute();
   const router = useRouter();
   let stopRestore: (() => void) | undefined;
+  let returning = false;
 
   const save = (from: RouteLocationNormalized) => {
     const scroller = getScroller();
@@ -36,8 +37,12 @@ export function useHistoryScrollRestore(content: Ref<HTMLElement | undefined>) {
     () => route.fullPath,
     (fullPath) => {
       stopRestore?.();
+      returning = false;
       const top = savedPositions.get(fullPath);
-      if (top && returnedByHistory(router)) startRestore(top);
+      if (top && returnedByHistory(router)) {
+        returning = true;
+        startRestore(top);
+      }
     },
     { immediate: true },
   );
@@ -66,8 +71,9 @@ export function useHistoryScrollRestore(content: Ref<HTMLElement | undefined>) {
       scroller.scrollTop = top;
       stopRestore?.();
     }, RESTORE_TIMEOUT_MS);
-    // the user scrolling on their own wins over the restore
-    const userEvents = ["wheel", "touchstart", "keydown"] as const;
+    // the user scrolling on their own wins over the restore; pointerdown
+    // covers touch and dragging the scrollbar
+    const userEvents = ["wheel", "pointerdown", "keydown"] as const;
     const cancel = () => stopRestore?.();
     userEvents.forEach((e) => scroller.addEventListener(e, cancel));
     stopRestore = () => {
@@ -79,7 +85,7 @@ export function useHistoryScrollRestore(content: Ref<HTMLElement | undefined>) {
     };
   }
 
-  return { restoring: () => stopRestore !== undefined };
+  return { returning: () => returning };
 }
 
 /** The scroll container most views share. */

@@ -413,7 +413,7 @@ watch(
 watch(
   () => itemDetails.value?.uri,
   () => {
-    if (scrollRestore.restoring()) return;
+    if (scrollRestore.returning()) return;
     document.querySelector(".content-section")?.scrollTo({ top: 0 });
   },
 );
