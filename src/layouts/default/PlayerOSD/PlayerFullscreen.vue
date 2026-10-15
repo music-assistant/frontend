@@ -330,6 +330,29 @@
                     </span>
                   </button>
                 </div>
+                <!-- bookmarks of the copy that is playing -->
+                <div
+                  v-if="row.state === 'playing' && playingBookmarks.length"
+                  class="queue-chapters"
+                >
+                  <button
+                    v-for="bookmark in playingBookmarks"
+                    :key="bookmark.start"
+                    type="button"
+                    class="queue-chapter"
+                    @click.stop="bookmarkClicked(bookmark)"
+                  >
+                    <span class="queue-bookmark__label">
+                      <BookmarkIcon :size="14" class="queue-bookmark__icon" />
+                      <span class="queue-chapter__name">{{
+                        bookmark.name
+                      }}</span>
+                    </span>
+                    <span class="queue-chapter__time">
+                      {{ formatDuration(bookmark.start) }}
+                    </span>
+                  </button>
+                </div>
               </div>
               <!-- floating ghost of the dragged item; tracks the pointer -->
               <div
@@ -385,6 +408,7 @@
             :show-labels="true"
             :color="sliderColor"
             :waveform="waveformData"
+            :bookmarks="playingBookmarks"
           />
         </div>
 
@@ -571,6 +595,7 @@ import {
 import { resolveCurrentChapter } from "@/helpers/chapters";
 import api from "@/plugins/api";
 import {
+  MediaItemBookmark,
   MediaItemChapter,
   MediaType,
   PlaybackState,
@@ -585,7 +610,11 @@ import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
-import { ChevronDownIcon, EllipsisVerticalIcon } from "@lucide/vue";
+import {
+  BookmarkIcon,
+  ChevronDownIcon,
+  EllipsisVerticalIcon,
+} from "@lucide/vue";
 import Color from "color";
 import {
   computed,
@@ -1280,6 +1309,58 @@ const bookmarkSaved = async function (name: string) {
   eventbus.emit("bookmarksChanged");
 };
 
+// only the copy that is playing: a bookmark's position does not fit another copy
+const playingBookmarks = ref<MediaItemBookmark[]>([]);
+
+const loadPlayingBookmarks = async function () {
+  const queueItem = store.curQueueItem;
+  const media = queueItem?.media_item;
+  const streamdetails = queueItem?.streamdetails;
+  if (
+    !store.showFullscreenPlayer ||
+    media?.media_type !== MediaType.AUDIOBOOK ||
+    !streamdetails
+  ) {
+    playingBookmarks.value = [];
+    return;
+  }
+  const bookmarks = await api.getAudiobookBookmarks(
+    media.item_id,
+    media.provider,
+  );
+  // the queue may have moved on while the bookmarks were fetched
+  if (store.curQueueItem?.queue_item_id !== queueItem?.queue_item_id) return;
+  playingBookmarks.value = bookmarks.filter(
+    (x) =>
+      x.provider_instance_id === streamdetails.provider &&
+      x.provider_item_id === streamdetails.item_id,
+  );
+};
+
+watch(
+  () => [
+    store.showFullscreenPlayer,
+    store.curQueueItem?.queue_item_id,
+    store.curQueueItem?.streamdetails?.item_id,
+  ],
+  () => loadPlayingBookmarks(),
+  { immediate: true },
+);
+
+onMounted(() => {
+  eventbus.on("bookmarksChanged", loadPlayingBookmarks);
+});
+
+onBeforeUnmount(() => {
+  eventbus.off("bookmarksChanged", loadPlayingBookmarks);
+});
+
+const bookmarkClicked = function (bookmark: MediaItemBookmark) {
+  const player = store.activePlayer;
+  if (!player) return;
+  api.playerCommandSeek(player.player_id, bookmark.start);
+};
+
 const speedSupported = computed(() =>
   playbackSpeedSupported(store.curQueueItem),
 );
@@ -1685,6 +1766,18 @@ onBeforeUnmount(() => {
 .queue-chapter__time {
   flex: 0 0 auto;
   font-size: 0.72rem;
+  opacity: 0.6;
+}
+
+.queue-bookmark__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.queue-bookmark__icon {
+  flex: 0 0 auto;
   opacity: 0.6;
 }
 

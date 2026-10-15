@@ -27,6 +27,7 @@ vi.mock("@/plugins/api", async () => {
       vi.fn<MusicAssistantApi["getPodcastEpisodeTranscript"]>(),
     playerCommandSeek: vi.fn<MusicAssistantApi["playerCommandSeek"]>(),
     playMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
+    getAudiobookBookmarks: vi.fn<MusicAssistantApi["getAudiobookBookmarks"]>(),
   });
   return { api, default: api };
 });
@@ -197,6 +198,7 @@ interface TestStore {
       media_type: MediaType;
       metadata?: { chapters?: Chapter[]; has_transcript?: boolean | null };
     };
+    streamdetails?: { provider: string; item_id: string };
   };
   showFullscreenPlayer: boolean;
   showPlayersMenu: boolean;
@@ -366,6 +368,51 @@ describe("PlayerFullscreen chapter queue", () => {
 
     expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 60);
     expect(api.playMedia).not.toHaveBeenCalled();
+  });
+
+  // a bookmark of another copy of the book does not fit the one playing
+  it("lists the bookmarks of the playing copy and seeks to one", async () => {
+    const api = (await import("@/plugins/api")).default as unknown as {
+      playerCommandSeek: ReturnType<typeof vi.fn>;
+      getAudiobookBookmarks: ReturnType<typeof vi.fn>;
+    };
+    const bookmark = {
+      name: "Arrakis",
+      start: 754,
+      provider_instance_id: "audiobookshelf--1",
+      provider_item_id: "book1",
+      stored_by_music_assistant: false,
+    };
+    api.getAudiobookBookmarks.mockResolvedValue([
+      bookmark,
+      { ...bookmark, name: "Other copy", provider_item_id: "dune.m4b" },
+    ]);
+    api.playerCommandSeek.mockClear();
+
+    const fullscreen = await mountChapterQueue();
+    // the stream details arrive once the copy to play is chosen
+    const { store } = await import("@/plugins/store");
+    const queueItem = (store as unknown as TestStore).curQueueItem!;
+    queueItem.media_item!.item_id = "1";
+    queueItem.media_item!.provider = "library";
+    queueItem.streamdetails = {
+      provider: "audiobookshelf--1",
+      item_id: "book1",
+    };
+    await nextTick();
+    expect(api.getAudiobookBookmarks).toHaveBeenCalledWith("1", "library");
+    // the clock is faked here, so let the fetch settle through it
+    await vi.advanceTimersByTimeAsync(0);
+    await nextTick();
+    const bookmarks = fullscreen
+      .findAll(".queue-chapter")
+      .filter((x) => x.find(".queue-bookmark__label").exists());
+
+    expect(bookmarks.map((x) => x.get(".queue-chapter__name").text())).toEqual([
+      "Arrakis",
+    ]);
+    await bookmarks[0].trigger("click");
+    expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 754);
   });
 });
 
