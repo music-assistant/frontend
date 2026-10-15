@@ -1201,8 +1201,10 @@ describe("MusicQuizPlayerView routing", () => {
       wrapper.unmount();
     });
 
-    it("keeps the join form and typed name while a background info refresh is loading", async () => {
-      const loading = ref(false);
+    it("shows the loading state instead of a stale landing while a foreground refetch is in flight", async () => {
+      // `resetToJoinInfo` clears the player but leaves the previous game's
+      // `info` populated while `fetchInfo` runs in the foreground; the landing
+      // must not render that stale info (or accept a join against it).
       mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
       mockUseMusicQuizPlayer.mockReturnValue({
         info: ref({
@@ -1220,7 +1222,7 @@ describe("MusicQuizPlayerView routing", () => {
         landingSeen: ref(false),
         gameRemoved: ref(false),
         busy: ref(false),
-        loading,
+        loading: ref(true),
         currentRound: ref(null),
         join: vi.fn(),
         submitAnswer: vi.fn(),
@@ -1229,19 +1231,9 @@ describe("MusicQuizPlayerView routing", () => {
       });
 
       const wrapper = mountView();
-      const input = wrapper.get<HTMLInputElement>("#music-quiz-player-name");
-      await input.setValue("Alice");
 
-      // Another player joining triggers a background info refresh that briefly
-      // flips `loading`. The landing — and the half-typed name — must survive
-      // it; otherwise the input is torn down and recreated on every event.
-      loading.value = true;
-      await nextTick();
-
-      expect(wrapper.find("#music-quiz-player-name").exists()).toBe(true);
-      expect(
-        wrapper.get<HTMLInputElement>("#music-quiz-player-name").element.value,
-      ).toBe("Alice");
+      expect(wrapper.find("#music-quiz-player-name").exists()).toBe(false);
+      expect(wrapper.text()).toContain("providers.music_quiz.loading");
       wrapper.unmount();
     });
   });
