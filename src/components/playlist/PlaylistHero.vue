@@ -42,7 +42,7 @@
         class="flex w-full min-w-0 items-end gap-6 max-md:flex-col max-md:items-stretch max-md:gap-3"
       >
         <div
-          class="size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] max-md:size-[132px]"
+          class="detail-hero-cover size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] max-md:size-[132px]"
         >
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
