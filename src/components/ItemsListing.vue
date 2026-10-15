@@ -12,7 +12,7 @@
       :icon-action="iconAction"
       :title="title"
       :subtitle="subtitle"
-      :count="params.search ? pagedItems.length : total || allItems.length"
+      :count="params.search ? pagedItems.length : (total ?? pagedItems.length)"
       color="transparent"
       :menu-items="menuItems"
       :enforce-overflow-menu="true"
@@ -495,7 +495,6 @@ import PanelviewItemCompact from "./PanelviewItemCompact.vue";
 // properties
 export interface Props {
   itemtype: string;
-  sortKeys?: string[];
   sortListing?: ListingType;
   sortOptionExcludeFields?: SortField[];
   showTrackNumber?: boolean;
@@ -523,7 +522,7 @@ export interface Props {
   // music providers).
   providerFilterOptions?: string[];
   // when set, the explicit provider list above also offers the library, as its
-  // first option: loadItems is handed "library" while it is the selected one
+  // first option
   libraryFilterOption?: boolean;
   // the option a required selection starts on, when nothing valid is stored
   // (default: the first one offered)
@@ -549,8 +548,6 @@ export interface Props {
   extraMenuItems?: ToolBarMenuItem[];
   // loadPagedData callback is provided for serverside paging/sorting
   loadPagedData?: LoadPagedDataFn;
-  // loadItems callback is provided for flat non-paged listings
-  loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   limit?: number;
   total?: number;
   infiniteScroll?: boolean;
@@ -567,7 +564,6 @@ export interface Props {
   trackTable?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
-  sortKeys: () => ["name", "sort_name"],
   sortListing: undefined,
   sortOptionExcludeFields: () => [],
   showTrackNumber: true,
@@ -605,7 +601,6 @@ const props = withDefaults(defineProps<Props>(), {
   showHideFullyPlayedFilter: false,
   extraMenuItems: undefined,
   loadPagedData: undefined,
-  loadItems: undefined,
   path: undefined,
   icon: undefined,
   iconAction: undefined,
@@ -638,9 +633,7 @@ const getActiveTab = () => {
 };
 
 const {
-  allItems,
   allItemsReceived,
-  initialDataReceived,
   isDisposed,
   librarySorting,
   loadAllItems,
@@ -1274,12 +1267,9 @@ const hasActiveFilters = computed(() => {
   );
 });
 
-// total number of items this listing represents. For flat (loadItems)
-// listings every item is loaded up front, so allItems holds the true total.
 // Server-paged listings only know their total when the parent passes it.
 const totalItemCount = computed(() => {
   if (props.total !== undefined) return props.total;
-  if (props.loadItems != null) return allItems.value.length;
   // server-paged without a known total: assume large enough to warrant search
   return Number.POSITIVE_INFINITY;
 });
@@ -1346,7 +1336,7 @@ const musicProviders = computed(() => {
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
     if (!props.libraryFilterOption) return providers;
-    // the library is not a provider instance: loadItems is handed "library"
+    // the library is not a provider instance: the listing callback is handed "library"
     return [{ label: t("source_library"), value: "library" }, ...providers];
   }
 
@@ -1629,25 +1619,6 @@ const menuItems = computed(() => {
     });
   }
 
-  // sort options
-  if (!props.sortListing && props.sortKeys?.length) {
-    items.push({
-      label: "tooltip.sort_options",
-      icon: ArrowUpDown,
-      disabled: props.sortKeys.length <= 1 || loading.value,
-      overflowAllowed: true,
-      subItems: props.sortKeys.map((sortKey) => {
-        return {
-          label: `sort.${sortKey}`,
-          selected: params.value.sortBy == sortKey,
-          action: () => {
-            changeSort(sortKey);
-          },
-        };
-      }),
-    });
-  }
-
   // toggle search (auto-hidden for small listings)
   if (searchAvailable.value) {
     items.push({
@@ -1804,10 +1775,6 @@ const restoreSettings = async function () {
         );
       }
     }
-  } else if (prefs.sortBy && props.sortKeys.includes(prefs.sortBy)) {
-    params.value.sortBy = prefs.sortBy;
-  } else {
-    params.value.sortBy = props.sortKeys[0];
   }
 
   // get stored/default favoriteOnlyFilter for this itemtype
@@ -1955,9 +1922,7 @@ if (props.restoreState) {
       carried: offeredCarriedProvider() !== undefined,
       scrollPos: el?.scrollTop || 0,
       pagedItems: pagedItems.value,
-      allItems: allItems.value,
       allItemsReceived: allItemsReceived.value,
-      initialDataReceived: initialDataReceived.value,
       params: params.value,
     };
   });
@@ -1989,7 +1954,6 @@ watch(
     if (loading.value == true) return;
     // completely reset if the path changes
     pagedItems.value = [];
-    allItems.value = [];
     loadData(true);
   },
 );
@@ -2000,7 +1964,6 @@ watch(
     if (props.refreshOnParentUpdate) {
       loadData(true);
     } else {
-      allItems.value = [];
       newContentAvailable.value = true;
     }
   },
@@ -2136,9 +2099,7 @@ onMounted(async () => {
     restoredFromPrevState = true;
     params.value = store.prevState.params;
     pagedItems.value = store.prevState.pagedItems;
-    allItems.value = store.prevState.allItems;
     allItemsReceived.value = store.prevState.allItemsReceived;
-    initialDataReceived.value = store.prevState.initialDataReceived;
     if (props.sortListing) {
       params.value.sortBy = librarySorting.normalizeSortBy(params.value.sortBy);
     }
@@ -2234,9 +2195,12 @@ watch(
 );
 
 const selectAll = async function () {
-  // We use the total length even when searching, since we can't know
-  // how many items will be loaded after filtering
-  const itemCount = props.total || allItems.value.length;
+  // Unknown server totals are treated conservatively to avoid instant selection.
+  const itemCount =
+    props.total ??
+    (allItemsReceived.value
+      ? pagedItems.value.length
+      : Number.POSITIVE_INFINITY);
   if (itemCount <= 250) {
     await selectEveryItem();
     return;

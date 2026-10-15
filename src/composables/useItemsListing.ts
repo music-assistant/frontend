@@ -1,7 +1,6 @@
 import { computed, onScopeDispose, ref } from "vue";
 
 import { useLibrarySorting } from "@/composables/useLibrarySorting";
-import { filterAndSortItems } from "@/helpers/itemListing";
 import {
   ListingType,
   MediaItemType,
@@ -52,9 +51,7 @@ export interface StoredState {
   carried: boolean;
   scrollPos: number;
   pagedItems: MediaItemType[];
-  allItems: MediaItemType[];
   allItemsReceived: boolean;
-  initialDataReceived: boolean;
   params: LoadDataParams;
 }
 
@@ -62,7 +59,6 @@ interface ItemsListingDataOptions {
   sortListing?: ListingType;
   sortOptionExcludeFields?: SortField[];
   loadPagedData?: LoadPagedDataFn;
-  loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   limit: number;
   toolBarTabs?: ToolBarTab[];
 }
@@ -80,13 +76,11 @@ export function useItemsListing(
     genreIds: undefined,
   });
   const pagedItems = ref<MediaItemType[]>([]);
-  const allItems = ref<MediaItemType[]>([]);
   const loading = ref(false);
   const newContentAvailable = ref(false);
   const allItemsReceived = ref(false);
   // set when the last load failed; scrolling does not retry it, the user does
   const loadError = ref(false);
-  const initialDataReceived = ref(false);
   const tempHide = ref(false);
   const serverSortOptions = ref<SortOptionInfo[]>([]);
   const sortOptionsLoaded = ref(false);
@@ -167,7 +161,6 @@ export function useItemsListing(
       // and then we load new items with a different size
       if (allItemsReceived.value) tempHide.value = true;
       allItemsReceived.value = false;
-      initialDataReceived.value = false;
       newContentAvailable.value = false;
     }
 
@@ -195,15 +188,6 @@ export function useItemsListing(
         if (Math.abs(nextItems.length - props.limit) > 10) {
           allItemsReceived.value = true;
         }
-      } else if (props.loadItems) {
-        if (!initialDataReceived.value || refresh) {
-          allItems.value = await props.loadItems(params.value);
-          initialDataReceived.value = true;
-        }
-        const nextItems = filterAndSortItems(allItems.value, params.value);
-        if (params.value.offset) pagedItems.value.push(...nextItems);
-        else pagedItems.value = nextItems;
-        allItemsReceived.value = nextItems.length < props.limit;
       }
     } catch {
       // the api already reports the failure to the user; the failed page is
@@ -271,9 +255,7 @@ export function useItemsListing(
   };
 
   return {
-    allItems,
     allItemsReceived,
-    initialDataReceived,
     isDisposed,
     librarySorting,
     loadAllItems,

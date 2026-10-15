@@ -1,5 +1,6 @@
 import {
   type BackgroundTask,
+  AlbumType,
   ArtistType,
   type CommandMessage,
   CoreState,
@@ -299,6 +300,7 @@ describe("MusicAssistantApi error handling", () => {
       40,
       SortField.DURATION,
       SortDirection.DESC,
+      true,
     );
 
     expect(transport.lastCommand.command).toBe("music/albums/album_tracks");
@@ -311,6 +313,7 @@ describe("MusicAssistantApi error handling", () => {
       sort_direction: SortDirection.DESC,
       limit: 20,
       offset: 40,
+      favorite_only: true,
     });
 
     transport.receive({
@@ -367,6 +370,7 @@ describe("MusicAssistantApi error handling", () => {
       40,
       SortField.POSITION,
       SortDirection.DESC,
+      "episode-current",
     );
 
     expect(transport.lastCommand.command).toBe(
@@ -381,6 +385,7 @@ describe("MusicAssistantApi error handling", () => {
       sort_direction: SortDirection.DESC,
       limit: 20,
       offset: 40,
+      exclude_item_id: "episode-current",
     });
 
     transport.receive({
@@ -496,6 +501,7 @@ describe("MusicAssistantApi error handling", () => {
       40,
       SortField.DURATION,
       SortDirection.DESC,
+      true,
     );
 
     expect(transport.lastCommand.command).toBe("music/artists/artist_tracks");
@@ -508,6 +514,7 @@ describe("MusicAssistantApi error handling", () => {
       offset: 40,
       sort_field: SortField.DURATION,
       sort_direction: SortDirection.DESC,
+      favorite_only: true,
     });
 
     transport.receive({
@@ -516,6 +523,71 @@ describe("MusicAssistantApi error handling", () => {
       partial: false,
     });
     await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends album type filters for artist albums", async () => {
+    const request = api.getArtistAlbums(
+      "artist-1",
+      "library",
+      undefined,
+      "live",
+      20,
+      40,
+      SortField.NAME,
+      SortDirection.ASC,
+      [AlbumType.SINGLE, AlbumType.EP],
+    );
+
+    expect(transport.lastCommand.command).toBe("music/artists/artist_albums");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      provider_filter: undefined,
+      search: "live",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.ASC,
+      album_types: [AlbumType.SINGLE, AlbumType.EP],
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends search and paging parameters for audiobook collections", async () => {
+    const request = api.getAudiobookCollection(
+      "collection-1",
+      "chapter 2",
+      20,
+      40,
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/audiobooks/get_collection",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "collection-1",
+      search: "chapter 2",
+      limit: 20,
+      offset: 40,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: {
+        item_id: "collection-1",
+        name: "Collection",
+        provider: "library",
+        items: [],
+      },
+      partial: false,
+    });
+    await expect(request).resolves.toMatchObject({ items: [] });
   });
 
   it("sends typed paging parameters for artist audiobooks", async () => {

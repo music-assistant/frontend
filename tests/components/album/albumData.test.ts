@@ -67,6 +67,31 @@ describe("albumData", () => {
         true,
       );
     });
+
+    it("passes the favorite-only filter to the server", async () => {
+      await loadAlbumTracks(
+        ALBUM,
+        false,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        true,
+      );
+
+      expect(apiMock.getAlbumTracks).toHaveBeenLastCalledWith(
+        "1",
+        "library",
+        false,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        true,
+      );
+    });
   });
 
   describe("loadAlbumVersions", () => {
@@ -88,7 +113,13 @@ describe("albumData", () => {
         "library",
       );
 
-      expect(apiMock.getArtistAlbums).toHaveBeenCalledWith("a1", "library");
+      expect(apiMock.getArtistAlbums).toHaveBeenCalledWith(
+        "a1",
+        "library",
+        undefined,
+        undefined,
+        0,
+      );
       expect(releases.map((release) => release.name)).toEqual(["30", "19"]);
     });
 
@@ -114,6 +145,9 @@ describe("albumData", () => {
       expect(apiMock.getArtistAlbums).toHaveBeenCalledWith(
         "sp-a1",
         "spotify--abc",
+        undefined,
+        undefined,
+        0,
       );
     });
 

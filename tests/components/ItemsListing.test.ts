@@ -351,7 +351,11 @@ describe("ItemsListing unmount cleanup", () => {
       // a short page, so paging that carries on regardless still comes to an end
       .mockResolvedValue([]);
 
-    const listing = mountListingRaw({ allowKeyHooks: true, loadPagedData });
+    const listing = mountListingRaw({
+      allowKeyHooks: true,
+      loadPagedData,
+      total: 3,
+    });
     await flushPromises();
     expect(loadPagedData).toHaveBeenCalledTimes(1);
 
@@ -730,8 +734,8 @@ describe("ItemsListing select all", () => {
 
 describe("ItemsListing failed load", () => {
   type LoadStatus = "ok" | "empty" | "loading" | "error";
-  type LoadItems = NonNullable<
-    InstanceType<typeof ItemsListing>["$props"]["loadItems"]
+  type LoadPagedData = NonNullable<
+    InstanceType<typeof ItemsListing>["$props"]["loadPagedData"]
   >;
   type OnLoad = (options: {
     side: string;
@@ -770,14 +774,13 @@ describe("ItemsListing failed load", () => {
     store.currentUser = undefined;
   });
 
-  function mountFailingListing(loadItems: LoadItems) {
+  function mountFailingListing(loadPagedData: LoadPagedData) {
     return mountListingRaw(
       {
         itemtype: "playlisttracks",
         path: "playlist.1.apple_music",
         showGenreFilter: false,
-        loadPagedData: undefined,
-        loadItems,
+        loadPagedData,
       },
       {
         VInfiniteScroll: InfiniteScrollStub,
@@ -807,10 +810,10 @@ describe("ItemsListing failed load", () => {
   }
 
   it("does not load again on its own after a load failed", async () => {
-    const loadItems = vi
-      .fn<LoadItems>()
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
       .mockRejectedValue(new Error("rate limited"));
-    const listing = mountFailingListing(loadItems);
+    const listing = mountFailingListing(loadPagedData);
     await flushPromises();
 
     // a scroller loads as soon as it shows up, so none is shown until the user retries
@@ -818,20 +821,19 @@ describe("ItemsListing failed load", () => {
       false,
     );
     expect(retryButton(listing)).toBeDefined();
-    expect(loadItems).toHaveBeenCalledTimes(1);
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
   });
 
   it("centres the failure like the empty state on full-page listings", async () => {
-    const loadItems = vi
-      .fn<LoadItems>()
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
       .mockRejectedValue(new Error("rate limited"));
     const listing = mountListingRaw(
       {
         itemtype: "playlisttracks",
         path: "playlist.1.apple_music",
         showGenreFilter: false,
-        loadPagedData: undefined,
-        loadItems,
+        loadPagedData,
         fillHeight: true,
       },
       { VInfiniteScroll: InfiniteScrollStub },
@@ -842,18 +844,18 @@ describe("ItemsListing failed load", () => {
   });
 
   it("loads from the start again when the user retries", async () => {
-    const loadItems = vi
-      .fn<LoadItems>()
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
       .mockRejectedValueOnce(new Error("rate limited"))
       .mockResolvedValue([track()]);
-    const listing = mountFailingListing(loadItems);
+    const listing = mountFailingListing(loadPagedData);
     await flushPromises();
 
     await retryButton(listing)!.trigger("click");
     await flushPromises();
 
-    expect(loadItems).toHaveBeenCalledTimes(2);
-    expect(loadItems.mock.calls[1][0]).toMatchObject({ offset: 0 });
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
+    expect(loadPagedData.mock.calls[1][0]).toMatchObject({ offset: 0 });
     // loaded, so the scroller finds the end instead of the failure
     expect(await scrollerLoads(listing)).toHaveBeenCalledWith("empty");
   });
@@ -1043,8 +1045,7 @@ describe("ItemsListing source selector", () => {
     const listing = mountListingRaw({
       itemtype: "artistalbums",
       path: "artistalbums",
-      loadPagedData: undefined,
-      loadItems,
+      loadPagedData: loadItems,
       providerFilterOptions: ["spotify--1"],
       requireProviderSelection: true,
       libraryFilterOption: true,
@@ -1382,7 +1383,7 @@ describe("ItemsListing empty-state source shortcuts", () => {
       props: {
         itemtype: "artistalbums",
         path: "artistalbums",
-        loadItems,
+        loadPagedData: loadItems,
         providerFilterOptions: ["spotify--1"],
         requireProviderSelection: true,
         libraryFilterOption: true,
@@ -1481,7 +1482,8 @@ describe("ItemsListing restore state", () => {
   });
 
   type Props = InstanceType<typeof ItemsListing>["$props"];
-  type LoadItemsFn = NonNullable<Props["loadItems"]>;
+  type LoadPagedData = NonNullable<Props["loadPagedData"]>;
+  type LoadItemsFn = LoadPagedData;
 
   // an artist's albums are listed from the library or from one provider
   const sourceSelection: Partial<Props> = {
@@ -1490,10 +1492,10 @@ describe("ItemsListing restore state", () => {
     libraryFilterOption: true,
   };
 
-  /** Mounts an artist-albums listing whose items come from `loadItems`. */
+  /** Mounts an artist-albums listing whose items come from the server page. */
   function mountArtistAlbums(
     parentItem: Props["parentItem"],
-    loadItems: LoadItemsFn,
+    loadPagedData: LoadPagedData,
     props: Partial<Props> = {},
   ) {
     return mountListingRaw({
@@ -1501,8 +1503,7 @@ describe("ItemsListing restore state", () => {
       path: "artistalbums",
       restoreState: true,
       parentItem,
-      loadPagedData: undefined,
-      loadItems,
+      loadPagedData,
       ...props,
     });
   }
@@ -1520,7 +1521,7 @@ describe("ItemsListing restore state", () => {
   ) {
     const first = mountArtistAlbums(
       parentItem,
-      vi.fn<LoadItemsFn>().mockResolvedValue(cached),
+      vi.fn<LoadPagedData>().mockResolvedValue(cached),
       props,
     );
     await flushPromises();
@@ -1675,81 +1676,17 @@ describe("ItemsListing restore state", () => {
   });
 });
 
-describe("ItemsListing date added sort", () => {
-  // added together (one edit), then a later addition, a very old one, and
-  // undated items (none, or unparsable), which sort as the oldest of all
-  const batch = "2024-03-01T12:00:00+00:00";
-  const playlistTracks = [
-    track({ item_id: "1", name: "Batch 1", position: 1, date_added: batch }),
-    track({ item_id: "2", name: "Undated", position: 2 }),
-    track({ item_id: "3", name: "Batch 2", position: 3, date_added: batch }),
-    track({
-      item_id: "4",
-      name: "Newer",
-      position: 4,
-      date_added: "2024-05-10T08:30:00+00:00",
-    }),
-    track({
-      item_id: "5",
-      name: "Old",
-      position: 5,
-      date_added: "1999-06-01T00:00:00+00:00",
-    }),
-    track({ item_id: "6", name: "Unparsable", position: 6, date_added: "?" }),
-  ];
-
-  async function sortedNames(sortKey: string) {
+describe("ItemsListing server ordering", () => {
+  it("preserves the order returned by the paged loader", async () => {
     const listing = mountListingRaw({
       itemtype: "playlisttracks",
       path: "playlist.1.library",
-      // a flat listing: every item at once, sorted in the browser
-      loadPagedData: undefined,
-      loadItems: vi.fn().mockResolvedValue(playlistTracks),
-      sortKeys: [sortKey, "position"],
-    });
-    await flushPromises();
-    return (listing.vm as unknown as { pagedItems: Track[] }).pagedItems.map(
-      (item) => item.name,
-    );
-  }
-
-  it("lists the most recently added first, keeping additions made together in order", async () => {
-    expect(await sortedNames("timestamp_added_desc")).toEqual([
-      "Newer",
-      "Batch 1",
-      "Batch 2",
-      "Old",
-      "Undated",
-      "Unparsable",
-    ]);
-  });
-
-  it("lists the earliest added first", async () => {
-    expect(await sortedNames("timestamp_added")).toEqual([
-      "Undated",
-      "Unparsable",
-      "Old",
-      "Batch 1",
-      "Batch 2",
-      "Newer",
-    ]);
-  });
-});
-
-describe("ItemsListing without sort keys", () => {
-  it("lists the items in the order they were loaded", async () => {
-    // a collection's books, in the series order the server sends
-    const listing = mountListingRaw({
-      itemtype: "audiobook",
-      path: undefined,
-      loadPagedData: undefined,
-      loadItems: vi
+      loadPagedData: vi
         .fn()
         .mockResolvedValue([
           track({ item_id: "2", name: "Book 2" }),
           track({ item_id: "1", name: "Book 1" }),
         ]),
-      sortKeys: [],
     });
     await flushPromises();
 

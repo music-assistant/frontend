@@ -25,6 +25,16 @@ export async function loadArtistReleases(
   return await artistAlbumsBySource(artist, source);
 }
 
+interface ArtistAlbumsListingOptions {
+  search?: string;
+  limit?: number;
+  offset?: number;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
+  albumTypes?: AlbumType[];
+  favoritesOnly?: boolean;
+}
+
 /**
  * The releases of an artist from one source: the library, or a single
  * provider's own catalog.
@@ -38,9 +48,25 @@ export async function loadArtistReleases(
 export async function artistAlbumsBySource(
   artist: ItemMapping | Artist,
   source: RowSource,
+  options?: ArtistAlbumsListingOptions,
 ): Promise<Album[]> {
+  const getAlbums = (itemId: string, provider: string) =>
+    options
+      ? api.getArtistAlbums(
+          itemId,
+          provider,
+          undefined,
+          options.search,
+          options.limit,
+          options.offset,
+          options.sortField,
+          options.sortDirection,
+          options.albumTypes,
+          options.favoritesOnly,
+        )
+      : api.getArtistAlbums(itemId, provider, undefined, undefined, 0);
   if (source === "library" || artist.provider !== "library") {
-    return await api.getArtistAlbums(artist.item_id, artist.provider);
+    return await getAlbums(artist.item_id, artist.provider);
   }
   const mappings =
     "provider_mappings" in artist ? artist.provider_mappings : [];
@@ -48,7 +74,7 @@ export async function artistAlbumsBySource(
     (candidate) => candidate.provider_instance === source,
   );
   if (!mapping) return [];
-  return await api.getArtistAlbums(mapping.item_id, mapping.provider_instance);
+  return await getAlbums(mapping.item_id, mapping.provider_instance);
 }
 
 /**
@@ -115,13 +141,15 @@ export async function loadArtistTracks(
   offset?: number,
   sortField?: SortField,
   sortDirection?: SortDirection,
+  favoriteOnly = false,
 ): Promise<Track[]> {
   if (
     search === undefined &&
     limit === undefined &&
     offset === undefined &&
     sortField === undefined &&
-    sortDirection === undefined
+    sortDirection === undefined &&
+    !favoriteOnly
   ) {
     return providerFilter === undefined
       ? await api.getArtistTracks(artist.item_id, artist.provider)
@@ -141,6 +169,7 @@ export async function loadArtistTracks(
     offset,
     sortField,
     sortDirection,
+    favoriteOnly,
   );
 }
 

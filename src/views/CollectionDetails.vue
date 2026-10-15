@@ -4,8 +4,7 @@
     :itemtype="collectionMediaType"
     :parent-item="itemDetails"
     :show-refresh-button="false"
-    :load-items="loadCollectionItems"
-    :sort-keys="[]"
+    :load-paged-data="loadCollectionItems"
     :title="title"
     :empty-message="emptyMessage"
     :allow-collapse="false"
@@ -14,7 +13,9 @@
 
 <script setup lang="ts">
 import InfoHeader from "@/components/InfoHeader.vue";
-import ItemsListing from "@/components/ItemsListing.vue";
+import ItemsListing, {
+  type LoadDataParams,
+} from "@/components/ItemsListing.vue";
 import { api } from "@/plugins/api";
 import {
   type MediaCollection,
@@ -50,9 +51,14 @@ const emptyMessage = computed(() => {
   return "";
 });
 
-const loadCollectionItems = async function () {
+const loadCollectionItems = async function (params: LoadDataParams) {
   if (collectionMediaType.value === MediaType.AUDIOBOOK) {
-    itemDetails.value = await api.getAudiobookCollection(props.itemId);
+    itemDetails.value = await api.getAudiobookCollection(
+      props.itemId,
+      params.search,
+      params.limit,
+      params.offset,
+    );
     return itemDetails.value.items;
   }
   return [];

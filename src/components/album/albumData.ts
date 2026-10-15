@@ -23,13 +23,15 @@ export async function loadAlbumTracks(
   offset?: number,
   sortField?: SortField,
   sortDirection?: SortDirection,
+  favoriteOnly = false,
 ): Promise<Track[]> {
   if (
     search === undefined &&
     limit === undefined &&
     offset === undefined &&
     sortField === undefined &&
-    sortDirection === undefined
+    sortDirection === undefined &&
+    !favoriteOnly
   ) {
     return await api.getAlbumTracks(
       album.item_id,
@@ -47,6 +49,7 @@ export async function loadAlbumTracks(
     offset,
     sortField,
     sortDirection,
+    favoriteOnly,
   );
 }
 

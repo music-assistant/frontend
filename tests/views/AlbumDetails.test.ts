@@ -316,16 +316,36 @@ describe("AlbumDetails", () => {
       0,
       SortField.DURATION,
       SortDirection.DESC,
+      undefined,
     );
   });
 
-  it("hides the unsupported favorite filter for album tracks", async () => {
+  it("shows and passes the server-side favorite filter for album tracks", async () => {
     const wrapper = await mountDetails();
-    expect(
-      wrapper
-        .findComponent({ name: "ItemsListing" })
-        .props("showFavoritesOnlyFilter"),
-    ).toBe(false);
+    const listing = wrapper.findComponent({ name: "ItemsListing" });
+    expect(listing.props("showFavoritesOnlyFilter")).toBe(true);
+
+    const loadPagedData = listing.props("loadPagedData") as (
+      params: LoadDataParams,
+    ) => Promise<unknown>;
+    await loadPagedData({
+      offset: 0,
+      limit: 50,
+      sortBy: "track_number",
+      search: "",
+      favoritesOnly: true,
+    });
+
+    expect(mockLoadAlbumTracks).toHaveBeenCalledWith(
+      ALBUM_WITH_REVIEW,
+      false,
+      "",
+      50,
+      0,
+      undefined,
+      undefined,
+      true,
+    );
   });
 
   it("sends the artist shelf to the artist's own albums listing", async () => {

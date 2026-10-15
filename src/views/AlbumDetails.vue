@@ -21,7 +21,7 @@
           :parent-item="itemDetails"
           :show-provider="true"
           :show-track-number="true"
-          :show-favorites-only-filter="false"
+          :show-favorites-only-filter="true"
           :show-library-only-filter="
             itemDetails.provider == 'library' && api.hasStreamingProviders.value
           "
@@ -344,6 +344,7 @@ const loadTracks = async function (params: LoadDataParams) {
     params.offset,
     params.sortField,
     params.sortDirection,
+    params.favoritesOnly,
   );
   if (itemDetails.value?.uri !== album.uri) return [];
   if (!params.libraryOnly && !params.search) {

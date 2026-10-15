@@ -20,7 +20,6 @@ const scopes: EffectScope[] = [];
 function setupItemsListing(
   options: {
     limit?: number;
-    loadItems?: (params: LoadDataParams) => Promise<Track[]>;
     loadPagedData?: LoadPagedDataFn;
     sortListing?: ListingType;
     toolBarTabs?: ToolBarTab[];
@@ -189,71 +188,6 @@ describe("useItemsListing", () => {
     expect(loadPagedData).toHaveBeenCalledTimes(1);
   });
 
-  it.each(["search", "sort"] as const)(
-    "reuses flat items after a pending %s change instead of refetching the source",
-    async (change) => {
-      let resolveItems!: (items: Track[]) => void;
-      const items = [
-        track({ item_id: "track-b", name: "B Side" }),
-        track({ item_id: "track-a", name: "A Side" }),
-      ];
-      const loadItems = vi.fn(
-        () =>
-          new Promise<Track[]>((resolve) => {
-            resolveItems = resolve;
-          }),
-      );
-      const listing = setupItemsListing({ loadItems });
-      const initialLoad = listing.loadData(true);
-
-      if (change === "search") listing.params.value.search = "B Side";
-      else listing.params.value.sortBy = "name_desc";
-      await listing.loadData(false, false, true);
-      expect(loadItems).toHaveBeenCalledTimes(1);
-
-      resolveItems(items);
-      await initialLoad;
-
-      expect(loadItems).toHaveBeenCalledTimes(1);
-      expect(listing.initialDataReceived.value).toBe(true);
-      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual(
-        change === "search" ? ["track-b"] : ["track-b", "track-a"],
-      );
-    },
-  );
-
-  it.each([
-    ["a clearing parameter change", [true, false, true]],
-    ["a refresh", [true, true, false]],
-  ] as const)(
-    "fetches a flat source again for %s queued during a load",
-    async (_change, args) => {
-      let resolveItems!: (items: Track[]) => void;
-      const loadItems = vi
-        .fn()
-        .mockImplementationOnce(
-          () =>
-            new Promise<Track[]>((resolve) => {
-              resolveItems = resolve;
-            }),
-        )
-        .mockResolvedValueOnce([track({ item_id: "fresh" })]);
-      const listing = setupItemsListing({ loadItems });
-      const initialLoad = listing.loadData(true);
-
-      await listing.loadData(...args);
-      expect(loadItems).toHaveBeenCalledTimes(1);
-
-      resolveItems([track({ item_id: "stale" })]);
-      await initialLoad;
-
-      expect(loadItems).toHaveBeenCalledTimes(2);
-      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual([
-        "fresh",
-      ]);
-    },
-  );
-
   it.each([
     {
       name: "loads the tab switched to",
@@ -293,26 +227,6 @@ describe("useItemsListing", () => {
     await initialLoad;
 
     expect(loadedTabIds).toEqual(loadedTabs);
-  });
-
-  it("filters and pages flat listings without reloading their source", async () => {
-    const loadItems = vi.fn(async () => [
-      track({ item_id: "track-b", name: "B Side" }),
-      track({ item_id: "track-a", name: "A Side" }),
-    ]);
-    const listing = setupItemsListing({ limit: 1, loadItems });
-
-    await listing.loadData(true);
-    expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual([
-      "track-a",
-    ]);
-
-    await listing.loadNextPage({ done: vi.fn() });
-    expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual([
-      "track-a",
-      "track-b",
-    ]);
-    expect(loadItems).toHaveBeenCalledTimes(1);
   });
 
   it("stops loading additional pages after its scope is disposed", async () => {

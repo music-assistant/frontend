@@ -78,7 +78,13 @@ describe("artistData", () => {
   describe("loadArtistReleases", () => {
     it("asks the library for the library source", async () => {
       await loadArtistReleases(LIBRARY_ARTIST, "library");
-      expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith("1", "library");
+      expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
+        "1",
+        "library",
+        undefined,
+        undefined,
+        0,
+      );
     });
 
     it("asks a provider source for its own catalog, by the artist's id there", async () => {
@@ -86,6 +92,9 @@ describe("artistData", () => {
       expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
         "sp1",
         "spotify--abc",
+        undefined,
+        undefined,
+        0,
       );
     });
 
@@ -101,6 +110,9 @@ describe("artistData", () => {
       expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
         "sp1",
         "spotify--abc",
+        undefined,
+        undefined,
+        0,
       );
     });
   });

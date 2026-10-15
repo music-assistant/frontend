@@ -23,8 +23,6 @@
       :show-album-type-filter="config.showAlbumTypeFilter"
       :show-track-number="config.showTrackNumber"
       :show-refresh-button="false"
-      :sort-keys="config.sortKeys"
-      :load-items="config.loadItems"
       :sort-listing="config.sortListing"
       :load-paged-data="config.loadPagedData"
       :empty-message="config.emptyMessage"
@@ -36,10 +34,9 @@
 
 <script setup lang="ts">
 import {
-  isSingleOrEp,
+  artistAlbumsBySource,
   loadArtistAppearsOn,
   loadArtistDiscography,
-  loadArtistReleases,
   loadArtistTracks,
 } from "@/components/artist/artistData";
 import { artistRows } from "@/components/artist/artistRows";
@@ -52,6 +49,7 @@ import { useEscapeBack } from "@/composables/useEscapeBack";
 import { goBack } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
 import {
+  AlbumType,
   ListingType,
   type Artist,
   type MediaItemType,
@@ -73,8 +71,6 @@ interface ListingConfig {
   labelKey: string;
   itemtype: string;
   path: string;
-  sortKeys: string[];
-  loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   loadPagedData?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   sortListing?: ListingType;
   showAlbumTypeFilter: boolean;
@@ -93,25 +89,16 @@ interface ListingConfig {
   providerOverride?: RowSource;
 }
 
-const ALBUM_SORT_KEYS = [
-  "sort_name",
-  "name",
-  "year",
-  "name_desc",
-  "sort_name_desc",
-  "year_desc",
-];
-
-const TRACK_SORT_KEYS = [
-  "sort_name",
-  "name",
-  "album",
-  "album_sort_name",
-  "duration",
-  "name_desc",
-  "sort_name_desc",
-  "duration_desc",
-];
+const RELEASE_TYPES: Record<"albums" | "singles_eps", AlbumType[]> = {
+  albums: [
+    AlbumType.ALBUM,
+    AlbumType.COMPILATION,
+    AlbumType.LIVE,
+    AlbumType.SOUNDTRACK,
+    AlbumType.UNKNOWN,
+  ],
+  singles_eps: [AlbumType.SINGLE, AlbumType.EP],
+};
 
 const router = useRouter();
 const route = useRoute();
@@ -178,13 +165,12 @@ const config = computed<ListingConfig | undefined>(() => {
         labelKey: artistRows.definition("albums").labelKey,
         path: "artistalbums",
         showAlbumTypeFilter: true,
+        sortListing: ListingType.ARTIST_ALBUMS,
         emptyMessage: showsLibrary.value
           ? $t("artist_no_library_albums")
           : undefined,
-        loadItems: async (params: LoadDataParams) =>
-          (await loadReleases("albums", params)).filter(
-            (album) => !isSingleOrEp(album),
-          ),
+        loadPagedData: (params: LoadDataParams) =>
+          loadArtistAlbumPage("albums", params),
       };
     case "singles":
       return {
@@ -192,10 +178,9 @@ const config = computed<ListingConfig | undefined>(() => {
         ...sourceSelection("singles_eps"),
         labelKey: artistRows.definition("singles_eps").labelKey,
         path: "artistsingles",
-        loadItems: async (params: LoadDataParams) =>
-          (await loadReleases("singles_eps", params)).filter((album) =>
-            isSingleOrEp(album),
-          ),
+        sortListing: ListingType.ARTIST_ALBUMS,
+        loadPagedData: (params: LoadDataParams) =>
+          loadArtistAlbumPage("singles_eps", params),
       };
     case "tracks":
       return {
@@ -203,10 +188,9 @@ const config = computed<ListingConfig | undefined>(() => {
         labelKey: "tracks",
         itemtype: "artisttracks",
         path: "artisttracks",
-        sortKeys: TRACK_SORT_KEYS,
         sortListing: ListingType.ARTIST_TRACKS,
         showProviderFilter: mappingProviderIds.value.length > 1,
-        showFavoritesOnlyFilter: false,
+        showFavoritesOnlyFilter: true,
         showTrackNumber: false,
         emptyMessage:
           itemDetails.value?.provider === "library"
@@ -261,6 +245,7 @@ async function loadArtistTrackPage(
     params.offset,
     params.sortField,
     params.sortDirection,
+    params.favoritesOnly,
   );
 }
 
@@ -275,13 +260,9 @@ const onProviderChange = function (provider?: string[]) {
 };
 
 /** Shared shape of the listings; every case overrides what differs. */
-function listingDefaults(): Omit<
-  ListingConfig,
-  "labelKey" | "path" | "loadItems"
-> {
+function listingDefaults(): Omit<ListingConfig, "labelKey" | "path"> {
   return {
     itemtype: "artistalbums",
-    sortKeys: ALBUM_SORT_KEYS,
     showAlbumTypeFilter: false,
     showFavoritesOnlyFilter: true,
     showProviderFilter: true,
@@ -334,17 +315,30 @@ function carriedSource(rowId: "albums" | "singles_eps"): RowSource | undefined {
     : undefined;
 }
 
-/** The artist's releases, from the source the user picked or the row's default one. */
-async function loadReleases(
+/** The artist's releases of one type, from the selected source and server page. */
+async function loadArtistAlbumPage(
   rowId: "albums" | "singles_eps",
   params: LoadDataParams,
-) {
+): Promise<MediaItemType[]> {
   if (!itemDetails.value) return [];
   const source =
     params.provider?.[0] ??
     artistRows.effectiveSource(rowId, itemDetails.value);
   activeSource.value = source;
-  return await loadArtistReleases(itemDetails.value, source);
+  const rowTypes = RELEASE_TYPES[rowId];
+  const albumTypes = params.albumType?.length
+    ? rowTypes.filter((albumType) => params.albumType?.includes(albumType))
+    : rowTypes;
+  if (!albumTypes.length) return [];
+  return await artistAlbumsBySource(itemDetails.value, source, {
+    search: params.search,
+    limit: params.limit,
+    offset: params.offset,
+    sortField: params.sortField,
+    sortDirection: params.sortDirection,
+    albumTypes,
+    favoritesOnly: params.favoritesOnly,
+  });
 }
 
 /** Everything MusicBrainz credits to the artist; only a library artist has one. */

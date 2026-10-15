@@ -1,5 +1,6 @@
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
+  AlbumType,
   ListingType,
   ProviderFeature,
   SortDirection,
@@ -18,6 +19,7 @@ import { providerMapping } from "../fixtures/providerMapping";
 const {
   mockGetArtist,
   mockGetArtistTracks,
+  mockGetArtistAlbums,
   mockGetArtistAppearsOn,
   mockGetArtistDiscography,
   mockReplace,
@@ -25,6 +27,7 @@ const {
 } = vi.hoisted(() => ({
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
   mockGetArtistTracks: vi.fn<MusicAssistantApi["getArtistTracks"]>(),
+  mockGetArtistAlbums: vi.fn<MusicAssistantApi["getArtistAlbums"]>(),
   mockGetArtistAppearsOn: vi.fn<MusicAssistantApi["getArtistAppearsOn"]>(),
   mockGetArtistDiscography: vi.fn<MusicAssistantApi["getArtistDiscography"]>(),
   mockReplace: vi.fn(),
@@ -35,7 +38,7 @@ vi.mock("@/plugins/api", () => ({
   api: {
     getArtist: mockGetArtist,
     getArtistTracks: mockGetArtistTracks,
-    getArtistAlbums: vi.fn().mockResolvedValue([]),
+    getArtistAlbums: mockGetArtistAlbums,
     getArtistAppearsOn: mockGetArtistAppearsOn,
     getArtistDiscography: mockGetArtistDiscography,
     providers: {},
@@ -112,6 +115,7 @@ describe("ArtistListing", () => {
   beforeEach(() => {
     mockGetArtist.mockReset();
     mockGetArtistTracks.mockReset().mockResolvedValue([]);
+    mockGetArtistAlbums.mockReset().mockResolvedValue([]);
     mockReplace.mockReset();
     mockGetArtistAppearsOn.mockReset().mockResolvedValue([]);
     mockGetArtistDiscography.mockReset().mockResolvedValue([]);
@@ -133,6 +137,66 @@ describe("ArtistListing", () => {
   it("renders nothing for an unknown listing", async () => {
     const wrapper = await mountListing("bogus");
     expect(wrapper.find(".items-listing-stub").exists()).toBe(false);
+  });
+
+  it("loads artist album pages with server-side type and favorite filters", async () => {
+    const item = artist({ item_id: "artist-1" });
+    const wrapper = await mountListing("albums", item);
+    const params: LoadDataParams = {
+      offset: 40,
+      limit: 20,
+      sortBy: "year:desc",
+      sortField: SortField.YEAR,
+      sortDirection: SortDirection.DESC,
+      search: "live",
+      favoritesOnly: true,
+      albumType: [AlbumType.ALBUM],
+    };
+
+    await listing(wrapper).props("loadPagedData")(params);
+
+    expect(listing(wrapper).props("sortListing")).toBe(
+      ListingType.ARTIST_ALBUMS,
+    );
+    expect(mockGetArtistAlbums).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+      undefined,
+      "live",
+      20,
+      40,
+      SortField.YEAR,
+      SortDirection.DESC,
+      [AlbumType.ALBUM],
+      true,
+    );
+  });
+
+  it("loads singles and EPs as a server-filtered album page", async () => {
+    const item = artist({ item_id: "artist-1" });
+    const wrapper = await mountListing("singles", item);
+    const params: LoadDataParams = {
+      offset: 0,
+      limit: 20,
+      sortBy: "sort_name",
+      sortField: SortField.SORT_NAME,
+      search: "",
+    };
+
+    await listing(wrapper).props("loadPagedData")(params);
+
+    expect(mockGetArtistAlbums).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+      undefined,
+      "",
+      20,
+      0,
+      SortField.SORT_NAME,
+      undefined,
+      [AlbumType.SINGLE, AlbumType.EP],
+      undefined,
+    );
   });
 
   it.each(["albums", "singles"])(
@@ -298,10 +362,16 @@ describe("ArtistListing", () => {
     expect(listing(wrapper).props("subtitle")).toBe("Artist");
 
     await (
-      listing(wrapper).props("loadItems") as (
-        params: Record<string, unknown>,
+      listing(wrapper).props("loadPagedData") as (
+        params: LoadDataParams,
       ) => Promise<unknown>
-    )({ provider: ["library"] });
+    )({
+      offset: 0,
+      limit: 50,
+      sortBy: "sort_name",
+      search: "",
+      provider: ["library"],
+    });
     await flushPromises();
 
     expect(listing(wrapper).props("subtitle")).toBe("Artist · source_library");
@@ -325,7 +395,7 @@ describe("ArtistListing", () => {
     await flushPromises();
 
     expect(listing(wrapper).props("subtitle")).toBe("Artist");
-    expect(listing(wrapper).props("showFavoritesOnlyFilter")).toBe(false);
+    expect(listing(wrapper).props("showFavoritesOnlyFilter")).toBe(true);
   });
 
   it("loads artist tracks with server paging, search, sort and provider filter", async () => {
@@ -355,6 +425,24 @@ describe("ArtistListing", () => {
       40,
       SortField.DURATION,
       "desc",
+      false,
+    );
+
+    mockGetArtistTracks.mockClear();
+    await listing(wrapper).props("loadPagedData")({
+      ...params,
+      favoritesOnly: true,
+    });
+    expect(mockGetArtistTracks).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+      "spotify--1",
+      "live",
+      20,
+      40,
+      SortField.DURATION,
+      "desc",
+      true,
     );
   });
 

@@ -98,7 +98,7 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 95;
+export const MIN_SERVER_SCHEMA_VERSION = 96;
 
 export interface CommandOptions {
   /**
@@ -754,6 +754,7 @@ export class MusicAssistantApi {
     offset?: number,
     sort_field?: SortField,
     sort_direction?: SortDirection,
+    favorite_only?: boolean,
   ): Promise<Track[]> {
     return this.sendCommand("music/artists/artist_tracks", {
       item_id,
@@ -764,6 +765,7 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+      favorite_only,
     });
   }
 
@@ -798,6 +800,8 @@ export class MusicAssistantApi {
     offset?: number,
     sort_field?: SortField,
     sort_direction?: SortDirection,
+    album_types?: AlbumType[],
+    favorite_only?: boolean,
   ): Promise<Album[]> {
     return this.sendCommand("music/artists/artist_albums", {
       item_id,
@@ -808,6 +812,8 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+      album_types,
+      favorite_only,
     });
   }
 
@@ -989,6 +995,7 @@ export class MusicAssistantApi {
     offset?: number,
     sort_field?: SortField,
     sort_direction?: SortDirection,
+    favorite_only?: boolean,
   ): Promise<Track[]> {
     return this.sendCommand("music/albums/album_tracks", {
       item_id,
@@ -999,6 +1006,7 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+      favorite_only,
     });
   }
 
@@ -1365,9 +1373,15 @@ export class MusicAssistantApi {
 
   public getAudiobookCollection(
     item_id: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
   ): Promise<MediaCollection<Audiobook>> {
     return this.sendCommand("music/audiobooks/get_collection", {
       item_id,
+      search,
+      limit,
+      offset,
     });
   }
 
@@ -1662,6 +1676,7 @@ export class MusicAssistantApi {
     offset?: number,
     sort_field?: SortField,
     sort_direction?: SortDirection,
+    exclude_item_id?: string,
   ): Promise<PodcastEpisode[]> {
     return this.sendCommand("music/podcasts/podcast_episodes", {
       item_id,
@@ -1672,6 +1687,7 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+      exclude_item_id,
     });
   }
 
