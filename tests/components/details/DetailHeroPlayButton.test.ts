@@ -140,4 +140,25 @@ describe("DetailHeroPlayButton", () => {
     expect(buttons[0].attributes("data-truncate")).toBe("true");
     expect(buttons[1].attributes("data-truncate")).toBe("true");
   });
+
+  it("keeps a usable width in a crowded row, rather than the scraps left", async () => {
+    row.room = 72;
+    storeMock.activePlayer = player();
+    const wrapper = mountButton();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.get("div").attributes("style")).toContain(
+      "max-width: 160px",
+    );
+  });
+
+  it("keeps that width when the other buttons alone overflow the row", async () => {
+    row.room = -20;
+    const wrapper = mountButton();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.get("div").attributes("style")).toContain(
+      "max-width: 160px",
+    );
+  });
 });

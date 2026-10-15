@@ -86,10 +86,16 @@ const sentenceWidth = ref(0);
 
 const sentenceFits = computed(() => sentenceWidth.value <= room.value);
 
-// inline, as a utility class would outrank it (they are all !important)
+// px the button keeps however crowded its row, room for the play icon, a few
+// letters of the name and the dropdown; the menu button's own minimum (min-w-40)
+const MIN_BUTTON_WIDTH = 160;
+
+// inline, as a utility class would outrank it (they are all !important). Below
+// the minimum the button keeps it, and a row that wraps moves its other
+// buttons to the next line instead
 const roomStyle = computed(() => ({
   maxWidth: Number.isFinite(room.value)
-    ? `${Math.max(room.value, 0)}px`
+    ? `${Math.max(room.value, MIN_BUTTON_WIDTH)}px`
     : "100%",
 }));
 
