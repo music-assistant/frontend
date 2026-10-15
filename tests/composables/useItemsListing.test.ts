@@ -103,32 +103,48 @@ describe("useItemsListing", () => {
     expect(done).toHaveBeenCalledWith("ok");
   });
 
-  it("keeps the displayed sort when a new sort request fails", async () => {
+  it("retries a failed sort from the start and replaces the displayed rows", async () => {
     const items = [track({ item_id: "track-1" })];
+    const nextItems = [track({ item_id: "track-2" })];
+    const sortedItems = [track({ item_id: "duration-first" })];
     const loadPagedData = vi
       .fn()
-      .mockResolvedValueOnce(items)
+      .mockResolvedValueOnce([...items])
+      .mockResolvedValueOnce(nextItems)
       .mockRejectedValueOnce(new Error("sort failed"))
-      .mockResolvedValueOnce(items);
-    const listing = setupItemsListing({ loadPagedData });
+      .mockResolvedValueOnce(sortedItems);
+    const listing = setupItemsListing({ limit: 1, loadPagedData });
     listing.serverSortOptions.value = [
       sortOption(SortField.NAME, SortDirection.ASC),
       sortOption(SortField.DURATION, SortDirection.DESC),
     ];
     listing.params.value.sortBy = "name:asc";
     await listing.loadData(true);
+    await listing.loadNextPage({ done: vi.fn() });
 
     listing.params.value.sortBy = "duration:desc";
     await listing.loadData(true, false, true);
 
     expect(listing.loadError.value).toBe(true);
-    expect(listing.pagedItems.value).toEqual(items);
+    expect(listing.pagedItems.value).toEqual([...items, ...nextItems]);
     expect(listing.displayedSort.value).toEqual({
       sortField: SortField.NAME,
       sortDirection: SortDirection.ASC,
     });
 
-    await listing.loadData(true);
+    const loadNext = vi.fn(() => listing.loadNextPage({ done: vi.fn() }));
+    await listing.retryLoad(loadNext);
+
+    expect(loadNext).not.toHaveBeenCalled();
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        offset: 0,
+        sortField: SortField.DURATION,
+        sortDirection: SortDirection.DESC,
+      }),
+    );
+    expect(listing.pagedItems.value).toEqual(sortedItems);
+    expect(listing.loadError.value).toBe(false);
     expect(listing.displayedSort.value).toEqual({
       sortField: SortField.DURATION,
       sortDirection: SortDirection.DESC,

@@ -113,6 +113,7 @@ export function useItemsListing(
   let pendingClear = false;
   let pendingRefresh = false;
   let pendingParamsChange = false;
+  let retryFromStart = false;
   // lets async work tell that the listing it is working for is already gone
   let disposed = false;
 
@@ -194,6 +195,7 @@ export function useItemsListing(
         if (params.value.offset) pagedItems.value.push(...nextItems);
         else pagedItems.value = nextItems;
         displayedSort.value = requestedSort;
+        retryFromStart = false;
         if (Math.abs(nextItems.length - props.limit) > 10) {
           allItemsReceived.value = true;
         }
@@ -202,6 +204,7 @@ export function useItemsListing(
       // the api already reports the failure to the user; the failed page is
       // loaded next
       params.value.offset = previousOffset;
+      retryFromStart = offset === 0;
       loadError.value = true;
     } finally {
       params.value.refresh = false;
@@ -250,9 +253,8 @@ export function useItemsListing(
 
   const retryLoad = (loadNext: () => void) => {
     loadError.value = false;
-    // nothing loaded yet, so the failed load was the first one
-    if (pagedItems.value.length === 0) loadData(true);
-    else loadNext();
+    if (retryFromStart || pagedItems.value.length === 0) return loadData(true);
+    loadNext();
   };
 
   const loadAllItems = async () => {
