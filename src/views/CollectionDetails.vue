@@ -22,7 +22,7 @@ import {
   type MediaItemType,
   MediaType,
 } from "@/plugins/api/interfaces";
-import { ref, computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { $t } from "@/plugins/i18n";
 import { getCollectionMediaTypeFromItemId } from "@/plugins/api/helpers";
 
@@ -51,16 +51,29 @@ const emptyMessage = computed(() => {
   return "";
 });
 
+watch(
+  () => [props.itemId, props.provider] as const,
+  async ([itemId, provider]) => {
+    itemDetails.value = undefined;
+    if (collectionMediaType.value !== MediaType.AUDIOBOOK) return;
+    const collection = await api.getAudiobookCollection(itemId, undefined, 0);
+    if (itemId === props.itemId && provider === props.provider) {
+      itemDetails.value = collection;
+    }
+  },
+  { immediate: true },
+);
+
 const loadCollectionItems = async function (params: LoadDataParams) {
   if (collectionMediaType.value === MediaType.AUDIOBOOK) {
-    itemDetails.value = await api.getAudiobookCollection(
+    const collection = await api.getAudiobookCollection(
       props.itemId,
       params.search,
       params.limit,
       params.offset,
       params.favoritesOnly,
     );
-    return itemDetails.value.items;
+    return collection.items;
   }
   return [];
 };
