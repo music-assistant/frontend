@@ -77,11 +77,7 @@
           <div
             class="flex min-w-0 flex-nowrap items-center gap-2 max-md:flex-wrap max-md:gap-2.5"
           >
-            <DetailHeroPlayButton
-              class="min-w-0 max-md:flex-1"
-              shrink-label
-              :item="item"
-            />
+            <DetailHeroPlayButton :item="item" />
             <DetailHeroButton
               :icon="Shuffle"
               :label="$t('shuffle')"
