@@ -293,6 +293,7 @@ useDetailItemUpdates(itemDetails, {
 
 const loadPlaylistTracks = async function (params: LoadDataParams) {
   const { itemId, provider } = props;
+  if (params.refresh) loadTracksQuietly(true);
   return await api.getPlaylistTracks(
     itemId,
     provider,

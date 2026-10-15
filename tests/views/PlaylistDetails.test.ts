@@ -185,6 +185,39 @@ describe("PlaylistDetails", () => {
     );
   });
 
+  it("refreshes the shared track snapshot when the listing refreshes", async () => {
+    const initialTracks = [track({ name: "Initial track" })];
+    const refreshedTracks = [track({ name: "Updated track" })];
+    apiMock.getPlaylistTracks.mockResolvedValue(initialTracks);
+    const item = playlistOf("builtin");
+    const wrapper = await mountDetails(item);
+    apiMock.getPlaylistTracks.mockClear().mockResolvedValue(refreshedTracks);
+
+    const loadPagedData = wrapper
+      .findComponent({ name: "ItemsListing" })
+      .props("loadPagedData") as (params: LoadDataParams) => Promise<unknown[]>;
+    await loadPagedData({
+      offset: 0,
+      limit: 50,
+      sortBy: "position",
+      search: "",
+      refresh: true,
+    });
+    await flushPromises();
+
+    expect(apiMock.getPlaylistTracks).toHaveBeenCalledTimes(2);
+    expect(apiMock.getPlaylistTracks).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+      true,
+    );
+    expect(
+      wrapper
+        .findComponent({ name: "PlaylistFeaturedArtists" })
+        .props("tracks"),
+    ).toEqual(refreshedTracks);
+  });
+
   it("leaves featured artists out of a dynamic playlist's rows", async () => {
     const wrapper = await mountDetails(
       playlist({ ...playlistOf("builtin"), is_dynamic: true }),
