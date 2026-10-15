@@ -37,6 +37,16 @@ describe("roomInRow", () => {
     expect(roomInRow(target)).toBe(300 - 32 - 40);
   });
 
+  it("leaves out the margins of the other items", () => {
+    const parent = row(300);
+    const target = child(0);
+    const pill = child(64);
+    pill.style.marginLeft = "4px";
+    parent.append(target, pill);
+
+    expect(roomInRow(target)).toBe(300 - 64 - 4);
+  });
+
   it("gives an item that isn't shown neither width nor a gap", () => {
     const parent = row(300, { columnGap: "8px" });
     const target = child(0);

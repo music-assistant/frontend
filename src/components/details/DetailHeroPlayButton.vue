@@ -1,5 +1,7 @@
 <template>
-  <div ref="wrapper" class="relative flex max-w-full min-w-0">
+  <!-- held to the room the row leaves it, so a long name ellipsizes before the
+       buttons beside it would wrap away -->
+  <div ref="wrapper" class="relative flex min-w-0" :style="roomStyle">
     <MenuButton
       ref="playButton"
       class="max-w-full min-w-0"
@@ -17,6 +19,7 @@
       class="pointer-events-none invisible absolute top-0 left-0 w-max"
       aria-hidden="true"
       inert
+      truncate
       :text="playSentence"
     />
   </div>
@@ -76,17 +79,31 @@ const playerName = computed(() => {
   return getPlayerName(player, Infinity);
 });
 
-const sentenceFits = ref(true);
+// px the row leaves the button, and px the whole sentence needs; until the row
+// is laid out, the sentence is taken to fit
+const room = ref(Infinity);
+const sentenceWidth = ref(0);
+
+const sentenceFits = computed(() => sentenceWidth.value <= room.value);
+
+// inline, as a utility class would outrank it (they are all !important)
+const roomStyle = computed(() => ({
+  maxWidth: Number.isFinite(room.value)
+    ? `${Math.max(room.value, 0)}px`
+    : "100%",
+}));
 
 const playButtonText = computed(() =>
   sentenceFits.value ? playSentence.value : playerName.value,
 );
 
-/** Whether the whole sentence fits the room the row leaves the button. */
+/** The room the row leaves the button, and the width the whole sentence needs. */
 const measure = function () {
   const probe = sentenceProbe.value?.$el as HTMLElement | undefined;
   if (!wrapper.value || !probe) return;
-  sentenceFits.value = probe.offsetWidth <= roomInRow(wrapper.value);
+  // whole pixels, so sub-pixel widths beside it can't tip the row into wrapping
+  room.value = Math.floor(roomInRow(wrapper.value));
+  sentenceWidth.value = probe.offsetWidth;
 };
 
 onMounted(measure);

@@ -28,8 +28,9 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 const MenuButtonStub = {
-  props: ["text", "label"],
-  template: '<button :label="label">{{ text }}</button>',
+  props: { text: String, label: String, truncate: Boolean },
+  template:
+    '<button :label="label" :data-truncate="String(truncate)">{{ text }}</button>',
 };
 
 function player(overrides: Partial<Player> = {}): Player {
@@ -120,5 +121,23 @@ describe("DetailHeroPlayButton", () => {
     await wrapper.vm.$nextTick();
 
     expect(visible(wrapper).text()).toBe("this_device");
+  });
+
+  it("holds the button to the room the row leaves it", async () => {
+    row.room = 180;
+    storeMock.activePlayer = player();
+    const wrapper = mountButton();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.get("div").attributes("style")).toContain(
+      "max-width: 180px",
+    );
+  });
+
+  it("measures the sentence with the same sizing as the button people see", () => {
+    const buttons = mountButton().findAll("button");
+
+    expect(buttons[0].attributes("data-truncate")).toBe("true");
+    expect(buttons[1].attributes("data-truncate")).toBe("true");
   });
 });
