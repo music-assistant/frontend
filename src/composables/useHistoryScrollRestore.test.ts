@@ -105,6 +105,21 @@ describe("useHistoryScrollRestore", () => {
     expect(scroller.scrollTop).toBe(0);
   });
 
+  it("gives up when the user presses a key while focus is outside the scroller", async () => {
+    leaveAt(1200);
+    historyMock.returned = true;
+    setContentHeight(800);
+    mount();
+    await nextTick();
+
+    document.body.dispatchEvent(
+      new KeyboardEvent("keydown", { bubbles: true }),
+    );
+    setContentHeight(2000);
+    resize();
+    expect(scroller.scrollTop).toBe(0);
+  });
+
   it("leaves a fresh navigation alone", async () => {
     leaveAt(1200);
     historyMock.returned = false;

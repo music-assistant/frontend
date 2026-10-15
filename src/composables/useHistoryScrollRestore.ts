@@ -73,14 +73,17 @@ export function useHistoryScrollRestore(content: Ref<HTMLElement | undefined>) {
     }, RESTORE_TIMEOUT_MS);
     // the user scrolling on their own wins over the restore; pointerdown
     // covers touch and dragging the scrollbar
-    const userEvents = ["wheel", "pointerdown", "keydown"] as const;
+    const userEvents = ["wheel", "pointerdown"] as const;
     const cancel = () => stopRestore?.();
     userEvents.forEach((e) => scroller.addEventListener(e, cancel));
+    // focus is often on the body after going back, outside the scroller
+    document.addEventListener("keydown", cancel);
     stopRestore = () => {
       observer.disconnect();
       stopObserve();
       clearTimeout(timeout);
       userEvents.forEach((e) => scroller.removeEventListener(e, cancel));
+      document.removeEventListener("keydown", cancel);
       stopRestore = undefined;
     };
   }
