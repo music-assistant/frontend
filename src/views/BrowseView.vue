@@ -1,6 +1,7 @@
 <template>
   <section class="flex min-h-full flex-col">
     <ItemsListing
+      :key="path || 'root'"
       fill-height
       itemtype="browse"
       :show-provider="false"
@@ -109,6 +110,7 @@ watch(
   () => props.path,
   async (path) => {
     currentFolder.value = undefined;
+    hasOnlyFolders.value = false;
     if (isRoot.value || !path) return;
     // opened without passing through the parent listing (a reload or a link)
     const folder = knownFolders.get(path) ?? (await findInParentListing(path));
@@ -119,8 +121,9 @@ watch(
 );
 
 const loadItems = async function (params: LoadDataParams) {
+  const path = props.path;
   const items: Array<MediaItemType> = await api.browse(
-    props.path,
+    path,
     store.activePlayerId,
     undefined,
     params.search,
@@ -129,6 +132,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.sortField,
     params.sortDirection,
   );
+  if (path !== props.path) return items;
   rememberFolders(items);
   const pageHasOnlyFolders = items.every(
     (item) => item.media_type === MediaType.FOLDER,
