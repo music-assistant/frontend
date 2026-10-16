@@ -248,6 +248,149 @@ describe("PlaylistDetails", () => {
     ).toEqual(refreshedTracks);
   });
 
+  it("retries a failed snapshot refresh before reloading the page", async () => {
+    const refreshedTracks = [track({ name: "Updated track" })];
+    apiMock.getPlaylistTracks.mockResolvedValue([
+      track({ name: "Initial track" }),
+    ]);
+    const item = playlistOf("builtin");
+    const wrapper = await mountDetails(item);
+    apiMock.getPlaylistTracks
+      .mockClear()
+      .mockRejectedValueOnce(new Error("snapshot refresh failed"))
+      .mockResolvedValueOnce(refreshedTracks)
+      .mockResolvedValueOnce(refreshedTracks);
+    const loadPagedData = wrapper
+      .findComponent({ name: "ItemsListing" })
+      .props("loadPagedData") as (params: LoadDataParams) => Promise<unknown[]>;
+    const params: LoadDataParams = {
+      offset: 0,
+      limit: 50,
+      sortBy: "position",
+      search: "",
+      refresh: true,
+    };
+
+    await expect(loadPagedData(params)).rejects.toThrow(
+      "snapshot refresh failed",
+    );
+    await loadPagedData({ ...params, refresh: false });
+
+    expect(apiMock.getPlaylistTracks).toHaveBeenNthCalledWith(
+      1,
+      item.item_id,
+      item.provider,
+      true,
+      undefined,
+      undefined,
+      0,
+    );
+    expect(apiMock.getPlaylistTracks).toHaveBeenNthCalledWith(
+      2,
+      item.item_id,
+      item.provider,
+      true,
+      undefined,
+      undefined,
+      0,
+    );
+    expect(apiMock.getPlaylistTracks).toHaveBeenNthCalledWith(
+      3,
+      item.item_id,
+      item.provider,
+      false,
+      undefined,
+      "",
+      50,
+      0,
+      undefined,
+      undefined,
+    );
+    expect(
+      wrapper
+        .findComponent({ name: "PlaylistFeaturedArtists" })
+        .props("tracks"),
+    ).toEqual(refreshedTracks);
+  });
+
+  it("keeps a newer playlist refresh pending when the previous playlist resolves late", async () => {
+    const firstItem = playlist({
+      ...playlistOf("builtin"),
+      item_id: "playlist-a",
+    });
+    const secondItem = playlist({
+      ...playlistOf("builtin"),
+      item_id: "playlist-b",
+    });
+    apiMock.getPlaylist.mockImplementation(async (itemId) =>
+      itemId === firstItem.item_id ? firstItem : secondItem,
+    );
+    const wrapper = await mountDetails(firstItem);
+    let resolveFirstRefresh!: (items: Track[]) => void;
+    let rejectSecondRefresh!: (error: Error) => void;
+    let secondRefreshAttempts = 0;
+    const refreshedTracks = [track({ name: "Playlist B track" })];
+    apiMock.getPlaylistTracks
+      .mockClear()
+      .mockImplementation((itemId, _provider, refresh) => {
+        if (itemId === firstItem.item_id && refresh) {
+          return new Promise<Track[]>((resolve) => {
+            resolveFirstRefresh = resolve;
+          });
+        }
+        if (itemId === secondItem.item_id && refresh) {
+          secondRefreshAttempts += 1;
+          if (secondRefreshAttempts === 1) {
+            return new Promise<Track[]>((_resolve, reject) => {
+              rejectSecondRefresh = reject;
+            });
+          }
+          return Promise.resolve(refreshedTracks);
+        }
+        return Promise.resolve([]);
+      });
+    const loadPagedData = wrapper
+      .findComponent({ name: "ItemsListing" })
+      .props("loadPagedData") as (params: LoadDataParams) => Promise<unknown[]>;
+
+    const firstRequest = loadPagedData({
+      offset: 0,
+      limit: 50,
+      sortBy: "position",
+      search: "",
+      refresh: true,
+    });
+    await wrapper.setProps({ itemId: secondItem.item_id });
+    await flushPromises();
+    const secondRequest = loadPagedData({
+      offset: 0,
+      limit: 50,
+      sortBy: "position",
+      search: "",
+      refresh: true,
+    });
+
+    resolveFirstRefresh([]);
+    await firstRequest;
+    rejectSecondRefresh(new Error("playlist B refresh failed"));
+    await expect(secondRequest).rejects.toThrow("playlist B refresh failed");
+
+    await loadPagedData({
+      offset: 0,
+      limit: 50,
+      sortBy: "position",
+      search: "",
+      refresh: false,
+    });
+
+    expect(secondRefreshAttempts).toBe(2);
+    expect(
+      wrapper
+        .findComponent({ name: "PlaylistFeaturedArtists" })
+        .props("tracks"),
+    ).toEqual(refreshedTracks);
+  });
+
   it("leaves featured artists out of a dynamic playlist's rows", async () => {
     const wrapper = await mountDetails(
       playlist({ ...playlistOf("builtin"), is_dynamic: true }),

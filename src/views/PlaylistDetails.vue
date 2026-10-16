@@ -171,6 +171,7 @@ const smartRules = ref<SmartPlaylistRules | null>(null);
 const showEditDialog = ref(false);
 const showRulesDialog = ref(false);
 const rowsEditorOpen = ref(false);
+let pendingSnapshotRefreshKey: string | undefined;
 // editing the rules of a smart playlist changes the library
 const canEditLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_WRITE),
@@ -270,6 +271,7 @@ watch(
       itemDetails.value = undefined;
       smartRules.value = null;
       resetTracks();
+      pendingSnapshotRefreshKey = undefined;
       updateAvailable.value = false;
       showRulesDialog.value = false;
       showEditDialog.value = false;
@@ -291,7 +293,14 @@ useDetailItemUpdates(itemDetails, {
 
 const loadPlaylistTracks = async function (params: LoadDataParams) {
   const { itemId, provider } = props;
-  if (params.refresh) await loadTracks(true);
+  const playlistKey = `${provider}/${itemId}`;
+  if (params.refresh) pendingSnapshotRefreshKey = playlistKey;
+  if (pendingSnapshotRefreshKey === playlistKey) {
+    await loadTracks(true);
+    if (pendingSnapshotRefreshKey === playlistKey) {
+      pendingSnapshotRefreshKey = undefined;
+    }
+  }
   return await api.getPlaylistTracks(
     itemId,
     provider,
