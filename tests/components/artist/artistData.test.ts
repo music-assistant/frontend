@@ -150,6 +150,9 @@ describe("artistData", () => {
       expect(apiMock.getArtistAppearsOn).toHaveBeenLastCalledWith(
         "1",
         "library",
+        undefined,
+        undefined,
+        0,
       );
     });
   });

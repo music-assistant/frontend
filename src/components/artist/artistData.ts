@@ -201,7 +201,13 @@ export async function loadArtistAppearsOn(
     sortField === undefined &&
     sortDirection === undefined
   ) {
-    return await api.getArtistAppearsOn(artist.item_id, artist.provider);
+    return await api.getArtistAppearsOn(
+      artist.item_id,
+      artist.provider,
+      undefined,
+      undefined,
+      0,
+    );
   }
 
   if (sortDirection === undefined) {

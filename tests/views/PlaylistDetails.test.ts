@@ -8,6 +8,7 @@ import {
   SortDirection,
   SortField,
   type SmartPlaylistRules,
+  type Track,
   type User,
 } from "@/plugins/api/interfaces";
 import PlaylistDetails from "@/views/PlaylistDetails.vue";
@@ -175,7 +176,7 @@ describe("PlaylistDetails", () => {
     expect(apiMock.getPlaylistTracks).toHaveBeenCalledWith(
       item.item_id,
       item.provider,
-      undefined,
+      false,
       undefined,
       "live",
       20,
@@ -191,18 +192,32 @@ describe("PlaylistDetails", () => {
     apiMock.getPlaylistTracks.mockResolvedValue(initialTracks);
     const item = playlistOf("builtin");
     const wrapper = await mountDetails(item);
-    apiMock.getPlaylistTracks.mockClear().mockResolvedValue(refreshedTracks);
+    let resolveRefresh!: (items: Track[]) => void;
+    apiMock.getPlaylistTracks
+      .mockClear()
+      .mockImplementationOnce(
+        () =>
+          new Promise<Track[]>((resolve) => {
+            resolveRefresh = resolve;
+          }),
+      )
+      .mockResolvedValue(refreshedTracks);
 
     const loadPagedData = wrapper
       .findComponent({ name: "ItemsListing" })
       .props("loadPagedData") as (params: LoadDataParams) => Promise<unknown[]>;
-    await loadPagedData({
+    const refreshing = loadPagedData({
       offset: 0,
       limit: 50,
       sortBy: "position",
       search: "",
       refresh: true,
     });
+    await flushPromises();
+
+    expect(apiMock.getPlaylistTracks).toHaveBeenCalledTimes(1);
+    resolveRefresh(refreshedTracks);
+    await refreshing;
     await flushPromises();
 
     expect(apiMock.getPlaylistTracks).toHaveBeenCalledTimes(2);
@@ -213,6 +228,18 @@ describe("PlaylistDetails", () => {
       undefined,
       undefined,
       0,
+    );
+    expect(apiMock.getPlaylistTracks).toHaveBeenNthCalledWith(
+      2,
+      item.item_id,
+      item.provider,
+      false,
+      undefined,
+      "",
+      50,
+      0,
+      undefined,
+      undefined,
     );
     expect(
       wrapper
