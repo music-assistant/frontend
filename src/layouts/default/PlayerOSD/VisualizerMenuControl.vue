@@ -42,6 +42,20 @@
       />
       <span class="visualizer-menu__value">{{ opacityDraft }}%</span>
     </div>
+    <div class="visualizer-menu__row">
+      <Palette :size="20" class="visualizer-menu__icon" />
+      <Slider
+        :model-value="[paletteRampDraft]"
+        :aria-label="$t('visualizer.palette_ramp')"
+        :min="0"
+        :max="100"
+        :step="VISUALIZER_PALETTE_RAMP_STEP"
+        class="visualizer-menu__slider"
+        @update:model-value="onPaletteRampChange"
+        @value-commit="onPaletteRampCommit"
+      />
+      <span class="visualizer-menu__value">{{ paletteRampDraft }}%</span>
+    </div>
     <!-- preset packs only load while enabled, so the list would be empty -->
     <template v-if="enabledPref">
       <DropdownMenuSeparator />
@@ -126,6 +140,7 @@ import {
   Contrast,
   Droplet,
   Focus,
+  Palette,
   Star,
   SwatchBook,
 } from "@lucide/vue";
@@ -140,6 +155,8 @@ import {
   currentVisualizerPreset,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
+  VISUALIZER_PALETTE_RAMP_DEFAULT,
+  VISUALIZER_PALETTE_RAMP_STEP,
 } from "@/composables/visualizer/state";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { listPresetNames } from "@/helpers/visualizer/presetLibrary";
@@ -161,6 +178,10 @@ const { visualizerEnabledPref: enabledPref, toggleVisualizer } = useVisualizer(
 );
 const presetPref = getPreference("visualizer_preset", "");
 const blurPref = getPreference("visualizer_blur", VISUALIZER_BLUR_DEFAULT);
+const paletteRampPref = getPreference(
+  "visualizer_palette_ramp",
+  VISUALIZER_PALETTE_RAMP_DEFAULT,
+);
 const opacityPref = getPreference(
   "visualizer_opacity",
   VISUALIZER_OPACITY_DEFAULT,
@@ -284,6 +305,20 @@ const blurDraft = ref(blurPref.value);
 watch(blurPref, (value) => (blurDraft.value = value));
 const opacityDraft = ref(opacityPref.value);
 watch(opacityPref, (value) => (opacityDraft.value = value));
+const paletteRampDraft = ref(paletteRampPref.value);
+watch(paletteRampPref, (value) => (paletteRampDraft.value = value));
+
+const onPaletteRampChange = (value: number[] | undefined) => {
+  if (!value) return;
+  paletteRampDraft.value = value[0] ?? VISUALIZER_PALETTE_RAMP_DEFAULT;
+};
+
+const onPaletteRampCommit = (value: number[]) => {
+  void setPreference(
+    "visualizer_palette_ramp",
+    value[0] ?? VISUALIZER_PALETTE_RAMP_DEFAULT,
+  );
+};
 
 const onBlurChange = (value: number[] | undefined) => {
   if (!value) return;

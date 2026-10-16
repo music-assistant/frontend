@@ -8,6 +8,7 @@
       :opacity="visualizerOpacityPref"
       :player-id="store.activePlayer?.player_id"
       covered-when-fullscreen
+      :force-dark-palette="useLightChrome"
     />
     <!-- Blurred album art background: separate element so the browser can cache the texture -->
     <div
