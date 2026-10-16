@@ -290,39 +290,42 @@ describe("MusicAssistantApi error handling", () => {
     await expect(sortedRequest).resolves.toEqual([]);
   });
 
-  it("sends typed paging parameters for album tracks", async () => {
-    const request = api.getAlbumTracks(
-      "album-1",
-      "spotify",
-      true,
-      "live",
-      20,
-      40,
-      SortField.DURATION,
-      SortDirection.DESC,
-      true,
-    );
+  it.each([true, false, undefined])(
+    "sends album track parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getAlbumTracks(
+        "album-1",
+        "spotify",
+        true,
+        "live",
+        20,
+        40,
+        SortField.DURATION,
+        SortDirection.DESC,
+        favorite,
+      );
 
-    expect(transport.lastCommand.command).toBe("music/albums/album_tracks");
-    expect(transport.lastCommand.args).toEqual({
-      item_id: "album-1",
-      provider_instance_id_or_domain: "spotify",
-      in_library_only: true,
-      search: "live",
-      sort_field: SortField.DURATION,
-      sort_direction: SortDirection.DESC,
-      limit: 20,
-      offset: 40,
-      favorite_only: true,
-    });
+      expect(transport.lastCommand.command).toBe("music/albums/album_tracks");
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "album-1",
+        provider_instance_id_or_domain: "spotify",
+        in_library_only: true,
+        search: "live",
+        sort_field: SortField.DURATION,
+        sort_direction: SortDirection.DESC,
+        limit: 20,
+        offset: 40,
+        favorite,
+      });
 
-    transport.receive({
-      message_id: transport.lastCommand.message_id!,
-      result: [],
-      partial: false,
-    });
-    await expect(request).resolves.toEqual([]);
-  });
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
 
   it("sends typed paging parameters for playlist tracks", async () => {
     const request = api.getPlaylistTracks(
@@ -491,108 +494,117 @@ describe("MusicAssistantApi error handling", () => {
     await expect(request).resolves.toEqual([]);
   });
 
-  it("sends typed paging parameters for artist tracks", async () => {
-    const request = api.getArtistTracks(
-      "artist-1",
-      "library",
-      "spotify--1",
-      "live",
-      20,
-      40,
-      SortField.DURATION,
-      SortDirection.DESC,
-      true,
-    );
+  it.each([true, false, undefined])(
+    "sends artist track parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getArtistTracks(
+        "artist-1",
+        "library",
+        "spotify--1",
+        "live",
+        20,
+        40,
+        SortField.DURATION,
+        SortDirection.DESC,
+        favorite,
+      );
 
-    expect(transport.lastCommand.command).toBe("music/artists/artist_tracks");
-    expect(transport.lastCommand.args).toEqual({
-      item_id: "artist-1",
-      provider_instance_id_or_domain: "library",
-      provider_filter: "spotify--1",
-      search: "live",
-      limit: 20,
-      offset: 40,
-      sort_field: SortField.DURATION,
-      sort_direction: SortDirection.DESC,
-      favorite_only: true,
-    });
+      expect(transport.lastCommand.command).toBe("music/artists/artist_tracks");
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "artist-1",
+        provider_instance_id_or_domain: "library",
+        provider_filter: "spotify--1",
+        search: "live",
+        limit: 20,
+        offset: 40,
+        sort_field: SortField.DURATION,
+        sort_direction: SortDirection.DESC,
+        favorite,
+      });
 
-    transport.receive({
-      message_id: transport.lastCommand.message_id!,
-      result: [],
-      partial: false,
-    });
-    await expect(request).resolves.toEqual([]);
-  });
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
 
-  it("sends album type filters for artist albums", async () => {
-    const request = api.getArtistAlbums(
-      "artist-1",
-      "library",
-      undefined,
-      "live",
-      20,
-      40,
-      SortField.NAME,
-      SortDirection.ASC,
-      [AlbumType.SINGLE, AlbumType.EP],
-      true,
-    );
+  it.each([true, false, undefined])(
+    "sends artist album parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getArtistAlbums(
+        "artist-1",
+        "library",
+        undefined,
+        "live",
+        20,
+        40,
+        SortField.NAME,
+        SortDirection.ASC,
+        [AlbumType.SINGLE, AlbumType.EP],
+        favorite,
+      );
 
-    expect(transport.lastCommand.command).toBe("music/artists/artist_albums");
-    expect(transport.lastCommand.args).toEqual({
-      item_id: "artist-1",
-      provider_instance_id_or_domain: "library",
-      provider_filter: undefined,
-      search: "live",
-      limit: 20,
-      offset: 40,
-      sort_field: SortField.NAME,
-      sort_direction: SortDirection.ASC,
-      album_types: [AlbumType.SINGLE, AlbumType.EP],
-      favorite_only: true,
-    });
+      expect(transport.lastCommand.command).toBe("music/artists/artist_albums");
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "artist-1",
+        provider_instance_id_or_domain: "library",
+        provider_filter: undefined,
+        search: "live",
+        limit: 20,
+        offset: 40,
+        sort_field: SortField.NAME,
+        sort_direction: SortDirection.ASC,
+        album_types: [AlbumType.SINGLE, AlbumType.EP],
+        favorite,
+      });
 
-    transport.receive({
-      message_id: transport.lastCommand.message_id!,
-      result: [],
-      partial: false,
-    });
-    await expect(request).resolves.toEqual([]);
-  });
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
 
-  it("sends search and paging parameters for audiobook collections", async () => {
-    const request = api.getAudiobookCollection(
-      "collection-1",
-      "chapter 2",
-      20,
-      40,
-      true,
-    );
+  it.each([true, false, undefined])(
+    "sends collection parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getAudiobookCollection(
+        "collection-1",
+        "chapter 2",
+        20,
+        40,
+        favorite,
+      );
 
-    expect(transport.lastCommand.command).toBe(
-      "music/audiobooks/get_collection",
-    );
-    expect(transport.lastCommand.args).toEqual({
-      item_id: "collection-1",
-      search: "chapter 2",
-      limit: 20,
-      offset: 40,
-      favorite_only: true,
-    });
-
-    transport.receive({
-      message_id: transport.lastCommand.message_id!,
-      result: {
+      expect(transport.lastCommand.command).toBe(
+        "music/audiobooks/get_collection",
+      );
+      expect(transport.lastCommand.args).toEqual({
         item_id: "collection-1",
-        name: "Collection",
-        provider: "library",
-        items: [],
-      },
-      partial: false,
-    });
-    await expect(request).resolves.toMatchObject({ items: [] });
-  });
+        search: "chapter 2",
+        limit: 20,
+        offset: 40,
+        favorite,
+      });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: {
+          item_id: "collection-1",
+          name: "Collection",
+          provider: "library",
+          items: [],
+        },
+        partial: false,
+      });
+      await expect(request).resolves.toMatchObject({ items: [] });
+    },
+  );
 
   it("sends typed paging parameters for artist audiobooks", async () => {
     const request = api.getArtistAudiobooks(

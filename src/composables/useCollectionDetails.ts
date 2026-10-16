@@ -42,7 +42,7 @@ export function useCollectionDetails(collection: () => CollectionRef) {
       params.search,
       params.limit,
       params.offset,
-      params.favoritesOnly,
+      params.favoritesOnly || undefined,
     );
     return page.items;
   };

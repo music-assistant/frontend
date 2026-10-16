@@ -62,7 +62,7 @@ export async function artistAlbumsBySource(
           options.sortField,
           options.sortDirection,
           options.albumTypes,
-          options.favoritesOnly,
+          options.favoritesOnly || undefined,
         )
       : api.getArtistAlbums(itemId, provider, undefined, undefined, 0);
   if (source === "library" || artist.provider !== "library") {
@@ -177,7 +177,7 @@ export async function loadArtistTracks(
     offset,
     sortField,
     sortDirection,
-    favoriteOnly,
+    favoriteOnly || undefined,
   );
 }
 

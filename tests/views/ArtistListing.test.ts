@@ -425,7 +425,7 @@ describe("ArtistListing", () => {
       40,
       SortField.DURATION,
       "desc",
-      false,
+      undefined,
     );
 
     mockGetArtistTracks.mockClear();

@@ -77,6 +77,22 @@ describe("useCollectionDetails", () => {
     expect(details.itemDetails.value).toEqual(full);
   });
 
+  it.each([true, false, undefined])(
+    "maps the favorite-only toggle %s to the collection filter",
+    async (favoritesOnly) => {
+      const details = setupCollection();
+      await details.loadCollectionItems({ ...params, favoritesOnly });
+
+      expect(getAudiobookCollection).toHaveBeenLastCalledWith(
+        "audiobook___First",
+        "",
+        50,
+        0,
+        favoritesOnly || undefined,
+      );
+    },
+  );
+
   it("retries the snapshot after a failed listing load", async () => {
     const details = setupCollection();
     getAudiobookCollection.mockRejectedValueOnce(new Error("snapshot failed"));

@@ -18,6 +18,7 @@ vi.mock("@/plugins/api", () => ({
 }));
 
 import {
+  artistAlbumsBySource,
   artistProvidersForFeature,
   isSingleOrEp,
   loadArtistAppearsOn,
@@ -76,6 +77,29 @@ describe("artistData", () => {
   });
 
   describe("loadArtistReleases", () => {
+    it.each([true, false, undefined])(
+      "maps the album favorite-only toggle %s to the server filter",
+      async (favoritesOnly) => {
+        await artistAlbumsBySource(LIBRARY_ARTIST, "library", {
+          limit: 20,
+          favoritesOnly,
+        });
+
+        expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
+          "1",
+          "library",
+          undefined,
+          undefined,
+          20,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          favoritesOnly || undefined,
+        );
+      },
+    );
+
     it("asks the library for the library source", async () => {
       await loadArtistReleases(LIBRARY_ARTIST, "library");
       expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
@@ -157,6 +181,34 @@ describe("artistData", () => {
   });
 
   describe("loadArtistTracks", () => {
+    it.each([true, false])(
+      "maps the track favorite-only toggle %s to the server filter",
+      async (favoriteOnly) => {
+        await loadArtistTracks(
+          LIBRARY_ARTIST,
+          undefined,
+          undefined,
+          20,
+          undefined,
+          undefined,
+          undefined,
+          favoriteOnly,
+        );
+
+        expect(apiMock.getArtistTracks).toHaveBeenLastCalledWith(
+          "1",
+          "library",
+          undefined,
+          undefined,
+          20,
+          undefined,
+          undefined,
+          undefined,
+          favoriteOnly || undefined,
+        );
+      },
+    );
+
     it("requests all tracks when no page parameters are given", async () => {
       await loadArtistTracks(LIBRARY_ARTIST);
       expect(apiMock.getArtistTracks).toHaveBeenLastCalledWith(

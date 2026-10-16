@@ -68,30 +68,33 @@ describe("albumData", () => {
       );
     });
 
-    it("passes the favorite-only filter to the server", async () => {
-      await loadAlbumTracks(
-        ALBUM,
-        false,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        true,
-      );
+    it.each([true, false])(
+      "maps the favorite-only toggle %s to the server filter",
+      async (favoriteOnly) => {
+        await loadAlbumTracks(
+          ALBUM,
+          false,
+          undefined,
+          20,
+          undefined,
+          undefined,
+          undefined,
+          favoriteOnly,
+        );
 
-      expect(apiMock.getAlbumTracks).toHaveBeenLastCalledWith(
-        "1",
-        "library",
-        false,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        true,
-      );
-    });
+        expect(apiMock.getAlbumTracks).toHaveBeenLastCalledWith(
+          "1",
+          "library",
+          false,
+          undefined,
+          20,
+          undefined,
+          undefined,
+          undefined,
+          favoriteOnly || undefined,
+        );
+      },
+    );
   });
 
   describe("loadAlbumVersions", () => {

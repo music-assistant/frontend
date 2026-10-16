@@ -49,7 +49,7 @@ export async function loadAlbumTracks(
     offset,
     sortField,
     sortDirection,
-    favoriteOnly,
+    favoriteOnly || undefined,
   );
 }
 

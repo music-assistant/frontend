@@ -759,7 +759,7 @@ export class MusicAssistantApi {
     offset?: number,
     sort_field?: SortField,
     sort_direction?: SortDirection,
-    favorite_only?: boolean,
+    favorite?: boolean,
   ): Promise<Track[]> {
     return this.sendCommand("music/artists/artist_tracks", {
       item_id,
@@ -770,7 +770,7 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
-      favorite_only,
+      favorite,
     });
   }
 
@@ -806,7 +806,7 @@ export class MusicAssistantApi {
     sort_field?: SortField,
     sort_direction?: SortDirection,
     album_types?: AlbumType[],
-    favorite_only?: boolean,
+    favorite?: boolean,
   ): Promise<Album[]> {
     return this.sendCommand("music/artists/artist_albums", {
       item_id,
@@ -818,7 +818,7 @@ export class MusicAssistantApi {
       sort_field,
       sort_direction,
       album_types,
-      favorite_only,
+      favorite,
     });
   }
 
@@ -1002,7 +1002,7 @@ export class MusicAssistantApi {
     offset?: number,
     sort_field?: SortField,
     sort_direction?: SortDirection,
-    favorite_only?: boolean,
+    favorite?: boolean,
   ): Promise<Track[]> {
     return this.sendCommand("music/albums/album_tracks", {
       item_id,
@@ -1013,7 +1013,7 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
-      favorite_only,
+      favorite,
     });
   }
 
@@ -1383,14 +1383,14 @@ export class MusicAssistantApi {
     search?: string,
     limit?: number,
     offset?: number,
-    favorite_only?: boolean,
+    favorite?: boolean,
   ): Promise<MediaCollection<Audiobook>> {
     return this.sendCommand("music/audiobooks/get_collection", {
       item_id,
       search,
       limit,
       offset,
-      favorite_only,
+      favorite,
     });
   }
 
