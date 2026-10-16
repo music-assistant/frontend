@@ -5,6 +5,11 @@
  * for as long as the id takes to arrive.
  */
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
+import {
+  currentVisualizerPreset,
+  visualizerAuditionRequest,
+} from "@/composables/visualizer/state";
+import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -37,6 +42,7 @@ vi.mock("@/plugins/visualizer-relay", () => ({
 }));
 
 const setPaused = vi.hoisted(() => vi.fn());
+const loadPresetByName = vi.hoisted(() => vi.fn(async () => {}));
 // The real module keeps the timing constants; only the engine itself is faked.
 vi.mock(
   "@/composables/visualizer/useVisualizerEngine",
@@ -44,7 +50,7 @@ vi.mock(
     ...(await importOriginal<object>()),
     isVisualizerSupported: () => true,
     createVisualizerEngine: vi.fn(async () => ({
-      loadPresetByName: vi.fn(async () => {}),
+      loadPresetByName,
       loadRandomPreset: vi.fn(async () => "preset"),
       setPaused,
       destroy: vi.fn(),
@@ -52,11 +58,20 @@ vi.mock(
   }),
 );
 
-vi.mock("@/composables/userPreferences", () => ({
-  useUserPreferences: () => ({
-    getPreference: (_key: string, fallback: unknown) => ({ value: fallback }),
-  }),
-}));
+// Real refs, registered per key, so tests can flip a preference reactively.
+const prefRefs = vi.hoisted(() => new Map<string, { value: unknown }>());
+vi.mock("@/composables/userPreferences", async () => {
+  const { ref } = await import("vue");
+  return {
+    useUserPreferences: () => ({
+      getPreference: (key: string, fallback: unknown) => {
+        const preference = ref(fallback);
+        prefRefs.set(key, preference);
+        return preference;
+      },
+    }),
+  };
+});
 
 vi.mock("@/helpers/visualizer/presetLibrary", () => ({
   randomPresetName: vi.fn(async () => "preset"),
@@ -231,6 +246,67 @@ describe("VisualizerCanvas playback gating", () => {
 
     // No wind-down to run: there is nothing on screen yet.
     expect(setPaused).toHaveBeenCalledWith(true, false);
+    wrapper.unmount();
+  });
+});
+
+describe("VisualizerCanvas preset auditions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    visualizerAuditionRequest.value = null;
+    (api.players as Record<string, { playback_state: PlaybackState }>).kitchen =
+      { playback_state: PlaybackState.PLAYING };
+  });
+
+  it("loads an auditioned preset instantly, without blending", async () => {
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+    loadPresetByName.mockClear();
+
+    visualizerAuditionRequest.value = { name: "audited preset" };
+    await flushPromises();
+
+    expect(loadPresetByName).toHaveBeenCalledWith("audited preset", 0);
+    expect(currentVisualizerPreset.value).toBe("audited preset");
+    wrapper.unmount();
+  });
+
+  it("does not re-blend when the deferred preference write lands on the auditioned preset", async () => {
+    const wrapper = mount(VisualizerCanvas, {
+      props: { playerId: "kitchen", preset: "audited preset" },
+    });
+    await flushPromises();
+    visualizerAuditionRequest.value = { name: "audited preset" };
+    await flushPromises();
+    loadPresetByName.mockClear();
+
+    // the menu's debounced flush arriving: mode flips to fixed on the pick
+    prefRefs.get("visualizer_preset_mode")!.value = "fixed";
+    await flushPromises();
+
+    expect(loadPresetByName).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("cancels an in-flight random pick when an audition arrives", async () => {
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+    loadPresetByName.mockClear();
+
+    // Hold the pick open so the audition races it.
+    let resolvePick: (name: string) => void = () => {};
+    vi.mocked(randomPresetName).mockReturnValueOnce(
+      new Promise((resolve) => (resolvePick = resolve)),
+    );
+    await wrapper.setProps({ preset: "nudges the preset watcher" });
+    visualizerAuditionRequest.value = { name: "audited preset" };
+    await flushPromises();
+    resolvePick("stale pick");
+    await flushPromises();
+
+    expect(loadPresetByName).toHaveBeenCalledTimes(1);
+    expect(loadPresetByName).toHaveBeenCalledWith("audited preset", 0);
+    expect(currentVisualizerPreset.value).toBe("audited preset");
     wrapper.unmount();
   });
 });
