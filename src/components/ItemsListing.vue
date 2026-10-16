@@ -1914,6 +1914,10 @@ onBeforeUnmount(() => {
 if (props.restoreState) {
   // handle restore state
   onBeforeUnmount(() => {
+    if (loading.value || loadError.value) {
+      store.prevState = undefined;
+      return;
+    }
     const key = props.path || props.itemtype;
     const el = document.querySelector(".content-section");
 

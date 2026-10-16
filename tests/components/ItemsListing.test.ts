@@ -1855,6 +1855,101 @@ describe("ItemsListing server sort options", () => {
     );
   });
 
+  it("does not cache a visit while a sort change is queued during a reload", async () => {
+    let resolveReload!: (items: Track[]) => void;
+    const reloadedTrack = track({ item_id: "fresh-order" });
+    const loadPagedData = vi
+      .fn()
+      .mockResolvedValueOnce([track({ item_id: "old-order" })])
+      .mockImplementationOnce(
+        () =>
+          new Promise<Track[]>((resolve) => {
+            resolveReload = resolve;
+          }),
+      )
+      .mockResolvedValueOnce([reloadedTrack]);
+    const props = {
+      sortListing: ListingType.LIBRARY_TRACKS,
+      loadPagedData,
+      showGenreFilter: false,
+      restoreState: true,
+    };
+    const listing = mountListingRaw(props);
+    await flushPromises();
+    const pendingReload = listing.vm.reload();
+    const playCountChip = listing
+      .findAll("button")
+      .find((button) => button.text().includes("sort.play_count"));
+    await playCountChip!.trigger("click");
+    await flushPromises();
+    listing.unmount();
+
+    expect(store.prevState).toBeUndefined();
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.librarytracks.tracks": { sortBy: "play_count:desc" },
+      },
+    });
+    const restored = mountListingRaw(props);
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(3);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        offset: 0,
+        sortField: SortField.PLAY_COUNT,
+      }),
+    );
+    expect(restored.vm.pagedItems).toEqual([reloadedTrack]);
+
+    resolveReload([track({ item_id: "late-old-order" })]);
+    await pendingReload;
+    expect(store.prevState).toBeUndefined();
+  });
+
+  it("does not cache old rows after a favorites reload fails", async () => {
+    const favoriteTrack = track({ item_id: "liked-track", favorite: true });
+    const loadPagedData = vi
+      .fn()
+      .mockResolvedValueOnce([track({ favorite: false })])
+      .mockRejectedValueOnce(new Error("favorites failed"))
+      .mockResolvedValueOnce([favoriteTrack]);
+    const props = {
+      sortListing: ListingType.LIBRARY_TRACKS,
+      loadPagedData,
+      showGenreFilter: false,
+      restoreState: true,
+    };
+    const listing = mountListingRaw(props);
+    await flushPromises();
+    const menuItems = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as {
+      label?: string;
+      action?: () => void;
+    }[];
+    menuItems.find((item) => item.label === "tooltip.filter_favorites")!
+      .action!();
+    await flushPromises();
+    listing.unmount();
+
+    expect(store.prevState).toBeUndefined();
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.librarytracks.tracks": { favoriteFilter: true },
+      },
+    });
+    const restored = mountListingRaw(props);
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(3);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        offset: 0,
+        favoritesOnly: true,
+      }),
+    );
+    expect(restored.vm.pagedItems).toEqual([favoriteTrack]);
+  });
+
   it("reloads instead of restoring rows from a failed sort", async () => {
     const reloadedTrack = track({ item_id: "play-count-first" });
     const loadPagedData = vi
