@@ -191,7 +191,7 @@ export function useItemsListing(
           sortField: params.value.sortField,
           sortDirection: params.value.sortDirection,
         };
-        const nextItems = await loadPagedData(params.value);
+        const nextItems = await loadPagedData({ ...params.value });
         if (params.value.offset) pagedItems.value.push(...nextItems);
         else pagedItems.value = nextItems;
         displayedSort.value = requestedSort;
@@ -253,7 +253,10 @@ export function useItemsListing(
 
   const retryLoad = (loadNext: () => void) => {
     loadError.value = false;
-    if (retryFromStart || pagedItems.value.length === 0) return loadData(true);
+    if (retryFromStart || pagedItems.value.length === 0) {
+      tempHide.value = true;
+      return loadData(true);
+    }
     loadNext();
   };
 

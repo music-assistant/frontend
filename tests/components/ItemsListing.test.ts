@@ -860,6 +860,54 @@ describe("ItemsListing failed load", () => {
     expect(await scrollerLoads(listing)).toHaveBeenCalledWith("empty");
   });
 
+  it("remounts an errored scroller after retrying a failed first-page reload", async () => {
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
+      .mockResolvedValueOnce([
+        track({ item_id: "old-1" }),
+        track({ item_id: "old-2" }),
+      ])
+      .mockRejectedValueOnce(new Error("filter failed"))
+      .mockResolvedValueOnce([
+        track({ item_id: "new-1" }),
+        track({ item_id: "new-2" }),
+      ])
+      .mockResolvedValueOnce([track({ item_id: "new-3" })]);
+    const listing = mountListingRaw(
+      { showGenreFilter: false, loadPagedData, limit: 2 },
+      { VInfiniteScroll: InfiniteScrollStub },
+    );
+    await flushPromises();
+    const menuItems = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as {
+      label?: string;
+      action?: () => void;
+    }[];
+    menuItems.find((item) => item.label === "tooltip.filter_favorites")!
+      .action!();
+    await flushPromises();
+    expect(await scrollerLoads(listing)).toHaveBeenCalledWith("error");
+    const failedScroller = listing.findComponent({
+      name: "VInfiniteScroll",
+    }).vm;
+
+    await retryButton(listing)!.trigger("click");
+    await flushPromises();
+
+    expect(listing.findComponent({ name: "VInfiniteScroll" }).vm).not.toBe(
+      failedScroller,
+    );
+    expect(loadPagedData.mock.calls[2][0].offset).toBe(0);
+    expect(await scrollerLoads(listing)).toHaveBeenCalledWith("ok");
+    expect(loadPagedData.mock.calls[3][0].offset).toBe(2);
+    expect(listing.vm.pagedItems.map((item) => item.item_id)).toEqual([
+      "new-1",
+      "new-2",
+      "new-3",
+    ]);
+  });
+
   it("retries the page that failed, not the one after it", async () => {
     const offsets: number[] = [];
     let fail = false;

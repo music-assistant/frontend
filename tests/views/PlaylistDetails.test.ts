@@ -256,34 +256,46 @@ describe("PlaylistDetails", () => {
     ).toEqual(tracks);
   });
 
-  it("reloads the tracks on an update while the track table is hidden", async () => {
-    const onUpdated: Array<(evt: EventMessage) => void> = [];
-    apiMock.subscribe.mockImplementation(((
-      type: EventType,
-      callback: (evt: EventMessage) => void,
-    ) => {
-      if (type === EventType.MEDIA_ITEM_UPDATED) onUpdated.push(callback);
-      return () => {};
-    }) as never);
-    storeMock.currentUser = user({
-      preferences: { "playlist.rows": { hidden: ["tracks"] } },
-    });
-    const item = playlistOf("builtin");
-    await mountDetails(item);
-    apiMock.getPlaylistTracks.mockClear();
+  it.each([true, false])(
+    "refreshes the snapshot on updates with tracks hidden: %s",
+    async (hidden) => {
+      const onUpdated: Array<(evt: EventMessage) => void> = [];
+      apiMock.subscribe.mockImplementation(((
+        type: EventType,
+        callback: (evt: EventMessage) => void,
+      ) => {
+        if (type === EventType.MEDIA_ITEM_UPDATED) onUpdated.push(callback);
+        return () => {};
+      }) as never);
+      storeMock.currentUser = user({
+        preferences: { "playlist.rows": { hidden: hidden ? ["tracks"] : [] } },
+      });
+      const item = playlistOf("builtin");
+      const wrapper = await mountDetails(item);
+      expect(wrapper.findComponent({ name: "ItemsListing" }).exists()).toBe(
+        !hidden,
+      );
+      const refreshedTracks = [track({ name: "Updated track" })];
+      apiMock.getPlaylistTracks.mockClear().mockResolvedValue(refreshedTracks);
 
-    onUpdated.forEach((callback) =>
-      callback({ data: { ...item, name: "Renamed" } } as EventMessage),
-    );
-    await flushPromises();
+      onUpdated.forEach((callback) =>
+        callback({ data: { ...item, name: "Renamed" } } as EventMessage),
+      );
+      await flushPromises();
 
-    expect(apiMock.getPlaylistTracks).toHaveBeenCalledWith(
-      item.item_id,
-      item.provider,
-      true,
-      undefined,
-      undefined,
-      0,
-    );
-  });
+      expect(apiMock.getPlaylistTracks).toHaveBeenCalledWith(
+        item.item_id,
+        item.provider,
+        true,
+        undefined,
+        undefined,
+        0,
+      );
+      expect(
+        wrapper
+          .findComponent({ name: "PlaylistFeaturedArtists" })
+          .props("tracks"),
+      ).toEqual(refreshedTracks);
+    },
+  );
 });

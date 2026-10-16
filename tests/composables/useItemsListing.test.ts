@@ -151,6 +151,46 @@ describe("useItemsListing", () => {
     });
   });
 
+  it("keeps request parameters stable when filters change while loading", async () => {
+    let resolveFirstPage!: (items: Track[]) => void;
+    const firstPage = new Promise<Track[]>((resolve) => {
+      resolveFirstPage = resolve;
+    });
+    const completedRequests: LoadDataParams[] = [];
+    const loadPagedData = vi
+      .fn<LoadPagedDataFn>()
+      .mockImplementationOnce(async (params) => {
+        const items = await firstPage;
+        completedRequests.push({ ...params });
+        return items;
+      })
+      .mockRejectedValueOnce(new Error("reload failed"));
+    const listing = setupItemsListing({ loadPagedData });
+    listing.params.value.favoritesOnly = true;
+    listing.params.value.search = "liked";
+    const initialLoad = listing.loadData(true);
+
+    listing.params.value.favoritesOnly = false;
+    listing.params.value.search = "all";
+    await listing.loadData(false, false, true);
+    resolveFirstPage([track()]);
+    await initialLoad;
+
+    expect(completedRequests[0]).toMatchObject({
+      favoritesOnly: true,
+      search: "liked",
+      offset: 0,
+    });
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        favoritesOnly: false,
+        search: "all",
+        offset: 0,
+      }),
+    );
+    expect(listing.loadError.value).toBe(true);
+  });
+
   it("sends no direction for a sort option without one", async () => {
     const loadPagedData = vi.fn().mockResolvedValue([]);
     const listing = setupItemsListing({ loadPagedData });
