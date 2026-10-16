@@ -1,9 +1,14 @@
 import z from "zod";
 
+const PASSWORD_MIN_LENGTH = 12;
+
 export const createPasswordSchema = (t: (key: string) => string) =>
   z
     .object({
-      newPassword: z.string().max(128, t("auth.password_max_length")),
+      newPassword: z
+        .string()
+        .min(PASSWORD_MIN_LENGTH, t("auth.password_min_length"))
+        .max(128, t("auth.password_max_length")),
       confirmPassword: z.string(),
     })
     .refine((data) => data.newPassword === data.confirmPassword, {
@@ -47,7 +52,7 @@ export const createUserSchema = (t: (key: string) => string) =>
       displayName: z.string().max(100, t("auth.display_name_max_length")),
       password: z
         .string()
-        .min(8, t("auth.password_min_length"))
+        .min(PASSWORD_MIN_LENGTH, t("auth.password_min_length"))
         .max(128, t("auth.password_max_length")),
       confirmPassword: z.string(),
       role: z.string().min(1),
@@ -72,7 +77,13 @@ export const editUserSchema = (t: (key: string) => string) =>
           message: "Invalid URL format.",
         }),
       role: z.string().min(1),
-      password: z.string().max(128, t("auth.password_max_length")),
+      // optional: an empty value keeps the current password
+      password: z
+        .string()
+        .max(128, t("auth.password_max_length"))
+        .refine((val) => !val || val.length >= PASSWORD_MIN_LENGTH, {
+          message: t("auth.password_min_length"),
+        }),
       confirmPassword: z.string(),
       playerFilter: z.array(z.string()),
     })
@@ -95,7 +106,7 @@ export const firstRunAccountSchema = (t: (key: string) => string) =>
       displayName: z.string().max(100, t("auth.display_name_max_length")),
       password: z
         .string()
-        .min(8, t("auth.password_min_length"))
+        .min(PASSWORD_MIN_LENGTH, t("auth.password_min_length"))
         .max(128, t("auth.password_max_length")),
       confirmPassword: z.string(),
     })
