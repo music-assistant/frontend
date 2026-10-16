@@ -302,6 +302,163 @@
               />
             </div>
           </section>
+
+          <!-- Statistics/Charts row -->
+          <section
+            v-else-if="row.kind === 'statistics'"
+            class="ed-section space-y-4 px-7"
+            :class="{ 'ed-dimmed': editMode && row.hidden }"
+          >
+            <div class="mb-3.5 flex items-start justify-between">
+              <div class="flex flex-col gap-2">
+                <h2
+                  class="m-0 text-[22px] font-bold text-[rgb(var(--v-theme-on-background))]"
+                >
+                  {{ $t("statistics_charts") }}
+                </h2>
+                <div class="flex flex-wrap items-center gap-4">
+                  <Tabs
+                    :model-value="activeStatTab"
+                    class="mt-1 flex-1"
+                    @update:model-value="
+                      (v) => (activeStatTab = v as MediaType)
+                    "
+                  >
+                    <TabsList class="h-auto w-auto gap-4 bg-transparent p-0">
+                      <TabsTrigger
+                        v-for="tab in statisticsTabs"
+                        :key="tab.type"
+                        :value="tab.type"
+                        class="flex-none rounded-none border-0 bg-transparent px-1 pt-1 pb-2 text-[13px] text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_0_currentColor] dark:data-[state=active]:bg-transparent"
+                      >
+                        {{ tab.label }}
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  <label class="sr-only" for="statistics-period">
+                    {{ $t("statistics_period") }}
+                  </label>
+                  <select
+                    id="statistics-period"
+                    v-model="activeStatPeriod"
+                    class="h-9 cursor-pointer rounded-md border border-border bg-background px-3 text-[13px] text-foreground transition-colors hover:border-foreground/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="today">{{ $t("period_today") }}</option>
+                    <option value="week">{{ $t("period_week") }}</option>
+                    <option value="month">{{ $t("period_month") }}</option>
+                    <option value="year">{{ $t("period_year") }}</option>
+                    <option value="all_time">
+                      {{ $t("period_all_time") }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <div v-if="editMode" class="ed-edit-controls">
+                <button
+                  class="ed-drag-handle"
+                  :aria-label="$t('queue_reorder')"
+                  @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                  @click.stop
+                >
+                  <GripVertical />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :aria-label="$t('tooltip.toggle_row')"
+                  @click="toggleRow(row)"
+                >
+                  <Eye v-if="!row.hidden" />
+                  <EyeOff v-else />
+                </Button>
+              </div>
+            </div>
+
+            <div
+              class="ma-scroll overflow-x-auto overflow-y-hidden overscroll-x-contain"
+            >
+              <div
+                v-if="statisticsLoading"
+                class="flex min-h-40 items-center justify-center p-10"
+              >
+                <Spinner class="size-8" />
+              </div>
+              <div
+                v-else-if="statisticsError"
+                class="p-10 text-center text-sm text-muted-foreground"
+              >
+                {{ $t("statistics_load_failed") }}
+              </div>
+              <div
+                v-else-if="statisticsItems.length === 0"
+                class="p-10 text-center text-sm text-muted-foreground"
+              >
+                {{ $t("no_statistics_data") }}
+              </div>
+              <div v-else class="flex gap-2 pb-1">
+                <ChartItem
+                  v-for="(statItem, statIdx) in statisticsItems"
+                  :key="statItem.item.uri"
+                  :item="statItem.item"
+                  :position="statIdx + 1"
+                  :play-count="statItem.play_count"
+                />
+              </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div
+              class="ma-scroll mt-6 overflow-x-auto overscroll-x-contain pb-2"
+            >
+              <div
+                class="grid grid-cols-[repeat(2,minmax(320px,1fr))] gap-4 p-1 min-[1401px]:grid-cols-[repeat(4,minmax(320px,1fr))] max-[768px]:flex max-[768px]:gap-3"
+              >
+                <div class="col-span-2 min-w-[320px] max-[768px]:col-span-1">
+                  <PieChartCard
+                    :title="$t('artist_distribution')"
+                    :data="artistDistribution"
+                    :loading="chartsLoading"
+                  />
+                </div>
+                <div class="min-w-[320px]">
+                  <LineChartCard
+                    :title="$t('plays_over_time')"
+                    :data="playsOverTime"
+                    :period="activeStatPeriod"
+                    :loading="chartsLoading"
+                  />
+                </div>
+                <div class="min-w-[320px]">
+                  <BarChartCard
+                    :title="$t('listening_time')"
+                    :data="listeningTime"
+                    :loading="chartsLoading"
+                  />
+                </div>
+                <div class="min-w-[320px]">
+                  <ListeningClockCard
+                    :title="$t('listening_clock')"
+                    :data="listeningActivity"
+                    :loading="chartsLoading"
+                  />
+                </div>
+                <div class="min-w-[320px]">
+                  <ListeningHeatmapCard
+                    :title="$t('listening_activity')"
+                    :data="listeningActivity"
+                    :loading="chartsLoading"
+                  />
+                </div>
+                <div class="min-w-[320px]">
+                  <DecadeBarChartCard
+                    :title="$t('music_by_decade')"
+                    :data="decadeDistribution"
+                    :loading="chartsLoading"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
 
         <!-- Floating ghost that follows the pointer while dragging a row -->
@@ -341,6 +498,18 @@ let prevState: DiscoverSnapshot | undefined;
 </script>
 
 <script setup lang="ts">
+import BarChartCard from "@/components/statistics/BarChartCard.vue";
+import DecadeBarChartCard from "@/components/statistics/DecadeBarChartCard.vue";
+import ListeningClockCard from "@/components/statistics/ListeningClockCard.vue";
+import ListeningHeatmapCard from "@/components/statistics/ListeningHeatmapCard.vue";
+import LineChartCard from "@/components/statistics/LineChartCard.vue";
+import PieChartCard from "@/components/statistics/PieChartCard.vue";
+import {
+  createLatestRequestGate,
+  getPlaysOverTimeGranularity,
+  loadStatisticsChartData,
+} from "@/components/statistics/statisticsRequests";
+import ChartItem from "@/components/discover/ChartItem.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialGenreTile from "@/components/discover/EditorialGenreTile.vue";
 import EditorialHeroCard from "@/components/discover/EditorialHeroCard.vue";
@@ -354,6 +523,7 @@ import {
   GENRES_ROW_ID,
   IN_PROGRESS_ROW_ID,
   PLAYERS_ROW_ID,
+  STATISTICS_ROW_ID,
   TOP_PICKS_ROW_ID,
   resolveDiscoverRowsConfig,
   setDiscoverRowHidden,
@@ -373,6 +543,7 @@ import {
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
@@ -382,16 +553,19 @@ import api from "@/plugins/api";
 import { ACTIVE_DOT_CLASS } from "@/constants";
 import {
   EventType,
+  MediaType,
   PlaybackState,
   RecommendationFolderType,
   type EventMessage,
   type Player,
+  type TopItemResult,
   type PlaylogUpdate,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { Eye, EyeOff, GripVertical, ListFilter, RefreshCw } from "@lucide/vue";
+import { toast } from "vue-sonner";
 import {
   computed,
   nextTick,
@@ -416,6 +590,34 @@ const recommendations = ref<RecommendationFolder[]>([]);
 const rowItemsMap = ref(new Map<string, MediaItemTypeOrItemMapping[]>());
 const recentlyPlayed = ref<ItemMapping[]>([]);
 const genres = ref<Genre[]>([]);
+
+// Statistics state
+const activeStatTab = ref<MediaType>(MediaType.TRACK);
+const activeStatPeriod = ref<string>("week");
+const statisticsItems = ref<
+  { item: MediaItemTypeOrItemMapping; play_count: number }[]
+>([]);
+const statisticsLoading = ref(false);
+const statisticsError = ref(false);
+
+// Statistics charts state
+const artistDistribution = ref<TopItemResult[]>([]);
+const playsOverTime = ref<Array<{ timestamp: string; value: number }>>([]);
+const listeningActivity = ref<
+  Array<{ hour: number; weekday: number; value: number }>
+>([]);
+const listeningTime = ref<Array<{ name: string; minutes: number }>>([]);
+const decadeDistribution = ref<Array<{ name: string; value: number }>>([]);
+const chartsLoading = ref(false);
+const statisticsRequests = createLatestRequestGate();
+const chartRequests = createLatestRequestGate();
+
+const statisticsTabs = computed(() => [
+  { type: MediaType.TRACK, label: $t("tracks") },
+  { type: MediaType.ALBUM, label: $t("albums") },
+  { type: MediaType.ARTIST, label: $t("artists") },
+  { type: MediaType.PLAYLIST, label: $t("playlists") },
+]);
 
 const tilesPerView = computed(() => {
   const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
@@ -616,7 +818,8 @@ const refreshTopPicks = async () => {
 };
 
 // --- Unified row list: visibility + ordering via the discover.rows pref ---
-type DiscoverRowKind = "players" | "top_picks" | "recommendation" | "genres";
+type DiscoverRowKind =
+  "players" | "top_picks" | "recommendation" | "genres" | "statistics";
 
 interface DiscoverRow {
   id: string;
@@ -650,6 +853,7 @@ const availableRowIds = computed<string[]>(() => {
   for (const uri of recUris) {
     if (!ids.includes(uri)) ids.push(uri);
   }
+  ids.push(STATISTICS_ROW_ID);
   if (genres.value.length > 0) ids.push(GENRES_ROW_ID);
   return ids;
 });
@@ -683,6 +887,13 @@ const allRows = computed<DiscoverRow[]>(() => {
         title: $t("browse_by_genre"),
         hidden: hidden.has(id),
       });
+    } else if (id === STATISTICS_ROW_ID) {
+      rows.push({
+        id,
+        kind: "statistics",
+        title: $t("statistics_charts"),
+        hidden: hidden.has(id),
+      });
     } else {
       const folder = folders.get(id);
       if (!folder) continue;
@@ -710,6 +921,12 @@ const displayedRows = computed(() =>
       : props.editMode || !row.hidden,
   ),
 );
+
+const statisticsRowVisible = computed(() => {
+  const rowIds = [...new Set([...availableRowIds.value, STATISTICS_ROW_ID])];
+  const { hidden } = resolveDiscoverRowsConfig(rowIds, defaultHiddenIds.value);
+  return props.editMode || !hidden.has(STATISTICS_ROW_ID);
+});
 
 // The recommendation rows currently visible to the user (not hidden). The Top
 // Picks hero draws only from these, so an opted-out row never feeds it.
@@ -843,6 +1060,123 @@ const loadGenres = async () => {
     .slice(0, 8);
 };
 
+const loadStatistics = async () => {
+  const requestGeneration = statisticsRequests.begin();
+  const mediaType = activeStatTab.value;
+  const period = activeStatPeriod.value;
+  statisticsItems.value = [];
+  statisticsError.value = false;
+  statisticsLoading.value = true;
+  try {
+    const result = await api.getTopItems(mediaType, period, 50);
+    if (
+      unmounted ||
+      !statisticsRequests.isCurrent(requestGeneration) ||
+      mediaType !== activeStatTab.value ||
+      period !== activeStatPeriod.value ||
+      !statisticsRowVisible.value
+    ) {
+      return;
+    }
+    statisticsItems.value = result.filter((item) => item && item.item);
+  } catch (err) {
+    if (
+      unmounted ||
+      !statisticsRequests.isCurrent(requestGeneration) ||
+      mediaType !== activeStatTab.value ||
+      period !== activeStatPeriod.value ||
+      !statisticsRowVisible.value
+    ) {
+      return;
+    }
+    console.error("Failed to load statistics:", err);
+    statisticsItems.value = [];
+    statisticsError.value = true;
+  } finally {
+    if (
+      statisticsRequests.isCurrent(requestGeneration) &&
+      !unmounted &&
+      mediaType === activeStatTab.value &&
+      period === activeStatPeriod.value &&
+      statisticsRowVisible.value
+    ) {
+      statisticsLoading.value = false;
+    }
+  }
+};
+
+const loadStatisticsCharts = async () => {
+  const requestGeneration = chartRequests.begin();
+  const period = activeStatPeriod.value;
+  chartsLoading.value = true;
+  try {
+    const { data, hasFailures } = await loadStatisticsChartData({
+      artistDistribution: api.getArtistDistribution(period, 10),
+      playsOverTime: api.getPlaysOverTime(
+        period,
+        getPlaysOverTimeGranularity(period),
+      ),
+      listeningActivity: api.getListeningActivity(period),
+      listeningTime: api.getListeningTime(period, "artist", 10),
+      decadeDistribution: api.getDecadeDistribution(period, 10),
+    });
+    if (
+      unmounted ||
+      !chartRequests.isCurrent(requestGeneration) ||
+      period !== activeStatPeriod.value ||
+      !statisticsRowVisible.value
+    ) {
+      return;
+    }
+
+    artistDistribution.value = data.artistDistribution;
+    playsOverTime.value = data.playsOverTime;
+    listeningActivity.value = data.listeningActivity;
+    listeningTime.value = data.listeningTime;
+    decadeDistribution.value = data.decadeDistribution;
+
+    if (hasFailures) {
+      console.error("One or more statistics chart requests failed.");
+      toast.error($t("statistics_load_failed"));
+    }
+  } finally {
+    if (
+      chartRequests.isCurrent(requestGeneration) &&
+      !unmounted &&
+      period === activeStatPeriod.value &&
+      statisticsRowVisible.value
+    ) {
+      chartsLoading.value = false;
+    }
+  }
+};
+
+watch(
+  [statisticsRowVisible, activeStatTab, activeStatPeriod],
+  ([visible, mediaType, period], previous) => {
+    const [wasVisible, previousMediaType, previousPeriod] = previous ?? [
+      false,
+      undefined,
+      undefined,
+    ];
+    if (!visible) {
+      statisticsRequests.invalidate();
+      chartRequests.invalidate();
+      statisticsLoading.value = false;
+      chartsLoading.value = false;
+      return;
+    }
+    if (
+      !wasVisible ||
+      mediaType !== previousMediaType ||
+      period !== previousPeriod
+    ) {
+      loadStatistics();
+    }
+    if (!wasVisible || period !== previousPeriod) loadStatisticsCharts();
+  },
+);
+
 let unmounted = false;
 let refreshRecommendationsTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -905,6 +1239,10 @@ const unsubscribePlaylog = api.subscribe(
         items.filter((item) => item.uri !== uri),
       );
     }
+    if (update?.fully_played && statisticsRowVisible.value) {
+      loadStatistics();
+      loadStatisticsCharts();
+    }
     scheduleRecommendationRefresh();
   },
 );
@@ -927,6 +1265,10 @@ onMounted(async () => {
   // Genres is its own row and isn't part of the fast catalog call, so it
   // doesn't gate the page spinner.
   loadGenres();
+  if (statisticsRowVisible.value) {
+    loadStatistics();
+    loadStatisticsCharts();
+  }
 
   // the page comes up as it was left only when gone back to; a fresh
   // navigation loads it anew
@@ -965,6 +1307,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   unmounted = true;
+  statisticsRequests.invalidate();
+  chartRequests.invalidate();
   unsubscribeRecommendations();
   unsubscribeProviderEvents();
   unsubscribePlaylog();

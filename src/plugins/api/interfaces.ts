@@ -1108,6 +1108,12 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number | null;
 }
 
+/** A ranked media item and its completed-play count from statistics endpoints. */
+export interface TopItemResult {
+  item: ItemMapping;
+  play_count: number;
+}
+
 export interface Artist extends MediaItem {
   artist_type: ArtistType;
 }
@@ -1258,6 +1264,25 @@ export interface RecommendationFolder extends BrowseFolder {
   enabled_by_default: boolean;
   type: RecommendationFolderType;
   supports_provider_filter: boolean;
+}
+
+export interface DailyStats {
+  date: string;
+  seconds_listened: number;
+  tracks_played: number;
+  unique_artists: number;
+}
+
+export interface ListeningSummary {
+  period: string;
+  period_start: string | null;
+  period_end: string | null;
+  total_listening_seconds: number;
+  total_plays: number;
+  unique_tracks: number;
+  unique_albums: number;
+  unique_artists: number;
+  top_genre: string | null;
 }
 
 export interface MediaCollection<M extends MediaItemType> extends MediaItem {
