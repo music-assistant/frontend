@@ -330,7 +330,13 @@ watch(
   },
 );
 
-useDetailItemUpdates(itemDetails, { providerItem: props });
+useDetailItemUpdates(itemDetails, {
+  providerItem: props,
+  // an update can change the tracks the hero counts and times
+  onUpdate: () => {
+    if (itemDetails.value) loadHeroTracks(itemDetails.value);
+  },
+});
 
 const loadTracks = async function (params: LoadDataParams) {
   const album = itemDetails.value;

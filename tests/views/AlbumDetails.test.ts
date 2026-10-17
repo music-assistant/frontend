@@ -1,11 +1,13 @@
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
+  EventType,
   ImageType,
   ListingType,
   MediaType,
   SortDirection,
   SortField,
   type Album,
+  type EventMessage,
   type Track,
 } from "@/plugins/api/interfaces";
 import type { LoadDataParams } from "@/composables/useItemsListing";
@@ -316,6 +318,40 @@ describe("AlbumDetails", () => {
     await flushPromises();
 
     expect(hero(wrapper).props("trackCount")).toBeUndefined();
+  });
+
+  it("counts and times the album again when it is updated", async () => {
+    const onUpdated: Array<(evt: EventMessage) => void> = [];
+    mockSubscribe.mockImplementation(((
+      type: EventType,
+      callback: (evt: EventMessage) => void,
+    ) => {
+      if (type === EventType.MEDIA_ITEM_UPDATED) onUpdated.push(callback);
+      return () => {};
+    }) as never);
+    const wrapper = await mountDetails();
+    expect(hero(wrapper).props("trackCount")).toBe(2);
+    mockLoadAlbumTracks.mockResolvedValue([
+      track({ item_id: "1", duration: 100 }),
+      track({ item_id: "2", duration: 42 }),
+      track({ item_id: "3", duration: 58 }),
+    ]);
+
+    onUpdated.forEach((callback) =>
+      callback({
+        data: { ...ALBUM_WITH_REVIEW, name: "Renamed" },
+      } as EventMessage),
+    );
+    await flushPromises();
+
+    expect(mockLoadAlbumTracks).toHaveBeenLastCalledWith(
+      expect.objectContaining({ name: "Renamed" }),
+      false,
+      undefined,
+      0,
+    );
+    expect(hero(wrapper).props("trackCount")).toBe(3);
+    expect(hero(wrapper).props("duration")).toBe(200);
   });
 
   it("hands the hero's play button the order the track listing shows", async () => {
