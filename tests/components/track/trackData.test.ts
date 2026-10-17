@@ -70,6 +70,8 @@ describe("trackData", () => {
         "1",
         "library",
         false,
+        undefined,
+        0,
       );
 
       await loadTrackVersions(TRACK);

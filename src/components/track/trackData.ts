@@ -46,9 +46,15 @@ const LOSSLESS_CODECS = new Set<ContentType>([
   ContentType.DSD_MSBF_PLANAR,
 ]);
 
-/** The albums the track appears on. */
+/** All the albums the track appears on. */
 export async function loadTrackAlbums(track: Track): Promise<Album[]> {
-  return await api.getTrackAlbums(track.item_id, track.provider, false);
+  return await api.getTrackAlbums(
+    track.item_id,
+    track.provider,
+    false,
+    undefined,
+    0,
+  );
 }
 
 /** The other versions of the track, on any provider. */
