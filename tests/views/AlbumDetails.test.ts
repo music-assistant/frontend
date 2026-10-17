@@ -196,6 +196,20 @@ function hero(wrapper: VueWrapper) {
   return wrapper.findComponent({ name: "AlbumHero" });
 }
 
+/** Catches the page's item updates, to hand it an updated album. */
+function captureAlbumUpdates() {
+  const onUpdated: Array<(evt: EventMessage) => void> = [];
+  mockSubscribe.mockImplementation(((
+    type: EventType,
+    callback: (evt: EventMessage) => void,
+  ) => {
+    if (type === EventType.MEDIA_ITEM_UPDATED) onUpdated.push(callback);
+    return () => {};
+  }) as never);
+  return (data: Album) =>
+    onUpdated.forEach((callback) => callback({ data } as EventMessage));
+}
+
 /** Runs the loader the tracks listing was handed, the way the listing does. */
 async function loadTracks(
   wrapper: VueWrapper,
@@ -321,14 +335,7 @@ describe("AlbumDetails", () => {
   });
 
   it("counts and times the album again when it is updated", async () => {
-    const onUpdated: Array<(evt: EventMessage) => void> = [];
-    mockSubscribe.mockImplementation(((
-      type: EventType,
-      callback: (evt: EventMessage) => void,
-    ) => {
-      if (type === EventType.MEDIA_ITEM_UPDATED) onUpdated.push(callback);
-      return () => {};
-    }) as never);
+    const sendUpdate = captureAlbumUpdates();
     const wrapper = await mountDetails();
     expect(hero(wrapper).props("trackCount")).toBe(2);
     mockLoadAlbumTracks.mockResolvedValue([
@@ -337,11 +344,7 @@ describe("AlbumDetails", () => {
       track({ item_id: "3", duration: 58 }),
     ]);
 
-    onUpdated.forEach((callback) =>
-      callback({
-        data: { ...ALBUM_WITH_REVIEW, name: "Renamed" },
-      } as EventMessage),
-    );
+    sendUpdate({ ...ALBUM_WITH_REVIEW, name: "Renamed" });
     await flushPromises();
 
     expect(mockLoadAlbumTracks).toHaveBeenLastCalledWith(
@@ -350,6 +353,33 @@ describe("AlbumDetails", () => {
       undefined,
       0,
     );
+    expect(hero(wrapper).props("trackCount")).toBe(3);
+    expect(hero(wrapper).props("duration")).toBe(200);
+  });
+
+  it("keeps the newest count and time when an older load finishes last", async () => {
+    const sendUpdate = captureAlbumUpdates();
+    let resolveFirst!: (tracks: Track[]) => void;
+    let resolveSecond!: (tracks: Track[]) => void;
+    mockLoadAlbumTracks
+      .mockReturnValueOnce(
+        new Promise<Track[]>((resolve) => (resolveFirst = resolve)),
+      )
+      .mockReturnValueOnce(
+        new Promise<Track[]>((resolve) => (resolveSecond = resolve)),
+      );
+    const wrapper = await mountDetails();
+    sendUpdate({ ...ALBUM_WITH_REVIEW, name: "Renamed" });
+
+    resolveSecond([
+      track({ item_id: "1", duration: 100 }),
+      track({ item_id: "2", duration: 42 }),
+      track({ item_id: "3", duration: 58 }),
+    ]);
+    await flushPromises();
+    resolveFirst([track({ item_id: "1", duration: 100 })]);
+    await flushPromises();
+
     expect(hero(wrapper).props("trackCount")).toBe(3);
     expect(hero(wrapper).props("duration")).toBe(200);
   });

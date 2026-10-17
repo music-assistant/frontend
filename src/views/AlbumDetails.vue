@@ -165,6 +165,8 @@ const rowsEditorOpen = ref(false);
 // all of the album's own tracks, whatever the listing below shows: what the
 // hero counts and times
 const albumTracks = ref<Track[]>();
+// counts the loads of those tracks, so only the latest one sets them
+let heroTracksRequest = 0;
 // the tracks listing (inside the rows loop, so held as an array), whose sort
 // order the play button follows
 const tracksListing = ref<InstanceType<typeof ItemsListing>[]>();
@@ -371,10 +373,16 @@ function selectMoreFromArtistSource(source: RowSource) {
 
 /** Loads every track of the album for the hero; a failure is reported by the api. */
 function loadHeroTracks(album: Album) {
+  const request = ++heroTracksRequest;
   loadAlbumTracks(album, false, undefined, 0).then(
     (tracks) => {
-      // a slower response for a previous album must not count for this one
-      if (itemDetails.value?.uri === album.uri) albumTracks.value = tracks;
+      // a slower response, of an older load or a previous album, must not count
+      if (
+        request === heroTracksRequest &&
+        itemDetails.value?.uri === album.uri
+      ) {
+        albumTracks.value = tracks;
+      }
     },
     () => undefined,
   );
