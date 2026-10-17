@@ -508,6 +508,7 @@ describe("ArtistListing", () => {
       20,
       40,
       SortField.ORIGINAL,
+      undefined,
     );
     expect(items).toEqual(appearances);
   });

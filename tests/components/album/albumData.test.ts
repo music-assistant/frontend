@@ -58,6 +58,12 @@ describe("albumData", () => {
         "1",
         "library",
         false,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
 
       await loadAlbumTracks(ALBUM, true);
@@ -65,6 +71,12 @@ describe("albumData", () => {
         "1",
         "library",
         true,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
     });
 

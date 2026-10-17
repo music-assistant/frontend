@@ -153,6 +153,9 @@ describe("artistData", () => {
         undefined,
         undefined,
         0,
+        undefined,
+        undefined,
+        undefined,
       );
     });
   });
@@ -171,6 +174,7 @@ describe("artistData", () => {
         "1",
         "library",
         25,
+        undefined,
       );
     });
 
@@ -179,6 +183,7 @@ describe("artistData", () => {
       expect(apiMock.getArtistTopTracks).toHaveBeenLastCalledWith(
         "sp1",
         "spotify--abc",
+        undefined,
       );
     });
   });
@@ -220,6 +225,10 @@ describe("artistData", () => {
         undefined,
         undefined,
         0,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
     });
 
@@ -231,6 +240,10 @@ describe("artistData", () => {
         "spotify--abc",
         undefined,
         0,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
     });
   });

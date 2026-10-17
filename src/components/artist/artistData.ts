@@ -132,6 +132,7 @@ export function artistProvidersForFeature(
 /**
  * The artist's tracks, optionally limited to a single provider: those in the
  * library for a library artist, its provider's own for a provider artist.
+ * All of them, or one page when a limit is given.
  */
 export async function loadArtistTracks(
   artist: Artist,
@@ -143,37 +144,12 @@ export async function loadArtistTracks(
   sortDirection?: SortDirection,
   favoriteOnly = false,
 ): Promise<Track[]> {
-  if (
-    search === undefined &&
-    limit === undefined &&
-    offset === undefined &&
-    sortField === undefined &&
-    sortDirection === undefined &&
-    !favoriteOnly
-  ) {
-    return providerFilter === undefined
-      ? await api.getArtistTracks(
-          artist.item_id,
-          artist.provider,
-          undefined,
-          undefined,
-          0,
-        )
-      : await api.getArtistTracks(
-          artist.item_id,
-          artist.provider,
-          providerFilter,
-          undefined,
-          0,
-        );
-  }
-
   return await api.getArtistTracks(
     artist.item_id,
     artist.provider,
     providerFilter,
     search,
-    limit,
+    limit ?? 0,
     offset,
     sortField,
     sortDirection,
@@ -183,6 +159,7 @@ export async function loadArtistTracks(
 
 /**
  * Albums the artist appears on without being an album artist, newest first.
+ * All of them, or one page when a limit is given.
  *
  * Only ever called for a library artist, the only kind the server lists.
  */
@@ -194,40 +171,12 @@ export async function loadArtistAppearsOn(
   sortField?: SortField,
   sortDirection?: SortDirection,
 ): Promise<Album[]> {
-  if (
-    search === undefined &&
-    limit === undefined &&
-    offset === undefined &&
-    sortField === undefined &&
-    sortDirection === undefined
-  ) {
-    return await api.getArtistAppearsOn(
-      artist.item_id,
-      artist.provider,
-      undefined,
-      undefined,
-      0,
-    );
-  }
-
-  if (sortDirection === undefined) {
-    return await api.getArtistAppearsOn(
-      artist.item_id,
-      artist.provider,
-      undefined,
-      search,
-      limit,
-      offset,
-      sortField,
-    );
-  }
-
   return await api.getArtistAppearsOn(
     artist.item_id,
     artist.provider,
     undefined,
     search,
-    limit,
+    limit ?? 0,
     offset,
     sortField,
     sortDirection,
@@ -239,14 +188,11 @@ export async function loadArtistTopTracks(
   artist: Artist,
   source: RowSource,
 ): Promise<Track[]> {
-  const providerFilter = aggregatedProviderFilter(artist, source);
-  return providerFilter === undefined
-    ? await api.getArtistTopTracks(artist.item_id, artist.provider)
-    : await api.getArtistTopTracks(
-        artist.item_id,
-        artist.provider,
-        providerFilter,
-      );
+  return await api.getArtistTopTracks(
+    artist.item_id,
+    artist.provider,
+    aggregatedProviderFilter(artist, source),
+  );
 }
 
 /** Artists similar to this one, as reported by `source`. */
@@ -254,15 +200,12 @@ export async function loadSimilarArtists(
   artist: Artist,
   source: RowSource,
 ): Promise<Artist[]> {
-  const providerFilter = aggregatedProviderFilter(artist, source);
-  return providerFilter === undefined
-    ? await api.getSimilarArtists(artist.item_id, artist.provider, 25)
-    : await api.getSimilarArtists(
-        artist.item_id,
-        artist.provider,
-        25,
-        providerFilter,
-      );
+  return await api.getSimilarArtists(
+    artist.item_id,
+    artist.provider,
+    25,
+    aggregatedProviderFilter(artist, source),
+  );
 }
 
 /** Whether the release belongs in the "Singles & EPs" shelf instead of "Albums". */

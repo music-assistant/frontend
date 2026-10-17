@@ -25,21 +25,6 @@ export async function loadAlbumTracks(
   sortDirection?: SortDirection,
   favoriteOnly = false,
 ): Promise<Track[]> {
-  if (
-    search === undefined &&
-    limit === undefined &&
-    offset === undefined &&
-    sortField === undefined &&
-    sortDirection === undefined &&
-    !favoriteOnly
-  ) {
-    return await api.getAlbumTracks(
-      album.item_id,
-      album.provider,
-      inLibraryOnly,
-    );
-  }
-
   return await api.getAlbumTracks(
     album.item_id,
     album.provider,
