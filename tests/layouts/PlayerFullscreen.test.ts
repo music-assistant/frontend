@@ -27,7 +27,7 @@ vi.mock("@/plugins/api", async () => {
       vi.fn<MusicAssistantApi["getPodcastEpisodeTranscript"]>(),
     playerCommandSeek: vi.fn<MusicAssistantApi["playerCommandSeek"]>(),
     playMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
-    getAudiobookBookmarks: vi.fn<MusicAssistantApi["getAudiobookBookmarks"]>(),
+    getBookmarks: vi.fn<MusicAssistantApi["getBookmarks"]>(),
   });
   return { api, default: api };
 });
@@ -374,7 +374,7 @@ describe("PlayerFullscreen chapter queue", () => {
   it("lists the playing copy's bookmarks under their chapters and seeks to one", async () => {
     const api = (await import("@/plugins/api")).default as unknown as {
       playerCommandSeek: ReturnType<typeof vi.fn>;
-      getAudiobookBookmarks: ReturnType<typeof vi.fn>;
+      getBookmarks: ReturnType<typeof vi.fn>;
     };
     const bookmark = {
       name: "In the second",
@@ -383,7 +383,7 @@ describe("PlayerFullscreen chapter queue", () => {
       provider_item_id: "book1",
       stored_by_music_assistant: false,
     };
-    api.getAudiobookBookmarks.mockResolvedValue([
+    api.getBookmarks.mockResolvedValue([
       { ...bookmark, name: "In the first", start: 30 },
       bookmark,
       { ...bookmark, name: "Other copy", provider_item_id: "dune.m4b" },
@@ -401,7 +401,11 @@ describe("PlayerFullscreen chapter queue", () => {
       item_id: "book1",
     };
     await nextTick();
-    expect(api.getAudiobookBookmarks).toHaveBeenCalledWith("1", "library");
+    expect(api.getBookmarks).toHaveBeenCalledWith(
+      MediaType.AUDIOBOOK,
+      "1",
+      "library",
+    );
     // the clock is faked here, so let the fetch settle through it
     await vi.advanceTimersByTimeAsync(0);
     await nextTick();

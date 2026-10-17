@@ -605,6 +605,7 @@ import {
   resolveQueueElapsedTime,
 } from "@/helpers/activeElapsedTime";
 import {
+  BOOKMARK_FEATURES,
   groupBookmarksByChapter,
   resolveCurrentChapter,
 } from "@/helpers/chapters";
@@ -1298,7 +1299,12 @@ const onArtistClick = async function () {
 const playbackSpeedDialogOpen = ref(false);
 const bookmarkDialogOpen = ref(false);
 // taken when the menu entry is picked, the position moves on while the name is typed
-const newBookmark = ref<{ provider: string; itemId: string; start: number }>();
+const newBookmark = ref<{
+  mediaType: MediaType;
+  provider: string;
+  itemId: string;
+  start: number;
+}>();
 
 // a route change closes the full screen player from under whatever is on top of
 // it, and vuetify then unmounts this card - the dialog has to go first, or it
@@ -1314,13 +1320,14 @@ watch(
 
 const bookmarkSaved = async function (name: string) {
   if (!newBookmark.value) return;
-  await api.setAudiobookBookmark(
+  await api.setBookmark(
+    newBookmark.value.mediaType,
     newBookmark.value.provider,
     newBookmark.value.itemId,
     newBookmark.value.start,
     name,
   );
-  // the book's detail page may be open below the player
+  // the item's detail page may be open below the player
   eventbus.emit("bookmarksChanged");
 };
 
@@ -1333,13 +1340,15 @@ const loadPlayingBookmarks = async function () {
   const streamdetails = queueItem?.streamdetails;
   if (
     !store.showFullscreenPlayer ||
-    media?.media_type !== MediaType.AUDIOBOOK ||
+    !media ||
+    !BOOKMARK_FEATURES[media.media_type] ||
     !streamdetails
   ) {
     playingBookmarks.value = [];
     return;
   }
-  const bookmarks = await api.getAudiobookBookmarks(
+  const bookmarks = await api.getBookmarks(
+    media.media_type,
     media.item_id,
     media.provider,
   );
@@ -1410,14 +1419,13 @@ const openQueueMenu = function (evt: Event) {
   }
   // a bookmark belongs to the copy that is playing, which the stream details name
   const streamdetails = store.curQueueItem?.streamdetails;
-  if (
-    store.curQueueItem?.media_item?.media_type === MediaType.AUDIOBOOK &&
-    streamdetails
-  ) {
+  const mediaType = store.curQueueItem?.media_item?.media_type;
+  if (mediaType && BOOKMARK_FEATURES[mediaType] && streamdetails) {
     menuItems.push({
       label: "add_bookmark",
       action: () => {
         newBookmark.value = {
+          mediaType,
           provider: streamdetails.provider,
           itemId: streamdetails.item_id,
           // whole seconds, as the Audiobookshelf web client sets them

@@ -1,7 +1,23 @@
-import type {
-  MediaItemBookmark,
-  MediaItemChapter,
+import {
+  MediaType,
+  ProviderFeature,
+  type MediaItemBookmark,
+  type MediaItemChapter,
 } from "@/plugins/api/interfaces";
+
+// the provider features to read and to edit bookmarks, per media type that has them
+export const BOOKMARK_FEATURES: Partial<
+  Record<MediaType, { read: ProviderFeature; edit: ProviderFeature }>
+> = {
+  [MediaType.AUDIOBOOK]: {
+    read: ProviderFeature.AUDIOBOOK_BOOKMARKS,
+    edit: ProviderFeature.AUDIOBOOK_BOOKMARKS_EDIT,
+  },
+  [MediaType.PODCAST_EPISODE]: {
+    read: ProviderFeature.PODCAST_EPISODE_BOOKMARKS,
+    edit: ProviderFeature.PODCAST_EPISODE_BOOKMARKS_EDIT,
+  },
+};
 
 export interface ChapterTick extends MediaItemChapter {
   // position along the track as percentage
@@ -81,14 +97,14 @@ export function computeChapterTicks(
 }
 
 export interface ChapterBookmarks {
-  // undefined for a book without chapters
+  // undefined for an item without chapters
   chapter?: MediaItemChapter;
   bookmarks: MediaItemBookmark[];
 }
 
 /**
  * place each bookmark under the last chapter starting at or before it, so it
- * shows where it is in the book; without chapters all bookmarks form one group
+ * shows where it is in the item; without chapters all bookmarks form one group
  */
 export function groupBookmarksByChapter(
   chapters: MediaItemChapter[] | null | undefined,

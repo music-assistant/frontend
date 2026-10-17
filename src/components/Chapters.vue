@@ -1,11 +1,7 @@
 <template>
   <section v-if="groups.length" style="margin-bottom: 10px">
     <Toolbar
-      :title="
-        itemDetails.metadata?.chapters?.length
-          ? $t('chapters')
-          : $t('bookmarks')
-      "
+      :title="$t(titleKey)"
       :menu-items="toolbarMenuItems"
       @title-clicked="toggleExpand"
     />
@@ -100,23 +96,23 @@ import BookmarkDialog from "@/components/BookmarkDialog.vue";
 import Container from "@/components/Container.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import Toolbar from "@/components/Toolbar.vue";
-import { groupBookmarksByChapter } from "@/helpers/chapters";
+import { BOOKMARK_FEATURES, groupBookmarksByChapter } from "@/helpers/chapters";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   MediaType,
-  ProviderFeature,
   type Audiobook,
   type MediaItemBookmark,
   type MediaItemChapter,
+  type PodcastEpisode,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 export interface Props {
-  itemDetails: Audiobook;
+  itemDetails: Audiobook | PodcastEpisode;
 }
 const props = defineProps<Props>();
 
@@ -148,11 +144,21 @@ const groups = computed(() =>
   ),
 );
 
+const titleKey = computed(() => {
+  if (!props.itemDetails.metadata?.chapters?.length) return "bookmarks";
+  return bookmarks.value.length ? "chapters_and_bookmarks" : "chapters";
+});
+
 const chapterClicked = function (chapter: MediaItemChapter) {
   if (!props.itemDetails || !itemIsAvailable(props.itemDetails)) return;
-  api.playMedia(props.itemDetails.uri, undefined, {
-    start_item: chapter.position.toString(),
-  });
+  // an episode is played on its own, so it starts at a position, not a chapter
+  api.playMedia(
+    props.itemDetails.uri,
+    undefined,
+    props.itemDetails.media_type === MediaType.PODCAST_EPISODE
+      ? { start_position: chapter.start }
+      : { start_item: chapter.position.toString() },
+  );
 };
 
 const providerDomain = function (bookmark: MediaItemBookmark) {
@@ -164,8 +170,10 @@ const providerDomain = function (bookmark: MediaItemBookmark) {
 
 const providerSupports = function (
   bookmark: MediaItemBookmark,
-  feature: ProviderFeature,
+  access: "read" | "edit",
 ) {
+  const feature = BOOKMARK_FEATURES[props.itemDetails.media_type]?.[access];
+  if (!feature) return false;
   return (
     api.providers[bookmark.provider_instance_id]?.supported_features.includes(
       feature,
@@ -176,20 +184,19 @@ const providerSupports = function (
 // worth a hint only where the provider keeps bookmarks of its own
 const storedOnlyByMusicAssistant = function (bookmark: MediaItemBookmark) {
   return (
-    bookmark.stored_by_music_assistant &&
-    providerSupports(bookmark, ProviderFeature.AUDIOBOOK_BOOKMARKS)
+    bookmark.stored_by_music_assistant && providerSupports(bookmark, "read")
   );
 };
 
 const isEditable = function (bookmark: MediaItemBookmark) {
   return (
-    bookmark.stored_by_music_assistant ||
-    providerSupports(bookmark, ProviderFeature.AUDIOBOOK_BOOKMARKS_EDIT)
+    bookmark.stored_by_music_assistant || providerSupports(bookmark, "edit")
   );
 };
 
 const loadBookmarks = async function () {
-  bookmarks.value = await api.getAudiobookBookmarks(
+  bookmarks.value = await api.getBookmarks(
+    props.itemDetails.media_type,
     props.itemDetails.item_id,
     props.itemDetails.provider,
   );
@@ -199,7 +206,7 @@ const bookmarkClicked = function (bookmark: MediaItemBookmark) {
   if (!itemIsAvailable(props.itemDetails)) return;
   // play the copy the bookmark was made on, its position may not fit another one
   api.playMedia(
-    `${bookmark.provider_instance_id}://${MediaType.AUDIOBOOK}/${bookmark.provider_item_id}`,
+    `${bookmark.provider_instance_id}://${props.itemDetails.media_type}/${bookmark.provider_item_id}`,
     undefined,
     { start_position: bookmark.start },
   );
@@ -213,7 +220,8 @@ const renameClicked = function (bookmark: MediaItemBookmark) {
 const renameSaved = async function (name: string) {
   const bookmark = renamedBookmark.value;
   if (!bookmark) return;
-  await api.setAudiobookBookmark(
+  await api.setBookmark(
+    props.itemDetails.media_type,
     bookmark.provider_instance_id,
     bookmark.provider_item_id,
     bookmark.start,
@@ -228,7 +236,8 @@ const removeClicked = function (bookmark: MediaItemBookmark) {
     message: $t("delete_bookmark_confirm", { name: bookmark.name }),
     confirmLabel: $t("delete"),
     onConfirm: async () => {
-      await api.removeAudiobookBookmark(
+      await api.removeBookmark(
+        props.itemDetails.media_type,
         bookmark.provider_instance_id,
         bookmark.provider_item_id,
         bookmark.start,

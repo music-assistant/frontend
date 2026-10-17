@@ -4,6 +4,7 @@ import {
   ProviderFeature,
   type Audiobook,
   type MediaItemBookmark,
+  type PodcastEpisode,
 } from "@/plugins/api/interfaces";
 import {
   eventbus,
@@ -24,8 +25,8 @@ const LOCAL = "filesystem_local--1";
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     providers: {} as Record<string, unknown>,
-    getAudiobookBookmarks: vi.fn(),
-    removeAudiobookBookmark: vi.fn(),
+    getBookmarks: vi.fn(),
+    removeBookmark: vi.fn(),
     playMedia: vi.fn(),
     subscribe: vi.fn(() => () => {}),
   },
@@ -33,7 +34,11 @@ const { apiMock } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/components/Toolbar.vue", () => ({
-  default: { name: "Toolbar", template: "<div />" },
+  default: {
+    name: "Toolbar",
+    props: ["title"],
+    template: '<div class="toolbar">{{ title }}</div>',
+  },
 }));
 vi.mock("@/components/ProviderIcon.vue", () => ({
   default: {
@@ -60,6 +65,14 @@ const book = {
   },
 } as unknown as Audiobook;
 
+const episode = {
+  ...book,
+  item_id: "episode1",
+  provider: ABS,
+  media_type: MediaType.PODCAST_EPISODE,
+  uri: "audiobookshelf--1://podcast_episode/episode1",
+} as unknown as PodcastEpisode;
+
 function bookmark(
   provider_instance_id: string,
   name: string,
@@ -75,10 +88,13 @@ function bookmark(
   };
 }
 
-async function mountChapters(bookmarks: MediaItemBookmark[]) {
-  apiMock.getAudiobookBookmarks.mockResolvedValue(bookmarks);
+async function mountChapters(
+  bookmarks: MediaItemBookmark[],
+  item: Audiobook | PodcastEpisode = book,
+) {
+  apiMock.getBookmarks.mockResolvedValue(bookmarks);
   const wrapper = mount(Chapters, {
-    props: { itemDetails: book },
+    props: { itemDetails: item },
     global: {
       plugins: [createVuetify({ components, directives })],
       mocks: { $t: (key: string) => key },
@@ -112,6 +128,20 @@ describe("Chapters", () => {
     };
   });
 
+  it.each([
+    [book, [], "Chapters"],
+    [book, [bookmark(LOCAL, "Local file", 30, true)], "Chapters & Bookmarks"],
+    [
+      { ...book, metadata: {} },
+      [bookmark(LOCAL, "Local file", 30, true)],
+      "Bookmarks",
+    ],
+  ])("names the list after what it holds", async (item, bookmarks, title) => {
+    const wrapper = await mountChapters(bookmarks, item as Audiobook);
+
+    expect(wrapper.get(".toolbar").text()).toBe(title);
+  });
+
   // a hint only where the provider keeps bookmarks itself, edits only where
   // somebody can make them
   it("lists each bookmark under its chapter with its provider", async () => {
@@ -143,17 +173,36 @@ describe("Chapters", () => {
     ]);
   });
 
-  it("plays the copy the bookmark was made on, at its start", async () => {
-    const wrapper = await mountChapters([bookmark(ABS, "Arrakis", 30, false)]);
+  // an episode is played on its own, so its chapters start at a position too
+  it.each([
+    [book, "audiobookshelf--1://audiobook/book1", { start_item: "2" }],
+    [
+      episode,
+      "audiobookshelf--1://podcast_episode/book1",
+      { start_position: 60 },
+    ],
+  ])(
+    "plays the copy the bookmark was made on, at its start",
+    async (item, bookmarkUri, chapterOptions) => {
+      const wrapper = await mountChapters(
+        [bookmark(ABS, "Arrakis", 30, false)],
+        item,
+      );
 
-    await wrapper.findAll(".v-list-item")[1].trigger("click");
+      await wrapper.findAll(".v-list-item")[1].trigger("click");
+      await wrapper.findAll(".v-list-item")[2].trigger("click");
 
-    expect(apiMock.playMedia).toHaveBeenCalledWith(
-      "audiobookshelf--1://audiobook/book1",
-      undefined,
-      { start_position: 30 },
-    );
-  });
+      expect(apiMock.getBookmarks).toHaveBeenCalledWith(
+        item.media_type,
+        item.item_id,
+        item.provider,
+      );
+      expect(apiMock.playMedia.mock.calls).toEqual([
+        [bookmarkUri, undefined, { start_position: 30 }],
+        [item.uri, undefined, chapterOptions],
+      ]);
+    },
+  );
 
   it("deletes only once confirmed, and follows changes made elsewhere", async () => {
     const wrapper = await mountChapters([
@@ -165,12 +214,13 @@ describe("Chapters", () => {
     eventbus.on("deleteConfirmationDialog", onConfirmation);
 
     await wrapper.findAll(".v-list-item-title button")[1].trigger("click");
-    expect(apiMock.removeAudiobookBookmark).not.toHaveBeenCalled();
+    expect(apiMock.removeBookmark).not.toHaveBeenCalled();
 
-    apiMock.getAudiobookBookmarks.mockResolvedValue([]);
+    apiMock.getBookmarks.mockResolvedValue([]);
     await confirmations[0].onConfirm();
     await flushPromises();
-    expect(apiMock.removeAudiobookBookmark).toHaveBeenCalledWith(
+    expect(apiMock.removeBookmark).toHaveBeenCalledWith(
+      MediaType.AUDIOBOOK,
       LOCAL,
       "book1",
       30,
@@ -178,7 +228,7 @@ describe("Chapters", () => {
     expect(wrapper.findAll(".v-list-item")).toHaveLength(2);
 
     // e.g. a bookmark added in the full screen player
-    apiMock.getAudiobookBookmarks.mockResolvedValue([
+    apiMock.getBookmarks.mockResolvedValue([
       bookmark(LOCAL, "Added in the player", 30, true),
     ]);
     eventbus.emit("bookmarksChanged");

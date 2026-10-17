@@ -535,9 +535,11 @@ export enum ProviderFeature {
   ARTIST_TOPALBUMS = "artist_topalbums",
   AUTHOR_AUDIOBOOKS = "author_audiobooks",
   NARRATOR_AUDIOBOOKS = "narrator_audiobooks",
-  // audiobook bookmarks of the user: read, and add/rename/remove
+  // bookmarks of the user per mediatype: read, and add/rename/remove
   AUDIOBOOK_BOOKMARKS = "audiobook_bookmarks",
   AUDIOBOOK_BOOKMARKS_EDIT = "audiobook_bookmarks_edit",
+  PODCAST_EPISODE_BOOKMARKS = "podcast_episode_bookmarks",
+  PODCAST_EPISODE_BOOKMARKS_EDIT = "podcast_episode_bookmarks_edit",
   // library edit (=add/remove) feature per mediatype
   LIBRARY_ARTISTS_EDIT = "library_artists_edit",
   LIBRARY_ALBUMS_EDIT = "library_albums_edit",

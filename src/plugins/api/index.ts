@@ -122,7 +122,7 @@ export interface PlayMediaOptions {
   queue_id?: string;
   sort_by?: string;
   start_from_beginning?: boolean;
-  /** Seconds to start an audiobook at, e.g. a bookmark, instead of its resume position. */
+  /** Seconds to start an audiobook or episode at, e.g. a bookmark, instead of its resume position. */
   start_position?: number;
   /** Set playback order for immediate-play options; omit to let the server decide. */
   shuffle?: boolean;
@@ -1236,23 +1236,27 @@ export class MusicAssistantApi {
     });
   }
 
-  public getAudiobookBookmarks(
+  public getBookmarks(
+    media_type: MediaType,
     item_id: string,
     provider_instance_id_or_domain: string,
   ): Promise<MediaItemBookmark[]> {
-    return this.sendCommand("music/audiobooks/bookmarks", {
+    return this.sendCommand("music/bookmarks", {
+      media_type,
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
-  public setAudiobookBookmark(
+  public setBookmark(
+    media_type: MediaType,
     provider_instance_id: string,
     provider_item_id: string,
     start: number,
     name: string,
   ): Promise<void> {
-    return this.sendCommand("music/audiobooks/set_bookmark", {
+    return this.sendCommand("music/set_bookmark", {
+      media_type,
       provider_instance_id,
       provider_item_id,
       start,
@@ -1260,12 +1264,14 @@ export class MusicAssistantApi {
     });
   }
 
-  public removeAudiobookBookmark(
+  public removeBookmark(
+    media_type: MediaType,
     provider_instance_id: string,
     provider_item_id: string,
     start: number,
   ): Promise<void> {
-    return this.sendCommand("music/audiobooks/remove_bookmark", {
+    return this.sendCommand("music/remove_bookmark", {
+      media_type,
       provider_instance_id,
       provider_item_id,
       start,
