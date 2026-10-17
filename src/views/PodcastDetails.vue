@@ -24,7 +24,6 @@
         <!-- the podcast's episodes -->
         <ItemsListing
           v-else-if="rowId === 'episodes'"
-          ref="episodesListing"
           itemtype="podcastepisodes"
           :parent-item="itemDetails"
           :show-provider="false"
@@ -76,11 +75,7 @@ import {
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
-import {
-  ListingType,
-  type Podcast,
-  type PodcastEpisode,
-} from "@/plugins/api/interfaces";
+import { ListingType, type Podcast } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed, watch, ref } from "vue";
 
@@ -91,17 +86,9 @@ export interface Props {
 const props = defineProps<Props>();
 const updateAvailable = ref(false);
 const itemDetails = ref<Podcast>();
-// how many episodes the podcast holds, counted from the loaded episodes since
-// the stored total_episodes of a library podcast is never updated
-const countedEpisodeCount = ref<number>();
-const countedEpisodes = ref<PodcastEpisode[]>([]);
-const episodesListing = ref<InstanceType<typeof ItemsListing>[]>();
-const episodeCount = computed(() => {
-  const listing = episodesListing.value?.[0];
-  return listing?.allItemsReceived && !listing.hasActiveFilters
-    ? listing.pagedItems.length
-    : countedEpisodeCount.value;
-});
+// how many episodes the podcast holds, counted from its episodes since the
+// stored total_episodes of a library podcast is never updated
+const episodeCount = ref<number>();
 const rowsEditorOpen = ref(false);
 
 // every row applies to every user; the editor lists the same set
@@ -133,10 +120,10 @@ const loadItemDetails = async function () {
   const { itemId, provider } = props;
   // the previous podcast must not stay actionable under the new route
   itemDetails.value = undefined;
-  countedEpisodeCount.value = undefined;
-  countedEpisodes.value = [];
+  episodeCount.value = undefined;
   updateAvailable.value = false;
   rowsEditorOpen.value = false;
+  countEpisodes();
   const podcast = await api.getPodcast(itemId, provider);
   // a slower response for a previous podcast must not replace the current one
   if (itemId !== props.itemId || provider !== props.provider) return;
@@ -156,10 +143,11 @@ useDetailItemUpdates(itemDetails, {
 });
 
 const loadPodcastEpisodes = async function (params: LoadDataParams) {
-  const { itemId, provider } = props;
-  const episodes = await api.getPodcastEpisodes(
-    itemId,
-    provider,
+  // a refresh can bring new episodes, which the hero counts as well
+  if (params.refresh) countEpisodes();
+  return await api.getPodcastEpisodes(
+    props.itemId,
+    props.provider,
     params.hideFullyPlayed ? false : undefined,
     params.search,
     params.limit,
@@ -167,25 +155,20 @@ const loadPodcastEpisodes = async function (params: LoadDataParams) {
     params.sortField,
     params.sortDirection,
   );
-  if (
-    itemId === props.itemId &&
-    provider === props.provider &&
-    !params.search &&
-    !params.hideFullyPlayed
-  ) {
-    const restoredItems =
-      (episodesListing.value?.[0]?.pagedItems as
-        PodcastEpisode[] | undefined) ?? [];
-    const previousItems =
-      restoredItems.length > countedEpisodes.value.length
-        ? restoredItems
-        : countedEpisodes.value;
-    countedEpisodes.value = params.offset
-      ? [...previousItems, ...episodes]
-      : episodes;
-    countedEpisodeCount.value =
-      episodes.length < params.limit ? countedEpisodes.value.length : undefined;
-  }
-  return episodes;
 };
+
+// a declaration, since the immediate route watcher calls it during setup
+function countEpisodes() {
+  const { itemId, provider } = props;
+  // all episodes: the listing only holds the pages it loaded so far
+  api.getPodcastEpisodes(itemId, provider, undefined, undefined, 0).then(
+    (episodes) => {
+      if (itemId === props.itemId && provider === props.provider) {
+        episodeCount.value = episodes.length;
+      }
+    },
+    // the api reports the failure, the hero just goes without a count
+    () => undefined,
+  );
+}
 </script>

@@ -901,7 +901,7 @@ describe("ItemsListing failed load", () => {
     expect(loadPagedData.mock.calls[2][0].offset).toBe(0);
     expect(await scrollerLoads(listing)).toHaveBeenCalledWith("ok");
     expect(loadPagedData.mock.calls[3][0].offset).toBe(2);
-    expect(listing.vm.pagedItems.map((item) => item.item_id)).toEqual([
+    expect(rows(listing).map((item) => item.item_id)).toEqual([
       "new-1",
       "new-2",
       "new-3",
@@ -1947,7 +1947,7 @@ describe("ItemsListing server sort options", () => {
         sortField: SortField.PLAY_COUNT,
       }),
     );
-    expect(restored.vm.pagedItems).toEqual([reloadedTrack]);
+    expect(rows(restored)).toEqual([reloadedTrack]);
 
     resolveReload([track({ item_id: "late-old-order" })]);
     await pendingReload;
@@ -1995,7 +1995,7 @@ describe("ItemsListing server sort options", () => {
         favoritesOnly: true,
       }),
     );
-    expect(restored.vm.pagedItems).toEqual([favoriteTrack]);
+    expect(rows(restored)).toEqual([favoriteTrack]);
   });
 
   it("reloads instead of restoring rows from a failed sort", async () => {
@@ -2062,7 +2062,7 @@ describe("ItemsListing server sort options", () => {
         sortDirection: SortDirection.DESC,
       }),
     );
-    expect(restored.vm.pagedItems).toEqual([reloadedTrack]);
+    expect(rows(restored)).toEqual([reloadedTrack]);
     expectDisplayedSort(restored, SortField.PLAY_COUNT, SortDirection.DESC);
   });
 

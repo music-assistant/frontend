@@ -56,16 +56,11 @@ vi.mock("@/components/details/DetailTextRow.vue", () => ({
 vi.mock("@/components/ProviderDetails.vue", () => ({
   default: { name: "ProviderDetails", template: "<div />" },
 }));
-// never calls the listing callback itself
+// never calls the listing callback itself, like a listing restoring its previous episodes
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
     props: ["parentItem", "loadPagedData", "path", "sortListing"],
-    data: () => ({
-      pagedItems: [] as PodcastEpisode[],
-      allItemsReceived: false,
-      hasActiveFilters: false,
-    }),
     template: '<div data-listing data-row="episodes" />',
   },
 }));
@@ -175,12 +170,6 @@ describe("PodcastDetails", () => {
 
   it("hands the editor the podcast rows and the episode count", async () => {
     const wrapper = await mountDetails();
-    await loadEpisodes(wrapper, {
-      offset: 0,
-      limit: 20,
-      sortBy: "position:desc",
-      search: "",
-    });
 
     expect(editor(wrapper).props("availableIds")).toEqual([
       "about",
@@ -210,71 +199,28 @@ describe("PodcastDetails", () => {
     expect(listing(wrapper).props("path")).toBe("podcast.7.library");
   });
 
-  it("counts all episodes after the paged listing finishes", async () => {
-    mockGetPodcastEpisodes
-      .mockResolvedValueOnce(EPISODES.slice(0, 2))
-      .mockResolvedValueOnce(EPISODES.slice(2));
-    const wrapper = await mountDetails();
-    const params: LoadDataParams = {
-      offset: 0,
-      limit: 2,
-      sortBy: "position:desc",
-      sortField: "position" as SortField,
-      sortDirection: "desc" as SortDirection,
-      search: "",
-    };
-    expect(hero(wrapper).props("episodeCount")).toBeUndefined();
+  it("counts every episode for the hero without the listing loading them", async () => {
+    const episodes = deferred<PodcastEpisode[]>();
+    mockGetPodcastEpisodes.mockReturnValue(episodes.promise);
 
-    await loadEpisodes(wrapper, params);
+    const wrapper = await mountDetails();
     expect(hero(wrapper).props("episodeCount")).toBeUndefined();
-    await loadEpisodes(wrapper, { ...params, offset: 2 });
-    await flushPromises();
-    expect(hero(wrapper).props("episodeCount")).toBe(EPISODES.length);
-    expect(listing(wrapper).props("sortListing")).toBe(
-      "podcast_episodes" as ListingType,
+    expect(mockGetPodcastEpisodes).toHaveBeenCalledWith(
+      "abc",
+      "rss",
+      undefined,
+      undefined,
+      0,
     );
-  });
 
-  it("includes restored pages when counting the final episode page", async () => {
-    const wrapper = await mountDetails();
-    const restoredListing = listing(wrapper).vm as unknown as {
-      pagedItems: PodcastEpisode[];
-      allItemsReceived: boolean;
-    };
-    restoredListing.pagedItems = EPISODES.slice(0, 2);
-    mockGetPodcastEpisodes.mockResolvedValueOnce([EPISODES[2]]);
-
-    await loadEpisodes(wrapper, {
-      offset: 2,
-      limit: 2,
-      sortBy: "position:desc",
-      search: "",
-    });
+    episodes.resolve(EPISODES);
     await flushPromises();
-
     expect(hero(wrapper).props("episodeCount")).toBe(EPISODES.length);
-  });
-
-  it("uses a completed restored total but not a completed filtered page", async () => {
-    const wrapper = await mountDetails();
-    const restoredListing = listing(wrapper).vm as unknown as {
-      pagedItems: PodcastEpisode[];
-      allItemsReceived: boolean;
-      hasActiveFilters: boolean;
-    };
-    restoredListing.pagedItems = EPISODES;
-    restoredListing.allItemsReceived = true;
-    await flushPromises();
-
-    expect(hero(wrapper).props("episodeCount")).toBe(EPISODES.length);
-
-    restoredListing.hasActiveFilters = true;
-    await flushPromises();
-    expect(hero(wrapper).props("episodeCount")).toBeUndefined();
   });
 
   it("loads episode pages with the server-side played filter and sort", async () => {
     const wrapper = await mountDetails();
+    mockGetPodcastEpisodes.mockClear();
     await loadEpisodes(wrapper, {
       offset: 40,
       limit: 20,
@@ -285,6 +231,9 @@ describe("PodcastDetails", () => {
       hideFullyPlayed: true,
     });
 
+    expect(listing(wrapper).props("sortListing")).toBe(
+      "podcast_episodes" as ListingType,
+    );
     expect(mockGetPodcastEpisodes).toHaveBeenCalledWith(
       "abc",
       "rss",
@@ -298,7 +247,7 @@ describe("PodcastDetails", () => {
     expect(mockGetPodcastEpisodes).toHaveBeenCalledTimes(1);
   });
 
-  it("fetches the episodes again when the listing refreshes", async () => {
+  it("counts the episodes again when the listing refreshes", async () => {
     const wrapper = await mountDetails();
     const params: LoadDataParams = {
       offset: 0,
@@ -306,22 +255,23 @@ describe("PodcastDetails", () => {
       sortBy: "position:desc",
       search: "",
     };
-
     await loadEpisodes(wrapper, params);
+    const newEpisode = podcastEpisode({ item_id: "ep4", position: 4 });
+    mockGetPodcastEpisodes
+      .mockClear()
+      .mockResolvedValue([...EPISODES, newEpisode]);
+
     await loadEpisodes(wrapper, { ...params, refresh: true });
+    await flushPromises();
 
     expect(mockGetPodcastEpisodes).toHaveBeenCalledTimes(2);
+    expect(hero(wrapper).props("episodeCount")).toBe(EPISODES.length + 1);
   });
 
   it("clears the count when another podcast opens", async () => {
     const wrapper = await mountDetails();
-    await loadEpisodes(wrapper, {
-      offset: 0,
-      limit: 20,
-      sortBy: "position:desc",
-      search: "",
-    });
     expect(hero(wrapper).props("episodeCount")).toBe(EPISODES.length);
+    mockGetPodcastEpisodes.mockReturnValue(new Promise(() => {}));
 
     await wrapper.setProps({ itemId: "def" });
 
@@ -330,19 +280,19 @@ describe("PodcastDetails", () => {
 
   it("ignores a late episode reply of the previous podcast", async () => {
     const previous = deferred<PodcastEpisode[]>();
-    mockGetPodcastEpisodes.mockReturnValueOnce(previous.promise);
+    const current = deferred<PodcastEpisode[]>();
+    mockGetPodcastEpisodes
+      .mockReturnValueOnce(previous.promise)
+      .mockReturnValueOnce(current.promise);
     const wrapper = await mountDetails();
-    const loading = loadEpisodes(wrapper, {
-      offset: 0,
-      limit: 20,
-      sortBy: "position:desc",
-      search: "",
-    });
 
     await wrapper.setProps({ itemId: "def" });
     previous.resolve(EPISODES);
-    await loading;
     await flushPromises();
     expect(hero(wrapper).props("episodeCount")).toBeUndefined();
+
+    current.resolve(EPISODES.slice(0, 2));
+    await flushPromises();
+    expect(hero(wrapper).props("episodeCount")).toBe(2);
   });
 });
