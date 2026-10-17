@@ -107,7 +107,8 @@ vi.mock("@/plugins/remote", () => ({
   },
 }));
 
-vi.mock("vue-i18n", () => ({
+vi.mock("vue-i18n", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-i18n")>()),
   useI18n: () => ({
     t: (_key: string, fallback: string) => fallback,
   }),
@@ -187,6 +188,10 @@ function mountLogin(): VueWrapper {
         $t: (_key: string, fallback: string) => fallback,
       },
       stubs: {
+        OidcLoginButton: {
+          props: ["provider"],
+          template: "<button>Sign in with {{ provider.name }}</button>",
+        },
         VAlert: layoutStub,
         VApp: layoutStub,
         VBtn: buttonStub,
@@ -969,6 +974,59 @@ describe("Home Assistant sign in", () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain("Sign in with Home Assistant");
+  });
+});
+
+describe("OIDC sign in visibility", () => {
+  const remoteId = "ABCDEFGH1234512345ABCDEFGH";
+
+  beforeEach(() => {
+    mocks.sendCommand.mockImplementation((command: string) =>
+      Promise.resolve(
+        command === "auth/providers"
+          ? [
+              { provider_id: "homeassistant" },
+              {
+                provider_id: "oidc",
+                name: "Authentik",
+                requires_redirect: true,
+              },
+            ]
+          : [],
+      ),
+    );
+  });
+
+  it("offers OIDC alongside the existing local and Home Assistant sign-ins", async () => {
+    mockHostedFrontend();
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Sign in with Authentik");
+    expect(wrapper.text()).toContain("Sign in with Home Assistant");
+    expect(wrapper.text()).toContain("Username");
+  });
+
+  it("hides OIDC when a remote browser cannot reach the callback server", async () => {
+    setLocation(`?remote=1&remote_id=${remoteId}`);
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("Sign in with Authentik");
+    expect(wrapper.text()).toContain("Username");
+  });
+
+  it("offers OIDC remotely when an External URL can serve the browser callback", async () => {
+    setLocation(`?remote=1&remote_id=${remoteId}`);
+    mocks.serverInfo.value = {
+      homeassistant_addon: false,
+      server_id: "server-id",
+      external_url: "https://music.example.com",
+    };
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Sign in with Authentik");
   });
 });
 
