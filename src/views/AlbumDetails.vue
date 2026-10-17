@@ -4,8 +4,8 @@
       :item="itemDetails"
       :backdrop="backdrop.url"
       :blur-backdrop="backdrop.blurred"
-      :track-count="allAlbumTracksLoaded ? albumTracks?.length : undefined"
-      :duration="allAlbumTracksLoaded ? runningTime : undefined"
+      :track-count="albumTracks?.length"
+      :duration="runningTime"
       :tracks-sort-field="tracksListing?.[0]?.sortField"
       :tracks-sort-direction="tracksListing?.[0]?.sortDirection"
       @edit-rows="rowsEditorOpen = true"
@@ -162,10 +162,9 @@ const router = useRouter();
 const itemDetails = ref<Album>();
 const rowsEditorOpen = ref(false);
 
-// the album's own tracks, as the listing below last loaded them unfiltered:
-// what the hero counts and times
+// all of the album's own tracks, whatever the listing below shows: what the
+// hero counts and times
 const albumTracks = ref<Track[]>();
-const allAlbumTracksLoaded = ref(false);
 // the tracks listing (inside the rows loop, so held as an array), whose sort
 // order the play button follows
 const tracksListing = ref<InstanceType<typeof ItemsListing>[]>();
@@ -285,7 +284,6 @@ const loadItemDetails = async function () {
   // the previous album must not stay actionable under the new route
   itemDetails.value = undefined;
   albumTracks.value = undefined;
-  allAlbumTracksLoaded.value = false;
   const album =
     provider === MUSICBRAINZ_PROVIDER
       ? await resolveMusicBrainzAlbum(itemId)
@@ -293,6 +291,7 @@ const loadItemDetails = async function () {
   // a slower response for a previous album must not replace the current one
   if (itemId !== props.itemId || provider !== props.provider) return;
   itemDetails.value = album;
+  if (album) loadHeroTracks(album);
 };
 
 watch(
@@ -347,12 +346,6 @@ const loadTracks = async function (params: LoadDataParams) {
     params.favoritesOnly,
   );
   if (itemDetails.value?.uri !== album.uri) return [];
-  if (!params.libraryOnly && !params.search && !params.favoritesOnly) {
-    albumTracks.value = params.offset
-      ? [...(albumTracks.value ?? []), ...tracks]
-      : tracks;
-    allAlbumTracksLoaded.value = tracks.length < params.limit;
-  }
   return tracks;
 };
 
@@ -368,6 +361,17 @@ const UpdateItemInDb = async function () {
 /** Switch the artist source from the shelf badge; the shelf reloads that source. */
 function selectMoreFromArtistSource(source: RowSource) {
   albumRows.setSource("more_from_artist", source);
+}
+
+/** Loads every track of the album for the hero; a failure is reported by the api. */
+function loadHeroTracks(album: Album) {
+  loadAlbumTracks(album, false, undefined, 0).then(
+    (tracks) => {
+      // a slower response for a previous album must not count for this one
+      if (itemDetails.value?.uri === album.uri) albumTracks.value = tracks;
+    },
+    () => undefined,
+  );
 }
 
 /**

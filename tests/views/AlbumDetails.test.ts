@@ -6,6 +6,7 @@ import {
   SortDirection,
   SortField,
   type Album,
+  type Track,
 } from "@/plugins/api/interfaces";
 import type { LoadDataParams } from "@/composables/useItemsListing";
 import AlbumDetails from "@/views/AlbumDetails.vue";
@@ -266,28 +267,55 @@ describe("AlbumDetails", () => {
     expect(renderedRows(wrapper)).not.toContain("review");
   });
 
-  it("counts and times the album from the tracks the listing loaded", async () => {
+  it("counts and times every track of the album for the hero", async () => {
     const wrapper = await mountDetails();
-    expect(hero(wrapper).props("trackCount")).toBeUndefined();
 
-    await loadTracks(wrapper);
-
+    expect(mockLoadAlbumTracks).toHaveBeenCalledWith(
+      ALBUM_WITH_REVIEW,
+      false,
+      undefined,
+      0,
+    );
     expect(hero(wrapper).props("trackCount")).toBe(2);
     expect(hero(wrapper).props("duration")).toBe(142);
   });
 
-  // the hero describes the album, not the part of it that happens to be in
-  // the library
-  it("ignores a library-only load for those", async () => {
-    const wrapper = await mountDetails();
-    await loadTracks(wrapper);
+  // the hero describes the album, not the part of it the listing shows
+  it.each<Partial<LoadDataParams>>([
+    { libraryOnly: true },
+    { favoritesOnly: true },
+    { search: "intro" },
+    { offset: 50 },
+  ])(
+    "keeps the whole album in the hero for a listing load with %o",
+    async (overrides) => {
+      const wrapper = await mountDetails();
+      mockLoadAlbumTracks.mockResolvedValue([
+        track({ item_id: "1", duration: 5 }),
+      ]);
 
-    mockLoadAlbumTracks.mockResolvedValue([
-      track({ item_id: "1", duration: 5 }),
-    ]);
-    await loadTracks(wrapper, { libraryOnly: true });
+      await loadTracks(wrapper, overrides);
 
-    expect(hero(wrapper).props("trackCount")).toBe(2);
+      expect(hero(wrapper).props("trackCount")).toBe(2);
+      expect(hero(wrapper).props("duration")).toBe(142);
+    },
+  );
+
+  it("ignores a late hero reply of the previous album", async () => {
+    let resolvePrevious!: (tracks: Track[]) => void;
+    mockLoadAlbumTracks.mockReturnValueOnce(
+      new Promise<Track[]>((resolve) => (resolvePrevious = resolve)),
+    );
+    const wrapper = await mountDetails(album({ item_id: "9" }));
+
+    mockGetAlbum.mockResolvedValue(ALBUM_WITH_REVIEW);
+    mockLoadAlbumTracks.mockReturnValueOnce(new Promise(() => {}));
+    await wrapper.setProps({ itemId: ALBUM_WITH_REVIEW.item_id });
+    await flushPromises();
+    resolvePrevious([track({ item_id: "1" })]);
+    await flushPromises();
+
+    expect(hero(wrapper).props("trackCount")).toBeUndefined();
   });
 
   it("hands the hero's play button the order the track listing shows", async () => {
@@ -297,38 +325,29 @@ describe("AlbumDetails", () => {
     expect(hero(wrapper).props("tracksSortDirection")).toBe(SortDirection.DESC);
   });
 
-  it("pages album tracks with the server sort and completes the hero count", async () => {
-    mockLoadAlbumTracks
-      .mockResolvedValueOnce([track({ item_id: "1" }), track({ item_id: "2" })])
-      .mockResolvedValueOnce([track({ item_id: "3" })]);
+  it("pages album tracks with the server sort", async () => {
     const wrapper = await mountDetails();
     const listing = wrapper.findComponent({ name: "ItemsListing" });
     const loadPagedData = listing.props("loadPagedData") as (
       params: LoadDataParams,
     ) => Promise<unknown>;
-    const params: LoadDataParams = {
-      offset: 0,
+
+    expect(listing.props("sortListing")).toBe(ListingType.ALBUM_TRACKS);
+    await loadPagedData({
+      offset: 2,
       limit: 2,
       sortBy: "duration:desc",
       sortField: SortField.DURATION,
       sortDirection: SortDirection.DESC,
       search: "",
-    };
+    });
 
-    expect(listing.props("sortListing")).toBe(ListingType.ALBUM_TRACKS);
-    await loadPagedData(params);
-    expect(hero(wrapper).props("trackCount")).toBeUndefined();
-    await loadPagedData({ ...params, offset: 2 });
-    await flushPromises();
-
-    expect(hero(wrapper).props("trackCount")).toBe(3);
-    expect(mockLoadAlbumTracks).toHaveBeenNthCalledWith(
-      1,
+    expect(mockLoadAlbumTracks).toHaveBeenLastCalledWith(
       ALBUM_WITH_REVIEW,
       false,
       "",
       2,
-      0,
+      2,
       SortField.DURATION,
       SortDirection.DESC,
       undefined,
@@ -361,25 +380,6 @@ describe("AlbumDetails", () => {
       undefined,
       true,
     );
-  });
-
-  it("keeps the album total when the listing is filtered to favorites", async () => {
-    const wrapper = await mountDetails();
-    const albumTracks = [
-      track({ item_id: "1", duration: 120 }),
-      track({ item_id: "2", duration: 180 }),
-    ];
-    mockLoadAlbumTracks.mockResolvedValue(albumTracks);
-
-    await loadTracks(wrapper);
-    expect(hero(wrapper).props("trackCount")).toBe(2);
-    expect(hero(wrapper).props("duration")).toBe(300);
-
-    mockLoadAlbumTracks.mockResolvedValue([albumTracks[0]]);
-    await loadTracks(wrapper, { favoritesOnly: true, limit: 1 });
-
-    expect(hero(wrapper).props("trackCount")).toBe(2);
-    expect(hero(wrapper).props("duration")).toBe(300);
   });
 
   it("sends the artist shelf to the artist's own albums listing", async () => {
