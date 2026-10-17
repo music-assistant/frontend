@@ -1,0 +1,286 @@
+name: Backport to stable
+
+# Cherry-picks merged main PRs labeled 'backport-to-stable' onto `stable`,
+# collected in one "[Backport to stable] <version>" PR per .post release.
+# Merging that PR publishes the release (see stable-release.yml).
+#
+# `stable` follows the frontend version pinned on the server's `stable` branch:
+# when that pin is not on `stable` yet (a new server X.Y.0), `stable` is reset
+# to it first. A manual run only does that reset.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request_target:
+    types: [labeled]
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Every run appends to the same backport branch, so runs must not overlap.
+concurrency:
+  group: backport-to-stable
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  find:
+    name: Find merged PRs with 'backport-to-stable' label
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      prs: ${{ steps.prs.outputs.result }}
+    steps:
+      - name: Resolve merged PRs for this event
+        id: prs
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const label = 'backport-to-stable';
+            const wanted = pr =>
+              pr.merged_at && pr.base.ref === 'main' && pr.labels.some(l => l.name === label);
+            const entry = pr => ({
+              pr_number: pr.number,
+              pr_title: pr.title,
+              merge_commit_sha: pr.merge_commit_sha,
+            });
+            const result = [];
+
+            if (context.eventName === 'push') {
+              for (const commit of context.payload.commits) {
+                const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  commit_sha: commit.id,
+                });
+                const pr = prs.find(p => p.merge_commit_sha === commit.id && wanted(p));
+                if (pr) result.push(entry(pr));
+              }
+            } else if (context.payload.label?.name === label) {
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+              });
+              if (wanted(pr)) {
+                result.push(entry(pr));
+              } else {
+                console.log('PR is not merged yet, skipping backport');
+              }
+            }
+
+            console.log(`PRs to backport: ${result.map(p => `#${p.pr_number}`).join(', ') || 'none'}`);
+            return result;
+
+  stable:
+    name: Sync stable with the server pin
+    needs: find
+    if: >-
+      !cancelled() && (github.event_name == 'workflow_dispatch' ||
+      (needs.find.result == 'success' && needs.find.outputs.prs != '[]'))
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.sync.outputs.version }}
+    steps:
+      - name: Create repository token
+        id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.MUSIC_ASSISTANT_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ steps.token.outputs.token }}
+
+      - name: Reset stable to the server pin and pick the next version
+        id: sync
+        run: |
+          PIN=$(gh api -H "Accept: application/vnd.github.raw" \
+            "repos/music-assistant/server/contents/pyproject.toml?ref=stable" |
+            sed -nE 's/.*"music-assistant-frontend==([^"]+)".*/\1/p')
+          if [[ ! "$PIN" =~ ^([0-9]+\.[0-9]+\.[0-9]+)(\.post[0-9]+)?$ ]]; then
+            echo "::error::Unexpected frontend pin on server stable: '$PIN'."
+            exit 1
+          fi
+          BASE="${BASH_REMATCH[1]}"
+          if ! PIN_SHA=$(git rev-parse -q --verify "refs/tags/$PIN^{commit}"); then
+            echo "::error::Server stable pins $PIN, but that tag does not exist here."
+            exit 1
+          fi
+
+          if git merge-base --is-ancestor "$PIN_SHA" origin/stable 2>/dev/null; then
+            echo "stable already contains $PIN"
+          else
+            echo "::notice::Resetting stable to $PIN, the version server stable now pins."
+            git push --force origin "$PIN_SHA:refs/heads/stable"
+
+            # Backports collected for the previous stable base are obsolete now.
+            gh pr list --base stable --state open --json number,headRefName \
+              --jq ".[] | select(.headRefName | startswith(\"backport/\")) |
+                select(.headRefName | startswith(\"backport/$BASE.post\") | not) | .number" |
+              while read -r NUMBER; do
+                gh pr close "$NUMBER" --comment "Closing: stable moved to $PIN, the version the server's stable branch now pins. Re-apply the \`backport-to-stable\` label on PRs that still need a backport."
+              done
+          fi
+
+          LAST_POST=$(git tag --list "$BASE.post*" | sed -E 's/.*\.post//' | grep -xE '[0-9]+' | sort -n | tail -1 || true)
+          VERSION="$BASE.post$(( ${LAST_POST:-0} + 1 ))"
+          echo "Next stable release: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+
+  backport:
+    name: Backport PR ${{ matrix.pr_number }}
+    needs: [find, stable]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJSON(needs.find.outputs.prs) }}
+    env:
+      BRANCH: backport/${{ needs.stable.outputs.version }}
+      VERSION: ${{ needs.stable.outputs.version }}
+      PR_NUMBER: ${{ matrix.pr_number }}
+      PR_TITLE: ${{ matrix.pr_title }}
+      SHA: ${{ matrix.merge_commit_sha }}
+    steps:
+      # Pushing and opening the PR as the bot, not GITHUB_TOKEN, so CI runs on the backport PR.
+      - name: Create repository token
+        id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.MUSIC_ASSISTANT_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ steps.token.outputs.token }}
+
+      - name: Set up Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check out backport branch
+        run: |
+          if git show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+          else
+            git checkout -b "$BRANCH" origin/stable
+          fi
+
+      - name: Cherry-pick
+        id: pick
+        run: |
+          if git merge-base --is-ancestor "$SHA" HEAD ||
+            [[ -n $(git log -1 --format=%h -F --grep="(cherry picked from commit $SHA)" HEAD) ]]; then
+            echo "::notice::#$PR_NUMBER is already on $BRANCH."
+            exit 0
+          fi
+
+          BEFORE=$(git rev-parse HEAD)
+          if ! git cherry-pick -x --empty=drop "$SHA"; then
+            {
+              echo 'conflicts<<CONFLICTS_EOF'
+              git diff --name-only --diff-filter=U
+              echo 'CONFLICTS_EOF'
+            } >> "$GITHUB_OUTPUT"
+            git cherry-pick --abort
+            # Pushed so a hand-made backport has a branch to target.
+            git push origin "HEAD:refs/heads/$BRANCH"
+            echo "::error::#$PR_NUMBER does not cherry-pick cleanly onto $BRANCH."
+            exit 1
+          fi
+
+          if [[ $(git rev-parse HEAD) == "$BEFORE" ]]; then
+            echo "::notice::#$PR_NUMBER brings no changes to $BRANCH."
+          else
+            echo "picked=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push backport branch
+        if: steps.pick.outputs.picked == 'true'
+        run: git push origin "HEAD:refs/heads/$BRANCH"
+
+      - name: Create or update backport PR
+        if: steps.pick.outputs.picked == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const { BRANCH: branch, VERSION: version, PR_NUMBER: number, PR_TITLE: title } = process.env;
+            const { owner, repo } = context.repo;
+            const item = `- ${title} (#${number})`;
+
+            const { data: open } = await github.rest.pulls.list({
+              owner, repo, state: 'open', head: `${owner}:${branch}`, base: 'stable',
+            });
+
+            if (open.length === 0) {
+              await github.rest.pulls.create({
+                owner, repo,
+                title: `[Backport to stable] ${version}`,
+                head: branch,
+                base: 'stable',
+                body:
+                  `Bug fixes from main for the stable frontend release ${version}. ` +
+                  `Merge with **Rebase and merge**: that publishes ${version} and opens ` +
+                  `the server PR that pins it.\n\nCherry-picked PRs:\n\n${item}`,
+              });
+              return;
+            }
+
+            const pr = open[0];
+            const body = pr.body || '';
+            if (body.includes(`(#${number})`)) {
+              console.log(`#${number} is already listed on #${pr.number}`);
+              return;
+            }
+            await github.rest.pulls.update({
+              owner, repo, pull_number: pr.number, body: `${body.trimEnd()}\n${item}`,
+            });
+
+      - name: Report failed cherry-pick
+        if: failure() && steps.pick.outcome == 'failure'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          CONFLICTS: ${{ steps.pick.outputs.conflicts }}
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const { BRANCH: branch, SHA: sha, PR_NUMBER: number, CONFLICTS: conflicts } = process.env;
+            const { owner, repo } = context.repo;
+            const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const files = conflicts.trim().split('\n').filter(Boolean).map(f => `- \`${f}\``).join('\n');
+
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: Number(number),
+              body:
+                `The automatic backport to stable failed ([run](${run})): ` +
+                `this PR does not cherry-pick cleanly onto \`${branch}\`.\n\n` +
+                (files ? `Conflicting files:\n\n${files}\n\n` : '') +
+                `To backport it by hand, run \`git cherry-pick -x ${sha.substring(0, 12)}\` ` +
+                `on a branch from \`${branch}\`, fix the conflicts and open a PR into \`${branch}\`. ` +
+                `If no "[Backport to stable]" PR is open yet, open one from \`${branch}\` into \`stable\`.`,
+            });
