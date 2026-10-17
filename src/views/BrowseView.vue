@@ -1,6 +1,7 @@
 <template>
   <section class="flex min-h-full flex-col">
     <ItemsListing
+      :key="path || 'root'"
       fill-height
       itemtype="browse"
       :show-provider="false"
@@ -8,8 +9,8 @@
       :show-favorites-only-filter="false"
       :show-track-number="false"
       :show-select-button="!isRoot && !hasOnlyFolders"
-      :load-items="loadItems"
-      :sort-keys="['original', 'name', 'name_desc']"
+      :sort-listing="ListingType.BROWSE"
+      :load-paged-data="loadItems"
       :path="path"
       :allow-key-hooks="true"
       :icon="Folder"
@@ -54,7 +55,11 @@ import ToolbarHeading, {
 } from "@/components/ToolbarHeading.vue";
 import { Button } from "@/components/ui/button";
 import api from "@/plugins/api";
-import { MediaItemType, MediaType } from "@/plugins/api/interfaces";
+import {
+  ListingType,
+  MediaItemType,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { Folder, Shuffle } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -105,6 +110,7 @@ watch(
   () => props.path,
   async (path) => {
     currentFolder.value = undefined;
+    hasOnlyFolders.value = false;
     if (isRoot.value || !path) return;
     // opened without passing through the parent listing (a reload or a link)
     const folder = knownFolders.get(path) ?? (await findInParentListing(path));
@@ -115,14 +121,26 @@ watch(
 );
 
 const loadItems = async function (params: LoadDataParams) {
+  const path = props.path;
   const items: Array<MediaItemType> = await api.browse(
-    props.path,
+    path,
     store.activePlayerId,
+    undefined,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
   );
+  if (path !== props.path) return items;
   rememberFolders(items);
-  hasOnlyFolders.value = items.every(
+  const pageHasOnlyFolders = items.every(
     (item) => item.media_type === MediaType.FOLDER,
   );
+  hasOnlyFolders.value =
+    params.offset === 0
+      ? pageHasOnlyFolders
+      : hasOnlyFolders.value && pageHasOnlyFolders;
   return items;
 };
 
@@ -145,9 +163,13 @@ async function findInParentListing(
 ): Promise<BrowseFolder | undefined> {
   try {
     rememberFolders(
-      await api.browse(parentBrowsePath(path), store.activePlayerId, {
-        suppressGlobalError: true,
-      }),
+      await api.browse(
+        parentBrowsePath(path),
+        store.activePlayerId,
+        { suppressGlobalError: true },
+        undefined,
+        0,
+      ),
     );
   } catch {
     return undefined;

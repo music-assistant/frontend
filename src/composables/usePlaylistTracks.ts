@@ -24,7 +24,14 @@ export function usePlaylistTracks(playlist: () => PlaylistRef) {
     const { itemId, provider } = playlist();
     const key = `${provider}/${itemId}`;
     if (!refresh && request && requestKey === key) return request;
-    const current = api.getPlaylistTracks(itemId, provider, refresh);
+    const current = api.getPlaylistTracks(
+      itemId,
+      provider,
+      refresh,
+      undefined,
+      undefined,
+      0,
+    );
     request = current;
     requestKey = key;
     // only the latest request may set the tracks; a failed one can be retried

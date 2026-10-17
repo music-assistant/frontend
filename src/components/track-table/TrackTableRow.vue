@@ -183,7 +183,12 @@ import {
 } from "@/helpers/media_item_actions";
 import { camelotColor } from "@/helpers/camelot";
 import { formatDuration } from "@/helpers/utils";
-import { Scope, type MediaItemType } from "@/plugins/api/interfaces";
+import {
+  Scope,
+  type MediaItemType,
+  type SortDirection,
+  type SortField,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { EllipsisVertical, Play } from "@lucide/vue";
@@ -209,6 +214,8 @@ export interface Props {
   disablePlayButton?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -218,6 +225,8 @@ const props = withDefaults(defineProps<Props>(), {
   disablePlayButton: false,
   parentItem: undefined,
   sortBy: undefined,
+  sortField: undefined,
+  sortDirection: undefined,
 });
 
 const emit = defineEmits<{
@@ -289,6 +298,8 @@ const onMenu = function (evt: Event) {
     props.parentItem,
     true,
     props.sortBy,
+    props.sortField,
+    props.sortDirection,
   );
 };
 
@@ -301,6 +312,9 @@ const onPlayClick = function (evt: MouseEvent) {
     props.parentItem,
     undefined,
     props.sortBy,
+    undefined,
+    props.sortField,
+    props.sortDirection,
   );
 };
 

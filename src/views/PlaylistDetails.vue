@@ -6,6 +6,8 @@
       :blur-backdrop="backdrop.blurred"
       :track-count="playlistTracks?.length"
       :duration="runningTime"
+      :tracks-sort-field="tracksListing?.[0]?.sortField"
+      :tracks-sort-direction="tracksListing?.[0]?.sortDirection"
       :has-rules="!!smartRules"
       :can-edit-rules="!!smartRules && canEditLibrary"
       :can-share="canShare"
@@ -28,6 +30,7 @@
           <!-- the listing keeps its own toolbar, but takes the title and gutter of the rows around it -->
           <ItemsListing
             v-else
+            ref="tracksListing"
             class="px-4 pt-3 max-md:px-1 max-md:pt-2 [&>.v-divider]:hidden"
             itemtype="playlisttracks"
             :parent-item="itemDetails"
@@ -38,25 +41,14 @@
             :show-track-number="false"
             :show-refresh-button="true"
             :refresh-on-parent-update="true"
-            :load-items="loadPlaylistTracks"
-            :sort-keys="[
-              'position',
-              'position_desc',
-              'timestamp_added',
-              'timestamp_added_desc',
-              'name',
-              'artist',
-              'album',
-              'duration',
-              'duration_desc',
-            ]"
+            :sort-listing="ListingType.PLAYLIST_TRACKS"
+            :load-paged-data="loadPlaylistTracks"
             :update-available="updateAvailable"
             :track-table="true"
             :title="$t('tracks')"
             :allow-key-hooks="true"
             :path="`playlist.${props.itemId}.${props.provider}`"
             :restore-state="true"
-            :no-server-side-sorting="true"
           >
             <template #title>
               <span
@@ -158,6 +150,7 @@ import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.v
 import { api } from "@/plugins/api";
 import {
   Scope,
+  ListingType,
   type Playlist,
   type SmartPlaylistRules,
 } from "@/plugins/api/interfaces";
@@ -178,6 +171,7 @@ const smartRules = ref<SmartPlaylistRules | null>(null);
 const showEditDialog = ref(false);
 const showRulesDialog = ref(false);
 const rowsEditorOpen = ref(false);
+let pendingSnapshotRefreshKey: string | undefined;
 // editing the rules of a smart playlist changes the library
 const canEditLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_WRITE),
@@ -190,6 +184,7 @@ const {
   load: loadTracks,
   reset: resetTracks,
 } = usePlaylistTracks(() => props);
+const tracksListing = ref<InstanceType<typeof ItemsListing>[]>();
 
 const canShare = computed(
   () =>
@@ -276,6 +271,7 @@ watch(
       itemDetails.value = undefined;
       smartRules.value = null;
       resetTracks();
+      pendingSnapshotRefreshKey = undefined;
       updateAvailable.value = false;
       showRulesDialog.value = false;
       showEditDialog.value = false;
@@ -289,18 +285,34 @@ watch(
 useDetailItemUpdates(itemDetails, {
   onUpdate: () => {
     updateAvailable.value = true;
-    // the listing reloads its own tracks; without it the page keeps them current
-    if (
-      !itemDetails.value?.is_dynamic &&
-      !visibleRows.value.includes("tracks")
-    ) {
+    if (!itemDetails.value?.is_dynamic) {
       loadTracksQuietly(true);
     }
   },
 });
 
-const loadPlaylistTracks = (params: LoadDataParams) =>
-  loadTracks(params.refresh);
+const loadPlaylistTracks = async function (params: LoadDataParams) {
+  const { itemId, provider } = props;
+  const playlistKey = `${provider}/${itemId}`;
+  if (params.refresh) pendingSnapshotRefreshKey = playlistKey;
+  if (pendingSnapshotRefreshKey === playlistKey) {
+    await loadTracks(true);
+    if (pendingSnapshotRefreshKey === playlistKey) {
+      pendingSnapshotRefreshKey = undefined;
+    }
+  }
+  return await api.getPlaylistTracks(
+    itemId,
+    provider,
+    false,
+    undefined,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+  );
+};
 
 /** Loads the tracks for the page; a failure is reported by the api. */
 function loadTracksQuietly(refresh = false) {
