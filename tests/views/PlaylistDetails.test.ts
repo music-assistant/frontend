@@ -72,6 +72,8 @@ vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
     props: ["loadPagedData", "sortListing"],
+    // the order the listing shows its tracks in
+    data: () => ({ sortField: "artist_name", sortDirection: "desc" }),
     template: "<div />",
   },
 }));
@@ -152,6 +154,14 @@ describe("PlaylistDetails", () => {
     expect(eventbusMock.emit).toHaveBeenCalledWith("playlistAccessDialog", {
       playlist: item,
     });
+  });
+
+  it("hands the hero's play button the order the track listing shows", async () => {
+    const wrapper = await mountDetails(playlistOf("builtin"));
+
+    const hero = wrapper.findComponent({ name: "PlaylistHero" });
+    expect(hero.props("tracksSortField")).toBe("artist_name");
+    expect(hero.props("tracksSortDirection")).toBe("desc");
   });
 
   it("loads playlist tracks through the server-paged listing API", async () => {

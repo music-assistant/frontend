@@ -90,7 +90,13 @@ vi.mock("@/components/album/albumData", async (importOriginal) => ({
 vi.mock("@/components/album/AlbumHero.vue", () => ({
   default: {
     name: "AlbumHero",
-    props: ["item", "trackCount", "duration"],
+    props: [
+      "item",
+      "trackCount",
+      "duration",
+      "tracksSortField",
+      "tracksSortDirection",
+    ],
     template: "<div data-hero />",
   },
 }));
@@ -144,6 +150,8 @@ vi.mock("@/components/ItemsListing.vue", () => ({
       "showFavoritesOnlyFilter",
       "sortListing",
     ],
+    // the order the listing shows its tracks in
+    data: () => ({ sortField: "duration", sortDirection: "desc" }),
     template: '<div data-row="tracks" :data-itemtype="itemtype" />',
   },
 }));
@@ -280,6 +288,13 @@ describe("AlbumDetails", () => {
     await loadTracks(wrapper, { libraryOnly: true });
 
     expect(hero(wrapper).props("trackCount")).toBe(2);
+  });
+
+  it("hands the hero's play button the order the track listing shows", async () => {
+    const wrapper = await mountDetails();
+
+    expect(hero(wrapper).props("tracksSortField")).toBe(SortField.DURATION);
+    expect(hero(wrapper).props("tracksSortDirection")).toBe(SortDirection.DESC);
   });
 
   it("pages album tracks with the server sort and completes the hero count", async () => {
