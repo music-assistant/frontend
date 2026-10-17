@@ -204,9 +204,15 @@ jobs:
       - name: Cherry-pick
         id: pick
         run: |
-          if git merge-base --is-ancestor "$SHA" HEAD ||
-            [[ -n $(git log -1 --format=%h -F --grep="(cherry picked from commit $SHA)" HEAD) ]]; then
+          if git merge-base --is-ancestor "$SHA" origin/stable ||
+            [[ -n $(git log -1 --format=%h -F --grep="(cherry picked from commit $SHA)" origin/stable) ]]; then
+            echo "::notice::#$PR_NUMBER is already on stable."
+            exit 0
+          fi
+          # Already picked (or picked by hand after a conflict): only bring the PR up to date.
+          if [[ -n $(git log -1 --format=%h -F --grep="(cherry picked from commit $SHA)" HEAD) ]]; then
             echo "::notice::#$PR_NUMBER is already on $BRANCH."
+            echo "pending=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -228,6 +234,7 @@ jobs:
             echo "::notice::#$PR_NUMBER brings no changes to $BRANCH."
           else
             echo "picked=true" >> "$GITHUB_OUTPUT"
+            echo "pending=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Push backport branch
@@ -235,7 +242,7 @@ jobs:
         run: git push origin "HEAD:refs/heads/$BRANCH"
 
       - name: Create or update backport PR
-        if: steps.pick.outputs.picked == 'true'
+        if: steps.pick.outputs.pending == 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ steps.token.outputs.token }}
@@ -293,5 +300,6 @@ jobs:
                 (files ? `Conflicting files:\n\n${files}\n\n` : '') +
                 `To backport it by hand, run \`git cherry-pick -x ${sha.substring(0, 12)}\` ` +
                 `on a branch from \`${branch}\`, fix the conflicts and open a PR into \`${branch}\`. ` +
-                `If no "[Backport to stable]" PR is open yet, open one from \`${branch}\` into \`stable\`.`,
+                `Once that is merged, remove and re-add the \`backport-to-stable\` label here ` +
+                `to list this PR on the "[Backport to stable]" PR.`,
             });
