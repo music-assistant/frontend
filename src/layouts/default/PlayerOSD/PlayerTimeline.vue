@@ -67,12 +67,12 @@
               aria-hidden="true"
             ></span>
           </button>
-          <!-- a bar, so a bookmark does not read as a chapter tick -->
+          <!-- the bookmark icon, so a bookmark does not read as a chapter tick -->
           <button
             v-for="tick in bookmarkTicks"
             :key="`bookmark-${tick.start}`"
             type="button"
-            class="absolute top-1/2 flex h-4 w-3 items-center justify-center"
+            class="absolute top-1/2 flex h-4 w-4 items-center justify-center"
             :style="{
               left: `${tick.percent}%`,
               transform: 'translate(-50%, -50%)',
@@ -83,10 +83,12 @@
             @pointerdown.stop
             @click.stop="bookmarkClicked(tick)"
           >
-            <span
-              class="w-0.5 h-3 rounded-full bg-background"
+            <Bookmark
+              :size="14"
+              :color="color"
+              class="fill-background"
               aria-hidden="true"
-            ></span>
+            />
           </button>
         </SliderTrack>
         <SliderThumb
@@ -166,6 +168,7 @@ import {
   resolveQueueElapsedTime,
   resolveActiveTiming,
 } from "@/helpers/activeElapsedTime";
+import { Bookmark } from "@lucide/vue";
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from "reka-ui";
 import { cn } from "@/lib/utils";
 import WaveformTrack from "./WaveformTrack.vue";

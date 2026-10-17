@@ -7,6 +7,7 @@ import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.
 import SkipBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBtn.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
@@ -417,13 +418,26 @@ describe("PlayerFullscreen chapter queue", () => {
         x.classes().includes("queue-bookmark--in-chapter"),
       ]),
     ).toEqual([
+      // a new one goes on the playing copy, at the playing position
+      ["add_bookmark_at", false],
       ["First", false],
       ["In the first", true],
       ["Second", false],
       ["In the second", true],
     ]);
-    await rows[3].trigger("click");
+    expect(fullscreen.find(".queue-bookmark-add__divider").exists()).toBe(true);
+    await rows[4].trigger("click");
     expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 90);
+
+    vi.mocked(eventbus.emit).mockClear();
+    await rows[0].trigger("click");
+    expect(eventbus.emit).toHaveBeenCalledWith("addBookmark", {
+      mediaType: MediaType.AUDIOBOOK,
+      providerInstanceId: "audiobookshelf--1",
+      providerItemId: "book1",
+      storedIn: "Music Assistant",
+      start: 10,
+    });
   });
 });
 

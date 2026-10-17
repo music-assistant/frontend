@@ -306,10 +306,31 @@
                   v-if="
                     row.state === 'playing' &&
                     row.item?.media_item &&
-                    queueChapterGroups.length
+                    (queueChapterGroups.length || canAddBookmark)
                   "
                   class="queue-chapters"
                 >
+                  <!-- on top, so a long chapter list does not hide it -->
+                  <template v-if="canAddBookmark">
+                    <button
+                      type="button"
+                      class="queue-chapter queue-bookmark-add"
+                      @click.stop="addBookmarkClicked"
+                    >
+                      <span class="queue-bookmark__label">
+                        <BookmarkPlus :size="14" />
+                        <span class="queue-chapter__name">{{
+                          $t("add_bookmark_at", {
+                            time: formatDuration(playingPosition),
+                          })
+                        }}</span>
+                      </span>
+                    </button>
+                    <div
+                      v-if="queueChapterGroups.length"
+                      class="queue-bookmark-add__divider"
+                    ></div>
+                  </template>
                   <template
                     v-for="group in queueChapterGroups"
                     :key="group.chapter?.position ?? 'bookmarks'"
@@ -597,13 +618,19 @@ import {
   resolveActiveElapsedTime,
   resolveQueueElapsedTime,
 } from "@/helpers/activeElapsedTime";
-import { BOOKMARK_FEATURES } from "@/helpers/bookmarks";
+import {
+  BOOKMARK_FEATURES,
+  newBookmarkOfPlayingItem,
+} from "@/helpers/bookmarks";
 import {
   groupBookmarksByChapter,
   resolveCurrentChapter,
 } from "@/helpers/chapters";
 import api from "@/plugins/api";
 import {
+  BookmarksUpdate,
+  EventMessage,
+  EventType,
   MediaItemBookmark,
   MediaItemChapter,
   MediaType,
@@ -621,6 +648,7 @@ import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import {
   BookmarkIcon,
+  BookmarkPlus,
   ChevronDownIcon,
   EllipsisVerticalIcon,
 } from "@lucide/vue";
@@ -709,13 +737,26 @@ const updateChapterTimer = (needed: boolean) => {
   }
 };
 
+// the playing item takes a new bookmark at its current position
+const canAddBookmark = computed(() => !!newBookmarkOfPlayingItem());
+
+const playingPosition = computed(() => {
+  void nowTick.value;
+  return Math.floor(resolveActiveElapsedTime() ?? 0);
+});
+
+const addBookmarkClicked = function () {
+  const bookmark = newBookmarkOfPlayingItem();
+  if (bookmark) eventbus.emit("addBookmark", bookmark);
+};
+
 const chapterTimerNeeded = computed(
   () =>
     store.showFullscreenPlayer &&
     store.showQueueItems &&
     store.activePlayer?.playback_state === PlaybackState.PLAYING &&
-    !!chapterQueueItem.value &&
-    showChapterProgress.value,
+    ((!!chapterQueueItem.value && showChapterProgress.value) ||
+      canAddBookmark.value),
 );
 
 watch(chapterTimerNeeded, updateChapterTimer, { immediate: true });
@@ -1342,11 +1383,20 @@ watch(
 );
 
 onMounted(() => {
-  eventbus.on("bookmarksChanged", loadPlayingBookmarks);
-});
-
-onBeforeUnmount(() => {
-  eventbus.off("bookmarksChanged", loadPlayingBookmarks);
+  const unsub = api.subscribe(
+    EventType.BOOKMARKS_UPDATED,
+    (evt: EventMessage) => {
+      const update = evt.data as BookmarksUpdate;
+      const streamdetails = store.curQueueItem?.streamdetails;
+      if (
+        update.provider_instance_id === streamdetails?.provider &&
+        update.provider_item_id === streamdetails?.item_id
+      ) {
+        loadPlayingBookmarks();
+      }
+    },
+  );
+  onBeforeUnmount(unsub);
 });
 
 const bookmarkClicked = function (bookmark: MediaItemBookmark) {
@@ -1764,6 +1814,21 @@ onBeforeUnmount(() => {
 
 .queue-bookmark--in-chapter {
   padding-left: 24px;
+}
+
+/* an action, not content: accent colored, without the active chapter's fill */
+.queue-bookmark-add {
+  color: var(--primary);
+}
+
+.queue-bookmark-add__divider {
+  height: 1px;
+  margin: 4px 8px;
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 15%,
+    transparent
+  );
 }
 
 .queue-empty {

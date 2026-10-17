@@ -1,8 +1,10 @@
 import Chapters from "@/components/Chapters.vue";
 import {
+  EventType,
   MediaType,
   ProviderFeature,
   type Audiobook,
+  type EventMessage,
   type MediaItemBookmark,
   type PodcastEpisode,
 } from "@/plugins/api/interfaces";
@@ -10,7 +12,7 @@ import {
   eventbus,
   type DeleteConfirmationDialogEvent,
 } from "@/plugins/eventbus";
-import { flushPromises, mount } from "@vue/test-utils";
+import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
@@ -28,9 +30,32 @@ const { apiMock } = vi.hoisted(() => ({
     getBookmarks: vi.fn(),
     removeBookmark: vi.fn(),
     playMedia: vi.fn(),
-    subscribe: vi.fn(() => () => {}),
+    subscribe: vi.fn(
+      (_event: EventType, _callback: (evt: EventMessage) => void) => () => {},
+    ),
   },
 }));
+
+// the server's word that the user's bookmarks of a copy changed
+async function bookmarksUpdated(
+  provider_instance_id: string,
+  provider_item_id: string,
+) {
+  for (const [event, callback] of apiMock.subscribe.mock.calls) {
+    if (event !== EventType.BOOKMARKS_UPDATED) continue;
+    callback({
+      event,
+      object_id: "",
+      data: {
+        media_type: MediaType.AUDIOBOOK,
+        provider_instance_id,
+        provider_item_id,
+        user_id: "user1",
+      },
+    } as EventMessage);
+  }
+  await flushPromises();
+}
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/components/Toolbar.vue", () => ({
@@ -104,6 +129,27 @@ async function mountChapters(
   return wrapper;
 }
 
+const tabLabels = (wrapper: VueWrapper) =>
+  wrapper.findAll('[role="tab"]').map((x) => x.text());
+
+async function showTab(wrapper: VueWrapper, label: string) {
+  await wrapper
+    .findAll('[role="tab"]')
+    .find((x) => x.text() === label)!
+    .trigger("mousedown");
+  await flushPromises();
+}
+
+const rowTexts = (wrapper: VueWrapper) =>
+  wrapper
+    .findAll(".v-list-item")
+    .map((row) => [
+      row.get(".v-list-item-title").text(),
+      row.find(".v-list-item__append").exists()
+        ? row.get(".v-list-item__append").text()
+        : null,
+    ]);
+
 describe("Chapters", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -142,6 +188,43 @@ describe("Chapters", () => {
     expect(wrapper.get(".toolbar").text()).toBe(title);
   });
 
+  // a single tab says no more than the header, so there is none
+  it.each([
+    [
+      book,
+      [bookmark(LOCAL, "Local file", 30, true)],
+      ["Chapters", "Bookmarks", "All"],
+    ],
+    [book, [], []],
+    [{ ...book, metadata: {} }, [bookmark(LOCAL, "Local file", 30, true)], []],
+  ])(
+    "offers a tab per kind, and both together",
+    async (item, bookmarks, tabs) => {
+      const wrapper = await mountChapters(bookmarks, item as Audiobook);
+
+      expect(tabLabels(wrapper)).toEqual(tabs);
+    },
+  );
+
+  // a position shows only where no chapter durations share the column
+  it("lists the chapters first and the bookmarks with their position apart", async () => {
+    const wrapper = await mountChapters([
+      bookmark(LOCAL, "Later", 754, true),
+      bookmark(ABS, "Earlier", 30, false),
+    ]);
+    expect(rowTexts(wrapper)).toEqual([
+      ["First", "01:00"],
+      ["Second", "01:00"],
+    ]);
+
+    await showTab(wrapper, "Bookmarks");
+
+    expect(rowTexts(wrapper)).toEqual([
+      ["Earlier", "00:30"],
+      ["Later", "12:34"],
+    ]);
+  });
+
   // edits only where somebody can make them
   it("lists each bookmark under its chapter with where it is kept", async () => {
     const wrapper = await mountChapters([
@@ -150,6 +233,7 @@ describe("Chapters", () => {
       bookmark(AUDIBLE, "Read only", 90, false),
       bookmark(AUDIBLE, "Kept by MA", 95, true),
     ]);
+    await showTab(wrapper, "All");
 
     expect(
       wrapper.findAll(".v-list-item").map((row) => [
@@ -190,6 +274,7 @@ describe("Chapters", () => {
         [bookmark(ABS, "Arrakis", 30, false)],
         item,
       );
+      await showTab(wrapper, "All");
 
       await wrapper.findAll(".v-list-item")[1].trigger("click");
       await wrapper.findAll(".v-list-item")[2].trigger("click");
@@ -214,6 +299,7 @@ describe("Chapters", () => {
     const onConfirmation = (evt: DeleteConfirmationDialogEvent) =>
       confirmations.push(evt);
     eventbus.on("deleteConfirmationDialog", onConfirmation);
+    await showTab(wrapper, "Bookmarks");
 
     await wrapper.findAll(".v-list-item-title button")[1].trigger("click");
     expect(apiMock.removeBookmark).not.toHaveBeenCalled();
@@ -227,17 +313,22 @@ describe("Chapters", () => {
       "book1",
       30,
     );
-    expect(wrapper.findAll(".v-list-item")).toHaveLength(2);
+    // the list follows the server's event, for a copy of this item only
+    await bookmarksUpdated(ABS, "other-book");
+    expect(rowTexts(wrapper)).toEqual([["Local file", "00:30"]]);
+    await bookmarksUpdated(LOCAL, "item-1");
+    // without bookmarks the chapters show, until some are back
+    expect(rowTexts(wrapper)).toEqual([
+      ["First", "01:00"],
+      ["Second", "01:00"],
+    ]);
 
-    // e.g. a bookmark added in the full screen player
+    // e.g. a bookmark added in the full screen player or on another device
     apiMock.getBookmarks.mockResolvedValue([
       bookmark(LOCAL, "Added in the player", 30, true),
     ]);
-    eventbus.emit("bookmarksChanged");
-    await flushPromises();
-    expect(wrapper.findAll(".v-list-item")[1].text()).toContain(
-      "Added in the player",
-    );
+    await bookmarksUpdated(LOCAL, "item-1");
+    expect(rowTexts(wrapper)).toEqual([["Added in the player", "00:30"]]);
 
     eventbus.off("deleteConfirmationDialog", onConfirmation);
     wrapper.unmount();

@@ -33,8 +33,6 @@ const save = async function (name: string) {
     bookmark.value.start,
     name,
   );
-  // the item's detail page and the full screen player list them
-  eventbus.emit("bookmarksChanged");
 };
 
 onMounted(() => {

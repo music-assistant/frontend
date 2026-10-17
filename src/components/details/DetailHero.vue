@@ -96,7 +96,6 @@ import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { ImageType, type MediaItemType } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
-import { store } from "@/plugins/store";
 import { ArrowLeft, Rows3 } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
@@ -183,11 +182,7 @@ watch(() => props.item, buildMenu, { immediate: true });
 // pinning or unpinning the item in the sidebar changes its menu entry
 const { getPreference } = useUserPreferences();
 const shortcutsPreference = getPreference<string[]>("sidebar.shortcuts", []);
-// the playing copy too: the menu offers a bookmark only while the item plays
-watch(
-  [shortcutsPreference, () => store.curQueueItem?.streamdetails?.item_id],
-  () => buildMenu(props.item),
-);
+watch(shortcutsPreference, () => buildMenu(props.item));
 
 const backButtonClick = function () {
   backFromMediaDetails(router);

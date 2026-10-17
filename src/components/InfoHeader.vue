@@ -614,18 +614,14 @@ watch(
 
 // Watch shortcuts preference to update overflow menu when shortcuts change
 const shortcutsPreference = getPreference<string[]>("sidebar.shortcuts", []);
-// the playing copy too: the menu offers a bookmark only while the item plays
-watch(
-  [shortcutsPreference, () => store.curQueueItem?.streamdetails?.item_id],
-  async () => {
-    if (compProps.item) {
-      menuItems.value = await getContextMenuItems(
-        [compProps.item],
-        compProps.item,
-      );
-    }
-  },
-);
+watch(shortcutsPreference, async () => {
+  if (compProps.item) {
+    menuItems.value = await getContextMenuItems(
+      [compProps.item],
+      compProps.item,
+    );
+  }
+});
 
 const showGenreChipContextMenu = (evt: Event, genre: Genre) => {
   if (

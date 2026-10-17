@@ -1,5 +1,4 @@
 // shared logic to build the per-item context menu for the fullscreen queue list
-import { newBookmarkOfPlayingItem } from "@/helpers/bookmarks";
 import {
   gotoRadio,
   radioActionLabelKey,
@@ -8,10 +7,9 @@ import {
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import api from "@/plugins/api";
 import { MediaType, QueueItem } from "@/plugins/api/interfaces";
-import { eventbus } from "@/plugins/eventbus";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
-import { BookmarkPlus, Orbit } from "@lucide/vue";
+import { Orbit } from "@lucide/vue";
 
 // Builds the context-menu entries for a single queue item. Items up to and
 // including the buffered region are locked (already cued in the stream), so
@@ -42,23 +40,6 @@ export const getQueueItemMenuItems = (
       disabled: locked,
     },
   ];
-
-  // a bookmark at the playing position, on the copy that plays
-  if (
-    item.queue_item_id === store.curQueueItem?.queue_item_id &&
-    newBookmarkOfPlayingItem()
-  ) {
-    menuItems.push({
-      label: "add_bookmark",
-      labelArgs: [],
-      action: () => {
-        const bookmark = newBookmarkOfPlayingItem();
-        if (bookmark) eventbus.emit("addBookmark", bookmark);
-      },
-      icon: BookmarkPlus,
-      disabled: false,
-    });
-  }
 
   // go to this item's radio (a dynamic playlist generated from it as the seed)
   const mediaItem = item.media_item;

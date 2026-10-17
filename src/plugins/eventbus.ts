@@ -146,7 +146,6 @@ export type Events = {
   clearSelection: void;
   genreExcluded: void;
   addBookmark: NewBookmark;
-  bookmarksChanged: void;
   "mobile-sidebar-open": void;
 };
 

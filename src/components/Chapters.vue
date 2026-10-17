@@ -6,46 +6,54 @@
       @title-clicked="toggleExpand"
     />
     <v-divider />
+    <!-- a single tab says no more than the header -->
+    <div v-if="expanded && tabs.length > 1" class="chapter-tabs">
+      <Tabs
+        :model-value="shownTab"
+        @update:model-value="(v) => (activeTab = v as ChapterTab)"
+      >
+        <TabsList variant="line">
+          <TabsTrigger v-for="tab in tabs" :key="tab.id" :value="tab.id">
+            {{ $t(tab.labelKey) }}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+    </div>
     <Container v-if="expanded">
       <v-list>
-        <!-- each chapter is followed by the bookmarks inside it -->
-        <template
-          v-for="group in groups"
-          :key="group.chapter?.position ?? 'bookmarks'"
-        >
+        <template v-for="row in rows" :key="row.key">
           <v-list-item
-            v-if="group.chapter"
+            v-if="row.chapter"
             :disabled="!itemIsAvailable(itemDetails)"
-            @click="chapterClicked(group.chapter)"
+            @click="chapterClicked(row.chapter)"
           >
             <template #prepend>
               <div style="width: 50px">
                 <v-chip>
-                  {{ group.chapter.position }}
+                  {{ row.chapter.position }}
                 </v-chip>
               </div>
             </template>
             <template #title>
-              <div>{{ group.chapter.name }}</div>
+              <div>{{ row.chapter.name }}</div>
             </template>
             <template #append>
-              <span v-if="group.chapter.end" class="text-caption"
-                >{{ formatDuration(group.chapter.end - group.chapter.start) }}
+              <span v-if="row.chapter.end" class="text-caption"
+                >{{ formatDuration(row.chapter.end - row.chapter.start) }}
               </span>
             </template>
           </v-list-item>
           <v-list-item
-            v-for="bookmark in group.bookmarks"
-            :key="`${bookmark.provider_instance_id}-${bookmark.provider_item_id}-${bookmark.start}`"
-            :class="{ 'bookmark--in-chapter': group.chapter }"
+            v-else-if="row.bookmark"
+            :class="{ 'bookmark--in-chapter': row.inChapter }"
             :disabled="!itemIsAvailable(itemDetails)"
-            @click="bookmarkClicked(bookmark)"
+            @click="bookmarkClicked(row.bookmark)"
           >
             <!-- where the bookmark is kept: its provider, or Music Assistant -->
             <template #prepend>
               <div style="width: 50px">
                 <img
-                  v-if="bookmark.stored_by_music_assistant"
+                  v-if="row.bookmark.stored_by_music_assistant"
                   src="@/assets/icon.svg"
                   alt="Music Assistant"
                   title="Music Assistant"
@@ -54,23 +62,21 @@
                 />
                 <ProviderIcon
                   v-else
-                  :domain="providerDomain(bookmark)"
+                  :domain="providerDomain(row.bookmark)"
                   :size="20"
                 />
               </div>
             </template>
-            <!-- no time: the chapters beside it show durations, not positions -->
             <template #title>
               <div class="d-flex align-center ga-2">
-                <Bookmark :size="16" class="bookmark-icon" />
-                <span class="text-truncate">{{ bookmark.name }}</span>
-                <template v-if="isEditable(bookmark)">
+                <span class="text-truncate">{{ row.bookmark.name }}</span>
+                <template v-if="isEditable(row.bookmark)">
                   <v-btn
                     icon
                     variant="text"
                     size="x-small"
                     :title="$t('rename_bookmark')"
-                    @click.stop="renameClicked(bookmark)"
+                    @click.stop="renameClicked(row.bookmark)"
                   >
                     <Pencil :size="16" />
                   </v-btn>
@@ -79,12 +85,18 @@
                     variant="text"
                     size="x-small"
                     :title="$t('delete')"
-                    @click.stop="removeClicked(bookmark)"
+                    @click.stop="removeClicked(row.bookmark)"
                   >
                     <Trash2 :size="16" />
                   </v-btn>
                 </template>
               </div>
+            </template>
+            <!-- a position only where no chapter durations share the column -->
+            <template v-if="shownTab === 'bookmarks'" #append>
+              <span class="text-caption">{{
+                formatDuration(row.bookmark.start)
+              }}</span>
             </template>
           </v-list-item>
         </template>
@@ -101,11 +113,12 @@
 </template>
 
 <script setup lang="ts">
-import { Bookmark, ChevronDown, ChevronUp, Pencil, Trash2 } from "@lucide/vue";
+import { ChevronDown, ChevronUp, Pencil, Trash2 } from "@lucide/vue";
 import BookmarkDialog from "@/components/BookmarkDialog.vue";
 import Container from "@/components/Container.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BOOKMARK_FEATURES } from "@/helpers/bookmarks";
 import { groupBookmarksByChapter } from "@/helpers/chapters";
 import { formatDuration } from "@/helpers/utils";
@@ -117,6 +130,9 @@ import {
   type MediaItemBookmark,
   type MediaItemChapter,
   type PodcastEpisode,
+  EventType,
+  type BookmarksUpdate,
+  type EventMessage,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
@@ -158,6 +174,66 @@ const groups = computed(() =>
 const titleKey = computed(() => {
   if (!props.itemDetails.metadata?.chapters?.length) return "bookmarks";
   return bookmarks.value.length ? "chapters_and_bookmarks" : "chapters";
+});
+
+type ChapterTab = "chapters" | "bookmarks" | "all";
+
+// a tab per kind the item has, and the combined one when it has both
+const tabs = computed(() => {
+  const hasChapters = !!props.itemDetails.metadata?.chapters?.length;
+  const hasBookmarks = bookmarks.value.length > 0;
+  const result: { id: ChapterTab; labelKey: string }[] = [];
+  if (hasChapters) result.push({ id: "chapters", labelKey: "chapters" });
+  if (hasBookmarks) result.push({ id: "bookmarks", labelKey: "bookmarks" });
+  if (hasChapters && hasBookmarks) {
+    result.push({ id: "all", labelKey: "chapters_and_bookmarks_tab" });
+  }
+  return result;
+});
+
+const activeTab = ref<ChapterTab>("chapters");
+
+// the picked tab while the item has it, the first one otherwise
+const shownTab = computed(() =>
+  tabs.value.some((x) => x.id === activeTab.value)
+    ? activeTab.value
+    : tabs.value[0]?.id,
+);
+
+interface ChapterRow {
+  key: string;
+  chapter?: MediaItemChapter;
+  bookmark?: MediaItemBookmark;
+  inChapter?: boolean;
+}
+
+const bookmarkKey = (bookmark: MediaItemBookmark) =>
+  `${bookmark.provider_instance_id}-${bookmark.provider_item_id}-${bookmark.start}`;
+
+const rows = computed<ChapterRow[]>(() => {
+  const tab = shownTab.value;
+  if (tab === "chapters") {
+    return (props.itemDetails.metadata?.chapters ?? []).map((chapter) => ({
+      key: `chapter-${chapter.position}`,
+      chapter,
+    }));
+  }
+  if (tab === "bookmarks") {
+    return [...bookmarks.value]
+      .sort((a, b) => a.start - b.start)
+      .map((bookmark) => ({ key: bookmarkKey(bookmark), bookmark }));
+  }
+  // each chapter is followed by the bookmarks inside it
+  return groups.value.flatMap((group) => [
+    ...(group.chapter
+      ? [{ key: `chapter-${group.chapter.position}`, chapter: group.chapter }]
+      : []),
+    ...group.bookmarks.map((bookmark) => ({
+      key: bookmarkKey(bookmark),
+      bookmark,
+      inChapter: !!group.chapter,
+    })),
+  ]);
 });
 
 const chapterClicked = function (chapter: MediaItemChapter) {
@@ -231,7 +307,6 @@ const renameSaved = async function (name: string) {
     bookmark.start,
     name,
   );
-  await loadBookmarks();
 };
 
 const removeClicked = function (bookmark: MediaItemBookmark) {
@@ -246,7 +321,6 @@ const removeClicked = function (bookmark: MediaItemBookmark) {
         bookmark.provider_item_id,
         bookmark.start,
       );
-      await loadBookmarks();
     },
   });
 };
@@ -257,12 +331,28 @@ watch(
   { immediate: true },
 );
 
+// a change made here, in the player or on another device, to any copy of the item
 onMounted(() => {
-  eventbus.on("bookmarksChanged", loadBookmarks);
-});
-
-onBeforeUnmount(() => {
-  eventbus.off("bookmarksChanged", loadBookmarks);
+  const unsub = api.subscribe(
+    EventType.BOOKMARKS_UPDATED,
+    (evt: EventMessage) => {
+      const update = evt.data as BookmarksUpdate;
+      const item = props.itemDetails;
+      if (
+        update.media_type === item.media_type &&
+        ((update.provider_instance_id === item.provider &&
+          update.provider_item_id === item.item_id) ||
+          item.provider_mappings.some(
+            (x) =>
+              x.provider_instance === update.provider_instance_id &&
+              x.item_id === update.provider_item_id,
+          ))
+      ) {
+        loadBookmarks();
+      }
+    },
+  );
+  onBeforeUnmount(unsub);
 });
 </script>
 
@@ -271,8 +361,11 @@ onBeforeUnmount(() => {
   padding-left: 40px !important;
 }
 
-.bookmark-icon {
-  flex: 0 0 auto;
-  opacity: 0.6;
+/* as the tabs of the item listings */
+.chapter-tabs {
+  padding: 10px 16px 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 </style>
