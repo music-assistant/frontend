@@ -53,10 +53,7 @@
       </template>
     </Toolbar>
 
-    <div
-      v-if="props.sortListing && !store.mobileLayout"
-      class="listing-sort-chips-row h-12"
-    >
+    <div v-if="showSortChipsRow" class="listing-sort-chips-row h-12">
       <LibrarySortControls
         v-if="sortOptionsLoaded && sortOptions.length"
         mode="chips"
@@ -656,6 +653,15 @@ const {
 const loadPending = computed(
   () => loading.value || (!!props.sortListing && !sortOptionsLoaded.value),
 );
+// the desktop row of quick sorts keeps its height while the sort options load,
+// so the items do not shift; a listing without quick sorts has no row
+const showSortChipsRow = computed(
+  () =>
+    !!props.sortListing &&
+    !store.mobileLayout &&
+    (!sortOptionsLoaded.value || librarySorting.quickOptions.value.length > 0),
+);
+
 watch(
   () => props.toolBarTabs,
   (tabs) => {

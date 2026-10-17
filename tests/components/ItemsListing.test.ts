@@ -2158,6 +2158,26 @@ describe("ItemsListing server sort options", () => {
     );
   });
 
+  it("leaves out the desktop sort chip row when no quick sort is offered", async () => {
+    mockGetSortOptions.mockResolvedValue(
+      sortOptions.filter((option) =>
+        [SortField.NAME, SortField.DURATION].includes(option.field),
+      ),
+    );
+
+    const listing = mountListingRaw({
+      sortListing: ListingType.PODCAST_EPISODES,
+      showGenreFilter: false,
+    });
+    expect(listing.find(".listing-sort-chips-row").exists()).toBe(true);
+    await flushPromises();
+
+    expect(listing.find(".listing-sort-chips-row").exists()).toBe(false);
+    expect(listing.findComponent(LibrarySortControls).props("mode")).toBe(
+      "menu",
+    );
+  });
+
   it("uses one toast ID when shared genre sort options fail in multiple listings", async () => {
     mockGetSortOptions.mockRejectedValue(new Error("request failed"));
 
