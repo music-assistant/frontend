@@ -98,6 +98,8 @@ jobs:
           repositories: ${{ github.event.repository.name }}
           permission-contents: write
           permission-pull-requests: write
+          # Resets and picks can change files under .github/workflows.
+          permission-workflows: write
 
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -132,11 +134,18 @@ jobs:
               --jq ".[] | select(.headRefName | startswith(\"backport/\")) |
                 select(.headRefName | startswith(\"backport/$BASE.post\") | not) | .number" |
               while read -r NUMBER; do
-                gh pr close "$NUMBER" --comment "Closing: stable moved to $PIN, the version the server's stable branch now pins. Re-apply the \`backport-to-stable\` label on PRs that still need a backport."
+                gh pr close "$NUMBER" --comment "Closing: stable moved to $PIN, the version the server's stable branch now pins. Remove and re-add the \`backport-to-stable\` label on PRs that still need a backport."
               done
           fi
 
-          LAST_POST=$(git tag --list "$BASE.post*" | sed -E 's/.*\.post//' | grep -xE '[0-9]+' | sort -n | tail -1 || true)
+          LAST_POST=$(
+            {
+              git tag --list "$BASE.post*"
+              # A merged backport PR holds its version before release.yml tags it.
+              gh pr list --base stable --state merged --limit 20 --json headRefName \
+                --jq ".[].headRefName | select(startswith(\"backport/$BASE.post\"))"
+            } | sed -E 's/.*\.post//' | grep -xE '[0-9]+' | sort -n | tail -1 || true
+          )
           VERSION="$BASE.post$(( ${LAST_POST:-0} + 1 ))"
           echo "Next stable release: $VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -170,6 +179,8 @@ jobs:
           repositories: ${{ github.event.repository.name }}
           permission-contents: write
           permission-pull-requests: write
+          # Resets and picks can change files under .github/workflows.
+          permission-workflows: write
 
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
