@@ -1274,9 +1274,18 @@ const hasActiveFilters = computed(() => {
   );
 });
 
-// Server-paged listings only know their total when the parent passes it.
+// Server-paged listings only know their total when the parent passes it. An
+// unfiltered listing that is loaded to its end, or holds less than a page,
+// counts what it holds: a small listing then keeps search hidden while it
+// (re)loads.
 const totalItemCount = computed(() => {
   if (props.total !== undefined) return props.total;
+  if (
+    !hasActiveFilters.value &&
+    (allItemsReceived.value || pagedItems.value.length < props.limit)
+  ) {
+    return pagedItems.value.length;
+  }
   // server-paged without a known total: assume large enough to warrant search
   return Number.POSITIVE_INFINITY;
 });

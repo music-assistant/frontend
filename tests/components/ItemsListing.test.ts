@@ -529,6 +529,37 @@ describe("ItemsListing per-page search", () => {
     );
   }
 
+  it("offers search on a server-paged listing unless it is known to be small", async () => {
+    const fullPage = Array.from({ length: 50 }, (_, i) =>
+      track({ item_id: `track-${i}` }),
+    );
+    let resolveFirstPage!: (items: Track[]) => void;
+    const large = mountListingRaw({
+      loadPagedData: vi.fn().mockResolvedValue(fullPage),
+    });
+    const small = mountListingRaw({
+      loadPagedData: vi
+        .fn()
+        .mockReturnValueOnce(
+          new Promise<Track[]>((resolve) => (resolveFirstPage = resolve)),
+        )
+        .mockReturnValue(new Promise(() => {})),
+    });
+    await flushPromises();
+    // nothing is known while the first page loads, which keeps search hidden
+    expect(searchButton(small)).toBeUndefined();
+
+    resolveFirstPage(fullPage.slice(0, 3));
+    await flushPromises();
+    expect(searchButton(large)).toBeDefined();
+    expect(searchButton(small)).toBeUndefined();
+
+    // a reload keeps it hidden on the rows it already shows
+    small.vm.reload();
+    await flushPromises();
+    expect(searchButton(small)).toBeUndefined();
+  });
+
   it("opens the field from the toolbar and closes it again", async () => {
     const listing = mountListingRaw({ showSearchButton: true });
     await flushPromises();
