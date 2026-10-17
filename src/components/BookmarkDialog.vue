@@ -3,6 +3,9 @@
     <DialogContent class="sm:max-w-[420px]">
       <DialogHeader>
         <DialogTitle>{{ title }}</DialogTitle>
+        <DialogDescription>
+          {{ $t("bookmark_saved_in", { name: storedIn }) }}
+        </DialogDescription>
       </DialogHeader>
       <form id="bookmark-form" class="py-2" @submit.prevent="save">
         <label for="bookmark-name" class="mb-2 block text-sm font-medium">
@@ -27,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -38,6 +42,8 @@ import { onBeforeUnmount, ref, watch } from "vue";
 export interface Props {
   title: string;
   initialName: string;
+  // the provider, or Music Assistant, that keeps the bookmark
+  storedIn: string;
 }
 const props = defineProps<Props>();
 const emit = defineEmits<{ save: [name: string] }>();

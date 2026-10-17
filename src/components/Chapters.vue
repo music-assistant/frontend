@@ -41,10 +41,22 @@
             :disabled="!itemIsAvailable(itemDetails)"
             @click="bookmarkClicked(bookmark)"
           >
-            <!-- a bookmark only fits the copy it was made on, its provider tells which -->
+            <!-- where the bookmark is kept: its provider, or Music Assistant -->
             <template #prepend>
               <div style="width: 50px">
-                <ProviderIcon :domain="providerDomain(bookmark)" :size="20" />
+                <img
+                  v-if="bookmark.stored_by_music_assistant"
+                  src="@/assets/icon.svg"
+                  alt="Music Assistant"
+                  title="Music Assistant"
+                  width="20"
+                  height="20"
+                />
+                <ProviderIcon
+                  v-else
+                  :domain="providerDomain(bookmark)"
+                  :size="20"
+                />
               </div>
             </template>
             <!-- no time: the chapters beside it show durations, not positions -->
@@ -74,9 +86,6 @@
                 </template>
               </div>
             </template>
-            <template v-if="storedOnlyByMusicAssistant(bookmark)" #subtitle>
-              {{ $t("bookmark_stored_by_music_assistant") }}
-            </template>
           </v-list-item>
         </template>
       </v-list>
@@ -85,6 +94,7 @@
       v-model:open="renameDialogOpen"
       :title="$t('rename_bookmark')"
       :initial-name="renamedBookmark?.name ?? ''"
+      :stored-in="renamedBookmark ? storeName(renamedBookmark) : ''"
       @save="renameSaved"
     />
   </section>
@@ -96,7 +106,8 @@ import BookmarkDialog from "@/components/BookmarkDialog.vue";
 import Container from "@/components/Container.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import Toolbar from "@/components/Toolbar.vue";
-import { BOOKMARK_FEATURES, groupBookmarksByChapter } from "@/helpers/chapters";
+import { BOOKMARK_FEATURES } from "@/helpers/bookmarks";
+import { groupBookmarksByChapter } from "@/helpers/chapters";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
@@ -168,29 +179,22 @@ const providerDomain = function (bookmark: MediaItemBookmark) {
   );
 };
 
-const providerSupports = function (
-  bookmark: MediaItemBookmark,
-  access: "read" | "edit",
-) {
-  const feature = BOOKMARK_FEATURES[props.itemDetails.media_type]?.[access];
-  if (!feature) return false;
-  return (
-    api.providers[bookmark.provider_instance_id]?.supported_features.includes(
-      feature,
-    ) ?? false
-  );
-};
-
-// worth a hint only where the provider keeps bookmarks of its own
-const storedOnlyByMusicAssistant = function (bookmark: MediaItemBookmark) {
-  return (
-    bookmark.stored_by_music_assistant && providerSupports(bookmark, "read")
-  );
+const storeName = function (bookmark: MediaItemBookmark) {
+  return bookmark.stored_by_music_assistant
+    ? "Music Assistant"
+    : (api.providers[bookmark.provider_instance_id]?.name ??
+        bookmark.provider_instance_id);
 };
 
 const isEditable = function (bookmark: MediaItemBookmark) {
+  if (bookmark.stored_by_music_assistant) return true;
+  const feature = BOOKMARK_FEATURES[props.itemDetails.media_type]?.edit;
   return (
-    bookmark.stored_by_music_assistant || providerSupports(bookmark, "edit")
+    !!feature &&
+    (api.providers[bookmark.provider_instance_id]?.supported_features.includes(
+      feature,
+    ) ??
+      false)
   );
 };
 

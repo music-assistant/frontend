@@ -1176,7 +1176,7 @@
     "delete_bookmark": "Delete bookmark",
     "delete_bookmark_confirm": "Delete the bookmark \"{name}\"?",
     "bookmark_name": "Name",
-    "bookmark_stored_by_music_assistant": "Saved in Music Assistant only",
+    "bookmark_saved_in": "Saved in {name}",
     "podcast": "Podcast",
     "podcasts": "Podcasts",
     "item_fully_played": "This item has been fully played",

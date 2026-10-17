@@ -547,18 +547,11 @@
       </div>
 
       <PlaybackSpeedDialog v-model:open="playbackSpeedDialogOpen" />
-      <BookmarkDialog
-        v-model:open="bookmarkDialogOpen"
-        :title="$t('add_bookmark')"
-        :initial-name="newBookmark ? formatDuration(newBookmark.start) : ''"
-        @save="bookmarkSaved"
-      />
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import BookmarkDialog from "@/components/BookmarkDialog.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
@@ -604,8 +597,8 @@ import {
   resolveActiveElapsedTime,
   resolveQueueElapsedTime,
 } from "@/helpers/activeElapsedTime";
+import { BOOKMARK_FEATURES } from "@/helpers/bookmarks";
 import {
-  BOOKMARK_FEATURES,
   groupBookmarksByChapter,
   resolveCurrentChapter,
 } from "@/helpers/chapters";
@@ -1297,14 +1290,6 @@ const onArtistClick = async function () {
 };
 
 const playbackSpeedDialogOpen = ref(false);
-const bookmarkDialogOpen = ref(false);
-// taken when the menu entry is picked, the position moves on while the name is typed
-const newBookmark = ref<{
-  mediaType: MediaType;
-  provider: string;
-  itemId: string;
-  start: number;
-}>();
 
 // a route change closes the full screen player from under whatever is on top of
 // it, and vuetify then unmounts this card - the dialog has to go first, or it
@@ -1312,24 +1297,9 @@ const newBookmark = ref<{
 watch(
   () => store.showFullscreenPlayer,
   (open) => {
-    if (open) return;
-    playbackSpeedDialogOpen.value = false;
-    bookmarkDialogOpen.value = false;
+    if (!open) playbackSpeedDialogOpen.value = false;
   },
 );
-
-const bookmarkSaved = async function (name: string) {
-  if (!newBookmark.value) return;
-  await api.setBookmark(
-    newBookmark.value.mediaType,
-    newBookmark.value.provider,
-    newBookmark.value.itemId,
-    newBookmark.value.start,
-    name,
-  );
-  // the item's detail page may be open below the player
-  eventbus.emit("bookmarksChanged");
-};
 
 // only the copy that is playing: a bookmark's position does not fit another copy
 const playingBookmarks = ref<MediaItemBookmark[]>([]);
@@ -1415,25 +1385,6 @@ const openQueueMenu = function (evt: Event) {
         playbackSpeedDialogOpen.value = true;
       },
       icon: "mdi-speedometer",
-    });
-  }
-  // a bookmark belongs to the copy that is playing, which the stream details name
-  const streamdetails = store.curQueueItem?.streamdetails;
-  const mediaType = store.curQueueItem?.media_item?.media_type;
-  if (mediaType && BOOKMARK_FEATURES[mediaType] && streamdetails) {
-    menuItems.push({
-      label: "add_bookmark",
-      action: () => {
-        newBookmark.value = {
-          mediaType,
-          provider: streamdetails.provider,
-          itemId: streamdetails.item_id,
-          // whole seconds, as the Audiobookshelf web client sets them
-          start: Math.floor(resolveActiveElapsedTime() ?? 0),
-        };
-        bookmarkDialogOpen.value = true;
-      },
-      icon: "mdi-bookmark-plus-outline",
     });
   }
   // The waveform toggle slots in above the visualizer popout entry (which

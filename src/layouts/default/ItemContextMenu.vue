@@ -330,6 +330,7 @@ import {
   pinShortcutStandalone,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
+import { newBookmarkOfPlayingItem } from "@/helpers/bookmarks";
 import { runWithConcurrency } from "@/helpers/concurrency";
 import {
   FAVORITABLE_MEDIA_TYPES,
@@ -386,6 +387,7 @@ import {
   ArrowDown,
   ArrowRightLeft,
   ArrowUp,
+  BookmarkPlus,
   Disc3,
   Download,
   Folder,
@@ -1118,6 +1120,22 @@ export const getContextMenuItems = async function (
         });
       }
     }
+  }
+
+  // a bookmark of the item while it plays, at the playing position
+  if (
+    items.length === 1 &&
+    firstItem.uri === store.curQueueItem?.media_item?.uri &&
+    newBookmarkOfPlayingItem()
+  ) {
+    contextMenuItems.push({
+      label: "add_bookmark",
+      icon: BookmarkPlus,
+      action: () => {
+        const bookmark = newBookmarkOfPlayingItem();
+        if (bookmark) eventbus.emit("addBookmark", bookmark);
+      },
+    });
   }
 
   // update metadata

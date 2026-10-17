@@ -35,6 +35,7 @@
           <player-group-playback-dialog />
           <setup-flow-dialog />
           <player-rename-dialog />
+          <add-bookmark-dialog />
           <item-context-menu />
           <command-center />
           <!-- kept last so it portals after the other dialogs, which share
@@ -55,6 +56,7 @@
 </template>
 
 <script lang="ts" setup>
+import AddBookmarkDialog from "@/components/AddBookmarkDialog.vue";
 import AddManualLink from "@/components/AddManualLink.vue";
 import CommandCenter from "@/components/CommandCenter.vue";
 import DialogDeleteConfirmation from "@/components/DialogDeleteConfirmation.vue";

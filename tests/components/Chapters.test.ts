@@ -142,9 +142,8 @@ describe("Chapters", () => {
     expect(wrapper.get(".toolbar").text()).toBe(title);
   });
 
-  // a hint only where the provider keeps bookmarks itself, edits only where
-  // somebody can make them
-  it("lists each bookmark under its chapter with its provider", async () => {
+  // edits only where somebody can make them
+  it("lists each bookmark under its chapter with where it is kept", async () => {
     const wrapper = await mountChapters([
       bookmark(LOCAL, "Local file", 100, true),
       bookmark(ABS, "On the provider", 30, false),
@@ -155,8 +154,11 @@ describe("Chapters", () => {
     expect(
       wrapper.findAll(".v-list-item").map((row) => [
         row.get(".v-list-item-title").text(),
-        row.find(".provider").exists() ? row.get(".provider").text() : null,
-        row.find(".v-list-item-subtitle").exists(),
+        row.find(".provider").exists()
+          ? row.get(".provider").text()
+          : row.find("img").exists()
+            ? row.get("img").attributes("alt")
+            : null,
         row.findAll(".v-list-item-title button").length,
         // a chapter shows its duration, a bookmark no time at all
         row.find(".v-list-item__append").exists()
@@ -164,12 +166,12 @@ describe("Chapters", () => {
           : null,
       ]),
     ).toEqual([
-      ["First", null, false, 0, "01:00"],
-      ["On the provider", "audiobookshelf", false, 2, null],
-      ["Second", null, false, 0, "01:00"],
-      ["Read only", "audible", false, 0, null],
-      ["Kept by MA", "audible", true, 2, null],
-      ["Local file", "filesystem_local", false, 2, null],
+      ["First", null, 0, "01:00"],
+      ["On the provider", "audiobookshelf", 2, null],
+      ["Second", null, 0, "01:00"],
+      ["Read only", "audible", 0, null],
+      ["Kept by MA", "Music Assistant", 2, null],
+      ["Local file", "Music Assistant", 2, null],
     ]);
   });
 

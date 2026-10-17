@@ -1,23 +1,7 @@
-import {
-  MediaType,
-  ProviderFeature,
-  type MediaItemBookmark,
-  type MediaItemChapter,
+import type {
+  MediaItemBookmark,
+  MediaItemChapter,
 } from "@/plugins/api/interfaces";
-
-// the provider features to read and to edit bookmarks, per media type that has them
-export const BOOKMARK_FEATURES: Partial<
-  Record<MediaType, { read: ProviderFeature; edit: ProviderFeature }>
-> = {
-  [MediaType.AUDIOBOOK]: {
-    read: ProviderFeature.AUDIOBOOK_BOOKMARKS,
-    edit: ProviderFeature.AUDIOBOOK_BOOKMARKS_EDIT,
-  },
-  [MediaType.PODCAST_EPISODE]: {
-    read: ProviderFeature.PODCAST_EPISODE_BOOKMARKS,
-    edit: ProviderFeature.PODCAST_EPISODE_BOOKMARKS_EDIT,
-  },
-};
 
 export interface ChapterTick extends MediaItemChapter {
   // position along the track as percentage
