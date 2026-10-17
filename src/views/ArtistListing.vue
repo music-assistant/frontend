@@ -71,8 +71,8 @@ interface ListingConfig {
   labelKey: string;
   itemtype: string;
   path: string;
-  loadPagedData?: (params: LoadDataParams) => Promise<MediaItemType[]>;
-  sortListing?: ListingType;
+  loadPagedData: (params: LoadDataParams) => Promise<MediaItemType[]>;
+  sortListing: ListingType;
   showAlbumTypeFilter: boolean;
   showFavoritesOnlyFilter: boolean;
   showProviderFilter: boolean;
@@ -190,7 +190,6 @@ const config = computed<ListingConfig | undefined>(() => {
         path: "artisttracks",
         sortListing: ListingType.ARTIST_TRACKS,
         showProviderFilter: mappingProviderIds.value.length > 1,
-        showFavoritesOnlyFilter: true,
         showTrackNumber: false,
         emptyMessage:
           itemDetails.value?.provider === "library"
@@ -260,7 +259,10 @@ const onProviderChange = function (provider?: string[]) {
 };
 
 /** Shared shape of the listings; every case overrides what differs. */
-function listingDefaults(): Omit<ListingConfig, "labelKey" | "path"> {
+function listingDefaults(): Omit<
+  ListingConfig,
+  "labelKey" | "path" | "loadPagedData" | "sortListing"
+> {
   return {
     itemtype: "artistalbums",
     showAlbumTypeFilter: false,

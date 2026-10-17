@@ -329,14 +329,9 @@ describe("BrowseView folder header", () => {
     expect(browse).toHaveBeenCalledWith(
       "root",
       "player",
-      {
-        suppressGlobalError: true,
-      },
+      { suppressGlobalError: true },
       undefined,
       0,
-      undefined,
-      undefined,
-      undefined,
     );
     expect(playedFolder(wrapper)).toBeUndefined();
   });

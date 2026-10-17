@@ -1397,11 +1397,11 @@ export class MusicAssistantApi {
   public getAudiobookVersions(
     item_id: string,
     provider_instance_id_or_domain: string,
-    search: string | undefined,
-    limit: number | undefined,
-    offset: number | undefined,
-    sort_field: SortField | undefined,
-    sort_direction: SortDirection | undefined,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Audiobook[]> {
     return this.sendCommand("music/audiobooks/audiobook_versions", {
       item_id,
@@ -1564,6 +1564,7 @@ export class MusicAssistantApi {
       media_id,
     });
   }
+
   public mergeGenres(
     genre_ids: string[],
     target_genre_id: string,
@@ -1659,11 +1660,11 @@ export class MusicAssistantApi {
   public gePodcastVersions(
     item_id: string,
     provider_instance_id_or_domain: string,
-    search: string | undefined,
-    limit: number | undefined,
-    offset: number | undefined,
-    sort_field: SortField | undefined,
-    sort_direction: SortDirection | undefined,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Podcast[]> {
     return this.sendCommand("music/podcasts/podcast_versions", {
       item_id,

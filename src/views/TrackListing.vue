@@ -109,10 +109,7 @@ async function loadSimilarTrackPage(
   );
   if (itemDetails.value?.uri !== track.uri) return [];
 
-  const visibleTracks = tracks.filter(
-    (candidate) => !tracksShareMapping(candidate, track),
-  );
-  return visibleTracks;
+  return tracks.filter((candidate) => !tracksShareMapping(candidate, track));
 }
 
 const backToTrack = function () {

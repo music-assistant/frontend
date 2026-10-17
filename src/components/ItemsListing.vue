@@ -448,7 +448,6 @@ import {
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
-  ArrowUpDown,
   CheckCheck,
   ChevronDown,
   ChevronUp,
@@ -1732,9 +1731,8 @@ const menuItems = computed(() => {
   return items;
 });
 
-// Re-derive from the current props.path: browse reuses one ItemsListing
-// instance across folders, so a ref bound to the mount-time path would read
-// and reset the wrong folder's saved sort/view settings.
+// Re-derive from the current props.path: a listing that stays mounted while
+// its path changes must not read and reset the settings saved for the old path.
 const savedPrefs = computed(
   () =>
     getItemsListingPreferences(props.path || props.itemtype, props.itemtype)
@@ -2243,7 +2241,6 @@ const selectAll = async function () {
 };
 
 defineExpose({
-  sortBy: computed(() => params.value.sortBy),
   sortField: computed(() => displayedSort.value.sortField),
   sortDirection: computed(() => displayedSort.value.sortDirection),
   reload: () => loadData(true, true),

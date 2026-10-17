@@ -166,14 +166,9 @@ async function findInParentListing(
       await api.browse(
         parentBrowsePath(path),
         store.activePlayerId,
-        {
-          suppressGlobalError: true,
-        },
+        { suppressGlobalError: true },
         undefined,
         0,
-        undefined,
-        undefined,
-        undefined,
       ),
     );
   } catch {

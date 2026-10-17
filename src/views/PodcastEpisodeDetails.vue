@@ -126,9 +126,8 @@ const transcriptLoaded = ref(false);
 const transcriptLoading = ref(false);
 
 // the episodes listing reloads as soon as the route changes, a moment before
-// the new details arrive; sharing the requests keeps the two on one episode
+// the new details arrive; sharing the request keeps the two on one episode
 let detailsRequest: Promise<PodcastEpisode> | undefined;
-let episodesRequest: Promise<PodcastEpisode[]> | undefined;
 
 // A provider that cannot tell reports null, in which case the transcript is
 // worth offering: the episode itself is the only place left to find out.
@@ -251,7 +250,7 @@ watch(
     showTranscript.value = false;
     checkedEpisodeKey.value = undefined;
     const details = (detailsRequest = api.getPodcastEpisode(itemId, provider));
-    const episodes = (episodesRequest = details
+    const episodes = details
       .then((episode) =>
         api.getPodcastEpisodes(
           episode.podcast.item_id,
@@ -261,9 +260,9 @@ watch(
           0,
         ),
       )
-      // an episode listing we cannot fetch leaves the steppers and the listing
-      // empty rather than failing the page
-      .catch(() => []));
+      // an episode listing we cannot fetch leaves the steppers empty rather
+      // than failing the page
+      .catch(() => []);
     const episode = await details.catch((error) => {
       console.error("Failed to fetch podcast episode:", error);
       return undefined;

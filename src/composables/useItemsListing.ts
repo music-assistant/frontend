@@ -174,17 +174,13 @@ export function useItemsListing(
       params.value.offset = offset;
       params.value.limit = props.limit;
       params.value.refresh = refresh;
-      // a listing without sort keys keeps the order its items are loaded in
-      const currentSort = params.value.sortBy
-        ? librarySorting.current.value
-        : undefined;
-      const sortField = currentSort?.field as SortField | undefined;
+      const currentSort = librarySorting.current.value;
       const selectedSortOption = librarySorting.selectedOption.value;
-      params.value.sortField = sortField;
+      params.value.sortField = currentSort.field as SortField;
       params.value.sortDirection =
         selectedSortOption?.supports_direction === false
           ? undefined
-          : currentSort?.direction;
+          : currentSort.direction;
 
       if (loadPagedData) {
         const requestedSort = {
