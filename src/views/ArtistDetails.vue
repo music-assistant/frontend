@@ -120,6 +120,7 @@
           :parent-item="itemDetails"
           :show-provider="true"
           :show-favorites-only-filter="false"
+          :show-favorite="true"
           :show-provider-filter="true"
           :single-provider-filter="true"
           :provider-filter-options="mappingProviderIds"

@@ -135,6 +135,7 @@ vi.mock("@/components/ItemsListing.vue", () => ({
       "loadPagedData",
       "sortListing",
       "showFavoritesOnlyFilter",
+      "showFavorite",
     ],
     template:
       '<div class="items-listing-stub" :data-path="path" :data-itemtype="itemtype" />',
@@ -376,7 +377,9 @@ describe("ArtistDetails", () => {
     await listing.props("loadPagedData")(params);
 
     expect(listing.props("sortListing")).toBe(ListingType.ARTIST_AUDIOBOOKS);
+    // the server cannot filter these to favorites, but they can still be liked
     expect(listing.props("showFavoritesOnlyFilter")).toBe(false);
+    expect(listing.props("showFavorite")).toBe(true);
     expect(mockGetArtistAudiobooks).toHaveBeenCalledWith(
       "author-1",
       "library",
