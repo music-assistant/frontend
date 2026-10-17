@@ -295,4 +295,30 @@ describe("PodcastDetails", () => {
     await flushPromises();
     expect(hero(wrapper).props("episodeCount")).toBe(2);
   });
+
+  it("keeps the newest count when an older count finishes last", async () => {
+    const first = deferred<PodcastEpisode[]>();
+    const second = deferred<PodcastEpisode[]>();
+    mockGetPodcastEpisodes
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+    const wrapper = await mountDetails();
+    await loadEpisodes(wrapper, {
+      offset: 0,
+      limit: 20,
+      sortBy: "position:desc",
+      search: "",
+      refresh: true,
+    });
+
+    second.resolve([
+      ...EPISODES,
+      podcastEpisode({ item_id: "ep4", position: 4 }),
+    ]);
+    await flushPromises();
+    first.resolve(EPISODES);
+    await flushPromises();
+
+    expect(hero(wrapper).props("episodeCount")).toBe(EPISODES.length + 1);
+  });
 });

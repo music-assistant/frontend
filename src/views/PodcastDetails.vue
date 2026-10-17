@@ -89,6 +89,8 @@ const itemDetails = ref<Podcast>();
 // how many episodes the podcast holds, counted from its episodes since the
 // stored total_episodes of a library podcast is never updated
 const episodeCount = ref<number>();
+// counts the requests for that count, so only the latest one sets it
+let episodeCountRequest = 0;
 const rowsEditorOpen = ref(false);
 
 // every row applies to every user; the editor lists the same set
@@ -159,16 +161,19 @@ const loadPodcastEpisodes = async function (params: LoadDataParams) {
 
 // a declaration, since the immediate route watcher calls it during setup
 function countEpisodes() {
-  const { itemId, provider } = props;
+  const request = ++episodeCountRequest;
   // all episodes: the listing only holds the pages it loaded so far
-  api.getPodcastEpisodes(itemId, provider, undefined, undefined, 0).then(
-    (episodes) => {
-      if (itemId === props.itemId && provider === props.provider) {
-        episodeCount.value = episodes.length;
-      }
-    },
-    // the api reports the failure, the hero just goes without a count
-    () => undefined,
-  );
+  api
+    .getPodcastEpisodes(props.itemId, props.provider, undefined, undefined, 0)
+    .then(
+      (episodes) => {
+        // a slower response, of an older count or a previous podcast, must not count
+        if (request === episodeCountRequest) {
+          episodeCount.value = episodes.length;
+        }
+      },
+      // the api reports the failure, the hero just goes without a count
+      () => undefined,
+    );
 }
 </script>
