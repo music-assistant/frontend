@@ -79,7 +79,8 @@ export async function artistAlbumsBySource(
 
 /**
  * The artist's discography as MusicBrainz knows it, newest first: the library
- * albums, and the releases outside the library as MusicBrainz items.
+ * albums, and the releases outside the library as MusicBrainz items. All of
+ * them, or one page when a limit is given.
  *
  * Only ever called for a library artist, the only kind the server lists.
  */
@@ -94,7 +95,7 @@ export async function loadArtistDiscography(
   return await api.getArtistDiscography(
     artist.item_id,
     search,
-    limit,
+    limit ?? 0,
     offset,
     sortField,
     sortDirection,

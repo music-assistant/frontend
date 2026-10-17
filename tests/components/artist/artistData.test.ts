@@ -4,6 +4,7 @@ const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     getArtistAlbums: vi.fn().mockResolvedValue([]),
     getArtistAppearsOn: vi.fn().mockResolvedValue([]),
+    getArtistDiscography: vi.fn().mockResolvedValue([]),
     getArtistTracks: vi.fn().mockResolvedValue([]),
     getArtistTopTracks: vi.fn().mockResolvedValue([]),
     getSimilarArtists: vi.fn().mockResolvedValue([]),
@@ -22,6 +23,7 @@ import {
   artistProvidersForFeature,
   isSingleOrEp,
   loadArtistAppearsOn,
+  loadArtistDiscography,
   loadArtistReleases,
   loadArtistTopTracks,
   loadArtistTracks,
@@ -137,6 +139,30 @@ describe("artistData", () => {
         undefined,
         undefined,
         0,
+      );
+    });
+  });
+
+  describe("loadArtistDiscography", () => {
+    it("asks for the whole discography unless a page is asked for", async () => {
+      await loadArtistDiscography(LIBRARY_ARTIST);
+      expect(apiMock.getArtistDiscography).toHaveBeenLastCalledWith(
+        "1",
+        undefined,
+        0,
+        undefined,
+        undefined,
+        undefined,
+      );
+
+      await loadArtistDiscography(LIBRARY_ARTIST, "live", 20, 40);
+      expect(apiMock.getArtistDiscography).toHaveBeenLastCalledWith(
+        "1",
+        "live",
+        20,
+        40,
+        undefined,
+        undefined,
       );
     });
   });
