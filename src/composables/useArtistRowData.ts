@@ -21,14 +21,12 @@ import {
 import { mappingsIdentity, useRowRequests } from "@/composables/useRowRequests";
 import {
   MediaType,
-  SortDirection,
-  SortField,
   type Album,
   type Artist,
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { computed, ref, watch, type Ref } from "vue";
+import { computed, onScopeDispose, ref, watch, type Ref } from "vue";
 
 const ARTIST_SHELF_LIMIT = 50;
 
@@ -44,6 +42,11 @@ export function useArtistRowData(
   artist: Ref<Artist | undefined>,
   visibleRows: Ref<ArtistRowId[]>,
 ) {
+  let disposed = false;
+  onScopeDispose(() => {
+    disposed = true;
+  });
+
   // Row data per source: two rows fed by the same source share one request and
   // a source change in the editor loads the new one. Absent = still loading.
   const albumReleases = ref(new Map<RowSource, Album[]>());
@@ -209,7 +212,7 @@ export function useArtistRowData(
 
   /** Request what the visible rows need, skipping what is already on its way. */
   function loadRowData() {
-    if (!artist.value) return;
+    if (disposed || !artist.value) return;
     const rows = visibleRows.value;
     if (rows.includes("albums")) fetchReleases("albums", albumsSource.value!);
     if (rows.includes("albums"))
@@ -251,43 +254,19 @@ export function useArtistRowData(
       cache,
       async (requestedArtist, rowSource) => {
         const requestArtistIdentity = mappingsIdentity(requestedArtist);
-        const releases: Album[] = [];
-        let offset = 0;
-        let boundaryYear: number | undefined;
-
-        while (true) {
-          const currentArtist = artist.value;
-          if (
-            !currentArtist ||
-            mappingsIdentity(currentArtist) !== requestArtistIdentity
-          ) {
-            return releases;
-          }
-
-          const page = await loadArtistReleases(requestedArtist, rowSource, {
-            limit: ARTIST_SHELF_LIMIT,
-            offset,
-            sortField: SortField.YEAR,
-            sortDirection: SortDirection.DESC,
-            albumTypes: ARTIST_RELEASE_TYPES[rowId],
-          });
-          const artistAfterRequest = artist.value;
-          if (
-            !artistAfterRequest ||
-            mappingsIdentity(artistAfterRequest) !== requestArtistIdentity
-          ) {
-            return releases;
-          }
-
-          releases.push(...page);
-          if (page.length < ARTIST_SHELF_LIMIT) break;
-
-          const pageLastYear = page[page.length - 1]?.year ?? 0;
-          if (boundaryYear !== undefined && pageLastYear < boundaryYear) break;
-          boundaryYear = pageLastYear;
-          offset += page.length;
+        if (disposed) return [];
+        const releases = await loadArtistReleases(requestedArtist, rowSource, {
+          limit: 0,
+          albumTypes: ARTIST_RELEASE_TYPES[rowId],
+        });
+        const currentArtist = artist.value;
+        if (
+          disposed ||
+          !currentArtist ||
+          mappingsIdentity(currentArtist) !== requestArtistIdentity
+        ) {
+          return [];
         }
-
         return releases;
       },
     );
@@ -317,6 +296,7 @@ export function useArtistRowData(
         const requestIsCurrent = () => {
           const currentArtist = artist.value;
           return (
+            !disposed &&
             !!currentArtist &&
             mappingsIdentity(currentArtist) === requestArtistIdentity &&
             visibleRows.value.includes("top_tracks") &&

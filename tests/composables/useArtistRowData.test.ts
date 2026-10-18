@@ -179,7 +179,7 @@ describe("useArtistRowData", () => {
       expect.anything(),
       "library",
       expect.objectContaining({
-        limit: 50,
+        limit: 0,
         albumTypes: [
           AlbumType.ALBUM,
           AlbumType.COMPILATION,
@@ -194,7 +194,7 @@ describe("useArtistRowData", () => {
       expect.anything(),
       "library",
       expect.objectContaining({
-        limit: 50,
+        limit: 0,
         albumTypes: [AlbumType.SINGLE, AlbumType.EP],
       }),
     );
@@ -202,7 +202,7 @@ describe("useArtistRowData", () => {
     expect(itemIds(page.singleItems.value)).toEqual(["single-1"]);
   });
 
-  it("bounds release shelves and counts each album type separately", async () => {
+  it("fetches separate typed release lists and counts for each shelf", async () => {
     const page = setupRowData({ rows: ["albums", "singles_eps"] });
     mockLoadArtistReleases.mockResolvedValue(RELEASES);
     mockArtistAlbumsCountBySource.mockImplementation(
@@ -218,10 +218,7 @@ describe("useArtistRowData", () => {
       expect.anything(),
       "library",
       {
-        limit: 50,
-        offset: 0,
-        sortField: SortField.YEAR,
-        sortDirection: SortDirection.DESC,
+        limit: 0,
         albumTypes: [
           AlbumType.ALBUM,
           AlbumType.COMPILATION,
@@ -236,7 +233,7 @@ describe("useArtistRowData", () => {
     expect(page.singlesCount.value).toBe(2);
   });
 
-  it("fetches the whole boundary year before choosing the newest 50 releases", async () => {
+  it("sorts the complete release list by release date before showing the newest 50", async () => {
     const page = setupRowData({ rows: ["albums"] });
     const firstPage = Array.from({ length: 50 }, (_, index) =>
       album({
@@ -262,25 +259,19 @@ describe("useArtistRowData", () => {
       year: 2024,
       metadata: { release_date: "2024-12-31" },
     });
-    mockLoadArtistReleases
-      .mockResolvedValueOnce(firstPage)
-      .mockResolvedValueOnce(secondPage)
-      .mockResolvedValueOnce([latestRelease, olderYearRelease]);
+    mockLoadArtistReleases.mockResolvedValue([
+      ...firstPage,
+      ...secondPage,
+      latestRelease,
+      olderYearRelease,
+    ]);
 
     await showArtist(page, libraryArtist());
 
-    expect(mockLoadArtistReleases).toHaveBeenCalledTimes(3);
-    expect(mockLoadArtistReleases).toHaveBeenNthCalledWith(
-      2,
+    expect(mockLoadArtistReleases).toHaveBeenCalledWith(
       expect.anything(),
       "library",
-      expect.objectContaining({ offset: 50, limit: 50 }),
-    );
-    expect(mockLoadArtistReleases).toHaveBeenNthCalledWith(
-      3,
-      expect.anything(),
-      "library",
-      expect.objectContaining({ offset: 100, limit: 50 }),
+      expect.objectContaining({ limit: 0, albumTypes: expect.any(Array) }),
     );
     expect(page.albumItems.value).toHaveLength(50);
     expect(page.albumItems.value?.[0].item_id).toBe("latest-release");
@@ -401,6 +392,52 @@ describe("useArtistRowData", () => {
       }
     },
   );
+
+  it.each(["empty", "rejected"] as const)(
+    "does not fetch fallback tracks after unmount when top tracks are %s",
+    async (outcome) => {
+      const page = setupRowData({ rows: ["top_tracks"] });
+      let resolveTopTracks!: (tracks: Track[]) => void;
+      let rejectTopTracks!: (error: Error) => void;
+      const pendingTopTracks = new Promise<Track[]>((resolve, reject) => {
+        resolveTopTracks = resolve;
+        rejectTopTracks = reject;
+      });
+      const requestError = new Error("top tracks failed after unmount");
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      mockLoadArtistTopTracks.mockReturnValueOnce(pendingTopTracks);
+      mockLoadArtistTracks.mockResolvedValue([track()]);
+
+      await showArtist(page, libraryArtist());
+      scopes[scopes.length - 1].stop();
+      if (outcome === "empty") resolveTopTracks([]);
+      else rejectTopTracks(requestError);
+      await flushPromises();
+
+      expect(mockLoadArtistTracks).not.toHaveBeenCalled();
+    },
+  );
+
+  it("does not continue release requests after unmount", async () => {
+    const page = setupRowData({ rows: ["albums"] });
+    let resolveAlbums!: (albums: Album[]) => void;
+    mockLoadArtistReleases.mockReturnValueOnce(
+      new Promise<Album[]>((resolve) => {
+        resolveAlbums = resolve;
+      }),
+    );
+
+    await showArtist(page, libraryArtist());
+    scopes[scopes.length - 1].stop();
+    resolveAlbums(
+      Array.from({ length: 50 }, (_, index) =>
+        album({ item_id: `boundary-${index}`, year: 2025 }),
+      ),
+    );
+    await flushPromises();
+
+    expect(mockLoadArtistReleases).toHaveBeenCalledTimes(1);
+  });
 
   it.each(["empty", "rejected"] as const)(
     "loads the cached-empty fallback when a hidden row is re-shown after a %s request",
