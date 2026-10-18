@@ -164,6 +164,7 @@ describe("useArtistRowData", () => {
     scopes.splice(0).forEach((scope) => scope.stop());
     store.currentUser = undefined;
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("requests separate typed lists for two rows fed by the same source", async () => {
@@ -218,6 +219,7 @@ describe("useArtistRowData", () => {
       "library",
       {
         limit: 50,
+        offset: 0,
         sortField: SortField.YEAR,
         sortDirection: SortDirection.DESC,
         albumTypes: [
@@ -232,6 +234,57 @@ describe("useArtistRowData", () => {
     expect(mockArtistAlbumsCountBySource).toHaveBeenCalledTimes(2);
     expect(page.albumsMeta.value).toContain("8");
     expect(page.singlesCount.value).toBe(2);
+  });
+
+  it("fetches the whole boundary year before choosing the newest 50 releases", async () => {
+    const page = setupRowData({ rows: ["albums"] });
+    const firstPage = Array.from({ length: 50 }, (_, index) =>
+      album({
+        item_id: `first-${index}`,
+        year: 2025,
+        metadata: { release_date: "2025-01-01" },
+      }),
+    );
+    const secondPage = Array.from({ length: 50 }, (_, index) =>
+      album({
+        item_id: `second-${index}`,
+        year: 2025,
+        metadata: { release_date: "2025-06-01" },
+      }),
+    );
+    const latestRelease = album({
+      item_id: "latest-release",
+      year: 2025,
+      metadata: { release_date: "2025-12-31" },
+    });
+    const olderYearRelease = album({
+      item_id: "older-year",
+      year: 2024,
+      metadata: { release_date: "2024-12-31" },
+    });
+    mockLoadArtistReleases
+      .mockResolvedValueOnce(firstPage)
+      .mockResolvedValueOnce(secondPage)
+      .mockResolvedValueOnce([latestRelease, olderYearRelease]);
+
+    await showArtist(page, libraryArtist());
+
+    expect(mockLoadArtistReleases).toHaveBeenCalledTimes(3);
+    expect(mockLoadArtistReleases).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      "library",
+      expect.objectContaining({ offset: 50, limit: 50 }),
+    );
+    expect(mockLoadArtistReleases).toHaveBeenNthCalledWith(
+      3,
+      expect.anything(),
+      "library",
+      expect.objectContaining({ offset: 100, limit: 50 }),
+    );
+    expect(page.albumItems.value).toHaveLength(50);
+    expect(page.albumItems.value?.[0].item_id).toBe("latest-release");
+    expect(itemIds(page.albumItems.value)).not.toContain("older-year");
   });
 
   it("requests a source switched to once, and serves the old one from the cache", async () => {
@@ -314,6 +367,40 @@ describe("useArtistRowData", () => {
       requestError,
     );
   });
+
+  it.each(["empty", "rejected"] as const)(
+    "does not start a fallback for a stale top-tracks request that is %s after navigation",
+    async (outcome) => {
+      const page = setupRowData({ rows: ["top_tracks"] });
+      let resolveFirst!: (tracks: Track[]) => void;
+      let rejectFirst!: (error: Error) => void;
+      const firstRequest = new Promise<Track[]>((resolve, reject) => {
+        resolveFirst = resolve;
+        rejectFirst = reject;
+      });
+      const requestError = new Error("stale top tracks request failed");
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockLoadArtistTopTracks
+        .mockReturnValueOnce(firstRequest)
+        .mockResolvedValueOnce([track({ item_id: "current-top-track" })]);
+
+      await showArtist(page, libraryArtist({ item_id: "artist-a" }));
+      await showArtist(page, libraryArtist({ item_id: "artist-b" }));
+
+      if (outcome === "empty") resolveFirst([]);
+      else rejectFirst(requestError);
+      await flushPromises();
+
+      expect(mockLoadArtistTracks).not.toHaveBeenCalled();
+      expect(itemIds(page.topTracksItems.value)).toEqual(["current-top-track"]);
+      if (outcome === "rejected") {
+        expect(errorSpy).toHaveBeenCalledWith(
+          "[useRowRequests] failed to load a row",
+          requestError,
+        );
+      }
+    },
+  );
 
   it("labels the top tracks row after the library when it uses that fallback", async () => {
     const page = setupRowData({ rows: ["top_tracks"] });

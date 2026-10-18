@@ -48,6 +48,7 @@ const sortOption = (
 describe("useItemsListing", () => {
   afterEach(() => {
     scopes.splice(0).forEach((scope) => scope.stop());
+    vi.restoreAllMocks();
   });
 
   it("shows random options offered for paged library listings", () => {

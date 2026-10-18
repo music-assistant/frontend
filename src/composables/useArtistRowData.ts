@@ -119,7 +119,9 @@ export function useArtistRowData(
     source?: RowSource,
   ) {
     const items = sourceItems(cache, source);
-    return items ? sortReleasesNewestFirst(items) : undefined;
+    return items
+      ? sortReleasesNewestFirst(items).slice(0, ARTIST_SHELF_LIMIT)
+      : undefined;
   };
 
   const albumSourceReleases = computed(() =>
@@ -236,13 +238,51 @@ export function useArtistRowData(
   function fetchReleases(rowId: "albums" | "singles_eps", source: RowSource) {
     const cache =
       rowId === "albums" ? albumReleases.value : singlesReleases.value;
-    return fetchInto(`releases:${rowId}`, source, cache, (artist, rowSource) =>
-      loadArtistReleases(artist, rowSource, {
-        limit: ARTIST_SHELF_LIMIT,
-        sortField: SortField.YEAR,
-        sortDirection: SortDirection.DESC,
-        albumTypes: ARTIST_RELEASE_TYPES[rowId],
-      }),
+    return fetchInto(
+      `releases:${rowId}`,
+      source,
+      cache,
+      async (requestedArtist, rowSource) => {
+        const requestArtistIdentity = mappingsIdentity(requestedArtist);
+        const releases: Album[] = [];
+        let offset = 0;
+        let boundaryYear: number | undefined;
+
+        while (true) {
+          const currentArtist = artist.value;
+          if (
+            !currentArtist ||
+            mappingsIdentity(currentArtist) !== requestArtistIdentity
+          ) {
+            return releases;
+          }
+
+          const page = await loadArtistReleases(requestedArtist, rowSource, {
+            limit: ARTIST_SHELF_LIMIT,
+            offset,
+            sortField: SortField.YEAR,
+            sortDirection: SortDirection.DESC,
+            albumTypes: ARTIST_RELEASE_TYPES[rowId],
+          });
+          const artistAfterRequest = artist.value;
+          if (
+            !artistAfterRequest ||
+            mappingsIdentity(artistAfterRequest) !== requestArtistIdentity
+          ) {
+            return releases;
+          }
+
+          releases.push(...page);
+          if (page.length < ARTIST_SHELF_LIMIT) break;
+
+          const pageLastYear = page[page.length - 1]?.year ?? 0;
+          if (boundaryYear !== undefined && pageLastYear < boundaryYear) break;
+          boundaryYear = pageLastYear;
+          offset += page.length;
+        }
+
+        return releases;
+      },
     );
   }
 
@@ -265,13 +305,25 @@ export function useArtistRowData(
       "top_tracks",
       source,
       topTracks.value,
-      async (artist, rowSource) => {
+      async (requestedArtist, rowSource) => {
+        const requestArtistIdentity = mappingsIdentity(requestedArtist);
+        const requestIsCurrent = () => {
+          const currentArtist = artist.value;
+          return (
+            !!currentArtist &&
+            mappingsIdentity(currentArtist) === requestArtistIdentity &&
+            visibleRows.value.includes("top_tracks") &&
+            topTracksSource.value === rowSource
+          );
+        };
         try {
-          const tracks = await loadArtistTopTracks(artist, rowSource);
-          if (tracks.length === 0) await fetchArtistTracks();
+          const tracks = await loadArtistTopTracks(requestedArtist, rowSource);
+          if (tracks.length === 0 && requestIsCurrent()) {
+            await fetchArtistTracks();
+          }
           return tracks;
         } catch (error) {
-          await fetchArtistTracks();
+          if (requestIsCurrent()) await fetchArtistTracks();
           throw error;
         }
       },
