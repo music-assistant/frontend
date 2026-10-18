@@ -296,6 +296,25 @@ describe("useArtistRowData", () => {
     expect(itemIds(page.topTracksItems.value)).toEqual(["newer", "older"]);
   });
 
+  it("falls back to artist tracks when the top-tracks request fails", async () => {
+    const page = setupRowData({ rows: ["top_tracks"] });
+    const requestError = new Error("top tracks unavailable");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mockLoadArtistTopTracks.mockRejectedValueOnce(requestError);
+    mockLoadArtistTracks.mockResolvedValue([
+      track({ item_id: "library-track" }),
+    ]);
+
+    await showArtist(page, libraryArtist());
+
+    expect(mockLoadArtistTracks).toHaveBeenCalledTimes(1);
+    expect(itemIds(page.topTracksItems.value)).toEqual(["library-track"]);
+    expect(console.error).toHaveBeenCalledWith(
+      "[useRowRequests] failed to load a row",
+      requestError,
+    );
+  });
+
   it("labels the top tracks row after the library when it uses that fallback", async () => {
     const page = setupRowData({ rows: ["top_tracks"] });
     mockLoadArtistTracks.mockResolvedValue([track()]);

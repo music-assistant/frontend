@@ -266,9 +266,14 @@ export function useArtistRowData(
       source,
       topTracks.value,
       async (artist, rowSource) => {
-        const tracks = await loadArtistTopTracks(artist, rowSource);
-        if (tracks.length === 0) await fetchArtistTracks();
-        return tracks;
+        try {
+          const tracks = await loadArtistTopTracks(artist, rowSource);
+          if (tracks.length === 0) await fetchArtistTracks();
+          return tracks;
+        } catch (error) {
+          await fetchArtistTracks();
+          throw error;
+        }
       },
     );
   }
