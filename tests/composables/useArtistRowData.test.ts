@@ -402,6 +402,40 @@ describe("useArtistRowData", () => {
     },
   );
 
+  it.each(["empty", "rejected"] as const)(
+    "loads the cached-empty fallback when a hidden row is re-shown after a %s request",
+    async (outcome) => {
+      const page = setupRowData({ rows: ["top_tracks"] });
+      let resolveTopTracks!: (tracks: Track[]) => void;
+      let rejectTopTracks!: (error: Error) => void;
+      const pendingTopTracks = new Promise<Track[]>((resolve, reject) => {
+        resolveTopTracks = resolve;
+        rejectTopTracks = reject;
+      });
+      const requestError = new Error("hidden top tracks request failed");
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      mockLoadArtistTopTracks.mockReturnValueOnce(pendingTopTracks);
+      mockLoadArtistTracks.mockResolvedValue([
+        track({ item_id: "library-fallback" }),
+      ]);
+
+      await showArtist(page, libraryArtist());
+      page.visibleRows.value = [];
+      await flushPromises();
+
+      if (outcome === "empty") resolveTopTracks([]);
+      else rejectTopTracks(requestError);
+      await flushPromises();
+      expect(mockLoadArtistTracks).not.toHaveBeenCalled();
+
+      page.visibleRows.value = ["top_tracks"];
+      await flushPromises();
+
+      expect(mockLoadArtistTracks).toHaveBeenCalledTimes(1);
+      expect(itemIds(page.topTracksItems.value)).toEqual(["library-fallback"]);
+    },
+  );
+
   it("labels the top tracks row after the library when it uses that fallback", async () => {
     const page = setupRowData({ rows: ["top_tracks"] });
     mockLoadArtistTracks.mockResolvedValue([track()]);

@@ -228,7 +228,14 @@ export function useArtistRowData(
     }
     if (rows.includes("top_tracks")) {
       fetchArtistTracksCount();
-      fetchTopTracks(topTracksSource.value!);
+      const source = topTracksSource.value!;
+      fetchTopTracks(source);
+      if (
+        topTracks.value.get(source)?.length === 0 &&
+        artistTracks.value === undefined
+      ) {
+        fetchArtistTracks();
+      }
     }
     if (rows.includes("similar_artists")) {
       fetchSimilarArtists(similarArtistsSource.value!);
