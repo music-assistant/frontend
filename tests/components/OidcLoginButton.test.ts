@@ -59,6 +59,8 @@ describe("OIDC sign-in", () => {
     expect(mocks.startAuthorization).toHaveBeenCalledWith(
       "oidc",
       window.location.href,
+      undefined,
+      { suppressGlobalError: true },
     );
     expect(replace).toHaveBeenCalledWith(
       "https://music.example/auth/oidc/start",
@@ -108,7 +110,7 @@ describe("OIDC sign-in", () => {
 
     expect(wrapper.emitted("error")?.at(-1)).toEqual(["Provider unavailable"]);
     expect(wrapper.emitted("busy")?.at(-1)).toEqual([false]);
-    expect(mocks.error).toHaveBeenCalledWith("Provider unavailable");
+    expect(mocks.error).toHaveBeenCalledExactlyOnceWith("Provider unavailable");
   });
 
   it("renders the administrator's provider label as text", () => {

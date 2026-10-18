@@ -3373,6 +3373,7 @@ export class MusicAssistantApi {
     providerId: string,
     returnUrl: string,
     codeChallenge?: string,
+    options?: CommandOptions,
   ): Promise<AuthorizationStart> {
     return await this.sendCommand<AuthorizationStart>(
       "auth/authorization_url",
@@ -3385,6 +3386,7 @@ export class MusicAssistantApi {
           redirect_target: "app",
         }),
       },
+      options,
     );
   }
 

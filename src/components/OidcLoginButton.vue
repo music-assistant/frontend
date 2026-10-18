@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { KeyRound, LoaderCircle } from "@lucide/vue";
 import { toast } from "vue-sonner";
@@ -29,6 +29,13 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const isStarting = ref(false);
 const providerName = computed(() => props.provider.name || "OpenID Connect");
+let isActive = true;
+
+onBeforeUnmount(() => {
+  isActive = false;
+  // The login form can disappear while authorization is still pending.
+  if (isStarting.value) emit("busy", false);
+});
 
 const startLogin = async () => {
   isStarting.value = true;
@@ -38,7 +45,10 @@ const startLogin = async () => {
     const result = await api.startAuthorization(
       props.provider.provider_id,
       window.location.href,
+      undefined,
+      { suppressGlobalError: true },
     );
+    if (!isActive) return;
     if (!isWebUrl(result.authorization_url)) {
       throw new Error(result.error || t("login.error_external_login_failed"));
     }
@@ -46,6 +56,7 @@ const startLogin = async () => {
     // The server entry point creates browser-bound state before visiting the IdP.
     window.location.replace(result.authorization_url);
   } catch (error) {
+    if (!isActive) return;
     const message =
       error instanceof Error
         ? error.message
