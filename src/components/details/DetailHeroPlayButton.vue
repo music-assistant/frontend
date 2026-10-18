@@ -31,7 +31,11 @@ import { handlePlayBtnClick } from "@/helpers/media_item_actions";
 import { getPlayerName, isBuiltinPlayer } from "@/helpers/players";
 import { roomInRow } from "@/helpers/room_in_row";
 import { api } from "@/plugins/api";
-import type { MediaItemType } from "@/plugins/api/interfaces";
+import {
+  type MediaItemType,
+  type SortDirection,
+  type SortField,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { useResizeObserver } from "@vueuse/core";
@@ -51,11 +55,13 @@ export interface Props {
   // playing on from the item (e.g. the podcast an episode belongs to)
   parentItem?: MediaItemType;
   // the order the item's tracks are listed in on its page, to play them that way
-  tracksSortBy?: string;
+  tracksSortField?: SortField;
+  tracksSortDirection?: SortDirection;
 }
 const props = withDefaults(defineProps<Props>(), {
   parentItem: undefined,
-  tracksSortBy: undefined,
+  tracksSortField: undefined,
+  tracksSortDirection: undefined,
 });
 
 const wrapper = useTemplateRef<HTMLElement>("wrapper");
@@ -142,7 +148,11 @@ const playButtonClick = function (forceMenu = false) {
     props.parentItem,
     forceMenu,
     undefined,
-    props.tracksSortBy,
+    undefined,
+    undefined,
+    undefined,
+    props.tracksSortField,
+    props.tracksSortDirection,
   );
 };
 </script>

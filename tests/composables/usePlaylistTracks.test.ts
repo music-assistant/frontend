@@ -48,6 +48,9 @@ describe("usePlaylistTracks", () => {
       "1",
       "library",
       true,
+      undefined,
+      undefined,
+      0,
     );
     expect(apiMock.getPlaylistTracks).toHaveBeenCalledTimes(2);
   });

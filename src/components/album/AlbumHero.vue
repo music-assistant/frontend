@@ -59,7 +59,11 @@
           </div>
 
           <div class="album-hero__actions">
-            <DetailHeroPlayButton :item="item" :tracks-sort-by="tracksSortBy" />
+            <DetailHeroPlayButton
+              :item="item"
+              :tracks-sort-field="tracksSortField"
+              :tracks-sort-direction="tracksSortDirection"
+            />
             <DetailHeroButton
               :icon="Shuffle"
               :label="$t('shuffle')"
@@ -102,6 +106,8 @@ import {
   type Album,
   type Artist,
   type ItemMapping,
+  type SortDirection,
+  type SortField,
 } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
@@ -121,7 +127,8 @@ export interface Props {
   // their total playing time in seconds, once they are known
   duration?: number;
   // the order the tracks are listed in below, which the play button follows
-  tracksSortBy?: string;
+  tracksSortField?: SortField;
+  tracksSortDirection?: SortDirection;
 }
 const props = defineProps<Props>();
 
