@@ -150,6 +150,9 @@
       :skip-song-tokens="skipSongTokens"
       :skipping-song="skippingSong"
       :skip-token-countdown="skipTokenCountdown"
+      :skip-votes="skipVotes"
+      :skip-votes-required="skipVotesRequired"
+      :has-voted-to-skip="hasVotedToSkip"
       :boost-badge-color="boostBadgeColor"
       :request-badge-color="requestBadgeColor"
       :boost-enabled="boostEnabled"
@@ -427,9 +430,32 @@ const boostQueueItem = async (item: QueueItem) => {
   }
 };
 
+// Skip votes are tallied by the server on the currently playing queue item
+const skipVotesRequired = computed(
+  () => partyConfig.value?.skip_votes_required ?? 1,
+);
+const currentQueueItemId = computed(
+  () => currentQueue.value?.current_item?.queue_item_id ?? "",
+);
+const skipVotes = computed(
+  () =>
+    currentQueue.value?.current_item?.extra_attributes?.party_skip_votes ?? 0,
+);
+const votedSkipItemId = ref("");
+const hasVotedToSkip = computed(
+  () =>
+    !!currentQueueItemId.value &&
+    votedSkipItemId.value === currentQueueItemId.value,
+);
+
 const skipCurrentSong = async () => {
   if (!skipSongEnabled.value) {
     toast.warning($t("providers.party.guest_page.skip_disabled"));
+    return;
+  }
+
+  if (hasVotedToSkip.value) {
+    toast.info($t("providers.party.guest_page.skip_already_voted"));
     return;
   }
 
@@ -442,17 +468,39 @@ const skipCurrentSong = async () => {
   }
 
   skippingSong.value = true;
+  const votedItemId = currentQueueItemId.value;
   try {
     const result = (await api.sendCommand("party/skip")) as {
       success: boolean;
+      skipped: boolean;
+      vote_counted: boolean;
+      votes: number;
+      votes_required: number;
     };
 
     if (!result.success) {
       throw new Error("Server rejected the request");
     }
 
+    if (!result.vote_counted) {
+      votedSkipItemId.value = votedItemId;
+      toast.info($t("providers.party.guest_page.skip_already_voted"));
+      return;
+    }
+
     if (rateLimitingEnabled.value) {
       consumeSkipSongToken();
+    }
+
+    if (!result.skipped) {
+      votedSkipItemId.value = votedItemId;
+      toast.success(
+        $t("providers.party.guest_page.skip_vote_counted", [
+          result.votes,
+          result.votes_required,
+        ]),
+      );
+      return;
     }
 
     toast.success($t("providers.party.guest_page.song_skipped"));

@@ -1670,6 +1670,8 @@
                 "skip_limit_reached": "Skip limit reached. Next skip available in {0} minutes.",
                 "skip": "Skip",
                 "song_skipped": "Song skipped!",
+                "skip_vote_counted": "Vote counted! {0} of {1} votes needed to skip.",
+                "skip_already_voted": "You already voted to skip this song.",
                 "try_different_search": "Try a different search term",
                 "unknown_artist": "Unknown Artist",
                 "view_songs": "View Songs",

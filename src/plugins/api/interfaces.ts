@@ -1412,6 +1412,7 @@ export interface QueueItem {
   extra_attributes?: {
     party_guest?: boolean; // true if added by party guest
     party_boosted?: boolean; // true if added as "boost" (play next)
+    party_skip_votes?: number; // guests that voted to skip this (currently playing) item
     playback_speed?: number; // current playback speed multiplier (audiobook/podcast)
   };
 }
@@ -2109,6 +2110,8 @@ export interface PartyConfig {
   enable_skip_song: boolean;
   skip_song_limit: number;
   skip_song_refill_minutes: number;
+  // Number of distinct guests that must vote before the current song is skipped
+  skip_votes_required: number;
   karaoke_mode: boolean;
   highlight_ahead: boolean;
   request_badge_color?: string;
