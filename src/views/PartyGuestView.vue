@@ -442,6 +442,11 @@ const skipVotes = computed(
     currentQueue.value?.current_item?.extra_attributes?.party_skip_votes ?? 0,
 );
 const votedSkipItemId = ref("");
+// The server drops the votes once the track stops playing, so a track that
+// plays again can be voted on again
+watch(currentQueueItemId, () => {
+  votedSkipItemId.value = "";
+});
 const hasVotedToSkip = computed(
   () =>
     !!currentQueueItemId.value &&
