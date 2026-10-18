@@ -78,9 +78,10 @@ const props = defineProps<{
 // computed properties
 const allConfigEntries = computed(() => {
   if (!config.value) return [];
-  // Pass all entries (including hidden ones) to EditConfig
-  // Hidden entries contain values that need to be preserved on save
-  return Object.values(config.value.values);
+  // Hide the card's fields only in the form; retain the server's visibility on the card.
+  return Object.values(config.value.values).map((entry) =>
+    urlCardEntries.value.includes(entry) ? { ...entry, hidden: true } : entry,
+  );
 });
 
 // the webserver entries the URL card edits in place of the form
@@ -97,15 +98,6 @@ watch(
     if (val) {
       config.value = await api.getCoreConfig(val);
     }
-  },
-  { immediate: true },
-);
-
-// hidden from the form, while EditConfig still saves and guards their values
-watch(
-  urlCardEntries,
-  (entries) => {
-    for (const entry of entries) entry.hidden = true;
   },
   { immediate: true },
 );
@@ -141,9 +133,9 @@ const getCoreIcon = (domain: string): Component => {
 
 const resetToDefaults = function () {
   editConfig.value?.resetToDefaults();
-  // the form's reset skips hidden entries, and these are hidden only because
-  // the URL card shows them
-  for (const entry of urlCardEntries.value) entry.value = entry.default_value;
+  for (const entry of urlCardEntries.value) {
+    if (!entry.hidden) entry.value = entry.default_value;
+  }
   urlCard.value?.reset();
 };
 

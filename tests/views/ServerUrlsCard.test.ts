@@ -57,6 +57,27 @@ beforeEach(() => {
 });
 
 describe("ServerUrlsCard", () => {
+  it("hides deployment-managed URLs while keeping other URLs editable", async () => {
+    const { wrapper } = await mountCard({
+      base_url: "https://managed.example",
+    });
+    await wrapper.setProps({
+      baseUrl: { ...wrapper.props("baseUrl"), hidden: true },
+    });
+
+    expect(wrapper.find("[data-testid=server-urls-local]").exists()).toBe(
+      false,
+    );
+    expect(wrapper.find("[data-testid=server-urls-internet]").exists()).toBe(
+      true,
+    );
+
+    await wrapper.setProps({
+      externalUrl: { ...wrapper.props("externalUrl"), hidden: true },
+    });
+    expect(wrapper.find("[data-testid=server-urls]").exists()).toBe(false);
+  });
+
   describe("internet", () => {
     it("uses remote access while the external URL is empty", async () => {
       const { wrapper } = await mountCard({ external_url: null });

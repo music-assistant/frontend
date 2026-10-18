@@ -339,6 +339,12 @@ describe("EditCoreConfig", () => {
     expect(renderedKeys(wrapper)).toEqual(["server_name"]);
     expect(saveDisabled(wrapper)).toBe(true);
 
+    const formEntries = wrapper
+      .findComponent({ name: "EditConfig" })
+      .props("configEntries") as ConfigEntry[];
+    formEntries.find((entry) => entry.key === "server_name")!.value =
+      "Edited server";
+
     await card.vm.$emit(
       "update:value",
       "external_url",
@@ -351,7 +357,7 @@ describe("EditCoreConfig", () => {
     await flushPromises();
 
     expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("webserver", {
-      server_name: "My server",
+      server_name: "Edited server",
       base_url: "auto",
       external_url: "https://music.example",
     });
@@ -406,6 +412,36 @@ describe("EditCoreConfig", () => {
     expect(card.props("externalUrl")?.value).toBeNull();
     // the card's switches follow the reset values rather than earlier choices
     expect(reset).toHaveBeenCalledOnce();
+  });
+
+  it("preserves server-hidden URLs when resetting editable settings", async () => {
+    const config = webserverConfig({
+      base_url: "https://managed.example",
+      external_url: "https://public.example",
+    });
+    config.values.base_url.hidden = true;
+    apiMock.getCoreConfig.mockResolvedValueOnce(config);
+    const wrapper = mountWithForm("webserver", {
+      ServerUrlsCard: {
+        name: "ServerUrlsCard",
+        props: ["baseUrl", "externalUrl"],
+        template: "<div />",
+        methods: { reset: vi.fn() },
+      },
+    });
+    await flushPromises();
+
+    const card = wrapper.findComponent(ServerUrlsCard);
+    expect(card.props("baseUrl").hidden).toBe(true);
+    expect(card.props("externalUrl").hidden).toBeFalsy();
+    expect(renderedKeys(wrapper)).toEqual(["server_name"]);
+
+    await wrapper
+      .findComponent({ name: "SettingsHeaderCard" })
+      .vm.$emit("resetToDefaults");
+
+    expect(card.props("baseUrl").value).toBe("https://managed.example");
+    expect(card.props("externalUrl").value).toBeNull();
   });
 });
 
