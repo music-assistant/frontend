@@ -1,10 +1,15 @@
 import {
+  ARTIST_RELEASE_TYPES,
+  artistAlbumsCountBySource,
   isSingleOrEp,
   loadArtistAppearsOn,
+  loadArtistAppearsOnCount,
   loadArtistDiscography,
+  loadArtistDiscographyCount,
   loadArtistReleases,
   loadArtistTopTracks,
   loadArtistTracks,
+  loadArtistTracksCount,
   loadSimilarArtists,
   sortReleasesNewestFirst,
 } from "@/components/artist/artistData";
@@ -16,12 +21,16 @@ import {
 import { mappingsIdentity, useRowRequests } from "@/composables/useRowRequests";
 import {
   MediaType,
+  SortDirection,
+  SortField,
   type Album,
   type Artist,
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed, ref, watch, type Ref } from "vue";
+
+const ARTIST_SHELF_LIMIT = 50;
 
 /**
  * What every row of the artist page shows, loaded as the visible rows need it.
@@ -37,34 +46,59 @@ export function useArtistRowData(
 ) {
   // Row data per source: two rows fed by the same source share one request and
   // a source change in the editor loads the new one. Absent = still loading.
-  const releases = ref(new Map<RowSource, Album[]>());
+  const albumReleases = ref(new Map<RowSource, Album[]>());
+  const singlesReleases = ref(new Map<RowSource, Album[]>());
+  const albumCounts = ref(new Map<RowSource, number | undefined>());
+  const singlesCounts = ref(new Map<RowSource, number | undefined>());
   const topTracks = ref(new Map<RowSource, Track[]>());
   const similarArtists = ref(new Map<RowSource, Artist[]>());
   const artistTracks = ref<Track[]>();
+  const artistTracksCount = ref<number>();
   // fed by the artist alone, so these need no per-source cache
   const appearsOn = ref<Album[]>();
+  const appearsOnCount = ref<number>();
   const discography = ref<Album[]>();
+  const discographyCount = ref<number>();
 
   // a new artist, or new provider mappings, start from empty rows; anything
   // else (a favorite toggle, a metadata update) keeps what is already loaded
-  const { fetchOnce, refetchOnLibraryChange } = useRowRequests(
+  const { fetchOnce, fetchOnceValue, refetchOnLibraryChange } = useRowRequests(
     artist,
     mappingsIdentity,
     () => {
-      releases.value = new Map();
+      albumReleases.value = new Map();
+      singlesReleases.value = new Map();
+      albumCounts.value = new Map();
+      singlesCounts.value = new Map();
       topTracks.value = new Map();
       similarArtists.value = new Map();
       artistTracks.value = undefined;
+      artistTracksCount.value = undefined;
       appearsOn.value = undefined;
+      appearsOnCount.value = undefined;
       discography.value = undefined;
+      discographyCount.value = undefined;
       loadRowData();
     },
   );
 
   refetchOnLibraryChange(
     {
-      [MediaType.ALBUM]: ["releases", "appears_on", "discography"],
-      [MediaType.TRACK]: ["artist_tracks", "appears_on", "top_tracks"],
+      [MediaType.ALBUM]: [
+        "releases",
+        "release_count:",
+        "appears_on",
+        "appears_on_count",
+        "discography",
+        "discography_count",
+      ],
+      [MediaType.TRACK]: [
+        "artist_tracks",
+        "artist_tracks_count",
+        "appears_on",
+        "appears_on_count",
+        "top_tracks",
+      ],
     },
     () => loadRowData(),
   );
@@ -80,28 +114,40 @@ export function useArtistRowData(
   const similarArtistsSource = computed(() => rowSource("similar_artists"));
 
   // releases sorted newest first, from the source that feeds the given row
-  const sortedReleases = function (source?: RowSource) {
-    const items = sourceItems(releases.value, source);
+  const sortedReleases = function (
+    cache: Map<RowSource, Album[]>,
+    source?: RowSource,
+  ) {
+    const items = sourceItems(cache, source);
     return items ? sortReleasesNewestFirst(items) : undefined;
   };
 
   const albumSourceReleases = computed(() =>
-    sortedReleases(albumsSource.value),
+    sortedReleases(albumReleases.value, albumsSource.value),
   );
   const singlesSourceReleases = computed(() =>
-    sortedReleases(singlesSource.value),
+    sortedReleases(singlesReleases.value, singlesSource.value),
   );
 
   const albumItems = computed(() =>
     albumSourceReleases.value?.filter((album) => !isSingleOrEp(album)),
   );
   const singleItems = computed(() =>
-    singlesSourceReleases.value?.filter((album) => isSingleOrEp(album)),
+    singlesSourceReleases.value?.filter(isSingleOrEp),
+  );
+  const albumsCount = computed(() =>
+    albumsSource.value ? albumCounts.value.get(albumsSource.value) : undefined,
   );
 
   const albumsMeta = computed(() =>
-    albumItems.value?.length
-      ? `${albumItems.value.length} · ${$t("newest_first")}`
+    albumsCount.value
+      ? `${albumsCount.value} · ${$t("newest_first")}`
+      : undefined,
+  );
+
+  const singlesCount = computed(() =>
+    singlesSource.value
+      ? singlesCounts.value.get(singlesSource.value)
       : undefined,
   );
 
@@ -163,12 +209,23 @@ export function useArtistRowData(
   function loadRowData() {
     if (!artist.value) return;
     const rows = visibleRows.value;
-    if (rows.includes("albums")) fetchReleases(albumsSource.value!);
-    if (rows.includes("singles_eps")) fetchReleases(singlesSource.value!);
-    if (rows.includes("appears_on")) fetchAppearsOn();
-    if (rows.includes("discography")) fetchDiscography();
+    if (rows.includes("albums")) fetchReleases("albums", albumsSource.value!);
+    if (rows.includes("albums"))
+      fetchReleaseCount("albums", albumsSource.value!);
+    if (rows.includes("singles_eps")) {
+      fetchReleases("singles_eps", singlesSource.value!);
+      fetchReleaseCount("singles_eps", singlesSource.value!);
+    }
+    if (rows.includes("appears_on")) {
+      fetchAppearsOn();
+      fetchAppearsOnCount();
+    }
+    if (rows.includes("discography")) {
+      fetchDiscography();
+      fetchDiscographyCount();
+    }
     if (rows.includes("top_tracks")) {
-      fetchArtistTracks();
+      fetchArtistTracksCount();
       fetchTopTracks(topTracksSource.value!);
     }
     if (rows.includes("similar_artists")) {
@@ -176,8 +233,31 @@ export function useArtistRowData(
     }
   }
 
-  function fetchReleases(source: RowSource) {
-    return fetchInto("releases", source, releases.value, loadArtistReleases);
+  function fetchReleases(rowId: "albums" | "singles_eps", source: RowSource) {
+    const cache =
+      rowId === "albums" ? albumReleases.value : singlesReleases.value;
+    return fetchInto(`releases:${rowId}`, source, cache, (artist, rowSource) =>
+      loadArtistReleases(artist, rowSource, {
+        limit: ARTIST_SHELF_LIMIT,
+        sortField: SortField.YEAR,
+        sortDirection: SortDirection.DESC,
+        albumTypes: ARTIST_RELEASE_TYPES[rowId],
+      }),
+    );
+  }
+
+  function fetchReleaseCount(
+    rowId: "albums" | "singles_eps",
+    source: RowSource,
+  ) {
+    const counts = rowId === "albums" ? albumCounts.value : singlesCounts.value;
+    return fetchOnceValue(
+      `release_count:${rowId}:${source}`,
+      (artist) =>
+        artistAlbumsCountBySource(artist, source, ARTIST_RELEASE_TYPES[rowId]),
+      (count) => counts.set(source, count),
+      undefined,
+    );
   }
 
   function fetchTopTracks(source: RowSource) {
@@ -185,7 +265,11 @@ export function useArtistRowData(
       "top_tracks",
       source,
       topTracks.value,
-      loadArtistTopTracks,
+      async (artist, rowSource) => {
+        const tracks = await loadArtistTopTracks(artist, rowSource);
+        if (tracks.length === 0) await fetchArtistTracks();
+        return tracks;
+      },
     );
   }
 
@@ -201,7 +285,7 @@ export function useArtistRowData(
   function fetchAppearsOn() {
     return fetchOnce(
       "appears_on",
-      (artist) => loadArtistAppearsOn(artist),
+      (artist) => loadArtistAppearsOn(artist, undefined, ARTIST_SHELF_LIMIT),
       (items) => (appearsOn.value = items),
     );
   }
@@ -209,8 +293,35 @@ export function useArtistRowData(
   function fetchDiscography() {
     return fetchOnce(
       "discography",
-      (artist) => loadArtistDiscography(artist),
+      (artist) => loadArtistDiscography(artist, undefined, ARTIST_SHELF_LIMIT),
       (items) => (discography.value = items),
+    );
+  }
+
+  function fetchAppearsOnCount() {
+    return fetchOnceValue(
+      "appears_on_count",
+      loadArtistAppearsOnCount,
+      (count) => (appearsOnCount.value = count),
+      undefined,
+    );
+  }
+
+  function fetchDiscographyCount() {
+    return fetchOnceValue(
+      "discography_count",
+      loadArtistDiscographyCount,
+      (count) => (discographyCount.value = count),
+      undefined,
+    );
+  }
+
+  function fetchArtistTracksCount() {
+    return fetchOnceValue(
+      "artist_tracks_count",
+      loadArtistTracksCount,
+      (count) => (artistTracksCount.value = count),
+      undefined,
     );
   }
 
@@ -238,11 +349,16 @@ export function useArtistRowData(
 
   return {
     artistTracks,
+    artistTracksCount,
     topTracksItems,
     albumItems,
     singleItems,
+    albumsCount,
+    singlesCount,
     appearsOnItems,
+    appearsOnCount,
     discographyItems,
+    discographyCount,
     similarArtistItems,
     albumsMeta,
     albumsSource,

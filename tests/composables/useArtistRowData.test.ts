@@ -10,6 +10,8 @@ import {
   EventType,
   ProviderFeature,
   ProviderType,
+  SortDirection,
+  SortField,
   type Album,
   type Artist,
   type EventMessage,
@@ -28,9 +30,13 @@ import { user } from "../fixtures/user";
 const {
   mockApi,
   mockLoadArtistReleases,
+  mockArtistAlbumsCountBySource,
   mockLoadArtistAppearsOn,
+  mockLoadArtistAppearsOnCount,
   mockLoadArtistDiscography,
+  mockLoadArtistDiscographyCount,
   mockLoadArtistTracks,
+  mockLoadArtistTracksCount,
   mockLoadArtistTopTracks,
   mockLoadSimilarArtists,
 } = vi.hoisted(() => ({
@@ -44,9 +50,13 @@ const {
   },
   mockLoadArtistReleases:
     vi.fn<(artist: Artist, source: RowSource) => Promise<Album[]>>(),
+  mockArtistAlbumsCountBySource: vi.fn(),
   mockLoadArtistAppearsOn: vi.fn<(artist: Artist) => Promise<Album[]>>(),
+  mockLoadArtistAppearsOnCount: vi.fn<(artist: Artist) => Promise<number>>(),
   mockLoadArtistDiscography: vi.fn<(artist: Artist) => Promise<Album[]>>(),
+  mockLoadArtistDiscographyCount: vi.fn<(artist: Artist) => Promise<number>>(),
   mockLoadArtistTracks: vi.fn<(artist: Artist) => Promise<Track[]>>(),
+  mockLoadArtistTracksCount: vi.fn<(artist: Artist) => Promise<number>>(),
   mockLoadArtistTopTracks:
     vi.fn<(artist: Artist, source: RowSource) => Promise<Track[]>>(),
   mockLoadSimilarArtists:
@@ -60,9 +70,13 @@ vi.mock("@/plugins/api", () => ({ api: mockApi, default: mockApi }));
 vi.mock("@/components/artist/artistData", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/artist/artistData")>()),
   loadArtistReleases: mockLoadArtistReleases,
+  artistAlbumsCountBySource: mockArtistAlbumsCountBySource,
   loadArtistAppearsOn: mockLoadArtistAppearsOn,
+  loadArtistAppearsOnCount: mockLoadArtistAppearsOnCount,
   loadArtistDiscography: mockLoadArtistDiscography,
+  loadArtistDiscographyCount: mockLoadArtistDiscographyCount,
   loadArtistTracks: mockLoadArtistTracks,
+  loadArtistTracksCount: mockLoadArtistTracksCount,
   loadArtistTopTracks: mockLoadArtistTopTracks,
   loadSimilarArtists: mockLoadSimilarArtists,
 }));
@@ -135,9 +149,13 @@ describe("useArtistRowData", () => {
     };
     mockApi.getProvider.mockReset();
     mockLoadArtistReleases.mockReset().mockResolvedValue([]);
+    mockArtistAlbumsCountBySource.mockReset().mockResolvedValue(0);
     mockLoadArtistAppearsOn.mockReset().mockResolvedValue([]);
+    mockLoadArtistAppearsOnCount.mockReset().mockResolvedValue(0);
     mockLoadArtistDiscography.mockReset().mockResolvedValue([]);
+    mockLoadArtistDiscographyCount.mockReset().mockResolvedValue(0);
     mockLoadArtistTracks.mockReset().mockResolvedValue([]);
+    mockLoadArtistTracksCount.mockReset().mockResolvedValue(0);
     mockLoadArtistTopTracks.mockReset().mockResolvedValue([]);
     mockLoadSimilarArtists.mockReset().mockResolvedValue([]);
   });
@@ -148,15 +166,72 @@ describe("useArtistRowData", () => {
     vi.useRealTimers();
   });
 
-  it("requests one list for two rows fed by the same source", async () => {
+  it("requests separate typed lists for two rows fed by the same source", async () => {
     const page = setupRowData({ rows: ["albums", "singles_eps"] });
     mockLoadArtistReleases.mockResolvedValue(RELEASES);
 
     await showArtist(page, libraryArtist());
 
-    expect(releaseSources()).toEqual(["library"]);
+    expect(releaseSources()).toEqual(["library", "library"]);
+    expect(mockLoadArtistReleases).toHaveBeenNthCalledWith(
+      1,
+      expect.anything(),
+      "library",
+      expect.objectContaining({
+        limit: 50,
+        albumTypes: [
+          AlbumType.ALBUM,
+          AlbumType.COMPILATION,
+          AlbumType.LIVE,
+          AlbumType.SOUNDTRACK,
+          AlbumType.UNKNOWN,
+        ],
+      }),
+    );
+    expect(mockLoadArtistReleases).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      "library",
+      expect.objectContaining({
+        limit: 50,
+        albumTypes: [AlbumType.SINGLE, AlbumType.EP],
+      }),
+    );
     expect(itemIds(page.albumItems.value)).toEqual(["album-1"]);
     expect(itemIds(page.singleItems.value)).toEqual(["single-1"]);
+  });
+
+  it("bounds release shelves and counts each album type separately", async () => {
+    const page = setupRowData({ rows: ["albums", "singles_eps"] });
+    mockLoadArtistReleases.mockResolvedValue(RELEASES);
+    mockArtistAlbumsCountBySource.mockImplementation(
+      async (_artist, _source, albumTypes) =>
+        albumTypes.includes(AlbumType.SINGLE) ? 2 : 8,
+    );
+
+    await showArtist(page, libraryArtist());
+
+    expect(mockLoadArtistReleases).toHaveBeenCalledTimes(2);
+    expect(mockLoadArtistReleases).toHaveBeenNthCalledWith(
+      1,
+      expect.anything(),
+      "library",
+      {
+        limit: 50,
+        sortField: SortField.YEAR,
+        sortDirection: SortDirection.DESC,
+        albumTypes: [
+          AlbumType.ALBUM,
+          AlbumType.COMPILATION,
+          AlbumType.LIVE,
+          AlbumType.SOUNDTRACK,
+          AlbumType.UNKNOWN,
+        ],
+      },
+    );
+    expect(mockArtistAlbumsCountBySource).toHaveBeenCalledTimes(2);
+    expect(page.albumsMeta.value).toContain("8");
+    expect(page.singlesCount.value).toBe(2);
   });
 
   it("requests a source switched to once, and serves the old one from the cache", async () => {
@@ -228,6 +303,16 @@ describe("useArtistRowData", () => {
     await showArtist(page, libraryArtist());
 
     expect(page.topTracksSourceDisplay.value?.label).toBe("In your library");
+  });
+
+  it("does not fetch all artist tracks when top tracks are available", async () => {
+    const page = setupRowData({ rows: ["top_tracks"] });
+    mockLoadArtistTopTracks.mockResolvedValue([track()]);
+
+    await showArtist(page, libraryArtist());
+
+    expect(mockLoadArtistTracksCount).toHaveBeenCalledTimes(1);
+    expect(mockLoadArtistTracks).not.toHaveBeenCalled();
   });
 
   it("keeps naming a provider artist's own provider when it uses that fallback", async () => {
@@ -312,7 +397,7 @@ describe("useArtistRowData", () => {
       }),
     );
 
-    expect(releaseSources()).toEqual([SPOTIFY]);
+    expect(releaseSources()).toEqual([SPOTIFY, SPOTIFY]);
   });
 
   it("loads the discography once and keeps the order it came in", async () => {

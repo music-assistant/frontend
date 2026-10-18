@@ -50,7 +50,7 @@ describe("useItemsListing", () => {
     scopes.splice(0).forEach((scope) => scope.stop());
   });
 
-  it("filters directionless random options from paged library listings", () => {
+  it("shows random options offered for paged library listings", () => {
     const listing = setupItemsListing({
       sortListing: ListingType.LIBRARY_TRACKS,
       loadPagedData: async () => [],
@@ -63,7 +63,41 @@ describe("useItemsListing", () => {
 
     expect(listing.sortOptions.value.map((option) => option.field)).toEqual([
       SortField.SORT_NAME,
+      SortField.RANDOM,
+      SortField.RANDOM_PLAY_COUNT,
     ]);
+  });
+
+  it("keeps a random seed across pages and changes it for a new listing", async () => {
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = setupItemsListing({ limit: 1, loadPagedData });
+    listing.serverSortOptions.value = [
+      sortOption(SortField.RANDOM, null, false),
+    ];
+    listing.params.value.sortBy = SortField.RANDOM;
+    vi.spyOn(Math, "random")
+      .mockReturnValueOnce(0.25)
+      .mockReturnValueOnce(0.75);
+
+    await listing.loadData(true);
+    const firstSeed = Math.floor(0.25 * Number.MAX_SAFE_INTEGER);
+    expect(loadPagedData).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ randomSeed: firstSeed }),
+    );
+
+    await listing.loadNextPage({ done: vi.fn() });
+    expect(loadPagedData).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ randomSeed: firstSeed, offset: 1 }),
+    );
+
+    await listing.loadData(true, false, true);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        randomSeed: Math.floor(0.75 * Number.MAX_SAFE_INTEGER),
+      }),
+    );
   });
 
   it("sends typed sort parameters and appends the next page", async () => {
