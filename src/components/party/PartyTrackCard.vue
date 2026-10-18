@@ -44,11 +44,18 @@
         :style="{ '--progress-scale': progressPercentage / 100 }"
       ></div>
     </div>
-    <!-- Guest request badge -->
-    <div v-if="isGuestRequest" class="guest-badge" :style="guestBadgeStyle">
-      <Rocket v-if="isBoost" class="badge-icon" />
-      <UserRound v-else class="badge-icon" />
-      <span v-if="position === 'current'">{{ badgeText }}</span>
+    <div v-if="isGuestRequest || showSkipVotes" class="card-badges">
+      <!-- Guest request badge -->
+      <div v-if="isGuestRequest" class="guest-badge" :style="guestBadgeStyle">
+        <Rocket v-if="isBoost" class="badge-icon" />
+        <UserRound v-else class="badge-icon" />
+        <span v-if="position === 'current'">{{ badgeText }}</span>
+      </div>
+      <!-- Skip vote progress for the current track -->
+      <div v-if="showSkipVotes" class="skip-vote-badge">
+        <SkipForward class="badge-icon" />
+        <span>{{ skipVotesText }}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -61,7 +68,7 @@ import { usePartyConfig } from "@/composables/usePartyConfig";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Rocket, UserRound } from "@lucide/vue";
+import { Rocket, SkipForward, UserRound } from "@lucide/vue";
 import Color from "color";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
@@ -173,6 +180,26 @@ const badgeText = computed(() => {
   if (isBoost.value) return $t("providers.party.boost");
   return $t("providers.party.request");
 });
+
+const skipVotesRequired = computed(
+  () => partyConfig.value?.skip_votes_required ?? 1,
+);
+const skipVotes = computed(
+  () => props.queueItem?.extra_attributes?.party_skip_votes ?? 0,
+);
+
+// Only show the tally while a vote is open, and not when one vote skips right away
+const showSkipVotes = computed(
+  () =>
+    props.position === "current" &&
+    (partyConfig.value?.enable_skip_song ?? false) &&
+    skipVotesRequired.value > 1 &&
+    skipVotes.value > 0,
+);
+
+const skipVotesText = computed(() =>
+  $t("providers.party.skip_votes", [skipVotes.value, skipVotesRequired.value]),
+);
 
 // Computed track name - prefer media_item.name for proper track title
 const trackName = computed(() => {
@@ -338,6 +365,35 @@ watch(
     0 0 2vh var(--guest-shadow);
 }
 
+.card-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6vh;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.skip-vote-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.6vh;
+  padding: 0.5vh 1.2vh;
+  background: rgba(var(--v-theme-error), 0.3);
+  border: 1px solid rgba(var(--v-theme-error), 0.5);
+  border-radius: 999px;
+  color: rgba(var(--v-theme-on-surface), 0.9);
+  font-size: clamp(0.65rem, 1.2vh, 1.1rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.white-text .skip-vote-badge {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .guest-badge {
   /* Color set via inline style from config */
   display: flex;
@@ -352,8 +408,6 @@ watch(
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  flex-shrink: 0;
-  margin-left: auto;
 }
 
 .badge-icon {

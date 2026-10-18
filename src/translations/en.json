@@ -1699,6 +1699,7 @@
             "nothing_playing": "Nothing Playing Right Now",
             "qr_failed": "Failed to generate QR code",
             "request": "Request",
+            "skip_votes": "Skip {0}/{1}",
             "link_copy_fail": "Failed to copy link",
             "link_copy_success": "Link copied!",
             "confirm_disable_guest_access": "Are you sure you want to disable guest access? Guests will no longer be able to join the party, browse music, or add songs to the queue.",
