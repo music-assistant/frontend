@@ -330,6 +330,7 @@ import {
   pinShortcutStandalone,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
+import { isAuthorOrNarrator } from "@/helpers/author_narrator";
 import { runWithConcurrency } from "@/helpers/concurrency";
 import {
   FAVORITABLE_MEDIA_TYPES,
@@ -1801,13 +1802,16 @@ const SHUFFLEABLE_MEDIA_TYPES = [
  * Whether starting the given items shuffled is worth offering.
  *
  * A single item needs to be a container to have an order to shuffle; a hand-picked
- * selection of several items is the user's own list, so it always qualifies.
+ * selection of several items is the user's own list, so it always qualifies. An
+ * author's or narrator's audiobooks play in their collection order.
  */
 const canPlayShuffled = function (
   items: MediaItemTypeOrItemMapping[],
 ): boolean {
   return (
-    items.length > 1 || SHUFFLEABLE_MEDIA_TYPES.includes(items[0].media_type)
+    items.length > 1 ||
+    (SHUFFLEABLE_MEDIA_TYPES.includes(items[0].media_type) &&
+      !isAuthorOrNarrator(items[0]))
   );
 };
 </script>
