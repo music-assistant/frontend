@@ -121,6 +121,7 @@ import type {
   RuleField,
   RuleOperator,
   RuleRow,
+  RuleValue,
 } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import type { Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -152,6 +153,7 @@ function fieldLabel(field: RuleField): string {
     .with("album_type", () => $t("album_type_label"))
     .with("artist", () => $t("artist"))
     .with("album", () => $t("album"))
+    .with("folder", () => $t("smart_playlist.field_folder"))
     .with("favorite", () => $t("smart_playlist.field_favorite"))
     .with("explicit", () => $t("smart_playlist.field_explicit"))
     .with("year", () => $t("smart_playlist.field_year"))
@@ -196,7 +198,7 @@ function onChangeLastPlayed(
   });
 }
 
-function onAddValue(rule: RuleRow, v: { id: number; name: string }) {
+function onAddValue(rule: RuleRow, v: RuleValue) {
   if (rule.values.some((x) => x.id === v.id)) return;
   emit("update-rule", rule.uid, { values: [...rule.values, v] });
 }
