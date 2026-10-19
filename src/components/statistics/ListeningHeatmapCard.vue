@@ -58,7 +58,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import BaseChartCard from "./BaseChartCard.vue";
-import { $t, i18n } from "@/plugins/i18n";
+import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
 
 interface HeatmapPoint {
   hour: number;
@@ -76,14 +76,18 @@ const props = withDefaults(
 );
 
 const hours = Array.from({ length: 24 }, (_, hour) => hour);
-const weekdays = computed(() =>
-  Array.from({ length: 7 }, (_, weekday) =>
-    new Intl.DateTimeFormat(i18n.global.locale.value, {
+const weekdays = computed(() => {
+  const formatter = new Intl.DateTimeFormat(
+    canonicalizeLocale(i18n.global.locale.value),
+    {
       weekday: "short",
       timeZone: "UTC",
-    }).format(new Date(Date.UTC(2024, 0, weekday + 1))),
-  ),
-);
+    },
+  );
+  return Array.from({ length: 7 }, (_, weekday) =>
+    formatter.format(new Date(Date.UTC(2024, 0, weekday + 1))),
+  );
+});
 
 const activity = computed(() => {
   const counts = Array.from({ length: 7 }, () => Array<number>(24).fill(0));
