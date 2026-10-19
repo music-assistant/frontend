@@ -12,7 +12,7 @@
       :icon-action="iconAction"
       :title="title"
       :subtitle="subtitle"
-      :count="params.search ? pagedItems.length : total || allItems.length"
+      :count="params.search ? pagedItems.length : (total ?? pagedItems.length)"
       color="transparent"
       :menu-items="menuItems"
       :enforce-overflow-menu="true"
@@ -53,10 +53,7 @@
       </template>
     </Toolbar>
 
-    <div
-      v-if="props.sortListing && !store.mobileLayout"
-      class="listing-sort-chips-row h-12"
-    >
+    <div v-if="showSortChipsRow" class="listing-sort-chips-row h-12">
       <LibrarySortControls
         v-if="sortOptionsLoaded && sortOptions.length"
         mode="chips"
@@ -122,13 +119,13 @@
       style="overflow: hidden"
     >
       <TrackTableHeader
-        v-if="showTrackTable && (loading || pagedItems.length)"
+        v-if="showTrackTable && (loadPending || pagedItems.length)"
         :columns="trackColumns"
         :enabled="enabledTrackColumns"
         @update:enabled="setEnabledTrackColumns"
       />
       <!-- Skeleton loading states -->
-      <template v-if="loading && pagedItems.length === 0">
+      <template v-if="loadPending && pagedItems.length === 0">
         <div v-if="viewMode === 'list'">
           <ListViewSkeleton v-for="n in 8" :key="'skeleton-list-' + n" />
         </div>
@@ -174,7 +171,7 @@
           !tempHide &&
           !firstLoadFailed &&
           !(pagedItems.length == 0 && allItemsReceived) &&
-          !(loading && pagedItems.length === 0)
+          !(loadPending && pagedItems.length === 0)
         "
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
@@ -219,7 +216,9 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
-              :sort-by="params.sortBy"
+              :sort-by="props.sortListing ? undefined : params.sortBy"
+              :sort-field="displayedSort.sortField"
+              :sort-direction="displayedSort.sortDirection"
               @select="onSelect"
             />
           </v-col>
@@ -241,7 +240,9 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
-              :sort-by="params.sortBy"
+              :sort-by="props.sortListing ? undefined : params.sortBy"
+              :sort-field="displayedSort.sortField"
+              :sort-direction="displayedSort.sortDirection"
               @select="onSelect"
             />
           </v-col>
@@ -270,7 +271,9 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
-              :sort-by="params.sortBy"
+              :sort-by="props.sortListing ? undefined : params.sortBy"
+              :sort-field="displayedSort.sortField"
+              :sort-direction="displayedSort.sortDirection"
               @select="onSelect"
             />
             <ListviewItem
@@ -291,7 +294,9 @@
               :show-details="itemtype.includes('versions')"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
-              :sort-by="params.sortBy"
+              :sort-by="props.sortListing ? undefined : params.sortBy"
+              :sort-field="displayedSort.sortField"
+              :sort-direction="displayedSort.sortDirection"
               @select="onSelect"
             />
           </template>
@@ -345,7 +350,9 @@
               anchor.y,
               parentItem,
               true,
-              params.sortBy,
+              undefined,
+              displayedSort.sortField,
+              displayedSort.sortDirection,
             )
         "
       />
@@ -427,6 +434,7 @@ import {
   PodcastEpisode,
   ProviderFeature,
   ProviderType,
+  SortDirection,
   Radio,
   SortField,
   type Album,
@@ -440,7 +448,6 @@ import {
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
-  ArrowUpDown,
   CheckCheck,
   ChevronDown,
   ChevronUp,
@@ -484,7 +491,6 @@ import PanelviewItemCompact from "./PanelviewItemCompact.vue";
 // properties
 export interface Props {
   itemtype: string;
-  sortKeys?: string[];
   sortListing?: ListingType;
   sortOptionExcludeFields?: SortField[];
   showTrackNumber?: boolean;
@@ -512,7 +518,7 @@ export interface Props {
   // music providers).
   providerFilterOptions?: string[];
   // when set, the explicit provider list above also offers the library, as its
-  // first option: loadItems is handed "library" while it is the selected one
+  // first option
   libraryFilterOption?: boolean;
   // the option a required selection starts on, when nothing valid is stored
   // (default: the first one offered)
@@ -538,8 +544,6 @@ export interface Props {
   extraMenuItems?: ToolBarMenuItem[];
   // loadPagedData callback is provided for serverside paging/sorting
   loadPagedData?: LoadPagedDataFn;
-  // loadItems callback is provided for flat non-paged listings
-  loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   limit?: number;
   total?: number;
   infiniteScroll?: boolean;
@@ -556,7 +560,6 @@ export interface Props {
   trackTable?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
-  sortKeys: () => ["name", "sort_name"],
   sortListing: undefined,
   sortOptionExcludeFields: () => [],
   showTrackNumber: true,
@@ -594,7 +597,6 @@ const props = withDefaults(defineProps<Props>(), {
   showHideFullyPlayedFilter: false,
   extraMenuItems: undefined,
   loadPagedData: undefined,
-  loadItems: undefined,
   path: undefined,
   icon: undefined,
   iconAction: undefined,
@@ -627,9 +629,8 @@ const getActiveTab = () => {
 };
 
 const {
-  allItems,
   allItemsReceived,
-  initialDataReceived,
+  displayedSort,
   isDisposed,
   librarySorting,
   loadAllItems,
@@ -646,6 +647,19 @@ const {
   sortOptionsLoaded,
   tempHide,
 } = useItemsListing(props, getActiveTab);
+// the first load waits for the sort options; until then the scroller must not
+// load a page of its own
+const loadPending = computed(
+  () => loading.value || (!!props.sortListing && !sortOptionsLoaded.value),
+);
+// the desktop row of quick sorts keeps its height while the sort options load,
+// so the items do not shift; a listing without quick sorts has no row
+const showSortChipsRow = computed(
+  () =>
+    !!props.sortListing &&
+    !store.mobileLayout &&
+    (!sortOptionsLoaded.value || librarySorting.quickOptions.value.length > 0),
+);
 
 watch(
   () => props.toolBarTabs,
@@ -753,8 +767,11 @@ const discNumber = (i: MediaItemType) =>
 const listDisplayItems = computed<(MediaItemType | DiscHeader)[]>(() => {
   const multiDisc =
     props.itemtype === "albumtracks" &&
-    allItems.value.some((i) => (discNumber(i) ?? 0) > 1);
-  if (!multiDisc || params.value.sortBy !== "track_number") {
+    pagedItems.value.some((i) => (discNumber(i) ?? 0) > 1);
+  const isTrackNumberAscending =
+    displayedSort.value.sortField === SortField.TRACK_NUMBER &&
+    displayedSort.value.sortDirection === SortDirection.ASC;
+  if (!multiDisc || !isTrackNumberAscending) {
     return pagedItems.value;
   }
   const result: (MediaItemType | DiscHeader)[] = [];
@@ -1171,7 +1188,7 @@ const saveProviderFilter = () =>
   );
 
 const showEmptyState = computed(
-  () => !loading.value && !loadError.value && pagedItems.value.length == 0,
+  () => !loadPending.value && !loadError.value && pagedItems.value.length == 0,
 );
 
 const firstLoadFailed = computed(
@@ -1256,12 +1273,18 @@ const hasActiveFilters = computed(() => {
   );
 });
 
-// total number of items this listing represents. For flat (loadItems)
-// listings every item is loaded up front, so allItems holds the true total.
-// Server-paged listings only know their total when the parent passes it.
+// Server-paged listings only know their total when the parent passes it. An
+// unfiltered listing that is loaded to its end, or holds less than a page,
+// counts what it holds: a small listing then keeps search hidden while it
+// (re)loads.
 const totalItemCount = computed(() => {
   if (props.total !== undefined) return props.total;
-  if (props.loadItems != null) return allItems.value.length;
+  if (
+    !hasActiveFilters.value &&
+    (allItemsReceived.value || pagedItems.value.length < props.limit)
+  ) {
+    return pagedItems.value.length;
+  }
   // server-paged without a known total: assume large enough to warrant search
   return Number.POSITIVE_INFINITY;
 });
@@ -1328,7 +1351,7 @@ const musicProviders = computed(() => {
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
     if (!props.libraryFilterOption) return providers;
-    // the library is not a provider instance: loadItems is handed "library"
+    // the library is not a provider instance: the listing callback is handed "library"
     return [{ label: t("source_library"), value: "library" }, ...providers];
   }
 
@@ -1611,25 +1634,6 @@ const menuItems = computed(() => {
     });
   }
 
-  // sort options
-  if (!props.sortListing && props.sortKeys?.length) {
-    items.push({
-      label: "tooltip.sort_options",
-      icon: ArrowUpDown,
-      disabled: props.sortKeys.length <= 1 || loading.value,
-      overflowAllowed: true,
-      subItems: props.sortKeys.map((sortKey) => {
-        return {
-          label: `sort.${sortKey}`,
-          selected: params.value.sortBy == sortKey,
-          action: () => {
-            changeSort(sortKey);
-          },
-        };
-      }),
-    });
-  }
-
   // toggle search (auto-hidden for small listings)
   if (searchAvailable.value) {
     items.push({
@@ -1727,9 +1731,8 @@ const menuItems = computed(() => {
   return items;
 });
 
-// Re-derive from the current props.path: browse reuses one ItemsListing
-// instance across folders, so a ref bound to the mount-time path would read
-// and reset the wrong folder's saved sort/view settings.
+// Re-derive from the current props.path: a listing that stays mounted while
+// its path changes must not read and reset the settings saved for the old path.
 const savedPrefs = computed(
   () =>
     getItemsListingPreferences(props.path || props.itemtype, props.itemtype)
@@ -1786,10 +1789,6 @@ const restoreSettings = async function () {
         );
       }
     }
-  } else if (prefs.sortBy && props.sortKeys.includes(prefs.sortBy)) {
-    params.value.sortBy = prefs.sortBy;
-  } else {
-    params.value.sortBy = props.sortKeys[0];
   }
 
   // get stored/default favoriteOnlyFilter for this itemtype
@@ -1928,6 +1927,10 @@ onBeforeUnmount(() => {
 if (props.restoreState) {
   // handle restore state
   onBeforeUnmount(() => {
+    if (loading.value || loadError.value) {
+      store.prevState = undefined;
+      return;
+    }
     const key = props.path || props.itemtype;
     const el = document.querySelector(".content-section");
 
@@ -1937,10 +1940,9 @@ if (props.restoreState) {
       carried: offeredCarriedProvider() !== undefined,
       scrollPos: el?.scrollTop || 0,
       pagedItems: pagedItems.value,
-      allItems: allItems.value,
       allItemsReceived: allItemsReceived.value,
-      initialDataReceived: initialDataReceived.value,
       params: params.value,
+      displayedSort: displayedSort.value,
     };
   });
 }
@@ -1971,7 +1973,6 @@ watch(
     if (loading.value == true) return;
     // completely reset if the path changes
     pagedItems.value = [];
-    allItems.value = [];
     loadData(true);
   },
 );
@@ -1982,7 +1983,6 @@ watch(
     if (props.refreshOnParentUpdate) {
       loadData(true);
     } else {
-      allItems.value = [];
       newContentAvailable.value = true;
     }
   },
@@ -2113,14 +2113,17 @@ onMounted(async () => {
     props.restoreState &&
     store.prevState?.path == key &&
     store.prevState.parentUri == props.parentItem?.uri &&
+    store.prevState.params.sortField ===
+      store.prevState.displayedSort.sortField &&
+    store.prevState.params.sortDirection ===
+      store.prevState.displayedSort.sortDirection &&
     cachedVisitApplies()
   ) {
     restoredFromPrevState = true;
     params.value = store.prevState.params;
     pagedItems.value = store.prevState.pagedItems;
-    allItems.value = store.prevState.allItems;
+    displayedSort.value = store.prevState.displayedSort;
     allItemsReceived.value = store.prevState.allItemsReceived;
-    initialDataReceived.value = store.prevState.initialDataReceived;
     if (props.sortListing) {
       params.value.sortBy = librarySorting.normalizeSortBy(params.value.sortBy);
     }
@@ -2216,9 +2219,12 @@ watch(
 );
 
 const selectAll = async function () {
-  // We use the total length even when searching, since we can't know
-  // how many items will be loaded after filtering
-  const itemCount = props.total || allItems.value.length;
+  // Unknown server totals are treated conservatively to avoid instant selection.
+  const itemCount =
+    props.total ??
+    (allItemsReceived.value
+      ? pagedItems.value.length
+      : Number.POSITIVE_INFINITY);
   if (itemCount <= 250) {
     await selectEveryItem();
     return;
@@ -2235,7 +2241,8 @@ const selectAll = async function () {
 };
 
 defineExpose({
-  sortBy: computed(() => params.value.sortBy),
+  sortField: computed(() => displayedSort.value.sortField),
+  sortDirection: computed(() => displayedSort.value.sortDirection),
   reload: () => loadData(true, true),
   // whether the item is absent while every item of the unfiltered listing is
   // loaded; a filter leaves items out on purpose

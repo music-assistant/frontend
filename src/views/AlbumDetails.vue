@@ -6,7 +6,8 @@
       :blur-backdrop="backdrop.blurred"
       :track-count="albumTracks?.length"
       :duration="runningTime"
-      :tracks-sort-by="tracksListing?.[0]?.sortBy"
+      :tracks-sort-field="tracksListing?.[0]?.sortField"
+      :tracks-sort-direction="tracksListing?.[0]?.sortDirection"
       @edit-rows="rowsEditorOpen = true"
     />
 
@@ -26,14 +27,8 @@
           "
           :show-refresh-button="false"
           :allow-key-hooks="true"
-          :load-items="loadTracks"
-          :sort-keys="[
-            'track_number',
-            'name',
-            'sort_name',
-            'duration',
-            'duration_desc',
-          ]"
+          :load-paged-data="loadTracks"
+          :sort-listing="ListingType.ALBUM_TRACKS"
           :title="$t('tracks')"
           :refresh-on-parent-update="true"
         />
@@ -142,6 +137,7 @@ import { api } from "@/plugins/api";
 import { MUSICBRAINZ_PROVIDER } from "@/plugins/api/helpers";
 import {
   AlbumType,
+  ListingType,
   MediaItemType,
   MediaType,
   Scope,
@@ -166,9 +162,11 @@ const router = useRouter();
 const itemDetails = ref<Album>();
 const rowsEditorOpen = ref(false);
 
-// the album's own tracks, as the listing below last loaded them unfiltered:
-// what the hero counts and times
+// all of the album's own tracks, whatever the listing below shows: what the
+// hero counts and times
 const albumTracks = ref<Track[]>();
+// counts the loads of those tracks, so only the latest one sets them
+let heroTracksRequest = 0;
 // the tracks listing (inside the rows loop, so held as an array), whose sort
 // order the play button follows
 const tracksListing = ref<InstanceType<typeof ItemsListing>[]>();
@@ -295,6 +293,7 @@ const loadItemDetails = async function () {
   // a slower response for a previous album must not replace the current one
   if (itemId !== props.itemId || provider !== props.provider) return;
   itemDetails.value = album;
+  if (album) loadHeroTracks(album);
 };
 
 watch(
@@ -333,13 +332,28 @@ watch(
   },
 );
 
-useDetailItemUpdates(itemDetails, { providerItem: props });
+useDetailItemUpdates(itemDetails, {
+  providerItem: props,
+  // an update can change the tracks the hero counts and times
+  onUpdate: () => {
+    if (itemDetails.value) loadHeroTracks(itemDetails.value);
+  },
+});
 
 const loadTracks = async function (params: LoadDataParams) {
-  if (!itemDetails.value) return [];
-  const tracks = await loadAlbumTracks(itemDetails.value, params.libraryOnly);
-  // the hero counts the whole album, not the library half of it
-  if (!params.libraryOnly) albumTracks.value = tracks;
+  const album = itemDetails.value;
+  if (!album) return [];
+  const tracks = await loadAlbumTracks(
+    album,
+    !!params.libraryOnly,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+    params.favoritesOnly,
+  );
+  if (itemDetails.value?.uri !== album.uri) return [];
   return tracks;
 };
 
@@ -355,6 +369,23 @@ const UpdateItemInDb = async function () {
 /** Switch the artist source from the shelf badge; the shelf reloads that source. */
 function selectMoreFromArtistSource(source: RowSource) {
   albumRows.setSource("more_from_artist", source);
+}
+
+/** Loads every track of the album for the hero; a failure is reported by the api. */
+function loadHeroTracks(album: Album) {
+  const request = ++heroTracksRequest;
+  loadAlbumTracks(album, false, undefined, 0).then(
+    (tracks) => {
+      // a slower response, of an older load or a previous album, must not count
+      if (
+        request === heroTracksRequest &&
+        itemDetails.value?.uri === album.uri
+      ) {
+        albumTracks.value = tracks;
+      }
+    },
+    () => undefined,
+  );
 }
 
 /**

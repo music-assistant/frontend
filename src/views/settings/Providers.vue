@@ -1,5 +1,5 @@
 <template>
-  <div class="providers-header w-100">
+  <div class="providers-header w-full">
     <ProviderFilters v-if="showSearch" @update:search="searchQuery = $event" />
     <!-- the empty state below carries the add button while there is nothing to list -->
     <Button
@@ -13,7 +13,7 @@
     </Button>
   </div>
 
-  <div class="pl-5 font-weight-medium">
+  <div class="pl-5 font-medium">
     {{
       $t("settings.providers_total", filteredProviders.length, {
         named: { count: filteredProviders.length },
@@ -74,7 +74,7 @@
 
     <Empty
       v-if="showMusicEmptyState"
-      class="border"
+      class="rounded-(--radius-xl) border"
       data-testid="music-sources-empty"
     >
       <EmptyMedia variant="icon">
@@ -101,16 +101,11 @@
       </EmptyContent>
     </Empty>
 
-    <div
+    <FilterEmptyState
       v-else-if="loaded && filteredProviders.length === 0"
-      class="empty-state"
-    >
-      <v-icon icon="mdi-puzzle-outline" size="64" class="empty-icon" />
-      <div class="empty-title">{{ $t("no_content") }}</div>
-      <div class="empty-message">
-        {{ $t("no_content_filter") }}
-      </div>
-    </div>
+      :icon="Puzzle"
+      data-testid="providers-empty"
+    />
   </Container>
 
   <!-- Audio analysis status hint -->
@@ -146,6 +141,7 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
+import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
 import ProviderRow from "@/components/settings/providers/ProviderRow.vue";
@@ -187,7 +183,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { Info, Music, Plus } from "@lucide/vue";
+import { Info, Music, Plus, Puzzle } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, inject, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
@@ -402,33 +398,5 @@ const openMenu = function (evt: Event, item: ProviderConfig) {
     width: 100%;
     align-self: stretch;
   }
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-  width: 100%;
-}
-
-.empty-icon {
-  color: rgba(var(--v-theme-on-surface), 0.3);
-  margin-bottom: 16px;
-}
-
-.empty-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-bottom: 8px;
-}
-
-.empty-message {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  line-height: 1.4;
 }
 </style>

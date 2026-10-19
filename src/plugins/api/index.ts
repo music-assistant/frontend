@@ -45,6 +45,8 @@ import {
   type UserSummary,
   AlbumType,
   Audiobook,
+  AuthExchangeResult,
+  AuthorizationStart,
   AuthProvider,
   ConfigActionResult,
   ConfigEntry,
@@ -97,7 +99,11 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 86;
+export const MIN_SERVER_SCHEMA_VERSION = 96;
+
+// Server error codes of a missing or rejected sign-in; the login UI reports these itself
+const AUTHENTICATION_REQUIRED_ERROR_CODE = 20;
+const AUTHENTICATION_FAILED_ERROR_CODE = 21;
 
 export interface CommandOptions {
   /**
@@ -114,6 +120,9 @@ export interface CommandOptions {
 export interface PlayMediaOptions {
   start_item?: PlayableMediaItemType | string;
   queue_id?: string;
+  sort_field?: SortField;
+  sort_direction?: SortDirection;
+  /** @deprecated Use sort_field and sort_direction. */
   sort_by?: string;
   start_from_beginning?: boolean;
   /** Set playback order for immediate-play options; omit to let the server decide. */
@@ -357,6 +366,7 @@ export class MusicAssistantApi {
       user?: User;
       success?: boolean;
       error?: string;
+      translation_key?: string;
     }>("auth/login", {
       username,
       password,
@@ -544,10 +554,20 @@ export class MusicAssistantApi {
   public getTrackVersions(
     item_id: string,
     provider_instance_id_or_domain: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Track[]> {
     return this.sendCommand("music/tracks/track_versions", {
       item_id,
       provider_instance_id_or_domain,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
     });
   }
 
@@ -555,23 +575,41 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     in_library_only = false,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Album[]> {
     return this.sendCommand("music/tracks/track_albums", {
       item_id,
       provider_instance_id_or_domain,
       in_library_only,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
     });
   }
 
   public getSimilarTracks(
     item_id: string,
     provider_instance_id_or_domain: string,
-    limit = 25,
+    limit: number,
+    search?: string,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Track[]> {
     return this.sendCommand("music/tracks/similar_tracks", {
       item_id,
       provider_instance_id_or_domain,
       limit,
+      search,
+      offset,
+      sort_field,
+      sort_direction,
     });
   }
 
@@ -704,22 +742,36 @@ export class MusicAssistantApi {
   public getArtist(
     item_id: string,
     provider_instance_id_or_domain: string,
+    options?: CommandOptions,
   ): Promise<Artist> {
-    return this.sendCommand("music/artists/get_artist", {
-      item_id,
-      provider_instance_id_or_domain,
-    });
+    return this.sendCommand(
+      "music/artists/get_artist",
+      { item_id, provider_instance_id_or_domain },
+      options,
+    );
   }
 
   public getArtistTracks(
     item_id: string,
     provider_instance_id_or_domain: string,
     provider_filter?: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    favorite?: boolean,
   ): Promise<Track[]> {
     return this.sendCommand("music/artists/artist_tracks", {
       item_id,
       provider_instance_id_or_domain,
       provider_filter,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
+      favorite,
     });
   }
 
@@ -727,11 +779,21 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     provider_filter?: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Track[]> {
     return this.sendCommand("music/artists/top_tracks", {
       item_id,
       provider_instance_id_or_domain,
       provider_filter,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
     });
   }
 
@@ -739,11 +801,25 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     provider_filter?: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    album_types?: AlbumType[],
+    favorite?: boolean,
   ): Promise<Album[]> {
     return this.sendCommand("music/artists/artist_albums", {
       item_id,
       provider_instance_id_or_domain,
       provider_filter,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
+      album_types,
+      favorite,
     });
   }
 
@@ -751,11 +827,21 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     provider_filter?: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Album[]> {
     return this.sendCommand("music/artists/artist_appears_on", {
       item_id,
       provider_instance_id_or_domain,
       provider_filter,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
     });
   }
 
@@ -763,11 +849,21 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     provider_filter?: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Album[]> {
     return this.sendCommand("music/artists/top_albums", {
       item_id,
       provider_instance_id_or_domain,
       provider_filter,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
     });
   }
 
@@ -779,24 +875,44 @@ export class MusicAssistantApi {
    * (provider "musicbrainz", without provider mappings), which the server resolves to a
    * real album when one is opened or added.
    */
-  public getArtistDiscography(item_id: string): Promise<Album[]> {
+  public getArtistDiscography(
+    item_id: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+  ): Promise<Album[]> {
     return this.sendCommand("music/artists/discography", {
       item_id,
       provider_instance_id_or_domain: "library",
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
     });
   }
 
   public getSimilarArtists(
     item_id: string,
     provider_instance_id_or_domain: string,
+    limit: number,
     provider_filter?: string,
-    limit = 25,
+    search?: string,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Artist[]> {
     return this.sendCommand("music/artists/similar_artists", {
       item_id,
       provider_instance_id_or_domain,
       provider_filter,
       limit,
+      search,
+      sort_field,
+      sort_direction,
+      offset,
     });
   }
 
@@ -806,6 +922,12 @@ export class MusicAssistantApi {
     artist_type?: ArtistType,
     in_library_only?: boolean,
     collapse_collections?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    provider_filter?: string,
   ): Promise<(Audiobook | MediaCollection<Audiobook>)[]> {
     return this.sendCommand("music/artists/artist_audiobooks", {
       item_id,
@@ -813,6 +935,12 @@ export class MusicAssistantApi {
       artist_type,
       in_library_only,
       collapse_collections,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
+      provider_filter,
     });
   }
 
@@ -870,21 +998,43 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     in_library_only = false,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    favorite?: boolean,
   ): Promise<Track[]> {
     return this.sendCommand("music/albums/album_tracks", {
       item_id,
       provider_instance_id_or_domain,
       in_library_only,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
+      favorite,
     });
   }
 
   public getAlbumVersions(
     item_id: string,
     provider_instance_id_or_domain: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Album[]> {
     return this.sendCommand("music/albums/album_versions", {
       item_id,
       provider_instance_id_or_domain,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
     });
   }
 
@@ -956,11 +1106,23 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     force_refresh?: boolean,
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<(Track | Radio | PodcastEpisode | Audiobook)[]> {
     return this.sendCommand("music/playlists/playlist_tracks", {
       item_id,
       provider_instance_id_or_domain,
       force_refresh,
+      favorite,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
     });
   }
 
@@ -1144,10 +1306,20 @@ export class MusicAssistantApi {
   public getRadioVersions(
     item_id: string,
     provider_instance_id_or_domain: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Radio[]> {
     return this.sendCommand("music/radios/radio_versions", {
       item_id,
       provider_instance_id_or_domain,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
     });
   }
 
@@ -1209,19 +1381,37 @@ export class MusicAssistantApi {
 
   public getAudiobookCollection(
     item_id: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    favorite?: boolean,
   ): Promise<MediaCollection<Audiobook>> {
     return this.sendCommand("music/audiobooks/get_collection", {
       item_id,
+      search,
+      limit,
+      offset,
+      favorite,
     });
   }
 
   public getAudiobookVersions(
     item_id: string,
     provider_instance_id_or_domain: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Audiobook[]> {
     return this.sendCommand("music/audiobooks/audiobook_versions", {
       item_id,
       provider_instance_id_or_domain,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
     });
   }
 
@@ -1471,20 +1661,44 @@ export class MusicAssistantApi {
   public gePodcastVersions(
     item_id: string,
     provider_instance_id_or_domain: string,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<Podcast[]> {
     return this.sendCommand("music/podcasts/podcast_versions", {
       item_id,
       provider_instance_id_or_domain,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
     });
   }
 
   public getPodcastEpisodes(
     item_id: string,
     provider_instance_id_or_domain: string,
+    fully_played?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    exclude_item_id?: string,
   ): Promise<PodcastEpisode[]> {
     return this.sendCommand("music/podcasts/podcast_episodes", {
       item_id,
       provider_instance_id_or_domain,
+      fully_played,
+      search,
+      limit,
+      offset,
+      sort_field,
+      sort_direction,
+      exclude_item_id,
     });
   }
 
@@ -1659,10 +1873,19 @@ export class MusicAssistantApi {
     path?: string,
     player_id?: string,
     options?: CommandOptions,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
   ): Promise<MediaItemType[]> {
     // Browse Music providers.
     // player_id scopes player-bound audio sources to that player.
-    return this.sendCommand("music/browse", { path, player_id }, options);
+    return this.sendCommand(
+      "music/browse",
+      { path, player_id, search, limit, offset, sort_field, sort_direction },
+      options,
+    );
   }
 
   public search(
@@ -1924,6 +2147,7 @@ export class MusicAssistantApi {
       offset,
     });
   }
+
   public queueCommandClear(queueId: string) {
     // Clear all items in the queue.
     this.playerQueueCommand(queueId, "clear");
@@ -2430,9 +2654,9 @@ export class MusicAssistantApi {
     if (
       !queue_id &&
       store.activePlayer?.active_source &&
-      store.activePlayer?.active_source in this.queues
+      store.activePlayer.active_source in this.queues
     ) {
-      queue_id = store.activePlayer?.active_source;
+      queue_id = store.activePlayer.active_source;
     } else if (!queue_id) {
       queue_id = store.activePlayer?.player_id;
     }
@@ -2442,6 +2666,8 @@ export class MusicAssistantApi {
       option,
       start_item: options.start_item,
       sort_by: options.sort_by,
+      sort_field: options.sort_field,
+      sort_direction: options.sort_direction,
       start_from_beginning: options.start_from_beginning,
       shuffle: options.shuffle,
     };
@@ -3215,14 +3441,9 @@ export class MusicAssistantApi {
         console.error("[resultMessage]", msg);
 
         // Don't show toast for authentication errors - they're handled by the login UI
-        const errorMsg = msg.details || "";
         const isAuthError =
-          errorMsg.includes("Invalid credentials") ||
-          errorMsg.includes("Invalid username") ||
-          errorMsg.includes("Invalid password") ||
-          errorMsg.includes("Authentication failed") ||
-          errorMsg.includes("Authentication required") ||
-          errorMsg.toLowerCase().includes("unauthorized");
+          msg.error_code === AUTHENTICATION_REQUIRED_ERROR_CODE ||
+          msg.error_code === AUTHENTICATION_FAILED_ERROR_CODE;
 
         if (!isAuthError) {
           toast.error(msg.details || String(msg.error_code));
@@ -3465,6 +3686,54 @@ export class MusicAssistantApi {
   public async getAuthProviders(): Promise<AuthProvider[]> {
     // Get list of available authentication providers
     return await this.sendCommand<AuthProvider[]>("auth/providers");
+  }
+
+  /**
+   * Start a sign-in with a provider that redirects the browser.
+   *
+   * :param providerId: The login provider to sign in with.
+   * :param returnUrl: The URL to come back to after signing in.
+   * :param codeChallenge: The S256 challenge of the app's code verifier. With
+   *     it the provider returns to the remote app, which completes the sign-in
+   *     with exchangeAuthCode; only accepted over Remote Access.
+   */
+  public async startAuthorization(
+    providerId: string,
+    returnUrl: string,
+    codeChallenge?: string,
+  ): Promise<AuthorizationStart> {
+    return await this.sendCommand<AuthorizationStart>(
+      "auth/authorization_url",
+      {
+        provider_id: providerId,
+        return_url: returnUrl,
+        ...(codeChallenge && {
+          code_challenge: codeChallenge,
+          code_challenge_method: "S256",
+          redirect_target: "app",
+        }),
+      },
+    );
+  }
+
+  /**
+   * Complete a sign-in that returned to the remote app.
+   *
+   * :param state: The state of the sign-in.
+   * :param code: The authorization code it returned with.
+   * :param codeVerifier: The code verifier of the challenge it started with.
+   */
+  public async exchangeAuthCode(
+    state: string,
+    code: string,
+    codeVerifier: string,
+  ): Promise<AuthExchangeResult> {
+    return await this.sendCommand<AuthExchangeResult>("auth/exchange", {
+      state,
+      code,
+      code_verifier: codeVerifier,
+      device_name: getDeviceName(),
+    });
   }
 
   public async logout(): Promise<boolean> {

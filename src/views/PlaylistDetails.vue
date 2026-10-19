@@ -6,6 +6,8 @@
       :blur-backdrop="backdrop.blurred"
       :track-count="playlistTracks?.length"
       :duration="runningTime"
+      :tracks-sort-field="tracksListing?.[0]?.sortField"
+      :tracks-sort-direction="tracksListing?.[0]?.sortDirection"
       :has-rules="!!smartRules"
       :can-edit-rules="!!smartRules && canEditLibrary"
       :can-share="canShare"
@@ -28,6 +30,7 @@
           <!-- the listing keeps its own toolbar, but takes the title and gutter of the rows around it -->
           <ItemsListing
             v-else
+            ref="tracksListing"
             class="px-4 pt-3 max-md:px-1 max-md:pt-2 [&>.v-divider]:hidden"
             itemtype="playlisttracks"
             :parent-item="itemDetails"
@@ -38,25 +41,14 @@
             :show-track-number="false"
             :show-refresh-button="true"
             :refresh-on-parent-update="true"
-            :load-items="loadPlaylistTracks"
-            :sort-keys="[
-              'position',
-              'position_desc',
-              'timestamp_added',
-              'timestamp_added_desc',
-              'name',
-              'artist',
-              'album',
-              'duration',
-              'duration_desc',
-            ]"
+            :sort-listing="ListingType.PLAYLIST_TRACKS"
+            :load-paged-data="loadPlaylistTracks"
             :update-available="updateAvailable"
             :track-table="true"
             :title="$t('tracks')"
             :allow-key-hooks="true"
             :path="`playlist.${props.itemId}.${props.provider}`"
             :restore-state="true"
-            :no-server-side-sorting="true"
           >
             <template #title>
               <span
@@ -67,6 +59,14 @@
             </template>
           </ItemsListing>
         </template>
+
+        <!-- spaced from the track list above as the shelf is from the row below -->
+        <PlaylistFeaturedArtists
+          v-else-if="rowId === 'featured_artists'"
+          class="mt-[32px] max-md:mt-[16px]"
+          :tracks="playlistTracks"
+          @edit-rows="rowsEditorOpen = true"
+        />
 
         <!-- description -->
         <DetailTextRow
@@ -126,8 +126,8 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import {
   playlistBackdrop,
   playlistDuration,
-  type PlaylistItem,
 } from "@/components/playlist/playlistData";
+import PlaylistFeaturedArtists from "@/components/playlist/PlaylistFeaturedArtists.vue";
 import PlaylistHero from "@/components/playlist/PlaylistHero.vue";
 import {
   availablePlaylistRowIds,
@@ -144,11 +144,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
+import { usePlaylistTracks } from "@/composables/usePlaylistTracks";
 import { canSharePlaylist } from "@/helpers/playlist_access";
 import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
 import { api } from "@/plugins/api";
 import {
   Scope,
+  ListingType,
   type Playlist,
   type SmartPlaylistRules,
 } from "@/plugins/api/interfaces";
@@ -169,14 +171,20 @@ const smartRules = ref<SmartPlaylistRules | null>(null);
 const showEditDialog = ref(false);
 const showRulesDialog = ref(false);
 const rowsEditorOpen = ref(false);
+let pendingSnapshotRefreshKey: string | undefined;
 // editing the rules of a smart playlist changes the library
 const canEditLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_WRITE),
 );
 
-// the playlist's tracks, as the listing below last loaded them: what the hero
-// counts and times
-const playlistTracks = ref<PlaylistItem[]>();
+// what the hero counts and times, the featured artists rank and the listing
+// below shows
+const {
+  tracks: playlistTracks,
+  load: loadTracks,
+  reset: resetTracks,
+} = usePlaylistTracks(() => props);
+const tracksListing = ref<InstanceType<typeof ItemsListing>[]>();
 
 const canShare = computed(
   () =>
@@ -189,12 +197,17 @@ const canShare = computed(
     ),
 );
 
-// the rows the page can render for this playlist; the editor lists the same set
-const availableRows = availablePlaylistRowIds();
+// the rows the page can render for this playlist; the editor lists the same set.
+// A dynamic playlist has no fixed tracks to take featured artists from
+const availableRows = computed(() =>
+  availablePlaylistRowIds().filter(
+    (rowId) => !(rowId === "featured_artists" && itemDetails.value?.is_dynamic),
+  ),
+);
 
 // reads the user's preferences from the store, so the page follows the editor
 const visibleRows = computed(() => {
-  const { order, hidden } = playlistRows.resolve(availableRows);
+  const { order, hidden } = playlistRows.resolve(availableRows.value);
   return order.filter((rowId) => !hidden.has(rowId));
 });
 
@@ -242,6 +255,8 @@ const loadItemDetails = async function () {
   }
   // a slower response for a previous playlist must not replace the current one
   if (itemId !== props.itemId || provider !== props.provider) return;
+  // started before the listing mounts, so it reuses this request
+  if (!playlist.is_dynamic) loadTracksQuietly();
   itemDetails.value = playlist;
   smartRules.value = rules;
 };
@@ -255,7 +270,8 @@ watch(
       document.querySelector(".content-section")?.scrollTo({ top: 0 });
       itemDetails.value = undefined;
       smartRules.value = null;
-      playlistTracks.value = undefined;
+      resetTracks();
+      pendingSnapshotRefreshKey = undefined;
       updateAvailable.value = false;
       showRulesDialog.value = false;
       showEditDialog.value = false;
@@ -267,15 +283,39 @@ watch(
 );
 
 useDetailItemUpdates(itemDetails, {
-  onUpdate: () => (updateAvailable.value = true),
+  onUpdate: () => {
+    updateAvailable.value = true;
+    if (!itemDetails.value?.is_dynamic) {
+      loadTracksQuietly(true);
+    }
+  },
 });
 
 const loadPlaylistTracks = async function (params: LoadDataParams) {
   const { itemId, provider } = props;
-  const tracks = await api.getPlaylistTracks(itemId, provider, params.refresh);
-  if (itemId === props.itemId && provider === props.provider) {
-    playlistTracks.value = tracks;
+  const playlistKey = `${provider}/${itemId}`;
+  if (params.refresh) pendingSnapshotRefreshKey = playlistKey;
+  if (pendingSnapshotRefreshKey === playlistKey) {
+    await loadTracks(true);
+    if (pendingSnapshotRefreshKey === playlistKey) {
+      pendingSnapshotRefreshKey = undefined;
+    }
   }
-  return tracks;
+  return await api.getPlaylistTracks(
+    itemId,
+    provider,
+    false,
+    undefined,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+  );
 };
+
+/** Loads the tracks for the page; a failure is reported by the api. */
+function loadTracksQuietly(refresh = false) {
+  loadTracks(refresh).catch(() => {});
+}
 </script>

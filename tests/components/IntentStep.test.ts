@@ -145,6 +145,15 @@ describe("IntentStep", () => {
     wrapper.unmount();
   });
 
+  it("answers nothing when the setup is paused on it", async () => {
+    const wrapper = await mountStep();
+
+    await expect(wrapper.vm.beforeLeave({ pausing: true })).resolves.toBe(true);
+    expect(setUserPreferenceMock).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
   it("leaves an answer already on the account alone", async () => {
     preferenceState.intent.value = "phone_apps";
 

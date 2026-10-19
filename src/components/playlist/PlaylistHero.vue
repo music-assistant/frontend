@@ -42,7 +42,7 @@
         class="flex w-full min-w-0 items-end gap-6 max-md:flex-col max-md:items-stretch max-md:gap-3"
       >
         <div
-          class="size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] max-md:size-[132px]"
+          class="detail-hero-cover size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] max-md:size-[132px]"
         >
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
@@ -78,9 +78,9 @@
             class="flex min-w-0 flex-nowrap items-center gap-2 max-md:flex-wrap max-md:gap-2.5"
           >
             <DetailHeroPlayButton
-              class="min-w-0 max-md:flex-1"
-              shrink-label
               :item="item"
+              :tracks-sort-field="tracksSortField"
+              :tracks-sort-direction="tracksSortDirection"
             />
             <DetailHeroButton
               :icon="Shuffle"
@@ -103,7 +103,8 @@
               @click="emit('show-rules')"
             />
             <span
-              class="inline-flex size-9 flex-none items-center justify-center rounded-lg border border-white/25 bg-black/40 max-md:size-11 max-md:rounded-[10px]"
+              v-if="!isPhone"
+              class="inline-flex size-9 flex-none items-center justify-center rounded-lg border border-white/25 bg-black/40"
               :title="providerBadgeTitle"
             >
               <ProviderIcon :domain="providerDomain" :size="20" />
@@ -135,7 +136,11 @@ import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatTotalDuration } from "@/helpers/duration";
 import { api } from "@/plugins/api";
 import { getProviderIconDomain } from "@/plugins/api/helpers";
-import type { Playlist } from "@/plugins/api/interfaces";
+import type {
+  Playlist,
+  SortDirection,
+  SortField,
+} from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -160,6 +165,8 @@ export interface Props {
   trackCount?: number;
   // their total playing time in seconds, once they are known
   duration?: number;
+  tracksSortField?: SortField;
+  tracksSortDirection?: SortDirection;
   // a smart playlist whose rules could be loaded
   hasRules?: boolean;
   canEditRules?: boolean;

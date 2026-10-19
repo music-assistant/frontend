@@ -9,6 +9,8 @@ import {
   type Album,
   type Artist,
   type ItemMapping,
+  type SortDirection,
+  type SortField,
   type Track,
 } from "@/plugins/api/interfaces";
 
@@ -21,6 +23,16 @@ export async function loadArtistReleases(
   source: RowSource,
 ): Promise<Album[]> {
   return await artistAlbumsBySource(artist, source);
+}
+
+interface ArtistAlbumsListingOptions {
+  search?: string;
+  limit?: number;
+  offset?: number;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
+  albumTypes?: AlbumType[];
+  favoritesOnly?: boolean;
 }
 
 /**
@@ -36,9 +48,25 @@ export async function loadArtistReleases(
 export async function artistAlbumsBySource(
   artist: ItemMapping | Artist,
   source: RowSource,
+  options?: ArtistAlbumsListingOptions,
 ): Promise<Album[]> {
+  const getAlbums = (itemId: string, provider: string) =>
+    options
+      ? api.getArtistAlbums(
+          itemId,
+          provider,
+          undefined,
+          options.search,
+          options.limit,
+          options.offset,
+          options.sortField,
+          options.sortDirection,
+          options.albumTypes,
+          options.favoritesOnly || undefined,
+        )
+      : api.getArtistAlbums(itemId, provider, undefined, undefined, 0);
   if (source === "library" || artist.provider !== "library") {
-    return await api.getArtistAlbums(artist.item_id, artist.provider);
+    return await getAlbums(artist.item_id, artist.provider);
   }
   const mappings =
     "provider_mappings" in artist ? artist.provider_mappings : [];
@@ -46,17 +74,32 @@ export async function artistAlbumsBySource(
     (candidate) => candidate.provider_instance === source,
   );
   if (!mapping) return [];
-  return await api.getArtistAlbums(mapping.item_id, mapping.provider_instance);
+  return await getAlbums(mapping.item_id, mapping.provider_instance);
 }
 
 /**
  * The artist's discography as MusicBrainz knows it, newest first: the library
- * albums, and the releases outside the library as MusicBrainz items.
+ * albums, and the releases outside the library as MusicBrainz items. All of
+ * them, or one page when a limit is given.
  *
  * Only ever called for a library artist, the only kind the server lists.
  */
-export async function loadArtistDiscography(artist: Artist): Promise<Album[]> {
-  return await api.getArtistDiscography(artist.item_id);
+export async function loadArtistDiscography(
+  artist: Artist,
+  search?: string,
+  limit?: number,
+  offset?: number,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
+): Promise<Album[]> {
+  return await api.getArtistDiscography(
+    artist.item_id,
+    search,
+    limit ?? 0,
+    offset,
+    sortField,
+    sortDirection,
+  );
 }
 
 /**
@@ -90,25 +133,55 @@ export function artistProvidersForFeature(
 /**
  * The artist's tracks, optionally limited to a single provider: those in the
  * library for a library artist, its provider's own for a provider artist.
+ * All of them, or one page when a limit is given.
  */
 export async function loadArtistTracks(
   artist: Artist,
   providerFilter?: string,
+  search?: string,
+  limit?: number,
+  offset?: number,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
+  favoriteOnly = false,
 ): Promise<Track[]> {
   return await api.getArtistTracks(
     artist.item_id,
     artist.provider,
     providerFilter,
+    search,
+    limit ?? 0,
+    offset,
+    sortField,
+    sortDirection,
+    favoriteOnly || undefined,
   );
 }
 
 /**
  * Albums the artist appears on without being an album artist, newest first.
+ * All of them, or one page when a limit is given.
  *
  * Only ever called for a library artist, the only kind the server lists.
  */
-export async function loadArtistAppearsOn(artist: Artist): Promise<Album[]> {
-  return await api.getArtistAppearsOn(artist.item_id, artist.provider);
+export async function loadArtistAppearsOn(
+  artist: Artist,
+  search?: string,
+  limit?: number,
+  offset?: number,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
+): Promise<Album[]> {
+  return await api.getArtistAppearsOn(
+    artist.item_id,
+    artist.provider,
+    undefined,
+    search,
+    limit ?? 0,
+    offset,
+    sortField,
+    sortDirection,
+  );
 }
 
 /** The artist's most popular tracks, as reported by `source`. */
@@ -131,6 +204,7 @@ export async function loadSimilarArtists(
   return await api.getSimilarArtists(
     artist.item_id,
     artist.provider,
+    25,
     aggregatedProviderFilter(artist, source),
   );
 }
