@@ -456,6 +456,16 @@ import {
 } from "@/helpers/guest_session";
 import { sanitizeDashboardViewerPath } from "@/helpers/dashboard_viewer_access";
 import {
+  canReturnExternalLogin,
+  type ExternalLoginResult,
+  getExternalLoginReturnPath,
+  listenForExternalLogin,
+  savePendingExternalLogin,
+  takeExternalLoginReturn,
+} from "@/helpers/external_login";
+import { createCodeChallenge, createCodeVerifier } from "@/helpers/pkce";
+import { isWebUrl } from "@/helpers/utils";
+import {
   createLocalConnectionIdentity,
   createRemoteConnectionIdentity,
 } from "@/helpers/connection_identity";
@@ -468,7 +478,7 @@ import { authManager } from "@/plugins/auth";
 import { remoteConnectionManager } from "@/plugins/remote";
 import SegmentedCodeInput from "@/components/SegmentedCodeInput.vue";
 import { REMOTE_ID_GROUPS, splitCode } from "@/helpers/segmented_code";
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { QrcodeStream } from "vue-qrcode-reader";
 import { useRouter } from "vue-router";
@@ -604,12 +614,25 @@ const loginError = ref<string | null>(null);
 
 // Auth providers state
 const authProviders = ref<AuthProvider[]>([]);
-// Home Assistant redirects back to the server itself, which a remote connection
-// can only reach through the server's External URL.
+const homeAssistantProvider = computed(() =>
+  authProviders.value.find((p) => p.provider_id === "homeassistant"),
+);
+// Home Assistant can return to the remote app itself when it is reachable from
+// the internet, which then completes the sign-in (completeExternalLogin).
+const canReturnToRemoteApp = computed(
+  () =>
+    isRemoteConnection.value &&
+    !!homeAssistantProvider.value?.supports_remote_app &&
+    canReturnExternalLogin(),
+);
+// Otherwise it returns to the server itself, which a remote connection can only
+// reach through the server's External URL.
 const hasHomeAssistantAuth = computed(
   () =>
-    authProviders.value.some((p) => p.provider_id === "homeassistant") &&
-    (!isRemoteConnection.value || !!api.serverInfo.value?.external_url),
+    !!homeAssistantProvider.value &&
+    (!isRemoteConnection.value ||
+      canReturnToRemoteApp.value ||
+      !!api.serverInfo.value?.external_url),
 );
 
 // Computed
@@ -798,9 +821,9 @@ const tryStoredTokenAuth = async (
  * Try to authenticate with a guest code (exchange for JWT)
  * This is the new short code system for party guest access
  *
- * The `error` of a rejected exchange is the server's plain-English reason
- * (rate limited, invalid or expired code); callers surface it as detail
- * alongside their own localized message.
+ * The `error` of a rejected exchange is the server's reason (rate limited,
+ * invalid or expired code), localized to the connection's locale; callers
+ * surface it as detail alongside their own message.
  */
 const tryGuestCodeAuth = async (
   code: string,
@@ -821,6 +844,7 @@ const tryGuestCodeAuth = async (
       access_token?: string;
       user?: { user_id: string; username: string; role: string };
       error?: string;
+      translation_key?: string;
     }>("auth/join_code/exchange", { code: code.toUpperCase() });
 
     if (!result.success || !result.access_token) {
@@ -1094,6 +1118,14 @@ const autoConnect = async () => {
     "login.checking_stored",
     "Checking for saved connection...",
   );
+
+  // A sign-in returning from its identity provider goes first, and its code
+  // (taken from the URL here) is never mistaken for a token below.
+  const externalLogin = takeExternalLoginReturn();
+  if (externalLogin) {
+    await completeExternalLogin(externalLogin);
+    return;
+  }
 
   // Check for auth code from setup flow in URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -1914,26 +1946,6 @@ const handleAuthenticationError = (error: unknown) => {
     );
   }
 
-  // Transform technical error messages into user-friendly ones
-  if (
-    errorMessage.includes("Invalid credentials") ||
-    errorMessage.includes("Invalid username") ||
-    errorMessage.includes("Invalid password") ||
-    errorMessage.includes("Authentication failed") ||
-    errorMessage.toLowerCase().includes("unauthorized")
-  ) {
-    errorMessage = t(
-      "login.error_invalid_credentials",
-      "Couldn't sign you in. Please check your username and password.",
-    );
-  } else if (errorMessage.includes("Authentication required")) {
-    // This happens when subsequent API calls fail due to auth issues
-    errorMessage = t(
-      "login.error_invalid_credentials",
-      "Couldn't sign you in. Please check your username and password.",
-    );
-  }
-
   loginError.value = errorMessage;
   isAuthenticating.value = false;
 };
@@ -1948,18 +1960,30 @@ const loginWithHomeAssistant = async () => {
   loginError.value = null;
 
   try {
-    const response = await api.sendCommand<{
-      authorization_url: string;
-    }>("auth/authorization_url", {
-      provider_id: "homeassistant",
-      return_url: window.location.href,
-    });
+    const remoteId = canReturnToRemoteApp.value
+      ? remoteConnectionManager.currentRemoteId.value
+      : null;
+    const verifier = remoteId ? createCodeVerifier() : undefined;
+    const response = await api.startAuthorization(
+      "homeassistant",
+      window.location.href,
+      verifier && (await createCodeChallenge(verifier)),
+    );
 
-    if (!response?.authorization_url) {
-      throw new Error("Invalid response from server");
+    const authorizationUrl = response.authorization_url;
+    if (!isWebUrl(authorizationUrl)) {
+      throw new Error(response.error || "Invalid response from server");
+    }
+    if (remoteId && verifier && response.state) {
+      savePendingExternalLogin(response.state, {
+        verifier,
+        remoteId,
+        returnPath: getExternalLoginReturnPath(),
+        createdAt: Date.now(),
+      });
     }
 
-    window.location.replace(response.authorization_url);
+    window.location.replace(authorizationUrl);
   } catch (error) {
     console.error("[Login] Failed to start Home Assistant OAuth:", error);
     loginError.value =
@@ -1970,6 +1994,74 @@ const loginWithHomeAssistant = async () => {
             "Failed to start Home Assistant authentication.",
           );
     isAuthenticating.value = false;
+  }
+};
+
+/**
+ * Complete a sign-in that its identity provider returned to this app with.
+ *
+ * Connects to the server the sign-in was started on, unless already connected
+ * to it, and signs in; a failed sign-in shows the login form with the reason.
+ *
+ * :param result: The returned sign-in.
+ */
+const completeExternalLogin = async (result: ExternalLoginResult) => {
+  const { remoteId } = result.pending;
+  setRemoteIdFromString(remoteId);
+  isRemoteConnection.value = true;
+  connectedServerName.value = `Remote: ${remoteId}`;
+  isAuthenticating.value = true;
+  loginError.value = null;
+
+  try {
+    if (
+      !api.serverInfo.value ||
+      remoteConnectionManager.currentRemoteId.value !== remoteId
+    ) {
+      // a tab still on another server lets go of it first, like goBack
+      remoteConnectionManager.disconnect();
+      api.disconnect();
+      step.value = "connecting";
+      connectionStatusMessage.value = t(
+        "login.connecting_remote",
+        "Connecting to remote server...",
+      );
+      emit("connected", await connectRemote(remoteId));
+      if (!(await waitForApiConnection())) {
+        throw new Error("Failed to establish API connection");
+      }
+    }
+  } catch (error) {
+    console.error("[Login] Remote connection failed:", error);
+    connectionError.value =
+      error instanceof Error
+        ? error.message
+        : t("login.error_unknown", "Unknown error occurred");
+    step.value = "error";
+    isAuthenticating.value = false;
+    return;
+  }
+
+  try {
+    if ("error" in result) throw new Error(result.error);
+    connectionStatusMessage.value = t(
+      "login.authenticating",
+      "Authenticating...",
+    );
+    const exchange = await api.exchangeAuthCode(
+      result.state,
+      result.code,
+      result.pending.verifier,
+    );
+    if (!exchange.success || !exchange.access_token) {
+      throw new Error(exchange.error || "Invalid response from server");
+    }
+    const { user } = await api.authenticateWithToken(exchange.access_token);
+    emit("authenticated", { token: exchange.access_token, user });
+  } catch (error) {
+    handleAuthenticationError(error);
+    await fetchAuthProviders();
+    step.value = "login";
   }
 };
 
@@ -2136,6 +2228,12 @@ watch(
   },
   { immediate: true },
 );
+
+// A sign-in that finished in another tab is handed to this one
+const stopExternalLoginListener = listenForExternalLogin(
+  (result) => void completeExternalLogin(result),
+);
+onUnmounted(stopExternalLoginListener);
 
 // Start auto-connect on mount; any other mount-time state is a reconnect
 // already under way (its own transport is live), handled above instead.

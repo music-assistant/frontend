@@ -32,9 +32,6 @@
       >
         {{ $t("musical_key") }}
       </span>
-      <span v-else-if="column === 'source'" class="truncate">
-        {{ $t("track_table.source") }}
-      </span>
       <span
         v-else-if="column === 'duration'"
         class="flex justify-end"
@@ -126,7 +123,6 @@ const OPTION_LABEL_KEYS: Record<OptionalTrackColumn, string> = {
   year: "track_table.year",
   bpm: "bpm",
   key: "musical_key",
-  source: "track_table.source",
 };
 
 const options = computed(() =>

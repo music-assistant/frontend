@@ -15,7 +15,7 @@
 
     <template v-if="item" #main>
       <div class="track-hero__main">
-        <div class="track-hero__cover">
+        <div class="track-hero__cover detail-hero-cover">
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
 
@@ -83,7 +83,7 @@
           </div>
 
           <div class="track-hero__actions">
-            <DetailHeroPlayButton class="track-hero__play" :item="item" />
+            <DetailHeroPlayButton :item="item" />
             <DetailHeroButton
               v-if="radioRelevant(item)"
               :icon="Orbit"
@@ -91,7 +91,11 @@
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />
-            <span class="track-hero__badge" :title="providerBadgeTitle">
+            <span
+              v-if="!isPhone"
+              class="track-hero__badge"
+              :title="providerBadgeTitle"
+            >
               <ProviderIcon :domain="providerDomain" :size="20" />
             </span>
             <span
@@ -344,9 +348,6 @@ const gotoItem = function (
   }
   .track-hero__actions {
     gap: 10px;
-  }
-  .track-hero__actions .track-hero__play {
-    flex: 1;
   }
   .track-hero__badge {
     width: 44px;

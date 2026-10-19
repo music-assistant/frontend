@@ -24,11 +24,7 @@
       </h1>
 
       <div class="artist-hero__actions">
-        <DetailHeroPlayButton
-          class="artist-hero__play"
-          shrink-label
-          :item="item"
-        />
+        <DetailHeroPlayButton :item="item" />
         <DetailHeroButton
           :icon="Shuffle"
           :label="$t('shuffle')"
@@ -127,10 +123,6 @@ const artistLogo = computed(() =>
   align-self: stretch;
   min-width: 0;
 }
-/* the play button gives way so Shuffle and Endless keep their place on the row */
-.artist-hero__play {
-  min-width: 0;
-}
 
 .artist-hero--phone .artist-hero__name {
   font-size: 34px;
@@ -141,8 +133,5 @@ const artistLogo = computed(() =>
 }
 .artist-hero--phone .artist-hero__actions {
   gap: 10px;
-}
-.artist-hero--phone .artist-hero__play {
-  flex: 1;
 }
 </style>

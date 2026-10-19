@@ -49,7 +49,8 @@
     <template v-else-if="itemDetails && !loading">
       <ItemsListing
         itemtype="artists"
-        :load-items="loadGenreArtists"
+        :load-paged-data="loadGenreArtists"
+        :sort-listing="ListingType.LIBRARY_ARTISTS"
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
@@ -68,7 +69,8 @@
       <br />
       <ItemsListing
         itemtype="albums"
-        :load-items="loadGenreAlbums"
+        :load-paged-data="loadGenreAlbums"
+        :sort-listing="ListingType.LIBRARY_ALBUMS"
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
@@ -87,7 +89,8 @@
       <br />
       <ItemsListing
         itemtype="tracks"
-        :load-items="loadGenreTracks"
+        :load-paged-data="loadGenreTracks"
+        :sort-listing="ListingType.LIBRARY_TRACKS"
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :show-track-number="false"
@@ -107,7 +110,8 @@
       <br />
       <ItemsListing
         itemtype="playlists"
-        :load-items="loadGenrePlaylists"
+        :load-paged-data="loadGenrePlaylists"
+        :sort-listing="ListingType.LIBRARY_PLAYLISTS"
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
@@ -126,7 +130,8 @@
       <br />
       <ItemsListing
         itemtype="podcasts"
-        :load-items="loadGenrePodcasts"
+        :load-paged-data="loadGenrePodcasts"
+        :sort-listing="ListingType.LIBRARY_PODCASTS"
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
@@ -145,7 +150,8 @@
       <br />
       <ItemsListing
         itemtype="audiobooks"
-        :load-items="loadGenreAudiobooks"
+        :load-paged-data="loadGenreAudiobooks"
+        :sort-listing="ListingType.LIBRARY_AUDIOBOOKS"
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
@@ -188,6 +194,7 @@ import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   Genre,
+  ListingType,
   MediaItemTypeOrItemMapping,
   MediaType,
   Scope,
@@ -386,10 +393,10 @@ const loadGenreArtists = async (params: LoadDataParams) => {
   return await api.getLibraryArtists(
     params.favoritesOnly || undefined,
     params.search,
-    undefined,
-    undefined,
-    params.sort_field,
-    params.sort_direction,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
     undefined,
     params.provider?.length ? params.provider : undefined,
     genreId(),
@@ -401,10 +408,10 @@ const loadGenreAlbums = async (params: LoadDataParams) => {
   return await api.getLibraryAlbums(
     params.favoritesOnly || undefined,
     params.search,
-    undefined,
-    undefined,
-    params.sort_field,
-    params.sort_direction,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
     undefined,
     params.provider?.length ? params.provider : undefined,
     genreId(),
@@ -416,10 +423,10 @@ const loadGenreTracks = async (params: LoadDataParams) => {
   return await api.getLibraryTracks(
     params.favoritesOnly || undefined,
     params.search,
-    undefined,
-    undefined,
-    params.sort_field,
-    params.sort_direction,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -430,10 +437,10 @@ const loadGenrePlaylists = async (params: LoadDataParams) => {
   return await api.getLibraryPlaylists(
     params.favoritesOnly || undefined,
     params.search,
-    undefined,
-    undefined,
-    params.sort_field,
-    params.sort_direction,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -444,10 +451,10 @@ const loadGenrePodcasts = async (params: LoadDataParams) => {
   return await api.getLibraryPodcasts(
     params.favoritesOnly || undefined,
     params.search,
-    undefined,
-    undefined,
-    params.sort_field,
-    params.sort_direction,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -458,10 +465,10 @@ const loadGenreAudiobooks = async (params: LoadDataParams) => {
   return await api.getLibraryAudiobooks(
     params.favoritesOnly || undefined,
     params.search,
-    undefined,
-    undefined,
-    params.sort_field,
-    params.sort_direction,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );

@@ -1,18 +1,35 @@
 import Login from "@/views/Login.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { UserRole } from "@/plugins/api/interfaces";
-import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  enableAutoUnmount,
+  flushPromises,
+  mount,
+  type VueWrapper,
+} from "@vue/test-utils";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from "vitest";
+import { createCodeChallenge } from "@/helpers/pkce";
 import { user } from "../fixtures/user";
 
 const mocks = vi.hoisted(() => ({
+  apiDisconnect: vi.fn<MusicAssistantApi["disconnect"]>(),
   apiState: { value: "disconnected" as string },
   authenticateWithToken: vi.fn<MusicAssistantApi["authenticateWithToken"]>(),
   clearAuth: vi.fn(),
   clearGuestSession: vi.fn(),
   connectRemote: vi.fn(),
+  currentRemoteId: { value: null as string | null },
   disconnectRemote: vi.fn(),
   endRejectedGuestSession: vi.fn(),
+  exchangeAuthCode: vi.fn<MusicAssistantApi["exchangeAuthCode"]>(),
   getCurrentUserInfo: vi.fn<MusicAssistantApi["getCurrentUserInfo"]>(),
   getPersistentToken: vi.fn(),
   getToken: vi.fn(),
@@ -33,6 +50,7 @@ const mocks = vi.hoisted(() => ({
     } | null,
   },
   setToken: vi.fn(),
+  startAuthorization: vi.fn<MusicAssistantApi["startAuthorization"]>(),
 }));
 
 vi.mock("@/plugins/api", async () => {
@@ -52,10 +70,12 @@ vi.mock("@/plugins/api", async () => {
     },
     api: {
       authenticateWithToken: mocks.authenticateWithToken,
-      disconnect: vi.fn<MusicAssistantApi["disconnect"]>(),
+      disconnect: mocks.apiDisconnect,
+      exchangeAuthCode: mocks.exchangeAuthCode,
       getCurrentUserInfo: mocks.getCurrentUserInfo,
       sendCommand: mocks.sendCommand,
       serverInfo: mocks.serverInfo,
+      startAuthorization: mocks.startAuthorization,
       state: mocks.apiState,
     },
   };
@@ -81,6 +101,7 @@ vi.mock("@/plugins/auth", () => ({
 vi.mock("@/plugins/remote", () => ({
   remoteConnectionManager: {
     connectRemote: mocks.connectRemote,
+    currentRemoteId: mocks.currentRemoteId,
     disconnect: mocks.disconnectRemote,
     getStoredRemoteId: mocks.getStoredRemoteId,
   },
@@ -101,6 +122,9 @@ vi.mock("vue-router", () => ({
 vi.mock("vue-qrcode-reader", () => ({
   QrcodeStream: { template: "<div />" },
 }));
+
+// a leaked Login keeps listening for sign-ins handed over by another tab
+enableAutoUnmount(afterEach);
 
 class WebSocketMock {
   onclose: (() => void) | null = null;
@@ -183,8 +207,11 @@ function mountLogin(): VueWrapper {
   });
 }
 
-function setLocation(query: string) {
-  window.history.replaceState({}, "", `http://localhost:3000/${query}`);
+function setLocation(query: string, origin = "http://localhost:3000") {
+  // setURL, as replaceState can not change the origin
+  (
+    window as unknown as { happyDOM: { setURL(url: string): void } }
+  ).happyDOM.setURL(`${origin}/${query}`);
 }
 
 function mockStandaloneFrontend() {
@@ -302,7 +329,11 @@ beforeEach(() => {
     sessionStorage.setItem("ma_guest_access_token", token);
   });
   mocks.getStoredRemoteId.mockReturnValue(null);
-  mocks.connectRemote.mockResolvedValue({ id: "transport" });
+  mocks.currentRemoteId.value = null;
+  mocks.connectRemote.mockImplementation((remoteId: string) => {
+    mocks.currentRemoteId.value = remoteId;
+    return Promise.resolve({ id: "transport" });
+  });
   mockSuccessfulGuest();
 });
 
@@ -938,6 +969,325 @@ describe("Home Assistant sign in", () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain("Sign in with Home Assistant");
+  });
+});
+
+describe("Home Assistant sign in over Remote Access", () => {
+  const portal = "https://app.music-assistant.io";
+  const remoteId = "ABCDEFGH1234512345ABCDEFGH";
+  const state = "w.0123456789abcdefghijABCDEFGHIJ";
+  const haCode = "3f9c1b2e7d4a4c0e9b8a6f5d2c1e0b9a";
+  const verifier = "v".repeat(43);
+  const pendingKey = `ma.external_login.${state}`;
+  const authorizationUrl = "https://ha.example.com/auth/authorize?state=x";
+  const signedInUser = user({
+    user_id: "ha-user",
+    username: "ha-user",
+    role: UserRole.ADMIN,
+  });
+  let replaceLocation: MockInstance<Location["replace"]>;
+
+  function mockProviders(supportsRemoteApp?: boolean) {
+    mocks.sendCommand.mockImplementation((command: string) =>
+      Promise.resolve(
+        command === "auth/providers"
+          ? [
+              {
+                provider_id: "homeassistant",
+                supports_remote_app: supportsRemoteApp,
+              },
+            ]
+          : [],
+      ),
+    );
+  }
+
+  function savePending() {
+    sessionStorage.setItem(
+      pendingKey,
+      JSON.stringify({
+        verifier,
+        remoteId,
+        returnPath: "/",
+        createdAt: Date.now(),
+      }),
+    );
+  }
+
+  async function clickHomeAssistant(wrapper: VueWrapper) {
+    const button = wrapper
+      .findAll("button")
+      .find((b) => b.text().includes("Sign in with Home Assistant"));
+    await button!.trigger("click");
+    // the challenge comes from crypto.subtle, which flushPromises doesn't wait for
+    await vi.waitFor(() => expect(mocks.startAuthorization).toHaveBeenCalled());
+    await flushPromises();
+  }
+
+  function passwordError(wrapper: VueWrapper) {
+    return wrapper
+      .find('input[placeholder="Enter your password"]')
+      .attributes("error-messages");
+  }
+
+  beforeEach(() => {
+    replaceLocation = vi
+      .spyOn(window.location, "replace")
+      .mockImplementation(() => {});
+    mocks.authenticateWithToken.mockResolvedValue({ user: signedInUser });
+    mocks.exchangeAuthCode.mockResolvedValue({
+      success: true,
+      access_token: "ha-token",
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("shows the button when Home Assistant can return to the remote app", async () => {
+    mockProviders(true);
+    setLocation(`?remote_id=${remoteId}`, portal);
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Sign in with Home Assistant");
+  });
+
+  it("hides the button on another origin, which the sign-in can't return to", async () => {
+    mockProviders(true);
+    setLocation(`?remote=1&remote_id=${remoteId}`);
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Username");
+    expect(wrapper.text()).not.toContain("Sign in with Home Assistant");
+  });
+
+  it("starts the sign-in with the challenge of a remembered verifier", async () => {
+    mockProviders(true);
+    mocks.startAuthorization.mockResolvedValue({
+      authorization_url: authorizationUrl,
+      state,
+    });
+    setLocation(`?remote_id=${remoteId}`, portal);
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    await clickHomeAssistant(wrapper);
+
+    const pending = JSON.parse(sessionStorage.getItem(pendingKey)!);
+    expect(pending).toMatchObject({ remoteId, returnPath: "/" });
+    expect(mocks.startAuthorization).toHaveBeenCalledWith(
+      "homeassistant",
+      `${portal}/`,
+      await createCodeChallenge(pending.verifier),
+    );
+    expect(replaceLocation).toHaveBeenCalledWith(authorizationUrl);
+  });
+
+  it("keeps today's flow when the server answers without a state", async () => {
+    mockProviders(true);
+    mocks.startAuthorization.mockResolvedValue({
+      authorization_url: authorizationUrl,
+    });
+    setLocation(`?remote_id=${remoteId}`, portal);
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    await clickHomeAssistant(wrapper);
+
+    expect(mocks.startAuthorization.mock.calls[0][2]).toBeDefined();
+    expect(sessionStorage.length).toBe(0);
+    expect(replaceLocation).toHaveBeenCalledWith(authorizationUrl);
+  });
+
+  it("returns to the server when only an External URL allows it", async () => {
+    mockProviders(undefined);
+    mocks.serverInfo.value = {
+      homeassistant_addon: false,
+      server_id: "server-id",
+      external_url: "https://music.example.com",
+    };
+    mocks.startAuthorization.mockResolvedValue({
+      authorization_url: authorizationUrl,
+    });
+    setLocation(`?remote_id=${remoteId}`, portal);
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    await clickHomeAssistant(wrapper);
+
+    expect(mocks.startAuthorization).toHaveBeenCalledWith(
+      "homeassistant",
+      `${portal}/`,
+      undefined,
+    );
+    expect(sessionStorage.length).toBe(0);
+    expect(replaceLocation).toHaveBeenCalledWith(authorizationUrl);
+  });
+
+  it("refuses an authorization URL that isn't http or https", async () => {
+    mockProviders(true);
+    mocks.startAuthorization.mockResolvedValue({
+      authorization_url: "javascript:alert(1)",
+      state,
+    });
+    setLocation(`?remote_id=${remoteId}`, portal);
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    await clickHomeAssistant(wrapper);
+
+    expect(replaceLocation).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(pendingKey)).toBeNull();
+  });
+
+  it("completes a returned sign-in before trying the stored token", async () => {
+    const storedRemoteId = "ZYXWVUTS9876598765ZYXWVUTS";
+    localStorage.setItem("ma_access_token", "stored-token");
+    mocks.getStoredRemoteId.mockReturnValue(storedRemoteId);
+    savePending();
+    setLocation(`?code=${haCode}&state=${state}`, portal);
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(mocks.connectRemote).toHaveBeenCalledExactlyOnceWith(remoteId);
+    expect(mocks.exchangeAuthCode).toHaveBeenCalledWith(
+      state,
+      haCode,
+      verifier,
+    );
+    expect(mocks.authenticateWithToken).toHaveBeenCalledExactlyOnceWith(
+      "ha-token",
+    );
+    expect(wrapper.emitted("authenticated")).toEqual([
+      [{ token: "ha-token", user: signedInUser }],
+    ]);
+    expect(mocks.setToken).not.toHaveBeenCalled();
+    expect(window.location.search).toBe("");
+    expect(sessionStorage.getItem(pendingKey)).toBeNull();
+  });
+
+  it("never takes a returned code for a token without its pending sign-in", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    setLocation(`?code=${haCode}&state=${state}`, portal);
+
+    mountLogin();
+
+    await flushPromises();
+    expect(mocks.setToken).not.toHaveBeenCalled();
+    expect(mocks.exchangeAuthCode).not.toHaveBeenCalled();
+    expect(window.location.search).toBe("");
+  });
+
+  it("shows the reason on the login form when the exchange fails", async () => {
+    mockProviders(true);
+    mocks.exchangeAuthCode.mockResolvedValue({
+      success: false,
+      error: "This sign-in is invalid or has expired",
+      translation_key: "sign_in_expired",
+    });
+    savePending();
+    setLocation(`?code=${haCode}&state=${state}`, portal);
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toBeUndefined();
+    expect(wrapper.text()).toContain("Sign in with Home Assistant");
+    expect(passwordError(wrapper)).toBe(
+      "This sign-in is invalid or has expired",
+    );
+  });
+
+  it("shows why Home Assistant refused the sign-in", async () => {
+    mockProviders(true);
+    savePending();
+    setLocation(
+      `?error=access_denied&error_description=Not+allowed&state=${state}`,
+      portal,
+    );
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(mocks.connectRemote).toHaveBeenCalledExactlyOnceWith(remoteId);
+    expect(mocks.exchangeAuthCode).not.toHaveBeenCalled();
+    expect(passwordError(wrapper)).toBe("Not allowed");
+  });
+
+  it("shows the connection error when the server can't be reached", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.connectRemote.mockRejectedValue(new Error("Server is offline"));
+    savePending();
+    setLocation(`?code=${haCode}&state=${state}`, portal);
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(mocks.exchangeAuthCode).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("Server is offline");
+  });
+
+  it("completes a sign-in handed over from another tab without reconnecting", async () => {
+    mockProviders(true);
+    setLocation(`?remote_id=${remoteId}`, portal);
+    const wrapper = mountLogin();
+    await flushPromises();
+    savePending();
+
+    const callbackPage = new BroadcastChannel("ma-external-login");
+    callbackPage.postMessage({
+      type: "ma-external-login",
+      state,
+      code: haCode,
+    });
+    await vi.waitFor(() =>
+      expect(wrapper.emitted("authenticated")).toBeDefined(),
+    );
+    callbackPage.close();
+
+    expect(mocks.connectRemote).toHaveBeenCalledOnce();
+    expect(mocks.exchangeAuthCode).toHaveBeenCalledWith(
+      state,
+      haCode,
+      verifier,
+    );
+  });
+
+  it("leaves another server before completing a sign-in handed over for its own", async () => {
+    const otherRemoteId = "ZYXWVUTS9876598765ZYXWVUTS";
+    mockProviders(true);
+    setLocation(`?remote_id=${otherRemoteId}`, portal);
+    const wrapper = mountLogin();
+    await flushPromises();
+    savePending();
+    mocks.disconnectRemote.mockClear();
+    mocks.apiDisconnect.mockClear();
+
+    const callbackPage = new BroadcastChannel("ma-external-login");
+    callbackPage.postMessage({
+      type: "ma-external-login",
+      state,
+      code: haCode,
+    });
+    await vi.waitFor(() =>
+      expect(wrapper.emitted("authenticated")).toBeDefined(),
+    );
+    callbackPage.close();
+
+    expect(mocks.disconnectRemote).toHaveBeenCalledOnce();
+    expect(mocks.apiDisconnect).toHaveBeenCalledOnce();
+    expect(mocks.connectRemote).toHaveBeenLastCalledWith(remoteId);
+    expect(mocks.exchangeAuthCode).toHaveBeenCalledWith(
+      state,
+      haCode,
+      verifier,
+    );
   });
 });
 
