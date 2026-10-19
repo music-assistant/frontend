@@ -1275,8 +1275,8 @@ export interface DailyStats {
 
 export interface ListeningSummary {
   period: string;
-  period_start: string | null;
-  period_end: string | null;
+  period_start: number;
+  period_end: number;
   total_listening_seconds: number;
   total_plays: number;
   unique_tracks: number;
