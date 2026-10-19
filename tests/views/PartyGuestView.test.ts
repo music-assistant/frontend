@@ -374,6 +374,47 @@ describe("PartyGuestView skip voting", () => {
     vi.mocked(api.sendCommand).mockResolvedValue(null as never);
   });
 
+  it("lets a guest vote again when the server drops the votes", async () => {
+    playItem("item_a");
+    const view = mountViewRaw();
+    await flushPromises();
+
+    view.findComponent(PartyQueueSection).vm.$emit("skip");
+    await flushPromises();
+    // the server stores the tally on the playing item
+    skipState.currentQueue.value = {
+      current_item: {
+        queue_item_id: "item_a",
+        extra_attributes: { party_skip_votes: 1 },
+      },
+    };
+    await flushPromises();
+    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
+      true,
+    );
+
+    // a reload of the Party plugin removes the tally while the track keeps playing
+    playItem("item_a");
+    await flushPromises();
+
+    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
+      false,
+    );
+  });
+
+  it("keeps the vote while the tally has not arrived yet", async () => {
+    playItem("item_a");
+    const view = mountViewRaw();
+    await flushPromises();
+
+    view.findComponent(PartyQueueSection).vm.$emit("skip");
+    await flushPromises();
+
+    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
+      true,
+    );
+  });
+
   it("lets a guest vote again when a voted track plays again", async () => {
     playItem("item_a");
     const view = mountViewRaw();

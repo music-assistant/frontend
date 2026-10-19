@@ -447,6 +447,11 @@ const votedSkipItemId = ref("");
 watch(currentQueueItemId, () => {
   votedSkipItemId.value = "";
 });
+// Every counted vote shows in the tally, so a tally back at zero means the
+// server dropped the votes, for example when the Party plugin reloaded
+watch(skipVotes, (votes) => {
+  if (votes === 0) votedSkipItemId.value = "";
+});
 const hasVotedToSkip = computed(
   () =>
     !!currentQueueItemId.value &&

@@ -44,7 +44,10 @@
         :style="{ '--progress-scale': progressPercentage / 100 }"
       ></div>
     </div>
-    <div v-if="isGuestRequest || showSkipVotes" class="card-badges">
+    <div
+      v-if="isGuestRequest || showSkipVotes"
+      class="ml-auto flex shrink-0 flex-col items-end gap-[0.6vh]"
+    >
       <!-- Guest request badge -->
       <div v-if="isGuestRequest" class="guest-badge" :style="guestBadgeStyle">
         <Rocket v-if="isBoost" class="badge-icon" />
@@ -52,7 +55,15 @@
         <span v-if="position === 'current'">{{ badgeText }}</span>
       </div>
       <!-- Skip vote progress for the current track -->
-      <div v-if="showSkipVotes" class="skip-vote-badge">
+      <div
+        v-if="showSkipVotes"
+        :class="
+          cn(
+            'flex items-center gap-[0.6vh] rounded-full border border-destructive/50 bg-destructive/30 px-[1.2vh] py-[0.5vh] text-[clamp(0.65rem,1.2vh,1.1rem)] font-semibold uppercase tracking-[0.5px] text-foreground/90 tabular-nums',
+            forceWhiteText && 'text-white/90',
+          )
+        "
+      >
         <SkipForward class="badge-icon" />
         <span>{{ skipVotesText }}</span>
       </div>
@@ -66,6 +77,7 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
+import { cn } from "@/lib/utils";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Rocket, SkipForward, UserRound } from "@lucide/vue";
@@ -363,35 +375,6 @@ watch(
   box-shadow:
     0 0.8vh 3.2vh rgba(0, 0, 0, 0.3),
     0 0 2vh var(--guest-shadow);
-}
-
-.card-badges {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.6vh;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-.skip-vote-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.6vh;
-  padding: 0.5vh 1.2vh;
-  background: rgba(var(--v-theme-error), 0.3);
-  border: 1px solid rgba(var(--v-theme-error), 0.5);
-  border-radius: 999px;
-  color: rgba(var(--v-theme-on-surface), 0.9);
-  font-size: clamp(0.65rem, 1.2vh, 1.1rem);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-variant-numeric: tabular-nums;
-}
-
-.white-text .skip-vote-badge {
-  color: rgba(255, 255, 255, 0.9);
 }
 
 .guest-badge {

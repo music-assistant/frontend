@@ -28,7 +28,10 @@
           <Spinner v-if="skippingSong" class="size-4" />
           <SkipForward v-else :size="16" />
           {{ $t("providers.party.guest_page.skip") }}
-          <span v-if="skipVotesRequired > 1" class="skip-votes">
+          <span
+            v-if="skipVotesRequired > 1"
+            class="ml-1 tabular-nums opacity-80"
+          >
             {{ skipVotes }}/{{ skipVotesRequired }}
           </span>
           <span
@@ -176,12 +179,6 @@ defineExpose({ listRef });
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0.5px;
-}
-
-.skip-votes {
-  margin-left: 0.25rem;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.8;
 }
 
 .skip-token-badge {
