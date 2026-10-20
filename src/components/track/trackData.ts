@@ -46,9 +46,15 @@ const LOSSLESS_CODECS = new Set<ContentType>([
   ContentType.DSD_MSBF_PLANAR,
 ]);
 
-/** The albums the track appears on. */
+/** All the albums the track appears on. */
 export async function loadTrackAlbums(track: Track): Promise<Album[]> {
-  return await api.getTrackAlbums(track.item_id, track.provider);
+  return await api.getTrackAlbums(
+    track.item_id,
+    track.provider,
+    false,
+    undefined,
+    0,
+  );
 }
 
 /** The other versions of the track, on any provider. */
@@ -58,9 +64,9 @@ export async function loadTrackVersions(track: Track): Promise<Track[]> {
 
 /** Tracks similar to this one, without the track itself. */
 export async function loadSimilarTracks(track: Track): Promise<Track[]> {
-  const tracks = await api.getSimilarTracks(track.item_id, track.provider);
+  const tracks = await api.getSimilarTracks(track.item_id, track.provider, 25);
   // a provider may hand the track itself back under another of its mappings
-  return tracks.filter((candidate) => !sharesMapping(candidate, track));
+  return tracks.filter((candidate) => !tracksShareMapping(candidate, track));
 }
 
 /**
@@ -173,7 +179,7 @@ export function trackBackdrop(track: Track, artist?: Artist): TrackBackdrop {
 }
 
 /** Whether the two tracks share a provider mapping, i.e. are the same recording. */
-function sharesMapping(a: Track, b: Track): boolean {
+export function tracksShareMapping(a: Track, b: Track): boolean {
   return b.provider_mappings.some((reference) =>
     a.provider_mappings.some(
       (mapping) =>

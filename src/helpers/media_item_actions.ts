@@ -11,6 +11,8 @@ import {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
+  SortDirection,
+  SortField,
   Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -52,6 +54,10 @@ export const handlePlayBtnClick = async function (
   forceMenu?: boolean,
   sortBy?: string,
   tracksSortBy?: string,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
+  tracksSortField?: SortField,
+  tracksSortDirection?: SortDirection,
 ) {
   // a failed play action must never be silent: without feedback the play
   // button appears dead (e.g. while the connection is re-establishing)
@@ -78,22 +84,40 @@ export const handlePlayBtnClick = async function (
         api
           .playMedia(parentItem.uri, undefined, {
             start_item: item.item_id,
-            sort_by: sortBy,
+            ...(sortField
+              ? { sort_field: sortField, sort_direction: sortDirection }
+              : sortBy
+                ? { sort_by: sortBy }
+                : {}),
           })
           .catch(onPlayError);
         return;
       }
     }
     // else: play the item directly
-    const playAction = tracksSortBy
-      ? api.playMedia(item, undefined, { sort_by: tracksSortBy })
+    const playOptions = tracksSortField
+      ? {
+          sort_field: tracksSortField,
+          sort_direction: tracksSortDirection,
+        }
+      : tracksSortBy
+        ? { sort_by: tracksSortBy }
+        : undefined;
+    const playAction = playOptions
+      ? api.playMedia(item, undefined, playOptions)
       : api.playMedia(item);
     playAction.catch(onPlayError);
     return;
   }
-  showPlayMenuForMediaItem(item, parentItem, posX, posY, tracksSortBy).catch(
-    onPlayError,
-  );
+  showPlayMenuForMediaItem(
+    item,
+    parentItem,
+    posX,
+    posY,
+    tracksSortBy,
+    tracksSortField,
+    tracksSortDirection,
+  ).catch(onPlayError);
 };
 
 /**
@@ -187,6 +211,8 @@ export const handleMenuBtnClick = function (
   parentItem?: MediaItemType,
   includePlayMenuItems = true,
   sortBy?: string,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
 ) {
   const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
     ? item
@@ -199,6 +225,9 @@ export const handleMenuBtnClick = function (
     includePlayMenuItems,
     includePlayMenuItems,
     sortBy,
+    undefined,
+    sortField,
+    sortDirection,
   );
 };
 

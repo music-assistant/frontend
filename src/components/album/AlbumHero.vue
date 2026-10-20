@@ -60,10 +60,9 @@
 
           <div class="album-hero__actions">
             <DetailHeroPlayButton
-              class="album-hero__play"
-              shrink-label
               :item="item"
-              :tracks-sort-by="tracksSortBy"
+              :tracks-sort-field="tracksSortField"
+              :tracks-sort-direction="tracksSortDirection"
             />
             <DetailHeroButton
               :icon="Shuffle"
@@ -107,6 +106,8 @@ import {
   type Album,
   type Artist,
   type ItemMapping,
+  type SortDirection,
+  type SortField,
 } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
@@ -126,7 +127,8 @@ export interface Props {
   // their total playing time in seconds, once they are known
   duration?: number;
   // the order the tracks are listed in below, which the play button follows
-  tracksSortBy?: string;
+  tracksSortField?: SortField;
+  tracksSortDirection?: SortDirection;
 }
 const props = defineProps<Props>();
 
@@ -282,10 +284,6 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   gap: 8px;
   min-width: 0;
 }
-/* the play button gives way so Shuffle and Endless keep their place on the row */
-.album-hero__play {
-  min-width: 0;
-}
 
 @media (max-width: 768px) {
   .album-hero__main {
@@ -306,9 +304,6 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   }
   .album-hero__actions {
     gap: 10px;
-  }
-  .album-hero__actions .album-hero__play {
-    flex: 1;
   }
 }
 </style>
