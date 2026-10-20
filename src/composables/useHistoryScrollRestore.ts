@@ -1,5 +1,5 @@
 import { returnedByHistory } from "@/helpers/navigation";
-import { onBeforeUnmount, watch, type Ref } from "vue";
+import { onScopeDispose, watch, type Ref } from "vue";
 import {
   onBeforeRouteLeave,
   onBeforeRouteUpdate,
@@ -52,7 +52,7 @@ export function useHistoryScrollRestore(content: Ref<HTMLElement | undefined>) {
     { immediate: true },
   );
 
-  onBeforeUnmount(() => stopRestore?.());
+  onScopeDispose(() => stopRestore?.());
 
   function startRestore(top: number) {
     const scroller = getScroller();

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { effectScope, nextTick, reactive, ref } from "vue";
+import { effectScope, nextTick, reactive, ref, type EffectScope } from "vue";
 import { useHistoryScrollRestore } from "./useHistoryScrollRestore";
 
 type Guard = (to: unknown, from: { fullPath: string }) => void;
@@ -35,6 +35,7 @@ class ResizeObserverMock {
 
 describe("useHistoryScrollRestore", () => {
   let scroller: HTMLDivElement;
+  let scopes: EffectScope[] = [];
 
   beforeEach(() => {
     vi.stubGlobal("ResizeObserver", ResizeObserverMock);
@@ -49,12 +50,15 @@ describe("useHistoryScrollRestore", () => {
   });
 
   afterEach(() => {
+    scopes.forEach((scope) => scope.stop());
+    scopes = [];
     scroller.remove();
     vi.unstubAllGlobals();
   });
 
   function mount() {
     const scope = effectScope();
+    scopes.push(scope);
     const restore = scope.run(() =>
       useHistoryScrollRestore(ref(document.createElement("section"))),
     )!;
@@ -117,6 +121,19 @@ describe("useHistoryScrollRestore", () => {
     document.body.dispatchEvent(
       new KeyboardEvent("keydown", { bubbles: true }),
     );
+    setContentHeight(2000);
+    resize();
+    expect(scroller.scrollTop).toBe(0);
+  });
+
+  it("stops restoring once the view is gone", async () => {
+    leaveAt(1200);
+    historyMock.returned = true;
+    setContentHeight(800);
+    const { scope } = mount();
+    await nextTick();
+
+    scope.stop();
     setContentHeight(2000);
     resize();
     expect(scroller.scrollTop).toBe(0);
