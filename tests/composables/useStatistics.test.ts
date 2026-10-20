@@ -21,6 +21,7 @@ const { api, unsubscribe, toastError } = vi.hoisted(() => ({
   unsubscribe: vi.fn(),
   toastError: vi.fn(),
 }));
+const STATISTICS_LOAD_ERROR_TOAST_ID = "statistics-load-failed";
 
 vi.mock("@/plugins/api", () => ({ default: api }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
@@ -186,7 +187,24 @@ describe("useStatistics", () => {
     expect(statistics.statisticsError.value).toBe(true);
     expect(toastError).toHaveBeenCalledExactlyOnceWith(
       "statistics_load_failed",
+      { id: STATISTICS_LOAD_ERROR_TOAST_ID },
     );
+  });
+
+  it("deduplicates notifications when ranking and chart requests both fail", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    api.getTopItems
+      .mockRejectedValueOnce(new Error("ranking failed"))
+      .mockRejectedValueOnce(new Error("artist chart failed"));
+    const statistics = setupStatistics();
+    await flushPromises();
+
+    expect(statistics.statisticsError.value).toBe(true);
+    expect(toastError).toHaveBeenCalledTimes(2);
+    expect(toastError.mock.calls.map(([, options]) => options?.id)).toEqual([
+      STATISTICS_LOAD_ERROR_TOAST_ID,
+      STATISTICS_LOAD_ERROR_TOAST_ID,
+    ]);
   });
 
   it("keeps successful chart data when another chart fails", async () => {

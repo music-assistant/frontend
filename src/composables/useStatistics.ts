@@ -19,6 +19,7 @@ import { toast } from "vue-sonner";
 
 const TOP_ITEMS_LIMIT = 50;
 const CHART_ITEMS_LIMIT = 10;
+const STATISTICS_LOAD_ERROR_TOAST_ID = "statistics-load-failed";
 
 export function useStatistics(visible: Readonly<Ref<boolean>>) {
   const activeStatTab = ref<MediaType>(MediaType.TRACK);
@@ -55,7 +56,9 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
       statisticsItems.value = result.filter((item) => item && item.item);
     } catch {
       if (!isCurrent()) return;
-      toast.error($t("statistics_load_failed"));
+      toast.error($t("statistics_load_failed"), {
+        id: STATISTICS_LOAD_ERROR_TOAST_ID,
+      });
       statisticsItems.value = [];
       statisticsError.value = true;
     } finally {
@@ -102,7 +105,9 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
       decadeDistribution.value = data.decadeDistribution;
       if (hasFailures) {
         console.error("One or more statistics chart requests failed.");
-        toast.error($t("statistics_load_failed"));
+        toast.error($t("statistics_load_failed"), {
+          id: STATISTICS_LOAD_ERROR_TOAST_ID,
+        });
       }
     } finally {
       if (isCurrent()) chartsLoading.value = false;

@@ -87,9 +87,9 @@ const chartOptions = computed<ChartOptions<"bar">>(() => ({
     },
     tooltip: createTooltipConfig({
       label: (context) => {
-        const minutes = context.parsed.x ?? 0;
-        const hours = Math.floor(minutes / 60);
-        const mins = Math.round(minutes % 60);
+        const totalMinutes = Math.round(context.parsed.x ?? 0);
+        const hours = Math.floor(totalMinutes / 60);
+        const mins = totalMinutes % 60;
         return hours > 0
           ? $t("duration_hours_minutes", { hours, minutes: mins })
           : $t("duration_minutes", { minutes: mins });

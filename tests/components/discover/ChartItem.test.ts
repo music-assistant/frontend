@@ -1,0 +1,55 @@
+import ChartItem from "@/components/discover/ChartItem.vue";
+import type { MediaItemTypeOrItemMapping } from "@/plugins/api/interfaces";
+import { MediaType } from "@/plugins/api/interfaces";
+import { mount } from "@vue/test-utils";
+import { describe, expect, it, vi } from "vitest";
+
+const { handlePlayBtnClick } = vi.hoisted(() => ({
+  handlePlayBtnClick: vi.fn(),
+}));
+
+vi.mock("@/components/discover/editorialArtwork", () => ({
+  itemArtwork: () => ({ image: undefined, gradient: "none" }),
+}));
+vi.mock("@/helpers/media_item_actions", () => ({
+  handleMediaItemClick: vi.fn(),
+  handleMenuBtnClick: vi.fn(),
+  handlePlayBtnClick,
+}));
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+
+function renderItem(available: boolean) {
+  const item = {
+    item_id: "track-1",
+    provider: "library",
+    media_type: MediaType.TRACK,
+    uri: "track://library/track-1",
+    name: "Track",
+    available,
+  } as MediaItemTypeOrItemMapping;
+
+  return mount(ChartItem, {
+    props: { item, position: 1, playCount: 3 },
+    global: { directives: { hold: () => undefined } },
+  });
+}
+
+describe("ChartItem play control", () => {
+  it("disables playback for unavailable history items", async () => {
+    const wrapper = renderItem(false);
+    const playButton = wrapper.get('button[aria-label="play"]');
+
+    expect((playButton.element as HTMLButtonElement).disabled).toBe(true);
+    await playButton.trigger("click");
+    expect(handlePlayBtnClick).not.toHaveBeenCalled();
+  });
+
+  it("keeps playback enabled for available items", async () => {
+    const wrapper = renderItem(true);
+    const playButton = wrapper.get('button[aria-label="play"]');
+
+    expect((playButton.element as HTMLButtonElement).disabled).toBe(false);
+    await playButton.trigger("click");
+    expect(handlePlayBtnClick).toHaveBeenCalledOnce();
+  });
+});
