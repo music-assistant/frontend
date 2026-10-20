@@ -7,13 +7,13 @@ import ListeningHeatmapCard from "@/components/statistics/ListeningHeatmapCard.v
 import PieChartCard from "@/components/statistics/PieChartCard.vue";
 import StatisticsRow from "@/components/statistics/StatisticsRow.vue";
 import { Spinner } from "@/components/ui/spinner";
-import { Tabs } from "@/components/ui/tabs";
+import { Tabs, TabsTrigger } from "@/components/ui/tabs";
 import {
   MediaType,
   type StatisticsTopItemResult,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { enableAutoUnmount, shallowMount } from "@vue/test-utils";
+import { enableAutoUnmount, mount, shallowMount } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
 
 enableAutoUnmount(afterEach);
@@ -97,6 +97,42 @@ describe("StatisticsRow", () => {
       expect(wrapper.findComponent(chart).props("loading")).toBe(true);
     }
     expect(wrapper.findComponent(LineChartCard).props("period")).toBe("today");
+  });
+
+  it("only offers media types supported by the statistics API", () => {
+    const wrapper = mount(StatisticsRow, {
+      props: {
+        activeTab: MediaType.TRACK,
+        period: "week",
+        items: [],
+        loading: false,
+        error: false,
+        chartsLoading: false,
+        charts: {
+          artistDistribution: [],
+          playsOverTime: [],
+          listeningActivity: [],
+          listeningTime: [],
+          decadeDistribution: [],
+        },
+      },
+      global: {
+        stubs: {
+          ChartItem: true,
+          Spinner: true,
+          PieChartCard: true,
+          LineChartCard: true,
+          BarChartCard: true,
+          ListeningClockCard: true,
+          ListeningHeatmapCard: true,
+          DecadeBarChartCard: true,
+        },
+      },
+    });
+
+    expect(
+      wrapper.findAllComponents(TabsTrigger).map((tab) => tab.props("value")),
+    ).toEqual([MediaType.TRACK, MediaType.ALBUM, MediaType.ARTIST]);
   });
 
   it("emits tab and period changes without owning requests", async () => {

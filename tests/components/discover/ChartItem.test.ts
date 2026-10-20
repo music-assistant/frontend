@@ -50,6 +50,7 @@ describe("ChartItem play control", () => {
     const playButton = wrapper.get('button[aria-label="play"]');
 
     expect((playButton.element as HTMLButtonElement).disabled).toBe(true);
+    expect(playButton.classes()).toContain("pointer-events-none");
     await playButton.trigger("click");
     expect(handlePlayBtnClick).not.toHaveBeenCalled();
   });
@@ -59,6 +60,12 @@ describe("ChartItem play control", () => {
     const playButton = wrapper.get('button[aria-label="play"]');
 
     expect((playButton.element as HTMLButtonElement).disabled).toBe(false);
+    expect(playButton.classes()).toContain("pointer-events-none");
+    expect(playButton.classes()).toContain("group-hover:pointer-events-auto");
+    expect(playButton.classes()).toContain("focus-visible:pointer-events-auto");
+    expect(playButton.classes()).toContain(
+      "[@media(hover:none)]:pointer-events-auto",
+    );
     await playButton.trigger("click");
     expect(handlePlayBtnClick).toHaveBeenCalledOnce();
   });

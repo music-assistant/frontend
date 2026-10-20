@@ -55,7 +55,7 @@
     </button>
     <button
       type="button"
-      class="absolute right-2 bottom-2 z-[4] inline-flex size-8 translate-y-1.5 items-center justify-center rounded-full border-0 bg-primary p-0 text-white opacity-0 shadow-lg transition-all group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:translate-y-0 focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-40 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100"
+      class="pointer-events-none absolute right-2 bottom-2 z-[4] inline-flex size-8 translate-y-1.5 items-center justify-center rounded-full border-0 bg-primary p-0 text-white opacity-0 shadow-lg transition-all group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:translate-y-0 focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-40 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100"
       :aria-label="$t('play')"
       :disabled="!isAvailable"
       @click.stop="handlePlay"
