@@ -18,7 +18,7 @@ export function usePlayPauseCommand(
   player: PlayerRef,
   playerQueue: PlayerQueueRef,
 ) {
-  const { activeSource } = useActiveSource(player);
+  const { activeSource, canRestartSource } = useActiveSource(player);
   const { activeAudioSource } = useActiveAudioSource(player);
 
   const queueCanPlay = computed(() => {
@@ -40,7 +40,7 @@ export function usePlayPauseCommand(
     }
     // Check if active source can play/pause
     if (activeSource.value) {
-      return activeSource.value.can_play_pause;
+      return activeSource.value.can_play_pause || canRestartSource.value;
     }
     // Fall back to queue or player capabilities
     return queueCanPlay.value || playerCanPlay.value;

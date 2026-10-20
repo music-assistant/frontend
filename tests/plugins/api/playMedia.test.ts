@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { api } from "@/plugins/api";
-import { QueueOption } from "@/plugins/api/interfaces";
+import {
+  QueueOption,
+  SortDirection,
+  SortField,
+} from "@/plugins/api/interfaces";
 
 describe("playMedia start_from_beginning passthrough", () => {
   afterEach(() => {
@@ -58,5 +62,41 @@ describe("playMedia start_from_beginning passthrough", () => {
     api.playMedia("library://track/1", QueueOption.PLAY);
 
     expect(spy.mock.calls[0].length).toBe(2);
+  });
+});
+
+describe("playMedia typed sort passthrough", () => {
+  it("forwards sort_field and sort_direction", () => {
+    const spy = vi
+      .spyOn(api, "sendCommand")
+      .mockResolvedValue(undefined as never);
+
+    api.playMedia("library://album/1", QueueOption.PLAY, {
+      sort_field: SortField.DURATION,
+      sort_direction: SortDirection.DESC,
+    });
+
+    expect(spy).toHaveBeenCalledWith(
+      "player_queues/play_media",
+      expect.objectContaining({
+        sort_field: SortField.DURATION,
+        sort_direction: SortDirection.DESC,
+      }),
+    );
+  });
+
+  it("preserves sort_by for callers that have not migrated to typed sorts", () => {
+    const spy = vi
+      .spyOn(api, "sendCommand")
+      .mockResolvedValue(undefined as never);
+
+    api.playMedia("library://album/1", QueueOption.PLAY, {
+      sort_by: "duration_desc",
+    });
+
+    expect(spy).toHaveBeenCalledWith(
+      "player_queues/play_media",
+      expect.objectContaining({ sort_by: "duration_desc" }),
+    );
   });
 });

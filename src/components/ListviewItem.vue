@@ -356,6 +356,8 @@ import {
   type MediaCollection,
   type MediaItemType,
   type PodcastEpisode,
+  SortDirection,
+  SortField,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -392,6 +394,8 @@ export interface Props {
   disablePlayButton?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
 }
 
 // touch devices (phones + tablets like iPad) can't hover, so they get an
@@ -419,6 +423,8 @@ const compProps = withDefaults(defineProps<Props>(), {
   isAvailable: true,
   parentItem: undefined,
   sortBy: undefined,
+  sortField: undefined,
+  sortDirection: undefined,
 });
 
 // computed properties
@@ -522,6 +528,8 @@ const onMenu = function (evt: Event) {
     compProps.parentItem,
     true,
     compProps.sortBy,
+    compProps.sortField,
+    compProps.sortDirection,
   );
 };
 
@@ -552,6 +560,9 @@ const onPlayClick = function (evt: PointerEvent) {
     compProps.parentItem,
     undefined,
     compProps.sortBy,
+    undefined,
+    compProps.sortField,
+    compProps.sortDirection,
   );
 };
 </script>
