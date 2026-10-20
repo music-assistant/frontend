@@ -11,7 +11,11 @@ import {
   Scope,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
-import { getPlayerDisplayName, isSelectablePlayer } from "@/helpers/players";
+import {
+  getPlayerDisplayName,
+  isPlayerManagedExternally,
+  isSelectablePlayer,
+} from "@/helpers/players";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { resolveExternalSource } from "@/composables/externalSource";
 import { resolveActiveSourceId } from "@/composables/activeSource";
@@ -379,8 +383,12 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // open the settings (both menus, for a role that changes player settings)
-  if (authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)) {
+  // open the settings (both menus, for a role that changes player settings);
+  // a player managed outside of Music Assistant has none to change here
+  if (
+    authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE) &&
+    !isPlayerManagedExternally(player)
+  ) {
     const openSettings = (path: string) => () => {
       store.showFullscreenPlayer = false;
       store.showPlayersMenu = false;

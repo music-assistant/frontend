@@ -26,6 +26,7 @@ import {
 const mocks = vi.hoisted(() => ({
   afterEachHooks: [] as NavigationHookAfter[],
   apiState: { value: "initialized" },
+  players: {} as Record<string, { managed_externally?: boolean }>,
   globalGuards: [] as NavigationGuardWithThis<undefined>[],
   hasScope: vi.fn<(scope: Scope) => boolean>(() => false),
   isDashboardViewer: vi.fn(() => false),
@@ -47,6 +48,7 @@ vi.mock("@/plugins/api", async () => {
   return {
     api: {
       state: mocks.apiState,
+      players: mocks.players,
     },
     ConnectionState: {
       AUTHENTICATED: "authenticated",
@@ -601,6 +603,37 @@ describe("scope-gated routes", () => {
       });
     },
   );
+});
+
+describe("a player managed outside of Music Assistant", () => {
+  beforeEach(() => {
+    mocks.store.currentUser = { role: "admin", username: "admin" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    mocks.players["player-1"] = { managed_externally: true };
+  });
+
+  afterEach(() => {
+    delete mocks.players["player-1"];
+  });
+
+  it.each([
+    "/settings/editplayer/player-1",
+    "/settings/editplayer/player-1/dsp",
+    "/settings/editqueue/player-1",
+  ])("sends %s back to the players list", async (path) => {
+    await expect(invokeGuard(globalGuard, resolveRoute(path))).resolves.toEqual(
+      { name: "playersettings" },
+    );
+  });
+
+  it("still opens its playback options", async () => {
+    await expect(
+      invokeGuard(
+        globalGuard,
+        resolveRoute("/settings/editplayer/player-1/options"),
+      ),
+    ).resolves.toBeUndefined();
+  });
 });
 
 describe("a gated route waits for the connection", () => {
