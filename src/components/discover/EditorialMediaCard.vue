@@ -133,6 +133,8 @@ import {
   MediaType,
   type MediaCollection,
   type PodcastEpisode,
+  SortDirection,
+  SortField,
   type Track,
 } from "@/plugins/api/interfaces";
 import { Check, ClockFading, Play } from "@lucide/vue";
@@ -154,6 +156,8 @@ interface Props {
   round?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
 }
 const props = withDefaults(defineProps<Props>(), {
   showProviderOnCover: false,
@@ -167,6 +171,8 @@ const props = withDefaults(defineProps<Props>(), {
   round: false,
   parentItem: undefined,
   sortBy: undefined,
+  sortField: undefined,
+  sortDirection: undefined,
 });
 
 const emit = defineEmits<{
@@ -304,6 +310,8 @@ const onHold = (e: TouchEvent) => {
     props.parentItem,
     true,
     props.sortBy,
+    props.sortField,
+    props.sortDirection,
   );
 };
 const onPlay = (e: MouseEvent) => {
@@ -315,6 +323,9 @@ const onPlay = (e: MouseEvent) => {
     props.parentItem,
     undefined,
     props.sortBy,
+    undefined,
+    props.sortField,
+    props.sortDirection,
   );
 };
 const onMenu = (e: MouseEvent) => {
@@ -326,6 +337,8 @@ const onMenu = (e: MouseEvent) => {
     props.parentItem,
     true,
     props.sortBy,
+    props.sortField,
+    props.sortDirection,
   );
 };
 </script>

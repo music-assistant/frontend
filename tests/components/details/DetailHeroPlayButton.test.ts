@@ -1,9 +1,14 @@
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
-import type { MediaItemType, Player } from "@/plugins/api/interfaces";
+import {
+  SortDirection,
+  SortField,
+  type MediaItemType,
+  type Player,
+} from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, storeMock } = vi.hoisted(() => ({
+const { apiMock, storeMock, mockHandlePlayBtnClick } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, Player>,
     queues: {},
@@ -12,6 +17,7 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
     activePlayer: undefined as Player | undefined,
     companionPlayerId: undefined as string | undefined,
   },
+  mockHandlePlayBtnClick: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
@@ -20,7 +26,7 @@ vi.mock("@/plugins/store", () => ({ store: storeMock }));
 const row = vi.hoisted(() => ({ room: 0 }));
 vi.mock("@/helpers/room_in_row", () => ({ roomInRow: () => row.room }));
 vi.mock("@/helpers/media_item_actions", () => ({
-  handlePlayBtnClick: vi.fn(),
+  handlePlayBtnClick: mockHandlePlayBtnClick,
 }));
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string, values?: Record<string, string>) =>
@@ -30,7 +36,7 @@ vi.mock("@/plugins/i18n", () => ({
 const MenuButtonStub = {
   props: { text: String, label: String, truncate: Boolean },
   template:
-    '<button :label="label" :data-truncate="String(truncate)">{{ text }}</button>',
+    '<button :label="label" :data-truncate="String(truncate)" @click="$emit(\'click\')">{{ text }}</button>',
 };
 
 function player(overrides: Partial<Player> = {}): Player {
@@ -43,9 +49,9 @@ function player(overrides: Partial<Player> = {}): Player {
   } as unknown as Player;
 }
 
-function mountButton() {
+function mountButton(props: Record<string, unknown> = {}) {
   return mount(DetailHeroPlayButton, {
-    props: { item: {} as MediaItemType },
+    props: { item: {} as MediaItemType, ...props },
     global: { stubs: { MenuButton: MenuButtonStub } },
   });
 }
@@ -59,6 +65,7 @@ describe("DetailHeroPlayButton", () => {
     apiMock.players = {};
     storeMock.activePlayer = undefined;
     storeMock.companionPlayerId = undefined;
+    mockHandlePlayBtnClick.mockClear();
     row.room = 0;
   });
 
@@ -90,6 +97,31 @@ describe("DetailHeroPlayButton", () => {
     storeMock.activePlayer = player();
 
     expect(visible(mountButton()).text()).toBe("play_on_this_device");
+  });
+
+  it("passes its tracks sort as typed fields to the play handler", async () => {
+    const item = {} as MediaItemType;
+    await mountButton({
+      item,
+      tracksSortField: SortField.DURATION,
+      tracksSortDirection: SortDirection.DESC,
+    })
+      .get("button")
+      .trigger("click");
+
+    expect(mockHandlePlayBtnClick).toHaveBeenCalledWith(
+      item,
+      expect.any(Number),
+      expect.any(Number),
+      undefined,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      SortField.DURATION,
+      SortDirection.DESC,
+    );
   });
 
   it("keeps a long player's name whole in the sentence", () => {

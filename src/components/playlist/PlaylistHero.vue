@@ -77,7 +77,11 @@
           <div
             class="flex min-w-0 flex-nowrap items-center gap-2 max-md:flex-wrap max-md:gap-2.5"
           >
-            <DetailHeroPlayButton :item="item" />
+            <DetailHeroPlayButton
+              :item="item"
+              :tracks-sort-field="tracksSortField"
+              :tracks-sort-direction="tracksSortDirection"
+            />
             <DetailHeroButton
               :icon="Shuffle"
               :label="$t('shuffle')"
@@ -98,13 +102,7 @@
               :label="$t('smart_playlist.rules_dialog_title')"
               @click="emit('show-rules')"
             />
-            <span
-              v-if="!isPhone"
-              class="inline-flex size-9 flex-none items-center justify-center rounded-lg border border-white/25 bg-black/40"
-              :title="providerBadgeTitle"
-            >
-              <ProviderIcon :domain="providerDomain" :size="20" />
-            </span>
+            <DetailHeroSourceBadge :item="item" />
           </div>
         </div>
       </div>
@@ -123,16 +121,19 @@ import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import PlaylistAccessSummary from "@/components/PlaylistAccessSummary.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
 import { isMusicAssistantPlaylist } from "@/helpers/playlist_access";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatTotalDuration } from "@/helpers/duration";
 import { api } from "@/plugins/api";
-import { getProviderIconDomain } from "@/plugins/api/helpers";
-import type { Playlist } from "@/plugins/api/interfaces";
+import type {
+  Playlist,
+  SortDirection,
+  SortField,
+} from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -157,6 +158,8 @@ export interface Props {
   trackCount?: number;
   // their total playing time in seconds, once they are known
   duration?: number;
+  tracksSortField?: SortField;
+  tracksSortDirection?: SortDirection;
   // a smart playlist whose rules could be loaded
   hasRules?: boolean;
   canEditRules?: boolean;
@@ -185,15 +188,5 @@ const facts = computed(() => {
   }
   if (props.duration) parts.push(formatTotalDuration(props.duration));
   return parts;
-});
-
-const providerDomain = computed(() =>
-  props.item ? getProviderIconDomain(props.item) : "",
-);
-
-const providerBadgeTitle = computed(() => {
-  const domain = providerDomain.value;
-  if (domain === "library") return $t("in_library");
-  return api.getProviderManifest(domain)?.name ?? domain;
 });
 </script>

@@ -20,7 +20,6 @@ const scopes: EffectScope[] = [];
 function setupItemsListing(
   options: {
     limit?: number;
-    loadItems?: (params: LoadDataParams) => Promise<Track[]>;
     loadPagedData?: LoadPagedDataFn;
     sortListing?: ListingType;
     toolBarTabs?: ToolBarTab[];
@@ -102,6 +101,94 @@ describe("useItemsListing", () => {
       "track-2",
     ]);
     expect(done).toHaveBeenCalledWith("ok");
+  });
+
+  it("retries a failed sort from the start and replaces the displayed rows", async () => {
+    const items = [track({ item_id: "track-1" })];
+    const nextItems = [track({ item_id: "track-2" })];
+    const sortedItems = [track({ item_id: "duration-first" })];
+    const loadPagedData = vi
+      .fn()
+      .mockResolvedValueOnce([...items])
+      .mockResolvedValueOnce(nextItems)
+      .mockRejectedValueOnce(new Error("sort failed"))
+      .mockResolvedValueOnce(sortedItems);
+    const listing = setupItemsListing({ limit: 1, loadPagedData });
+    listing.serverSortOptions.value = [
+      sortOption(SortField.NAME, SortDirection.ASC),
+      sortOption(SortField.DURATION, SortDirection.DESC),
+    ];
+    listing.params.value.sortBy = "name:asc";
+    await listing.loadData(true);
+    await listing.loadNextPage({ done: vi.fn() });
+
+    listing.params.value.sortBy = "duration:desc";
+    await listing.loadData(true, false, true);
+
+    expect(listing.loadError.value).toBe(true);
+    expect(listing.pagedItems.value).toEqual([...items, ...nextItems]);
+    expect(listing.displayedSort.value).toEqual({
+      sortField: SortField.NAME,
+      sortDirection: SortDirection.ASC,
+    });
+
+    const loadNext = vi.fn(() => listing.loadNextPage({ done: vi.fn() }));
+    await listing.retryLoad(loadNext);
+
+    expect(loadNext).not.toHaveBeenCalled();
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        offset: 0,
+        sortField: SortField.DURATION,
+        sortDirection: SortDirection.DESC,
+      }),
+    );
+    expect(listing.pagedItems.value).toEqual(sortedItems);
+    expect(listing.loadError.value).toBe(false);
+    expect(listing.displayedSort.value).toEqual({
+      sortField: SortField.DURATION,
+      sortDirection: SortDirection.DESC,
+    });
+  });
+
+  it("keeps request parameters stable when filters change while loading", async () => {
+    let resolveFirstPage!: (items: Track[]) => void;
+    const firstPage = new Promise<Track[]>((resolve) => {
+      resolveFirstPage = resolve;
+    });
+    const completedRequests: LoadDataParams[] = [];
+    const loadPagedData = vi
+      .fn<LoadPagedDataFn>()
+      .mockImplementationOnce(async (params) => {
+        const items = await firstPage;
+        completedRequests.push({ ...params });
+        return items;
+      })
+      .mockRejectedValueOnce(new Error("reload failed"));
+    const listing = setupItemsListing({ loadPagedData });
+    listing.params.value.favoritesOnly = true;
+    listing.params.value.search = "liked";
+    const initialLoad = listing.loadData(true);
+
+    listing.params.value.favoritesOnly = false;
+    listing.params.value.search = "all";
+    await listing.loadData(false, false, true);
+    resolveFirstPage([track()]);
+    await initialLoad;
+
+    expect(completedRequests[0]).toMatchObject({
+      favoritesOnly: true,
+      search: "liked",
+      offset: 0,
+    });
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        favoritesOnly: false,
+        search: "all",
+        offset: 0,
+      }),
+    );
+    expect(listing.loadError.value).toBe(true);
   });
 
   it("sends no direction for a sort option without one", async () => {
@@ -189,71 +276,6 @@ describe("useItemsListing", () => {
     expect(loadPagedData).toHaveBeenCalledTimes(1);
   });
 
-  it.each(["search", "sort"] as const)(
-    "reuses flat items after a pending %s change instead of refetching the source",
-    async (change) => {
-      let resolveItems!: (items: Track[]) => void;
-      const items = [
-        track({ item_id: "track-b", name: "B Side" }),
-        track({ item_id: "track-a", name: "A Side" }),
-      ];
-      const loadItems = vi.fn(
-        () =>
-          new Promise<Track[]>((resolve) => {
-            resolveItems = resolve;
-          }),
-      );
-      const listing = setupItemsListing({ loadItems });
-      const initialLoad = listing.loadData(true);
-
-      if (change === "search") listing.params.value.search = "B Side";
-      else listing.params.value.sortBy = "name_desc";
-      await listing.loadData(false, false, true);
-      expect(loadItems).toHaveBeenCalledTimes(1);
-
-      resolveItems(items);
-      await initialLoad;
-
-      expect(loadItems).toHaveBeenCalledTimes(1);
-      expect(listing.initialDataReceived.value).toBe(true);
-      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual(
-        change === "search" ? ["track-b"] : ["track-b", "track-a"],
-      );
-    },
-  );
-
-  it.each([
-    ["a clearing parameter change", [true, false, true]],
-    ["a refresh", [true, true, false]],
-  ] as const)(
-    "fetches a flat source again for %s queued during a load",
-    async (_change, args) => {
-      let resolveItems!: (items: Track[]) => void;
-      const loadItems = vi
-        .fn()
-        .mockImplementationOnce(
-          () =>
-            new Promise<Track[]>((resolve) => {
-              resolveItems = resolve;
-            }),
-        )
-        .mockResolvedValueOnce([track({ item_id: "fresh" })]);
-      const listing = setupItemsListing({ loadItems });
-      const initialLoad = listing.loadData(true);
-
-      await listing.loadData(...args);
-      expect(loadItems).toHaveBeenCalledTimes(1);
-
-      resolveItems([track({ item_id: "stale" })]);
-      await initialLoad;
-
-      expect(loadItems).toHaveBeenCalledTimes(2);
-      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual([
-        "fresh",
-      ]);
-    },
-  );
-
   it.each([
     {
       name: "loads the tab switched to",
@@ -293,26 +315,6 @@ describe("useItemsListing", () => {
     await initialLoad;
 
     expect(loadedTabIds).toEqual(loadedTabs);
-  });
-
-  it("filters and pages flat listings without reloading their source", async () => {
-    const loadItems = vi.fn(async () => [
-      track({ item_id: "track-b", name: "B Side" }),
-      track({ item_id: "track-a", name: "A Side" }),
-    ]);
-    const listing = setupItemsListing({ limit: 1, loadItems });
-
-    await listing.loadData(true);
-    expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual([
-      "track-a",
-    ]);
-
-    await listing.loadNextPage({ done: vi.fn() });
-    expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual([
-      "track-a",
-      "track-b",
-    ]);
-    expect(loadItems).toHaveBeenCalledTimes(1);
   });
 
   it("stops loading additional pages after its scope is disposed", async () => {

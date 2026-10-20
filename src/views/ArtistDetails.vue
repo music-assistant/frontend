@@ -119,21 +119,15 @@
           path="artistaudiobooks"
           :parent-item="itemDetails"
           :show-provider="true"
-          :show-favorites-only-filter="true"
+          :show-favorites-only-filter="false"
+          :show-favorite="true"
           :show-provider-filter="true"
           :single-provider-filter="true"
           :provider-filter-options="mappingProviderIds"
           :show-album-type-filter="false"
           :show-refresh-button="false"
-          :load-items="loadArtistAudiobooks"
-          :sort-keys="[
-            'sort_name',
-            'name',
-            'year',
-            'name_desc',
-            'sort_name_desc',
-            'year_desc',
-          ]"
+          :sort-listing="ListingType.ARTIST_AUDIOBOOKS"
+          :load-paged-data="loadArtistAudiobooks"
           :title="$t('audiobooks')"
           :subtitle="$t('in_library')"
           :empty-message="$t('artist_no_library_audiobooks')"
@@ -156,16 +150,8 @@
           :require-provider-selection="true"
           :provider-filter-options="audiobookSourceProviderIds"
           :show-refresh-button="false"
-          :load-items="loadAllAudiobooks"
-          :sort-keys="[
-            'original',
-            'name',
-            'sort_name',
-            'year',
-            'name_desc',
-            'sort_name_desc',
-            'year_desc',
-          ]"
+          :sort-listing="ListingType.ARTIST_AUDIOBOOKS"
+          :load-paged-data="loadAllAudiobooks"
           :title="$t('artist_all_audiobooks')"
           :subtitle="$t('on_provider', [activeAudiobookProvider])"
           :allow-collapse="true"
@@ -232,6 +218,7 @@ import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
 import {
   ArtistType,
+  ListingType,
   ProviderFeature,
   Scope,
   type Artist,
@@ -417,13 +404,26 @@ watch(
 useDetailItemUpdates(itemDetails, { providerItem: props });
 
 const loadArtistAudiobooks = async function (params: LoadDataParams) {
-  if (!itemDetails.value) return [];
+  const artist = itemDetails.value;
+  if (!artist) return [];
+  const providerMapping = params.provider?.[0]
+    ? artist.provider_mappings.find(
+        (mapping) => mapping.provider_instance === params.provider?.[0],
+      )
+    : undefined;
+  if (params.provider?.[0] && !providerMapping) return [];
   return await api.getArtistAudiobooks(
-    itemDetails.value.item_id,
-    itemDetails.value.provider,
-    itemDetails.value.artist_type,
+    providerMapping?.item_id ?? artist.item_id,
+    providerMapping?.provider_instance ?? artist.provider,
+    artist.artist_type,
     undefined,
     params.collapseCollections,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+    params.provider?.[0],
   );
 };
 
@@ -437,6 +437,14 @@ const loadAllAudiobooks = async function (params: LoadDataParams) {
     source.item_id,
     source.provider_instance,
     itemDetails.value.artist_type,
+    undefined,
+    params.collapseCollections,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+    providerId,
   );
 };
 
