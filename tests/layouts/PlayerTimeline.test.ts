@@ -511,6 +511,46 @@ describe("PlayerTimeline", () => {
     wrapper!.unmount();
     expect(timerCount()).toEqual({ raf: 0, interval: 0 });
   });
+
+  it("seeks to the pointer position when the pointer moves during a waveform click", async () => {
+    store.activePlayer = {
+      player_id: "p1",
+      playback_state: PlaybackState.PAUSED,
+      elapsed_time: 30,
+      elapsed_time_last_updated: NOW,
+      current_media: { duration: 300 },
+    };
+    api.playerCommandSeek.mockClear();
+
+    wrapper = mount(PlayerTimeline, {
+      props: { waveform: [0.5, 0.5] },
+      global: { stubs: { WaveformTrack: true } },
+    });
+    const slider = wrapper.get('[data-slot="slider"]').element as HTMLElement;
+    vi.spyOn(slider, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(100, 0, 200, 40),
+    );
+    const captured = new Set<number>();
+    Object.assign(slider, {
+      setPointerCapture: (id: number) => captured.add(id),
+      hasPointerCapture: (id: number) => captured.has(id),
+      releasePointerCapture: (id: number) => captured.delete(id),
+    });
+
+    // a click that drifts a few px between press and release
+    const pointer = (type: string, clientX: number) =>
+      slider.dispatchEvent(
+        new PointerEvent(type, { clientX, pointerId: 1, bubbles: true }),
+      );
+    pointer("pointerdown", 200);
+    await nextTick();
+    pointer("pointermove", 202);
+    await nextTick();
+    pointer("pointerup", 202);
+    await nextTick();
+
+    expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 153);
+  });
 });
 
 function mountTimeline(extraStubs: Record<string, unknown> = {}) {

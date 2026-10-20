@@ -328,10 +328,6 @@ const draggedItem = computed(() =>
   color: inherit !important;
 }
 
-:deep(a:visited) {
-  color: inherit !important;
-}
-
 /* Override AppSidebar global padding for image-based items */
 :deep([data-sidebar="menu-button"].shortcut-button) {
   /* explicit height (not auto) so transition-[height] can animate */

@@ -2173,6 +2173,7 @@ export interface SmartPlaylistRules {
   genre_ids: number[];
   artist_ids: number[];
   album_ids: number[];
+  folder_paths?: string[];
   favorites_only: boolean;
   explicit?: boolean | null;
   seed_track_uris?: string[];

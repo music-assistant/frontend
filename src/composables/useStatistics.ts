@@ -56,9 +56,6 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
       statisticsItems.value = result.filter((item) => item && item.item);
     } catch {
       if (!isCurrent()) return;
-      toast.error($t("statistics_load_failed"), {
-        id: STATISTICS_LOAD_ERROR_TOAST_ID,
-      });
       statisticsItems.value = [];
       statisticsError.value = true;
     } finally {
