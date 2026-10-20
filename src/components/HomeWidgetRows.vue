@@ -419,7 +419,6 @@ import api from "@/plugins/api";
 import { ACTIVE_DOT_CLASS } from "@/constants";
 import {
   EventType,
-  MediaType,
   PlaybackState,
   RecommendationFolderType,
   type EventMessage,

@@ -5,10 +5,10 @@ import type {
 } from "chart.js";
 
 /**
- * Gemeinsame Chart.js Konfigurationen für Music Assistant Stil
+ * Shared Chart.js configuration for Music Assistant styling.
  */
 
-// Music Assistant Farbpalette für Charts
+// Music Assistant chart color palette.
 export const CHART_COLORS = [
   "#03a9f4", // MA Primary Blue
   "#4caf50", // Green
@@ -22,7 +22,7 @@ export const CHART_COLORS = [
   "#009688", // Teal
 ];
 
-// Gemeinsame Tooltip-Konfiguration
+// Shared tooltip configuration.
 export const createTooltipConfig = <
   T extends keyof ChartTypeRegistry = keyof ChartTypeRegistry,
 >(
@@ -44,7 +44,7 @@ export const createTooltipConfig = <
   return config;
 };
 
-// Gemeinsame Achsen-Konfiguration
+// Shared axis configuration.
 export const createAxisConfig = (
   axis: "x" | "y",
   foregroundColor: string,
@@ -60,24 +60,5 @@ export const createAxisConfig = (
   grid: {
     color: isDark ? "rgba(255, 255, 255, 0.16)" : "rgba(0, 0, 0, 0.12)",
     display: axis === "x",
-  },
-});
-
-// Gemeinsame Legend-Konfiguration
-export const createLegendConfig = (
-  position: "top" | "right" | "bottom" | "left" = "right",
-) => ({
-  position,
-  labels: {
-    color: "rgb(var(--v-theme-on-surface))",
-    font: {
-      size: 12,
-      family: "system-ui, -apple-system, sans-serif",
-    },
-    padding: 16,
-    boxWidth: 16,
-    boxHeight: 16,
-    usePointStyle: true,
-    pointStyle: "circle",
   },
 });
