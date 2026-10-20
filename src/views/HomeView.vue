@@ -81,7 +81,7 @@
         class="shrink-0"
         @click="reviewSetupPlayers"
       >
-        {{ $t("review") }}
+        {{ $t("review_setup") }}
         <ArrowRight class="size-3.5" />
       </Button>
       <Button
