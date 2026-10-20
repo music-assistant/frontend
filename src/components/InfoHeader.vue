@@ -378,7 +378,7 @@
               />
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
-              <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
+              <ItemSourceBadge :item="item" :size="25" />
               <!-- audio analysis details (full track details only) -->
               <AudioAnalysisMetadata
                 v-if="item.media_type == MediaType.TRACK"
@@ -488,6 +488,7 @@
 <script setup lang="ts">
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
 import FavoriteMenu from "@/components/FavoriteMenu.vue";
+import ItemSourceBadge from "@/components/ItemSourceBadge.vue";
 import MarkdownText from "@/components/MarkdownText.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
@@ -519,10 +520,7 @@ import {
 } from "@/helpers/utils";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
-import {
-  getCollectionMediaTypeFromItemId,
-  getProviderIconDomain,
-} from "@/plugins/api/helpers";
+import { getCollectionMediaTypeFromItemId } from "@/plugins/api/helpers";
 import type {
   Album,
   Artist,
@@ -552,7 +550,6 @@ import MarqueeText from "./MarqueeText.vue";
 import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
-import ProviderIcon from "./ProviderIcon.vue";
 
 // properties
 export interface Props {
