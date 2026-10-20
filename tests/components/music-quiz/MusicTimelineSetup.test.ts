@@ -40,6 +40,13 @@ vi.mock("@/components/MediaItemThumb.vue", () => ({
   },
 }));
 
+vi.mock("@/components/ProviderIcon.vue", () => ({
+  default: {
+    name: "ProviderIcon",
+    template: "<div />",
+  },
+}));
+
 async function flushPromises() {
   await Promise.resolve();
   await nextTick();
