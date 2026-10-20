@@ -34,14 +34,11 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip);
 
-interface DistributionItem {
-  name: string;
-  value: number;
-}
+import type { StatisticsDistributionItem } from "@/plugins/api/interfaces";
 
 interface Props {
   title: string;
-  data: DistributionItem[];
+  data: StatisticsDistributionItem[];
   loading?: boolean;
 }
 

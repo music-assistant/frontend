@@ -1109,9 +1109,30 @@ export interface ItemMapping extends _MediaItemBase {
 }
 
 /** A ranked media item and its completed-play count from statistics endpoints. */
-export interface TopItemResult {
+export interface StatisticsTopItemResult {
   item: ItemMapping;
   play_count: number;
+}
+
+export interface StatisticsDistributionItem {
+  name: string;
+  value: number;
+}
+
+export interface StatisticsTimeSeriesPoint {
+  timestamp: string;
+  value: number;
+}
+
+export interface StatisticsHeatmapPoint {
+  hour: number;
+  weekday: number;
+  value: number;
+}
+
+export interface StatisticsListeningTimeItem {
+  name: string;
+  minutes: number;
 }
 
 export interface Artist extends MediaItem {

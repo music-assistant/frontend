@@ -44,14 +44,11 @@ ChartJS.register(
   Filler,
 );
 
-interface TimeSeriesPoint {
-  timestamp: string;
-  value: number;
-}
+import type { StatisticsTimeSeriesPoint } from "@/plugins/api/interfaces";
 
 interface Props {
   title: string;
-  data: TimeSeriesPoint[];
+  data: StatisticsTimeSeriesPoint[];
   period: string;
   loading?: boolean;
 }

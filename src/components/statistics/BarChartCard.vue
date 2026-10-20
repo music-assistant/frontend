@@ -35,14 +35,11 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip);
 
-interface ListeningTimeItem {
-  name: string;
-  minutes: number;
-}
+import type { StatisticsListeningTimeItem } from "@/plugins/api/interfaces";
 
 interface Props {
   title: string;
-  data: ListeningTimeItem[];
+  data: StatisticsListeningTimeItem[];
   loading?: boolean;
 }
 

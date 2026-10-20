@@ -60,16 +60,12 @@ import { computed } from "vue";
 import BaseChartCard from "./BaseChartCard.vue";
 import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
 
-interface HeatmapPoint {
-  hour: number;
-  weekday: number;
-  value: number;
-}
+import type { StatisticsHeatmapPoint } from "@/plugins/api/interfaces";
 
 const props = withDefaults(
   defineProps<{
     title: string;
-    data: HeatmapPoint[];
+    data: StatisticsHeatmapPoint[];
     loading?: boolean;
   }>(),
   { loading: false },

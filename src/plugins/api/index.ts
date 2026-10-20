@@ -24,6 +24,10 @@ import {
   type CommandMessage,
   type ErrorResultMessage,
   type EventMessage,
+  type StatisticsDistributionItem,
+  type StatisticsHeatmapPoint,
+  type StatisticsListeningTimeItem,
+  type StatisticsTimeSeriesPoint,
   type Genre,
   type MassEvent,
   type MediaItemType,
@@ -84,7 +88,7 @@ import {
   SortField,
   SmartPlaylistRules,
   SoundEffect,
-  TopItemResult,
+  StatisticsTopItemResult,
   SourceFolder,
   StorageInfo,
   StorageLocation,
@@ -1954,7 +1958,7 @@ export class MusicAssistantApi {
     media_type: MediaType,
     period = "week",
     limit = 50,
-  ): Promise<TopItemResult[]> {
+  ): Promise<StatisticsTopItemResult[]> {
     return this.sendCommand(
       "statistics/top_items",
       {
@@ -1967,25 +1971,10 @@ export class MusicAssistantApi {
     );
   }
 
-  public async getArtistDistribution(
-    period = "week",
-    limit = 10,
-  ): Promise<TopItemResult[]> {
-    return this.sendCommand(
-      "statistics/artist_distribution",
-      {
-        period,
-        limit,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
-      { suppressGlobalError: true },
-    );
-  }
-
   public async getPlaysOverTime(
     period = "week",
     granularity = "day",
-  ): Promise<Array<{ timestamp: string; value: number }>> {
+  ): Promise<StatisticsTimeSeriesPoint[]> {
     return this.sendCommand(
       "statistics/plays_over_time",
       {
@@ -1999,7 +1988,7 @@ export class MusicAssistantApi {
 
   public async getListeningActivity(
     period = "week",
-  ): Promise<Array<{ hour: number; weekday: number; value: number }>> {
+  ): Promise<StatisticsHeatmapPoint[]> {
     return this.sendCommand(
       "statistics/listening_activity",
       {
@@ -2014,7 +2003,7 @@ export class MusicAssistantApi {
     period = "week",
     group_by = "artist",
     limit = 10,
-  ): Promise<Array<{ name: string; minutes: number }>> {
+  ): Promise<StatisticsListeningTimeItem[]> {
     return this.sendCommand(
       "statistics/listening_time",
       {
@@ -2030,7 +2019,7 @@ export class MusicAssistantApi {
   public async getDecadeDistribution(
     period = "all_time",
     limit = 10,
-  ): Promise<Array<{ name: string; value: number }>> {
+  ): Promise<StatisticsDistributionItem[]> {
     return this.sendCommand(
       "statistics/decade_distribution",
       {

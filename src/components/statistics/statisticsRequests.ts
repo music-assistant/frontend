@@ -1,21 +1,25 @@
-import type { TopItemResult } from "@/plugins/api/interfaces";
+import type {
+  StatisticsDistributionItem,
+  StatisticsHeatmapPoint,
+  StatisticsListeningTimeItem,
+  StatisticsTimeSeriesPoint,
+  StatisticsTopItemResult,
+} from "@/plugins/api/interfaces";
 
 export interface StatisticsChartData {
-  artistDistribution: TopItemResult[];
-  playsOverTime: Array<{ timestamp: string; value: number }>;
-  listeningActivity: Array<{ hour: number; weekday: number; value: number }>;
-  listeningTime: Array<{ name: string; minutes: number }>;
-  decadeDistribution: Array<{ name: string; value: number }>;
+  artistDistribution: StatisticsTopItemResult[];
+  playsOverTime: StatisticsTimeSeriesPoint[];
+  listeningActivity: StatisticsHeatmapPoint[];
+  listeningTime: StatisticsListeningTimeItem[];
+  decadeDistribution: StatisticsDistributionItem[];
 }
 
 export interface StatisticsChartRequests {
-  artistDistribution: Promise<TopItemResult[]>;
-  playsOverTime: Promise<Array<{ timestamp: string; value: number }>>;
-  listeningActivity: Promise<
-    Array<{ hour: number; weekday: number; value: number }>
-  >;
-  listeningTime: Promise<Array<{ name: string; minutes: number }>>;
-  decadeDistribution: Promise<Array<{ name: string; value: number }>>;
+  artistDistribution: Promise<StatisticsTopItemResult[]>;
+  playsOverTime: Promise<StatisticsTimeSeriesPoint[]>;
+  listeningActivity: Promise<StatisticsHeatmapPoint[]>;
+  listeningTime: Promise<StatisticsListeningTimeItem[]>;
+  decadeDistribution: Promise<StatisticsDistributionItem[]>;
 }
 
 export function getPlaysOverTimeGranularity(period: string): "hour" | "day" {

@@ -25,7 +25,7 @@
           class="flex w-full cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent p-2 text-left text-inherit transition-colors hover:bg-[rgba(var(--v-theme-on-surface),0.05)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-default disabled:hover:bg-transparent"
           :aria-label="topItem.item.name"
           :disabled="!navigateTo"
-          @click="handleLegendClick(topItem)"
+          @click="navigateToItem(topItem)"
         >
           <div
             class="size-3 shrink-0 rounded-full"
@@ -84,13 +84,13 @@ import {
 } from "chart.js";
 import BaseChartCard from "./BaseChartCard.vue";
 import { CHART_COLORS, createTooltipConfig } from "./chartConfig";
-import type { TopItemResult } from "@/plugins/api/interfaces";
+import type { StatisticsTopItemResult } from "@/plugins/api/interfaces";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface Props {
   title: string;
-  data: TopItemResult[];
+  data: StatisticsTopItemResult[];
   loading?: boolean;
   navigateTo?: "artist" | "genre" | null;
 }
@@ -123,36 +123,19 @@ const handleChartClick = (
   event: unknown,
   elements: Array<{ index: number }>,
 ) => {
-  if (!elements.length || !props.navigateTo) return;
-
-  const element = elements[0];
-  const topItem = props.data[element.index];
-
-  if (!topItem) return;
-
-  if (props.navigateTo === "artist") {
-    router.push({
-      name: "artist",
-      params: {
-        provider: topItem.item.provider,
-        itemId: topItem.item.item_id,
-      },
-    });
-  }
+  if (!elements.length) return;
+  navigateToItem(props.data[elements[0].index]);
 };
 
-const handleLegendClick = (topItem: TopItemResult) => {
-  if (!props.navigateTo) return;
-
-  if (props.navigateTo === "artist") {
-    router.push({
-      name: "artist",
-      params: {
-        provider: topItem.item.provider,
-        itemId: topItem.item.item_id,
-      },
-    });
-  }
+const navigateToItem = (topItem: StatisticsTopItemResult | undefined) => {
+  if (!topItem || props.navigateTo !== "artist") return;
+  router.push({
+    name: "artist",
+    params: {
+      provider: topItem.item.provider,
+      itemId: topItem.item.item_id,
+    },
+  });
 };
 
 const chartData = computed<ChartData<"doughnut">>(() => {

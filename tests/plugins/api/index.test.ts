@@ -195,7 +195,6 @@ describe("MusicAssistantApi error handling", () => {
 
   it.each([
     "top_items",
-    "artist_distribution",
     "plays_over_time",
     "listening_activity",
     "listening_time",
@@ -208,7 +207,6 @@ describe("MusicAssistantApi error handling", () => {
     });
     const calls: Record<string, () => Promise<unknown>> = {
       top_items: () => api.getTopItems(MediaType.TRACK),
-      artist_distribution: () => api.getArtistDistribution(),
       plays_over_time: () => api.getPlaysOverTime(),
       listening_activity: () => api.getListeningActivity(),
       listening_time: () => api.getListeningTime(),

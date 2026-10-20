@@ -28,15 +28,11 @@ import { $t } from "@/plugins/i18n";
 
 ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 
-interface HeatmapPoint {
-  hour: number;
-  weekday: number;
-  value: number;
-}
+import type { StatisticsHeatmapPoint } from "@/plugins/api/interfaces";
 
 interface Props {
   title: string;
-  data: HeatmapPoint[];
+  data: StatisticsHeatmapPoint[];
   loading?: boolean;
 }
 
