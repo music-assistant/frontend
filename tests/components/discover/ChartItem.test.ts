@@ -9,7 +9,11 @@ const { handlePlayBtnClick } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/components/discover/editorialArtwork", () => ({
-  itemArtwork: () => ({ image: undefined, gradient: "none" }),
+  itemArtwork: (item: { name: string }) => ({
+    image: undefined,
+    gradient: "none",
+    initials: item.name.slice(0, 2).toUpperCase(),
+  }),
 }));
 vi.mock("@/helpers/media_item_actions", () => ({
   handleMediaItemClick: vi.fn(),
@@ -35,6 +39,12 @@ function renderItem(available: boolean) {
 }
 
 describe("ChartItem play control", () => {
+  it("renders the initials artwork fallback when there is no image", () => {
+    const wrapper = renderItem(true);
+
+    expect(wrapper.get('[aria-hidden="true"]').text().trim()).toBe("TR");
+  });
+
   it("disables playback for unavailable history items", async () => {
     const wrapper = renderItem(false);
     const playButton = wrapper.get('button[aria-label="play"]');

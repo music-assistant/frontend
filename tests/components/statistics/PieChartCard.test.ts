@@ -26,7 +26,8 @@ vi.mock("vuetify", async (importOriginal) => ({
 enableAutoUnmount(afterEach);
 afterEach(() => vi.clearAllMocks());
 
-function renderChart(navigateTo: "artist" | null = "artist") {
+function renderChart(navigateTo: "artist" | "genre" | null = "artist") {
+  const mediaType = navigateTo === "genre" ? MediaType.GENRE : MediaType.ARTIST;
   return mount(PieChartCard, {
     props: {
       title: "Artists",
@@ -34,11 +35,11 @@ function renderChart(navigateTo: "artist" | null = "artist") {
       data: [
         {
           item: {
-            item_id: "artist-1",
+            item_id: `${mediaType}-1`,
             provider: "library",
-            media_type: MediaType.ARTIST,
+            media_type: mediaType,
             name: "Artist",
-            uri: "artist://library/artist-1",
+            uri: `${mediaType}://library/${mediaType}-1`,
             available: true,
           },
           play_count: 3,
@@ -67,5 +68,15 @@ describe("PieChartCard navigation", () => {
       wrapper.find("button[aria-label]").attributes("disabled"),
     ).toBeDefined();
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it("routes genre chart segments to the genre detail page", async () => {
+    const wrapper = renderChart("genre");
+    await wrapper.find(".chart-hit").trigger("click");
+
+    expect(push).toHaveBeenCalledExactlyOnceWith({
+      name: "genre",
+      params: { provider: "library", itemId: `${MediaType.GENRE}-1` },
+    });
   });
 });

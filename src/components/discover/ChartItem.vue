@@ -25,6 +25,13 @@
           :src="art.image"
           :alt="item.name"
         />
+        <span
+          v-else-if="art.initials"
+          class="absolute inset-0 z-[1] flex items-center justify-center text-lg font-semibold text-[rgb(var(--v-theme-on-surface))]"
+          aria-hidden="true"
+        >
+          {{ art.initials }}
+        </span>
       </span>
       <span class="flex min-w-0 flex-1 flex-col gap-1">
         <span

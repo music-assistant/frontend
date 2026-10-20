@@ -128,9 +128,9 @@ const handleChartClick = (
 };
 
 const navigateToItem = (topItem: StatisticsTopItemResult | undefined) => {
-  if (!topItem || props.navigateTo !== "artist") return;
+  if (!topItem || !props.navigateTo) return;
   router.push({
-    name: "artist",
+    name: props.navigateTo,
     params: {
       provider: topItem.item.provider,
       itemId: topItem.item.item_id,
