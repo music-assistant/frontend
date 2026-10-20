@@ -5,13 +5,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { providerMapping } from "../fixtures/providerMapping";
 import { track } from "../fixtures/track";
 
-const { copyMock, toastMock } = vi.hoisted(() => ({
+const { copyMock, getLibraryItemMock, toastMock } = vi.hoisted(() => ({
   copyMock: vi.fn<(text: string) => Promise<boolean>>(),
+  getLibraryItemMock: vi.fn(),
   toastMock: { success: vi.fn(), error: vi.fn() },
 }));
 
 vi.mock("@/plugins/api", () => ({
-  api: { getProviderManifest: () => ({ name: "Spotify" }) },
+  api: {
+    getProviderManifest: () => ({ name: "Spotify" }),
+    getLibraryItem: getLibraryItemMock,
+  },
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/helpers/utils", () => ({ copyToClipboard: copyMock }));
@@ -56,6 +60,18 @@ describe("ItemSourceBadge", () => {
 
     expect(copyMock).toHaveBeenCalledWith("library://track/1");
     expect(toastMock.success).toHaveBeenCalledWith("uri_copied");
+  });
+
+  it("copies the library URI of a liked provider item", async () => {
+    copyMock.mockResolvedValue(true);
+    getLibraryItemMock.mockResolvedValue(track({ item_id: "5" }));
+    const wrapper = mountBadge({ ...outsideLibrary(), favorite: true });
+
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+
+    expect(getLibraryItemMock).toHaveBeenCalledWith("track", "1", "spotify");
+    expect(copyMock).toHaveBeenCalledWith("library://track/5");
   });
 
   it("reports a failed copy", async () => {

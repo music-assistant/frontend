@@ -3,7 +3,7 @@
   <button
     v-if="domain === 'library'"
     type="button"
-    class="item-source-badge item-source-badge--copy"
+    class="item-source-badge inline-flex flex-none items-center justify-center hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     :title="$t('in_library')"
     :aria-label="$t('in_library')"
     @click="copyUri"
@@ -12,7 +12,7 @@
   </button>
   <span
     v-else-if="!libraryOnly"
-    class="item-source-badge"
+    class="item-source-badge inline-flex flex-none items-center justify-center"
     role="img"
     :title="providerName"
     :aria-label="providerName"
@@ -48,26 +48,20 @@ const providerName = computed(
 );
 
 const copyUri = async function () {
-  if (await copyToClipboard(props.item.uri)) {
+  // a provider item that was just liked shows as in the library before the page
+  // swaps in the library item
+  const libraryItem =
+    props.item.provider === "library"
+      ? props.item
+      : await api.getLibraryItem(
+          props.item.media_type,
+          props.item.item_id,
+          props.item.provider,
+        );
+  if (libraryItem && (await copyToClipboard(libraryItem.uri))) {
     toast.success($t("uri_copied"));
   } else {
     toast.error($t("uri_copy_failed"));
   }
 };
 </script>
-
-<style scoped>
-.item-source-badge {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-}
-.item-source-badge--copy:hover {
-  opacity: 0.8;
-}
-.item-source-badge--copy:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
-}
-</style>
