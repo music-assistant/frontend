@@ -160,5 +160,6 @@ const tabs = computed(() => [
   { type: MediaType.TRACK, label: $t("tracks") },
   { type: MediaType.ALBUM, label: $t("albums") },
   { type: MediaType.ARTIST, label: $t("artists") },
+  { type: MediaType.PLAYLIST, label: $t("playlists") },
 ]);
 </script>

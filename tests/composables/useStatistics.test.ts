@@ -5,12 +5,14 @@ import {
   type EventMessage,
   type StatisticsTopItemResult,
 } from "@/plugins/api/interfaces";
+import { ConnectionState } from "@/plugins/api";
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { effectScope, ref, type EffectScope } from "vue";
+import { effectScope, nextTick, ref, type EffectScope } from "vue";
 
 const { api, unsubscribe, toastError } = vi.hoisted(() => ({
   api: {
+    state: { value: "initialized" },
     getTopItems: vi.fn(),
     getPlaysOverTime: vi.fn(),
     getListeningActivity: vi.fn(),
@@ -23,7 +25,13 @@ const { api, unsubscribe, toastError } = vi.hoisted(() => ({
 }));
 const STATISTICS_LOAD_ERROR_TOAST_ID = "statistics-load-failed";
 
-vi.mock("@/plugins/api", () => ({ default: api }));
+vi.mock("@/plugins/api", () => ({
+  default: api,
+  ConnectionState: {
+    INITIALIZED: "initialized",
+    RECONNECTING: "reconnecting",
+  },
+}));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/plugins/store", () => ({
   store: { currentUser: { user_id: "self" } },
@@ -50,14 +58,17 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-function topItem(itemId: string): StatisticsTopItemResult {
+function topItem(
+  itemId: string,
+  mediaType: MediaType = MediaType.TRACK,
+): StatisticsTopItemResult {
   return {
     item: {
       item_id: itemId,
       provider: "library",
-      media_type: MediaType.TRACK,
+      media_type: mediaType,
       name: itemId,
-      uri: `track://library/${itemId}`,
+      uri: `${mediaType}://library/${itemId}`,
       available: true,
     },
     play_count: 1,
@@ -77,6 +88,7 @@ function emitPlaylog(userid: string | null, fullyPlayed: boolean): void {
 describe("useStatistics", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    api.state = ref(ConnectionState.INITIALIZED);
     for (const request of [
       api.getTopItems,
       api.getPlaysOverTime,
@@ -131,6 +143,60 @@ describe("useStatistics", () => {
     expect(api.getTopItems).toHaveBeenCalledTimes(3);
   });
 
+  it("reuses artist ranking data instead of requesting the artist chart twice", async () => {
+    const statistics = setupStatistics();
+    await flushPromises();
+    const artistRequests = () =>
+      api.getTopItems.mock.calls.filter(
+        ([mediaType]) => mediaType === MediaType.ARTIST,
+      );
+    expect(artistRequests()).toHaveLength(1);
+
+    statistics.activeStatTab.value = MediaType.ARTIST;
+    await flushPromises();
+
+    expect(artistRequests()).toHaveLength(2);
+    expect(api.getTopItems).toHaveBeenLastCalledWith(
+      MediaType.ARTIST,
+      "week",
+      50,
+    );
+  });
+
+  it("reloads visible statistics when the API finishes reconnecting", async () => {
+    const statistics = setupStatistics();
+    await flushPromises();
+    expect(api.getTopItems).toHaveBeenCalledTimes(2);
+
+    api.state.value = ConnectionState.RECONNECTING;
+    await nextTick();
+    api.state.value = ConnectionState.INITIALIZED;
+    await flushPromises();
+
+    expect(api.getTopItems).toHaveBeenCalledTimes(4);
+    expect(api.getPlaysOverTime).toHaveBeenCalledTimes(2);
+  });
+
+  it("loads playlist rankings with a playlist result fixture", async () => {
+    const playlist = topItem("playlist-1", MediaType.PLAYLIST);
+    api.getTopItems
+      .mockResolvedValueOnce([topItem("track-1")])
+      .mockResolvedValueOnce([topItem("artist-1", MediaType.ARTIST)])
+      .mockResolvedValueOnce([playlist]);
+    const statistics = setupStatistics();
+    await flushPromises();
+
+    statistics.activeStatTab.value = MediaType.PLAYLIST;
+    await flushPromises();
+
+    expect(api.getTopItems).toHaveBeenLastCalledWith(
+      MediaType.PLAYLIST,
+      "week",
+      50,
+    );
+    expect(statistics.statisticsItems.value).toEqual([playlist]);
+  });
+
   it("refreshes both datasets and hourly buckets when the period changes", async () => {
     const statistics = setupStatistics();
     await flushPromises();
@@ -153,7 +219,7 @@ describe("useStatistics", () => {
       .mockReturnValueOnce(oldItems.promise)
       .mockReturnValueOnce(oldArtists.promise)
       .mockResolvedValueOnce([topItem("new")])
-      .mockResolvedValueOnce([topItem("new")]);
+      .mockResolvedValueOnce([topItem("new-artist", MediaType.ARTIST)]);
     const statistics = setupStatistics();
     statistics.activeStatPeriod.value = "month";
     await flushPromises();
@@ -162,7 +228,9 @@ describe("useStatistics", () => {
     await flushPromises();
 
     expect(statistics.statisticsItems.value).toEqual([topItem("new")]);
-    expect(statistics.artistDistribution.value).toEqual([topItem("new")]);
+    expect(statistics.artistDistribution.value).toEqual([
+      topItem("new-artist", MediaType.ARTIST),
+    ]);
   });
 
   it("invalidates pending results when the row is hidden", async () => {

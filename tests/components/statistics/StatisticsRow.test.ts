@@ -132,7 +132,12 @@ describe("StatisticsRow", () => {
 
     expect(
       wrapper.findAllComponents(TabsTrigger).map((tab) => tab.props("value")),
-    ).toEqual([MediaType.TRACK, MediaType.ALBUM, MediaType.ARTIST]);
+    ).toEqual([
+      MediaType.TRACK,
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.PLAYLIST,
+    ]);
   });
 
   it("emits tab and period changes without owning requests", async () => {

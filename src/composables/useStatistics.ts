@@ -4,7 +4,7 @@ import {
   loadStatisticsChartData,
   type StatisticsChartData,
 } from "@/components/statistics/statisticsRequests";
-import api from "@/plugins/api";
+import api, { ConnectionState } from "@/plugins/api";
 import {
   EventType,
   MediaType,
@@ -42,6 +42,7 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
   const statisticsRequests = createLatestRequestGate();
   const chartRequests = createLatestRequestGate();
   let disposed = false;
+  let hasInitialized = api.state.value === ConnectionState.INITIALIZED;
 
   async function loadStatistics(): Promise<void> {
     const generation = statisticsRequests.begin();
@@ -59,12 +60,17 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
     try {
       const result = await api.getTopItems(mediaType, period, TOP_ITEMS_LIMIT);
       if (!isCurrent()) return;
-      statisticsItems.value = result.filter((item) => item && item.item);
+      const validItems = result.filter((item) => item && item.item);
+      statisticsItems.value = validItems;
+      if (mediaType === MediaType.ARTIST) {
+        artistDistribution.value = validItems.slice(0, CHART_ITEMS_LIMIT);
+      }
     } catch {
       if (!isCurrent()) return;
       notifyStatisticsLoadError();
       statisticsItems.value = [];
       statisticsError.value = true;
+      if (mediaType === MediaType.ARTIST) artistDistribution.value = [];
     } finally {
       if (isCurrent()) statisticsLoading.value = false;
     }
@@ -73,6 +79,7 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
   async function loadCharts(): Promise<void> {
     const generation = chartRequests.begin();
     const period = activeStatPeriod.value;
+    const mediaType = activeStatTab.value;
     const isCurrent = () =>
       !disposed &&
       visible.value &&
@@ -81,11 +88,10 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
     chartsLoading.value = true;
     try {
       const { data, hasFailures } = await loadStatisticsChartData({
-        artistDistribution: api.getTopItems(
-          MediaType.ARTIST,
-          period,
-          CHART_ITEMS_LIMIT,
-        ),
+        artistDistribution:
+          mediaType === MediaType.ARTIST
+            ? Promise.resolve([])
+            : api.getTopItems(MediaType.ARTIST, period, CHART_ITEMS_LIMIT),
         playsOverTime: api.getPlaysOverTime(
           period,
           getPlaysOverTimeGranularity(period),
@@ -102,7 +108,9 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
         ),
       });
       if (!isCurrent()) return;
-      artistDistribution.value = data.artistDistribution;
+      if (mediaType !== MediaType.ARTIST) {
+        artistDistribution.value = data.artistDistribution;
+      }
       playsOverTime.value = data.playsOverTime;
       listeningActivity.value = data.listeningActivity;
       listeningTime.value = data.listeningTime;
@@ -147,6 +155,15 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
       if (!wasVisible || period !== previousPeriod) void loadCharts();
     },
     { immediate: true },
+  );
+
+  watch(
+    () => api.state.value,
+    (state) => {
+      if (state !== ConnectionState.INITIALIZED) return;
+      if (hasInitialized) refresh();
+      hasInitialized = true;
+    },
   );
 
   const unsubscribe = api.subscribe(

@@ -47,7 +47,7 @@ describe("ChartItem play control", () => {
 
   it("disables playback for unavailable history items", async () => {
     const wrapper = renderItem(false);
-    const playButton = wrapper.get('button[aria-label="play"]');
+    const playButton = wrapper.get('button[aria-label="play Track"]');
 
     expect((playButton.element as HTMLButtonElement).disabled).toBe(true);
     expect(playButton.classes()).toContain("pointer-events-none");
@@ -57,7 +57,7 @@ describe("ChartItem play control", () => {
 
   it("keeps playback enabled for available items", async () => {
     const wrapper = renderItem(true);
-    const playButton = wrapper.get('button[aria-label="play"]');
+    const playButton = wrapper.get('button[aria-label="play Track"]');
 
     expect((playButton.element as HTMLButtonElement).disabled).toBe(false);
     expect(playButton.classes()).toContain("pointer-events-none");
