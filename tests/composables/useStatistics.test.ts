@@ -179,13 +179,16 @@ describe("useStatistics", () => {
     expect(statistics.chartsLoading.value).toBe(false);
   });
 
-  it("shows top-item failures in the row without a duplicate toast", async () => {
+  it("reports top-item failures with the shared toast id", async () => {
     api.getTopItems.mockRejectedValueOnce(new Error("failed"));
     const statistics = setupStatistics();
     await flushPromises();
 
     expect(statistics.statisticsError.value).toBe(true);
-    expect(toastError).not.toHaveBeenCalled();
+    expect(toastError).toHaveBeenCalledExactlyOnceWith(
+      "statistics_load_failed",
+      { id: STATISTICS_LOAD_ERROR_TOAST_ID },
+    );
   });
 
   it("deduplicates notifications when ranking and chart requests both fail", async () => {
@@ -197,10 +200,11 @@ describe("useStatistics", () => {
     await flushPromises();
 
     expect(statistics.statisticsError.value).toBe(true);
-    expect(toastError).toHaveBeenCalledExactlyOnceWith(
-      "statistics_load_failed",
-      { id: STATISTICS_LOAD_ERROR_TOAST_ID },
-    );
+    expect(toastError).toHaveBeenCalledTimes(2);
+    expect(toastError.mock.calls.map(([, options]) => options?.id)).toEqual([
+      STATISTICS_LOAD_ERROR_TOAST_ID,
+      STATISTICS_LOAD_ERROR_TOAST_ID,
+    ]);
   });
 
   it("keeps successful chart data when another chart fails", async () => {
@@ -216,7 +220,10 @@ describe("useStatistics", () => {
       { timestamp: "2026-10-20", value: 3 },
     ]);
     expect(statistics.listeningActivity.value).toEqual([]);
-    expect(toastError).toHaveBeenCalledTimes(1);
+    expect(toastError).toHaveBeenCalledExactlyOnceWith(
+      "statistics_load_failed",
+      { id: STATISTICS_LOAD_ERROR_TOAST_ID },
+    );
   });
 
   it("refreshes only completed plays belonging to the current user", async () => {
