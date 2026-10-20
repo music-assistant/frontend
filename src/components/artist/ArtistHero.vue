@@ -26,7 +26,6 @@
       <div class="artist-hero__actions">
         <DetailHeroPlayButton :item="item" />
         <DetailHeroButton
-          v-if="!isAuthorOrNarrator(item)"
           :icon="Shuffle"
           :label="$t('shuffle')"
           :disabled="!store.activePlayer"
@@ -59,7 +58,6 @@ import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
-import { isAuthorOrNarrator } from "@/helpers/author_narrator";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
