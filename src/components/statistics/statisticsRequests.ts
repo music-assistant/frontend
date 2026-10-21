@@ -22,8 +22,11 @@ export interface StatisticsChartRequests {
   decadeDistribution: Promise<StatisticsDistributionItem[]>;
 }
 
-export function getPlaysOverTimeGranularity(period: string): "hour" | "day" {
-  return period === "today" ? "hour" : "day";
+export function getPlaysOverTimeGranularity(
+  period: string,
+): "hour" | "day" | "month" {
+  if (period === "today") return "hour";
+  return period === "all_time" ? "month" : "day";
 }
 
 export function formatPlaysOverTimeLabel(
@@ -40,6 +43,7 @@ const PERIOD_LENGTH_DAYS: Partial<Record<string, number>> = {
   month: 30,
   year: 365,
 };
+const MAX_ALL_TIME_MONTHLY_BUCKETS = 60;
 
 export function fillPlaysOverTimeGaps(
   points: StatisticsTimeSeriesPoint[],
@@ -48,11 +52,28 @@ export function fillPlaysOverTimeGaps(
 ): StatisticsTimeSeriesPoint[] {
   if (points.length === 0) return [];
 
-  const hourly = period === "today";
+  const sourceGranularity =
+    period === "today" ? "hour" : period === "all_time" ? "month" : "day";
   const sortedPoints = [...points].sort((left, right) =>
     left.timestamp.localeCompare(right.timestamp),
   );
-  const firstBucket = parsePlayBucket(sortedPoints[0].timestamp, hourly);
+  const firstSourceBucket = parsePlayBucket(
+    sortedPoints[0].timestamp,
+    sourceGranularity,
+  );
+  if (!firstSourceBucket) return sortedPoints;
+
+  const granularity =
+    period === "all_time" &&
+    getBucketCount(firstSourceBucket, startOfBucket(now, "month"), "month") >
+      MAX_ALL_TIME_MONTHLY_BUCKETS
+      ? "year"
+      : sourceGranularity;
+  const bucketPoints =
+    granularity === "year"
+      ? aggregateMonthlyPointsByYear(sortedPoints)
+      : sortedPoints;
+  const firstBucket = parsePlayBucket(bucketPoints[0].timestamp, granularity);
   if (!firstBucket) return sortedPoints;
 
   const periodLength = PERIOD_LENGTH_DAYS[period];
@@ -75,55 +96,99 @@ export function fillPlaysOverTimeGaps(
               now.getMonth(),
               now.getDate() - periodLength!,
             ),
-            hourly,
+            granularity,
           );
-  const end = startOfBucket(now, hourly);
+  const end = startOfBucket(now, granularity);
   const pointsByBucket = new Map(
-    sortedPoints.map((point) => [point.timestamp, point.value]),
+    bucketPoints.map((point) => [point.timestamp, point.value]),
   );
   const filledPoints: StatisticsTimeSeriesPoint[] = [];
   const bucket = new Date(start);
 
   while (bucket <= end) {
-    const timestamp = formatPlayBucket(bucket, hourly);
+    const timestamp = formatPlayBucket(bucket, granularity);
     filledPoints.push({
       timestamp,
       value: pointsByBucket.get(timestamp) ?? 0,
     });
-    if (hourly) bucket.setHours(bucket.getHours() + 1);
-    else bucket.setDate(bucket.getDate() + 1);
+    if (granularity === "hour") bucket.setHours(bucket.getHours() + 1);
+    else if (granularity === "day") bucket.setDate(bucket.getDate() + 1);
+    else if (granularity === "month") bucket.setMonth(bucket.getMonth() + 1);
+    else bucket.setFullYear(bucket.getFullYear() + 1);
   }
 
   return filledPoints;
 }
 
-function parsePlayBucket(timestamp: string, hourly: boolean): Date | undefined {
-  const match = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):\d{2}:\d{2})?$/.exec(
-    timestamp,
-  );
+function parsePlayBucket(
+  timestamp: string,
+  granularity: "hour" | "day" | "month" | "year",
+): Date | undefined {
+  const pattern =
+    granularity === "year"
+      ? /^(\d{4})$/
+      : granularity === "month"
+        ? /^(\d{4})-(\d{2})$/
+        : /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):\d{2}:\d{2})?$/;
+  const match = pattern.exec(timestamp);
   if (!match) return undefined;
   return new Date(
     Number(match[1]),
-    Number(match[2]) - 1,
-    Number(match[3]),
-    hourly ? Number(match[4] ?? 0) : 0,
+    granularity === "year" ? 0 : Number(match[2]) - 1,
+    granularity === "year" || granularity === "month" ? 1 : Number(match[3]),
+    granularity === "hour" ? Number(match[4] ?? 0) : 0,
   );
 }
 
-function startOfBucket(date: Date, hourly: boolean): Date {
+function startOfBucket(
+  date: Date,
+  granularity: "hour" | "day" | "month" | "year",
+): Date {
   const result = new Date(date);
-  if (hourly) result.setMinutes(0, 0, 0);
-  else result.setHours(0, 0, 0, 0);
+  if (granularity === "hour") result.setMinutes(0, 0, 0);
+  else {
+    result.setHours(0, 0, 0, 0);
+    if (granularity === "month" || granularity === "year") result.setDate(1);
+    if (granularity === "year") result.setMonth(0);
+  }
   return result;
 }
 
-function formatPlayBucket(date: Date, hourly: boolean): string {
+function getBucketCount(start: Date, end: Date, granularity: "month"): number {
+  return (
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    end.getMonth() -
+    start.getMonth() +
+    1
+  );
+}
+
+function aggregateMonthlyPointsByYear(
+  points: StatisticsTimeSeriesPoint[],
+): StatisticsTimeSeriesPoint[] {
+  const valuesByYear = new Map<string, number>();
+  for (const point of points) {
+    const year = point.timestamp.slice(0, 4);
+    valuesByYear.set(year, (valuesByYear.get(year) ?? 0) + point.value);
+  }
+  return Array.from(valuesByYear, ([timestamp, value]) => ({
+    timestamp,
+    value,
+  })).sort((left, right) => left.timestamp.localeCompare(right.timestamp));
+}
+
+function formatPlayBucket(
+  date: Date,
+  granularity: "hour" | "day" | "month" | "year",
+): string {
+  if (granularity === "year") return date.getFullYear().toString();
   const datePart = [
     date.getFullYear().toString().padStart(4, "0"),
     (date.getMonth() + 1).toString().padStart(2, "0"),
     date.getDate().toString().padStart(2, "0"),
   ].join("-");
-  if (!hourly) return datePart;
+  if (granularity === "month") return datePart.slice(0, 7);
+  if (granularity === "day") return datePart;
   return `${datePart} ${date.getHours().toString().padStart(2, "0")}:00:00`;
 }
 

@@ -214,6 +214,8 @@ describe("useStatistics", () => {
 
     expect(toastError).not.toHaveBeenCalled();
     expect(statistics.statisticsError.value).toBe(false);
+    expect(statistics.statisticsLoading.value).toBe(false);
+    expect(statistics.chartsLoading.value).toBe(false);
 
     api.state.value = ConnectionState.INITIALIZED;
     await flushPromises();

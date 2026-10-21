@@ -8,10 +8,10 @@ import {
 } from "@/components/statistics/statisticsRequests";
 
 describe("statistics requests", () => {
-  it("uses hourly buckets for today and daily buckets for longer periods", () => {
+  it("uses hourly, daily and monthly buckets for the respective periods", () => {
     expect(getPlaysOverTimeGranularity("today")).toBe("hour");
     expect(getPlaysOverTimeGranularity("week")).toBe("day");
-    expect(getPlaysOverTimeGranularity("all_time")).toBe("day");
+    expect(getPlaysOverTimeGranularity("all_time")).toBe("month");
   });
 
   it("shows only the hour for today and keeps dates for longer periods", () => {
@@ -21,20 +21,42 @@ describe("statistics requests", () => {
     expect(formatPlaysOverTimeLabel(timestamp, "week")).toBe(timestamp);
   });
 
-  it("fills missing daily trend buckets with zero plays", () => {
+  it("fills missing all-time monthly trend buckets for shorter histories", () => {
     const points = fillPlaysOverTimeGaps(
       [
-        { timestamp: "2026-10-12", value: 3 },
-        { timestamp: "2026-10-14", value: 1 },
+        { timestamp: "2026-09", value: 3 },
+        { timestamp: "2026-11", value: 1 },
       ],
       "all_time",
-      new Date(2026, 9, 14, 12),
+      new Date(2026, 10, 14, 12),
     );
 
     expect(points).toEqual([
-      { timestamp: "2026-10-12", value: 3 },
-      { timestamp: "2026-10-13", value: 0 },
-      { timestamp: "2026-10-14", value: 1 },
+      { timestamp: "2026-09", value: 3 },
+      { timestamp: "2026-10", value: 0 },
+      { timestamp: "2026-11", value: 1 },
+    ]);
+  });
+
+  it("aggregates longer all-time histories into yearly buckets", () => {
+    const points = fillPlaysOverTimeGaps(
+      [
+        { timestamp: "2020-11", value: 3 },
+        { timestamp: "2020-12", value: 2 },
+        { timestamp: "2021-01", value: 4 },
+      ],
+      "all_time",
+      new Date(2026, 9, 14),
+    );
+
+    expect(points).toEqual([
+      { timestamp: "2020", value: 5 },
+      { timestamp: "2021", value: 4 },
+      { timestamp: "2022", value: 0 },
+      { timestamp: "2023", value: 0 },
+      { timestamp: "2024", value: 0 },
+      { timestamp: "2025", value: 0 },
+      { timestamp: "2026", value: 0 },
     ]);
   });
 

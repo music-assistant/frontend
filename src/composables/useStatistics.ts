@@ -42,7 +42,6 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
   const statisticsRequests = createLatestRequestGate();
   const chartRequests = createLatestRequestGate();
   let disposed = false;
-  let hasInitialized = api.state.value === ConnectionState.INITIALIZED;
 
   async function loadStatistics(): Promise<void> {
     const generation = statisticsRequests.begin();
@@ -137,7 +136,13 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
   }
 
   function refresh(): void {
-    if (disposed || !visible.value) return;
+    if (
+      disposed ||
+      !visible.value ||
+      api.state.value !== ConnectionState.INITIALIZED
+    ) {
+      return;
+    }
     void loadStatistics();
     void loadCharts();
   }
@@ -146,6 +151,10 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
     [visible, activeStatTab, activeStatPeriod],
     ([isVisible, mediaType, period], previous) => {
       if (!isVisible) {
+        invalidate();
+        return;
+      }
+      if (api.state.value !== ConnectionState.INITIALIZED) {
         invalidate();
         return;
       }
@@ -165,9 +174,11 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
   watch(
     () => api.state.value,
     (state) => {
-      if (state !== ConnectionState.INITIALIZED) return;
-      if (hasInitialized) refresh();
-      hasInitialized = true;
+      if (state !== ConnectionState.INITIALIZED) {
+        invalidate();
+        return;
+      }
+      refresh();
     },
   );
 
