@@ -760,7 +760,7 @@ const displayedRows = computed(() =>
 const statisticsRowVisible = computed(() => {
   const rowIds = [...new Set([...availableRowIds.value, STATISTICS_ROW_ID])];
   const { hidden } = resolveDiscoverRowsConfig(rowIds, defaultHiddenIds.value);
-  return props.editMode || !hidden.has(STATISTICS_ROW_ID);
+  return !hidden.has(STATISTICS_ROW_ID);
 });
 
 const {
