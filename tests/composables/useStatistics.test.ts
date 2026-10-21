@@ -197,6 +197,33 @@ describe("useStatistics", () => {
     expect(api.getPlaysOverTime).toHaveBeenCalledTimes(2);
   });
 
+  it("ignores request failures during reconnect and retries after initialization", async () => {
+    const pendingTopItems = deferred<StatisticsTopItemResult[]>();
+    const pendingArtistItems = deferred<StatisticsTopItemResult[]>();
+    api.getTopItems
+      .mockReturnValueOnce(pendingTopItems.promise)
+      .mockReturnValueOnce(pendingArtistItems.promise)
+      .mockResolvedValue([]);
+    const statistics = setupStatistics();
+
+    api.state.value = ConnectionState.RECONNECTING;
+    await nextTick();
+    pendingTopItems.reject(new Error("connection lost"));
+    pendingArtistItems.reject(new Error("connection lost"));
+    await flushPromises();
+
+    expect(toastError).not.toHaveBeenCalled();
+    expect(statistics.statisticsError.value).toBe(false);
+
+    api.state.value = ConnectionState.INITIALIZED;
+    await flushPromises();
+
+    expect(api.getTopItems).toHaveBeenCalledTimes(4);
+    expect(statistics.statisticsLoading.value).toBe(false);
+    expect(statistics.chartsLoading.value).toBe(false);
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
   it("loads playlist rankings with a playlist result fixture", async () => {
     const playlist = topItem("playlist-1", MediaType.PLAYLIST);
     api.getTopItems

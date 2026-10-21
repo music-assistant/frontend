@@ -51,6 +51,7 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
     const isCurrent = () =>
       !disposed &&
       visible.value &&
+      api.state.value === ConnectionState.INITIALIZED &&
       statisticsRequests.isCurrent(generation) &&
       mediaType === activeStatTab.value &&
       period === activeStatPeriod.value;
@@ -83,6 +84,7 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
     const isCurrent = () =>
       !disposed &&
       visible.value &&
+      api.state.value === ConnectionState.INITIALIZED &&
       chartRequests.isCurrent(generation) &&
       period === activeStatPeriod.value;
     chartsLoading.value = true;
