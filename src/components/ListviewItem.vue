@@ -274,17 +274,17 @@
       />
 
       <!-- fully played or in progress icon -->
-      <!-- only used for podcast-episodes and audiobook-chapters; the slot stays
-      when unplayed so the durations line up across rows -->
+      <!-- only used for podcast-episodes, audiobooks and collections; the slot
+      stays when unplayed so the durations line up across rows -->
       <span
-        v-if="'fully_played' in item"
+        v-if="'fully_played' in item || item.media_type == MediaType.COLLECTION"
         class="listitem-played-state"
         :role="playedStateLabel ? 'img' : undefined"
         :title="playedStateLabel"
         :aria-label="playedStateLabel"
       >
-        <Check v-if="item.fully_played" />
-        <ClockFading v-else-if="isInProgress" />
+        <Check v-if="playedState === 'fully_played'" />
+        <ClockFading v-else-if="playedState === 'in_progress'" />
       </span>
 
       <!-- favorite (heart) icon -->
@@ -338,6 +338,7 @@ import {
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
+import { getPlayedState } from "@/helpers/played_state";
 import {
   formatDuration,
   getArtistsString,
@@ -477,16 +478,11 @@ const collabArtists = computed(() => {
   );
   return collab.map((a) => a.name).join(" | ");
 });
-const isInProgress = computed(
-  () =>
-    "resume_position_ms" in compProps.item &&
-    !!compProps.item.resume_position_ms,
-);
+const playedState = computed(() => getPlayedState(compProps.item));
 // undefined while unplayed, when the played state shows nothing
 const playedStateLabel = computed(() => {
-  if ("fully_played" in compProps.item && compProps.item.fully_played)
-    return $t("item_fully_played");
-  return isInProgress.value ? $t("item_in_progress") : undefined;
+  if (playedState.value === "fully_played") return $t("item_fully_played");
+  return playedState.value ? $t("item_in_progress") : undefined;
 });
 
 const HiResDetails = computed(() => {

@@ -71,31 +71,7 @@
                 @click="emit('next')"
               />
             </template>
-            <span
-              v-if="item.fully_played"
-              class="podcast-episode-hero__badge"
-              role="img"
-              :title="$t('item_fully_played')"
-              :aria-label="$t('item_fully_played')"
-            >
-              <Check :size="20" />
-            </span>
-            <span
-              v-else-if="item.resume_position_ms"
-              class="podcast-episode-hero__badge"
-              role="img"
-              :title="$t('item_in_progress')"
-              :aria-label="$t('item_in_progress')"
-            >
-              <ClockFading :size="20" />
-            </span>
-            <!-- holds the played state's place so the transcript button keeps
-            its position while the episode is unplayed -->
-            <span
-              v-else
-              class="podcast-episode-hero__badge podcast-episode-hero__badge--empty"
-              aria-hidden="true"
-            ></span>
+            <DetailHeroPlayedState :item="item" />
             <DetailHeroButton
               v-if="showTranscript"
               :icon="Captions"
@@ -121,6 +97,7 @@ import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import DetailHeroPlayedState from "@/components/details/DetailHeroPlayedState.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { podcastEpisodeNumber } from "@/components/podcast/podcastEpisodeData";
@@ -130,10 +107,8 @@ import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import {
   Calendar,
   Captions,
-  Check,
   ChevronLeft,
   ChevronRight,
-  ClockFading,
   PodcastIcon,
   Timer,
 } from "@lucide/vue";
@@ -291,20 +266,6 @@ const gotoPodcast = function () {
   flex-wrap: wrap;
   gap: 8px;
 }
-/* the same chrome as the hero buttons, for the facts that are not actions */
-.podcast-episode-hero__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.4);
-}
-.podcast-episode-hero__badge--empty {
-  visibility: hidden;
-}
 
 @media (max-width: 768px) {
   .podcast-episode-hero__main {
@@ -325,11 +286,6 @@ const gotoPodcast = function () {
   }
   .podcast-episode-hero__actions {
     gap: 10px;
-  }
-  .podcast-episode-hero__badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
   }
 }
 </style>

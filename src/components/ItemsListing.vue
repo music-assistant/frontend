@@ -2183,16 +2183,20 @@ onMounted(async () => {
           );
         }
       } else if (evt.event == EventType.MEDIA_ITEM_PLAYED) {
-        // update item
-        const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
-        if (idx >= 0) {
-          const item = pagedItems.value[idx];
-          if (itemSupportsPlayLog(item)) {
-            const playData = evt.data as Record<string, unknown>;
-            item.fully_played = playData["fully_played"] as boolean;
-            item.resume_position_ms =
-              ((playData["seconds_played"] as number) ?? 0) * 1000;
-          }
+        // update item, also inside a collection, which derives its played state
+        // from its members
+        const item = pagedItems.value
+          .flatMap((i) =>
+            i.media_type == MediaType.COLLECTION && "items" in i
+              ? i.items
+              : [i],
+          )
+          .find((i) => i.uri == evt.object_id);
+        if (item && itemSupportsPlayLog(item)) {
+          const playData = evt.data as Record<string, unknown>;
+          item.fully_played = playData["fully_played"] as boolean;
+          item.resume_position_ms =
+            ((playData["seconds_played"] as number) ?? 0) * 1000;
         }
       }
     },

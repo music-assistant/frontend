@@ -48,8 +48,9 @@
             <DetailHeroFacts :icon="BookAudio" :facts="facts" />
           </div>
 
-          <div class="flex min-w-0 items-center">
+          <div class="flex min-w-0 items-center gap-2 max-md:gap-2.5">
             <DetailHeroPlayButton :item="item" />
+            <DetailHeroPlayedState :item="item" />
           </div>
         </div>
       </div>
@@ -61,6 +62,7 @@
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import DetailHeroPlayedState from "@/components/details/DetailHeroPlayedState.vue";
 import MediaCollectionThumb from "@/components/MediaCollectionThumb.vue";
 import { formatTotalDuration } from "@/helpers/duration";
 import {
