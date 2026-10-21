@@ -7,6 +7,7 @@
     <Line
       :data="chartData"
       :options="chartOptions"
+      role="img"
       :aria-label="accessibleSummary"
     />
   </BaseChartCard>

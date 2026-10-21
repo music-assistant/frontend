@@ -9,9 +9,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("vue-chartjs", () => ({
   Doughnut: {
-    props: ["options", "ariaLabel"],
+    props: ["options", "ariaLabel", "role"],
     template:
-      '<canvas class="chart-hit" role="img" :aria-label="ariaLabel" @click="options.onClick?.(undefined, [{ index: 0 }])"></canvas>',
+      '<canvas class="chart-hit" :role="role" :aria-label="ariaLabel" @click="options.onClick?.(undefined, [{ index: 0 }])"></canvas>',
   },
 }));
 vi.mock("vue-router", async (importOriginal) => ({
@@ -54,6 +54,7 @@ describe("PieChartCard navigation", () => {
     const wrapper = renderChart();
     const accessibleSummary = wrapper.get("canvas").attributes("aria-label");
 
+    expect(wrapper.get("canvas").attributes("role")).toBe("img");
     expect(accessibleSummary).toContain("Artists");
     expect(accessibleSummary).toContain("Artist: 3 plays");
     expect(wrapper.findAll(`[aria-label="${accessibleSummary}"]`)).toHaveLength(

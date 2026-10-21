@@ -15,6 +15,7 @@
         <Doughnut
           :data="chartData"
           :options="chartOptions"
+          role="img"
           :aria-label="accessibleSummary"
         />
       </div>
