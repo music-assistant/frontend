@@ -113,16 +113,11 @@ const narrators = computed(() =>
 // "Collection · 5 audiobooks · 42 h 10 min", without whatever is unknown
 const facts = computed(() => {
   const parts = [$t("collection")];
-  const books = props.item?.items ?? [];
-  if (books.length) {
-    parts.push(
-      $t("n_audiobooks", books.length, { named: { count: books.length } }),
-    );
+  const count = props.item?.total_items;
+  if (count) {
+    parts.push($t("n_audiobooks", count, { named: { count } }));
   }
-  const duration = books.reduce(
-    (total, book) => total + (book.duration || 0),
-    0,
-  );
+  const duration = props.item?.duration;
   if (duration) parts.push(formatTotalDuration(duration));
   return parts;
 });

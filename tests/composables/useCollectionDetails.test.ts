@@ -8,7 +8,9 @@ import { effectScope, nextTick, reactive, type EffectScope } from "vue";
 const { getAudiobookCollection } = vi.hoisted(() => ({
   getAudiobookCollection: vi.fn<MusicAssistantApi["getAudiobookCollection"]>(),
 }));
-vi.mock("@/plugins/api", () => ({ api: { getAudiobookCollection } }));
+vi.mock("@/plugins/api", () => ({
+  api: { getAudiobookCollection, subscribe: () => () => {} },
+}));
 
 const scopes: EffectScope[] = [];
 const params: LoadDataParams = {

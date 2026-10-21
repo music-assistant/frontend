@@ -1,3 +1,4 @@
+import { useCollectionStatistics } from "@/composables/useCollectionStatistics";
 import type { LoadDataParams } from "@/composables/useItemsListing";
 import { api } from "@/plugins/api";
 import { getCollectionMediaTypeFromItemId } from "@/plugins/api/helpers";
@@ -15,6 +16,7 @@ interface CollectionRef {
 
 export function useCollectionDetails(collection: () => CollectionRef) {
   const itemDetails = ref<MediaCollection<MediaItemType>>();
+  useCollectionStatistics(() => (itemDetails.value ? [itemDetails.value] : []));
   const collectionMediaType = computed(() =>
     getCollectionMediaTypeFromItemId(collection().itemId),
   );

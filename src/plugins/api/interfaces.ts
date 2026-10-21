@@ -1262,6 +1262,11 @@ export interface RecommendationFolder extends BrowseFolder {
 
 export interface MediaCollection<M extends MediaItemType> extends MediaItem {
   items: M[];
+  // computed over all items of the collection, also when items holds a filtered subset
+  total_items: number | null;
+  duration: number | null;
+  fully_played: boolean | null;
+  in_progress: boolean | null;
 }
 
 // unlike the server alias of the same name this includes BrowseFolder, because

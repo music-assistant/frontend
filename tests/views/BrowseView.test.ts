@@ -16,6 +16,7 @@ import { defineComponent, nextTick, onMounted, type PropType } from "vue";
 import { track } from "../fixtures/track";
 
 vi.mock("vue-i18n", () => ({ useI18n: () => ({ t: (key: string) => key }) }));
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 const browsed = vi.hoisted(() => ({
   items: [] as object[],
@@ -29,6 +30,7 @@ vi.mock("@/plugins/api", () => ({
     getProviderName: (domain: string) => `${domain} provider`,
     browse,
   },
+  api: { subscribe: () => () => {} },
 }));
 vi.mock("@/plugins/store", () => ({ store: { activePlayerId: "player" } }));
 

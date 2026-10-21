@@ -1,5 +1,6 @@
 import { computed, onScopeDispose, ref } from "vue";
 
+import { useCollectionStatistics } from "@/composables/useCollectionStatistics";
 import { useLibrarySorting } from "@/composables/useLibrarySorting";
 import {
   ListingType,
@@ -77,6 +78,7 @@ export function useItemsListing(
     genreIds: undefined,
   });
   const pagedItems = ref<MediaItemType[]>([]);
+  useCollectionStatistics(() => pagedItems.value);
   const displayedSort = ref<
     Pick<LoadDataParams, "sortField" | "sortDirection">
   >({});
