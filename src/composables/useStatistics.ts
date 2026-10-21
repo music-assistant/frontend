@@ -41,7 +41,9 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
   const chartsLoading = ref(false);
   const statisticsRequests = createLatestRequestGate();
   const chartRequests = createLatestRequestGate();
+  const artistDistributionRequests = createLatestRequestGate();
   let disposed = false;
+  let artistDistributionNeedsRetry = false;
 
   async function loadStatistics(): Promise<void> {
     const generation = statisticsRequests.begin();
@@ -54,6 +56,10 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
       statisticsRequests.isCurrent(generation) &&
       mediaType === activeStatTab.value &&
       period === activeStatPeriod.value;
+    if (mediaType === MediaType.ARTIST) {
+      artistDistributionRequests.invalidate();
+      artistDistributionNeedsRetry = true;
+    }
     statisticsItems.value = [];
     statisticsError.value = false;
     statisticsLoading.value = true;
@@ -64,6 +70,7 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
       statisticsItems.value = validItems;
       if (mediaType === MediaType.ARTIST) {
         artistDistribution.value = validItems.slice(0, CHART_ITEMS_LIMIT);
+        artistDistributionNeedsRetry = false;
       }
     } catch {
       if (!isCurrent()) return;
@@ -77,6 +84,7 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
   }
 
   async function loadCharts(): Promise<void> {
+    artistDistributionRequests.invalidate();
     const generation = chartRequests.begin();
     const period = activeStatPeriod.value;
     const mediaType = activeStatTab.value;
@@ -86,13 +94,20 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
       api.state.value === ConnectionState.INITIALIZED &&
       chartRequests.isCurrent(generation) &&
       period === activeStatPeriod.value;
+    let artistDistributionFailed = false;
+    const artistDistributionRequest =
+      mediaType === MediaType.ARTIST
+        ? Promise.resolve([])
+        : api
+            .getTopItems(MediaType.ARTIST, period, CHART_ITEMS_LIMIT)
+            .catch((error: unknown) => {
+              artistDistributionFailed = true;
+              throw error;
+            });
     chartsLoading.value = true;
     try {
       const { data, hasFailures } = await loadStatisticsChartData({
-        artistDistribution:
-          mediaType === MediaType.ARTIST
-            ? Promise.resolve([])
-            : api.getTopItems(MediaType.ARTIST, period, CHART_ITEMS_LIMIT),
+        artistDistribution: artistDistributionRequest,
         playsOverTime: api.getPlaysOverTime(
           period,
           getPlaysOverTimeGranularity(period),
@@ -114,6 +129,7 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
         activeStatTab.value !== MediaType.ARTIST
       ) {
         artistDistribution.value = data.artistDistribution;
+        artistDistributionNeedsRetry = artistDistributionFailed;
       }
       playsOverTime.value = data.playsOverTime;
       listeningActivity.value = data.listeningActivity;
@@ -128,9 +144,42 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
     }
   }
 
+  async function retryArtistDistribution(period: string): Promise<void> {
+    const generation = artistDistributionRequests.begin();
+    try {
+      const result = await api.getTopItems(
+        MediaType.ARTIST,
+        period,
+        CHART_ITEMS_LIMIT,
+      );
+      if (
+        disposed ||
+        !visible.value ||
+        api.state.value !== ConnectionState.INITIALIZED ||
+        !artistDistributionRequests.isCurrent(generation) ||
+        period !== activeStatPeriod.value
+      ) {
+        return;
+      }
+      artistDistribution.value = result.filter((item) => item && item.item);
+      artistDistributionNeedsRetry = false;
+    } catch {
+      if (
+        !disposed &&
+        visible.value &&
+        api.state.value === ConnectionState.INITIALIZED &&
+        artistDistributionRequests.isCurrent(generation) &&
+        period === activeStatPeriod.value
+      ) {
+        notifyStatisticsLoadError();
+      }
+    }
+  }
+
   function invalidate(): void {
     statisticsRequests.invalidate();
     chartRequests.invalidate();
+    artistDistributionRequests.invalidate();
     statisticsLoading.value = false;
     chartsLoading.value = false;
   }
@@ -165,6 +214,14 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
         period !== previousPeriod
       ) {
         void loadStatistics();
+      }
+      if (
+        wasVisible &&
+        mediaType !== previousMediaType &&
+        mediaType !== MediaType.ARTIST &&
+        artistDistributionNeedsRetry
+      ) {
+        void retryArtistDistribution(period);
       }
       if (!wasVisible || period !== previousPeriod) void loadCharts();
     },

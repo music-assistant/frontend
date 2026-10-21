@@ -65,6 +65,14 @@ describe("PieChartCard navigation", () => {
     );
   });
 
+  it("uses square rounded artwork like the Artists list view", () => {
+    const wrapper = renderChart();
+    const artwork = wrapper.get(".size-10");
+
+    expect(artwork.classes()).toContain("rounded");
+    expect(artwork.classes()).not.toContain("rounded-full");
+  });
+
   it("navigates chart segments and legend entries to the same artist", async () => {
     const wrapper = renderChart();
     await wrapper.find(".chart-hit").trigger("click");

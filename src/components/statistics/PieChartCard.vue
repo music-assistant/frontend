@@ -38,7 +38,7 @@
             }"
           ></div>
           <div
-            class="size-10 shrink-0 overflow-hidden rounded-full bg-[rgba(var(--v-theme-on-surface),0.1)]"
+            class="size-10 shrink-0 overflow-hidden rounded bg-[rgba(var(--v-theme-on-surface),0.1)]"
           >
             <img
               class="size-full object-cover"

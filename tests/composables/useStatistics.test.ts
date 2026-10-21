@@ -163,6 +163,54 @@ describe("useStatistics", () => {
     );
   });
 
+  it("retries failed artist distribution on a tab change without reloading charts", async () => {
+    const artist = topItem("artist-retry", MediaType.ARTIST);
+    api.getTopItems
+      .mockResolvedValueOnce([topItem("track-ranking")])
+      .mockRejectedValueOnce(new Error("artist chart failed"))
+      .mockResolvedValueOnce([topItem("album-ranking", MediaType.ALBUM)])
+      .mockResolvedValueOnce([artist]);
+    const statistics = setupStatistics();
+    await flushPromises();
+
+    expect(statistics.artistDistribution.value).toEqual([]);
+    expect(api.getTopItems).toHaveBeenCalledTimes(2);
+    expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
+
+    statistics.activeStatTab.value = MediaType.ALBUM;
+    await flushPromises();
+
+    expect(statistics.artistDistribution.value).toEqual([artist]);
+    expect(api.getTopItems).toHaveBeenCalledTimes(4);
+    expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores a pending artist retry after returning to the artist tab", async () => {
+    const pendingRetry = deferred<StatisticsTopItemResult[]>();
+    const selectedArtist = topItem("selected-artist", MediaType.ARTIST);
+    api.getTopItems
+      .mockResolvedValueOnce([topItem("track-ranking")])
+      .mockRejectedValueOnce(new Error("artist chart failed"))
+      .mockResolvedValueOnce([topItem("album-ranking", MediaType.ALBUM)])
+      .mockReturnValueOnce(pendingRetry.promise)
+      .mockResolvedValueOnce([selectedArtist]);
+    const statistics = setupStatistics();
+    await flushPromises();
+
+    statistics.activeStatTab.value = MediaType.ALBUM;
+    await flushPromises();
+    expect(api.getTopItems).toHaveBeenCalledTimes(4);
+
+    statistics.activeStatTab.value = MediaType.ARTIST;
+    await flushPromises();
+    expect(statistics.artistDistribution.value).toEqual([selectedArtist]);
+
+    pendingRetry.resolve([topItem("stale-artist", MediaType.ARTIST)]);
+    await flushPromises();
+
+    expect(statistics.artistDistribution.value).toEqual([selectedArtist]);
+  });
+
   it("does not let a pending chart response overwrite artist tab rankings", async () => {
     const pendingArtistChart = deferred<StatisticsTopItemResult[]>();
     const selectedArtist = topItem("selected-artist", MediaType.ARTIST);
