@@ -108,7 +108,10 @@ export function useStatistics(visible: Readonly<Ref<boolean>>) {
         ),
       });
       if (!isCurrent()) return;
-      if (mediaType !== MediaType.ARTIST) {
+      if (
+        mediaType !== MediaType.ARTIST &&
+        activeStatTab.value !== MediaType.ARTIST
+      ) {
         artistDistribution.value = data.artistDistribution;
       }
       playsOverTime.value = data.playsOverTime;

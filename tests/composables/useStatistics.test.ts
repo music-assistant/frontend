@@ -163,6 +163,26 @@ describe("useStatistics", () => {
     );
   });
 
+  it("does not let a pending chart response overwrite artist tab rankings", async () => {
+    const pendingArtistChart = deferred<StatisticsTopItemResult[]>();
+    const selectedArtist = topItem("selected-artist", MediaType.ARTIST);
+    api.getTopItems
+      .mockResolvedValueOnce([topItem("track-ranking")])
+      .mockReturnValueOnce(pendingArtistChart.promise)
+      .mockResolvedValueOnce([selectedArtist]);
+    const statistics = setupStatistics();
+    await flushPromises();
+
+    statistics.activeStatTab.value = MediaType.ARTIST;
+    await flushPromises();
+    expect(statistics.artistDistribution.value).toEqual([selectedArtist]);
+
+    pendingArtistChart.resolve([topItem("stale-artist", MediaType.ARTIST)]);
+    await flushPromises();
+
+    expect(statistics.artistDistribution.value).toEqual([selectedArtist]);
+  });
+
   it("reloads visible statistics when the API finishes reconnecting", async () => {
     const statistics = setupStatistics();
     await flushPromises();
