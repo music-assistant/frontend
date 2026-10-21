@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createLatestRequestGate,
+  fillPlaysOverTimeGaps,
   formatPlaysOverTimeLabel,
   getPlaysOverTimeGranularity,
   loadStatisticsChartData,
@@ -18,6 +19,48 @@ describe("statistics requests", () => {
 
     expect(formatPlaysOverTimeLabel(timestamp, "today")).toBe("09:00");
     expect(formatPlaysOverTimeLabel(timestamp, "week")).toBe(timestamp);
+  });
+
+  it("fills missing daily trend buckets with zero plays", () => {
+    const points = fillPlaysOverTimeGaps(
+      [
+        { timestamp: "2026-10-12", value: 3 },
+        { timestamp: "2026-10-14", value: 1 },
+      ],
+      "all_time",
+      new Date(2026, 9, 14, 12),
+    );
+
+    expect(points).toEqual([
+      { timestamp: "2026-10-12", value: 3 },
+      { timestamp: "2026-10-13", value: 0 },
+      { timestamp: "2026-10-14", value: 1 },
+    ]);
+  });
+
+  it("fills today's hourly trend from midnight through the current hour", () => {
+    const points = fillPlaysOverTimeGaps(
+      [
+        { timestamp: "2026-10-14 08:00:00", value: 2 },
+        { timestamp: "2026-10-14 10:00:00", value: 1 },
+      ],
+      "today",
+      new Date(2026, 9, 14, 10, 35),
+    );
+
+    expect(points).toEqual([
+      { timestamp: "2026-10-14 00:00:00", value: 0 },
+      { timestamp: "2026-10-14 01:00:00", value: 0 },
+      { timestamp: "2026-10-14 02:00:00", value: 0 },
+      { timestamp: "2026-10-14 03:00:00", value: 0 },
+      { timestamp: "2026-10-14 04:00:00", value: 0 },
+      { timestamp: "2026-10-14 05:00:00", value: 0 },
+      { timestamp: "2026-10-14 06:00:00", value: 0 },
+      { timestamp: "2026-10-14 07:00:00", value: 0 },
+      { timestamp: "2026-10-14 08:00:00", value: 2 },
+      { timestamp: "2026-10-14 09:00:00", value: 0 },
+      { timestamp: "2026-10-14 10:00:00", value: 1 },
+    ]);
   });
 
   it("marks earlier requests stale and invalidates requests when hidden", () => {

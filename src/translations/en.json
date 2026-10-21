@@ -2451,6 +2451,7 @@
     "statistics_decade_empty": "No plays from library tracks linked to albums with a known year were found in this period.",
     "statistics_load_failed": "Some statistics could not be loaded.",
     "statistics_chart_accessible_summary": "{title}. {values}",
+    "statistics_play_count_accessible": "Play count: {count}",
     "statistics_activity_cell": "{weekday} at {hour}: {plays} plays",
     "music_by_decade": "Music by Decade",
     "plays": "plays",

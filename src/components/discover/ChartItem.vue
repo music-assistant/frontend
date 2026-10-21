@@ -46,8 +46,12 @@
           >
           <span
             class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-xl bg-[rgba(var(--v-theme-primary),0.15)] px-2 py-0.5 text-[11px] tabular-nums text-[rgb(var(--v-theme-primary))]"
+            role="img"
+            :aria-label="
+              $t('statistics_play_count_accessible', { count: playCount })
+            "
           >
-            <Play :size="12" />
+            <Play :size="12" aria-hidden="true" />
             <span>{{ formattedPlays }}</span>
           </span>
         </span>

@@ -4,8 +4,9 @@ import { MediaType } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
-const { handlePlayBtnClick } = vi.hoisted(() => ({
+const { handlePlayBtnClick, translate } = vi.hoisted(() => ({
   handlePlayBtnClick: vi.fn(),
+  translate: vi.fn((key: string) => key),
 }));
 
 vi.mock("@/components/discover/editorialArtwork", () => ({
@@ -20,7 +21,7 @@ vi.mock("@/helpers/media_item_actions", () => ({
   handleMenuBtnClick: vi.fn(),
   handlePlayBtnClick,
 }));
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+vi.mock("@/plugins/i18n", () => ({ $t: translate }));
 
 function renderItem(available: boolean) {
   const item = {
@@ -43,6 +44,18 @@ describe("ChartItem play control", () => {
     const wrapper = renderItem(true);
 
     expect(wrapper.get('[aria-hidden="true"]').text().trim()).toBe("TR");
+  });
+
+  it("labels the play count badge for assistive technology", () => {
+    const wrapper = renderItem(true);
+    const playCount = wrapper.get('[role="img"]');
+
+    expect(playCount.attributes("aria-label")).toBe(
+      "statistics_play_count_accessible",
+    );
+    expect(translate).toHaveBeenCalledWith("statistics_play_count_accessible", {
+      count: 3,
+    });
   });
 
   it("disables playback for unavailable history items", async () => {

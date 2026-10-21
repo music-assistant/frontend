@@ -32,7 +32,10 @@ import {
   createAxisConfig,
   CHART_COLORS,
 } from "./chartConfig";
-import { formatPlaysOverTimeLabel } from "./statisticsRequests";
+import {
+  fillPlaysOverTimeGaps,
+  formatPlaysOverTimeLabel,
+} from "./statisticsRequests";
 
 ChartJS.register(
   CategoryScale,
@@ -57,11 +60,14 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
 });
 const theme = useTheme();
+const trendData = computed(() =>
+  fillPlaysOverTimeGaps(props.data, props.period),
+);
 
 const accessibleSummary = computed(() =>
   $t("statistics_chart_accessible_summary", {
     title: props.title,
-    values: props.data
+    values: trendData.value
       .map(
         (point) =>
           `${formatPlaysOverTimeLabel(point.timestamp, props.period)}: ${point.value} ${$t("plays")}`,
@@ -72,13 +78,13 @@ const accessibleSummary = computed(() =>
 
 const chartData = computed<ChartData<"line">>(() => {
   return {
-    labels: props.data.map((item) =>
+    labels: trendData.value.map((item) =>
       formatPlaysOverTimeLabel(item.timestamp, props.period),
     ),
     datasets: [
       {
         label: $t("plays"),
-        data: props.data.map((item) => item.value),
+        data: trendData.value.map((item) => item.value),
         borderColor: CHART_COLORS[0],
         backgroundColor: "rgba(3, 169, 244, 0.15)",
         fill: true,
