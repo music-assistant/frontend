@@ -3,9 +3,12 @@
     :title="title"
     :loading="loading"
     :is-empty="!data || data.length === 0"
-    :accessible-summary="accessibleSummary"
   >
-    <PolarArea :data="chartData" :options="chartOptions" />
+    <PolarArea
+      :data="chartData"
+      :options="chartOptions"
+      :aria-label="accessibleSummary"
+    />
   </BaseChartCard>
 </template>
 

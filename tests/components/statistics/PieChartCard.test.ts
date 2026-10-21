@@ -9,9 +9,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("vue-chartjs", () => ({
   Doughnut: {
-    props: ["options"],
+    props: ["options", "ariaLabel"],
     template:
-      '<button class="chart-hit" @click="options.onClick?.(undefined, [{ index: 0 }])">Chart</button>',
+      '<canvas class="chart-hit" role="img" :aria-label="ariaLabel" @click="options.onClick?.(undefined, [{ index: 0 }])"></canvas>',
   },
 }));
 vi.mock("vue-router", async (importOriginal) => ({
@@ -50,6 +50,17 @@ function renderChart(navigateTo: "artist" | "genre" | null = "artist") {
 }
 
 describe("PieChartCard navigation", () => {
+  it("labels the chart canvas with its accessible data summary", () => {
+    const wrapper = renderChart();
+    const accessibleSummary = wrapper.get("canvas").attributes("aria-label");
+
+    expect(accessibleSummary).toContain("Artists");
+    expect(accessibleSummary).toContain("Artist: 3 plays");
+    expect(wrapper.findAll(`[aria-label="${accessibleSummary}"]`)).toHaveLength(
+      1,
+    );
+  });
+
   it("navigates chart segments and legend entries to the same artist", async () => {
     const wrapper = renderChart();
     await wrapper.find(".chart-hit").trigger("click");

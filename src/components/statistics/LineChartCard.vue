@@ -3,9 +3,12 @@
     :title="title"
     :loading="loading"
     :is-empty="!data || data.length === 0"
-    :accessible-summary="accessibleSummary"
   >
-    <Line :data="chartData" :options="chartOptions" />
+    <Line
+      :data="chartData"
+      :options="chartOptions"
+      :aria-label="accessibleSummary"
+    />
   </BaseChartCard>
 </template>
 

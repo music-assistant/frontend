@@ -4,10 +4,13 @@
     :loading="loading"
     :is-empty="!data || data.length === 0"
     :empty-message="$t('statistics_listening_time_empty')"
-    :accessible-summary="accessibleSummary"
     mobile-expanded
   >
-    <Bar :data="chartData" :options="chartOptions" />
+    <Bar
+      :data="chartData"
+      :options="chartOptions"
+      :aria-label="accessibleSummary"
+    />
   </BaseChartCard>
 </template>
 

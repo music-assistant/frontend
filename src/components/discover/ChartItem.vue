@@ -23,7 +23,7 @@
           class="absolute inset-0 z-[1] size-full object-cover"
           loading="lazy"
           :src="art.image"
-          :alt="item.name"
+          alt=""
         />
         <span
           v-else-if="art.initials"

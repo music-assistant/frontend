@@ -4,9 +4,12 @@
     :loading="loading"
     :is-empty="!data || data.length === 0"
     :empty-message="$t('statistics_decade_empty')"
-    :accessible-summary="accessibleSummary"
   >
-    <Bar :data="chartData" :options="chartOptions" />
+    <Bar
+      :data="chartData"
+      :options="chartOptions"
+      :aria-label="accessibleSummary"
+    />
   </BaseChartCard>
 </template>
 

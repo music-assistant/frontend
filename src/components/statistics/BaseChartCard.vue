@@ -21,8 +21,6 @@
       v-else
       class="flex min-h-0 flex-1 items-center justify-center"
       :class="clickable && '[&_canvas]:cursor-pointer'"
-      :role="accessibleSummary ? 'group' : undefined"
-      :aria-label="accessibleSummary || undefined"
     >
       <slot></slot>
     </div>
@@ -38,7 +36,6 @@ interface Props {
   isEmpty?: boolean;
   emptyMessage?: string;
   clickable?: boolean;
-  accessibleSummary?: string;
   mobileExpanded?: boolean;
 }
 
@@ -47,7 +44,6 @@ withDefaults(defineProps<Props>(), {
   isEmpty: false,
   emptyMessage: "",
   clickable: false,
-  accessibleSummary: "",
   mobileExpanded: false,
 });
 </script>

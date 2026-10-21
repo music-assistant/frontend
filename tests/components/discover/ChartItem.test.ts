@@ -10,8 +10,8 @@ const { handlePlayBtnClick, translate } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/components/discover/editorialArtwork", () => ({
-  itemArtwork: (item: { name: string }) => ({
-    image: undefined,
+  itemArtwork: (item: { name: string; image?: string }) => ({
+    image: item.image,
     gradient: "none",
     initials: item.name.slice(0, 2).toUpperCase(),
   }),
@@ -23,7 +23,7 @@ vi.mock("@/helpers/media_item_actions", () => ({
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: translate }));
 
-function renderItem(available: boolean) {
+function renderItem(available: boolean, image?: string) {
   const item = {
     item_id: "track-1",
     provider: "library",
@@ -31,6 +31,7 @@ function renderItem(available: boolean) {
     uri: "track://library/track-1",
     name: "Track",
     available,
+    image,
   } as MediaItemTypeOrItemMapping;
 
   return mount(ChartItem, {
@@ -44,6 +45,12 @@ describe("ChartItem play control", () => {
     const wrapper = renderItem(true);
 
     expect(wrapper.get('[aria-hidden="true"]').text().trim()).toBe("TR");
+  });
+
+  it("keeps redundant artwork out of the item announcement", () => {
+    const wrapper = renderItem(true, "/track.jpg");
+
+    expect(wrapper.get("img").attributes("alt")).toBe("");
   });
 
   it("labels the play count badge for assistive technology", () => {

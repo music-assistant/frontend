@@ -4,7 +4,6 @@
     :loading="loading"
     :is-empty="!data || data.length === 0"
     :clickable="!!navigateTo"
-    :accessible-summary="accessibleSummary"
     mobile-expanded
   >
     <div
@@ -13,7 +12,11 @@
       <div
         class="size-[180px] shrink-0 max-[600px]:size-[132px] max-[600px]:self-center"
       >
-        <Doughnut :data="chartData" :options="chartOptions" />
+        <Doughnut
+          :data="chartData"
+          :options="chartOptions"
+          :aria-label="accessibleSummary"
+        />
       </div>
       <div
         class="flex max-h-[240px] min-w-0 flex-1 flex-col gap-3 overflow-y-auto pr-2 max-[600px]:max-h-[420px] max-[600px]:w-full"
@@ -39,7 +42,7 @@
             <img
               class="size-full object-cover"
               :src="getImageThumbForItem(topItem.item) || placeholderImage"
-              :alt="topItem.item.name"
+              alt=""
               loading="lazy"
             />
           </div>
