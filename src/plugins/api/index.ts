@@ -2031,24 +2031,6 @@ export class MusicAssistantApi {
     );
   }
 
-  public async getStatisticsPlayHistory(limit = 100): Promise<ItemMapping[]> {
-    return this.sendCommand("statistics/play_history", {
-      limit,
-    });
-  }
-
-  public async getPlayCount(
-    item_id: string,
-    provider: string,
-    media_type: MediaType,
-  ): Promise<number> {
-    return this.sendCommand("statistics/play_count", {
-      item_id,
-      provider,
-      media_type,
-    });
-  }
-
   public async getSoundEffects(): Promise<SoundEffect[]> {
     // Fetch all sound effect items from providers that offer them.
     return this.sendCommand("music/sound_effects");

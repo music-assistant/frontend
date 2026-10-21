@@ -26,7 +26,10 @@ vi.mock("vuetify", async (importOriginal) => ({
 enableAutoUnmount(afterEach);
 afterEach(() => vi.clearAllMocks());
 
-function renderChart(navigateTo: "artist" | "genre" | null = "artist") {
+function renderChart(
+  navigateTo: "artist" | "genre" | null = "artist",
+  available = true,
+) {
   const mediaType = navigateTo === "genre" ? MediaType.GENRE : MediaType.ARTIST;
   return mount(PieChartCard, {
     props: {
@@ -40,7 +43,7 @@ function renderChart(navigateTo: "artist" | "genre" | null = "artist") {
             media_type: mediaType,
             name: "Artist",
             uri: `${mediaType}://library/${mediaType}-1`,
-            available: true,
+            available,
           },
           play_count: 3,
         } as StatisticsTopItemResult,
@@ -79,6 +82,17 @@ describe("PieChartCard navigation", () => {
     expect(
       wrapper.find("button[aria-label]").attributes("disabled"),
     ).toBeDefined();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("does not navigate to unavailable historical items", async () => {
+    const wrapper = renderChart("artist", false);
+    const legendEntry = wrapper.find("button[aria-label]");
+
+    expect(legendEntry.attributes("disabled")).toBeDefined();
+    await wrapper.find(".chart-hit").trigger("click");
+    await legendEntry.trigger("click");
+
     expect(push).not.toHaveBeenCalled();
   });
 
