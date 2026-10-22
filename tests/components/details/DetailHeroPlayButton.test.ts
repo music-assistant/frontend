@@ -1,9 +1,14 @@
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
-import type { MediaItemType, Player } from "@/plugins/api/interfaces";
+import {
+  SortDirection,
+  SortField,
+  type MediaItemType,
+  type Player,
+} from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, storeMock } = vi.hoisted(() => ({
+const { apiMock, storeMock, mockHandlePlayBtnClick } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, Player>,
     queues: {},
@@ -12,16 +17,16 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
     activePlayer: undefined as Player | undefined,
     companionPlayerId: undefined as string | undefined,
   },
+  mockHandlePlayBtnClick: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
-const screen = vi.hoisted(() => ({ isPhone: false }));
-vi.mock("@/plugins/breakpoint", () => ({
-  isPhoneSizedScreen: () => screen.isPhone,
-}));
+// jsdom does no layout, so the probe measures 0px wide: any room fits it
+const row = vi.hoisted(() => ({ room: 0 }));
+vi.mock("@/helpers/room_in_row", () => ({ roomInRow: () => row.room }));
 vi.mock("@/helpers/media_item_actions", () => ({
-  handlePlayBtnClick: vi.fn(),
+  handlePlayBtnClick: mockHandlePlayBtnClick,
 }));
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string, values?: Record<string, string>) =>
@@ -29,9 +34,9 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 const MenuButtonStub = {
-  props: ["text", "label", "truncate"],
+  props: { text: String, label: String, truncate: Boolean },
   template:
-    '<button :label="label" :data-truncate="String(truncate)">{{ text }}</button>',
+    '<button :label="label" :data-truncate="String(truncate)" @click="$emit(\'click\')">{{ text }}</button>',
 };
 
 function player(overrides: Partial<Player> = {}): Player {
@@ -44,29 +49,36 @@ function player(overrides: Partial<Player> = {}): Player {
   } as unknown as Player;
 }
 
-function mountButton() {
+function mountButton(props: Record<string, unknown> = {}) {
   return mount(DetailHeroPlayButton, {
-    props: { item: {} as MediaItemType },
+    props: { item: {} as MediaItemType, ...props },
     global: { stubs: { MenuButton: MenuButtonStub } },
   });
 }
+
+/** The button people see; the other one only measures the sentence. */
+const visible = (wrapper: ReturnType<typeof mountButton>) =>
+  wrapper.findAll("button")[0];
 
 describe("DetailHeroPlayButton", () => {
   beforeEach(() => {
     apiMock.players = {};
     storeMock.activePlayer = undefined;
     storeMock.companionPlayerId = undefined;
-    screen.isPhone = false;
+    mockHandlePlayBtnClick.mockClear();
+    row.room = 0;
   });
 
   it("plays without naming a player when none is selected", () => {
-    expect(mountButton().text()).toBe("play");
+    expect(visible(mountButton()).text()).toBe("play");
   });
 
-  it("names the selected player", () => {
+  it("names the selected player when the sentence fits", () => {
     storeMock.activePlayer = player();
 
-    expect(mountButton().text()).toBe('play_on_player:{"player":"Kitchen"}');
+    expect(visible(mountButton()).text()).toBe(
+      'play_on_player:{"player":"Kitchen"}',
+    );
   });
 
   it("names the selected player with the players synced to it", () => {
@@ -75,82 +87,110 @@ describe("DetailHeroPlayButton", () => {
     };
     storeMock.activePlayer = player({ group_members: ["kitchen", "office"] });
 
-    expect(mountButton().text()).toBe('play_on_player:{"player":"Kitchen +1"}');
+    expect(visible(mountButton()).text()).toBe(
+      'play_on_player:{"player":"Kitchen +1"}',
+    );
   });
 
   it("uses its own sentence for the player of this device", () => {
-    apiMock.players = {
-      office: player({ player_id: "office", available: true }),
-    };
     storeMock.companionPlayerId = "kitchen";
-    storeMock.activePlayer = player({ group_members: ["kitchen", "office"] });
+    storeMock.activePlayer = player();
 
-    expect(mountButton().text()).toBe("play_on_this_device");
+    expect(visible(mountButton()).text()).toBe("play_on_this_device");
   });
 
-  it("shows only the player's name on a phone", () => {
-    screen.isPhone = true;
-    storeMock.activePlayer = player({ name: "Kitchen speaker" });
+  it("passes its tracks sort as typed fields to the play handler", async () => {
+    const item = {} as MediaItemType;
+    await mountButton({
+      item,
+      tracksSortField: SortField.DURATION,
+      tracksSortDirection: SortDirection.DESC,
+    })
+      .get("button")
+      .trigger("click");
 
-    const button = mountButton();
-    expect(button.text()).toBe("Kitchen speaker");
+    expect(mockHandlePlayBtnClick).toHaveBeenCalledWith(
+      item,
+      expect.any(Number),
+      expect.any(Number),
+      undefined,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      SortField.DURATION,
+      SortDirection.DESC,
+    );
+  });
+
+  it("keeps a long player's name whole in the sentence", () => {
+    storeMock.activePlayer = player({ name: "Kitchen ceiling speaker left" });
+
+    expect(visible(mountButton()).text()).toBe(
+      'play_on_player:{"player":"Kitchen ceiling speaker left"}',
+    );
+  });
+
+  it("shows only the player's name when the row has no room for the sentence", async () => {
+    row.room = -1;
+    storeMock.activePlayer = player({ name: "Kitchen ceiling speaker left" });
+    const wrapper = mountButton();
+    await wrapper.vm.$nextTick();
+
+    expect(visible(wrapper).text()).toBe("Kitchen ceiling speaker left");
     // the whole sentence stays for screen readers and the tooltip
-    expect(button.find("button").attributes("label")).toBe(
-      'play_on_player:{"player":"Kitchen speaker"}',
+    expect(visible(wrapper).attributes("label")).toBe(
+      'play_on_player:{"player":"Kitchen ceiling speaker left"}',
     );
   });
 
-  it("calls the player of this device by that name on a phone", () => {
-    screen.isPhone = true;
+  it("calls the player of this device by that name when space is short", async () => {
+    row.room = -1;
     storeMock.companionPlayerId = "kitchen";
     storeMock.activePlayer = player();
+    const wrapper = mountButton();
+    await wrapper.vm.$nextTick();
 
-    expect(mountButton().text()).toBe("this_device");
+    expect(visible(wrapper).text()).toBe("this_device");
   });
 
-  it("still just plays on a phone without a player", () => {
-    screen.isPhone = true;
-    expect(mountButton().text()).toBe("play");
-  });
-
-  it("names a long player in full for screen readers on a phone", () => {
-    screen.isPhone = true;
-    storeMock.activePlayer = player({ name: "Kitchen ceiling speaker left" });
-
-    const button = mountButton().find("button");
-    expect(button.text()).toBe("Kitchen ceiling speaker left");
-    expect(button.attributes("label")).toBe(
-      'play_on_player:{"player":"Kitchen ceiling speaker left"}',
-    );
-  });
-
-  it("names a long player in full for screen readers on a wider screen", () => {
-    storeMock.activePlayer = player({ name: "Kitchen ceiling speaker left" });
-
-    const button = mountButton().find("button");
-    // the visible sentence trims the name, the label does not
-    expect(button.text()).toBe(
-      'play_on_player:{"player":"Kitchen ceiling spea..."}',
-    );
-    expect(button.attributes("label")).toBe(
-      'play_on_player:{"player":"Kitchen ceiling speaker left"}',
-    );
-  });
-
-  it("lets the button shrink and ellipsize the name on every phone header", () => {
-    screen.isPhone = true;
+  it("holds the button to the room the row leaves it", async () => {
+    row.room = 180;
     storeMock.activePlayer = player();
+    const wrapper = mountButton();
+    await wrapper.vm.$nextTick();
 
-    expect(mountButton().find("button").attributes("data-truncate")).toBe(
-      "true",
+    expect(wrapper.get("div").attributes("style")).toContain(
+      "max-width: 180px",
     );
   });
 
-  it("keeps the label whole where the header doesn't ask it to shrink", () => {
-    storeMock.activePlayer = player();
+  it("measures the sentence with the same sizing as the button people see", () => {
+    const buttons = mountButton().findAll("button");
 
-    expect(mountButton().find("button").attributes("data-truncate")).toBe(
-      "false",
+    expect(buttons[0].attributes("data-truncate")).toBe("true");
+    expect(buttons[1].attributes("data-truncate")).toBe("true");
+  });
+
+  it("keeps a usable width in a crowded row, rather than the scraps left", async () => {
+    row.room = 72;
+    storeMock.activePlayer = player();
+    const wrapper = mountButton();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.get("div").attributes("style")).toContain(
+      "max-width: 160px",
+    );
+  });
+
+  it("keeps that width when the other buttons alone overflow the row", async () => {
+    row.room = -20;
+    const wrapper = mountButton();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.get("div").attributes("style")).toContain(
+      "max-width: 160px",
     );
   });
 });

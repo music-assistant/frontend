@@ -1,9 +1,19 @@
 import ToolbarHeading from "@/components/ToolbarHeading.vue";
 import BrowseView from "@/views/BrowseView.vue";
+import {
+  useItemsListing,
+  type LoadPagedDataFn,
+} from "@/composables/useItemsListing";
 import { flushPromises, mount } from "@vue/test-utils";
-import { MediaType } from "@/plugins/api/interfaces";
+import {
+  ListingType,
+  MediaType,
+  SortDirection,
+  SortField,
+} from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { nextTick } from "vue";
+import { defineComponent, nextTick, onMounted, type PropType } from "vue";
+import { track } from "../fixtures/track";
 
 vi.mock("vue-i18n", () => ({ useI18n: () => ({ t: (key: string) => key }) }));
 
@@ -27,7 +37,7 @@ vi.mock("@/plugins/store", () => ({ store: { activePlayerId: "player" } }));
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["showSelectButton", "loadItems"],
+    props: ["showSelectButton", "loadPagedData", "sortListing"],
     template: '<div><slot name="title" /><slot name="header" /></div>',
   },
 }));
@@ -142,12 +152,136 @@ describe("BrowseView", () => {
     const wrapper = mountBrowse("filesystem://Music");
     browsed.items = [{ media_type: MediaType.FOLDER }];
 
-    await wrapper.findComponent({ name: "ItemsListing" }).props("loadItems")(
-      {},
-    );
+    await loadListing(wrapper);
     await nextTick();
 
     expect(selectButtonShown(wrapper)).toBe(false);
+  });
+
+  it("starts a new listing when changing folders during a pending page request", async () => {
+    const parentPath = "fs://PagingRace";
+    const childPath = `${parentPath}/Child`;
+    let resolveOldPage!: (items: object[]) => void;
+    const oldPage = new Promise<object[]>((resolve) => {
+      resolveOldPage = resolve;
+    });
+    let parentRequests = 0;
+    const childItems = [
+      {
+        media_type: MediaType.FOLDER,
+        name: "Nested",
+        path: `${childPath}/Nested`,
+        is_playable: false,
+      },
+    ];
+    const PagingListing = defineComponent({
+      name: "ItemsListing",
+      props: {
+        loadPagedData: {
+          type: Function as PropType<LoadPagedDataFn>,
+          required: true,
+        },
+        showSelectButton: Boolean,
+      },
+      setup(props) {
+        const listing = useItemsListing(
+          { limit: 2, loadPagedData: props.loadPagedData },
+          () => undefined,
+        );
+        onMounted(() => listing.loadData(true));
+        return {
+          pagedItems: listing.pagedItems,
+          loadNextPage: listing.loadNextPage,
+        };
+      },
+      template: "<div />",
+    });
+
+    await browse.withImplementation(
+      async (path) => {
+        if (path === parentPath) {
+          parentRequests += 1;
+          return parentRequests === 1
+            ? [
+                {
+                  media_type: MediaType.FOLDER,
+                  name: "Child",
+                  path: childPath,
+                  is_playable: false,
+                },
+                track({ item_id: "parent-track" }),
+              ]
+            : oldPage;
+        }
+        return path === childPath ? childItems : [];
+      },
+      async () => {
+        const wrapper = mount(BrowseView, {
+          props: { path: parentPath },
+          global: {
+            stubs: {
+              ItemsListing: PagingListing,
+              RouterLink: true,
+              VBreadcrumbs: true,
+            },
+          },
+        });
+        await flushPromises();
+        const previous = wrapper.findComponent(PagingListing);
+        const pendingPage = previous.vm.loadNextPage({ done: vi.fn() });
+        await nextTick();
+
+        await wrapper.setProps({ path: childPath });
+        await flushPromises();
+        const current = wrapper.findComponent(PagingListing);
+        expect(current.vm === previous.vm).toBe(false);
+        expect(browse).toHaveBeenCalledWith(
+          childPath,
+          "player",
+          undefined,
+          "",
+          2,
+          0,
+          expect.anything(),
+          expect.anything(),
+        );
+        expect(current.vm.pagedItems).toEqual(childItems);
+        expect(current.props("showSelectButton")).toBe(false);
+
+        resolveOldPage([track({ item_id: "late-parent-track" })]);
+        await pendingPage;
+        await flushPromises();
+        expect(current.vm.pagedItems).toEqual(childItems);
+        expect(current.props("showSelectButton")).toBe(false);
+        wrapper.unmount();
+      },
+    );
+  });
+
+  it("loads each folder page with server search and sort parameters", async () => {
+    const wrapper = mountBrowse("filesystem://Music");
+    const listing = wrapper.findComponent({ name: "ItemsListing" });
+
+    await listing.props("loadPagedData")({
+      offset: 20,
+      limit: 20,
+      sortBy: "name:desc",
+      sortField: SortField.NAME,
+      sortDirection: SortDirection.DESC,
+      search: "live",
+    });
+
+    expect(listing.props("sortListing")).toBe(ListingType.BROWSE);
+    expect(browse).toHaveBeenCalledWith(
+      "filesystem://Music",
+      "player",
+      undefined,
+      "live",
+      20,
+      20,
+      SortField.NAME,
+      SortDirection.DESC,
+    );
   });
 });
 
@@ -192,9 +326,13 @@ describe("BrowseView folder header", () => {
     const wrapper = mountBrowse("radio://");
     await flushPromises();
 
-    expect(browse).toHaveBeenCalledWith("root", "player", {
-      suppressGlobalError: true,
-    });
+    expect(browse).toHaveBeenCalledWith(
+      "root",
+      "player",
+      { suppressGlobalError: true },
+      undefined,
+      0,
+    );
     expect(playedFolder(wrapper)).toBeUndefined();
   });
 
@@ -235,7 +373,13 @@ describe("BrowseView folder header", () => {
 });
 
 async function loadListing(wrapper: ReturnType<typeof mountBrowse>) {
-  await wrapper.findComponent({ name: "ItemsListing" }).props("loadItems")({});
+  await wrapper.findComponent({ name: "ItemsListing" }).props("loadPagedData")({
+    offset: 0,
+    limit: 50,
+    sortBy: "original",
+    sortField: SortField.ORIGINAL,
+    search: "",
+  });
 }
 
 function playedFolder(wrapper: ReturnType<typeof mountBrowse>) {

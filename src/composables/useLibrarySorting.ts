@@ -17,6 +17,8 @@ function parseSortBy(sortBy: string) {
   const legacyFieldAliases: Record<string, SortField> = {
     album_artist_name: SortField.ARTIST_NAME,
     track_artist_name: SortField.ARTIST_NAME,
+    artist: SortField.ARTIST_NAME,
+    album: SortField.ALBUM_NAME,
   };
   const field = legacyFieldAliases[rawField] ?? rawField;
 

@@ -374,6 +374,8 @@ import {
   ProviderMapping,
   QueueOption,
   Radio,
+  SortDirection,
+  SortField,
   Scope,
   Track,
 } from "@/plugins/api/interfaces";
@@ -434,6 +436,8 @@ export const showContextMenuForMediaItem = async function (
   showPlayMenuHeader = false,
   sortBy?: string,
   options?: ContextMenuOptions,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
 ) {
   // show ContextMenu for given MediaItem(s)
   const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
@@ -472,6 +476,8 @@ export const showContextMenuForMediaItem = async function (
       menuTargets,
       parentItem,
       sortBy,
+      sortField,
+      sortDirection,
     );
     menuItems.push(...contextMenuItems);
   } else {
@@ -504,6 +510,8 @@ export const showPlayMenuForMediaItem = async function (
   posX = 0,
   posY = 0,
   tracksSortBy?: string,
+  tracksSortField?: SortField,
+  tracksSortDirection?: SortDirection,
 ) {
   // open the play menu by emitting the event
 
@@ -540,6 +548,8 @@ export const showPlayMenuForMediaItem = async function (
         defaultEnqueueOption,
         // the order of a single album/playlist's own tracks
         playableItems.length == 1 ? tracksSortBy : undefined,
+        playableItems.length == 1 ? tracksSortField : undefined,
+        playableItems.length == 1 ? tracksSortDirection : undefined,
       ),
     );
   }
@@ -1445,6 +1455,8 @@ export const getPlaybackContextMenuItems = async function (
   items: MediaItemTypeOrItemMapping[],
   parentItem?: MediaItemType,
   sortBy?: string,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
 ) {
   const playMenuItems: ContextMenuItem[] = [];
   if (items.length == 0 || !itemIsAvailable(items[0])) {
@@ -1482,7 +1494,11 @@ export const getPlaybackContextMenuItems = async function (
         action: () => {
           api.playMedia(parentItem.uri, undefined, {
             start_item: playableItems[0].item_id,
-            sort_by: sortBy,
+            ...(sortField
+              ? { sort_field: sortField, sort_direction: sortDirection }
+              : sortBy
+                ? { sort_by: sortBy }
+                : {}),
           });
         },
         icon: PlayCircle,
@@ -1497,7 +1513,11 @@ export const getPlaybackContextMenuItems = async function (
         action: () => {
           api.playMedia(parentItem.uri, undefined, {
             start_item: firstItem.item_id,
-            sort_by: sortBy,
+            ...(sortField
+              ? { sort_field: sortField, sort_direction: sortDirection }
+              : sortBy
+                ? { sort_by: sortBy }
+                : {}),
           });
         },
         icon: PlayCircle,
@@ -1659,6 +1679,8 @@ const buildEnqueueMenuItems = function (
   items: MediaItemTypeOrItemMapping[],
   defaultEnqueueOption: QueueOption | undefined,
   tracksSortBy?: string,
+  tracksSortField?: SortField,
+  tracksSortDirection?: SortDirection,
 ): ContextMenuItem[] {
   return [
     QueueOption.PLAY,
@@ -1670,7 +1692,12 @@ const buildEnqueueMenuItems = function (
     label: $t(`queue_option.${option}`),
     action: () => {
       const uris = items.map((x) => x.uri);
-      if (tracksSortBy) {
+      if (tracksSortField) {
+        api.playMedia(uris, option, {
+          sort_field: tracksSortField,
+          sort_direction: tracksSortDirection,
+        });
+      } else if (tracksSortBy) {
         api.playMedia(uris, option, { sort_by: tracksSortBy });
       } else {
         api.playMedia(uris, option);

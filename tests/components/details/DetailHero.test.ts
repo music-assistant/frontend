@@ -16,6 +16,12 @@ vi.mock("vue-router", () => ({ useRouter: () => ({ back: vi.fn() }) }));
 vi.mock("@/components/Toolbar.vue", () => ({
   default: { template: "<div />" },
 }));
+// only the item named "With art" has artwork of its own
+vi.mock("@/helpers/utils", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/utils")>()),
+  getImageThumbForItem: (item?: { name?: string }) =>
+    item?.name === "With art" ? "cover.jpg" : undefined,
+}));
 
 /** Stands in for the browser's observer, so a test can say what is in view. */
 class FakeIntersectionObserver {
@@ -137,5 +143,44 @@ describe("DetailHero backdrop", () => {
     const backdrop = backdropOf({ softenBackdrop: true, blurBackdrop: true });
     expect(backdrop.classes()).toContain("detail-hero__backdrop--blurred");
     expect(backdrop.classes()).not.toContain("blur-[6px]");
+  });
+});
+
+describe("DetailHero on a phone", () => {
+  beforeEach(() => {
+    vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const heroFor = (name: string) =>
+    mount(DetailHero, {
+      props: { item: track({ name }), backdrop: "fanart.jpg" },
+      slots: { main: '<div class="detail-hero-cover" /><h1>{{ name }}</h1>' },
+      global: { mocks: { $t: (key: string) => key } },
+    });
+
+  it("lays the item's own artwork across the top, in place of its cover", () => {
+    const hero = heroFor("With art");
+    const backdrop = hero.get(".detail-hero__backdrop");
+
+    expect(backdrop.attributes("style")).toContain("cover.jpg");
+    expect(backdrop.classes()).toContain("aspect-square");
+    expect(hero.get(".detail-hero__main").classes()).toContain(
+      "[&_.detail-hero-cover]:hidden",
+    );
+  });
+
+  it("keeps the usual backdrop for an item without artwork", () => {
+    const hero = heroFor("No art");
+    const backdrop = hero.get(".detail-hero__backdrop");
+
+    expect(backdrop.attributes("style")).toContain("fanart.jpg");
+    expect(backdrop.classes()).not.toContain("aspect-square");
+    expect(hero.get(".detail-hero__main").classes()).not.toContain(
+      "[&_.detail-hero-cover]:hidden",
+    );
   });
 });
