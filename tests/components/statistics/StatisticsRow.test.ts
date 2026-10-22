@@ -6,6 +6,7 @@ import ListeningClockCard from "@/components/statistics/ListeningClockCard.vue";
 import ListeningHeatmapCard from "@/components/statistics/ListeningHeatmapCard.vue";
 import PieChartCard from "@/components/statistics/PieChartCard.vue";
 import StatisticsRow from "@/components/statistics/StatisticsRow.vue";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -143,7 +144,7 @@ describe("StatisticsRow", () => {
   it("emits tab and period changes without owning requests", async () => {
     const wrapper = renderRow();
     wrapper.findComponent(Tabs).vm.$emit("update:modelValue", MediaType.ALBUM);
-    await wrapper.find("select").setValue("month");
+    wrapper.findComponent(NativeSelect).vm.$emit("update:modelValue", "month");
 
     expect(wrapper.emitted("update:activeTab")).toEqual([[MediaType.ALBUM]]);
     expect(wrapper.emitted("update:period")).toEqual([["month"]]);

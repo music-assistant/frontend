@@ -27,17 +27,27 @@
           <label class="sr-only" for="statistics-period">{{
             $t("statistics_period")
           }}</label>
-          <select
+          <NativeSelect
             id="statistics-period"
             v-model="period"
-            class="h-9 cursor-pointer rounded-md border border-border bg-background px-3 text-[13px] text-foreground transition-colors hover:border-foreground/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            class="w-auto cursor-pointer text-[13px]"
           >
-            <option value="today">{{ $t("period_today") }}</option>
-            <option value="week">{{ $t("period_week") }}</option>
-            <option value="month">{{ $t("period_month") }}</option>
-            <option value="year">{{ $t("period_year") }}</option>
-            <option value="all_time">{{ $t("period_all_time") }}</option>
-          </select>
+            <NativeSelectOption value="today">{{
+              $t("period_today")
+            }}</NativeSelectOption>
+            <NativeSelectOption value="week">{{
+              $t("period_week")
+            }}</NativeSelectOption>
+            <NativeSelectOption value="month">{{
+              $t("period_month")
+            }}</NativeSelectOption>
+            <NativeSelectOption value="year">{{
+              $t("period_year")
+            }}</NativeSelectOption>
+            <NativeSelectOption value="all_time">{{
+              $t("period_all_time")
+            }}</NativeSelectOption>
+          </NativeSelect>
         </div>
       </div>
       <slot name="edit-controls"></slot>
@@ -129,6 +139,10 @@
 
 <script setup lang="ts">
 import ChartItem from "@/components/discover/ChartItem.vue";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
