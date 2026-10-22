@@ -3,10 +3,12 @@ import api from "@/plugins/api";
 import {
   EventType,
   ProviderStatus,
+  Scope,
   type ProviderConfig,
   type PlayerConfig,
   type ConfigEntry,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 
 export type ScrobblingState = "ready";
@@ -26,15 +28,7 @@ const PROVIDER_LABELS: Record<string, string> = {
 };
 
 const textForProvider = (provider: ProviderConfig) =>
-  [
-    provider.domain,
-    provider.name,
-    provider.default_name,
-    ...Object.entries(provider.values).flatMap(([key, entry]) => [
-      key,
-      entry.label,
-    ]),
-  ]
+  [provider.domain, provider.name, provider.default_name]
     .filter((value): value is string => !!value)
     .join(" ");
 
@@ -85,7 +79,7 @@ export const getScrobblingStatus = (
     (provider) =>
       isScrobblingProvider(provider) &&
       provider.enabled &&
-      (!provider.status || provider.status === ProviderStatus.LOADED) &&
+      provider.status === ProviderStatus.LOADED &&
       selectedIdsInclude(provider.values, "scrobble_users", userId) &&
       selectedIdsInclude(
         provider.values,
@@ -111,6 +105,14 @@ export function useScrobblingStatus() {
   let unsubscribe: (() => void) | undefined;
 
   const refresh = async () => {
+    if (
+      !authManager.hasScope(Scope.CONFIG_PROVIDERS_READ) ||
+      !authManager.hasScope(Scope.CONFIG_PLAYERS_READ)
+    ) {
+      providerConfigs.value = [];
+      playerConfigs.value = [];
+      return;
+    }
     try {
       const [providers, players] = await Promise.all([
         api.getProviderConfigs(),

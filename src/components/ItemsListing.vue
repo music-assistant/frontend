@@ -328,7 +328,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { useHotkeys, type RegisterableHotkey } from "@tanstack/vue-hotkeys";
+import { useHotkeys } from "@tanstack/vue-hotkeys";
 import {
   ArrowUpDown,
   CheckCheck,
@@ -1728,10 +1728,9 @@ const restoreSettings = async function () {
   }
 };
 
-// Register listing search shortcuts through TanStack Hotkeys. The callback
-// deliberately keeps the target checks here: typing in a different control
-// (for example the player drawer search) must not steal its input.
+// Keep the same focus and dialog guards for explicit shortcuts and typing.
 const handleSearchHotkey = function (e: KeyboardEvent) {
+  if (!props.allowKeyHooks || e.isComposing) return;
   if (store.dialogActive || store.showPlayersMenu) return;
   if (loading.value) return;
   if (e.key === "Escape") closeSearch();
@@ -1751,12 +1750,14 @@ const handleSearchHotkey = function (e: KeyboardEvent) {
   }
 
   if (e.key.toLowerCase() === "a" && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
     selectAll();
   } else if (!searchHasFocus.value && e.key == "Backspace") {
     focusSearch();
   } else if (
     !searchHasFocus.value &&
     e.key.length == 1 &&
+    e.key !== " " &&
     !e.ctrlKey &&
     !e.metaKey
   ) {
@@ -1765,18 +1766,12 @@ const handleSearchHotkey = function (e: KeyboardEvent) {
   }
 };
 
-const searchHotkeyKeys = [
-  ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-  "Backspace",
-  "Escape",
-] as RegisterableHotkey[];
 useHotkeys(
-  () => [
-    ...searchHotkeyKeys.map((hotkey) => ({
-      hotkey,
-      callback: handleSearchHotkey,
-    })),
-    { hotkey: "Mod+A", callback: handleSearchHotkey },
+  [
+    { hotkey: "Control+A", callback: handleSearchHotkey },
+    { hotkey: "Meta+A", callback: handleSearchHotkey },
+    { hotkey: "Backspace", callback: handleSearchHotkey },
+    { hotkey: "Escape", callback: handleSearchHotkey },
   ],
   {
     enabled: () => props.allowKeyHooks,
@@ -1785,6 +1780,18 @@ useHotkeys(
     ignoreInputs: false,
   },
 );
+
+// Printable input includes punctuation, shifted keys and non-Latin characters.
+// Leave modifier shortcuts and non-printable keys to TanStack above.
+const handlePrintableSearchKey = (e: KeyboardEvent) => {
+  if (e.key.length !== 1 || e.ctrlKey || e.metaKey) return;
+  handleSearchHotkey(e);
+};
+
+document.addEventListener("keydown", handlePrintableSearchKey);
+onBeforeUnmount(() => {
+  document.removeEventListener("keydown", handlePrintableSearchKey);
+});
 
 if (props.restoreState) {
   // handle restore state

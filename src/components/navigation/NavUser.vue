@@ -23,6 +23,7 @@ import { api } from "@/plugins/api";
 import { copyToClipboard } from "@/helpers/utils";
 import { useAccountSwitcher } from "@/composables/useAccountSwitcher";
 import { useScrobblingStatus } from "@/composables/useScrobblingStatus";
+import { runAfterPreferenceWrites } from "@/composables/userPreferences";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { Activity, Copy, LogOut, Pencil, Server, UserRound } from "@lucide/vue";
@@ -98,13 +99,19 @@ const handleAvatarUpdate = async (avatarUrl: string) => {
   if (!store.currentUser || savingAvatar.value) return;
   savingAvatar.value = true;
   try {
-    const updatedUser = await api.updateUser(store.currentUser.user_id, {
-      avatarUrl,
+    const userId = store.currentUser.user_id;
+    await runAfterPreferenceWrites(async () => {
+      if (store.currentUser?.user_id !== userId) return;
+      const updatedUser = await api.updateUser(
+        userId,
+        { avatarUrl },
+        { suppressGlobalError: true },
+      );
+      if (updatedUser && store.currentUser?.user_id === userId) {
+        store.currentUser = updatedUser;
+        toast.success(t("auth.profile_updated"));
+      }
     });
-    if (updatedUser) {
-      store.currentUser = updatedUser;
-      toast.success(t("auth.profile_updated"));
-    }
   } catch (error: unknown) {
     toast.error(error instanceof Error ? error.message : t("error_generic"));
   } finally {

@@ -241,10 +241,18 @@ export class AuthManager {
     window.location.reload();
   }
 
+  /** Open the login screen without revoking the remembered account's token. */
+  addAccount(): void {
+    if (store.currentUser) this.rememberAccount(store.currentUser);
+    this.clearAuth();
+    this.returnToFullApp();
+  }
+
   private rememberAccount(user: User): void {
-    if (!this.token || this.isGuestAccessSession() || !user.username) return;
+    if (!this.token || this.guestSessionKind() || !user.username) return;
     const accounts = this.getSavedAccounts().filter(
-      (account) => account.token !== this.token,
+      (account) =>
+        account.token !== this.token && account.username !== user.username,
     );
     accounts.unshift({
       token: this.token,

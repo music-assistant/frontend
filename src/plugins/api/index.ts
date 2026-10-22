@@ -3307,7 +3307,7 @@ export class MusicAssistantApi {
 
       if (updates.username) args.username = updates.username;
       if (updates.displayName) args.display_name = updates.displayName;
-      if (updates.avatarUrl) args.avatar_url = updates.avatarUrl;
+      if (updates.avatarUrl !== undefined) args.avatar_url = updates.avatarUrl;
       if (updates.role) args.role = updates.role;
       if (updates.password) args.password = updates.password;
       if (updates.preferences != undefined)

@@ -79,6 +79,32 @@ describe("useScrobblingStatus helpers", () => {
     ).toBe(false);
   });
 
+  it("does not report a provider with unknown lifecycle status as ready", () => {
+    expect(
+      getScrobblingStatus([provider({ status: null })], "user-1", player())
+        .configured,
+    ).toBe(false);
+  });
+
+  it("does not infer scrobbling from disabled options or selection labels", () => {
+    const configured = provider({
+      domain: "custom_music",
+      default_name: "Custom music",
+      values: {
+        scrobble: {
+          ...selection([]),
+          type: ConfigEntryType.BOOLEAN,
+          label: "Scrobble plays",
+          value: false,
+        },
+        scrobble_users: selection([]),
+      },
+    });
+    expect(
+      getScrobblingStatus([configured], "user-1", player()).configured,
+    ).toBe(false);
+  });
+
   it("includes multiple configured services", () => {
     const result = getScrobblingStatus(
       [

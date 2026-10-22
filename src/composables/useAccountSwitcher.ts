@@ -63,7 +63,7 @@ export function useAccountSwitcher() {
   };
 
   const addAccount = () => {
-    authManager.logout();
+    authManager.addAccount();
   };
 
   const switchAccount = (account: SavedAccount | undefined) => {

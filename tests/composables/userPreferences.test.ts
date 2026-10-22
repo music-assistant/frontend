@@ -29,6 +29,8 @@ vi.mock("@/plugins/store", () => ({
 
 import {
   pruneStaleProviderFilters,
+  runAfterPreferenceWrites,
+  setUserPreference,
   useUserPreferences,
 } from "@/composables/userPreferences";
 
@@ -117,6 +119,99 @@ describe("userPreferences - itemsListing", () => {
     );
 
     expect(readPrefs("librarygenres", "genres").favoriteFilter).toBeUndefined();
+  });
+
+  it("serializes requests so an older write cannot overwrite a newer preference", async () => {
+    let finishFirst!: (value: ReturnType<typeof user>) => void;
+    mockUpdateUser.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishFirst = resolve;
+        }),
+    );
+    const first = setUserPreference("theme", "dark");
+    const second = setUserPreference("language", "fr");
+    await vi.waitFor(() => expect(mockUpdateUser).toHaveBeenCalledTimes(1));
+    finishFirst(user());
+    await Promise.all([first, second]);
+    expect(mockUpdateUser.mock.calls[1]).toEqual([
+      "u1",
+      { preferences: { theme: "dark", language: "fr" } },
+    ]);
+  });
+
+  it("merges simultaneous changes to the same listing", async () => {
+    const { setItemsListingPreference } = useUserPreferences();
+    await Promise.all([
+      setItemsListingPreference(
+        "librarygenres",
+        "genres",
+        "favoriteFilter",
+        true,
+      ),
+      setItemsListingPreference(
+        "librarygenres",
+        "genres",
+        "hideEmptyFilter",
+        true,
+      ),
+    ]);
+    expect(readPrefs("librarygenres", "genres")).toEqual({
+      favoriteFilter: true,
+      hideEmptyFilter: true,
+    });
+  });
+
+  it("drops queued writes when the signed-in account changes", async () => {
+    let finishFirst!: (value: ReturnType<typeof user>) => void;
+    mockUpdateUser.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishFirst = resolve;
+        }),
+    );
+    const first = setUserPreference("theme", "dark");
+    const second = setUserPreference("language", "fr");
+    await vi.waitFor(() => expect(mockUpdateUser).toHaveBeenCalledTimes(1));
+    storeMock.currentUser = { user_id: "u2", preferences: {} };
+    finishFirst(user());
+    await Promise.all([first, second]);
+    expect(mockUpdateUser).toHaveBeenCalledTimes(1);
+    expect(storeMock.currentUser.preferences).toEqual({});
+  });
+
+  it("rolls back a failed write and continues the queue", async () => {
+    const loggedError = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockUpdateUser.mockRejectedValueOnce(new Error("Cannot save"));
+    await Promise.all([
+      setUserPreference("theme", "dark"),
+      setUserPreference("language", "fr"),
+    ]);
+    expect(storeMock.currentUser?.preferences).toEqual({ language: "fr" });
+    expect(mockUpdateUser.mock.calls[1]).toEqual([
+      "u1",
+      { preferences: { language: "fr" } },
+    ]);
+    loggedError.mockRestore();
+  });
+
+  it("holds preference writes until a user refresh has finished", async () => {
+    let finishRefresh!: () => void;
+    const refresh = runAfterPreferenceWrites(async () => {
+      await new Promise<void>((resolve) => {
+        finishRefresh = resolve;
+      });
+      storeMock.currentUser!.preferences = { theme: "light" };
+    });
+    const write = setUserPreference("language", "fr");
+    await vi.waitFor(() => expect(finishRefresh).toBeDefined());
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+    finishRefresh();
+    await Promise.all([refresh, write]);
+    expect(storeMock.currentUser?.preferences).toEqual({
+      theme: "light",
+      language: "fr",
+    });
   });
 });
 

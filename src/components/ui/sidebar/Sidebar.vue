@@ -50,6 +50,7 @@ const mobileSheetSide = useMobileSidebarSide();
       data-mobile="true"
       :side="mobileSheetSide"
       class="sidebar-mobile-sheet bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+      :class="`sidebar-mobile-sheet--${mobileSheetSide}`"
       overlay-class="sidebar-mobile-overlay"
       :style="{
         '--sidebar-width': SIDEBAR_WIDTH_MOBILE,

@@ -1,4 +1,4 @@
-import { computed, ComputedRef } from "vue";
+import { computed, ComputedRef, toRaw } from "vue";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 
@@ -26,31 +26,43 @@ export async function setUserPreference(
   key: string,
   value: unknown,
 ): Promise<void> {
-  if (!store.currentUser) {
-    console.warn("Cannot set preference: no user logged in");
-    return;
-  }
-
-  if (!store.currentUser.preferences) {
-    store.currentUser.preferences = {};
-  }
-
   const plainValue = JSON.parse(JSON.stringify(value));
+  await updateUserPreferences((current) => ({ ...current, [key]: plainValue }));
+}
 
-  const updatedPreferences = {
-    ...store.currentUser.preferences,
-    [key]: plainValue,
-  };
+// Each request replaces the whole preferences object. Serialize writes and
+// user refreshes so an older response cannot overwrite a later change.
+let pendingWrite: Promise<unknown> = Promise.resolve();
 
-  store.currentUser.preferences = updatedPreferences;
+export async function runAfterPreferenceWrites<T>(
+  task: () => Promise<T>,
+): Promise<T> {
+  const queued = pendingWrite.then(task);
+  pendingWrite = queued.catch(() => {});
+  return await queued;
+}
 
-  try {
-    await api.updateUser(store.currentUser.user_id, {
-      preferences: updatedPreferences,
-    });
-  } catch (error) {
-    console.error("Failed to update user preferences:", error);
-  }
+async function updateUserPreferences(
+  change: (current: Record<string, unknown>) => Record<string, unknown> | null,
+): Promise<void> {
+  const userId = store.currentUser?.user_id;
+  await runAfterPreferenceWrites(async () => {
+    const currentUser = store.currentUser;
+    if (!currentUser || currentUser.user_id !== userId) return;
+    const previous = currentUser.preferences ?? {};
+    const updated = change(previous);
+    if (!updated) return;
+    currentUser.preferences = updated;
+    try {
+      await api.updateUser(currentUser.user_id, { preferences: updated });
+    } catch (error) {
+      const latest = store.currentUser;
+      if (latest?.user_id === userId && toRaw(latest.preferences) === updated) {
+        latest.preferences = previous;
+      }
+      console.error("Failed to update user preferences:", error);
+    }
+  });
 }
 
 /**
@@ -114,13 +126,15 @@ export function useUserPreferences() {
     const storKey = `${path}.${itemtype}`;
     const prefKey = `itemsListing.${storKey}`;
 
-    const currentPrefs = getItemsListingPreferences(path, itemtype);
-    const updatedPrefs = {
-      ...currentPrefs.value,
-      [key]: value,
-    };
-
-    await setPreference(prefKey, updatedPrefs);
+    const plainValue = JSON.parse(JSON.stringify({ [key]: value }));
+    await updateUserPreferences((current) => ({
+      ...current,
+      [prefKey]: {
+        ...(current[prefKey] as ItemsListingPreferences | undefined),
+        // Keep an undefined value so clearing a listing filter removes it.
+        [key]: plainValue[key],
+      },
+    }));
   }
 
   return {
@@ -143,6 +157,7 @@ export function useUserPreferences() {
  */
 export async function pruneStaleProviderFilters(): Promise<void> {
   if (!store.currentUser?.preferences) return;
+  const userId = store.currentUser.user_id;
 
   let configuredIds: Set<string>;
   try {
@@ -154,8 +169,17 @@ export async function pruneStaleProviderFilters(): Promise<void> {
   }
   // No configs yet (server not ready): never wipe filters.
   if (configuredIds.size === 0) return;
+  if (store.currentUser?.user_id !== userId) return;
 
-  const prefs = store.currentUser.preferences;
+  await updateUserPreferences((prefs) =>
+    pruneProviderFilters(prefs, configuredIds),
+  );
+}
+
+function pruneProviderFilters(
+  prefs: Record<string, unknown>,
+  configuredIds: Set<string>,
+): Record<string, unknown> | null {
   const updatedPrefs: Record<string, unknown> = { ...prefs };
   let changed = false;
 
@@ -188,14 +212,5 @@ export async function pruneStaleProviderFilters(): Promise<void> {
     }
   }
 
-  if (!changed) return;
-
-  store.currentUser.preferences = updatedPrefs;
-  try {
-    await api.updateUser(store.currentUser.user_id, {
-      preferences: updatedPrefs,
-    });
-  } catch (error) {
-    console.error("Failed to prune stale provider filters:", error);
-  }
+  return changed ? updatedPrefs : null;
 }

@@ -181,7 +181,7 @@ const copyVersion = async () => {
               target="_blank"
               rel="noopener noreferrer"
               class="text-primary text-xs hover:underline"
-              @click.stop
+              @click.stop="setOpenMobile(false)"
             >
               {{ $t("settings.release_notes") }}
             </a>

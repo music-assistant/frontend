@@ -200,6 +200,7 @@ onUnmounted(() => {
         :items="discoverItems"
         :label="sections.explore.label"
         :default-label="sections.explore.defaultLabel"
+        :label-hidden="sections.explore.labelHidden"
         section-id="explore"
         :edit-mode="editMode"
         separator="collapsed"

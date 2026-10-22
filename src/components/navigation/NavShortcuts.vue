@@ -208,7 +208,7 @@ const draggedItem = computed(() =>
 </script>
 
 <template>
-  <!-- <div ref="navEl" class="h-0"></div> -->
+  <div ref="navEl" class="h-0"></div>
   <template v-if="pinnedItems.length > 0 || isLoading">
     <SidebarGroup
       :class="{ 'shortcuts-group-collapsed': isCollapsed }"

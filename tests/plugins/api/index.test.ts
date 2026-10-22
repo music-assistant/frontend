@@ -15,7 +15,7 @@ import {
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../../fixtures/playlist";
-import { userSummary } from "../../fixtures/user";
+import { user, userSummary } from "../../fixtures/user";
 
 const { mockToastError, mockToastInfo } = vi.hoisted(() => ({
   mockToastError: vi.fn(),
@@ -188,6 +188,21 @@ describe("MusicAssistantApi error handling", () => {
 
     await rejection;
     expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it("sends an explicitly cleared avatar URL to the server", async () => {
+    const updatedUser = user({ avatar_url: null });
+    const result = api.updateUser(updatedUser.user_id, { avatarUrl: "" });
+    expect(transport.lastCommand.args).toEqual({
+      user_id: updatedUser.user_id,
+      avatar_url: "",
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: updatedUser,
+      partial: false,
+    });
+    await expect(result).resolves.toEqual(updatedUser);
   });
 
   it("lets createUser suppress the global error toast for the caller", async () => {
