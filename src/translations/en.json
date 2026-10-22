@@ -111,6 +111,8 @@
     "refresh_item": "Refresh item",
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
+    "playlist_move_to_top": "Move to top",
+    "playlist_move_to_bottom": "Move to bottom",
     "review": "Review",
     "review_setup": "Review",
     "search": "Search",

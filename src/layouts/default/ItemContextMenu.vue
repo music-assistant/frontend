@@ -344,6 +344,7 @@ import {
   canAddToPlaylist,
   canEditPlaylistItems,
   canManagePlaylist,
+  canReorderPlaylistItems,
   canSharePlaylist,
 } from "@/helpers/playlist_access";
 import {
@@ -359,6 +360,7 @@ import {
   isMusicBrainzItem,
   itemIsAvailable,
   itemSupportsPlayLog,
+  providerSupportsPlaylistMove,
 } from "@/plugins/api/helpers";
 import {
   Album,
@@ -403,6 +405,8 @@ import {
   Merge,
   MicVocal,
   MinusCircle,
+  ArrowDownToLine,
+  ArrowUpToLine,
   Orbit,
   Pencil,
   Pin,
@@ -1075,6 +1079,35 @@ export const getContextMenuItems = async function (
         },
         icon: MinusCircle,
       });
+    }
+    // move to the playlist's top or bottom; the listing showing it saves the move
+    const positions = items.map((x) =>
+      "position" in x && typeof x.position === "number" ? x.position : 0,
+    );
+    if (
+      positions.every((position) => position > 0) &&
+      canReorderPlaylistItems(
+        playlist,
+        store.currentUser,
+        managesLibrary,
+        providerSupportsPlaylistMove,
+      )
+    ) {
+      for (const edge of ["top", "bottom"] as const) {
+        contextMenuItems.push({
+          label:
+            edge === "top" ? "playlist_move_to_top" : "playlist_move_to_bottom",
+          labelArgs: [],
+          action: () => {
+            eventbus.emit("movePlaylistItems", {
+              playlistId: playlist.item_id,
+              positions,
+              edge,
+            });
+          },
+          icon: edge === "top" ? ArrowUpToLine : ArrowDownToLine,
+        });
+      }
     }
   }
   // add to playlist action (an item nothing can play has no place in one)

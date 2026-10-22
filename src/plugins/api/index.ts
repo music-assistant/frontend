@@ -1169,6 +1169,23 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * Moves items of a playlist as one block, keeping their order, resolving
+   * once the provider holds the new order. All positions are 1-based;
+   * `to_position` is where the block's first item ends up.
+   */
+  public movePlaylistTracks(
+    db_playlist_id: string | number,
+    positions: number[],
+    to_position: number,
+  ): Promise<void> {
+    return this.sendCommand("music/playlists/move_playlist_tracks", {
+      db_playlist_id,
+      positions,
+      to_position,
+    });
+  }
+
   public createPlaylist(
     name: string,
     provider_instance_or_domain?: string,

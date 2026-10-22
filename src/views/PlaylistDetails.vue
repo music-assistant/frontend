@@ -152,8 +152,8 @@ import {
 } from "@/helpers/playlist_access";
 import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
 import { api } from "@/plugins/api";
+import { providerSupportsPlaylistMove } from "@/plugins/api/helpers";
 import {
-  ProviderFeature,
   Scope,
   ListingType,
   type Playlist,
@@ -210,10 +210,7 @@ const canReorder = computed(
       itemDetails.value,
       store.currentUser,
       authManager.hasScope(Scope.LIBRARY_MANAGE),
-      (instance) =>
-        !!api.providers[instance]?.supported_features.includes(
-          ProviderFeature.PLAYLIST_TRACKS_MOVE,
-        ),
+      providerSupportsPlaylistMove,
     ),
 );
 

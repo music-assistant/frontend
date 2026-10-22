@@ -267,7 +267,7 @@
                 :index="index"
                 :columns="trackRowColumns"
                 :class="[
-                  { invisible: draggingIndex === index },
+                  trackRowDragClass(item, index),
                   isDragging && 'transition-transform duration-200 ease-out',
                 ]"
                 :style="trackRowDragStyle(index)"
@@ -309,18 +309,15 @@
               />
             </template>
           </v-virtual-scroll>
-          <TrackTableRow
+          <TrackTableDragGhost
             v-if="draggedTrack && draggingIndex !== null"
-            class="pointer-events-none absolute inset-x-0 z-10 bg-accent shadow-lg"
-            :style="{ top: `${ghostY}px` }"
             :item="draggedTrack"
             :index="draggingIndex"
             :columns="trackRowColumns"
-            :is-selected="false"
+            :count="draggedCount"
+            :top="ghostY"
             :is-available="itemIsAvailable(draggedTrack)"
             :parent-item="parentItem"
-            aria-hidden="true"
-            inert
           />
         </div>
       </v-infinite-scroll>
@@ -399,6 +396,7 @@ import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import TrackTableDragGhost from "@/components/track-table/TrackTableDragGhost.vue";
 import TrackTableHeader from "@/components/track-table/TrackTableHeader.vue";
 import TrackTableRow from "@/components/track-table/TrackTableRow.vue";
 import {
@@ -478,7 +476,7 @@ import {
   ListingType,
   type Track,
 } from "@/plugins/api/interfaces";
-import { eventbus } from "@/plugins/eventbus";
+import { eventbus, type MovePlaylistItemsEvent } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
   CheckCheck,
@@ -1318,14 +1316,17 @@ const canDragTracks = computed(
     displayedSort.value.sortField === SortField.POSITION &&
     displayedSort.value.sortDirection !== SortDirection.DESC &&
     !hasActiveFilters.value &&
-    !showCheckboxes.value &&
-    // a move made while reconnecting could not be saved nor read back
-    canSavePlaylistMoves() &&
     listsPlaylistFromStart(pagedItems.value),
 );
 const trackRowColumns = computed<TrackColumn[]>(() =>
   canDragTracks.value ? ["handle", ...trackColumns.value] : trackColumns.value,
 );
+const selectedRowIndices = () =>
+  showCheckboxes.value
+    ? pagedItems.value.flatMap((item, index) =>
+        isSelected(item) ? [index] : [],
+      )
+    : [];
 const listRowsEl = ref<HTMLElement | null>(null);
 const infiniteScrollEl = ref<{ reset: () => void } | null>(null);
 // a reload that finds the listing grew past its end pages on again; a load
@@ -1338,7 +1339,8 @@ watch(allItemsReceived, (received, wasReceived) => {
 const {
   startDrag: startTrackDrag,
   moveBy: moveTrackRowBy,
-  refresh: refreshTrackRows,
+  moveRows: moveTrackRows,
+  moveToEdge: moveTracksToEdge,
   draggingIndex,
   isDragging,
   ghostY,
@@ -1347,21 +1349,20 @@ const {
 } = usePlaylistTrackReorder({
   listEl: listRowsEl,
   items: pagedItems,
-  // albums re-read their rows the same way, but only a playlist's edits are held
-  playlistId: () =>
-    props.parentItem?.media_type === MediaType.PLAYLIST
-      ? props.parentItem.item_id
-      : undefined,
+  playlistId: () => props.parentItem?.item_id,
+  inOwnOrder: () => canDragTracks.value,
+  allLoaded: () => allItemsReceived.value,
+  selectedIndices: selectedRowIndices,
   rowHeight: TRACK_ROW_HEIGHT,
-  reload: async () => {
-    const failed = loadError.value;
-    await reloadLoadedItems();
-    // rows read again after a failed page let the scroller page on again
-    if (failed && !loadError.value && !tempHide.value) {
-      infiniteScrollEl.value?.reset();
-    }
+  reload: reloadLoadedItems,
+  // the reload replaced the rows, so the selection follows the moved block
+  onMoved: (toIndex, count) => {
+    if (!showCheckboxes.value) return;
+    selectedItems.value =
+      toIndex === undefined
+        ? []
+        : pagedItems.value.slice(toIndex, toIndex + count);
   },
-  onReloaded: () => reselectReloadedRows(),
 });
 let stopFollowingMovedTrack: (() => void) | undefined;
 const focusReorderHandle = (index: number) => {
@@ -1410,10 +1411,28 @@ const draggedTrack = computed(() =>
     ? undefined
     : pagedItems.value[draggingIndex.value],
 );
+// grabbing a selected row drags every selected row
+const draggedCount = computed(() => {
+  const source = draggingIndex.value;
+  if (source === null) return 0;
+  const selected = selectedRowIndices();
+  return selected.length > 1 && selected.includes(source) ? selected.length : 1;
+});
 const trackRowDragStyle = (index: number) =>
   isDragging.value
     ? { transform: `translateY(${rowOffset(index)}px)` }
     : undefined;
+// the grabbed row leaves a gap, the rest of a dragged block dims
+const trackRowDragClass = (item: MediaItemTypeOrItemMapping, index: number) => {
+  if (draggingIndex.value === index) return "opacity-0";
+  if (draggedCount.value > 1 && isSelected(item)) return "opacity-40";
+  return undefined;
+};
+const onMovePlaylistItems = (event: MovePlaylistItemsEvent) => {
+  if (!props.reorderable || event.playlistId !== props.parentItem?.item_id)
+    return;
+  void moveTracksToEdge(event.positions, event.edge);
+};
 
 // Server-paged listings only know their total when the parent passes it. An
 // unfiltered listing that is loaded to its end, or holds less than a page,
@@ -2234,6 +2253,7 @@ const allSelected = computed(
 onBeforeUnmount(() => {
   stopFollowingMovedTrack?.();
   eventbus.off("clearSelection", clearSelection);
+  eventbus.off("movePlaylistItems", onMovePlaylistItems);
   _unsubscribeMediaEvents?.();
   _unsubscribeFavorites?.();
 });
@@ -2306,6 +2326,7 @@ onMounted(async () => {
 
   // Listen for selection clearing events
   eventbus.on("clearSelection", clearSelection);
+  eventbus.on("movePlaylistItems", onMovePlaylistItems);
 
   // signal if/when items get played/updated/removed
   _unsubscribeMediaEvents = api.subscribe_multi(

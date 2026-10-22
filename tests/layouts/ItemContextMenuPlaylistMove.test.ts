@@ -1,0 +1,130 @@
+/**
+ * Tests for the context menu actions that move playlist items to the
+ * playlist's top or bottom. They are offered for items of a playlist the user
+ * may edit, on a provider that can store a new order, and hand the move to
+ * the listing through the eventbus.
+ */
+import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
+import {
+  ProviderFeature,
+  ProviderType,
+  type Scope,
+  type User,
+} from "@/plugins/api/interfaces";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { playlist } from "../fixtures/playlist";
+import { providerMapping } from "../fixtures/providerMapping";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+import { track } from "../fixtures/track";
+import { user } from "../fixtures/user";
+
+const { apiMock, authMock, storeMock, mockEventbusEmit } = vi.hoisted(() => ({
+  apiMock: {
+    providers: {} as Record<string, unknown>,
+    getProvider: vi.fn(),
+    getLibraryItem: vi.fn(),
+    players: {},
+  },
+  authMock: {
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
+  },
+  storeMock: {
+    currentUser: undefined as User | undefined,
+    enabledPlugins: new Set<string>(),
+  },
+  mockEventbusEmit: vi.fn(),
+}));
+
+vi.mock("@/plugins/api", () => ({ default: apiMock, api: apiMock }));
+vi.mock("@/plugins/auth", () => ({ authManager: authMock }));
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
+vi.mock("@/plugins/eventbus", () => ({
+  eventbus: {
+    on: vi.fn(),
+    off: vi.fn(),
+    emit: mockEventbusEmit,
+  },
+}));
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+
+const MOVE_LABELS = ["playlist_move_to_top", "playlist_move_to_bottom"];
+
+const parent = playlist({
+  item_id: "42",
+  is_editable: true,
+  provider_mappings: [
+    providerMapping({
+      provider_domain: "builtin",
+      provider_instance: "builtin",
+      in_library: true,
+    }),
+  ],
+});
+
+const setMoveSupport = (supported: boolean) => {
+  apiMock.providers = {
+    builtin: {
+      type: ProviderType.MUSIC,
+      domain: "builtin",
+      instance_id: "builtin",
+      supported_features: supported
+        ? [
+            ProviderFeature.PLAYLIST_TRACKS_EDIT,
+            ProviderFeature.PLAYLIST_TRACKS_MOVE,
+          ]
+        : [ProviderFeature.PLAYLIST_TRACKS_EDIT],
+      available: true,
+    },
+  };
+};
+
+const moveLabels = async (items = [track({ position: 2 })]) =>
+  (await getContextMenuItems(items, parent))
+    .map((item) => item.label)
+    .filter((label) => MOVE_LABELS.includes(label));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  apiMock.getLibraryItem.mockResolvedValue(null);
+  authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+  storeMock.currentUser = user({ user_id: "me" });
+  setMoveSupport(true);
+  apiMock.getProvider.mockImplementation((id: string) => apiMock.providers[id]);
+});
+
+describe("move playlist items context menu actions", () => {
+  it("offers moving to the top and the bottom", async () => {
+    expect(await moveLabels()).toEqual(MOVE_LABELS);
+  });
+
+  it("hands the selected positions to the listing", async () => {
+    const items = [track({ position: 5 }), track({ position: 2 })];
+    const menu = await getContextMenuItems(items, parent);
+
+    menu.find((item) => item.label === "playlist_move_to_bottom")?.action?.();
+
+    expect(mockEventbusEmit).toHaveBeenCalledWith("movePlaylistItems", {
+      playlistId: "42",
+      positions: [5, 2],
+      edge: "bottom",
+    });
+  });
+
+  it("is not offered on a provider that cannot reorder", async () => {
+    setMoveSupport(false);
+
+    expect(await moveLabels()).toEqual([]);
+  });
+
+  it("is not offered to a user who may not change the library", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+
+    expect(await moveLabels()).toEqual([]);
+  });
+
+  it("is not offered for items without a playlist position", async () => {
+    expect(await moveLabels([track()])).toEqual([]);
+  });
+});
