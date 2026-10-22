@@ -5,13 +5,14 @@
   without closing the menu. The menu's arrow keys reach the slider's thumb
   like any other row; once there, the slider keeps its keys to itself, so
   they change the size rather than move through the menu (Escape still
-  closes it). Keeps its own value: the menu hands it a snapshot of its items,
-  so the size it was opened with is only where it starts.
+  closes it). Tab moves between the slider and the eye toggle.
+  The listing supplies live props even when the menu snapshots its items.
 -->
 <template>
   <div
     class="flex min-w-52 items-center gap-3 px-2 py-1.5"
     @click.stop
+    @keydown.tab.stop
     @keydown.up.stop
     @keydown.down.stop
     @keydown.left.stop
@@ -23,7 +24,7 @@
   >
     <Grid3x3 :size="18" class="shrink-0 opacity-70" aria-hidden="true" />
     <Slider
-      :model-value="[value]"
+      :model-value="[size]"
       :min="GRID_SIZE_MIN"
       :max="GRID_SIZE_MAX"
       :step="1"
@@ -34,36 +35,90 @@
       @value-commit="onCommit"
     />
     <Grid2x2 :size="18" class="shrink-0 opacity-70" aria-hidden="true" />
+    <div
+      v-if="supportsActions"
+      class="bg-border h-5 w-px shrink-0"
+      aria-hidden="true"
+    ></div>
+    <Tooltip v-if="supportsActions" v-model:open="actionsTooltipOpen">
+      <!-- Keep the explanation reachable when the button is disabled. -->
+      <TooltipTrigger
+        as="span"
+        class="inline-flex"
+        :tabindex="actionsFit ? undefined : 0"
+        :aria-label="actionsLabel"
+        @focusin="actionsTooltipOpen = true"
+        @focusout="actionsTooltipOpen = false"
+      >
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          :class="actionsShown ? 'bg-accent' : 'opacity-60'"
+          :disabled="!actionsFit"
+          :aria-pressed="actionsShown"
+          :aria-label="actionsLabel"
+          @click="emit('toggleActions', !showActions)"
+        >
+          <Eye v-if="actionsShown" :size="18" />
+          <EyeOff v-else :size="18" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent class="z-1000000">
+        {{ actionsLabel }}
+      </TooltipContent>
+    </Tooltip>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { GRID_SIZE_MAX, GRID_SIZE_MIN } from "@/helpers/grid_size";
 import { $t } from "@/plugins/i18n";
-import { Grid2x2, Grid3x3 } from "@lucide/vue";
+import { Eye, EyeOff, Grid2x2, Grid3x3 } from "@lucide/vue";
 import { computed, ref } from "vue";
 
-const props = defineProps<{ size: number }>();
+interface Props {
+  size: number;
+  showActions?: boolean;
+  actionsFit?: boolean;
+  supportsActions?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  showActions: true,
+  actionsFit: true,
+  supportsActions: true,
+});
 
 const emit = defineEmits<{
   // while dragging, to follow along in the grid
   (e: "change", size: number): void;
   // once let go, to keep
   (e: "commit", size: number): void;
+  (e: "toggleActions", show: boolean): void;
 }>();
 
-const value = ref(props.size);
+const actionsShown = computed(() => props.showActions && props.actionsFit);
+const actionsTooltipOpen = ref(false);
+const actionsLabel = computed(() =>
+  props.actionsFit ? $t("show_action_buttons") : $t("action_buttons_too_small"),
+);
 
 // the value itself is only an offset from the window's own column count, so
 // say which way it goes
 const valueText = computed(() => {
-  if (value.value < 0) {
-    const count = -value.value;
+  if (props.size < 0) {
+    const count = -props.size;
     return $t("grid_size_smaller", count, { named: { count } });
   }
-  if (value.value > 0) {
-    const count = value.value;
+  if (props.size > 0) {
+    const count = props.size;
     return $t("grid_size_larger", count, { named: { count } });
   }
   return $t("grid_size_default");
@@ -71,7 +126,6 @@ const valueText = computed(() => {
 
 const onUpdate = (values: number[] | undefined) => {
   if (!values?.length) return;
-  value.value = values[0];
   emit("change", values[0]);
 };
 

@@ -7,6 +7,7 @@ import { store } from "@/plugins/store";
 export interface ItemsListingPreferences {
   viewMode?: string;
   gridSize?: number;
+  showActions?: boolean;
   sortBy?: string;
   favoriteFilter?: boolean;
   libraryFilter?: boolean;
@@ -205,6 +206,10 @@ export function useUserPreferences() {
     const currentPrefs = getItemsListingPreferences(path, itemtype);
     const updatedPrefs = {
       ...currentPrefs.value,
+      // Preserve compact mode's action preference when viewMode is replaced.
+      ...(currentPrefs.value.viewMode === "panel_compact"
+        ? { showActions: currentPrefs.value.showActions ?? false }
+        : {}),
       [key]: value,
     };
 

@@ -181,7 +181,7 @@
           </div>
         </template>
         <!-- panel view -->
-        <v-row v-if="viewMode == 'panel'">
+        <v-row v-if="viewMode == 'panel'" ref="panelRow">
           <v-col
             v-for="item in pagedItems"
             :key="item.uri"
@@ -192,15 +192,7 @@
               :item="item"
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
-              :show-actions="
-                [
-                  'tracks',
-                  'albums',
-                  'albumtracks',
-                  'artists',
-                  'genres',
-                ].includes(itemtype)
-              "
+              :show-actions="showGridActions && supportsGridActions"
               :show-track-number="showTrackNumber"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
@@ -380,6 +372,7 @@ import {
   GRID_SIZE_DEFAULT,
   gridColumns,
   normalizeGridSize,
+  PANEL_ACTIONS_MIN_WIDTH,
 } from "@/helpers/grid_size";
 import { returnedByHistory } from "@/helpers/navigation";
 import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
@@ -443,10 +436,13 @@ import {
   nextTick,
   onBeforeUnmount,
   onMounted,
+  reactive,
   ref,
+  useTemplateRef,
   watch,
   watchEffect,
 } from "vue";
+import { unrefElement, useResizeObserver } from "@vueuse/core";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -673,6 +669,12 @@ const {
   props.trackTable ? listContainer.value : undefined,
 );
 const gridSize = ref(GRID_SIZE_DEFAULT);
+const showGridActions = ref(true);
+const supportsGridActions = computed(() =>
+  ["tracks", "albums", "albumtracks", "artists", "genres"].includes(
+    props.itemtype,
+  ),
+);
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
 const searchInputRef = ref<InstanceType<typeof SearchInput>>();
@@ -840,6 +842,39 @@ const commitGridSize = function (size: number) {
     size,
   );
 };
+
+// the cards hide their action row when the covers get too small for it
+const panelRow = useTemplateRef("panelRow");
+const gridActionsFit = ref(true);
+const updateGridActionsFit = () => {
+  const width = unrefElement(panelRow)
+    ?.querySelector(".ed-card__art")
+    ?.getBoundingClientRect().width;
+  gridActionsFit.value = !width || width >= PANEL_ACTIONS_MIN_WIDTH;
+};
+useResizeObserver(panelRow, updateGridActionsFit);
+watch(gridColumnCount, updateGridActionsFit, { flush: "post" });
+
+// The desktop menu snapshots its items; keep the control's props live.
+const gridControlProps = reactive({
+  size: gridSize,
+  showActions: showGridActions,
+  actionsFit: gridActionsFit,
+  supportsActions: supportsGridActions,
+  onChange: (size: number) => {
+    gridSize.value = size;
+  },
+  onCommit: commitGridSize,
+  onToggleActions: (show: boolean) => {
+    showGridActions.value = show;
+    setItemsListingPreference(
+      props.path || props.itemtype,
+      props.itemtype,
+      "showActions",
+      show,
+    );
+  },
+});
 
 watch(
   () => props.forcedViewMode,
@@ -1657,13 +1692,7 @@ const menuItems = computed(() => {
           // markRaw: the menu items land in a reactive array; a bare component
           // definition there would be needlessly made reactive.
           component: markRaw(GridSizeSlider),
-          componentProps: {
-            size: gridSize.value,
-            onChange: (size: number) => {
-              gridSize.value = size;
-            },
-            onCommit: commitGridSize,
-          },
+          componentProps: gridControlProps,
         },
       ],
     });
@@ -1719,6 +1748,8 @@ const restoreSettings = async function () {
   }
 
   gridSize.value = normalizeGridSize(prefs.gridSize);
+  showGridActions.value =
+    prefs.showActions ?? prefs.viewMode !== "panel_compact";
 
   // get stored/default sortBy for this itemtype
   if (props.sortListing) {

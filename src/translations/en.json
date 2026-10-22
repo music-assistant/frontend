@@ -2307,6 +2307,8 @@
     "lyrics_offset": "Lyrics offset",
     "transcript_offset": "Transcript offset",
     "grid_size": "Cover size",
+    "show_action_buttons": "Show action buttons",
+    "action_buttons_too_small": "Covers are too small for action buttons",
     "grid_size_default": "Default size",
     "grid_size_smaller": "{count} step smaller | {count} steps smaller",
     "grid_size_larger": "{count} step larger | {count} steps larger",

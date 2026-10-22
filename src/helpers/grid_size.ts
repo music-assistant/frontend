@@ -7,6 +7,9 @@ export const GRID_SIZE_MIN = -4;
 export const GRID_SIZE_MAX = 2;
 export const GRID_SIZE_DEFAULT = 0;
 
+/** Below this cover width the cards hide their action row (`@max-[150px]` in PanelviewItem). */
+export const PANEL_ACTIONS_MIN_WIDTH = 150;
+
 // the range the `col-N` classes in the listing cover
 const MIN_COLUMNS = 2;
 const MAX_COLUMNS = 12;
