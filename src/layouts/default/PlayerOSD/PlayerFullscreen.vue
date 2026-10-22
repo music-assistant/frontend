@@ -47,6 +47,14 @@
           </Button>
         </template>
         <template #append>
+          <ProviderLinkButton
+            v-if="
+              store.curQueueItem?.media_item &&
+              'provider_mappings' in store.curQueueItem.media_item
+            "
+            :mappings="store.curQueueItem.media_item.provider_mappings"
+            :title="store.curQueueItem.media_item.name"
+          />
           <PlayerFullscreenHeaderControls
             :lyrics-state="lyricsState"
             :lyrics-active="showLyrics"
@@ -516,6 +524,7 @@
 </template>
 
 <script setup lang="ts">
+import ProviderLinkButton from "@/components/ProviderLinkButton.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import PanelDragHandle from "@/components/PanelDragHandle.vue";

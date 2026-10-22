@@ -20,6 +20,18 @@
       </div>
       <div class="mediacontrols-bottom-center">
         <div class="player-center-controls">
+          <div
+            v-if="getBreakpointValue('bp7') && currentMediaItem"
+            class="player-center-side-action col-start-1 row-start-1 justify-self-end"
+          >
+            <ProviderLinkButton
+              :mappings="currentMediaItem.provider_mappings"
+              :title="currentMediaItem.name"
+              size="icon-lg"
+              variant="ghost-icon"
+              class="text-foreground opacity-[0.62] transition-opacity hover:opacity-100"
+            />
+          </div>
           <div class="player-center-transport">
             <div class="player-center-side-action">
               <FavoriteMenuBtn class="player-control-button" />
@@ -132,6 +144,7 @@
 </template>
 
 <script setup lang="ts">
+import ProviderLinkButton from "@/components/ProviderLinkButton.vue";
 import { ImageColorPalette, paletteFromServer } from "@/helpers/utils";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
@@ -154,6 +167,10 @@ interface Props {
 }
 const props = defineProps<Props>();
 const showMobileVolumeControls = ref(false);
+const currentMediaItem = computed(() => {
+  const item = store.curQueueItem?.media_item;
+  return item && "provider_mappings" in item ? item : undefined;
+});
 
 // The controls beside the queue button reach into the room the actions to their
 // right leave free, so each waits for the width it fits in. Measured, that room

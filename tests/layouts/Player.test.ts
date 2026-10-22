@@ -1,3 +1,4 @@
+import ProviderLinkButton from "@/components/ProviderLinkButton.vue";
 import Player from "@/layouts/default/PlayerOSD/Player.vue";
 import PlayerBarGroupControl from "@/layouts/default/PlayerOSD/PlayerBarGroupControl.vue";
 import PlayerBarMobileVolumeSheet from "@/layouts/default/PlayerOSD/PlayerBarMobileVolumeSheet.vue";
@@ -7,11 +8,17 @@ import PlaybackSpeedBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/Playb
 import QueueBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/QueueBtn.vue";
 import SleepTimerBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SleepTimerBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
-import type { Player as PlayerModel } from "@/plugins/api/interfaces";
+import type {
+  QueueItem,
+  Player as PlayerModel,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { queueItem } from "../fixtures/queueItem";
+import { track } from "../fixtures/track";
 
 vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 
@@ -41,6 +48,7 @@ vi.mock("@/plugins/store", async () => {
 const mockStore = store as unknown as {
   activePlayer?: PlayerModel;
   activePlayerId?: string;
+  curQueueItem?: QueueItem;
 };
 
 // bp7: the width from which the countdown fits beside the queue button
@@ -86,6 +94,7 @@ afterEach(() => {
   wrapper = undefined;
   mockStore.activePlayer = undefined;
   mockStore.activePlayerId = undefined;
+  mockStore.curQueueItem = undefined;
   if (originalInnerWidth) {
     Object.defineProperty(window, "innerWidth", originalInnerWidth);
   }
@@ -139,6 +148,36 @@ describe("Player floating mobile bar", () => {
 });
 
 describe("Player desktop bar", () => {
+  it.each([1099, 1100, 1300])(
+    "offers sharing beside favorite only when it fits at %i px",
+    (width) => {
+      mockStore.curQueueItem = queueItem({ media_item: track() });
+      setViewportWidth(width);
+      const player = mountPlayer(false);
+      const sharing = player.findComponent(ProviderLinkButton);
+      expect(sharing.exists()).toBe(width >= SLEEP_TIMER_BREAKPOINT);
+      if (sharing.exists()) {
+        expect(sharing.props("size")).toBe("icon-lg");
+        expect(
+          player.find(".mediacontrols-left provider-link-button-stub").exists(),
+        ).toBe(false);
+        expect(
+          player
+            .find(".player-center-transport provider-link-button-stub")
+            .exists(),
+        ).toBe(false);
+      }
+      expect(player.findComponent(FavoriteMenuBtn).exists()).toBe(true);
+    },
+  );
+
+  it("hides sharing without a current media item", () => {
+    setViewportWidth(PLAYBACK_SPEED_BREAKPOINT);
+    expect(mountPlayer(false).findComponent(ProviderLinkButton).exists()).toBe(
+      false,
+    );
+  });
+
   it("leaves the desktop player outside the floating container", () => {
     const player = mountPlayer(false);
 

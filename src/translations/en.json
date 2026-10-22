@@ -1550,6 +1550,16 @@
     },
     "yes": "Yes",
     "no": "No",
+    "provider_links": {
+        "share": "Share link",
+        "copy": "Copy link",
+        "open_on": "Open on {provider}",
+        "share_on": "Share {provider} link",
+        "copy_from": "Copy {provider} link",
+        "copied": "Link copied to clipboard",
+        "copy_failed": "Failed to copy link",
+        "share_failed": "Failed to share link"
+    },
     "uri_copied": "URI copied to clipboard",
     "uri_copy_failed": "Failed to copy URI to clipboard",
     "search_all_providers": "Search all music sources for matches",
