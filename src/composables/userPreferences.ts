@@ -200,20 +200,27 @@ export function useUserPreferences() {
     key: keyof ItemsListingPreferences,
     value: ItemsListingPreferences[keyof ItemsListingPreferences],
   ): Promise<void> {
-    const storKey = `${path}.${itemtype}`;
-    const prefKey = `itemsListing.${storKey}`;
+    const prefKey = `itemsListing.${path}.${itemtype}`;
+    // a plain copy, so a reactive array is not stored by reference
+    const plainValue =
+      value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 
-    const currentPrefs = getItemsListingPreferences(path, itemtype);
-    const updatedPrefs = {
-      ...currentPrefs.value,
-      // Preserve compact mode's action preference when viewMode is replaced.
-      ...(currentPrefs.value.viewMode === "panel_compact"
-        ? { showActions: currentPrefs.value.showActions ?? false }
-        : {}),
-      [key]: value,
-    };
-
-    await setPreference(prefKey, updatedPrefs);
+    // merged when the write's turn comes, so overlapping changes to the same
+    // listing all land
+    await updateUserPreferences((current) => {
+      const listing = (current[prefKey] as ItemsListingPreferences) ?? {};
+      return {
+        ...current,
+        [prefKey]: {
+          ...listing,
+          // Preserve compact mode's action preference when viewMode is replaced.
+          ...(listing.viewMode === "panel_compact"
+            ? { showActions: listing.showActions ?? false }
+            : {}),
+          [key]: plainValue,
+        },
+      };
+    });
   }
 
   return {

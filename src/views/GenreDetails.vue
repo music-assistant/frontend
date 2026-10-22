@@ -55,6 +55,7 @@
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
         :forced-view-mode="itemsViewMode"
+        :hide-actions-by-default="wasCompact"
       >
         <template #title>
           <span>{{ $t("artists") }}</span>
@@ -75,6 +76,7 @@
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
         :forced-view-mode="itemsViewMode"
+        :hide-actions-by-default="wasCompact"
       >
         <template #title>
           <span>{{ $t("albums") }}</span>
@@ -96,6 +98,7 @@
         :show-track-number="false"
         :hide-on-empty="true"
         :forced-view-mode="itemsViewMode"
+        :hide-actions-by-default="wasCompact"
       >
         <template #title>
           <span>{{ $t("tracks") }}</span>
@@ -116,6 +119,7 @@
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
         :forced-view-mode="itemsViewMode"
+        :hide-actions-by-default="wasCompact"
       >
         <template #title>
           <span>{{ $t("playlists") }}</span>
@@ -136,6 +140,7 @@
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
         :forced-view-mode="itemsViewMode"
+        :hide-actions-by-default="wasCompact"
       >
         <template #title>
           <span>{{ $t("podcasts") }}</span>
@@ -156,6 +161,7 @@
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
         :forced-view-mode="itemsViewMode"
+        :hide-actions-by-default="wasCompact"
       >
         <template #title>
           <span>{{ $t("audiobooks") }}</span>
@@ -238,11 +244,9 @@ const savedViewMode = getPreference<GenreViewMode>(
   "genre_detail_view",
   "discovery",
 );
-const viewMode = ref<GenreViewMode>(
-  (savedViewMode.value as string) === "panel_compact"
-    ? "panel"
-    : savedViewMode.value,
-);
+// the compact thumbs view became thumbs without the action buttons
+const wasCompact = (savedViewMode.value as string) === "panel_compact";
+const viewMode = ref<GenreViewMode>(wasCompact ? "panel" : savedViewMode.value);
 const itemsViewMode = computed(() =>
   viewMode.value !== "discovery" ? viewMode.value : undefined,
 );

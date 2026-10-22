@@ -516,6 +516,8 @@ export interface Props {
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
   forcedViewMode?: "list" | "panel";
+  // the cards start without their action buttons until the user picks
+  hideActionsByDefault?: boolean;
   toolBarTabs?: ToolBarTab[];
   // the list view shows tracks as a table with columns
   trackTable?: boolean;
@@ -565,6 +567,7 @@ const props = withDefaults(defineProps<Props>(), {
   onTitleClick: undefined,
   refreshOnParentUpdate: false,
   forcedViewMode: undefined,
+  hideActionsByDefault: false,
   toolBarTabs: undefined,
   trackTable: false,
 });
@@ -1661,8 +1664,9 @@ const menuItems = computed(() => {
     });
   }
 
-  // toggle view mode (hidden when view mode is controlled externally)
-  if (!props.forcedViewMode)
+  // toggle view mode; when it is controlled externally only the thumbs
+  // controls stay
+  if (props.forcedViewMode !== "list")
     items.push({
       label: "tooltip.view_mode",
       icon: viewMode.value == "list" ? LayoutList : LayoutGrid,
@@ -1671,6 +1675,7 @@ const menuItems = computed(() => {
         {
           label: "view.list",
           icon: LayoutList,
+          hide: !!props.forcedViewMode,
           selected: viewMode.value == "list",
           close_on_click: false,
           action: () => {
@@ -1680,6 +1685,7 @@ const menuItems = computed(() => {
         {
           label: "view.panel",
           icon: LayoutGrid,
+          hide: !!props.forcedViewMode,
           selected: viewMode.value == "panel",
           close_on_click: false,
           action: () => {
@@ -1749,7 +1755,8 @@ const restoreSettings = async function () {
 
   gridSize.value = normalizeGridSize(prefs.gridSize);
   showGridActions.value =
-    prefs.showActions ?? prefs.viewMode !== "panel_compact";
+    prefs.showActions ??
+    !(props.hideActionsByDefault || prefs.viewMode === "panel_compact");
 
   // get stored/default sortBy for this itemtype
   if (props.sortListing) {
