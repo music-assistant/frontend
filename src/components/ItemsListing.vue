@@ -120,7 +120,7 @@
     >
       <TrackTableHeader
         v-if="showTrackTable && (loadPending || pagedItems.length)"
-        :columns="trackColumns"
+        :columns="trackRowColumns"
         :enabled="enabledTrackColumns"
         @update:enabled="setEnabledTrackColumns"
       />
@@ -248,59 +248,76 @@
           </v-col>
         </v-row>
 
-        <!-- list view -->
-        <v-virtual-scroll
-          v-if="viewMode == 'list'"
-          :item-height="showTrackTable ? TRACK_ROW_HEIGHT : 70"
-          height="100%"
-          :items="listDisplayItems"
-          style="height: 100%; overflow: hidden"
-        >
-          <template #default="{ item, index }">
-            <div v-if="'isDiscHeader' in item" class="disc-header">
-              {{ $t("disc", { number: item.disc }) }}
-            </div>
-            <TrackTableRow
-              v-else-if="showTrackTable"
-              :item="item"
-              :index="index"
-              :columns="trackColumns"
-              :show-checkboxes="showCheckboxes"
-              :is-selected="isSelected(item)"
-              :is-available="itemIsAvailable(item)"
-              :is-playing="isPlaying(item, itemtype)"
-              :disable-play-button="isPlayActionInProgress"
-              :parent-item="parentItem"
-              :sort-by="props.sortListing ? undefined : params.sortBy"
-              :sort-field="displayedSort.sortField"
-              :sort-direction="displayedSort.sortDirection"
-              @select="onSelect"
-            />
-            <ListviewItem
-              v-else
-              :item="item"
-              :album-track-view="itemtype === 'albumtracks'"
-              :show-track-number="showTrackNumber"
-              :show-disc-number="showTrackNumber"
-              :show-duration="showDuration"
-              :show-favorite="showFavorite ?? showFavoritesOnlyFilter"
-              :show-menu="item.is_playable || isMusicBrainzItem(item)"
-              :show-provider="showProvider"
-              :show-album="showAlbum"
-              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
-              :is-selected="isSelected(item)"
-              :is-available="itemIsAvailable(item)"
-              :is-playing="isPlaying(item, itemtype)"
-              :show-details="itemtype.includes('versions')"
-              :disable-play-button="isPlayActionInProgress"
-              :parent-item="parentItem"
-              :sort-by="props.sortListing ? undefined : params.sortBy"
-              :sort-field="displayedSort.sortField"
-              :sort-direction="displayedSort.sortDirection"
-              @select="onSelect"
-            />
-          </template>
-        </v-virtual-scroll>
+        <!-- list view; the wrapper anchors the row being dragged -->
+        <div v-if="viewMode == 'list'" ref="listRowsEl" class="relative h-full">
+          <v-virtual-scroll
+            :item-height="showTrackTable ? TRACK_ROW_HEIGHT : 70"
+            height="100%"
+            :items="listDisplayItems"
+            style="height: 100%; overflow: hidden"
+          >
+            <template #default="{ item, index }">
+              <div v-if="'isDiscHeader' in item" class="disc-header">
+                {{ $t("disc", { number: item.disc }) }}
+              </div>
+              <TrackTableRow
+                v-else-if="showTrackTable"
+                :item="item"
+                :index="index"
+                :columns="trackRowColumns"
+                :class="{ 'opacity-0': draggingIndex === index }"
+                :style="trackRowDragStyle(index)"
+                :show-checkboxes="showCheckboxes"
+                :is-selected="isSelected(item)"
+                :is-available="itemIsAvailable(item)"
+                :is-playing="isPlaying(item, itemtype)"
+                :disable-play-button="isPlayActionInProgress"
+                :parent-item="parentItem"
+                :sort-by="props.sortListing ? undefined : params.sortBy"
+                :sort-field="displayedSort.sortField"
+                :sort-direction="displayedSort.sortDirection"
+                @select="onSelect"
+                @drag-start="(evt: PointerEvent) => startTrackDrag(evt, index)"
+                @move-by="(delta: number) => moveTrack(index, index + delta)"
+              />
+              <ListviewItem
+                v-else
+                :item="item"
+                :album-track-view="itemtype === 'albumtracks'"
+                :show-track-number="showTrackNumber"
+                :show-disc-number="showTrackNumber"
+                :show-duration="showDuration"
+                :show-favorite="showFavorite ?? showFavoritesOnlyFilter"
+                :show-menu="item.is_playable || isMusicBrainzItem(item)"
+                :show-provider="showProvider"
+                :show-album="showAlbum"
+                :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
+                :is-selected="isSelected(item)"
+                :is-available="itemIsAvailable(item)"
+                :is-playing="isPlaying(item, itemtype)"
+                :show-details="itemtype.includes('versions')"
+                :disable-play-button="isPlayActionInProgress"
+                :parent-item="parentItem"
+                :sort-by="props.sortListing ? undefined : params.sortBy"
+                :sort-field="displayedSort.sortField"
+                :sort-direction="displayedSort.sortDirection"
+                @select="onSelect"
+              />
+            </template>
+          </v-virtual-scroll>
+          <TrackTableRow
+            v-if="draggedTrack && draggingIndex !== null"
+            class="pointer-events-none absolute inset-x-0 z-10 bg-accent shadow-lg"
+            :style="{ top: `${ghostY}px` }"
+            :item="draggedTrack"
+            :index="draggingIndex"
+            :columns="trackRowColumns"
+            :is-selected="false"
+            :is-available="itemIsAvailable(draggedTrack)"
+            :parent-item="parentItem"
+            aria-hidden="true"
+          />
+        </div>
       </v-infinite-scroll>
 
       <!-- subtle message shown when there are no items to display -->
@@ -379,7 +396,10 @@ import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/cons
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import TrackTableHeader from "@/components/track-table/TrackTableHeader.vue";
 import TrackTableRow from "@/components/track-table/TrackTableRow.vue";
-import { TRACK_ROW_HEIGHT } from "@/components/track-table/trackTableColumns";
+import {
+  TRACK_ROW_HEIGHT,
+  type TrackColumn,
+} from "@/components/track-table/trackTableColumns";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
 import { Button } from "@/components/ui/button";
@@ -396,6 +416,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GridSizeSlider from "@/components/GridSizeSlider.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import { useItemsListing } from "@/composables/useItemsListing";
+import { usePlaylistTrackReorder } from "@/composables/usePlaylistTrackReorder";
 import type {
   LoadDataParams,
   LoadPagedDataFn,
@@ -558,6 +579,9 @@ export interface Props {
   toolBarTabs?: ToolBarTab[];
   // the list view shows tracks as a table with columns
   trackTable?: boolean;
+  // the track table rows can be dragged to a new place in the parent playlist,
+  // while the listing shows the playlist's own order
+  reorderable?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortListing: undefined,
@@ -606,6 +630,7 @@ const props = withDefaults(defineProps<Props>(), {
   forcedViewMode: undefined,
   toolBarTabs: undefined,
   trackTable: false,
+  reorderable: false,
 });
 
 const emit = defineEmits<{
@@ -641,6 +666,7 @@ const {
   newContentAvailable,
   pagedItems,
   params,
+  reloadLoadedItems,
   retryLoad,
   serverSortOptions,
   sortOptions,
@@ -1272,6 +1298,48 @@ const hasActiveFilters = computed(() => {
     p.hideEmptyFilter === null,
   );
 });
+
+// rows only move in the playlist's own order, with every row listed
+const canDragTracks = computed(
+  () =>
+    props.reorderable &&
+    showTrackTable.value &&
+    displayedSort.value.sortField === SortField.POSITION &&
+    displayedSort.value.sortDirection !== SortDirection.DESC &&
+    !hasActiveFilters.value &&
+    !showCheckboxes.value,
+);
+const trackRowColumns = computed<TrackColumn[]>(() =>
+  canDragTracks.value ? ["handle", ...trackColumns.value] : trackColumns.value,
+);
+const listRowsEl = ref<HTMLElement | null>(null);
+const {
+  startDrag: startTrackDrag,
+  move: moveTrack,
+  draggingIndex,
+  isDragging,
+  ghostY,
+  rowOffset,
+} = usePlaylistTrackReorder({
+  listEl: listRowsEl,
+  items: pagedItems,
+  playlistId: () => props.parentItem?.item_id,
+  rowHeight: TRACK_ROW_HEIGHT,
+  reload: reloadLoadedItems,
+});
+const draggedTrack = computed(() =>
+  draggingIndex.value === null
+    ? undefined
+    : pagedItems.value[draggingIndex.value],
+);
+// the rows between the dragged row and its drop slot slide aside
+const trackRowDragStyle = (index: number) =>
+  isDragging.value
+    ? {
+        transform: `translateY(${rowOffset(index)}px)`,
+        transition: "transform 150ms ease",
+      }
+    : undefined;
 
 // Server-paged listings only know their total when the parent passes it. An
 // unfiltered listing that is loaded to its end, or holds less than a page,

@@ -9,7 +9,15 @@
 //   position math) and each row must carry `data-drag-index="<index>"`.
 // - The drag handle should have `touch-action: none` so touch drags don't
 //   scroll the page.
+// - A virtualized list passes `rowBox`, since rows scrolled out of view have no
+//   element to measure; the rows then need no `data-drag-index`.
 import { Ref, computed, onBeforeUnmount, ref } from "vue";
+
+export interface ListRowBox {
+  // Y of the row's top within listEl, in px.
+  top: number;
+  height: number;
+}
 
 interface ListDragReorderOptions {
   // Container element holding the rows (rows tagged with data-drag-index).
@@ -19,10 +27,12 @@ interface ListDragReorderOptions {
   // Called on drop with the source index and the final resting index.
   onCommit: (fromIndex: number, toIndex: number) => void;
   onDragStart?: () => void;
+  // Layout of the row at an index, for lists that don't render every row.
+  rowBox?: (index: number) => ListRowBox | undefined;
 }
 
 export function useListDragReorder(options: ListDragReorderOptions) {
-  const { listEl, count, onCommit, onDragStart } = options;
+  const { listEl, count, onCommit, onDragStart, rowBox } = options;
 
   // Index of the row being dragged (null when idle) and the index the item
   // would be inserted *before* on drop.
@@ -75,6 +85,21 @@ export function useListDragReorder(options: ListDragReorderOptions) {
     return y;
   };
 
+  // Layout of every row, read from the rendered rows unless the consumer
+  // provides it.
+  const measureRows = (): ((index: number) => ListRowBox | undefined) => {
+    if (rowBox) return rowBox;
+    const rows = new Map<number, ListRowBox>();
+    const el = listEl.value;
+    if (!el) return () => undefined;
+    for (const row of el.querySelectorAll<HTMLElement>("[data-drag-index]")) {
+      const index = Number(row.dataset.dragIndex);
+      if (Number.isNaN(index)) continue;
+      rows.set(index, { top: rowTopWithinList(row), height: row.offsetHeight });
+    }
+    return (index) => rows.get(index);
+  };
+
   // The pointer must cross a slot boundary by this margin before the drop
   // target flips, so the gap doesn't flap when the pointer rests near one.
   const DROP_HYSTERESIS = 12;
@@ -93,22 +118,17 @@ export function useListDragReorder(options: ListDragReorderOptions) {
     if (!el || source == null) return current;
     const listTop = el.getBoundingClientRect().top;
 
-    const rows = new Map<number, { top: number; height: number }>();
-    for (const row of el.querySelectorAll<HTMLElement>("[data-drag-index]")) {
-      const index = Number(row.dataset.dragIndex);
-      if (Number.isNaN(index)) continue;
-      rows.set(index, { top: rowTopWithinList(row), height: row.offsetHeight });
-    }
-    const sourceRow = rows.get(source);
+    const rowAt = measureRows();
+    const sourceRow = rowAt(source);
     if (!sourceRow) return current;
     // Full span the source occupies, inter-row gap included (rows below
     // shift up by this much once it is lifted out).
-    const nextRow = rows.get(source + 1);
+    const nextRow = rowAt(source + 1);
     const sourceSpan = nextRow ? nextRow.top - sourceRow.top : sourceRow.height;
 
     const scan = (y: number): number => {
       for (let index = 0; index < count(); index++) {
-        const row = rows.get(index);
+        const row = rowAt(index);
         if (!row) continue;
         const top = index > source ? row.top - sourceSpan : row.top;
         if (y < listTop + top + row.height / 2) return index;
@@ -206,12 +226,12 @@ export function useListDragReorder(options: ListDragReorderOptions) {
     const el = listEl.value;
     if (!el || index < 0 || index >= count()) return;
 
-    const rowEl = el.querySelector<HTMLElement>(`[data-drag-index="${index}"]`);
-    if (!rowEl) return;
+    const row = measureRows()(index);
+    if (!row) return;
 
     const listTop = el.getBoundingClientRect().top;
-    const rowTop = rowTopWithinList(rowEl);
-    dragRowHeight.value = rowEl.offsetHeight;
+    const rowTop = row.top;
+    dragRowHeight.value = row.height;
     dragGrabOffset = evt.clientY - listTop - rowTop;
     ghostY.value = rowTop;
 

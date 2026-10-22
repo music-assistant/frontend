@@ -1,4 +1,6 @@
 export type TrackColumn =
+  // the drag handle of a listing that can be reordered, never chosen by the user
+  | "handle"
   | "number"
   | "title"
   | "album"
@@ -62,6 +64,7 @@ const MIN_TABLE_WIDTH: Partial<Record<TrackColumn, number>> = {
 };
 
 const COLUMN_WIDTH: Record<TrackColumn, string> = {
+  handle: "1.25rem",
   number: "2rem",
   title: "minmax(0,4fr)",
   album: "minmax(0,3fr)",

@@ -1099,7 +1099,8 @@
         "duration": "Duration",
         "columns": "Columns",
         "choose_columns": "Choose columns",
-        "hidden_at_width": "Hidden at this width"
+        "hidden_at_width": "Hidden at this width",
+        "reorder_track": "Drag to reorder {0}"
     },
     "tracks": "Tracks",
     "search_in": "Search in {0}...",

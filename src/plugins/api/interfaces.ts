@@ -549,6 +549,7 @@ export enum ProviderFeature {
   SIMILAR_ARTISTS = "similar_artists",
   // playlist-specific features
   PLAYLIST_TRACKS_EDIT = "playlist_tracks_edit",
+  PLAYLIST_TRACKS_MOVE = "playlist_tracks_move",
   PLAYLIST_CREATE = "playlist_create",
   PLAYLIST_CREATE_TRACKS = "playlist_create_tracks",
   PLAYLIST_CREATE_AUDIOBOOKS = "playlist_create_audiobooks",

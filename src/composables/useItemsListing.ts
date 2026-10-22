@@ -264,6 +264,25 @@ export function useItemsListing(
     }
   };
 
+  /**
+   * Reads the items already listed again, in one request and without clearing
+   * the list, so the scroll position holds. For a change that moved items
+   * among the ones listed.
+   */
+  const reloadLoadedItems = async function () {
+    const activeTab = props.toolBarTabs?.length ? getActiveTab() : undefined;
+    const loadPagedData = activeTab?.loadPagedData ?? props.loadPagedData;
+    if (!loadPagedData || loading.value || disposed) return;
+    const limit = Math.max(pagedItems.value.length, props.limit);
+    try {
+      const items = await loadPagedData({ ...params.value, offset: 0, limit });
+      // a load that started meanwhile has the newer items
+      if (!disposed && !loading.value) pagedItems.value = items;
+    } catch {
+      // the api already reports the failure to the user
+    }
+  };
+
   return {
     allItemsReceived,
     displayedSort,
@@ -277,6 +296,7 @@ export function useItemsListing(
     newContentAvailable,
     pagedItems,
     params,
+    reloadLoadedItems,
     retryLoad,
     serverSortOptions,
     sortOptions,
