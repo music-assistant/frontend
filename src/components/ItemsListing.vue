@@ -410,6 +410,7 @@ import {
   subscribeOwnFavorites,
 } from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
+import { selectionRange } from "@/helpers/selection_range";
 import {
   GRID_SIZE_DEFAULT,
   gridColumns,
@@ -481,6 +482,7 @@ import {
   watch,
   watchEffect,
 } from "vue";
+import { useKeyModifier } from "@vueuse/core";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -1050,7 +1052,11 @@ const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
   }
 };
 
-const onSelect = function (
+// the item last (de)selected, where a shift-click range starts
+let selectionAnchor: MediaItemTypeOrItemMapping | undefined;
+const shiftHeld = useKeyModifier("Shift");
+
+const setSelected = function (
   item: MediaItemTypeOrItemMapping,
   selected: boolean,
 ) {
@@ -1066,10 +1072,27 @@ const onSelect = function (
   }
 };
 
+// a shift-click gives every item from the previous click on the same state
+const onSelect = function (
+  item: MediaItemTypeOrItemMapping,
+  selected: boolean,
+) {
+  const range = shiftHeld.value
+    ? selectionRange<MediaItemTypeOrItemMapping>(
+        pagedItems.value,
+        selectionAnchor,
+        item,
+      )
+    : [item];
+  for (const rangeItem of range) setSelected(rangeItem, selected);
+  selectionAnchor = item;
+};
+
 const toggleCheckboxes = function () {
   if (showCheckboxes.value) {
     // clear selection
     selectedItems.value = [];
+    selectionAnchor = undefined;
   }
   showCheckboxes.value = !showCheckboxes.value;
 };
@@ -1969,6 +1992,7 @@ watch(
     // always leave selection mode: the selection belongs to the previous
     // folder, and the target may not offer the toggle to turn it off
     selectedItems.value = [];
+    selectionAnchor = undefined;
     showCheckboxes.value = false;
     if (loading.value == true) return;
     // completely reset if the path changes
@@ -2075,6 +2099,7 @@ let _unsubscribeFavorites: (() => void) | undefined;
 
 const clearSelection = () => {
   selectedItems.value = [];
+  selectionAnchor = undefined;
   showCheckboxes.value = false;
 };
 
