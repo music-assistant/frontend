@@ -1320,6 +1320,7 @@ const {
   isDragging,
   ghostY,
   rowOffset,
+  saving: reorderSaving,
 } = usePlaylistTrackReorder({
   listEl: listRowsEl,
   items: pagedItems,
@@ -2049,7 +2050,11 @@ watch(
   () => {
     if (loading.value == true) return;
     if (props.refreshOnParentUpdate) {
-      loadData(true);
+      // a reorder that is saving reads its rows back itself
+      if (reorderSaving.value) return;
+      // re-read the rows in place, so the list neither collapses nor scrolls
+      if (pagedItems.value.length) reloadLoadedItems();
+      else loadData(true);
     } else {
       newContentAvailable.value = true;
     }

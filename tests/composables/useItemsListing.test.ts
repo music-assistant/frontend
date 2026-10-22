@@ -336,4 +336,58 @@ describe("useItemsListing", () => {
 
     expect(loadPagedData).toHaveBeenCalledTimes(1);
   });
+
+  describe("reloadLoadedItems", () => {
+    const tracks = (count: number, prefix = "t") =>
+      Array.from({ length: count }, (_, index) =>
+        track({ item_id: `${prefix}${index}` }),
+      );
+
+    it("re-reads every loaded page in one request without clearing the list", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData
+        .mockResolvedValueOnce(tracks(2))
+        .mockResolvedValueOnce(tracks(2, "page2-"));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      await listing.loadNextPage({ done: () => {} });
+      const reloaded = tracks(4, "new-");
+      loadPagedData.mockImplementationOnce(async () => {
+        // the old rows stay listed while the reload is on its way
+        expect(listing.pagedItems.value).toHaveLength(4);
+        return reloaded;
+      });
+
+      await listing.reloadLoadedItems();
+
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 0, limit: 4 }),
+      );
+      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual(
+        reloaded.map((item) => item.item_id),
+      );
+      // the next page still follows on from the pages already loaded
+      expect(listing.params.value.offset).toBe(2);
+    });
+
+    it("keeps a page that finished loading while the reload was on its way", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValueOnce(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      let finishReload: (items: Track[]) => void = () => {};
+      loadPagedData.mockImplementationOnce(
+        () => new Promise((resolve) => (finishReload = resolve)),
+      );
+      const reload = listing.reloadLoadedItems();
+      loadPagedData.mockResolvedValueOnce(tracks(2, "page2-"));
+      await listing.loadNextPage({ done: () => {} });
+
+      finishReload(tracks(2, "stale-"));
+      await reload;
+
+      expect(listing.pagedItems.value).toHaveLength(4);
+      expect(listing.pagedItems.value[0].item_id).toBe("t0");
+    });
+  });
 });
