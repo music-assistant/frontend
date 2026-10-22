@@ -60,6 +60,9 @@ describe("PieChartCard navigation", () => {
     expect(wrapper.get("canvas").attributes("role")).toBe("img");
     expect(accessibleSummary).toContain("Artists");
     expect(accessibleSummary).toContain("Artist: 3 plays");
+    expect(wrapper.get("button").attributes("aria-label")).toBe(
+      "Artist: 3 plays",
+    );
     expect(wrapper.findAll(`[aria-label="${accessibleSummary}"]`)).toHaveLength(
       1,
     );

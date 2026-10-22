@@ -27,7 +27,7 @@
           :key="topItem.item.uri"
           type="button"
           class="flex w-full cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent p-2 text-left text-inherit transition-colors hover:bg-[rgba(var(--v-theme-on-surface),0.05)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-default disabled:hover:bg-transparent"
-          :aria-label="topItem.item.name"
+          :aria-label="`${topItem.item.name}: ${topItem.play_count} ${$t('plays')}`"
           :disabled="!navigateTo || !itemIsAvailable(topItem.item)"
           @click="navigateToItem(topItem)"
         >
