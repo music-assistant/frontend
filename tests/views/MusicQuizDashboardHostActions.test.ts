@@ -1,8 +1,9 @@
+import MusicQuizPreparingState from "@/components/music-quiz/MusicQuizPreparingState.vue";
 import MusicQuizDashboardView from "@/views/MusicQuizDashboardView.vue";
 import type {
   MusicQuizSupportedHostState,
   MusicQuizTriviaHostState,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick, ref, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,7 +24,7 @@ const {
   mockUseMusicQuizHost: vi.fn(),
 }));
 
-vi.mock("@/composables/useMusicQuizHost", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuizHost", () => ({
   useMusicQuizHost: mockUseMusicQuizHost,
 }));
 
@@ -57,11 +58,14 @@ vi.mock("@/plugins/api", () => ({
   },
 }));
 
-vi.mock("@/plugins/auth", () => ({
-  authManager: {
-    isAdmin: () => false,
-  },
-}));
+// signed in as a member
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: scopeChecker(BUILTIN_ROLE_SCOPES.user) },
+  };
+});
 
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
@@ -91,6 +95,8 @@ const HOST_STATE = {
   answer_type: "multiple_choice",
   phase: "finished",
   name: "Quiz",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   suggestion_count: 4,
   answer_duration: 30,
@@ -101,6 +107,7 @@ const HOST_STATE = {
   join_url: "http://join",
   rounds: [],
   current_round: null,
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizSupportedHostState;
 const TRIVIA_HOST_STATE = {
   ...HOST_STATE,
@@ -144,7 +151,6 @@ describe("MusicQuizDashboardView host actions", () => {
       loading: ref(false),
       playbackOptions: ref(null),
       playbackOptionsLoading: ref(false),
-      playbackOptionsLegacy: ref(false),
       playbackOptionsError: ref(false),
       next: vi.fn(),
       replay: mockReplay,
@@ -230,6 +236,9 @@ describe("MusicQuizDashboardView host actions", () => {
     const status = wrapper.get('[data-testid="music-quiz-preparing"]');
     expect(status.attributes("role")).toBe("status");
     expect(status.text()).toContain("providers.music_quiz.preparing_game");
+    expect(
+      wrapper.findComponent(MusicQuizPreparingState).props("autofocus"),
+    ).toBe(true);
     expect(wrapper.find('[data-testid="start-now"]').exists()).toBe(false);
 
     finishStart();
@@ -238,6 +247,28 @@ describe("MusicQuizDashboardView host actions", () => {
     expect(wrapper.find('[data-testid="music-quiz-preparing"]').exists()).toBe(
       false,
     );
+  });
+
+  it("shows preparation progress when the server reports preparing", async () => {
+    state.value = { ...HOST_STATE, preparing: true };
+    const wrapper = mountDashboard();
+
+    expect(
+      wrapper.get('[data-testid="music-quiz-preparing"]').text(),
+    ).toContain("providers.music_quiz.preparing_game");
+    // A host tab that did not issue the action must not have focus pulled away.
+    expect(
+      wrapper.findComponent(MusicQuizPreparingState).props("autofocus"),
+    ).toBe(false);
+    expect(wrapper.find('[data-testid="play-again"]').exists()).toBe(false);
+
+    state.value = { ...HOST_STATE, preparing: false };
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="music-quiz-preparing"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="play-again"]').exists()).toBe(true);
   });
 
   it("deletes the finished game before opening fresh setup", async () => {
@@ -347,18 +378,6 @@ describe("MusicQuizDashboardView host actions", () => {
         .get('[data-testid="session-header"]')
         .attributes("data-listen-in-enabled"),
     ).toBe("true");
-
-    state.value = {
-      ...TRIVIA_HOST_STATE,
-      play_reveal_audio: undefined,
-    };
-    await nextTick();
-
-    expect(
-      wrapper
-        .get('[data-testid="session-header"]')
-        .attributes("data-listen-in-enabled"),
-    ).toBe("false");
   });
 
   it("returns to the compact empty state when the host state is cleared", async () => {

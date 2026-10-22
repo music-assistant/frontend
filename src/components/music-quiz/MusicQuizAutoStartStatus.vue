@@ -16,7 +16,7 @@
 import {
   useMusicQuizAutoStart,
   type MusicQuizAutoStartState,
-} from "@/composables/useMusicQuizAutoStart";
+} from "@/composables/music-quiz/useMusicQuizAutoStart";
 import { $t } from "@/plugins/i18n";
 
 const props = defineProps<{

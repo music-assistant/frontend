@@ -9,12 +9,16 @@
     :disable-play-button="disablePlayButton"
     :parent-item="parentItem"
     :sort-by="sortBy"
+    :sort-field="sortField"
+    :sort-direction="sortDirection"
     @select="(i, selected) => emit('select', i as MediaItemType, selected)"
   >
     <template v-if="showActions" #actions>
       <div class="panel-item-actions" @click.stop>
         <v-icon
-          v-if="parseBool(item.metadata.explicit || false)"
+          v-if="
+            'metadata' in item && parseBool(item.metadata.explicit || false)
+          "
           size="30"
           icon="mdi-alpha-e-box"
         />
@@ -44,11 +48,17 @@
           <v-icon size="small" icon="mdi-music-circle-outline" />
           {{ item.position }}
         </span>
-        <FavouriteButton v-if="getBreakpointValue('bp3')" :item="item" />
+        <FavouriteButton
+          v-if="
+            getBreakpointValue('bp3') && canHoldFavorite(item) && canEditLibrary
+          "
+          :item="item"
+        />
         <v-spacer />
         <MAButton
           variant="list"
           icon="mdi-dots-vertical"
+          :aria-label="menuButtonLabel"
           @click.stop="onMenu"
         />
       </div>
@@ -60,9 +70,19 @@
 import MAButton from "@/components/Button.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
-import { handleMenuBtnClick, parseBool } from "@/helpers/utils";
-import { ContentType, type MediaItemType } from "@/plugins/api/interfaces";
+import { canHoldFavorite } from "@/helpers/favorites";
+import { handleMenuBtnClick } from "@/helpers/media_item_actions";
+import { parseBool } from "@/helpers/parse";
+import {
+  ContentType,
+  SortDirection,
+  SortField,
+  Scope,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
 
@@ -79,6 +99,8 @@ export interface Props {
   disablePlayButton?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
@@ -90,16 +112,27 @@ const compProps = withDefaults(defineProps<Props>(), {
   disablePlayButton: false,
   parentItem: undefined,
   sortBy: undefined,
+  sortField: undefined,
+  sortDirection: undefined,
 });
+
+// favouring an item changes the library
+const canEditLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE),
+);
 
 const emit = defineEmits<{
   (e: "select", item: MediaItemType, selected: boolean): void;
 }>();
 
+const menuButtonLabel = computed(
+  () => `${$t("more_options")}: ${compProps.item.name}`,
+);
+
 // computed: hi-res audio details (kHz/bit-depth) for lossless formats
 const HiResDetails = computed(() => {
+  if (!("provider_mappings" in compProps.item)) return "";
   for (const prov of compProps.item.provider_mappings) {
-    if (!prov.audio_format) continue;
     if (prov.audio_format.content_type == undefined) continue;
     if (
       ![
@@ -130,6 +163,8 @@ const onMenu = function (evt: MouseEvent) {
     compProps.parentItem,
     true,
     compProps.sortBy,
+    compProps.sortField,
+    compProps.sortDirection,
   );
 };
 </script>

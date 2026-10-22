@@ -4,11 +4,12 @@
  * failures were swallowed, leaving the play button a silent no-op
  * (e.g. while the API connection is re-establishing after a server restart).
  */
+import type { MusicAssistantApi } from "@/plugins/api";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const { mockPlayMedia, mockShowPlayMenu, mockToastError, mockStore } =
   vi.hoisted(() => ({
-    mockPlayMedia: vi.fn(),
+    mockPlayMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
     mockShowPlayMenu: vi.fn(),
     mockToastError: vi.fn(),
     mockStore: {
@@ -28,6 +29,15 @@ vi.mock("@/plugins/api", () => ({
 vi.mock("@/plugins/store", () => ({
   store: mockStore,
 }));
+
+// signed in as a member
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
 
 vi.mock("@/plugins/breakpoint", () => ({
   getBreakpointValue: vi.fn(() => false),
@@ -49,6 +59,9 @@ vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
 
 vi.mock("@/plugins/api/helpers", () => ({
   itemIsAvailable: vi.fn(),
+  // what the real helper does, which this module-wide mock would otherwise hide
+  isMusicBrainzItem: (item: { provider: string }) =>
+    item.provider === "musicbrainz",
 }));
 
 vi.mock("@/plugins/i18n", () => ({
@@ -59,24 +72,19 @@ vi.mock("vue-sonner", () => ({
   toast: { error: mockToastError },
 }));
 
-import { handlePlayBtnClick } from "@/helpers/utils";
-import { MediaType, type Playlist, type Track } from "@/plugins/api/interfaces";
+import { handlePlayBtnClick } from "@/helpers/media_item_actions";
+import { playlist } from "../fixtures/playlist";
+import { track } from "../fixtures/track";
 
-const track = {
+const playedTrack = track({
   item_id: "track1",
-  uri: "library://track/track1",
-  media_type: MediaType.TRACK,
   name: "Track 1",
-  is_playable: true,
-} as unknown as Track;
+});
 
-const playlist = {
+const parentPlaylist = playlist({
   item_id: "pl1",
-  uri: "library://playlist/pl1",
-  media_type: MediaType.PLAYLIST,
   name: "Playlist 1",
-  is_playable: true,
-} as unknown as Playlist;
+});
 
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -92,7 +100,7 @@ describe("handlePlayBtnClick error feedback", () => {
   it("shows a toast when direct play fails", async () => {
     mockPlayMedia.mockRejectedValue(new Error("Connection lost"));
 
-    handlePlayBtnClick(track, 0, 0);
+    handlePlayBtnClick(playedTrack, 0, 0);
     await flushPromises();
 
     expect(mockToastError).toHaveBeenCalledWith("play_failed");
@@ -101,7 +109,7 @@ describe("handlePlayBtnClick error feedback", () => {
   it("shows a toast when play-from-here fails", async () => {
     mockPlayMedia.mockRejectedValue(new Error("Connection lost"));
 
-    handlePlayBtnClick(track, 0, 0, playlist);
+    handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist);
     await flushPromises();
 
     expect(mockToastError).toHaveBeenCalledWith("play_failed");
@@ -111,7 +119,7 @@ describe("handlePlayBtnClick error feedback", () => {
     mockStore.activePlayer = undefined;
     mockShowPlayMenu.mockRejectedValue(new Error("Connection lost"));
 
-    handlePlayBtnClick(track, 0, 0);
+    handlePlayBtnClick(playedTrack, 0, 0);
     await flushPromises();
 
     expect(mockToastError).toHaveBeenCalledWith("play_failed");
@@ -120,7 +128,7 @@ describe("handlePlayBtnClick error feedback", () => {
   it("does not show a toast when play succeeds", async () => {
     mockPlayMedia.mockResolvedValue(undefined);
 
-    handlePlayBtnClick(track, 0, 0);
+    handlePlayBtnClick(playedTrack, 0, 0);
     await flushPromises();
 
     expect(mockToastError).not.toHaveBeenCalled();

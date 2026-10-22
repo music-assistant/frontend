@@ -3,8 +3,16 @@
   <Icon
     v-bind="{ ...icon, ...$attrs }"
     :disabled="!player || !canPrevious || isLoading"
+    :aria-label="
+      previousChapter ? $t('previous_chapter') : $t('previous_track')
+    "
+    :title="previousChapter ? $t('previous_chapter') : $t('previous_track')"
     variant="button"
-    @click="api.playerCommandPrevious(player!.player_id)"
+    @click="
+      previousChapter
+        ? api.playerCommandSeek(player!.player_id, previousChapter.start)
+        : api.playerCommandPrevious(player!.player_id)
+    "
   >
     <SkipBack :size="size" />
   </Icon>
@@ -15,6 +23,7 @@ defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
+import { useChapterNavigation } from "@/composables/useChapterNavigation";
 import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
 import { SkipBack } from "@lucide/vue";
@@ -35,6 +44,7 @@ const compProps = withDefaults(defineProps<Props>(), {
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));
 const { activeAudioSource } = useActiveAudioSource(toRef(compProps, "player"));
+const { previousChapter } = useChapterNavigation();
 
 const queueHasPrevious = computed(() => {
   if (!compProps.playerQueue?.active) return false;
@@ -53,6 +63,7 @@ const playerHasPrevious = computed(() => {
 });
 
 const canPrevious = computed(() => {
+  if (previousChapter.value) return true;
   // AudioSource queue items carry their own capability flags
   if (activeAudioSource.value) {
     return activeAudioSource.value.can_next_previous;

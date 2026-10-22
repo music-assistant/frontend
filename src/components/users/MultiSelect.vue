@@ -31,7 +31,8 @@
             size="icon-sm"
             variant="ghost"
             class="ml-auto shrink-0"
-            :aria-label="$t('tooltip.open_options')"
+            :aria-label="placeholder || $t('tooltip.open_options')"
+            :title="placeholder || $t('tooltip.open_options')"
             @click.prevent
           >
             <ChevronsUpDown :size="16" class="opacity-50" />
@@ -45,7 +46,7 @@
       align="start"
       :side-offset="4"
       :collision-padding="16"
-      @open-auto-focus.prevent
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
       <Command>
         <CommandInput :placeholder="$t('search')" />
@@ -100,6 +101,7 @@ import {
   TagsInputItem,
   TagsInputItemDelete,
 } from "@/components/ui/tags-input";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { cn } from "@/lib/utils";
 import { CheckIcon, ChevronsUpDown, X } from "@lucide/vue";
 import { TagsInputRoot } from "reka-ui";

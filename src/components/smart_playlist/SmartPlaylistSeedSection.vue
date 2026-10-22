@@ -89,7 +89,7 @@ import {
   SEED_MAX,
   useSmartPlaylistSeedItems,
   type SeedKind,
-} from "@/composables/useSmartPlaylistSeedItems";
+} from "@/composables/smart-playlist/useSmartPlaylistSeedItems";
 import type { Album, Artist, Playlist, Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Disc3, ListMusic, Mic2, Music, Sparkles, X } from "@lucide/vue";

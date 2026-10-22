@@ -1,27 +1,19 @@
 <template>
   <ItemsListing
     ref="itemsListing"
+    fill-height
     itemtype="radios"
     path="libraryradios"
     :show-duration="false"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
-    :sort-keys="sortKeys"
+    :sort-listing="ListingType.LIBRARY_RADIOS"
     :update-available="updateAvailable"
     :title="$t('radios')"
     :show-search-button="true"
     :allow-key-hooks="true"
-    :extra-menu-items="[
-      {
-        label: 'add_url_item',
-        labelArgs: [],
-        action: () => {
-          showAddEditDialog = true;
-        },
-        icon: 'mdi-playlist-plus',
-      },
-    ]"
+    :extra-menu-items="extraMenuItems"
     :icon="Radio"
     :restore-state="true"
     :total="total"
@@ -37,12 +29,20 @@
 <script setup lang="ts">
 import AddManualLink from "@/components/AddManualLink.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import api from "@/plugins/api";
-import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
+import {
+  EventMessage,
+  EventType,
+  ListingType,
+  MediaType,
+  Scope,
+} from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { Radio } from "@lucide/vue";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { ListPlus, Radio } from "@lucide/vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
   name: "Radios",
@@ -53,18 +53,21 @@ const total = ref(store.libraryRadiosCount);
 const showAddEditDialog = ref(false);
 const itemsListing = ref<InstanceType<typeof ItemsListing>>();
 
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
+// adding a radio station by its url adds it to the library
+const extraMenuItems = computed<ToolBarMenuItem[]>(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE)
+    ? [
+        {
+          label: "add_url_item",
+          labelArgs: [],
+          action: () => {
+            showAddEditDialog.value = true;
+          },
+          icon: ListPlus,
+        },
+      ]
+    : [],
+);
 
 onMounted(() => {
   // signal if/when items get added within this library
@@ -94,7 +97,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sortField,
+    params.sortDirection,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
   );

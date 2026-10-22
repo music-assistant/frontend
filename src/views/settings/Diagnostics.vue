@@ -1,5 +1,6 @@
 <template>
   <div class="flex h-full flex-col p-6 pb-40">
+    <UnsupportedInstallBanner class="mb-4 shrink-0" />
     <Card class="flex flex-1 flex-col gap-0 overflow-hidden py-0 min-h-0">
       <CardHeader class="shrink-0 border-b px-6 py-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -74,10 +75,12 @@
 import { AlertCircle, Download, RefreshCw, Stethoscope } from "@lucide/vue";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
+import UnsupportedInstallBanner from "@/components/UnsupportedInstallBanner.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { $t } from "@/plugins/i18n";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/plugins/api";
 
@@ -90,6 +93,10 @@ const downloadingDiagnostics = ref(false);
 const logContainer = ref<HTMLDivElement | null>(null);
 const maxLines = 150;
 let refreshInterval: ReturnType<typeof setInterval> | null = null;
+
+// Set by the unmount hook, so the startup below can tell that the view it is
+// setting things up for is already gone.
+let unmounted = false;
 
 const displayContent = computed(() => {
   const lines = logContent.value.split("\n");
@@ -130,7 +137,8 @@ const fetchLogs = async (isRefresh = false) => {
       setTimeout(() => scrollToBottom(), 100);
     }
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : "Failed to load server logs";
+    error.value =
+      e instanceof Error ? e.message : $t("settings.server_logs_load_failed");
     console.error("Error loading logs:", e);
   } finally {
     loading.value = false;
@@ -139,6 +147,26 @@ const fetchLogs = async (isRefresh = false) => {
 };
 
 const refreshLog = () => {
+  fetchLogs(true);
+};
+
+// True while the user has a non-collapsed text selection inside the log
+// container (e.g. mid-drag or an unfinished copy).
+const hasActiveLogSelection = () => {
+  const container = logContainer.value;
+  if (!container) return false;
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+    return false;
+  }
+  return container.contains(selection.getRangeAt(0).commonAncestorContainer);
+};
+
+// Auto-refresh replaces the <pre> text node and scrolls to the bottom, which
+// destroys any in-progress selection. Skip the tick while a selection is
+// active; the next tick after the user is done picks up the new content.
+const autoRefreshTick = () => {
+  if (hasActiveLogSelection()) return;
   fetchLogs(true);
 };
 
@@ -187,9 +215,7 @@ const downloadDiagnostics = async () => {
 
 watch(autoRefresh, (enabled) => {
   if (enabled) {
-    refreshInterval = setInterval(() => {
-      fetchLogs(true);
-    }, 5000);
+    refreshInterval = setInterval(autoRefreshTick, 5000);
   } else {
     if (refreshInterval) {
       clearInterval(refreshInterval);
@@ -200,14 +226,19 @@ watch(autoRefresh, (enabled) => {
 
 onMounted(async () => {
   await fetchLogs(false);
-  if (autoRefresh.value) {
-    refreshInterval = setInterval(() => {
-      fetchLogs(true);
-    }, 5000);
+  // The first fetch can outlast the view, and the unmount hook only reaches
+  // what was already set up by the time it ran.
+  if (unmounted) return;
+
+  // The auto-refresh watcher arms this interval too, and only the handle held
+  // here is the one the unmount hook clears.
+  if (autoRefresh.value && !refreshInterval) {
+    refreshInterval = setInterval(autoRefreshTick, 5000);
   }
 });
 
 onUnmounted(() => {
+  unmounted = true;
   if (refreshInterval) {
     clearInterval(refreshInterval);
   }
@@ -229,5 +260,10 @@ onUnmounted(() => {
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-all;
+  /* Opt back in to text selection: global.css disables user-select
+     app-wide, but log output must be copyable. */
+  -webkit-user-select: text;
+  user-select: text;
+  cursor: text;
 }
 </style>

@@ -1,5 +1,6 @@
 <template>
   <ItemsListing
+    fill-height
     itemtype="artists"
     path="libraryartists"
     :show-provider="false"
@@ -11,7 +12,7 @@
     :allow-key-hooks="true"
     :show-search-button="true"
     :show-genre-filter="true"
-    :sort-keys="sortKeys"
+    :sort-listing="ListingType.LIBRARY_ARTISTS"
     :icon="ArtistIcon"
     :restore-state="true"
     :total="total"
@@ -24,8 +25,13 @@ import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import api from "@/plugins/api";
-import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
+import {
+  ArtistType,
+  EventMessage,
+  EventType,
+  ListingType,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
@@ -33,20 +39,7 @@ defineOptions({
 });
 
 const updateAvailable = ref(false);
-const total = ref(store.libraryArtistsCount);
-
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
+const total = ref<number | undefined>(undefined);
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
@@ -56,18 +49,16 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sortField,
+    params.sortDirection,
     params.albumArtistsFilter,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
+    ArtistType.SINGER,
   );
 };
 
 const setTotals = async function (params: LoadDataParams) {
-  if (!params.favoritesOnly && !params.albumArtistsFilter && !params.provider) {
-    total.value = store.libraryArtistsCount;
-    return;
-  }
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
@@ -77,6 +68,7 @@ const setTotals = async function (params: LoadDataParams) {
   total.value = await api.getLibraryArtistsCount(
     params.favoritesOnly || false,
     params.albumArtistsFilter || false,
+    ArtistType.SINGER,
   );
 };
 

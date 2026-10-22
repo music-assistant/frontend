@@ -1,7 +1,7 @@
 <template>
   <AlertDialog v-model:open="open">
     <AlertDialogContent class="gap-3 p-4 sm:max-w-sm sm:p-5">
-      <AlertDialogHeader class="gap-1 text-left">
+      <AlertDialogHeader class="gap-1">
         <AlertDialogTitle>
           {{ $t("providers.music_quiz.end_game") }}
         </AlertDialogTitle>
@@ -10,7 +10,7 @@
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter class="flex-row justify-end">
-        <AlertDialogCancel class="mt-0">{{ $t("cancel") }}</AlertDialogCancel>
+        <AlertDialogCancel>{{ $t("cancel") }}</AlertDialogCancel>
         <Button
           variant="destructive"
           data-testid="confirm-end-game"

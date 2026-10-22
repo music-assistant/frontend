@@ -8,7 +8,7 @@
     :disabled="disabled"
     :no-filter="true"
     item-value="value"
-    item-title="value"
+    item-title="title"
     variant="outlined"
     density="comfortable"
     clearable
@@ -18,15 +18,9 @@
   >
     <!-- icon preview in the input field -->
     <template #prepend-inner>
-      <v-icon
-        v-if="modelValue?.startsWith('mdi-')"
-        :icon="modelValue"
-        :size="20"
-        class="mr-2"
-      />
       <component
         :is="getLucideIcon(modelValue)"
-        v-else-if="modelValue && getLucideIcon(modelValue)"
+        v-if="modelValue && getLucideIcon(modelValue)"
         :size="20"
         class="mr-2"
       />
@@ -34,7 +28,11 @@
 
     <!-- icon list items -->
     <template #item="{ item, props: itemProps }">
-      <v-list-item v-bind="itemProps" :title="item.raw.value">
+      <v-list-item
+        v-bind="itemProps"
+        :title="item.raw.title"
+        :subtitle="item.raw.value"
+      >
         <template #prepend>
           <component
             :is="getLucideIcon(item.raw.value)"
@@ -48,22 +46,8 @@
 </template>
 
 <script setup lang="ts">
-import {
-  getAllSearchableIconNames,
-  getLucideIcon,
-  getLucideIconNames,
-  SUGGESTED_ICON_NAMES,
-} from "@/helpers/icon";
-import { computed, onMounted, ref } from "vue";
-
-const searchableIconNames = ref<readonly string[]>([]);
-const lucideIconNames = ref<readonly string[]>([]);
-onMounted(() => {
-  searchableIconNames.value = getAllSearchableIconNames();
-  getLucideIconNames().then((names) => {
-    lucideIconNames.value = names;
-  });
-});
+import { getLucideIcon, PLAYER_ICON_OPTIONS } from "@/helpers/icon";
+import { computed, ref } from "vue";
 
 const props = defineProps<{
   modelValue: string | null | undefined;
@@ -77,53 +61,48 @@ const emit = defineEmits<{
   (e: "click:clear"): void;
 }>();
 
-const MAX_ITEMS = 100;
 const searchQuery = ref("");
 
-// When no query: show curated suggestions only.
-// Otherwise: rank across all MA + Lucide icons, boost suggested ones.
+// The picker only offers the canonical ids of the shared icon set. With no
+// query, all icons are listed in manifest (category) order; a query ranks
+// them by id, display name and keywords.
 const filteredItems = computed(() => {
-  const raw = searchQuery.value?.trim().toLowerCase() ?? "";
-  // Legacy mdi-* values aren't part of the Lucide/MA set. Rather than show a
-  // dead "No data available", treat them as an empty query so the picker
-  // cleanly falls back to the curated suggestions to pick a replacement from.
-  const q = raw.startsWith("mdi-") ? "" : raw;
+  const q = searchQuery.value?.trim().toLowerCase() ?? "";
 
-  if (!q) {
-    return SUGGESTED_ICON_NAMES.map((name) => ({ value: name }));
-  }
+  const options = PLAYER_ICON_OPTIONS.map((o) => ({
+    value: o.id,
+    title: o.name,
+    option: o,
+  }));
+  if (!q) return options;
 
-  const suggestedSet = new Set(SUGGESTED_ICON_NAMES);
-  const ranked: { rank: number; name: string }[] = [];
-
-  // Search across MA icons (including aliases) and Lucide icons
-  for (const name of [...searchableIconNames.value, ...lucideIconNames.value]) {
-    const parts = name.split("-");
-    let rank: number;
-
-    if (parts.includes(q)) {
-      rank = 1;
-    } else if (name.startsWith(q)) {
-      rank = 2;
-    } else if (parts.some((p) => p.startsWith(q))) {
-      rank = 3;
-    } else if (name.includes(q)) {
-      rank = 4;
-    } else {
-      continue;
-    }
-
-    // Suggested icons sort before non-suggested within the same rank
-    if (suggestedSet.has(name)) rank -= 0.5;
-
-    ranked.push({ rank, name });
-    if (ranked.length >= MAX_ITEMS * 2) break;
-  }
-
-  return ranked
+  const ranked = options
+    .flatMap((item) => {
+      const { id, name, keywords } = item.option;
+      const idParts = id.split("-");
+      let rank: number;
+      if (idParts.includes(q)) {
+        rank = 1;
+      } else if (id.startsWith(q) || name.toLowerCase().startsWith(q)) {
+        rank = 2;
+      } else if (idParts.some((p) => p.startsWith(q))) {
+        rank = 3;
+      } else if (
+        id.includes(q) ||
+        name.toLowerCase().includes(q) ||
+        keywords.some((k) => k.includes(q))
+      ) {
+        rank = 4;
+      } else {
+        return [];
+      }
+      return [{ rank, item }];
+    })
     .sort((a, b) => a.rank - b.rank)
-    .slice(0, MAX_ITEMS)
-    .map((e) => ({ value: e.name }));
+    .map((e) => e.item);
+
+  if (!ranked.length && q === props.modelValue?.toLowerCase()) return options;
+  return ranked;
 });
 
 const onSelect = (value: string | null) => {

@@ -1,8 +1,20 @@
-import { ProviderStatus } from "@/plugins/api/interfaces";
+import {
+  type ProviderInstance,
+  ProviderStage,
+  ProviderStatus,
+} from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
+import { providerConfig } from "../../tests/fixtures/providerConfig";
+import { providerManifest } from "../../tests/fixtures/providerManifest";
 import {
   canReconfigureProvider,
+  getProviderStageTranslationKey,
+  getProviderStatusTranslationKey,
+  getProviderSupportIssuesUrl,
+  isBuiltinProvider,
+  providerDisplayName,
   providerRequiresReconfiguration,
+  shouldShowStageBadge,
 } from "./provider_config";
 
 describe("provider configuration state", () => {
@@ -37,4 +49,159 @@ describe("provider configuration state", () => {
       ).toBe(expected);
     },
   );
+
+  it.each([
+    [ProviderStatus.LOADED, "settings.provider_status_loaded"],
+    [ProviderStatus.LOADING, "settings.provider_status_loading"],
+    [ProviderStatus.DISABLED, "settings.provider_status_disabled"],
+    [ProviderStatus.AUTH_REQUIRED, "settings.provider_status_auth_required"],
+    [ProviderStatus.INCOMPATIBLE, "settings.provider_status_incompatible"],
+    [ProviderStatus.ERROR, "settings.provider_status_error"],
+    [undefined, "settings.provider_status_unknown"],
+  ])("maps provider status %s to %s", (status, expected) => {
+    expect(getProviderStatusTranslationKey(status)).toBe(expected);
+  });
+
+  it.each([
+    [
+      ProviderStatus.INCOMPATIBLE,
+      ProviderStage.DEPRECATED,
+      "settings.provider_status_retired",
+    ],
+    [
+      ProviderStatus.INCOMPATIBLE,
+      ProviderStage.STABLE,
+      "settings.provider_status_incompatible",
+    ],
+    [
+      ProviderStatus.INCOMPATIBLE,
+      undefined,
+      "settings.provider_status_incompatible",
+    ],
+    // only INCOMPATIBLE is ambiguous; a deprecated provider that still loads
+    // keeps its own status
+    [
+      ProviderStatus.LOADED,
+      ProviderStage.DEPRECATED,
+      "settings.provider_status_loaded",
+    ],
+    [undefined, ProviderStage.DEPRECATED, "settings.provider_status_unknown"],
+  ])("maps status %s at stage %s to %s", (status, stage, expected) => {
+    expect(getProviderStatusTranslationKey(status, stage)).toBe(expected);
+  });
+
+  it.each([
+    [ProviderStage.ALPHA, "settings.stage.options.alpha"],
+    [ProviderStage.BETA, "settings.stage.options.beta"],
+    [ProviderStage.STABLE, "settings.stage.options.stable"],
+    [ProviderStage.EXPERIMENTAL, "settings.stage.options.experimental"],
+    [ProviderStage.UNMAINTAINED, "settings.stage.options.unmaintained"],
+    [ProviderStage.DEPRECATED, "settings.stage.options.deprecated"],
+    [undefined, undefined],
+    ["", undefined],
+    ["something_new", undefined],
+  ])("maps provider stage %s to %s", (stage, expected) => {
+    expect(getProviderStageTranslationKey(stage)).toBe(expected);
+  });
+
+  it.each([
+    [ProviderStage.STABLE, false],
+    [ProviderStage.ALPHA, true],
+    [ProviderStage.BETA, true],
+    [ProviderStage.EXPERIMENTAL, true],
+    [ProviderStage.UNMAINTAINED, true],
+    [ProviderStage.DEPRECATED, true],
+    [undefined, false],
+    ["something_new", false],
+  ])("badges provider stage %s: %s", (stage, expected) => {
+    expect(shouldShowStageBadge(stage)).toBe(expected);
+  });
+
+  it.each([
+    ["spotify", "spotify"],
+    ["spotify_connect", "Spotify Connect"],
+    ["ytmusic", "youtube_music"],
+  ])("builds a support issues link for %s", (domain, label) => {
+    expect(getProviderSupportIssuesUrl(domain)).toBe(
+      `https://github.com/music-assistant/support/issues?q=${encodeURIComponent(
+        `is:issue state:open label:"${label}"`,
+      )}`,
+    );
+  });
+});
+
+describe("the name a provider goes by", () => {
+  const config = providerConfig({
+    domain: "spotify",
+    name: "The kitchen's Spotify",
+    default_name: "Spotify (kitchen)",
+  });
+  const manifest = providerManifest({ domain: "spotify", name: "Spotify" });
+  const instance = { name: "Spotify" } as ProviderInstance;
+
+  it("prefers the custom name set on the configuration", () => {
+    expect(
+      providerDisplayName(
+        { ...config },
+        { ...instance, name: "Renamed" },
+        manifest,
+      ),
+    ).toBe("The kitchen's Spotify");
+  });
+
+  it("falls back on what the running instance calls itself", () => {
+    expect(
+      providerDisplayName(
+        { ...config, name: null },
+        { ...instance, name: "Renamed" },
+        manifest,
+      ),
+    ).toBe("Renamed");
+  });
+
+  it("falls back on the configured name when nothing is loaded", () => {
+    expect(providerDisplayName(config, undefined, manifest)).toBe(
+      "The kitchen's Spotify",
+    );
+  });
+
+  it("falls back past a custom name that was cleared", () => {
+    // renaming writes an empty string rather than dropping the key
+    expect(
+      providerDisplayName({ ...config, name: "" }, instance, manifest),
+    ).toBe("Spotify");
+  });
+
+  it("falls back on the default name the server gave it", () => {
+    expect(
+      providerDisplayName({ ...config, name: null }, undefined, manifest),
+    ).toBe("Spotify (kitchen)");
+  });
+
+  it("falls back on the manifest name", () => {
+    expect(
+      providerDisplayName(
+        { ...config, name: null, default_name: null },
+        undefined,
+        manifest,
+      ),
+    ).toBe("Spotify");
+  });
+
+  it("is empty when nothing names the provider", () => {
+    expect(
+      providerDisplayName({ ...config, name: null, default_name: null }),
+    ).toBe("");
+  });
+});
+
+describe("a provider that ships with the server", () => {
+  it("reads the flag off the manifest", () => {
+    expect(isBuiltinProvider(providerManifest({ builtin: true }))).toBe(true);
+    expect(isBuiltinProvider(providerManifest({ builtin: false }))).toBe(false);
+  });
+
+  it("claims nothing about a provider whose manifest is missing", () => {
+    expect(isBuiltinProvider(undefined)).toBe(false);
+  });
 });

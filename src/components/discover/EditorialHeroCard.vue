@@ -14,7 +14,7 @@
         class="ed-hero__img"
         loading="lazy"
         :src="art.image"
-        :alt="item.name"
+        alt=""
       />
     </div>
     <div class="ed-hero__scrim"></div>
@@ -34,7 +34,7 @@
         :size="18"
         fill="currentColor"
         :stroke-width="0"
-        class="ed-hero__play-icon"
+        class="ed-hero__play-icon play-icon-centered"
       />
     </span>
   </button>
@@ -43,11 +43,11 @@
 <script setup lang="ts">
 import { itemArtwork } from "@/components/discover/editorialArtwork";
 import {
-  getArtistsString,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
-} from "@/helpers/utils";
+} from "@/helpers/media_item_actions";
+import { getArtistsString } from "@/helpers/utils";
 import {
   type Album,
   type ItemMapping,
@@ -216,7 +216,6 @@ const onHold = (e: TouchEvent) => {
   z-index: 2;
 }
 .ed-hero__play-icon {
-  margin-left: 2px;
   fill: currentColor;
   stroke: none;
 }

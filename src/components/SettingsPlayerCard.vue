@@ -1,112 +1,86 @@
 <template>
-  <v-card
-    class="flex-fill rounded-lg player-card"
+  <Card
+    v-hold="onHold"
+    class="player-card min-h-[120px] cursor-pointer gap-3 rounded-(--radius-xl) p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
     :class="{
-      'player-disabled': !playerConfig.enabled,
-      'player-unavailable': !isAvailable,
-      'player-needs-setup': playerConfig.enabled && needsSetup,
+      'player-disabled opacity-60': !playerConfig.enabled,
+      'player-unavailable opacity-70': isUnavailable,
     }"
+    @click.capture="swallowClickAfterHold"
     @click="handleClick"
+    @click.right.prevent="handleMenu"
+    @touchstart.passive="onTouchStart"
   >
-    <div class="card-content">
-      <div class="card-header">
-        <div class="player-icon-wrapper">
-          <PlayerIcon :icon="player?.icon" :size="24" />
+    <div class="flex items-center gap-3">
+      <div
+        class="flex size-12 shrink-0 items-center justify-center rounded-(--radius-lg) bg-primary/15"
+      >
+        <PlayerIcon :icon="player?.icon" :size="24" />
+      </div>
+      <div class="min-w-0 flex-1">
+        <div
+          class="player-name flex items-center gap-1.5 text-base leading-snug font-medium"
+        >
+          <!-- the name is the focusable control; the card itself only follows the pointer -->
+          <button
+            type="button"
+            class="min-w-0 cursor-pointer truncate text-left"
+            data-testid="player-open"
+            @click.stop="handleClick"
+          >
+            {{ playerName }}
+          </button>
+          <PlayerDeviceBadge v-if="isThisDevice" label />
         </div>
-        <div class="player-info">
-          <div class="player-name">{{ playerName }}</div>
-          <div class="provider-name">{{ providerName }}</div>
+        <div class="mt-0.5 truncate text-[13px] text-muted-foreground">
+          {{ providerName }}
         </div>
-        <v-btn
-          icon="mdi-dots-vertical"
-          size="small"
-          variant="text"
-          class="menu-btn"
-          @click.stop="handleMenu"
+      </div>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        class="-mt-1 -mr-2 shrink-0 self-start"
+        :aria-label="menuLabel"
+        :title="menuLabel"
+        @click.stop="handleMenu"
+      >
+        <MoreVertical class="size-4" />
+      </Button>
+    </div>
+
+    <PlayerSetupWarning v-if="needsSetup" @setup="handleSetup" />
+
+    <div class="mt-auto flex items-center justify-between">
+      <div class="flex flex-1 flex-wrap gap-1">
+        <ProtocolChip
+          v-for="protocol in outputProtocols"
+          :key="protocol.output_protocol_id"
+          :protocol="protocol"
         />
       </div>
-
-      <!-- Player needs setup warning -->
-      <div
-        v-if="playerConfig.enabled && needsSetup"
-        class="player-warning-card"
-      >
-        <div class="player-warning-inline">
-          <v-icon icon="mdi-alert-circle" size="16" color="warning" />
-          <span class="player-warning-text">{{
-            $t("settings.player_needs_setup")
-          }}</span>
-        </div>
-        <v-btn
-          size="small"
-          color="warning"
-          variant="flat"
-          block
-          class="mt-2"
-          @click.stop="handleSetup"
-        >
-          {{ $t("settings.start_setup") }}
-        </v-btn>
-      </div>
-
-      <div class="card-footer">
-        <div class="protocol-chips">
-          <v-chip
-            v-for="protocol in outputProtocols"
-            :key="protocol.output_protocol_id"
-            size="x-small"
-            variant="tonal"
-            class="protocol-chip"
-            :class="{ 'protocol-chip--unavailable': !protocol.available }"
-          >
-            <template #prepend>
-              <ProviderIcon
-                :domain="protocol.protocol_domain!"
-                :size="14"
-                class="chip-icon"
-              />
-            </template>
-            {{
-              api.getProviderManifest(protocol.protocol_domain!)?.name ||
-              protocol.protocol_domain
-            }}
-          </v-chip>
-        </div>
-        <div class="status-icons">
-          <v-icon
-            v-if="!playerConfig.enabled"
-            icon="mdi-cancel"
-            size="16"
-            color="grey"
-            :title="$t('settings.player_disabled')"
-          />
-          <v-icon
-            v-else-if="needsSetup"
-            icon="mdi-alert-circle"
-            size="16"
-            color="warning"
-            :title="$t('settings.player_needs_setup')"
-          />
-          <v-icon
-            v-else-if="!isAvailable"
-            icon="mdi-timer-sand"
-            size="16"
-            color="grey"
-            :title="$t('settings.player_not_available')"
-          />
-        </div>
-      </div>
+      <PlayerStatusIcon
+        :enabled="playerConfig.enabled"
+        :unavailable="isUnavailable"
+        class="size-4"
+      />
     </div>
-  </v-card>
+  </Card>
 </template>
 
 <script setup lang="ts">
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import PlayerDeviceBadge from "@/components/PlayerDeviceBadge.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
-import { api } from "@/plugins/api";
+import PlayerSetupWarning from "@/components/PlayerSetupWarning.vue";
+import PlayerStatusIcon from "@/components/settings/players/PlayerStatusIcon.vue";
+import ProtocolChip from "@/components/ProtocolChip.vue";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useSettingsPlayer } from "@/composables/settings/players/useSettingsPlayer";
+import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { PlayerConfig } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { computed } from "vue";
+import { MoreVertical } from "@lucide/vue";
+import { computed, toRef } from "vue";
 
 const props = defineProps<{
   playerConfig: PlayerConfig;
@@ -118,37 +92,17 @@ const emit = defineEmits<{
   (e: "setup", playerConfig: PlayerConfig): void;
 }>();
 
-const player = computed(() => api.players[props.playerConfig.player_id]);
-const isAvailable = computed(() => player.value?.available ?? false);
-const needsSetup = computed(() => player.value?.needs_setup ?? false);
-const providerDomain = computed(
-  () =>
-    api.getProviderManifest(props.playerConfig.provider)?.domain ||
-    props.playerConfig.provider,
-);
-const providerName = computed(() => {
-  if (player.value?.device_info) {
-    return `${player.value.device_info.manufacturer} / ${player.value.device_info.model}`;
-  }
-  return (
-    api.getProviderManifest(props.playerConfig.provider)?.name ||
-    props.playerConfig.provider
-  );
-});
+const {
+  player,
+  playerName,
+  isUnavailable,
+  isThisDevice,
+  needsSetup,
+  providerName,
+  outputProtocols,
+} = useSettingsPlayer(toRef(props, "playerConfig"));
 
-const playerName = computed(() => {
-  return (
-    props.playerConfig.name ||
-    player.value?.name ||
-    props.playerConfig.default_name ||
-    props.playerConfig.player_id
-  );
-});
-
-const outputProtocols = computed(() => {
-  // Return only non-native protocols (ones with a protocol_domain)
-  return player.value?.output_protocols || [];
-});
+const menuLabel = computed(() => `${$t("more_options")}: ${playerName.value}`);
 
 const handleClick = () => {
   emit("click", props.playerConfig);
@@ -158,159 +112,10 @@ const handleMenu = (event: Event) => {
   emit("menu", event, props.playerConfig);
 };
 
+const { onHold, onTouchStart, swallowClickAfterHold } =
+  useHoldToOpenMenu(handleMenu);
+
 const handleSetup = () => {
   emit("setup", props.playerConfig);
 };
 </script>
-
-<style scoped>
-.player-card {
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-  cursor: pointer;
-}
-
-.player-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.player-disabled {
-  opacity: 0.6;
-}
-
-.player-unavailable {
-  opacity: 0.7;
-}
-
-.player-needs-setup {
-  border-left: 3px solid rgb(var(--v-theme-warning));
-}
-
-.player-warning-card {
-  background: rgba(var(--v-theme-warning), 0.08);
-  border-radius: 8px;
-  margin: 8px 0 0 0;
-  padding: 8px 12px;
-}
-
-.player-warning-inline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: rgb(var(--v-theme-warning));
-}
-
-.player-warning-text {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.card-content {
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  height: 100%;
-  min-height: 120px;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.player-icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: rgba(var(--v-theme-primary), 0.15);
-  flex-shrink: 0;
-}
-
-.player-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.player-name {
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.provider-name {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  margin-top: 2px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.menu-btn {
-  flex-shrink: 0;
-  align-self: flex-start;
-  margin: -4px -8px 0 0;
-}
-
-.card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: auto;
-  padding-top: 12px;
-}
-
-.protocol-chips {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  flex: 1;
-}
-
-.protocol-chip {
-  text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: 0.3px;
-}
-
-.protocol-chip--unavailable {
-  opacity: 0.4;
-}
-
-.status-icons {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.chip-icon {
-  margin: 0 !important;
-  width: auto !important;
-}
-
-.chip-icon :deep(div) {
-  margin-left: 0 !important;
-  margin-right: 4px !important;
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper) {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper svg) {
-  width: 14px !important;
-  height: 14px !important;
-}
-</style>

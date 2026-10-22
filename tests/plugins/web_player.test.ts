@@ -61,6 +61,7 @@ vi.mock("@/plugins/sendspin-connection", () => ({
 }));
 
 import { companionMode } from "@/plugins/companion";
+import { BrowserMediaControlsMode } from "@/helpers/device_settings";
 import {
   clearWebPlayerAudioUnlock,
   initializeWebPlayerModeSync,
@@ -93,15 +94,28 @@ async function applyPreferredMode(): Promise<WebPlayerMode> {
 
 function setRegularPreferences(
   webPlayerEnabled: boolean,
-  browserControlsEnabled: boolean,
+  browserControlsMode: string | null,
 ): void {
   window.localStorage.setItem(
     "frontend.settings.web_player_enabled",
     String(webPlayerEnabled),
   );
-  window.localStorage.setItem(
-    "frontend.settings.enable_browser_controls",
-    String(browserControlsEnabled),
+  if (browserControlsMode === null) {
+    window.localStorage.removeItem("frontend.settings.enable_browser_controls");
+  } else {
+    window.localStorage.setItem(
+      "frontend.settings.enable_browser_controls",
+      browserControlsMode,
+    );
+  }
+}
+
+// Mirrors saveDeviceSetting: the settings page writes the value and announces it.
+function saveWebPlayerEnabled(enabled: boolean): void {
+  const key = "frontend.settings.web_player_enabled";
+  window.localStorage.setItem(key, String(enabled));
+  window.dispatchEvent(
+    new StorageEvent("storage", { key, newValue: String(enabled) }),
   );
 }
 
@@ -139,7 +153,7 @@ describe("web player preferred mode", () => {
 
   it("uses receive-only Sendspin for Music Quiz guests", async () => {
     authState.guest = "music_quiz";
-    setRegularPreferences(false, true);
+    setRegularPreferences(false, "true");
 
     expect(await applyPreferredMode()).toBe(WebPlayerMode.SENDSPIN_ONLY);
   });
@@ -158,16 +172,84 @@ describe("web player preferred mode", () => {
   );
 
   it.each([
-    [true, true, WebPlayerMode.SENDSPIN_WITH_CONTROLS],
-    [true, false, WebPlayerMode.SENDSPIN_ONLY],
-    [false, true, WebPlayerMode.CONTROLS_ONLY],
-    [false, false, WebPlayerMode.DISABLED],
+    [
+      true,
+      BrowserMediaControlsMode.ACTIVE_PLAYER,
+      WebPlayerMode.SENDSPIN_WITH_CONTROLS,
+      BrowserMediaControlsMode.ACTIVE_PLAYER,
+    ],
+    [
+      true,
+      BrowserMediaControlsMode.WEB_PLAYER,
+      WebPlayerMode.SENDSPIN_WITH_CONTROLS,
+      BrowserMediaControlsMode.WEB_PLAYER,
+    ],
+    [
+      true,
+      BrowserMediaControlsMode.DISABLED,
+      WebPlayerMode.SENDSPIN_ONLY,
+      BrowserMediaControlsMode.DISABLED,
+    ],
+    [
+      false,
+      BrowserMediaControlsMode.ACTIVE_PLAYER,
+      WebPlayerMode.CONTROLS_ONLY,
+      BrowserMediaControlsMode.ACTIVE_PLAYER,
+    ],
+    [
+      false,
+      BrowserMediaControlsMode.WEB_PLAYER,
+      WebPlayerMode.DISABLED,
+      BrowserMediaControlsMode.WEB_PLAYER,
+    ],
+    [
+      false,
+      BrowserMediaControlsMode.DISABLED,
+      WebPlayerMode.DISABLED,
+      BrowserMediaControlsMode.DISABLED,
+    ],
+    [
+      false,
+      "true",
+      WebPlayerMode.DISABLED,
+      BrowserMediaControlsMode.WEB_PLAYER,
+    ],
+    [
+      true,
+      "false",
+      WebPlayerMode.SENDSPIN_ONLY,
+      BrowserMediaControlsMode.DISABLED,
+    ],
+    [
+      true,
+      null,
+      WebPlayerMode.SENDSPIN_WITH_CONTROLS,
+      BrowserMediaControlsMode.WEB_PLAYER,
+    ],
   ])(
-    "keeps regular user preferences (%s, %s) mapped to %s",
-    async (webPlayerEnabled, browserControlsEnabled, expectedMode) => {
-      setRegularPreferences(webPlayerEnabled, browserControlsEnabled);
+    "maps web player %s and browser controls %s to %s",
+    async (
+      webPlayerEnabled,
+      browserControlsMode,
+      expectedMode,
+      expectedControlsMode,
+    ) => {
+      setRegularPreferences(webPlayerEnabled, browserControlsMode);
 
       expect(await applyPreferredMode()).toBe(expectedMode);
+      expect(webPlayer.browserControlsMode).toBe(expectedControlsMode);
     },
   );
+
+  it("drops the web player as soon as the setting is switched off", async () => {
+    setRegularPreferences(true, BrowserMediaControlsMode.ACTIVE_PLAYER);
+    expect(await applyPreferredMode()).toBe(
+      WebPlayerMode.SENDSPIN_WITH_CONTROLS,
+    );
+
+    // The settings page reloads right after saving, so waiting for the next
+    // navigation would leave the server holding a player nobody listens to.
+    saveWebPlayerEnabled(false);
+    await vi.waitUntil(() => webPlayer.mode === WebPlayerMode.CONTROLS_ONLY);
+  });
 });

@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { guestEntryStateKey } from "@/composables/useGuestEntryResolver";
+import { guestEntryStateKey } from "@/composables/guest/useGuestEntryResolver";
 import {
   Card,
   CardDescription,

@@ -1,0 +1,369 @@
+import {
+  effectScope,
+  nextTick,
+  reactive,
+  ref,
+  type EffectScope,
+  type Ref,
+} from "vue";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PlaybackState } from "@/plugins/api/interfaces";
+
+interface MockQueue {
+  queue_id: string;
+  state: PlaybackState;
+  active: boolean;
+}
+
+interface MockPlayer {
+  player_id: string;
+  active_source?: string;
+  playback_state?: PlaybackState;
+  elapsed_time?: number;
+  elapsed_time_last_updated?: number;
+}
+
+const { apiMock, serverNowMock } = vi.hoisted(() => ({
+  apiMock: {
+    queues: {} as Record<string, MockQueue>,
+    queueElapsedTime: {} as Record<
+      string,
+      { elapsed_time?: number; elapsed_time_last_updated?: number }
+    >,
+  },
+  serverNowMock: vi.fn<() => number>(),
+}));
+
+vi.mock("@/plugins/api", () => ({
+  default: apiMock,
+}));
+
+vi.mock("@/composables/useServerTime", () => ({
+  serverNow: serverNowMock,
+}));
+
+// Reactive so the composable's watchEffect reacts to mutations, mirroring
+// the pattern used by the other composable tests in this directory.
+const storeMock = reactive({
+  activePlayerQueue: undefined as MockQueue | undefined,
+  activePlayer: undefined as MockPlayer | undefined,
+});
+
+vi.mock("@/plugins/store", () => ({
+  store: storeMock,
+}));
+
+// ---------------------------------------------------------------------------
+// Manual requestAnimationFrame driver
+// ---------------------------------------------------------------------------
+//
+// Records scheduled callbacks by id instead of auto-recursing, so a test can
+// flush exactly one frame and inspect how many frames are still pending.
+
+let pendingFrames: Map<number, FrameRequestCallback>;
+let nextRafId: number;
+
+function flushFrame(): void {
+  const callbacks = [...pendingFrames.values()];
+  pendingFrames.clear();
+  for (const callback of callbacks) callback(0);
+}
+
+// Hands back a driver for the frame the composable has scheduled, so a test can
+// keep ticking after the composable stopped scheduling frames itself. The frames
+// the callback re-arms are dropped, leaving `pendingFrames` a view of what the
+// composable scheduled on its own.
+function manualFrameDriver(): () => void {
+  const [callback] = pendingFrames.values();
+  if (!callback) throw new Error("no frame scheduled");
+
+  return () => {
+    const composableFrames = new Map(pendingFrames);
+    callback(0);
+    pendingFrames = composableFrames;
+  };
+}
+
+const NOW = 1_700_000_000;
+
+const PLAYER_ID = "p1";
+
+/**
+ * Seed the active player's queue.
+ *
+ * The resolver reaches the queue through the player's `active_source`, while the
+ * composable's own gate reads it off the store, so both are pointed at it.
+ */
+function seedQueue(overrides: Partial<MockQueue> = {}): void {
+  const queue: MockQueue = {
+    queue_id: "q1",
+    state: PlaybackState.PLAYING,
+    active: true,
+    ...overrides,
+  };
+  storeMock.activePlayerQueue = queue;
+  apiMock.queues[queue.queue_id] = queue;
+  seedPlayer({ active_source: queue.queue_id });
+}
+
+/** Seed the active player's own fields, keeping any queue already seeded. */
+function seedPlayer(player: Omit<MockPlayer, "player_id">): void {
+  storeMock.activePlayer = {
+    ...storeMock.activePlayer,
+    player_id: PLAYER_ID,
+    ...player,
+  };
+}
+
+// Stands in for the `enabled` ref and counts how often the gate re-runs: the
+// watchEffect is the only reader, so a read means the effect ran. It never
+// changes value, so it needs no reactivity of its own.
+function countingEnabled() {
+  let reads = 0;
+  return {
+    ref: {
+      get value() {
+        reads++;
+        return true;
+      },
+    } as unknown as Ref<boolean>,
+    reads: () => reads,
+  };
+}
+
+// Disposed in afterEach so a failed assertion cannot leave an effect
+// subscribed to the shared store mock and corrupt the tests that follow.
+let activeScope: EffectScope | undefined;
+
+async function runComposable(enabled?: Ref<boolean>) {
+  const { useLyricsElapsedTime } =
+    await import("@/composables/lyrics/useLyricsElapsedTime");
+  activeScope = effectScope();
+  const composable = activeScope.run(() => useLyricsElapsedTime(enabled));
+  if (!composable) throw new Error("useLyricsElapsedTime did not run");
+  return { ...composable, scope: activeScope };
+}
+
+describe("useLyricsElapsedTime", () => {
+  beforeEach(() => {
+    activeScope = undefined;
+    pendingFrames = new Map();
+    nextRafId = 0;
+    vi.stubGlobal(
+      "requestAnimationFrame",
+      vi.fn((callback: FrameRequestCallback) => {
+        const id = ++nextRafId;
+        pendingFrames.set(id, callback);
+        return id;
+      }),
+    );
+    vi.stubGlobal(
+      "cancelAnimationFrame",
+      vi.fn((id: number) => {
+        pendingFrames.delete(id);
+      }),
+    );
+
+    // reactive like the real map, so a timing push can be seen to (not) wake
+    // anything that subscribed to it
+    apiMock.queueElapsedTime = reactive({});
+    apiMock.queues = {};
+    storeMock.activePlayerQueue = undefined;
+    storeMock.activePlayer = undefined;
+    serverNowMock.mockReset();
+    serverNowMock.mockReturnValue(NOW);
+  });
+
+  afterEach(() => {
+    activeScope?.stop();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("reads a frozen position from a paused queue even while the loop runs", async () => {
+    seedQueue({ state: PlaybackState.PLAYING });
+    seedPlayer({ playback_state: PlaybackState.PLAYING });
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 42,
+      elapsed_time_last_updated: NOW,
+    };
+
+    const { elapsedTime } = await runComposable();
+    await nextTick();
+    // Captured while the queue still plays: pausing it below cancels the loop.
+    const tick = manualFrameDriver();
+
+    seedQueue({ state: PlaybackState.PAUSED });
+    await nextTick();
+    expect(pendingFrames.size).toBe(0);
+
+    // Driving the loop proves the position itself is frozen rather than merely
+    // unpolled.
+    tick();
+    expect(elapsedTime.value).toBe(42);
+
+    serverNowMock.mockReturnValue(NOW + 50);
+    tick();
+    expect(elapsedTime.value).toBe(42);
+  });
+
+  it("advances the position as serverNow advances while the queue plays", async () => {
+    seedQueue();
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 10,
+      elapsed_time_last_updated: NOW,
+    };
+
+    const { elapsedTime } = await runComposable();
+    await nextTick();
+    flushFrame();
+    expect(elapsedTime.value).toBe(10);
+
+    serverNowMock.mockReturnValue(NOW + 5);
+    flushFrame();
+    expect(elapsedTime.value).toBe(15);
+  });
+
+  it("runs the loop from the queue's state even when the player disagrees", async () => {
+    seedQueue({ state: PlaybackState.PLAYING });
+    seedPlayer({ playback_state: PlaybackState.PAUSED });
+
+    await runComposable();
+    await nextTick();
+
+    expect(pendingFrames.size).toBe(1);
+  });
+
+  it("stops the loop when the queue pauses even though the player keeps playing", async () => {
+    seedQueue({ state: PlaybackState.PLAYING });
+    seedPlayer({ playback_state: PlaybackState.PLAYING });
+
+    await runComposable();
+    await nextTick();
+    expect(pendingFrames.size).toBe(1);
+
+    seedQueue({ state: PlaybackState.PAUSED });
+    await nextTick();
+
+    expect(pendingFrames.size).toBe(0);
+  });
+
+  it("stops the loop when the queue becomes inactive", async () => {
+    seedQueue({ active: true });
+
+    await runComposable();
+    await nextTick();
+    expect(pendingFrames.size).toBe(1);
+
+    seedQueue({ active: false });
+    await nextTick();
+
+    expect(pendingFrames.size).toBe(0);
+  });
+
+  it("stops the loop when the enabled ref flips to false", async () => {
+    seedQueue();
+    const enabled = ref(true);
+
+    await runComposable(enabled);
+    await nextTick();
+    expect(pendingFrames.size).toBe(1);
+
+    enabled.value = false;
+    await nextTick();
+
+    expect(pendingFrames.size).toBe(0);
+  });
+
+  it("resolves the position when the enabled ref flips to true on a paused queue", async () => {
+    seedQueue({ state: PlaybackState.PAUSED });
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 42,
+      elapsed_time_last_updated: NOW,
+    };
+    const enabled = ref(false);
+
+    const { elapsedTime } = await runComposable(enabled);
+    await nextTick();
+    expect(elapsedTime.value).toBe(0);
+
+    enabled.value = true;
+    await nextTick();
+
+    // A paused queue schedules no frames, so the position has to be there
+    // without one.
+    expect(pendingFrames.size).toBe(0);
+    expect(elapsedTime.value).toBe(42);
+  });
+
+  it("holds the last queue position rather than adopting the player's", async () => {
+    seedQueue();
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 10,
+      elapsed_time_last_updated: NOW,
+    };
+
+    const { elapsedTime } = await runComposable();
+    await nextTick();
+    flushFrame();
+    expect(elapsedTime.value).toBe(10);
+
+    // the queue stops reporting a position while the player still reports one
+    delete apiMock.queueElapsedTime["q1"];
+    seedPlayer({
+      playback_state: PlaybackState.PLAYING,
+      elapsed_time: 999,
+      elapsed_time_last_updated: NOW,
+    });
+    await nextTick();
+    flushFrame();
+
+    expect(elapsedTime.value).toBe(10);
+  });
+
+  it("does not re-run the gate when the queue timing updates", async () => {
+    seedQueue();
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 10,
+      elapsed_time_last_updated: NOW,
+    };
+    const enabled = countingEnabled();
+
+    const { elapsedTime } = await runComposable(enabled.ref);
+    await nextTick();
+    const gateRuns = enabled.reads();
+    expect(gateRuns).toBeGreaterThan(0);
+
+    // a burst of QUEUE_TIME_UPDATED events
+    for (let second = 1; second <= 5; second++) {
+      apiMock.queueElapsedTime["q1"].elapsed_time = 10 + second;
+      await nextTick();
+    }
+
+    expect(enabled.reads()).toBe(gateRuns);
+    // and the loop is still running off those pushes
+    flushFrame();
+    expect(elapsedTime.value).toBe(15);
+  });
+
+  it("stops the loop and removes the visibilitychange listener when the scope is disposed", async () => {
+    const addEventListenerSpy = vi.spyOn(document, "addEventListener");
+    const removeEventListenerSpy = vi.spyOn(document, "removeEventListener");
+    seedQueue();
+
+    const { scope } = await runComposable();
+    await nextTick();
+    expect(pendingFrames.size).toBe(1);
+
+    scope.stop();
+
+    expect(pendingFrames.size).toBe(0);
+    const [, visibilityHandler] = addEventListenerSpy.mock.calls.find(
+      ([eventName]) => eventName === "visibilitychange",
+    )!;
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      "visibilitychange",
+      visibilityHandler,
+    );
+  });
+});

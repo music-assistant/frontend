@@ -19,6 +19,18 @@ vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: mockSetUserPreference,
 }));
 
+// signed in as a member unless a test says otherwise
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+
+import { authManager } from "@/plugins/auth";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
+
 import {
   DEFAULT_MENU_ITEMS,
   getMenuItems,
@@ -68,16 +80,44 @@ describe("getMenuItems (sidebar.menu preference)", () => {
     storeMock.libraryAudiobooksCount = 1;
     storeMock.libraryPodcastsCount = 1;
     storeMock.currentUser = { preferences: {} };
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
   });
 
   it("shows everything in default order for users without any customization", () => {
-    storeMock.enabledPlugins = new Set(["party", "music_quiz"]);
+    storeMock.enabledPlugins = new Set([
+      "party",
+      "music_quiz",
+      "ai_radio",
+      "milkdrop_visualizer",
+    ]);
 
     expect(getIds()).toEqual(DEFAULT_MENU_ITEMS);
     expect(getMenuItems().filter((item) => item.hidden)).toEqual([]);
     expect(getMenuItems().find((item) => item.id === "music_quiz")?.icon).toBe(
       MicVocal,
     );
+  });
+
+  it("groups the plugin-backed entries under the plugins section", () => {
+    storeMock.enabledPlugins = new Set([
+      "party",
+      "music_quiz",
+      "ai_radio",
+      "milkdrop_visualizer",
+    ]);
+
+    const pluginIds = getMenuItems()
+      .filter((item) => item.group === "plugins")
+      .map((item) => item.id);
+
+    expect(pluginIds).toEqual([
+      "party",
+      "music_quiz",
+      "ai_radio",
+      "milkdrop_visualizer",
+    ]);
   });
 
   it("ignores the retired menu_items whitelist preferences", () => {
@@ -153,6 +193,35 @@ describe("getMenuItems (sidebar.menu preference)", () => {
 
     expect(getIds()).not.toContain("party");
     expect(getIds()).not.toContain("music_quiz");
+  });
+
+  it("leaves out the Music Quiz for a role that may not host one", () => {
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+    storeMock.enabledPlugins = new Set(["music_quiz"]);
+
+    expect(getIds()).not.toContain("music_quiz");
+  });
+
+  it("offers a guest the Party, AI Radio and visualizer pages", () => {
+    // what these pages send fits the guest scopes, and their host controls
+    // sit behind scopes of their own
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+    storeMock.enabledPlugins = new Set([
+      "party",
+      "music_quiz",
+      "ai_radio",
+      "milkdrop_visualizer",
+    ]);
+
+    const pluginIds = getMenuItems()
+      .filter((item) => item.group === "plugins")
+      .map((item) => item.id);
+
+    expect(pluginIds).toEqual(["party", "ai_radio", "milkdrop_visualizer"]);
   });
 
   it("hides items", async () => {

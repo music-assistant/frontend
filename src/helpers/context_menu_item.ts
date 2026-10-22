@@ -1,3 +1,4 @@
+import { $t } from "@/plugins/i18n";
 import type { Component } from "vue";
 
 // Menu item for the app-wide context menu (ItemContextMenu / eventbus
@@ -6,7 +7,8 @@ import type { Component } from "vue";
 // without going through the Vue language plugin's virtual files.
 export interface ContextMenuItem {
   label: string;
-  labelArgs?: Array<string | number>;
+  // positional for a `{0}` message, named for a `{name}` one
+  labelArgs?: Array<string | number> | Record<string, string | number>;
   action?: () => void;
   icon?: string | Component;
   disabled?: boolean;
@@ -19,4 +21,16 @@ export interface ContextMenuItem {
   // are ignored except for the list key). Used for inline controls like the
   // lyrics-offset stepper.
   component?: Component;
+  // Submenu popout rendered as this component instead of a subItems list.
+  subComponent?: Component;
+  // Props passed through to `component` or `subComponent`.
+  componentProps?: Record<string, unknown>;
 }
+
+/** The label to show for a menu item, with its arguments filled in. */
+export const menuItemLabel = (
+  item: Pick<ContextMenuItem, "label" | "labelArgs">,
+): string =>
+  Array.isArray(item.labelArgs)
+    ? $t(item.label, item.labelArgs)
+    : $t(item.label, item.labelArgs ?? {});

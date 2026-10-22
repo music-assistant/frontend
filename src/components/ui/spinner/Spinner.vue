@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { $t } from "@/plugins/i18n";
 import { cn } from "@/lib/utils";
 import { Loader2Icon } from "@lucide/vue";
 import type { HTMLAttributes } from "vue";
@@ -6,11 +7,9 @@ import type { HTMLAttributes } from "vue";
 const props = withDefaults(
   defineProps<{
     class?: HTMLAttributes["class"];
-    size?: number;
   }>(),
   {
     class: undefined,
-    size: undefined,
   },
 );
 </script>
@@ -18,8 +17,7 @@ const props = withDefaults(
 <template>
   <Loader2Icon
     role="status"
-    aria-label="Loading"
-    :size="props.size"
-    :class="cn('size-4 animate-spin', props.class)"
+    :aria-label="$t('loading_short')"
+    :class="cn('size-4 shrink-0 animate-spin', props.class)"
   />
 </template>

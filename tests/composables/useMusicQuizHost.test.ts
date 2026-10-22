@@ -37,7 +37,7 @@ vi.mock("vue", async () => {
   };
 });
 
-vi.mock("@/composables/useMusicQuiz", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuiz", () => ({
   getMusicQuiz: mockGetMusicQuiz,
   getAvailableMusicQuizTypes: mockGetAvailableMusicQuizTypes,
   getMusicQuizPlaybackOptions: mockGetMusicQuizPlaybackOptions,
@@ -70,9 +70,10 @@ vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
 
+import { ApiCommandError } from "@/plugins/api/errors";
 import { EventType } from "@/plugins/api/interfaces";
-import type { MusicQuizCreateRequest } from "@/composables/useMusicQuiz";
-import { useMusicQuizHost } from "@/composables/useMusicQuizHost";
+import type { MusicQuizCreateRequest } from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizHost } from "@/composables/music-quiz/useMusicQuizHost";
 
 const HOST_STATE = {
   quiz_type: "guess_the_song",
@@ -267,7 +268,6 @@ describe("useMusicQuizHost", () => {
     expect(mockGetMusicQuizPlaybackOptions).toHaveBeenCalledOnce();
     expect(host.playbackOptions.value).toEqual(PLAYBACK_OPTIONS);
     expect(host.playbackOptionsLoading.value).toBe(false);
-    expect(host.playbackOptionsLegacy.value).toBe(false);
     expect(host.playbackOptionsError.value).toBe(false);
   });
 
@@ -299,23 +299,7 @@ describe("useMusicQuizHost", () => {
     expect(host.playbackOptionsLoading.value).toBe(false);
   });
 
-  it("silently falls back for playback options on older servers", async () => {
-    mockGetMusicQuizPlaybackOptions.mockRejectedValue(
-      "Invalid command: music_quiz/playback_options",
-    );
-    const notifyError = vi.fn();
-
-    const host = useMusicQuizHost({ notifyError });
-    await flushPromises();
-
-    expect(host.playbackOptions.value).toBeNull();
-    expect(host.playbackOptionsLoading.value).toBe(false);
-    expect(host.playbackOptionsLegacy.value).toBe(true);
-    expect(host.playbackOptionsError.value).toBe(false);
-    expect(notifyError).not.toHaveBeenCalled();
-  });
-
-  it("blocks legacy fallback after an initial playback discovery failure", async () => {
+  it("reports an initial playback discovery failure", async () => {
     mockGetMusicQuizPlaybackOptions.mockRejectedValue(
       new Error("Server unavailable"),
     );
@@ -326,7 +310,6 @@ describe("useMusicQuizHost", () => {
 
     expect(host.playbackOptions.value).toBeNull();
     expect(host.playbackOptionsLoading.value).toBe(false);
-    expect(host.playbackOptionsLegacy.value).toBe(false);
     expect(host.playbackOptionsError.value).toBe(true);
     expect(notifyError).toHaveBeenCalledWith(
       "providers.music_quiz.error_load_playback_options",
@@ -345,7 +328,6 @@ describe("useMusicQuizHost", () => {
     await host.fetchPlaybackOptions();
 
     expect(host.playbackOptions.value).toEqual(PLAYBACK_OPTIONS);
-    expect(host.playbackOptionsLegacy.value).toBe(false);
     expect(host.playbackOptionsError.value).toBe(false);
   });
 
@@ -359,7 +341,6 @@ describe("useMusicQuizHost", () => {
     await host.fetchPlaybackOptions();
 
     expect(host.playbackOptions.value).toEqual(PLAYBACK_OPTIONS);
-    expect(host.playbackOptionsLegacy.value).toBe(false);
     expect(host.playbackOptionsError.value).toBe(true);
   });
 
@@ -384,19 +365,6 @@ describe("useMusicQuizHost", () => {
 
     expect(host.playbackOptions.value).toEqual(refreshedOptions);
     expect(host.playbackOptionsLoading.value).toBe(false);
-  });
-
-  it("keeps optional game types hidden on older servers", async () => {
-    mockGetAvailableMusicQuizTypes.mockRejectedValue(
-      "Invalid command: music_quiz/available_quiz_types",
-    );
-    const notifyError = vi.fn();
-
-    const host = useMusicQuizHost({ notifyError });
-    await flushPromises();
-
-    expect(host.availableQuizTypes.value).toEqual([]);
-    expect(notifyError).not.toHaveBeenCalled();
   });
 
   it("treats a null response as setup state without a toast", async () => {
@@ -525,8 +493,10 @@ describe("useMusicQuizHost", () => {
     },
   );
 
-  it("treats a no-active-game string as an empty state without a toast", async () => {
-    mockGetMusicQuiz.mockRejectedValue("There is no active Music Quiz game");
+  it("treats a no-active-game error as an empty state without a toast", async () => {
+    mockGetMusicQuiz.mockRejectedValue(
+      new ApiCommandError("Er is geen actief Music Quiz spel.", 1001),
+    );
     const notifyError = vi.fn();
     const host = useMusicQuizHost({ notifyError });
     await flushPromises();
@@ -583,18 +553,6 @@ describe("useMusicQuizHost", () => {
 
     resolveDelete();
     await expect(deleting).resolves.toBe(true);
-    expect(host.state.value).toBeNull();
-  });
-
-  it("treats a no-active-game Error as an empty state without a toast", async () => {
-    mockGetMusicQuiz.mockRejectedValue(
-      new Error("There is no active Music Quiz game"),
-    );
-    const notifyError = vi.fn();
-    const host = useMusicQuizHost({ notifyError });
-    await flushPromises();
-
-    expect(notifyError).not.toHaveBeenCalled();
     expect(host.state.value).toBeNull();
   });
 

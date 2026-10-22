@@ -19,6 +19,7 @@
         {{ $t("providers.music_quiz.qr_unavailable") }}
       </p>
       <InvitationShareActions
+        v-if="!hideShareActions"
         :join-link="joinLink"
         :title="$t('providers.music_quiz.share_title')"
         :description="$t('providers.music_quiz.share_description')"
@@ -45,8 +46,10 @@ const props = withDefaults(
     joinLink: string;
     size?: number;
     caption?: string;
+    // a cast TV or kiosk has no way to copy or share the link
+    hideShareActions?: boolean;
   }>(),
-  { size: 220, caption: undefined },
+  { size: 220, caption: undefined, hideShareActions: false },
 );
 
 const qrCanvas = ref<HTMLCanvasElement | null>(null);

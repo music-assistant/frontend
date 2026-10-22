@@ -91,11 +91,13 @@ const attributionId = useId();
 const autoEnableSuppressed = ref(false);
 
 const {
+  canListenIn,
   isListeningIn,
   busy,
   shouldShowListenInToggle,
   enableListenIn: startListenIn,
   disableListenIn: stopListenIn,
+  checkCanListenIn,
 } = useListenIn({
   domain: props.domain,
   mode: () => props.mode,
@@ -139,6 +141,24 @@ async function disableListenIn() {
   autoEnableSuppressed.value = true;
   await stopListenIn();
 }
+
+/** Starts listening in when a gesture-driven auto-enable applies. */
+async function requestAutoEnable() {
+  if (
+    props.mode !== "remote" ||
+    autoEnableSuppressed.value ||
+    isListeningIn.value ||
+    busy.value
+  ) {
+    return;
+  }
+  // Availability rechecks are debounced, so it may not have settled yet
+  if (!canListenIn.value) await checkCanListenIn();
+  if (!canListenIn.value) return;
+  await enableListenIn();
+}
+
+defineExpose({ busy, requestAutoEnable });
 
 function shouldAutoEnable() {
   return (

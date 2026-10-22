@@ -5,32 +5,43 @@ import {
   PlaybackState,
   type Player,
   PlayerFeature,
+  type PlayerMedia,
   PlayerType,
+  type Scope,
 } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, emitContextMenu } = vi.hoisted(() => ({
+const { apiMock, emitContextMenu, hasScope } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, Player>,
     queues: {} as Record<
       string,
       {
+        active?: boolean;
         extra_attributes?: {
           play_action_in_progress?: boolean;
         };
         items?: number;
       }
     >,
-    playerCommandPlayPause: vi.fn(),
-    playerCommandPowerToggle: vi.fn(),
+    playerCommandPlayPause:
+      vi.fn<MusicAssistantApi["playerCommandPlayPause"]>(),
+    playerCommandPowerToggle:
+      vi.fn<MusicAssistantApi["playerCommandPowerToggle"]>(),
   },
   emitContextMenu: vi.fn(),
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
 }));
 
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope },
 }));
 
 vi.mock("@/plugins/store", () => ({
@@ -69,19 +80,33 @@ vi.mock("@/helpers/player_menu_items", () => ({
   getPlayerMenuItems: () => [],
 }));
 
+vi.mock("@/helpers/player_settings_actions", () => ({
+  getSetupRequiredPlayerMenuItems: () => [{ label: "configure_player" }],
+}));
+
 vi.mock("@/helpers/utils", () => ({
   getMediaImageUrl: (url: string) => url,
-  getPlayerName: (player: Player) => {
-    const childCount = player.group_members.filter(
-      (playerId) =>
-        playerId !== player.player_id && apiMock.players[playerId]?.available,
-    ).length;
-    return player.type !== PlayerType.GROUP && childCount > 0
-      ? `${player.name} +${childCount}`
-      : player.name;
-  },
-  isBuiltinPlayer: (player: Player) => player.player_id === "builtin",
 }));
+
+vi.mock("@/helpers/players", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/helpers/players")>();
+  const getPlayerDisplayName = (player: Player) =>
+    player.player_id === "builtin" ? "this_device" : player.name;
+  return {
+    ...actual,
+    isBuiltinPlayer: (player: Player) => player.player_id === "builtin",
+    getPlayerDisplayName,
+    getPlayerName: (player: Player) => {
+      const childCount = player.group_members.filter(
+        (playerId) =>
+          playerId !== player.player_id && apiMock.players[playerId]?.available,
+      ).length;
+      return player.type !== PlayerType.GROUP && childCount > 0
+        ? `${getPlayerDisplayName(player)} +${childCount}`
+        : getPlayerDisplayName(player);
+    },
+  };
+});
 
 const ButtonStub = {
   template: "<button><slot /></button>",
@@ -96,14 +121,36 @@ const BadgeStub = {
 };
 
 const VolumeControlStub = {
+  props: ["showMemberControls", "showVolumeControl"],
   emits: ["toggle-child-volumes"],
   template: `
     <button
       class="volume-control"
+      :data-member-controls="showMemberControls ? 'true' : 'false'"
+      :data-volume-control="showVolumeControl ? 'true' : 'false'"
       @click="$emit('toggle-child-volumes')"
     />
   `,
 };
+
+// the server sends every PlayerMedia key, using null for the ones it has no value for
+function createPlayerMedia(overrides: Partial<PlayerMedia> = {}): PlayerMedia {
+  return {
+    uri: "test://track",
+    media_type: MediaType.TRACK,
+    title: null,
+    artist: null,
+    album: null,
+    image_url: null,
+    palette: null,
+    duration: null,
+    source_id: null,
+    elapsed_time: null,
+    elapsed_time_last_updated: null,
+    queue_item_id: null,
+    ...overrides,
+  };
+}
 
 function createPlayer(overrides: Partial<Player> = {}): Player {
   return {
@@ -115,6 +162,9 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     device_info: {
       model: "Test",
       manufacturer: "Test",
+      software_version: null,
+      model_id: null,
+      manufacturer_id: null,
       identifiers: {
         [IdentifierType.MAC_ADDRESS]: "",
         [IdentifierType.SERIAL_NUMBER]: "",
@@ -138,13 +188,24 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     group_volume: null,
     group_volume_muted: null,
     hide_in_ui: false,
+    private: false,
     icon: "speaker",
     power_control: "power",
     volume_control: "volume",
     mute_control: "mute",
     needs_setup: false,
+    has_setup_flow: false,
     output_protocols: [],
     active_output_protocol: null,
+    elapsed_time: null,
+    elapsed_time_last_updated: null,
+    current_media: null,
+    active_source: null,
+    active_sound_mode: null,
+    active_group: null,
+    synced_to: null,
+    sleep_timer_expires_at: null,
+    active_source_audio: null,
     ...overrides,
   };
 }
@@ -152,7 +213,14 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
 function mountPlayerCard(
   player: Player,
   props: {
+    groupControlExpanded?: boolean;
+    groupControlsId?: string;
+    showDisabledGroupControl?: boolean;
+    showMemberControls?: boolean;
+    showSelectedIndicator?: boolean;
     showGroupMemberNames?: boolean;
+    groupMemberLayout?: "subtitle" | "subtitle-list" | "title-list";
+    showVolumeControl?: boolean;
     stackMediaDetails?: boolean;
   } = {},
 ) {
@@ -191,7 +259,9 @@ function mountPlayerCard(
 describe("PlayerCard", () => {
   beforeEach(() => {
     apiMock.players = {};
+    apiMock.queues = {};
     store.deviceType = "desktop";
+    hasScope.mockReturnValue(true);
   });
 
   it("uses a primary border for the active player", () => {
@@ -204,6 +274,21 @@ describe("PlayerCard", () => {
     expect(wrapper.classes()).toContain("border-primary");
   });
 
+  it("labels the selected player when requested by the selector", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        player_id: "active",
+      }),
+      { showSelectedIndicator: true },
+    );
+
+    expect(wrapper.classes()).toContain("ring-1");
+    expect(wrapper.classes()).toContain("pt-4");
+    const badge = wrapper.get(".selected-player-badge");
+    expect(badge.text()).toBe("player_tip.selected_player");
+    expect(badge.classes()).toContain("rounded-full");
+  });
+
   it("keeps the player details in the selection action name", () => {
     const wrapper = mountPlayerCard(createPlayer());
     const action = wrapper.find(".player-select-action");
@@ -211,6 +296,17 @@ describe("PlayerCard", () => {
     expect(action.attributes("aria-label")).toBeUndefined();
     expect(action.text()).toContain("tooltip.select_player");
     expect(action.text()).toContain("Kitchen");
+  });
+
+  it("includes queue status in the selection action name", () => {
+    const player = createPlayer();
+    apiMock.queues[player.player_id] = { active: true, items: 0 };
+
+    const wrapper = mountPlayerCard(player);
+
+    expect(wrapper.find(".player-select-action").text()).toContain(
+      "queue_empty",
+    );
   });
 
   it("keeps setup-required player details at full opacity", () => {
@@ -227,15 +323,49 @@ describe("PlayerCard", () => {
     expect(wrapper.classes()).not.toContain("opacity-40");
     expect(wrapper.find(".player-card-name").text()).toBe("Kitchen");
     expect(wrapper.text()).toContain("settings.setup_required");
+    expect(wrapper.find(".player-select-action").text()).toContain(
+      "configure_player",
+    );
+    expect(wrapper.find(".player-select-action").text()).toContain(
+      "settings.setup_required",
+    );
+    expect(wrapper.find(".player-select-action").text()).not.toContain(
+      "tooltip.select_player",
+    );
     expect(
       wrapper.find(".player-select-action").attributes("disabled"),
     ).toBeUndefined();
     expect(wrapper.find('[aria-label="play"]').attributes("disabled")).toBe("");
-    expect(
-      wrapper
-        .find('[aria-label="tooltip.more_options"]')
-        .attributes("disabled"),
-    ).toBe("");
+  });
+
+  it("offers the setup menu for a player that needs setup", async () => {
+    vi.clearAllMocks();
+    const wrapper = mountPlayerCard(
+      createPlayer({ available: false, needs_setup: true }),
+    );
+    const menuButton = wrapper.find('[aria-label="tooltip.more_options"]');
+
+    expect(menuButton.attributes("disabled")).toBeUndefined();
+    await menuButton.trigger("click");
+
+    expect(emitContextMenu).toHaveBeenCalledWith(
+      "contextmenu",
+      expect.objectContaining({ items: [{ label: "configure_player" }] }),
+    );
+  });
+
+  it("keeps the menu of a player that needs setup from a role that may not set it up", async () => {
+    vi.clearAllMocks();
+    hasScope.mockReturnValue(false);
+    const wrapper = mountPlayerCard(
+      createPlayer({ available: false, needs_setup: true }),
+    );
+    const menuButton = wrapper.find('[aria-label="tooltip.more_options"]');
+
+    expect(menuButton.attributes("disabled")).toBeDefined();
+    await wrapper.trigger("contextmenu");
+
+    expect(emitContextMenu).not.toHaveBeenCalled();
   });
 
   it("lists every player name in a manual group", () => {
@@ -275,20 +405,183 @@ describe("PlayerCard", () => {
     expect(wrapper.find(".player-card-name").text()).toBe("Kitchen +2");
     expect(members.text()).toBe("Kitchen • Office • Patio");
     expect(members.classes()).toContain("text-[11px]");
+    expect(
+      wrapper
+        .find(".player-select-action")
+        .text()
+        .match(/Kitchen/g),
+    ).toHaveLength(1);
   });
 
-  it("keeps the this-device badge accessible on phones", () => {
-    store.deviceType = "phone";
+  it("names a built-in group member after this device", () => {
+    const builtin = createPlayer({
+      player_id: "builtin",
+      name: "Marcel's Mac (Chrome)",
+    });
+    const parent = createPlayer({
+      group_members: ["player", "builtin"],
+    });
+    apiMock.players = {
+      [parent.player_id]: parent,
+      [builtin.player_id]: builtin,
+    };
+
+    const wrapper = mountPlayerCard(parent, {
+      showGroupMemberNames: true,
+      groupMemberLayout: "subtitle-list",
+    });
+
+    expect(wrapper.find(".player-card-name").text()).toBe("Kitchen");
+    expect(wrapper.find(".player-card-group-members").text()).toBe(
+      "this_device",
+    );
+  });
+
+  it("can render grouped players as separate title lines", () => {
+    const office = createPlayer({
+      player_id: "office",
+      name: "Office",
+    });
+    const patio = createPlayer({
+      player_id: "patio",
+      name: "Patio",
+    });
+    const parent = createPlayer({
+      group_members: ["office", "player", "patio"],
+    });
+    apiMock.players = {
+      [parent.player_id]: parent,
+      [office.player_id]: office,
+      [patio.player_id]: patio,
+    };
+
+    const wrapper = mountPlayerCard(parent, {
+      groupMemberLayout: "title-list",
+      showGroupMemberNames: true,
+    });
+
+    expect(
+      wrapper.findAll(".player-card-name").map((name) => name.text()),
+    ).toEqual(["Kitchen", "Office", "Patio"]);
+    expect(wrapper.find(".player-card-group-members").exists()).toBe(false);
+  });
+
+  it("can render each grouped child on a larger subtitle line", () => {
+    const office = createPlayer({
+      player_id: "office",
+      name: "Office",
+    });
+    const patio = createPlayer({
+      player_id: "patio",
+      name: "Patio",
+    });
+    const parent = createPlayer({
+      group_members: ["office", "player", "patio"],
+    });
+    apiMock.players = {
+      [parent.player_id]: parent,
+      [office.player_id]: office,
+      [patio.player_id]: patio,
+    };
+
+    const wrapper = mountPlayerCard(parent, {
+      groupMemberLayout: "subtitle-list",
+      showGroupMemberNames: true,
+    });
+
+    expect(wrapper.find(".player-card-name").text()).toBe("Kitchen");
+    expect(
+      wrapper.findAll(".player-card-group-member").map((name) => name.text()),
+    ).toEqual(["Office", "Patio"]);
+    expect(wrapper.find(".player-card-group-member").classes()).toContain(
+      "text-xs",
+    );
+  });
+
+  it("expands grouped child names beyond the first two", async () => {
+    const children = Array.from({ length: 5 }, (_, index) =>
+      createPlayer({
+        player_id: `child-${index}`,
+        name: `Child ${index + 1}`,
+      }),
+    );
+    const parent = createPlayer({
+      group_members: ["player", ...children.map((child) => child.player_id)],
+    });
+    apiMock.players = {
+      [parent.player_id]: parent,
+      ...Object.fromEntries(children.map((child) => [child.player_id, child])),
+    };
+    const wrapper = mountPlayerCard(parent, {
+      groupMemberLayout: "subtitle-list",
+      showGroupMemberNames: true,
+    });
+    const visibleNames = () =>
+      wrapper.findAll(".player-card-group-member").map((name) => name.text());
+    const toggle = wrapper.get(".player-card-group-toggle");
+
+    expect(visibleNames()).toEqual(["Child 1", "Child 2"]);
+    expect(toggle.attributes("data-remaining-count")).toBe("3");
+
+    await toggle.trigger("click");
+    expect(visibleNames()).toEqual([
+      "Child 1",
+      "Child 2",
+      "Child 3",
+      "Child 4",
+      "Child 5",
+    ]);
+    expect(toggle.attributes("aria-expanded")).toBe("true");
+    expect(wrapper.emitted("click")).toBeUndefined();
+
+    await toggle.trigger("click");
+    expect(visibleNames()).toEqual(["Child 1", "Child 2"]);
+  });
+
+  it("names the built-in player after this device, with an icon-only badge", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        player_id: "builtin",
+        name: "Marcel's Mac (Chrome)",
+      }),
+    );
+    const badge = wrapper.get(".player-device-badge");
+
+    expect(wrapper.get(".player-card-name").text()).toBe("this_device");
+    expect(wrapper.text()).not.toContain("Marcel's Mac (Chrome)");
+    expect(badge.attributes("aria-hidden")).toBe("true");
+    expect(badge.find(".player-device-badge-label").exists()).toBe(false);
+  });
+
+  it.each([
+    ["desktop", "lucide-monitor"],
+    ["phone", "lucide-smartphone"],
+    ["tablet", "lucide-tablet"],
+  ] as const)("shows the %s form factor on the badge", (deviceType, icon) => {
+    store.deviceType = deviceType;
 
     const wrapper = mountPlayerCard(
       createPlayer({
         player_id: "builtin",
       }),
     );
-    const badgeLabel = wrapper.find(".player-device-badge-label");
 
-    expect(badgeLabel.text()).toBe("this_device");
-    expect(badgeLabel.classes()).toContain("sr-only");
+    expect(wrapper.get(".player-device-badge").find(`.${icon}`).exists()).toBe(
+      true,
+    );
+  });
+
+  it("uses a neutral outline for the this-device badge", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        player_id: "builtin",
+      }),
+    );
+    const badge = wrapper.get(".player-device-badge");
+
+    expect(badge.classes()).toContain("border-foreground/25");
+    expect(badge.classes()).toContain("text-muted-foreground");
+    expect(badge.classes()).toContain("shadow-none");
   });
 
   it("shows member names beneath a dedicated group title", () => {
@@ -325,12 +618,10 @@ describe("PlayerCard", () => {
   it("stacks player identity above loaded media only when requested", () => {
     const player = createPlayer({
       playback_state: PlaybackState.PLAYING,
-      current_media: {
-        uri: "test://track",
-        media_type: MediaType.TRACK,
+      current_media: createPlayerMedia({
         title: "Hate Me Now",
         artist: "Nas",
-      },
+      }),
     });
 
     const mainCard = mountPlayerCard(player);
@@ -381,11 +672,9 @@ describe("PlayerCard", () => {
       const wrapper = mountPlayerCard(
         createPlayer({
           playback_state: playbackState,
-          current_media: {
-            uri: "test://track",
-            media_type: MediaType.TRACK,
+          current_media: createPlayerMedia({
             image_url: "https://example.test/cover.jpg",
-          },
+          }),
         }),
       );
 
@@ -398,11 +687,9 @@ describe("PlayerCard", () => {
   it("shows the player icon instead of idle artwork", () => {
     const wrapper = mountPlayerCard(
       createPlayer({
-        current_media: {
-          uri: "test://track",
-          media_type: MediaType.TRACK,
+        current_media: createPlayerMedia({
           image_url: "https://example.test/cover.jpg",
-        },
+        }),
       }),
     );
 
@@ -447,7 +734,10 @@ describe("PlayerCard", () => {
     expect(apiMock.playerCommandPlayPause).toHaveBeenCalledWith(
       player.player_id,
     );
-    expect(wrapper.emitted("toggle-member-controls")).toEqual([[player]]);
+    const memberControlEvent = wrapper.emitted("toggle-member-controls");
+    expect(memberControlEvent).toHaveLength(1);
+    expect(memberControlEvent?.[0][0]).toEqual(player);
+    expect(memberControlEvent?.[0][1]).toBeInstanceOf(HTMLElement);
     expect(wrapper.emitted("toggle-child-volumes")).toEqual([[player]]);
     expect(emitContextMenu).toHaveBeenCalledWith(
       "contextmenu",
@@ -456,6 +746,64 @@ describe("PlayerCard", () => {
         posY: 2,
       }),
     );
+  });
+
+  it("exposes the group panel state from the group-count control", async () => {
+    const player = createPlayer({
+      group_members: ["player", "child"],
+    });
+    const wrapper = mountPlayerCard(player, {
+      groupControlExpanded: true,
+      groupControlsId: "group-panel",
+    });
+    const control = wrapper.get("[data-player-group-control]");
+
+    expect(control.text()).toContain("2");
+    expect(control.attributes("aria-controls")).toBe("group-panel");
+    expect(control.attributes("aria-expanded")).toBe("true");
+    await control.trigger("click");
+    expect(wrapper.emitted("toggle-member-controls")?.[0][0]).toEqual(player);
+  });
+
+  it("renders inline grouping without an inactive volume slider", () => {
+    const wrapper = mountPlayerCard(createPlayer(), {
+      groupControlsId: "group-panel",
+      showMemberControls: true,
+      showVolumeControl: false,
+    });
+    const controls = wrapper.get(".volume-control");
+
+    expect(controls.attributes("id")).toBe("group-panel");
+    expect(controls.attributes("data-member-controls")).toBe("true");
+    expect(controls.attributes("data-volume-control")).toBe("false");
+  });
+
+  it("reserves a neutral disabled grouping slot beside the menu", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        supported_features: [],
+        can_group_with: [],
+      }),
+      { showDisabledGroupControl: true },
+    );
+    const actions = wrapper
+      .find(".player-card-actions")
+      .findAll("button")
+      .map((button) => button.attributes("aria-label"));
+    const groupControl = wrapper.get("[data-player-group-control]");
+    const count = wrapper.get("[data-player-group-count]");
+
+    expect(actions).toEqual([
+      "play",
+      "tooltip.group_members: 1",
+      "tooltip.more_options",
+    ]);
+    expect(groupControl.attributes("disabled")).toBeDefined();
+    // the badge takes the speaker's own colour rather than an accent, so a
+    // disabled slot stays as quiet as the icon it sits on
+    expect(count.classes()).toContain("bg-muted-foreground/90");
+    expect(count.get("span").classes()).toContain("text-background");
+    expect(count.classes()).not.toContain("bg-primary");
   });
 
   it("stops the native context-menu event at the card", () => {

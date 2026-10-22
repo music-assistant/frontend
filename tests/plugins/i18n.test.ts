@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   canonicalizeLocale,
   getLocaleDisplayName,
+  i18n,
   resolveLocale,
 } from "@/plugins/i18n";
 
@@ -60,6 +61,67 @@ describe("resolveLocale", () => {
   it("falls back to English for an unknown language", () => {
     expect(resolveLocale("ja", AVAILABLE)).toBe("en");
     expect(resolveLocale("xx-YY", AVAILABLE)).toBe("en");
+  });
+});
+
+describe("pluralized settings messages", () => {
+  let originalLocale: string;
+
+  beforeEach(() => {
+    originalLocale = i18n.global.locale.value;
+    i18n.global.locale.value = "en";
+  });
+
+  afterEach(() => {
+    i18n.global.locale.value = originalLocale;
+  });
+
+  it("interpolates the provider total in the en locale", () => {
+    expect(
+      i18n.global.t("settings.providers_total", 1, {
+        named: { count: 1 },
+      }),
+    ).toBe("1 total");
+    expect(
+      i18n.global.t("settings.providers_total", 2, {
+        named: { count: 2 },
+      }),
+    ).toBe("2 total");
+  });
+
+  it("pluralizes player totals in the en locale", () => {
+    expect(
+      i18n.global.t("settings.players_total", 1, {
+        named: { count: 1 },
+      }),
+    ).toBe("1 total player");
+    expect(
+      i18n.global.t("settings.players_total", 2, {
+        named: { count: 2 },
+      }),
+    ).toBe("2 total players");
+  });
+
+  // The genre table's selection count carries two numbers, so the plural form
+  // is chosen by the selected count rather than by a single `count` argument.
+  it("pluralizes the genre table selection on the selected count", () => {
+    expect(
+      i18n.global.t("settings.genre_table_rows_selected", 1, {
+        named: { selected: 1, total: 57 },
+      }),
+    ).toBe("1 of 57 row selected.");
+    expect(
+      i18n.global.t("settings.genre_table_rows_selected", 3, {
+        named: { selected: 3, total: 57 },
+      }),
+    ).toBe("3 of 57 rows selected.");
+    // A single row out of a single row: still singular, so the form cannot be
+    // coming from the total.
+    expect(
+      i18n.global.t("settings.genre_table_rows_selected", 1, {
+        named: { selected: 1, total: 1 },
+      }),
+    ).toBe("1 of 1 row selected.");
   });
 });
 

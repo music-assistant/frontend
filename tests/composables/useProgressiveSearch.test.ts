@@ -1,30 +1,36 @@
 import {
   MediaType,
   ProviderFeature,
+  type Genre,
   type SearchResults,
   type Track,
 } from "@/plugins/api/interfaces";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { effectScope, nextTick, ref, type EffectScope } from "vue";
+import type { MusicAssistantApi } from "@/plugins/api";
+import { track } from "../fixtures/track";
+import { genre } from "../fixtures/genre";
+import { providerMapping } from "../fixtures/providerMapping";
 
 const { mockSearch, mockGetLibraryGenres, mockProviders, mockManifests } =
   vi.hoisted(() => {
     return {
-      mockSearch: vi.fn(),
-      mockGetLibraryGenres: vi.fn(),
+      mockSearch: vi.fn<MusicAssistantApi["search"]>(),
+      mockGetLibraryGenres: vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
       mockProviders: {} as Record<string, unknown>,
       mockManifests: {} as Record<string, unknown>,
     };
   });
 
-vi.mock("@/plugins/api", () => ({
-  api: {
+vi.mock("@/plugins/api", () => {
+  const api = {
     providers: mockProviders,
     providerManifests: mockManifests,
     search: mockSearch,
     getLibraryGenres: mockGetLibraryGenres,
-  },
-}));
+  };
+  return { api, default: api };
+});
 
 import {
   LIBRARY_SEARCH_TARGET,
@@ -48,13 +54,39 @@ const results = (partial: Partial<SearchResults>): SearchResults => ({
   ...partial,
 });
 
-const track = (itemId: string, name: string): Track =>
-  ({
+const trackFixture = (
+  itemId: string,
+  name: string,
+  provider = "library",
+): Track =>
+  track({
     item_id: itemId,
+    provider,
     name,
-    uri: `test://track/${itemId}`,
-    media_type: MediaType.TRACK,
-  }) as Track;
+  });
+
+// a track mapped to the given spotify item id
+const spotifyMappedTrack = (
+  itemId: string,
+  name: string,
+  provider: string,
+  spotifyItemId: string,
+): Track =>
+  track({
+    item_id: itemId,
+    provider,
+    name,
+    provider_mappings: [
+      providerMapping({
+        item_id: spotifyItemId,
+        provider_domain: "spotify",
+        provider_instance: "spotify-a",
+      }),
+    ],
+  });
+
+const genreFixture = (itemId: string, name: string): Genre =>
+  genre({ item_id: itemId, name });
 
 const provider = (
   instanceId: string,
@@ -131,12 +163,14 @@ describe("useProgressiveSearch", () => {
 
   it("fires one request per target and merges results library first", async () => {
     mockSearch.mockImplementation(
-      (_query, _mediaTypes, _limit, providers: string[]) => {
+      (_query, _mediaTypes, _limit, providers: string[] = []) => {
         if (providers[0] === LIBRARY_SEARCH_TARGET)
-          return Promise.resolve(results({ tracks: [track("l1", "Lib hit")] }));
+          return Promise.resolve(
+            results({ tracks: [trackFixture("l1", "Lib hit")] }),
+          );
         if (providers[0] === "spotify")
           return Promise.resolve(
-            results({ tracks: [track("s1", "Spotify hit")] }),
+            results({ tracks: [trackFixture("s1", "Spotify hit", "spotify")] }),
           );
         return Promise.resolve(emptyResults());
       },
@@ -159,15 +193,95 @@ describe("useProgressiveSearch", () => {
     expect(loading.value).toBe(false);
   });
 
-  it("floats exact name matches above earlier fuzzy results", async () => {
+  it("interleaves provider results after the library results", async () => {
     mockSearch.mockImplementation(
-      (_query, _mediaTypes, _limit, providers: string[]) => {
+      (_query, _mediaTypes, _limit, providers: string[] = []) => {
         if (providers[0] === LIBRARY_SEARCH_TARGET)
           return Promise.resolve(
-            results({ tracks: [track("l1", "Queen tribute")] }),
+            results({ tracks: [trackFixture("l1", "Lib 1")] }),
+          );
+        if (providers[0] === "fs1")
+          return Promise.resolve(
+            results({
+              tracks: [
+                trackFixture("f1", "Fs 1", "fs1"),
+                trackFixture("f2", "Fs 2", "fs1"),
+                trackFixture("f3", "Fs 3", "fs1"),
+              ],
+            }),
           );
         if (providers[0] === "spotify")
-          return Promise.resolve(results({ tracks: [track("s1", "Queen")] }));
+          return Promise.resolve(
+            results({ tracks: [trackFixture("s1", "Spotify 1", "spotify")] }),
+          );
+        return Promise.resolve(emptyResults());
+      },
+    );
+    const { search, searchResult } = setup();
+
+    await search("hit");
+    await flush();
+
+    expect(searchResult.value?.tracks.map((item) => item.name)).toEqual([
+      "Lib 1",
+      "Fs 1",
+      "Spotify 1",
+      "Fs 2",
+      "Fs 3",
+    ]);
+  });
+
+  it("leaves out provider items that are already in the library results", async () => {
+    mockSearch.mockImplementation(
+      (_query, _mediaTypes, _limit, providers: string[] = []) => {
+        if (providers[0] === LIBRARY_SEARCH_TARGET)
+          return Promise.resolve(
+            results({
+              tracks: [spotifyMappedTrack("l1", "Lib hit", "library", "s1")],
+            }),
+          );
+        if (providers[0] === "spotify")
+          return Promise.resolve(
+            results({
+              tracks: [
+                spotifyMappedTrack("s1", "Spotify hit", "spotify-a", "s1"),
+                spotifyMappedTrack("s2", "Spotify other", "spotify-a", "s2"),
+              ],
+            }),
+          );
+        return Promise.resolve(emptyResults());
+      },
+    );
+    const providers = ref<string[]>([]);
+    const { search, searchResult } = setup({ providers });
+
+    await search("hit");
+    await flush();
+    expect(searchResult.value?.tracks.map((item) => item.name)).toEqual([
+      "Lib hit",
+      "Spotify other",
+    ]);
+
+    // without the library in the selection, its provider item is listed
+    providers.value = ["spotify"];
+    await nextTick();
+    expect(searchResult.value?.tracks.map((item) => item.name)).toEqual([
+      "Spotify hit",
+      "Spotify other",
+    ]);
+  });
+
+  it("floats exact name matches above earlier fuzzy results", async () => {
+    mockSearch.mockImplementation(
+      (_query, _mediaTypes, _limit, providers: string[] = []) => {
+        if (providers[0] === LIBRARY_SEARCH_TARGET)
+          return Promise.resolve(
+            results({ tracks: [trackFixture("l1", "Queen tribute")] }),
+          );
+        if (providers[0] === "spotify")
+          return Promise.resolve(
+            results({ tracks: [trackFixture("s1", "Queen", "spotify")] }),
+          );
         return Promise.resolve(emptyResults());
       },
     );
@@ -227,13 +341,15 @@ describe("useProgressiveSearch", () => {
         return new Promise<SearchResults>((resolve) => {
           resolveFirst = resolve;
         });
-      return Promise.resolve(results({ tracks: [track("t2", "Second")] }));
+      return Promise.resolve(
+        results({ tracks: [trackFixture("t2", "Second")] }),
+      );
     });
     const { search, searchResult } = setup();
 
     await search("first");
     await search("second");
-    resolveFirst(results({ tracks: [track("t1", "First")] }));
+    resolveFirst(results({ tracks: [trackFixture("t1", "First")] }));
     await flush();
 
     expect(searchResult.value?.tracks.map((item) => item.name)).toEqual([
@@ -247,7 +363,7 @@ describe("useProgressiveSearch", () => {
     vi.useFakeTimers();
     let spotifyCalls = 0;
     mockSearch.mockImplementation(
-      (_query, _mediaTypes, _limit, providers: string[]) => {
+      (_query, _mediaTypes, _limit, providers: string[] = []) => {
         if (providers[0] !== "spotify") return Promise.resolve(emptyResults());
         spotifyCalls += 1;
         if (spotifyCalls === 1) {
@@ -256,7 +372,9 @@ describe("useProgressiveSearch", () => {
             setTimeout(() => resolve(emptyResults()), 8000),
           );
         }
-        return Promise.resolve(results({ tracks: [track("s1", "Late")] }));
+        return Promise.resolve(
+          results({ tracks: [trackFixture("s1", "Late", "spotify")] }),
+        );
       },
     );
     const { search, searchResult, loading } = setup();
@@ -275,7 +393,7 @@ describe("useProgressiveSearch", () => {
   });
 
   it("searches only the library for a genre-only search", async () => {
-    const genres = [{ item_id: "g1", name: "Rock" }];
+    const genres = [genreFixture("g1", "Rock")];
     mockGetLibraryGenres.mockResolvedValue(genres);
     const mediaTypes = ref<MediaType[]>([MediaType.GENRE]);
     const { search, searchResult } = setup({ mediaTypes });
@@ -345,5 +463,51 @@ describe("useProgressiveSearch", () => {
     expect(mockSearch).toHaveBeenLastCalledWith("query", undefined, 8, [
       "spotify",
     ]);
+  });
+
+  it("asks the library for genres on a genre-only search whatever the selection", async () => {
+    const genres = [genreFixture("g1", "Rock")];
+    mockGetLibraryGenres.mockResolvedValue(genres);
+    const { search, searchResult, loading } = setup({
+      mediaTypes: ref<MediaType[]>([MediaType.GENRE]),
+      providers: ref(["spotify"]),
+    });
+
+    await search("rock");
+    await flush();
+
+    expect(mockSearch).not.toHaveBeenCalled();
+    expect(searchResult.value?.genres).toEqual(genres);
+    expect(loading.value).toBe(false);
+  });
+
+  it("leaves the library genres out when the library is not searched", async () => {
+    const { search } = setup({ providers: ref(["spotify"]) });
+
+    await search("rock");
+    await flush();
+
+    expect(mockGetLibraryGenres).not.toHaveBeenCalled();
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops loading once a provider still searching is deselected", async () => {
+    mockSearch.mockImplementation(
+      (_query, _mediaTypes, _limit, providers: string[] = []) =>
+        providers[0] === "spotify"
+          ? new Promise<SearchResults>(() => {})
+          : Promise.resolve(emptyResults()),
+    );
+    const providers = ref<string[]>([]);
+    const { search, loading } = setup({ providers });
+
+    await search("query");
+    await flush();
+    expect(loading.value).toBe(true);
+
+    providers.value = [LIBRARY_SEARCH_TARGET, "fs1"];
+    await nextTick();
+
+    expect(loading.value).toBe(false);
   });
 });

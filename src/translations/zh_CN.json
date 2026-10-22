@@ -31,7 +31,6 @@
     "delete_db": "从数据库中删除项目",
     "details": "详细信息",
     "enter_url": "输入要手动添加到数据库的 URL",
-    "external_source_active": "激活外部源:{0}",
     "goto_album": "跳转到唱片集{0}",
     "goto_artist": "转到歌手{0}",
     "items_selected": "已选择{0}项",
@@ -56,14 +55,12 @@
     "player_type": {
         "group": "组",
         "player": "播放器",
-        "stereo_pair": "立体声配对",
-        "sync_group": "同步组"
+        "stereo_pair": "立体声配对"
     },
     "players": "播放器",
     "playlist": "播放列表",
     "playlist_tracks": "播放列表的歌曲",
     "playlists": "播放列表",
-    "provider_details": "提供程序详细信息",
     "queue": "队列",
     "queue_clear": "清除队列中的所有项目",
     "queue_delete": "删除项目",
@@ -81,29 +78,15 @@
     "search": "搜索",
     "settings": {
         "add_new": "添加新内容",
-        "add_provider": "添加新的提供程序",
-        "advanced_settings": "高级设置",
-        "check_docs": "查看文档",
-        "config_player": "配置播放器： {0}",
         "configure": "配置",
         "delete": "删除",
         "disable": "禁用",
         "documentation": "文档",
         "enable": "启用",
         "enable_player": "启用此播放器",
-        "enable_provider": "启用此提供程序",
-        "enabled": "启用",
         "invalid_input": "输入无效",
         "metadataproviders": "元数据提供程序",
-        "musicproviders": "音乐源提供程序",
-        "need_help_setup_provider": "设置该提供程序需要帮助吗？",
-        "no_providers": "未配置音乐源提供程序",
-        "no_providers_detail": "在下方添加您的音乐源提供程序，开始您的 Music Assistant 体验。",
-        "not_loaded": "提供程序尚未加载",
-        "player_address": "地址",
         "player_disabled": "该播放器已被禁用",
-        "player_id": "播放器 ID",
-        "player_model": "模型",
         "player_name": "自定义播放器名称",
         "player_not_available": "该播放器目前不可用",
         "player_provider": "提供程序",
@@ -111,21 +94,15 @@
         "player_type_label": "播放器类型",
         "playerproviders": "播放器提供程序",
         "players": "播放器",
-        "pluginproviders": "插件提供程序",
         "provider_disabled": "此提供程序已被禁用",
         "provider_name": "自定义该提供程序的名称",
-        "providers": "提供程序",
         "reload": "重新加载",
         "save": "保存",
         "settings": "设置",
-        "setup_provider": "设置提供程序:  {0}",
         "sync": "立即同步",
         "sync_running": "现在同步该提供程序",
-        "core_modules": "核心模块",
         "server_info": "服务器信息",
-        "server_id": "服务器 ID",
         "server_version": "服务器版本",
-        "server_base_url": "基本 URL",
         "server_as_addon": "家庭助理插件",
         "artists_in_library": "媒体库中的歌手",
         "albums_in_library": "媒体库中的唱片集",
@@ -133,8 +110,6 @@
         "playlists_in_library": "媒体库中的播放列表",
         "radio_in_library": "媒体库内的收音机",
         "download_log": "下载日志文件",
-        "edit_group_members": "编辑群组成员",
-        "add_new_provider_button": "添加提供程序: {0}",
         "add_group_player": "添加群组播放器",
         "group_members": "组成员",
         "default": "默认",
@@ -180,10 +155,6 @@
                 "bg_BG": "保加利亚语"
             }
         },
-        "no_music_providers": "未配置音乐源提供程序",
-        "no_music_providers_detail": "添加音乐源提供程序，开始您的 Music Assistant 体验!",
-        "no_player_providers": "未配置播放器提供程序",
-        "no_player_providers_detail": "配置播放器提供程序，以选择 Music Assistant 可输出音乐的设备。",
         "dynamic_members": {
             "label": "动态组成员",
             "description": "允许成员（临时）动态加入\/离开群组，因此群组的行为或多或少与手动同步播放器的行为相同，主要区别在于群组播放器将持有队列。"
@@ -195,8 +166,7 @@
             "output": "输出",
             "filter": {
                 "add": "添加过滤器",
-                "type": "过滤器类型",
-                "new": "新{type}"
+                "type": "过滤器类型"
             },
             "move_up": "向上移动",
             "move_down": "向下移动",
@@ -224,12 +194,14 @@
                 "edited_channel": "绘制该通道的 EQ 响应",
                 "channel": "该频段将用于",
                 "per_channel_preamp": "{channel}的额外前置放大器增益",
-                "disable_multichannel_controls": "禁用多通道控制"
+                "disable_multichannel_controls": "禁用多通道控制",
+                "help": "精确的音色塑造：每个频段针对特定频率，可对其进行衰减或提升。衰减比提升更安全，因为提升可能会导致削波。"
             },
             "tone_control": {
                 "bass_level": "低音等级",
                 "mid_level": "中音等级",
-                "treble_level": "高音等级"
+                "treble_level": "高音等级",
+                "help": "一个简单的三频段调节功能，分别针对低音、中音和高音。如需更精细的调节，请使用参量均衡器。"
             },
             "parameter": {
                 "frequency": "频率",
@@ -261,10 +233,16 @@
                 "remove_confirm": "您确定要移除此 DSP 预设吗？",
                 "custom": "自定义",
                 "selected": "预设： {0}"
+            },
+            "input_gain_help": "设置进入信号链的电平。将其调低，以便为提升型滤波器预留余量。",
+            "output_gain_help": "调整信号链中每个滤波器应用后的输出电平。播放器音量稍后应用。",
+            "gain": {
+                "help": "将流经链中该节点的所有内容的电平提高或降低。"
+            },
+            "balance": {
+                "help": "将声音向左或右扬声器偏移。仅适用于立体声音频。"
             }
         },
-        "dsp_enabled": "DSP 已启用",
-        "dsp_disabled": "DSP 已禁用",
         "dsp_note_multi_device_group": {
             "label": "您可以为每个播放器单独配置 DSP。"
         },
@@ -272,15 +250,7 @@
             "label": "在向多个设备播放时，该群组类型不支持 DSP。"
         },
         "add_group_player_desc_universal": "通过创建通用播放器组，您可以将来自不同提供程序\/生态系统的播放器分组在一起。这将向所有成员播放器分发相同的音频（但不会同步）。",
-        "edit_provider": "编辑提供程序： {0}",
-        "metadata": "元数据",
-        "metadataprovider": "元数据提供程序",
-        "music": "音乐",
-        "musicprovider": "音乐源提供程序",
-        "player": "播放器",
         "playerprovider": "播放器提供程序",
-        "plugin": "插件",
-        "pluginprovider": "插件提供程序",
         "providers_total": "总共{0}个提供程序",
         "stage": {
             "label": "阶段",
@@ -297,22 +267,17 @@
             "label": "强制移动布局",
             "description": "即使在大屏幕上，也强制使用移动版布局（菜单导航位于底部）。"
         },
-        "providers_description": "管理音乐源、播放器提供程序和插件",
         "players_description": "配置和管理音频输出设备",
         "frontend_description": "自定义用户界面主题和外观",
-        "provider_type": "类型",
-        "onboarding_title": "欢迎使用 Music Assistant！",
         "profile_description": "管理个人账户设置和偏好",
         "users": "用户",
         "users_description": "管理用户帐户、角色和权限",
         "system_description": "配置 Music Assistant 服务器设置和核心模块",
         "system": "系统",
-        "view_documentation": "查看文档",
         "about": "关于",
         "about_description": "版本信息、制作人员名单及其他",
         "auto_refresh_log": "自动刷新",
         "log_truncated": "显示最后 {0} 行。下载完整日志文件以查看完整历史记录。",
-        "version_info": "版本信息",
         "library_stats": "媒体库统计",
         "links": "链接",
         "changelog": "更新日志",
@@ -320,7 +285,6 @@
         "bug_reports": "错误报告",
         "discussion_forums": "讨论论坛",
         "license": "许可证",
-        "open_home_foundation": "开放家园基金会",
         "proud_part_of": "自豪地成为",
         "core_module": {
             "cache": {
@@ -366,7 +330,6 @@
         "remote_access_feature_no_port_forwarding": "无需端口转发或 VPN",
         "remote_access_mode_optimized": "优化模式（HA 云）",
         "remote_access_mode_basic": "以基本模式运行",
-        "remote_access_mode_optimized_description": "使用 Home Assistant Cloud 的 STUN\/TURN 服务器，可实现最佳性能。可在所有网络配置下可靠运行。",
         "remote_access_mode_basic_description": "使用公共 STUN 服务器。这在复杂的网络环境中可能无法正常工作。升级到 Home Assistant Cloud 可获得最佳体验。",
         "remote_access_upgrade_to_optimized": "升级到 Home Assistant Cloud",
         "remote_access_status": "远程访问状态",
@@ -397,8 +360,6 @@
         "remote_access_protocol_optimized": "通过 Home Assistant Cloud 优化的 STUN\/TURN 服务器实现 WebRTC（适用于所有网络设置）。",
         "remote_access_encryption_description": "使用 DTLS-SRTP 进行端到端加密，确保数据的私密性和安全性。",
         "frontend": "用户界面",
-        "players_count": "{0} 个播放器",
-        "one_player": "1 个播放器",
         "view_players": "查看播放器",
         "players_total": "{0} 个播放器{1}",
         "api_docs": "API 文档",
@@ -413,18 +374,9 @@
             "display_settings": "显示",
             "dsp": "DSP"
         },
-        "onboarding_subtitle": "让我们从连接音乐源和音频设备开始吧。",
-        "onboarding_music_title": "音乐",
-        "onboarding_music_desc": "连接 Spotify、Tidal 或本地媒体库等流媒体服务。",
-        "onboarding_add_music": "添加音乐",
-        "onboarding_player_title": "播放器",
-        "onboarding_player_desc": "连接扬声器和 Sonos、Chromecast 或 AirPlay 等设备。",
-        "onboarding_add_player": "添加播放器",
-        "onboarding_footer": "您以后可以在此设置页面添加更多提供程序",
         "remote_access_qr_code": "二维码",
         "remote_access_qr_code_description": "使用手机摄像头扫描即可立即连接。",
         "reset_to_defaults": "重置为默认值",
-        "reset_to_defaults_confirm": "您确定要将所有设置重置为默认值吗？此操作将立即保存更改。",
         "unsaved_changes": "未保存的更改",
         "unsaved_changes_message": "您有未保存的更改。您确定要不保存就离开吗？",
         "stay": "停留",
@@ -442,7 +394,6 @@
             "description": "允许使用浏览器的内置媒体控件（如键盘上的媒体键）控制播放。"
         },
         "settings_saved": "设置已保存",
-        "protocol_disabled_message": "启用此协议以配置其设置",
         "protocol_no_settings": "该输出协议没有任何附加配置",
         "protocol_no_settings_with_advanced": "未显示任何设置。启用高级设置以查看更多配置选项。",
         "show_advanced_settings": "显示高级设置",
@@ -469,21 +420,6 @@
         "restore_all_present": "所有默认流派都已存在。",
         "full_restore_success": "完全恢复完成。已恢复 {0} 默认流派。",
         "genre_statistics": "流派媒体库管理",
-        "total_genres": "总流派",
-        "view_all_genres": "查看所有流派",
-        "background_scanner": "后台扫描",
-        "background_scanner_description": "自动将歌曲、唱片集和歌手映射到流派。",
-        "scanner_status": "扫描状态",
-        "scanner_running": "运行中...",
-        "scanner_idle": "闲置",
-        "last_scan": "上次扫描",
-        "last_scan_mapped": "映射的项目（上次扫描）",
-        "scan_now": "立即扫描",
-        "scan_triggered": "流派扫描成功开始。",
-        "scan_already_running": "流派扫描已在进行中。",
-        "scan_never": "从不",
-        "scanner_status_failed": "获取扫描状态失败",
-        "scan_trigger_failed": "流派扫描失败",
         "restore_defaults_failed": "恢复流派默认设置失败",
         "full_restore_failed": "未能执行完整的流派恢复",
         "error_loading_genres": "加载流派时出错",
@@ -499,29 +435,18 @@
         "metadata_providers_description": "管理封面图和附加信息的元数据提供程序",
         "plugin_providers_description": "管理可扩展 Music Assistant 功能的插件",
         "restore_genres": "恢复流派",
-        "scan_ago": "{0} 前",
         "genre_statistics_description": "浏览和过滤媒体库中的所有流派。可在全局范围内排除和恢复流派。",
-        "excluded_genres": "排除的流派",
-        "excluded_genres_description": "此处列出的流派将从您的媒体库中完全排除，并且不会出现在任何视图中",
         "genre_table_rows_per_page": "每页行数",
-        "genre_table_page_info": "{0}–{1} （共 {2}）",
         "missing_players_hint": "缺失播放器？ {0}",
         "add_player_providers": "增加更多播放器提供程序",
         "add_audio_analysis_provider": "添加音频分析提供程序",
         "audio_analysis_providers": "音频分析",
         "audio_analysis_providers_description": "管理用于分析音频的提供程序",
         "audio_analysis": "音频分析",
-        "sendspin_static_delay": {
-            "label": "静态播放延迟（毫秒）",
-            "description": "用于让此播放器与其他播放器保持同步的毫秒偏移量。如果音频播放过晚，例如需要补偿功放、有源音箱或操作系统带来的延迟，请增大此值。"
-        },
         "audio_analysis_coverage": {
             "title": "音频分析覆盖范围",
-            "col_provider": "提供程序",
-            "col_coverage": "覆盖范围",
             "col_pending": "待定",
             "col_stale": "陈旧",
-            "col_version": "版本",
             "unavailable": "不可用",
             "none": "—"
         },
@@ -568,9 +493,7 @@
         "queue_global_settings_link": "打开全局队列设置",
         "protocol_provider_unavailable": "此输出协议的提供程序目前不可用。",
         "protocol_multi_info": "该播放器支持多种输出协议。Music Assistant 会自动将它们连接起来，使其作为单一播放器运行——请启用您想要使用的协议。",
-        "protocol_enable_label": "启用输出协议",
         "protocol_configure_title": "配置{name}",
-        "protocol_configure_label": "配置输出协议",
         "protocol_configure_title_via": "配置 {name} （通过 {base}）",
         "show_waveform": {
             "label": "将波形显示为进度条",
@@ -599,7 +522,6 @@
         "artist": "歌手",
         "name": "字母顺序",
         "name_desc": "字母顺序（降序）",
-        "recent": "最近添加",
         "year_desc": "发布年份（降序）",
         "duration_desc": "持续时间（降序）",
         "original": "原创",
@@ -612,8 +534,6 @@
         "last_played_desc": "上次播放（倒序）",
         "play_count": "播放次数",
         "play_count_desc": "播放次数（倒序）",
-        "artist_name": "唱片集歌手",
-        "artist_name_desc": "唱片集歌手（降序）",
         "album_sort_name": "唱片集（排序名称）"
     },
     "state": {
@@ -629,7 +549,6 @@
         "explicit": "显式",
         "filter_library": "在媒体库\/过滤收藏夹中切换",
         "library": "在媒体库\/收藏夹中切换",
-        "linked": "此提供程序已链接到当前项目",
         "refresh": "刷新项目列表",
         "refresh_new_content": "有新内容可用，单击刷新列表",
         "search": "显示\/隐藏搜索",
@@ -641,7 +560,6 @@
         "open_provider_link": "在提供程序的网站上打开此项目",
         "collapse_expand": "折叠\/展开此列表",
         "back": "返回",
-        "show_menu": "显示\/隐藏菜单",
         "search_filter_active": "筛选搜索的结果",
         "play_sample": "播放示例",
         "album_type": "唱片集类型",
@@ -705,7 +623,6 @@
     "check_item_on_provider": "检查{1}中的{0}",
     "check_item_in_library": "在媒体库中检查{0}",
     "media_details": "媒体详情",
-    "mapped_providers": "提供程序详细信息",
     "item_in_library": "此项目可在媒体库中找到",
     "back": "返回",
     "recently_played": "最近播放",
@@ -760,7 +677,6 @@
     "global_search": "全局搜索",
     "podcast_episode": "插曲",
     "podcast_episodes": "剧集",
-    "play_from_here": "从此处开始播放",
     "dsp_active": "激活",
     "currently_playing_players": "正在播放",
     "all_players": "所有播放器",
@@ -774,7 +690,6 @@
         "eq_band_count_singular": "1个乐队",
         "input_gain": "输入增益 ({0} dB)",
         "output_gain": "输出增益 ( {0} dB)",
-        "output_limiter": "输出限制器",
         "file_info": {
             "container": "容器： {0}",
             "codec": "编解码器： {0}",
@@ -986,12 +901,8 @@
         "token_copy_failed": "无法将令牌复制到剪贴板",
         "player_filter": "按播放器筛选",
         "player_filter_hint": "限制该用户只能访问选定的播放器。留空表示完全访问所有播放器。",
-        "provider_filter": "音乐提供程序筛选器",
-        "provider_filter_hint": "限制此用户仅可访问选定的音乐提供程序。留空则可完全访问所有音乐提供程序。",
         "no_players_selected": "所有播放器（无限制）",
-        "no_providers_selected": "所有提供程序（无限制）",
         "select_players": "选择播放器",
-        "select_providers": "选择提供程序",
         "save_changes": "保存更改",
         "update_password": "更新密码",
         "guest_role": "访客"
@@ -1290,7 +1201,6 @@
             "current_music": "当前播放的音乐",
             "copy_music_name": "复制歌曲标题",
             "copy_music_name_failed": "无法复制歌曲标题",
-            "loading_lyrics": "正在加载歌词……",
             "no_winner": "这次没有赢家",
             "winner_single": "{0} 以 {1} 分获胜",
             "winner_multiple": "{0} 以 {1} 分并列夺冠",
@@ -1418,9 +1328,6 @@
             "playback_summary_remote": "远程 · 玩家使用自己的设备收听",
             "playback_venue_unavailable": "场地模式不可用。",
             "playback_remote_unavailable": "远程模式不可用。",
-            "speaker": "扬声器",
-            "choose_speaker": "选择一个扬声器",
-            "no_available_speakers": "未找到可用扬声器。请使用远程模式或检查播放器设置。",
             "no_playback_modes": "没有可用的播放模式。请检查您的音乐问答设置。",
             "loading_playback_options": "正在加载播放选项...",
             "error_load_playback_options": "无法加载播放选项",
@@ -1443,6 +1350,14 @@
             "play_along": "一起演奏",
             "host_controls": "主机控制",
             "return_to_host_panel": "返回主机面板"
+        },
+        "ai_radio": {
+            "fields": {
+                "shuffle_playlist_tracks": "随机播放列表曲目"
+            },
+            "field_descriptions": {
+                "shuffle_playlist_tracks": "以随机顺序播放源播放列表。关闭此选项可按播放列表本身的顺序播放。"
+            }
         }
     },
     "no_lyrics_available": "暂无歌词",

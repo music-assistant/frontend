@@ -1,6 +1,9 @@
 import { createGuestQuizAffinity } from "@/helpers/guest_quiz_affinity";
+import { Scope, UserRole } from "@/plugins/api/interfaces";
 import { AuthManager } from "@/plugins/auth";
+import { store } from "@/plugins/store";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { user } from "../fixtures/user";
 
 const { localStorageMock, sessionStorageMock } = vi.hoisted(() => {
   const createStorage = () => {
@@ -156,6 +159,145 @@ describe("AuthManager guest sessions", () => {
     expect(localStorage.getItem("ma_access_token_connection")).toBeNull();
     expect(sessionStorage.getItem("ma_guest_access_token")).toBeNull();
     expect(sessionStorage.getItem("music_quiz_guest_affinity")).toBeNull();
+  });
+
+  it("restores the saved regular token when a dashboard viewer session is cleared", () => {
+    const regularToken = createToken("regular-token", "admin");
+    const dashboardToken = createToken("dashboard-token", "dashboard_viewer");
+    localStorage.setItem("ma_access_token", regularToken);
+    const authManager = new AuthManager();
+    authManager.setToken(dashboardToken);
+
+    authManager.clearGuestSession();
+
+    expect(authManager.getToken()).toBe(regularToken);
+    expect(authManager.isDashboardViewer()).toBe(false);
+    expect(sessionStorage.getItem("ma_guest_access_token")).toBeNull();
+  });
+
+  describe("endRejectedGuestSession", () => {
+    it("reports no guest session and writes no marker for a regular session", () => {
+      const authManager = new AuthManager();
+      authManager.setToken(createToken("regular-token", "admin"));
+
+      expect(authManager.endRejectedGuestSession()).toEqual({
+        outcome: "no-guest-session",
+      });
+      expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
+    });
+
+    it("restores the device's own session and writes no marker when one is saved", () => {
+      const regularToken = createToken("regular-token", "admin");
+      const guestToken = createToken("guest-token", "party_guest");
+      localStorage.setItem("ma_access_token", regularToken);
+      const authManager = new AuthManager();
+      authManager.setToken(guestToken);
+      const reloadSpy = vi
+        .spyOn(window.location, "reload")
+        .mockImplementation(() => {});
+
+      const result = authManager.endRejectedGuestSession();
+
+      expect(result).toEqual({ outcome: "own-session-restored" });
+      expect(reloadSpy).toHaveBeenCalledOnce();
+      expect(authManager.getToken()).toBe(regularToken);
+      expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
+
+      reloadSpy.mockRestore();
+    });
+
+    it("records the ended kind when no regular session is saved", () => {
+      const guestToken = createToken("guest-token", "party_guest");
+      const authManager = new AuthManager();
+      authManager.setToken(guestToken);
+
+      const result = authManager.endRejectedGuestSession();
+
+      expect(result).toEqual({ outcome: "ended", kind: "party" });
+      expect(sessionStorage.getItem("ma_guest_session_ended")).toBe("party");
+    });
+  });
+
+  it("drops both join codes but keeps the remote id when returning to the app", () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/?join=ABCD1234&dashboard=WXYZ5678&remote_id=REMOTE#/guest",
+    );
+    const authManager = new AuthManager();
+    const reloadSpy = vi
+      .spyOn(window.location, "reload")
+      .mockImplementation(() => {});
+
+    authManager.returnToFullApp();
+
+    expect(window.location.search).not.toContain("join");
+    expect(window.location.search).not.toContain("dashboard");
+    expect(window.location.search).toContain("remote_id=REMOTE");
+    expect(window.location.hash).toBe("#/discover");
+
+    reloadSpy.mockRestore();
+  });
+
+  it("resets the route on logout so the next user starts at discover", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/?remote_id=REMOTE#/artists/library/1",
+    );
+    const authManager = new AuthManager();
+    const reloadSpy = vi
+      .spyOn(window.location, "reload")
+      .mockImplementation(() => {});
+
+    await authManager.logout();
+
+    expect(window.location.hash).toBe("#/discover");
+    expect(window.location.search).toContain("remote_id=REMOTE");
+    expect(reloadSpy).toHaveBeenCalledOnce();
+
+    reloadSpy.mockRestore();
+  });
+});
+
+describe("AuthManager scopes", () => {
+  beforeEach(() => {
+    store.currentUser = undefined;
+    store.roleScopes = {};
+  });
+
+  it("grants a scope its role holds", () => {
+    store.currentUser = user({ role: UserRole.USER });
+    store.roleScopes = { user: [Scope.CONFIG_PROVIDERS_OWN] };
+
+    expect(new AuthManager().hasScope(Scope.CONFIG_PROVIDERS_OWN)).toBe(true);
+  });
+
+  it("grants every scope to a role holding the wildcard", () => {
+    store.currentUser = user({ role: UserRole.ADMIN });
+    store.roleScopes = { admin: [Scope.ALL] };
+
+    expect(new AuthManager().hasScope(Scope.CONFIG_PROVIDERS_OWN)).toBe(true);
+  });
+
+  it("denies a scope its role does not hold", () => {
+    store.currentUser = user({ role: UserRole.USER });
+    store.roleScopes = { user: [Scope.LIBRARY_READ] };
+
+    expect(new AuthManager().hasScope(Scope.CONFIG_PROVIDERS_OWN)).toBe(false);
+  });
+
+  it("denies every scope to a role the server did not list", () => {
+    store.currentUser = user({ role: "power_user" });
+    store.roleScopes = { admin: [Scope.ALL] };
+
+    expect(new AuthManager().hasScope(Scope.LIBRARY_READ)).toBe(false);
+  });
+
+  it("denies every scope when nobody is signed in", () => {
+    store.roleScopes = { admin: [Scope.ALL] };
+
+    expect(new AuthManager().hasScope(Scope.LIBRARY_READ)).toBe(false);
   });
 });
 

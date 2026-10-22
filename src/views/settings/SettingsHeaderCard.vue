@@ -1,0 +1,100 @@
+<template>
+  <Card class="mb-4 gap-0 py-0">
+    <CardHeader
+      class="relative flex flex-col gap-5 p-6 pr-16 sm:flex-row sm:items-center"
+    >
+      <div
+        :class="
+          cn(
+            'flex size-14 shrink-0 items-center justify-center rounded-xl bg-current/10 text-primary',
+            iconClass,
+          )
+        "
+      >
+        <component :is="icon" class="size-8" />
+      </div>
+      <div class="min-w-0 flex-1">
+        <CardTitle class="text-xl leading-tight">{{ title }}</CardTitle>
+        <CardDescription v-if="description" class="mt-2 leading-relaxed">
+          {{ description }}
+        </CardDescription>
+      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <Button
+            data-testid="settings-menu"
+            variant="ghost"
+            size="icon-sm"
+            class="absolute top-4 right-4"
+            :aria-label="$t('more_options')"
+          >
+            <MoreVertical class="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            data-testid="settings-reset-defaults"
+            @click="emit('resetToDefaults')"
+          >
+            <RotateCcw class="size-4" />
+            {{ $t("settings.reset_to_defaults") }}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </CardHeader>
+    <CardContent
+      v-if="documentationUrl"
+      class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
+    >
+      <Button
+        as="a"
+        data-testid="settings-documentation"
+        variant="outline"
+        :href="documentationUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <BookOpen class="size-4" />
+        {{ $t("settings.documentation") }}
+      </Button>
+    </CardContent>
+  </Card>
+</template>
+
+<script setup lang="ts">
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import { BookOpen, MoreVertical, RotateCcw } from "@lucide/vue";
+import type { Component } from "vue";
+
+/**
+ * Header card shared by the settings screens that edit a plain config: it names what
+ * is being configured and carries the controls that act on the whole form.
+ */
+defineProps<{
+  icon: Component;
+  title: string;
+  description?: string;
+  /** Tints the icon and its tile, e.g. "text-orange-500"; defaults to the primary colour. */
+  iconClass?: string;
+  /** Where the documentation of this screen lives; without one no link is offered. */
+  documentationUrl?: string;
+}>();
+
+const emit = defineEmits<{
+  (e: "resetToDefaults"): void;
+}>();
+</script>

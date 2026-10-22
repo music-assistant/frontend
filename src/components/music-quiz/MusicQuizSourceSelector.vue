@@ -22,7 +22,7 @@
         <span class="text-muted-foreground">
           {{ $t("providers.music_quiz.selected_music") }}
         </span>
-        <Badge variant="secondary">{{ selectedSummary }}</Badge>
+        <Badge>{{ selectedSummary }}</Badge>
       </div>
       <div
         v-if="selectedSources.length"
@@ -71,7 +71,7 @@ import {
   MUSIC_QUIZ_SOURCE_MEDIA_TYPES,
   useMusicQuizSources,
   type MusicQuizSourceItem,
-} from "@/composables/useMusicQuizSources";
+} from "@/composables/music-quiz/useMusicQuizSources";
 import { musicQuizSourceTypeLabel } from "@/helpers/music_quiz_sources";
 import {
   MediaType,

@@ -1,13 +1,14 @@
 <template>
   <!-- streaming quality details -->
-  <Popover v-if="audioProcessing && streamDetails">
-    <!-- quality pill/chip trigger; pill = ghost-outline to match the fullscreen
+  <Popover v-if="activeAudioPath" v-model:open="open">
+    <!-- quality pill/chip trigger; pill = overlay to match the fullscreen
          header controls. A single clean PopoverTrigger so it opens reliably
          inside the fullscreen v-dialog (a Tooltip wrapper here blocked it). -->
     <PopoverTrigger as-child>
       <Button
-        :variant="pill ? 'ghost-outline' : 'outline'"
-        size="xs"
+        :variant="pill ? 'overlay' : 'outline'"
+        :size="pill ? pillSize : 'xs'"
+        :class="pill ? 'px-3' : ''"
         :disabled="triggerDisabled"
         :title="$t('show_audio_chain_details')"
         :aria-label="qualityDetailsLabel"
@@ -37,8 +38,12 @@
         tabindex="-1"
       >
         <AudioProcessingDetails
-          :chain="audioProcessing"
-          :stream-details="streamDetails"
+          :chain="activeAudioPath.audioProcessing"
+          :stream-details="activeAudioPath.streamDetails"
+          :crossfade-intent="activeAudioPath.crossfadeIntent"
+          :queue-id="activeAudioPath.queueId"
+          :container="activeAudioPath.container"
+          @navigate="open = false"
         />
       </div>
     </PopoverContent>
@@ -61,20 +66,20 @@ import {
   qualityTierToColor,
   useStreamQuality,
 } from "@/composables/useStreamQuality";
+import { useActiveAudioPath } from "@/composables/useActiveAudioPath";
 
 // render the quality indicator as a rounded "pill" (matching the shadcn player
 // header controls) instead of the default square chip
 defineProps<{ pill?: boolean }>();
 
-const streamDetails = computed(
-  () => store.activePlayerQueue?.current_item?.streamdetails,
-);
-const audioProcessing = computed(
-  () => streamDetails.value?.audio_processing ?? undefined,
-);
+// the pill follows the fullscreen header's control height, compact on phones
+const pillSize = computed(() => (store.mobileLayout ? "sm" : "default"));
 
-const { minOutputQualityTier, maxOutputQualityTier } =
-  useStreamQuality(audioProcessing);
+const { activeAudioPath } = useActiveAudioPath();
+
+const { minOutputQualityTier, maxOutputQualityTier } = useStreamQuality(
+  computed(() => activeAudioPath.value?.audioProcessing),
+);
 
 const qualityLabel = computed(() => {
   return qualityTierRangeLabel(
@@ -90,14 +95,18 @@ const qualityDetailsLabel = computed(() =>
     : $t("show_audio_chain_details"),
 );
 const popoverFocusTarget = ref<HTMLElement>();
+const open = ref(false);
 
-// disable the trigger when there is no active queue with items
-const triggerDisabled = computed(
-  () =>
+// disable the trigger when there is no active queue with items; a live
+// source has no queue to check and is gated by the popover's own v-if instead
+const triggerDisabled = computed(() => {
+  if (activeAudioPath.value?.kind !== "queue") return false;
+  return (
     !store.activePlayerQueue ||
     !store.activePlayerQueue?.active ||
-    store.activePlayerQueue?.items == 0,
-);
+    store.activePlayerQueue?.items == 0
+  );
+});
 
 function focusPopoverContent(event: Event): void {
   event.preventDefault();

@@ -7,7 +7,7 @@ const { guestEntryStateKey } = vi.hoisted(() => ({
   guestEntryStateKey: Symbol("guest-entry-state"),
 }));
 
-vi.mock("@/composables/useGuestEntryResolver", () => ({
+vi.mock("@/composables/guest/useGuestEntryResolver", () => ({
   guestEntryStateKey,
 }));
 

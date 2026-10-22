@@ -1,0 +1,387 @@
+<template>
+  <div
+    class="show-card"
+    :class="{ 'show-card--editable ma-tap': canEdit }"
+    :role="canEdit ? 'button' : undefined"
+    :tabindex="canEdit ? 0 : undefined"
+    @click="customize"
+    @keydown.enter.self="customize"
+    @keydown.space.self.prevent="customize"
+  >
+    <div class="show-card__art">
+      <MediaItemThumb
+        v-if="playlist"
+        :item="playlist"
+        :size="320"
+        :rounded="false"
+        class="show-card__img"
+      />
+      <div
+        v-else
+        class="show-card__fallback"
+        :style="{ background: bannerBackground }"
+      >
+        <span class="show-card__initials">{{ itemInitials(show.name) }}</span>
+      </div>
+
+      <Badge
+        v-if="onAirQueue"
+        variant="info"
+        class="show-card__onair bg-blue-500 text-white"
+      >
+        {{ $t("providers.ai_radio.card.on_air") }}
+      </Badge>
+
+      <DropdownMenu v-if="canEdit">
+        <DropdownMenuTrigger as-child>
+          <Button
+            variant="ghost-icon"
+            size="icon-sm"
+            class="show-card__menu rounded-full bg-background/70 backdrop-blur-sm hover:bg-background/90"
+            :aria-label="$t('more_options')"
+            @click.stop
+          >
+            <MoreVertical class="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem @click="emit('customize', show.id)">
+            {{ $t("providers.ai_radio.card.customize") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem :disabled="isDuplicating" @click="onDuplicate">
+            {{ $t("providers.ai_radio.card.duplicate") }}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            :disabled="isDeleting"
+            @click="onDelete"
+          >
+            {{ $t("providers.ai_radio.card.delete") }}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+
+    <div class="show-card__meta">
+      <div
+        class="show-card__title"
+        :class="{ 'show-card__title--playing': !!onAirQueue }"
+      >
+        {{ show.name }}
+      </div>
+      <div class="show-card__sub">
+        {{ playlist?.name || show.source_playlist_id }}
+      </div>
+
+      <button
+        v-if="onAirQueue"
+        type="button"
+        class="show-card__action"
+        :disabled="isStopping"
+        :aria-busy="isStopping || undefined"
+        :aria-label="$t('providers.ai_radio.card.stop')"
+        @click.stop="onStop"
+      >
+        <Spinner v-if="isStopping" class="size-4.5" />
+        <Square v-else :size="14" fill="currentColor" :stroke-width="0" />
+      </button>
+      <button
+        v-else
+        type="button"
+        class="show-card__action show-card__action--reveal"
+        :disabled="isStarting"
+        :aria-busy="isStarting || undefined"
+        :aria-label="$t('providers.ai_radio.card.play')"
+        @click.stop="onPlay"
+      >
+        <Spinner v-if="isStarting" class="size-4.5" />
+        <Play
+          v-else
+          :size="18"
+          fill="currentColor"
+          :stroke-width="0"
+          class="show-card__action-play-icon play-icon-centered"
+        />
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import {
+  bannerBackground,
+  itemInitials,
+} from "@/components/discover/editorialArtwork";
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Spinner } from "@/components/ui/spinner";
+import { useShows } from "@/composables/ai-radio/useShows";
+import {
+  deepClone,
+  errorMessage,
+  resolveShowPlayerId,
+  slugify,
+} from "@/helpers/ai_radio";
+import { Scope, type AIRadioStation } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
+import { eventbus } from "@/plugins/eventbus";
+import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
+import api from "@/plugins/api";
+import { MoreVertical, Play, Square } from "@lucide/vue";
+import { computed } from "vue";
+import { toast } from "vue-sonner";
+
+const props = defineProps<{
+  show: AIRadioStation;
+}>();
+
+const emit = defineEmits<{
+  customize: [stationId: string];
+}>();
+
+const {
+  shows,
+  deletingShowId,
+  savingShow,
+  playlistFor,
+  getShow,
+  saveShow,
+  deleteShow,
+  startShow,
+  stopShow,
+  onAirQueueId,
+  isStarting: isShowStarting,
+  isStopping: isShowStopping,
+  reportStartError,
+} = useShows();
+
+// customizing, duplicating and deleting a show takes config.providers.write;
+// playing it does not
+const canEdit = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+);
+
+const isStarting = computed(() => isShowStarting(props.show.id));
+const isStopping = computed(() => isShowStopping(props.show.id));
+const isDeleting = computed(() => deletingShowId.value === props.show.id);
+// Duplicate reuses the shared save-in-flight flag; there's no dedicated per-show one.
+const isDuplicating = computed(() => savingShow.value);
+
+const playlist = computed(() =>
+  playlistFor(
+    props.show.source_playlist_provider,
+    props.show.source_playlist_id,
+  ),
+);
+
+const onAirQueue = computed(() => onAirQueueId(props.show.id));
+
+function customize() {
+  if (canEdit.value) emit("customize", props.show.id);
+}
+
+async function onPlay() {
+  const playerId = resolveShowPlayerId(
+    props.show,
+    store.activePlayerId,
+    api.players,
+  );
+  if (!playerId) {
+    toast.error($t("providers.ai_radio.card.no_player"));
+    return;
+  }
+  try {
+    await startShow(props.show.id, playerId);
+  } catch (error) {
+    const message = errorMessage(error);
+    toast.error($t("providers.ai_radio.card.start_failed", [message]));
+    reportStartError(message);
+  }
+}
+
+async function onStop() {
+  try {
+    await stopShow(props.show.id);
+  } catch (error) {
+    toast.error(errorMessage(error));
+  }
+}
+
+async function onDuplicate() {
+  try {
+    const full = await getShow(props.show.id);
+    const copy = deepClone(full);
+    copy.name = $t("providers.ai_radio.card.duplicate_name", [full.name]);
+    let id = slugify(copy.name);
+    if (shows.value.some((existing) => existing.id === id)) {
+      id = `${id}_${Date.now().toString(36)}`;
+    }
+    copy.id = id;
+    await saveShow(copy, $t("providers.ai_radio.toast.station_duplicated"));
+  } catch (error) {
+    toast.error(errorMessage(error));
+  }
+}
+
+function onDelete() {
+  eventbus.emit("deleteConfirmationDialog", {
+    title: $t("providers.ai_radio.confirm.delete_station_title"),
+    message: $t("providers.ai_radio.confirm.delete_station"),
+    confirmLabel: $t("providers.ai_radio.actions.delete"),
+    onConfirm: async () => {
+      try {
+        await deleteShow(props.show.id);
+      } catch (error) {
+        toast.error(errorMessage(error));
+      }
+    },
+  });
+}
+</script>
+
+<style scoped>
+.show-card {
+  --show-card-pad: 8px;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: var(--show-card-pad);
+  border-radius: var(--show-card-pad);
+  color: rgb(var(--v-theme-on-background));
+  transition: background 0.15s ease;
+}
+.show-card--editable {
+  cursor: pointer;
+}
+.show-card:hover {
+  background: rgba(var(--v-theme-on-surface), 0.08);
+}
+.ma-tap:active {
+  transform: scale(0.97);
+}
+
+.show-card__art {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--show-card-pad);
+  overflow: hidden;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.25),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.show-card__img {
+  width: 100%;
+  height: 100%;
+}
+.show-card__fallback {
+  position: absolute;
+  inset: 0;
+  container-type: inline-size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* mirrors .ed-card__initials on EditorialMediaCard */
+.show-card__initials {
+  font-size: 34cqw;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  user-select: none;
+}
+.show-card__onair {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+}
+.show-card__menu {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+}
+
+.show-card__meta {
+  position: relative;
+  width: 100%;
+  margin-top: 10px;
+  padding-right: 44px;
+}
+.show-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.show-card__title--playing {
+  color: rgb(var(--v-theme-primary));
+}
+.show-card__sub {
+  font-size: 12px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+.show-card__action {
+  position: absolute;
+  bottom: 2px;
+  right: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: rgb(var(--v-theme-primary));
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  z-index: 4;
+}
+.show-card__action:disabled {
+  opacity: 0.7;
+}
+.show-card__action-play-icon {
+  fill: currentColor;
+  stroke: none;
+}
+.show-card__action--reveal {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 0.18s,
+    transform 0.18s;
+}
+.show-card:hover .show-card__action--reveal,
+.show-card:focus-within .show-card__action--reveal {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+@media (hover: none) {
+  .show-card__action--reveal {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+}
+</style>

@@ -5,7 +5,7 @@ import type {
   MusicQuizTimelineHostRound,
   MusicQuizTimelineHostState,
   MusicQuizTimelineRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { mount, shallowMount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -76,6 +76,8 @@ const hostState = {
   answer_type: "timeline",
   phase: "answering",
   name: "Music Timeline",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 1,
   answer_duration: 30,
   artist_bonus_mode: "free_text",
@@ -118,6 +120,7 @@ const hostState = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [protectedHostRound],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizTimelineHostState;
 
 describe("timeline host and present answers", () => {
@@ -229,6 +232,11 @@ describe("timeline host and present answers", () => {
           },
         },
       ],
+      playback: {
+        mode: "venue",
+        venue_player_id: null,
+        venue_player_name: null,
+      },
     } satisfies MusicQuizTimelineHostState;
     const wrapper = mount(TimelineAudienceAnswer, {
       props: {
@@ -260,5 +268,52 @@ describe("timeline host and present answers", () => {
         .classes(),
     ).toContain("text-green-600");
     expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(true);
+
+    // the TV dashboard hides the per-round results; every other surface keeps them
+    const dashboard = mount(TimelineAudienceAnswer, {
+      props: {
+        state,
+        currentRound: revealedRound,
+        present: true,
+        dashboard: true,
+      },
+      slots: {
+        leaderboard: '<div data-testid="leaderboard">Leaderboard</div>',
+      },
+      global: {
+        stubs: {
+          MusicQuizCountdown: true,
+          TimelineDisplay: true,
+          TimelineProgress: true,
+        },
+      },
+    });
+    expect(
+      dashboard.find('[data-testid="timeline-round-results"]').exists(),
+    ).toBe(false);
+    expect(dashboard.find('[data-testid="leaderboard"]').exists()).toBe(true);
+  });
+
+  it("hides the dashboard leaderboard while guessing, keeps it for the host", () => {
+    for (const [dashboard, expected] of [
+      [true, false],
+      [false, true],
+    ] as const) {
+      const wrapper = shallowMount(TimelineAudienceAnswer, {
+        props: {
+          state: hostState,
+          currentRound,
+          present: true,
+          dashboard,
+        },
+        slots: {
+          leaderboard: '<div data-testid="leaderboard">Leaderboard</div>',
+        },
+      });
+      expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(
+        expected,
+      );
+      wrapper.unmount();
+    }
   });
 });

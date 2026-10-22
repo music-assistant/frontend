@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { MusicAssistantApi } from "@/plugins/api";
+import { MediaType, type ItemMapping } from "@/plugins/api/interfaces";
+import { track } from "../fixtures/track";
 
 const { mockSendCommand, mockGetTrack } = vi.hoisted(() => {
   return {
     mockSendCommand: vi.fn(),
-    mockGetTrack: vi.fn(),
+    mockGetTrack: vi.fn<MusicAssistantApi["getTrack"]>(),
   };
 });
 
@@ -20,7 +23,7 @@ import {
   classifyRetry,
   useAudioAnalysisFailures,
   type RawFailure,
-} from "@/composables/useAudioAnalysisFailures";
+} from "@/composables/audio-analysis/useAudioAnalysisFailures";
 
 /** Server `audio_analysis/failures` row shape (snake_case, epoch seconds). */
 interface ServerFailure {
@@ -57,7 +60,12 @@ beforeEach(() => {
   mockSendCommand.mockReset();
   mockGetTrack.mockReset();
   mockGetTrack.mockImplementation((itemId: string) =>
-    Promise.resolve({ name: `Track ${itemId}`, artists: [{ name: "Artist" }] }),
+    Promise.resolve(
+      track({
+        name: `Track ${itemId}`,
+        artists: [artistMapping("Artist")],
+      }),
+    ),
   );
 });
 
@@ -98,23 +106,6 @@ describe("useAudioAnalysisFailures", () => {
     expect(f.loading.value).toBe(false);
     expect(f.total.value).toBe(2);
     expect(mockSendCommand).toHaveBeenCalledWith("audio_analysis/failures");
-  });
-
-  it("degrades to an empty list without an error when the failures command is unsupported", async () => {
-    mockSendCommand.mockImplementation((cmd: string) => {
-      if (cmd === "audio_analysis/failures")
-        // The api client rejects with the server's details string verbatim.
-        return Promise.reject("Invalid command: audio_analysis/failures");
-      return Promise.resolve(undefined);
-    });
-
-    const f = useAudioAnalysisFailures();
-    await f.refresh();
-
-    expect(f.loading.value).toBe(false);
-    expect(f.total.value).toBe(0);
-    expect(f.pageRows.value).toEqual([]);
-    expect(f.error.value).toBeNull();
   });
 
   it("surfaces an error when the failures fetch fails for a real reason", async () => {
@@ -208,10 +199,9 @@ describe("useAudioAnalysisFailures", () => {
 
   it("resolves the track name + artist for the current page", async () => {
     mockFailures([serverFailure({ item_id: "1", provider: "tidal" })]);
-    mockGetTrack.mockResolvedValueOnce({
-      name: "Creep",
-      artists: [{ name: "Radiohead" }],
-    });
+    mockGetTrack.mockResolvedValueOnce(
+      track({ name: "Creep", artists: [artistMapping("Radiohead")] }),
+    );
 
     const f = useAudioAnalysisFailures();
     await f.refresh();
@@ -228,7 +218,9 @@ describe("useAudioAnalysisFailures", () => {
     ]);
     mockGetTrack.mockImplementation((itemId: string) => {
       if (itemId === "gone") return Promise.reject(new Error("not found"));
-      return Promise.resolve({ name: "Fine", artists: [{ name: "Band" }] });
+      return Promise.resolve(
+        track({ name: "Fine", artists: [artistMapping("Band")] }),
+      );
     });
 
     const f = useAudioAnalysisFailures();
@@ -338,10 +330,11 @@ describe("useAudioAnalysisFailures", () => {
       serverFailure({ item_id: "1", provider: "qobuz" }),
     ]);
     mockGetTrack.mockImplementation((_itemId: string, provider: string) =>
-      Promise.resolve({
-        name: provider === "tidal" ? "Tidal Track" : "Qobuz Track",
-        artists: [],
-      }),
+      Promise.resolve(
+        track({
+          name: provider === "tidal" ? "Tidal Track" : "Qobuz Track",
+        }),
+      ),
     );
 
     const f = useAudioAnalysisFailures();
@@ -378,7 +371,7 @@ describe("useAudioAnalysisFailures", () => {
     mockGetTrack.mockImplementation((itemId: string) =>
       itemId === "1"
         ? Promise.reject(new Error("not found"))
-        : Promise.resolve({ name: "Two", artists: [] }),
+        : Promise.resolve(track({ name: "Two" })),
     );
 
     const f = useAudioAnalysisFailures({ pageSize: 1 });
@@ -553,3 +546,17 @@ describe("useAudioAnalysisFailures", () => {
 // Keep the RawFailure import meaningful so the public type is part of the contract.
 const _typecheck: RawFailure | undefined = undefined;
 void _typecheck;
+
+function artistMapping(name: string): ItemMapping {
+  return {
+    item_id: name,
+    provider: "tidal",
+    name,
+    version: "",
+    uri: `tidal://artist/${name}`,
+    external_ids: [],
+    is_playable: true,
+    media_type: MediaType.ARTIST,
+    available: true,
+  };
+}

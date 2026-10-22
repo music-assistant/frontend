@@ -172,6 +172,22 @@ describe("MusicQuizQrCard", () => {
     );
     wrapper.unmount();
   });
+
+  it("drops the share actions on a display that cannot use them", async () => {
+    const wrapper = mount(MusicQuizQrCard, {
+      props: {
+        joinLink: "https://example.com/quiz/one",
+        hideShareActions: true,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.find("canvas").exists()).toBe(true);
+    expect(
+      wrapper.find('[data-testid="invitation-share-primary"]').exists(),
+    ).toBe(false);
+    wrapper.unmount();
+  });
 });
 
 function setNavigatorProperty(property: "share" | "canShare", value: unknown) {

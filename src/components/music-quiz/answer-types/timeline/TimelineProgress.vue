@@ -8,9 +8,7 @@
         <Badge variant="outline">
           {{ $t("providers.music_quiz.timeline_placed_count", [placedCount]) }}
         </Badge>
-        <Badge variant="secondary">
-          {{ completedCount }} / {{ statuses.length }}
-        </Badge>
+        <Badge>{{ completedCount }} / {{ statuses.length }}</Badge>
       </CardAction>
     </CardHeader>
     <CardContent
@@ -51,7 +49,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { MusicQuizTimelinePlayer } from "@/composables/useMusicQuiz";
+import type { MusicQuizTimelinePlayer } from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { CheckCircle2, Clock, ListChecks } from "@lucide/vue";
 import { computed } from "vue";

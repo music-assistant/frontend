@@ -1,58 +1,99 @@
 import Login from "@/views/Login.vue";
-import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { MusicAssistantApi } from "@/plugins/api";
+import { UserRole } from "@/plugins/api/interfaces";
+import {
+  enableAutoUnmount,
+  flushPromises,
+  mount,
+  type VueWrapper,
+} from "@vue/test-utils";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from "vitest";
+import { createCodeChallenge } from "@/helpers/pkce";
+import { user } from "../fixtures/user";
 
 const mocks = vi.hoisted(() => ({
-  authenticateWithToken: vi.fn(),
+  apiDisconnect: vi.fn<MusicAssistantApi["disconnect"]>(),
+  apiState: { value: "disconnected" as string },
+  authenticateWithToken: vi.fn<MusicAssistantApi["authenticateWithToken"]>(),
   clearAuth: vi.fn(),
   clearGuestSession: vi.fn(),
   connectRemote: vi.fn(),
+  currentRemoteId: { value: null as string | null },
   disconnectRemote: vi.fn(),
-  getCurrentUserInfo: vi.fn(),
+  endRejectedGuestSession: vi.fn(),
+  exchangeAuthCode: vi.fn<MusicAssistantApi["exchangeAuthCode"]>(),
+  getCurrentUserInfo: vi.fn<MusicAssistantApi["getCurrentUserInfo"]>(),
   getPersistentToken: vi.fn(),
   getToken: vi.fn(),
   getStoredRemoteId: vi.fn(),
+  guestSessionKind: vi.fn(),
   leaveGuestSession: vi.fn(),
+  returnToFullApp: vi.fn(),
   routerReplace: vi.fn(),
   sendCommand: vi.fn(),
   serverInfo: {
     value: {
       homeassistant_addon: false,
       server_id: "server-id",
-    } as { homeassistant_addon: boolean; server_id: string } | null,
+    } as {
+      homeassistant_addon: boolean;
+      server_id: string;
+      external_url?: string | null;
+    } | null,
   },
   setToken: vi.fn(),
+  startAuthorization: vi.fn<MusicAssistantApi["startAuthorization"]>(),
 }));
 
-vi.mock("@/plugins/api", () => ({
-  ConnectionState: {
-    AUTHENTICATED: "authenticated",
-    AUTHENTICATING: "authenticating",
-    AUTH_REQUIRED: "auth_required",
-    DISCONNECTED: "disconnected",
-    FAILED: "failed",
-    RECONNECTING: "reconnecting",
-  },
-  api: {
-    authenticateWithToken: mocks.authenticateWithToken,
-    disconnect: vi.fn(),
-    getCurrentUserInfo: mocks.getCurrentUserInfo,
-    sendCommand: mocks.sendCommand,
-    serverInfo: mocks.serverInfo,
-    state: { value: "disconnected" },
-  },
-}));
+vi.mock("@/plugins/api", async () => {
+  // Login.vue watches api.state, so the mock has to carry a real ref:
+  // assignments to a plain { value } would never reach the watcher.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  mocks.apiState = ref(mocks.apiState.value);
+  return {
+    ConnectionLostError: class ConnectionLostError extends Error {},
+    ConnectionState: {
+      AUTHENTICATED: "authenticated",
+      AUTHENTICATING: "authenticating",
+      AUTH_REQUIRED: "auth_required",
+      DISCONNECTED: "disconnected",
+      FAILED: "failed",
+      RECONNECTING: "reconnecting",
+    },
+    api: {
+      authenticateWithToken: mocks.authenticateWithToken,
+      disconnect: mocks.apiDisconnect,
+      exchangeAuthCode: mocks.exchangeAuthCode,
+      getCurrentUserInfo: mocks.getCurrentUserInfo,
+      sendCommand: mocks.sendCommand,
+      serverInfo: mocks.serverInfo,
+      startAuthorization: mocks.startAuthorization,
+      state: mocks.apiState,
+    },
+  };
+});
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
     clearAuth: mocks.clearAuth,
     clearGuestSession: mocks.clearGuestSession,
+    endRejectedGuestSession: mocks.endRejectedGuestSession,
     getPersistentToken: mocks.getPersistentToken,
     getToken: mocks.getToken,
+    guestSessionKind: mocks.guestSessionKind,
     isDashboardViewer: () => false,
     isGuestAccessSession: () =>
       sessionStorage.getItem("ma_guest_access_token") !== null,
     leaveGuestSession: mocks.leaveGuestSession,
+    returnToFullApp: mocks.returnToFullApp,
     setToken: mocks.setToken,
   },
 }));
@@ -60,6 +101,7 @@ vi.mock("@/plugins/auth", () => ({
 vi.mock("@/plugins/remote", () => ({
   remoteConnectionManager: {
     connectRemote: mocks.connectRemote,
+    currentRemoteId: mocks.currentRemoteId,
     disconnect: mocks.disconnectRemote,
     getStoredRemoteId: mocks.getStoredRemoteId,
   },
@@ -80,6 +122,9 @@ vi.mock("vue-router", () => ({
 vi.mock("vue-qrcode-reader", () => ({
   QrcodeStream: { template: "<div />" },
 }));
+
+// a leaked Login keeps listening for sign-ins handed over by another tab
+enableAutoUnmount(afterEach);
 
 class WebSocketMock {
   onclose: (() => void) | null = null;
@@ -162,8 +207,11 @@ function mountLogin(): VueWrapper {
   });
 }
 
-function setLocation(query: string) {
-  window.history.replaceState({}, "", `http://localhost:3000/${query}`);
+function setLocation(query: string, origin = "http://localhost:3000") {
+  // setURL, as replaceState can not change the origin
+  (
+    window as unknown as { happyDOM: { setURL(url: string): void } }
+  ).happyDOM.setURL(`${origin}/${query}`);
 }
 
 function mockStandaloneFrontend() {
@@ -186,7 +234,11 @@ function mockHostedFrontend() {
 }
 
 function mockSuccessfulGuest(username = "party_guest") {
-  const guestUser = { user_id: "guest-id", username, role: "guest" };
+  const guestUser = user({
+    user_id: "guest-id",
+    username,
+    role: UserRole.GUEST,
+  });
   mocks.sendCommand.mockImplementation((command: string) => {
     if (command === "auth/join_code/exchange") {
       return Promise.resolve({
@@ -202,11 +254,11 @@ function mockSuccessfulGuest(username = "party_guest") {
       user:
         token === "guest-token"
           ? guestUser
-          : {
+          : user({
               user_id: "regular-id",
               username: "regular-user",
-              role: "admin",
-            },
+              role: UserRole.ADMIN,
+            }),
     }),
   );
 }
@@ -217,6 +269,7 @@ beforeEach(() => {
   setLocation("");
   vi.clearAllMocks();
   vi.useRealTimers();
+  mocks.apiState.value = "disconnected";
   mocks.routerReplace.mockResolvedValue(undefined);
   vi.stubGlobal("WebSocket", WebSocketMock);
   mocks.clearAuth.mockImplementation(() => {
@@ -237,6 +290,20 @@ beforeEach(() => {
   mocks.leaveGuestSession.mockImplementation(() => {
     mocks.clearGuestSession();
   });
+  mocks.guestSessionKind.mockImplementation(() =>
+    sessionStorage.getItem("ma_guest_access_token") ? "party" : null,
+  );
+  mocks.endRejectedGuestSession.mockImplementation(() => {
+    const kind = mocks.guestSessionKind();
+    if (!kind) return { outcome: "no-guest-session" };
+    mocks.clearGuestSession();
+    if (mocks.getToken()) {
+      mocks.returnToFullApp();
+      return { outcome: "own-session-restored" };
+    }
+    sessionStorage.setItem("ma_guest_session_ended", kind);
+    return { outcome: "ended", kind };
+  });
   mocks.getToken.mockImplementation(
     () =>
       sessionStorage.getItem("ma_guest_access_token") ||
@@ -247,11 +314,13 @@ beforeEach(() => {
       ? localStorage.getItem("ma_access_token")
       : null,
   );
-  mocks.getCurrentUserInfo.mockResolvedValue({
-    user_id: "ingress-user",
-    username: "ingress-user",
-    role: "admin",
-  });
+  mocks.getCurrentUserInfo.mockResolvedValue(
+    user({
+      user_id: "ingress-user",
+      username: "ingress-user",
+      role: UserRole.ADMIN,
+    }),
+  );
   mocks.serverInfo.value = {
     homeassistant_addon: false,
     server_id: "server-id",
@@ -260,7 +329,11 @@ beforeEach(() => {
     sessionStorage.setItem("ma_guest_access_token", token);
   });
   mocks.getStoredRemoteId.mockReturnValue(null);
-  mocks.connectRemote.mockResolvedValue({ id: "transport" });
+  mocks.currentRemoteId.value = null;
+  mocks.connectRemote.mockImplementation((remoteId: string) => {
+    mocks.currentRemoteId.value = remoteId;
+    return Promise.resolve({ id: "transport" });
+  });
   mockSuccessfulGuest();
 });
 
@@ -283,16 +356,19 @@ describe("guest join login", () => {
 
       const wrapper = mountLogin();
 
-      await vi.waitFor(() => {
-        expect(wrapper.emitted("authenticated")).toEqual([
-          [
-            {
-              token: "guest-token",
-              user: { user_id: "guest-id", username, role: "guest" },
-            },
-          ],
-        ]);
-      });
+      await flushPromises();
+      expect(wrapper.emitted("authenticated")).toEqual([
+        [
+          {
+            token: "guest-token",
+            user: user({
+              user_id: "guest-id",
+              username,
+              role: UserRole.GUEST,
+            }),
+          },
+        ],
+      ]);
       expect(wrapper.emitted("local-connect")).toEqual([
         ["http://music-assistant.local:8095"],
       ]);
@@ -330,9 +406,8 @@ describe("guest join login", () => {
     await wrapper.find("input").setValue("http://selected-server:8095");
     await wrapper.find("button").trigger("click");
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")).toHaveLength(1);
-    });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toHaveLength(1);
     expect(wrapper.emitted("local-connect")).toEqual([
       ["http://selected-server:8095"],
     ]);
@@ -358,9 +433,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")).toHaveLength(1);
-    });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toHaveLength(1);
     expect(mocks.sendCommand).toHaveBeenCalledWith("auth/join_code/exchange", {
       code: "ABCD1234",
     });
@@ -382,15 +456,14 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        token: "admin-token",
-        user: {
-          user_id: "regular-id",
-          username: "regular-user",
-          role: "admin",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      token: "admin-token",
+      user: user({
+        user_id: "regular-id",
+        username: "regular-user",
+        role: UserRole.ADMIN,
+      }),
     });
     expect(mocks.clearAuth).not.toHaveBeenCalled();
     expect(localStorage.getItem("ma_access_token")).toBe("admin-token");
@@ -421,21 +494,46 @@ describe("guest join login", () => {
     );
     mocks.sendCommand.mockResolvedValue({
       success: false,
-      error: "expired",
+      error: "Invalid or expired join code",
     });
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain(
-        "Failed to join party. The code may have expired.",
-      );
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Couldn't join the party");
+    expect(wrapper.get(".text-h6").text()).toBe("Couldn't join the party");
+    expect(wrapper.text()).toContain("Invalid or expired join code");
+    expect(wrapper.text()).not.toContain("Connection Failed");
     expect(sessionStorage.getItem("ma_pending_join_code")).toBeNull();
     expect(sessionStorage.getItem("ma_pending_join_type")).toBeNull();
     expect(sessionStorage.getItem("ma_guest_server_address")).toBeNull();
     expect(localStorage.getItem("ma_access_token")).toBe("admin-token");
     expect(sessionStorage.getItem("ma_guest_access_token")).toBeNull();
+    expect(wrapper.emitted("authenticated")).toBeUndefined();
+  });
+
+  it("shows the server reason when the join code exchange is rate limited", async () => {
+    setLocation("?join=abcd1234");
+    mockStandaloneFrontend();
+    localStorage.setItem(
+      "mass_server_address",
+      "http://music-assistant.local:8095",
+    );
+    mocks.sendCommand.mockResolvedValue({
+      success: false,
+      error: "Too many failed attempts. Please try again in 120 seconds.",
+    });
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Couldn't join the party");
+    expect(wrapper.get(".text-h6").text()).toBe("Couldn't join the party");
+    expect(wrapper.text()).toContain(
+      "Too many failed attempts. Please try again in 120 seconds.",
+    );
+    expect(wrapper.text()).not.toContain("expired");
+    expect(wrapper.text()).not.toContain("Connection Failed");
     expect(wrapper.emitted("authenticated")).toBeUndefined();
   });
 
@@ -445,9 +543,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")).toHaveLength(1);
-    });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toHaveLength(1);
     expect(wrapper.emitted("local-connect")).toEqual([
       ["http://localhost:3000"],
     ]);
@@ -467,9 +564,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")).toHaveLength(1);
-    });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toHaveLength(1);
     expect(mocks.connectRemote).toHaveBeenCalledWith(remoteId, {
       remember: false,
     });
@@ -490,15 +586,14 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        token: "admin-token",
-        user: {
-          user_id: "regular-id",
-          username: "regular-user",
-          role: "admin",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      token: "admin-token",
+      user: user({
+        user_id: "regular-id",
+        username: "regular-user",
+        role: UserRole.ADMIN,
+      }),
     });
     expect(mocks.authenticateWithToken).toHaveBeenCalledWith("admin-token");
     expect(mocks.sendCommand).not.toHaveBeenCalledWith(
@@ -522,15 +617,14 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        token: "guest-token",
-        user: {
-          user_id: "guest-id",
-          username: "party_guest",
-          role: "guest",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      token: "guest-token",
+      user: user({
+        user_id: "guest-id",
+        username: "party_guest",
+        role: UserRole.GUEST,
+      }),
     });
     expect(mocks.authenticateWithToken).not.toHaveBeenCalledWith("admin-token");
     expect(mocks.sendCommand).toHaveBeenCalledWith("auth/join_code/exchange", {
@@ -545,9 +639,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Network unavailable");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Network unavailable");
     expect(sessionStorage.getItem("ma_pending_join_code")).toBe("abcd1234");
     expect(sessionStorage.getItem("ma_pending_join_type")).toBe("remote");
     expect(sessionStorage.getItem("ma_guest_remote_id")).toBe(remoteId);
@@ -587,14 +680,13 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        user: {
-          user_id: "ingress-user",
-          username: "ingress-user",
-          role: "admin",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      user: user({
+        user_id: "ingress-user",
+        username: "ingress-user",
+        role: UserRole.ADMIN,
+      }),
     });
 
     expect(mocks.getCurrentUserInfo).toHaveBeenCalledOnce();
@@ -614,12 +706,17 @@ describe("guest join login", () => {
     localStorage.setItem("mass_remote_id", regularRemoteId);
     mocks.authenticateWithToken.mockRejectedValueOnce(new Error("expired"));
 
-    mountLogin();
+    const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(mocks.leaveGuestSession).toHaveBeenCalledOnce();
-    });
+    await flushPromises();
+    expect(mocks.returnToFullApp).toHaveBeenCalledOnce();
+    await flushPromises();
 
+    // The reload is already under way, so nothing should replace it with a
+    // sign-in form the guest would see flash past.
+    expect(wrapper.text()).not.toContain("Username");
+    expect(mocks.clearGuestSession).toHaveBeenCalledOnce();
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
     expect(mocks.connectRemote).toHaveBeenCalledWith(guestRemoteId, {
       remember: false,
     });
@@ -630,6 +727,100 @@ describe("guest join login", () => {
     expect(mocks.clearAuth).not.toHaveBeenCalled();
     expect(localStorage.getItem("ma_access_token")).toBe("admin-token");
     expect(localStorage.getItem("mass_remote_id")).toBe(regularRemoteId);
+  });
+});
+
+describe("ended guest session", () => {
+  const stubExpiredGuestToken = (kind = "party") => {
+    setLocation("");
+    mockStandaloneFrontend();
+    localStorage.setItem(
+      "mass_server_address",
+      "http://music-assistant.local:8095",
+    );
+    sessionStorage.setItem("ma_guest_access_token", "expired-guest-token");
+    sessionStorage.setItem(
+      "ma_guest_server_address",
+      "http://music-assistant.local:8095",
+    );
+    mocks.guestSessionKind.mockReturnValue(kind);
+    mocks.authenticateWithToken.mockRejectedValue(new Error("expired"));
+  };
+
+  it("explains an ended party session instead of asking for credentials", async () => {
+    stubExpiredGuestToken();
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your party session has ended");
+    expect(wrapper.text()).toContain(
+      "Ask the host to share the party link or QR code again to rejoin.",
+    );
+    expect(wrapper.text()).toContain("Scan QR Code");
+    expect(wrapper.text()).not.toContain("Username");
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBe("party");
+    expect(mocks.clearGuestSession).toHaveBeenCalledOnce();
+    expect(mocks.returnToFullApp).not.toHaveBeenCalled();
+    expect(mocks.clearAuth).not.toHaveBeenCalled();
+  });
+
+  it("uses the quiz wording for an ended quiz session", async () => {
+    stubExpiredGuestToken("music_quiz");
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your quiz session has ended");
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBe("music_quiz");
+  });
+
+  it("keeps explaining an ended session after a reload", async () => {
+    setLocation("");
+    mockStandaloneFrontend();
+    sessionStorage.setItem("ma_guest_session_ended", "party");
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your party session has ended");
+    expect(mocks.authenticateWithToken).not.toHaveBeenCalled();
+    expect(mocks.connectRemote).not.toHaveBeenCalled();
+  });
+
+  it("drops the ended marker when the guest scans a fresh join code", async () => {
+    setLocation("?join=abcd1234");
+    mockStandaloneFrontend();
+    sessionStorage.setItem("ma_guest_session_ended", "party");
+    localStorage.setItem(
+      "mass_server_address",
+      "http://music-assistant.local:8095",
+    );
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toBeTruthy();
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
+    expect(mocks.sendCommand).toHaveBeenCalledWith("auth/join_code/exchange", {
+      code: "ABCD1234",
+    });
+  });
+
+  it("hands the tab back to the full app when the guest leaves", async () => {
+    stubExpiredGuestToken();
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your party session has ended");
+    const leaveButton = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Continue to Music Assistant");
+    await leaveButton!.trigger("click");
+
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
+    expect(mocks.returnToFullApp).toHaveBeenCalledOnce();
   });
 });
 
@@ -644,14 +835,13 @@ describe("ingress login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        user: {
-          role: "admin",
-          user_id: "ingress-user",
-          username: "ingress-user",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      user: user({
+        role: UserRole.ADMIN,
+        user_id: "ingress-user",
+        username: "ingress-user",
+      }),
     });
     expect(mocks.getCurrentUserInfo).toHaveBeenCalledOnce();
     expect(mocks.authenticateWithToken).not.toHaveBeenCalled();
@@ -664,15 +854,14 @@ describe("ingress login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        token: "admin-token",
-        user: {
-          role: "admin",
-          user_id: "regular-id",
-          username: "regular-user",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      token: "admin-token",
+      user: user({
+        role: UserRole.ADMIN,
+        user_id: "regular-id",
+        username: "regular-user",
+      }),
     });
     expect(mocks.authenticateWithToken).toHaveBeenCalledWith("admin-token");
     expect(mocks.getCurrentUserInfo).not.toHaveBeenCalled();
@@ -684,9 +873,452 @@ describe("ingress login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Username");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Username");
     expect(mocks.getCurrentUserInfo).not.toHaveBeenCalled();
+  });
+});
+
+describe("connection state changes", () => {
+  it("shows the reconnecting screen when the connection drops", async () => {
+    mockStandaloneFrontend();
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    mocks.apiState.value = "reconnecting";
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Reconnecting");
+    wrapper.unmount();
+  });
+
+  it("returns to the server picker when a reconnect fails", async () => {
+    mockStandaloneFrontend();
+    const wrapper = mountLogin();
+    await flushPromises();
+    mocks.apiState.value = "reconnecting";
+    await flushPromises();
+    expect(wrapper.text()).toContain("Reconnecting");
+
+    mocks.apiState.value = "disconnected";
+
+    await flushPromises();
+    expect(wrapper.text()).not.toContain("Reconnecting");
+    expect(wrapper.text()).toContain("Connect");
+    wrapper.unmount();
+  });
+
+  it("keeps explaining an ended guest session while the connection churns", async () => {
+    mockStandaloneFrontend();
+    sessionStorage.setItem("ma_guest_session_ended", "party");
+    const wrapper = mountLogin();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your party session has ended");
+
+    mocks.apiState.value = "reconnecting";
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Your party session has ended");
+    expect(wrapper.text()).not.toContain("Reconnecting");
+    wrapper.unmount();
+  });
+});
+
+describe("Home Assistant sign in", () => {
+  const remoteId = "ABCDEFGH1234512345ABCDEFGH";
+
+  beforeEach(() => {
+    mocks.sendCommand.mockImplementation((command: string) =>
+      Promise.resolve(
+        command === "auth/providers" ? [{ provider_id: "homeassistant" }] : [],
+      ),
+    );
+  });
+
+  it("hides the button for a remote connection without an External URL", async () => {
+    setLocation(`?remote=1&remote_id=${remoteId}`);
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Username");
+    expect(wrapper.text()).not.toContain("Sign in with Home Assistant");
+  });
+
+  it("shows the button for a remote connection with an External URL", async () => {
+    setLocation(`?remote=1&remote_id=${remoteId}`);
+    mocks.serverInfo.value = {
+      homeassistant_addon: false,
+      server_id: "server-id",
+      external_url: "https://music.example.com",
+    };
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Sign in with Home Assistant");
+  });
+
+  it("shows the button for a local connection without an External URL", async () => {
+    mockStandaloneFrontend();
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    await wrapper.find("input").setValue("http://music-assistant.local:8095");
+    await wrapper.find("button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Sign in with Home Assistant");
+  });
+});
+
+describe("Home Assistant sign in over Remote Access", () => {
+  const portal = "https://app.music-assistant.io";
+  const remoteId = "ABCDEFGH1234512345ABCDEFGH";
+  const state = "w.0123456789abcdefghijABCDEFGHIJ";
+  const haCode = "3f9c1b2e7d4a4c0e9b8a6f5d2c1e0b9a";
+  const verifier = "v".repeat(43);
+  const pendingKey = `ma.external_login.${state}`;
+  const authorizationUrl = "https://ha.example.com/auth/authorize?state=x";
+  const signedInUser = user({
+    user_id: "ha-user",
+    username: "ha-user",
+    role: UserRole.ADMIN,
+  });
+  let replaceLocation: MockInstance<Location["replace"]>;
+
+  function mockProviders(supportsRemoteApp?: boolean) {
+    mocks.sendCommand.mockImplementation((command: string) =>
+      Promise.resolve(
+        command === "auth/providers"
+          ? [
+              {
+                provider_id: "homeassistant",
+                supports_remote_app: supportsRemoteApp,
+              },
+            ]
+          : [],
+      ),
+    );
+  }
+
+  function savePending() {
+    sessionStorage.setItem(
+      pendingKey,
+      JSON.stringify({
+        verifier,
+        remoteId,
+        returnPath: "/",
+        createdAt: Date.now(),
+      }),
+    );
+  }
+
+  async function clickHomeAssistant(wrapper: VueWrapper) {
+    const button = wrapper
+      .findAll("button")
+      .find((b) => b.text().includes("Sign in with Home Assistant"));
+    await button!.trigger("click");
+    // the challenge comes from crypto.subtle, which flushPromises doesn't wait for
+    await vi.waitFor(() => expect(mocks.startAuthorization).toHaveBeenCalled());
+    await flushPromises();
+  }
+
+  function passwordError(wrapper: VueWrapper) {
+    return wrapper
+      .find('input[placeholder="Enter your password"]')
+      .attributes("error-messages");
+  }
+
+  beforeEach(() => {
+    replaceLocation = vi
+      .spyOn(window.location, "replace")
+      .mockImplementation(() => {});
+    mocks.authenticateWithToken.mockResolvedValue({ user: signedInUser });
+    mocks.exchangeAuthCode.mockResolvedValue({
+      success: true,
+      access_token: "ha-token",
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("shows the button when Home Assistant can return to the remote app", async () => {
+    mockProviders(true);
+    setLocation(`?remote_id=${remoteId}`, portal);
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Sign in with Home Assistant");
+  });
+
+  it("hides the button on another origin, which the sign-in can't return to", async () => {
+    mockProviders(true);
+    setLocation(`?remote=1&remote_id=${remoteId}`);
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Username");
+    expect(wrapper.text()).not.toContain("Sign in with Home Assistant");
+  });
+
+  it("starts the sign-in with the challenge of a remembered verifier", async () => {
+    mockProviders(true);
+    mocks.startAuthorization.mockResolvedValue({
+      authorization_url: authorizationUrl,
+      state,
+    });
+    setLocation(`?remote_id=${remoteId}`, portal);
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    await clickHomeAssistant(wrapper);
+
+    const pending = JSON.parse(sessionStorage.getItem(pendingKey)!);
+    expect(pending).toMatchObject({ remoteId, returnPath: "/" });
+    expect(mocks.startAuthorization).toHaveBeenCalledWith(
+      "homeassistant",
+      `${portal}/`,
+      await createCodeChallenge(pending.verifier),
+    );
+    expect(replaceLocation).toHaveBeenCalledWith(authorizationUrl);
+  });
+
+  it("keeps today's flow when the server answers without a state", async () => {
+    mockProviders(true);
+    mocks.startAuthorization.mockResolvedValue({
+      authorization_url: authorizationUrl,
+    });
+    setLocation(`?remote_id=${remoteId}`, portal);
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    await clickHomeAssistant(wrapper);
+
+    expect(mocks.startAuthorization.mock.calls[0][2]).toBeDefined();
+    expect(sessionStorage.length).toBe(0);
+    expect(replaceLocation).toHaveBeenCalledWith(authorizationUrl);
+  });
+
+  it("returns to the server when only an External URL allows it", async () => {
+    mockProviders(undefined);
+    mocks.serverInfo.value = {
+      homeassistant_addon: false,
+      server_id: "server-id",
+      external_url: "https://music.example.com",
+    };
+    mocks.startAuthorization.mockResolvedValue({
+      authorization_url: authorizationUrl,
+    });
+    setLocation(`?remote_id=${remoteId}`, portal);
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    await clickHomeAssistant(wrapper);
+
+    expect(mocks.startAuthorization).toHaveBeenCalledWith(
+      "homeassistant",
+      `${portal}/`,
+      undefined,
+    );
+    expect(sessionStorage.length).toBe(0);
+    expect(replaceLocation).toHaveBeenCalledWith(authorizationUrl);
+  });
+
+  it("refuses an authorization URL that isn't http or https", async () => {
+    mockProviders(true);
+    mocks.startAuthorization.mockResolvedValue({
+      authorization_url: "javascript:alert(1)",
+      state,
+    });
+    setLocation(`?remote_id=${remoteId}`, portal);
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    await clickHomeAssistant(wrapper);
+
+    expect(replaceLocation).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(pendingKey)).toBeNull();
+  });
+
+  it("completes a returned sign-in before trying the stored token", async () => {
+    const storedRemoteId = "ZYXWVUTS9876598765ZYXWVUTS";
+    localStorage.setItem("ma_access_token", "stored-token");
+    mocks.getStoredRemoteId.mockReturnValue(storedRemoteId);
+    savePending();
+    setLocation(`?code=${haCode}&state=${state}`, portal);
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(mocks.connectRemote).toHaveBeenCalledExactlyOnceWith(remoteId);
+    expect(mocks.exchangeAuthCode).toHaveBeenCalledWith(
+      state,
+      haCode,
+      verifier,
+    );
+    expect(mocks.authenticateWithToken).toHaveBeenCalledExactlyOnceWith(
+      "ha-token",
+    );
+    expect(wrapper.emitted("authenticated")).toEqual([
+      [{ token: "ha-token", user: signedInUser }],
+    ]);
+    expect(mocks.setToken).not.toHaveBeenCalled();
+    expect(window.location.search).toBe("");
+    expect(sessionStorage.getItem(pendingKey)).toBeNull();
+  });
+
+  it("never takes a returned code for a token without its pending sign-in", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    setLocation(`?code=${haCode}&state=${state}`, portal);
+
+    mountLogin();
+
+    await flushPromises();
+    expect(mocks.setToken).not.toHaveBeenCalled();
+    expect(mocks.exchangeAuthCode).not.toHaveBeenCalled();
+    expect(window.location.search).toBe("");
+  });
+
+  it("shows the reason on the login form when the exchange fails", async () => {
+    mockProviders(true);
+    mocks.exchangeAuthCode.mockResolvedValue({
+      success: false,
+      error: "This sign-in is invalid or has expired",
+      translation_key: "sign_in_expired",
+    });
+    savePending();
+    setLocation(`?code=${haCode}&state=${state}`, portal);
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toBeUndefined();
+    expect(wrapper.text()).toContain("Sign in with Home Assistant");
+    expect(passwordError(wrapper)).toBe(
+      "This sign-in is invalid or has expired",
+    );
+  });
+
+  it("shows why Home Assistant refused the sign-in", async () => {
+    mockProviders(true);
+    savePending();
+    setLocation(
+      `?error=access_denied&error_description=Not+allowed&state=${state}`,
+      portal,
+    );
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(mocks.connectRemote).toHaveBeenCalledExactlyOnceWith(remoteId);
+    expect(mocks.exchangeAuthCode).not.toHaveBeenCalled();
+    expect(passwordError(wrapper)).toBe("Not allowed");
+  });
+
+  it("shows the connection error when the server can't be reached", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.connectRemote.mockRejectedValue(new Error("Server is offline"));
+    savePending();
+    setLocation(`?code=${haCode}&state=${state}`, portal);
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(mocks.exchangeAuthCode).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("Server is offline");
+  });
+
+  it("completes a sign-in handed over from another tab without reconnecting", async () => {
+    mockProviders(true);
+    setLocation(`?remote_id=${remoteId}`, portal);
+    const wrapper = mountLogin();
+    await flushPromises();
+    savePending();
+
+    const callbackPage = new BroadcastChannel("ma-external-login");
+    callbackPage.postMessage({
+      type: "ma-external-login",
+      state,
+      code: haCode,
+    });
+    await vi.waitFor(() =>
+      expect(wrapper.emitted("authenticated")).toBeDefined(),
+    );
+    callbackPage.close();
+
+    expect(mocks.connectRemote).toHaveBeenCalledOnce();
+    expect(mocks.exchangeAuthCode).toHaveBeenCalledWith(
+      state,
+      haCode,
+      verifier,
+    );
+  });
+
+  it("leaves another server before completing a sign-in handed over for its own", async () => {
+    const otherRemoteId = "ZYXWVUTS9876598765ZYXWVUTS";
+    mockProviders(true);
+    setLocation(`?remote_id=${otherRemoteId}`, portal);
+    const wrapper = mountLogin();
+    await flushPromises();
+    savePending();
+    mocks.disconnectRemote.mockClear();
+    mocks.apiDisconnect.mockClear();
+
+    const callbackPage = new BroadcastChannel("ma-external-login");
+    callbackPage.postMessage({
+      type: "ma-external-login",
+      state,
+      code: haCode,
+    });
+    await vi.waitFor(() =>
+      expect(wrapper.emitted("authenticated")).toBeDefined(),
+    );
+    callbackPage.close();
+
+    expect(mocks.disconnectRemote).toHaveBeenCalledOnce();
+    expect(mocks.apiDisconnect).toHaveBeenCalledOnce();
+    expect(mocks.connectRemote).toHaveBeenLastCalledWith(remoteId);
+    expect(mocks.exchangeAuthCode).toHaveBeenCalledWith(
+      state,
+      haCode,
+      verifier,
+    );
+  });
+});
+
+describe("credentials field input behavior", () => {
+  it("marks username and password inputs for autofill and disables mobile autocorrect", async () => {
+    mockStandaloneFrontend();
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    await wrapper.find("input").setValue("http://music-assistant.local:8095");
+    await wrapper.find("button").trigger("click");
+    await flushPromises();
+
+    const usernameInput = wrapper.find(
+      'input[placeholder="Enter your username"]',
+    );
+    const passwordInput = wrapper.find(
+      'input[placeholder="Enter your password"]',
+    );
+
+    expect(usernameInput.attributes()).toMatchObject({
+      autocomplete: "username",
+      autocapitalize: "none",
+      autocorrect: "off",
+      spellcheck: "false",
+    });
+    expect(passwordInput.attributes()).toMatchObject({
+      autocomplete: "current-password",
+      autocapitalize: "none",
+      autocorrect: "off",
+      spellcheck: "false",
+    });
   });
 });

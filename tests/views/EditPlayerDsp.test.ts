@@ -7,25 +7,28 @@ import type {
   ToneControlFilter,
 } from "@/plugins/api/interfaces";
 import { DSPFilterType, EventType } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import EditPlayerDsp from "@/views/settings/EditPlayerDsp.vue";
+import {
+  eventbus,
+  type DeleteConfirmationDialogEvent,
+} from "@/plugins/eventbus";
 
 const apiMock = vi.hoisted(() => ({
-  applyDSPPreset: vi.fn(),
-  getDSPConfig: vi.fn(),
+  applyDSPPreset: vi.fn<MusicAssistantApi["applyDSPPreset"]>(),
+  getDSPConfig: vi.fn<MusicAssistantApi["getDSPConfig"]>(),
   playerDSPCallback: undefined as
-    | ((event: { data: DSPConfig }) => void)
-    | undefined,
+    ((event: { data: DSPConfig }) => void) | undefined,
   players: { "player-1": {} },
-  removeDSPPreset: vi.fn(),
-  saveDSPConfig: vi.fn(),
-  saveDSPPreset: vi.fn(),
+  removeDSPPreset: vi.fn<MusicAssistantApi["removeDSPPreset"]>(),
+  saveDSPConfig: vi.fn<MusicAssistantApi["saveDSPConfig"]>(),
+  saveDSPPreset: vi.fn<MusicAssistantApi["saveDSPPreset"]>(),
   subscribe: vi.fn(),
   unsubscribe: vi.fn(),
 }));
 const registryMock = vi.hoisted(() => ({
   presets: undefined as Ref<DSPConfigPreset[]> | undefined,
 }));
-
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
   default: apiMock,
@@ -42,8 +45,9 @@ vi.mock("@/composables/useDSPPresets", async () => {
     }),
   };
 });
+// The view uses only truncateString from @/helpers/utils.
 vi.mock("@/helpers/utils", () => ({
-  getPlayerName: () => "Test player",
+  truncateString: (str: string) => str,
 }));
 vi.mock("vue-i18n", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-i18n")>();
@@ -54,18 +58,8 @@ vi.mock("vue-i18n", async (importOriginal) => {
     }),
   };
 });
-vi.mock("vuetify", async () => {
-  const { ref } = await import("vue");
-  return {
-    useDisplay: () => ({ mobile: ref(false) }),
-    useTheme: () => ({
-      global: { current: ref({ dark: false }) },
-    }),
-  };
-});
-
 const SwitchStub = {
-  name: "VSwitch",
+  name: "Switch",
   props: ["modelValue"],
   emits: ["update:modelValue"],
   template:
@@ -203,7 +197,7 @@ describe("EditPlayerDsp preset identity", () => {
     );
   });
 
-  it("clears preset identity immediately on a top-level manual edit", async () => {
+  it("keeps preset identity when DSP is switched off and on", async () => {
     apiMock.getDSPConfig.mockResolvedValue(
       makeConfig({ preset_id: "preset-1" }),
     );
@@ -213,12 +207,48 @@ describe("EditPlayerDsp preset identity", () => {
     await wrapper.get(".dsp-switch").trigger("click");
     await nextTick();
 
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(apiMock.saveDSPConfig).toHaveBeenLastCalledWith(
+      "player-1",
+      expect.objectContaining({
+        enabled: false,
+        preset_id: "preset-1",
+      }),
+    );
+
+    await wrapper.get(".dsp-switch").trigger("click");
+    await nextTick();
+
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(apiMock.saveDSPConfig).toHaveBeenLastCalledWith(
+      "player-1",
+      expect.objectContaining({
+        enabled: true,
+        preset_id: "preset-1",
+      }),
+    );
+  });
+
+  it("clears preset identity immediately on a top-level manual edit", async () => {
+    apiMock.getDSPConfig.mockResolvedValue(
+      makeConfig({ preset_id: "preset-1" }),
+    );
+    const wrapper = await mountEditor();
+
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+    wrapper
+      .findAllComponents({ name: "DSPSlider" })[0]
+      .vm.$emit("update:modelValue", -3);
+    await nextTick();
+
     expect(selectedPresetBadge(wrapper)).toBeUndefined();
     await vi.advanceTimersByTimeAsync(2100);
     expect(apiMock.saveDSPConfig).toHaveBeenCalledWith(
       "player-1",
       expect.objectContaining({
-        enabled: false,
+        input_gain: -3,
         preset_id: null,
       }),
     );
@@ -643,48 +673,70 @@ describe("EditPlayerDsp preset identity", () => {
   });
 });
 
+describe("EditPlayerDsp preset removal", () => {
+  const nativeConfirm = vi.fn();
+
+  beforeEach(() => {
+    nativeConfirm.mockReset();
+    // the test environment has no window.confirm, so a native popup would throw
+    // here; the stub turns that into a readable assertion instead
+    vi.stubGlobal("confirm", nativeConfirm);
+    vi.spyOn(eventbus, "emit");
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.mocked(eventbus.emit).mockRestore();
+  });
+
+  it("asks through the app's own dialog before removing a preset", async () => {
+    const wrapper = await mountEditor();
+
+    await wrapper.get(".preset-item button").trigger("click");
+    const request = confirmationRequest();
+
+    expect(nativeConfirm).not.toHaveBeenCalled();
+    expect(request?.message).toBe("settings.dsp.presets.remove_confirm");
+    expect(apiMock.removeDSPPreset).not.toHaveBeenCalled();
+
+    await request?.onConfirm();
+
+    expect(apiMock.removeDSPPreset).toHaveBeenCalledWith("preset-1");
+    // the trash button must not also load the preset it removes
+    expect(apiMock.applyDSPPreset).not.toHaveBeenCalled();
+  });
+});
+
+function confirmationRequest() {
+  // the emitter types its payload per event, which a call list cannot express
+  const calls = vi.mocked(eventbus.emit).mock.calls as unknown as [
+    string,
+    DeleteConfirmationDialogEvent,
+  ][];
+  return calls.find(([event]) => event === "deleteConfirmationDialog")?.[1];
+}
+
 async function mountEditor() {
   const wrapper = shallowMount(EditPlayerDsp, {
     props: { playerId: "player-1" },
     global: {
       mocks: {
         $t: translate,
-        $vuetify: {
-          theme: { current: { dark: false } },
-        },
       },
       stubs: {
         Badge: { template: "<span><slot /></span>" },
+        Button: { template: "<button><slot /></button>" },
+        DropdownMenu: { template: "<div><slot /></div>" },
+        DropdownMenuContent: { template: "<div><slot /></div>" },
+        DropdownMenuItem: {
+          template: '<button class="preset-item"><slot /></button>',
+        },
+        DropdownMenuTrigger: { template: "<div><slot /></div>" },
         DSPParametricEQ: true,
         DSPPipeline: PipelineStub,
         DSPSlider: true,
         DSPToneControl: ToneControlStub,
-        VAlert: true,
-        VBtn: { template: "<button><slot /></button>" },
-        VCard: { template: "<div><slot /></div>" },
-        VCardActions: { template: "<div><slot /></div>" },
-        VCardText: { template: "<div><slot /></div>" },
-        VCardTitle: { template: "<div><slot /></div>" },
-        VCol: { template: "<div><slot /></div>" },
-        VContainer: { template: "<div><slot /></div>" },
-        VDialog: { template: "<div><slot /></div>" },
-        VIcon: true,
-        VList: { template: "<div><slot /></div>" },
-        VListItem: {
-          template:
-            '<button class="preset-item"><slot /><slot name="append" /></button>',
-        },
-        VListItemTitle: { template: "<span><slot /></span>" },
-        VMenu: {
-          template: '<div><slot name="activator" :props="{}" /><slot /></div>',
-        },
-        VRow: { template: "<div><slot /></div>" },
-        VSelect: { template: "<div />" },
-        VSpacer: true,
-        VSwitch: SwitchStub,
-        VTextField: { template: "<div />" },
-        VToolbar: { template: "<div><slot /></div>" },
-        VToolbarTitle: { template: "<span><slot /></span>" },
+        Switch: SwitchStub,
       },
     },
   });

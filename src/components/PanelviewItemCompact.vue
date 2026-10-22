@@ -10,6 +10,8 @@
     :disabled="disabled"
     :parent-item="parentItem"
     :sort-by="sortBy"
+    :sort-field="sortField"
+    :sort-direction="sortDirection"
     :show-provider-on-cover="showProviderOnCover"
     @select="(i, selected) => emit('select', i, selected)"
   />
@@ -17,7 +19,12 @@
 
 <script setup lang="ts">
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
-import { ItemMapping, type MediaItemType } from "@/plugins/api/interfaces";
+import {
+  ItemMapping,
+  SortDirection,
+  SortField,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 
 export interface Props {
   item: MediaItemType | ItemMapping;
@@ -31,6 +38,8 @@ export interface Props {
   disablePlayButton?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
   disabled?: boolean;
 }
 withDefaults(defineProps<Props>(), {
@@ -44,6 +53,8 @@ withDefaults(defineProps<Props>(), {
   disabled: false,
   parentItem: undefined,
   sortBy: undefined,
+  sortField: undefined,
+  sortDirection: undefined,
 });
 
 const emit = defineEmits<{

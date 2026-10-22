@@ -5,7 +5,7 @@
         <Button
           variant="ghost"
           size="icon"
-          :title="$t('tooltip.toggle_view_mode')"
+          :title="viewModeMenuLabel"
           @click="(e: MouseEvent) => openViewModeMenu(e)"
         >
           <v-icon :icon="viewModeIcon" />
@@ -49,7 +49,8 @@
     <template v-else-if="itemDetails && !loading">
       <ItemsListing
         itemtype="artists"
-        :load-items="loadGenreArtists"
+        :load-paged-data="loadGenreArtists"
+        :sort-listing="ListingType.LIBRARY_ARTISTS"
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
@@ -68,7 +69,8 @@
       <br />
       <ItemsListing
         itemtype="albums"
-        :load-items="loadGenreAlbums"
+        :load-paged-data="loadGenreAlbums"
+        :sort-listing="ListingType.LIBRARY_ALBUMS"
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
@@ -87,7 +89,8 @@
       <br />
       <ItemsListing
         itemtype="tracks"
-        :load-items="loadGenreTracks"
+        :load-paged-data="loadGenreTracks"
+        :sort-listing="ListingType.LIBRARY_TRACKS"
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :show-track-number="false"
@@ -107,7 +110,8 @@
       <br />
       <ItemsListing
         itemtype="playlists"
-        :load-items="loadGenrePlaylists"
+        :load-paged-data="loadGenrePlaylists"
+        :sort-listing="ListingType.LIBRARY_PLAYLISTS"
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
@@ -126,7 +130,8 @@
       <br />
       <ItemsListing
         itemtype="podcasts"
-        :load-items="loadGenrePodcasts"
+        :load-paged-data="loadGenrePodcasts"
+        :sort-listing="ListingType.LIBRARY_PODCASTS"
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
@@ -145,7 +150,8 @@
       <br />
       <ItemsListing
         itemtype="audiobooks"
-        :load-items="loadGenreAudiobooks"
+        :load-paged-data="loadGenreAudiobooks"
+        :sort-listing="ListingType.LIBRARY_AUDIOBOOKS"
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
@@ -165,7 +171,7 @@
     </template>
 
     <GenreAliasManager
-      v-if="itemDetails && isAdmin"
+      v-if="itemDetails && canManageLibrary"
       :genre="itemDetails"
       :existing-genre-names="existingGenreNames"
       @reload="loadItemDetails"
@@ -180,30 +186,23 @@ import GenreAliasManager from "@/components/genre/GenreAliasManager.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { Button } from "@/components/ui/button";
+import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
-  EventMessage,
-  EventType,
   Genre,
-  MediaItemType,
+  ListingType,
   MediaItemTypeOrItemMapping,
   MediaType,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { SquareArrowRightEnter } from "@lucide/vue";
-import {
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-  type Component,
-} from "vue";
+import { computed, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
@@ -228,7 +227,9 @@ const existingGenreNames = ref<Set<string>>(new Set());
 const { t } = useI18n();
 const router = useRouter();
 
-const isAdmin = computed(() => authManager.isAdmin());
+const canManageLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_MANAGE),
+);
 
 type GenreViewMode = "discovery" | "list" | "panel" | "panel_compact";
 
@@ -261,6 +262,14 @@ const viewModeIcon = computed(() => {
   if (viewMode.value === "panel_compact") return "mdi-view-comfy";
   return "mdi-view-list";
 });
+
+const getViewModeLabel = function (mode: GenreViewMode) {
+  return t(`view.${mode}`);
+};
+
+const viewModeMenuLabel = computed(() =>
+  t("tooltip.view_mode_current", [getViewModeLabel(viewMode.value)]),
+);
 
 const openViewModeMenu = (e: MouseEvent) => {
   eventbus.emit("contextmenu", {
@@ -384,9 +393,10 @@ const loadGenreArtists = async (params: LoadDataParams) => {
   return await api.getLibraryArtists(
     params.favoritesOnly || undefined,
     params.search,
-    undefined,
-    undefined,
-    params.sortBy,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
     undefined,
     params.provider?.length ? params.provider : undefined,
     genreId(),
@@ -398,9 +408,10 @@ const loadGenreAlbums = async (params: LoadDataParams) => {
   return await api.getLibraryAlbums(
     params.favoritesOnly || undefined,
     params.search,
-    undefined,
-    undefined,
-    params.sortBy,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
     undefined,
     params.provider?.length ? params.provider : undefined,
     genreId(),
@@ -412,9 +423,10 @@ const loadGenreTracks = async (params: LoadDataParams) => {
   return await api.getLibraryTracks(
     params.favoritesOnly || undefined,
     params.search,
-    undefined,
-    undefined,
-    params.sortBy,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -425,9 +437,10 @@ const loadGenrePlaylists = async (params: LoadDataParams) => {
   return await api.getLibraryPlaylists(
     params.favoritesOnly || undefined,
     params.search,
-    undefined,
-    undefined,
-    params.sortBy,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -438,9 +451,10 @@ const loadGenrePodcasts = async (params: LoadDataParams) => {
   return await api.getLibraryPodcasts(
     params.favoritesOnly || undefined,
     params.search,
-    undefined,
-    undefined,
-    params.sortBy,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -451,9 +465,10 @@ const loadGenreAudiobooks = async (params: LoadDataParams) => {
   return await api.getLibraryAudiobooks(
     params.favoritesOnly || undefined,
     params.search,
-    undefined,
-    undefined,
-    params.sortBy,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
@@ -474,18 +489,7 @@ watch(
   },
 );
 
-onMounted(() => {
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_UPDATED,
-    (evt: EventMessage) => {
-      const updatedItem = evt.data as MediaItemType;
-      if (itemDetails.value?.uri == updatedItem.uri) {
-        itemDetails.value = updatedItem as Genre;
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
-});
+useDetailItemUpdates(itemDetails);
 </script>
 
 <style scoped>

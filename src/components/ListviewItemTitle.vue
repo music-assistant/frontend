@@ -17,15 +17,15 @@
   >
     {{ displayName }}
     <span v-if="'version' in item && item.version"> ({{ item.version }}) </span>
-    <span
-      v-if="item.media_type == MediaType.TRACK && item.metadata?.release_date"
-    >
-      ({{ new Date(item.metadata.release_date).getFullYear() }})
-    </span>
+    <span v-if="releaseYear"> ({{ releaseYear }}) </span>
   </span>
   <!-- explicit icon -->
   <template
-    v-if="item && item.metadata && parseBool(item.metadata.explicit || false)"
+    v-if="
+      'metadata' in item &&
+      item.metadata &&
+      parseBool(item.metadata.explicit || false)
+    "
   >
     <Tooltip>
       <TooltipTrigger as-child>
@@ -49,12 +49,14 @@
 </template>
 
 <script setup lang="ts">
-import { getBrowseFolderName, parseBool } from "@/helpers/utils";
+import { parseBool } from "@/helpers/parse";
+import { getBrowseFolderName, getTrackReleaseYear } from "@/helpers/utils";
 import {
   MediaType,
   type BrowseFolder,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
 import {
@@ -65,20 +67,26 @@ import {
 
 // properties
 export interface Props {
-  displayName: string;
+  displayName?: string;
   item: MediaItemType;
-  showCheckboxes: boolean;
-  isPlaying: boolean;
+  parentItem?: MediaItemType;
+  showCheckboxes?: boolean;
+  isPlaying?: boolean;
 }
 
 // global refs
 const { t } = useI18n();
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   displayName: "",
+  parentItem: undefined,
   showCheckboxes: false,
   isPlaying: false,
 });
+
+const releaseYear = computed(() =>
+  getTrackReleaseYear(props.item, props.parentItem),
+);
 </script>
 
 <style scoped>

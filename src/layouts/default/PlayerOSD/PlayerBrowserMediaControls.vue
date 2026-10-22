@@ -12,6 +12,12 @@
 // First second of this file has an inaudible 15Hz tone (-64dB), rest is silent.
 // We only play the tone once at the start to ensure that the notification is shown.
 import audio from "@/assets/almost_silent.mp3";
+import {
+  SKIP_BACK_SECONDS,
+  SKIP_FORWARD_SECONDS,
+  useSkipControls,
+} from "@/composables/useSkipControls";
+import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
@@ -87,8 +93,7 @@ updateMediaState(store.activePlayer?.playback_state);
 // This allows for correct seeking on repeated seek forward/backward presses
 let lastSeekPos = undefined as undefined | number;
 let lastSeekPosTimeoutHandle = undefined as
-  | undefined
-  | ReturnType<typeof setTimeout>;
+  undefined | ReturnType<typeof setTimeout>;
 
 const lastSeekPosTimeout = function () {
   clearTimeout(lastSeekPosTimeoutHandle);
@@ -99,23 +104,32 @@ const lastSeekPosTimeout = function () {
 };
 
 useMediaBrowserMetaData();
+const { showSkip } = useSkipControls();
 
 const seekHandler = function (
   evt: MediaSessionActionDetails,
   player_id: string,
 ) {
   let to = null;
-  if (evt.action === "seekto" && evt.seekTime) {
+  if (evt.action === "seekto" && evt.seekTime != null) {
     to = evt.seekTime;
   } else if (evt.action === "seekforward" || evt.action === "seekbackward") {
-    const offset = evt.seekOffset || 10;
-    const queueId = store.activePlayerQueue?.queue_id;
-    const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-    const elapsed_time =
-      lastSeekPos != null ? lastSeekPos : queueTime?.elapsed_time;
+    const offset = evt.seekOffset || defaultSeekOffset(evt.action);
+    const queue = store.activePlayerQueue;
+    // the server adds up quick presses and keeps the jump within the item
+    if (showSkip.value && queue) {
+      // the server can not skip within an item without a duration
+      if (!queue.current_item?.duration) return;
+      api.queueCommandSkip(
+        queue.queue_id,
+        evt.action === "seekbackward" ? -offset : offset,
+      );
+      return;
+    }
+    const elapsed_time = lastSeekPos ?? resolveActiveElapsedTime(player_id);
     if (elapsed_time == null) return;
     if (evt.action === "seekbackward") {
-      to = elapsed_time - offset;
+      to = Math.max(0, elapsed_time - offset);
     } else {
       to = elapsed_time + offset;
     }
@@ -163,6 +177,12 @@ onMounted(() => {
     });
   }
 });
+
+// jump the same amounts as the skip buttons while they are shown
+function defaultSeekOffset(action: MediaSessionAction): number {
+  if (!showSkip.value) return 10;
+  return action === "seekbackward" ? SKIP_BACK_SECONDS : SKIP_FORWARD_SECONDS;
+}
 </script>
 <style lang="css">
 .audio-control {

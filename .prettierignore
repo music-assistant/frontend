@@ -8,3 +8,7 @@ pnpm-lock.yaml
 
 # Lokalise-managed translation files use their own formatting
 src/translations
+
+# Nested git worktrees hold another branch's checkout
+.claude/worktrees
+.worktrees

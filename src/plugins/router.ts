@@ -1,17 +1,35 @@
-import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
+import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
-import { watch } from "vue";
+import { returnedByHistory } from "@/helpers/navigation";
+import { $t } from "@/plugins/i18n";
+import { nextTick, watch } from "vue";
 import {
   createRouter,
   createWebHashHistory,
   type RouteLocationNormalized,
   type RouteRecordRaw,
 } from "vue-router";
+import { toast } from "vue-sonner";
 import { api, ConnectionState } from "./api";
+import { Scope } from "./api/interfaces";
 import { authManager } from "./auth";
-import { notifyHARouteChange } from "./homeassistant";
+import { createHAHistory, isInHAAppPanel } from "./homeassistant_history";
 import { store } from "./store";
+
+declare module "vue-router" {
+  interface RouteMeta {
+    // only a role granting this scope may open the route
+    requiresScope?: Scope;
+  }
+}
+
+// the url's params and query together as the view's props, e.g. the album a
+// track was opened from
+const paramsAndQueryProps = (route: {
+  params: Record<string, string | string[]>;
+  query: Record<string, string | (string | null)[] | null | undefined>;
+}) => ({ ...route.params, ...route.query });
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -55,6 +73,9 @@ export const routes: RouteRecordRaw[] = [
       {
         path: "",
         name: "party",
+        // the dashboard fills its container and scrolls internally, so the
+        // layout drops the content section's padding and outer scrolling
+        meta: { partyView: true },
         component: () =>
           import(
             /* webpackChunkName: "party" */ "@/views/PartyDashboardView.vue"
@@ -81,7 +102,9 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
-          // Dashboard viewers can't populate enabledPlugins (scoped like guests); trust the server, since the session only exists via an already-enabled dashboard.
+          // A redirect would loop with the global guard, which sends a
+          // dashboard viewer back to its pinned route; trust the server, since
+          // the session only exists via an already-enabled dashboard.
           if (authManager.isDashboardViewer()) return;
 
           // Only allow access if party plugin is enabled
@@ -107,6 +130,21 @@ export const routes: RouteRecordRaw[] = [
       },
     ],
   },
+  // Viewer-only Music Quiz kiosk route; top-level like /now-playing so it renders without nav/player chrome, and unlike /music-quiz it needs no host scope.
+  {
+    path: "/music-quiz/dashboard",
+    component: () => import("@/layouts/default/Default.vue"),
+    children: [
+      {
+        path: "",
+        name: "music-quiz-dashboard",
+        component: () =>
+          import(
+            /* webpackChunkName: "music-quiz" */ "@/views/MusicQuizDashboardStageView.vue"
+          ),
+      },
+    ],
+  },
   // All other routes go through default layout with navigation/player controls
   {
     path: "/",
@@ -124,17 +162,78 @@ export const routes: RouteRecordRaw[] = [
         redirect: "/discover",
       },
       {
+        path: "/search",
+        redirect: "/discover",
+      },
+      {
         path: "/discover",
         name: "discover",
         component: () =>
           import(/* webpackChunkName: "discover" */ "@/views/HomeView.vue"),
       },
       {
-        path: "/search",
-        name: "search",
+        path: "/ai-radio",
+        name: "ai-radio",
         component: () =>
-          import(/* webpackChunkName: "search" */ "@/views/Search.vue"),
-        props: true,
+          import(/* webpackChunkName: "ai-radio" */ "@/views/AIRadioView.vue"),
+        beforeEnter: async () => {
+          if (api.state.value !== ConnectionState.INITIALIZED) {
+            // Wait for the connection, but never block navigation forever.
+            await new Promise<void>((resolve) => {
+              const timeout = setTimeout(() => {
+                unwatch();
+                resolve();
+              }, 10000);
+              const unwatch = watch(
+                () => api.state.value,
+                (newState) => {
+                  if (newState === ConnectionState.INITIALIZED) {
+                    clearTimeout(timeout);
+                    unwatch();
+                    resolve();
+                  }
+                },
+                { immediate: true },
+              );
+            });
+          }
+          if (!store.enabledPlugins.has("ai_radio")) {
+            toast.error($t("providers.ai_radio.toast.unavailable"));
+            return { name: "discover" };
+          }
+        },
+      },
+      {
+        path: "/visualizer",
+        name: "visualizer",
+        component: () =>
+          import(
+            /* webpackChunkName: "visualizersettings" */ "@/views/settings/VisualizerConfig.vue"
+          ),
+        beforeEnter: async () => {
+          if (api.state.value !== ConnectionState.INITIALIZED) {
+            await new Promise<void>((resolve) => {
+              const timeout = setTimeout(() => {
+                unwatch();
+                resolve();
+              }, 10000);
+              const unwatch = watch(
+                () => api.state.value,
+                (newState) => {
+                  if (newState === ConnectionState.INITIALIZED) {
+                    clearTimeout(timeout);
+                    unwatch();
+                    resolve();
+                  }
+                },
+                { immediate: true },
+              );
+            });
+          }
+          if (!store.enabledPlugins.has("milkdrop_visualizer")) {
+            return { name: "discover" };
+          }
+        },
       },
       {
         path: "/browse",
@@ -163,6 +262,15 @@ export const routes: RouteRecordRaw[] = [
             component: () =>
               import(
                 /* webpackChunkName: "artist" */ "@/views/ArtistDetails.vue"
+              ),
+            props: true,
+          },
+          {
+            path: ":provider/:itemId/:listing",
+            name: "artistlisting",
+            component: () =>
+              import(
+                /* webpackChunkName: "artistlisting" */ "@/views/ArtistListing.vue"
               ),
             props: true,
           },
@@ -210,16 +318,16 @@ export const routes: RouteRecordRaw[] = [
               import(
                 /* webpackChunkName: "track" */ "@/views/TrackDetails.vue"
               ),
-            props: (route: {
-              params: Record<string, string | string[]>;
-              query: Record<
-                string,
-                string | (string | null)[] | null | undefined
-              >;
-            }) => ({
-              ...route.params,
-              ...route.query,
-            }),
+            props: paramsAndQueryProps,
+          },
+          {
+            path: ":provider/:itemId/:listing",
+            name: "tracklisting",
+            component: () =>
+              import(
+                /* webpackChunkName: "tracklisting" */ "@/views/TrackListing.vue"
+              ),
+            props: paramsAndQueryProps,
           },
         ],
       },
@@ -267,6 +375,17 @@ export const routes: RouteRecordRaw[] = [
               ),
             props: true,
           },
+          {
+            // the name must stay equal to MediaType.PODCAST_EPISODE: navigation
+            // to a details view pushes the media type as the route name
+            path: ":provider/episode/:itemId",
+            name: "podcast_episode",
+            component: () =>
+              import(
+                /* webpackChunkName: "podcast_episode" */ "@/views/PodcastEpisodeDetails.vue"
+              ),
+            props: true,
+          },
         ],
       },
       {
@@ -287,6 +406,15 @@ export const routes: RouteRecordRaw[] = [
             component: () =>
               import(
                 /* webpackChunkName: "audiobook" */ "@/views/AudiobookDetails.vue"
+              ),
+            props: true,
+          },
+          {
+            path: ":provider/collection/:itemId",
+            name: "collection",
+            component: () =>
+              import(
+                /* webpackChunkName: "collection" */ "@/views/CollectionDetails.vue"
               ),
             props: true,
           },
@@ -345,6 +473,8 @@ export const routes: RouteRecordRaw[] = [
           import(
             /* webpackChunkName: "music-quiz" */ "@/views/MusicQuizDashboardView.vue"
           ),
+        // hosting a quiz lets guests join, which is what users.invite grants
+        meta: { requiresScope: Scope.USERS_INVITE },
       },
       {
         path: "/settings",
@@ -372,7 +502,20 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "providersettings" */ "@/views/settings/Providers.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            // whoever may read the source settings opens the page; a member
+            // manages the sources it owns from it
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_READ },
+          },
+          {
+            path: "storage",
+            name: "storagesettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "storagesettings" */ "@/views/settings/StorageSettings.vue"
+              ),
+            props: true,
+            // managing the storage is admin work; members pick folders in the picker
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
           },
           {
             path: "players",
@@ -382,7 +525,8 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "playersettings" */ "@/views/settings/Players.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            // guests and members read player configs, these pages change them
+            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
           {
             path: "system",
@@ -392,7 +536,8 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "systemsettings" */ "@/views/settings/SystemConfig.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            // members read core settings, the server settings pages change them
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {
             path: "audio-analysis",
@@ -402,7 +547,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "audioanalysissettings" */ "@/views/settings/AudioAnalysis.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.SYSTEM_MANAGE },
           },
           {
             path: "remote-access",
@@ -412,7 +557,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "remoteaccesssettings" */ "@/views/settings/RemoteAccessSettings.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.SYSTEM_MANAGE },
           },
           {
             path: "frontend",
@@ -431,7 +576,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "usersettings" */ "@/views/settings/UserManagement.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.USERS_READ },
           },
           {
             path: "about",
@@ -450,7 +595,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "diagnostics" */ "@/views/settings/Diagnostics.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.SYSTEM_MANAGE },
           },
           {
             path: "tasks",
@@ -460,6 +605,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "backgroundtasks" */ "@/views/settings/BackgroundTasks.vue"
               ),
             props: true,
+            meta: { requiresScope: Scope.SYSTEM_READ },
           },
           {
             path: "genremanagement",
@@ -469,7 +615,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "genremanagement" */ "@/views/settings/GenreManagement.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.LIBRARY_MANAGE },
           },
           {
             path: "editprovider/:instanceId",
@@ -479,7 +625,8 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editprovider" */ "@/views/settings/EditProvider.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            // members reach the options of the music sources they own from here too
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
           },
           {
             path: "editplayer/:playerId",
@@ -489,7 +636,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayer.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
           {
             path: "editplayer/:playerId/options",
@@ -499,7 +646,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayerOptions.vue"
               ),
             props: true,
-            meta: { requiresAdmin: false },
+            meta: { requiresScope: Scope.PLAYERS_CONTROL },
           },
           {
             path: "editplayer/:playerId/dsp",
@@ -509,7 +656,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editdsp" */ "@/views/settings/EditPlayerDsp.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
           {
             path: "editqueue/:queueId",
@@ -519,7 +666,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editqueue" */ "@/views/settings/EditPlayerQueue.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
           {
             path: "editcore/:domain",
@@ -529,7 +676,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editcore" */ "@/views/settings/EditCoreConfig.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {
             path: "addgroup/:provider",
@@ -539,7 +686,7 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "addgroup" */ "@/views/settings/AddPlayerGroup.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
         ],
       },
@@ -553,10 +700,14 @@ export const routes: RouteRecordRaw[] = [
   },
 ];
 
+const inHAAppPanel = isInHAAppPanel();
+
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: inHAAppPanel ? createHAHistory() : createWebHashHistory(),
   routes,
 });
+
+const CHUNK_RELOAD_STORAGE_KEY = "chunkReloadAttempted";
 
 // Handle chunk loading errors (e.g., after frontend update with stale cache)
 // When a dynamic import fails with a 404, it means the chunk no longer exists
@@ -571,30 +722,42 @@ router.onError((error, to) => {
     (error.name === "TypeError" && error.message.includes("fetch"));
 
   if (isChunkLoadError) {
-    const reloadKey = "chunkReloadAttempted";
-    if (sessionStorage.getItem(reloadKey)) {
-      // Already tried reloading once this session — avoid an infinite loop.
-      // Clear the flag so a future manual navigation can try again.
-      sessionStorage.removeItem(reloadKey);
+    if (sessionStorage.getItem(CHUNK_RELOAD_STORAGE_KEY)) {
+      // A reload is already in flight or did not help, so stop here to avoid
+      // an endless reload loop while the server keeps failing.
       console.error(
         "Chunk loading failed again after reload. Server may be unavailable.",
         error,
       );
       return;
     }
-    sessionStorage.setItem(reloadKey, "1");
+    sessionStorage.setItem(CHUNK_RELOAD_STORAGE_KEY, "1");
     console.warn(
       "Chunk loading failed, likely due to app update. Reloading page...",
       error,
     );
-    // Use location.href to do a full reload to the intended route
-    // This ensures we get fresh HTML and assets from the server
-    window.location.href =
-      window.location.origin + window.location.pathname + "#" + to.fullPath;
+    // The intended route differs from the current URL only in its fragment, so
+    // moving the hash stays on the same document and the reload is what fetches
+    // fresh HTML and assets. Moving only the hash also keeps the rest of the
+    // URL (e.g. Home Assistant ingress query params) intact.
+    if (inHAAppPanel) {
+      // A new entry would land in the history Home Assistant keeps.
+      window.history.replaceState(window.history.state, "", `#${to.fullPath}`);
+    } else {
+      window.location.hash = to.fullPath;
+    }
+    window.location.reload();
   }
 });
 
-// Navigation guard for admin-only routes and guest mode restrictions
+// The reload above lands on the route that just failed, so a navigation
+// completing afterwards means the app loads again and a later update can
+// recover the same way.
+router.afterEach((_to, _from, failure) => {
+  if (!failure) sessionStorage.removeItem(CHUNK_RELOAD_STORAGE_KEY);
+});
+
+// Navigation guard for scope-gated routes and guest mode restrictions
 router.beforeEach(async (to) => {
   const guestRedirect = getGuestNavigationRedirect(
     authManager.isGuestAccessSession(),
@@ -621,12 +784,14 @@ router.beforeEach(async (to) => {
     }
   }
 
-  // Check admin-only routes - check all matched routes for requiresAdmin meta
-  const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
+  // Check gated routes - every matched route may require a scope
+  const requiredScopes = to.matched.flatMap((record) =>
+    record.meta.requiresScope ? [record.meta.requiresScope] : [],
+  );
 
-  if (requiresAdmin) {
-    // Wait for API to be initialized before checking admin access
-    // This ensures store.currentUser is set before we check permissions
+  if (requiredScopes.length) {
+    // Wait for API to be initialized before checking access
+    // This ensures store.currentUser and store.roleScopes are set before we check permissions
     if (api.state.value !== ConnectionState.INITIALIZED) {
       // Wait for initialization to complete
       await new Promise<void>((resolve) => {
@@ -645,7 +810,7 @@ router.beforeEach(async (to) => {
 
     const currentUser = store.currentUser;
     console.debug(
-      "Admin route check:",
+      "Route access check:",
       to.path,
       "user:",
       currentUser?.username,
@@ -653,42 +818,29 @@ router.beforeEach(async (to) => {
       currentUser?.role,
     );
 
-    if (!currentUser || currentUser.role !== "admin") {
-      console.warn("Admin access required for", to.path);
+    const missingScope = requiredScopes.find(
+      (scope) => !authManager.hasScope(scope),
+    );
+    if (missingScope) {
+      console.warn(`The ${missingScope} scope is required for`, to.path);
       return { name: "discover" };
     }
   }
 });
 
-router.afterEach((to, from) => {
-  if (!from?.path) return;
-  store.prevRoute = from.path;
-
-  if (store.isIngressSession) {
-    notifyHARouteChange(to.fullPath);
-  }
-
-  // Clean up onboard parameter from URL if present
-  if (store.isOnboarding && to.path === "/settings") {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("onboard")) {
-      urlParams.delete("onboard");
-      const cleanUrl =
-        window.location.pathname +
-        (urlParams.toString() ? "?" + urlParams.toString() : "") +
-        window.location.hash;
-      window.history.replaceState({}, "", cleanUrl);
-    }
-  }
-
-  // Reset onboarding flag when navigating away from settings
-  if (
-    store.isOnboarding &&
-    from.path === "/settings" &&
-    to.path !== "/settings"
-  ) {
-    store.isOnboarding = false;
-  }
+// Most views share the .content-section scroll container which stays mounted across route changes
+// Prevent the scroll position from staying the same when changing route
+router.afterEach((to, from, failure) => {
+  if (failure) return;
+  // Don't reset on same route
+  if (to.path === from.path) return;
+  if (returnedByHistory(router)) return;
+  // nextTick needed because afterEach fires before Vue unmounts the page
+  // Resetting here would wipe its scroll position before it's saved
+  nextTick(() => {
+    const contentSection = document.querySelector(".content-section");
+    if (contentSection) contentSection.scrollTop = 0;
+  });
 });
 
 export default router;

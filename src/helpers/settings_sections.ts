@@ -1,0 +1,153 @@
+import { Scope } from "@/plugins/api/interfaces";
+import {
+  AudioWaveform,
+  CloudCog,
+  FileCode,
+  Info,
+  Music,
+  Palette,
+  Puzzle,
+  Server,
+  SlidersHorizontal,
+  Speaker,
+  UserCog,
+  Users,
+} from "@lucide/vue";
+import type { Component } from "vue";
+import type { RouteLocationRaw } from "vue-router";
+
+export interface SettingsSection {
+  name: string;
+  label: string;
+  description: string;
+  icon: Component;
+  color: string;
+  route: RouteLocationRaw;
+  // only a role granting this scope sees the section
+  requiresScope?: Scope;
+}
+
+// the sections of the settings overview, in display order
+export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
+  {
+    name: "music_providers",
+    label: "settings.music_sources",
+    description: "settings.music_providers_description",
+    icon: Music,
+    color: "blue",
+    route: { name: "providersettings", query: { types: "music" } },
+    // a member sees the music sources it may use here, and manages its own
+    requiresScope: Scope.CONFIG_PROVIDERS_READ,
+  },
+  {
+    name: "player_providers",
+    label: "settings.playerproviders",
+    description: "settings.player_providers_description",
+    icon: Speaker,
+    color: "green",
+    route: { name: "providersettings", query: { types: "player" } },
+    // the provider types share the route a member opens for its own music
+    // sources, managing any other type takes managing every provider
+    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
+  },
+  {
+    name: "metadata_providers",
+    label: "settings.metadataproviders",
+    description: "settings.metadata_providers_description",
+    icon: FileCode,
+    color: "indigo",
+    route: { name: "providersettings", query: { types: "metadata" } },
+    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
+  },
+  {
+    name: "plugin_providers",
+    label: "settings.plugins",
+    description: "settings.plugin_providers_description",
+    icon: Puzzle,
+    color: "deep-purple",
+    route: { name: "providersettings", query: { types: "plugin" } },
+    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
+  },
+  {
+    name: "players",
+    label: "settings.players",
+    description: "settings.players_description",
+    icon: SlidersHorizontal,
+    color: "teal",
+    route: { name: "playersettings" },
+    requiresScope: Scope.CONFIG_PLAYERS_WRITE,
+  },
+  {
+    name: "audio_analysis_providers",
+    label: "settings.audio_analysis_providers",
+    description: "settings.audio_analysis_providers_description",
+    icon: AudioWaveform,
+    color: "blue",
+    route: { name: "providersettings", query: { types: "audio_analysis" } },
+    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
+  },
+  {
+    name: "profile",
+    label: "auth.profile",
+    description: "settings.profile_description",
+    icon: UserCog,
+    color: "indigo",
+    route: { name: "profile" },
+  },
+  {
+    name: "frontend",
+    label: "settings.frontend",
+    description: "settings.frontend_description",
+    icon: Palette,
+    color: "orange",
+    route: { name: "frontendsettings" },
+  },
+  {
+    name: "users",
+    label: "auth.user_management",
+    description: "settings.users_description",
+    icon: Users,
+    color: "teal",
+    route: { name: "usersettings" },
+    requiresScope: Scope.USERS_READ,
+  },
+  {
+    name: "remote_access",
+    label: "settings.remote_access",
+    description: "settings.remote_access_description",
+    icon: CloudCog,
+    color: "deep-purple",
+    route: { name: "remoteaccesssettings" },
+    requiresScope: Scope.SYSTEM_MANAGE,
+  },
+  {
+    name: "system",
+    label: "settings.system",
+    description: "settings.system_description",
+    icon: Server,
+    color: "purple",
+    route: { name: "systemsettings" },
+    requiresScope: Scope.CONFIG_CORE_WRITE,
+  },
+  {
+    name: "about",
+    label: "settings.about",
+    description: "settings.about_description",
+    icon: Info,
+    color: "grey-darken-1",
+    route: { name: "aboutsettings" },
+  },
+];
+
+/**
+ * The settings sections the current user may open.
+ *
+ * @param hasScope - Whether the role of the current user grants the given scope.
+ */
+export function availableSettingsSections(
+  hasScope: (scope: Scope) => boolean,
+): SettingsSection[] {
+  return SETTINGS_SECTIONS.filter(
+    (section) => !section.requiresScope || hasScope(section.requiresScope),
+  );
+}

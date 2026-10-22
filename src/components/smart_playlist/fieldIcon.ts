@@ -1,9 +1,10 @@
 import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
-import type { RuleField } from "@/composables/useSmartPlaylistRulesForm";
+import type { RuleField } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import {
   Ban,
   CalendarRange,
   Disc3,
+  Folder,
   Heart,
   History,
   Mic2,
@@ -19,6 +20,7 @@ export function fieldIcon(field: RuleField): Component {
     .with("artist", () => Mic2)
     .with("album", () => Disc3)
     .with("album_type", () => Disc3)
+    .with("folder", () => Folder)
     .with("favorite", () => Heart)
     .with("year", () => CalendarRange)
     .with("explicit", () => ExplicitIcon)

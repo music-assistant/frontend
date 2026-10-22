@@ -1,0 +1,374 @@
+<template>
+  <section class="flex min-h-full flex-col">
+    <ItemsListing
+      v-if="itemDetails && config"
+      :key="config.path"
+      fill-height
+      :icon="ArrowLeft"
+      :icon-action="backToArtist"
+      :title="$t(config.labelKey)"
+      :subtitle="subtitle"
+      :itemtype="config.itemtype"
+      :path="config.path"
+      :parent-item="itemDetails"
+      :show-provider="true"
+      :show-favorites-only-filter="config.showFavoritesOnlyFilter"
+      :show-provider-filter="config.showProviderFilter"
+      :single-provider-filter="true"
+      :provider-filter-options="config.providerFilterOptions"
+      :require-provider-selection="config.requireProviderSelection"
+      :library-filter-option="config.libraryFilterOption"
+      :default-provider="config.defaultProvider"
+      :provider-override="config.providerOverride"
+      :show-album-type-filter="config.showAlbumTypeFilter"
+      :show-track-number="config.showTrackNumber"
+      :show-refresh-button="false"
+      :sort-listing="config.sortListing"
+      :load-paged-data="config.loadPagedData"
+      :empty-message="config.emptyMessage"
+      :restore-state="true"
+      @provider-change="onProviderChange"
+    />
+  </section>
+</template>
+
+<script setup lang="ts">
+import {
+  artistAlbumsBySource,
+  loadArtistAppearsOn,
+  loadArtistDiscography,
+  loadArtistTracks,
+} from "@/components/artist/artistData";
+import { artistRows } from "@/components/artist/artistRows";
+import {
+  rowSourceLabel,
+  type RowSource,
+} from "@/components/details/rowRegistry";
+import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import { useEscapeBack } from "@/composables/useEscapeBack";
+import { goBack } from "@/helpers/navigation";
+import { api } from "@/plugins/api";
+import {
+  AlbumType,
+  ListingType,
+  type Artist,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+import { ArrowLeft } from "@lucide/vue";
+import { computed, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
+export interface Props {
+  itemId: string;
+  provider: string;
+  // which of the artist page's shelves is shown in full
+  listing: "albums" | "singles" | "tracks" | "appears_on" | "discography";
+}
+const props = defineProps<Props>();
+
+interface ListingConfig {
+  labelKey: string;
+  itemtype: string;
+  path: string;
+  loadPagedData: (params: LoadDataParams) => Promise<MediaItemType[]>;
+  sortListing: ListingType;
+  showAlbumTypeFilter: boolean;
+  showFavoritesOnlyFilter: boolean;
+  showProviderFilter: boolean;
+  showTrackNumber: boolean;
+  providerFilterOptions: string[];
+  // what the listing says when the artist has nothing to show there
+  emptyMessage?: string;
+  // a required single source selection: the library or one of the providers
+  // the artist is mapped to
+  requireProviderSelection?: boolean;
+  libraryFilterOption?: boolean;
+  defaultProvider?: RowSource;
+  // a source carried in by a link, shown on arrival instead of the saved one
+  providerOverride?: RowSource;
+}
+
+const RELEASE_TYPES: Record<"albums" | "singles_eps", AlbumType[]> = {
+  albums: [
+    AlbumType.ALBUM,
+    AlbumType.COMPILATION,
+    AlbumType.LIVE,
+    AlbumType.SOUNDTRACK,
+    AlbumType.UNKNOWN,
+  ],
+  singles_eps: [AlbumType.SINGLE, AlbumType.EP],
+};
+
+const router = useRouter();
+const route = useRoute();
+const itemDetails = ref<Artist>();
+// the source of the releases on screen: the one the listing is on, or the one
+// they were last loaded from, so the header names it
+const activeSource = ref<RowSource>();
+// the source another page's "view all" link carried in, taken off the url as
+// soon as it is read: it is honoured on arrival only, and a return to or
+// reload of this page lands on what the user has picked since
+let linkedSource: string | undefined;
+
+watch(
+  () => [props.itemId, props.provider],
+  async ([itemId, provider]) => {
+    linkedSource = takeLinkedSource();
+    // the listing remounts for the new artist instead of keeping the old items
+    itemDetails.value = undefined;
+    activeSource.value = undefined;
+    const artist = await api.getArtist(itemId, provider);
+    // a slower response for a previous artist must not replace the current one
+    if (itemId !== props.itemId || provider !== props.provider) return;
+    itemDetails.value = artist;
+  },
+  { immediate: true },
+);
+
+// each shelf has its own source, so the one on screen is never another's, and
+// a switch of shelf is an arrival of its own that reads the url again
+watch(
+  () => props.listing,
+  () => {
+    activeSource.value = undefined;
+    linkedSource = takeLinkedSource();
+  },
+);
+
+// the listing can be filtered to the providers the artist is actually mapped to
+const mappingProviderIds = computed(() => [
+  ...new Set(
+    (itemDetails.value?.provider_mappings || []).map(
+      (mapping) => mapping.provider_instance,
+    ),
+  ),
+]);
+
+// the releases are shown one source at a time, so the header says which one
+const subtitle = computed(() => {
+  const name = itemDetails.value?.name || "";
+  if (!activeSource.value) return name;
+  return `${name} · ${rowSourceLabel(activeSource.value)}`;
+});
+
+const showsLibrary = computed(
+  () => !activeSource.value || activeSource.value === "library",
+);
+
+const config = computed<ListingConfig | undefined>(() => {
+  switch (props.listing) {
+    case "albums":
+      return {
+        ...listingDefaults(),
+        ...sourceSelection("albums"),
+        labelKey: artistRows.definition("albums").labelKey,
+        path: "artistalbums",
+        showAlbumTypeFilter: true,
+        sortListing: ListingType.ARTIST_ALBUMS,
+        emptyMessage: showsLibrary.value
+          ? $t("artist_no_library_albums")
+          : undefined,
+        loadPagedData: (params: LoadDataParams) =>
+          loadArtistAlbumPage("albums", params),
+      };
+    case "singles":
+      return {
+        ...listingDefaults(),
+        ...sourceSelection("singles_eps"),
+        labelKey: artistRows.definition("singles_eps").labelKey,
+        path: "artistsingles",
+        sortListing: ListingType.ARTIST_ALBUMS,
+        loadPagedData: (params: LoadDataParams) =>
+          loadArtistAlbumPage("singles_eps", params),
+      };
+    case "tracks":
+      return {
+        ...listingDefaults(),
+        labelKey: "tracks",
+        itemtype: "artisttracks",
+        path: "artisttracks",
+        sortListing: ListingType.ARTIST_TRACKS,
+        showProviderFilter: mappingProviderIds.value.length > 1,
+        showTrackNumber: false,
+        emptyMessage:
+          itemDetails.value?.provider === "library"
+            ? $t("artist_no_library_tracks")
+            : $t("artist_no_tracks"),
+        loadPagedData: loadArtistTrackPage,
+      };
+    case "appears_on":
+      return {
+        ...listingDefaults(),
+        labelKey: artistRows.definition("appears_on").labelKey,
+        path: "artistappearson",
+        showFavoritesOnlyFilter: false,
+        showProviderFilter: false,
+        sortListing: ListingType.ARTIST_APPEARS_ON,
+        loadPagedData: loadAppearsOn,
+      };
+    case "discography":
+      return {
+        ...listingDefaults(),
+        labelKey: artistRows.definition("discography").labelKey,
+        path: "artistdiscography",
+        sortListing: ListingType.ARTIST_DISCOGRAPHY,
+        showAlbumTypeFilter: false,
+        showFavoritesOnlyFilter: false,
+        showProviderFilter: false,
+        emptyMessage: $t("artist_row_empty"),
+        loadPagedData: loadDiscography,
+      };
+    default:
+      return undefined;
+  }
+});
+
+const backToArtist = function () {
+  goBack(router, {
+    name: "artist",
+    params: { provider: props.provider, itemId: props.itemId },
+  });
+};
+
+async function loadArtistTrackPage(
+  params: LoadDataParams,
+): Promise<MediaItemType[]> {
+  const artist = itemDetails.value;
+  if (!artist) return [];
+  return await loadArtistTracks(
+    artist,
+    params.provider?.[0],
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+    params.favoritesOnly,
+  );
+}
+
+useEscapeBack(backToArtist);
+
+// the listing says which source it is on, a restored visit included, so the
+// header and the empty text follow it without a load; only the release
+// listings choose a source
+const onProviderChange = function (provider?: string[]) {
+  if (!config.value?.requireProviderSelection) return;
+  activeSource.value = provider?.[0];
+};
+
+/** Shared shape of the listings; every case overrides what differs. */
+function listingDefaults(): Omit<
+  ListingConfig,
+  "labelKey" | "path" | "loadPagedData" | "sortListing"
+> {
+  return {
+    itemtype: "artistalbums",
+    showAlbumTypeFilter: false,
+    showFavoritesOnlyFilter: true,
+    showProviderFilter: true,
+    showTrackNumber: true,
+    providerFilterOptions: mappingProviderIds.value,
+  };
+}
+
+/**
+ * The source selector of a release listing: the same sources the row's picker
+ * on the artist page offers, starting on the one feeding it there. A provider
+ * artist has only its own catalog, so it gets no selector at all.
+ */
+function sourceSelection(rowId: "albums" | "singles_eps") {
+  const artist = itemDetails.value;
+  if (artist?.provider !== "library") return { showProviderFilter: false };
+  return {
+    requireProviderSelection: true,
+    libraryFilterOption: true,
+    providerFilterOptions: artistRows
+      .sources(rowId, artist)
+      .filter((source) => source !== "library"),
+    defaultProvider: artistRows.effectiveSource(rowId, artist),
+    providerOverride: carriedSource(rowId),
+  };
+}
+
+/** The source named in the url's query, if any, taken off the url. */
+function takeLinkedSource(): string | undefined {
+  const source = route.query.source;
+  if (typeof source !== "string") return undefined;
+  const query = { ...route.query };
+  delete query.source;
+  router.replace({ query });
+  return source;
+}
+
+/**
+ * The source a "view all" link carried in, when it is one the albums listing
+ * offers. The listing opens on it instead of the saved filter, without saving
+ * it, so the user's own preference stays as it was.
+ */
+function carriedSource(rowId: "albums" | "singles_eps"): RowSource | undefined {
+  const artist = itemDetails.value;
+  if (rowId !== "albums" || !artist || linkedSource === undefined) {
+    return undefined;
+  }
+  return artistRows.sources("albums", artist).includes(linkedSource)
+    ? linkedSource
+    : undefined;
+}
+
+/** The artist's releases of one type, from the selected source and server page. */
+async function loadArtistAlbumPage(
+  rowId: "albums" | "singles_eps",
+  params: LoadDataParams,
+): Promise<MediaItemType[]> {
+  if (!itemDetails.value) return [];
+  const source =
+    params.provider?.[0] ??
+    artistRows.effectiveSource(rowId, itemDetails.value);
+  activeSource.value = source;
+  const rowTypes = RELEASE_TYPES[rowId];
+  const albumTypes = params.albumType?.length
+    ? rowTypes.filter((albumType) => params.albumType?.includes(albumType))
+    : rowTypes;
+  if (!albumTypes.length) return [];
+  return await artistAlbumsBySource(itemDetails.value, source, {
+    search: params.search,
+    limit: params.limit,
+    offset: params.offset,
+    sortField: params.sortField,
+    sortDirection: params.sortDirection,
+    albumTypes,
+    favoritesOnly: params.favoritesOnly,
+  });
+}
+
+/** Everything MusicBrainz credits to the artist; only a library artist has one. */
+async function loadDiscography(
+  params: LoadDataParams,
+): Promise<MediaItemType[]> {
+  const artist = itemDetails.value;
+  if (artist?.provider !== "library") return [];
+  return await loadArtistDiscography(
+    artist,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+  );
+}
+
+/** Albums the artist is credited on without being the album artist. */
+async function loadAppearsOn(params: LoadDataParams): Promise<MediaItemType[]> {
+  if (!itemDetails.value) return [];
+  return await loadArtistAppearsOn(
+    itemDetails.value,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+  );
+}
+</script>

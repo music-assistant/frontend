@@ -1,0 +1,590 @@
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import {
+  getPlayerSettingsMenuItems,
+  getSetupRequiredPlayerMenuItems,
+  renamePlayer,
+  setPlayerEnabled,
+} from "@/helpers/player_settings_actions";
+import {
+  PlayerType,
+  ProviderFeature,
+  ProviderType,
+  Scope,
+  type Player,
+  type PlayerOption,
+  type ProviderInstance,
+} from "@/plugins/api/interfaces";
+import { flushPromises } from "@vue/test-utils";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { playerConfig } from "../fixtures/playerConfig";
+import { providerManifest } from "../fixtures/providerManifest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+
+const {
+  apiMock,
+  emitEvent,
+  hasScope,
+  routerPush,
+  setPreference,
+  storeMock,
+  toastMock,
+} = vi.hoisted(() => ({
+  apiMock: {
+    getProvider: vi.fn(),
+    getPlayerConfig: vi.fn(),
+    getProviderManifest: vi.fn(),
+    players: {} as Record<string, unknown>,
+    queues: {} as Record<string, unknown>,
+    removePlayer: vi.fn(),
+    savePlayerConfig: vi.fn(),
+  },
+  emitEvent: vi.fn(),
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
+  routerPush: vi.fn(),
+  setPreference: vi.fn(),
+  storeMock: {
+    activePlayerId: undefined as string | undefined,
+    showFullscreenPlayer: false,
+    showPlayersMenu: false,
+  },
+  toastMock: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
+
+vi.mock("@/plugins/api", () => ({
+  api: apiMock,
+  default: apiMock,
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope },
+}));
+
+vi.mock("@/plugins/eventbus", () => ({
+  eventbus: {
+    emit: emitEvent,
+  },
+}));
+
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string) => key,
+}));
+
+vi.mock("@/plugins/router", () => ({
+  default: {
+    push: routerPush,
+  },
+}));
+
+vi.mock("@/plugins/store", () => ({
+  store: storeMock,
+}));
+
+vi.mock("@/composables/userPreferences", () => ({
+  setUserPreference: setPreference,
+}));
+
+// the setup entry is built and covered where the player menus live
+vi.mock("@/helpers/player_menu_items", () => ({
+  getPlayerSetupMenuItem: (player: Player) =>
+    player.needs_setup ? { label: "configure_player" } : undefined,
+}));
+
+vi.mock("@/helpers/utils", () => ({
+  openLinkInNewTab: vi.fn(),
+}));
+
+vi.mock("vue-sonner", () => ({
+  toast: toastMock,
+}));
+
+const SECTION_LABELS = [
+  "open_player_settings",
+  "open_queue_settings",
+  "open_dsp_settings",
+  "player_options.open",
+];
+
+// an admin unless a test says otherwise
+beforeEach(() => {
+  hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+});
+
+describe("getPlayerSettingsMenuItems sections", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer();
+    apiMock.getProvider.mockReturnValue(providerInstance());
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+  });
+
+  it("leaves the sections out unless they are asked for", () => {
+    const labels = visibleLabels(getPlayerSettingsMenuItems(playerConfig()));
+
+    for (const section of SECTION_LABELS) {
+      expect(labels).not.toContain(section);
+    }
+  });
+
+  it("lists every section a player has", () => {
+    const labels = visibleLabels(
+      getPlayerSettingsMenuItems(playerConfig(), { includeSections: true }),
+    );
+
+    expect(labels.slice(0, SECTION_LABELS.length)).toEqual(SECTION_LABELS);
+  });
+
+  it.each([
+    ["open_queue_settings", "/settings/editqueue/kitchen"],
+    ["open_dsp_settings", "/settings/editplayer/kitchen/dsp"],
+    ["player_options.open", "/settings/editplayer/kitchen/options"],
+    ["open_player_settings", "/settings/editplayer/kitchen"],
+  ])("opens %s on its own page", (label, path) => {
+    const menuItems = getPlayerSettingsMenuItems(playerConfig(), {
+      includeSections: true,
+    });
+
+    menuItems.find((item) => item.label === label)?.action?.();
+
+    expect(routerPush).toHaveBeenCalledWith(path);
+  });
+
+  it("leaves out the queue section for a player without a queue", () => {
+    apiMock.queues = {};
+
+    expect(sectionLabels()).not.toContain("open_queue_settings");
+  });
+
+  it("leaves out the DSP section for a group player", () => {
+    registerPlayer({ type: PlayerType.GROUP });
+
+    expect(sectionLabels()).not.toContain("open_dsp_settings");
+  });
+
+  it("leaves out the options section for a player exposing none", () => {
+    registerPlayer({ options: [] });
+
+    expect(sectionLabels()).not.toContain("player_options.open");
+  });
+});
+
+describe("getPlayerSettingsMenuItems actions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer();
+    apiMock.getProvider.mockReturnValue(providerInstance());
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+    apiMock.savePlayerConfig.mockResolvedValue({});
+    apiMock.removePlayer.mockResolvedValue(undefined);
+    storeMock.activePlayerId = undefined;
+  });
+
+  it("opens the rename dialog on the name the player carries", () => {
+    const config = playerConfig({
+      name: "Kitchen",
+      default_name: "Chromecast",
+    });
+
+    menuItem(
+      getPlayerSettingsMenuItems(config),
+      "player_select.rename_player",
+    ).action?.();
+
+    expect(emitEvent).toHaveBeenCalledWith("playerRenameDialog", {
+      playerId: "kitchen",
+      name: "Kitchen",
+      defaultName: "Chromecast",
+    });
+  });
+
+  it("asks before disabling a player", async () => {
+    const menuItems = getPlayerSettingsMenuItems(playerConfig());
+
+    menuItem(menuItems, "settings.disable").action?.();
+
+    expect(apiMock.savePlayerConfig).not.toHaveBeenCalled();
+    await confirmation().onConfirm();
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      enabled: false,
+    });
+  });
+
+  it("enables a player without asking", () => {
+    const menuItems = getPlayerSettingsMenuItems(
+      playerConfig({ enabled: false }),
+    );
+
+    menuItem(menuItems, "settings.enable").action?.();
+
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      enabled: true,
+    });
+    expect(emitEvent).not.toHaveBeenCalledWith(
+      "deleteConfirmationDialog",
+      expect.anything(),
+    );
+  });
+
+  it("asks before deleting a player and reports it gone", async () => {
+    const onDeleted = vi.fn();
+    const menuItems = getPlayerSettingsMenuItems(playerConfig(), { onDeleted });
+
+    menuItem(menuItems, "settings.delete").action?.();
+
+    expect(apiMock.removePlayer).not.toHaveBeenCalled();
+    await confirmation().onConfirm();
+    expect(apiMock.removePlayer).toHaveBeenCalledWith("kitchen");
+    expect(onDeleted).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the player around when its removal fails", async () => {
+    const onDeleted = vi.fn();
+    apiMock.removePlayer.mockRejectedValueOnce(new Error("Remove failed"));
+    const menuItems = getPlayerSettingsMenuItems(playerConfig(), { onDeleted });
+
+    menuItem(menuItems, "settings.delete").action?.();
+    await confirmation().onConfirm();
+
+    expect(onDeleted).not.toHaveBeenCalled();
+    // the api layer reports the failure, so this must not toast a second time
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
+  it("offers no deletion for a provider that cannot remove the player", () => {
+    apiMock.getProvider.mockReturnValue(
+      providerInstance({ supported_features: [] }),
+    );
+
+    expect(
+      visibleLabels(getPlayerSettingsMenuItems(playerConfig())),
+    ).not.toContain("settings.delete");
+  });
+
+  it.each(["settings.disable", "settings.delete"])(
+    "hands the player bar to another player after %s",
+    async (label) => {
+      registerPlayer();
+      apiMock.players = {
+        ...apiMock.players,
+        office: player({ player_id: "office" }),
+      };
+      storeMock.activePlayerId = "kitchen";
+
+      menuItem(getPlayerSettingsMenuItems(playerConfig()), label).action?.();
+      await confirmation().onConfirm();
+
+      expect(storeMock.activePlayerId).toBe("office");
+      // the remembered one is gone for good, and waiting for it to come back
+      // would leave the next visit with no player at all
+      expect(setPreference).toHaveBeenCalledWith("activePlayerId", null);
+    },
+  );
+
+  it("forgets the remembered player when it leaves", async () => {
+    storeMock.activePlayerId = "kitchen";
+
+    menuItem(
+      getPlayerSettingsMenuItems(playerConfig()),
+      "settings.disable",
+    ).action?.();
+    await confirmation().onConfirm();
+
+    expect(storeMock.activePlayerId).toBeUndefined();
+    expect(setPreference).toHaveBeenCalledWith("activePlayerId", null);
+  });
+
+  it("leaves the player bar alone when another player is active", async () => {
+    apiMock.players = {
+      ...apiMock.players,
+      office: player({ player_id: "office" }),
+    };
+    storeMock.activePlayerId = "office";
+
+    menuItem(
+      getPlayerSettingsMenuItems(playerConfig()),
+      "settings.delete",
+    ).action?.();
+    await confirmation().onConfirm();
+
+    expect(storeMock.activePlayerId).toBe("office");
+    // it was not the player that left, so nothing about the selection changes
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+});
+
+describe("getPlayerSettingsMenuItems provider settings", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer();
+    apiMock.getProvider.mockReturnValue(providerInstance());
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+  });
+
+  const offersProviderSettings = () =>
+    visibleLabels(getPlayerSettingsMenuItems(playerConfig())).includes(
+      "settings.provider_settings",
+    );
+
+  it("links an admin to the settings of the player provider", () => {
+    expect(offersProviderSettings()).toBe(true);
+  });
+
+  it.each([
+    { role: "a member", scopes: BUILTIN_ROLE_SCOPES.user },
+    { role: "a guest", scopes: BUILTIN_ROLE_SCOPES.guest },
+    {
+      role: "a role that only changes player settings",
+      scopes: [...BUILTIN_ROLE_SCOPES.guest, Scope.CONFIG_PLAYERS_WRITE],
+    },
+  ])(
+    "keeps $role away from the settings of the player provider",
+    ({ scopes }) => {
+      hasScope.mockImplementation(scopeChecker(scopes));
+
+      expect(offersProviderSettings()).toBe(false);
+    },
+  );
+});
+
+describe("getSetupRequiredPlayerMenuItems", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMock.savePlayerConfig.mockResolvedValue({});
+  });
+
+  const setupRequiredPlayer = () =>
+    player({ name: "Living Room (2)", available: false, needs_setup: true });
+
+  it("offers to set the player up, rename it, open its settings and disable it", () => {
+    expect(
+      visibleLabels(getSetupRequiredPlayerMenuItems(setupRequiredPlayer())),
+    ).toEqual([
+      "configure_player",
+      "player_select.rename_player",
+      "open_settings",
+      "settings.disable",
+    ]);
+  });
+
+  it("offers nothing to a role that may not change player settings", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+
+    expect(getSetupRequiredPlayerMenuItems(setupRequiredPlayer())).toEqual([]);
+  });
+
+  it("opens the rename dialog on the names the player config carries", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(
+      playerConfig({ name: null, default_name: "Living Room (2)" }),
+    );
+
+    menuItem(
+      getSetupRequiredPlayerMenuItems(setupRequiredPlayer()),
+      "player_select.rename_player",
+    ).action?.();
+    await flushPromises();
+
+    expect(apiMock.getPlayerConfig).toHaveBeenCalledWith("kitchen");
+    expect(emitEvent).toHaveBeenCalledWith("playerRenameDialog", {
+      playerId: "kitchen",
+      name: null,
+      defaultName: "Living Room (2)",
+    });
+  });
+
+  it("opens no rename dialog when the config does not load, and leaves the message to the api", async () => {
+    apiMock.getPlayerConfig.mockRejectedValue(new Error("Lookup failed"));
+
+    menuItem(
+      getSetupRequiredPlayerMenuItems(setupRequiredPlayer()),
+      "player_select.rename_player",
+    ).action?.();
+    await flushPromises();
+
+    expect(emitEvent).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
+  it("closes the player surfaces on the way to the player settings", () => {
+    storeMock.showFullscreenPlayer = true;
+    storeMock.showPlayersMenu = true;
+
+    menuItem(
+      getSetupRequiredPlayerMenuItems(setupRequiredPlayer()),
+      "open_settings",
+    ).action?.();
+
+    expect(storeMock.showFullscreenPlayer).toBe(false);
+    expect(storeMock.showPlayersMenu).toBe(false);
+    expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
+  });
+
+  it("asks before disabling the player", async () => {
+    menuItem(
+      getSetupRequiredPlayerMenuItems(setupRequiredPlayer()),
+      "settings.disable",
+    ).action?.();
+
+    expect(apiMock.savePlayerConfig).not.toHaveBeenCalled();
+    await confirmation().onConfirm();
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      enabled: false,
+    });
+  });
+});
+
+describe("setPlayerEnabled", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer();
+    apiMock.savePlayerConfig.mockResolvedValue({});
+    storeMock.activePlayerId = undefined;
+  });
+
+  it("saves the state and says the change landed", async () => {
+    await expect(setPlayerEnabled("kitchen", false)).resolves.toBe(true);
+
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      enabled: false,
+    });
+    expect(toastMock.success).toHaveBeenCalledWith("settings.player_saved");
+  });
+
+  it("hands the player bar on when the player it points at is switched off", async () => {
+    apiMock.players = {
+      ...apiMock.players,
+      office: player({ player_id: "office" }),
+    };
+    storeMock.activePlayerId = "kitchen";
+
+    await setPlayerEnabled("kitchen", false);
+
+    expect(storeMock.activePlayerId).toBe("office");
+    expect(setPreference).toHaveBeenCalledWith("activePlayerId", null);
+  });
+
+  it("leaves the player bar where it is when a player is switched on", async () => {
+    storeMock.activePlayerId = "kitchen";
+
+    await setPlayerEnabled("kitchen", true);
+
+    // the player is coming back, not leaving: nothing about the selection changes
+    expect(storeMock.activePlayerId).toBe("kitchen");
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+
+  it("says a save that did not land, and leaves the message to the api", async () => {
+    apiMock.savePlayerConfig.mockRejectedValueOnce(new Error("Save failed"));
+
+    await expect(setPlayerEnabled("kitchen", false)).resolves.toBe(false);
+
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+});
+
+describe("renamePlayer", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMock.savePlayerConfig.mockResolvedValue({});
+  });
+
+  it("saves the name and says the change landed", async () => {
+    await expect(renamePlayer("kitchen", "Attic")).resolves.toBe(true);
+
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      name: "Attic",
+    });
+    expect(toastMock.success).toHaveBeenCalledWith("settings.player_saved");
+  });
+
+  it("hands the player back to the name its provider reports", async () => {
+    await renamePlayer("kitchen", null);
+
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      name: null,
+    });
+  });
+
+  it("says a save that did not land, and leaves the message to the api", async () => {
+    apiMock.savePlayerConfig.mockRejectedValueOnce(new Error("Save failed"));
+
+    await expect(renamePlayer("kitchen", "Attic")).resolves.toBe(false);
+
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The labels a user actually sees, so an entry the menu hides counts as absent.
+ */
+function visibleLabels(menuItems: ContextMenuItem[]): string[] {
+  return menuItems.filter((item) => !item.hide).map((item) => item.label);
+}
+
+function sectionLabels(): string[] {
+  return visibleLabels(
+    getPlayerSettingsMenuItems(playerConfig(), { includeSections: true }),
+  );
+}
+
+function menuItem(
+  menuItems: ContextMenuItem[],
+  label: string,
+): ContextMenuItem {
+  const menuItem = menuItems.find((item) => item.label === label);
+  if (!menuItem) throw new Error(`The menu has no "${label}" entry`);
+  return menuItem;
+}
+
+/**
+ * The confirmation the last action asked for.
+ */
+function confirmation(): { onConfirm: () => Promise<void> } {
+  const event = emitEvent.mock.calls.find(
+    ([name]) => name === "deleteConfirmationDialog",
+  )?.[1];
+  if (!event) throw new Error("No confirmation was asked for");
+  return event as { onConfirm: () => Promise<void> };
+}
+
+/**
+ * Register a player that has every settings section to offer.
+ */
+function registerPlayer(overrides: Partial<Player> = {}) {
+  apiMock.players = { kitchen: player(overrides) };
+  apiMock.queues = { kitchen: { queue_id: "kitchen" } };
+}
+
+function player(overrides: Partial<Player> = {}): Player {
+  return {
+    player_id: "kitchen",
+    provider: "chromecast--1",
+    name: "Kitchen",
+    type: PlayerType.PLAYER,
+    available: true,
+    enabled: true,
+    needs_setup: false,
+    hide_in_ui: false,
+    synced_to: null,
+    options: [{ key: "eq", name: "EQ" } as PlayerOption],
+    ...overrides,
+  } as Player;
+}
+
+function providerInstance(
+  overrides: Partial<ProviderInstance> = {},
+): ProviderInstance {
+  return {
+    type: ProviderType.PLAYER,
+    domain: "chromecast",
+    instance_id: "chromecast--1",
+    name: "Chromecast",
+    available: true,
+    is_streaming_provider: null,
+    supported_features: [ProviderFeature.REMOVE_PLAYER],
+    ...overrides,
+  };
+}

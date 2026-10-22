@@ -50,6 +50,14 @@ const props = defineProps<ToasterProps>();
 
 <style>
 /*
+ * Keep the line breaks of a multi-line message (e.g. a certificate summary
+ * reported by a settings action) instead of collapsing them into one run-on line.
+ */
+[data-sonner-toast] [data-title] {
+  white-space: pre-line;
+}
+
+/*
  * Make the toast action button read as a darker variant of the toast bg
  * instead of the default high-contrast popover-foreground button.
  * Each toast type swaps the bg/text vars so the button picks up the

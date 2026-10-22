@@ -1,10 +1,11 @@
 allowBuilds:
   "@parcel/watcher": true
+  core-js: false
   esbuild: true
   vue-demi: true
 
 minimumReleaseAgeExclude:
-  - '@sendspin/sendspin-js@3.2.1'
+  - '@sendspin/sendspin-js@5.0.0'
 
 overrides:
   "minimatch@9": "9.0.9"

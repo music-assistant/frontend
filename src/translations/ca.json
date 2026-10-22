@@ -29,7 +29,6 @@
     "delete_db": "Suprimeix l'element de la base de dades",
     "details": "Detalls",
     "enter_url": "Introduïu l'URL que voleu afegir manualment a la base de dades",
-    "external_source_active": "Font externa activa: {0}",
     "goto_album": "Vés a l'àlbum {0}",
     "goto_artist": "Vés a l'artista {0}",
     "items_selected": "{0} element(s) seleccionat(s)",
@@ -54,8 +53,7 @@
     "player_type": {
         "group": "Grup",
         "player": "Reproductor",
-        "stereo_pair": "Conjunt d'altaveus estèreo",
-        "sync_group": "Grup de sincronització"
+        "stereo_pair": "Conjunt d'altaveus estèreo"
     },
     "players": "Reproductors",
     "playlist": "Llista de reproducció",
@@ -212,7 +210,6 @@
         "artist": "Artista",
         "name": "Alfabèticament",
         "name_desc": "Alfabèticament (descendent)",
-        "recent": "Afegit recentment",
         "year_desc": "Any de llançament (descendent)",
         "duration_desc": "Durada (descendent)",
         "original": "Original",
@@ -247,7 +244,6 @@
         "filter_favorites": "Mostra només els preferits",
         "favorite": "Marca\/desmarca com a preferit",
         "back": "Enrere",
-        "show_menu": "Mostra\/amaga el menú",
         "search_filter_active": "La cerca està filtrant els resultats actualment",
         "primary_image": "Aquesta és la imatge principal d'aquest tipus d'imatge",
         "select_all": "Selecciona tots els elements"

@@ -55,7 +55,7 @@ jobs:
 
       - name: Create immutable settings token
         id: immutable_settings_token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.MUSIC_ASSISTANT_BOT_CLIENT_ID }}
           private-key: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}
@@ -141,13 +141,13 @@ jobs:
 
       - name: Install pnpm
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           version: 11.8.0
 
       - name: Set up Node ${{ env.NODE_VERSION }}
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -188,6 +188,10 @@ jobs:
           rm -rf dist music_assistant_frontend.egg-info
           python3 -m build
 
+      - name: Verify the package ships the frontend
+        if: steps.inspect_release.outputs.already_published != 'true'
+        run: .github/scripts/verify-python-package.sh
+
       - name: Create or verify tag
         if: steps.inspect_release.outputs.already_published != 'true'
         run: |
@@ -211,7 +215,7 @@ jobs:
       - name: Generate release notes with Release Drafter
         id: release_drafter
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: release-drafter/release-drafter@eada3c96a64734dd381cfbda23511034e328ddb0 # v7.6.0
+        uses: release-drafter/release-drafter@978bb0b30c5ee8cdd332ced253758157150d43f0 # v7.10.0
         with:
           config-name: release-drafter.yml
           version: ${{ inputs.version }}
@@ -270,20 +274,10 @@ jobs:
         if: steps.inspect_release.outputs.already_published != 'true'
         run: |
           RELEASE_ID="${{ steps.prepare_draft.outputs.release_id }}"
+          # The verify step above already established that dist/ holds exactly
+          # one wheel and one source distribution, both carrying the frontend.
           shopt -s nullglob
-          WHEELS=(dist/*.whl)
-          SDISTS=(dist/*.tar.gz)
-          if (( ${#WHEELS[@]} != 1 || ${#SDISTS[@]} != 1 )); then
-            echo "::error::Expected one wheel and one source distribution."
-            exit 1
-          fi
-          ASSETS=("${WHEELS[@]}" "${SDISTS[@]}")
-          for ASSET in "${ASSETS[@]}"; do
-            if [[ ! -s "$ASSET" ]]; then
-              echo "::error::Release asset $ASSET is empty."
-              exit 1
-            fi
-          done
+          ASSETS=(dist/*.whl dist/*.tar.gz)
 
           read -r RELEASE_TAG IS_DRAFT <<< "$(
             gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
@@ -331,7 +325,7 @@ jobs:
 
       - name: Publish release to PyPI
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247 # v1.14.1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
@@ -364,7 +358,7 @@ jobs:
     steps:
       - name: Create immutable settings token
         id: immutable_settings_token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.MUSIC_ASSISTANT_BOT_CLIENT_ID }}
           private-key: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}
@@ -474,7 +468,7 @@ jobs:
 
       - name: Create server repository token
         id: server_repo_token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.MUSIC_ASSISTANT_BOT_CLIENT_ID }}
           private-key: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}

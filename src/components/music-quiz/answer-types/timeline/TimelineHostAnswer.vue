@@ -1,7 +1,7 @@
 <template>
   <TimelineAudienceAnswer :state="state" :current-round="currentRound">
     <template #leaderboard>
-      <slot name="leaderboard" />
+      <slot name="leaderboard"></slot>
     </template>
   </TimelineAudienceAnswer>
 </template>
@@ -15,7 +15,7 @@ import type {
 import type {
   MusicQuizTimelineHostState,
   MusicQuizTimelineRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 
 defineProps<
   MusicQuizHostAnswerAdapterProps<

@@ -1,5 +1,6 @@
 <template>
   <ItemsListing
+    fill-height
     itemtype="podcasts"
     path="librarypodcasts"
     :show-duration="false"
@@ -7,7 +8,7 @@
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :show-library="true"
-    :sort-keys="sortKeys"
+    :sort-listing="ListingType.LIBRARY_PODCASTS"
     :update-available="updateAvailable"
     :title="$t('podcasts')"
     :allow-key-hooks="true"
@@ -24,7 +25,12 @@
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import api from "@/plugins/api";
-import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
+import {
+  EventMessage,
+  EventType,
+  ListingType,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { Podcast } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
@@ -36,21 +42,6 @@ defineOptions({
 const updateAvailable = ref(false);
 const total = ref(store.libraryPodcastsCount);
 
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "timestamp_modified",
-  "timestamp_modified_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
-
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
@@ -59,7 +50,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sortField,
+    params.sortDirection,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
   );

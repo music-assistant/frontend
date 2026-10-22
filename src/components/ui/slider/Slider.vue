@@ -13,11 +13,22 @@ import type { HTMLAttributes } from "vue";
 import { computed } from "vue";
 
 const props = defineProps<
-  SliderRootProps & { class?: HTMLAttributes["class"] }
+  SliderRootProps & {
+    class?: HTMLAttributes["class"];
+    // the thumb is what takes focus, so it is what a screen reader names and
+    // reads the value of
+    thumbLabel?: string;
+    thumbValueText?: string;
+  }
 >();
 const emits = defineEmits<SliderRootEmits>();
 
-const delegatedProps = reactiveOmit(props, "class");
+const delegatedProps = reactiveOmit(
+  props,
+  "class",
+  "thumbLabel",
+  "thumbValueText",
+);
 
 const forwardedProps = useForwardPropsEmits(delegatedProps, emits);
 
@@ -52,6 +63,8 @@ const forwarded = computed(() => ({
     <SliderThumb
       v-for="(_, key) in modelValue"
       :key="key"
+      :aria-label="thumbLabel"
+      :aria-valuetext="thumbValueText"
       data-slot="slider-thumb"
       class="grid place-items-center bg-transparent size-[32px] shrink-0 rounded-full transition-[color,box-shadow] focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 before:block before:size-[10px] before:rounded-full before:bg-[_rgb(var(--v-theme-surface-variant))] before:shadow-[0_1px_3px_rgba(0,0,0,0.35)] hover:before:shadow-[0_0_0_5px_rgba(var(--v-theme-surface-variant),0.05)]"
     />

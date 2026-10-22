@@ -1,9 +1,13 @@
 <template>
   <v-main
     id="cont"
-    :class="['main-layout', { 'main-layout--mobile': store.mobileLayout }]"
+    :class="[
+      'main-layout',
+      { 'main-layout--mobile': store.mobileLayout },
+      { 'main-layout--frameless': store.frameless },
+    ]"
   >
-    <SidebarProvider>
+    <SidebarProvider class="min-h-0">
       <AppSidebar v-if="!store.frameless" />
       <SidebarInset>
         <div
@@ -11,6 +15,7 @@
             'content-section',
             { 'content-section--mobile': store.mobileLayout },
             { 'content-section--frameless': store.frameless },
+            { 'party-view-active': route.meta.partyView === true },
           ]"
         >
           <router-view v-slot="{ Component }">
@@ -21,12 +26,21 @@
           <create-playlist-dialog />
           <create-smart-playlist-dialog />
           <import-playlist-dialog />
+          <migrate-playlist-dialog />
+          <playlist-access-dialog />
+          <play-announcement-dialog />
           <merge-genre-dialog />
           <delete-genre-dialog />
           <link-genre-dialog />
-          <dialog-delete-confirmation />
+          <player-group-playback-dialog />
           <setup-flow-dialog />
+          <player-rename-dialog />
           <item-context-menu />
+          <command-center />
+          <!-- kept last so it portals after the other dialogs, which share
+               its z-index, and a confirmation asked from one of them (e.g.
+               the search popup) appears on top -->
+          <dialog-delete-confirmation />
           <AddManualLink
             v-model="showEditItemDialog"
             :type="editItemType"
@@ -35,27 +49,24 @@
         </div>
       </SidebarInset>
       <PlayerSelect />
+      <TourOverlay />
     </SidebarProvider>
   </v-main>
 </template>
 
 <script lang="ts" setup>
-import AppSidebar from "@/components/navigation/AppSidebar.vue";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { store } from "@/plugins/store";
-import PlayerSelect from "./PlayerSelect.vue";
+import AddManualLink from "@/components/AddManualLink.vue";
+import CommandCenter from "@/components/CommandCenter.vue";
+import DialogDeleteConfirmation from "@/components/DialogDeleteConfirmation.vue";
 import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
-import DialogDeleteConfirmation from "@/components/DialogDeleteConfirmation.vue";
+import AppSidebar from "@/components/navigation/AppSidebar.vue";
+import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
+import PlayerGroupPlaybackDialog from "@/components/PlayerGroupPlaybackDialog.vue";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
-import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
-import AudioOverlayDialog from "./AudioOverlayDialog.vue";
-import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
-import CreateSmartPlaylistDialog from "./CreateSmartPlaylistDialog.vue";
-import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
-import ItemContextMenu from "./ItemContextMenu.vue";
-import AddManualLink from "@/components/AddManualLink.vue";
+import TourOverlay from "@/components/tour/TourOverlay.vue";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   MediaType,
   type Playlist,
@@ -63,7 +74,21 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
+import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
+import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
+import AudioOverlayDialog from "./AudioOverlayDialog.vue";
+import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
+import CreateSmartPlaylistDialog from "./CreateSmartPlaylistDialog.vue";
+import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
+import ItemContextMenu from "./ItemContextMenu.vue";
+import MigratePlaylistDialog from "./MigratePlaylistDialog.vue";
+import PlayAnnouncementDialog from "./PlayAnnouncementDialog.vue";
+import PlayerSelect from "./PlayerSelect.vue";
+import PlaylistAccessDialog from "./PlaylistAccessDialog.vue";
+
+const route = useRoute();
 
 const showEditItemDialog = ref(false);
 const editItem = ref<Radio | Track | Playlist | undefined>(undefined);
@@ -83,24 +108,38 @@ onMounted(() => {
 
 <style scoped>
 .main-layout {
+  box-sizing: border-box;
   display: flex;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
   /* Reset Vuetify's automatic padding that accounts for drawers */
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding-top: var(--device-inset-top) !important;
+  padding-right: var(--device-inset-right) !important;
+  /* Vuetify measures the fixed footer. Its manual safe-area offset is not part
+     of that measurement, so reserve both before sizing the page scroller. */
+  padding-bottom: calc(
+    var(--v-layout-bottom, 0px) + var(--device-inset-bottom)
+  ) !important;
+  padding-left: var(--device-inset-left) !important;
+}
+
+.main-layout--mobile,
+.main-layout--frameless {
+  /* Mobile chrome intentionally overlays the page; frameless has no chrome. */
+  padding-bottom: 0 !important;
 }
 
 .content-section {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   min-height: 0;
-  padding-bottom: 90px;
 }
 
 .content-section--mobile {
-  padding-bottom: 230px;
+  /* clears the bottom navigation plus the floating player bar above it */
+  padding-bottom: calc(var(--mobile-navigation-height) + 162px);
 }
 
 .content-section--frameless {

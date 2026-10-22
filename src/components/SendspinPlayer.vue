@@ -9,12 +9,15 @@
 </template>
 
 <script setup lang="ts">
+import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
+import { BrowserMediaControlsMode } from "@/helpers/device_settings";
 import {
   isMediaSessionDisabled,
   resetMediaSession,
 } from "@/helpers/mediaSession";
-import { getDeviceName } from "@/plugins/api/helpers";
+import { resolvePlayerQueue } from "@/plugins/api/helpers";
+import { getWebPlayerName } from "@/helpers/players";
 import { SendspinPlayer, Codec } from "@sendspin/sendspin-js";
 
 import almostSilentMp3 from "@/assets/almost_silent.mp3";
@@ -24,6 +27,7 @@ import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import {
   webPlayer,
+  isPlaybackMode,
   registerWebPlayerAudioUnlock,
   clearWebPlayerAudioUnlock,
   WebPlayerMode,
@@ -42,6 +46,11 @@ export interface Props {
 const props = defineProps<Props>();
 const route = useRoute();
 
+// Versioned: delays saved before sendspin-js 4.0.0 dropped its 200ms default would replay early.
+const SYNC_DELAY_STORAGE_KEY = "frontend.settings.sendspin_static_delay_v2";
+
+const VOLUME_STORAGE_KEY = "frontend.settings.sendspin_volume";
+
 const audioRef = ref<HTMLAudioElement>();
 const silentAudioRef = ref<HTMLAudioElement>();
 
@@ -54,6 +63,9 @@ const isMobileOutput = isAndroid || isIOS;
 
 // Sendspin Player instance
 let player: SendspinPlayer | null = null;
+// Set on teardown, so a session that is still being prepared does not connect a
+// player nothing owns.
+let unmounted = false;
 
 // iOS only lets audio start inside a user gesture, but listen-in audio starts
 // asynchronously (after the server groups this player), so the library would
@@ -69,12 +81,14 @@ const primeAudio = () => {
 
 // Reactive state
 const isPlaying = ref(false);
-const volume = ref(100);
+// this browser's last volume, so a new session doesn't start at full volume
+const volume = ref(loadSavedVolume());
 const muted = ref(false);
 const playerState = ref<"synchronized" | "error">("synchronized");
 
 // Watch for volume/mute changes from UI
 watch(volume, (newVolume) => {
+  localStorage.setItem(VOLUME_STORAGE_KEY, String(newVolume));
   if (player) {
     player.setVolume(newVolume);
   }
@@ -105,18 +119,16 @@ const resetLastSeekPos = () => {
   }, 2000);
 };
 
-// Determine which player's metadata to show:
-// - Web player's metadata when it's playing
-// - Selected player's metadata otherwise (undefined = uses store.activePlayerId)
-const metadataPlayerId = computed(() => {
-  const thisPlayer = api.players[props.playerId];
-  if (thisPlayer?.playback_state === PlaybackState.PLAYING) {
-    return props.playerId;
-  }
-  return undefined;
-});
-const mediaSessionDisabled = computed(() =>
-  isMediaSessionDisabled(route, authManager.isGuestAccessSession()),
+// An undefined player ID makes the metadata helper follow the selected player.
+const metadataPlayerId = computed(() =>
+  webPlayer.browserControlsMode === BrowserMediaControlsMode.WEB_PLAYER
+    ? props.playerId
+    : undefined,
+);
+const mediaSessionDisabled = computed(
+  () =>
+    webPlayer.browserControlsMode === BrowserMediaControlsMode.DISABLED ||
+    isMediaSessionDisabled(route, authManager.isGuestAccessSession()),
 );
 
 const correctionMode = computed(() => {
@@ -167,42 +179,37 @@ watch(
   { immediate: true },
 );
 
-// Control silent audio based on interaction and metadata target
-watch(
-  [metadataPlayerId, () => webPlayer.interacted],
-  ([newPlayerId, interacted]) => {
-    if (!interacted) return;
-
-    // Stop silent audio when web player takes over
-    if (newPlayerId !== undefined && silentAudioRef.value) {
-      silentAudioRef.value.pause();
-    }
-  },
-  { immediate: true },
+// The builtin sendspin player plays through Web Audio, which is not a media element.
+// Once that goes quiet on pause the browser drops the media session and the
+// OS gives the media keys to another app. The silent element keeps the
+// session alive there too. On mobile the sendspin audio element does that.
+const silentAudioBacksSession = computed(
+  () => metadataPlayerId.value === undefined || !isMobileOutput,
 );
 
-// Watch active player's playback state to control silent audio
 watch(
-  [() => store.activePlayer?.playback_state, mediaSessionDisabled],
-  ([state, disabled]) => {
-    if (disabled) {
-      if (silentAudioInterval) {
-        clearInterval(silentAudioInterval);
-        silentAudioInterval = undefined;
-      }
-      silentAudioRef.value?.pause();
-      return;
-    }
-    // Only control when showing active player metadata (not web player)
-    if (metadataPlayerId.value !== undefined) return;
-    if (!silentAudioRef.value) return;
-
-    // Clear existing interval
+  [
+    () => store.activePlayer?.playback_state,
+    () => api.players[props.playerId]?.playback_state,
+    mediaSessionDisabled,
+    metadataPlayerId,
+    silentAudioBacksSession,
+    () => webPlayer.interacted,
+    // The element only exists after mount, so the first run above bails out
+    silentAudioRef,
+  ],
+  ([activeState, ownState, disabled, targetPlayerId, backs, interacted]) => {
     if (silentAudioInterval) {
       clearInterval(silentAudioInterval);
       silentAudioInterval = undefined;
     }
+    if (disabled || !backs || !interacted) {
+      silentAudioRef.value?.pause();
+      return;
+    }
+    if (!silentAudioRef.value) return;
 
+    const state = targetPlayerId === undefined ? activeState : ownState;
     if (state === PlaybackState.PLAYING) {
       silentAudioRef.value.play().catch(() => {});
       // Reset to silent portion every 55 seconds to avoid audible tone on loop restart
@@ -226,11 +233,12 @@ watch(
     isPlaying,
     playerState,
     () => store.activePlayer?.playback_state,
+    () => api.players[props.playerId]?.playback_state,
     metadataPlayerId,
     () => webPlayer.interacted,
     mediaSessionDisabled,
   ],
-  ([, pState, , metaPlayerId, interacted, disabled]) => {
+  ([, pState, , ownState, metaPlayerId, interacted, disabled]) => {
     if (disabled) {
       resetMediaSession();
       return;
@@ -239,9 +247,17 @@ watch(
 
     let state: MediaSessionPlaybackState;
     if (metaPlayerId !== undefined) {
-      // Web player is the source - use isPlaying from library
-      // Show as paused if player has error
-      state = isPlaying.value && pState !== "error" ? "playing" : "paused";
+      // Web player is the source. Use the server's player state: the library's
+      // isPlaying only follows stream start/end, so it can stay true while
+      // paused and the OS would then send pause instead of play.
+      // Show as paused if player has error. Without a server player (e.g.
+      // disconnected) there is nothing to report.
+      if (!ownState) {
+        state = "none";
+      } else {
+        const playing = ownState === PlaybackState.PLAYING;
+        state = playing && pState !== "error" ? "playing" : "paused";
+      }
     } else {
       // Active player is the source
       const activeState = store.activePlayer?.playback_state;
@@ -262,35 +278,40 @@ watch(correctionMode, (mode) => {
   player?.setCorrectionMode(mode);
 });
 
+// Hand this client's pairing token to the server so it can pair us without an
+// operator step. The server derives the client id from the token itself, and
+// ignores the call once we are paired.
+const registerPairing = () => {
+  const pairingToken = player?.pairingToken;
+  if (!pairingToken) return;
+  api
+    .sendCommand(
+      "sendspin/pair_web_player",
+      { pairing_token: pairingToken },
+      { suppressGlobalError: true },
+    )
+    .catch((error) => console.warn("Sendspin: auto-pairing failed", error));
+};
+
 // Setup on mount
 onMounted(() => {
   console.debug("Sendspin: Component mounted, connecting...");
 
   registerWebPlayerAudioUnlock(primeAudio);
 
-  // If already showing active player metadata, play silent audio now that silentAudioRef exists
-  if (
-    metadataPlayerId.value === undefined &&
-    !mediaSessionDisabled.value &&
-    webPlayer.interacted &&
-    silentAudioRef.value
-  ) {
-    silentAudioRef.value.play().catch(() => {});
-  }
-
   // Create and initialize player
   if (audioRef.value) {
     const audioElement = isMobileOutput ? audioRef.value : undefined;
 
-    const savedSyncDelay = localStorage.getItem(
-      "frontend.settings.sendspin_static_delay",
-    );
+    const savedSyncDelay = localStorage.getItem(SYNC_DELAY_STORAGE_KEY);
     const parsed = savedSyncDelay !== null ? parseInt(savedSyncDelay, 10) : NaN;
     const syncDelay = isNaN(parsed) ? undefined : parsed;
 
     // Prepare session first, then create player with appropriate codecs
     prepareSendspinSession()
       .then(() => {
+        if (unmounted) return;
+
         // Prefer opus for bandwidth efficiency, flac as fallback
         // (opus requires secure context which may not be available)
         const codecs: Codec[] = ["opus", "flac"];
@@ -302,16 +323,25 @@ onMounted(() => {
         // Use a placeholder URL - the WebSocket interceptor will route through WebRTC
         // The URL just needs to be valid and contain "/sendspin" for the interceptor
         player = new SendspinPlayer({
-          playerId: props.playerId,
           baseUrl: "http://sendspin.local",
           audioElement,
-          clientName: getDeviceName(),
+          // Shared guest accounts have no person to name the device after
+          clientName: getWebPlayerName(
+            authManager.isGuestAccessSession() ||
+              authManager.isDashboardViewer()
+              ? undefined
+              : store.currentUser,
+          ),
+          // How the server recognizes us as its built-in player rather than a
+          // third-party client that has to be paired by hand.
+          productName: "Web Player",
           codecs,
           syncDelay,
           requiredLeadTimeMs: 250,
-          // Ask for a larger buffer when we are being routed through WebRTC.
-          // This increases latency for live streams, but improves stability
-          minBufferMs: isDirectConnection() ? 2500 : 6000,
+          // Startup lead the server uses to schedule the first chunk, so it
+          // directly delays first audio and must stay small. Once playback is
+          // running the buffer grows well beyond this on its own.
+          minBufferMs: 500,
           onStateChange: (state) => {
             // Update reactive state when player state changes
             isPlaying.value = state.isPlaying;
@@ -320,11 +350,10 @@ onMounted(() => {
             playerState.value = state.playerState;
           },
           correctionMode: correctionMode.value,
+          onPairing: (event: string, detail?: string) =>
+            console.debug(`Sendspin: pairing ${event}`, detail ?? ""),
           onDelayCommand: (delayMs: number) => {
-            localStorage.setItem(
-              "frontend.settings.sendspin_static_delay",
-              String(delayMs),
-            );
+            localStorage.setItem(SYNC_DELAY_STORAGE_KEY, String(delayMs));
           },
           // Recover a sendspin transport that drops on its own (e.g. its socket is
           // idle-timed-out while the main API connection stays up). Drops that also
@@ -338,13 +367,21 @@ onMounted(() => {
             maxDelayMs: 30000,
             onReconnecting: (attempt: number) =>
               console.debug(`Sendspin: reconnecting (attempt ${attempt})`),
-            onReconnected: () => console.debug("Sendspin: reconnected"),
+            // Re-pair after a reconnect: the server may have dropped our pairing
+            // record in the meantime (guest pairings are removed on disconnect),
+            // leaving the new connection unpaired. A no-op while still paired.
+            onReconnected: () => {
+              console.debug("Sendspin: reconnected");
+              registerPairing();
+            },
             onExhausted: () =>
               console.warn("Sendspin: reconnect attempts exhausted"),
           },
         });
+        // set before connecting so the server is told the saved volume, not the default
+        player.setVolume(volume.value);
 
-        return player.connect();
+        return player.connect().then(registerPairing);
       })
       .catch((error) => {
         console.error("Sendspin: Failed to connect", error);
@@ -376,9 +413,16 @@ onMounted(() => {
 
 // Cleanup on unmount
 onBeforeUnmount(() => {
+  unmounted = true;
   clearWebPlayerAudioUnlock(primeAudio);
   if (player) {
-    player.disconnect();
+    // The server holds a player registered for minutes after a "restart"
+    // goodbye, which is what a hand-over to another tab needs. Once this
+    // browser wants no player at all, say so instead, or it stays targetable
+    // while nothing is listening.
+    player.disconnect(
+      isPlaybackMode(webPlayer.mode) ? "restart" : "user_request",
+    );
     player = null;
   }
   if (unsubMetadata) unsubMetadata();
@@ -388,6 +432,7 @@ onBeforeUnmount(() => {
   pauseCommandTimeouts.clear();
   if (
     mediaSessionDisabled.value ||
+    webPlayer.browserControlsMode !== BrowserMediaControlsMode.ACTIVE_PLAYER ||
     webPlayer.tabMode !== WebPlayerMode.CONTROLS_ONLY
   ) {
     resetMediaSession();
@@ -399,10 +444,18 @@ function getTargetPlayerId(): string | undefined {
   return store.activePlayerId;
 }
 
+function hasSomethingToPlay(playerId: string): boolean {
+  const player = api.players[playerId];
+  if (!player) return false;
+  const queue = resolvePlayerQueue(player);
+  return !queue || queue.items > 0;
+}
+
 function registerMediaSessionActionHandlers(): void {
   navigator.mediaSession.setActionHandler("play", () => {
     const targetId = getTargetPlayerId();
-    if (!targetId) return;
+    // The server rejects play on an empty queue
+    if (!targetId || !hasSomethingToPlay(targetId)) return;
     api.playerCommandPlay(targetId);
   });
 
@@ -431,7 +484,7 @@ function registerMediaSessionActionHandlers(): void {
 
   navigator.mediaSession.setActionHandler("seekto", (evt) => {
     const targetId = getTargetPlayerId();
-    if (!targetId || !evt.seekTime) return;
+    if (!targetId || evt.seekTime == null) return;
     api.playerCommandSeek(targetId, Math.round(evt.seekTime));
   });
 
@@ -441,9 +494,8 @@ function registerMediaSessionActionHandlers(): void {
       const targetId = getTargetPlayerId();
       if (!targetId) return;
       const offset = evt.seekOffset || 10;
-      const queueId = store.activePlayerQueue?.queue_id;
-      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
+      const elapsed = lastSeekPos ?? resolveActiveElapsedTime(targetId);
+      if (elapsed == null) return;
       const newPos = Math.round(elapsed + offset);
       lastSeekPos = newPos;
       resetLastSeekPos();
@@ -454,15 +506,19 @@ function registerMediaSessionActionHandlers(): void {
       const targetId = getTargetPlayerId();
       if (!targetId) return;
       const offset = evt.seekOffset || 10;
-      const queueId = store.activePlayerQueue?.queue_id;
-      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
+      const elapsed = lastSeekPos ?? resolveActiveElapsedTime(targetId);
+      if (elapsed == null) return;
       const newPos = Math.round(Math.max(0, elapsed - offset));
       lastSeekPos = newPos;
       resetLastSeekPos();
       api.playerCommandSeek(targetId, newPos);
     });
   }
+}
+
+function loadSavedVolume(): number {
+  const saved = parseInt(localStorage.getItem(VOLUME_STORAGE_KEY) ?? "", 10);
+  return isNaN(saved) ? 100 : Math.min(100, Math.max(0, saved));
 }
 </script>
 

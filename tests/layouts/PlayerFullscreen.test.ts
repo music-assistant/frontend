@@ -1,0 +1,888 @@
+import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
+import LyricsViewer from "@/components/LyricsViewer.vue";
+import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
+import PlayerFullscreen from "@/layouts/default/PlayerOSD/PlayerFullscreen.vue";
+import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
+import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import SkipBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBtn.vue";
+import type { MusicAssistantApi } from "@/plugins/api";
+import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
+import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
+
+// Only the fields the lyrics clock and its gate read are mocked; the elapsed
+// time resolver reaches the queue through the player's active_source, so both
+// the api and the store are seeded.
+vi.mock("@/plugins/api", async () => {
+  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
+  const api = reactive({
+    queues: {},
+    queueElapsedTime: {},
+    // the menu's ai dj entry derives availability from the provider list
+    providers: {},
+    subscribe: vi.fn(() => vi.fn()),
+    getTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
+    getPodcastEpisodeTranscript:
+      vi.fn<MusicAssistantApi["getPodcastEpisodeTranscript"]>(),
+    playerCommandSeek: vi.fn<MusicAssistantApi["playerCommandSeek"]>(),
+    playMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
+  });
+  return { api, default: api };
+});
+
+vi.mock("@/plugins/store", async () => {
+  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
+  return {
+    store: reactive({
+      activePlayer: undefined,
+      activePlayerQueue: undefined,
+      curQueueItem: undefined,
+      showFullscreenPlayer: false,
+      showPlayersMenu: false,
+      showQueueItems: false,
+      enabledPlugins: new Set<string>(),
+    }),
+  };
+});
+
+// signed in as a member
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+
+vi.mock("@/composables/useServerTime", () => ({
+  // Date.now() is intentional here: the highlight test advances fake wall time.
+  serverNow: () => Date.now() / 1000,
+}));
+
+// The queue list and the waveform are unrelated to the lyrics clock and pull in
+// their own scrolling/loading machinery.
+vi.mock("@/layouts/default/PlayerOSD/useFullscreenQueue", async () => {
+  const { computed, ref: vueRef } =
+    await vi.importActual<typeof import("vue")>("vue");
+  const { store } = await import("@/plugins/store");
+  const api = (await import("@/plugins/api")).default;
+  return {
+    useFullscreenQueue: () => ({
+      queueScrollRef: vueRef(null),
+      virtualRows: computed(() => {
+        const item = store.curQueueItem;
+        if (!item) return [];
+        return [
+          {
+            index: 0,
+            vItem: { start: 0 },
+            state: "playing",
+            item,
+            divider: null,
+          },
+        ];
+      }),
+      totalItems: computed(() => (store.curQueueItem ? 1 : 0)),
+      upNextCount: computed(() => 0),
+      queueEnded: computed(() => false),
+      totalSize: computed(() => 0),
+      measureRow: vi.fn(),
+      playerActive: computed(() => false),
+      hoveredMarqueeSync: vueRef(undefined),
+      requestBadgeColor: computed(() => ""),
+      boostBadgeColor: computed(() => ""),
+      queueTitleFontSize: computed(() => "1em"),
+      queueSubtitleFontSize: computed(() => "1em"),
+      openQueueItemMenu: vi.fn(),
+      chapterClicked: vi.fn((_item: unknown, chapter: { start: number }) => {
+        const player = (store as unknown as TestStore).activePlayer;
+        if (player) {
+          api.playerCommandSeek(player.player_id, chapter.start);
+        }
+      }),
+      startItemDrag: vi.fn(),
+      draggingIndex: vueRef(undefined),
+      isDragging: vueRef(false),
+      draggedItem: vueRef(undefined),
+      ghostY: vueRef(0),
+      rowOffset: () => 0,
+    }),
+  };
+});
+
+vi.mock("@/composables/useActiveTrackWaveform", async () => {
+  const { ref: vueRef } = await vi.importActual<typeof import("vue")>("vue");
+  return {
+    useActiveTrackWaveform: () => ({ waveformBins: vueRef(undefined) }),
+  };
+});
+
+const vuetifyTheme = vi.hoisted(() => ({ dark: true }));
+
+vi.mock("@/plugins/vuetify", async () => {
+  const { ref: vueRef } = await vi.importActual<typeof import("vue")>("vue");
+  return {
+    default: {
+      display: { height: vueRef(900), mdAndUp: vueRef(true) },
+      theme: { current: vueRef(vuetifyTheme) },
+    },
+  };
+});
+
+vi.mock("vuetify", async () => {
+  const { ref: vueRef } = await vi.importActual<typeof import("vue")>("vue");
+  return {
+    useDisplay: () => ({ name: vueRef("lg"), mdAndUp: vueRef(true) }),
+  };
+});
+
+vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
+
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/players")>()),
+  getPlayerDisplayName: (player: { name: string }) => player.name,
+  getPlayerName: (player: { name: string }) => player.name,
+}));
+
+// the overflow menu is handed to the app-wide context menu over the event bus,
+// which is where a test can read the entries it was built with
+vi.mock("@/plugins/eventbus", () => ({
+  eventbus: { emit: vi.fn(), on: vi.fn(), off: vi.fn() },
+}));
+
+const NOW = 1_700_000_000;
+const QUEUE_ID = "q1";
+
+interface Chapter {
+  position: number;
+  name: string;
+  start: number;
+  end: number | null;
+}
+
+interface TestStore {
+  activePlayer?: {
+    player_id: string;
+    active_source?: string;
+    name?: string;
+    group_members?: string[];
+    source_list?: unknown[];
+    sound_mode_list?: unknown[];
+    playback_state?: PlaybackState;
+    current_media?: {
+      media_type?: MediaType;
+      title?: string | null;
+      artist?: string | null;
+      album?: string | null;
+      duration?: number | null;
+      elapsed_time?: number | null;
+      elapsed_time_last_updated?: number | null;
+      queue_item_id?: string | null;
+    };
+  };
+  activePlayerQueue?: {
+    queue_id: string;
+    state: PlaybackState;
+    active: boolean;
+  };
+  curQueueItem?: {
+    queue_item_id?: string;
+    name?: string;
+    media_item?: {
+      item_id?: string;
+      provider?: string;
+      media_type: MediaType;
+      metadata?: { chapters?: Chapter[]; has_transcript?: boolean | null };
+    };
+  };
+  showFullscreenPlayer: boolean;
+  showPlayersMenu: boolean;
+  showQueueItems: boolean;
+}
+
+interface TestApi {
+  getPodcastEpisodeTranscript: ReturnType<typeof vi.fn>;
+  queues: Record<
+    string,
+    { queue_id: string; state: PlaybackState; active: boolean }
+  >;
+  queueElapsedTime: Record<
+    string,
+    { elapsed_time?: number; elapsed_time_last_updated?: number }
+  >;
+}
+
+// Records scheduled callbacks instead of running them, so a test can see how
+// many frames the component's lyrics clock has pending.
+let pendingFrames: Map<number, FrameRequestCallback>;
+let nextRafId: number;
+let wrapper: VueWrapper | undefined;
+
+/** Put a playing queue on the active player, the way the store reports one. */
+async function seedPlayingQueue(): Promise<void> {
+  const { store } = await import("@/plugins/store");
+  const api = (await import("@/plugins/api")).default;
+  const testStore = store as unknown as TestStore;
+  const testApi = api as unknown as TestApi;
+
+  testApi.queues[QUEUE_ID] = {
+    queue_id: QUEUE_ID,
+    state: PlaybackState.PLAYING,
+    active: true,
+  };
+  testApi.queueElapsedTime[QUEUE_ID] = {
+    elapsed_time: 10,
+    elapsed_time_last_updated: NOW,
+  };
+  testStore.activePlayer = {
+    player_id: "p1",
+    active_source: QUEUE_ID,
+    group_members: [],
+    playback_state: PlaybackState.PLAYING,
+    current_media: {
+      media_type: MediaType.AUDIOBOOK,
+      queue_item_id: "item-1",
+    },
+  };
+  testStore.curQueueItem = {
+    queue_item_id: "item-1",
+    media_item: {
+      media_type: MediaType.AUDIOBOOK,
+      metadata: {
+        chapters: [
+          { position: 1, name: "First", start: 0, end: 60 },
+          { position: 2, name: "Second", start: 60, end: 120 },
+        ],
+      },
+    },
+  };
+  testStore.activePlayerQueue = {
+    queue_id: QUEUE_ID,
+    state: PlaybackState.PLAYING,
+    active: true,
+  };
+}
+
+beforeEach(() => {
+  pendingFrames = new Map();
+  nextRafId = 0;
+  vi.stubGlobal(
+    "requestAnimationFrame",
+    vi.fn((callback: FrameRequestCallback) => {
+      const id = ++nextRafId;
+      pendingFrames.set(id, callback);
+      return id;
+    }),
+  );
+  vi.stubGlobal(
+    "cancelAnimationFrame",
+    vi.fn((id: number) => {
+      pendingFrames.delete(id);
+    }),
+  );
+});
+
+afterEach(async () => {
+  wrapper?.unmount();
+  wrapper = undefined;
+  vi.unstubAllGlobals();
+
+  const { store } = await import("@/plugins/store");
+  const api = (await import("@/plugins/api")).default;
+  const testStore = store as unknown as TestStore;
+  const testApi = api as unknown as TestApi;
+  testStore.activePlayer = undefined;
+  testStore.activePlayerQueue = undefined;
+  testStore.showFullscreenPlayer = false;
+  testStore.showPlayersMenu = false;
+  testStore.showQueueItems = false;
+  testStore.curQueueItem = undefined;
+  testApi.queues = {};
+  testApi.queueElapsedTime = {};
+  testApi.getPodcastEpisodeTranscript.mockReset();
+});
+
+describe("PlayerFullscreen chapter queue", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW * 1000);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  async function mountChapterQueue(): Promise<VueWrapper> {
+    await seedPlayingQueue();
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.showFullscreenPlayer = true;
+    testStore.showQueueItems = true;
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+        },
+      },
+    });
+    await nextTick();
+    return wrapper;
+  }
+
+  it("highlights the active chapter and moves at the next boundary", async () => {
+    const fullscreen = await mountChapterQueue();
+    const chapters = fullscreen.findAll(".queue-chapter");
+    expect(chapters).toHaveLength(2);
+    expect(chapters[0].classes()).toContain("queue-chapter--active");
+    expect(chapters[0].attributes("aria-current")).toBe("true");
+    expect(chapters[1].attributes("aria-current")).toBeUndefined();
+
+    await vi.advanceTimersByTimeAsync(51_000);
+    await nextTick();
+    expect(fullscreen.findAll(".queue-chapter")[1].classes()).toContain(
+      "queue-chapter--active",
+    );
+    expect(
+      fullscreen.findAll(".queue-chapter")[0].attributes("aria-current"),
+    ).toBeUndefined();
+  });
+
+  it("seeks to a chapter start without reloading the media", async () => {
+    const fullscreen = await mountChapterQueue();
+    const api = (await import("@/plugins/api")).default as unknown as {
+      playerCommandSeek: ReturnType<typeof vi.fn>;
+      playMedia: ReturnType<typeof vi.fn>;
+    };
+    api.playerCommandSeek.mockClear();
+    api.playMedia.mockClear();
+
+    await fullscreen.findAll(".queue-chapter")[1].trigger("click");
+
+    expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 60);
+    expect(api.playMedia).not.toHaveBeenCalled();
+  });
+});
+
+describe("PlayerFullscreen lyrics clock", () => {
+  it("only runs while the lyrics panel is on screen", async () => {
+    await seedPlayingQueue();
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+    });
+    await nextTick();
+
+    // The component stays mounted while the dialog is closed.
+    expect(pendingFrames.size).toBe(0);
+
+    testStore.showFullscreenPlayer = true;
+    await nextTick();
+    // Open, but showing the queue rather than the lyrics.
+    expect(pendingFrames.size).toBe(0);
+
+    // The lyrics toggle lives on a header button inside the dialog, which a
+    // shallow mount does not render, so the panel is opened through the binding
+    // that button drives.
+    const vm = wrapper.vm as unknown as { showLyrics: boolean };
+    vm.showLyrics = true;
+    await nextTick();
+    expect(pendingFrames.size).toBe(1);
+
+    testStore.showFullscreenPlayer = false;
+    await nextTick();
+    expect(pendingFrames.size).toBe(0);
+  });
+});
+
+describe("PlayerFullscreen transcript", () => {
+  /** Open the fullscreen player on a podcast episode and let its lookups settle. */
+  async function openEpisode(hasTranscript: boolean | null): Promise<void> {
+    await seedPlayingQueue();
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.curQueueItem = {
+      queue_item_id: "item-1",
+      media_item: {
+        item_id: "podcast-1:episode-1",
+        provider: "pocketcasts--abc",
+        media_type: MediaType.PODCAST_EPISODE,
+        metadata: { has_transcript: hasTranscript },
+      },
+    };
+    testStore.showFullscreenPlayer = true;
+
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+        },
+      },
+    });
+    await nextTick();
+    await nextTick();
+  }
+
+  /** Move the queue's reported position to `seconds`. */
+  async function seekQueue(seconds: number): Promise<void> {
+    const api = (await import("@/plugins/api")).default;
+    (api as unknown as TestApi).queueElapsedTime[QUEUE_ID] = {
+      elapsed_time: seconds,
+      elapsed_time_last_updated: NOW,
+    };
+  }
+
+  it("asks for the transcript", async () => {
+    const api = (await import("@/plugins/api")).default;
+    const testApi = api as unknown as TestApi;
+    testApi.getPodcastEpisodeTranscript.mockResolvedValue([null, null]);
+
+    await openEpisode(null);
+
+    expect(testApi.getPodcastEpisodeTranscript).toHaveBeenCalledWith(
+      "podcast-1:episode-1",
+      "pocketcasts--abc",
+    );
+  });
+
+  it("skips an episode the provider says has no transcript", async () => {
+    const api = (await import("@/plugins/api")).default;
+    const testApi = api as unknown as TestApi;
+
+    await openEpisode(false);
+
+    expect(testApi.getPodcastEpisodeTranscript).not.toHaveBeenCalled();
+  });
+
+  describe("sync toggle", () => {
+    beforeEach(async () => {
+      // only the clock, so flushPromises can still let the transcript load
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(NOW * 1000);
+      const api = (await import("@/plugins/api")).default;
+      (api as unknown as TestApi).getPodcastEpisodeTranscript.mockResolvedValue(
+        ["Hello", [{ start: 0, text: "Hello" }]],
+      );
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("stops following playback while unlinked", async () => {
+      await openEpisode(null);
+      await flushPromises();
+      const vm = wrapper!.vm as unknown as {
+        showLyrics: boolean;
+        toggleTranscriptSync: () => void;
+      };
+      vm.showLyrics = true;
+      await nextTick();
+      const viewer = () => wrapper!.findComponent(LyricsViewer);
+      expect(viewer().props("syncDisabled")).toBe(false);
+
+      vm.toggleTranscriptSync();
+      await nextTick();
+      expect(viewer().props("syncDisabled")).toBe(true);
+
+      vm.toggleTranscriptSync();
+      await nextTick();
+      expect(viewer().props("syncDisabled")).toBe(false);
+    });
+
+    it("shifts the transcript back by the time spent unlinked, even with the panel closed", async () => {
+      await openEpisode(null);
+      await flushPromises();
+      const vm = wrapper!.vm as unknown as { toggleTranscriptSync: () => void };
+      const { offset } = useLyricsOffset();
+
+      vm.toggleTranscriptSync();
+      await seekQueue(40);
+      vm.toggleTranscriptSync();
+
+      expect(offset.value).toBe(-30);
+    });
+  });
+});
+
+describe("PlayerFullscreen lyrics offset", () => {
+  /** Make `media_type` the current queue item, as a new entry in the queue. */
+  async function playNext(queueItemId: string, mediaType: MediaType) {
+    const { store } = await import("@/plugins/store");
+    (store as unknown as TestStore).curQueueItem = {
+      queue_item_id: queueItemId,
+      media_item: { item_id: queueItemId, media_type: mediaType },
+    };
+    await nextTick();
+  }
+
+  it("keeps a track's offset for the next track and resets it around an episode", async () => {
+    await playNext("track-1", MediaType.TRACK);
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+    });
+    // the offset is shared module state, so start from a known value
+    const { offset, adjust, reset } = useLyricsOffset();
+    reset();
+    adjust(1.5);
+
+    await playNext("track-2", MediaType.TRACK);
+    expect(offset.value).toBe(1.5);
+
+    await playNext("episode-1", MediaType.PODCAST_EPISODE);
+    expect(offset.value).toBe(0);
+
+    adjust(-90);
+    await playNext("track-3", MediaType.TRACK);
+    expect(offset.value).toBe(0);
+  });
+});
+
+describe("PlayerFullscreen player select button", () => {
+  async function mountFullscreenDialog(
+    extraStubs: Record<string, unknown> = {},
+  ): Promise<VueWrapper> {
+    const { store } = await import("@/plugins/store");
+    (store as unknown as TestStore).showFullscreenPlayer = true;
+
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
+        // the button lives inside the dialog, which a shallow mount leaves empty
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+          ...extraStubs,
+        },
+      },
+    });
+    await nextTick();
+    return wrapper;
+  }
+
+  it("opens the player list on top of the fullscreen player", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    const fullscreen = await mountFullscreenDialog();
+
+    await fullscreen.find("#fullscreen-player-select-button").trigger("click");
+
+    expect(testStore.showPlayersMenu).toBe(true);
+    expect(testStore.showFullscreenPlayer).toBe(true);
+  });
+
+  it("announces the player list panel it opens", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    const fullscreen = await mountFullscreenDialog();
+    const selectButton = fullscreen.get("#fullscreen-player-select-button");
+
+    expect(selectButton.attributes("aria-haspopup")).toBe("dialog");
+    expect(selectButton.attributes("aria-expanded")).toBe("false");
+    // no player selected, so the label carries no trailing player name
+    expect(selectButton.attributes("aria-label")).toBe("tooltip.select_player");
+
+    testStore.showPlayersMenu = true;
+    await nextTick();
+
+    expect(selectButton.attributes("aria-expanded")).toBe("true");
+  });
+
+  it("names the selected player it opens the list from", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = {
+      player_id: "p1",
+      name: "Kitchen",
+      group_members: [],
+    };
+    const fullscreen = await mountFullscreenDialog();
+
+    expect(
+      fullscreen
+        .get("#fullscreen-player-select-button")
+        .attributes("aria-label"),
+    ).toBe("tooltip.select_player: Kitchen");
+  });
+
+  // Rendered through the real Button so the variant classes actually go through
+  // class-variance-authority; a stub would only echo back the class prop.
+  it("renders as an overlay button", async () => {
+    const fullscreen = await mountFullscreenDialog({ Button: false });
+    const classes = fullscreen
+      .get("#fullscreen-player-select-button")
+      .classes();
+
+    expect(classes).toContain("bg-overlay-muted");
+    expect(classes).toContain("text-overlay-foreground");
+  });
+});
+
+describe("PlayerFullscreen overlay buttons", () => {
+  afterEach(() => {
+    vuetifyTheme.dark = true;
+  });
+
+  async function mountCard(): Promise<VueWrapper> {
+    const { store } = await import("@/plugins/store");
+    (store as unknown as TestStore).showFullscreenPlayer = true;
+
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+        },
+      },
+    });
+    await nextTick();
+    return wrapper;
+  }
+
+  it("sets the dark overlay values in the dark theme", async () => {
+    const card = (await mountCard()).get("[data-player-panel]");
+
+    expect(card.attributes("style")).toContain("--overlay-fg: #ffffff");
+  });
+
+  it("mirrors the overlay buttons for dark text on a light palette", async () => {
+    vuetifyTheme.dark = false;
+
+    const card = (await mountCard()).get("[data-player-panel]");
+
+    expect(card.attributes("style")).toContain("--overlay-fg: #000000");
+  });
+});
+
+describe("PlayerFullscreen overflow menu", () => {
+  async function openOverflowMenu(mediaType: MediaType) {
+    const { store } = await import("@/plugins/store");
+    const { eventbus } = await import("@/plugins/eventbus");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = {
+      player_id: "p1",
+      group_members: [],
+      source_list: [],
+      sound_mode_list: [],
+    };
+    // a track sends the view looking for lyrics on the way past
+    testStore.curQueueItem = {
+      media_item: { media_type: mediaType, metadata: {} },
+    };
+    testStore.showFullscreenPlayer = true;
+
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+          // the overflow button rides in the toolbar's append slot
+          "v-toolbar": { template: "<div><slot name='append' /></div>" },
+        },
+      },
+    });
+    await nextTick();
+
+    const emit = vi.mocked(eventbus.emit);
+    emit.mockClear();
+    await wrapper.get('[aria-label="tooltip.more_options"]').trigger("click");
+
+    // the bus is typed per event, so the payload only takes a shape here
+    const calls = emit.mock.calls as unknown as [
+      string,
+      { items: { label: string }[] },
+    ][];
+    const call = calls.find(([event]) => event === "contextmenu");
+    if (!call) throw new Error("the overflow button opened no menu");
+    return call[1].items.map((item) => item.label);
+  }
+
+  // the playback speed is a per-item setting, so it only belongs to the
+  // spoken-word content that carries one
+  it.each([
+    { mediaType: MediaType.AUDIOBOOK, offered: true },
+    { mediaType: MediaType.PODCAST_EPISODE, offered: true },
+    { mediaType: MediaType.TRACK, offered: false },
+  ])("offers the playback speed for $mediaType: $offered", async (testCase) => {
+    const labels = await openOverflowMenu(testCase.mediaType);
+
+    expect(labels.includes("change_playback_speed")).toBe(testCase.offered);
+  });
+});
+
+describe("PlayerFullscreen controls row", () => {
+  async function mountControls(
+    mediaType: MediaType,
+    mdAndUp: boolean,
+  ): Promise<VueWrapper> {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = { player_id: "p1", group_members: [] };
+    testStore.curQueueItem = {
+      media_item: { media_type: mediaType, metadata: {} },
+    };
+    testStore.showFullscreenPlayer = true;
+
+    const fullscreen = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp } } },
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+        },
+      },
+    });
+    wrapper = fullscreen;
+    await nextTick();
+    return fullscreen;
+  }
+
+  const sideSlots = (fullscreen: VueWrapper) =>
+    fullscreen.findAll(".media-controls > .side-slot");
+
+  it.each([true, false])(
+    "puts skip back and forward in the side slots of an audiobook (wide: %s)",
+    async (mdAndUp) => {
+      const fullscreen = await mountControls(MediaType.AUDIOBOOK, mdAndUp);
+
+      const skips = fullscreen.findAllComponents(SkipBtn);
+      expect(skips.map((skip) => skip.props("direction"))).toEqual([
+        "back",
+        "forward",
+      ]);
+      expect(fullscreen.findComponent(ShuffleBtn).exists()).toBe(false);
+      expect(fullscreen.findComponent(RepeatBtn).exists()).toBe(false);
+    },
+  );
+
+  it("keeps shuffle and repeat for a track on a wide screen", async () => {
+    const fullscreen = await mountControls(MediaType.TRACK, true);
+
+    expect(fullscreen.findComponent(SkipBtn).exists()).toBe(false);
+    expect(fullscreen.findComponent(ShuffleBtn).exists()).toBe(true);
+    expect(fullscreen.findComponent(RepeatBtn).exists()).toBe(true);
+  });
+
+  // the empty slots hold their place so the other buttons sit where they do
+  // for an audiobook
+  it("keeps the side slots empty for a track on a narrow screen", async () => {
+    const fullscreen = await mountControls(MediaType.TRACK, false);
+
+    const slots = sideSlots(fullscreen);
+    expect(slots).toHaveLength(2);
+    expect(slots.every((slot) => slot.element.children.length === 0)).toBe(
+      true,
+    );
+  });
+});
+
+describe("PlayerFullscreen source badge", () => {
+  beforeEach(async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = undefined;
+    testStore.activePlayerQueue = undefined;
+    testStore.curQueueItem = undefined;
+    // the queue panel replaces the details column below bp7, which is where
+    // the badge and the album line live
+    testStore.showQueueItems = false;
+  });
+
+  async function mountDetails(): Promise<VueWrapper> {
+    const { store } = await import("@/plugins/store");
+    (store as unknown as TestStore).showFullscreenPlayer = true;
+
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+          // the title and album lines are the assertion targets, and a
+          // default stub renders no slot content
+          "v-card-title": { template: "<div class='title'><slot /></div>" },
+          "v-card-subtitle": { template: "<div class='sub'><slot /></div>" },
+          MarqueeText: { template: "<span><slot /></span>" },
+        },
+      },
+    });
+    await nextTick();
+    return wrapper;
+  }
+
+  function albumLine(fullscreen: VueWrapper) {
+    return fullscreen.findAll(".sub")[0];
+  }
+
+  it("keeps the radio station name in the album line", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = {
+      player_id: "p1",
+      name: "Kitchen",
+      group_members: [],
+      current_media: {
+        media_type: MediaType.RADIO,
+        title: "Live track",
+        artist: "Artist",
+        // the server puts the station name here when there is no real album
+        album: "Radio 538",
+      },
+    };
+
+    const fullscreen = await mountDetails();
+
+    expect(albumLine(fullscreen).exists()).toBe(true);
+    expect(albumLine(fullscreen).text()).toContain("Radio 538");
+  });
+
+  it("leaves a real album on its line", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = {
+      player_id: "p1",
+      name: "Kitchen",
+      group_members: [],
+      current_media: { title: "Song", artist: "Artist", album: "Album" },
+    };
+
+    const fullscreen = await mountDetails();
+
+    expect(albumLine(fullscreen).text()).toContain("Album");
+  });
+
+  // this replaced the "External source active: {0}" caption, so the title has
+  // to fall through to something rather than render blank
+  it("falls back to the player name when an external source sends no metadata", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = {
+      player_id: "p1",
+      name: "Kitchen",
+      group_members: [],
+      active_source: "line-in",
+      source_list: [{ id: "line-in", name: "Line In" }],
+    };
+
+    const fullscreen = await mountDetails();
+
+    expect(fullscreen.get(".title").text()).toBe("Kitchen");
+  });
+});

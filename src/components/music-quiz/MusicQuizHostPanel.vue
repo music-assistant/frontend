@@ -7,10 +7,10 @@
     />
 
     <div class="flex flex-col gap-4">
-      <slot name="game" />
+      <slot name="game"></slot>
 
       <div
-        v-if="state.phase === 'lobby' && state.playback"
+        v-if="state.phase === 'lobby'"
         class="bg-muted/40 flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
         data-testid="music-quiz-playback-summary"
       >
@@ -122,9 +122,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { MusicQuizSupportedHostState } from "@/composables/useMusicQuiz";
-import { useMusicQuizAutoStart } from "@/composables/useMusicQuizAutoStart";
-import { useMusicQuizRevealCountdown } from "@/composables/useMusicQuizRevealCountdown";
+import type { MusicQuizSupportedHostState } from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizAutoStart } from "@/composables/music-quiz/useMusicQuizAutoStart";
+import { useMusicQuizRevealCountdown } from "@/composables/music-quiz/useMusicQuizRevealCountdown";
 import { $t } from "@/plugins/i18n";
 import {
   ChevronDown,
@@ -176,7 +176,6 @@ const startLabel = computed(() => {
 });
 const playbackSummary = computed(() => {
   const playback = props.state.playback;
-  if (!playback) return "";
   if (playback.mode === "remote") {
     return $t("providers.music_quiz.playback_summary_remote");
   }

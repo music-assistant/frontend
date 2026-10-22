@@ -1,28 +1,27 @@
 <template>
-  <section class="edit-core-config">
-    <div v-if="config && api.providerManifests[config.domain]">
-      <!-- Header card -->
-      <v-card class="header-card mb-4" elevation="0">
-        <div class="header-content">
-          <div class="header-icon">
-            <v-icon size="32" color="primary">{{
-              getCoreIcon(config.domain)
-            }}</v-icon>
-          </div>
-          <div class="header-info">
-            <h2 class="header-title">
-              {{ getItemTitle(config) }}
-            </h2>
-            <p class="header-description">
-              {{ getItemDescription(config) }}
-            </p>
-          </div>
-        </div>
-      </v-card>
-    </div>
+  <section class="p-4">
+    <SettingsHeaderCard
+      v-if="config && api.providerManifests[config.domain]"
+      :icon="getCoreIcon(config.domain)"
+      :title="getItemTitle(config)"
+      :description="getItemDescription(config)"
+      :documentation-url="
+        getExternalLinkUrl(api.providerManifests[config.domain].documentation)
+      "
+      @reset-to-defaults="resetToDefaults"
+    />
+
+    <ServerUrlsCard
+      v-if="config?.domain === 'webserver'"
+      ref="urlCard"
+      :base-url="config.values.base_url"
+      :external-url="config.values.external_url"
+      @update:value="onUrlUpdate"
+    />
 
     <edit-config
       v-if="config"
+      ref="editConfig"
       :config-entries="allConfigEntries"
       :disabled="false"
       @submit="onSubmit"
@@ -30,31 +29,45 @@
       @immediate-apply="onImmediateApply"
     />
 
-    <v-overlay
-      v-model="loading"
-      scrim="true"
-      persistent
-      class="loading-overlay"
+    <!-- z-index clears the player bar (2001), which floats above page content -->
+    <div
+      v-if="loading"
+      data-testid="loading-overlay"
+      class="fixed inset-0 z-[2100] flex items-center justify-center bg-background/80"
     >
-      <v-progress-circular indeterminate size="64" color="primary" />
-    </v-overlay>
+      <Spinner class="size-16" />
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { openActionUrlEntries } from "@/helpers/utils";
+import { Spinner } from "@/components/ui/spinner";
+import { useConfigAction } from "@/composables/useConfigAction";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { ConfigValueType, CoreConfig } from "@/plugins/api/interfaces";
-import { computed, ref, watch } from "vue";
+import {
+  Database,
+  Globe,
+  Music,
+  RadioTower,
+  Settings2,
+  Speaker,
+  Tags,
+} from "@lucide/vue";
+import { computed, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import { toast } from "vue-sonner";
 import EditConfig from "./EditConfig.vue";
+import ServerUrlsCard from "./ServerUrlsCard.vue";
+import SettingsHeaderCard from "./SettingsHeaderCard.vue";
 
 // global refs
 const router = useRouter();
 const { t } = useI18n();
 const config = ref<CoreConfig>();
+const editConfig = ref<InstanceType<typeof EditConfig>>();
+const urlCard = ref<InstanceType<typeof ServerUrlsCard>>();
 const loading = ref(false);
 
 // props
@@ -70,6 +83,13 @@ const allConfigEntries = computed(() => {
   return Object.values(config.value.values);
 });
 
+// the webserver entries the URL card edits in place of the form
+const urlCardEntries = computed(() => {
+  if (config.value?.domain !== "webserver") return [];
+  const { base_url, external_url } = config.value.values;
+  return [base_url, external_url];
+});
+
 // watchers
 watch(
   () => props.domain,
@@ -77,6 +97,15 @@ watch(
     if (val) {
       config.value = await api.getCoreConfig(val);
     }
+  },
+  { immediate: true },
+);
+
+// hidden from the form, while EditConfig still saves and guards their values
+watch(
+  urlCardEntries,
+  (entries) => {
+    for (const entry of entries) entry.hidden = true;
   },
   { immediate: true },
 );
@@ -98,16 +127,28 @@ const getItemDescription = (item: CoreConfig) => {
     : api.providerManifests[item.domain].description;
 };
 
-const getCoreIcon = (domain: string): string => {
-  const iconMap: Record<string, string> = {
-    streams: "mdi-radio-tower",
-    players: "mdi-speaker-multiple",
-    metadata: "mdi-tag-multiple",
-    music: "mdi-music",
-    webserver: "mdi-web",
-    cache: "mdi-cached",
+const getCoreIcon = (domain: string): Component => {
+  const iconMap: Record<string, Component> = {
+    streams: RadioTower,
+    players: Speaker,
+    metadata: Tags,
+    music: Music,
+    webserver: Globe,
+    cache: Database,
   };
-  return iconMap[domain] || "mdi-cog";
+  return iconMap[domain] || Settings2;
+};
+
+const resetToDefaults = function () {
+  editConfig.value?.resetToDefaults();
+  // the form's reset skips hidden entries, and these are hidden only because
+  // the URL card shows them
+  for (const entry of urlCardEntries.value) entry.value = entry.default_value;
+  urlCard.value?.reset();
+};
+
+const onUrlUpdate = function (key: string, value: string) {
+  config.value!.values[key].value = value;
 };
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
@@ -118,8 +159,9 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     .then(() => {
       router.push({ name: "systemsettings" });
     })
-    .catch((err) => {
-      toast.error(err.message || err);
+    .catch(() => {
+      // the api reports the failure itself
+      editConfig.value?.saveFailed();
     })
     .finally(() => {
       loading.value = false;
@@ -137,101 +179,11 @@ const onImmediateApply = async function (
   }
 };
 
-const onAction = async function (
-  action: string,
-  _values: Record<string, ConfigValueType>,
-  immediateApply: boolean,
-) {
-  loading.value = true;
-  api
-    .invokeCoreConfigAction(config.value!.domain, action)
-    .then(async (entries) => {
-      entries = openActionUrlEntries(entries);
-      config.value!.values = {};
-      for (const entry of entries) {
-        config.value!.values[entry.key] = entry;
-      }
-      // If the action has immediate_apply, save the updated values right away
-      if (immediateApply) {
-        const saveValues: Record<string, ConfigValueType> = {};
-        for (const entry of entries) {
-          if (entry.value !== undefined) {
-            saveValues[entry.key] = entry.value;
-          }
-        }
-        const updatedConfig = await api.saveCoreConfig(
-          config.value!.domain,
-          saveValues,
-        );
-        for (const [key, entry] of Object.entries(updatedConfig.values)) {
-          config.value!.values[key] = entry;
-        }
-      }
-      loading.value = false;
-    })
-    .catch((err) => {
-      toast.error(err.message || err);
-      loading.value = false;
-    });
-};
+const { onAction } = useConfigAction({
+  config,
+  loading,
+  invokeAction: (action) =>
+    api.invokeCoreConfigAction(config.value!.domain, action),
+  saveValues: (values) => api.saveCoreConfig(config.value!.domain, values),
+});
 </script>
-
-<style scoped>
-.edit-core-config {
-  padding: 16px;
-}
-
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
-.header-content {
-  display: flex;
-  gap: 20px;
-  padding: 24px;
-}
-
-.header-icon {
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  background: rgba(var(--v-theme-primary), 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.header-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.header-description {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin: 0;
-  line-height: 1.5;
-}
-
-.loading-overlay {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-@media (max-width: 600px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-</style>

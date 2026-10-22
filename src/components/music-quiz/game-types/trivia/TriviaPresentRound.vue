@@ -18,10 +18,10 @@
 import type { MusicQuizPresentGameAdapterProps } from "@/components/music-quiz/adapter_contracts";
 import TriviaQuestion from "@/components/music-quiz/game-types/trivia/TriviaQuestion.vue";
 import type {
-  MusicQuizTriviaHostState,
+  MusicQuizTriviaPublicState,
   MusicQuizTriviaRound,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizRevealCountdown } from "@/composables/useMusicQuizRevealCountdown";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizRevealCountdown } from "@/composables/music-quiz/useMusicQuizRevealCountdown";
 import { $t } from "@/plugins/i18n";
 import { Clock3 } from "@lucide/vue";
 import { computed } from "vue";
@@ -29,7 +29,7 @@ import { computed } from "vue";
 const props =
   defineProps<
     MusicQuizPresentGameAdapterProps<
-      MusicQuizTriviaHostState,
+      MusicQuizTriviaPublicState,
       MusicQuizTriviaRound
     >
   >();

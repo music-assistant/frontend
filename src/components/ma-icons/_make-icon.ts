@@ -1,60 +1,46 @@
-// Internal factory helpers — import only within this directory.
-import { h } from "vue";
-import type { Component } from "vue";
+// Internal factory helper — import only within this directory.
+import { defineComponent, h } from "vue";
+import type { Component, PropType } from "vue";
 
-/** Stroke-based icon (Lucide style). viewBox defaults to 24×24; supply a custom square viewBox for other coordinate spaces. */
-export function makeStrokeIcon(
-  name: string,
-  viewBox = "0 0 24 24",
-  ...children: ReturnType<typeof h>[]
-): Component {
-  return {
-    name,
-    props: { size: { type: [Number, String], default: 24 } },
-    setup(props: { size?: number | string }) {
-      return () =>
-        h(
-          "svg",
-          {
-            xmlns: "http://www.w3.org/2000/svg",
-            width: props.size ?? 24,
-            height: props.size ?? 24,
-            viewBox,
-            fill: "none",
-            stroke: "currentColor",
-            "stroke-width": "2",
-            "stroke-linecap": "round",
-            "stroke-linejoin": "round",
-          },
-          children,
-        );
-    },
-  };
-}
+/** Render canonical shared SVG artwork inline while retaining its currentColor theming. */
+export function makeSvgIcon(name: string, svg: string): Component {
+  const rootMatch = svg.trim().match(/^<svg\s+([^>]*)>([\s\S]*)<\/svg>$/);
+  if (!rootMatch) throw new Error(`Invalid SVG for shared icon "${name}"`);
+  const rootAttributes = Object.fromEntries(
+    [...rootMatch[1].matchAll(/([:\w-]+)="([^"]*)"/g)].map((match) => [
+      match[1],
+      match[2],
+    ]),
+  );
+  delete rootAttributes.xmlns;
+  delete rootAttributes.width;
+  delete rootAttributes.height;
+  // Strip again until nothing changes, so a split comment cannot survive.
+  let innerHtml = rootMatch[2];
+  for (let previous = ""; previous !== innerHtml;) {
+    previous = innerHtml;
+    innerHtml = innerHtml.replace(/<!--[\s\S]*?-->/g, " ");
+  }
+  innerHtml = innerHtml.replace(/\s+/g, " ").trim();
 
-/** Fill-based icon. viewBox must be square — pad non-square artwork horizontally before passing in. */
-export function makeFillIcon(
-  name: string,
-  viewBox: string,
-  ...children: ReturnType<typeof h>[]
-): Component {
-  return {
+  return defineComponent({
     name,
-    props: { size: { type: [Number, String], default: 24 } },
-    setup(props: { size?: number | string }) {
-      return () =>
-        h(
-          "svg",
-          {
-            xmlns: "http://www.w3.org/2000/svg",
-            width: props.size ?? 24,
-            height: props.size ?? 24,
-            viewBox,
-            fill: "none",
-            stroke: "none",
-          },
-          children,
-        );
+    inheritAttrs: false,
+    props: {
+      size: {
+        type: [Number, String] as PropType<number | string>,
+        default: 24,
+      },
     },
-  };
+    setup(props, { attrs }) {
+      return () =>
+        h("svg", {
+          ...rootAttributes,
+          width: props.size,
+          height: props.size,
+          ...attrs,
+          innerHTML: innerHtml,
+        });
+    },
+  });
 }

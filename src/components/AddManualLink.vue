@@ -96,10 +96,10 @@
         <Button
           type="submit"
           form="form-add-manual-link"
-          :disabled="loading || !isFormValid"
+          :disabled="!isFormValid"
+          :loading="loading"
         >
-          <Spinner v-if="loading" />
-          {{ isEditMode ? $t("save") : $t("add") }}
+          {{ isEditMode ? $t("settings.save") : $t("add") }}
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AnyFieldApi } from "@tanstack/form-core";
+import type { AnyFieldApi } from "@tanstack/vue-form";
 import { useForm } from "@tanstack/vue-form";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -128,7 +128,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
 import { manualLinkSchema } from "@/lib/forms/manual-link";
 import api from "@/plugins/api";
 import type { Playlist, Radio, Track } from "@/plugins/api/interfaces";
@@ -200,7 +199,7 @@ watch(
     if (active != null) store.dialogActive = active;
     if (active && compProps.editItem) {
       // Pre-populate fields with current values
-      const thumbImage = compProps.editItem.metadata?.images?.find(
+      const thumbImage = compProps.editItem.metadata.images?.find(
         (img) => img.type === ImageType.THUMB,
       );
       form.reset({
@@ -298,14 +297,20 @@ const save = async function (value: {
           images: [],
         };
       }
-      await api.sendCommand(updateEndpoint.value, {
-        item_id: parseInt(compProps.editItem.item_id, 10),
-        update: updatedItem,
-        overwrite: true,
-      });
+      await api.sendCommand(
+        updateEndpoint.value,
+        {
+          item_id: parseInt(compProps.editItem.item_id, 10),
+          update: updatedItem,
+          overwrite: true,
+        },
+        // this dialog reports a failed edit itself, so opt out of the global toast
+        { suppressGlobalError: true },
+      );
       model.value = false;
     } catch (e) {
       console.error("Failed to edit item:", e);
+      toast.error(String(e));
     } finally {
       loading.value = false;
     }

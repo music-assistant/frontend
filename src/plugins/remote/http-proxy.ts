@@ -14,6 +14,8 @@ const REMOTE_MODE_STORAGE_KEY = "ma_remote_mode";
 const CURRENT_REMOTE_ID_STORAGE_KEY = "ma_current_remote_id";
 // Storage key to track reload attempts (prevents infinite loops)
 const SW_RELOAD_ATTEMPT_KEY = "ma_sw_reload_attempt";
+// Shape of the messages exchanged with the service worker (must match public/sw.js)
+const MESSAGE_PROTOCOL_VERSION = 1;
 
 class HttpProxyBridge {
   private transport: WebRTCTransport | null = null;
@@ -252,6 +254,7 @@ class HttpProxyBridge {
       // Send the message
       navigator.serviceWorker.controller.postMessage({
         type: "set-remote-mode",
+        protocol: MESSAGE_PROTOCOL_VERSION,
         data: { isRemote, proxyScope },
       });
     });
@@ -332,22 +335,7 @@ class HttpProxyBridge {
     if (this.shouldSuppressRequest(data.path)) {
       // Return a 503 Service Unavailable to indicate temporary failure
       // This prevents retry loops while still informing the client
-      if (navigator.serviceWorker?.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: "http-proxy-response",
-          data: {
-            id: data.id,
-            status: 503,
-            headers: {
-              "Content-Type": "text/plain",
-              "Retry-After": "5",
-            },
-            body: this.bytesToHex(
-              new TextEncoder().encode("Request temporarily suppressed"),
-            ),
-          },
-        });
-      }
+      this.sendErrorResponse(data.id, 503, "Request temporarily suppressed");
       return;
     }
 
@@ -375,17 +363,12 @@ class HttpProxyBridge {
       }
 
       // Send response back to service worker
-      if (navigator.serviceWorker?.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: "http-proxy-response",
-          data: {
-            id: data.id,
-            status: response.status,
-            headers: response.headers,
-            body: this.bytesToHex(response.body),
-          },
-        });
-      }
+      this.sendProxyResponse(
+        data.id,
+        response.status,
+        response.headers,
+        response.body,
+      );
     } catch (error) {
       // Record the failure to prevent immediate retries
       this.recordFailure(data.path);
@@ -421,29 +404,46 @@ class HttpProxyBridge {
    * Send an error response to the service worker
    */
   private sendErrorResponse(id: string, status: number, message: string): void {
-    if (navigator.serviceWorker?.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: "http-proxy-response",
-        data: {
-          id,
-          status,
-          headers: {
-            "Content-Type": "text/plain",
-            ...(status === 503 ? { "Retry-After": "5" } : {}),
-          },
-          body: this.bytesToHex(new TextEncoder().encode(message)),
-        },
-      });
-    }
+    this.sendProxyResponse(
+      id,
+      status,
+      {
+        "Content-Type": "text/plain",
+        ...(status === 503 ? { "Retry-After": "5" } : {}),
+      },
+      new TextEncoder().encode(message),
+    );
   }
 
   /**
-   * Convert Uint8Array to hex string
+   * Send a proxied response to the service worker.
+   *
+   * Hands over ownership of the body: its buffer is transferred, so the bytes
+   * must not be read after this call.
    */
-  private bytesToHex(bytes: Uint8Array): string {
-    return Array.from(bytes)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
+  private sendProxyResponse(
+    id: string,
+    status: number,
+    headers: Record<string, string>,
+    body: Uint8Array,
+  ): void {
+    const controller = navigator.serviceWorker?.controller;
+    if (!controller) return;
+    // The transport answers with a view over a buffer sized to the frames it received,
+    // which can hold more than the response itself. Transferring that buffer would hand
+    // the surplus over too, so only a view covering its whole buffer goes as-is.
+    const bytes =
+      body.byteOffset === 0 && body.byteLength === body.buffer.byteLength
+        ? body
+        : body.slice();
+    controller.postMessage(
+      {
+        type: "http-proxy-response",
+        protocol: MESSAGE_PROTOCOL_VERSION,
+        data: { id, status, headers, body: bytes },
+      },
+      [bytes.buffer],
+    );
   }
 
   private async syncRemoteMode(): Promise<void> {

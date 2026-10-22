@@ -1,4 +1,10 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import {
+  keepOwnFavorite,
+  setFavoriteState,
+  subscribeOwnFavorites,
+} from "@/helpers/favorites";
+import { embeddedProviderDomains } from "@/helpers/provider_domain";
 import { api } from "@/plugins/api";
 import type {
   Album,
@@ -7,6 +13,7 @@ import type {
   EventMessage,
   Genre,
   ItemMapping,
+  MediaItemTypeOrItemMapping,
   Playlist,
   Podcast,
   Radio,
@@ -20,14 +27,7 @@ import {
 import { store } from "@/plugins/store";
 
 export type ShortcutItem =
-  | Playlist
-  | Artist
-  | Album
-  | Track
-  | Radio
-  | Podcast
-  | Audiobook
-  | Genre;
+  Playlist | Artist | Album | Track | Radio | Podcast | Audiobook | Genre;
 
 const SUPPORTED_TYPES = new Set([
   MediaType.PLAYLIST,
@@ -114,14 +114,17 @@ function getShortcutIdentities(
     },
   ];
 
-  // Also match the provider domain form for instance-based provider ids.
-  const baseProvider = safeDecode(item.provider.split("--")[0]);
-  if (baseProvider && baseProvider !== safeDecode(item.provider)) {
-    identities.push({
-      provider: baseProvider,
-      mediaType: item.media_type,
-      itemId: safeDecode(item.item_id),
-    });
+  // Also match the provider domain form for instance-based provider ids; a converted
+  // source by the domain it had as well as the one it now has.
+  for (const domain of embeddedProviderDomains(item.provider)) {
+    const baseProvider = safeDecode(domain);
+    if (baseProvider && baseProvider !== safeDecode(item.provider)) {
+      identities.push({
+        provider: baseProvider,
+        mediaType: item.media_type,
+        itemId: safeDecode(item.item_id),
+      });
+    }
   }
 
   if ("provider_mappings" in item && Array.isArray(item.provider_mappings)) {
@@ -132,11 +135,18 @@ function getShortcutIdentities(
         itemId: safeDecode(mapping.item_id),
       });
       // Some URIs store provider domain instead of provider instance.
-      identities.push({
-        provider: safeDecode(mapping.provider_domain),
-        mediaType: item.media_type,
-        itemId: safeDecode(mapping.item_id),
-      });
+      const domains = new Set([
+        mapping.provider_domain,
+        // A converted source also by the domain its id names.
+        ...embeddedProviderDomains(mapping.provider_instance),
+      ]);
+      for (const domain of domains) {
+        identities.push({
+          provider: safeDecode(domain),
+          mediaType: item.media_type,
+          itemId: safeDecode(mapping.item_id),
+        });
+      }
     }
   }
 
@@ -155,6 +165,16 @@ function hasShortcutIdentityMatch(
   );
 }
 
+function isUriMatchingItem(
+  uri: string,
+  item: ShortcutItem | ItemMapping,
+): boolean {
+  const parsed = parseShortcutUri(uri);
+  if (!parsed) return false;
+  const identities = getShortcutIdentities(item);
+  return hasShortcutIdentityMatch(parsed, identities);
+}
+
 function findPinnedUriByIdentities(
   identities: ParsedShortcutUri[],
   pinnedUris: string[],
@@ -169,8 +189,13 @@ function findPinnedUriByIdentities(
   return null;
 }
 
-export function isShortcutMediaType(mediaType: MediaType): boolean {
-  return SUPPORTED_TYPES.has(mediaType);
+/**
+ * Type guard for items that can be pinned as a sidebar shortcut.
+ */
+export function isShortcutItem(
+  item: MediaItemTypeOrItemMapping,
+): item is ShortcutItem | ItemMapping {
+  return SUPPORTED_TYPES.has(item.media_type);
 }
 
 // ---------------------------------------------------------------------------
@@ -181,12 +206,6 @@ function _getPinnedUris(): string[] {
   return (store.currentUser?.preferences?.[PREF_KEY] as string[]) ?? [];
 }
 
-export function isShortcutPinned(uri: string): boolean {
-  return _getPinnedUris().some((pinnedUri) =>
-    isSameShortcutUri(pinnedUri, uri),
-  );
-}
-
 export function isShortcutCapReached(): boolean {
   return _getPinnedUris().length >= MAX_SHORTCUTS;
 }
@@ -194,38 +213,28 @@ export function isShortcutCapReached(): boolean {
 export function isShortcutPinnedItem(
   item: ShortcutItem | ItemMapping,
 ): boolean {
-  const identities = getShortcutIdentities(item);
-  return _getPinnedUris().some((pinnedUri) => {
-    const parsed = parseShortcutUri(pinnedUri);
-    if (!parsed) return false;
-    return hasShortcutIdentityMatch(parsed, identities);
-  });
+  return _getPinnedUris().some((pinnedUri) =>
+    isUriMatchingItem(pinnedUri, item),
+  );
 }
 
 export async function unpinShortcutStandaloneItem(
   item: ShortcutItem | ItemMapping,
 ): Promise<void> {
-  const identities = getShortcutIdentities(item);
   await setUserPreference(
     PREF_KEY,
-    _getPinnedUris().filter((pinnedUri) => {
-      const parsed = parseShortcutUri(pinnedUri);
-      if (!parsed) return true;
-      return !hasShortcutIdentityMatch(parsed, identities);
-    }),
+    _getPinnedUris().filter((pinnedUri) => !isUriMatchingItem(pinnedUri, item)),
   );
 }
 
 export async function pinShortcutStandalone(
   item: ShortcutItem | ItemMapping,
 ): Promise<void> {
-  if (!isShortcutMediaType(item.media_type)) return;
+  if (!isShortcutItem(item)) return;
   const uris = _getPinnedUris();
   if (uris.length >= MAX_SHORTCUTS) return;
-  // Always construct a proper MA URI from provider/media_type/item_id.
-  // item.uri may be a non-MA URL (e.g. a podcast website link).
+  if (uris.some((pinnedUri) => isUriMatchingItem(pinnedUri, item))) return;
   const maUri = getShortcutUri(item);
-  if (uris.some((pinnedUri) => isSameShortcutUri(pinnedUri, maUri))) return;
   await setUserPreference(PREF_KEY, [...uris, maUri]);
 }
 
@@ -275,7 +284,9 @@ export async function reorderShortcutStandalone(
   await setUserPreference(PREF_KEY, nextUris);
 }
 
-function findPinnedUriForItem(item: ShortcutItem | ItemMapping): string | null {
+export function findPinnedUriForItem(
+  item: ShortcutItem | ItemMapping,
+): string | null {
   const identities = getShortcutIdentities(item);
   return findPinnedUriByIdentities(identities, _getPinnedUris());
 }
@@ -365,47 +376,30 @@ export function useShortcuts() {
     }
   }
 
-  function isPinned(uri: string): boolean {
-    return pinnedUris.value.some((pinnedUri) =>
-      isSameShortcutUri(pinnedUri, uri),
-    );
-  }
-
   async function pinItem(item: ShortcutItem) {
-    // Always construct a proper MA URI from provider/media_type/item_id.
-    // item.uri may be a non-MA URL (e.g. a podcast website link).
     const maUri = getShortcutUri(item);
-    if (isPinned(maUri)) return;
+    const alreadyPinned = pinnedUris.value.some((pinnedUri) =>
+      isUriMatchingItem(pinnedUri, item),
+    );
+    if (alreadyPinned) return;
     if (pinnedUris.value.length >= MAX_SHORTCUTS) return;
     // Add immediately for instant sidebar feedback; watch won't re-add (already present)
     resolvedItems.value = [...resolvedItems.value, item];
     await setPreference(PREF_KEY, [...pinnedUris.value, maUri]);
   }
 
-  async function unpinItem(uri: string) {
-    // Remove immediately; watch won't re-remove (already absent)
-    resolvedItems.value = resolvedItems.value.filter(
-      (p) => !isSameShortcutUri(uri, p),
-    );
-    await setPreference(
-      PREF_KEY,
-      pinnedUris.value.filter((u) => !isSameShortcutUri(u, uri)),
-    );
-  }
-
   // React to external changes (e.g. pinShortcutStandalone from the context menu)
   watch(pinnedUris, async (newUris) => {
     const currentItems = resolvedItems.value;
 
-    // Remove items no longer in pinned list (smart URI matching avoids false removals
-    // when API-returned URIs differ in encoding from stored preference URIs)
+    // Remove items no longer in pinned list
     resolvedItems.value = currentItems.filter((item) =>
-      newUris.some((uri) => isSameShortcutUri(uri, item)),
+      newUris.some((uri) => isUriMatchingItem(uri, item)),
     );
 
     // Fetch and add newly pinned items not yet resolved
     const toAdd = newUris.filter(
-      (uri) => !currentItems.some((item) => isSameShortcutUri(uri, item)),
+      (uri) => !currentItems.some((item) => isUriMatchingItem(uri, item)),
     );
     if (toAdd.length > 0) {
       const settled = await Promise.allSettled(
@@ -428,47 +422,69 @@ export function useShortcuts() {
   });
 
   let _unsubscribeUpdated: (() => void) | undefined;
+  let _unsubscribeFavorites: (() => void) | undefined;
+  let unmounted = false;
 
   onMounted(async () => {
     await loadShortcuts();
+    // The load can outlast the component, and the cleanup hook has already run
+    // by then with nothing to unsubscribe.
+    if (unmounted) return;
 
     _unsubscribeUpdated = api.subscribe(
       EventType.MEDIA_ITEM_UPDATED,
       (evt: EventMessage) => {
         const objectId = evt.object_id as string | undefined;
         if (!objectId) return;
+
         const idx = resolvedItems.value.findIndex((item) =>
-          isSameShortcutUri(objectId, item),
+          isUriMatchingItem(objectId, item),
         );
         if (
           idx >= 0 &&
           evt.data &&
           SUPPORTED_TYPES.has((evt.data as ShortcutItem).media_type)
         ) {
-          resolvedItems.value[idx] = evt.data as ShortcutItem;
+          resolvedItems.value[idx] = keepOwnFavorite(
+            evt.data as ShortcutItem,
+            resolvedItems.value[idx],
+          );
         }
       },
     );
+
+    // the user's own like or dislike, wherever they made it
+    _unsubscribeFavorites = subscribeOwnFavorites((update) => {
+      setFavoriteState(
+        resolvedItems.value.find((item) => isUriMatchingItem(update.uri, item)),
+        update.favorite,
+      );
+    });
   });
 
   onUnmounted(() => {
+    unmounted = true;
     _unsubscribeUpdated?.();
+    _unsubscribeFavorites?.();
   });
 
   return {
     // Derive display order from pinnedUris (insertion order) so that resolvedItems
     // being in any internal order doesn't cause sort-order regressions.
-    pinnedItems: computed(() =>
-      pinnedUris.value
+    pinnedItems: computed(() => {
+      const seen = new Set<ShortcutItem>();
+      return pinnedUris.value
         .map((uri) =>
-          resolvedItems.value.find((item) => isSameShortcutUri(uri, item)),
+          resolvedItems.value.find((item) => isUriMatchingItem(uri, item)),
         )
-        .filter((item): item is ShortcutItem => item !== undefined),
-    ),
+        .filter((item): item is ShortcutItem => {
+          if (!item || seen.has(item)) return false;
+          seen.add(item);
+          return true;
+        });
+    }),
     isLoading,
     pinnedCount: computed(() => pinnedUris.value.length),
-    isPinned,
     pinItem,
-    unpinItem,
   };
 }

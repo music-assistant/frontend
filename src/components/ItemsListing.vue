@@ -1,12 +1,18 @@
 <!-- eslint-disable vue/no-v-for-template-key-on-child -->
 <template>
-  <section v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)">
+  <section
+    v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)"
+    :class="{ 'flex min-h-full flex-1 flex-col': fillsHeight }"
+  >
     <!-- eslint-disable vue/no-template-shadow -->
+    <!-- inset so the title lines up with the row artwork and the menu with the rows' menu -->
     <Toolbar
+      class="ps-[5px] pe-[7px]"
       :icon="icon"
+      :icon-action="iconAction"
       :title="title"
       :subtitle="subtitle"
-      :count="params.search ? pagedItems.length : total || allItems.length"
+      :count="params.search ? pagedItems.length : (total ?? pagedItems.length)"
       color="transparent"
       :menu-items="menuItems"
       :enforce-overflow-menu="true"
@@ -16,32 +22,110 @@
       <template #title>
         <slot name="title">{{ title }}</slot>
       </template>
+
+      <template #append>
+        <LibrarySortControls
+          v-if="props.sortListing && sortOptionsLoaded && sortOptions.length"
+          mode="menu"
+          :options="sortOptions"
+          :sort-by="params.sortBy"
+          @sort-by="changeSort"
+        />
+        <Transition v-if="!store.mobileLayout" name="listing-search">
+          <!-- the input follows the slot's edge as it opens, and the padding
+               keeps its 3px focus ring inside the clipped area -->
+          <div
+            v-if="showSearchInput"
+            class="listing-search-slot -m-[3px] box-content p-[3px]"
+          >
+            <SearchInput
+              ref="searchInputRef"
+              v-model="params.search"
+              clearable
+              class="listing-search listing-search--inline"
+              :placeholder="searchLabel"
+              :aria-label="searchLabel"
+              @focus="searchHasFocus = true"
+              @blur="searchHasFocus = false"
+            />
+          </div>
+        </Transition>
+      </template>
     </Toolbar>
+
+    <div v-if="showSortChipsRow" class="listing-sort-chips-row h-12">
+      <LibrarySortControls
+        v-if="sortOptionsLoaded && sortOptions.length"
+        mode="chips"
+        :options="sortOptions"
+        :sort-by="params.sortBy"
+        @sort-by="changeSort"
+      />
+    </div>
 
     <v-divider />
 
-    <v-text-field
-      v-if="showSearchInput"
-      id="searchInput"
-      v-model="params.search"
-      clearable
-      prepend-inner-icon="mdi-magnify"
-      :label="$t('search')"
-      hide-details
-      variant="filled"
-      style="width: auto; margin-top: 10px"
-      @focus="searchHasFocus = true"
-      @blur="searchHasFocus = false"
-      @click:clear="onClear"
-    />
+    <slot name="header"></slot>
+
+    <div v-if="props.toolBarTabs !== undefined" class="content-tabs">
+      <Tabs
+        :model-value="activeTabId"
+        class="items-start"
+        @update:model-value="(v) => onTabChange(v as string)"
+      >
+        <TabsList variant="line">
+          <TabsTrigger
+            v-for="tab in props.toolBarTabs"
+            :key="tab.id"
+            :value="tab.id"
+          >
+            {{ tab.label }}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+    </div>
+
+    <div
+      v-if="showSearchInput && store.mobileLayout"
+      class="mx-2.5 mt-2.5 flex items-center gap-1"
+    >
+      <SearchInput
+        ref="searchInputRef"
+        v-model="params.search"
+        clearable
+        class="listing-search listing-search--row min-w-0 flex-1"
+        :placeholder="searchLabel"
+        :aria-label="searchLabel"
+        @focus="searchHasFocus = true"
+        @blur="searchHasFocus = false"
+      />
+      <Button
+        variant="ghost"
+        size="icon"
+        class="size-10 shrink-0"
+        :aria-label="$t('close')"
+        :title="$t('close')"
+        @click="closeSearch"
+      >
+        <X class="size-[22px]" />
+      </Button>
+    </div>
 
     <Container
       v-if="expanded"
+      ref="listContainer"
       :variant="viewMode == 'list' ? 'default' : 'panel'"
+      :class="{ 'flex flex-1 flex-col': fillsHeight }"
       style="overflow: hidden"
     >
+      <TrackTableHeader
+        v-if="showTrackTable && (loadPending || pagedItems.length)"
+        :columns="trackColumns"
+        :enabled="enabledTrackColumns"
+        @update:enabled="setEnabledTrackColumns"
+      />
       <!-- Skeleton loading states -->
-      <template v-if="loading && pagedItems.length === 0">
+      <template v-if="loadPending && pagedItems.length === 0">
         <div v-if="viewMode === 'list'">
           <ListViewSkeleton v-for="n in 8" :key="'skeleton-list-' + n" />
         </div>
@@ -50,7 +134,7 @@
             v-for="n in 12"
             :key="'skeleton-panel-' + n"
             cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${gridColumnCount}`"
           >
             <PanelViewSkeleton />
           </v-col>
@@ -60,18 +144,34 @@
             v-for="n in 12"
             :key="'skeleton-compact-' + n"
             cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${gridColumnCount}`"
           >
             <PanelViewSkeleton />
           </v-col>
         </v-row>
       </template>
 
+      <!-- the infinite scroller can't show its own retry before any item is loaded -->
+      <Empty v-if="firstLoadFailed" class="border-none">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <TriangleAlert />
+          </EmptyMedia>
+          <EmptyTitle>{{ $t("items_load_failed") }}</EmptyTitle>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button variant="outline" size="sm" @click="loadData(true)">
+            {{ $t("settings.retry") }}
+          </Button>
+        </EmptyContent>
+      </Empty>
+
       <v-infinite-scroll
         v-if="
           !tempHide &&
+          !firstLoadFailed &&
           !(pagedItems.length == 0 && allItemsReceived) &&
-          !(loading && pagedItems.length === 0)
+          !(loadPending && pagedItems.length === 0)
         "
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
@@ -79,13 +179,24 @@
         :empty-text="''"
         style="overflow: hidden"
       >
+        <template #error="{ props: errorProps }">
+          <div class="flex justify-center py-4">
+            <Button
+              variant="outline"
+              size="sm"
+              @click="retryLoad(errorProps.onClick)"
+            >
+              {{ $t("settings.retry") }}
+            </Button>
+          </div>
+        </template>
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'">
           <v-col
             v-for="item in pagedItems"
             :key="item.uri"
             cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${gridColumnCount}`"
           >
             <PanelviewItem
               :item="item"
@@ -105,7 +216,9 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
-              :sort-by="params.sortBy"
+              :sort-by="props.sortListing ? undefined : params.sortBy"
+              :sort-field="displayedSort.sortField"
+              :sort-direction="displayedSort.sortDirection"
               @select="onSelect"
             />
           </v-col>
@@ -117,7 +230,7 @@
             v-for="item in pagedItems"
             :key="item.uri"
             cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${gridColumnCount}`"
           >
             <PanelviewItemCompact
               :item="item"
@@ -127,7 +240,9 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
-              :sort-by="params.sortBy"
+              :sort-by="props.sortListing ? undefined : params.sortBy"
+              :sort-field="displayedSort.sortField"
+              :sort-direction="displayedSort.sortDirection"
               @select="onSelect"
             />
           </v-col>
@@ -136,15 +251,31 @@
         <!-- list view -->
         <v-virtual-scroll
           v-if="viewMode == 'list'"
-          :item-height="70"
+          :item-height="showTrackTable ? TRACK_ROW_HEIGHT : 70"
           height="100%"
           :items="listDisplayItems"
           style="height: 100%; overflow: hidden"
         >
-          <template #default="{ item }">
+          <template #default="{ item, index }">
             <div v-if="'isDiscHeader' in item" class="disc-header">
               {{ $t("disc", { number: item.disc }) }}
             </div>
+            <TrackTableRow
+              v-else-if="showTrackTable"
+              :item="item"
+              :index="index"
+              :columns="trackColumns"
+              :show-checkboxes="showCheckboxes"
+              :is-selected="isSelected(item)"
+              :is-available="itemIsAvailable(item)"
+              :is-playing="isPlaying(item, itemtype)"
+              :disable-play-button="isPlayActionInProgress"
+              :parent-item="parentItem"
+              :sort-by="props.sortListing ? undefined : params.sortBy"
+              :sort-field="displayedSort.sortField"
+              :sort-direction="displayedSort.sortDirection"
+              @select="onSelect"
+            />
             <ListviewItem
               v-else
               :item="item"
@@ -153,7 +284,7 @@
               :show-disc-number="showTrackNumber"
               :show-duration="showDuration"
               :show-favorite="showFavorite ?? showFavoritesOnlyFilter"
-              :show-menu="item.is_playable"
+              :show-menu="item.is_playable || isMusicBrainzItem(item)"
               :show-provider="showProvider"
               :show-album="showAlbum"
               :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
@@ -163,7 +294,9 @@
               :show-details="itemtype.includes('versions')"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
-              :sort-by="params.sortBy"
+              :sort-by="props.sortListing ? undefined : params.sortBy"
+              :sort-field="displayedSort.sortField"
+              :sort-direction="displayedSort.sortDirection"
               @select="onSelect"
             />
           </template>
@@ -171,58 +304,69 @@
       </v-infinite-scroll>
 
       <!-- subtle message shown when there are no items to display -->
-      <Empty
-        v-if="!loading && pagedItems.length == 0"
-        class="border-none gap-3 py-8"
-      >
-        <EmptyMedia variant="icon">
-          <FilterX v-if="hasActiveFilters" class="h-5 w-5" />
-          <ListMusic v-else class="h-5 w-5" />
-        </EmptyMedia>
-        <EmptyDescription>
-          {{
-            hasActiveFilters
-              ? $t("no_content_filter")
-              : emptyMessage || $t("no_content")
-          }}
-        </EmptyDescription>
+      <Empty v-if="showEmptyState" class="border-none">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <FilterX v-if="hasActiveFilters" />
+            <ListMusic v-else />
+          </EmptyMedia>
+          <EmptyTitle>{{ $t("no_content") }}</EmptyTitle>
+          <EmptyDescription v-if="emptyDescription">
+            {{ emptyDescription }}
+          </EmptyDescription>
+        </EmptyHeader>
         <EmptyContent v-if="hasActiveFilters && params.search">
           <Button variant="outline" size="sm" @click="redirectSearch">
             {{ $t("try_global_search") }}
           </Button>
         </EmptyContent>
+        <EmptyContent
+          v-if="emptyStateProviderActions.length"
+          class="flex-row flex-wrap justify-center gap-2"
+        >
+          <Button
+            v-for="provider in emptyStateProviderActions"
+            :key="provider.value"
+            variant="outline"
+            size="sm"
+            @click="changeProviderFilter(provider.value)"
+          >
+            {{ $t("show_results_on", [provider.label]) }}
+          </Button>
+        </EmptyContent>
       </Empty>
 
-      <!-- box shown when item(s) selected -->
-      <v-snackbar
-        :model-value="selectedItems.length > 1"
-        :timeout="-1"
-        style="margin-bottom: 120px"
-      >
-        <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
-        <template #actions>
-          <v-btn
-            color="primary"
-            variant="text"
-            @click="
-              (evt: PointerEvent) =>
-                handleMenuBtnClick(
-                  selectedItems,
-                  evt.clientX,
-                  evt.clientY,
-                  parentItem,
-                  true,
-                  params.sortBy,
-                )
-            "
-          >
-            {{ $t("actions") }}
-          </v-btn>
-        </template>
-      </v-snackbar>
+      <ListingSelectionBar
+        :open="selectedItems.length > 1"
+        :count="selectedItems.length"
+        :all-selected="allSelected"
+        @clear="clearSelection"
+        @select-all="selectAll"
+        @actions="
+          (anchor: { x: number; y: number }) =>
+            handleMenuBtnClick(
+              selectedItems,
+              anchor.x,
+              anchor.y,
+              parentItem,
+              true,
+              undefined,
+              displayedSort.sortField,
+              displayedSort.sortDirection,
+            )
+        "
+      />
     </Container>
   </section>
 </template>
+
+<script lang="ts">
+export type {
+  LoadDataParams,
+  StoredState,
+  ToolBarTab,
+} from "@/composables/useItemsListing";
+</script>
 
 <script setup lang="ts">
 import type { Component } from "vue";
@@ -233,21 +377,53 @@ import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import TrackTableHeader from "@/components/track-table/TrackTableHeader.vue";
+import TrackTableRow from "@/components/track-table/TrackTableRow.vue";
+import { TRACK_ROW_HEIGHT } from "@/components/track-table/trackTableColumns";
+import LibrarySortControls from "@/components/LibrarySortControls.vue";
+import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
   EmptyContent,
   EmptyDescription,
+  EmptyHeader,
   EmptyMedia,
+  EmptyTitle,
 } from "@/components/ui/empty";
+import { SearchInput } from "@/components/ui/search-input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import GridSizeSlider from "@/components/GridSizeSlider.vue";
+import { useCommandCenter } from "@/composables/useCommandCenter";
+import { useItemsListing } from "@/composables/useItemsListing";
+import type {
+  LoadDataParams,
+  LoadPagedDataFn,
+  ToolBarTab,
+} from "@/composables/useItemsListing";
+import { useTrackTableColumns } from "@/composables/useTrackTableColumns";
+import { SEARCHABLE_MEDIA_TYPES } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
-  handleMenuBtnClick,
-  panelViewItemResponsive,
-  scrollElement,
-} from "@/helpers/utils";
+  keepOwnFavorite,
+  setFavoriteState,
+  subscribeOwnFavorites,
+} from "@/helpers/favorites";
+import { handleMenuBtnClick } from "@/helpers/media_item_actions";
+import {
+  GRID_SIZE_DEFAULT,
+  gridColumns,
+  normalizeGridSize,
+} from "@/helpers/grid_size";
+import { returnedByHistory } from "@/helpers/navigation";
+import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import {
+  isMusicBrainzItem,
+  itemIsAvailable,
+  itemSupportsPlayLog,
+  providerServiceName,
+} from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
@@ -258,17 +434,46 @@ import {
   PodcastEpisode,
   ProviderFeature,
   ProviderType,
+  SortDirection,
   Radio,
+  SortField,
   type Album,
   type Genre,
+  type MediaItem,
   type MediaItemType,
+  type ProviderInstance,
+  ListingType,
   type Track,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "@lucide/vue";
+import {
+  CheckCheck,
+  ChevronDown,
+  ChevronUp,
+  Disc3,
+  Eye,
+  EyeClosed,
+  EyeOff,
+  Files,
+  FilterX,
+  Heart,
+  Layers,
+  LayoutGrid,
+  LayoutList,
+  LibraryBig,
+  ListChecks,
+  ListMusic,
+  MicVocal,
+  Package,
+  RefreshCw,
+  Search,
+  TriangleAlert,
+  X,
+} from "@lucide/vue";
 import {
   computed,
+  markRaw,
   nextTick,
   onBeforeUnmount,
   onMounted,
@@ -283,25 +488,11 @@ import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
 
-export interface LoadDataParams {
-  offset: number;
-  limit: number;
-  sortBy: string;
-  search: string;
-  genreIds?: number | number[];
-  favoritesOnly?: boolean;
-  albumArtistsFilter?: boolean;
-  libraryOnly?: boolean;
-  hideEmptyFilter?: boolean | null;
-  hideFullyPlayed?: boolean;
-  refresh?: boolean;
-  albumType?: string[];
-  provider?: string[];
-}
 // properties
 export interface Props {
   itemtype: string;
-  sortKeys?: string[];
+  sortListing?: ListingType;
+  sortOptionExcludeFields?: SortField[];
   showTrackNumber?: boolean;
   showProvider?: boolean;
   showAlbum?: boolean;
@@ -315,6 +506,7 @@ export interface Props {
   showSelectButton?: boolean;
   showAlbumTypeFilter?: boolean;
   showProviderFilter?: boolean;
+  showCollapseCollections?: boolean;
   // when set, the provider filter allows only a single selection at a time
   singleProviderFilter?: boolean;
   // when set, the provider filter is a required single selector: exactly one
@@ -325,12 +517,24 @@ export interface Props {
   // when set, it replaces the itemtype-derived list (and is not limited to
   // music providers).
   providerFilterOptions?: string[];
+  // when set, the explicit provider list above also offers the library, as its
+  // first option
+  libraryFilterOption?: boolean;
+  // the option a required selection starts on, when nothing valid is stored
+  // (default: the first one offered)
+  defaultProvider?: string;
+  // a provider carried in by a link: selected instead of the saved filter on
+  // this visit. Nothing is saved until the user picks a provider themselves,
+  // which may be this one.
+  providerOverride?: string;
   updateAvailable?: boolean;
   title?: string;
   subtitle?: string;
   hideOnEmpty?: boolean;
   // custom message shown when the listing has no items and no active filters
   emptyMessage?: string;
+  // the listing is the whole view, so the empty state centres in the page height
+  fillHeight?: boolean;
   showLibraryOnlyFilter?: boolean;
   showGenreFilter?: boolean;
   showHideEmptyFilter?: boolean;
@@ -339,21 +543,25 @@ export interface Props {
   allowKeyHooks?: boolean;
   extraMenuItems?: ToolBarMenuItem[];
   // loadPagedData callback is provided for serverside paging/sorting
-  loadPagedData?: (params: LoadDataParams) => Promise<MediaItemType[]>;
-  // loadItems callback is provided for flat non-paged listings
-  loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
+  loadPagedData?: LoadPagedDataFn;
   limit?: number;
   total?: number;
   infiniteScroll?: boolean;
   path?: string;
   icon?: string | Component;
+  // makes the toolbar icon a button, e.g. a back arrow for a full-page listing
+  iconAction?: () => void;
   restoreState?: boolean;
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
   forcedViewMode?: "list" | "panel" | "panel_compact";
+  toolBarTabs?: ToolBarTab[];
+  // the list view shows tracks as a table with columns
+  trackTable?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
-  sortKeys: () => ["name", "sort_name"],
+  sortListing: undefined,
+  sortOptionExcludeFields: () => [],
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
@@ -363,14 +571,19 @@ const props = withDefaults(defineProps<Props>(), {
   parentItem: undefined,
   hideOnEmpty: false,
   emptyMessage: undefined,
+  fillHeight: false,
   showSearchButton: undefined,
   showRefreshButton: undefined,
   showSelectButton: undefined,
   showAlbumTypeFilter: undefined,
   showProviderFilter: undefined,
+  showCollapseCollections: undefined,
   singleProviderFilter: false,
   requireProviderSelection: false,
   providerFilterOptions: undefined,
+  libraryFilterOption: false,
+  defaultProvider: undefined,
+  providerOverride: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
   limit: 50,
@@ -384,49 +597,162 @@ const props = withDefaults(defineProps<Props>(), {
   showHideFullyPlayedFilter: false,
   extraMenuItems: undefined,
   loadPagedData: undefined,
-  loadItems: undefined,
   path: undefined,
   icon: undefined,
+  iconAction: undefined,
   restoreState: false,
   onTitleClick: undefined,
   refreshOnParentUpdate: false,
   forcedViewMode: undefined,
+  toolBarTabs: undefined,
+  trackTable: false,
 });
+
+const emit = defineEmits<{
+  // the provider selection whenever it is set: on start, from a restored
+  // visit, or by the user
+  "provider-change": [provider: string[] | undefined];
+}>();
 
 // global refs
 const router = useRouter();
 const route = useRoute();
 const { t, te } = useI18n();
+const { open: openCommandCenter } = useCommandCenter();
 const { getItemsListingPreferences, setItemsListingPreference } =
   useUserPreferences();
+const activeTabId = ref(props.toolBarTabs?.[0]?.id || "");
+let restoredFromPrevState = false;
 
-// local refs
-const params = ref<LoadDataParams>({
-  offset: 0,
-  limit: 50,
-  sortBy: "name",
-  search: "",
-  libraryOnly: false,
-  genreIds: undefined,
-});
+const getActiveTab = () => {
+  return props.toolBarTabs?.find((tab) => tab.id === activeTabId.value);
+};
+
+const {
+  allItemsReceived,
+  displayedSort,
+  isDisposed,
+  librarySorting,
+  loadAllItems,
+  loadData,
+  loadError,
+  loadNextPage,
+  loading,
+  newContentAvailable,
+  pagedItems,
+  params,
+  retryLoad,
+  serverSortOptions,
+  sortOptions,
+  sortOptionsLoaded,
+  tempHide,
+} = useItemsListing(props, getActiveTab);
+// the first load waits for the sort options; until then the scroller must not
+// load a page of its own
+const loadPending = computed(
+  () => loading.value || (!!props.sortListing && !sortOptionsLoaded.value),
+);
+// the desktop row of quick sorts keeps its height while the sort options load,
+// so the items do not shift; a listing without quick sorts has no row
+const showSortChipsRow = computed(
+  () =>
+    !!props.sortListing &&
+    !store.mobileLayout &&
+    (!sortOptionsLoaded.value || librarySorting.quickOptions.value.length > 0),
+);
+
+watch(
+  () => props.toolBarTabs,
+  (tabs) => {
+    if (!tabs || tabs.length === 0) return;
+    if (tabs.some((tab) => tab.id === activeTabId.value)) return;
+    const hadActiveTab = activeTabId.value !== "";
+    const preferred = savedPrefs.value.activeTab;
+    const target = tabs.find((tab) => tab.id === preferred) ?? tabs[0];
+
+    activeTabId.value = target.id;
+
+    if (restoredFromPrevState) {
+      if (preferred && !tabs.some((tab) => tab.id === preferred)) {
+        loadData(true);
+      }
+    } else if (hadActiveTab || target.id !== tabs[0].id) {
+      loadData(true);
+    }
+  },
+);
+
+const onTabChange = function (tabId: string) {
+  if (!tabId || tabId === activeTabId.value) return;
+  activeTabId.value = tabId;
+
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "activeTab",
+    tabId,
+  );
+  loadData(true);
+};
+
 const viewMode = ref("list");
+const listContainer = ref<InstanceType<typeof Container>>();
+const showTrackTable = computed(
+  () => props.trackTable && viewMode.value == "list",
+);
+const {
+  enabledColumns: enabledTrackColumns,
+  visibleColumns: trackColumns,
+  setEnabledColumns: setEnabledTrackColumns,
+} = useTrackTableColumns(() =>
+  props.trackTable ? listContainer.value : undefined,
+);
+const gridSize = ref(GRID_SIZE_DEFAULT);
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
-const pagedItems = ref<MediaItemType[]>([]);
-const allItems = ref<MediaItemType[]>([]);
-const loading = ref(false);
+const searchInputRef = ref<InstanceType<typeof SearchInput>>();
+const listingMediaType = computed(() => MEDIA_TYPE_BY_ITEMTYPE[props.itemtype]);
+const searchLabel = computed(() => {
+  const mediaType = listingMediaType.value;
+  if (!mediaType) return t("search");
+  const labelKey = MEDIA_TYPE_LABEL_KEYS[mediaType] ?? `${mediaType}s`;
+  return t("search_in", [t(labelKey)]);
+});
 const selectedItems = ref<MediaItemTypeOrItemMapping[]>([]);
-const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const expanded = ref(true);
-const allItemsReceived = ref(false);
-const initialDataReceived = ref(false);
-const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
 
 // below this item count, the per-listing search option is hidden to reduce
 // clutter (consumers can force it on/off via the showSearchButton prop).
 const SEARCH_ITEM_THRESHOLD = 25;
+
+const MEDIA_TYPE_BY_ITEMTYPE: Record<string, MediaType> = {
+  artists: MediaType.ARTIST,
+  similarartists: MediaType.ARTIST,
+  albums: MediaType.ALBUM,
+  albumversions: MediaType.ALBUM,
+  artistalbums: MediaType.ALBUM,
+  trackalbums: MediaType.ALBUM,
+  tracks: MediaType.TRACK,
+  albumtracks: MediaType.TRACK,
+  artisttracks: MediaType.TRACK,
+  playlisttracks: MediaType.TRACK,
+  similartracks: MediaType.TRACK,
+  trackversions: MediaType.TRACK,
+  playlists: MediaType.PLAYLIST,
+  audiobooks: MediaType.AUDIOBOOK,
+  artistaudiobooks: MediaType.AUDIOBOOK,
+  podcasts: MediaType.PODCAST,
+  podcastepisodes: MediaType.PODCAST_EPISODE,
+  radios: MediaType.RADIO,
+  radioversions: MediaType.RADIO,
+  genres: MediaType.GENRE,
+};
+
+const MEDIA_TYPE_LABEL_KEYS: Partial<Record<MediaType, string>> = {
+  [MediaType.PODCAST_EPISODE]: "podcast_episodes",
+};
 
 interface DiscHeader {
   isDiscHeader: true;
@@ -441,8 +767,11 @@ const discNumber = (i: MediaItemType) =>
 const listDisplayItems = computed<(MediaItemType | DiscHeader)[]>(() => {
   const multiDisc =
     props.itemtype === "albumtracks" &&
-    allItems.value.some((i) => (discNumber(i) ?? 0) > 1);
-  if (!multiDisc || params.value.sortBy !== "track_number") {
+    pagedItems.value.some((i) => (discNumber(i) ?? 0) > 1);
+  const isTrackNumberAscending =
+    displayedSort.value.sortField === SortField.TRACK_NUMBER &&
+    displayedSort.value.sortDirection === SortDirection.ASC;
+  if (!multiDisc || !isTrackNumberAscending) {
     return pagedItems.value;
   }
   const result: (MediaItemType | DiscHeader)[] = [];
@@ -491,7 +820,7 @@ const closeSearch = function () {
 };
 const focusSearch = function () {
   nextTick(() => {
-    document.getElementById("searchInput")?.focus();
+    searchInputRef.value?.focus();
   });
 };
 const toggleSearch = function () {
@@ -530,6 +859,25 @@ const selectViewMode = function (newMode: string) {
       newMode,
     );
   }
+};
+
+// follows resizes: the breakpoints it looks up are reactive
+const gridColumnCount = computed(() =>
+  gridColumns(panelViewItemResponsive(0), gridSize.value),
+);
+
+const commitGridSize = function (size: number) {
+  gridSize.value = size;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "gridSize",
+    size,
+  );
+};
+
+const getViewModeLabel = function (mode: string) {
+  return t(`view.${mode}`);
 };
 
 watch(
@@ -581,6 +929,17 @@ const toggleAlbumArtistsFilter = function () {
     params.value.albumArtistsFilter,
   );
   loadData(undefined, undefined, true);
+};
+
+const toggleCollapseCollections = function () {
+  params.value.collapseCollections = !params.value.collapseCollections;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "collapseCollections",
+    params.value.collapseCollections,
+  );
+  loadData(true, undefined, true);
 };
 
 const toggleHideEmptyFilter = function () {
@@ -653,10 +1012,7 @@ const isParentDirItem = function (item: MediaItemTypeOrItemMapping) {
 const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
   if (store.activePlayer?.playback_state != PlaybackState.PLAYING) return false;
   const current = store.curQueueItem?.media_item as
-    | Track
-    | Radio
-    | PodcastEpisode
-    | undefined;
+    Track | Radio | PodcastEpisode | undefined;
   if (!current) return false;
   switch (itemtype) {
     case "tracks":
@@ -722,11 +1078,19 @@ const onRefreshClicked = function () {
   loadData(true, true);
 };
 
-const onClear = function () {
-  params.value.search = "";
-  showSearch.value = false;
-  loadData(undefined, undefined, true);
-};
+watch(sortOptions, () => {
+  if (!sortOptionsLoaded.value || !props.sortListing) return;
+  const normalized = librarySorting.normalizeSortBy(params.value.sortBy);
+  if (normalized === params.value.sortBy) return;
+  params.value.sortBy = normalized;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "sortBy",
+    normalized,
+  );
+  loadData(true, undefined, true);
+});
 
 const changeSort = function (sort_key?: string) {
   if (sort_key !== undefined) {
@@ -759,11 +1123,37 @@ const changeAlbumTypeFilter = function (albumType: string) {
   loadData(undefined, undefined, true);
 };
 
+// the provider carried in by a link, kept until the user picks a provider
+// themselves: every preference write hands the listing its saved settings
+// again, and this keeps the carried one in front of the saved filter across
+// those. One that is not offered here is ignored.
+let carriedProvider = props.providerOverride;
+const offeredCarriedProvider = () =>
+  carriedProvider !== undefined &&
+  musicProviders.value.some((provider) => provider.value === carriedProvider)
+    ? carriedProvider
+    : undefined;
+
+// a cached visit that was on a carried-in provider is only returned to by
+// going back; reached any other way, the listing starts over on the saved
+// filter, or on what is carried in now
+const cachedVisitApplies = () =>
+  !store.prevState?.carried ||
+  offeredCarriedProvider() !== undefined ||
+  returnedByHistory(router);
+
 const changeProviderFilter = function (providerId: string) {
   if (props.requireProviderSelection) {
-    // required selector: always keep exactly one provider selected — clicking
-    // the active provider is a no-op (it cannot be cleared to "all").
-    if (params.value.provider?.[0] === providerId) return;
+    // required selector: always keep exactly one provider selected, so
+    // clicking the active provider cannot clear it to "all". It pins the
+    // provider carried in by a link, which is already on screen, and is a
+    // no-op otherwise.
+    if (params.value.provider?.[0] === providerId) {
+      if (offeredCarriedProvider() !== providerId) return;
+      carriedProvider = undefined;
+      saveProviderFilter();
+      return;
+    }
     params.value.provider = [providerId];
   } else if (props.singleProviderFilter) {
     // single-select: clicking the active provider clears it, otherwise it
@@ -783,14 +1173,48 @@ const changeProviderFilter = function (providerId: string) {
   if (params.value.provider?.length === 0) {
     params.value.provider = undefined;
   }
+  // the user's own pick is what gets saved and shown from here on
+  carriedProvider = undefined;
+  saveProviderFilter();
+  loadData(true, undefined, true);
+};
+
+const saveProviderFilter = () =>
   setItemsListingPreference(
     props.path || props.itemtype,
     props.itemtype,
     "providerFilter",
     params.value.provider,
   );
-  loadData(true, undefined, true);
-};
+
+const showEmptyState = computed(
+  () => !loadPending.value && !loadError.value && pagedItems.value.length == 0,
+);
+
+const firstLoadFailed = computed(
+  () => loadError.value && !loading.value && pagedItems.value.length === 0,
+);
+
+const fillsHeight = computed(
+  () => props.fillHeight && (showEmptyState.value || firstLoadFailed.value),
+);
+
+const emptyDescription = computed(() =>
+  hasActiveFilters.value ? t("no_content_filter_hint") : props.emptyMessage,
+);
+
+// a listing scoped to the library (its own "library" option selected) that comes
+// up empty gives no hint that a provider's catalog is one filter switch away —
+// the artist album/singles "See all" is the case. Offer those sources as
+// one-tap buttons in the empty state; other listings never select "library" so
+// they never show them.
+const emptyStateProviderActions = computed(() => {
+  if (!props.libraryFilterOption) return [];
+  if (params.value.provider?.[0] !== "library") return [];
+  return musicProviders.value.filter(
+    (provider) => provider.value !== "library",
+  );
+});
 
 // the provider list shown by both the provider filter and the provider selector
 const providerFilterSubItems = () =>
@@ -803,46 +1227,14 @@ const providerFilterSubItems = () =>
   }));
 
 const redirectSearch = function () {
-  store.globalSearchTerm = params.value.search;
-  const mediaTypeByItemtype: Record<string, MediaType> = {
-    artists: MediaType.ARTIST,
-    albums: MediaType.ALBUM,
-    tracks: MediaType.TRACK,
-    playlists: MediaType.PLAYLIST,
-    audiobooks: MediaType.AUDIOBOOK,
-    podcasts: MediaType.PODCAST,
-    radios: MediaType.RADIO,
-    genres: MediaType.GENRE,
-  };
-  const mediaType = mediaTypeByItemtype[props.itemtype];
-  store.globalSearchMediaTypes = mediaType ? [mediaType] : [];
-  router.push({ name: "search" });
-};
-
-const loadNextPage = async function ({
-  done,
-}: {
-  done: (status: "ok" | "empty" | "loading" | "error") => void;
-}) {
-  if (allItemsReceived.value) {
-    done("empty");
-    return;
-  }
-
-  await loadData(
-    undefined,
-    undefined,
-    undefined,
-    params.value.offset + props.limit,
-  );
-
-  done("ok");
-};
-
-const loadAllItems = async function () {
-  while (!allItemsReceived.value) {
-    await loadNextPage({ done: function () {} });
-  }
+  const mediaType = listingMediaType.value;
+  openCommandCenter({
+    query: params.value.search,
+    mediaTypes:
+      mediaType && SEARCHABLE_MEDIA_TYPES.includes(mediaType)
+        ? [mediaType]
+        : [],
+  });
 };
 
 // computed properties
@@ -868,6 +1260,7 @@ const hasActiveFilters = computed(() => {
     p.favoritesOnly ||
     p.libraryOnly ||
     p.albumArtistsFilter ||
+    (props.showCollapseCollections && p.collapseCollections) ||
     p.hideFullyPlayed ||
     // a required selector always has a provider chosen — that is not a "filter"
     (!props.requireProviderSelection && p.provider && p.provider.length > 0) ||
@@ -880,12 +1273,18 @@ const hasActiveFilters = computed(() => {
   );
 });
 
-// total number of items this listing represents. For flat (loadItems)
-// listings every item is loaded up front, so allItems holds the true total.
-// Server-paged listings only know their total when the parent passes it.
+// Server-paged listings only know their total when the parent passes it. An
+// unfiltered listing that is loaded to its end, or holds less than a page,
+// counts what it holds: a small listing then keeps search hidden while it
+// (re)loads.
 const totalItemCount = computed(() => {
   if (props.total !== undefined) return props.total;
-  if (props.loadItems != null) return allItems.value.length;
+  if (
+    !hasActiveFilters.value &&
+    (allItemsReceived.value || pagedItems.value.length < props.limit)
+  ) {
+    return pagedItems.value.length;
+  }
   // server-paged without a known total: assume large enough to warrant search
   return Number.POSITIVE_INFINITY;
 });
@@ -906,6 +1305,10 @@ const searchAvailable = computed(() => {
 const showSearchInput = computed(() => {
   return searchAvailable.value && showSearch.value && expanded.value;
 });
+
+const searchButtonCloses = computed(
+  () => showSearchInput.value && !store.mobileLayout,
+);
 
 const isLibraryItem = computed(() => {
   const libraryItemTypes = [
@@ -933,25 +1336,23 @@ const musicProviders = computed(() => {
   // explicit provider list supplied by the parent: resolve the given
   // instance_ids to labels as-is, without any itemtype/type filtering.
   if (props.providerFilterOptions) {
-    return props.providerFilterOptions
+    const instances = props.providerFilterOptions
       .map((instanceId) => api.providers[instanceId])
-      .filter((provider) => provider !== undefined)
-      .filter(
-        // honour an admin's personal provider filter, like the default branch
-        // (but without the music-only type guard: these options are
-        // intentionally allowed to include any provider type).
-        (provider) =>
-          !(
-            store.currentUser &&
-            store.currentUser.provider_filter.length &&
-            !store.currentUser.provider_filter.includes(provider.instance_id)
-          ),
-      )
+      .filter((provider) => provider !== undefined);
+    // accounts of one service listed side by side keep their own names
+    const sharesDomain = (provider: ProviderInstance) =>
+      instances.filter((other) => other.domain === provider.domain).length > 1;
+    const providers = instances
       .map((provider) => ({
-        label: provider.name,
+        label: sharesDomain(provider)
+          ? provider.name
+          : providerServiceName(provider),
         value: provider.instance_id,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
+    if (!props.libraryFilterOption) return providers;
+    // the library is not a provider instance: the listing callback is handed "library"
+    return [{ label: t("source_library"), value: "library" }, ...providers];
   }
 
   // Map itemtype to the ProviderFeatures that mark a provider as a possible
@@ -1001,15 +1402,6 @@ const musicProviders = computed(() => {
         return provider.available;
       }
       if (provider.type !== ProviderType.MUSIC) return false;
-      if (
-        store.currentUser &&
-        store.currentUser.provider_filter.length &&
-        !store.currentUser.provider_filter.includes(provider.instance_id)
-      ) {
-        // for non-admin users, the providerfilter is applied in the backend
-        // but for admin users we need to filter here as well
-        return false;
-      }
       // If we have required feature(s) for this itemtype, filter by them
       if (requiredFeatures) {
         return requiredFeatures.some((feature) =>
@@ -1054,7 +1446,7 @@ const menuItems = computed(() => {
     return [
       {
         label: "tooltip.collapse_expand",
-        icon: "mdi-chevron-down",
+        icon: ChevronDown,
         action: toggleExpand,
         overflowAllowed: false,
       },
@@ -1068,16 +1460,16 @@ const menuItems = computed(() => {
     if (showCheckboxes.value) {
       items.push({
         label: "tooltip.select_all",
-        icon: "mdi-select-all",
+        icon: CheckCheck,
         action: selectAll,
         overflowAllowed: true,
       });
     }
     items.push({
-      label: "tooltip.select_items",
-      icon: showCheckboxes.value
-        ? "mdi-checkbox-multiple-outline"
-        : "mdi-checkbox-multiple-blank-outline",
+      label: showCheckboxes.value
+        ? "tooltip.exit_select_items"
+        : "tooltip.select_items",
+      icon: ListChecks,
       action: toggleCheckboxes,
       active: showCheckboxes.value,
       overflowAllowed: true,
@@ -1087,7 +1479,7 @@ const menuItems = computed(() => {
   if (props.showLibraryOnlyFilter === true) {
     items.push({
       label: "tooltip.filter_library",
-      icon: "mdi-bookshelf",
+      icon: LibraryBig,
       action: toggleLibraryOnlyFilter,
       active: params.value.libraryOnly,
       overflowAllowed: true,
@@ -1124,7 +1516,7 @@ const menuItems = computed(() => {
   if (props.showFavoritesOnlyFilter === true) {
     items.push({
       label: "tooltip.filter_favorites",
-      icon: params.value.favoritesOnly ? "mdi-heart" : "mdi-heart-outline",
+      icon: Heart,
       action: toggleFavoriteFilter,
       active: params.value.favoritesOnly,
       overflowAllowed: true,
@@ -1135,9 +1527,7 @@ const menuItems = computed(() => {
   if (props.showHideFullyPlayedFilter === true) {
     items.push({
       label: "tooltip.filter_hide_fully_played",
-      icon: params.value.hideFullyPlayed
-        ? "mdi-eye-off"
-        : "mdi-eye-off-outline",
+      icon: EyeOff,
       action: toggleHideFullyPlayedFilter,
       active: params.value.hideFullyPlayed,
       overflowAllowed: true,
@@ -1148,11 +1538,20 @@ const menuItems = computed(() => {
   if (props.showAlbumArtistsOnlyFilter === true) {
     items.push({
       label: "tooltip.album_artist_filter",
-      icon: params.value.albumArtistsFilter
-        ? "mdi-account-music"
-        : "mdi-account-music-outline",
+      icon: MicVocal,
       action: toggleAlbumArtistsFilter,
       active: params.value.albumArtistsFilter,
+      overflowAllowed: true,
+    });
+  }
+
+  // collapse collections filter
+  if (props.showCollapseCollections === true) {
+    items.push({
+      label: "tooltip.collapse_collections",
+      icon: Files,
+      action: toggleCollapseCollections,
+      active: params.value.collapseCollections,
       overflowAllowed: true,
     });
   }
@@ -1178,7 +1577,7 @@ const menuItems = computed(() => {
   if (props.showAlbumTypeFilter) {
     items.push({
       label: "tooltip.album_type",
-      icon: "mdi-album",
+      icon: Disc3,
       disabled: loading.value,
       active: params.value.albumType && params.value.albumType.length > 0,
       closeOnContentClick: false,
@@ -1209,7 +1608,7 @@ const menuItems = computed(() => {
   if (providerFilterAvailable.value && !props.requireProviderSelection) {
     items.push({
       label: "tooltip.filter_provider",
-      icon: "mdi-package-variant",
+      icon: Package,
       disabled: loading.value,
       active: !!params.value.provider && params.value.provider.length > 0,
       closeOnContentClick: props.singleProviderFilter,
@@ -1227,7 +1626,7 @@ const menuItems = computed(() => {
       label: newContentAvailable.value
         ? "tooltip.refresh_new_content"
         : "tooltip.refresh",
-      icon: "mdi-refresh",
+      icon: RefreshCw,
       action: onRefreshClicked,
       active: newContentAvailable.value,
       disabled: loading.value,
@@ -1235,34 +1634,17 @@ const menuItems = computed(() => {
     });
   }
 
-  // sort options
-  if (props.sortKeys?.length) {
-    items.push({
-      label: "tooltip.sort_options",
-      icon: "mdi-sort",
-      disabled: props.sortKeys.length <= 1 || loading.value,
-      overflowAllowed: true,
-      subItems: props.sortKeys.map((sortKey) => {
-        return {
-          label: `sort.${sortKey}`,
-          selected: params.value.sortBy == sortKey,
-          action: () => {
-            changeSort(sortKey);
-          },
-        };
-      }),
-    });
-  }
-
   // toggle search (auto-hidden for small listings)
   if (searchAvailable.value) {
     items.push({
-      label: isSearchActive.value
-        ? "tooltip.search_filter_active"
-        : "tooltip.search",
-      icon: "mdi-magnify",
+      label: searchButtonCloses.value
+        ? "close"
+        : isSearchActive.value
+          ? "tooltip.search_filter_active"
+          : "tooltip.search",
+      icon: searchButtonCloses.value ? X : Search,
       action: toggleSearch,
-      active: isSearchActive.value,
+      active: isSearchActive.value && !searchButtonCloses.value,
       disabled: loading.value,
       overflowAllowed: false,
     });
@@ -1274,7 +1656,7 @@ const menuItems = computed(() => {
   if (providerFilterAvailable.value && props.requireProviderSelection) {
     items.push({
       label: "tooltip.select_provider",
-      icon: "mdi-package-variant",
+      icon: Package,
       disabled: loading.value,
       // single selection: close on pick so only one stays checked.
       closeOnContentClick: true,
@@ -1286,13 +1668,14 @@ const menuItems = computed(() => {
   // toggle view mode (hidden when view mode is controlled externally)
   if (!props.forcedViewMode)
     items.push({
-      label: "tooltip.toggle_view_mode",
-      icon: viewMode.value == "list" ? "mdi-view-list" : "mdi-grid",
+      label: "tooltip.view_mode_current",
+      labelArgs: [getViewModeLabel(viewMode.value)],
+      icon: viewMode.value == "list" ? LayoutList : LayoutGrid,
       overflowAllowed: true,
       subItems: [
         {
           label: "view.list",
-          icon: "mdi-view-list",
+          icon: LayoutList,
           selected: viewMode.value == "list",
           action: () => {
             selectViewMode("list");
@@ -1300,7 +1683,7 @@ const menuItems = computed(() => {
         },
         {
           label: "view.panel",
-          icon: "mdi-grid",
+          icon: LayoutGrid,
           selected: viewMode.value == "panel",
           action: () => {
             selectViewMode("panel");
@@ -1308,10 +1691,24 @@ const menuItems = computed(() => {
         },
         {
           label: "view.panel_compact",
-          icon: "mdi-grid",
+          icon: LayoutGrid,
           selected: viewMode.value == "panel_compact",
           action: () => {
             selectViewMode("panel_compact");
+          },
+        },
+        {
+          label: "grid_size",
+          hide: viewMode.value == "list",
+          // markRaw: the menu items land in a reactive array; a bare component
+          // definition there would be needlessly made reactive.
+          component: markRaw(GridSizeSlider),
+          componentProps: {
+            size: gridSize.value,
+            onChange: (size: number) => {
+              gridSize.value = size;
+            },
+            onCommit: commitGridSize,
           },
         },
       ],
@@ -1325,7 +1722,7 @@ const menuItems = computed(() => {
   if (props.allowCollapse === true) {
     items.push({
       label: "tooltip.collapse_expand",
-      icon: "mdi-chevron-up",
+      icon: ChevronUp,
       action: toggleExpand,
       overflowAllowed: false,
     });
@@ -1334,77 +1731,8 @@ const menuItems = computed(() => {
   return items;
 });
 
-const loadData = async function (
-  clear = false,
-  refresh = false,
-  FilterParamsChanged = false,
-  offset = 0,
-) {
-  if (loading.value) {
-    // we could potentially be called multiple times due to multiple watchers
-    // so ignore if we're already loading
-    return;
-  }
-  loading.value = true;
-
-  if (FilterParamsChanged && props.loadPagedData != null) {
-    // on paged server listings, we need to clear the list on filter params change
-    clear = true;
-  }
-
-  if (clear || refresh) {
-    offset = 0;
-    if (allItemsReceived.value) {
-      // this hack is needed in order to force refresh the infinite scroller
-      // otherwise it will not attempt to load more items if the end was reached
-      // and then we load new items with a different size
-      tempHide.value = true;
-    }
-    allItemsReceived.value = false;
-    initialDataReceived.value = false;
-    newContentAvailable.value = false;
-  }
-
-  params.value.offset = offset;
-  params.value.limit = props.limit;
-  params.value.refresh = refresh;
-
-  if (props.loadPagedData != null) {
-    // server side paged listing (with filter support)
-    const nextItems = await props.loadPagedData(params.value);
-    if (params.value.offset) {
-      pagedItems.value.push(...nextItems);
-    } else {
-      pagedItems.value = nextItems;
-    }
-    if (Math.abs(nextItems.length - props.limit) > 10) {
-      allItemsReceived.value = true;
-    }
-  } else if (props.loadItems != null) {
-    // grab items from loadItems callback
-    if (!initialDataReceived.value || refresh) {
-      // load all items from the callback
-      allItems.value = await props.loadItems(params.value);
-      initialDataReceived.value = true;
-    }
-    // filter items
-    const nextItems = getFilteredItems(allItems.value, params.value);
-    if (params.value.offset) {
-      pagedItems.value.push(...nextItems);
-    } else {
-      pagedItems.value = nextItems;
-    }
-    // mark allItemsReceived if we have all items
-    allItemsReceived.value = nextItems.length < props.limit;
-  }
-  params.value.refresh = false;
-  loading.value = false;
-  tempHide.value = false;
-};
-
-// Re-derive from the current props.path: browse reuses one ItemsListing
-// instance across folders, so a ref bound to the mount-time path would read
-// and reset the wrong folder's saved sort/view settings.
+// Re-derive from the current props.path: a listing that stays mounted while
+// its path changes must not read and reset the settings saved for the old path.
 const savedPrefs = computed(
   () =>
     getItemsListingPreferences(props.path || props.itemtype, props.itemtype)
@@ -1414,6 +1742,13 @@ const savedPrefs = computed(
 const restoreSettings = async function () {
   // restore settings for this path/itemtype
   const prefs = savedPrefs.value;
+
+  if (
+    prefs.activeTab &&
+    props.toolBarTabs?.some((tab) => tab.id === prefs.activeTab)
+  ) {
+    activeTabId.value = prefs.activeTab;
+  }
 
   // get stored/default viewMode for this itemtype
   if (props.forcedViewMode) {
@@ -1433,11 +1768,27 @@ const restoreSettings = async function () {
     viewMode.value = "list";
   }
 
+  gridSize.value = normalizeGridSize(prefs.gridSize);
+
   // get stored/default sortBy for this itemtype
-  if (prefs.sortBy && props.sortKeys.includes(prefs.sortBy)) {
-    params.value.sortBy = prefs.sortBy;
-  } else {
-    params.value.sortBy = props.sortKeys[0];
+  if (props.sortListing) {
+    if (sortOptionsLoaded.value) {
+      const defaultSortBy = sortOptions.value[0]
+        ? librarySorting.sortByOption(sortOptions.value[0])
+        : params.value.sortBy;
+      const normalizedSortBy = librarySorting.normalizeSortBy(
+        prefs.sortBy || defaultSortBy,
+      );
+      params.value.sortBy = normalizedSortBy;
+      if (prefs.sortBy && normalizedSortBy !== prefs.sortBy) {
+        setItemsListingPreference(
+          props.path || props.itemtype,
+          props.itemtype,
+          "sortBy",
+          normalizedSortBy,
+        );
+      }
+    }
   }
 
   // get stored/default favoriteOnlyFilter for this itemtype
@@ -1460,6 +1811,14 @@ const restoreSettings = async function () {
     prefs.albumArtistsFilter !== undefined
   ) {
     params.value.albumArtistsFilter = prefs.albumArtistsFilter;
+  }
+
+  // get stored/default collapse Collection for this itemtype
+  if (
+    props.showCollapseCollections !== false &&
+    prefs.collapseCollections !== undefined
+  ) {
+    params.value.collapseCollections = prefs.collapseCollections;
   }
 
   // get stored/default hideEmptyFilter for this itemtype (default: true = hide empty)
@@ -1490,6 +1849,10 @@ const restoreSettings = async function () {
     params.value.provider = next.length > 0 ? next : undefined;
   }
 
+  // the carried-in provider outranks the saved filter, on every restore
+  const carried = offeredCarriedProvider();
+  if (carried !== undefined) params.value.provider = [carried];
+
   // required selector: when nothing valid is stored, default to the first
   // available provider so exactly one is always selected.
   if (
@@ -1497,7 +1860,11 @@ const restoreSettings = async function () {
     musicProviders.value.length > 0 &&
     !params.value.provider?.length
   ) {
-    params.value.provider = [musicProviders.value[0].value];
+    const offered = musicProviders.value.map((provider) => provider.value);
+    const preferred = props.defaultProvider;
+    params.value.provider = [
+      preferred && offered.includes(preferred) ? preferred : offered[0],
+    ];
   }
 
   // get stored searchquery (but only if we're allowed to store the state)
@@ -1509,8 +1876,14 @@ const restoreSettings = async function () {
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive || store.showPlayersMenu) return;
-  if (loading.value) return;
-  if (e.key === "Escape") closeSearch();
+  if (e.key === "Escape") {
+    if (showSearchInput.value) {
+      e.preventDefault();
+      closeSearch();
+    }
+    return;
+  }
+  if (!props.allowKeyHooks || loading.value) return;
   // Let searchInput handle this.
   if (searchHasFocus.value) return;
 
@@ -1531,33 +1904,45 @@ const keyListener = function (e: KeyboardEvent) {
     selectAll();
   } else if (!searchHasFocus.value && e.key == "Backspace") {
     focusSearch();
-  } else if (!searchHasFocus.value && e.key.length == 1) {
+  } else if (
+    !searchHasFocus.value &&
+    e.key.length == 1 &&
+    // Space belongs to the play/pause shortcut, and no search starts with one
+    e.key != " " &&
+    !e.ctrlKey &&
+    !e.metaKey
+  ) {
     showSearch.value = true;
     focusSearch();
   }
 };
 
-if (props.allowKeyHooks) {
-  document.addEventListener("keydown", keyListener);
-  onBeforeUnmount(() => {
-    document.removeEventListener("keydown", keyListener);
-  });
-}
+// Always listen: an open search claims Escape before the window-level
+// back navigation (useEscapeBack) sees it, even without key hooks
+document.addEventListener("keydown", keyListener);
+onBeforeUnmount(() => {
+  document.removeEventListener("keydown", keyListener);
+});
 
 if (props.restoreState) {
   // handle restore state
   onBeforeUnmount(() => {
+    if (loading.value || loadError.value) {
+      store.prevState = undefined;
+      return;
+    }
     const key = props.path || props.itemtype;
     const el = document.querySelector(".content-section");
 
     store.prevState = {
       path: key,
+      parentUri: props.parentItem?.uri,
+      carried: offeredCarriedProvider() !== undefined,
       scrollPos: el?.scrollTop || 0,
       pagedItems: pagedItems.value,
-      allItems: allItems.value,
       allItemsReceived: allItemsReceived.value,
-      initialDataReceived: initialDataReceived.value,
       params: params.value,
+      displayedSort: displayedSort.value,
     };
   });
 }
@@ -1588,7 +1973,6 @@ watch(
     if (loading.value == true) return;
     // completely reset if the path changes
     pagedItems.value = [];
-    allItems.value = [];
     loadData(true);
   },
 );
@@ -1599,17 +1983,10 @@ watch(
     if (props.refreshOnParentUpdate) {
       loadData(true);
     } else {
-      allItems.value = [];
       newContentAvailable.value = true;
     }
   },
   { deep: true },
-);
-watch(
-  () => props.limit,
-  (newVal) => {
-    params.value.limit = newVal;
-  },
 );
 watch(
   () => props.updateAvailable,
@@ -1622,6 +1999,14 @@ watch(
 
 // Watch savedPrefs and restore settings when they change (e.g., when user loads)
 watch(savedPrefs, () => restoreSettings(), { immediate: true });
+
+// the page is told which provider the listing is on, a restored visit
+// included, so it can show that without a load of its own
+watch(
+  () => params.value.provider,
+  (provider) => emit("provider-change", provider),
+  { deep: true, immediate: true },
+);
 
 // When a provider stops being usable at runtime, drop it from the active filter
 // and reload so the view refreshes without a remount. Only the live query is
@@ -1660,10 +2045,13 @@ const loadGenreOptions = async () => {
     const mediaType = itemtypeToMediaType[props.itemtype];
 
     do {
+      // the paging can outlast the listing, so stop fetching once it is gone
+      if (isDisposed()) return;
+
       page = await api.getLibraryGenres({
         limit: pageSize,
         offset,
-        order_by: "name",
+        sort_field: SortField.NAME,
         hide_empty: true, // always hide empty genres in the filter dropdown
         media_type: mediaType, // filter to genres relevant for this media type
       });
@@ -1678,36 +2066,86 @@ const loadGenreOptions = async () => {
 
     genreOptions.value = all;
   } catch {
-    toast.error(t("error_loading_genres"));
+    toast.error(t("settings.error_loading_genres"));
   }
 };
 
 let _unsubscribeMediaEvents: (() => void) | undefined;
+let _unsubscribeFavorites: (() => void) | undefined;
+
+const clearSelection = () => {
+  selectedItems.value = [];
+  showCheckboxes.value = false;
+};
+
+// every item is loaded and selected, so select all has nothing left to add
+const allSelected = computed(
+  () =>
+    allItemsReceived.value &&
+    selectedItems.value.length >=
+      pagedItems.value.filter((x) => !isParentDirItem(x)).length,
+);
+
 onBeforeUnmount(() => {
-  eventbus.off("clearSelection");
+  eventbus.off("clearSelection", clearSelection);
   _unsubscribeMediaEvents?.();
+  _unsubscribeFavorites?.();
 });
 
 onMounted(async () => {
+  if (props.sortListing) {
+    try {
+      serverSortOptions.value = await api.getSortOptions(props.sortListing);
+    } catch {
+      toast.error(t("settings.error_loading_sort_options"), {
+        id: "library-sort-options-error",
+      });
+    }
+    sortOptionsLoaded.value = true;
+    if (isDisposed()) return;
+    restoreSettings();
+  }
+
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;
-  if (props.restoreState && store.prevState?.path == key) {
+  if (
+    props.restoreState &&
+    store.prevState?.path == key &&
+    store.prevState.parentUri == props.parentItem?.uri &&
+    store.prevState.params.sortField ===
+      store.prevState.displayedSort.sortField &&
+    store.prevState.params.sortDirection ===
+      store.prevState.displayedSort.sortDirection &&
+    cachedVisitApplies()
+  ) {
+    restoredFromPrevState = true;
     params.value = store.prevState.params;
     pagedItems.value = store.prevState.pagedItems;
-    allItems.value = store.prevState.allItems;
+    displayedSort.value = store.prevState.displayedSort;
     allItemsReceived.value = store.prevState.allItemsReceived;
-    initialDataReceived.value = store.prevState.initialDataReceived;
-    // scroll the main listing back to its previous scroll position
-    nextTick(() => {
-      const el = document.querySelector(".content-section") as HTMLElement;
+    if (props.sortListing) {
+      params.value.sortBy = librarySorting.normalizeSortBy(params.value.sortBy);
+    }
+    // what the last visit left behind gives way to a provider carried in by a
+    // link, unless it already came from there
+    const carried = offeredCarriedProvider();
+    const switchProvider =
+      carried !== undefined && params.value.provider?.[0] !== carried;
+    if (switchProvider) {
+      params.value.provider = [carried];
+    } else {
+      // scroll the main listing back to its previous scroll position
+      nextTick(() => {
+        const el = document.querySelector(".content-section") as HTMLElement;
 
-      if (el) {
-        scrollElement(el, store.prevState!.scrollPos, 50);
-      }
-    });
+        if (el) {
+          scrollElement(el, store.prevState!.scrollPos, 50);
+        }
+      });
+    }
     loading.value = false;
-    if (applyQueryGenreFilter()) {
+    if (applyQueryGenreFilter() || switchProvider) {
       loadData(true, undefined, true);
     }
   } else {
@@ -1716,12 +2154,12 @@ onMounted(async () => {
   }
 
   await loadGenreOptions();
+  // The await can outlast the listing, and the unmount hook only reaches what
+  // was already set up by the time it ran.
+  if (isDisposed()) return;
 
   // Listen for selection clearing events
-  eventbus.on("clearSelection", () => {
-    selectedItems.value = [];
-    showCheckboxes.value = false;
-  });
+  eventbus.on("clearSelection", clearSelection);
 
   // signal if/when items get played/updated/removed
   _unsubscribeMediaEvents = api.subscribe_multi(
@@ -1739,24 +2177,35 @@ onMounted(async () => {
         // update item
         const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
         if (idx >= 0) {
-          pagedItems.value[idx] = evt.data as MediaItemType;
+          pagedItems.value[idx] = keepOwnFavorite(
+            evt.data as MediaItemType,
+            pagedItems.value[idx],
+          );
         }
       } else if (evt.event == EventType.MEDIA_ITEM_PLAYED) {
         // update item
         const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
         if (idx >= 0) {
-          const playData = evt.data as Record<string, unknown>;
-          if ("fully_played" in pagedItems.value[idx])
-            pagedItems.value[idx].fully_played = playData[
-              "fully_played"
-            ] as boolean;
-          if ("resume_position_ms" in pagedItems.value[idx])
-            pagedItems.value[idx].resume_position_ms =
-              (playData["seconds_played"] as number) * 1000;
+          const item = pagedItems.value[idx];
+          if (itemSupportsPlayLog(item)) {
+            const playData = evt.data as Record<string, unknown>;
+            item.fully_played = playData["fully_played"] as boolean;
+            item.resume_position_ms =
+              ((playData["seconds_played"] as number) ?? 0) * 1000;
+          }
         }
       }
     },
   );
+
+  // the user's own like or dislike, wherever they made it. A listing can hold
+  // the same item on more than one row (a playlist listing a track twice), and
+  // every one of them shows the state.
+  _unsubscribeFavorites = subscribeOwnFavorites((update) => {
+    for (const item of pagedItems.value) {
+      if (item.uri == update.uri) setFavoriteState(item, update.favorite);
+    }
+  });
 });
 
 watch(
@@ -1769,212 +2218,78 @@ watch(
   { deep: true },
 );
 
-export interface StoredState {
-  path: string;
-  scrollPos: number;
-  pagedItems: MediaItemType[];
-  allItems: MediaItemType[];
-  allItemsReceived: boolean;
-  initialDataReceived: boolean;
-  params: LoadDataParams;
-}
-
-const getSortName = function (
-  item: MediaItemType | ItemMapping,
-  preferSortName = false,
-) {
-  if (!item) return "";
-  // names (incl. translated folder/media names) are resolved server-side, so we sort
-  // by item.name, falling back to sort_name when explicitly preferred.
-  if (preferSortName && "sort_name" in item && item.sort_name)
-    return item.sort_name;
-  return item.name;
-};
-
-const getFilteredItems = function (
-  // In-memory filter for (smaller) item sets that do not have server side paging and filtering
-  items: MediaItemType[],
-  params: LoadDataParams,
-): MediaItemType[] {
-  let result = [];
-
-  // search
-  if (params.search) {
-    const searchStr = params.search.toLowerCase();
-    for (const item of items) {
-      if (item.name.toLowerCase().includes(searchStr)) {
-        result.push(item);
-      } else if (
-        "album" in item &&
-        item.album?.name.toLowerCase().includes(searchStr)
-      ) {
-        result.push(item);
-      } else if (
-        "artists" in item &&
-        item.artists &&
-        item.artists.length &&
-        item.artists[0].name.toLowerCase().includes(searchStr)
-      ) {
-        result.push(item);
-      }
-    }
-  } else {
-    result = [...items];
-  }
-
-  // sort
-  if (params.sortBy == "name") {
-    result.sort((a, b) =>
-      getSortName(a).localeCompare(getSortName(b), undefined, {
-        numeric: true,
-      }),
-    );
-  }
-  if (params.sortBy == "sort_name") {
-    result.sort((a, b) =>
-      getSortName(a, true).localeCompare(getSortName(b, true), undefined, {
-        numeric: true,
-      }),
-    );
-  }
-  if (params.sortBy == "name_desc") {
-    result.sort((a, b) =>
-      getSortName(b).localeCompare(getSortName(a), undefined, {
-        numeric: true,
-      }),
-    );
-  }
-  if (params.sortBy == "sort_name_desc") {
-    result.sort((a, b) =>
-      getSortName(b, true).localeCompare(getSortName(a, true), undefined, {
-        numeric: true,
-      }),
-    );
-  }
-
-  if (params.sortBy == "album" || params.sortBy == "album_sort_name") {
-    const preferSortName = params.sortBy == "album_sort_name";
-    result.sort((a, b) => {
-      const albumCompare = getSortName(
-        (a as Track).album,
-        preferSortName,
-      ).localeCompare(
-        getSortName((b as Track).album, preferSortName),
-        undefined,
-        { numeric: true },
-      );
-      if (albumCompare !== 0) return albumCompare;
-      const discCompare =
-        ((a as Track).disc_number ?? 0) - ((b as Track).disc_number ?? 0);
-      if (discCompare !== 0) return discCompare;
-      return (
-        ((a as Track).track_number ?? 0) - ((b as Track).track_number ?? 0)
-      );
-    });
-  }
-  if (params.sortBy == "artist") {
-    result.sort((a, b) =>
-      getSortName((a as Track).artists[0]).localeCompare(
-        getSortName((b as Track).artists[0]),
-      ),
-    );
-  }
-  if (params.sortBy == "track_number") {
-    result.sort(
-      (a, b) =>
-        ((a as Track).track_number || 0) - ((b as Track).track_number || 0),
-    );
-    result.sort(
-      (a, b) =>
-        ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0),
-    );
-  }
-  if (params.sortBy == "position") {
-    result.sort(
-      (a, b) => ((a as Track).position || 0) - ((b as Track).position || 0),
-    );
-  }
-  if (params.sortBy == "position_desc") {
-    result.sort(
-      (a, b) => ((b as Track).position || 0) - ((a as Track).position || 0),
-    );
-  }
-  if (params.sortBy == "year") {
-    result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
-  }
-  if (params.sortBy == "year_desc") {
-    result.sort((a, b) => ((b as Album).year || 0) - ((a as Album).year || 0));
-  }
-  if (params.sortBy == "recent") {
-    result.sort((a, b) => {
-      const aTimestamp = "timestamp_added" in a ? a.timestamp_added : 0;
-      const bTimestamp = "timestamp_added" in b ? b.timestamp_added : 0;
-      return bTimestamp - aTimestamp;
-    });
-  }
-
-  if (params.sortBy == "duration") {
-    result.sort(
-      (a, b) => ((a as Track).duration || 0) - ((b as Track).duration || 0),
-    );
-  }
-  if (params.sortBy == "duration_desc") {
-    result.sort(
-      (a, b) => ((b as Track).duration || 0) - ((a as Track).duration || 0),
-    );
-  }
-
-  if (params.sortBy == "provider") {
-    result.sort((a, b) => a.provider.localeCompare(b.provider));
-  }
-
-  if (params.favoritesOnly) {
-    result = result.filter((x) => x.favorite);
-  }
-
-  if (params.hideFullyPlayed) {
-    result = result.filter((x) => (x as PodcastEpisode).fully_played !== true);
-  }
-
-  if (params.albumType && params.albumType.length > 0) {
-    result = result.filter((x) =>
-      params.albumType?.includes((x as Album).album_type),
-    );
-  }
-  return result.slice(params.offset, params.offset + params.limit);
-};
-
 const selectAll = async function () {
-  let confirmed = true;
-  // We use the total length even when searching, since we can't know
-  // how many items will be loaded after filtering
-  const itemCount = props.total || allItems.value.length;
-  if (itemCount > 250) {
-    // This could be a large selection. Prevent accidental activation
-    // by asking the user for a confirmation
-    confirmed = await new Promise((resolve) => {
-      if (confirm(t("select_all_confirmation"))) {
-        resolve(true);
-      } else {
-        resolve(false);
-      }
-    });
+  // Unknown server totals are treated conservatively to avoid instant selection.
+  const itemCount =
+    props.total ??
+    (allItemsReceived.value
+      ? pagedItems.value.length
+      : Number.POSITIVE_INFINITY);
+  if (itemCount <= 250) {
+    await selectEveryItem();
+    return;
   }
-
-  if (confirmed) {
-    await loadAllItems();
-    selectedItems.value = pagedItems.value.filter((x) => !isParentDirItem(x));
-    showCheckboxes.value = true;
-  }
+  // This could be a large selection. Prevent accidental activation
+  // by asking the user for a confirmation
+  eventbus.emit("deleteConfirmationDialog", {
+    title: t("tooltip.select_all"),
+    message: t("select_all_confirmation"),
+    confirmLabel: t("yes"),
+    destructive: false,
+    onConfirm: selectEveryItem,
+  });
 };
 
 defineExpose({
-  sortBy: computed(() => params.value.sortBy),
+  sortField: computed(() => displayedSort.value.sortField),
+  sortDirection: computed(() => displayedSort.value.sortDirection),
   reload: () => loadData(true, true),
+  // whether the item is absent while every item of the unfiltered listing is
+  // loaded; a filter leaves items out on purpose
+  isMissing: (uri: string) =>
+    allItemsReceived.value &&
+    !hasActiveFilters.value &&
+    !pagedItems.value.some((i) => i.uri === uri),
 });
+
+/** Loads the remaining pages and puts every item in the selection. */
+async function selectEveryItem() {
+  await loadAllItems();
+  selectedItems.value = pagedItems.value.filter((x) => !isParentDirItem(x));
+  showCheckboxes.value = true;
+}
 </script>
 
 <style scoped>
+.listing-search-slot {
+  --listing-search-width: clamp(0px, calc(100vw - 560px), 280px);
+  display: flex;
+  width: var(--listing-search-width);
+}
+
+.listing-search-enter-active,
+.listing-search-leave-active {
+  overflow: hidden;
+  transition: width 320ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.listing-search-enter-from,
+.listing-search-leave-to {
+  width: 0;
+}
+
+.listing-search--inline {
+  font-size: 0.9375rem;
+  font-weight: 400;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .listing-search-enter-active,
+  .listing-search-leave-active {
+    transition: none;
+  }
+}
+
 .disc-header {
   display: flex;
   align-items: flex-end;
@@ -2039,5 +2354,25 @@ defineExpose({
   max-width: 10%;
   flex-basis: 10%;
   padding: 8px;
+}
+.col-11 {
+  width: 9.09%;
+  max-width: 9.09%;
+  flex-basis: 9.09%;
+  padding: 8px;
+}
+.col-12 {
+  width: 8.33%;
+  max-width: 8.33%;
+  flex-basis: 8.33%;
+  padding: 8px;
+}
+.content-tabs {
+  padding: 10px 16px 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 </style>

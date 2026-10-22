@@ -1,5 +1,5 @@
 <template>
-  <Popover>
+  <Popover @update:open="onOpenChange">
     <PopoverTrigger as-child>
       <!-- custom trigger (e.g. a compact icon button inside an input) -->
       <slot name="trigger">
@@ -10,16 +10,18 @@
             <Separator orientation="vertical" class="mx-2 h-4" />
             <Badge
               class="lg:hidden font-medium rounded-[6px]"
-              :aria-label="`${selectedCount} selected`"
+              :aria-label="
+                $t('faceted_filter.selected', { count: selectedCount })
+              "
             >
-              {{ selectedCount }}
+              {{ $t("faceted_filter.selected", { count: selectedCount }) }}
             </Badge>
             <div class="hidden space-x-1 lg:flex">
               <Badge v-if="selectedCount > 2" class="rounded-[6px] gap-2">
-                {{ selectedCount }} selected
+                {{ $t("faceted_filter.selected", { count: selectedCount }) }}
                 <button
                   type="button"
-                  :aria-label="`Clear all ${title} filters`"
+                  :aria-label="$t('faceted_filter.clear_all_for', { title })"
                   class="flex items-center justify-center cursor-pointer hover:opacity-70"
                   @click.stop="clear"
                 >
@@ -35,7 +37,9 @@
                   {{ opt.label }}
                   <button
                     type="button"
-                    :aria-label="`Remove ${opt.label} filter`"
+                    :aria-label="
+                      $t('faceted_filter.remove_filter', { label: opt.label })
+                    "
                     class="flex items-center justify-center cursor-pointer hover:opacity-70"
                     @click.stop="removeFilter(opt.value)"
                   >
@@ -48,12 +52,17 @@
         </Button>
       </slot>
     </PopoverTrigger>
-    <PopoverContent class="w-[220px] p-0" align="start">
+    <PopoverContent
+      class="w-[220px] p-0"
+      align="start"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
+    >
       <div class="faceted-filter-content">
         <Input
+          v-if="showSearch"
           v-model="search"
           :placeholder="title"
-          :aria-label="`Search ${title}`"
+          :aria-label="$t('faceted_filter.search_for', { title })"
           class="mb-2 h-8"
         />
         <div class="faceted-filter-list">
@@ -83,10 +92,10 @@
           v-if="selectedCount > 0"
           type="button"
           class="faceted-filter-clear"
-          :aria-label="`Clear ${title} filters`"
+          :aria-label="$t('faceted_filter.clear_for', { title })"
           @click="clear"
         >
-          Clear filters
+          {{ $t("faceted_filter.clear") }}
         </button>
       </div>
     </PopoverContent>
@@ -108,6 +117,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 
 interface FacetedOption {
   label: string;
@@ -125,7 +135,15 @@ const emit = defineEmits<{
   (e: "update:modelValue", value: TValue[]): void;
 }>();
 
+// a list this short is quicker to scan than to search - and on a touch device
+// a search field opens the on-screen keyboard on top of the options
+const MAX_OPTIONS_WITHOUT_SEARCH = 8;
+
 const search = ref("");
+
+const showSearch = computed(
+  () => props.options.length > MAX_OPTIONS_WITHOUT_SEARCH,
+);
 
 const selectedSet = computed(() => new Set(props.modelValue || []));
 
@@ -136,7 +154,7 @@ const selectedOptionLabels = computed(() =>
 );
 
 const filteredOptions = computed(() => {
-  const term = search.value.toLowerCase().trim();
+  const term = showSearch.value ? search.value.toLowerCase().trim() : "";
   if (!term) return props.options;
   return props.options.filter((opt) => opt.label.toLowerCase().includes(term));
 });
@@ -159,6 +177,13 @@ const removeFilter = (value: TValue) => {
 
 const clear = () => {
   emit("update:modelValue", []);
+};
+
+// only the popover content unmounts on close, so a term left in the field has to
+// be dropped by hand - on open, to leave the closing animation on the list the
+// user last saw
+const onOpenChange = (open: boolean) => {
+  if (open) search.value = "";
 };
 </script>
 

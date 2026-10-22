@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAudioAnalysisCoverage } from "@/composables/useAudioAnalysisCoverage";
+import { useAudioAnalysisCoverage } from "@/composables/audio-analysis/useAudioAnalysisCoverage";
 import { $t } from "@/plugins/i18n";
 import { api } from "@/plugins/api";
 import { Badge } from "@/components/ui/badge";

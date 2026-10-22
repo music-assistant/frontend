@@ -4,7 +4,7 @@ import type {
   MusicQuizTimelineEntry,
   MusicQuizTimelineHostState,
   MusicQuizTimelineRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -73,6 +73,8 @@ const state = {
   answer_type: "timeline",
   phase: "reveal",
   name: "Music Timeline",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 12,
   answer_duration: 30,
   artist_bonus_mode: "free_text",
@@ -84,6 +86,7 @@ const state = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizTimelineHostState;
 const leaderboardRows = players.map((player, index) => ({
   ...player,
@@ -92,6 +95,21 @@ const leaderboardRows = players.map((player, index) => ({
 })) satisfies MusicQuizLeaderboardRow[];
 
 describe("MusicTimelinePresentBody", () => {
+  it("splits reveal evenly on the dashboard, keeps the host ratio elsewhere", () => {
+    for (const [dashboard, expected] of [
+      [true, "lg:grid-cols-[minmax(16rem,1fr)_minmax(22rem,1fr)]"],
+      [false, "lg:grid-cols-[minmax(16rem,2fr)_minmax(22rem,3fr)]"],
+    ] as const) {
+      const wrapper = mount(MusicTimelinePresentBody, {
+        props: { state, currentRound, leaderboardRows, dashboard },
+      });
+      expect(
+        wrapper.get('[data-testid="music-timeline-present-body"]').classes(),
+      ).toContain(expected);
+      wrapper.unmount();
+    }
+  });
+
   it("keeps song and score panels before the bottom timeline", () => {
     const wrapper = mount(MusicTimelinePresentBody, {
       props: {

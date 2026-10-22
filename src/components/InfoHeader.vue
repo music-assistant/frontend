@@ -25,9 +25,11 @@
         :transition="false"
         eager
       />
+      <!-- The details layout below is transformed, which gives it a stacking
+           context, so the toolbar needs a rank to stay clickable above it. -->
       <Toolbar
         :icon="ArrowLeft"
-        style="position: absolute; z-index: 999999"
+        style="position: absolute; z-index: 1"
         :menu-items="menuItems"
         :enforce-overflow-menu="true"
         :icon-action="backButtonClick"
@@ -69,6 +71,17 @@
             <v-avatar size="210" style="margin-bottom: 10%">
               <MediaItemThumb :item="item" size="calc(100%)" />
             </v-avatar>
+          </div>
+          <div
+            v-else-if="
+              item.media_type && item.media_type == MediaType.COLLECTION
+            "
+          >
+            <MediaCollectionThumb
+              :item="item as MediaCollection<MediaItemType>"
+              size="calc(100%)"
+              style="max-height: 256px"
+            />
           </div>
           <div v-else>
             <MediaItemThumb
@@ -133,7 +146,7 @@
                 color="primary"
                 icon="mdi-calendar"
               />
-              {{ new Date(item.metadata.release_date).getFullYear() }}
+              {{ new Date(item.metadata.release_date).getUTCFullYear() }}
             </v-card-subtitle>
 
             <!-- item artists -->
@@ -193,7 +206,9 @@
               />
               <MarqueeText :sync="marqueeSync">
                 <span
-                  v-for="(author, authorindex) in item.authors"
+                  v-for="(author, authorindex) in getAuthorsNarratorsArray(
+                    item.authors,
+                  )"
                   :key="author"
                 >
                   <span style="color: accent">{{ author }}</span>
@@ -220,7 +235,9 @@
               />
               <MarqueeText :sync="marqueeSync">
                 <span
-                  v-for="(narrator, narratorIndex) in item.narrators"
+                  v-for="(narrator, narratorIndex) in getAuthorsNarratorsArray(
+                    item.narrators,
+                  )"
                   :key="narrator"
                 >
                   <span style="color: accent">{{ narrator }}</span>
@@ -246,7 +263,9 @@
                 icon="mdi-account-music"
               />
               <MarqueeText :sync="marqueeSync">
-                <a style="color: primary">{{ item.owner }}</a>
+                <slot name="owner"
+                  ><a style="color: primary">{{ item.owner }}</a></slot
+                >
               </MarqueeText>
             </v-card-subtitle>
 
@@ -261,14 +280,65 @@
                 icon="mdi-album"
               />
               <MarqueeText :sync="marqueeSync">
-                <a
-                  style="color: secondary"
-                  @click="albumClick((item as Track)?.album)"
-                  >{{ item.album.name }}</a
+                <a style="color: secondary" @click="albumClick(item.album)">{{
+                  item.album.name
+                }}</a
                 ><span v-if="'year' in item.album && item.album.year">
                   • {{ item.album.year }}</span
                 ></MarqueeText
               >
+            </v-card-subtitle>
+
+            <!-- Audiobook Collection -->
+            <v-card-subtitle
+              v-if="collectionMediaType === MediaType.AUDIOBOOK"
+              class="title d-flex"
+            >
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-account-edit"
+              />
+              <MarqueeText :sync="marqueeSync">
+                <span
+                  v-for="(author, authorindex) in collectionArtists"
+                  :key="author"
+                >
+                  <span style="color: accent">{{ author }}</span>
+                  <span
+                    v-if="authorindex + 1 < collectionArtists.length"
+                    :key="authorindex"
+                    style="color: accent"
+                    >{{ " / " }}</span
+                  >
+                </span>
+              </MarqueeText>
+            </v-card-subtitle>
+            <v-card-subtitle
+              v-if="collectionMediaType === MediaType.AUDIOBOOK"
+              class="title d-flex"
+            >
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-account-voice"
+              />
+              <MarqueeText :sync="marqueeSync">
+                <span
+                  v-for="(narrator, narratorIndex) in collectionNarrators"
+                  :key="narrator"
+                >
+                  <span style="color: accent">{{ narrator }}</span>
+                  <span
+                    v-if="narratorIndex + 1 < collectionNarrators.length"
+                    :key="narratorIndex"
+                    style="color: accent"
+                    >{{ " / " }}</span
+                  >
+                </span>
+              </MarqueeText>
             </v-card-subtitle>
           </div>
 
@@ -286,68 +356,61 @@
             <!-- play button with contextmenu -->
             <MenuButton
               id="playbutton"
-              :width="220"
-              icon="mdi-play-circle-outline"
-              :text="truncateString($t('play'), 14)"
+              :text="playButtonText"
+              :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
               :disabled="!item"
               :loading="playActionInProgress"
-              :open-menu-on-click="!store.activePlayer"
               style="margin-right: 8px; margin-bottom: 4px"
               @click="playButtonClick"
               @menu="playButtonClick(true)"
             />
 
-            <div class="flex items-center gap-2">
-              <!-- favorite (heart) icon -->
-              <IconHeartFilled
-                v-if="item.favorite"
-                :size="24"
-                class="cursor-pointer"
-                :title="$t('tooltip.favorite')"
-                @click="api.toggleFavorite(item)"
-              />
-              <IconHeart
-                v-else
-                :stroke-width="2"
-                :size="24"
-                class="cursor-pointer"
-                :title="$t('tooltip.favorite')"
-                @click="api.toggleFavorite(item)"
+            <div
+              v-if="item.media_type != MediaType.COLLECTION"
+              class="flex items-center gap-2"
+            >
+              <!-- favorite (heart) menu -->
+              <FavoriteMenu
+                :item="item"
+                variant="ghost-icon"
+                size="icon-xs"
+                icon-class="size-6"
               />
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
-              <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
+              <ItemSourceBadge :item="item" :size="25" />
               <!-- audio analysis details (full track details only) -->
               <AudioAnalysisMetadata
                 v-if="item.media_type == MediaType.TRACK"
                 :audio-metadata="(item as Track).audio_metadata"
               />
-              <!-- slot for extra action icons (e.g. smart playlist edit) -->
+              <!-- slot for extra action buttons (e.g. smart playlist edit) -->
               <slot name="append-actions"></slot>
               <!-- merge genre button (admin only) -->
-              <Merge
-                v-if="
-                  item.media_type === MediaType.GENRE &&
-                  item.provider === 'library' &&
-                  isAdmin
-                "
-                :size="22"
-                class="cursor-pointer -ml-1"
+              <Button
+                v-if="canManageGenre"
+                type="button"
+                variant="ghost-icon"
+                size="icon-xs"
+                :aria-label="$t('merge_into')"
                 :title="$t('merge_into')"
                 @click="mergeGenre"
-              />
+              >
+                <Merge class="size-5.5" />
+              </Button>
               <!-- delete genre button (admin only) -->
-              <Trash2
-                v-if="
-                  item.media_type === MediaType.GENRE &&
-                  item.provider === 'library' &&
-                  isAdmin
-                "
-                :size="22"
-                class="cursor-pointer ml-2"
+              <Button
+                v-if="canManageGenre"
+                type="button"
+                variant="ghost-icon"
+                size="icon-xs"
+                class="ml-2"
+                :aria-label="$t('delete_genre')"
                 :title="$t('delete_genre')"
                 @click="deleteGenre"
-              />
+              >
+                <Trash2 class="size-5.5" />
+              </Button>
             </div>
           </div>
           <div
@@ -362,11 +425,9 @@
             v-if="shortDescription"
             class="body-2 justify-left description-text"
             style="padding-bottom: 10px; cursor: pointer"
-            @click="showFullInfo = !showFullInfo"
+            @click="onDescriptionClick"
           >
-            <!-- eslint-disable vue/no-v-html -->
-            <div v-html="shortDescription"></div>
-            <!-- eslint-enable vue/no-v-html -->
+            <MarkdownText :text="shortDescription" />
           </v-card-subtitle>
 
           <!-- genres/tags -->
@@ -405,13 +466,11 @@
         <DialogHeader>
           <DialogTitle>{{ headerTitle }}</DialogTitle>
         </DialogHeader>
-        <!-- eslint-disable vue/no-v-html -->
-        <div
-          class="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed"
+        <MarkdownText
+          :text="rawDescription"
+          class="max-w-none text-sm leading-relaxed"
           style="max-height: 60vh; overflow-y: auto"
-          v-html="fullDescription"
-        ></div>
-        <!-- eslint-enable vue/no-v-html -->
+        />
         <DialogFooter>
           <Button @click="showFullInfo = false">{{ $t("close") }}</Button>
         </DialogFooter>
@@ -427,8 +486,11 @@
 </template>
 
 <script setup lang="ts">
-import Toolbar from "@/components/Toolbar.vue";
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
+import FavoriteMenu from "@/components/FavoriteMenu.vue";
+import ItemSourceBadge from "@/components/ItemSourceBadge.vue";
+import MarkdownText from "@/components/MarkdownText.vue";
+import Toolbar from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -442,43 +504,58 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { useUserPreferences } from "@/composables/userPreferences";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { backFromMediaDetails } from "@/helpers/navigation";
 import {
-  getImageThumbForItem,
   handleMediaItemClick,
   handlePlayBtnClick,
-  markdownToHtml,
-  parseBool,
-  truncateString,
+} from "@/helpers/media_item_actions";
+import { parseBool } from "@/helpers/parse";
+import { getPlayerName } from "@/helpers/players";
+import {
+  getAudiobookCollectionArtists,
+  getAuthorsNarratorsArray,
+  getImageThumbForItem,
 } from "@/helpers/utils";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
-import { getProviderIconDomain } from "@/plugins/api/helpers";
+import { getCollectionMediaTypeFromItemId } from "@/plugins/api/helpers";
 import type {
   Album,
   Artist,
+  Audiobook,
+  BrowseFolder,
   Genre,
   ItemMapping,
   MediaItemType,
 } from "@/plugins/api/interfaces";
-import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  MediaCollection,
+  MediaType,
+  Scope,
+  Track,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
-import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
+import { useEscapeBack } from "@/composables/useEscapeBack";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import MarqueeText from "./MarqueeText.vue";
+import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
-import ProviderIcon from "./ProviderIcon.vue";
 
 // properties
 export interface Props {
-  item?: MediaItemType;
+  // browse folders are listed, never opened in a details view
+  item?: Exclude<MediaItemType, BrowseFolder>;
+  // the order the item's tracks are listed in on its page, which play follows
   sortBy?: string;
 }
 const compProps = defineProps<Props>();
@@ -546,7 +623,7 @@ watch(shortcutsPreference, async () => {
 const showGenreChipContextMenu = (evt: Event, genre: Genre) => {
   if (
     !compProps.item ||
-    !isAdmin.value ||
+    !canManageLibrary.value ||
     compProps.item.provider !== "library"
   )
     return;
@@ -602,24 +679,7 @@ const artistClick = function (item: Artist | ItemMapping) {
 };
 
 const backButtonClick = function () {
-  // if we have stored routes, we can safely use history back
-  if (store.prevRoute) {
-    router.back();
-    return;
-  }
-  // back to main listing for itemtype
-  const curRoute = router.currentRoute.value.name?.toString() || "";
-  for (const itemType of ["artist", "album", "track", "playlist", "radio"]) {
-    if (curRoute.includes(itemType)) {
-      router.push({
-        name: `${itemType}s`,
-      });
-      return;
-    }
-  }
-  router.push({
-    name: "discover",
-  });
+  backFromMediaDetails(router);
 };
 
 // Resolve the queue playMedia targets directly, since activePlayerQueue is
@@ -636,14 +696,24 @@ const playActionInProgress = computed(() => {
   );
 });
 
+const playButtonText = computed(() => {
+  if (!store.activePlayer) return $t("play");
+  return getPlayerName(store.activePlayer, 20);
+});
+
+useEscapeBack(backButtonClick);
+
 const playButtonClick = function (forceMenu = false) {
   const playButton = document.getElementById("playbutton") as HTMLElement;
+  const rect = playButton.getBoundingClientRect();
+
   handlePlayBtnClick(
     compProps.item!,
-    playButton.getBoundingClientRect().left,
-    playButton.getBoundingClientRect().top + 36,
+    rect.right,
+    rect.bottom,
     undefined,
     forceMenu,
+    undefined,
     compProps.sortBy,
   );
 };
@@ -664,17 +734,19 @@ const rawDescription = computed(() => {
   return "";
 });
 
-const fullDescription = computed(() => {
-  return markdownToHtml(rawDescription.value);
-});
-
 const shortDescription = computed(() => {
   const maxChars = 800;
   if (rawDescription.value.length > maxChars) {
-    return fullDescription.value.substring(0, maxChars) + "…";
+    return rawDescription.value.substring(0, maxChars) + "…";
   }
-  return fullDescription.value;
+  return rawDescription.value;
 });
+
+const onDescriptionClick = (event: MouseEvent) => {
+  // a link in the description opens on its own; don't also expand the text
+  if ((event.target as HTMLElement).closest("a")) return;
+  showFullInfo.value = !showFullInfo.value;
+};
 
 const artistLogo = computed(() => {
   if (!compProps.item) return undefined;
@@ -682,7 +754,16 @@ const artistLogo = computed(() => {
   return getImageThumbForItem(compProps.item, ImageType.LOGO);
 });
 
-const isAdmin = computed(() => authManager.isAdmin());
+const canManageLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_MANAGE),
+);
+// merging and deleting a genre is limited to library genres and library managers
+const canManageGenre = computed(
+  () =>
+    compProps.item?.media_type === MediaType.GENRE &&
+    compProps.item.provider === "library" &&
+    canManageLibrary.value,
+);
 
 const mergeGenre = () => {
   if (!compProps.item) return;
@@ -700,6 +781,30 @@ const deleteGenre = () => {
     navigateBack: true,
   });
 };
+
+const collectionMediaType = computed(() => {
+  if (compProps.item?.media_type != MediaType.COLLECTION)
+    return MediaType.UNKNOWN;
+  return getCollectionMediaTypeFromItemId(compProps.item.item_id);
+});
+
+const collectionArtists = computed(() => {
+  if (collectionMediaType.value != MediaType.AUDIOBOOK) return [];
+
+  return getAudiobookCollectionArtists(
+    compProps.item as MediaCollection<Audiobook>,
+    (book) => book.authors,
+  );
+});
+
+const collectionNarrators = computed(() => {
+  if (collectionMediaType.value != MediaType.AUDIOBOOK) return [];
+
+  return getAudiobookCollectionArtists(
+    compProps.item as MediaCollection<Audiobook>,
+    (book) => book.narrators,
+  );
+});
 </script>
 
 <style scoped>
@@ -723,6 +828,7 @@ const deleteGenre = () => {
 .background-image .v-img__img--cover {
   object-position: 50% 20%;
 }
+
 .v-card--variant-elevated {
   box-shadow: none;
   border-width: 1px;

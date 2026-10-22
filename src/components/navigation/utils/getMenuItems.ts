@@ -1,11 +1,14 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { setUserPreference } from "@/composables/userPreferences";
+import { Scope } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import {
   BookAudio,
   Compass,
   Disc3,
+  Droplet,
   Folder,
   ListMusic,
   MicVocal,
@@ -15,10 +18,13 @@ import {
   Radio,
   Search,
   Settings,
+  Sparkles,
 } from "@lucide/vue";
 import { Component } from "vue";
 
 export type MenuGroup = "explore" | "library" | "plugins" | "system";
+
+export type MenuItemAction = "command-center";
 
 // Sections that can be customized (renamed / label hidden) in menu edit mode.
 export type MenuSectionId = MenuGroup | "shortcuts";
@@ -33,6 +39,7 @@ export interface MenuItem {
   // User opted out of this item via menu edit mode.
   hidden: boolean;
   disabled?: boolean;
+  action?: MenuItemAction;
 }
 
 export interface MenuSectionConfig {
@@ -67,6 +74,7 @@ interface MenuItemDefinition {
   path: string;
   isLibraryNode: boolean;
   group: MenuGroup;
+  action?: MenuItemAction;
   // Runtime availability (e.g. plugin enabled); unavailable items are never
   // rendered, not even in edit mode.
   available?: () => boolean;
@@ -87,9 +95,10 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     id: "search",
     label: "search",
     icon: Search,
-    path: "/search",
+    path: "",
     isLibraryNode: false,
     group: "explore",
+    action: "command-center",
   },
   {
     id: "browse",
@@ -181,7 +190,28 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     path: "/music-quiz",
     isLibraryNode: false,
     group: "plugins",
-    available: () => store.enabledPlugins.has("music_quiz"),
+    // the menu opens the host panel, which takes users.invite
+    available: () =>
+      store.enabledPlugins.has("music_quiz") &&
+      authManager.hasScope(Scope.USERS_INVITE),
+  },
+  {
+    id: "ai_radio",
+    label: "providers.ai_radio.title",
+    icon: Sparkles,
+    path: "/ai-radio",
+    isLibraryNode: false,
+    group: "plugins",
+    available: () => store.enabledPlugins.has("ai_radio"),
+  },
+  {
+    id: "milkdrop_visualizer",
+    label: "visualizer.title",
+    icon: Droplet,
+    path: "/visualizer",
+    isLibraryNode: false,
+    group: "plugins",
+    available: () => store.enabledPlugins.has("milkdrop_visualizer"),
   },
   {
     id: "settings",
@@ -218,6 +248,7 @@ export const getMenuItems = function (): MenuItem[] {
       group: def.group,
       hidden: hidden.has(id),
       disabled: def.disabled?.() || undefined,
+      action: def.action,
     });
   }
   return items;
@@ -231,8 +262,7 @@ export const getMenuItems = function (): MenuItem[] {
 export function resolveMenuConfig(): ResolvedMenuConfig {
   const knownIds = DEFAULT_MENU_ITEMS;
   const pref = store.currentUser?.preferences?.[MENU_PREFERENCE_KEY] as
-    | MenuConfig
-    | undefined;
+    MenuConfig | undefined;
   if (pref && typeof pref === "object") {
     const known = new Set(knownIds);
     const hidden = new Set(

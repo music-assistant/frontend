@@ -1,9 +1,13 @@
 import { api } from "@/plugins/api";
+import { providerServiceName } from "@/plugins/api/helpers";
 import {
   Genre,
+  MediaItem,
   MediaType,
   ProviderFeature,
+  ProviderMapping,
   SearchResults,
+  SortField,
 } from "@/plugins/api/interfaces";
 import { computed, onScopeDispose, ref, watch, type Ref } from "vue";
 
@@ -74,8 +78,6 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
   // older search id are discarded
   let currentSearchId = 0;
 
-  const loading = computed(() => pendingTargets.value.size > 0);
-
   // the media type selection clamped to the allowed set
   const selectedMediaTypes = computed(() =>
     options.mediaTypes.value.filter((mediaType) =>
@@ -118,7 +120,7 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
         seenStreamingDomains.add(provider.domain);
         targets.push({
           id: provider.domain,
-          name: api.providerManifests[provider.domain]?.name || provider.name,
+          name: providerServiceName(provider),
           iconDomain: provider.domain,
         });
       } else {
@@ -143,8 +145,10 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
 
   // An empty selection searches everything: the library plus all providers.
   // A non-empty selection searches exactly the selected targets, so a
-  // library-only search is possible too.
+  // library-only search is possible too. Genres live in the library only, so
+  // a genre-only search asks the library whatever the selection.
   const enabledTargetIds = computed(() => {
+    if (genreOnly.value) return [LIBRARY_SEARCH_TARGET];
     const allTargetIds = [
       LIBRARY_SEARCH_TARGET,
       ...providerTargets.value.map((target) => target.id),
@@ -154,24 +158,36 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
     return allTargetIds.filter((id) => selected.includes(id));
   });
 
-  // Merge the per-target results in a stable order (library first, then
-  // providers) and float exact name matches to the top, approximating the
-  // ranking of the server's combined search.
+  // a target deselected while its request is still out no longer counts
+  const loading = computed(() =>
+    enabledTargetIds.value.some((id) => pendingTargets.value.has(id)),
+  );
+
+  // Merge like the server's combined search: library first, then the providers
+  // round-robin without the items already in the library results, with exact
+  // name matches floated to the top.
   const searchResult = computed<SearchResults | undefined>(() => {
     if (!activeSearchTerm.value) return undefined;
     const query = activeSearchTerm.value.toLowerCase().trim();
-    const ordered = enabledTargetIds.value
+    const library = enabledTargetIds.value.includes(LIBRARY_SEARCH_TARGET)
+      ? providerResults.value[LIBRARY_SEARCH_TARGET]
+      : undefined;
+    const providers = enabledTargetIds.value
+      .filter((targetId) => targetId !== LIBRARY_SEARCH_TARGET)
       .map((targetId) => providerResults.value[targetId])
       .filter((result) => !!result);
+    const collect = <T extends MediaItem>(
+      pick: (result: SearchResults) => T[],
+    ) => collectField(library, providers, pick, query);
     const merged: SearchResults = {
-      artists: collectField(ordered, (r) => r.artists, query),
-      albums: collectField(ordered, (r) => r.albums, query),
-      tracks: collectField(ordered, (r) => r.tracks, query),
-      playlists: collectField(ordered, (r) => r.playlists, query),
-      radio: collectField(ordered, (r) => r.radio, query),
-      podcasts: collectField(ordered, (r) => r.podcasts, query),
-      audiobooks: collectField(ordered, (r) => r.audiobooks, query),
-      genres: collectField(ordered, (r) => r.genres, query),
+      artists: collect((r) => r.artists),
+      albums: collect((r) => r.albums),
+      tracks: collect((r) => r.tracks),
+      playlists: collect((r) => r.playlists),
+      radio: collect((r) => r.radio),
+      podcasts: collect((r) => r.podcasts),
+      audiobooks: collect((r) => r.audiobooks),
+      genres: collect((r) => r.genres),
     };
     if (!merged.genres.length) merged.genres = [...libraryGenresFallback.value];
     return merged;
@@ -198,7 +214,7 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
           search: trimmedTerm,
           limit: limits.single,
           offset: 0,
-          order_by: "name",
+          sort_field: SortField.NAME,
         });
         if (searchId !== currentSearchId) return;
         providerResults.value[LIBRARY_SEARCH_TARGET] = {
@@ -215,14 +231,17 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
     }
 
     const mediaTypes = effectiveMediaTypes.value;
-    if (!mediaTypes || mediaTypes.includes(MediaType.GENRE)) {
+    if (
+      (!mediaTypes || mediaTypes.includes(MediaType.GENRE)) &&
+      enabledTargetIds.value.includes(LIBRARY_SEARCH_TARGET)
+    ) {
       // supplement the results with (library) genre results
       api
         .getLibraryGenres({
           search: trimmedTerm,
           limit: limits.multi,
           offset: 0,
-          order_by: "name",
+          sort_field: SortField.NAME,
         })
         .then((genres) => {
           if (searchId === currentSearchId)
@@ -344,14 +363,14 @@ const emptyResults = (): SearchResults => ({
 });
 
 const isEmptyResult = (result: SearchResults): boolean =>
-  !result.artists?.length &&
-  !result.albums?.length &&
-  !result.tracks?.length &&
-  !result.playlists?.length &&
-  !result.radio?.length &&
-  !result.podcasts?.length &&
-  !result.audiobooks?.length &&
-  !result.genres?.length;
+  !result.artists.length &&
+  !result.albums.length &&
+  !result.tracks.length &&
+  !result.playlists.length &&
+  !result.radio.length &&
+  !result.podcasts.length &&
+  !result.audiobooks.length &&
+  !result.genres.length;
 
 // Keeps the relative order but floats items whose name matches the query
 // exactly, so a late provider with the exact hit still lands on top.
@@ -368,12 +387,38 @@ const floatExactMatches = function <T extends { name?: string }>(
   return exact.length ? exact.concat(rest) : items;
 };
 
-const collectField = function <T extends { name?: string }>(
-  results: SearchResults[],
-  pick: (result: SearchResults) => T[] | undefined,
+// Round-robin merge of the per-provider lists, like the server's zip_longest.
+const interleave = function <T>(lists: T[][]): T[] {
+  const items: T[] = [];
+  const longest = Math.max(0, ...lists.map((list) => list.length));
+  for (let index = 0; index < longest; index++) {
+    for (const list of lists) {
+      if (index < list.length) items.push(list[index]);
+    }
+  }
+  return items;
+};
+
+const mappingKey = (mapping: ProviderMapping) =>
+  `${mapping.provider_domain}:${mapping.item_id}`;
+
+const collectField = function <T extends MediaItem>(
+  library: SearchResults | undefined,
+  providers: SearchResults[],
+  pick: (result: SearchResults) => T[],
   query: string,
 ): T[] {
-  const items: T[] = [];
-  for (const result of results) items.push(...(pick(result) || []));
-  return floatExactMatches(items, query);
+  const libraryItems = library ? pick(library) : [];
+  // the library and each provider are searched separately, so a provider item
+  // that maps to a library item would otherwise be listed twice
+  const libraryMappings = new Set(
+    libraryItems.flatMap((item) => item.provider_mappings.map(mappingKey)),
+  );
+  const providerItems = interleave(providers.map(pick)).filter(
+    (item) =>
+      !item.provider_mappings.some((mapping) =>
+        libraryMappings.has(mappingKey(mapping)),
+      ),
+  );
+  return floatExactMatches([...libraryItems, ...providerItems], query);
 };

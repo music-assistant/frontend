@@ -2,7 +2,7 @@
   <div class="lyrics-container">
     <div v-if="loading || externalLoading" class="lyrics-loading">
       <Spinner class="size-6" />
-      <div>{{ $t("loading_lyrics") }}</div>
+      <div>{{ $t("lyrics_loading") }}</div>
     </div>
     <div v-else-if="!displayLines.length" class="lyrics-empty">
       {{ $t("no_lyrics_available") }}
@@ -25,7 +25,7 @@
         </div>
       </Transition>
       <div
-        class="synced-content"
+        :class="['synced-content', { 'read-as-prose': isTranscript }]"
         :style="{
           transform: `translateY(${contentTranslateY}px)`,
           transition: contentTransitionEnabled ? undefined : 'none',
@@ -87,7 +87,7 @@
       v-else-if="!props.anticipation"
       class="h-full w-full static-lyrics"
     >
-      <div class="lyrics-content">
+      <div :class="['lyrics-content', { 'read-as-prose': isTranscript }]">
         <div
           v-for="(line, index) in displayLines"
           :key="index"
@@ -104,7 +104,12 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { parseLrcLine } from "@/helpers/lrcParser";
-import { MediaItemType, StreamDetails, Track } from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  PlayableMediaItemType,
+  StreamDetails,
+  Track,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import Color from "color";
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
@@ -117,9 +122,9 @@ interface DisplayLine {
 }
 
 interface Props {
-  mediaItem?: MediaItemType;
+  mediaItem?: PlayableMediaItemType | null;
   position?: number;
-  streamDetails?: StreamDetails;
+  streamDetails?: StreamDetails | null;
   textColor?: string;
   lyrics?: string | null;
   lrcLyrics?: string | null;
@@ -127,6 +132,7 @@ interface Props {
   externalLoading?: boolean;
   highlightAhead?: boolean;
   offset?: number;
+  syncDisabled?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -140,7 +146,17 @@ const props = withDefaults(defineProps<Props>(), {
   externalLoading: false,
   highlightAhead: true,
   offset: 0,
+  syncDisabled: false,
 });
+
+// A podcast transcript is prose to read rather than lyrics to sing along to, so
+// it is left aligned and spaced for full sentences.
+const isTranscript = computed(
+  () =>
+    !!props.mediaItem &&
+    "media_type" in props.mediaItem &&
+    props.mediaItem.media_type === MediaType.PODCAST_EPISODE,
+);
 
 // Older Cast and Android TV runtimes have no color-mix(), and an unsupported
 // stop invalidates the whole gradient, which would blank the note entirely.
@@ -178,6 +194,8 @@ const setLineRef = (el: HTMLElement | null, index: number) => {
 };
 
 const beforeFirstLyric = computed(() => {
+  // The intro card announces a song about to start, which a transcript is not.
+  if (isTranscript.value) return false;
   if (!hasTimestamps.value || !displayLines.value.length) {
     return false;
   }
@@ -194,7 +212,7 @@ const artistName = computed(() => {
     props.mediaItem.media_type === "track"
   ) {
     const track = props.mediaItem as Track;
-    if (track.artists?.length) {
+    if (track.artists.length) {
       return track.artists.map((a) => a.name).join(", ");
     }
   }
@@ -280,8 +298,9 @@ const fetchLyrics = () => {
       const lines: DisplayLine[] = [];
 
       // Intro break: if the first lyric starts late enough, add a
-      // countdown break so the singer knows lyrics are coming.
-      if (contentLines.length > 0) {
+      // countdown break so the singer knows lyrics are coming. A transcript is
+      // read rather than sung, so it gets no musical notes.
+      if (contentLines.length > 0 && !isTranscript.value) {
         const firstTime = contentLines[0].time;
         if (firstTime >= INTRO_BREAK_LEAD) {
           lines.push({
@@ -434,7 +453,8 @@ watch(effectivePosition, (newPosition: number | undefined) => {
   if (
     newPosition === undefined ||
     !displayLines.value.length ||
-    !hasTimestamps.value
+    !hasTimestamps.value ||
+    props.syncDisabled
   ) {
     return;
   }
@@ -573,6 +593,20 @@ onBeforeUnmount(() => {
 .lyrics-line.active {
   opacity: 1;
   color: v-bind(textColor);
+}
+
+/* Transcript text: prose alignment and spacing instead of sing-along styling */
+.read-as-prose {
+  text-align: left;
+  padding-left: 4%;
+  padding-right: 4%;
+}
+
+.read-as-prose .lyrics-line {
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 4px;
+  margin: 2px 0;
 }
 
 .break-note {

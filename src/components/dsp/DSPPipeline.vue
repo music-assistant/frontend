@@ -1,89 +1,91 @@
 <template>
-  <v-timeline density="compact" side="end">
+  <div class="dsp-chain">
     <!-- Input -->
-    <v-timeline-item
-      :dot-color="isDotActive('input')"
-      size="x-small"
-      @click="handleSelect('input')"
-    >
-      <v-btn
-        flat
-        rounded="pill"
-        :color="getButtonColor('input')"
-        :class="getButtonClass('input')"
-        class="dsp-pipeline-card"
+    <div class="dsp-chain-stage dsp-chain-stage--start">
+      <span class="dsp-chain-connector" aria-hidden="true">
+        <span class="dsp-chain-tick"></span>
+        <span class="dsp-chain-dot" :class="dotClass('input')"></span>
+      </span>
+      <button
+        type="button"
+        class="dsp-chain-item"
+        :class="{ 'dsp-chain-item--selected': selected === 'input' }"
+        :aria-current="selected === 'input' ? 'true' : undefined"
+        @click="handleSelect('input')"
       >
-        <v-card-text class="px-3 py-1">{{
-          $t("settings.dsp.input")
-        }}</v-card-text>
-      </v-btn>
-    </v-timeline-item>
-
-    <v-timeline-item :hide-dot="true" size="x-small" />
+        <AudioLines :size="18" class="dsp-chain-icon" />
+        <span class="dsp-chain-title">{{ $t("settings.dsp.input") }}</span>
+      </button>
+    </div>
 
     <!-- DSP Filters -->
-    <v-timeline-item
+    <div
       v-for="(filter, index) in dsp.filters"
       :key="index"
       v-hold="(e: Event) => onHold(e, index)"
-      :dot-color="isDotActive(index)"
-      size="x-small"
-      :hide-dot="isDisabled(index)"
-      @click="handleSelect(index)"
+      class="dsp-chain-stage"
       @click.capture="swallowClickAfterHold"
       @contextmenu.prevent="(e: MouseEvent) => openFilterContextMenu(e, index)"
       @touchstart.passive="onTouchStart"
     >
-      <v-btn
-        flat
-        rounded="pill"
-        :color="getButtonColor(index)"
-        :class="getButtonClass(index)"
-        class="dsp-pipeline-card"
+      <!-- A deactivated filter leaves the chain: the rail runs past it with no
+           dot and no tick. -->
+      <span class="dsp-chain-connector" aria-hidden="true">
+        <template v-if="!isDisabled(index)">
+          <span class="dsp-chain-tick"></span>
+          <span class="dsp-chain-dot" :class="dotClass(index)"></span>
+        </template>
+      </span>
+      <button
+        type="button"
+        class="dsp-chain-item"
+        :class="{
+          'dsp-chain-item--selected': selected === index,
+          'dsp-chain-item--off': isDisabled(index),
+        }"
+        :aria-current="selected === index ? 'true' : undefined"
+        @click="handleSelect(index)"
       >
-        <v-card-text class="px-3 py-1">{{
-          $t(`settings.dsp.types.${filter.type}`)
-        }}</v-card-text>
-      </v-btn>
-    </v-timeline-item>
+        <component
+          :is="dspFilterIcon(filter)"
+          :size="18"
+          class="dsp-chain-icon"
+        />
+        <span class="dsp-chain-title">{{ dspFilterTypeLabel(filter) }}</span>
+      </button>
+    </div>
 
-    <!-- Add Filter Button -->
-    <v-timeline-item dot-color="secondary" size="x-small" :hide-dot="true">
-      <v-btn
-        outlined
-        rounded="pill"
-        class="dsp-pipeline-card add-filter-btn"
-        :elevation="0"
+    <!-- Add Filter -->
+    <div class="dsp-chain-stage">
+      <span class="dsp-chain-connector" aria-hidden="true"></span>
+      <button
+        type="button"
+        class="dsp-chain-item dsp-chain-item--add"
         @click="emit('onAddFilter')"
       >
-        <v-card-text class="py-1 d-flex align-center">
-          <v-icon size="small" class="mr-1">mdi-plus</v-icon>
-          {{ $t("settings.dsp.filter.add") }}
-        </v-card-text>
-      </v-btn>
-    </v-timeline-item>
-
-    <v-timeline-item :hide-dot="true" size="x-small" />
+        <Plus :size="18" class="dsp-chain-icon" />
+        <span class="dsp-chain-title">{{ $t("settings.dsp.filter.add") }}</span>
+      </button>
+    </div>
 
     <!-- Output -->
-    <v-timeline-item
-      :dot-color="isDotActive('output')"
-      size="x-small"
-      @click="handleSelect('output')"
-    >
-      <v-btn
-        flat
-        rounded="pill"
-        :color="getButtonColor('output')"
-        :class="getButtonClass('output')"
-        class="dsp-pipeline-card"
+    <div class="dsp-chain-stage dsp-chain-stage--end">
+      <span class="dsp-chain-connector" aria-hidden="true">
+        <span class="dsp-chain-tick"></span>
+        <span class="dsp-chain-dot" :class="dotClass('output')"></span>
+      </span>
+      <button
+        type="button"
+        class="dsp-chain-item"
+        :class="{ 'dsp-chain-item--selected': selected === 'output' }"
+        :aria-current="selected === 'output' ? 'true' : undefined"
+        @click="handleSelect('output')"
       >
-        <v-card-text class="px-3 py-1">{{
-          $t("settings.dsp.output")
-        }}</v-card-text>
-      </v-btn>
-    </v-timeline-item>
-  </v-timeline>
+        <Speaker :size="18" class="dsp-chain-icon" />
+        <span class="dsp-chain-title">{{ $t("settings.dsp.output") }}</span>
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -92,10 +94,9 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { DSPConfig } from "@/plugins/api/interfaces";
+import { dspFilterIcon, dspFilterTypeLabel } from "@/helpers/audioProcessing";
 import { eventbus } from "@/plugins/eventbus";
-import { useTheme } from "vuetify";
-
-const theme = useTheme();
+import { AudioLines, Plus, Speaker } from "@lucide/vue";
 
 type SelectionType = number | "input" | "output";
 
@@ -111,8 +112,8 @@ const emit = defineEmits<{
   (e: "onDeleteFilter", index: number): void;
 }>();
 
-const isDotActive = (value: SelectionType): string =>
-  props.selected === value ? "primary" : "secondary";
+const dotClass = (value: SelectionType) =>
+  props.selected === value ? "dsp-chain-dot--active" : "";
 
 const isDisabled = (value: SelectionType): boolean => {
   if (value === "input" || value === "output") {
@@ -121,17 +122,6 @@ const isDisabled = (value: SelectionType): boolean => {
     return !props.dsp.filters[value].enabled;
   }
 };
-
-const getButtonColor = (value: SelectionType): string => {
-  if (props.selected === value) {
-    return "primary";
-  }
-  return theme.global.current.value.dark ? "grey-darken-3" : "grey-lighten-3";
-};
-
-const getButtonClass = (value: SelectionType) => ({
-  "filter-selected": props.selected === value,
-});
 
 const handleSelect = (value: SelectionType): void => {
   emit("onSelect", value);
@@ -188,28 +178,130 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(
 </script>
 
 <style scoped>
-.dsp-pipeline-card {
-  min-width: 160px;
-  transition: transform 0.2s ease;
+.dsp-chain {
+  min-width: 220px;
 }
 
-.dsp-pipeline-card:hover,
-.filter-selected {
-  transform: translateX(4px);
+.dsp-chain-stage {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  column-gap: 6px;
+  align-items: stretch;
 }
 
-.add-filter-btn {
-  background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.5);
-  cursor: pointer;
+.dsp-chain-connector {
+  position: relative;
+  grid-column: 1;
+  width: 18px;
+  margin-left: 8px;
 }
 
-.v-theme--dark .add-filter-btn {
-  border-color: rgba(255, 255, 255, 0.5);
+/* Split into halves so the node lands on the row's centre whatever its height. */
+.dsp-chain-connector::before,
+.dsp-chain-connector::after {
+  position: absolute;
+  left: 0;
+  border-left: 2px solid var(--border);
+  content: "";
 }
 
-.add-filter-btn:hover {
-  border-color: rgb(var(--v-theme-primary));
-  transform: none;
+.dsp-chain-connector::before {
+  top: 0;
+  height: 50%;
+}
+
+.dsp-chain-connector::after {
+  top: 50%;
+  bottom: 0;
+}
+
+.dsp-chain-stage--start .dsp-chain-connector::before,
+.dsp-chain-stage--end .dsp-chain-connector::after {
+  display: none;
+}
+
+.dsp-chain-tick {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 18px;
+  border-top: 2px solid var(--border);
+}
+
+.dsp-chain-dot {
+  position: absolute;
+  top: 50%;
+  left: -2.5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  opacity: 0.7;
+  transform: translateY(-50%);
+}
+
+.dsp-chain-dot--active {
+  background: var(--primary);
+  opacity: 1;
+}
+
+.dsp-chain-item {
+  grid-column: 2;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  /* Spacing lives on the item, not the row, so the rail stays unbroken. */
+  margin-block: 3px;
+  padding: 6px 8px;
+  border-radius: var(--radius-md);
+  font-size: 1.125rem;
+  line-height: 1.3;
+  text-align: left;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.dsp-chain-item:hover {
+  background: var(--accent);
+}
+
+.dsp-chain-item:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+.dsp-chain-item--selected {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: 500;
+}
+
+.dsp-chain-item--selected .dsp-chain-icon {
+  color: var(--primary);
+}
+
+.dsp-chain-item--off {
+  opacity: 0.55;
+}
+
+.dsp-chain-item--add {
+  color: var(--muted-foreground);
+}
+
+.dsp-chain-item--add:hover {
+  color: var(--foreground);
+}
+
+.dsp-chain-icon {
+  flex: 0 0 auto;
+  color: var(--muted-foreground);
+}
+
+.dsp-chain-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 </style>

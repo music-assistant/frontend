@@ -104,7 +104,7 @@ import type {
   MusicQuizTimelineHostState,
   MusicQuizTimelineRound,
   MusicQuizTimelineBonusMode,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import {
   getMusicQuizSourceSummary,
   musicQuizSourceTypeLabel,

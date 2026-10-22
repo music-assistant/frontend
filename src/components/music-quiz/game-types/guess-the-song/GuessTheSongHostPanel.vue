@@ -71,7 +71,7 @@ import { Card } from "@/components/ui/card";
 import type {
   MusicQuizGuessTheSongHostState,
   MusicQuizGuessTheSongRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import {
   getMusicQuizSourceSummary,
   musicQuizSourceTypeLabel,

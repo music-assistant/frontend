@@ -5,19 +5,32 @@
 -->
 <template>
   <Sheet v-model:open="show">
-    <SheetContent side="bottom" class="h-[85vh] flex flex-col p-0">
-      <SheetHeader class="flex-row items-center gap-3 border-b px-4 py-3">
+    <SheetContent
+      side="bottom"
+      class="h-[85vh] flex flex-col p-0"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
+    >
+      <!-- right padding keeps the search box clear of the sheet's close button -->
+      <SheetHeader class="flex-row items-center gap-3 border-b py-3 pl-4 pr-12">
         <ListPlus class="size-5 shrink-0 opacity-80" />
-        <SheetTitle>{{ $t("add_playlist") }}</SheetTitle>
+        <SheetTitle class="truncate">{{ $t("add_playlist") }}</SheetTitle>
+        <SearchInput
+          v-model="search"
+          clearable
+          autocomplete="off"
+          class="ml-auto w-40 shrink-0 sm:w-64"
+          :placeholder="$t('search')"
+          :aria-label="$t('search')"
+        />
       </SheetHeader>
       <SheetDescription class="sr-only">
         {{ $t("add_playlist") }}
       </SheetDescription>
 
       <ScrollArea class="h-full max-h-full overflow-hidden flex-1">
-        <div class="pt-2 pb-8">
+        <div class="playlist-list pt-2">
           <button
-            v-for="playlist of playlists"
+            v-for="playlist of filteredPlaylists"
             :key="playlist.item_id"
             type="button"
             class="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent"
@@ -41,6 +54,12 @@
               class="shrink-0"
             />
           </button>
+          <p
+            v-if="search.trim() && !filteredPlaylists.length"
+            class="px-4 py-2.5 text-sm text-muted-foreground"
+          >
+            {{ $t("no_content_filter") }}
+          </p>
 
           <div class="py-4">
             <Separator />
@@ -76,12 +95,60 @@
       </ScrollArea>
     </SheetContent>
   </Sheet>
+
+  <Dialog v-model:open="showNameDialog">
+    <!-- the sheet above sits at z-100000, so the name dialog has to clear it -->
+    <DialogContent class="sm:max-w-[420px] z-[100001]">
+      <DialogHeader>
+        <DialogTitle>{{ $t("new_playlist") }}</DialogTitle>
+      </DialogHeader>
+      <form
+        id="new-playlist-name-form"
+        class="py-2"
+        @submit.prevent="confirmNewPlaylist"
+      >
+        <label for="new-playlist-name" class="mb-2 block text-sm font-medium">{{
+          $t("new_playlist_name")
+        }}</label>
+        <Input
+          id="new-playlist-name"
+          v-model="newPlaylistName"
+          autocomplete="off"
+          autofocus
+        />
+      </form>
+      <DialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          @click="showNameDialog = false"
+          >{{ $t("cancel") }}</Button
+        >
+        <Button
+          type="submit"
+          form="new-playlist-name-form"
+          :disabled="!newPlaylistName.trim()"
+          >{{ $t("create") }}</Button
+        >
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SearchInput } from "@/components/ui/search-input";
 import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
@@ -90,24 +157,42 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
+import { canEditPlaylistItems } from "@/helpers/playlist_access";
 import api from "@/plugins/api";
 import type {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   Playlist,
+  ProviderInstance,
 } from "@/plugins/api/interfaces";
-import { MediaType, ProviderFeature } from "@/plugins/api/interfaces";
+import { MediaType, ProviderFeature, Scope } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus, PlaylistDialogEvent } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ListPlus } from "@lucide/vue";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const show = ref<boolean>(false);
 const playlists = ref<Playlist[]>([]);
 const createPlaylistProviders = ref<string[]>([]);
 const parentItem = ref<MediaItemType>();
 const selectedItems = ref<MediaItemTypeOrItemMapping[]>([]);
+const showNameDialog = ref(false);
+const newPlaylistName = ref("");
+const newPlaylistProvider = ref<ProviderInstance>();
+const search = ref("");
+
+const filteredPlaylists = computed(() => {
+  const query = search.value.trim().toLowerCase();
+  if (!query) return playlists.value;
+  return playlists.value.filter((playlist) =>
+    [playlist.name, playlist.owner].some((text) =>
+      text.toLowerCase().includes(query),
+    ),
+  );
+});
 
 watch(show, (open) => {
   store.dialogActive = open;
@@ -116,6 +201,7 @@ watch(show, (open) => {
 onMounted(() => {
   eventbus.on("playlistdialog", async (evt: PlaylistDialogEvent) => {
     show.value = true;
+    search.value = "";
     selectedItems.value = evt.items;
     parentItem.value = evt.parentItem;
     await fetchPlaylists();
@@ -134,23 +220,35 @@ const fetchPlaylists = async function () {
     undefined,
     undefined,
   );
-  let refItem = selectedItems.value.length ? selectedItems.value[0] : undefined;
+  const selected = selectedItems.value.length
+    ? selectedItems.value[0]
+    : undefined;
 
-  if (!refItem) return;
-  if (!("provider_mappings" in refItem)) {
-    // resolve itemmapping
-    refItem = await api.getItem(
-      refItem.media_type,
-      refItem.item_id,
-      refItem.provider,
-    );
-  }
+  if (!selected) return;
+  // an itemmapping carries no provider mappings, resolve it to the full item
+  const refItem =
+    "provider_mappings" in selected
+      ? selected
+      : await api.getItem(
+          selected.media_type,
+          selected.item_id,
+          selected.provider,
+        );
+  // a browse folder has no provider mappings and can not be added to a playlist
+  if (!("provider_mappings" in refItem)) return;
 
   for (const playlist of playlistResults) {
     // skip unavailable playlists
     if (!playlist.provider_mappings.filter((x) => x.available).length) continue;
-    // skip non-editable playlists
-    if (!playlist.is_editable) continue;
+    // skip playlists the user may not add to
+    if (
+      !canEditPlaylistItems(
+        playlist,
+        store.currentUser,
+        authManager.hasScope(Scope.LIBRARY_MANAGE),
+      )
+    )
+      continue;
     // skip playlist that is currently opened (=parentItem)
     if (
       parentItem.value &&
@@ -242,16 +340,33 @@ const addToPlaylist = async function (value: MediaItemType) {
   );
   close();
 };
-const newPlaylist = async function (provId: string) {
+const newPlaylist = function (provId: string) {
   const refItem = selectedItems.value.length
     ? selectedItems.value[0]
     : undefined;
   if (!refItem) return;
   const provider = api.getProvider(provId);
   if (!provider) return;
-  const name = prompt($t("new_playlist_name"));
-  if (!name) return;
+  newPlaylistProvider.value = provider;
+  newPlaylistName.value = "";
+  showNameDialog.value = true;
+};
 
+const confirmNewPlaylist = async function () {
+  const name = newPlaylistName.value.trim();
+  const provider = newPlaylistProvider.value;
+  if (!name || !provider) return;
+  showNameDialog.value = false;
+  await createNamedPlaylist(name, provider);
+};
+
+const close = function () {
+  show.value = false;
+};
+
+/** Creates the playlist on the provider and adds the selected item(s) to it. */
+async function createNamedPlaylist(name: string, provider: ProviderInstance) {
+  const refItem = selectedItems.value[0];
   let supportedMediaTypes: MediaType[] = [];
   if (
     provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE_MIXED)
@@ -287,15 +402,17 @@ const newPlaylist = async function (provId: string) {
     // otherwise the playlist must support the mediatype of the selected item
     supportedMediaTypes = [refItem.media_type];
   }
-  const newPlaylist = await api.createPlaylist(
+  const playlist = await api.createPlaylist(
     name,
-    provId,
+    provider.instance_id,
     supportedMediaTypes,
   );
-  addToPlaylist(newPlaylist);
-};
-
-const close = function () {
-  show.value = false;
-};
+  addToPlaylist(playlist);
+}
 </script>
+
+<style scoped>
+.playlist-list {
+  padding-bottom: calc(2rem + var(--device-inset-bottom));
+}
+</style>

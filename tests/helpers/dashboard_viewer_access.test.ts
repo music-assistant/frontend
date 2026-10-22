@@ -5,14 +5,14 @@ import {
 import { describe, expect, it } from "vitest";
 
 describe("dashboard viewer dashboard path", () => {
-  it.each(["/party", "/music-quiz", "/now-playing"])(
+  it.each(["/party", "/music-quiz/dashboard", "/now-playing"])(
     "keeps a known dashboard route %s",
     (path) => {
       expect(sanitizeDashboardViewerPath(path)).toBe(path);
     },
   );
 
-  it.each([null, "", "/discover", "/settings"])(
+  it.each([null, "", "/discover", "/settings", "/music-quiz"])(
     "falls back to /party for %s",
     (path) => {
       expect(sanitizeDashboardViewerPath(path)).toBe("/party");

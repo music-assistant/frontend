@@ -22,7 +22,8 @@ import type {
   MusicQuizTriviaPersonalizedState,
   MusicQuizTriviaRound,
   MusicQuizType,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { shallowMount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -50,9 +51,9 @@ vi.mock("@/helpers/utils", () => ({
 
 vi.mock("@/plugins/api", () => ({
   default: {
-    getItemByUri: vi.fn(),
-    getTrackLyrics: vi.fn(),
-    search: vi.fn(),
+    getItemByUri: vi.fn<MusicAssistantApi["getItemByUri"]>(),
+    getTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
+    search: vi.fn<MusicAssistantApi["search"]>(),
   },
 }));
 
@@ -73,6 +74,8 @@ const playerState = {
   answer_type: "multiple_choice",
   phase: "answering",
   name: "Quiz",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   suggestion_count: 2,
   answer_duration: 30,
@@ -92,6 +95,8 @@ const hostState = {
   answer_type: "multiple_choice",
   phase: "answering",
   name: "Quiz",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   suggestion_count: 2,
   answer_duration: 30,
@@ -102,6 +107,7 @@ const hostState = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [currentRound],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizGuessTheSongHostState;
 
 const musicTimelineRound = {
@@ -129,6 +135,8 @@ const musicTimelinePlayerState = {
   answer_type: "timeline",
   phase: "answering",
   name: "Music Timeline",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   answer_duration: 30,
   artist_bonus_mode: "off",
@@ -149,6 +157,8 @@ const musicTimelineHostState = {
   answer_type: "timeline",
   phase: "answering",
   name: "Music Timeline",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   answer_duration: 30,
   artist_bonus_mode: "off",
@@ -160,6 +170,7 @@ const musicTimelineHostState = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizTimelineHostState;
 
 const triviaRound = {
@@ -181,6 +192,8 @@ const triviaPlayerState = {
   play_reveal_audio: true,
   phase: "answering",
   name: "Trivia",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   suggestion_count: 2,
   answer_duration: 30,
@@ -201,6 +214,7 @@ const triviaHostState = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizTriviaHostState;
 
 interface GameMountFixture {
@@ -305,11 +319,6 @@ describe("Music Quiz registries", () => {
         play_reveal_audio: false,
       }),
     ).toBe(false);
-    const legacyTriviaState = {
-      ...triviaPlayerState,
-      play_reveal_audio: undefined,
-    };
-    expect(supportsMusicQuizListenIn(trivia, legacyTriviaState)).toBe(false);
     expect(supportsMusicQuizListenIn(trivia)).toBe(false);
     expect(
       supportsMusicQuizListenIn(
@@ -342,6 +351,18 @@ describe("Music Quiz registries", () => {
     );
     expect(trivia && isMusicQuizGameAvailable(trivia, [])).toBe(false);
     expect(trivia && isMusicQuizGameAvailable(trivia, ["trivia"])).toBe(true);
+  });
+
+  it("declares an answering prompt only where the game renders none itself", () => {
+    const prompts = Object.fromEntries(
+      MUSIC_QUIZ_GAME_TYPES.map((game) => [game.id, game.answeringPromptKey]),
+    );
+
+    expect(prompts).toEqual({
+      guess_the_song: "providers.music_quiz.name_that_track",
+      music_timeline: undefined,
+      trivia: undefined,
+    });
   });
 
   it.each(MUSIC_QUIZ_GAME_TYPES)("mounts every $id game adapter", (game) => {

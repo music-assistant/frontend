@@ -8,10 +8,12 @@
           size="sm"
           class="px-2"
           data-testid="guest-host-controls"
+          :aria-busy="busy"
           :aria-label="$t('providers.music_quiz.host_controls')"
           :title="$t('providers.music_quiz.host_controls')"
         >
-          <SlidersHorizontal class="size-4" aria-hidden="true" />
+          <Spinner v-if="busy" class="size-4" />
+          <SlidersHorizontal v-else class="size-4" aria-hidden="true" />
           <span class="hidden sm:inline">
             {{ $t("providers.music_quiz.host_controls") }}
           </span>
@@ -102,11 +104,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Spinner } from "@/components/ui/spinner";
 import {
   isSupportedMusicQuiz,
   type MusicQuizSupportedHostState,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizHost } from "@/composables/useMusicQuizHost";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizHost } from "@/composables/music-quiz/useMusicQuizHost";
 import { $t } from "@/plugins/i18n";
 import {
   ArrowLeft,

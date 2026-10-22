@@ -4,12 +4,16 @@
       <Button
         :variant="variant"
         :size="buttonSize"
+        :data-active="activeSession ? true : undefined"
         :class="activeSession ? activePillClass : ''"
         :aria-label="$t('tooltip.show_dashboard')"
         :title="$t('tooltip.show_dashboard')"
         @click="loadDashboards"
       >
-        <TvMinimal :size="iconSize" />
+        <TvMinimal
+          class="size-(--icon-size)"
+          :style="{ '--icon-size': `${iconSize}px` }"
+        />
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" :class="contentClass">
@@ -28,7 +32,7 @@
         {{ $t("dashboard.no_devices") }}
       </div>
       <DropdownMenuItem
-        v-for="device in dashboards"
+        v-for="device in sortedDashboards"
         :key="device.dashboard_id"
         data-testid="cast-dashboard-device"
         @click="selectDevice(device)"
@@ -53,6 +57,14 @@
           <span>{{ $t("dashboard.disconnect", [activeSession.name]) }}</span>
         </DropdownMenuItem>
       </template>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        data-testid="cast-dashboard-get-url"
+        @click="copyDashboardUrlToClipboard"
+      >
+        <v-icon icon="mdi-link" size="16" />
+        <span>{{ $t("dashboard.get_url") }}</span>
+      </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
@@ -68,6 +80,7 @@ import {
 import { Button, type ButtonVariants } from "@/components/ui/button";
 import DashboardDeviceIcon from "@/components/DashboardDeviceIcon.vue";
 import api from "@/plugins/api";
+import { ApiCommandError } from "@/plugins/api/errors";
 import { waitForApiInitialization } from "@/plugins/api/helpers";
 import {
   type DashboardDevice,
@@ -75,12 +88,14 @@ import {
   type DashboardType,
   type EventMessage,
   EventType,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { Check, TvMinimal, Unplug } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { toast } from "vue-sonner";
+import { copyToClipboard } from "@/helpers/utils";
 
 const props = withDefaults(
   defineProps<{
@@ -93,6 +108,7 @@ const props = withDefaults(
     contentClass?: string;
   }>(),
   {
+    playerId: undefined,
     variant: "ghost-icon",
     buttonSize: "icon-sm",
     iconSize: 13,
@@ -101,18 +117,48 @@ const props = withDefaults(
 );
 
 const open = ref(false);
+const apiReady = ref(false);
 const loading = ref(false);
 const dashboards = ref<DashboardDevice[]>([]);
 const sessions = ref<DashboardSession[]>([]);
 
-// A dashboard viewer can't cast a dashboard itself; only show once one is registered.
-const showButton = computed(
-  () => !authManager.isDashboardViewer?.() && dashboards.value.length > 0,
+// casting a dashboard lets a device join, which is what users.invite grants
+const canShowDashboards = computed(() =>
+  authManager.hasScope(Scope.USERS_INVITE),
 );
 
-// Solid primary pill for the active state, matching the fullscreen player header's autoplay/crossfade toggles.
-const activePillClass =
-  "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90";
+// Same requirement the server applies in dashboard/get_url.
+const canGetUrl = computed(() => {
+  const info = api.serverInfo.value;
+  return (
+    !!info &&
+    (info.has_remote_access ||
+      [info.base_url, info.external_url].some((url) =>
+        url?.startsWith("https://"),
+      ))
+  );
+});
+
+// A dashboard viewer can't cast a dashboard itself.
+const showButton = computed(
+  () =>
+    apiReady.value &&
+    canShowDashboards.value &&
+    !authManager.isDashboardViewer?.() &&
+    (dashboards.value.length > 0 || canGetUrl.value),
+);
+
+// The overlay variant styles its own active state; elsewhere an active session
+// shows as a solid primary pill.
+const activePillClass = computed(() =>
+  props.variant === "overlay"
+    ? ""
+    : "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90",
+);
+
+const sortedDashboards = computed(() =>
+  [...dashboards.value].sort(compareDashboards),
+);
 
 // Session (if any) showing this dashboard; now_playing also requires a matching player_id.
 const activeSession = computed(() =>
@@ -125,14 +171,14 @@ const activeSession = computed(() =>
 );
 
 // Wait for API init (mount can race a hard page refresh) before fetching lists/subscribing.
-let active = false;
+let unmounted = false;
 const unsubscribers: Array<() => void> = [];
 
 onMounted(async () => {
-  active = true;
   await waitForApiInitialization();
-  if (!active) return;
+  if (unmounted || !canShowDashboards.value) return;
 
+  apiReady.value = true;
   fetchSessions();
   loadDashboards();
   unsubscribers.push(
@@ -145,7 +191,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  active = false;
+  unmounted = true;
   unsubscribers.forEach((unsubscribe) => unsubscribe());
 });
 
@@ -221,8 +267,58 @@ async function disconnect() {
   }
 }
 
+async function getDashboardUrl(): Promise<string | null> {
+  // The caller reports a failure itself, with the server's reason.
+  return api.sendCommand<string | null>(
+    "dashboard/get_url",
+    { dashboard: props.dashboard, player_id: props.playerId ?? null },
+    { suppressGlobalError: true },
+  );
+}
+
+function compareDashboards(left: DashboardDevice, right: DashboardDevice) {
+  const leftProvider = left.provider_domain_hint ?? "";
+  const rightProvider = right.provider_domain_hint ?? "";
+  if (leftProvider !== rightProvider) {
+    // Endpoints without a known provider go last.
+    if (!leftProvider) return 1;
+    if (!rightProvider) return -1;
+    return leftProvider.localeCompare(rightProvider);
+  }
+  return left.name.localeCompare(right.name, undefined, {
+    sensitivity: "base",
+  });
+}
+
 function isActiveDevice(device: DashboardDevice): boolean {
   const session = activeSession.value;
   return !!session && session.dashboard_id === device.dashboard_id;
 }
+
+const copyDashboardUrlToClipboard = async function () {
+  let url: string | null;
+  try {
+    url = await getDashboardUrl();
+  } catch (error) {
+    // e.g. neither remote access nor an https base url is configured
+    console.error("Failed to get dashboard URL:", error);
+    toast.error(
+      error instanceof ApiCommandError && error.details
+        ? error.details
+        : $t("dashboard.uri_copy_failed"),
+    );
+    return;
+  }
+  if (!url) {
+    toast.error($t("dashboard.uri_copy_failed"));
+    return;
+  }
+
+  const success = await copyToClipboard(url);
+  if (success) {
+    toast.success($t("dashboard.uri_copied"));
+  } else {
+    toast.error($t("dashboard.uri_copy_failed"));
+  }
+};
 </script>

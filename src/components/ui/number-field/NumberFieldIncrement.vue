@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { cn } from "@/lib/utils";
+import { $t } from "@/plugins/i18n";
 import { Plus } from "@lucide/vue";
 import { reactiveOmit } from "@vueuse/core";
 import type { NumberFieldIncrementProps } from "reka-ui";
@@ -19,6 +20,8 @@ const forwarded = useForwardProps(delegatedProps);
   <NumberFieldIncrement
     data-slot="increment"
     v-bind="forwarded"
+    :aria-label="$t('increase_value')"
+    :title="$t('increase_value')"
     :class="
       cn(
         'absolute top-1/2 -translate-y-1/2 right-0 disabled:cursor-not-allowed disabled:opacity-20 p-3 w-10 h-full flex items-center justify-center',
