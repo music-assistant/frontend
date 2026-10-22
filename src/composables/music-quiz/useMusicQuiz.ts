@@ -97,10 +97,10 @@ interface MusicQuizStateIdentity<
   answer_type: TAnswerType;
   phase: MusicQuizPhase;
   name: string | null;
-  include_similar_music?: boolean;
-  auto_start_at?: number | null;
-  // public and host state only, and only once the server resolved it: servers
-  // before the dashboard feature omit it, and then a display hides its join QR
+  include_similar_music: boolean;
+  auto_start_at: number | null;
+  // public and host state only, and only once the server resolved it: until
+  // then a display hides its join QR
   join_url?: string;
 }
 
@@ -137,7 +137,7 @@ interface MusicQuizTriviaStateBase extends MusicQuizStateIdentity {
   quiz_type: "trivia";
   answer_type: "multiple_choice";
   language: string;
-  play_reveal_audio?: boolean;
+  play_reveal_audio: boolean;
   round_count: number;
   suggestion_count: number;
   answer_duration: number;
@@ -206,7 +206,7 @@ export interface MusicQuizGuessTheSongHostState extends MusicQuizGuessTheSongSta
   sources: MusicQuizSource[];
   join_url: string;
   rounds: MusicQuizGuessTheSongRound[];
-  playback?: MusicQuizHostPlayback;
+  playback: MusicQuizHostPlayback;
 }
 
 export interface MusicQuizTimelineHostState extends MusicQuizTimelineStateBase {
@@ -214,7 +214,7 @@ export interface MusicQuizTimelineHostState extends MusicQuizTimelineStateBase {
   sources: MusicQuizSource[];
   join_url: string;
   rounds: MusicQuizTimelineHostRound[];
-  playback?: MusicQuizHostPlayback;
+  playback: MusicQuizHostPlayback;
 }
 
 export interface MusicQuizTriviaHostState extends MusicQuizTriviaStateBase {
@@ -222,7 +222,7 @@ export interface MusicQuizTriviaHostState extends MusicQuizTriviaStateBase {
   sources: MusicQuizSource[];
   join_url: string;
   rounds: MusicQuizTriviaHostRound[];
-  playback?: MusicQuizHostPlayback;
+  playback: MusicQuizHostPlayback;
 }
 
 export type MusicQuizMultipleChoicePublicState =
@@ -237,7 +237,7 @@ export type MusicQuizSupportedHostState =
   | MusicQuizTriviaHostState;
 
 export type MusicQuizUnsupportedHostState = MusicQuizUnsupportedPublicState & {
-  playback?: MusicQuizHostPlayback;
+  playback: MusicQuizHostPlayback;
 };
 
 export type MusicQuizHostState =
@@ -263,7 +263,7 @@ export interface MusicQuizTriviaInfo extends MusicQuizStateIdentity {
   quiz_type: "trivia";
   answer_type: "multiple_choice";
   language: string;
-  play_reveal_audio?: boolean;
+  play_reveal_audio: boolean;
   player_count: number;
   round_count: number;
   mode: MusicQuizMode;

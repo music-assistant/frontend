@@ -1,12 +1,18 @@
 import {
   type BackgroundTask,
+  AlbumType,
+  ArtistType,
   type CommandMessage,
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
+  ListingType,
+  MediaType,
   type Player,
   PlaylistMatchPolicy,
   RepeatMode,
+  SortDirection,
+  SortField,
   type Scope,
   type ServerInfoMessage,
   type SuccessResultMessage,
@@ -53,6 +59,7 @@ import {
   ApiCommandError,
   ConnectionLostError,
   ConnectionState,
+  MIN_SERVER_SCHEMA_VERSION,
   MusicAssistantApi,
 } from "@/plugins/api";
 
@@ -69,6 +76,7 @@ const SERVER_INFO: ServerInfoMessage = {
   internal_url: "http://test.local",
   external_url: null,
   has_remote_access: false,
+  unsupported_install: false,
 };
 
 class TestTransport extends BaseTransport {
@@ -122,6 +130,14 @@ describe("MusicAssistantApi error handling", () => {
     transport.receive(SERVER_INFO);
     await initialization;
     expect(api.state.value).toBe(ConnectionState.CONNECTED);
+    // answer what the api sends on connect, so no command is left in flight
+    for (const command of transport.sentCommands) {
+      transport.receive({
+        message_id: command.message_id!,
+        result: null,
+        partial: false,
+      });
+    }
   });
 
   afterEach(() => {
@@ -175,6 +191,518 @@ describe("MusicAssistantApi error handling", () => {
     expect(consoleError).toHaveBeenCalledWith("[resultMessage]", error);
     expect(mockToastError).toHaveBeenCalledWith("Visible failure");
     expect(consoleDebug).not.toHaveBeenCalled();
+  });
+
+  it("caches sort options per listing until disconnect", async () => {
+    const firstRequest = api.getSortOptions(ListingType.LIBRARY_GENRES);
+    const concurrentRequest = api.getSortOptions(ListingType.LIBRARY_GENRES);
+    const sortOptionsRequests = () =>
+      transport.sentCommands.filter(
+        (command) => command.command === "music/sort_options",
+      );
+
+    expect(sortOptionsRequests()).toHaveLength(1);
+    expect(transport.lastCommand.command).toBe("music/sort_options");
+    expect(transport.lastCommand.args).toEqual({ listing: "library_genres" });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(
+      Promise.all([firstRequest, concurrentRequest]),
+    ).resolves.toEqual([[], []]);
+
+    await expect(
+      api.getSortOptions(ListingType.LIBRARY_GENRES),
+    ).resolves.toEqual([]);
+    expect(sortOptionsRequests()).toHaveLength(1);
+
+    api.disconnect();
+    const reconnectTransport = new TestTransport();
+    const initialization = api.initialize(reconnectTransport);
+    reconnectTransport.receive(SERVER_INFO);
+    await initialization;
+
+    const afterDisconnect = api.getSortOptions(ListingType.LIBRARY_GENRES);
+    expect(
+      reconnectTransport.sentCommands.filter(
+        (command) => command.command === "music/sort_options",
+      ),
+    ).toHaveLength(1);
+    reconnectTransport.receive({
+      message_id: reconnectTransport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(afterDisconnect).resolves.toEqual([]);
+  });
+
+  it.each([
+    [ListingType.LIBRARY_ARTISTS, "library_artists"],
+    [ListingType.LIBRARY_ALBUMS, "library_albums"],
+    [ListingType.LIBRARY_TRACKS, "library_tracks"],
+    [ListingType.LIBRARY_PLAYLISTS, "library_playlists"],
+    [ListingType.LIBRARY_RADIOS, "library_radios"],
+    [ListingType.LIBRARY_AUDIOBOOKS, "library_audiobooks"],
+    [ListingType.LIBRARY_PODCASTS, "library_podcasts"],
+    [ListingType.LIBRARY_GENRES, "library_genres"],
+  ] as const)(
+    "requests sort options for %s using listing %s",
+    async (listingType, listing) => {
+      const request = api.getSortOptions(listingType);
+
+      expect(transport.lastCommand.command).toBe("music/sort_options");
+      expect(transport.lastCommand.args).toEqual({ listing });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it("sends typed sort fields for library listings", async () => {
+    const sortedRequest = api.getLibraryTracks(
+      false,
+      undefined,
+      20,
+      10,
+      SortField.NAME,
+      SortDirection.DESC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/tracks/library_items");
+    expect(transport.lastCommand.args).toMatchObject({
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.DESC,
+    });
+    expect(transport.lastCommand.args).not.toHaveProperty("order_by");
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(sortedRequest).resolves.toEqual([]);
+  });
+
+  it.each([true, false, undefined])(
+    "sends album track parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getAlbumTracks(
+        "album-1",
+        "spotify",
+        true,
+        "live",
+        20,
+        40,
+        SortField.DURATION,
+        SortDirection.DESC,
+        favorite,
+      );
+
+      expect(transport.lastCommand.command).toBe("music/albums/album_tracks");
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "album-1",
+        provider_instance_id_or_domain: "spotify",
+        in_library_only: true,
+        search: "live",
+        sort_field: SortField.DURATION,
+        sort_direction: SortDirection.DESC,
+        limit: 20,
+        offset: 40,
+        favorite,
+      });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it("sends typed paging parameters for playlist tracks", async () => {
+    const request = api.getPlaylistTracks(
+      "playlist-1",
+      "spotify",
+      true,
+      true,
+      "live",
+      20,
+      40,
+      SortField.POSITION,
+      SortDirection.ASC,
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/playlists/playlist_tracks",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "playlist-1",
+      provider_instance_id_or_domain: "spotify",
+      force_refresh: true,
+      favorite: true,
+      search: "live",
+      sort_field: SortField.POSITION,
+      sort_direction: SortDirection.ASC,
+      limit: 20,
+      offset: 40,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for podcast episodes", async () => {
+    const request = api.getPodcastEpisodes(
+      "podcast-1",
+      "rss",
+      false,
+      "interview",
+      20,
+      40,
+      SortField.POSITION,
+      SortDirection.DESC,
+      "episode-current",
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/podcasts/podcast_episodes",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "podcast-1",
+      provider_instance_id_or_domain: "rss",
+      fully_played: false,
+      search: "interview",
+      sort_field: SortField.POSITION,
+      sort_direction: SortDirection.DESC,
+      limit: 20,
+      offset: 40,
+      exclude_item_id: "episode-current",
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for similar tracks", async () => {
+    const request = api.getSimilarTracks(
+      "track-1",
+      "spotify",
+      20,
+      "live",
+      40,
+      SortField.NAME,
+      SortDirection.ASC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/tracks/similar_tracks");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "track-1",
+      provider_instance_id_or_domain: "spotify",
+      limit: 20,
+      search: "live",
+      offset: 40,
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.ASC,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for browse", async () => {
+    const request = api.browse(
+      "spotify://albums",
+      "player-1",
+      undefined,
+      "live",
+      20,
+      40,
+      SortField.NAME,
+      SortDirection.DESC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/browse");
+    expect(transport.lastCommand.args).toEqual({
+      path: "spotify://albums",
+      player_id: "player-1",
+      search: "live",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.DESC,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for artist appearances", async () => {
+    const request = api.getArtistAppearsOn(
+      "artist-1",
+      "library",
+      undefined,
+      "live",
+      20,
+      40,
+      SortField.ORIGINAL,
+      undefined,
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/artist_appears_on",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      provider_filter: undefined,
+      search: "live",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.ORIGINAL,
+      sort_direction: undefined,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it.each([true, false, undefined])(
+    "sends artist track parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getArtistTracks(
+        "artist-1",
+        "library",
+        "spotify--1",
+        "live",
+        20,
+        40,
+        SortField.DURATION,
+        SortDirection.DESC,
+        favorite,
+      );
+
+      expect(transport.lastCommand.command).toBe("music/artists/artist_tracks");
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "artist-1",
+        provider_instance_id_or_domain: "library",
+        provider_filter: "spotify--1",
+        search: "live",
+        limit: 20,
+        offset: 40,
+        sort_field: SortField.DURATION,
+        sort_direction: SortDirection.DESC,
+        favorite,
+      });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it.each([true, false, undefined])(
+    "sends artist album parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getArtistAlbums(
+        "artist-1",
+        "library",
+        undefined,
+        "live",
+        20,
+        40,
+        SortField.NAME,
+        SortDirection.ASC,
+        [AlbumType.SINGLE, AlbumType.EP],
+        favorite,
+      );
+
+      expect(transport.lastCommand.command).toBe("music/artists/artist_albums");
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "artist-1",
+        provider_instance_id_or_domain: "library",
+        provider_filter: undefined,
+        search: "live",
+        limit: 20,
+        offset: 40,
+        sort_field: SortField.NAME,
+        sort_direction: SortDirection.ASC,
+        album_types: [AlbumType.SINGLE, AlbumType.EP],
+        favorite,
+      });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it.each([true, false, undefined])(
+    "sends collection parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getAudiobookCollection(
+        "collection-1",
+        "chapter 2",
+        20,
+        40,
+        favorite,
+      );
+
+      expect(transport.lastCommand.command).toBe(
+        "music/audiobooks/get_collection",
+      );
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "collection-1",
+        search: "chapter 2",
+        limit: 20,
+        offset: 40,
+        favorite,
+      });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: {
+          item_id: "collection-1",
+          name: "Collection",
+          provider: "library",
+          items: [],
+        },
+        partial: false,
+      });
+      await expect(request).resolves.toMatchObject({ items: [] });
+    },
+  );
+
+  it("sends typed paging parameters for artist audiobooks", async () => {
+    const request = api.getArtistAudiobooks(
+      "artist-1",
+      "library",
+      ArtistType.AUTHOR,
+      true,
+      true,
+      "story",
+      20,
+      40,
+      SortField.NAME,
+      SortDirection.ASC,
+      "qobuz_1",
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/artist_audiobooks",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      artist_type: ArtistType.AUTHOR,
+      in_library_only: true,
+      collapse_collections: true,
+      search: "story",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.ASC,
+      provider_filter: "qobuz_1",
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for radio versions", async () => {
+    const request = api.getRadioVersions(
+      "radio-1",
+      "library",
+      "jazz",
+      20,
+      40,
+      SortField.PROVIDER,
+      SortDirection.ASC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/radios/radio_versions");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "radio-1",
+      provider_instance_id_or_domain: "library",
+      search: "jazz",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.PROVIDER,
+      sort_direction: SortDirection.ASC,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for artist discography", async () => {
+    const request = api.getArtistDiscography(
+      "artist-1",
+      "jazz",
+      20,
+      40,
+      SortField.YEAR,
+      SortDirection.DESC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/artists/discography");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      search: "jazz",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.YEAR,
+      sort_direction: SortDirection.DESC,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
   });
 
   it("lets updateUser suppress the global error toast for the caller", async () => {
@@ -345,24 +873,25 @@ describe("MusicAssistantApi error handling", () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
-  it("lists the share candidates from schema 72 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 71 };
-    expect(api.supportsShareCandidates).toBe(false);
+  it("flags a server below the minimum schema version as outdated", () => {
+    // before server_info arrives there is nothing to judge yet
+    api.serverInfo.value = undefined;
+    expect(api.serverOutdated).toBe(false);
 
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 72 };
-    expect(api.supportsShareCandidates).toBe(true);
-  });
+    api.serverInfo.value = {
+      ...SERVER_INFO,
+      schema_version: MIN_SERVER_SCHEMA_VERSION - 1,
+    };
+    expect(api.serverOutdated).toBe(true);
 
-  it("lists the roles from schema 74 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 73 };
-    expect(api.supportsRoles).toBe(false);
-
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
-    expect(api.supportsRoles).toBe(true);
+    api.serverInfo.value = {
+      ...SERVER_INFO,
+      schema_version: MIN_SERVER_SCHEMA_VERSION,
+    };
+    expect(api.serverOutdated).toBe(false);
   });
 
   it("loads the roles the server lists", async () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
     const roles = [
       {
         role_id: UserRole.ADMIN,
@@ -381,32 +910,6 @@ describe("MusicAssistantApi error handling", () => {
       partial: false,
     });
     await expect(result).resolves.toEqual(roles);
-  });
-
-  it("builds the builtin roles from their scopes on an older server", async () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 73 };
-    const result = api.getRoles();
-
-    expect(transport.lastCommand.command).toBe("auth/scopes");
-    transport.receive({
-      message_id: transport.lastCommand.message_id!,
-      result: { [UserRole.ADMIN]: ["*"], [UserRole.GUEST]: ["library.read"] },
-      partial: false,
-    });
-    await expect(result).resolves.toEqual([
-      {
-        role_id: UserRole.ADMIN,
-        name: UserRole.ADMIN,
-        scopes: ["*"],
-        builtin: true,
-      },
-      {
-        role_id: UserRole.GUEST,
-        name: UserRole.GUEST,
-        scopes: ["library.read"],
-        builtin: true,
-      },
-    ]);
   });
 
   it("sends the role commands and leaves their errors to the caller", async () => {
@@ -457,16 +960,15 @@ describe("MusicAssistantApi error handling", () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
-  it("lets a role with queues.control play AI Radio from schema 75 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
-    expect(api.supportsAIRadioPlaybackScopes).toBe(false);
-
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 75 };
-    expect(api.supportsAIRadioPlaybackScopes).toBe(true);
-  });
-
   it("asks the library for an artist's discography", () => {
-    api.getArtistDiscography("artist-1");
+    api.getArtistDiscography(
+      "artist-1",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    );
 
     expect(transport.lastCommand.command).toBe("music/artists/discography");
     expect(transport.lastCommand.args).toEqual({
@@ -476,7 +978,16 @@ describe("MusicAssistantApi error handling", () => {
   });
 
   it("asks the library for the albums an artist appears on", () => {
-    api.getArtistAppearsOn("artist-1", "library", "spotify--abc");
+    api.getArtistAppearsOn(
+      "artist-1",
+      "library",
+      "spotify--abc",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    );
 
     expect(transport.lastCommand.command).toBe(
       "music/artists/artist_appears_on",

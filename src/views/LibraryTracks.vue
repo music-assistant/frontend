@@ -1,13 +1,14 @@
 <template>
   <ItemsListing
     ref="itemsListing"
+    fill-height
     itemtype="tracks"
     path="librarytracks"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :show-track-number="false"
     :load-paged-data="loadItems"
-    :sort-keys="sortKeys"
+    :sort-listing="ListingType.LIBRARY_TRACKS"
     :show-album="true"
     :update-available="updateAvailable"
     :title="$t('tracks')"
@@ -36,6 +37,7 @@ import api from "@/plugins/api";
 import {
   EventMessage,
   EventType,
+  ListingType,
   MediaType,
   Scope,
 } from "@/plugins/api/interfaces";
@@ -69,23 +71,6 @@ const extraMenuItems = computed<ToolBarMenuItem[]>(() =>
     : [],
 );
 
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "track_artist_name",
-  "track_artist_name_desc",
-  "duration",
-  "duration_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
-
 onMounted(() => {
   // signal if/when items get added within this library
   const unsub = api.subscribe(
@@ -115,7 +100,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sortField,
+    params.sortDirection,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
   );

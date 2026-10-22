@@ -16,6 +16,7 @@ const autoplayEnabled = ref(false);
 const repeatLocked = ref(false);
 const setAutoplay = vi.fn();
 
+vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 vi.mock("@/plugins/api", () => ({
   default: {
     getProviderName: (providerId: string) =>

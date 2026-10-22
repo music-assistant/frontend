@@ -814,6 +814,120 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     },
   );
 
+  it("opens a paused setup again on the step it was on", async () => {
+    const { open, pause, close, active, paused, requestedStep } =
+      await loadOnboarding();
+    open("players");
+
+    await pause();
+    expect(active.value).toBe(false);
+    expect(paused.value).toBe(true);
+
+    open();
+    expect(active.value).toBe(true);
+    expect(paused.value).toBe(false);
+    expect(requestedStep.value).toBe("players");
+
+    // a setup that is closed for good starts over from what is left to do
+    close();
+    open();
+    expect(requestedStep.value).toBeNull();
+  });
+
+  it("keeps a paused setup aside once the banner is dismissed", async () => {
+    const {
+      open,
+      pause,
+      dismissPaused,
+      paused,
+      showPausedBanner,
+      requestedStep,
+    } = await loadOnboarding();
+    open("players");
+    await pause();
+
+    dismissPaused();
+    expect(showPausedBanner.value).toBe(false);
+    expect(paused.value).toBe(true);
+    expect(requestedStep.value).toBe("players");
+
+    open();
+    await pause();
+    expect(showPausedBanner.value).toBe(true);
+  });
+
+  it("lets go when the user leaves the page while a pause is still saving", async () => {
+    const { open, pause, setStepGuard, active, paused } =
+      await loadOnboarding();
+    let answer: (saved: boolean) => void = () => undefined;
+    setStepGuard(
+      () =>
+        new Promise<boolean>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    open();
+
+    const closing = pause();
+    await pause({ force: true });
+    expect(active.value).toBe(false);
+
+    // the save that was on its way fails, and the wizard stays gone
+    answer(false);
+    await closing;
+    expect(active.value).toBe(false);
+    expect(paused.value).toBe(true);
+  });
+
+  it("leaves a wizard resumed while an older pause was saving open", async () => {
+    const { open, pause, setStepGuard, active } = await loadOnboarding();
+    let answer: (saved: boolean) => void = () => undefined;
+    setStepGuard(
+      () =>
+        new Promise<boolean>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    open();
+
+    const closing = pause();
+    await pause({ force: true });
+    open();
+
+    // the older save lands, and the resumed wizard stays
+    answer(true);
+    await closing;
+    expect(active.value).toBe(true);
+  });
+
+  it("keeps the guard of a wizard that took over from one going away", async () => {
+    const { open, pause, setStepGuard, active } = await loadOnboarding();
+    const removeOld = setStepGuard(async () => true);
+    setStepGuard(async () => false);
+    removeOld();
+    open();
+
+    await pause();
+
+    expect(active.value).toBe(true);
+  });
+
+  it("lets the step on screen save before it pauses", async () => {
+    const { open, pause, setStepGuard, active } = await loadOnboarding();
+    const guard = vi.fn().mockResolvedValue(false);
+    setStepGuard(guard);
+    open();
+
+    // a step that could not save keeps the wizard open
+    await pause();
+    expect(guard).toHaveBeenCalledOnce();
+    expect(active.value).toBe(true);
+
+    // unless the user has already gone to another page
+    await pause({ force: true });
+    expect(active.value).toBe(false);
+  });
+
   describe("a fresh server's first run", () => {
     it("is the admin track's from before anyone can sign in", async () => {
       const { ctx, steps, pending } = await loadFirstRun();

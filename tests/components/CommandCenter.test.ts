@@ -39,6 +39,7 @@ vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
 
+vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 vi.mock("vue-router", async () => {
   const { reactive } = await import("vue");
   state.route = reactive(state.route);
@@ -791,6 +792,29 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
+  it("keeps and labels versions of the same title apart", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      { ...makeTrack("t1", "Waterloo"), provider: "spotify" },
+      {
+        ...makeTrack("t2", "Waterloo"),
+        provider: "spotify",
+        version: "Deluxe Edition",
+      },
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "waterloo");
+    const items = wrapper
+      .findAll('[data-testid="palette-item"]')
+      .filter((item) => item.text().includes("Waterloo"));
+    expect(items).toHaveLength(2);
+    expect(items[1].text()).toContain("Waterloo (Deluxe Edition)");
+
+    wrapper.unmount();
+  });
+
   it("shows a spinner while a submitted search is loading", async () => {
     const wrapper = mountPalette();
     useCommandCenter().open();
@@ -811,6 +835,29 @@ describe("CommandCenter", () => {
     expect(wrapper.find('[data-testid="palette-spinner"]').exists()).toBe(
       false,
     );
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    wrapper.unmount();
+  });
+
+  it("shows one spinner at a time while results stream in", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    const spinners = () => wrapper.findAll('[data-testid="palette-spinner"]');
+
+    // nothing in yet: only the results area spins
+    state.loading.value = true;
+    await typeQuery(wrapper, "bohemian");
+    expect(spinners()).toHaveLength(1);
+
+    // the first results land while other sources still search
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    state.bumpResults();
+    await flushPromises();
+    expect(spinners()).toHaveLength(1);
     expect(wrapper.text()).toContain("Bohemian Rhapsody");
 
     wrapper.unmount();

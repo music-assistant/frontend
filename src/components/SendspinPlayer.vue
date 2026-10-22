@@ -16,6 +16,7 @@ import {
   isMediaSessionDisabled,
   resetMediaSession,
 } from "@/helpers/mediaSession";
+import { resolvePlayerQueue } from "@/plugins/api/helpers";
 import { getWebPlayerName } from "@/helpers/players";
 import { SendspinPlayer, Codec } from "@sendspin/sendspin-js";
 
@@ -178,24 +179,37 @@ watch(
   { immediate: true },
 );
 
+// The builtin sendspin player plays through Web Audio, which is not a media element.
+// Once that goes quiet on pause the browser drops the media session and the
+// OS gives the media keys to another app. The silent element keeps the
+// session alive there too. On mobile the sendspin audio element does that.
+const silentAudioBacksSession = computed(
+  () => metadataPlayerId.value === undefined || !isMobileOutput,
+);
+
 watch(
   [
     () => store.activePlayer?.playback_state,
+    () => api.players[props.playerId]?.playback_state,
     mediaSessionDisabled,
     metadataPlayerId,
+    silentAudioBacksSession,
     () => webPlayer.interacted,
+    // The element only exists after mount, so the first run above bails out
+    silentAudioRef,
   ],
-  ([state, disabled, targetPlayerId, interacted]) => {
+  ([activeState, ownState, disabled, targetPlayerId, backs, interacted]) => {
     if (silentAudioInterval) {
       clearInterval(silentAudioInterval);
       silentAudioInterval = undefined;
     }
-    if (disabled || targetPlayerId !== undefined || !interacted) {
+    if (disabled || !backs || !interacted) {
       silentAudioRef.value?.pause();
       return;
     }
     if (!silentAudioRef.value) return;
 
+    const state = targetPlayerId === undefined ? activeState : ownState;
     if (state === PlaybackState.PLAYING) {
       silentAudioRef.value.play().catch(() => {});
       // Reset to silent portion every 55 seconds to avoid audible tone on loop restart
@@ -219,11 +233,12 @@ watch(
     isPlaying,
     playerState,
     () => store.activePlayer?.playback_state,
+    () => api.players[props.playerId]?.playback_state,
     metadataPlayerId,
     () => webPlayer.interacted,
     mediaSessionDisabled,
   ],
-  ([, pState, , metaPlayerId, interacted, disabled]) => {
+  ([, pState, , ownState, metaPlayerId, interacted, disabled]) => {
     if (disabled) {
       resetMediaSession();
       return;
@@ -232,9 +247,17 @@ watch(
 
     let state: MediaSessionPlaybackState;
     if (metaPlayerId !== undefined) {
-      // Web player is the source - use isPlaying from library
-      // Show as paused if player has error
-      state = isPlaying.value && pState !== "error" ? "playing" : "paused";
+      // Web player is the source. Use the server's player state: the library's
+      // isPlaying only follows stream start/end, so it can stay true while
+      // paused and the OS would then send pause instead of play.
+      // Show as paused if player has error. Without a server player (e.g.
+      // disconnected) there is nothing to report.
+      if (!ownState) {
+        state = "none";
+      } else {
+        const playing = ownState === PlaybackState.PLAYING;
+        state = playing && pState !== "error" ? "playing" : "paused";
+      }
     } else {
       // Active player is the source
       const activeState = store.activePlayer?.playback_state;
@@ -275,16 +298,6 @@ onMounted(() => {
   console.debug("Sendspin: Component mounted, connecting...");
 
   registerWebPlayerAudioUnlock(primeAudio);
-
-  // If already showing active player metadata, play silent audio now that silentAudioRef exists
-  if (
-    metadataPlayerId.value === undefined &&
-    !mediaSessionDisabled.value &&
-    webPlayer.interacted &&
-    silentAudioRef.value
-  ) {
-    silentAudioRef.value.play().catch(() => {});
-  }
 
   // Create and initialize player
   if (audioRef.value) {
@@ -431,10 +444,18 @@ function getTargetPlayerId(): string | undefined {
   return store.activePlayerId;
 }
 
+function hasSomethingToPlay(playerId: string): boolean {
+  const player = api.players[playerId];
+  if (!player) return false;
+  const queue = resolvePlayerQueue(player);
+  return !queue || queue.items > 0;
+}
+
 function registerMediaSessionActionHandlers(): void {
   navigator.mediaSession.setActionHandler("play", () => {
     const targetId = getTargetPlayerId();
-    if (!targetId) return;
+    // The server rejects play on an empty queue
+    if (!targetId || !hasSomethingToPlay(targetId)) return;
     api.playerCommandPlay(targetId);
   });
 

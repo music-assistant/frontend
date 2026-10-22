@@ -9,6 +9,8 @@
     :disable-play-button="disablePlayButton"
     :parent-item="parentItem"
     :sort-by="sortBy"
+    :sort-field="sortField"
+    :sort-direction="sortDirection"
     @select="(i, selected) => emit('select', i as MediaItemType, selected)"
   >
     <template v-if="showActions" #actions>
@@ -85,6 +87,8 @@ import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
 import {
   ContentType,
+  SortDirection,
+  SortField,
   Scope,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
@@ -107,6 +111,8 @@ export interface Props {
   disablePlayButton?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
@@ -118,6 +124,8 @@ const compProps = withDefaults(defineProps<Props>(), {
   disablePlayButton: false,
   parentItem: undefined,
   sortBy: undefined,
+  sortField: undefined,
+  sortDirection: undefined,
 });
 
 // favouring an item changes the library
@@ -167,6 +175,8 @@ const onMenu = function (evt: MouseEvent) {
     compProps.parentItem,
     true,
     compProps.sortBy,
+    compProps.sortField,
+    compProps.sortDirection,
   );
 };
 </script>

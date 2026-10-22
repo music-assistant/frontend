@@ -1,12 +1,15 @@
 <template>
   <Toaster rich-colors close-button />
 
+  <!-- Only the public web app can reach a server older than this frontend supports -->
+  <ServerOutdated v-if="api.serverOutdated" />
+
   <!-- Login screen (when not authenticated). On a fresh server's first run
        there is no account to sign in with until the setup wizard has made
        one, so the sign-in waits for that account and stays out of sight
        behind the wizard while it runs. -->
   <Login
-    v-if="showLogin && !awaitingAccount"
+    v-else-if="showLogin && !awaitingAccount"
     v-show="!firstRun"
     ref="loginComponent"
     @connected="handleRemoteConnected"
@@ -46,6 +49,7 @@
 
 <script setup lang="ts">
 import HomeAssistantMenuButton from "@/components/HomeAssistantMenuButton.vue";
+import ServerOutdated from "@/components/ServerOutdated.vue";
 import { Toaster } from "@/components/ui/sonner";
 import { loadRoles } from "@/composables/roles";
 import { useReconnectGrace } from "@/composables/useReconnectGrace";
@@ -117,7 +121,7 @@ const router = useRouter();
 // the wizard for a fresh install and the welcome for a new member both open as
 // a modal over the app; opened here, before the app is shown, so a fresh
 // sign-in never flashes the app behind them first
-const { open: openOnboarding } = useOnboarding();
+const { open: openOnboarding, paused: setupPaused } = useOnboarding();
 const { firstRun, awaitingAccount } = useFirstRunSetup();
 
 // A fresh server without Home Assistant sends the browser to its setup page,
@@ -341,7 +345,7 @@ const completeInitialization = async () => {
   }
 
   // Guard against multiple initializations
-  if (initializationCompleted) {
+  if (initializationCompleted || api.serverOutdated) {
     return;
   }
 
@@ -426,7 +430,9 @@ const completeInitialization = async () => {
   }
 
   if (
-    (onboardRequested || serverInfo.onboard_done === false) &&
+    // a setup the admin paused stays paused when a reconnect runs this again
+    (onboardRequested ||
+      (serverInfo.onboard_done === false && !setupPaused.value)) &&
     // the wizard sets up every kind of provider
     authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
   ) {
@@ -547,9 +553,6 @@ onMounted(async () => {
   watch(
     () => i18n.global.locale.value,
     async (locale) => {
-      // Only relevant for servers that localize server-provided strings; older servers can't
-      // re-localize, so there's nothing to push or re-fetch.
-      if (!api.supportsServerSideTranslations) return;
       try {
         await api.setLocale(locale as string);
         if (

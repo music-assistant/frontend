@@ -642,7 +642,6 @@
             "reconfigure_title": "Konfigurera om {0}"
         },
         "options": "Alternativ",
-        "add_group_player_desc": "Skapa en permanent spelargrupp med {0} spelare. När du spelar i den här spelargruppen synkroniseras medlemsspelarna automatiskt.",
         "server_clock_offset": "Klockförskjutning (server vs den här enheten)",
         "action_completed": "Åtgärd slutförd",
         "hass_controls": {
@@ -761,7 +760,8 @@
             },
             "updated": "Åtkomst uppdaterad",
             "share_title": "Dela {name}",
-            "nobody": "Ingen kan använda den här källan."
+            "nobody": "Ingen kan använda den här källan.",
+            "section_description": "Vem äger denna musikkälla och vem mer får använda den?"
         },
         "set_custom_name": "Ange ett eget namn",
         "genre_table_page_of": "Sida {0} av {1}",
@@ -874,7 +874,33 @@
         },
         "remove_provider_confirm_music": "Ta bort \"{0}\"? All musik från denna källa tas bort från ditt bibliotek, tillsammans med uppspelningshistoriken. Detta går inte att ångra.",
         "remove_provider_confirm_player": "Ta bort \"{0}\"? Dess spelare och deras inställningar tas också bort. Detta går inte att ångra.",
-        "remove_provider_acknowledge": "Jag förstår att detta tar bort musik från mitt bibliotek."
+        "remove_provider_acknowledge": "Jag förstår att detta tar bort musik från mitt bibliotek.",
+        "provider_players_description": "Spelarna som denna leverantör tillför Music Assistant",
+        "sync_in_progress": "Synkroniserar...",
+        "library_sync": "Bibliotekssynkronisering",
+        "library_sync_description": "Uppdaterar biblioteket med denna musikkälla.",
+        "storage_location": "Lagringsplats",
+        "storage_location_description": "Varifrån denna musikkälla läser sina filer",
+        "server_url": {
+            "title": "URL för Music Assistant",
+            "description": "Där enheter och gäster når Music Assistant, till exempel via länkarna i inbjudningar till fester och frågesporter.",
+            "internet": "Internet",
+            "local_network": "Lokalt nätverk",
+            "use_remote_access": "Använd fjärråtkomst",
+            "remote_access_description": "Länkar som delas med gäster öppnas via fjärråtkomst.",
+            "remote_access_hint": "Inte nåbar från internet? Fjärråtkomst fungerar utan en publik URL.",
+            "set_up_remote_access": "Konfigurera fjärråtkomst",
+            "automatic": "Automatiskt",
+            "detected_after_save": "Identifieras automatiskt efter att ha sparats",
+            "copy_remote": "Kopiera länk för fjärråtkomst",
+            "copy_detected": "Kopiera URL för lokalt nätverk",
+            "copied": "URL kopierad",
+            "copy_failed": "Det gick inte att kopiera URL"
+        },
+        "unsupported_install_title": "Installation som inte stöds",
+        "unsupported_install_description": "Den här servern är inte installerad via någon av {0}. Vissa funktioner kanske inte fungerar som förväntat, och ärenden som rapporteras gällande dessa kan komma att stängas utan support.",
+        "unsupported_install_link": "installationsmetoder som stöds",
+        "error_loading_sort_options": "Fel vid inläsning av sorteringsalternativ"
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
@@ -911,7 +937,11 @@
         "ascending": "Stigande",
         "ascending_abbreviation": "Stigande",
         "descending": "Fallande",
-        "descending_abbreviation": "Fallande"
+        "descending_abbreviation": "Fallande",
+        "favorite_timestamp": "Datum då objektet markerades som favorit",
+        "artist_name": "Artist",
+        "random": "Slumpmässig",
+        "random_play_count": "Slumpmässigt (minst spelade först)"
     },
     "state": {
         "idle": "vilande",
@@ -1150,7 +1180,8 @@
                 "smart": "Smart",
                 "standard": "Standard",
                 "disabled": "Inaktiverad",
-                "source": "Tillämpad av {0}"
+                "source": "Tillämpad av {0}",
+                "voice_over": "Voice-over, musik sänkt i bakgrunden"
             },
             "dsp_state": {
                 "enabled": "DSP aktiv",
@@ -1425,7 +1456,9 @@
         "guest_ended_dashboard_title": "Den här instrumentpanelssessionen har avslutats",
         "guest_ended_dashboard_message": "Casta instrumentpanelen igen från Music Assistant för att fortsätta.",
         "continue_to_app": "Fortsätt till Music Assistant",
-        "scan_qr_hint_guest": "Rikta kameran mot QR-koden som värden visar."
+        "scan_qr_hint_guest": "Rikta kameran mot QR-koden som värden visar.",
+        "server_outdated_title": "Servern behöver en uppdatering.",
+        "server_outdated_message": "Den här appen behöver en nyare version av Music Assistant servern än {version}. När servern har uppdaterats, försök igen."
     },
     "yes": "Ja",
     "no": "Nej",
@@ -1856,12 +1889,14 @@
                 "shuffle_playlist_tracks": "Blanda spår i spellistan",
                 "voice": "Röst",
                 "host": "Värd",
-                "language": "Språk"
+                "language": "Språk",
+                "allow_post": "Prata under introt"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximal total speltid för källmusiken, i minuter. Spår spelas i den ordning programmet spelar dem tills gränsen nås. Låt värdet vara 0 om du vill ha obegränsad tid.",
                 "instructions": "Beskriver värdens personlighet och hur segment ska skrivas. Detta skickas till AI:n med varje segment.",
-                "shuffle_playlist_tracks": "Spela upp källspellistan i slumpmässig ordning. Stäng av detta för att följa spellistan i dess egen ordning."
+                "shuffle_playlist_tracks": "Spela upp källspellistan i slumpmässig ordning. Stäng av detta för att följa spellistan i dess egen ordning.",
+                "allow_post": "Slutet av detta segment spelas samtidigt som nästa låt börjar, med musiken sänkt i bakgrunden, och tonar ut precis innan sången drar igång. Detta sker endast när Music Assistant vet var sången börjar och introt är tillräckligt långt. Om flera segment läses upp som ett sammanhängande avsnitt måste funktionen vara aktiverad för samtliga."
             },
             "web_search": {
                 "disabled": "inaktiverad (inget webbverktyg)",
@@ -1905,14 +1940,9 @@
                 "playlists_truncated": "Endast den första {0} spellistor laddades.",
                 "unavailable": "AI radio är inte aktiverad.",
                 "live_starting": "Live radio har startat",
-                "live_start_failed": "Misslyckades med att starta direktsänd radio",
-                "session_stopped": "AI radiosessionen har stoppats",
-                "session_stop_failed": "Misslyckades med att stoppa AI radiosessionen",
                 "station_saved": "Stationen sparad",
-                "station_save_failed": "Misslyckades med att spara stationen",
                 "station_deleted": "Stationen raderad",
                 "station_duplicated": "Stationen duplicerad",
-                "session_failed": "AI radiokörningen misslyckades: {0}",
                 "host_saved": "Värd sparad",
                 "host_deleted": "Värd borttagen",
                 "tts_engines_load_failed": "Det gick inte att läsa in röstalternativen"
@@ -1933,21 +1963,14 @@
             },
             "card": {
                 "play": "Spela",
-                "starting": "Startar...",
                 "stop": "Stopp",
                 "on_air": "I sändning",
                 "customize": "Anpassa",
                 "duplicate": "Duplicera",
                 "duplicate_name": "{0} (kopiera)",
                 "delete": "Radera",
-                "session_failed": "Senaste körningen misslyckades",
-                "status_failed": "Misslyckades {0}",
-                "status_last_on_air": "Sist i sändning {0}",
                 "no_player": "Välj en spelare först",
-                "start_failed": "Misslyckades med att starta: {0}",
-                "switch_show_title": "Byta program?",
-                "switch_show_confirm": "«{0}» är i sändning. Stoppa den och spela «{1}»?",
-                "switch_show_confirm_label": "Växla"
+                "start_failed": "Misslyckades med att starta: {0}"
             },
             "create": {
                 "title": "Skapa en show",
@@ -2864,5 +2887,11 @@
     "grid_size": "Omslagsstorlek",
     "grid_size_default": "Standardstorlek",
     "grid_size_smaller": "{count} ett steg mindre | {count} mindre steg",
-    "grid_size_larger": "{count} ett steg större | {count} större steg"
+    "grid_size_larger": "{count} ett steg större | {count} större steg",
+    "edit_rows_subtitle_podcast": "Gäller varje podcastsida",
+    "playlist_radio": "Spellista med oändlig mix",
+    "edit_rows_subtitle_playlist": "Gäller varje spellistesida",
+    "duration_hours_minutes": "{hours} timmar {minutes} minuter",
+    "duration_hours": "{hours} timmar",
+    "duration_minutes": "{minutes} minuter"
 }

@@ -2,6 +2,9 @@ import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import PlayerFullscreen from "@/layouts/default/PlayerOSD/PlayerFullscreen.vue";
+import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
+import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import SkipBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBtn.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
@@ -719,6 +722,73 @@ describe("PlayerFullscreen overflow menu", () => {
     const labels = await openOverflowMenu(testCase.mediaType);
 
     expect(labels.includes("change_playback_speed")).toBe(testCase.offered);
+  });
+});
+
+describe("PlayerFullscreen controls row", () => {
+  async function mountControls(
+    mediaType: MediaType,
+    mdAndUp: boolean,
+  ): Promise<VueWrapper> {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = { player_id: "p1", group_members: [] };
+    testStore.curQueueItem = {
+      media_item: { media_type: mediaType, metadata: {} },
+    };
+    testStore.showFullscreenPlayer = true;
+
+    const fullscreen = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp } } },
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+        },
+      },
+    });
+    wrapper = fullscreen;
+    await nextTick();
+    return fullscreen;
+  }
+
+  const sideSlots = (fullscreen: VueWrapper) =>
+    fullscreen.findAll(".media-controls > .side-slot");
+
+  it.each([true, false])(
+    "puts skip back and forward in the side slots of an audiobook (wide: %s)",
+    async (mdAndUp) => {
+      const fullscreen = await mountControls(MediaType.AUDIOBOOK, mdAndUp);
+
+      const skips = fullscreen.findAllComponents(SkipBtn);
+      expect(skips.map((skip) => skip.props("direction"))).toEqual([
+        "back",
+        "forward",
+      ]);
+      expect(fullscreen.findComponent(ShuffleBtn).exists()).toBe(false);
+      expect(fullscreen.findComponent(RepeatBtn).exists()).toBe(false);
+    },
+  );
+
+  it("keeps shuffle and repeat for a track on a wide screen", async () => {
+    const fullscreen = await mountControls(MediaType.TRACK, true);
+
+    expect(fullscreen.findComponent(SkipBtn).exists()).toBe(false);
+    expect(fullscreen.findComponent(ShuffleBtn).exists()).toBe(true);
+    expect(fullscreen.findComponent(RepeatBtn).exists()).toBe(true);
+  });
+
+  // the empty slots hold their place so the other buttons sit where they do
+  // for an audiobook
+  it("keeps the side slots empty for a track on a narrow screen", async () => {
+    const fullscreen = await mountControls(MediaType.TRACK, false);
+
+    const slots = sideSlots(fullscreen);
+    expect(slots).toHaveLength(2);
+    expect(slots.every((slot) => slot.element.children.length === 0)).toBe(
+      true,
+    );
   });
 });
 

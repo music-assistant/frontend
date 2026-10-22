@@ -340,9 +340,7 @@ describe("isSelfServiceProvider", () => {
     ).toBe(false);
   });
 
-  it("is true for a manifest without the flag, as an older server sends it", () => {
-    expect(
-      isSelfServiceProvider(providerManifest({ self_service: undefined })),
-    ).toBe(true);
+  it("is false without a manifest", () => {
+    expect(isSelfServiceProvider(undefined)).toBe(false);
   });
 });

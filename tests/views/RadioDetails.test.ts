@@ -1,17 +1,30 @@
 import RadioDetails from "@/views/RadioDetails.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import type { Radio } from "@/plugins/api/interfaces";
+import type { LoadDataParams } from "@/components/ItemsListing.vue";
+import {
+  ListingType,
+  SortDirection,
+  SortField,
+  type Radio,
+} from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { radio } from "../fixtures/radio";
 
-const { mockGetRadio, mockSubscribe } = vi.hoisted(() => ({
-  mockGetRadio: vi.fn<MusicAssistantApi["getRadio"]>(),
-  mockSubscribe: vi.fn(() => () => {}),
-}));
+const { mockGetRadio, mockGetRadioVersions, mockSubscribe } = vi.hoisted(
+  () => ({
+    mockGetRadio: vi.fn<MusicAssistantApi["getRadio"]>(),
+    mockGetRadioVersions: vi.fn<MusicAssistantApi["getRadioVersions"]>(),
+    mockSubscribe: vi.fn(() => () => {}),
+  }),
+);
 
 vi.mock("@/plugins/api", () => ({
-  api: { getRadio: mockGetRadio, subscribe: mockSubscribe },
+  api: {
+    getRadio: mockGetRadio,
+    getRadioVersions: mockGetRadioVersions,
+    subscribe: mockSubscribe,
+  },
 }));
 
 vi.mock("@/components/InfoHeader.vue", () => ({
@@ -22,6 +35,7 @@ vi.mock("@/components/InfoHeader.vue", () => ({
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
+    props: ["loadPagedData", "sortListing"],
     template: '<div class="items-listing-stub" />',
   },
 }));
@@ -48,6 +62,7 @@ async function mountDetails(item: Radio) {
 describe("RadioDetails", () => {
   beforeEach(() => {
     mockGetRadio.mockReset();
+    mockGetRadioVersions.mockReset().mockResolvedValue([]);
     mockSubscribe.mockReset().mockReturnValue(() => {});
   });
 
@@ -60,6 +75,49 @@ describe("RadioDetails", () => {
 
   it("shows other versions for a non-dynamic station", async () => {
     const wrapper = await mountDetails(radio({ is_dynamic: false }));
+
+    expect(wrapper.find(".items-listing-stub").exists()).toBe(true);
+    expect(wrapper.find(".dynamic-item-sample-stub").exists()).toBe(false);
+  });
+
+  it("loads radio versions with server search, sort and paging", async () => {
+    const item = radio({ is_dynamic: false });
+    const wrapper = await mountDetails(item);
+    const listing = wrapper.findComponent({ name: "ItemsListing" });
+    const params: LoadDataParams = {
+      offset: 40,
+      limit: 20,
+      sortBy: "provider:asc",
+      sortField: SortField.PROVIDER,
+      sortDirection: SortDirection.ASC,
+      search: "jazz",
+    };
+
+    await listing.props("loadPagedData")(params);
+
+    expect(listing.props("sortListing")).toBe(ListingType.VERSIONS);
+    expect(mockGetRadioVersions).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+      "jazz",
+      20,
+      40,
+      SortField.PROVIDER,
+      SortDirection.ASC,
+    );
+  });
+
+  it("shows the tracklist for a finite station", async () => {
+    const wrapper = await mountDetails(radio({ is_endless: false }));
+
+    expect(wrapper.find(".dynamic-item-sample-stub").exists()).toBe(true);
+    expect(wrapper.find(".items-listing-stub").exists()).toBe(false);
+  });
+
+  it("shows other versions for a station that does not report is_endless", async () => {
+    const wrapper = await mountDetails(
+      radio({ is_dynamic: false, is_endless: undefined }),
+    );
 
     expect(wrapper.find(".items-listing-stub").exists()).toBe(true);
     expect(wrapper.find(".dynamic-item-sample-stub").exists()).toBe(false);

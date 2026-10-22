@@ -1136,15 +1136,12 @@
             },
             "card": {
                 "play": "Spill av",
-                "starting": "Starter...",
                 "stop": "Stopp",
                 "customize": "Tilpass",
                 "duplicate": "Duplikat",
                 "delete": "Slett",
-                "status_failed": "Mislyktes {0}",
                 "no_player": "Velg en spiller først",
-                "start_failed": "Kunne ikke starte: {0}",
-                "switch_show_title": "Bytte program?"
+                "start_failed": "Kunne ikke starte: {0}"
             },
             "create": {
                 "title": "Lag et program",

@@ -1,13 +1,14 @@
 <template>
   <ItemsListing
     ref="itemsListing"
+    fill-height
     itemtype="radios"
     path="libraryradios"
     :show-duration="false"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
-    :sort-keys="sortKeys"
+    :sort-listing="ListingType.LIBRARY_RADIOS"
     :update-available="updateAvailable"
     :title="$t('radios')"
     :show-search-button="true"
@@ -34,6 +35,7 @@ import api from "@/plugins/api";
 import {
   EventMessage,
   EventType,
+  ListingType,
   MediaType,
   Scope,
 } from "@/plugins/api/interfaces";
@@ -67,19 +69,6 @@ const extraMenuItems = computed<ToolBarMenuItem[]>(() =>
     : [],
 );
 
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
-
 onMounted(() => {
   // signal if/when items get added within this library
   const unsub = api.subscribe(
@@ -108,7 +97,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sortField,
+    params.sortDirection,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
   );

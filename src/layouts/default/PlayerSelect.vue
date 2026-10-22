@@ -210,6 +210,7 @@ import {
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
 import {
+  canEditPlayerGroup,
   getPlayerDisplayName,
   isBuiltinPlayer,
   isPlayerActive,
@@ -314,6 +315,7 @@ watch(
         activeElement instanceof HTMLElement && activeElement !== document.body
           ? activeElement
           : null;
+      expandActivePlayerGroupControls();
       void scrollSelectedPlayerIntoView();
       return;
     }
@@ -471,6 +473,17 @@ function toggleExpandedPlayer(playerIds: Set<string>, playerId: string) {
   } else {
     playerIds.add(playerId);
   }
+}
+
+/**
+ * Open the group controls of the active player when the panel is opened from
+ * the fullscreen player, where changing the group is the only reason to open it.
+ */
+function expandActivePlayerGroupControls() {
+  const player = store.activePlayer;
+  if (!popoutFromFullscreen.value || !player || !canEditPlayerGroup(player))
+    return;
+  expandedMemberPlayerIds.add(player.player_id);
 }
 
 function getGroupControlsId(playerId: string) {

@@ -10,7 +10,7 @@
   >
     <template v-if="item" #main>
       <div class="podcast-episode-hero__main">
-        <div class="podcast-episode-hero__cover">
+        <div class="podcast-episode-hero__cover detail-hero-cover">
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
 
@@ -31,28 +31,30 @@
               </span>
             </div>
             <div
-              v-if="releaseDate || item.duration"
-              class="podcast-episode-hero__line"
+              v-if="releaseDate || item.duration || episodeNumber"
+              class="podcast-episode-hero__line podcast-episode-hero__facts"
             >
-              <Calendar :size="16" class="podcast-episode-hero__icon" />
-              <span class="podcast-episode-hero__line-text">
+              <span
+                v-if="episodeNumber"
+                class="podcast-episode-hero__fact"
+                :title="episodeNumber.label"
+              >
+                <span aria-hidden="true">{{ episodeNumber.short }}</span>
+                <span class="sr-only">{{ episodeNumber.label }}</span>
+              </span>
+              <span v-if="releaseDate" class="podcast-episode-hero__fact">
+                <Calendar :size="16" class="podcast-episode-hero__icon" />
                 {{ releaseDate }}
-                <template v-if="item.duration">
-                  <span v-if="releaseDate" class="podcast-episode-hero__sep"
-                    >·</span
-                  >
-                  {{ formatDuration(item.duration) }}
-                </template>
+              </span>
+              <span v-if="item.duration" class="podcast-episode-hero__fact">
+                <Timer :size="16" class="podcast-episode-hero__icon" />
+                {{ formatDuration(item.duration) }}
               </span>
             </div>
           </div>
 
           <div class="podcast-episode-hero__actions">
-            <DetailHeroPlayButton
-              class="podcast-episode-hero__play"
-              :item="item"
-              :parent-item="parentPodcast"
-            />
+            <DetailHeroPlayButton :item="item" :parent-item="parentPodcast" />
             <template v-if="showSteppers">
               <DetailHeroButton
                 :icon="ChevronLeft"
@@ -121,6 +123,7 @@ import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import { podcastEpisodeNumber } from "@/components/podcast/podcastEpisodeData";
 import { formatDuration } from "@/helpers/utils";
 import type { Podcast, PodcastEpisode } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
@@ -132,6 +135,7 @@ import {
   ChevronRight,
   ClockFading,
   PodcastIcon,
+  Timer,
 } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
@@ -174,6 +178,10 @@ const releaseDate = computed(() => {
     : "";
 });
 
+const episodeNumber = computed(() =>
+  props.item ? podcastEpisodeNumber(props.item) : undefined,
+);
+
 const gotoPodcast = function () {
   const podcast = props.parentPodcast ?? props.item?.podcast;
   if (!podcast) return;
@@ -214,7 +222,7 @@ const gotoPodcast = function () {
   font-size: 44px;
   font-weight: 500;
   letter-spacing: -1.1px;
-  line-height: 1.05;
+  line-height: 1.2;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -265,9 +273,16 @@ const gotoPodcast = function () {
   outline-offset: 2px;
   border-radius: 4px;
 }
-.podcast-episode-hero__sep {
-  margin: 0 4px;
-  opacity: 0.5;
+/* wraps on a narrow phone rather than running past the edge */
+.podcast-episode-hero__facts {
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+.podcast-episode-hero__fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .podcast-episode-hero__actions {
@@ -304,16 +319,12 @@ const gotoPodcast = function () {
   .podcast-episode-hero__name {
     font-size: 30px;
     letter-spacing: -0.7px;
-    line-height: 1.1;
   }
   .podcast-episode-hero__meta {
     font-size: 14px;
   }
   .podcast-episode-hero__actions {
     gap: 10px;
-  }
-  .podcast-episode-hero__actions .podcast-episode-hero__play {
-    flex: 1;
   }
   .podcast-episode-hero__badge {
     width: 44px;

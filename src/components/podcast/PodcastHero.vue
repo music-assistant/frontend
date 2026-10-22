@@ -6,7 +6,7 @@
     :blur-backdrop="blurBackdrop"
     :height="400"
     :phone-height="360"
-    :editable-rows="false"
+    @edit-rows="emit('edit-rows')"
   >
     <template #toolbar-append>
       <DetailHeroFavorite v-if="item" :item="item" />
@@ -14,7 +14,7 @@
 
     <template v-if="item" #main>
       <div class="podcast-hero__main">
-        <div class="podcast-hero__cover">
+        <div class="podcast-hero__cover detail-hero-cover">
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
 
@@ -41,15 +41,7 @@
           <div class="podcast-hero__actions">
             <DetailHeroPlayButton :item="item" />
             <!-- outside the library the services listed beside already say where it is from -->
-            <span
-              v-if="isItemInLibrary(item)"
-              class="podcast-hero__badge"
-              role="img"
-              :title="$t('in_library')"
-              :aria-label="$t('in_library')"
-            >
-              <ProviderIcon domain="library" :size="20" />
-            </span>
+            <DetailHeroSourceBadge :item="item" library-only />
           </div>
         </div>
       </div>
@@ -68,9 +60,8 @@ import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
+import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
-import { isItemInLibrary } from "@/plugins/api/helpers";
 import type { Podcast } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { Mic, PodcastIcon } from "@lucide/vue";
@@ -87,7 +78,13 @@ export interface Props {
 }
 defineProps<Props>();
 
-const coverSize = computed(() => (isPhoneSizedScreen() ? 132 : 200));
+const emit = defineEmits<{
+  (e: "edit-rows"): void;
+}>();
+
+const isPhone = computed(() => isPhoneSizedScreen());
+
+const coverSize = computed(() => (isPhone.value ? 132 : 200));
 </script>
 
 <style scoped>
@@ -120,7 +117,7 @@ const coverSize = computed(() => (isPhoneSizedScreen() ? 132 : 200));
   font-size: 44px;
   font-weight: 500;
   letter-spacing: -1.1px;
-  line-height: 1.05;
+  line-height: 1.2;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -159,17 +156,6 @@ const coverSize = computed(() => (isPhoneSizedScreen() ? 132 : 200));
   gap: 8px;
   min-width: 0;
 }
-/* the same chrome as the hero buttons, for the facts that are not actions */
-.podcast-hero__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.4);
-}
 
 @media (max-width: 768px) {
   .podcast-hero__main {
@@ -184,18 +170,12 @@ const coverSize = computed(() => (isPhoneSizedScreen() ? 132 : 200));
   .podcast-hero__name {
     font-size: 30px;
     letter-spacing: -0.7px;
-    line-height: 1.1;
   }
   .podcast-hero__meta {
     font-size: 14px;
   }
   .podcast-hero__actions {
     gap: 10px;
-  }
-  .podcast-hero__badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
   }
 }
 </style>

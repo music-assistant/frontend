@@ -17,6 +17,8 @@ import {
   ContentType,
   CrossfadeMode,
   DSPState,
+  type ItemMapping,
+  MediaType,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
@@ -29,6 +31,7 @@ import {
   audioQueueProcessing,
 } from "../fixtures/audioProcessing";
 import { audioFormat } from "../fixtures/audioFormat";
+import { itemMapping } from "../fixtures/itemMapping";
 import { outputProtocol } from "../fixtures/outputProtocol";
 import { streamDetails } from "../fixtures/streamDetails";
 
@@ -68,6 +71,7 @@ const dependencies: AudioProcessingDetailsDependencies = {
   getIRName: (irId) => (irId ? irNames.get(irId) : undefined),
   getPlayerName: (player) => player.name,
   players: makePlayers(),
+  canOpenSettings: true,
 };
 
 beforeEach(() => {
@@ -75,6 +79,7 @@ beforeEach(() => {
   dependencies.locale = "en-US";
   dependencies.players = makePlayers();
   dependencies.getPlayerName = (player) => player.name;
+  dependencies.canOpenSettings = true;
   presetNames.clear();
   presetNames.set("preset-1", "Living room");
   irNames.clear();
@@ -93,6 +98,66 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       title: "FLAC",
       icon: FileIcon,
     });
+    expect(display.inputStages[0].subtitleParts).toBeUndefined();
+    expect(display.inputStages[0].subtitleLink).toBeUndefined();
+  });
+
+  it.each([
+    [MediaType.ALBUM, "Album"],
+    [MediaType.PLAYLIST, "Playlist"],
+  ])(
+    "names the %s the track was played from under its source",
+    (mediaType, label) => {
+      const container = itemMapping({
+        item_id: "7",
+        provider: "tidal--1",
+        media_type: mediaType,
+        name: "Road Trip",
+      });
+
+      const display = buildDisplay(
+        {},
+        makeFormat(),
+        undefined,
+        undefined,
+        container,
+      );
+
+      expect(display.inputStages[0]).toMatchObject({
+        title: "Test provider",
+        subtitleParts: ["Playing from Road Trip", label],
+        subtitleLink: {
+          to: {
+            name: mediaType,
+            params: { provider: "tidal--1", itemId: "7" },
+          },
+          label: "Open Road Trip",
+        },
+      });
+    },
+  );
+
+  it("names a folder the track was played from without a link", () => {
+    const container = itemMapping({
+      item_id: "Late Night Mix",
+      provider: "filesystem_local--1",
+      media_type: MediaType.FOLDER,
+      name: "Late Night Mix",
+    });
+
+    const stage = buildDisplay(
+      {},
+      makeFormat(),
+      undefined,
+      undefined,
+      container,
+    ).inputStages[0];
+
+    expect(stage.subtitleParts).toEqual([
+      "Playing from Late Night Mix",
+      "Folder",
+    ]);
+    expect(stage.subtitleLink).toBeUndefined();
   });
 
   it.each([
@@ -414,6 +479,111 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     );
   });
 
+  it("links the DSP rows of a single-speaker output to its DSP settings", () => {
+    const display = buildDisplay({
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["airplay-kitchen"],
+          dsp: audioDSPDetails({
+            state: DSPState.ENABLED,
+            preset_id: "preset-1",
+          }),
+          output_format: makeFormat(),
+        }),
+      ],
+    });
+    const dspStages = display.outputPaths[0].stages.filter((stage) =>
+      stage.key.startsWith("dsp-"),
+    );
+
+    expect(dspStages).toHaveLength(2);
+    for (const stage of dspStages) {
+      expect(stage.link).toEqual({
+        to: { name: "editplayerdsp", params: { playerId: "kitchen" } },
+        label: "Open DSP settings",
+      });
+    }
+  });
+
+  it("does not link the DSP rows of an output to several speakers", () => {
+    const display = buildDisplay({
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["airplay-kitchen", "office"],
+          dsp: audioDSPDetails({
+            state: DSPState.ENABLED,
+            preset_id: "preset-1",
+          }),
+          output_format: makeFormat(),
+        }),
+      ],
+    });
+
+    expect(
+      display.outputPaths[0].stages.some((stage) => stage.link !== undefined),
+    ).toBe(false);
+  });
+
+  it.each([
+    ["the queue", "queue-1", true],
+    ["a live source", undefined, false],
+  ])("links normalization and crossfade for %s", (_label, queueId, linked) => {
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.DYNAMIC,
+          }),
+        }),
+      },
+      makeFormat(),
+      CrossfadeMode.STANDARD_CROSSFADE,
+      queueId,
+    );
+    const expected = linked
+      ? {
+          to: { name: "editqueue", params: { queueId: "queue-1" } },
+          label: "Open queue settings",
+        }
+      : undefined;
+
+    for (const key of ["normalization", "crossfade"]) {
+      expect(
+        display.processingStages.find((stage) => stage.key === key)?.link,
+      ).toEqual(expected);
+    }
+  });
+
+  it("links nothing for a user who may not open settings", () => {
+    dependencies.canOpenSettings = false;
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.DYNAMIC,
+          }),
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["airplay-kitchen"],
+            dsp: audioDSPDetails({ state: DSPState.ENABLED }),
+            output_format: makeFormat(),
+          }),
+        ],
+      },
+      makeFormat(),
+      CrossfadeMode.STANDARD_CROSSFADE,
+      "queue-1",
+    );
+    const stages = [
+      ...display.processingStages,
+      ...display.outputPaths[0].stages,
+    ];
+
+    expect(stages.some((stage) => stage.link !== undefined)).toBe(false);
+    expect(display.outputPaths[0].destination.title).toBe("Kitchen");
+  });
+
   it("resolves presets and protocol-parent destinations", () => {
     const chain: Partial<AudioProcessingChain> = {
       input_fidelity: audioFidelity({ quality: AudioQuality.LOSSLESS }),
@@ -546,6 +716,25 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       });
     },
   );
+
+  it("shows a reported voice-over whatever the crossfade intent", () => {
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          crossfade_mode: CrossfadeMode.VOICE_OVER,
+        }),
+      },
+      makeFormat(),
+      CrossfadeMode.DISABLED,
+    );
+
+    expect(
+      display.processingStages.find((stage) => stage.key === "crossfade"),
+    ).toMatchObject({
+      title: "Crossfade",
+      subtitleParts: ["Voice-over, music ducked under it"],
+    });
+  });
 
   it("prefers crossfade intent over the reported fallback mode", () => {
     const display = buildDisplay(
@@ -903,6 +1092,8 @@ function buildDisplay(
   chain: Partial<AudioProcessingChain> = {},
   format = makeFormat(),
   crossfadeIntent?: CrossfadeMode,
+  queueId?: string,
+  container?: ItemMapping,
 ) {
   return buildAudioProcessingDetailsDisplay(
     audioProcessingChain(chain),
@@ -913,6 +1104,8 @@ function buildDisplay(
     }),
     dependencies,
     crossfadeIntent,
+    queueId,
+    container,
   );
 }
 

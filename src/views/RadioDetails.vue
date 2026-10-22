@@ -1,9 +1,12 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
-    <!-- dynamic station: content is generated on the fly, so show a sample instead of "other versions" -->
+    <!-- tracklisted station (dynamic or finite): show its tracks instead of "other versions" -->
     <DynamicItemSample
-      v-if="itemDetails && itemDetails.is_dynamic"
+      v-if="
+        itemDetails &&
+        (itemDetails.is_dynamic || itemDetails.is_endless === false)
+      "
       :item-details="itemDetails"
       :provider="props.provider"
     />
@@ -16,8 +19,8 @@
       :show-library="false"
       :show-radio-number="false"
       :show-duration="false"
-      :load-items="loadRadioVersions"
-      :sort-keys="['provider', 'sort_name']"
+      :sort-listing="ListingType.VERSIONS"
+      :load-paged-data="loadRadioVersions"
       :title="$t('other_versions')"
       :hide-on-empty="true"
     />
@@ -31,17 +34,11 @@
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import DynamicItemSample from "@/components/DynamicItemSample.vue";
-import { ref, watch, onMounted, onBeforeUnmount } from "vue";
-import {
-  EventType,
-  type Radio,
-  type EventMessage,
-  type MediaItemType,
-} from "@/plugins/api/interfaces";
+import { ref, watch } from "vue";
+import { ListingType, type Radio } from "@/plugins/api/interfaces";
 import ProviderDetails from "@/components/ProviderDetails.vue";
-import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
+import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
-import { getStreamingProviderMappings } from "@/helpers/utils";
 
 export interface Props {
   itemId: string;
@@ -62,48 +59,19 @@ watch(
   { immediate: true },
 );
 
-onMounted(() => {
-  //signal if/when item updates
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_UPDATED,
-    (evt: EventMessage) => {
-      const updatedItem = evt.data as MediaItemType;
-      if (itemDetails.value?.uri == updatedItem.uri) {
-        itemDetails.value = keepOwnFavorite(
-          updatedItem,
-          itemDetails.value,
-        ) as Radio;
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
-
-  // the user's own like or dislike, wherever they made it
-  const unsubFavorite = subscribeOwnFavorites((update) => {
-    const item = itemDetails.value;
-    if (item?.uri == update.uri) item.favorite = update.favorite;
-  });
-  onBeforeUnmount(unsubFavorite);
-});
+useDetailItemUpdates(itemDetails);
 
 const loadRadioVersions = async function (params: LoadDataParams) {
-  const allVersions: Radio[] = [];
-  if (props.provider == "library") {
-    const radioVersions = await api.getRadioVersions(
-      props.itemId,
-      props.provider,
-    );
-    allVersions.push(...radioVersions);
-  }
-  for (const providerMapping of getStreamingProviderMappings(
-    itemDetails.value!,
-  )) {
-    const radioVersions = await api.getRadioVersions(
-      providerMapping.item_id,
-      providerMapping.provider_instance,
-    );
-    allVersions.push(...radioVersions);
-  }
-  return allVersions;
+  const radio = itemDetails.value;
+  if (!radio) return [];
+  return await api.getRadioVersions(
+    radio.item_id,
+    radio.provider,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+  );
 };
 </script>

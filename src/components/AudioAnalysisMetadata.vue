@@ -71,7 +71,10 @@ const props = defineProps<{
 const bpm = computed(() =>
   props.audioMetadata?.bpm ? Math.round(props.audioMetadata.bpm) : undefined,
 );
-const musicalKey = computed(
-  () => props.audioMetadata?.musical_key || undefined,
-);
+const musicalKey = computed(() => {
+  const key = props.audioMetadata?.musical_key;
+  if (!key) return undefined;
+  const camelotKey = props.audioMetadata?.camelot_key;
+  return camelotKey ? `${key} (${camelotKey})` : key;
+});
 </script>

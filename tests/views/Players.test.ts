@@ -55,7 +55,8 @@ vi.mock("@/plugins/eventbus", () => ({
   },
 }));
 
-vi.mock("@/helpers/player_config", () => ({
+vi.mock("@/helpers/player_config", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/player_config")>()),
   getPlayerName: (config: PlayerConfig) => config.name ?? config.player_id,
 }));
 
@@ -92,19 +93,6 @@ const playerConfig = {
   provider: "test",
   player_type: PlayerType.PLAYER,
   values: {},
-};
-
-const ListItemStub = {
-  emits: ["click", "menu"],
-  template: `
-    <button
-      class="player-list-item"
-      @click="$emit('click')"
-      @contextmenu="$emit('menu', $event)"
-    >
-      <slot name="title" />
-    </button>
-  `,
 };
 
 const SettingsPlayerCardStub = {
@@ -172,7 +160,7 @@ describe("Players", () => {
   });
 
   it.each([
-    ["list", ".player-list-item"],
+    ["list", ".player-row"],
     ["card", ".settings-player-card"],
   ] as const)(
     "starts setup when clicking a setup-required player in %s view",
@@ -194,7 +182,7 @@ describe("Players", () => {
     apiMock.players.kitchen.available = true;
     const wrapper = await mountPlayers("list");
 
-    await wrapper.get(".player-list-item").trigger("click");
+    await wrapper.get(".player-row").trigger("click");
 
     expect(emitEvent).not.toHaveBeenCalledWith(
       "setupFlowDialog",
@@ -207,7 +195,7 @@ describe("Players", () => {
     playerConfig.enabled = false;
     const wrapper = await mountPlayers("list");
 
-    await wrapper.get(".player-list-item").trigger("click");
+    await wrapper.get(".player-row").trigger("click");
 
     expect(emitEvent).not.toHaveBeenCalledWith(
       "setupFlowDialog",
@@ -216,10 +204,23 @@ describe("Players", () => {
     expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
   });
 
+  it("opens a player from its name, a button the keyboard can reach", async () => {
+    apiMock.players.kitchen.needs_setup = false;
+    apiMock.players.kitchen.available = true;
+    const wrapper = await mountPlayers("list");
+    const name = wrapper.get('.player-row [data-testid="player-open"]');
+
+    expect(name.element.tagName).toBe("BUTTON");
+    await name.trigger("click");
+
+    expect(routerPush).toHaveBeenCalledTimes(1);
+    expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
+  });
+
   it("opens the shared player menu with links to the settings sections", async () => {
     const wrapper = await mountPlayers("list");
 
-    await wrapper.get(".player-list-item").trigger("contextmenu");
+    await wrapper.get(".player-row").trigger("contextmenu", { button: 2 });
 
     expect(getPlayerSettingsMenuItems).toHaveBeenCalledWith(
       expect.objectContaining({ player_id: "kitchen" }),
@@ -234,7 +235,8 @@ describe("Players", () => {
   it("opens the menu at the touch position for a long-press", async () => {
     const wrapper = await mountPlayers("list");
 
-    await wrapper.get(".player-list-item").trigger("contextmenu", {
+    await wrapper.get(".player-row").trigger("contextmenu", {
+      button: 2,
       touches: [{ clientX: 11, clientY: 22 }],
     });
 
@@ -247,7 +249,7 @@ describe("Players", () => {
   it("labels the player of this device next to its real name", async () => {
     webPlayer.player_id = "kitchen";
     const wrapper = await mountPlayers("list");
-    const row = wrapper.get(".player-list-item");
+    const row = wrapper.get(".player-row");
 
     expect(row.text()).toContain("Kitchen");
     expect(row.get(".player-device-badge-label").text()).toBe("this_device");
@@ -265,21 +267,21 @@ describe("Players", () => {
 
     filters.vm.$emit("update:statuses", ["needs_setup"]);
     await flushPromises();
-    expect(wrapper.find(".player-list-item").exists()).toBe(true);
+    expect(wrapper.find(".player-row").exists()).toBe(true);
 
     filters.vm.$emit("update:statuses", ["available"]);
     await flushPromises();
-    expect(wrapper.find(".player-list-item").exists()).toBe(false);
+    expect(wrapper.find(".player-row").exists()).toBe(false);
   });
 
   it("drops a deleted player from the list", async () => {
     const wrapper = await mountPlayers("list");
-    await wrapper.get(".player-list-item").trigger("contextmenu");
+    await wrapper.get(".player-row").trigger("contextmenu", { button: 2 });
 
     getPlayerSettingsMenuItems.mock.calls[0][1]!.onDeleted!();
     await flushPromises();
 
-    expect(wrapper.find(".player-list-item").exists()).toBe(false);
+    expect(wrapper.find(".player-row").exists()).toBe(false);
   });
 });
 
@@ -289,6 +291,8 @@ async function mountPlayers(viewMode: "list" | "card") {
       mocks: {
         $t: (key: string) => key,
       },
+      // the long-press directive is registered by a plugin the test skips
+      directives: { hold: {} },
       provide: {
         playersViewMode: {
           toggleViewMode: vi.fn(),
@@ -299,15 +303,10 @@ async function mountPlayers(viewMode: "list" | "card") {
         AddPlayerGroupDialog: true,
         Button: true,
         Container: passthroughStub,
-        ListItem: ListItemStub,
         PlayerFilters: true,
         PlayerIcon: true,
         RouterLink: true,
         SettingsPlayerCard: SettingsPlayerCardStub,
-        VCol: passthroughStub,
-        VIcon: true,
-        VList: passthroughStub,
-        VRow: passthroughStub,
       },
     },
   });

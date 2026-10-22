@@ -319,7 +319,7 @@ import {
   ref,
   watch,
 } from "vue";
-import { useRouter } from "vue-router";
+import { START_LOCATION, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import ConfigEntryRow from "@/views/settings/ConfigEntryRow.vue";
 
@@ -394,12 +394,13 @@ const flowTitle = computed(() => {
       api.getProviderManifest(launch.value.domain)?.name || launch.value.domain;
     return $t("settings.setup_flow.setup_title", [name]);
   }
-  // the launch event carries only an id, so neither instance nor player is
-  // guaranteed to be in the store; both fall back to an unnamed title
+  // neither instance nor player is guaranteed to be in the store; both fall
+  // back to an unnamed title
   if (launch.value.kind === "reconfigure") {
-    const instance = api.providers[launch.value.instanceId];
-    return instance
-      ? $t("settings.setup_flow.reconfigure_title", [instance.name])
+    const name =
+      launch.value.name || api.providers[launch.value.instanceId]?.name;
+    return name
+      ? $t("settings.setup_flow.reconfigure_title", [name])
       : $t("settings.reconfigure");
   }
   const player = api.players[launch.value.playerId];
@@ -466,8 +467,16 @@ onMounted(() => {
   eventbus.on("setupFlowDialog", onLaunch);
 });
 
+// a link inside a step that opens another page in the same tab has taken the
+// user away from the flow, so it ends instead of covering that page
+const removeRouteGuard = router.afterEach((to, from, failure) => {
+  if (failure || !open.value || from === START_LOCATION) return;
+  if (to.path !== from.path) close();
+});
+
 onBeforeUnmount(() => {
   eventbus.off("setupFlowDialog", onLaunch);
+  removeRouteGuard();
   cleanupFlow();
   stopCountdown();
 });

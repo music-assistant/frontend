@@ -2,12 +2,11 @@
   <div class="p-4">
     <!-- Header card -->
     <SettingsHeaderCard
-      v-model:show-advanced-settings="showAdvancedSettings"
       :icon="Palette"
       icon-class="text-orange-500"
       :title="$t('settings.frontend')"
       :description="$t('settings.frontend_description')"
-      :show-advanced-toggle="hasAdvancedEntries(config)"
+      :documentation-url="documentationUrl"
       @reset-to-defaults="resetToDefaults"
     />
 
@@ -15,7 +14,6 @@
     <EditConfig
       v-if="config.length > 0"
       ref="editConfig"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :config-entries="config"
       :disabled="false"
       @submit="onSubmit"
@@ -36,13 +34,12 @@
 
 <script setup lang="ts">
 import { Palette } from "@lucide/vue";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { Spinner } from "@/components/ui/spinner";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { DEVICE_SETTING_KEYS } from "@/constants";
-import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
 import {
   BROWSER_MEDIA_CONTROLS,
   BrowserMediaControlsMode,
@@ -52,6 +49,7 @@ import {
   saveDeviceSetting,
 } from "@/helpers/device_settings";
 import { expertMode, expertModeSetting } from "@/helpers/expert_mode";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -65,14 +63,16 @@ import { store } from "@/plugins/store";
 import EditConfig from "./EditConfig.vue";
 import SettingsHeaderCard from "./SettingsHeaderCard.vue";
 
+const FRONTEND_DOCS_URL = "https://music-assistant.io/settings/user-interface/";
+
 // global refs
 const router = useRouter();
 const config = ref<ConfigEntry[]>([]);
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
-// no entry below is advanced today, so the toggle stays hidden; the wiring is what
-// makes an advanced entry reachable the moment one is added
-const showAdvancedSettings = ref(false);
+
+// the docs of a beta server live on the beta site
+const documentationUrl = computed(() => getExternalLinkUrl(FRONTEND_DOCS_URL));
 
 // The form hands back every entry on save, not just the edited ones, so the
 // values it submits are compared against these to tell a real change from a

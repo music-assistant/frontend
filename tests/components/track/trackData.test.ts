@@ -66,7 +66,13 @@ describe("trackData", () => {
   describe("loadTrackAlbums / loadTrackVersions", () => {
     it("ask the track's own provider", async () => {
       await loadTrackAlbums(TRACK);
-      expect(apiMock.getTrackAlbums).toHaveBeenLastCalledWith("1", "library");
+      expect(apiMock.getTrackAlbums).toHaveBeenLastCalledWith(
+        "1",
+        "library",
+        false,
+        undefined,
+        0,
+      );
 
       await loadTrackVersions(TRACK);
       expect(apiMock.getTrackVersions).toHaveBeenLastCalledWith("1", "library");
@@ -100,7 +106,11 @@ describe("trackData", () => {
       apiMock.getSimilarTracks.mockResolvedValue([self, other, elsewhere]);
 
       expect(await loadSimilarTracks(TRACK)).toEqual([other, elsewhere]);
-      expect(apiMock.getSimilarTracks).toHaveBeenLastCalledWith("1", "library");
+      expect(apiMock.getSimilarTracks).toHaveBeenLastCalledWith(
+        "1",
+        "library",
+        25,
+      );
     });
   });
 

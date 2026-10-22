@@ -1,3 +1,9 @@
+/** The domain of the Local files provider, which reads a folder on the server. */
+export const LOCAL_FILES_DOMAIN = "filesystem_local";
+
+/** The domain prefix of the providers that read music files from a folder. */
+export const FILESYSTEM_DOMAIN_PREFIX = "filesystem_";
+
 /**
  * Providers the server has folded into another provider. An instance keeps its id when
  * its provider is converted, because the library refers to it by that id, so the id
@@ -6,8 +12,8 @@
  * after 2.13 release").
  */
 const MERGED_PROVIDER_DOMAINS: Readonly<Record<string, string>> = {
-  filesystem_smb: "filesystem_local",
-  filesystem_nfs: "filesystem_local",
+  filesystem_smb: LOCAL_FILES_DOMAIN,
+  filesystem_nfs: LOCAL_FILES_DOMAIN,
 };
 
 /** What the app knows of the providers: the loaded instances and the manifests. */

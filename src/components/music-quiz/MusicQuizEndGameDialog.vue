@@ -1,7 +1,7 @@
 <template>
   <AlertDialog v-model:open="open">
     <AlertDialogContent class="gap-3 p-4 sm:max-w-sm sm:p-5">
-      <AlertDialogHeader class="gap-1 text-left">
+      <AlertDialogHeader class="gap-1">
         <AlertDialogTitle>
           {{ $t("providers.music_quiz.end_game") }}
         </AlertDialogTitle>
