@@ -480,16 +480,27 @@ const skipCurrentSong = async () => {
   skippingSong.value = true;
   const votedItemId = currentQueueItemId.value;
   try {
-    const result = (await api.sendCommand("party/skip")) as {
+    // Tell the server which track the guest saw, so a vote that arrives after
+    // the track changed does not count towards the next one
+    const result = (await api.sendCommand(
+      "party/skip",
+      votedItemId ? { queue_item_id: votedItemId } : undefined,
+    )) as {
       success: boolean;
       skipped: boolean;
       vote_counted: boolean;
+      song_changed: boolean;
       votes: number;
       votes_required: number;
     };
 
     if (!result.success) {
       throw new Error("Server rejected the request");
+    }
+
+    if (result.song_changed) {
+      toast.info($t("providers.party.guest_page.skip_song_changed"));
+      return;
     }
 
     if (!result.vote_counted) {

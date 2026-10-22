@@ -11,6 +11,7 @@ import PartyGuestView from "@/views/PartyGuestView.vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
+import { toast } from "vue-sonner";
 
 // Tracks live subscriptions the way the api does, so one that outlives the
 // view stays listed here.
@@ -360,6 +361,7 @@ describe("PartyGuestView skip voting", () => {
             success: true,
             skipped: false,
             vote_counted: true,
+            song_changed: false,
             votes: 1,
             votes_required: 2,
           }
@@ -372,6 +374,47 @@ describe("PartyGuestView skip voting", () => {
     skipState.currentQueue.value = null;
     partyConfig.config.value = null;
     vi.mocked(api.sendCommand).mockResolvedValue(null as never);
+  });
+
+  it("tells the server which track the guest voted on", async () => {
+    playItem("item_a");
+    const view = mountViewRaw();
+    await flushPromises();
+
+    view.findComponent(PartyQueueSection).vm.$emit("skip");
+    await flushPromises();
+
+    expect(api.sendCommand).toHaveBeenCalledWith("party/skip", {
+      queue_item_id: "item_a",
+    });
+  });
+
+  it("does not count a vote for a track that already changed", async () => {
+    vi.mocked(api.sendCommand).mockImplementation(async (command: unknown) =>
+      command === "party/skip"
+        ? {
+            success: true,
+            skipped: false,
+            vote_counted: false,
+            song_changed: true,
+            votes: 0,
+            votes_required: 2,
+          }
+        : null,
+    );
+    playItem("item_a");
+    const view = mountViewRaw();
+    await flushPromises();
+
+    view.findComponent(PartyQueueSection).vm.$emit("skip");
+    await flushPromises();
+
+    expect(toast.info).toHaveBeenCalledWith(
+      "providers.party.guest_page.skip_song_changed",
+    );
+    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
+      false,
+    );
   });
 
   it("lets a guest vote again when the server drops the votes", async () => {
