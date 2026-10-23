@@ -26,7 +26,6 @@ const {
 } = vi.hoisted(() => ({
   apiMock: {
     abortSetupFlow: vi.fn<MusicAssistantApi["abortSetupFlow"]>(),
-    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
     players: {
       "player-1": { name: "Living Room" },
     },
@@ -38,8 +37,9 @@ const {
       },
     },
     reconfigureProvider: vi.fn<MusicAssistantApi["reconfigureProvider"]>(),
-    setupPlayer: vi.fn<MusicAssistantApi["setupPlayer"]>(),
     setupProvider: vi.fn<MusicAssistantApi["setupProvider"]>(),
+    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
+    setupPlayer: vi.fn<MusicAssistantApi["setupPlayer"]>(),
     state: {
       value: "authenticated",
     },
@@ -53,6 +53,7 @@ const {
   },
   routerMock: {
     push: vi.fn(),
+    // the hooks the dialog follows the page with, for a test to call
     hooks: [] as ((to: { path: string }, from: { path: string }) => void)[],
     afterEach: vi.fn(),
   },
