@@ -1157,10 +1157,6 @@ export class MusicAssistantApi {
     });
   }
 
-  /**
-   * Moves one item of a playlist, resolving once the provider holds the new
-   * order. Both positions are 1-based; `to_position` is where the item ends up.
-   */
   public movePlaylistTrack(
     db_playlist_id: string | number,
     from_position: number,

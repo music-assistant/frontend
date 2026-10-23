@@ -247,9 +247,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   select: [item: MediaItemType, selected: boolean];
-  // the drag handle was grabbed
   dragStart: [evt: PointerEvent];
-  // the handle asked to move the row this many places
   moveBy: [delta: number];
 }>();
 

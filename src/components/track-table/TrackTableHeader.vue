@@ -5,7 +5,6 @@
     :style="{ gridTemplateColumns: gridTemplate }"
   >
     <template v-for="column in columns" :key="column">
-      <!-- the drag handles have no heading -->
       <span v-if="column === 'handle'" aria-hidden="true"></span>
       <span
         v-else-if="column === 'number'"

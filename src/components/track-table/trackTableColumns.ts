@@ -1,5 +1,4 @@
 export type TrackColumn =
-  // the drag handle of a listing that can be reordered, never chosen by the user
   | "handle"
   | "number"
   | "title"

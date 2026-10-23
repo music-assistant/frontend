@@ -248,7 +248,7 @@
           </v-col>
         </v-row>
 
-        <!-- list view; the wrapper anchors the row being dragged -->
+        <!-- list view -->
         <div v-if="viewMode == 'list'" ref="listRowsEl" class="relative h-full">
           <v-virtual-scroll
             :item-height="showTrackTable ? TRACK_ROW_HEIGHT : 70"
@@ -1302,7 +1302,6 @@ const hasActiveFilters = computed(() => {
   );
 });
 
-// rows only move in the playlist's own order, with every row listed
 const canDragTracks = computed(
   () =>
     props.reorderable &&
@@ -1336,7 +1335,6 @@ const draggedTrack = computed(() =>
     ? undefined
     : pagedItems.value[draggingIndex.value],
 );
-// the rows between the dragged row and its drop slot slide aside
 const trackRowDragStyle = (index: number) =>
   isDragging.value
     ? { transform: `translateY(${rowOffset(index)}px)` }

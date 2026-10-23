@@ -61,7 +61,6 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
         : undefined,
   });
 
-  // Begin dragging a row from its handle, unless a move is still saving.
   const startDrag = (evt: PointerEvent, index: number) => {
     if (saving.value) return;
     drag.startItemDrag(evt, index);

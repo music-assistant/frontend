@@ -271,11 +271,8 @@ export function useItemsListing(
     }
   };
 
-  /**
-   * Reads the items already listed again, in one request and without clearing
-   * the list, so the rows stay mounted and the scroll position holds. For a
-   * change to items the listing already shows.
-   */
+  // re-reads the listed items without clearing them, so the rows stay mounted
+  // and the scroll position holds
   const reloadLoadedItems = async function () {
     const activeTab = props.toolBarTabs?.length ? getActiveTab() : undefined;
     const loadPagedData = activeTab?.loadPagedData ?? props.loadPagedData;
