@@ -10,8 +10,48 @@ import {
   playlistPosition,
 } from "@/helpers/playlist_reorder";
 import { api } from "@/plugins/api";
-import type { MediaItemType } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  TaskStatus,
+  type BackgroundTask,
+  type EventMessage,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { Ref, computed, reactive, toRaw, watch } from "vue";
+
+const FINISHED_TASK_STATUSES = new Set([
+  TaskStatus.SUCCESS,
+  TaskStatus.PARTIAL_SUCCESS,
+  TaskStatus.FAILED,
+  TaskStatus.CANCELLED,
+]);
+// The longest an edit waits for its background task, should its end go
+// unreported (e.g. while the connection is down).
+const TASK_END_TIMEOUT_MS = 120_000;
+
+/** Resolves once a background task has finished, or is no longer listed. */
+export const untilTaskEnds = (task: BackgroundTask) =>
+  new Promise<void>((resolve) => {
+    if (FINISHED_TASK_STATUSES.has(task.status)) {
+      resolve();
+      return;
+    }
+    const stop = () => {
+      unsubscribe();
+      clearTimeout(timer);
+      resolve();
+    };
+    const unsubscribe = api.subscribe(
+      EventType.TASKS_UPDATED,
+      (event: EventMessage) => {
+        const current = (event.data as BackgroundTask[]).find(
+          (listed) => listed.id === task.id,
+        );
+        if (!current || FINISHED_TASK_STATUSES.has(current.status)) stop();
+      },
+    ) as () => void;
+    const timer = setTimeout(stop, TASK_END_TIMEOUT_MS);
+  });
 
 // Counts per playlist id, for edits on their way from outside the playlist's
 // listing (such as the track menu), and for every edit that is saving or

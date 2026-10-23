@@ -1,9 +1,14 @@
 import {
   isPlaylistEditPending,
   sendPlaylistEdit,
+  untilTaskEnds,
   usePlaylistTrackReorder,
 } from "@/composables/usePlaylistTrackReorder";
-import type { MediaItemType } from "@/plugins/api/interfaces";
+import {
+  TaskStatus,
+  type BackgroundTask,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, ref, toRaw } from "vue";
@@ -13,6 +18,7 @@ const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     movePlaylistTrack: vi.fn<() => Promise<void>>(),
     movePlaylistTracks: vi.fn<() => Promise<void>>(),
+    subscribe: vi.fn(),
   },
 }));
 
@@ -253,5 +259,42 @@ describe("usePlaylistTrackReorder", () => {
     finishReload();
     await flushPromises();
     expect(reorder.saving.value).toBe(false);
+  });
+
+  describe("untilTaskEnds", () => {
+    const task = (id: string, status: TaskStatus) =>
+      ({ id, status }) as BackgroundTask;
+
+    it("resolves once the task is reported finished", async () => {
+      let report: (event: { data: BackgroundTask[] }) => void = () => {};
+      const unsubscribe = vi.fn();
+      apiMock.subscribe.mockImplementation((_type, callback) => {
+        report = callback;
+        return unsubscribe;
+      });
+      let ended = false;
+      const waiting = untilTaskEnds(task("t1", TaskStatus.PENDING)).then(
+        () => (ended = true),
+      );
+
+      report({ data: [task("t1", TaskStatus.RUNNING)] });
+      await flushPromises();
+      expect(ended).toBe(false);
+      report({ data: [task("t1", TaskStatus.SUCCESS)] });
+      await waiting;
+
+      expect(unsubscribe).toHaveBeenCalledOnce();
+    });
+
+    it("resolves when the task's end goes unreported", async () => {
+      vi.useFakeTimers();
+      apiMock.subscribe.mockReturnValue(vi.fn());
+      const waiting = untilTaskEnds(task("t1", TaskStatus.PENDING));
+
+      vi.advanceTimersByTime(120_000);
+      vi.useRealTimers();
+
+      await expect(waiting).resolves.toBeUndefined();
+    });
   });
 });
