@@ -20,23 +20,38 @@
     "browse": "資料夾",
     "close": "關閉",
     "create_playlist": "新增 {0} 播放清單上",
+    "details": "詳情",
     "goto_album": "前往專輯 {0}",
     "goto_artist": "前往歌手 {0}",
     "library": "音樂庫",
     "mass": "Music Assistant",
     "new_playlist_name": "輸入新播放清單名稱",
+    "no_content": "沒有找到任何項目。",
     "no_content_filter": "未找到符合目前篩選\/搜尋條件的項目。",
+    "no_player": "尚未選擇播放器",
+    "off": "關閉",
+    "on": "開啟",
+    "other_versions": "其他版本",
+    "play": "播放",
     "play_album_from": "從這裡播放專輯",
+    "play_next": "播放下一首",
+    "play_now": "開始播放",
+    "play_on": "播放於:{0}",
     "play_playlist_from": "在這裡播放播放清單",
+    "player_type": {
+        "stereo_pair": "立體聲組合"
+    },
     "playlist": "播放清單",
     "playlist_tracks": "播放清單歌曲",
     "playlists": "播放清單",
     "queue": "佇列",
     "queue_clear": "清除佇列",
     "queue_delete": "刪除項目",
+    "queue_empty": "佇列中無任何項目",
     "queue_move_down": "向下移動",
     "queue_move_up": "向上移動",
     "queue_next_items": "接下來播放",
+    "queue_options": "佇列設定",
     "queue_previous_items": "已播放清單",
     "radios": "電臺",
     "read_more": "檢視更多",
@@ -52,6 +67,11 @@
         "documentation": "文件",
         "enable": "啟用",
         "enable_player": "啟用此播放器",
+        "invalid_input": "無效輸入",
+        "metadataproviders": "Matadata 提供來源",
+        "player_disabled": "自動播放已停用",
+        "player_name": "顯示名稱",
+        "player_provider": "播放器提供來源",
         "save": "儲存",
         "artists_in_library": "專輯庫裡的歌手",
         "albums_in_library": "專輯庫",
@@ -89,6 +109,8 @@
                 "description": "音訊串流和處理引擎設定"
             }
         },
+        "remote_access_title": "遠端安全存取",
+        "remote_access_explanation_intro": "遠端存取功能讓您可以從世界任何地方安全地連接到您的Music Assistant伺服器。",
         "remote_access_step_3": "隨時隨地連線並享受您的音樂！",
         "frontend": "使用者介面",
         "view_players": "檢視播放器",
@@ -152,7 +174,8 @@
         "provider": "提供來源",
         "album": "專輯 (按字母順序排列)",
         "artist": "歌手",
-        "album_sort_name": "專輯 (名稱排序)"
+        "album_sort_name": "專輯 (名稱排序)",
+        "album_name": "專輯"
     },
     "sync_running": "正在同步一個或多個音樂提供來源。",
     "tooltip": {
@@ -514,8 +537,16 @@
             "dsp_preset_label": "DSP 預設",
             "dsp_title": "DSP"
         },
-        "more_info_for": "更多資訊 {item}"
+        "more_info_for": "更多資訊 {item}",
+        "open_played_from": "打開 {0}"
     },
     "pause": "暫停",
-    "show_audio_chain_details_for_quality": "顯示音訊鏈詳情（{quality}）"
+    "show_audio_chain_details_for_quality": "顯示音訊鏈詳情（{quality}）",
+    "folder": "資料夾",
+    "select_all": "選擇多個項目",
+    "no_content_filter_hint": "嘗試使用不同關鍵字搜尋或是更改篩選條件",
+    "items_load_failed": "無法加載項目",
+    "onboarding": {
+        "paused_title": "暫停安裝"
+    }
 }
