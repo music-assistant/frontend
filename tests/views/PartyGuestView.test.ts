@@ -1,3 +1,4 @@
+import PartyQueueSection from "@/components/party/PartyQueueSection.vue";
 import PartyResultItem from "@/components/party/PartyResultItem.vue";
 import MediaSearch from "@/components/MediaSearch.vue";
 import api from "@/plugins/api";
@@ -10,6 +11,7 @@ import PartyGuestView from "@/views/PartyGuestView.vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
+import { toast } from "vue-sonner";
 
 // Tracks live subscriptions the way the api does, so one that outlives the
 // view stays listed here.
@@ -31,6 +33,15 @@ const guest = vi.hoisted(() => ({
   startCountdown: vi.fn(() => vi.fn()),
   subscribeToEvents: vi.fn(() => vi.fn()),
 }));
+
+// shared so tests can enable skipping and switch the playing track
+const skipState = await vi.hoisted(async () => {
+  const { ref } = await import("vue");
+  return {
+    skipSongEnabled: ref(false),
+    currentQueue: ref<unknown>(null),
+  };
+});
 
 // shared so tests can set the party config before mounting the view
 const partyConfig = await vi.hoisted(async () => {
@@ -54,7 +65,7 @@ vi.mock("@/plugins/router", () => ({ default: {} }));
 vi.mock("@/plugins/auth", () => ({ authManager: {}, default: {} }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("vue-sonner", () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
+  toast: { error: vi.fn(), info: vi.fn(), success: vi.fn(), warning: vi.fn() },
 }));
 
 vi.mock("@/composables/usePartyConfig", () => ({
@@ -69,7 +80,7 @@ vi.mock("@/composables/useRateLimiting", () => ({
     rateLimitingEnabled: ref(false),
     boostEnabled: ref(false),
     addQueueEnabled: ref(true),
-    skipSongEnabled: ref(false),
+    skipSongEnabled: skipState.skipSongEnabled,
     requestBadgeColor: ref("#2196F3"),
     boostBadgeColor: ref("#FF5722"),
     boostTokens: ref(0),
@@ -97,7 +108,7 @@ vi.mock("@/composables/guest/useGuestQueue", () => ({
     queueFetchOffset: ref(0),
     loadingMoreQueueItems: ref(false),
     partyQueueId: ref(null),
-    currentQueue: ref(null),
+    currentQueue: skipState.currentQueue,
     currentQueueIndex: ref(0),
     fetchQueueItems: vi.fn(),
     handleQueueScroll: vi.fn(),
@@ -329,5 +340,142 @@ describe("PartyGuestView requesting the same track again", () => {
     expect(
       view.findComponent(PartyResultItem).props("addedItems").has(track.uri),
     ).toBe(false);
+  });
+});
+
+describe("PartyGuestView skip voting", () => {
+  const playItem = (queueItemId: string) => {
+    skipState.currentQueue.value = {
+      current_item: { queue_item_id: queueItemId, extra_attributes: {} },
+    };
+  };
+
+  beforeEach(() => {
+    skipState.skipSongEnabled.value = true;
+    partyConfig.config.value = {
+      skip_votes_required: 2,
+    } as unknown as PartyConfig;
+    vi.mocked(api.sendCommand).mockImplementation(async (command: unknown) =>
+      command === "party/skip"
+        ? {
+            success: true,
+            skipped: false,
+            vote_counted: true,
+            song_changed: false,
+            votes: 1,
+            votes_required: 2,
+          }
+        : null,
+    );
+  });
+
+  afterEach(() => {
+    skipState.skipSongEnabled.value = false;
+    skipState.currentQueue.value = null;
+    partyConfig.config.value = null;
+    vi.mocked(api.sendCommand).mockResolvedValue(null as never);
+  });
+
+  it("tells the server which track the guest voted on", async () => {
+    playItem("item_a");
+    const view = mountViewRaw();
+    await flushPromises();
+
+    view.findComponent(PartyQueueSection).vm.$emit("skip");
+    await flushPromises();
+
+    expect(api.sendCommand).toHaveBeenCalledWith("party/skip", {
+      queue_item_id: "item_a",
+    });
+  });
+
+  it("does not count a vote for a track that already changed", async () => {
+    vi.mocked(api.sendCommand).mockImplementation(async (command: unknown) =>
+      command === "party/skip"
+        ? {
+            success: true,
+            skipped: false,
+            vote_counted: false,
+            song_changed: true,
+            votes: 0,
+            votes_required: 2,
+          }
+        : null,
+    );
+    playItem("item_a");
+    const view = mountViewRaw();
+    await flushPromises();
+
+    view.findComponent(PartyQueueSection).vm.$emit("skip");
+    await flushPromises();
+
+    expect(toast.info).toHaveBeenCalledWith(
+      "providers.party.guest_page.skip_song_changed",
+    );
+    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
+      false,
+    );
+  });
+
+  it("lets a guest vote again when the server drops the votes", async () => {
+    playItem("item_a");
+    const view = mountViewRaw();
+    await flushPromises();
+
+    view.findComponent(PartyQueueSection).vm.$emit("skip");
+    await flushPromises();
+    // the server stores the tally on the playing item
+    skipState.currentQueue.value = {
+      current_item: {
+        queue_item_id: "item_a",
+        extra_attributes: { party_skip_votes: 1 },
+      },
+    };
+    await flushPromises();
+    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
+      true,
+    );
+
+    // a reload of the Party plugin removes the tally while the track keeps playing
+    playItem("item_a");
+    await flushPromises();
+
+    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
+      false,
+    );
+  });
+
+  it("keeps the vote while the tally has not arrived yet", async () => {
+    playItem("item_a");
+    const view = mountViewRaw();
+    await flushPromises();
+
+    view.findComponent(PartyQueueSection).vm.$emit("skip");
+    await flushPromises();
+
+    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
+      true,
+    );
+  });
+
+  it("lets a guest vote again when a voted track plays again", async () => {
+    playItem("item_a");
+    const view = mountViewRaw();
+    await flushPromises();
+
+    view.findComponent(PartyQueueSection).vm.$emit("skip");
+    await flushPromises();
+    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
+      true,
+    );
+
+    playItem("item_b");
+    await flushPromises();
+    playItem("item_a");
+    await flushPromises();
+
+    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
+      false,
+    );
   });
 });

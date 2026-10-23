@@ -44,11 +44,29 @@
         :style="{ '--progress-scale': progressPercentage / 100 }"
       ></div>
     </div>
-    <!-- Guest request badge -->
-    <div v-if="isGuestRequest" class="guest-badge" :style="guestBadgeStyle">
-      <Rocket v-if="isBoost" class="badge-icon" />
-      <UserRound v-else class="badge-icon" />
-      <span v-if="position === 'current'">{{ badgeText }}</span>
+    <div
+      v-if="isGuestRequest || showSkipVotes"
+      class="ml-auto flex shrink-0 flex-col items-end gap-[0.6vh]"
+    >
+      <!-- Guest request badge -->
+      <div v-if="isGuestRequest" class="guest-badge" :style="guestBadgeStyle">
+        <Rocket v-if="isBoost" class="badge-icon" />
+        <UserRound v-else class="badge-icon" />
+        <span v-if="position === 'current'">{{ badgeText }}</span>
+      </div>
+      <!-- Skip vote progress for the current track -->
+      <div
+        v-if="showSkipVotes"
+        :class="
+          cn(
+            'flex items-center gap-[0.6vh] rounded-full border border-destructive/50 bg-destructive/30 px-[1.2vh] py-[0.5vh] text-[clamp(0.65rem,1.2vh,1.1rem)] font-semibold uppercase tracking-[0.5px] text-foreground/90 tabular-nums',
+            forceWhiteText && 'text-white/90',
+          )
+        "
+      >
+        <SkipForward class="badge-icon" />
+        <span>{{ skipVotesText }}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -59,9 +77,10 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
+import { cn } from "@/lib/utils";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Rocket, UserRound } from "@lucide/vue";
+import { Rocket, SkipForward, UserRound } from "@lucide/vue";
 import Color from "color";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
@@ -173,6 +192,26 @@ const badgeText = computed(() => {
   if (isBoost.value) return $t("providers.party.boost");
   return $t("providers.party.request");
 });
+
+const skipVotesRequired = computed(
+  () => partyConfig.value?.skip_votes_required ?? 1,
+);
+const skipVotes = computed(
+  () => props.queueItem?.extra_attributes?.party_skip_votes ?? 0,
+);
+
+// Only show the tally while a vote is open, and not when one vote skips right away
+const showSkipVotes = computed(
+  () =>
+    props.position === "current" &&
+    (partyConfig.value?.enable_skip_song ?? false) &&
+    skipVotesRequired.value > 1 &&
+    skipVotes.value > 0,
+);
+
+const skipVotesText = computed(() =>
+  $t("providers.party.skip_votes", [skipVotes.value, skipVotesRequired.value]),
+);
 
 // Computed track name - prefer media_item.name for proper track title
 const trackName = computed(() => {
@@ -352,8 +391,6 @@ watch(
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  flex-shrink: 0;
-  margin-left: auto;
 }
 
 .badge-icon {

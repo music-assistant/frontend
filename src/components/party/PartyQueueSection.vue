@@ -18,7 +18,9 @@
         <Button
           size="sm"
           :disabled="
-            (rateLimitingEnabled && skipSongTokens <= 0) || skippingSong
+            (rateLimitingEnabled && skipSongTokens <= 0) ||
+            skippingSong ||
+            hasVotedToSkip
           "
           class="skip-btn"
           @click="$emit('skip')"
@@ -26,6 +28,12 @@
           <Spinner v-if="skippingSong" class="size-4" />
           <SkipForward v-else :size="16" />
           {{ $t("providers.party.guest_page.skip") }}
+          <span
+            v-if="skipVotesRequired > 1"
+            class="ml-1 tabular-nums opacity-80"
+          >
+            {{ skipVotes }}/{{ skipVotesRequired }}
+          </span>
           <span
             v-if="rateLimitingEnabled"
             class="skip-token-badge"
@@ -92,6 +100,9 @@ const props = defineProps<{
   skipSongTokens: number;
   skippingSong: boolean;
   skipTokenCountdown: string;
+  skipVotes: number;
+  skipVotesRequired: number;
+  hasVotedToSkip: boolean;
   boostBadgeColor: string;
   requestBadgeColor: string;
   boostEnabled: boolean;
