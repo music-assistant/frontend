@@ -8,6 +8,7 @@ import {
   EventType,
   ListingType,
   MediaType,
+  QueueOption,
   SortDirection,
   SortField,
   type Album,
@@ -54,6 +55,7 @@ const mockGetLibraryGenres = vi.hoisted(() =>
 const mockGetSortOptions = vi.hoisted(() => vi.fn());
 const mockToastError = vi.hoisted(() => vi.fn());
 const mockSubscribeMulti = vi.hoisted(() => vi.fn());
+const mockPlayMedia = vi.hoisted(() => vi.fn<MusicAssistantApi["playMedia"]>());
 const mockSubscribe = vi.hoisted(() => vi.fn());
 
 vi.mock("@/plugins/api", () => {
@@ -63,6 +65,7 @@ vi.mock("@/plugins/api", () => {
     getLibraryGenres: mockGetLibraryGenres,
     getSortOptions: mockGetSortOptions,
     subscribe_multi: mockSubscribeMulti,
+    playMedia: mockPlayMedia,
     subscribe: mockSubscribe,
   };
   return { api, default: api };
@@ -191,6 +194,9 @@ vi.mock("@/composables/useTrackTableColumns", async () => {
 
 // the real store computes these; on the mock they are plain writable state
 const store = storeModule as typeof storeModule & { mobileLayout: boolean };
+const playerState = storeModule as unknown as {
+  activePlayer: { player_id: string } | undefined;
+};
 
 /** Signs in a user who saved these settings for the artist-albums listing. */
 function signInWithSavedSettings(settings: Record<string, unknown>) {
@@ -1808,6 +1814,107 @@ function confirmationRequest() {
   ][];
   return calls.find(([event]) => event === "deleteConfirmationDialog")?.[1];
 }
+
+describe("ItemsListing play all", () => {
+  // the listing stops paging once a page comes back more than ten items short of
+  // the limit, so thirteen albums at a limit of twelve take a second page
+  const discography = Array.from({ length: 13 }, (_, index) =>
+    album({
+      item_id: `album-${index}`,
+      name: `Album ${index}`,
+      year: 1990 + index,
+    }),
+  );
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset().mockResolvedValue([]);
+    mockGetSortOptions.mockReset().mockResolvedValue([]);
+    mockSubscribeMulti.mockReset().mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset().mockImplementation(events.subscribe);
+    mockPlayMedia.mockReset().mockResolvedValue(undefined);
+    playerState.activePlayer = { player_id: "player1" };
+    store.prevState = undefined;
+  });
+
+  /** Mount an artist album listing, in the order the albums are given. */
+  async function mountAlbums(albums = discography) {
+    const listing = mountListingRaw({
+      itemtype: "artistalbums",
+      path: "artistalbums",
+      showGenreFilter: false,
+      showPlayAll: true,
+      limit: 12,
+      loadPagedData: vi.fn(({ offset, limit }) =>
+        Promise.resolve(albums.slice(offset, offset + limit)),
+      ),
+    });
+    await flushPromises();
+    return listing;
+  }
+
+  function playAll(listing: ReturnType<typeof mountListingRaw>) {
+    const menuItems = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as {
+      label: string;
+      disabled?: boolean;
+      action?: () => void;
+    }[];
+    return menuItems.find((item) => item.label === "tooltip.play_all");
+  }
+
+  it("plays every album of the listing, in the order shown, unshuffled", async () => {
+    const listing = await mountAlbums();
+
+    playAll(listing)!.action!();
+    await flushPromises();
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(
+      discography.map((item) => item.uri),
+      QueueOption.REPLACE,
+      { shuffle: false },
+    );
+  });
+
+  it("leaves out the albums that cannot be played", async () => {
+    const unplayable = album({ item_id: "bootleg", name: "Bootleg" });
+    unplayable.is_playable = false;
+    const albums = [
+      ...discography.slice(0, 6),
+      unplayable,
+      ...discography.slice(6),
+    ];
+
+    playAll(await mountAlbums(albums))!.action!();
+    await flushPromises();
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(
+      discography.map((item) => item.uri),
+      QueueOption.REPLACE,
+      { shuffle: false },
+    );
+  });
+
+  it("is disabled while no player is selected", async () => {
+    playerState.activePlayer = undefined;
+
+    expect(playAll(await mountAlbums())?.disabled).toBe(true);
+  });
+
+  it("is left out of a listing that does not ask for it", async () => {
+    const listing = mountListingRaw({
+      itemtype: "artistalbums",
+      path: "artistalbums",
+      showGenreFilter: false,
+      loadPagedData: vi.fn().mockResolvedValue([discography[0]]),
+    });
+    await flushPromises();
+
+    expect(playAll(listing)).toBeUndefined();
+  });
+});
 
 describe("ItemsListing server sort options", () => {
   const sortOptions: SortOptionInfo[] = [
