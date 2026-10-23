@@ -265,7 +265,10 @@
                 :item="item"
                 :index="index"
                 :columns="trackRowColumns"
-                :class="{ 'opacity-0': draggingIndex === index }"
+                :class="[
+                  { 'opacity-0': draggingIndex === index },
+                  isDragging && 'transition-transform duration-200 ease-out',
+                ]"
                 :style="trackRowDragStyle(index)"
                 :show-checkboxes="showCheckboxes"
                 :is-selected="isSelected(item)"
@@ -1336,10 +1339,7 @@ const draggedTrack = computed(() =>
 // the rows between the dragged row and its drop slot slide aside
 const trackRowDragStyle = (index: number) =>
   isDragging.value
-    ? {
-        transform: `translateY(${rowOffset(index)}px)`,
-        transition: "transform 150ms ease",
-      }
+    ? { transform: `translateY(${rowOffset(index)}px)` }
     : undefined;
 
 // Server-paged listings only know their total when the parent passes it. An

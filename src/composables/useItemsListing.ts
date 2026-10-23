@@ -11,6 +11,13 @@ import {
   SortOptionInfo,
 } from "@/plugins/api/interfaces";
 
+// A load that returns more than this many items fewer (or more) than it asked
+// for reached the end of the listing.
+const PAGE_END_TOLERANCE = 10;
+
+const isLastPage = (received: number, requested: number) =>
+  Math.abs(received - requested) > PAGE_END_TOLERANCE;
+
 export type LoadPagedDataFn = (
   params: LoadDataParams,
 ) => Promise<MediaItemType[]>;
@@ -192,7 +199,7 @@ export function useItemsListing(
         else pagedItems.value = nextItems;
         displayedSort.value = requestedSort;
         retryFromStart = false;
-        if (Math.abs(nextItems.length - props.limit) > 10) {
+        if (isLastPage(nextItems.length, props.limit)) {
           allItemsReceived.value = true;
         }
       }
@@ -281,7 +288,7 @@ export function useItemsListing(
       // a load that started or finished meanwhile has the newer items
       if (disposed || loading.value || params.value.offset !== offset) return;
       pagedItems.value = items;
-      allItemsReceived.value = Math.abs(items.length - limit) > 10;
+      allItemsReceived.value = isLastPage(items.length, limit);
       newContentAvailable.value = false;
     } catch {
       // the api already reports the failure to the user
