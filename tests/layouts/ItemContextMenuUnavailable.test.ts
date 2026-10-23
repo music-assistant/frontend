@@ -10,6 +10,7 @@ import type {
 } from "@/plugins/eventbus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
+import { playlist } from "../fixtures/playlist";
 import { track } from "../fixtures/track";
 import { providerMapping } from "../fixtures/providerMapping";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
@@ -135,7 +136,7 @@ describe("the context menu of an unavailable library item", () => {
 describe("the context menu of an unresolved shared track", () => {
   const preview = track({
     provider: "builtin",
-    item_id: "share://track/encoded",
+    item_id: "share-preview://track/encoded",
     provider_mappings: [],
   });
 
@@ -155,6 +156,21 @@ describe("the context menu of an unresolved shared track", () => {
     expect(apiMock.getLibraryItem).not.toHaveBeenCalled();
     expect(apiMock.playMedia).not.toHaveBeenCalled();
     expect(routerMock.push).not.toHaveBeenCalled();
+  });
+
+  it("keeps normal playlist removal for imported unresolved tracks", async () => {
+    const imported = track({
+      provider: "builtin",
+      item_id: "share://track/0",
+      provider_mappings: [],
+    });
+    const parent = playlist({ item_id: "imported", is_editable: true });
+    apiMock.getLibraryItem.mockResolvedValue(imported);
+    await showContextMenuForMediaItem(imported, parent, 0, 0, true, true);
+    const labels = emittedMenus[0].items.map((entry) => entry.label);
+
+    expect(labels).not.toContain("share.search_track");
+    expect(labels).toContain("remove_playlist");
   });
 
   it("opens only track details after a confirmed text search", async () => {

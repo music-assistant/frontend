@@ -600,7 +600,7 @@ export const getContextMenuItems = async function (
   }
 
   const firstItem = items[0];
-  const sharedTrackPrefix = "share://track/";
+  const sharedTrackPrefix = "share-preview://track/";
   if (
     firstItem.media_type === MediaType.TRACK &&
     firstItem.provider === "builtin" &&

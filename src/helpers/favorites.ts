@@ -86,7 +86,7 @@ export function canHoldFavorite(
   if (
     item.media_type === MediaType.TRACK &&
     item.provider === "builtin" &&
-    item.item_id.startsWith("share://track/")
+    item.item_id.startsWith("share-preview://track/")
   ) {
     return false;
   }

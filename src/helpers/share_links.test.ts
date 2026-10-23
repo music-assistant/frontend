@@ -9,7 +9,7 @@ import {
 } from "./share_links";
 
 describe("encodeSharedTrack", () => {
-  it("preserves Unicode metadata and external IDs in a standalone v2 track", () => {
+  it("preserves Unicode metadata and external IDs without a version field", () => {
     const track = {
       title: "Musik \u00fcberall",
       artist: "Bj\u00f6rk",
@@ -24,17 +24,16 @@ describe("encodeSharedTrack", () => {
       (character) => character.charCodeAt(0),
     );
     expect(JSON.parse(new TextDecoder().decode(bytes))).toEqual({
-      v: 2,
       type: "track",
       ...track,
     });
+    expect(JSON.parse(new TextDecoder().decode(bytes))).not.toHaveProperty("v");
   });
 });
 
 describe("decodeSharePreview", () => {
-  it("decodes v2 compact references for display", () => {
+  it("decodes compact references without a version field", () => {
     const payload = {
-      v: 2,
       title: "Track",
       artist: "Artist",
       art_ref: "m:is1-ssl:/image/cover.jpg",
@@ -63,13 +62,6 @@ describe("decodeSharePreview", () => {
         },
       ],
     });
-  });
-
-  it("rejects legacy v1 payloads", () => {
-    const encoded = btoa(JSON.stringify({ v: 1, title: "Track", links: {} }));
-    expect(() =>
-      decodeSharePreview(`https://share.example/#${encoded}`, () => ""),
-    ).toThrow("Invalid share payload");
   });
 });
 

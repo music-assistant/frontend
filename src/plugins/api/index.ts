@@ -1202,18 +1202,30 @@ export class MusicAssistantApi {
   }
 
   public generateShareLink(uri: string): Promise<string> {
-    return this.sendCommand("share/generate", { uri });
+    return this.sendCommand(
+      "share/generate",
+      { uri },
+      { suppressGlobalError: true },
+    );
   }
 
   public resolveSharedItem(
     encoded: string,
     allow_search = true,
   ): Promise<MediaItemType | null> {
-    return this.sendCommand("share/resolve", { encoded, allow_search });
+    return this.sendCommand(
+      "share/resolve",
+      { encoded, allow_search },
+      { suppressGlobalError: true },
+    );
   }
 
   public importSharedPlaylist(encoded: string): Promise<Playlist> {
-    return this.sendCommand("share/import_playlist", { encoded });
+    return this.sendCommand(
+      "share/import_playlist",
+      { encoded },
+      { suppressGlobalError: true },
+    );
   }
 
   public previewSharedPlaylist(
@@ -1221,11 +1233,11 @@ export class MusicAssistantApi {
     offset: number,
     limit: number,
   ): Promise<MediaItemType[]> {
-    return this.sendCommand("share/preview_playlist", {
-      encoded,
-      offset,
-      limit,
-    });
+    return this.sendCommand(
+      "share/preview_playlist",
+      { encoded, offset, limit },
+      { suppressGlobalError: true },
+    );
   }
 
   public migratePlaylist(

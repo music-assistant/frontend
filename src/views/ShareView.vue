@@ -176,7 +176,12 @@ function goBack(): void {
 
 watch(
   () => props.payload,
-  async (encoded) => {
+  async (encoded, _previous, onCleanup) => {
+    let active = true;
+    onCleanup(() => {
+      active = false;
+    });
+    confirmImportOpen.value = false;
     decodedPayload.value = undefined;
     artworkFailed.value = false;
     errorKey.value = "";
@@ -199,15 +204,16 @@ watch(
 
     try {
       const item = await api.resolveSharedItem(encoded);
+      if (!active) return;
       if (!item) {
         errorKey.value = "share.resolve_failed";
         return;
       }
       await openItem(item);
     } catch {
-      errorKey.value = "share.resolve_failed";
+      if (active) errorKey.value = "share.resolve_failed";
     } finally {
-      loading.value = false;
+      if (active) loading.value = false;
     }
   },
   { immediate: true },
@@ -264,7 +270,6 @@ function decodePayload(encoded: string): SharedPayload {
   if (!value || typeof value !== "object") throw new Error("Invalid payload");
   const candidate = value as Record<string, unknown>;
   if (
-    candidate.v !== 2 ||
     !["track", "album", "artist", "playlist"].includes(
       String(candidate.type),
     ) ||
