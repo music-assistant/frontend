@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import {
+  ARTIST_RELEASE_TYPES,
   artistAlbumsBySource,
   loadArtistAppearsOn,
   loadArtistDiscography,
@@ -88,17 +89,6 @@ interface ListingConfig {
   // a source carried in by a link, shown on arrival instead of the saved one
   providerOverride?: RowSource;
 }
-
-const RELEASE_TYPES: Record<"albums" | "singles_eps", AlbumType[]> = {
-  albums: [
-    AlbumType.ALBUM,
-    AlbumType.COMPILATION,
-    AlbumType.LIVE,
-    AlbumType.SOUNDTRACK,
-    AlbumType.UNKNOWN,
-  ],
-  singles_eps: [AlbumType.SINGLE, AlbumType.EP],
-};
 
 const router = useRouter();
 const route = useRoute();
@@ -327,7 +317,7 @@ async function loadArtistAlbumPage(
     params.provider?.[0] ??
     artistRows.effectiveSource(rowId, itemDetails.value);
   activeSource.value = source;
-  const rowTypes = RELEASE_TYPES[rowId];
+  const rowTypes = ARTIST_RELEASE_TYPES[rowId];
   const albumTypes = params.albumType?.length
     ? rowTypes.filter((albumType) => params.albumType?.includes(albumType))
     : rowTypes;

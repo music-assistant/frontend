@@ -19,7 +19,8 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/components/discover/EditorialShelf.vue", () => ({
   default: {
     name: "EditorialShelf",
-    template: "<div><slot /></div>",
+    template:
+      '<div><slot name="header" /><slot name="actions" /><slot /></div>',
   },
 }));
 vi.mock("@/components/discover/EditorialMediaCard.vue", () => ({
@@ -30,18 +31,41 @@ vi.mock("@/components/discover/EditorialMediaCard.vue", () => ({
   },
 }));
 
-function mountShelf(items: Album[]) {
+function mountShelf(items: Album[], itemCount?: number) {
   return mount(ReleaseShelf, {
-    props: { title: "Discography", items },
+    props: {
+      title: "Discography",
+      items,
+      itemCount,
+      viewAllTo: { name: "artistlisting" },
+    },
     global: {
       directives: { hold: () => undefined },
       mocks: { $t: (key: string) => key },
-      stubs: { RouterLink: true },
+      stubs: { RouterLink: { template: "<a><slot /></a>" } },
     },
   });
 }
 
 describe("ReleaseShelf subtitles", () => {
+  it("adds the total count to the view-all action when provided", () => {
+    const wrapper = mountShelf([], 42);
+
+    expect(wrapper.get(".release-shelf__more").text()).toBe("view_all (42)");
+    expect(wrapper.get(".release-shelf__more").attributes("aria-label")).toBe(
+      "tooltip.view_all (42)",
+    );
+  });
+
+  it("leaves the view-all action unchanged without a count", () => {
+    const wrapper = mountShelf([]);
+
+    expect(wrapper.get(".release-shelf__more").text()).toBe("view_all");
+    expect(wrapper.get(".release-shelf__more").attributes("aria-label")).toBe(
+      "tooltip.view_all",
+    );
+  });
+
   it("says a release is not in the library instead of naming its type", () => {
     const wrapper = mountShelf([
       album({

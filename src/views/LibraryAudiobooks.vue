@@ -66,6 +66,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
     params.collapseCollections,
+    params.randomSeed,
   );
 };
 
@@ -87,6 +88,7 @@ const loadItemsAuthorsNarrators = async (
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
     artistType,
+    params.randomSeed,
   );
 };
 

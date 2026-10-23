@@ -74,6 +74,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.albumType,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
+    params.randomSeed,
   );
 };
 
