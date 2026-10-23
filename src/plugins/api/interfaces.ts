@@ -892,7 +892,7 @@ export interface SetupFlowStep {
   last_step?: boolean | null;
   // url [EXTERNAL]: url the user must open (e.g. an OAuth authorize url)
   url?: string | null;
-  // copy_text [EXTERNAL]: optional value the user can copy to the clipboard
+  // copy_text [FORM, EXTERNAL]: optional value the user can copy to the clipboard
   copy_text?: string | null;
   // progress_text [PROGRESS]: localized status message
   progress_text?: string | null;
