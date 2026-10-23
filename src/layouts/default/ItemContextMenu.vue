@@ -410,6 +410,7 @@ import {
   PlusCircle,
   RefreshCw,
   RotateCcw,
+  Search,
   Share2,
   Shuffle,
   SkipForward,
@@ -599,9 +600,53 @@ export const getContextMenuItems = async function (
   }
 
   const firstItem = items[0];
+  const sharedTrackPrefix = "share://track/";
+  if (
+    firstItem.media_type === MediaType.TRACK &&
+    firstItem.provider === "builtin" &&
+    firstItem.item_id.startsWith(sharedTrackPrefix)
+  ) {
+    if (items.length !== 1 || !authManager.hasScope(Scope.LIBRARY_READ))
+      return [];
+    return [
+      {
+        label: "share.search_track",
+        labelArgs: [firstItem.name],
+        icon: Search,
+        action: () =>
+          eventbus.emit("deleteConfirmationDialog", {
+            title: $t("share.search_confirm_title"),
+            message: $t("share.search_confirm_description", [firstItem.name]),
+            confirmLabel: $t("share.search_anyway"),
+            destructive: false,
+            onConfirm: async () => {
+              try {
+                const item = await api.resolveSharedItem(
+                  firstItem.item_id.slice(sharedTrackPrefix.length),
+                  true,
+                );
+                if (!item || item.media_type !== MediaType.TRACK) {
+                  toast.error($t("share.resolve_failed"));
+                  return;
+                }
+                await router.push({
+                  name: "track",
+                  params: { provider: item.provider, itemId: item.item_id },
+                });
+              } catch {
+                toast.error($t("share.resolve_failed"));
+              }
+            },
+          }),
+      },
+    ];
+  }
   const managesLibrary = authManager.hasScope(Scope.LIBRARY_MANAGE);
   // favorites, library membership, playlists and played state change the library
   const canEditLibrary = authManager.hasScope(Scope.LIBRARY_WRITE);
+  const canGenerateShareLink =
+    store.enabledPlugins?.has("share_provider") === true &&
+    authManager.hasScope(Scope.LIBRARY_READ);
 
   // show info
   if (
@@ -635,6 +680,28 @@ export const getContextMenuItems = async function (
         });
       },
       icon: Info,
+    });
+  }
+
+  if (
+    canGenerateShareLink &&
+    items.length === 1 &&
+    itemIsAvailable(firstItem) &&
+    (firstItem.media_type === MediaType.TRACK ||
+      firstItem.media_type === MediaType.ALBUM ||
+      firstItem.media_type === MediaType.ARTIST ||
+      firstItem.media_type === MediaType.PLAYLIST) &&
+    typeof firstItem.uri === "string"
+  ) {
+    contextMenuItems.push({
+      label: "share.open_preview",
+      labelArgs: [],
+      action: () => {
+        const uri = firstItem.uri;
+        if (!uri || !itemIsAvailable(firstItem)) return;
+        eventbus.emit("shareLinkPreview", { uri });
+      },
+      icon: Share2,
     });
   }
 

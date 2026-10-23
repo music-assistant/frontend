@@ -4,14 +4,29 @@
  * context menu, which is the server's refresh with a substitute search.
  */
 import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
-import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
+import type {
+  ContextMenuDialogEvent,
+  DeleteConfirmationDialogEvent,
+} from "@/plugins/eventbus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
+import { track } from "../fixtures/track";
 import { providerMapping } from "../fixtures/providerMapping";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
-const { apiMock, emittedMenus, hasScope, storeMock } = vi.hoisted(() => ({
+const {
+  apiMock,
+  emittedMenus,
+  confirmations,
+  routerMock,
+  toastMock,
+  hasScope,
+  storeMock,
+} = vi.hoisted(() => ({
   emittedMenus: [] as ContextMenuDialogEvent[],
+  confirmations: [] as DeleteConfirmationDialogEvent[],
+  routerMock: { push: vi.fn() },
+  toastMock: { error: vi.fn() },
   apiMock: {
     getItem: vi.fn(),
     getLibraryItem: vi.fn(),
@@ -20,6 +35,7 @@ const { apiMock, emittedMenus, hasScope, storeMock } = vi.hoisted(() => ({
     refreshItem: vi.fn(),
     signalEvent: vi.fn(),
     playMedia: vi.fn(),
+    resolveSharedItem: vi.fn(),
     providers: {},
     players: {},
   },
@@ -34,13 +50,23 @@ const { apiMock, emittedMenus, hasScope, storeMock } = vi.hoisted(() => ({
 vi.mock("@/plugins/api", () => ({ default: apiMock, api: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
+vi.mock("@/plugins/router", () => ({ default: routerMock }));
+vi.mock("vue-sonner", () => ({ toast: toastMock }));
 vi.mock("@/plugins/eventbus", () => ({
   eventbus: {
     on: vi.fn(),
     off: vi.fn(),
-    emit: vi.fn((_type: string, payload: ContextMenuDialogEvent) => {
-      emittedMenus.push(payload);
-    }),
+    emit: vi.fn(
+      (
+        type: string,
+        payload: ContextMenuDialogEvent | DeleteConfirmationDialogEvent,
+      ) => {
+        if (type === "contextmenu")
+          emittedMenus.push(payload as ContextMenuDialogEvent);
+        if (type === "deleteConfirmationDialog")
+          confirmations.push(payload as DeleteConfirmationDialogEvent);
+      },
+    ),
   },
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
@@ -65,6 +91,7 @@ beforeEach(() => {
   apiMock.refreshItem.mockResolvedValue(undefined);
   hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
   emittedMenus.length = 0;
+  confirmations.length = 0;
 });
 
 describe("the context menu of an unavailable library item", () => {
@@ -103,4 +130,55 @@ describe("the context menu of an unavailable library item", () => {
 
     expect(await offeredLabels()).not.toContain("find_on_music_services");
   });
+});
+
+describe("the context menu of an unresolved shared track", () => {
+  const preview = track({
+    provider: "builtin",
+    item_id: "share://track/encoded",
+    provider_mappings: [],
+  });
+
+  async function requestSearch() {
+    await showContextMenuForMediaItem(preview);
+    expect(emittedMenus[0].items.map((entry) => entry.label)).toEqual([
+      "share.search_track",
+    ]);
+    await emittedMenus[0].items[0].action?.();
+    return confirmations[0];
+  }
+
+  it("does not search or write before explicit confirmation", async () => {
+    const confirmation = await requestSearch();
+    expect(confirmation.destructive).toBe(false);
+    expect(apiMock.resolveSharedItem).not.toHaveBeenCalled();
+    expect(apiMock.getLibraryItem).not.toHaveBeenCalled();
+    expect(apiMock.playMedia).not.toHaveBeenCalled();
+    expect(routerMock.push).not.toHaveBeenCalled();
+  });
+
+  it("opens only track details after a confirmed text search", async () => {
+    apiMock.resolveSharedItem.mockResolvedValue(track({ item_id: "matched" }));
+    const confirmation = await requestSearch();
+    await confirmation.onConfirm();
+    expect(apiMock.resolveSharedItem).toHaveBeenCalledWith("encoded", true);
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "track",
+      params: { provider: "library", itemId: "matched" },
+    });
+    expect(apiMock.playMedia).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])(
+    "reports failed search without opening details (error: %s)",
+    async (requestFails) => {
+      if (requestFails)
+        apiMock.resolveSharedItem.mockRejectedValue(new Error("offline"));
+      else apiMock.resolveSharedItem.mockResolvedValue(null);
+      const confirmation = await requestSearch();
+      await confirmation.onConfirm();
+      expect(toastMock.error).toHaveBeenCalledWith("share.resolve_failed");
+      expect(routerMock.push).not.toHaveBeenCalled();
+    },
+  );
 });

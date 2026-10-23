@@ -1201,6 +1201,33 @@ export class MusicAssistantApi {
     });
   }
 
+  public generateShareLink(uri: string): Promise<string> {
+    return this.sendCommand("share/generate", { uri });
+  }
+
+  public resolveSharedItem(
+    encoded: string,
+    allow_search = true,
+  ): Promise<MediaItemType | null> {
+    return this.sendCommand("share/resolve", { encoded, allow_search });
+  }
+
+  public importSharedPlaylist(encoded: string): Promise<Playlist> {
+    return this.sendCommand("share/import_playlist", { encoded });
+  }
+
+  public previewSharedPlaylist(
+    encoded: string,
+    offset: number,
+    limit: number,
+  ): Promise<MediaItemType[]> {
+    return this.sendCommand("share/preview_playlist", {
+      encoded,
+      offset,
+      limit,
+    });
+  }
+
   public migratePlaylist(
     db_playlist_id: string | number,
     destination_provider: string,
