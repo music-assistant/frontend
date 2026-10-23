@@ -124,14 +124,6 @@ export type SetupFlowDialogEvent =
     }
   | { kind: "player"; playerId: string; onFlowEnded?: SetupFlowEndedCallback };
 
-// moves listed items of a playlist to its top or bottom
-export interface MovePlaylistItemsEvent {
-  playlistId: string;
-  // 1-based positions of the items to move
-  positions: number[];
-  edge: "top" | "bottom";
-}
-
 export type Events = {
   contextmenu: ContextMenuDialogEvent;
   playlistdialog: PlaylistDialogEvent;
@@ -151,7 +143,6 @@ export type Events = {
   setupFlowDialog: SetupFlowDialogEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;
-  movePlaylistItems: MovePlaylistItemsEvent;
   genreExcluded: void;
   "mobile-sidebar-open": void;
 };

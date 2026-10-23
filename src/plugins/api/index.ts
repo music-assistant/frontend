@@ -1172,12 +1172,13 @@ export class MusicAssistantApi {
   /**
    * Moves items of a playlist as one block, keeping their order, resolving
    * once the provider holds the new order. All positions are 1-based;
-   * `to_position` is where the block's first item ends up.
+   * `to_position` is where the block's first item ends up, and without it the
+   * block goes to the end of the playlist.
    */
   public movePlaylistTracks(
     db_playlist_id: string | number,
     positions: number[],
-    to_position: number,
+    to_position?: number,
   ): Promise<void> {
     return this.sendCommand("music/playlists/move_playlist_tracks", {
       db_playlist_id,

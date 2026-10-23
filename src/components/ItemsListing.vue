@@ -476,7 +476,7 @@ import {
   ListingType,
   type Track,
 } from "@/plugins/api/interfaces";
-import { eventbus, type MovePlaylistItemsEvent } from "@/plugins/eventbus";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
   CheckCheck,
@@ -1340,7 +1340,6 @@ const {
   startDrag: startTrackDrag,
   moveBy: moveTrackRowBy,
   moveRows: moveTrackRows,
-  moveToEdge: moveTracksToEdge,
   draggingIndex,
   isDragging,
   ghostY,
@@ -1351,17 +1350,13 @@ const {
   items: pagedItems,
   playlistId: () => props.parentItem?.item_id,
   inOwnOrder: () => canDragTracks.value,
-  allLoaded: () => allItemsReceived.value,
   selectedIndices: selectedRowIndices,
   rowHeight: TRACK_ROW_HEIGHT,
   reload: reloadLoadedItems,
   // the reload replaced the rows, so the selection follows the moved block
   onMoved: (toIndex, count) => {
     if (!showCheckboxes.value) return;
-    selectedItems.value =
-      toIndex === undefined
-        ? []
-        : pagedItems.value.slice(toIndex, toIndex + count);
+    selectedItems.value = pagedItems.value.slice(toIndex, toIndex + count);
   },
 });
 let stopFollowingMovedTrack: (() => void) | undefined;
@@ -1427,11 +1422,6 @@ const trackRowDragClass = (item: MediaItemTypeOrItemMapping, index: number) => {
   if (draggingIndex.value === index) return "opacity-0";
   if (draggedCount.value > 1 && isSelected(item)) return "opacity-40";
   return undefined;
-};
-const onMovePlaylistItems = (event: MovePlaylistItemsEvent) => {
-  if (!props.reorderable || event.playlistId !== props.parentItem?.item_id)
-    return;
-  void moveTracksToEdge(event.positions, event.edge);
 };
 
 // Server-paged listings only know their total when the parent passes it. An
@@ -2253,7 +2243,6 @@ const allSelected = computed(
 onBeforeUnmount(() => {
   stopFollowingMovedTrack?.();
   eventbus.off("clearSelection", clearSelection);
-  eventbus.off("movePlaylistItems", onMovePlaylistItems);
   _unsubscribeMediaEvents?.();
   _unsubscribeFavorites?.();
 });
@@ -2326,7 +2315,6 @@ onMounted(async () => {
 
   // Listen for selection clearing events
   eventbus.on("clearSelection", clearSelection);
-  eventbus.on("movePlaylistItems", onMovePlaylistItems);
 
   // signal if/when items get played/updated/removed
   _unsubscribeMediaEvents = api.subscribe_multi(

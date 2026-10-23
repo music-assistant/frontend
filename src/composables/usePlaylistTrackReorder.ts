@@ -1,8 +1,7 @@
-// Reordering the tracks of a playlist listing: dragging one row or a block of
-// selected rows, and moving items to the playlist's top or bottom. While the
-// listing shows the playlist's own order, a move shows at once, is saved on
-// the provider and the listed rows are then read again; when saving fails the
-// previous order comes back.
+// Reordering the tracks of a playlist listing by dragging one row or a block
+// of selected rows. A move shows at once, is saved on the provider and the
+// listed rows are then read again; when saving fails the previous order comes
+// back.
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import {
   blockStartIndex,
@@ -35,17 +34,14 @@ interface PlaylistTrackReorderOptions {
   // The rows show the playlist's own order with nothing filtered out, so a
   // row's index is its position minus one.
   inOwnOrder: () => boolean;
-  // Every row of the playlist is listed.
-  allLoaded: () => boolean;
   // Indices of the selected rows; grabbing one of them drags them all.
   selectedIndices: () => number[];
   // Height of every row in px; the list is virtualized, so rows are not measured.
   rowHeight: number;
   // Re-reads the listed rows from the provider.
   reload: () => Promise<void>;
-  // Called after a move with the block's new first index and its size, or
-  // with undefined when the rows were not in the playlist's own order.
-  onMoved?: (toIndex: number | undefined, count: number) => void;
+  // Called after a move with the block's new first index and its size.
+  onMoved?: (toIndex: number, count: number) => void;
 }
 
 /** Whether the server takes commands, so a move can be saved and read back. */
@@ -56,7 +52,7 @@ export const canSavePlaylistMoves = () =>
 export const isPlaylistEditPending = (id: string) => pendingEdits.has(id);
 
 export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
-  const { listEl, items, playlistId, inOwnOrder, allLoaded } = options;
+  const { listEl, items, playlistId, inOwnOrder } = options;
 
   // A move is being saved; another one waits for it, so the reload that
   // follows can't overwrite the newer order.
@@ -100,7 +96,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     id: string,
     positions: number[],
     toPosition: number,
-    optimistic?: { before: MediaItemType[]; after: MediaItemType[] },
+    optimistic: { before: MediaItemType[]; after: MediaItemType[] },
   ): Promise<boolean> {
     saving.value = true;
     try {
@@ -114,7 +110,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     } catch {
       // the api already reports the failure to the user; a load that replaced
       // the rows meanwhile has the order the server holds
-      if (optimistic && toRaw(items.value) === optimistic.after) {
+      if (toRaw(items.value) === optimistic.after) {
         items.value = optimistic.before;
       }
       return false;
@@ -123,7 +119,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     }
   };
 
-  /** Move the rows at `indices` as one block that starts at row `toIndex`. */
+  // Move the rows at `indices` as one block that starts at row `toIndex`.
   const moveRows = async function (indices: number[], toIndex: number) {
     const id = playlistId();
     const before = toRaw(items.value);
@@ -139,47 +135,6 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     items.value = after;
     if (await save(id, positions as number[], toIndex + 1, { before, after })) {
       options.onMoved?.(toIndex, rows.length);
-    }
-  };
-
-  // Number of tracks in the whole playlist.
-  const playlistLength = async function (id: string) {
-    if (inOwnOrder() && allLoaded()) return items.value.length;
-    const tracks = await api.getPlaylistTracks(
-      id,
-      "library",
-      false,
-      undefined,
-      undefined,
-      0,
-    );
-    return tracks.length;
-  };
-
-  /** Move the items at these playlist positions to its top or bottom. */
-  const moveToEdge = async function (
-    positions: number[],
-    edge: "top" | "bottom",
-  ) {
-    const id = playlistId();
-    if (id === undefined || saving.value || !positions.length) return;
-    const unique = [...new Set(positions)].sort((a, b) => a - b);
-    let toPosition = 1;
-    if (edge === "bottom") {
-      try {
-        toPosition = (await playlistLength(id)) - unique.length + 1;
-      } catch {
-        // the api already reports the failure to the user
-        return;
-      }
-    }
-    if (inOwnOrder() && allLoaded()) {
-      await moveRows(
-        unique.map((position) => position - 1),
-        toPosition - 1,
-      );
-    } else if (await save(id, unique, toPosition)) {
-      options.onMoved?.(undefined, unique.length);
     }
   };
 
@@ -218,7 +173,6 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     ...drag,
     startDrag,
     moveRows,
-    moveToEdge,
     moveBy,
     refresh,
     saving,

@@ -1,8 +1,8 @@
 /**
  * Tests for the context menu actions that move playlist items to the
  * playlist's top or bottom. They are offered for items of a playlist the user
- * may edit, on a provider that can store a new order, and hand the move to
- * the listing through the eventbus.
+ * may edit, on a provider that can store a new order, and save the move
+ * straight away.
  */
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import {
@@ -23,6 +23,7 @@ const { apiMock, authMock, storeMock, mockEventbusEmit } = vi.hoisted(() => ({
     providers: {} as Record<string, unknown>,
     getProvider: vi.fn(),
     getLibraryItem: vi.fn(),
+    movePlaylistTracks: vi.fn(),
     players: {},
   },
   authMock: {
@@ -97,17 +98,24 @@ describe("move playlist items context menu actions", () => {
     expect(await moveLabels()).toEqual(MOVE_LABELS);
   });
 
-  it("hands the selected positions to the listing", async () => {
+  it("moves the selected positions to the top", async () => {
+    const items = [track({ position: 5 }), track({ position: 2 })];
+    const menu = await getContextMenuItems(items, parent);
+
+    menu.find((item) => item.label === "playlist_move_to_top")?.action?.();
+
+    expect(apiMock.movePlaylistTracks).toHaveBeenCalledWith("42", [5, 2], 1);
+    expect(mockEventbusEmit).toHaveBeenCalledWith("clearSelection");
+  });
+
+  it("leaves the end of the playlist for the server to find", async () => {
     const items = [track({ position: 5 }), track({ position: 2 })];
     const menu = await getContextMenuItems(items, parent);
 
     menu.find((item) => item.label === "playlist_move_to_bottom")?.action?.();
 
-    expect(mockEventbusEmit).toHaveBeenCalledWith("movePlaylistItems", {
-      playlistId: "42",
-      positions: [5, 2],
-      edge: "bottom",
-    });
+    expect(apiMock.movePlaylistTracks).toHaveBeenCalledWith("42", [5, 2]);
+    expect(mockEventbusEmit).toHaveBeenCalledWith("clearSelection");
   });
 
   it("is not offered on a provider that cannot reorder", async () => {

@@ -389,8 +389,10 @@ import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { isPlaylistEditPending } from "@/composables/usePlaylistTrackReorder";
 import {
   ArrowDown,
+  ArrowDownToLine,
   ArrowRightLeft,
   ArrowUp,
+  ArrowUpToLine,
   Disc3,
   Download,
   Folder,
@@ -405,8 +407,6 @@ import {
   Merge,
   MicVocal,
   MinusCircle,
-  ArrowDownToLine,
-  ArrowUpToLine,
   Orbit,
   Pencil,
   Pin,
@@ -1080,7 +1080,8 @@ export const getContextMenuItems = async function (
         icon: MinusCircle,
       });
     }
-    // move to the playlist's top or bottom; the listing showing it saves the move
+    // move to the playlist's top or bottom; the listing reloads once the
+    // playlist reports the change
     const positions = items.map((x) =>
       "position" in x && typeof x.position === "number" ? x.position : 0,
     );
@@ -1093,21 +1094,24 @@ export const getContextMenuItems = async function (
         providerSupportsPlaylistMove,
       )
     ) {
-      for (const edge of ["top", "bottom"] as const) {
-        contextMenuItems.push({
-          label:
-            edge === "top" ? "playlist_move_to_top" : "playlist_move_to_bottom",
-          labelArgs: [],
-          action: () => {
-            eventbus.emit("movePlaylistItems", {
-              playlistId: playlist.item_id,
-              positions,
-              edge,
-            });
-          },
-          icon: edge === "top" ? ArrowUpToLine : ArrowDownToLine,
-        });
-      }
+      contextMenuItems.push({
+        label: "playlist_move_to_top",
+        labelArgs: [],
+        action: () => {
+          api.movePlaylistTracks(playlist.item_id, positions, 1);
+          eventbus.emit("clearSelection");
+        },
+        icon: ArrowUpToLine,
+      });
+      contextMenuItems.push({
+        label: "playlist_move_to_bottom",
+        labelArgs: [],
+        action: () => {
+          api.movePlaylistTracks(playlist.item_id, positions);
+          eventbus.emit("clearSelection");
+        },
+        icon: ArrowDownToLine,
+      });
     }
   }
   // add to playlist action (an item nothing can play has no place in one)
