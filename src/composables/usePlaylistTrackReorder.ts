@@ -11,26 +11,39 @@ import {
 } from "@/helpers/playlist_reorder";
 import { api } from "@/plugins/api";
 import type { MediaItemType } from "@/plugins/api/interfaces";
-import { Ref, computed, reactive, ref, toRaw, watch } from "vue";
+import { Ref, computed, reactive, toRaw, watch } from "vue";
 
-// Playlists with moves on their way from outside their listing, such as the
-// track menu, by id; the listed positions are out of date until read back.
+// Counts per playlist id, for moves on their way from outside the playlist's
+// listing (such as the track menu), and for every move that is saving or
+// being read back; the listed positions are out of date until it is done.
 const outsideMoves = reactive(new Map<string, number>());
+const savingMoves = reactive(new Map<string, number>());
+
+const hold = (counts: Map<string, number>, id: string) =>
+  counts.set(id, (counts.get(id) ?? 0) + 1);
+const release = (counts: Map<string, number>, id: string) => {
+  const left = (counts.get(id) ?? 1) - 1;
+  if (left > 0) counts.set(id, left);
+  else counts.delete(id);
+};
+
+/** Whether a move of the playlist is saving, or its order is being read back. */
+export const isPlaylistMoveSaving = (id: string) => savingMoves.has(id);
 
 /** Send a move from outside the playlist's listing, holding back the listing's own. */
 export const sendPlaylistMove = async function (
   id: string,
   move: () => Promise<void>,
 ) {
-  outsideMoves.set(id, (outsideMoves.get(id) ?? 0) + 1);
+  hold(outsideMoves, id);
+  hold(savingMoves, id);
   try {
     await move();
   } catch {
     // the api already reports the failure to the user
   } finally {
-    const left = (outsideMoves.get(id) ?? 1) - 1;
-    if (left > 0) outsideMoves.set(id, left);
-    else outsideMoves.delete(id);
+    release(outsideMoves, id);
+    release(savingMoves, id);
   }
 };
 
@@ -67,12 +80,12 @@ export const isPlaylistEditPending = (id: string) => pendingEdits.has(id);
 export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
   const { listEl, items, playlistId, inOwnOrder, reload } = options;
 
-  // A move is being saved, here or from outside the listing; another one
-  // waits for it, so the reload that follows can't overwrite the newer order.
-  const savingHere = ref(false);
+  // A move is being saved or read back, here or from outside the listing;
+  // another one waits for it, so the reload that follows can't overwrite the
+  // newer order.
   const saving = computed(() => {
     const id = playlistId();
-    return savingHere.value || (id !== undefined && outsideMoves.has(id));
+    return id !== undefined && isPlaylistMoveSaving(id);
   });
 
   // Tells the listing which row now stands for each row it held.
@@ -108,7 +121,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     rowsReplaced(
       new Map(order.map((from, index) => [before[from], after[index]])),
     );
-    savingHere.value = true;
+    hold(savingMoves, id);
     try {
       if (positions.length === 1) {
         await api.movePlaylistTrack(id, positions[0]!, toIndex + 1);
@@ -131,7 +144,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
       rowsReplaced(new Map());
       await reload();
     } finally {
-      savingHere.value = false;
+      release(savingMoves, id);
     }
   };
 
@@ -143,15 +156,45 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
       return id !== undefined && outsideMoves.has(id);
     },
     async (pending, wasPending) => {
-      if (pending || !wasPending) return;
-      savingHere.value = true;
+      const id = playlistId();
+      if (pending || !wasPending || id === undefined) return;
+      hold(savingMoves, id);
       try {
         await reload();
       } finally {
-        savingHere.value = false;
+        release(savingMoves, id);
       }
     },
+    // hold the guard before anything else can run
+    { flush: "sync" },
   );
+
+  // Grabbing a selected row moves every selected row.
+  const movesBlock = (source: number) => {
+    const selected = options.selectedIndices();
+    return selected.length > 1 && selected.includes(source);
+  };
+
+  // Move the row at `source` to rest at `finalIndex`, taking the selected rows
+  // along when it is one of them; returns the row it now is, when it moved.
+  const moveFrom = (source: number, finalIndex: number): number | undefined => {
+    const before = toRaw(items.value);
+    let rows = [source];
+    let toIndex = finalIndex;
+    if (movesBlock(source)) {
+      rows = [...new Set(options.selectedIndices())].sort((a, b) => a - b);
+      // the drop slot as an index before the drag lifted the source out
+      const dropBefore = finalIndex > source ? finalIndex + 1 : finalIndex;
+      toIndex = blockStartIndex(rows, dropBefore);
+    }
+    void moveRows(rows, toIndex);
+    if (toRaw(items.value) === before) return undefined;
+    return toIndex + rows.indexOf(source);
+  };
+
+  // Move a row one place by keyboard; returns the row it now is, when it moved.
+  const moveBy = (index: number, delta: number) =>
+    moveFrom(index, index + delta);
 
   // The rows and playlist a drag started on; a drop on a listing that was
   // replaced meanwhile would move a different track.
@@ -164,15 +207,10 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     onCommit: (source, finalIndex) => {
       if (toRaw(items.value) !== dragRows) return;
       if (playlistId() !== dragPlaylistId) return;
-      const selected = options.selectedIndices();
-      if (selected.length > 1 && selected.includes(source)) {
-        // the drop slot as an index before the drag lifted the source out
-        const dropBefore = finalIndex > source ? finalIndex + 1 : finalIndex;
-        void moveRows(selected, blockStartIndex(selected, dropBefore));
-      } else {
-        void moveRows([source], finalIndex);
-      }
+      void moveFrom(source, finalIndex);
     },
+    // a scattered block dropped by its grabbed row still gathers there
+    commitsInPlace: (source) => movesBlock(source),
     rowBox: (index) =>
       index >= 0 && index < items.value.length
         ? { top: index * options.rowHeight, height: options.rowHeight }
@@ -190,6 +228,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     ...drag,
     startDrag,
     moveRows,
+    moveBy,
     saving,
   };
 }

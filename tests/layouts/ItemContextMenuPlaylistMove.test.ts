@@ -4,6 +4,7 @@
  * may edit, on a provider that can store a new order, and save the move
  * straight away.
  */
+import { sendPlaylistMove } from "@/composables/usePlaylistTrackReorder";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import {
   ProviderFeature,
@@ -134,5 +135,35 @@ describe("move playlist items context menu actions", () => {
 
   it("is not offered for items without a playlist position", async () => {
     expect(await moveLabels([track()])).toEqual([]);
+  });
+
+  it("does not offer the top to items already there", async () => {
+    const items = [track({ position: 2 }), track({ position: 1 })];
+
+    expect(await moveLabels(items)).toEqual(["playlist_move_to_bottom"]);
+  });
+
+  it("is not offered while another move of the playlist saves", async () => {
+    let finishMove = () => {};
+    const sent = sendPlaylistMove(
+      "42",
+      () => new Promise<void>((resolve) => (finishMove = resolve)),
+    );
+
+    expect(await moveLabels()).toEqual([]);
+    finishMove();
+    await sent;
+    expect(await moveLabels()).toEqual(MOVE_LABELS);
+  });
+
+  it("is not offered on a dynamic playlist", async () => {
+    const dynamic = { ...parent, is_dynamic: true };
+    const labels = (
+      await getContextMenuItems([track({ position: 2 })], dynamic)
+    )
+      .map((item) => item.label)
+      .filter((label) => MOVE_LABELS.includes(label));
+
+    expect(labels).toEqual([]);
   });
 });

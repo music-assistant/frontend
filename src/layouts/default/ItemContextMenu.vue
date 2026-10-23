@@ -386,7 +386,10 @@ import { $t } from "@/plugins/i18n";
 import { toast } from "vue-sonner";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { sendPlaylistMove } from "@/composables/usePlaylistTrackReorder";
+import {
+  isPlaylistMoveSaving,
+  sendPlaylistMove,
+} from "@/composables/usePlaylistTrackReorder";
 import {
   ArrowDown,
   ArrowDownToLine,
@@ -1081,12 +1084,17 @@ export const getContextMenuItems = async function (
       });
     }
     // move to the playlist's top or bottom; the listing reloads once the
-    // playlist reports the change
+    // playlist reports the change. While another move is saving the listed
+    // positions are out of date, so none is offered
     const positions = items.map((x) =>
       "position" in x && typeof x.position === "number" ? x.position : 0,
     );
+    const atTop = [...new Set(positions)]
+      .sort((a, b) => a - b)
+      .every((position, index) => position === index + 1);
     if (
       positions.every((position) => position > 0) &&
+      !isPlaylistMoveSaving(playlist.item_id) &&
       canReorderPlaylistItems(
         playlist,
         store.currentUser,
@@ -1094,21 +1102,25 @@ export const getContextMenuItems = async function (
         providerSupportsPlaylistMove,
       )
     ) {
-      contextMenuItems.push({
-        label: "playlist_move_to_top",
-        labelArgs: [],
-        action: () => {
-          void sendPlaylistMove(playlist.item_id, () =>
-            api.movePlaylistTracks(playlist.item_id, positions, 1),
-          );
-          eventbus.emit("clearSelection");
-        },
-        icon: ArrowUpToLine,
-      });
+      if (!atTop) {
+        contextMenuItems.push({
+          label: "playlist_move_to_top",
+          labelArgs: [],
+          action: () => {
+            if (isPlaylistMoveSaving(playlist.item_id)) return;
+            void sendPlaylistMove(playlist.item_id, () =>
+              api.movePlaylistTracks(playlist.item_id, positions, 1),
+            );
+            eventbus.emit("clearSelection");
+          },
+          icon: ArrowUpToLine,
+        });
+      }
       contextMenuItems.push({
         label: "playlist_move_to_bottom",
         labelArgs: [],
         action: () => {
+          if (isPlaylistMoveSaving(playlist.item_id)) return;
           void sendPlaylistMove(playlist.item_id, () =>
             api.movePlaylistTracks(playlist.item_id, positions),
           );
