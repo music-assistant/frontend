@@ -173,6 +173,7 @@
           !(pagedItems.length == 0 && allItemsReceived) &&
           !(loadPending && pagedItems.length === 0)
         "
+        ref="infiniteScrollEl"
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
         :load-more-text="$t('load_more_items')"
@@ -1315,6 +1316,13 @@ const trackRowColumns = computed<TrackColumn[]>(() =>
   canDragTracks.value ? ["handle", ...trackColumns.value] : trackColumns.value,
 );
 const listRowsEl = ref<HTMLElement | null>(null);
+const infiniteScrollEl = ref<{ reset: () => void } | null>(null);
+// re-reads the rows in place; a listing that grew past its end pages on again
+const reloadListedItems = async () => {
+  const wasComplete = allItemsReceived.value;
+  await reloadLoadedItems();
+  if (wasComplete && !allItemsReceived.value) infiniteScrollEl.value?.reset();
+};
 const {
   startDrag: startTrackDrag,
   move: moveTrack,
@@ -1328,7 +1336,7 @@ const {
   items: pagedItems,
   playlistId: () => props.parentItem?.item_id,
   rowHeight: TRACK_ROW_HEIGHT,
-  reload: reloadLoadedItems,
+  reload: reloadListedItems,
 });
 const draggedTrack = computed(() =>
   draggingIndex.value === null
@@ -2051,7 +2059,7 @@ watch(
       // a reorder that is saving reads its rows back itself
       if (reorderSaving.value) return;
       // re-read the rows in place, so the list neither collapses nor scrolls
-      if (pagedItems.value.length) reloadLoadedItems();
+      if (pagedItems.value.length) reloadListedItems();
       else loadData(true);
     } else {
       newContentAvailable.value = true;

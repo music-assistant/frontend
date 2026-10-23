@@ -389,5 +389,41 @@ describe("useItemsListing", () => {
       expect(listing.pagedItems.value).toHaveLength(4);
       expect(listing.pagedItems.value[0].item_id).toBe("t0");
     });
+
+    it("keeps the rows of a newer first page that finished before it", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValueOnce(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      let finishReload: (items: Track[]) => void = () => {};
+      loadPagedData.mockImplementationOnce(
+        () => new Promise((resolve) => (finishReload = resolve)),
+      );
+      const reload = listing.reloadLoadedItems();
+      loadPagedData.mockResolvedValueOnce(tracks(2, "new-"));
+      await listing.loadData(true);
+
+      finishReload(tracks(2, "stale-"));
+      await reload;
+
+      expect(listing.pagedItems.value[0].item_id).toBe("new-0");
+    });
+
+    it("shows the sort it read the rows with", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValue(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      // a sort change whose load failed left its sort in the params
+      listing.params.value.sortField = SortField.SORT_NAME;
+      listing.params.value.sortDirection = SortDirection.DESC;
+
+      await listing.reloadLoadedItems();
+
+      expect(listing.displayedSort.value).toEqual({
+        sortField: SortField.SORT_NAME,
+        sortDirection: SortDirection.DESC,
+      });
+    });
   });
 });

@@ -16,6 +16,7 @@
           :aria-label="reorderLabel"
           :title="reorderLabel"
           @pointerdown.stop.prevent="emit('dragStart', $event)"
+          @touchstart.stop
           @keydown.up.prevent="emit('moveBy', -1)"
           @keydown.down.prevent="emit('moveBy', 1)"
           @click.stop

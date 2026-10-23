@@ -31,6 +31,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     const id = playlistId();
     const before = toRaw(items.value);
     if (id === undefined || saving.value || from === to) return;
+    if (from < 0 || from >= before.length) return;
     if (to < 0 || to >= before.length) return;
     const fromPosition = playlistPosition(before[from]);
     const toPosition = playlistPosition(before[to]);
@@ -44,17 +45,29 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
       await reload();
     } catch {
       // the api already reports the failure to the user; a load that replaced
-      // the rows meanwhile has the order the server holds
-      if (toRaw(items.value) === after) items.value = before;
+      // the rows meanwhile has the order the server holds, and a page loaded
+      // meanwhile was appended to the moved rows
+      if (toRaw(items.value) === after) {
+        items.value = [...before, ...after.slice(before.length)];
+      }
     } finally {
       saving.value = false;
     }
   };
 
+  // The rows and playlist a drag started on; a drop on a listing that was
+  // replaced meanwhile would move a different track.
+  let dragRows: MediaItemType[] | undefined;
+  let dragPlaylistId: string | undefined;
+
   const drag = useListDragReorder({
     listEl,
     count: () => items.value.length,
-    onCommit: (from, to) => void move(from, to),
+    onCommit: (from, to) => {
+      if (toRaw(items.value) !== dragRows) return;
+      if (playlistId() !== dragPlaylistId) return;
+      void move(from, to);
+    },
     rowBox: (index) =>
       index >= 0 && index < items.value.length
         ? { top: index * rowHeight, height: rowHeight }
@@ -63,6 +76,8 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
 
   const startDrag = (evt: PointerEvent, index: number) => {
     if (saving.value) return;
+    dragRows = toRaw(items.value);
+    dragPlaylistId = playlistId();
     drag.startItemDrag(evt, index);
   };
 

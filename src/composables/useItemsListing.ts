@@ -121,6 +121,8 @@ export function useItemsListing(
   let pendingRefresh = false;
   let pendingParamsChange = false;
   let retryFromStart = false;
+  // counts the loads started, so a reload can tell a newer one replaced its rows
+  let loadGeneration = 0;
   // lets async work tell that the listing it is working for is already gone
   let disposed = false;
 
@@ -160,6 +162,7 @@ export function useItemsListing(
       return;
     }
     loading.value = true;
+    loadGeneration++;
     loadingTabId = currentTabId;
     // a reload the user asked for gets a fresh attempt
     if (clear || refresh || filterParamsChanged) loadError.value = false;
@@ -277,14 +280,19 @@ export function useItemsListing(
     const activeTab = props.toolBarTabs?.length ? getActiveTab() : undefined;
     const loadPagedData = activeTab?.loadPagedData ?? props.loadPagedData;
     if (!loadPagedData || loading.value || disposed) return;
+    const generation = ++loadGeneration;
     // every page loaded so far, so the next page still follows on
-    const offset = params.value.offset;
-    const limit = offset + props.limit;
+    const limit = params.value.offset + props.limit;
+    const requestedSort = {
+      sortField: params.value.sortField,
+      sortDirection: params.value.sortDirection,
+    };
     try {
       const items = await loadPagedData({ ...params.value, offset: 0, limit });
-      // a load that started or finished meanwhile has the newer items
-      if (disposed || loading.value || params.value.offset !== offset) return;
+      // a load that started meanwhile has the newer items
+      if (disposed || generation !== loadGeneration) return;
       pagedItems.value = items;
+      displayedSort.value = requestedSort;
       allItemsReceived.value = isLastPage(items.length, limit);
       newContentAvailable.value = false;
     } catch {
