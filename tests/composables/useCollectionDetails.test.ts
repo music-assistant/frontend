@@ -9,7 +9,7 @@ const { getAudiobookCollection } = vi.hoisted(() => ({
   getAudiobookCollection: vi.fn<MusicAssistantApi["getAudiobookCollection"]>(),
 }));
 vi.mock("@/plugins/api", () => ({
-  api: { getAudiobookCollection, subscribe: () => () => {} },
+  api: { getAudiobookCollection, subscribe_multi: () => () => {} },
 }));
 
 const scopes: EffectScope[] = [];

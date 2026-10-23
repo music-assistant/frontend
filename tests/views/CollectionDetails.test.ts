@@ -10,7 +10,7 @@ const { getAudiobookCollection } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/plugins/api", () => ({
-  api: { getAudiobookCollection, subscribe: () => () => {} },
+  api: { getAudiobookCollection, subscribe_multi: () => () => {} },
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/components/collection/CollectionHero.vue", () => ({

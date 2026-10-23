@@ -30,7 +30,7 @@ vi.mock("@/plugins/api", () => ({
     getProviderName: (domain: string) => `${domain} provider`,
     browse,
   },
-  api: { subscribe: () => () => {} },
+  api: { subscribe_multi: () => () => {} },
 }));
 vi.mock("@/plugins/store", () => ({ store: { activePlayerId: "player" } }));
 

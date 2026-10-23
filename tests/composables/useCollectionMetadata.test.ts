@@ -6,23 +6,31 @@ import {
   type Audiobook,
   type EventMessage,
   type MediaCollection,
-  type MediaItemType,
   type PlaylogUpdate,
 } from "@/plugins/api/interfaces";
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { effectScope, reactive, type EffectScope } from "vue";
 
+interface Listener {
+  events: EventType[];
+  callback: (evt: EventMessage) => void;
+}
+
 const { getAudiobookCollection, listeners } = vi.hoisted(() => ({
   getAudiobookCollection: vi.fn<MusicAssistantApi["getAudiobookCollection"]>(),
-  listeners: [] as ((evt: EventMessage) => void)[],
+  listeners: [] as Listener[],
 }));
 vi.mock("@/plugins/api", () => ({
   api: {
     getAudiobookCollection,
-    subscribe: (_: EventType, callback: (evt: EventMessage) => void) => {
-      listeners.push(callback);
-      return () => listeners.splice(listeners.indexOf(callback), 1);
+    subscribe_multi: (
+      events: EventType[],
+      callback: (evt: EventMessage) => void,
+    ) => {
+      const listener = { events, callback };
+      listeners.push(listener);
+      return () => listeners.splice(listeners.indexOf(listener), 1);
     },
   },
 }));
@@ -34,6 +42,7 @@ vi.mock("vue-sonner", () => ({ toast: { error: vi.fn() } }));
 
 const BOOK_URI = "library://audiobook/1";
 
+// as listed on an author page: two of the author's books, unplayed
 function collection(itemId: string): MediaCollection<Audiobook> {
   return reactive({
     media_type: MediaType.COLLECTION,
@@ -43,7 +52,7 @@ function collection(itemId: string): MediaCollection<Audiobook> {
   }) as MediaCollection<Audiobook>;
 }
 
-function playlogUpdate(update: Partial<PlaylogUpdate>) {
+function played(event: EventType, update: Partial<PlaylogUpdate>) {
   const data: PlaylogUpdate = {
     uri: BOOK_URI,
     media_type: MediaType.AUDIOBOOK,
@@ -53,15 +62,16 @@ function playlogUpdate(update: Partial<PlaylogUpdate>) {
     ...update,
   };
   for (const listener of listeners)
-    listener({ event: EventType.PLAYLOG_UPDATED, data } as EventMessage);
+    if (listener.events.includes(event))
+      listener.callback({ event, data } as EventMessage);
 }
 
 let scope: EffectScope;
 
 beforeEach(() => {
-  // what the server computes once the last book is finished
+  // the whole series once the last book is finished, across all authors
   getAudiobookCollection.mockReset().mockResolvedValue({
-    metadata: { total_items: 2, fully_played: true, in_progress: false },
+    metadata: { total_items: 5, fully_played: true, in_progress: false },
   } as MediaCollection<Audiobook>);
 });
 
@@ -71,23 +81,36 @@ afterEach(() => {
 });
 
 describe("useCollectionMetadata", () => {
+  const FINISHED = { fully_played: true, seconds_played: 100 };
+
   it.each([
     // settled without the server, which would report the collection finished
-    ["in progress", { seconds_played: 60 }, false, true],
-    ["finished", { fully_played: true, seconds_played: 100 }, true, false],
+    ["during playback", EventType.MEDIA_ITEM_PLAYED, {}, false, true],
+    ["once stored", EventType.PLAYLOG_UPDATED, {}, false, true],
+    ["finished", EventType.PLAYLOG_UPDATED, FINISHED, true, false],
+    // a finished book waits for the stored playlog
+    [
+      "finished, not yet stored",
+      EventType.MEDIA_ITEM_PLAYED,
+      FINISHED,
+      false,
+      false,
+    ],
   ])(
     "updates every collection holding a book played %s",
-    async (_, update, fully_played, in_progress) => {
+    async (_, event, update, fully_played, in_progress) => {
       const items = [collection("a"), collection("b")];
       scope = effectScope();
       scope.run(() => useCollectionMetadata(() => items));
 
-      playlogUpdate(update);
+      played(event, update);
       await flushPromises();
 
+      // the count keeps the listing's scope
+      const expected = { total_items: 2, fully_played, in_progress };
       expect(items.map((item) => item.metadata)).toEqual([
-        expect.objectContaining({ fully_played, in_progress }),
-        expect.objectContaining({ fully_played, in_progress }),
+        expect.objectContaining(expected),
+        expect.objectContaining(expected),
       ]);
     },
   );
@@ -101,7 +124,8 @@ describe("useCollectionMetadata", () => {
     scope = effectScope();
     scope.run(() => useCollectionMetadata(() => items));
 
-    playlogUpdate(update);
+    played(EventType.MEDIA_ITEM_PLAYED, update);
+    played(EventType.PLAYLOG_UPDATED, update);
     await flushPromises();
 
     expect(items[0].metadata.in_progress).toBe(false);
