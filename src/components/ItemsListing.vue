@@ -177,6 +177,7 @@
         :mode="infiniteScroll ? 'intersect' : 'manual'"
         :load-more-text="$t('load_more_items')"
         :empty-text="''"
+        :class="{ 'select-none': shiftSelecting }"
         style="overflow: hidden"
       >
         <template #error="{ props: errorProps }">
@@ -1054,6 +1055,10 @@ const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
 
 let selectionAnchor: MediaItemTypeOrItemMapping | undefined;
 const shiftHeld = useKeyModifier("Shift");
+// a shift-click would otherwise also select the text of the rows in between
+const shiftSelecting = computed(
+  () => showCheckboxes.value && !!shiftHeld.value,
+);
 
 const setSelected = function (
   item: MediaItemTypeOrItemMapping,
