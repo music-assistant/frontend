@@ -23,6 +23,23 @@ export const blockStartIndex = (
 ): number => dropBefore - indices.filter((index) => index < dropBefore).length;
 
 /**
+ * For each row of a listing of `length` rows after moving the rows at
+ * `indices` (0-based) as one block that starts at `toIndex`, the row it was
+ * before the move.
+ */
+export const movedOrder = (
+  length: number,
+  indices: readonly number[],
+  toIndex: number,
+): number[] => {
+  const chosen = new Set(indices);
+  const all = Array.from({ length }, (_, index) => index);
+  const block = all.filter((index) => chosen.has(index));
+  const rest = all.filter((index) => !chosen.has(index));
+  return [...rest.slice(0, toIndex), ...block, ...rest.slice(toIndex)];
+};
+
+/**
  * The listing after moving the items at `indices` (0-based) as one block that
  * starts at `toIndex`, keeping their order. The positions stay with their
  * slots, so every row keeps showing its place in the playlist while the items
@@ -32,14 +49,9 @@ export const moveListedItems = (
   items: MediaItemType[],
   indices: readonly number[],
   toIndex: number,
-): MediaItemType[] => {
-  const chosen = new Set(indices);
-  const block = items.filter((_, index) => chosen.has(index));
-  const rest = items.filter((_, index) => !chosen.has(index));
-  const moved = [...rest.slice(0, toIndex), ...block, ...rest.slice(toIndex)];
-  return moved.map((item, index) => {
+): MediaItemType[] =>
+  movedOrder(items.length, indices, toIndex).map((from, index) => {
     const slotPosition = playlistPosition(items[index]);
-    if (item === items[index] || slotPosition === undefined) return item;
-    return { ...item, position: slotPosition };
+    if (from === index || slotPosition === undefined) return items[from];
+    return { ...items[from], position: slotPosition };
   });
-};

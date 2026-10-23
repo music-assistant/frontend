@@ -386,7 +386,7 @@ import { $t } from "@/plugins/i18n";
 import { toast } from "vue-sonner";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { isPlaylistEditPending } from "@/composables/usePlaylistTrackReorder";
+import { sendPlaylistMove } from "@/composables/usePlaylistTrackReorder";
 import {
   ArrowDown,
   ArrowDownToLine,
@@ -1098,7 +1098,9 @@ export const getContextMenuItems = async function (
         label: "playlist_move_to_top",
         labelArgs: [],
         action: () => {
-          api.movePlaylistTracks(playlist.item_id, positions, 1);
+          void sendPlaylistMove(playlist.item_id, () =>
+            api.movePlaylistTracks(playlist.item_id, positions, 1),
+          );
           eventbus.emit("clearSelection");
         },
         icon: ArrowUpToLine,
@@ -1107,7 +1109,9 @@ export const getContextMenuItems = async function (
         label: "playlist_move_to_bottom",
         labelArgs: [],
         action: () => {
-          api.movePlaylistTracks(playlist.item_id, positions);
+          void sendPlaylistMove(playlist.item_id, () =>
+            api.movePlaylistTracks(playlist.item_id, positions),
+          );
           eventbus.emit("clearSelection");
         },
         icon: ArrowDownToLine,

@@ -5,23 +5,33 @@
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import {
   blockStartIndex,
+  movedOrder,
   moveListedItems,
   playlistPosition,
 } from "@/helpers/playlist_reorder";
 import { api } from "@/plugins/api";
 import type { MediaItemType } from "@/plugins/api/interfaces";
-import { Ref, computed, reactive, toRaw } from "vue";
+import { Ref, computed, reactive, ref, toRaw, watch } from "vue";
 
-// Counts per playlist id of the edits that are saving or being read back; the
-// listed positions are out of date until they are done.
-const pendingEdits = reactive(new Map<string, number>());
+// Playlists with moves on their way from outside their listing, such as the
+// track menu, by id; the listed positions are out of date until read back.
+const outsideMoves = reactive(new Map<string, number>());
 
-const hold = (counts: Map<string, number>, id: string) =>
-  counts.set(id, (counts.get(id) ?? 0) + 1);
-const release = (counts: Map<string, number>, id: string) => {
-  const left = (counts.get(id) ?? 1) - 1;
-  if (left > 0) counts.set(id, left);
-  else counts.delete(id);
+/** Send a move from outside the playlist's listing, holding back the listing's own. */
+export const sendPlaylistMove = async function (
+  id: string,
+  move: () => Promise<void>,
+) {
+  outsideMoves.set(id, (outsideMoves.get(id) ?? 0) + 1);
+  try {
+    await move();
+  } catch {
+    // the api already reports the failure to the user
+  } finally {
+    const left = (outsideMoves.get(id) ?? 1) - 1;
+    if (left > 0) outsideMoves.set(id, left);
+    else outsideMoves.delete(id);
+  }
 };
 
 interface PlaylistTrackReorderOptions {
@@ -40,8 +50,11 @@ interface PlaylistTrackReorderOptions {
   rowHeight: number;
   // Re-reads the listed rows from the provider.
   reload: () => Promise<void>;
-  // Called after a move with the block's new first index and its size.
-  onMoved?: (toIndex: number, count: number) => void;
+  // Called when rows were replaced by others for the same tracks, with the
+  // row that now stands for an old one (undefined when that is unknown).
+  onRowsReplaced?: (
+    replacement: (row: MediaItemType) => MediaItemType | undefined,
+  ) => void;
 }
 
 /** Whether the server takes commands, so a move can be saved and read back. */
@@ -52,72 +65,28 @@ export const canSavePlaylistMoves = () =>
 export const isPlaylistEditPending = (id: string) => pendingEdits.has(id);
 
 export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
-  const { listEl, items, playlistId, inOwnOrder } = options;
+  const { listEl, items, playlistId, inOwnOrder, reload } = options;
 
-  // A move is being saved; another one waits for it, so the reload that
-  // follows can't overwrite the newer order.
-  const saving = ref(false);
-  // the playlist changed while its rows were being read back
-  let changedMeanwhile = false;
-
-  // Saves a move, if any, and reads the rows back while holding off other
-  // moves; a change reported meanwhile is read back as well.
-  const settle = async function (save?: () => Promise<void>) {
-    if (settling) {
-      changedMeanwhile = true;
-      return;
-    }
+  // A move is being saved, here or from outside the listing; another one
+  // waits for it, so the reload that follows can't overwrite the newer order.
+  const savingHere = ref(false);
+  const saving = computed(() => {
     const id = playlistId();
-    settling = true;
-    if (id !== undefined) hold(pendingEdits, id);
-    try {
-      try {
-        await save?.();
-      } catch {
-        // the api already reports the failure to the user; the provider may
-        // have stored part of the move, so its order is read back all the same
-      }
-      do {
-        changedMeanwhile = false;
-        await reload();
-        options.onReloaded?.();
-      } while (changedMeanwhile);
-    } finally {
-      settling = false;
-      if (id !== undefined) release(pendingEdits, id);
-    }
-  };
+    return savingHere.value || (id !== undefined && outsideMoves.has(id));
+  });
 
-  // Reads the rows back after the playlist changed.
-  const refresh = () => settle();
+  // Tells the listing which row now stands for each row it held.
+  const rowsReplaced = (pairs: Map<MediaItemType, MediaItemType>) =>
+    options.onRowsReplaced?.((row) => pairs.get(row));
 
-  const save = async function (
-    id: string,
-    positions: number[],
-    toPosition: number,
-    optimistic: { before: MediaItemType[]; after: MediaItemType[] },
-  ): Promise<boolean> {
-    saving.value = true;
-    try {
-      if (positions.length === 1) {
-        await api.movePlaylistTrack(id, positions[0], toPosition);
-      } else {
-        await api.movePlaylistTracks(id, positions, toPosition);
-      }
-      await options.reload();
-      return true;
-    } catch {
-      // the api already reports the failure to the user; a load that replaced
-      // the rows meanwhile has the order the server holds, and a page loaded
-      // meanwhile was appended to the moved rows
-      const { before, after } = optimistic;
-      if (toRaw(items.value) === after) {
-        items.value = [...before, ...after.slice(before.length)];
-      }
-      return false;
-    } finally {
-      saving.value = false;
-    }
+  // The rows that took the place of `rows` in the listing, by index.
+  const rowsByIndex = (rows: MediaItemType[]) => {
+    const current = toRaw(items.value);
+    return new Map(
+      rows.flatMap((row, index) =>
+        index < current.length ? [[row, current[index]] as const] : [],
+      ),
+    );
   };
 
   const moveRows = async function (indices: number[], toIndex: number) {
@@ -132,15 +101,57 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     const positions = rows.map((row) => playlistPosition(before[row]));
     if (positions.some((position) => position === undefined)) return;
 
+    // the moved rows are copies holding their new positions
     const after = moveListedItems(before, rows, toIndex);
+    const order = movedOrder(before.length, rows, toIndex);
     items.value = after;
-    const saved = await save(id, positions as number[], toIndex + 1, {
-      before,
-      after,
-    });
-    // a search or sort changed meanwhile puts other rows at the block's place
-    if (saved && inOwnOrder()) options.onMoved?.(toIndex, rows.length);
+    rowsReplaced(
+      new Map(order.map((from, index) => [before[from], after[index]])),
+    );
+    savingHere.value = true;
+    try {
+      if (positions.length === 1) {
+        await api.movePlaylistTrack(id, positions[0]!, toIndex + 1);
+      } else {
+        await api.movePlaylistTracks(id, positions as number[], toIndex + 1);
+      }
+      await reload();
+      // a search or sort changed meanwhile puts other rows in the moved ones' place
+      if (inOwnOrder()) rowsReplaced(rowsByIndex(after));
+      else rowsReplaced(new Map());
+    } catch {
+      // the api already reports the failure to the user; a load that replaced
+      // the rows meanwhile has the order the server holds, and a page loaded
+      // meanwhile was appended to the moved rows
+      if (toRaw(items.value) === after) {
+        items.value = [...before, ...after.slice(before.length)];
+      }
+      // the provider may have stored part of the move, so read its order
+      // back; which rows the selection stood for is then unknown
+      rowsReplaced(new Map());
+      await reload();
+    } finally {
+      savingHere.value = false;
+    }
   };
+
+  // A move sent from outside the listing has finished: read the order back
+  // before the listed positions are used again.
+  watch(
+    () => {
+      const id = playlistId();
+      return id !== undefined && outsideMoves.has(id);
+    },
+    async (pending, wasPending) => {
+      if (pending || !wasPending) return;
+      savingHere.value = true;
+      try {
+        await reload();
+      } finally {
+        savingHere.value = false;
+      }
+    },
+  );
 
   // The rows and playlist a drag started on; a drop on a listing that was
   // replaced meanwhile would move a different track.

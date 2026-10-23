@@ -1353,10 +1353,12 @@ const {
   selectedIndices: selectedRowIndices,
   rowHeight: TRACK_ROW_HEIGHT,
   reload: reloadLoadedItems,
-  // the reload replaced the rows, so the selection follows the moved block
-  onMoved: (toIndex, count) => {
-    if (!showCheckboxes.value) return;
-    selectedItems.value = pagedItems.value.slice(toIndex, toIndex + count);
+  // the selection keeps the rows that hold the selected tracks' positions
+  onRowsReplaced: (replacement) => {
+    selectedItems.value = selectedItems.value.flatMap((item) => {
+      const row = replacement(item as MediaItemType);
+      return row ? [row] : [];
+    });
   },
 });
 let stopFollowingMovedTrack: (() => void) | undefined;

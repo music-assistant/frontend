@@ -4,6 +4,7 @@ import { track } from "../../tests/fixtures/track";
 import {
   blockStartIndex,
   listsPlaylistFromStart,
+  movedOrder,
   moveListedItems,
   playlistPosition,
 } from "./playlist_reorder";
@@ -111,18 +112,9 @@ describe("listsPlaylistFromStart", () => {
   });
 });
 
-describe("nearestIndexOf", () => {
-  const rows = ["A", "B", "A", "C"].map((name, index) =>
-    track({ item_id: `${index}`, uri: `library://track/${name}` }),
-  );
-
-  it("finds the row holding the track nearest to the given index", () => {
-    expect(nearestIndexOf(rows, "library://track/A", 3)).toBe(2);
-    expect(nearestIndexOf(rows, "library://track/A", 0)).toBe(0);
-    expect(nearestIndexOf(rows, "library://track/C", 0)).toBe(3);
-  });
-
-  it("finds nothing when no row holds the track", () => {
-    expect(nearestIndexOf(rows, "library://track/D", 1)).toBe(-1);
+describe("movedOrder", () => {
+  it("gives the row each row was before the move", () => {
+    expect(movedOrder(5, [1, 3], 0)).toEqual([1, 3, 0, 2, 4]);
+    expect(movedOrder(4, [0], 3)).toEqual([1, 2, 3, 0]);
   });
 });

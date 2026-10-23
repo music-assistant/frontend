@@ -3,6 +3,7 @@
     class="pointer-events-none absolute inset-x-0 z-10 rounded-md bg-accent shadow-lg"
     :style="{ top: `${top}px` }"
     aria-hidden="true"
+    inert
   >
     <TrackTableRow
       :item="item"
