@@ -119,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import {
   Check,
   ChevronDown,
@@ -140,6 +140,7 @@ import {
   currentVisualizerPreset,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
+  visualizerAuditionRequest,
 } from "@/composables/visualizer/state";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { listPresetNames } from "@/helpers/visualizer/presetLibrary";
@@ -172,6 +173,12 @@ const presetModePref = getPreference<string>(
 );
 
 const presetNames = ref<string[]>([]);
+
+// Taps audition instantly; the preference write (a full api.updateUser round
+// trip) is debounced, flushed at the latest when the menu closes.
+const PERSIST_DEBOUNCE_MS = 2000;
+const pendingPreset = ref<string | null>(null);
+let persistTimer: number | null = null;
 
 // Folded by default so the popout stays compact; per menu open, not persisted.
 const presetsExpanded = ref(false);
@@ -241,6 +248,7 @@ watch(
 // The list reflects and controls the full selection: concrete preset
 // switches to fixed mode; the Random entries switch the mode back.
 const selectValue = computed(() => {
+  if (pendingPreset.value) return pendingPreset.value;
   if (presetModePref.value === "fixed" && presetPref.value)
     return presetPref.value;
   if (presetModePref.value === "random_favorites")
@@ -264,18 +272,50 @@ const showingLabel = computed(() => {
     : $t("visualizer.preset_random");
 });
 
-const onPresetChange = (value: unknown) => {
-  if (value === RANDOM_VALUE) {
-    void setPreference("visualizer_preset_mode", "random");
-    return;
-  }
-  if (value === RANDOM_FAVORITES_VALUE) {
-    void setPreference("visualizer_preset_mode", "random_favorites");
-    return;
-  }
-  void setPreference("visualizer_preset", String(value ?? ""));
-  void setPreference("visualizer_preset_mode", "fixed");
+const cancelPersistTimer = () => {
+  if (persistTimer !== null) window.clearTimeout(persistTimer);
+  persistTimer = null;
 };
+
+// Hand back to the prefs once they catch up with the flushed pick; clearing
+// at flush time would flicker the check mark.
+watch([presetPref, presetModePref], ([preset, mode]) => {
+  if (mode === "fixed" && preset === pendingPreset.value)
+    pendingPreset.value = null;
+});
+
+const flushPendingPreset = () => {
+  cancelPersistTimer();
+  const name = pendingPreset.value;
+  if (name === null) return;
+  if (presetModePref.value !== "fixed" || presetPref.value !== name) {
+    void setPreference("visualizer_preset", name);
+    void setPreference("visualizer_preset_mode", "fixed");
+  }
+};
+
+const onPresetChange = (value: unknown) => {
+  if (value === RANDOM_VALUE || value === RANDOM_FAVORITES_VALUE) {
+    // The random mode is the newest intent; drop any pending fixed pick.
+    cancelPersistTimer();
+    pendingPreset.value = null;
+    void setPreference(
+      "visualizer_preset_mode",
+      value === RANDOM_VALUE ? "random" : "random_favorites",
+    );
+    return;
+  }
+  const name = String(value ?? "");
+  pendingPreset.value = name;
+  visualizerAuditionRequest.value = { name };
+  cancelPersistTimer();
+  persistTimer = window.setTimeout(() => {
+    persistTimer = null;
+    flushPendingPreset();
+  }, PERSIST_DEBOUNCE_MS);
+};
+
+onBeforeUnmount(flushPendingPreset);
 
 // Track drags locally so the labels stay live; the preference is persisted
 // only on commit (drag end) — every write is a full api.updateUser round-trip

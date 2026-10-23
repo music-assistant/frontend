@@ -45,6 +45,7 @@ import {
   currentVisualizerPreset,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
+  visualizerAuditionRequest,
 } from "@/composables/visualizer/state";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
@@ -184,6 +185,8 @@ const layerStyle = computed(() => ({
 }));
 
 let lastPresetSwitchAt = 0;
+// What the engine has loaded, so a deferred audition write doesn't re-blend.
+let loadedPresetName: string | null = null;
 
 const pickPresetName = async (forceRandom = false): Promise<string | null> => {
   if (!forceRandom && presetModePref.value === "fixed" && props.preset)
@@ -205,8 +208,10 @@ const applyPreset = async (blendSec?: number, forceRandom = false) => {
   const requestId = ++presetRequestId;
   const name = await pickPresetName(forceRandom);
   if (requestId !== presetRequestId || !name || !engine) return;
+  if (name === loadedPresetName) return;
   lastPresetSwitchAt = performance.now();
   currentVisualizerPreset.value = name;
+  loadedPresetName = name;
   await engine.loadPresetByName(name, blendSec);
 };
 
@@ -286,6 +291,7 @@ const createEngine = async () => {
   const requestId = ++engineRequestId;
   engine?.destroy();
   engine = null;
+  loadedPresetName = null;
   let created: VisualizerEngine | null = null;
   try {
     created = await createVisualizerEngine(
@@ -369,6 +375,18 @@ watch(
   () => [props.preset, presetModePref.value],
   () => void applyPreset(),
 );
+
+// Auditions from the fullscreen menu load instantly; the menu's deferred
+// preference write then no-ops via the loadedPresetName guard.
+watch(visualizerAuditionRequest, async (request) => {
+  if (!request || !engine || request.name === loadedPresetName) return;
+  // Cancel an in-flight applyPreset pick.
+  presetRequestId++;
+  lastPresetSwitchAt = performance.now();
+  currentVisualizerPreset.value = request.name;
+  loadedPresetName = request.name;
+  await engine.loadPresetByName(request.name, 0);
+});
 
 // Quality changes need a fresh butterchurn instance (mesh/texture sizes are
 // fixed at creation).
