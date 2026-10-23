@@ -1,5 +1,9 @@
 <template>
-  <Card class="mb-4" data-testid="server-urls">
+  <Card
+    v-if="!baseUrl.hidden || !externalUrl.hidden"
+    class="mb-4"
+    data-testid="server-urls"
+  >
     <CardHeader>
       <CardTitle>{{ $t("settings.server_url.title") }}</CardTitle>
       <CardDescription>
@@ -7,7 +11,11 @@
       </CardDescription>
     </CardHeader>
     <CardContent class="flex flex-col gap-6">
-      <FieldSet class="gap-3" data-testid="server-urls-internet">
+      <FieldSet
+        v-if="!externalUrl.hidden"
+        class="gap-3"
+        data-testid="server-urls-internet"
+      >
         <!-- styled like the section headings of the settings form below -->
         <FieldLegend
           class="mb-2 flex w-full items-center gap-3 text-xs tracking-wider text-primary uppercase"
@@ -86,7 +94,11 @@
         </Field>
       </FieldSet>
 
-      <FieldSet class="gap-3" data-testid="server-urls-local">
+      <FieldSet
+        v-if="!baseUrl.hidden"
+        class="gap-3"
+        data-testid="server-urls-local"
+      >
         <FieldLegend
           class="mb-2 flex w-full items-center gap-3 text-xs tracking-wider text-primary uppercase"
         >
