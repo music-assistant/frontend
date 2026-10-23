@@ -1084,6 +1084,12 @@ const onSelect = function (
         item,
       )
     : [item];
+  if (selected && range.length > 1) {
+    // the range joins the selection in listing order, whichever way it ran
+    selectedItems.value = selectedItems.value.filter(
+      (selectedItem) => !range.includes(selectedItem),
+    );
+  }
   for (const rangeItem of range) setSelected(rangeItem, selected);
   selectionAnchor = item;
 };
