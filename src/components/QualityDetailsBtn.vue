@@ -1,13 +1,14 @@
 <template>
   <!-- streaming quality details -->
-  <Popover v-if="activeAudioPath">
-    <!-- quality pill/chip trigger; pill = ghost-outline to match the fullscreen
+  <Popover v-if="activeAudioPath" v-model:open="open">
+    <!-- quality pill/chip trigger; pill = overlay to match the fullscreen
          header controls. A single clean PopoverTrigger so it opens reliably
          inside the fullscreen v-dialog (a Tooltip wrapper here blocked it). -->
     <PopoverTrigger as-child>
       <Button
-        :variant="pill ? 'ghost-outline' : 'outline'"
-        size="xs"
+        :variant="pill ? 'overlay' : 'outline'"
+        :size="pill ? pillSize : 'xs'"
+        :class="pill ? 'px-3' : ''"
         :disabled="triggerDisabled"
         :title="$t('show_audio_chain_details')"
         :aria-label="qualityDetailsLabel"
@@ -40,6 +41,9 @@
           :chain="activeAudioPath.audioProcessing"
           :stream-details="activeAudioPath.streamDetails"
           :crossfade-intent="activeAudioPath.crossfadeIntent"
+          :queue-id="activeAudioPath.queueId"
+          :container="activeAudioPath.container"
+          @navigate="open = false"
         />
       </div>
     </PopoverContent>
@@ -68,6 +72,9 @@ import { useActiveAudioPath } from "@/composables/useActiveAudioPath";
 // header controls) instead of the default square chip
 defineProps<{ pill?: boolean }>();
 
+// the pill follows the fullscreen header's control height, compact on phones
+const pillSize = computed(() => (store.mobileLayout ? "sm" : "default"));
+
 const { activeAudioPath } = useActiveAudioPath();
 
 const { minOutputQualityTier, maxOutputQualityTier } = useStreamQuality(
@@ -88,6 +95,7 @@ const qualityDetailsLabel = computed(() =>
     : $t("show_audio_chain_details"),
 );
 const popoverFocusTarget = ref<HTMLElement>();
+const open = ref(false);
 
 // disable the trigger when there is no active queue with items; a live
 // source has no queue to check and is gated by the popover's own v-if instead

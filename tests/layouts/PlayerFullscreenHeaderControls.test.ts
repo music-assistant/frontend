@@ -12,9 +12,11 @@ import { ref } from "vue";
 const queue = ref<Partial<PlayerQueue> | undefined>(undefined);
 const hasActiveAudioPath = ref(false);
 const autoplayApplicable = ref(false);
+const autoplayEnabled = ref(false);
 const repeatLocked = ref(false);
 const setAutoplay = vi.fn();
 
+vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 vi.mock("@/plugins/api", () => ({
   default: {
     getProviderName: (providerId: string) =>
@@ -34,7 +36,7 @@ vi.mock("@/layouts/default/PlayerOSD/useQueueModes", () => ({
     queue,
     sources: ref([]),
     dynamicModeActive: ref(false),
-    autoplayEnabled: ref(false),
+    autoplayEnabled,
     autoplayApplicable,
     repeatLocked,
     setAutoplay,
@@ -89,6 +91,7 @@ describe("PlayerFullscreenHeaderControls", () => {
     queue.value = undefined;
     hasActiveAudioPath.value = false;
     autoplayApplicable.value = false;
+    autoplayEnabled.value = false;
     repeatLocked.value = false;
     setAutoplay.mockClear();
   });
@@ -175,5 +178,21 @@ describe("PlayerFullscreenHeaderControls", () => {
     await toggle!.trigger("click");
 
     expect(setAutoplay).toHaveBeenCalledExactlyOnceWith(true);
+  });
+
+  it("marks the autoplay pill active only while autoplay is enabled", async () => {
+    seedQueue(CrossfadeMode.SOURCE);
+    autoplayApplicable.value = true;
+
+    const wrapper = mountControls();
+
+    expect(findAutoplayToggle(wrapper)!.attributes("data-active")).toBe(
+      undefined,
+    );
+
+    autoplayEnabled.value = true;
+    await wrapper.vm.$nextTick();
+
+    expect(findAutoplayToggle(wrapper)!.attributes("data-active")).toBe("true");
   });
 });

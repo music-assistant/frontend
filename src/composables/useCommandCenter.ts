@@ -4,6 +4,10 @@ import { ref } from "vue";
 const isOpen = ref(false);
 const initialQuery = ref("");
 const initialMediaTypes = ref<MediaType[]>([]);
+// true when a caller opened the palette with options (even an empty query); a
+// bare open (the ⌘K shortcut, the sidebar) leaves it false so the palette
+// restores its previous search instead of clearing it
+const initialSeeded = ref(false);
 
 export const isMacPlatform =
   typeof navigator !== "undefined" &&
@@ -19,6 +23,9 @@ export interface CommandCenterOpenOptions {
 const open = function (options?: CommandCenterOpenOptions) {
   initialQuery.value = options?.query?.trim() || "";
   initialMediaTypes.value = options?.mediaTypes ? [...options.mediaTypes] : [];
+  // a caller handing over options wants a fresh search, even an empty one; only
+  // a bare open (the ⌘K shortcut, the sidebar) restores the previous search
+  initialSeeded.value = options !== undefined;
   isOpen.value = true;
 };
 
@@ -31,6 +38,7 @@ export function useCommandCenter() {
     isOpen,
     initialQuery,
     initialMediaTypes,
+    initialSeeded,
     open,
     close,
     toggle: (options?: CommandCenterOpenOptions) => {

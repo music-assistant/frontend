@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { copyToClipboard, openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
+import { useTour } from "@/composables/useTour";
 import { usePwaUpdate } from "@/composables/usePwaUpdate";
 import { useSidebar } from "@/components/ui/sidebar";
 import { store } from "@/plugins/store";
@@ -33,6 +34,7 @@ import {
   LifeBuoy,
   RefreshCw,
   RotateCcw,
+  Route,
   ServerCog,
   Settings,
   Users,
@@ -70,6 +72,19 @@ const browserInfo =
 
 const router = useRouter();
 const { isMobile, setOpenMobile } = useSidebar();
+const { active: tourActive, start: startTour } = useTour();
+
+const handleTour = () => {
+  // The sidebar sheet would cover the app elements the tour points at.
+  setOpenMobile(false);
+  startTour();
+};
+
+const onCloseAutoFocus = (event: Event) => {
+  // Keep focus on the tour card when the menu closes behind it.
+  if (tourActive.value) event.preventDefault();
+};
+
 const handleSettings = () => {
   setOpenMobile(false);
   router.push({ name: "settings" });
@@ -153,6 +168,7 @@ const copyVersion = async () => {
       :side="isMobile ? 'bottom' : 'bottom'"
       :side-offset="isMobile ? 4 : 15"
       align="start"
+      @close-auto-focus="onCloseAutoFocus"
     >
       <DropdownMenuLabel class="p-0 font-normal">
         <div class="flex items-center gap-3 px-2 py-2 text-left">
@@ -219,6 +235,10 @@ const copyVersion = async () => {
         <NavKeyboardShortcuts />
         <DropdownMenuSeparator />
       </template>
+      <DropdownMenuItem data-testid="nav-header-tour" @click="handleTour">
+        <Route class="size-4" />
+        {{ $t("tour.start") }}
+      </DropdownMenuItem>
       <DropdownMenuSub>
         <DropdownMenuSubTrigger>
           <LifeBuoy class="size-4" />

@@ -1,17 +1,22 @@
 // Everything that can be done to a player from the settings surfaces: the menu on the
 // players list and the menu on the player settings page itself. Both build their menu
-// from here so the two never drift apart.
+// from here so the two never drift apart. The menu of a player that still needs setup
+// lives here too, as managing it is all such a player has to offer.
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import { getPlayerName } from "@/helpers/player_config";
 import { getPlayerSetupMenuItem } from "@/helpers/player_menu_items";
 import { isSelectablePlayer } from "@/helpers/players";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { setUserPreference } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import {
+  Player,
   PlayerConfig,
   PlayerType,
   ProviderFeature,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
@@ -97,13 +102,7 @@ export const getPlayerSettingsMenuItems = (
 
   menuItems.push({
     label: "player_select.rename_player",
-    action: () => {
-      eventbus.emit("playerRenameDialog", {
-        playerId,
-        name: config.name,
-        defaultName: config.default_name,
-      });
-    },
+    action: () => openPlayerRenameDialog(config),
     icon: markRaw(Pencil),
   });
 
@@ -119,7 +118,8 @@ export const getPlayerSettingsMenuItems = (
           `/settings/editprovider/${provider?.instance_id ?? config.provider}`,
         ),
       icon: markRaw(Cog),
-      hide: !provider,
+      // a player provider's settings take config.providers.write
+      hide: !provider || !authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
     },
     {
       label: "settings.documentation",
@@ -131,17 +131,10 @@ export const getPlayerSettingsMenuItems = (
       label: config.enabled ? "settings.disable" : "settings.enable",
       action: () => {
         if (!config.enabled) {
-          void setPlayerEnabled(config, true);
+          void setPlayerEnabled(playerId, true);
           return;
         }
-        eventbus.emit("deleteConfirmationDialog", {
-          title: $t("player_select.disable_player_title", [
-            getPlayerName(config),
-          ]),
-          message: $t("player_select.disable_player_confirmation"),
-          confirmLabel: $t("settings.disable"),
-          onConfirm: () => setPlayerEnabled(config, false),
-        });
+        confirmDisablePlayer(playerId, getPlayerName(config));
       },
       icon: markRaw(config.enabled ? CircleOff : Power),
       hide: !provider,
@@ -164,12 +157,53 @@ export const getPlayerSettingsMenuItems = (
   return menuItems;
 };
 
-/** The name shown for a player, which may only be configured and not registered yet. */
-export const getPlayerName = (config: PlayerConfig): string =>
-  config.name ||
-  api.players[config.player_id]?.name ||
-  config.default_name ||
-  config.player_id;
+/**
+ * Menu entries for a player that still needs setup and so can't play yet:
+ * setting it up, renaming it, opening its settings and disabling it. Empty for
+ * a role that may not change player settings.
+ */
+export const getSetupRequiredPlayerMenuItems = (
+  player: Player,
+): ContextMenuItem[] => {
+  // setting a player up takes the same scope as changing its settings
+  if (!authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)) return [];
+
+  const playerId = player.player_id;
+  const menuItems: ContextMenuItem[] = [];
+
+  const setupMenuItem = getPlayerSetupMenuItem(player);
+  if (setupMenuItem) menuItems.push(setupMenuItem);
+
+  menuItems.push(
+    {
+      label: "player_select.rename_player",
+      // only the config tells a custom name apart from the one the provider
+      // reports; a failed command is already reported by the api layer
+      action: () =>
+        void api
+          .getPlayerConfig(playerId)
+          .then(openPlayerRenameDialog)
+          .catch(() => undefined),
+      icon: markRaw(Pencil),
+    },
+    {
+      label: "open_settings",
+      action: () => {
+        store.showFullscreenPlayer = false;
+        store.showPlayersMenu = false;
+        router.push(`/settings/editplayer/${playerId}`);
+      },
+      icon: "mdi-cog-outline",
+    },
+    {
+      label: "settings.disable",
+      action: () => confirmDisablePlayer(playerId, player.name),
+      icon: markRaw(CircleOff),
+    },
+  );
+
+  return menuItems;
+};
 
 /** Whether the player's provider offers to remove it. */
 export const playerCanBeDeleted = (playerId: string): boolean => {
@@ -184,14 +218,58 @@ export const playerCanBeDeleted = (playerId: string): boolean => {
     ?.supported_features.includes(feature);
 };
 
-async function setPlayerEnabled(config: PlayerConfig, enabled: boolean) {
+/**
+ * Switch a player on or off, and say whether the change landed. Switching off
+ * the player the player bar points at hands the bar to another player.
+ */
+export const setPlayerEnabled = async (
+  playerId: string,
+  enabled: boolean,
+): Promise<boolean> => {
   try {
-    await api.savePlayerConfig(config.player_id, { enabled });
-    if (!enabled) selectFallbackPlayer(config.player_id);
+    await api.savePlayerConfig(playerId, { enabled });
+    if (!enabled) selectFallbackPlayer(playerId);
     toast.success($t("settings.player_saved"));
+    return true;
   } catch {
     // a failed command is already reported by the api layer
+    return false;
   }
+};
+
+/**
+ * Give a player a name of its own, or hand it back to the name its provider
+ * reports by clearing the name, and say whether the change landed.
+ */
+export const renamePlayer = async (
+  playerId: string,
+  name: string | null,
+): Promise<boolean> => {
+  try {
+    await api.savePlayerConfig(playerId, { name });
+    toast.success($t("settings.player_saved"));
+    return true;
+  } catch {
+    // a failed command is already reported by the api layer
+    return false;
+  }
+};
+
+function openPlayerRenameDialog(config: PlayerConfig) {
+  eventbus.emit("playerRenameDialog", {
+    playerId: config.player_id,
+    name: config.name,
+    defaultName: config.default_name,
+  });
+}
+
+function confirmDisablePlayer(playerId: string, playerName: string) {
+  eventbus.emit("deleteConfirmationDialog", {
+    title: $t("player_select.disable_player_title", [playerName]),
+    message: $t("player_select.disable_player_confirmation"),
+    confirmLabel: $t("settings.disable"),
+    onConfirm: () => void setPlayerEnabled(playerId, false),
+  });
 }
 
 async function deletePlayer(playerId: string, onDeleted?: () => void) {

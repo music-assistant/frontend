@@ -11,21 +11,35 @@ import { createMemoryHistory, createRouter, RouterView } from "vue-router";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
-import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
+import {
+  ConfigEntryType,
+  type ConfigEntry,
+  type ConfigValueType,
+} from "@/plugins/api/interfaces";
 import EditConfig from "@/views/settings/EditConfig.vue";
 
-const { apiMock, routerMock, storeMock } = vi.hoisted(() => ({
-  apiMock: {
-    players: {},
-    providers: {},
-  },
-  routerMock: {
-    push: vi.fn(),
-  },
-  storeMock: {
-    frameless: false,
-    mobileLayout: false,
-  },
+const { apiMock, routerMock, setUserPreference, storeMock } = vi.hoisted(
+  () => ({
+    apiMock: {
+      players: {},
+      providers: {},
+    },
+    routerMock: {
+      push: vi.fn(),
+    },
+    setUserPreference: vi.fn(async () => true),
+    storeMock: {
+      frameless: false,
+      mobileLayout: false,
+      currentUser: undefined as
+        { preferences: Record<string, unknown> } | undefined,
+    },
+  }),
+);
+
+vi.mock("@/composables/userPreferences", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/composables/userPreferences")>()),
+  setUserPreference,
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -55,6 +69,8 @@ describe("EditConfig", () => {
   beforeEach(() => {
     storeMock.frameless = false;
     storeMock.mobileLayout = false;
+    storeMock.currentUser = undefined;
+    setUserPreference.mockClear();
   });
 
   it.each([
@@ -272,7 +288,7 @@ describe("EditConfig", () => {
     expect(saveDisabled(wrapper)).toBe(true);
   });
 
-  it("leaves the form-wide controls to the settings screen around it", async () => {
+  it("leaves resetting to defaults to the settings screen around it", async () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING }),
     ]);
@@ -283,11 +299,10 @@ describe("EditConfig", () => {
     expect(wrapper.get('[data-testid="config-save"]').text()).toContain(
       "settings.save",
     );
-    expect(wrapper.text()).not.toContain("settings.show_advanced_settings");
     expect(wrapper.text()).not.toContain("settings.reset_to_defaults");
   });
 
-  it("puts every entry back to its default value on request", async () => {
+  it("puts every entry but a hidden one back to its default value on request", async () => {
     const wrapper = mountEntries([
       entry({
         key: "server",
@@ -307,6 +322,73 @@ describe("EditConfig", () => {
           .props("confEntry") as ConfigEntry
       ).value,
     ).toBe("localhost");
+    expect(saveDisabled(wrapper)).toBe(false);
+  });
+
+  it("leaves a hidden entry as it is when resetting to defaults", () => {
+    // housekeeping the server keeps in the config, out of the user's sight
+    const cursor = entry({
+      key: "track_reconciliation_cursor",
+      type: ConfigEntryType.STRING,
+      hidden: true,
+      default_value: "",
+      value: "track/1234",
+    });
+    const wrapper = mountEntries([
+      entry({
+        key: "server",
+        type: ConfigEntryType.STRING,
+        default_value: "localhost",
+        value: "elsewhere",
+      }),
+      cursor,
+    ]);
+
+    wrapper.vm.resetToDefaults();
+    // an action hands over the same values a save does
+    wrapper.findAllComponents({ name: "ConfigEntryRow" })[0].vm.$emit("action");
+
+    expect(cursor.value).toBe("track/1234");
+    expect(wrapper.emitted("action")?.[0]?.[1]).toEqual({
+      server: "localhost",
+      track_reconciliation_cursor: "track/1234",
+    });
+  });
+
+  it("stops offering to save the values the server took", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+    ]);
+
+    dirty(wrapper);
+    await nextTick();
+    expect(saveDisabled(wrapper)).toBe(false);
+
+    wrapper.vm.saveSucceeded({ server: "localhost" });
+    await nextTick();
+    expect(saveDisabled(wrapper)).toBe(true);
+
+    // and offers again for whatever is typed next
+    edit(wrapper, 0, "elsewhere");
+    await nextTick();
+    expect(saveDisabled(wrapper)).toBe(false);
+  });
+
+  it("keeps offering an edit the save did not carry", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "token", type: ConfigEntryType.STRING }),
+    ]);
+
+    dirty(wrapper);
+    await nextTick();
+
+    // the form stays open while a save is on its way, so what lands covers the
+    // values that were sent and nothing the user typed in the meantime
+    edit(wrapper, 1, "secret");
+    wrapper.vm.saveSucceeded({ server: "localhost" });
+    await nextTick();
+
     expect(saveDisabled(wrapper)).toBe(false);
   });
 
@@ -332,6 +414,225 @@ describe("EditConfig", () => {
       ]);
 
       expect(wrapper.get(".floating-save").classes()).toContain(cssClass);
+    },
+  );
+
+  it("keeps the save action in the flow of the form when asked", () => {
+    const wrapper = mountEntries(
+      [entry({ key: "server", type: ConfigEntryType.STRING })],
+      false,
+      true,
+    );
+
+    // a form inside a dialog: nothing floats, the button follows the fields
+    expect(wrapper.find(".floating-save").exists()).toBe(false);
+    expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(true);
+  });
+
+  it.each([
+    { advanced: true, disabled: false, offered: true },
+    { advanced: false, disabled: false, offered: false },
+    { advanced: true, disabled: true, offered: false },
+  ])(
+    "offers the advanced toggle for advanced entries: $advanced, disabled: $disabled",
+    ({ advanced, disabled, offered }) => {
+      const wrapper = mountEntries(
+        [
+          entry({ key: "server", type: ConfigEntryType.STRING }),
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced }),
+        ],
+        disabled,
+      );
+
+      expect(wrapper.text()).toContain("settings.options");
+      expect(advancedToggle(wrapper).exists()).toBe(offered);
+    },
+  );
+
+  it("keeps the card with its toggle for a config holding only advanced entries", () => {
+    const wrapper = mountEntries([
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual([]);
+    expect(advancedToggle(wrapper).exists()).toBe(true);
+  });
+
+  it("offers saving an advanced-only config once its entries show", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+    const save = () => wrapper.find('[data-testid="config-save"]');
+    expect(save().exists()).toBe(false);
+
+    await wrapper.setProps({ showAdvancedSettings: true });
+    expect(save().exists()).toBe(true);
+
+    // an edit hidden again by the toggle can still be saved
+    edit(wrapper, 0, 9000);
+    await wrapper.setProps({ showAdvancedSettings: false });
+    expect(renderedKeys(wrapper)).toEqual([]);
+    expect(save().exists()).toBe(true);
+  });
+
+  it("reveals the advanced entries from its own toggle and remembers the choice", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+    expect(renderedKeys(wrapper)).toEqual(["server"]);
+
+    advancedToggle(wrapper).vm.$emit("update:showAdvancedSettings", true);
+    await nextTick();
+
+    expect(renderedKeys(wrapper)).toEqual(["server", "port"]);
+    expect(setUserPreference).toHaveBeenCalledWith(
+      "settings.showAdvancedSettings",
+      true,
+    );
+  });
+
+  it("shows the advanced entries the user chose to see before", () => {
+    storeMock.currentUser = {
+      preferences: { "settings.showAdvancedSettings": true },
+    };
+
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["server", "port"]);
+    expect(advancedToggle(wrapper).props("showAdvancedSettings")).toBe(true);
+  });
+
+  it("keeps the choice made here when the profile keeps the old one", async () => {
+    // the profile could not be updated, so it still says to hide them
+    setUserPreference.mockResolvedValueOnce(false);
+    const wrapper = mountEntries([
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+
+    advancedToggle(wrapper).vm.$emit("update:showAdvancedSettings", true);
+    await flushPromises();
+
+    expect(renderedKeys(wrapper)).toEqual(["port"]);
+  });
+
+  it("lets the host decide over the user's choice", () => {
+    storeMock.currentUser = {
+      preferences: { "settings.showAdvancedSettings": true },
+    };
+
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "server", type: ConfigEntryType.STRING }),
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        showAdvancedSettings: false,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(renderedKeys(wrapper)).toEqual(["server"]);
+  });
+
+  it("offers no toggle when the host decides what shows", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        showAdvancedSettings: true,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(advancedToggle(wrapper).exists()).toBe(false);
+    expect(renderedKeys(wrapper)).toEqual(["port"]);
+  });
+
+  it("leaves out its header when the host asks", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        hideHeader: true,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(wrapper.text()).not.toContain("settings.options");
+    expect(advancedToggle(wrapper).exists()).toBe(false);
+  });
+
+  it("leaves out the card when the host hides the header and every entry is advanced", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        hideHeader: true,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(wrapper.findComponent({ name: "Card" }).exists()).toBe(false);
+  });
+
+  it("offers no save action on a form holding only actions", () => {
+    const wrapper = mountEntries([
+      entry({ key: "clear_cache", type: ConfigEntryType.ACTION }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["clear_cache"]);
+    expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
+    // nothing floats, so no room is kept for it either
+    expect(wrapper.get("v-form-stub").classes()).not.toContain(
+      "floating-save-clearance",
+    );
+  });
+
+  it("leaves out the card and its save action for a config with nothing to show", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING, hidden: true }),
+    ]);
+
+    expect(wrapper.findComponent({ name: "Card" }).exists()).toBe(false);
+    expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
+  });
+
+  it("leaves room below the last row for the floating save action", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+    ]);
+
+    expect(wrapper.get("v-form-stub").classes()).toContain(
+      "floating-save-clearance",
+    );
+  });
+
+  it.each([
+    ["disabled", true, false],
+    ["inline save", false, true],
+  ] as const)(
+    "leaves no room for a save action that does not float (%s)",
+    (_, disabled, inlineSave) => {
+      const wrapper = mountEntries(
+        [entry({ key: "server", type: ConfigEntryType.STRING })],
+        disabled,
+        inlineSave,
+      );
+
+      expect(wrapper.get("v-form-stub").classes()).not.toContain(
+        "floating-save-clearance",
+      );
     },
   );
 });
@@ -432,6 +733,43 @@ describe("EditConfig unsaved changes", () => {
     expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(true);
   });
 
+  it("lets the form go once what is on it has been saved", async () => {
+    const { router, wrapper } = await mountInRouter();
+    const form = wrapper.findComponent(EditConfig);
+    dirty(wrapper);
+    await nextTick();
+
+    await form.get('[data-testid="config-save"]').trigger("click");
+    await flushPromises();
+    form.vm.saveSucceeded({ server: "localhost" });
+
+    await router.push({ name: "music-quiz" });
+
+    expect(router.currentRoute.value.name).toBe("music-quiz");
+    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(false);
+  });
+
+  // a save lets the screen navigate away without asking, and that permission is
+  // spent on the values it carried: what is typed afterwards is guarded again
+  it("asks again about an edit made after a save", async () => {
+    const { router, wrapper } = await mountInRouter();
+    const form = wrapper.findComponent(EditConfig);
+    dirty(wrapper);
+    await nextTick();
+
+    await form.get('[data-testid="config-save"]').trigger("click");
+    await flushPromises();
+    form.vm.saveSucceeded({ server: "localhost" });
+    edit(wrapper, 0, "elsewhere");
+    await nextTick();
+
+    router.push({ name: "music-quiz" });
+    await flushPromises();
+
+    expect(router.currentRoute.value.name).toBe("editprovider");
+    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(true);
+  });
+
   it("lets an unchanged form go without asking", async () => {
     const { router, wrapper } = await mountInRouter();
 
@@ -466,11 +804,19 @@ function dependentEntry(
   });
 }
 
-function mountEntries(configEntries: ConfigEntry[], disabled = false) {
+function mountEntries(
+  configEntries: ConfigEntry[],
+  disabled = false,
+  inlineSave = false,
+) {
   return shallowMount(EditConfig, {
-    props: { configEntries, disabled },
+    props: { configEntries, disabled, inlineSave },
     global: { renderStubDefaultSlot: true },
   });
+}
+
+function advancedToggle(wrapper: VueWrapper) {
+  return wrapper.findComponent({ name: "AdvancedSettingsToggle" });
 }
 
 function renderedKeys(wrapper: VueWrapper) {
@@ -481,10 +827,14 @@ function renderedKeys(wrapper: VueWrapper) {
 
 // edits the first entry in place, which is what typing into its field does
 function dirty(wrapper: VueWrapper) {
-  const first = wrapper
-    .findAllComponents({ name: "ConfigEntryRow" })[0]
-    .props("confEntry") as ConfigEntry;
-  first.value = "localhost";
+  edit(wrapper, 0, "localhost");
+}
+
+function edit(wrapper: VueWrapper, index: number, value: ConfigValueType) {
+  const target = wrapper
+    .findAllComponents({ name: "ConfigEntryRow" })
+    [index].props("confEntry") as ConfigEntry;
+  target.value = value;
 }
 
 function saveDisabled(wrapper: VueWrapper) {

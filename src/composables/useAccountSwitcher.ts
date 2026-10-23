@@ -1,5 +1,5 @@
 import { api } from "@/plugins/api";
-import type { User } from "@/plugins/api/interfaces";
+import { Scope, type User } from "@/plugins/api/interfaces";
 import { authManager, type SavedAccount } from "@/plugins/auth";
 import { toast } from "vue-sonner";
 import { computed, ref } from "vue";
@@ -36,14 +36,14 @@ const availableAccounts = computed<AccountOption[]>(() => {
 });
 
 const loadAccounts = async () => {
-  if (!authManager.isAdmin()) {
+  if (!authManager.hasScope(Scope.USERS_MANAGE)) {
     serverUsers.value = [];
     return;
   }
   try {
     serverUsers.value = await api.getAllUsers();
   } catch {
-    // Non-admin users cannot list all accounts; remembered sessions still work.
+    // Listing users may fail; remembered sessions still work.
   }
 };
 

@@ -16,7 +16,7 @@ export function track(overrides: Partial<Track> = {}): Track {
     media_type: MediaType.TRACK,
     provider_mappings: [],
     metadata: {},
-    favorite: false,
+    favorite: null,
     duration: 200,
     artists: [],
     album: null,

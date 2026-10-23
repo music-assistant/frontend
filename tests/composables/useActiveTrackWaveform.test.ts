@@ -66,10 +66,13 @@ async function importComposable(): Promise<UseActiveTrackWaveform> {
  * Registers a consumer inside its own effect scope, mimicking a mounted
  * component. The returned scope can be stopped to simulate unmounting.
  */
-function addConsumer(useActiveTrackWaveform: UseActiveTrackWaveform) {
+function addConsumer(
+  useActiveTrackWaveform: UseActiveTrackWaveform,
+  options?: Parameters<UseActiveTrackWaveform>[0],
+) {
   const scope = effectScope();
   scopes.push(scope);
-  return { scope, ...scope.run(useActiveTrackWaveform)! };
+  return { scope, ...scope.run(() => useActiveTrackWaveform(options))! };
 }
 
 // ---------------------------------------------------------------------------
@@ -85,7 +88,9 @@ describe("useActiveTrackWaveform", () => {
     mockGetWaveForm.mockReset();
     scopes = [];
     storeMock.curQueueItem = null;
-    storeMock.currentUser = null;
+    // The waveform setting follows the expert mode until it is set, so only an
+    // expert has it on by default and gets anything fetched at all.
+    storeMock.currentUser = { preferences: { expert_mode: true } };
     await nextTick();
   });
 
@@ -269,8 +274,9 @@ describe("useActiveTrackWaveform", () => {
     await nextTick();
     await nextTick();
 
+    // one fetch serves both, and both see what it brought in
     expect(mockGetWaveForm).toHaveBeenCalledTimes(1);
-    expect(first.waveformBins).toBe(second.waveformBins);
+    expect(first.waveformBins.value).toEqual([0.5]);
     expect(second.waveformBins.value).toEqual([0.5]);
   });
 
@@ -296,7 +302,9 @@ describe("useActiveTrackWaveform", () => {
 
   it("does not fetch when the show_waveform preference is off", async () => {
     mockGetWaveForm.mockResolvedValue([0.5]);
-    storeMock.currentUser = { preferences: { show_waveform: false } };
+    storeMock.currentUser = {
+      preferences: { expert_mode: true, show_waveform: false },
+    };
 
     const { waveformBins } = addConsumer(await importComposable());
 
@@ -310,7 +318,9 @@ describe("useActiveTrackWaveform", () => {
 
   it("fetches once the show_waveform preference is switched back on", async () => {
     mockGetWaveForm.mockResolvedValue([0.5]);
-    storeMock.currentUser = { preferences: { show_waveform: false } };
+    storeMock.currentUser = {
+      preferences: { expert_mode: true, show_waveform: false },
+    };
 
     const { waveformBins } = addConsumer(await importComposable());
 
@@ -319,12 +329,124 @@ describe("useActiveTrackWaveform", () => {
     await nextTick();
     expect(mockGetWaveForm).not.toHaveBeenCalled();
 
-    storeMock.currentUser = { preferences: { show_waveform: true } };
+    storeMock.currentUser = {
+      preferences: { expert_mode: true, show_waveform: true },
+    };
     await nextTick();
     await nextTick();
 
     expect(mockGetWaveForm).toHaveBeenCalledTimes(1);
     expect(waveformBins.value).toEqual([0.5]);
+  });
+
+  it("fetches nothing for a user who never asked for the expert experience", async () => {
+    mockGetWaveForm.mockResolvedValue([0.5]);
+    storeMock.currentUser = null;
+
+    const { waveformBins } = addConsumer(await importComposable());
+
+    storeMock.curQueueItem = makeQueueItem();
+    await nextTick();
+    await nextTick();
+
+    expect(mockGetWaveForm).not.toHaveBeenCalled();
+    expect(waveformBins.value).toBeNull();
+
+    // an account that answered nothing is no different from having none
+    storeMock.currentUser = { preferences: {} };
+    storeMock.curQueueItem = makeQueueItem({ queue_item_id: "qi-2" });
+    await nextTick();
+    await nextTick();
+
+    expect(mockGetWaveForm).not.toHaveBeenCalled();
+    expect(waveformBins.value).toBeNull();
+  });
+
+  it("follows the expert mode until the waveform setting is set", async () => {
+    mockGetWaveForm.mockResolvedValue([0.5]);
+
+    const { waveformBins } = addConsumer(await importComposable());
+
+    storeMock.curQueueItem = makeQueueItem();
+    await nextTick();
+    await nextTick();
+    expect(mockGetWaveForm).toHaveBeenCalledTimes(1);
+    expect(waveformBins.value).toEqual([0.5]);
+
+    storeMock.currentUser = { preferences: { expert_mode: false } };
+    await nextTick();
+    await nextTick();
+
+    expect(mockGetWaveForm).toHaveBeenCalledTimes(1);
+    expect(waveformBins.value).toBeNull();
+  });
+
+  it("fetches for a consumer that wants the waveform whatever the setting says", async () => {
+    mockGetWaveForm.mockResolvedValue([0.5]);
+    storeMock.currentUser = null;
+
+    const { waveformBins } = addConsumer(await importComposable(), {
+      ignorePreference: true,
+    });
+
+    storeMock.curQueueItem = makeQueueItem();
+    await nextTick();
+    await nextTick();
+
+    expect(mockGetWaveForm).toHaveBeenCalledTimes(1);
+    expect(waveformBins.value).toEqual([0.5]);
+  });
+
+  it("goes back to the setting once that consumer is torn down", async () => {
+    mockGetWaveForm.mockResolvedValue([0.5]);
+    storeMock.currentUser = null;
+
+    const useActiveTrackWaveform = await importComposable();
+    const forced = addConsumer(useActiveTrackWaveform, {
+      ignorePreference: true,
+    });
+    const { waveformBins } = addConsumer(useActiveTrackWaveform);
+
+    storeMock.curQueueItem = makeQueueItem();
+    await nextTick();
+    await nextTick();
+    expect(mockGetWaveForm).toHaveBeenCalledTimes(1);
+
+    forced.scope.stop();
+
+    storeMock.curQueueItem = makeQueueItem({
+      queue_item_id: "qi-2",
+      streamdetails: streamDetails({
+        item_id: "stream-2",
+        provider: "spotify",
+      }),
+    });
+    await nextTick();
+    await nextTick();
+
+    expect(mockGetWaveForm).toHaveBeenCalledTimes(1);
+    expect(waveformBins.value).toBeNull();
+  });
+
+  it("keeps a forced fetch away from a consumer that follows the setting", async () => {
+    mockGetWaveForm.mockResolvedValue([0.5]);
+    storeMock.currentUser = { preferences: { expert_mode: false } };
+
+    const useActiveTrackWaveform = await importComposable();
+    const forced = addConsumer(useActiveTrackWaveform, {
+      ignorePreference: true,
+    });
+    const following = addConsumer(useActiveTrackWaveform);
+
+    storeMock.curQueueItem = makeQueueItem();
+    await nextTick();
+    await nextTick();
+
+    // one fetch, made for the caller that asked regardless; the other keeps
+    // showing nothing, as its setting says
+    expect(mockGetWaveForm).toHaveBeenCalledTimes(1);
+    expect(forced.waveformBins.value).toEqual([0.5]);
+    expect(following.waveformBins.value).toBeNull();
   });
 
   it("refetches when the track changed while no consumer was alive", async () => {

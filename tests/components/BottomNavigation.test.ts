@@ -20,6 +20,10 @@ vi.mock("@/plugins/eventbus", () => ({
 
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
+vi.mock("@/helpers/players", () => ({
+  getPlayerDisplayName: (player: { name: string }) => player.name,
+}));
+
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   return { store: reactive({ showPlayersMenu: false }) };

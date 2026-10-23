@@ -5,13 +5,17 @@ import {
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   BrowseFolder,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
+  SortDirection,
+  SortField,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
@@ -39,7 +43,8 @@ const CLICK_ACTION_CONFIG_KEYS: Partial<Record<MediaType, string>> = {
  * when there is no usable active player or when forceMenu is set. sortBy is the
  * sort order of the list the item was played from. A track within an album or
  * playlist follows the configured play action: continue from that track, or
- * play only the track itself.
+ * play only the track itself. tracksSortBy is the order the item's own tracks
+ * are shown in, so an album or playlist played from its page plays that way.
  */
 export const handlePlayBtnClick = async function (
   item: MediaItemTypeOrItemMapping,
@@ -48,6 +53,11 @@ export const handlePlayBtnClick = async function (
   parentItem?: MediaItemType,
   forceMenu?: boolean,
   sortBy?: string,
+  tracksSortBy?: string,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
+  tracksSortField?: SortField,
+  tracksSortDirection?: SortDirection,
 ) {
   // a failed play action must never be silent: without feedback the play
   // button appears dead (e.g. while the connection is re-establishing)
@@ -74,17 +84,40 @@ export const handlePlayBtnClick = async function (
         api
           .playMedia(parentItem.uri, undefined, {
             start_item: item.item_id,
-            sort_by: sortBy,
+            ...(sortField
+              ? { sort_field: sortField, sort_direction: sortDirection }
+              : sortBy
+                ? { sort_by: sortBy }
+                : {}),
           })
           .catch(onPlayError);
         return;
       }
     }
     // else: play the item directly
-    api.playMedia(item).catch(onPlayError);
+    const playOptions = tracksSortField
+      ? {
+          sort_field: tracksSortField,
+          sort_direction: tracksSortDirection,
+        }
+      : tracksSortBy
+        ? { sort_by: tracksSortBy }
+        : undefined;
+    const playAction = playOptions
+      ? api.playMedia(item, undefined, playOptions)
+      : api.playMedia(item);
+    playAction.catch(onPlayError);
     return;
   }
-  showPlayMenuForMediaItem(item, parentItem, posX, posY).catch(onPlayError);
+  showPlayMenuForMediaItem(
+    item,
+    parentItem,
+    posX,
+    posY,
+    tracksSortBy,
+    tracksSortField,
+    tracksSortDirection,
+  ).catch(onPlayError);
 };
 
 /**
@@ -98,6 +131,19 @@ export const handleMediaItemClick = async function (
   posY: number,
   parentItem?: MediaItemType,
 ) {
+  // a MusicBrainz release has nothing to play: the server resolves it to the
+  // same album on one of the user's music services when its page opens
+  if (isMusicBrainzItem(item)) {
+    router.push({
+      name: item.media_type,
+      params: {
+        itemId: item.item_id,
+        provider: item.provider,
+      },
+    });
+    return;
+  }
+
   // open menu when item is unavailable so the user has a way to remove/refresh the item
   if (!itemIsAvailable(item)) {
     handleMenuBtnClick(item, posX, posY, undefined, false);
@@ -113,12 +159,6 @@ export const handleMediaItemClick = async function (
       },
     });
     return;
-  }
-
-  // podcast episode has no details view so show play menu directly
-  // TODO: revisit this once we have a proper podcast episode details view
-  if (item.media_type == MediaType.PODCAST_EPISODE) {
-    return handlePlayBtnClick(item, posX, posY, parentItem, true);
   }
 
   // audio sources (e.g. Spotify Connect, AirPlay) have no browse view: always play them
@@ -171,6 +211,8 @@ export const handleMenuBtnClick = function (
   parentItem?: MediaItemType,
   includePlayMenuItems = true,
   sortBy?: string,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
 ) {
   const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
     ? item
@@ -183,6 +225,9 @@ export const handleMenuBtnClick = function (
     includePlayMenuItems,
     includePlayMenuItems,
     sortBy,
+    undefined,
+    sortField,
+    sortDirection,
   );
 };
 
@@ -195,6 +240,8 @@ export const handleMenuBtnClick = function (
 const readClickSetting = async function (
   key: string,
 ): Promise<string | undefined> {
+  // the defaults apply to a role that may not read the core settings
+  if (!authManager.hasScope(Scope.CONFIG_CORE_READ)) return undefined;
   try {
     const value = await api.getCoreConfigValue("player_queues", key);
     return typeof value === "string" ? value : undefined;

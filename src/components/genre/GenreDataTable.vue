@@ -90,12 +90,7 @@ interface FilterOption {
 }
 
 type CountMediaType =
-  | "track"
-  | "album"
-  | "artist"
-  | "playlist"
-  | "podcast"
-  | "audiobook";
+  "track" | "album" | "artist" | "playlist" | "podcast" | "audiobook";
 type CountKey = `${CountMediaType}Count`;
 
 // count columns relevant to each taxonomy; "all" shows everything.
@@ -282,29 +277,27 @@ const columns: ColumnDef<GenreRow>[] = [
         ),
       ]),
   },
-  ...mediaTypeDefs.map(
-    ({ key, countKey, id }): ColumnDef<GenreRow> => ({
-      id,
-      accessorKey: countKey,
-      header: ({ column }) =>
-        h(DataTableColumnHeader, {
-          // h() can't infer the generic prop, so cast to the widened Column type.
-          column: column as Column<unknown, unknown>,
-          title: toSentenceCase(t(`${key}s`)),
-          align: "center",
-        }),
-      cell: ({ row }) =>
-        h(
-          "div",
-          {
-            class:
-              "cursor-pointer text-center tabular-nums text-muted-foreground hover:text-foreground",
-            onClick: () => emit("navigate-library", row.original.genre, key),
-          },
-          formatCount(row.original[countKey]),
-        ),
-    }),
-  ),
+  ...mediaTypeDefs.map(({ key, countKey, id }): ColumnDef<GenreRow> => ({
+    id,
+    accessorKey: countKey,
+    header: ({ column }) =>
+      h(DataTableColumnHeader, {
+        // h() can't infer the generic prop, so cast to the widened Column type.
+        column: column as Column<unknown, unknown>,
+        title: toSentenceCase(t(`${key}s`)),
+        align: "center",
+      }),
+    cell: ({ row }) =>
+      h(
+        "div",
+        {
+          class:
+            "cursor-pointer text-center tabular-nums text-muted-foreground hover:text-foreground",
+          onClick: () => emit("navigate-library", row.original.genre, key),
+        },
+        formatCount(row.original[countKey]),
+      ),
+  })),
   {
     id: "actions",
     cell: ({ row }) =>
@@ -547,8 +540,18 @@ const table = useVueTable({
     <div class="flex items-center justify-between px-4 lg:px-6">
       <div class="text-muted-foreground hidden flex-1 text-sm lg:flex">
         <template v-if="table.getFilteredSelectedRowModel().rows.length > 0">
-          {{ table.getFilteredSelectedRowModel().rows.length }} of
-          {{ table.getFilteredRowModel().rows.length }} row(s) selected.
+          {{
+            $t(
+              "settings.genre_table_rows_selected",
+              table.getFilteredSelectedRowModel().rows.length,
+              {
+                named: {
+                  selected: table.getFilteredSelectedRowModel().rows.length,
+                  total: table.getFilteredRowModel().rows.length,
+                },
+              },
+            )
+          }}
         </template>
       </div>
       <div class="flex w-full items-center gap-8 lg:w-fit">
@@ -582,8 +585,12 @@ const table = useVueTable({
           </Select>
         </div>
         <div class="flex w-fit items-center justify-center text-sm font-medium">
-          Page {{ table.getState().pagination.pageIndex + 1 }} of
-          {{ table.getPageCount() }}
+          {{
+            $t("settings.genre_table_page_of", [
+              table.getState().pagination.pageIndex + 1,
+              table.getPageCount(),
+            ])
+          }}
         </div>
         <div class="ml-auto flex items-center gap-2 lg:ml-0">
           <Button

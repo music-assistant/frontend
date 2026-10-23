@@ -1,8 +1,8 @@
 <template>
   <Dialog v-model:open="open">
     <DialogContent class="sm:max-w-[560px]">
-      <DialogHeader class="text-left">
-        <DialogTitle class="text-center">
+      <DialogHeader>
+        <DialogTitle>
           {{ $t("settings.dsp.convolution.library") }}
         </DialogTitle>
         <DialogDescription>
@@ -78,10 +78,10 @@
           {{ $t("close") }}
         </Button>
         <Button
-          :disabled="!selectedFile || !uploadName.trim() || uploading"
+          :disabled="!selectedFile || !uploadName.trim()"
+          :loading="uploading"
           @click="upload"
         >
-          <Spinner v-if="uploading" />
           {{ $t("settings.dsp.convolution.upload") }}
         </Button>
       </DialogFooter>
@@ -109,7 +109,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Spinner } from "@/components/ui/spinner";
 import {
   IR_FILE_ACCEPT,
   MAX_IR_BYTES,

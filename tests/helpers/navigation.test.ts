@@ -1,19 +1,44 @@
-import { backFromMediaDetails, canGoBack, goBack } from "@/helpers/navigation";
+import {
+  backFromMediaDetails,
+  canGoBack,
+  goBack,
+  returnedByHistory,
+} from "@/helpers/navigation";
 import type { Router } from "vue-router";
 import { describe, expect, it, vi } from "vitest";
 
-/** A router on `routeName`, reached from `backEntry` when one is given. */
-function fakeRouter(routeName?: string, backEntry: string | null = null) {
+/**
+ * A router on `routeName`, reached from `backEntry` when one is given, and
+ * returned to from `forwardEntry` when one is given.
+ */
+function fakeRouter(
+  routeName?: string,
+  backEntry: string | null = null,
+  forwardEntry: string | null = null,
+) {
   const back = vi.fn();
   const push = vi.fn();
   const router = {
     back,
     push,
     currentRoute: { value: { name: routeName } },
-    options: { history: { state: { back: backEntry } } },
+    options: { history: { state: { back: backEntry, forward: forwardEntry } } },
   } as unknown as Router;
   return { router, back, push };
 }
+
+describe("returnedByHistory", () => {
+  it("is true on a view gone back to", () => {
+    const { router } = fakeRouter("albums", "/discover", "/albums/library/1");
+    expect(returnedByHistory(router)).toBe(true);
+  });
+
+  it("is false on a view reached by a new navigation", () => {
+    expect(returnedByHistory(fakeRouter("albums", "/discover").router)).toBe(
+      false,
+    );
+  });
+});
 
 describe("canGoBack", () => {
   it("is true while history holds an earlier entry", () => {
@@ -66,6 +91,7 @@ describe("backFromMediaDetails", () => {
     ["genre", "genres"],
     ["playlist", "playlists"],
     ["podcast", "podcasts"],
+    ["podcast_episode", "podcasts"],
     ["radio", "radios"],
     ["track", "tracks"],
   ])("goes up from %s opened directly to %s", (details, listing) => {

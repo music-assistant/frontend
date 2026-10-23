@@ -1,20 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { storeMock, mockSetUserPreference, providersMock } = vi.hoisted(() => ({
-  storeMock: {
-    currentUser: null as { preferences?: Record<string, unknown> } | null,
-  },
-  mockSetUserPreference: vi.fn(),
-  providersMock: {} as Record<string, unknown>,
-}));
+const { storeMock, mockSetUserPreference, providersMock, manifestsMock } =
+  vi.hoisted(() => ({
+    storeMock: {
+      currentUser: null as { preferences?: Record<string, unknown> } | null,
+    },
+    mockSetUserPreference: vi.fn(),
+    providersMock: {} as Record<string, unknown>,
+    manifestsMock: {} as Record<string, { name: string }>,
+  }));
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
 }));
 
-vi.mock("@/plugins/api", () => ({
-  api: { providers: providersMock },
-}));
+vi.mock("@/plugins/api", () => {
+  const api = { providers: providersMock, providerManifests: manifestsMock };
+  return { api, default: api };
+});
 
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: mockSetUserPreference,
@@ -23,16 +26,8 @@ vi.mock("@/composables/userPreferences", () => ({
 import {
   ARTIST_ROWS_PREFERENCE_KEY,
   ARTIST_ROW_SOURCES_PREFERENCE_KEY,
-  artistRowDefinition,
-  artistRowSources,
+  artistRows,
   availableArtistRowIds,
-  effectiveArtistRowSource,
-  getArtistRowSource,
-  resetArtistRows,
-  resolveArtistRows,
-  setArtistRowHidden,
-  setArtistRowSource,
-  setArtistRowsOrder,
   type ArtistRowId,
 } from "@/components/artist/artistRows";
 import {
@@ -49,6 +44,7 @@ const MUSIC_ROWS: ArtistRowId[] = [
   "albums",
   "singles_eps",
   "appears_on",
+  "discography",
   "similar_artists",
 ];
 
@@ -69,6 +65,7 @@ function addProvider(
   instanceId: string,
   features: ProviderFeature[],
   type = ProviderType.MUSIC,
+  overrides: Record<string, unknown> = {},
 ) {
   providersMock[instanceId] = {
     instance_id: instanceId,
@@ -76,6 +73,7 @@ function addProvider(
     domain: instanceId.split("--")[0],
     type,
     supported_features: features,
+    ...overrides,
   };
 }
 
@@ -84,6 +82,7 @@ describe("artistRows", () => {
     mockSetUserPreference.mockReset();
     setPreferences({});
     for (const key of Object.keys(providersMock)) delete providersMock[key];
+    for (const key of Object.keys(manifestsMock)) delete manifestsMock[key];
   });
 
   describe("availableArtistRowIds", () => {
@@ -109,12 +108,12 @@ describe("artistRows", () => {
     });
   });
 
-  describe("artistRowSources", () => {
+  describe("sources", () => {
     it("lists the library and the capable providers for a release row, never every provider at once", () => {
       addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
       addProvider("tidal--def", []);
       expect(
-        artistRowSources("albums", mappedTo("spotify--abc", "tidal--def")),
+        artistRows.sources("albums", mappedTo("spotify--abc", "tidal--def")),
       ).toEqual(["library", "spotify--abc"]);
     });
 
@@ -126,23 +125,56 @@ describe("artistRows", () => {
         ProviderType.METADATA,
       );
       expect(
-        artistRowSources("similar_artists", mappedTo("spotify--abc")),
+        artistRows.sources("similar_artists", mappedTo("spotify--abc")),
       ).toEqual(["all", "lastfm--ghi", "spotify--abc"]);
+    });
+
+    it("offers a streaming service once beside the metadata providers, sorted by the name shown", () => {
+      manifestsMock["spotify"] = { name: "Spotify" };
+      for (const [instanceId, name] of [
+        ["spotify--b", "Zoe's Spotify"],
+        ["spotify--a", "Zed's Spotify"],
+      ]) {
+        addProvider(
+          instanceId,
+          [ProviderFeature.SIMILAR_ARTISTS],
+          ProviderType.MUSIC,
+          { name, is_streaming_provider: true },
+        );
+      }
+      addProvider(
+        "lastfm--ghi",
+        [ProviderFeature.SIMILAR_ARTISTS],
+        ProviderType.METADATA,
+        { name: "Last.fm" },
+      );
+      addProvider(
+        "tidal--def",
+        [ProviderFeature.SIMILAR_ARTISTS],
+        ProviderType.MUSIC,
+        { name: "Tidal" },
+      );
+      expect(
+        artistRows.sources(
+          "similar_artists",
+          mappedTo("spotify--b", "tidal--def", "spotify--a"),
+        ),
+      ).toEqual(["all", "lastfm--ghi", "spotify--a", "tidal--def"]);
     });
 
     it("offers nothing for a provider artist or a row without a picker", () => {
       addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
       const providerArtist = artist({ provider: "spotify--abc" });
-      expect(artistRowSources("albums", providerArtist)).toEqual([]);
-      expect(artistRowSources("appears_on", mappedTo("spotify--abc"))).toEqual(
-        [],
-      );
+      expect(artistRows.sources("albums", providerArtist)).toEqual([]);
+      expect(
+        artistRows.sources("appears_on", mappedTo("spotify--abc")),
+      ).toEqual([]);
     });
   });
 
-  describe("artistRowDefinition", () => {
+  describe("definition", () => {
     it("returns the row's label and source support", () => {
-      expect(artistRowDefinition("albums")).toEqual({
+      expect(artistRows.definition("albums")).toEqual({
         id: "albums",
         labelKey: "albums",
         audience: "music",
@@ -151,9 +183,9 @@ describe("artistRows", () => {
     });
   });
 
-  describe("resolveArtistRows", () => {
+  describe("resolve", () => {
     it("returns the default order with nothing hidden without preferences", () => {
-      const { order, hidden } = resolveArtistRows(MUSIC_ROWS);
+      const { order, hidden } = artistRows.resolve(MUSIC_ROWS);
       expect(order).toEqual(MUSIC_ROWS);
       expect(hidden.size).toBe(0);
     });
@@ -165,12 +197,13 @@ describe("artistRows", () => {
           order: ["albums", "bio", "top_tracks"],
         },
       });
-      const { order, hidden } = resolveArtistRows(MUSIC_ROWS);
+      const { order, hidden } = artistRows.resolve(MUSIC_ROWS);
       // the rows the user never ordered follow their default sibling: albums
       expect(order).toEqual([
         "albums",
         "singles_eps",
         "appears_on",
+        "discography",
         "similar_artists",
         "bio",
         "top_tracks",
@@ -185,15 +218,15 @@ describe("artistRows", () => {
           order: ["audiobooks", "albums"],
         },
       });
-      const { order, hidden } = resolveArtistRows(MUSIC_ROWS);
+      const { order, hidden } = artistRows.resolve(MUSIC_ROWS);
       expect(order).not.toContain("audiobooks");
       expect(hidden.size).toBe(0);
     });
   });
 
-  describe("setArtistRowHidden / setArtistRowsOrder / resetArtistRows", () => {
+  describe("setHidden / setOrder / reset", () => {
     it("persists the hidden row", async () => {
-      await setArtistRowHidden("appears_on", true);
+      await artistRows.setHidden("appears_on", true);
       expect(mockSetUserPreference).toHaveBeenLastCalledWith(
         ARTIST_ROWS_PREFERENCE_KEY,
         expect.objectContaining({ hidden: ["appears_on"], shown: [] }),
@@ -207,9 +240,10 @@ describe("artistRows", () => {
         "top_tracks",
         "singles_eps",
         "appears_on",
+        "discography",
         "similar_artists",
       ];
-      await setArtistRowsOrder(reordered, MUSIC_ROWS);
+      await artistRows.setOrder(reordered, MUSIC_ROWS);
       expect(mockSetUserPreference).toHaveBeenLastCalledWith(
         ARTIST_ROWS_PREFERENCE_KEY,
         expect.objectContaining({ order: reordered }),
@@ -217,12 +251,12 @@ describe("artistRows", () => {
     });
 
     it("ignores an order containing unknown rows", async () => {
-      await setArtistRowsOrder(["audiobooks"], MUSIC_ROWS);
+      await artistRows.setOrder(["audiobooks"], MUSIC_ROWS);
       expect(mockSetUserPreference).not.toHaveBeenCalled();
     });
 
     it("clears both preferences", async () => {
-      await resetArtistRows();
+      await artistRows.reset();
       expect(mockSetUserPreference).toHaveBeenCalledWith(
         ARTIST_ROWS_PREFERENCE_KEY,
         { hidden: [], shown: [], order: [] },
@@ -236,20 +270,20 @@ describe("artistRows", () => {
 
   describe("row sources", () => {
     it("reads and writes a single row's source", async () => {
-      expect(getArtistRowSource("albums")).toBeUndefined();
+      expect(artistRows.getSource("albums")).toBeUndefined();
 
       setPreferences({
         [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { albums: "spotify--abc" },
       });
-      expect(getArtistRowSource("albums")).toBe("spotify--abc");
+      expect(artistRows.getSource("albums")).toBe("spotify--abc");
 
-      await setArtistRowSource("top_tracks", "library");
+      await artistRows.setSource("top_tracks", "library");
       expect(mockSetUserPreference).toHaveBeenLastCalledWith(
         ARTIST_ROW_SOURCES_PREFERENCE_KEY,
         { albums: "spotify--abc", top_tracks: "library" },
       );
 
-      await setArtistRowSource("albums", undefined);
+      await artistRows.setSource("albums", undefined);
       expect(mockSetUserPreference).toHaveBeenLastCalledWith(
         ARTIST_ROW_SOURCES_PREFERENCE_KEY,
         {},
@@ -257,18 +291,22 @@ describe("artistRows", () => {
     });
   });
 
-  describe("effectiveArtistRowSource", () => {
+  describe("effectiveSource", () => {
     it("defaults the release rows to the library", () => {
       const libraryArtist = artist();
-      expect(effectiveArtistRowSource("albums", libraryArtist)).toBe("library");
-      expect(effectiveArtistRowSource("singles_eps", libraryArtist)).toBe(
+      expect(artistRows.effectiveSource("albums", libraryArtist)).toBe(
+        "library",
+      );
+      expect(artistRows.effectiveSource("singles_eps", libraryArtist)).toBe(
         "library",
       );
     });
 
     it("defaults the server-aggregated rows to every provider", () => {
-      expect(effectiveArtistRowSource("top_tracks", artist())).toBe("all");
-      expect(effectiveArtistRowSource("similar_artists", artist())).toBe("all");
+      expect(artistRows.effectiveSource("top_tracks", artist())).toBe("all");
+      expect(artistRows.effectiveSource("similar_artists", artist())).toBe(
+        "all",
+      );
     });
 
     it("uses the saved source when a mapped provider can supply the row", () => {
@@ -276,9 +314,9 @@ describe("artistRows", () => {
         [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { albums: "spotify--abc" },
       });
       addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
-      expect(effectiveArtistRowSource("albums", mappedTo("spotify--abc"))).toBe(
-        "spotify--abc",
-      );
+      expect(
+        artistRows.effectiveSource("albums", mappedTo("spotify--abc")),
+      ).toBe("spotify--abc");
     });
 
     it("falls back to the default when the saved provider lacks the row's feature", () => {
@@ -287,7 +325,7 @@ describe("artistRows", () => {
       });
       addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
       expect(
-        effectiveArtistRowSource("top_tracks", mappedTo("spotify--abc")),
+        artistRows.effectiveSource("top_tracks", mappedTo("spotify--abc")),
       ).toBe("all");
     });
 
@@ -295,9 +333,9 @@ describe("artistRows", () => {
       setPreferences({
         [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { albums: "spotify--gone" },
       });
-      expect(effectiveArtistRowSource("albums", mappedTo("spotify--abc"))).toBe(
-        "library",
-      );
+      expect(
+        artistRows.effectiveSource("albums", mappedTo("spotify--abc")),
+      ).toBe("library");
     });
 
     it("ignores an 'all' saved for a release row while the discography existed", () => {
@@ -307,8 +345,8 @@ describe("artistRows", () => {
           top_tracks: "all",
         },
       });
-      expect(effectiveArtistRowSource("albums", artist())).toBe("library");
-      expect(effectiveArtistRowSource("top_tracks", artist())).toBe("all");
+      expect(artistRows.effectiveSource("albums", artist())).toBe("library");
+      expect(artistRows.effectiveSource("top_tracks", artist())).toBe("all");
     });
 
     it("keeps a provider artist on its own provider", () => {
@@ -319,7 +357,7 @@ describe("artistRows", () => {
         provider: "spotify--abc",
         artist_type: ArtistType.SINGER,
       });
-      expect(effectiveArtistRowSource("albums", providerArtist)).toBe(
+      expect(artistRows.effectiveSource("albums", providerArtist)).toBe(
         "spotify--abc",
       );
     });

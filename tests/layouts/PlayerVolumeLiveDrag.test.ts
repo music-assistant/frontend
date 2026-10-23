@@ -102,6 +102,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     active_group: null,
     synced_to: null,
     sleep_timer_expires_at: null,
+    active_source_audio: null,
     ...overrides,
   };
 }
@@ -117,6 +118,7 @@ function mountVolume(
   const wrapper = mount(PlayerVolume, {
     props: { player, ...props },
     global: {
+      mocks: { $t: (key: string) => key },
       stubs: {
         Slider: {
           emits: ["update:modelValue"],

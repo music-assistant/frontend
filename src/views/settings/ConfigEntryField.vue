@@ -85,10 +85,7 @@
     <!-- int/float value in range: slider control -->
     <div
       v-else-if="
-        (confEntry.type == ConfigEntryType.INTEGER ||
-          confEntry.type == ConfigEntryType.FLOAT) &&
-        confEntry.range &&
-        confEntry.range.length == 2
+        isNumberEntry && confEntry.range && confEntry.range.length == 2
       "
       class="config-slider-wrapper"
     >
@@ -121,7 +118,7 @@
                 confEntry.type == ConfigEntryType.FLOAT ? 1 : 0,
             }"
             class="w-[100px]"
-            @update:model-value="$emit('update:value', $event)"
+            @update:model-value="$emit('update:value', $event ?? null)"
           >
             <NumberFieldContent>
               <NumberFieldInput />
@@ -170,6 +167,15 @@
       @update:value="onUpdateValue($event)"
     />
 
+    <!-- folder on one of the server's storage locations -->
+    <FolderPickerField
+      v-else-if="confEntry.type == ConfigEntryType.FOLDER"
+      :entry="confEntry"
+      :label="displayLabel()"
+      :disabled="isFieldDisabled"
+      @update:value="onUpdateValue($event)"
+    />
+
     <!-- value with all options expanded: one button per option -->
     <RadioGroupField
       v-else-if="
@@ -179,6 +185,7 @@
       "
       :label="displayLabel()"
       :options="displayOptions"
+      :value="confEntry.value"
       :disabled="isFieldDisabled"
       @update:value="onUpdateValue($event)"
     />
@@ -216,10 +223,7 @@
 
     <!-- int value without range -->
     <v-text-field
-      v-else-if="
-        confEntry.type == ConfigEntryType.INTEGER ||
-        confEntry.type == ConfigEntryType.FLOAT
-      "
+      v-else-if="isNumberEntry"
       :model-value="confEntry.value"
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
@@ -307,6 +311,7 @@ import {
 } from "@/plugins/api/interfaces";
 import IconPicker from "@/components/IconPicker.vue";
 import AlertField from "./fields/AlertField.vue";
+import FolderPickerField from "./fields/FolderPickerField.vue";
 import HassControlPickerField from "./fields/HassControlPickerField.vue";
 import HassControlsField from "./fields/HassControlsField.vue";
 import LabelField from "./fields/LabelField.vue";
@@ -341,13 +346,18 @@ const isFieldDisabled = computed(() => {
   return props.disabled || props.confEntry.read_only;
 });
 
+const isNumberEntry = computed(
+  () =>
+    props.confEntry.type == ConfigEntryType.INTEGER ||
+    props.confEntry.type == ConfigEntryType.FLOAT,
+);
+
 // Only surface an <img> when a source is actually available; otherwise the
 // element would render as a broken image (both value and default missing).
 const imageSrc = computed(
   () =>
     (props.confEntry.value ?? props.confEntry.default_value) as
-      | string
-      | undefined,
+      string | undefined,
 );
 
 const emit = defineEmits<{
@@ -374,7 +384,7 @@ const displayActionLabel = () =>
 
 const onUpdateValue = (value: ConfigValueType) => {
   // When value is cleared (null/undefined/empty array), emit the default value instead
-  // For non-required fields, allow empty strings as a valid value
+  // For non-required text fields, allow empty strings as a valid value
   if (
     value === null ||
     value === undefined ||
@@ -382,6 +392,9 @@ const onUpdateValue = (value: ConfigValueType) => {
     (Array.isArray(value) && value.length === 0)
   ) {
     emit("update:value", props.confEntry.default_value);
+  } else if (value === "" && isNumberEntry.value) {
+    // an emptied number field has no value, so the server falls back to the default
+    emit("update:value", null);
   } else {
     emit("update:value", value);
   }

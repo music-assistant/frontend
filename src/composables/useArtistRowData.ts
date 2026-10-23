@@ -1,23 +1,24 @@
 import {
-  appearsOnAlbums,
   isSingleOrEp,
-  loadArtistLibraryTracks,
+  loadArtistAppearsOn,
+  loadArtistDiscography,
   loadArtistReleases,
   loadArtistTopTracks,
+  loadArtistTracks,
   loadSimilarArtists,
   sortReleasesNewestFirst,
 } from "@/components/artist/artistData";
+import { artistRows, type ArtistRowId } from "@/components/artist/artistRows";
 import {
-  effectiveArtistRowSource,
-  type ArtistRowId,
-  type ArtistRowSource,
-} from "@/components/artist/artistRows";
-import { api } from "@/plugins/api";
-import type {
-  Album,
-  Artist,
-  ItemMapping,
-  Track,
+  rowSourceDisplay,
+  type RowSource,
+} from "@/components/details/rowRegistry";
+import { mappingsIdentity, useRowRequests } from "@/composables/useRowRequests";
+import {
+  MediaType,
+  type Album,
+  type Artist,
+  type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed, ref, watch, type Ref } from "vue";
@@ -36,27 +37,50 @@ export function useArtistRowData(
 ) {
   // Row data per source: two rows fed by the same source share one request and
   // a source change in the editor loads the new one. Absent = still loading.
-  const releases = ref(new Map<ArtistRowSource, Album[]>());
-  const topTracks = ref(new Map<ArtistRowSource, Track[]>());
-  const similarArtists = ref(new Map<ArtistRowSource, Artist[]>());
-  const libraryTracks = ref<Track[]>();
+  const releases = ref(new Map<RowSource, Album[]>());
+  const topTracks = ref(new Map<RowSource, Track[]>());
+  const similarArtists = ref(new Map<RowSource, Artist[]>());
+  const artistTracks = ref<Track[]>();
+  // fed by the artist alone, so these need no per-source cache
+  const appearsOn = ref<Album[]>();
+  const discography = ref<Album[]>();
 
-  // the requests already sent for the artist currently shown, as "<kind>:<source>"
-  let requested = new Set<string>();
+  // a new artist, or new provider mappings, start from empty rows; anything
+  // else (a favorite toggle, a metadata update) keeps what is already loaded
+  const { fetchOnce, refetchOnLibraryChange } = useRowRequests(
+    artist,
+    mappingsIdentity,
+    () => {
+      releases.value = new Map();
+      topTracks.value = new Map();
+      similarArtists.value = new Map();
+      artistTracks.value = undefined;
+      appearsOn.value = undefined;
+      discography.value = undefined;
+      loadRowData();
+    },
+  );
 
-  const rowSource = function (rowId: ArtistRowId): ArtistRowSource | undefined {
+  refetchOnLibraryChange(
+    {
+      [MediaType.ALBUM]: ["releases", "appears_on", "discography"],
+      [MediaType.TRACK]: ["artist_tracks", "appears_on", "top_tracks"],
+    },
+    () => loadRowData(),
+  );
+
+  const rowSource = function (rowId: ArtistRowId): RowSource | undefined {
     if (!artist.value) return undefined;
-    return effectiveArtistRowSource(rowId, artist.value);
+    return artistRows.effectiveSource(rowId, artist.value);
   };
 
   const albumsSource = computed(() => rowSource("albums"));
   const singlesSource = computed(() => rowSource("singles_eps"));
-  const appearsOnSource = computed(() => rowSource("appears_on"));
   const topTracksSource = computed(() => rowSource("top_tracks"));
   const similarArtistsSource = computed(() => rowSource("similar_artists"));
 
   // releases sorted newest first, from the source that feeds the given row
-  const sortedReleases = function (source?: ArtistRowSource) {
+  const sortedReleases = function (source?: RowSource) {
     const items = sourceItems(releases.value, source);
     return items ? sortReleasesNewestFirst(items) : undefined;
   };
@@ -74,7 +98,6 @@ export function useArtistRowData(
   const singleItems = computed(() =>
     singlesSourceReleases.value?.filter((album) => isSingleOrEp(album)),
   );
-  const latestRelease = computed(() => albumSourceReleases.value?.[0]);
 
   const albumsMeta = computed(() =>
     albumItems.value?.length
@@ -82,48 +105,45 @@ export function useArtistRowData(
       : undefined,
   );
 
-  // every album the artist's library tracks point at that is not one of their
-  // own releases is an appearance
-  const appearsOnItems = computed<Array<Album | ItemMapping> | undefined>(
-    () => {
-      const ownReleases = sourceItems(releases.value, appearsOnSource.value);
-      if (!artist.value || !libraryTracks.value || !ownReleases)
-        return undefined;
-      return appearsOnAlbums(libraryTracks.value, artist.value, ownReleases);
-    },
-  );
+  const appearsOnItems = computed(() => appearsOn.value);
 
-  // falls back to the newest library tracks when no provider supplies top tracks
+  // kept in the order the server sent it, which is newest first
+  const discographyItems = computed(() => discography.value);
+
+  // falls back to the artist's newest tracks when no provider supplies top
+  // tracks (for a provider artist, those of its own provider)
   const topTracksItems = computed(() => {
     const items = sourceItems(topTracks.value, topTracksSource.value);
     if (items === undefined) return undefined;
     if (items.length) return items;
-    return libraryTracks.value && newestLibraryTracks(libraryTracks.value);
+    return artistTracks.value && newestArtistTracks(artistTracks.value);
   });
 
   const similarArtistItems = computed(() =>
     sourceItems(similarArtists.value, similarArtistsSource.value),
   );
 
-  const topTracksProvider = computed(() =>
-    sourceProvider(topTracksSource.value),
+  const albumsSourceDisplay = computed(() =>
+    rowSourceDisplay(albumsSource.value),
   );
-  const similarArtistsProvider = computed(() =>
-    sourceProvider(similarArtistsSource.value),
+  const singlesSourceDisplay = computed(() =>
+    rowSourceDisplay(singlesSource.value),
   );
 
-  // a new artist, or new provider mappings, start from empty rows; anything
-  // else (a favorite toggle, a metadata update) keeps what is already loaded
-  watch(
-    () => artist.value && rowsIdentity(artist.value),
-    () => {
-      releases.value = new Map();
-      topTracks.value = new Map();
-      similarArtists.value = new Map();
-      libraryTracks.value = undefined;
-      requested = new Set();
-      loadRowData();
-    },
+  // on that fallback, only a library artist's badge switches to the library
+  const topTracksSourceDisplay = computed(() => {
+    const provided = sourceItems(topTracks.value, topTracksSource.value);
+    const usesLibraryFallback =
+      artist.value?.provider === "library" &&
+      provided?.length === 0 &&
+      !!artistTracks.value?.length;
+    return rowSourceDisplay(
+      usesLibraryFallback ? "library" : topTracksSource.value,
+    );
+  });
+
+  const similarArtistsSourceDisplay = computed(() =>
+    rowSourceDisplay(similarArtistsSource.value),
   );
 
   // unhiding a row or switching its source in the editor loads what it needs,
@@ -133,7 +153,6 @@ export function useArtistRowData(
       visibleRows,
       albumsSource,
       singlesSource,
-      appearsOnSource,
       topTracksSource,
       similarArtistsSource,
     ],
@@ -142,41 +161,27 @@ export function useArtistRowData(
 
   /** Request what the visible rows need, skipping what is already on its way. */
   function loadRowData() {
-    const shown = artist.value;
-    if (!shown) return;
+    if (!artist.value) return;
     const rows = visibleRows.value;
-    // the top tracks row shows the latest release from the albums source
-    if (rows.includes("albums") || rows.includes("top_tracks")) {
-      fetchReleases(shown, albumsSource.value!);
-    }
-    if (rows.includes("singles_eps"))
-      fetchReleases(shown, singlesSource.value!);
-    if (rows.includes("appears_on")) {
-      fetchReleases(shown, appearsOnSource.value!);
-      fetchLibraryTracks(shown);
-    }
+    if (rows.includes("albums")) fetchReleases(albumsSource.value!);
+    if (rows.includes("singles_eps")) fetchReleases(singlesSource.value!);
+    if (rows.includes("appears_on")) fetchAppearsOn();
+    if (rows.includes("discography")) fetchDiscography();
     if (rows.includes("top_tracks")) {
-      fetchLibraryTracks(shown);
-      fetchTopTracks(shown, topTracksSource.value!);
+      fetchArtistTracks();
+      fetchTopTracks(topTracksSource.value!);
     }
     if (rows.includes("similar_artists")) {
-      fetchSimilarArtists(shown, similarArtistsSource.value!);
+      fetchSimilarArtists(similarArtistsSource.value!);
     }
   }
 
-  function fetchReleases(artist: Artist, source: ArtistRowSource) {
-    return fetchInto(
-      artist,
-      "releases",
-      source,
-      releases.value,
-      loadArtistReleases,
-    );
+  function fetchReleases(source: RowSource) {
+    return fetchInto("releases", source, releases.value, loadArtistReleases);
   }
 
-  function fetchTopTracks(artist: Artist, source: ArtistRowSource) {
+  function fetchTopTracks(source: RowSource) {
     return fetchInto(
-      artist,
       "top_tracks",
       source,
       topTracks.value,
@@ -184,9 +189,8 @@ export function useArtistRowData(
     );
   }
 
-  function fetchSimilarArtists(artist: Artist, source: ArtistRowSource) {
+  function fetchSimilarArtists(source: RowSource) {
     return fetchInto(
-      artist,
       "similar_artists",
       source,
       similarArtists.value,
@@ -194,88 +198,78 @@ export function useArtistRowData(
     );
   }
 
-  async function fetchLibraryTracks(artist: Artist) {
-    if (requested.has("library_tracks")) return;
-    requested.add("library_tracks");
-    const identity = rowsIdentity(artist);
-    const items = await orEmpty(loadArtistLibraryTracks(artist));
-    if (stillShown(identity)) libraryTracks.value = items;
+  function fetchAppearsOn() {
+    return fetchOnce(
+      "appears_on",
+      (artist) => loadArtistAppearsOn(artist),
+      (items) => (appearsOn.value = items),
+    );
+  }
+
+  function fetchDiscography() {
+    return fetchOnce(
+      "discography",
+      (artist) => loadArtistDiscography(artist),
+      (items) => (discography.value = items),
+    );
+  }
+
+  function fetchArtistTracks() {
+    return fetchOnce(
+      "artist_tracks",
+      (artist) => loadArtistTracks(artist),
+      (items) => (artistTracks.value = items),
+    );
   }
 
   /** One request per kind and source, kept for every row that shares it. */
-  async function fetchInto<T>(
-    artist: Artist,
+  function fetchInto<T>(
     kind: string,
-    source: ArtistRowSource,
-    cache: Map<ArtistRowSource, T[]>,
-    load: (artist: Artist, source: ArtistRowSource) => Promise<T[]>,
+    source: RowSource,
+    cache: Map<RowSource, T[]>,
+    load: (artist: Artist, source: RowSource) => Promise<T[]>,
   ) {
-    const key = `${kind}:${source}`;
-    if (requested.has(key)) return;
-    requested.add(key);
-    const identity = rowsIdentity(artist);
-    const items = await orEmpty(load(artist, source));
-    if (stillShown(identity)) cache.set(source, items);
-  }
-
-  /** Whether a finished request still belongs to the artist (and mappings) on screen. */
-  function stillShown(identity: string): boolean {
-    return !!artist.value && rowsIdentity(artist.value) === identity;
+    return fetchOnce(
+      `${kind}:${source}`,
+      (artist) => load(artist, source),
+      (items) => cache.set(source, items),
+    );
   }
 
   return {
-    libraryTracks,
+    artistTracks,
     topTracksItems,
     albumItems,
     singleItems,
     appearsOnItems,
+    discographyItems,
     similarArtistItems,
-    latestRelease,
     albumsMeta,
-    topTracksProvider,
-    similarArtistsProvider,
+    albumsSource,
+    singlesSource,
+    topTracksSource,
+    similarArtistsSource,
+    albumsSourceDisplay,
+    singlesSourceDisplay,
+    topTracksSourceDisplay,
+    similarArtistsSourceDisplay,
   };
-}
-
-/** What the rows are loaded from: the artist and the providers it is mapped to. */
-function rowsIdentity(artist: Artist): string {
-  const mappings = artist.provider_mappings
-    .map((mapping) => `${mapping.provider_instance}:${mapping.item_id}`)
-    .sort();
-  return [artist.uri, ...mappings].join("|");
 }
 
 /** The cached items of a source, undefined while unknown or still loading. */
 function sourceItems<T>(
-  cache: Map<ArtistRowSource, T[]>,
-  source?: ArtistRowSource,
+  cache: Map<RowSource, T[]>,
+  source?: RowSource,
 ): T[] | undefined {
   return source ? cache.get(source) : undefined;
 }
 
-/** The provider behind a row's source, when a single one feeds it. */
-function sourceProvider(source?: ArtistRowSource) {
-  if (!source || source === "all" || source === "library") return undefined;
-  const provider = api.getProvider(source);
-  return provider && { name: provider.name, domain: provider.domain };
-}
-
-/** The library tracks of the newest releases first, the top-tracks fallback. */
-function newestLibraryTracks(tracks: Track[]): Track[] {
+/** The artist's tracks, newest release first, as the top-tracks fallback. */
+function newestArtistTracks(tracks: Track[]): Track[] {
   return [...tracks].sort((a, b) => albumYear(b) - albumYear(a));
 }
 
 /** The release year of a track's album, 0 when it carries none. */
 function albumYear(track: Track): number {
   return (track.album && "year" in track.album && track.album.year) || 0;
-}
-
-/** A failing provider must not blank the page, so its row just stays empty. */
-async function orEmpty<T>(request: Promise<T[]>): Promise<T[]> {
-  try {
-    return await request;
-  } catch (err) {
-    console.error("[useArtistRowData] failed to load a row", err);
-    return [];
-  }
 }

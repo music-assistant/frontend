@@ -1,15 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockSendCommand, mockProviders } = vi.hoisted(() => ({
-  mockSendCommand: vi.fn(),
-  mockProviders: {} as Record<string, { domain: string }>,
-}));
+const { mockSendCommand, mockProviders, mockEnabledPlugins } = vi.hoisted(
+  () => ({
+    mockSendCommand: vi.fn(),
+    mockProviders: {} as Record<string, { domain: string }>,
+    mockEnabledPlugins: new Set<string>(),
+  }),
+);
 
 vi.mock("@/plugins/api", () => ({
   default: {
     sendCommand: mockSendCommand,
     providers: mockProviders,
   },
+}));
+
+vi.mock("@/plugins/store", () => ({
+  store: { enabledPlugins: mockEnabledPlugins },
 }));
 
 import {
@@ -59,16 +66,20 @@ describe("useMusicQuiz commands", () => {
     mockSendCommand.mockReset();
     mockSendCommand.mockResolvedValue(undefined);
     Object.keys(mockProviders).forEach((key) => delete mockProviders[key]);
+    mockEnabledPlugins.clear();
   });
 
   describe("getMusicQuizInfo", () => {
-    it("resolves null without a server round-trip when the provider is absent", async () => {
+    it("resolves null without a server round-trip when the plugin is not loaded", async () => {
+      // listed among the providers, but not among the loaded plugins
+      mockProviders.music_quiz = { domain: "music_quiz" };
+
       await expect(getMusicQuizInfo()).resolves.toBeNull();
       expect(mockSendCommand).not.toHaveBeenCalled();
     });
 
     it("queries the server as a best-effort command when the provider is loaded", async () => {
-      mockProviders.music_quiz = { domain: "music_quiz" };
+      mockEnabledPlugins.add("music_quiz");
       const info = { game_id: "game-1" };
       mockSendCommand.mockResolvedValue(info);
 
@@ -82,13 +93,16 @@ describe("useMusicQuiz commands", () => {
   });
 
   describe("getMusicQuizPublicState", () => {
-    it("resolves null without a server round-trip when the provider is absent", async () => {
+    it("resolves null without a server round-trip when the plugin is not loaded", async () => {
+      // listed among the providers, but not among the loaded plugins
+      mockProviders.music_quiz = { domain: "music_quiz" };
+
       await expect(getMusicQuizPublicState()).resolves.toBeNull();
       expect(mockSendCommand).not.toHaveBeenCalled();
     });
 
     it("fetches the guest-safe state as a best-effort command", async () => {
-      mockProviders.music_quiz = { domain: "music_quiz" };
+      mockEnabledPlugins.add("music_quiz");
       const state = { phase: "lobby", join_url: "http://ma/join" };
       mockSendCommand.mockResolvedValue(state);
 
@@ -380,6 +394,8 @@ describe("useMusicQuiz commands", () => {
       answer_type: "multiple_choice",
       phase: "lobby",
       name: "Quiz",
+      include_similar_music: false,
+      auto_start_at: null,
       round_count: 5,
       suggestion_count: 4,
       answer_duration: 30,
@@ -391,18 +407,24 @@ describe("useMusicQuiz commands", () => {
       answer_type: "multiple_choice",
       phase: "lobby",
       name: "Future Quiz",
+      include_similar_music: false,
+      auto_start_at: null,
     } satisfies MusicQuizPublicState;
     const unsupportedAnswer = {
       quiz_type: "guess_the_song",
       answer_type: unsupportedAnswerType("future_answer"),
       phase: "lobby",
       name: "Future Quiz",
+      include_similar_music: false,
+      auto_start_at: null,
     } satisfies MusicQuizPublicState;
     const musicTimeline = {
       quiz_type: "music_timeline",
       answer_type: "timeline",
       phase: "lobby",
       name: null,
+      include_similar_music: false,
+      auto_start_at: null,
       round_count: 5,
       answer_duration: 30,
       artist_bonus_mode: "off",
@@ -415,8 +437,11 @@ describe("useMusicQuiz commands", () => {
       quiz_type: "trivia",
       answer_type: "multiple_choice",
       language: "pt-BR",
+      play_reveal_audio: true,
       phase: "lobby",
       name: "Trivia",
+      include_similar_music: false,
+      auto_start_at: null,
       round_count: 5,
       suggestion_count: 4,
       answer_duration: 30,
@@ -429,6 +454,8 @@ describe("useMusicQuiz commands", () => {
       answer_type: "timeline",
       phase: "lobby",
       name: "Mismatched Quiz",
+      include_similar_music: false,
+      auto_start_at: null,
     } satisfies MusicQuizPublicState;
 
     expect(isSupportedMusicQuiz(known)).toBe(true);
@@ -440,7 +467,7 @@ describe("useMusicQuiz commands", () => {
     expect(isSupportedMusicQuiz(mismatched)).toBe(false);
   });
 
-  it("types Trivia reveal audio in state and info while allowing legacy payloads", () => {
+  it("types Trivia reveal audio in state and info", () => {
     const state = {
       quiz_type: "trivia",
       answer_type: "multiple_choice",
@@ -448,19 +475,8 @@ describe("useMusicQuiz commands", () => {
       play_reveal_audio: true,
       phase: "lobby",
       name: "Trivia",
-      round_count: 5,
-      suggestion_count: 4,
-      answer_duration: 30,
-      mode: "venue",
-      players: [],
-      current_round: null,
-    } satisfies MusicQuizPublicState;
-    const legacyState = {
-      quiz_type: "trivia",
-      answer_type: "multiple_choice",
-      language: "en",
-      phase: "lobby",
-      name: "Trivia",
+      include_similar_music: false,
+      auto_start_at: null,
       round_count: 5,
       suggestion_count: 4,
       answer_duration: 30,
@@ -475,34 +491,24 @@ describe("useMusicQuiz commands", () => {
       play_reveal_audio: false,
       phase: "lobby",
       name: "Trivia",
+      include_similar_music: false,
+      auto_start_at: null,
       player_count: 2,
       round_count: 5,
       mode: "venue",
     } satisfies MusicQuizTriviaInfo;
-    const legacyInfo = {
-      quiz_type: "trivia",
-      answer_type: "multiple_choice",
-      language: "en",
-      phase: "lobby",
-      name: "Trivia",
-      player_count: 2,
-      round_count: 5,
-      mode: "venue",
-    } satisfies MusicQuizTriviaInfo;
-
     expect(state.play_reveal_audio).toBe(true);
-    expect("play_reveal_audio" in legacyState).toBe(false);
     expect(info.play_reveal_audio).toBe(false);
-    expect("play_reveal_audio" in legacyInfo).toBe(false);
   });
 
-  it("types similar music across server state while allowing legacy payloads", () => {
+  it("types similar music across server state and info", () => {
     const publicState = {
       quiz_type: "guess_the_song",
       answer_type: "multiple_choice",
       phase: "lobby",
       name: "Quiz",
       include_similar_music: true,
+      auto_start_at: null,
       round_count: 5,
       suggestion_count: 4,
       answer_duration: 30,
@@ -537,15 +543,7 @@ describe("useMusicQuiz commands", () => {
       phase: "lobby",
       name: "Quiz",
       include_similar_music: false,
-      player_count: 1,
-      round_count: 5,
-      mode: "venue",
-    } satisfies MusicQuizInfo;
-    const legacyInfo = {
-      quiz_type: "guess_the_song",
-      answer_type: "multiple_choice",
-      phase: "lobby",
-      name: "Quiz",
+      auto_start_at: null,
       player_count: 1,
       round_count: 5,
       mode: "venue",
@@ -556,7 +554,6 @@ describe("useMusicQuiz commands", () => {
     expect(hostState.include_similar_music).toBe(true);
     expect(hostState.playback.venue_player_name).toBe("Living Room");
     expect(info.include_similar_music).toBe(false);
-    expect("include_similar_music" in legacyInfo).toBe(false);
   });
 
   it("preserves nullable server fields in supported state", () => {
@@ -565,6 +562,7 @@ describe("useMusicQuiz commands", () => {
       answer_type: "multiple_choice",
       phase: "reveal",
       name: null,
+      include_similar_music: false,
       auto_start_at: null,
       round_count: 1,
       suggestion_count: 2,
@@ -596,6 +594,8 @@ describe("useMusicQuiz commands", () => {
       answer_type: "timeline",
       phase: "answering",
       name: null,
+      include_similar_music: false,
+      auto_start_at: null,
       round_count: 1,
       answer_duration: 30,
       artist_bonus_mode: "off",
@@ -625,6 +625,8 @@ describe("useMusicQuiz commands", () => {
         answer_type: "multiple_choice",
         phase: "lobby",
         name: "Future Quiz",
+        include_similar_music: false,
+        auto_start_at: null,
       },
     } satisfies MusicQuizProviderEvent;
 

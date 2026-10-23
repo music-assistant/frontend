@@ -10,7 +10,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { storeMock } = vi.hoisted(() => ({
-  storeMock: { isTouchscreen: false },
+  storeMock: { isTouchscreen: false, enabledPlugins: new Set<string>() },
 }));
 
 vi.mock("@/plugins/store", () => ({ store: storeMock }));

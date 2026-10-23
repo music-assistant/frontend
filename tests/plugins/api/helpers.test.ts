@@ -1,8 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 
 const mocks = vi.hoisted(() => ({
   apiState: { value: "connected" as string },
+  getProvider: vi.fn(),
+  getProviderManifest: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", async () => {
@@ -16,6 +18,8 @@ vi.mock("@/plugins/api", async () => {
       providers: {},
       queues: {},
       state: mocks.apiState,
+      getProvider: mocks.getProvider,
+      getProviderManifest: mocks.getProviderManifest,
     },
     ConnectionState: { INITIALIZED: "initialized" },
   };
@@ -23,8 +27,10 @@ vi.mock("@/plugins/api", async () => {
 
 import api from "@/plugins/api";
 import {
+  getDeviceName,
   getPlaylistMigrationProviders,
   getProviderRootDomain,
+  mappedServices,
   isAudioSource,
   isQueueInfiniteStream,
   queueSourceCrossfadeProvider,
@@ -42,6 +48,7 @@ import type {
   PlayableMediaItemType,
   Player,
   ProviderInstance,
+  ProviderMapping,
   QueueItem,
 } from "@/plugins/api/interfaces";
 import { playerQueue } from "../../fixtures/playerQueue";
@@ -381,5 +388,95 @@ describe("getPlaylistMigrationProviders", () => {
         .map((p) => p.instance_id)
         .sort(),
     ).toEqual(["builtin", "spotify--1"]);
+  });
+});
+
+describe("mappedServices", () => {
+  const SPOTIFY = { name: "Spotify", domain: "spotify" };
+
+  const item = (...mappings: Array<{ domain: string; instance: string }>) => ({
+    provider_mappings: mappings.map(({ domain, instance }) => ({
+      provider_domain: domain,
+      provider_instance: instance,
+    })) as ProviderMapping[],
+  });
+
+  beforeEach(() => {
+    mocks.getProvider.mockReset();
+    mocks.getProviderManifest.mockReset();
+  });
+
+  it("lists a service once, however many accounts of it are mapped", () => {
+    mocks.getProviderManifest.mockReturnValue(SPOTIFY);
+
+    expect(
+      mappedServices(
+        item(
+          { domain: "spotify", instance: "spotify--one" },
+          { domain: "spotify", instance: "spotify--two" },
+        ),
+      ),
+    ).toEqual([{ domain: "spotify", name: "Spotify" }]);
+  });
+
+  it("names the service, not the account it is configured as", () => {
+    mocks.getProviderManifest.mockReturnValue(SPOTIFY);
+    mocks.getProvider.mockReturnValue({ name: "Spotify [account]" });
+
+    expect(
+      mappedServices(item({ domain: "spotify", instance: "spotify--one" })),
+    ).toEqual([{ domain: "spotify", name: "Spotify" }]);
+  });
+
+  it("falls back to the instance name when the service has no manifest", () => {
+    mocks.getProvider.mockReturnValue({ name: "My files" });
+
+    expect(
+      mappedServices(item({ domain: "filesystem_smb", instance: "smb--one" })),
+    ).toEqual([{ domain: "filesystem_smb", name: "My files" }]);
+  });
+
+  // the server sends mappings whose provider fields are the string "None";
+  // there is no service to name, so the chip row is better off without them
+  it("leaves out a mapping nothing can name", () => {
+    mocks.getProviderManifest.mockImplementation((domain: string) =>
+      domain === "spotify" ? SPOTIFY : undefined,
+    );
+
+    expect(
+      mappedServices(
+        item(
+          { domain: "spotify", instance: "spotify--one" },
+          { domain: "None", instance: "None" },
+        ),
+      ),
+    ).toEqual([{ domain: "spotify", name: "Spotify" }]);
+  });
+});
+
+describe("getDeviceName", () => {
+  const originalUserAgent = Object.getOwnPropertyDescriptor(
+    navigator,
+    "userAgent",
+  );
+
+  afterEach(() => {
+    if (originalUserAgent) {
+      Object.defineProperty(navigator, "userAgent", originalUserAgent);
+    } else {
+      Reflect.deleteProperty(navigator, "userAgent");
+    }
+    vi.unstubAllGlobals();
+  });
+
+  it("names the browser and device this app runs on", () => {
+    Object.defineProperty(navigator, "userAgent", {
+      configurable: true,
+      value:
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+    });
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+
+    expect(getDeviceName()).toBe("Web (Chrome on Mac)");
   });
 });

@@ -1,23 +1,60 @@
-import type { MusicAssistantApi } from "@/plugins/api";
-import type { Artist } from "@/plugins/api/interfaces";
+import { api, type MusicAssistantApi } from "@/plugins/api";
+import {
+  AlbumType,
+  ListingType,
+  ProviderFeature,
+  SortDirection,
+  SortField,
+  type Artist,
+  type ProviderInstance,
+} from "@/plugins/api/interfaces";
 import ArtistListing, { type Props } from "@/views/ArtistListing.vue";
+import type { LoadDataParams } from "@/components/ItemsListing.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
+import { providerMapping } from "../fixtures/providerMapping";
 
-const { mockGetArtist } = vi.hoisted(() => ({
+const {
+  mockGetArtist,
+  mockGetArtistTracks,
+  mockGetArtistAlbums,
+  mockGetArtistAppearsOn,
+  mockGetArtistDiscography,
+  mockReplace,
+  routeQuery,
+} = vi.hoisted(() => ({
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
+  mockGetArtistTracks: vi.fn<MusicAssistantApi["getArtistTracks"]>(),
+  mockGetArtistAlbums: vi.fn<MusicAssistantApi["getArtistAlbums"]>(),
+  mockGetArtistAppearsOn: vi.fn<MusicAssistantApi["getArtistAppearsOn"]>(),
+  mockGetArtistDiscography: vi.fn<MusicAssistantApi["getArtistDiscography"]>(),
+  mockReplace: vi.fn(),
+  routeQuery: {} as Record<string, string>,
 }));
 
 vi.mock("@/plugins/api", () => ({
   api: {
     getArtist: mockGetArtist,
+    getArtistTracks: mockGetArtistTracks,
+    getArtistAlbums: mockGetArtistAlbums,
+    getArtistAppearsOn: mockGetArtistAppearsOn,
+    getArtistDiscography: mockGetArtistDiscography,
     providers: {},
   },
 }));
 
+// the source label is translated in the view's script, so the key is what the
+// assertions read and they stay independent of en.json
+vi.mock("@/plugins/i18n", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/plugins/i18n")>()),
+  $t: (key: string) => key,
+}));
+
 vi.mock("vue-router", () => ({
-  useRouter: () => ({}),
+  useRouter: () => ({ replace: mockReplace }),
+  useRoute: () => ({ query: routeQuery }),
 }));
 
 // the stub renders path/itemtype so tests can read which preference key
@@ -25,7 +62,23 @@ vi.mock("vue-router", () => ({
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["path", "itemtype"],
+    props: [
+      "path",
+      "itemtype",
+      "subtitle",
+      "loadItems",
+      "loadPagedData",
+      "sortListing",
+      "showFavoritesOnlyFilter",
+      "requireProviderSelection",
+      "libraryFilterOption",
+      "defaultProvider",
+      "providerOverride",
+      "providerFilterOptions",
+      "showProviderFilter",
+      "showAlbumTypeFilter",
+      "sortKeys",
+    ],
     template:
       '<div class="items-listing-stub" :data-path="path" :data-itemtype="itemtype" />',
   },
@@ -46,6 +99,10 @@ async function mountListing(listing: string, item: Artist = artist()) {
   return wrapper;
 }
 
+function listing(wrapper: VueWrapper) {
+  return wrapper.findComponent({ name: "ItemsListing" });
+}
+
 function listingAttributes(wrapper: VueWrapper) {
   const listing = wrapper.find(".items-listing-stub");
   return {
@@ -57,6 +114,13 @@ function listingAttributes(wrapper: VueWrapper) {
 describe("ArtistListing", () => {
   beforeEach(() => {
     mockGetArtist.mockReset();
+    mockGetArtistTracks.mockReset().mockResolvedValue([]);
+    mockGetArtistAlbums.mockReset().mockResolvedValue([]);
+    mockReplace.mockReset();
+    mockGetArtistAppearsOn.mockReset().mockResolvedValue([]);
+    mockGetArtistDiscography.mockReset().mockResolvedValue([]);
+    for (const key of Object.keys(api.providers)) delete api.providers[key];
+    for (const key of Object.keys(routeQuery)) delete routeQuery[key];
   });
 
   it.each([
@@ -64,6 +128,7 @@ describe("ArtistListing", () => {
     ["singles", "artistsingles", "artistalbums"],
     ["tracks", "artisttracks", "artisttracks"],
     ["appears_on", "artistappearson", "artistalbums"],
+    ["discography", "artistdiscography", "artistalbums"],
   ])("renders %s as its own listing", async (listing, path, itemtype) => {
     const wrapper = await mountListing(listing);
     expect(listingAttributes(wrapper)).toEqual({ path, itemtype });
@@ -72,6 +137,388 @@ describe("ArtistListing", () => {
   it("renders nothing for an unknown listing", async () => {
     const wrapper = await mountListing("bogus");
     expect(wrapper.find(".items-listing-stub").exists()).toBe(false);
+  });
+
+  it("loads artist album pages with server-side type and favorite filters", async () => {
+    const item = artist({ item_id: "artist-1" });
+    const wrapper = await mountListing("albums", item);
+    const params: LoadDataParams = {
+      offset: 40,
+      limit: 20,
+      sortBy: "year:desc",
+      sortField: SortField.YEAR,
+      sortDirection: SortDirection.DESC,
+      search: "live",
+      favoritesOnly: true,
+      albumType: [AlbumType.ALBUM],
+    };
+
+    await listing(wrapper).props("loadPagedData")(params);
+
+    expect(listing(wrapper).props("sortListing")).toBe(
+      ListingType.ARTIST_ALBUMS,
+    );
+    expect(mockGetArtistAlbums).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+      undefined,
+      "live",
+      20,
+      40,
+      SortField.YEAR,
+      SortDirection.DESC,
+      [AlbumType.ALBUM],
+      true,
+    );
+  });
+
+  it("loads singles and EPs as a server-filtered album page", async () => {
+    const item = artist({ item_id: "artist-1" });
+    const wrapper = await mountListing("singles", item);
+    const params: LoadDataParams = {
+      offset: 0,
+      limit: 20,
+      sortBy: "sort_name",
+      sortField: SortField.SORT_NAME,
+      search: "",
+    };
+
+    await listing(wrapper).props("loadPagedData")(params);
+
+    expect(mockGetArtistAlbums).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+      undefined,
+      "",
+      20,
+      0,
+      SortField.SORT_NAME,
+      undefined,
+      [AlbumType.SINGLE, AlbumType.EP],
+      undefined,
+    );
+  });
+
+  it.each(["albums", "singles"])(
+    "lets %s be switched between the library and a provider",
+    async (which) => {
+      const props = listing(await mountListing(which)).props();
+
+      expect(props.requireProviderSelection).toBe(true);
+      expect(props.libraryFilterOption).toBe(true);
+      // the row on the artist page is fed by the library, so the listing opens
+      // on it too
+      expect(props.defaultProvider).toBe("library");
+    },
+  );
+
+  // a provider artist has nothing but its own catalog to show
+  it("leaves a provider artist without a source selection", async () => {
+    const props = listing(
+      await mountListing("albums", artist({ provider: "spotify--abc" })),
+    ).props();
+
+    expect(props.requireProviderSelection).toBeUndefined();
+    expect(props.libraryFilterOption).toBeUndefined();
+    expect(props.showProviderFilter).toBe(false);
+  });
+
+  // the row's picker on the artist page leaves out providers that cannot list
+  // an artist's albums, and so does the listing
+  it("offers the sources the row itself can be fed from", async () => {
+    api.providers["spotify--abc"] = {
+      instance_id: "spotify--abc",
+      name: "Spotify",
+      supported_features: [ProviderFeature.ARTIST_ALBUMS],
+    } as ProviderInstance;
+    api.providers["lyrics--1"] = {
+      instance_id: "lyrics--1",
+      name: "Lyrics",
+      supported_features: [],
+    } as unknown as ProviderInstance;
+
+    const props = listing(
+      await mountListing(
+        "albums",
+        artist({
+          provider_mappings: [
+            providerMapping({ provider_instance: "spotify--abc" }),
+            providerMapping({ provider_instance: "lyrics--1" }),
+          ],
+        }),
+      ),
+    ).props();
+
+    expect(props.providerFilterOptions).toEqual(["spotify--abc"]);
+  });
+
+  // the album page's "view all" can hand the albums listing the source its
+  // shelf was showing, so the two line up
+  it("opens on a source carried in by the route", async () => {
+    api.providers["spotify--abc"] = {
+      instance_id: "spotify--abc",
+      name: "Spotify",
+      supported_features: [ProviderFeature.ARTIST_ALBUMS],
+    } as ProviderInstance;
+    routeQuery.source = "spotify--abc";
+    routeQuery.other = "kept";
+
+    const props = listing(
+      await mountListing(
+        "albums",
+        artist({
+          provider_mappings: [
+            providerMapping({ provider_instance: "spotify--abc" }),
+          ],
+        }),
+      ),
+    ).props();
+
+    // the link's source is this visit's, over the saved filter; the row's own
+    // source stays what the listing falls back to
+    expect(props.providerOverride).toBe("spotify--abc");
+    expect(props.defaultProvider).toBe("library");
+    // a reload of, or a return to, this page must not carry it in again
+    expect(mockReplace).toHaveBeenCalledWith({ query: { other: "kept" } });
+  });
+
+  it("ignores a carried source the listing does not offer", async () => {
+    routeQuery.source = "tidal--gone";
+
+    const props = listing(await mountListing("albums")).props();
+
+    expect(props.providerOverride).toBeUndefined();
+    expect(props.defaultProvider).toBe("library");
+    expect(mockReplace).toHaveBeenCalledWith({ query: {} });
+  });
+
+  it("leaves the url alone when no source was carried in", async () => {
+    await mountListing("albums");
+
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  // the route reuses this view from one artist to the next, so every arrival
+  // reads its own url
+  it("takes a carried source per arrival", async () => {
+    api.providers["spotify--abc"] = {
+      instance_id: "spotify--abc",
+      name: "Spotify",
+      supported_features: [ProviderFeature.ARTIST_ALBUMS],
+    } as ProviderInstance;
+    const mapped = (item_id: string) =>
+      artist({
+        item_id,
+        provider_mappings: [
+          providerMapping({ provider_instance: "spotify--abc" }),
+        ],
+      });
+    routeQuery.source = "spotify--abc";
+    const wrapper = await mountListing("albums", mapped("artist-a"));
+    expect(listing(wrapper).props("providerOverride")).toBe("spotify--abc");
+
+    // the next artist's url names no source, so none is carried over
+    delete routeQuery.source;
+    mockGetArtist.mockResolvedValue(mapped("artist-b"));
+    await wrapper.setProps({ itemId: "artist-b" });
+    await flushPromises();
+    expect(listing(wrapper).props("providerOverride")).toBeUndefined();
+
+    routeQuery.source = "spotify--abc";
+    mockGetArtist.mockResolvedValue(mapped("artist-c"));
+    await wrapper.setProps({ itemId: "artist-c" });
+    await flushPromises();
+    expect(listing(wrapper).props("providerOverride")).toBe("spotify--abc");
+    expect(mockReplace).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not carry a consumed source over to another shelf and back", async () => {
+    api.providers["spotify--abc"] = {
+      instance_id: "spotify--abc",
+      name: "Spotify",
+      supported_features: [ProviderFeature.ARTIST_ALBUMS],
+    } as ProviderInstance;
+    routeQuery.source = "spotify--abc";
+    const wrapper = await mountListing(
+      "albums",
+      artist({
+        provider_mappings: [
+          providerMapping({ provider_instance: "spotify--abc" }),
+        ],
+      }),
+    );
+    expect(listing(wrapper).props("providerOverride")).toBe("spotify--abc");
+
+    delete routeQuery.source;
+    await wrapper.setProps({ listing: "singles" });
+    await wrapper.setProps({ listing: "albums" });
+    await flushPromises();
+
+    expect(listing(wrapper).props("providerOverride")).toBeUndefined();
+  });
+
+  it("names the source the releases were loaded from", async () => {
+    const wrapper = await mountListing("albums");
+    expect(listing(wrapper).props("subtitle")).toBe("Artist");
+
+    await (
+      listing(wrapper).props("loadPagedData") as (
+        params: LoadDataParams,
+      ) => Promise<unknown>
+    )({
+      offset: 0,
+      limit: 50,
+      sortBy: "sort_name",
+      search: "",
+      provider: ["library"],
+    });
+    await flushPromises();
+
+    expect(listing(wrapper).props("subtitle")).toBe("Artist · source_library");
+  });
+
+  // a visit restored from the cache loads nothing, so the listing says which
+  // source it is on
+  it("names the source the listing says it is on", async () => {
+    const wrapper = await mountListing("albums");
+
+    listing(wrapper).vm.$emit("provider-change", ["library"]);
+    await flushPromises();
+
+    expect(listing(wrapper).props("subtitle")).toBe("Artist · source_library");
+  });
+
+  it("leaves the tracks header alone when the listing names a provider filter", async () => {
+    const wrapper = await mountListing("tracks");
+
+    listing(wrapper).vm.$emit("provider-change", ["library"]);
+    await flushPromises();
+
+    expect(listing(wrapper).props("subtitle")).toBe("Artist");
+    expect(listing(wrapper).props("showFavoritesOnlyFilter")).toBe(true);
+  });
+
+  it("loads artist tracks with server paging, search, sort and provider filter", async () => {
+    const item = artist({ item_id: "artist-1" });
+    const wrapper = await mountListing("tracks", item);
+    const params: LoadDataParams = {
+      offset: 40,
+      limit: 20,
+      sortBy: "duration:desc",
+      sortField: SortField.DURATION,
+      sortDirection: SortDirection.DESC,
+      search: "live",
+      provider: ["spotify--1"],
+    };
+
+    await listing(wrapper).props("loadPagedData")(params);
+
+    expect(listing(wrapper).props("sortListing")).toBe(
+      ListingType.ARTIST_TRACKS,
+    );
+    expect(mockGetArtistTracks).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+      "spotify--1",
+      "live",
+      20,
+      40,
+      SortField.DURATION,
+      "desc",
+      undefined,
+    );
+
+    mockGetArtistTracks.mockClear();
+    await listing(wrapper).props("loadPagedData")({
+      ...params,
+      favoritesOnly: true,
+    });
+    expect(mockGetArtistTracks).toHaveBeenCalledWith(
+      item.item_id,
+      item.provider,
+      "spotify--1",
+      "live",
+      20,
+      40,
+      SortField.DURATION,
+      "desc",
+      true,
+    );
+  });
+
+  it("lists the artist's whole discography, in the order the server sent it", async () => {
+    const wrapper = await mountListing(
+      "discography",
+      artist({ item_id: "artist-1" }),
+    );
+
+    const params: LoadDataParams = {
+      offset: 40,
+      limit: 20,
+      sortBy: "year:desc",
+      sortField: SortField.YEAR,
+      sortDirection: SortDirection.DESC,
+      search: "jazz",
+    };
+    await listing(wrapper).props("loadPagedData")(params);
+
+    expect(listing(wrapper).props("sortListing")).toBe(
+      ListingType.ARTIST_DISCOGRAPHY,
+    );
+    expect(listing(wrapper).props("showAlbumTypeFilter")).toBe(false);
+    expect(mockGetArtistDiscography).toHaveBeenCalledWith(
+      "artist-1",
+      "jazz",
+      20,
+      40,
+      SortField.YEAR,
+      SortDirection.DESC,
+    );
+  });
+
+  it("lists a library artist's appearances as the server sends them", async () => {
+    const appearances = [album({ item_id: "guest" })];
+    mockGetArtistAppearsOn.mockResolvedValue(appearances);
+    const wrapper = await mountListing(
+      "appears_on",
+      artist({ item_id: "artist-1" }),
+    );
+
+    const params = {
+      offset: 40,
+      limit: 20,
+      sortBy: "original",
+      sortField: SortField.ORIGINAL,
+      search: "live",
+    };
+    const items = await (
+      listing(wrapper).props("loadPagedData") as (
+        params: LoadDataParams,
+      ) => Promise<unknown>
+    )(params);
+
+    expect(listing(wrapper).props("sortListing")).toBe(
+      ListingType.ARTIST_APPEARS_ON,
+    );
+    expect(mockGetArtistAppearsOn).toHaveBeenCalledWith(
+      "artist-1",
+      "library",
+      undefined,
+      "live",
+      20,
+      40,
+      SortField.ORIGINAL,
+      undefined,
+    );
+    expect(items).toEqual(appearances);
+  });
+
+  // the discography is the library artist's, so there is nothing to switch to
+  it("leaves the discography without a source selection", async () => {
+    const props = listing(await mountListing("discography")).props();
+
+    expect(props.showProviderFilter).toBe(false);
+    expect(props.requireProviderSelection).toBeUndefined();
   });
 
   it("uses the same listing path for every artist", async () => {

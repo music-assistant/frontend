@@ -9,6 +9,8 @@
     :disable-play-button="disablePlayButton"
     :parent-item="parentItem"
     :sort-by="sortBy"
+    :sort-field="sortField"
+    :sort-direction="sortDirection"
     @select="(i, selected) => emit('select', i as MediaItemType, selected)"
   >
     <template v-if="showActions" #actions>
@@ -47,7 +49,9 @@
           {{ item.position }}
         </span>
         <FavouriteButton
-          v-if="getBreakpointValue('bp3') && 'favorite' in item"
+          v-if="
+            getBreakpointValue('bp3') && canHoldFavorite(item) && canEditLibrary
+          "
           :item="item"
         />
         <v-spacer />
@@ -66,9 +70,17 @@
 import MAButton from "@/components/Button.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
+import { canHoldFavorite } from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
-import { ContentType, type MediaItemType } from "@/plugins/api/interfaces";
+import {
+  ContentType,
+  SortDirection,
+  SortField,
+  Scope,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
@@ -87,6 +99,8 @@ export interface Props {
   disablePlayButton?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
@@ -98,7 +112,14 @@ const compProps = withDefaults(defineProps<Props>(), {
   disablePlayButton: false,
   parentItem: undefined,
   sortBy: undefined,
+  sortField: undefined,
+  sortDirection: undefined,
 });
+
+// favouring an item changes the library
+const canEditLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE),
+);
 
 const emit = defineEmits<{
   (e: "select", item: MediaItemType, selected: boolean): void;
@@ -142,6 +163,8 @@ const onMenu = function (evt: MouseEvent) {
     compProps.parentItem,
     true,
     compProps.sortBy,
+    compProps.sortField,
+    compProps.sortDirection,
   );
 };
 </script>

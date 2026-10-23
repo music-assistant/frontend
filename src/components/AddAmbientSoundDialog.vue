@@ -74,9 +74,9 @@
         <Button
           type="submit"
           form="form-add-ambient-sound"
-          :disabled="loading || !isFormValid"
+          :disabled="!isFormValid"
+          :loading="loading"
         >
-          <Spinner v-if="loading" />
           {{ $t("add") }}
         </Button>
       </DialogFooter>
@@ -85,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AnyFieldApi } from "@tanstack/form-core";
+import type { AnyFieldApi } from "@tanstack/vue-form";
 import { useForm } from "@tanstack/vue-form";
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -107,7 +107,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
 import { manualLinkSchema } from "@/lib/forms/manual-link";
 import api, { ApiCommandError } from "@/plugins/api";
 import { store } from "@/plugins/store";

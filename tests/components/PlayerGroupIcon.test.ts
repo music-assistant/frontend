@@ -9,7 +9,7 @@ describe("PlayerGroupIcon", () => {
     expect(wrapper.get("[data-player-group-count]").text()).toBe("4");
   });
 
-  it("sizes the speaker glyph rather than the badge wrapper", () => {
+  it("sizes the icon glyph rather than the badge wrapper", () => {
     const wrapper = mount(PlayerGroupIcon, {
       props: { count: 2 },
       attrs: { class: "size-7" },
@@ -21,7 +21,7 @@ describe("PlayerGroupIcon", () => {
     expect(wrapper.get("span.relative").classes()).not.toContain("size-7");
   });
 
-  it("lets a caller set the line weight of the speaker", () => {
+  it("lets a caller set the line weight of the icon", () => {
     const wrapper = mount(PlayerGroupIcon, {
       props: { count: 2 },
       attrs: { "stroke-width": 1.6 },

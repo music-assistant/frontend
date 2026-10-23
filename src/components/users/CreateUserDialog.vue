@@ -1,7 +1,7 @@
 <template>
   <Dialog v-model:open="isOpen">
-    <DialogContent class="max-h-[70vh] flex flex-col p-0">
-      <DialogHeader class="px-6 pt-6 pb-4">
+    <DialogContent class="max-h-[90vh] flex flex-col p-0">
+      <DialogHeader class="px-6 pt-6 pb-4 text-left">
         <DialogTitle>{{ $t("auth.create_user") }}</DialogTitle>
       </DialogHeader>
       <div ref="scrollContainer" class="flex-1 overflow-y-auto px-6">
@@ -9,118 +9,24 @@
           <FieldGroup>
             <form.Field name="username">
               <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.username") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    autofocus
-                    autocomplete="username"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
+                <FormTextField
+                  :field="field"
+                  :label="$t('auth.username')"
+                  autofocus
+                  autocomplete="username"
+                />
               </template>
             </form.Field>
 
             <form.Field name="displayName">
               <template #default="{ field }">
-                <Field>
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.display_name") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    :model-value="field.state.value"
-                    autocomplete="name"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldDescription>
-                    {{ $t("optional") }}
-                  </FieldDescription>
-                </Field>
-              </template>
-            </form.Field>
-
-            <form.Field name="password">
-              <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.password") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    type="password"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    autocomplete="new-password"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
-              </template>
-            </form.Field>
-
-            <form.Field name="confirmPassword">
-              <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.confirm_password") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    type="password"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    autocomplete="new-password"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
+                <FormTextField
+                  :field="field"
+                  :label="$t('auth.display_name')"
+                  autocomplete="name"
+                  :description="$t('optional')"
+                  :show-validation="false"
+                />
               </template>
             </form.Field>
 
@@ -133,7 +39,7 @@
                   <Select
                     :model-value="field.state.value"
                     @update:model-value="
-                      (value) => field.handleChange(value as UserRole)
+                      (value) => field.handleChange(value as string)
                     "
                   >
                     <SelectTrigger :id="field.name" class="w-full">
@@ -150,6 +56,28 @@
                     </SelectContent>
                   </Select>
                 </Field>
+              </template>
+            </form.Field>
+
+            <form.Field name="password">
+              <template #default="{ field }">
+                <FormTextField
+                  :field="field"
+                  :label="$t('auth.password')"
+                  type="password"
+                  autocomplete="new-password"
+                />
+              </template>
+            </form.Field>
+
+            <form.Field name="confirmPassword">
+              <template #default="{ field }">
+                <FormTextField
+                  :field="field"
+                  :label="$t('auth.confirm_password')"
+                  type="password"
+                  autocomplete="new-password"
+                />
               </template>
             </form.Field>
 
@@ -178,12 +106,7 @@
         <Button variant="outline" @click="handleClose">
           {{ $t("cancel") }}
         </Button>
-        <Button
-          type="submit"
-          form="form-create-user"
-          :disabled="loading"
-          :loading="loading"
-        >
+        <Button type="submit" form="form-create-user" :loading="loading">
           {{ $t("create") }}
         </Button>
       </DialogFooter>
@@ -192,13 +115,13 @@
 </template>
 
 <script setup lang="ts">
-import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
 import { useVModel } from "@vueuse/core";
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
+import FormTextField from "@/components/forms/FormTextField.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -210,11 +133,9 @@ import {
 import {
   Field,
   FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -222,9 +143,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { assignableRoles, roleDisplayName } from "@/helpers/roles";
 import { createUserSchema } from "@/lib/forms/profile";
 import { api, ApiCommandError } from "@/plugins/api";
 import { UserRole } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import MultiSelect from "./MultiSelect.vue";
 
 const { t } = useI18n();
@@ -271,11 +194,12 @@ const handleFormSubmit = async () => {
   }
 };
 
-const roleOptions = computed(() => [
-  { label: t("auth.admin_role"), value: "admin" },
-  { label: t("auth.user_role"), value: "user" },
-  { label: t("auth.guest_role"), value: "guest" },
-]);
+const roleOptions = computed(() =>
+  assignableRoles(store.roles).map((role) => ({
+    label: roleDisplayName(role.role_id, store.roles),
+    value: role.role_id,
+  })),
+);
 
 const playerOptions = computed(() => {
   return Object.values(api.players)
@@ -292,7 +216,7 @@ const form = useForm({
     displayName: "",
     password: "",
     confirmPassword: "",
-    role: "user" as UserRole,
+    role: UserRole.USER as string,
     playerFilter: [] as string[],
   },
   validators: {
@@ -326,10 +250,6 @@ const form = useForm({
     }
   },
 });
-
-const isInvalid = (field: AnyFieldApi) => {
-  return field.state.meta.errors.length > 0;
-};
 
 const handleClose = () => {
   form.reset();

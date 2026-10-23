@@ -1,11 +1,12 @@
 <template>
   <div
-    class="show-card ma-tap"
-    role="button"
-    tabindex="0"
-    @click="emit('customize', show.id)"
-    @keydown.enter.self="emit('customize', show.id)"
-    @keydown.space.self.prevent="emit('customize', show.id)"
+    class="show-card"
+    :class="{ 'show-card--editable ma-tap': canEdit }"
+    :role="canEdit ? 'button' : undefined"
+    :tabindex="canEdit ? 0 : undefined"
+    @click="customize"
+    @keydown.enter.self="customize"
+    @keydown.space.self.prevent="customize"
   >
     <div class="show-card__art">
       <MediaItemThumb
@@ -24,49 +25,14 @@
       </div>
 
       <Badge
-        v-if="runningSession"
+        v-if="onAirQueue"
         variant="info"
         class="show-card__onair bg-blue-500 text-white"
       >
         {{ $t("providers.ai_radio.card.on_air") }}
       </Badge>
-      <TooltipProvider v-if="failedSession">
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <span class="show-card__status-chip bg-destructive/90 text-white">
-              <TriangleAlert class="h-3 w-3 shrink-0" />
-              <span class="truncate">
-                {{
-                  $t("providers.ai_radio.card.status_failed", [
-                    sessionRelativeTime(failedSession),
-                  ])
-                }}
-              </span>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="top" class="max-w-[220px] px-2.5 py-1">
-            {{
-              failedSession.error ||
-              $t("providers.ai_radio.card.session_failed")
-            }}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      <span
-        v-else-if="lastEndedSession"
-        class="show-card__status-chip bg-black/50 text-white/90"
-      >
-        <History class="h-3 w-3 shrink-0" />
-        <span class="truncate">
-          {{
-            $t("providers.ai_radio.card.status_last_on_air", [
-              sessionRelativeTime(lastEndedSession),
-            ])
-          }}
-        </span>
-      </span>
 
-      <DropdownMenu>
+      <DropdownMenu v-if="canEdit">
         <DropdownMenuTrigger as-child>
           <Button
             variant="ghost-icon"
@@ -100,7 +66,7 @@
     <div class="show-card__meta">
       <div
         class="show-card__title"
-        :class="{ 'show-card__title--playing': !!runningSession }"
+        :class="{ 'show-card__title--playing': !!onAirQueue }"
       >
         {{ show.name }}
       </div>
@@ -109,14 +75,15 @@
       </div>
 
       <button
-        v-if="runningSession"
+        v-if="onAirQueue"
         type="button"
         class="show-card__action"
         :disabled="isStopping"
+        :aria-busy="isStopping || undefined"
         :aria-label="$t('providers.ai_radio.card.stop')"
         @click.stop="onStop"
       >
-        <Loader2 v-if="isStopping" :size="18" class="animate-spin" />
+        <Spinner v-if="isStopping" class="size-4.5" />
         <Square v-else :size="14" fill="currentColor" :stroke-width="0" />
       </button>
       <button
@@ -124,16 +91,17 @@
         type="button"
         class="show-card__action show-card__action--reveal"
         :disabled="isStarting"
+        :aria-busy="isStarting || undefined"
         :aria-label="$t('providers.ai_radio.card.play')"
         @click.stop="onPlay"
       >
-        <Loader2 v-if="isStarting" :size="18" class="animate-spin" />
+        <Spinner v-if="isStarting" class="size-4.5" />
         <Play
           v-else
           :size="18"
           fill="currentColor"
           :stroke-width="0"
-          class="show-card__action-play-icon"
+          class="show-card__action-play-icon play-icon-centered"
         />
       </button>
     </div>
@@ -155,32 +123,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 import { useShows } from "@/composables/ai-radio/useShows";
 import {
   deepClone,
   errorMessage,
-  relativeTimeFromIso,
   resolveShowPlayerId,
   slugify,
 } from "@/helpers/ai_radio";
-import type { AIRadioSession, AIRadioStation } from "@/plugins/api/interfaces";
+import { Scope, type AIRadioStation } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import {
-  History,
-  Loader2,
-  MoreVertical,
-  Play,
-  Square,
-  TriangleAlert,
-} from "@lucide/vue";
+import api from "@/plugins/api";
+import { MoreVertical, Play, Square } from "@lucide/vue";
 import { computed } from "vue";
 import { toast } from "vue-sonner";
 
@@ -194,9 +151,6 @@ const emit = defineEmits<{
 
 const {
   shows,
-  sessions,
-  startingShowId,
-  stoppingSessionId,
   deletingShowId,
   savingShow,
   playlistFor,
@@ -205,17 +159,20 @@ const {
   deleteShow,
   startShow,
   stopShow,
-  loadStatus,
-  runningSessionForStation,
+  onAirQueueId,
+  isStarting: isShowStarting,
+  isStopping: isShowStopping,
   reportStartError,
 } = useShows();
 
-const isStarting = computed(() => startingShowId.value === props.show.id);
-const isStopping = computed(
-  () =>
-    !!runningSession.value &&
-    stoppingSessionId.value === runningSession.value.session_id,
+// customizing, duplicating and deleting a show takes config.providers.write;
+// playing it does not
+const canEdit = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
 );
+
+const isStarting = computed(() => isShowStarting(props.show.id));
+const isStopping = computed(() => isShowStopping(props.show.id));
 const isDeleting = computed(() => deletingShowId.value === props.show.id);
 // Duplicate reuses the shared save-in-flight flag; there's no dedicated per-show one.
 const isDuplicating = computed(() => savingShow.value);
@@ -227,89 +184,25 @@ const playlist = computed(() =>
   ),
 );
 
-const runningSession = computed(() => runningSessionForStation(props.show.id));
+const onAirQueue = computed(() => onAirQueueId(props.show.id));
 
-// `sessions` is globally sorted newest-first, so the first match is the latest for this show.
-const latestSession = computed(() =>
-  sessions.value.find((session) => session.station_id === props.show.id),
-);
-const failedSession = computed(() =>
-  latestSession.value?.status === "failed" ? latestSession.value : undefined,
-);
-
-const lastEndedSession = computed(() => {
-  const session = latestSession.value;
-
-  if (!session) return undefined;
-
-  const endedLive =
-    session.status === "stopped" || session.status === "completed";
-  return endedLive ? session : undefined;
-});
-
-function sessionRelativeTime(session: AIRadioSession): string {
-  return relativeTimeFromIso(session.ended_at || session.created_at);
-}
-
-/** Any other station's running session, i.e. the one that would block this show from starting. */
-function findOtherRunningSession(): AIRadioSession | undefined {
-  return sessions.value.find(
-    (session) =>
-      session.status === "running" && session.station_id !== props.show.id,
-  );
-}
-
-/** Confirms swapping the on-air show, like switching radio stations. */
-function confirmSwitchAndPlay(
-  otherSession: AIRadioSession,
-  playerId: string,
-): void {
-  const runningName =
-    shows.value.find((show) => show.id === otherSession.station_id)?.name ||
-    otherSession.station_id;
-  eventbus.emit("deleteConfirmationDialog", {
-    title: $t("providers.ai_radio.card.switch_show_title"),
-    message: $t("providers.ai_radio.card.switch_show_confirm", [
-      runningName,
-      props.show.name,
-    ]),
-    confirmLabel: $t("providers.ai_radio.card.switch_show_confirm_label"),
-    onConfirm: async () => {
-      try {
-        await stopShow(otherSession.session_id);
-        await startShow(props.show.id, { playerIdOverride: playerId });
-      } catch (error) {
-        const message = errorMessage(error);
-        toast.error($t("providers.ai_radio.card.start_failed", [message]));
-        reportStartError(message);
-      }
-    },
-  });
+function customize() {
+  if (canEdit.value) emit("customize", props.show.id);
 }
 
 async function onPlay() {
-  const playerId = resolveShowPlayerId(props.show, store.activePlayerId);
+  const playerId = resolveShowPlayerId(
+    props.show,
+    store.activePlayerId,
+    api.players,
+  );
   if (!playerId) {
     toast.error($t("providers.ai_radio.card.no_player"));
     return;
   }
-  const otherRunning = findOtherRunningSession();
-  if (otherRunning) {
-    confirmSwitchAndPlay(otherRunning, playerId);
-    return;
-  }
   try {
-    await startShow(props.show.id, { playerIdOverride: playerId });
+    await startShow(props.show.id, playerId);
   } catch (error) {
-    // The server localizes error details, so the max-concurrent reason can't be
-    // matched on text. Reconcile status instead: if another show turns out to be
-    // running, that's why the start was rejected — offer to switch.
-    await loadStatus();
-    const raceWinner = findOtherRunningSession();
-    if (raceWinner) {
-      confirmSwitchAndPlay(raceWinner, playerId);
-      return;
-    }
     const message = errorMessage(error);
     toast.error($t("providers.ai_radio.card.start_failed", [message]));
     reportStartError(message);
@@ -317,16 +210,10 @@ async function onPlay() {
 }
 
 async function onStop() {
-  const session = runningSession.value;
-  if (!session) return;
   try {
-    await stopShow(session.session_id);
+    await stopShow(props.show.id);
   } catch (error) {
-    const stillRunning = sessions.value.some(
-      (item) =>
-        item.session_id === session.session_id && item.status === "running",
-    );
-    if (stillRunning) toast.error(errorMessage(error));
+    toast.error(errorMessage(error));
   }
 }
 
@@ -369,13 +256,15 @@ function onDelete() {
   width: 100%;
   box-sizing: border-box;
   text-align: left;
-  cursor: pointer;
   background: transparent;
   border: none;
   padding: var(--show-card-pad);
   border-radius: var(--show-card-pad);
   color: rgb(var(--v-theme-on-background));
   transition: background 0.15s ease;
+}
+.show-card--editable {
+  cursor: pointer;
 }
 .show-card:hover {
   background: rgba(var(--v-theme-on-surface), 0.08);
@@ -452,23 +341,6 @@ function onDelete() {
   text-overflow: ellipsis;
   margin-top: 2px;
 }
-/* compact status pill overlaid on the artwork's bottom-left corner */
-.show-card__status-chip {
-  position: absolute;
-  bottom: 6px;
-  left: 6px;
-  max-width: calc(100% - 12px);
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  line-height: 16px;
-  backdrop-filter: blur(4px);
-}
-
 .show-card__action {
   position: absolute;
   bottom: 2px;
@@ -488,7 +360,6 @@ function onDelete() {
   opacity: 0.7;
 }
 .show-card__action-play-icon {
-  margin-left: 2px;
   fill: currentColor;
   stroke: none;
 }

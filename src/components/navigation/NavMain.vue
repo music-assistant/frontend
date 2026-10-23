@@ -22,6 +22,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useListDragReorder } from "@/composables/useListDragReorder";
+import { isTourStop } from "@/helpers/tour";
 import { useSidebarPressFeedback } from "@/composables/useSidebarPressFeedback";
 import { ChevronRight, Eye, EyeOff, GripVertical } from "@lucide/vue";
 import NavSectionHeader from "./NavSectionHeader.vue";
@@ -101,6 +102,9 @@ const isActive = (url: string) => {
 };
 
 const itemActive = (item: NavItem) => !item.action && isActive(item.url);
+
+const tourMarker = (item: NavItem) =>
+  item.id && isTourStop(item.id) ? item.id : undefined;
 
 const handleClick = (item: NavItem, event: Event) => {
   if (item.action) {
@@ -309,6 +313,7 @@ const draggedItem = computed(() =>
                     :is-active="itemActive(item)"
                     :tooltip="item.title"
                     :aria-label="item.title"
+                    :data-tour="tourMarker(item)"
                     :disabled="item.disabled"
                     class="mr-1.5 group-data-[collapsible=icon]:mr-0"
                     :class="[

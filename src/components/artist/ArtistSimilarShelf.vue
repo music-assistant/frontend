@@ -11,10 +11,17 @@
         @touchstart.passive="onTouchStart"
         @click.capture="swallowClickAfterHold"
       >
-        <h2 class="artist-similar__title">{{ $t("similar_artists") }}</h2>
-        <span v-if="sourceLabel" class="artist-similar__meta">{{
-          $t("via_provider", { provider: sourceLabel })
-        }}</span>
+        <h2 class="artist-similar__title">
+          {{ title ?? $t("similar_artists") }}
+        </h2>
+        <RowSourceBadge
+          v-if="sourceLabel"
+          :label="sourceLabel"
+          :domain="sourceDomain"
+          :options="sourceOptions"
+          :selected="sourceValue"
+          @select="(source) => emit('select-source', source)"
+        />
       </div>
     </template>
 
@@ -28,6 +35,12 @@
       >
         <template #subtitle>{{ $t("artist") }}</template>
       </EditorialMediaCard>
+      <div
+        v-if="items.length === 0 && emptyMessage"
+        class="artist-similar__empty"
+      >
+        {{ emptyMessage }}
+      </div>
     </template>
     <template v-else>
       <EditorialCardSkeleton v-for="index in SKELETONS" :key="index" />
@@ -36,26 +49,39 @@
 </template>
 
 <script setup lang="ts">
+import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
+import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { itemIsAvailable } from "@/plugins/api/helpers";
-import type { Artist } from "@/plugins/api/interfaces";
+import type { Artist, ItemMapping } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { computed } from "vue";
 
 export interface Props {
   // undefined while the row is still loading
-  items?: Artist[];
-  // provider name when a single provider feeds the row
+  items?: Array<Artist | ItemMapping>;
+  // the row heading, "Similar artists" unless set
+  title?: string;
+  // source label for the row's badge, e.g. "All sources" or "On Spotify"
   sourceLabel?: string;
+  // provider domain behind `sourceLabel`, for its icon
+  sourceDomain?: string;
+  // the sources the row can switch to; makes the badge a picker when >1 offered
+  sourceOptions?: SourceOption[];
+  // the source currently feeding the row, highlighted in the picker
+  sourceValue?: RowSource;
+  // shown when the row has no artists but stays mounted for its source picker
+  emptyMessage?: string;
 }
 defineProps<Props>();
 
 const emit = defineEmits<{
   (e: "edit-rows"): void;
+  (e: "select-source", source: RowSource): void;
 }>();
 
 const SKELETONS = 6;
@@ -74,7 +100,7 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
 <style scoped>
 .artist-similar__titles {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
   min-width: 0;
 }
@@ -88,10 +114,11 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.artist-similar__meta {
-  font-size: 13px;
+.artist-similar__empty {
+  align-self: center;
+  padding: 8px 4px;
+  font-size: 14px;
   color: rgba(var(--v-theme-on-surface), 0.6);
-  white-space: nowrap;
 }
 /* the round cards read as portraits, so their captions are centred */
 .artist-similar :deep(.ed-card--round .ed-card__meta) {

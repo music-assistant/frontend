@@ -3,7 +3,9 @@
 # Ensure a recent Node + pnpm are available in PATH.
 # Homebrew's node (/opt/homebrew/bin) must come before /usr/local/bin, which
 # may hold an old Node (e.g. 20.x) that pnpm 11 refuses to run on (needs >=22.13).
-export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+# For the same reason /usr/local/bin only goes last, as a fallback, so it never
+# shadows a newer Node already on the PATH.
+export PATH="/opt/homebrew/bin:$PATH:/usr/local/bin"
 
 # Lint and format the staged files only, then restage what was fixed.
 # CI (.github/workflows/test.yml) covers the rest on every push and pull

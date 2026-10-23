@@ -6,8 +6,7 @@ import type { MusicAssistantApi } from "@/plugins/api";
 
 const apiMock = vi.hoisted(() => ({
   eventCallback: undefined as
-    | ((event: { data: DSPConfigPreset[] }) => void)
-    | undefined,
+    ((event: { data: DSPConfigPreset[] }) => void) | undefined,
   getDSPPresets: vi.fn<MusicAssistantApi["getDSPPresets"]>(),
   subscribe: vi.fn(),
   unsubscribe: vi.fn(),

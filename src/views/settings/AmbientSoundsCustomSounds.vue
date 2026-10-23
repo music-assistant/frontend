@@ -63,6 +63,7 @@
 <script setup lang="ts">
 import { Plus, Trash2 } from "@lucide/vue";
 import { onMounted, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 
 import AddAmbientSoundDialog from "@/components/AddAmbientSoundDialog.vue";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,9 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/plugins/api";
 import type { SoundEffect } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
+
+const { t } = useI18n();
 
 const customSounds = ref<SoundEffect[]>([]);
 const loading = ref(false);
@@ -104,7 +108,16 @@ async function loadCustomSounds(): Promise<void> {
   }
 }
 
-const onRemoveSound = async (sound: SoundEffect) => {
+const onRemoveSound = (sound: SoundEffect) => {
+  eventbus.emit("deleteConfirmationDialog", {
+    title: t("audio_overlay_remove_custom"),
+    message: t("audio_overlay_remove_custom_confirm", [sound.name]),
+    confirmLabel: t("remove"),
+    onConfirm: () => removeSound(sound),
+  });
+};
+
+async function removeSound(sound: SoundEffect): Promise<void> {
   try {
     await api.removeAmbientSound(sound.item_id);
   } catch (e) {
@@ -113,5 +126,5 @@ const onRemoveSound = async (sound: SoundEffect) => {
   } finally {
     await loadCustomSounds();
   }
-};
+}
 </script>

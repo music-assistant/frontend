@@ -5,6 +5,7 @@ import {
 import {
   ProviderStatus,
   ProviderType,
+  PlayerType,
   ConfigEntryType,
   type ConfigEntry,
   type PlayerConfig,
@@ -32,6 +33,7 @@ const player = (overrides: Partial<PlayerConfig> = {}): PlayerConfig => ({
   enabled: true,
   name: null,
   default_name: "Speaker",
+  player_type: PlayerType.PLAYER,
   values: {},
   ...overrides,
 });

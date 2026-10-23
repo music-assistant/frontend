@@ -5,64 +5,107 @@
     <template v-if="itemDetails">
       <template v-for="rowId in visibleRows" :key="rowId">
         <!-- biography -->
-        <ArtistBioRow
+        <DetailTextRow
           v-if="rowId === 'bio' && !!itemDetails.metadata?.description"
-          :item="itemDetails"
+          :text="itemDetails.metadata.description!"
+          :dialog-title="itemDetails.name"
+          markdown
           @edit-rows="rowsEditorOpen = true"
         />
 
-        <!-- top tracks, beside the latest release -->
+        <!-- top tracks -->
         <ArtistTopTracksRow
-          v-else-if="rowId === 'top_tracks' && showRow(topTracksItems)"
+          v-else-if="
+            rowId === 'top_tracks' &&
+            sourceRowVisible('top_tracks', topTracksItems)
+          "
           :artist="itemDetails"
           :tracks="topTracksItems"
-          :source-label="topTracksProvider?.name"
-          :source-domain="topTracksProvider?.domain"
-          :library-track-count="libraryTracks?.length"
-          :latest-release="latestRelease"
+          :source-label="topTracksSourceDisplay?.label"
+          :source-domain="topTracksSourceDisplay?.domain"
+          :source-options="sourceOptions('top_tracks')"
+          :source-value="topTracksSource"
+          :artist-track-count="artistTracks?.length"
+          :empty-message="$t('artist_row_empty')"
           @edit-rows="rowsEditorOpen = true"
+          @select-source="(source) => selectRowSource('top_tracks', source)"
         />
 
         <!-- albums -->
-        <ArtistReleaseShelf
-          v-else-if="rowId === 'albums' && showRow(albumItems)"
+        <ReleaseShelf
+          v-else-if="
+            rowId === 'albums' && sourceRowVisible('albums', albumItems)
+          "
           :title="$t('albums')"
-          :meta="albumsMeta"
+          :source-label="albumsSourceDisplay?.label"
+          :source-domain="albumsSourceDisplay?.domain"
+          :source-options="sourceOptions('albums')"
+          :source-value="albumsSource"
           :items="albumItems"
           :view-all-to="listingRoute('albums')"
-          size="lg"
+          :empty-message="albumsEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
+          @select-source="(source) => selectRowSource('albums', source)"
         />
 
         <!-- singles & EPs -->
-        <ArtistReleaseShelf
-          v-else-if="rowId === 'singles_eps' && showRow(singleItems)"
+        <ReleaseShelf
+          v-else-if="
+            rowId === 'singles_eps' &&
+            sourceRowVisible('singles_eps', singleItems)
+          "
           :title="$t('singles_eps')"
-          :meta="singleItems?.length ? String(singleItems.length) : undefined"
+          :source-label="singlesSourceDisplay?.label"
+          :source-domain="singlesSourceDisplay?.domain"
+          :source-options="sourceOptions('singles_eps')"
+          :source-value="singlesSource"
           :items="singleItems"
           :view-all-to="listingRoute('singles')"
+          :empty-message="singlesEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
+          @select-source="(source) => selectRowSource('singles_eps', source)"
         />
 
         <!-- appears on -->
-        <ArtistReleaseShelf
+        <ReleaseShelf
           v-else-if="rowId === 'appears_on' && showRow(appearsOnItems)"
           :title="$t('appears_on')"
-          :meta="$t('appears_on_hint')"
+          :meta="isPhone ? undefined : $t('appears_on_hint')"
           :items="appearsOnItems"
           :view-all-to="listingRoute('appears_on')"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         />
 
+        <!-- discography (every release MusicBrainz lists, in the library or not) -->
+        <ReleaseShelf
+          v-else-if="rowId === 'discography' && showRow(discographyItems)"
+          :title="$t('discography')"
+          :meta="isPhone ? undefined : $t('discography_hint')"
+          :items="discographyShelfItems"
+          :view-all-to="listingRoute('discography')"
+          :parent-item="itemDetails"
+          @edit-rows="rowsEditorOpen = true"
+        />
+
         <!-- similar artists -->
         <ArtistSimilarShelf
-          v-else-if="rowId === 'similar_artists' && showRow(similarArtistItems)"
+          v-else-if="
+            rowId === 'similar_artists' &&
+            sourceRowVisible('similar_artists', similarArtistItems)
+          "
           :items="similarArtistItems"
-          :source-label="similarArtistsProvider?.name"
+          :source-label="similarArtistsSourceDisplay?.label"
+          :source-domain="similarArtistsSourceDisplay?.domain"
+          :source-options="sourceOptions('similar_artists')"
+          :source-value="similarArtistsSource"
+          :empty-message="$t('artist_row_empty')"
           @edit-rows="rowsEditorOpen = true"
+          @select-source="
+            (source) => selectRowSource('similar_artists', source)
+          "
         />
 
         <!-- audiobooks in library (library authors/narrators only) -->
@@ -76,21 +119,15 @@
           path="artistaudiobooks"
           :parent-item="itemDetails"
           :show-provider="true"
-          :show-favorites-only-filter="true"
+          :show-favorites-only-filter="false"
+          :show-favorite="true"
           :show-provider-filter="true"
           :single-provider-filter="true"
           :provider-filter-options="mappingProviderIds"
           :show-album-type-filter="false"
           :show-refresh-button="false"
-          :load-items="loadArtistAudiobooks"
-          :sort-keys="[
-            'sort_name',
-            'name',
-            'year',
-            'name_desc',
-            'sort_name_desc',
-            'year_desc',
-          ]"
+          :sort-listing="ListingType.ARTIST_AUDIOBOOKS"
+          :load-paged-data="loadArtistAudiobooks"
           :title="$t('audiobooks')"
           :subtitle="$t('in_library')"
           :empty-message="$t('artist_no_library_audiobooks')"
@@ -113,81 +150,82 @@
           :require-provider-selection="true"
           :provider-filter-options="audiobookSourceProviderIds"
           :show-refresh-button="false"
-          :load-items="loadAllAudiobooks"
-          :sort-keys="[
-            'original',
-            'name',
-            'sort_name',
-            'year',
-            'name_desc',
-            'sort_name_desc',
-            'year_desc',
-          ]"
+          :sort-listing="ListingType.ARTIST_AUDIOBOOKS"
+          :load-paged-data="loadAllAudiobooks"
           :title="$t('artist_all_audiobooks')"
           :subtitle="$t('on_provider', [activeAudiobookProvider])"
           :allow-collapse="true"
         />
 
         <!-- provider mapping details -->
-        <div v-else-if="rowId === 'provider_mappings'" class="artist-admin">
+        <DetailAdminCard v-else-if="rowId === 'provider_mappings'">
           <ProviderDetails :item-details="itemDetails" />
-        </div>
+        </DetailAdminCard>
 
         <!-- media images -->
-        <div
+        <DetailAdminCard
           v-else-if="
             rowId === 'artwork' &&
             itemDetails.provider == 'library' &&
             itemDetails.metadata?.images
           "
-          class="artist-admin"
         >
           <MediaItemImages
             v-model="itemDetails.metadata.images"
             @update:model-value="UpdateItemInDb"
           />
-        </div>
+        </DetailAdminCard>
       </template>
     </template>
-    <ArtistRowsEditor
+    <RowsEditor
       v-if="itemDetails"
       v-model:open="rowsEditorOpen"
-      :artist="itemDetails"
+      :item="itemDetails"
+      :registry="artistRows"
       :available-ids="availableRows"
       :row-meta="rowMeta"
+      :subtitle="$t('edit_rows_subtitle')"
+      round-avatar
     />
     <br />
   </section>
 </template>
 
 <script setup lang="ts">
-import ArtistBioRow from "@/components/artist/ArtistBioRow.vue";
 import ArtistHero from "@/components/artist/ArtistHero.vue";
-import ArtistReleaseShelf from "@/components/artist/ArtistReleaseShelf.vue";
-import ArtistRowsEditor from "@/components/artist/ArtistRowsEditor.vue";
 import {
+  artistRows,
   availableArtistRowIds,
-  resolveArtistRows,
   type ArtistRowId,
 } from "@/components/artist/artistRows";
 import ArtistSimilarShelf from "@/components/artist/ArtistSimilarShelf.vue";
 import ArtistTopTracksRow from "@/components/artist/ArtistTopTracksRow.vue";
+import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
+import DetailTextRow from "@/components/details/DetailTextRow.vue";
+import ReleaseShelf from "@/components/details/ReleaseShelf.vue";
+import {
+  rowSourceOptions,
+  type RowSource,
+  type SourceOption,
+} from "@/components/details/rowRegistry";
+import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import { useArtistRowData } from "@/composables/useArtistRowData";
+import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
 import {
   ArtistType,
-  EventMessage,
-  EventType,
-  MediaItemType,
+  ListingType,
   ProviderFeature,
+  Scope,
   type Artist,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
 export interface Props {
@@ -200,6 +238,8 @@ const itemDetails = ref<Artist>();
 const loading = ref(false);
 const rowsEditorOpen = ref(false);
 
+const isPhone = computed(() => isPhoneSizedScreen());
+
 const isAudiobookArtist = computed(() => {
   const artistType = itemDetails.value?.artist_type;
   return artistType === ArtistType.AUTHOR || artistType === ArtistType.NARRATOR;
@@ -207,43 +247,83 @@ const isAudiobookArtist = computed(() => {
 
 // the rows the page can render for this artist; the editor lists the same set
 const availableRows = computed(() =>
-  availableArtistRowIds(isAudiobookArtist.value, authManager.isAdmin()).filter(
-    rowApplies,
-  ),
+  availableArtistRowIds(
+    isAudiobookArtist.value,
+    authManager.hasScope(Scope.LIBRARY_MANAGE),
+  ).filter(rowApplies),
 );
 
 // reads the user's preferences from the store, so the page follows the editor
 const visibleRows = computed(() => {
-  const { order, hidden } = resolveArtistRows(availableRows.value);
+  const { order, hidden } = artistRows.resolve(availableRows.value);
   return order.filter((rowId) => !hidden.has(rowId));
 });
 
 const {
-  libraryTracks,
+  artistTracks,
   topTracksItems,
   albumItems,
   singleItems,
   appearsOnItems,
+  discographyItems,
   similarArtistItems,
-  latestRelease,
   albumsMeta,
-  topTracksProvider,
-  similarArtistsProvider,
+  albumsSource,
+  singlesSource,
+  topTracksSource,
+  similarArtistsSource,
+  albumsSourceDisplay,
+  singlesSourceDisplay,
+  topTracksSourceDisplay,
+  similarArtistsSourceDisplay,
 } = useArtistRowData(itemDetails, visibleRows);
+
+// the sources a row's badge can switch between, so the picker matches the rows
+// editor without opening it
+const sourceOptions = (rowId: ArtistRowId): SourceOption[] =>
+  itemDetails.value
+    ? rowSourceOptions(artistRows, rowId, itemDetails.value)
+    : [];
+
+/** Switch a row's source from its badge; the page reloads that row's data. */
+function selectRowSource(rowId: ArtistRowId, source: RowSource) {
+  artistRows.setSource(rowId, source);
+}
+
+// a prolific artist's discography runs to hundreds of releases: the shelf
+// shows the newest, "View all" has them all
+const DISCOGRAPHY_SHELF_LIMIT = 50;
+const discographyShelfItems = computed(() =>
+  discographyItems.value?.slice(0, DISCOGRAPHY_SHELF_LIMIT),
+);
+
+// an empty release row explains the library case; from a provider source the
+// badge already names it, so a neutral line is enough
+const albumsEmptyMessage = computed(() =>
+  albumsSource.value === "library"
+    ? $t("artist_no_library_albums")
+    : $t("artist_row_empty"),
+);
+const singlesEmptyMessage = computed(() =>
+  singlesSource.value === "library"
+    ? $t("artist_no_library_singles")
+    : $t("artist_row_empty"),
+);
 
 // how much each row currently holds, for the editor's per-row meta line (it
 // adds the source itself)
 const rowMeta = computed<Partial<Record<ArtistRowId, string>>>(() => ({
-  top_tracks: libraryTracks.value?.length
-    ? $t("all_n_tracks", libraryTracks.value.length, {
-        named: { count: libraryTracks.value.length },
-      })
+  top_tracks: artistTracks.value?.length
+    ? topTracksMeta(artistTracks.value.length)
     : undefined,
   albums: albumsMeta.value,
   singles_eps: singleItems.value?.length
     ? String(singleItems.value.length)
     : undefined,
   appears_on: $t("appears_on_hint"),
+  discography: discographyItems.value?.length
+    ? String(discographyItems.value.length)
+    : undefined,
 }));
 
 // library audiobooks can be filtered to the providers the artist is mapped to
@@ -321,46 +401,29 @@ watch(
   },
 );
 
-onMounted(() => {
-  //signal if/when item updates
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_UPDATED,
-    (evt: EventMessage) => {
-      const updatedItem = evt.data as MediaItemType;
-      // check if the updated item is the current item
-      if (itemDetails.value?.uri == updatedItem.uri) {
-        // update UI with the updated item
-        loading.value = true;
-        itemDetails.value = updatedItem as Artist;
-        loading.value = false;
-      } else if ("provider_mappings" in updatedItem) {
-        for (const provMap of updatedItem.provider_mappings) {
-          if (
-            provMap.item_id == props.itemId &&
-            [provMap.provider_instance, provMap.provider_domain].includes(
-              props.provider,
-            )
-          ) {
-            loading.value = true;
-            itemDetails.value = updatedItem as Artist;
-            loading.value = false;
-            break;
-          }
-        }
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
-});
+useDetailItemUpdates(itemDetails, { providerItem: props });
 
 const loadArtistAudiobooks = async function (params: LoadDataParams) {
-  if (!itemDetails.value) return [];
+  const artist = itemDetails.value;
+  if (!artist) return [];
+  const providerMapping = params.provider?.[0]
+    ? artist.provider_mappings.find(
+        (mapping) => mapping.provider_instance === params.provider?.[0],
+      )
+    : undefined;
+  if (params.provider?.[0] && !providerMapping) return [];
   return await api.getArtistAudiobooks(
-    itemDetails.value.item_id,
-    itemDetails.value.provider,
-    itemDetails.value.artist_type,
+    providerMapping?.item_id ?? artist.item_id,
+    providerMapping?.provider_instance ?? artist.provider,
+    artist.artist_type,
     undefined,
     params.collapseCollections,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+    params.provider?.[0],
   );
 };
 
@@ -374,6 +437,14 @@ const loadAllAudiobooks = async function (params: LoadDataParams) {
     source.item_id,
     source.provider_instance,
     itemDetails.value.artist_type,
+    undefined,
+    params.collapseCollections,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+    providerId,
   );
 };
 
@@ -393,6 +464,8 @@ function rowApplies(rowId: ArtistRowId): boolean {
     case "appears_on":
     case "audiobooks":
       return isLibraryItem;
+    case "discography":
+      return isLibraryItem;
     case "audiobooks_all":
       return audiobookSourceProviderIds.value.length > 0;
     case "artwork":
@@ -402,9 +475,31 @@ function rowApplies(rowId: ArtistRowId): boolean {
   }
 }
 
+/** The top tracks row's track count; only a library artist's are in the library. */
+function topTracksMeta(count: number): string {
+  return itemDetails.value?.provider === "library"
+    ? $t("n_in_library", { count })
+    : $t("n_tracks", count, { named: { count } });
+}
+
 /** A row is rendered while it loads and once it has something to show. */
 function showRow(items?: unknown[]): boolean {
   return items === undefined || items.length > 0;
+}
+
+/**
+ * A source-backed row stays rendered while it loads, when it has items, or when
+ * it is empty but offers more than one source: its picker (and a release row's
+ * "See all") must not vanish and strand the user on a source that came up empty.
+ */
+function sourceRowVisible(rowId: ArtistRowId, items?: unknown[]): boolean {
+  return showRow(items) || hasSourcePicker(rowId);
+}
+
+/** Whether the row offers more than one source, i.e. an inline source picker. */
+function hasSourcePicker(rowId: ArtistRowId): boolean {
+  if (!itemDetails.value) return false;
+  return artistRows.sources(rowId, itemDetails.value).length > 1;
 }
 
 /** The "View all" target of a shelf. */
@@ -420,74 +515,3 @@ function listingRoute(listing: string): RouteLocationRaw | undefined {
   };
 }
 </script>
-
-<style scoped>
-/* the shared admin sections keep their own toolbar and content, but take the
-   page's row title and gutter and sit in a card each; their inline bottom margin
-   is the only spacing they set themselves, hence the override */
-.artist-admin :deep(section) {
-  margin: 16px 28px 0 !important;
-  border-radius: 12px;
-  background: rgba(var(--v-theme-on-surface), 0.04);
-  overflow: hidden;
-}
-.artist-admin :deep(.v-toolbar-title) {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-}
-.artist-admin :deep(.v-divider) {
-  display: none;
-}
-/* the lists and image tiles inside sit on the card instead of painting their own surface */
-.artist-admin :deep(.v-container) {
-  padding: 0 12px 12px;
-}
-.artist-admin :deep(.v-list),
-.artist-admin :deep(.panel-item) {
-  background: transparent;
-  box-shadow: none;
-}
-.artist-admin :deep(.v-list) {
-  padding: 0;
-}
-/* uniform square image tiles instead of percentage columns, one row per image type */
-.artist-admin :deep(.v-row) {
-  margin: 0 0 12px;
-  gap: 12px;
-}
-.artist-admin :deep(.v-row:empty) {
-  display: none;
-}
-.artist-admin :deep(.v-col) {
-  flex: 0 0 auto;
-  width: 176px;
-  max-width: 176px;
-  padding: 0;
-}
-.artist-admin :deep(.panel-item) {
-  padding: 8px;
-  /* outweighs the equally-!important radius the card's tile utility carries */
-  border-radius: 12px !important;
-}
-.artist-admin :deep(.panel-item:hover) {
-  background: rgba(var(--v-theme-on-surface), 0.08);
-  box-shadow: none;
-}
-.artist-admin :deep(.panel-item .v-img) {
-  aspect-ratio: 1 / 1;
-  border-radius: 8px;
-}
-.artist-admin :deep(.panel-item .v-img__img) {
-  object-fit: cover;
-}
-
-@media (max-width: 768px) {
-  .artist-admin :deep(section) {
-    margin: 12px 16px 0 !important;
-  }
-  .artist-admin :deep(.v-toolbar-title) {
-    font-size: 19px;
-  }
-}
-</style>

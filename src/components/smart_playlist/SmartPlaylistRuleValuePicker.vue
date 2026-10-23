@@ -24,20 +24,49 @@
         class="mb-2 h-8 text-sm"
         @keydown.stop
       />
+      <div
+        v-if="source === 'folder' && folderPath !== null && currentFolder"
+        class="mb-1 flex items-center gap-1"
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          class="h-7 w-7 shrink-0"
+          :aria-label="$t('back')"
+          @click.stop="openParent(folderPath)"
+        >
+          <ChevronLeft class="h-3.5 w-3.5" />
+        </Button>
+        <span class="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+          {{ currentFolder.name }}
+        </span>
+        <Button
+          size="sm"
+          class="h-7 shrink-0 px-2 text-xs"
+          :disabled="selectedIds.includes(currentFolder.id)"
+          @click.stop="onPickFolder(currentFolder)"
+        >
+          {{ $t("settings.folder_picker.use_folder") }}
+        </Button>
+      </div>
       <div class="max-h-56 overflow-y-auto flex flex-col min-h-[80px]">
         <div v-if="isSearching" class="flex justify-center py-6">
-          <Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />
+          <Spinner class="text-muted-foreground" />
         </div>
         <template v-else-if="displayedOptions.length > 0">
           <button
             v-for="opt in displayedOptions"
-            :key="opt.id"
+            :key="opt.path ?? opt.id"
             type="button"
             class="flex items-center gap-1.5 py-1 px-1.5 text-sm rounded-sm hover:bg-accent text-left"
-            @click.stop="onPick(opt)"
+            @click.stop="opt.path ? openFolder(opt.path) : onPick(opt)"
           >
+            <Folder
+              v-if="opt.path"
+              class="h-4 w-4 flex-none text-muted-foreground"
+            />
             <div
-              v-if="opt.item"
+              v-else-if="opt.item"
               class="h-8 w-8 flex-none overflow-hidden rounded"
             >
               <MediaItemThumb :item="opt.item" :size="32" />
@@ -67,21 +96,38 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner";
+import { parentBrowsePath } from "@/helpers/browse_path";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
+import { FILESYSTEM_DOMAIN_PREFIX } from "@/helpers/provider_domain";
 import api from "@/plugins/api";
-import type { Album, Artist, Genre } from "@/plugins/api/interfaces";
+import {
+  folderValue,
+  type RuleValue,
+} from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
+import {
+  MediaType,
+  ProviderFeature,
+  type Album,
+  type Artist,
+  type BrowseFolder,
+  type Genre,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Loader2, Plus } from "@lucide/vue";
+import { ChevronLeft, Folder, Plus } from "@lucide/vue";
 import { useDebounceFn } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
+import { toast } from "vue-sonner";
 
 interface Option {
   id: number;
   name: string;
   item?: Artist | Album | Genre;
+  // folder source only: the browse path to open
+  path?: string;
 }
 
-type Source = "genre" | "artist" | "album" | "album_type";
+type Source = "genre" | "artist" | "album" | "album_type" | "folder";
 
 const props = defineProps<{
   source: Source;
@@ -91,7 +137,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  add: [value: Option];
+  add: [value: RuleValue];
 }>();
 
 const open = ref(false);
@@ -99,10 +145,17 @@ const query = ref("");
 const remoteResults = ref<Option[]>([]);
 const isSearching = ref(false);
 
-// Genre and album_type options are preloaded and filtered client-side; artist/album are
-// fetched remotely as the user types.
+// Genre and album_type options are preloaded and filtered client-side, folders are browsed;
+// artist/album are fetched remotely as the user types.
 const isRemote = computed(
-  () => props.source !== "genre" && props.source !== "album_type",
+  () => props.source === "artist" || props.source === "album",
+);
+
+// null lists the filesystem music sources, otherwise the browse path of the open folder
+const folderPath = ref<string | null>(null);
+const folderOptions = ref<Option[]>([]);
+const currentFolder = computed(() =>
+  folderPath.value === null ? null : folderValue(folderPath.value),
 );
 
 const filteredPreloaded = computed(() => {
@@ -116,6 +169,11 @@ const filteredPreloaded = computed(() => {
 });
 
 const displayedOptions = computed(() => {
+  if (props.source === "folder") {
+    return folderOptions.value.filter((o) =>
+      o.name.toLowerCase().includes(query.value.toLowerCase()),
+    );
+  }
   if (!isRemote.value) return filteredPreloaded.value;
   return remoteResults.value.filter((o) => !props.selectedIds.includes(o.id));
 });
@@ -171,15 +229,76 @@ watch(open, (isOpen) => {
     query.value = "";
     remoteResults.value = [];
     isSearching.value = false;
+    if (props.source === "folder") openFolder(null);
   }
 });
+
+function openParent(path: string) {
+  const parent = parentBrowsePath(path);
+  // a source's own level goes back to the list of sources
+  openFolder(parent === "root" ? null : parent);
+}
+
+// counts every navigation, so only the latest one applies its listing, even when
+// the same folder is opened again while its first request is still running
+let folderRequest = 0;
+
+async function openFolder(path: string | null) {
+  const request = ++folderRequest;
+  folderPath.value = path;
+  query.value = "";
+  if (path === null) {
+    // drops the spinner of a folder still loading, its result is ignored
+    isSearching.value = false;
+    folderOptions.value = Object.values(api.providers)
+      .filter(
+        (p) =>
+          p.domain.startsWith(FILESYSTEM_DOMAIN_PREFIX) &&
+          p.available &&
+          // skips audiobook, podcast and sound effect folders: they hold no tracks
+          p.supported_features.includes(ProviderFeature.LIBRARY_TRACKS),
+      )
+      .map((p) => ({ id: 0, name: p.name, path: `${p.instance_id}://` }));
+    return;
+  }
+  isSearching.value = true;
+  try {
+    // the failure is reported below, so keep the global error toast quiet
+    const items = await api.browse(path, undefined, {
+      suppressGlobalError: true,
+    });
+    if (request !== folderRequest) return;
+    folderOptions.value = items
+      .filter(
+        (i): i is BrowseFolder =>
+          i.media_type === MediaType.FOLDER && i.name !== "..",
+      )
+      .map((i) => ({ id: 0, name: i.name, path: i.path }));
+  } catch {
+    if (request !== folderRequest) return;
+    folderOptions.value = [];
+    toast.error($t("settings.folder_picker.browse_failed"));
+  } finally {
+    if (request === folderRequest) isSearching.value = false;
+  }
+}
 
 function onPick(opt: Option) {
   emit("add", { id: opt.id, name: opt.name });
   open.value = false;
 }
 
+function onPickFolder(folder: RuleValue) {
+  emit("add", folder);
+  open.value = false;
+}
+
 const emptyStateText = computed(() => {
+  if (props.source === "folder" && !query.value) {
+    return folderPath.value === null
+      ? $t("smart_playlist.picker_empty_folder_sources")
+      : $t("settings.folder_picker.no_subfolders");
+  }
   if (isRemote.value && query.value.length < 2) {
     return $t("smart_playlist.picker_empty_search", {
       label: props.addLabel.toLowerCase(),

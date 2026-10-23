@@ -108,8 +108,7 @@ function legacyConfig(): DiscoverRowsConfig {
   }
   const order: string[] = [];
   const rowSettings = prefs[LEGACY_ROW_SETTINGS_KEY] as
-    | Record<string, LegacyRowSetting>
-    | undefined;
+    Record<string, LegacyRowSetting> | undefined;
   if (rowSettings && typeof rowSettings === "object") {
     const entries = Object.entries(rowSettings).filter(
       ([, setting]) => typeof setting?.position === "number",

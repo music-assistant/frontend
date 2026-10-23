@@ -72,5 +72,6 @@ const sidebarToggleLabel = computed(() =>
 .trigger-container .navuser-trigger :deep(ul[data-sidebar="menu"]) {
   padding-left: 0 !important;
   padding-right: 0 !important;
+  padding-bottom: 0 !important;
 }
 </style>

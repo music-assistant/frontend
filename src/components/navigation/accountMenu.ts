@@ -86,10 +86,7 @@ export function accountAccentButtonClass(username: string): string {
 }
 
 export type ConnectionStatusKey =
-  | "connected"
-  | "connecting"
-  | "disconnected"
-  | "failed";
+  "connected" | "connecting" | "disconnected" | "failed";
 
 export function getConnectionStatusKey(state: string): ConnectionStatusKey {
   switch (state) {

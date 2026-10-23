@@ -330,6 +330,7 @@
 import { ref, computed, toRaw, watch, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
 import { api } from "@/plugins/api";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
   DSPConfig,
@@ -351,7 +352,7 @@ import {
   HighLowPassMode,
   EventType,
 } from "@/plugins/api/interfaces";
-import { getPlayerName } from "@/helpers/utils";
+import { truncateString } from "@/helpers/utils";
 import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
@@ -404,6 +405,7 @@ import { Switch } from "@/components/ui/switch";
 import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
   areDSPConfigsEqual,
+  areDSPSettingsEqual,
   dspFilterTypeLabel,
   sanitizeDSPPresetConfig,
 } from "@/helpers/audioProcessing";
@@ -425,6 +427,9 @@ const newPresetName = ref("");
 // the force-mobile setting, rather than Vuetify's width-only breakpoint.
 const mobileLayout = computed(() => store.mobileLayout);
 let updatedFromServer = false;
+// Last config received from the server, used to tell whether a local edit
+// still matches the selected preset.
+let serverDSPConfig: DSPConfig | undefined;
 let localConfigGeneration = 0;
 let applyRequestId = 0;
 let playerLoadRequestId = 0;
@@ -679,10 +684,13 @@ const savePreset = async () => {
   }
 };
 
-const removePreset = async (presetId?: string | null) => {
-  if (!presetId || !confirm(t("settings.dsp.presets.remove_confirm"))) return;
+const removePreset = (presetId?: string | null) => {
+  if (!presetId) return;
 
-  await api.removeDSPPreset(presetId);
+  eventbus.emit("deleteConfirmationDialog", {
+    message: t("settings.dsp.presets.remove_confirm"),
+    onConfirm: () => api.removeDSPPreset(presetId),
+  });
 };
 
 // Watchers
@@ -696,12 +704,8 @@ watch(
   },
   { immediate: true },
 );
-const playerName = computed(() =>
-  getPlayerName(api.players[props.playerId!], 27),
-);
-const fullPlayerName = computed(
-  () => api.players[props.playerId!]?.name || playerName.value,
-);
+const fullPlayerName = computed(() => api.players[props.playerId!]?.name ?? "");
+const playerName = computed(() => truncateString(fullPlayerName.value, 27));
 // Stable names: the switch's checked state already conveys on/off, so the
 // accessible name identifies what the switch controls.
 const dspToggleLabel = computed(() => `DSP: ${fullPlayerName.value}`);
@@ -796,7 +800,12 @@ watch(
     if (newVal) {
       localConfigGeneration += 1;
       if (props.playerId) markPlayerOperation(props.playerId);
-      newVal.preset_id = null;
+      if (
+        newVal.preset_id &&
+        (!serverDSPConfig || !areDSPSettingsEqual(newVal, serverDSPConfig))
+      ) {
+        newVal.preset_id = null;
+      }
       debouncedSave(newVal);
     }
   },
@@ -809,11 +818,13 @@ function setServerDSPConfig(
 ): void {
   if (playerId) markPlayerOperation(playerId);
   updatedFromServer = true;
+  serverDSPConfig = structuredClone(config);
   dsp.value = structuredClone(config);
 }
 
 function clearServerDSPConfig(): void {
   updatedFromServer = true;
+  serverDSPConfig = undefined;
   dsp.value = undefined;
 }
 

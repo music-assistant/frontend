@@ -20,7 +20,8 @@
       aria-live="polite"
       data-testid="music-quiz-playback-loading"
     >
-      <LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+      <!-- decorative: the surrounding region already carries the status role -->
+      <Spinner aria-hidden="true" />
       {{ $t("providers.music_quiz.loading_playback_options") }}
     </div>
 
@@ -178,13 +179,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import type {
   MusicQuizMode,
   MusicQuizPlaybackOptions,
 } from "@/composables/music-quiz/useMusicQuiz";
 import type { MusicQuizPlaybackSelection } from "@/helpers/music_quiz_playback";
 import { $t } from "@/plugins/i18n";
-import { LoaderCircle, RefreshCw, TriangleAlert } from "@lucide/vue";
+import { RefreshCw, TriangleAlert } from "@lucide/vue";
 import type { AcceptableValue } from "reka-ui";
 import { computed } from "vue";
 

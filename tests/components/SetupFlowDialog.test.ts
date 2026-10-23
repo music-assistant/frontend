@@ -31,6 +31,8 @@ const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
         },
       },
       reconfigureProvider: vi.fn<MusicAssistantApi["reconfigureProvider"]>(),
+      setupProvider: vi.fn<MusicAssistantApi["setupProvider"]>(),
+      getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
       setupPlayer: vi.fn<MusicAssistantApi["setupPlayer"]>(),
       state: {
         value: "authenticated",
@@ -44,6 +46,9 @@ const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
     },
     routerMock: {
       push: vi.fn(),
+      // the hooks the dialog follows the page with, for a test to call
+      hooks: [] as ((to: { path: string }, from: { path: string }) => void)[],
+      afterEach: vi.fn(),
     },
     storeMock: {
       dialogActive: false,
@@ -55,8 +60,7 @@ const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
 );
 
 let launchSetupFlow:
-  | ((event: SetupFlowDialogEvent) => Promise<void>)
-  | undefined;
+  ((event: SetupFlowDialogEvent) => Promise<void>) | undefined;
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
@@ -116,6 +120,13 @@ afterAll(() => {
 beforeEach(() => {
   vi.clearAllMocks();
   launchSetupFlow = undefined;
+  routerMock.hooks = [];
+  routerMock.afterEach.mockImplementation(
+    (hook: (typeof routerMock.hooks)[number]) => {
+      routerMock.hooks.push(hook);
+      return vi.fn();
+    },
+  );
   apiMock.subscribeSetupFlow.mockReturnValue(vi.fn());
   eventbusMock.on.mockImplementation(
     (event: string, callback: typeof launchSetupFlow) => {
@@ -198,6 +209,18 @@ describe("SetupFlowDialog", () => {
     );
   });
 
+  it("heads a reconfigure flow with the name it was given when the source is not loaded", async () => {
+    const wrapper = await mountHeader({
+      kind: "reconfigure",
+      instanceId: "spotify--gone",
+      name: "My Spotify",
+    });
+
+    expect(headerText(wrapper, "dialog-title-stub")).toBe(
+      "settings.setup_flow.reconfigure_title:My Spotify",
+    );
+  });
+
   it("puts the step's own title under the flow title", async () => {
     const wrapper = await mountHeader(
       { kind: "player", playerId: "player-1" },
@@ -208,6 +231,30 @@ describe("SetupFlowDialog", () => {
       "Enter the pairing code",
     );
   });
+
+  it.each([
+    ["form", { ...formStep(), description: "Register https://example.com/cb" }],
+    ["external", { ...terminalStep(FlowStepType.EXTERNAL), description: "Go" }],
+    ["progress", progressStep("Waiting for the device")],
+    ["finish", { ...terminalStep(FlowStepType.FINISH), description: "Done" }],
+    ["abort", { ...terminalStep(FlowStepType.ABORT), reason: "Token expired" }],
+  ] as [string, SetupFlowStep][])(
+    "lets the user select the text of a %s step",
+    async (_type, step) => {
+      const wrapper = await mountHeader(
+        { kind: "reconfigure", instanceId: "spotify--test" },
+        step,
+      );
+      const text = step.description ?? step.progress_text ?? step.reason;
+
+      const body = wrapper
+        .findAll("div")
+        .find((el) => el.element.childElementCount === 0 && el.text() === text);
+      expect(body?.classes()).toEqual(
+        expect.arrayContaining(["select-text", "[&_*]:select-text"]),
+      );
+    },
+  );
 
   it("leaves the subtitle out when the step brings no title", async () => {
     const wrapper = await mountHeader({ kind: "player", playerId: "player-1" });
@@ -485,6 +532,154 @@ describe("SetupFlowDialog", () => {
   });
 });
 
+describe("SetupFlowDialog launched with initial values", () => {
+  const localFilesEntries = () => [
+    entry({
+      key: "content_type",
+      type: ConfigEntryType.STRING,
+      required: true,
+      expanded_options: true,
+      options: [
+        { title: "Music", value: "music" },
+        { title: "Audiobooks", value: "audiobooks" },
+      ],
+      value: "music",
+    }),
+    entry({
+      key: "path",
+      type: ConfigEntryType.FOLDER,
+      default_value: "/media",
+    }),
+  ];
+
+  async function launchLocalFiles() {
+    const wrapper = shallowMount(SetupFlowDialog, {
+      global: { renderStubDefaultSlot: true },
+    });
+    await launchSetupFlow?.({
+      kind: "provider",
+      domain: "filesystem_local",
+      initialValues: { path: "/media/nas_music", not_in_step: "ignored" },
+    });
+    await flushPromises();
+    return wrapper;
+  }
+
+  it("fills the first form step in by entry key, leaving the rest as served", async () => {
+    apiMock.setupProvider.mockResolvedValue(formStep(localFilesEntries()));
+
+    const wrapper = await launchLocalFiles();
+
+    expect(apiMock.setupProvider).toHaveBeenCalledWith("filesystem_local");
+    expect(entryValues(wrapper)).toEqual({
+      content_type: "music",
+      path: "/media/nas_music",
+    });
+    // shown for the user to confirm, not sent on their behalf
+    expect(apiMock.submitSetupFlow).not.toHaveBeenCalled();
+  });
+
+  it("leaves a later form step as the server serves it", async () => {
+    apiMock.setupProvider.mockResolvedValue(formStep(localFilesEntries()));
+    apiMock.submitSetupFlow.mockResolvedValue({
+      ...formStep([
+        entry({ key: "path", type: ConfigEntryType.STRING, value: "/music" }),
+      ]),
+      step_id: "second",
+    });
+    const wrapper = await launchLocalFiles();
+
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+
+    expect(apiMock.submitSetupFlow).toHaveBeenCalledWith("flow-1", {
+      content_type: "music",
+      path: "/media/nas_music",
+    });
+    expect(entryValues(wrapper)).toEqual({ path: "/music" });
+  });
+
+  it.each([
+    ["that showed its form", true],
+    ["whose form is still on its way", false],
+  ])(
+    "shows the server's values to a launch without values, right after one with values %s",
+    async (_case, firstAnswered) => {
+      apiMock.abortSetupFlow.mockResolvedValue();
+      apiMock.setupProvider
+        .mockReturnValueOnce(
+          firstAnswered
+            ? Promise.resolve(formStep(localFilesEntries()))
+            : new Promise<SetupFlowStep>(() => undefined),
+        )
+        .mockResolvedValueOnce(formStep(localFilesEntries()));
+      const wrapper = shallowMount(SetupFlowDialog, {
+        global: { renderStubDefaultSlot: true },
+      });
+      void launchSetupFlow?.({
+        kind: "provider",
+        domain: "filesystem_local",
+        initialValues: { path: "/media/nas_music" },
+      });
+      await flushPromises();
+
+      await launchSetupFlow?.({ kind: "provider", domain: "filesystem_local" });
+      await flushPromises();
+
+      expect(entryValues(wrapper)).toEqual({
+        content_type: "music",
+        path: "/media",
+      });
+    },
+  );
+
+  it.each([
+    [
+      "ends the flow when a link takes the user to another page",
+      "/settings/storage",
+      true,
+    ],
+    ["stays open while the page stays the same", "/discover", false],
+  ])("%s", async (_case, to, ends) => {
+    apiMock.abortSetupFlow.mockResolvedValue();
+    apiMock.setupProvider.mockResolvedValue(formStep(localFilesEntries()));
+    shallowMount(SetupFlowDialog);
+    await launchSetupFlow?.({ kind: "provider", domain: "filesystem_local" });
+    await flushPromises();
+
+    for (const hook of routerMock.hooks)
+      hook({ path: to }, { path: "/discover" });
+
+    expect(apiMock.abortSetupFlow).toHaveBeenCalledTimes(ends ? 1 : 0);
+    expect(storeMock.dialogActive).toBe(!ends);
+  });
+
+  it("tells a provider flow that it finished", async () => {
+    apiMock.setupProvider.mockResolvedValue(terminalStep(FlowStepType.FINISH));
+    const onFlowEnded = vi.fn();
+    shallowMount(SetupFlowDialog);
+
+    await launchSetupFlow?.({
+      kind: "provider",
+      domain: "filesystem_local",
+      onFlowEnded,
+    });
+    await flushPromises();
+
+    expect(onFlowEnded).toHaveBeenCalledExactlyOnceWith(true);
+  });
+});
+
+/** The values of the form's entries by key, as the dialog hands them to the rows. */
+function entryValues(wrapper: VueWrapper) {
+  return Object.fromEntries(
+    wrapper.findAllComponents({ name: "ConfigEntryRow" }).map((row) => {
+      const confEntry = row.props("confEntry") as ConfigEntry;
+      return [confEntry.key, confEntry.value];
+    }),
+  );
+}
+
 async function pickOption(wrapper: VueWrapper, value: string) {
   const row = wrapper
     .findAllComponents({ name: "ConfigEntryRow" })
@@ -513,7 +708,7 @@ async function mountHeader(
   return wrapper;
 }
 
-// the per-field help dialog carries a title of its own, so scope to the step's header
+// the step title renders in the dialog header, so read it from there
 function headerText(wrapper: VueWrapper, stub: string) {
   return wrapper.find("dialog-header-stub").find(stub).text();
 }
@@ -534,7 +729,7 @@ async function mountFormStep(entries: ConfigEntry[]) {
   return wrapper;
 }
 
-// the per-field help dialog carries a footer of its own, so scope to the step's
+// the step's action buttons render in the dialog footer, so read them from there
 function stepFooterLabels(wrapper: VueWrapper) {
   return wrapper
     .find("dialog-footer-stub")

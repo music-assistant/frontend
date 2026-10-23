@@ -10,6 +10,7 @@
       variant="ghost"
       class="player-control-button mobile-navigation-item mobile-navigation-item--bare px-1"
       :aria-label="$t('menu')"
+      data-tour="menu"
       @click="handleMenuClick"
     >
       <span class="mobile-navigation-icon">
@@ -41,6 +42,7 @@
       :data-active="commandCenterOpen"
       :aria-expanded="commandCenterOpen"
       :aria-label="$t('search')"
+      data-tour="search"
       @click="handleSearchClick"
     >
       <span class="mobile-navigation-icon">

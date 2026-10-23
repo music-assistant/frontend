@@ -113,7 +113,7 @@ const themeToggleLabel = computed(() =>
 );
 
 // Editing needs the full (labeled) menu, so pop the sidebar open when edit
-// mode is entered from anywhere (profile menu, settings page shortcut), and
+// mode is entered from anywhere (sidebar menu, settings page shortcut), and
 // treat collapsing to icon mode as leaving edit mode.
 watch(editMode, (editing) => {
   if (editing && !isMobile.value) setOpen(true);
@@ -149,7 +149,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Sidebar collapsible="icon">
+  <Sidebar collapsible="icon" data-tour="menu">
     <SidebarHeader
       class="h-16 group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:pb-0"
     >

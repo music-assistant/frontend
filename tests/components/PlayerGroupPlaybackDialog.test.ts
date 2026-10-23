@@ -65,6 +65,7 @@ function openDialog(overrides: Partial<PlayerGroupPlaybackDialogEvent> = {}) {
   const event: PlayerGroupPlaybackDialogEvent = {
     change: "remove",
     playerName: "Kitchen",
+    isThisDevice: false,
     onKeepPlaying: vi.fn(),
     onStopAndUngroup: vi.fn(),
     ...overrides,
@@ -125,6 +126,20 @@ describe("PlayerGroupPlaybackDialog", () => {
     expect(event.onStopAndUngroup).toHaveBeenCalledOnce();
     expect(event.onKeepPlaying).not.toHaveBeenCalled();
   });
+
+  it.each(["remove", "power_off"] as const)(
+    "uses its own %s sentence for the player of this device",
+    async (change) => {
+      const wrapper = mountDialog();
+      openDialog({ change, isThisDevice: true });
+      await flushPromises();
+
+      expect(wrapper.text()).toContain(
+        `player_group_playback.${change}_message_this_device`,
+      );
+      expect(wrapper.text()).not.toContain("Kitchen");
+    },
+  );
 
   it("shows an action error and stays open", async () => {
     const wrapper = mountDialog();

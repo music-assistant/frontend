@@ -1,7 +1,10 @@
 import {
   canBeGroupMember,
   canEditPlayerGroup,
+  getPlayerDisplayName,
   getPlayerGroupMemberCount,
+  getPlayerName,
+  getWebPlayerName,
   groupMemberPickerVisible,
   isBuiltinPlayer,
   isPlayerGrouped,
@@ -18,10 +21,15 @@ import {
   type User,
   UserRole,
 } from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import { user } from "../fixtures/user";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/plugins/api", () => ({
+  api: { players: {} },
+}));
 
 vi.mock("@/plugins/store", () => ({
   store: { companionPlayerId: undefined, currentUser: undefined },
@@ -85,6 +93,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     active_group: null,
     synced_to: null,
     sleep_timer_expires_at: null,
+    active_source_audio: null,
     ...overrides,
   };
 }
@@ -114,6 +123,7 @@ function createAdminUser(playerFilter: string[]): User {
 }
 
 beforeEach(() => {
+  api.players = {};
   store.companionPlayerId = undefined;
   store.currentUser = undefined;
   webPlayer.player_id = null;
@@ -166,6 +176,109 @@ describe("isBuiltinPlayer", () => {
     store.companionPlayerId = "local-companion-player";
 
     expect(isBuiltinPlayer(player)).toBe(false);
+  });
+});
+
+describe("getPlayerDisplayName", () => {
+  it("names the built-in player after this device", () => {
+    const player = createPlayer({ name: "Marcel's Mac (Chrome)" });
+    webPlayer.player_id = player.player_id;
+
+    expect(getPlayerDisplayName(player)).toBe("This device");
+  });
+
+  it("keeps the name of a player of another device", () => {
+    expect(getPlayerDisplayName(createPlayer({ name: "Kitchen" }))).toBe(
+      "Kitchen",
+    );
+  });
+});
+
+describe("getPlayerName", () => {
+  it("names the built-in player after this device", () => {
+    const player = createPlayer({ name: "Marcel's Mac (Chrome)" });
+    webPlayer.player_id = player.player_id;
+
+    expect(getPlayerName(player)).toBe("This device");
+  });
+
+  it("counts the available players synced to the built-in player", () => {
+    const player = createPlayer({
+      group_members: ["player", "office", "patio"],
+    });
+    api.players = {
+      office: createPlayer({ player_id: "office" }),
+      patio: createPlayer({ player_id: "patio", available: false }),
+    };
+    webPlayer.player_id = player.player_id;
+
+    expect(getPlayerName(player)).toBe("This device +1");
+  });
+
+  it("truncates a long name", () => {
+    expect(getPlayerName(createPlayer({ name: "Living room" }), 6)).toBe(
+      "Living...",
+    );
+  });
+});
+
+describe("getWebPlayerName", () => {
+  const MAC_CHROME =
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
+  const IPHONE_SAFARI =
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+  const originalUserAgent = Object.getOwnPropertyDescriptor(
+    navigator,
+    "userAgent",
+  );
+
+  function emulate(userAgent: string, installed = false) {
+    Object.defineProperty(navigator, "userAgent", {
+      configurable: true,
+      value: userAgent,
+    });
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: installed && query === "(display-mode: standalone)",
+    }));
+  }
+
+  afterEach(() => {
+    if (originalUserAgent) {
+      Object.defineProperty(navigator, "userAgent", originalUserAgent);
+    } else {
+      Reflect.deleteProperty(navigator, "userAgent");
+    }
+    vi.unstubAllGlobals();
+  });
+
+  it("names the player after the first name of its owner", () => {
+    emulate(MAC_CHROME);
+
+    expect(
+      getWebPlayerName(user({ display_name: "Marcel van der Veldt" })),
+    ).toBe("Marcel's Mac (Chrome)");
+  });
+
+  it("falls back to the username without a display name", () => {
+    emulate(MAC_CHROME);
+
+    expect(
+      getWebPlayerName(user({ display_name: null, username: "marcel" })),
+    ).toBe("marcel's Mac (Chrome)");
+  });
+
+  it("names an installed app after the app instead of the browser", () => {
+    emulate(IPHONE_SAFARI, true);
+
+    expect(getWebPlayerName(user({ display_name: "Marcel" }))).toBe(
+      "Marcel's iPhone (App)",
+    );
+  });
+
+  it("keeps the device name without a known owner", () => {
+    emulate(MAC_CHROME);
+
+    expect(getWebPlayerName(undefined)).toBe("Web (Chrome on Mac)");
   });
 });
 

@@ -1,5 +1,6 @@
 <template>
   <ItemsListing
+    fill-height
     itemtype="audiobooks"
     path="libraryaudiobooks"
     :show-duration="false"
@@ -7,7 +8,8 @@
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :show-library="true"
-    :sort-keys="sortKeys"
+    :sort-listing="ListingType.LIBRARY_AUDIOBOOKS"
+    :sort-option-exclude-fields="audiobookSortOptionExclusions"
     :update-available="updateAvailable"
     :title="$t('audiobooks')"
     :allow-key-hooks="true"
@@ -33,8 +35,10 @@ import {
   ArtistType,
   EventMessage,
   EventType,
+  ListingType,
   MediaType,
   ProviderFeature,
+  SortField,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -49,21 +53,6 @@ const updateAvailable = ref(false);
 const total = ref(store.libraryAudiobooksCount);
 const supportedArtistTypes = ref<ArtistType[]>([]);
 
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "timestamp_modified",
-  "timestamp_modified_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
-
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
@@ -72,7 +61,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sortField,
+    params.sortDirection,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
     params.collapseCollections,
@@ -91,7 +81,8 @@ const loadItemsAuthorsNarrators = async (
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sortField,
+    params.sortDirection,
     false,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
@@ -186,6 +177,10 @@ const artistTabs = computed(() => {
 
   return tabs.length > 0 ? tabs : undefined;
 });
+
+const audiobookSortOptionExclusions = computed(() =>
+  artistTabs.value && artistTabs.value.length > 1 ? [SortField.DURATION] : [],
+);
 
 const refreshArtistTypes = async function () {
   supportedArtistTypes.value = await api.getLibraryArtistTypes();

@@ -466,10 +466,6 @@ const draggedItem = computed(() =>
   color: inherit !important;
 }
 
-:deep(a:visited) {
-  color: inherit !important;
-}
-
 /* Override AppSidebar global padding for image-based items */
 :deep([data-sidebar="menu-button"].shortcut-button) {
   /* Use p-3 spacing; keep the extra right

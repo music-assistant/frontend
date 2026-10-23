@@ -221,17 +221,14 @@ function isSameParticipantContext(
 async function resolveGuestEntryState(
   quizAffinity: GuestQuizAffinity,
 ): Promise<GuestEntryState> {
-  const providerDomains = new Set(
-    Object.values(api.providers).map((provider) => provider.domain),
-  );
-  const hasMusicQuiz = providerDomains.has("music_quiz");
+  const hasMusicQuiz = store.enabledPlugins.has("music_quiz");
 
   if (hasMusicQuiz) {
     const game = await getMusicQuizInfo();
     if (game) return "quiz";
   }
   if (quizAffinity.active) return "quiz-inactive";
-  if (providerDomains.has("party")) return "party";
+  if (store.enabledPlugins.has("party")) return "party";
   return hasMusicQuiz ? "quiz-inactive" : "inactive";
 }
 

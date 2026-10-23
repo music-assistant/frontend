@@ -5,8 +5,9 @@
  * The on/off state is per player: an explicit `visualizer_enabled.<player_id>`
  * preference wins, with the plain `visualizer_enabled` preference as the
  * default for players never toggled individually (also the settings-page
- * toggle). Toggling from a view therefore only affects the player that view is
- * showing, not every display of the user.
+ * toggle); that preference itself follows the expert mode until it is set.
+ * Toggling from a view therefore only affects the player that view is showing,
+ * not every display of the user.
  */
 
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
@@ -18,6 +19,7 @@ import {
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
+import { expertModeSetting } from "@/helpers/expert_mode";
 import { store } from "@/plugins/store";
 import {
   visualizerCanRender,
@@ -35,7 +37,7 @@ export function visualizerEnabledForPlayer(playerId?: string): boolean {
     const override = prefs?.[`visualizer_enabled.${playerId}`];
     if (override !== undefined) return Boolean(override);
   }
-  return Boolean(prefs?.["visualizer_enabled"] ?? false);
+  return expertModeSetting("visualizer_enabled");
 }
 
 export function toggleVisualizerForPlayer(playerId?: string): void {

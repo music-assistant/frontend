@@ -4,6 +4,8 @@ export { default as Button } from "./Button.vue";
 
 // A button showing a spinner is busy, not unavailable, so it keeps full opacity
 // while disabled - a half-transparent spinner is hard to make out.
+// On the overlay variant `data-active="true"` marks a toggle that is on: it turns
+// into the frosted box and its icon takes the primary colour.
 export const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 has-[.animate-spin]:disabled:opacity-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
@@ -15,10 +17,14 @@ export const buttonVariants = cva(
         outline:
           "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary: "bg-accent text-accent-foreground hover:bg-accent/80",
+        warning:
+          "bg-warning text-warning-foreground hover:bg-warning/90 focus-visible:ring-warning/20 dark:focus-visible:ring-warning/40",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         "ghost-outline":
           "border border-foreground/25 bg-transparent hover:bg-background/40 hover:text-foreground hover:backdrop-blur-md",
+        overlay:
+          "border border-overlay-muted-border bg-overlay-muted text-overlay-foreground hover:bg-overlay-muted-hover data-[active=true]:border-overlay-border data-[active=true]:bg-overlay data-[active=true]:backdrop-blur-md data-[active=true]:hover:bg-overlay data-[active=true]:[&_svg]:text-primary",
         "ghost-icon": "hover:bg-transparent",
         link: "text-primary underline-offset-4 hover:underline",
       },

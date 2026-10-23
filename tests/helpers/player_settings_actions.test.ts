@@ -1,42 +1,65 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
-import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import {
+  getPlayerSettingsMenuItems,
+  getSetupRequiredPlayerMenuItems,
+  renamePlayer,
+  setPlayerEnabled,
+} from "@/helpers/player_settings_actions";
 import {
   PlayerType,
   ProviderFeature,
   ProviderType,
+  Scope,
   type Player,
-  type PlayerConfig,
   type PlayerOption,
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
+import { flushPromises } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { playerConfig } from "../fixtures/playerConfig";
 import { providerManifest } from "../fixtures/providerManifest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
-const { apiMock, emitEvent, routerPush, setPreference, storeMock, toastMock } =
-  vi.hoisted(() => ({
-    apiMock: {
-      getProvider: vi.fn(),
-      getProviderManifest: vi.fn(),
-      players: {} as Record<string, unknown>,
-      queues: {} as Record<string, unknown>,
-      removePlayer: vi.fn(),
-      savePlayerConfig: vi.fn(),
-    },
-    emitEvent: vi.fn(),
-    routerPush: vi.fn(),
-    setPreference: vi.fn(),
-    storeMock: {
-      activePlayerId: undefined as string | undefined,
-    },
-    toastMock: {
-      error: vi.fn(),
-      success: vi.fn(),
-    },
-  }));
+const {
+  apiMock,
+  emitEvent,
+  hasScope,
+  routerPush,
+  setPreference,
+  storeMock,
+  toastMock,
+} = vi.hoisted(() => ({
+  apiMock: {
+    getProvider: vi.fn(),
+    getPlayerConfig: vi.fn(),
+    getProviderManifest: vi.fn(),
+    players: {} as Record<string, unknown>,
+    queues: {} as Record<string, unknown>,
+    removePlayer: vi.fn(),
+    savePlayerConfig: vi.fn(),
+  },
+  emitEvent: vi.fn(),
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
+  routerPush: vi.fn(),
+  setPreference: vi.fn(),
+  storeMock: {
+    activePlayerId: undefined as string | undefined,
+    showFullscreenPlayer: false,
+    showPlayersMenu: false,
+  },
+  toastMock: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
   default: apiMock,
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope },
 }));
 
 vi.mock("@/plugins/eventbus", () => ({
@@ -65,7 +88,8 @@ vi.mock("@/composables/userPreferences", () => ({
 
 // the setup entry is built and covered where the player menus live
 vi.mock("@/helpers/player_menu_items", () => ({
-  getPlayerSetupMenuItem: () => undefined,
+  getPlayerSetupMenuItem: (player: Player) =>
+    player.needs_setup ? { label: "configure_player" } : undefined,
 }));
 
 vi.mock("@/helpers/utils", () => ({
@@ -82,6 +106,11 @@ const SECTION_LABELS = [
   "open_dsp_settings",
   "player_options.open",
 ];
+
+// an admin unless a test says otherwise
+beforeEach(() => {
+  hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+});
 
 describe("getPlayerSettingsMenuItems sections", () => {
   beforeEach(() => {
@@ -285,6 +314,209 @@ describe("getPlayerSettingsMenuItems actions", () => {
   });
 });
 
+describe("getPlayerSettingsMenuItems provider settings", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer();
+    apiMock.getProvider.mockReturnValue(providerInstance());
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+  });
+
+  const offersProviderSettings = () =>
+    visibleLabels(getPlayerSettingsMenuItems(playerConfig())).includes(
+      "settings.provider_settings",
+    );
+
+  it("links an admin to the settings of the player provider", () => {
+    expect(offersProviderSettings()).toBe(true);
+  });
+
+  it.each([
+    { role: "a member", scopes: BUILTIN_ROLE_SCOPES.user },
+    { role: "a guest", scopes: BUILTIN_ROLE_SCOPES.guest },
+    {
+      role: "a role that only changes player settings",
+      scopes: [...BUILTIN_ROLE_SCOPES.guest, Scope.CONFIG_PLAYERS_WRITE],
+    },
+  ])(
+    "keeps $role away from the settings of the player provider",
+    ({ scopes }) => {
+      hasScope.mockImplementation(scopeChecker(scopes));
+
+      expect(offersProviderSettings()).toBe(false);
+    },
+  );
+});
+
+describe("getSetupRequiredPlayerMenuItems", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMock.savePlayerConfig.mockResolvedValue({});
+  });
+
+  const setupRequiredPlayer = () =>
+    player({ name: "Living Room (2)", available: false, needs_setup: true });
+
+  it("offers to set the player up, rename it, open its settings and disable it", () => {
+    expect(
+      visibleLabels(getSetupRequiredPlayerMenuItems(setupRequiredPlayer())),
+    ).toEqual([
+      "configure_player",
+      "player_select.rename_player",
+      "open_settings",
+      "settings.disable",
+    ]);
+  });
+
+  it("offers nothing to a role that may not change player settings", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+
+    expect(getSetupRequiredPlayerMenuItems(setupRequiredPlayer())).toEqual([]);
+  });
+
+  it("opens the rename dialog on the names the player config carries", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(
+      playerConfig({ name: null, default_name: "Living Room (2)" }),
+    );
+
+    menuItem(
+      getSetupRequiredPlayerMenuItems(setupRequiredPlayer()),
+      "player_select.rename_player",
+    ).action?.();
+    await flushPromises();
+
+    expect(apiMock.getPlayerConfig).toHaveBeenCalledWith("kitchen");
+    expect(emitEvent).toHaveBeenCalledWith("playerRenameDialog", {
+      playerId: "kitchen",
+      name: null,
+      defaultName: "Living Room (2)",
+    });
+  });
+
+  it("opens no rename dialog when the config does not load, and leaves the message to the api", async () => {
+    apiMock.getPlayerConfig.mockRejectedValue(new Error("Lookup failed"));
+
+    menuItem(
+      getSetupRequiredPlayerMenuItems(setupRequiredPlayer()),
+      "player_select.rename_player",
+    ).action?.();
+    await flushPromises();
+
+    expect(emitEvent).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
+  it("closes the player surfaces on the way to the player settings", () => {
+    storeMock.showFullscreenPlayer = true;
+    storeMock.showPlayersMenu = true;
+
+    menuItem(
+      getSetupRequiredPlayerMenuItems(setupRequiredPlayer()),
+      "open_settings",
+    ).action?.();
+
+    expect(storeMock.showFullscreenPlayer).toBe(false);
+    expect(storeMock.showPlayersMenu).toBe(false);
+    expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
+  });
+
+  it("asks before disabling the player", async () => {
+    menuItem(
+      getSetupRequiredPlayerMenuItems(setupRequiredPlayer()),
+      "settings.disable",
+    ).action?.();
+
+    expect(apiMock.savePlayerConfig).not.toHaveBeenCalled();
+    await confirmation().onConfirm();
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      enabled: false,
+    });
+  });
+});
+
+describe("setPlayerEnabled", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer();
+    apiMock.savePlayerConfig.mockResolvedValue({});
+    storeMock.activePlayerId = undefined;
+  });
+
+  it("saves the state and says the change landed", async () => {
+    await expect(setPlayerEnabled("kitchen", false)).resolves.toBe(true);
+
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      enabled: false,
+    });
+    expect(toastMock.success).toHaveBeenCalledWith("settings.player_saved");
+  });
+
+  it("hands the player bar on when the player it points at is switched off", async () => {
+    apiMock.players = {
+      ...apiMock.players,
+      office: player({ player_id: "office" }),
+    };
+    storeMock.activePlayerId = "kitchen";
+
+    await setPlayerEnabled("kitchen", false);
+
+    expect(storeMock.activePlayerId).toBe("office");
+    expect(setPreference).toHaveBeenCalledWith("activePlayerId", null);
+  });
+
+  it("leaves the player bar where it is when a player is switched on", async () => {
+    storeMock.activePlayerId = "kitchen";
+
+    await setPlayerEnabled("kitchen", true);
+
+    // the player is coming back, not leaving: nothing about the selection changes
+    expect(storeMock.activePlayerId).toBe("kitchen");
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+
+  it("says a save that did not land, and leaves the message to the api", async () => {
+    apiMock.savePlayerConfig.mockRejectedValueOnce(new Error("Save failed"));
+
+    await expect(setPlayerEnabled("kitchen", false)).resolves.toBe(false);
+
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+});
+
+describe("renamePlayer", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMock.savePlayerConfig.mockResolvedValue({});
+  });
+
+  it("saves the name and says the change landed", async () => {
+    await expect(renamePlayer("kitchen", "Attic")).resolves.toBe(true);
+
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      name: "Attic",
+    });
+    expect(toastMock.success).toHaveBeenCalledWith("settings.player_saved");
+  });
+
+  it("hands the player back to the name its provider reports", async () => {
+    await renamePlayer("kitchen", null);
+
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      name: null,
+    });
+  });
+
+  it("says a save that did not land, and leaves the message to the api", async () => {
+    apiMock.savePlayerConfig.mockRejectedValueOnce(new Error("Save failed"));
+
+    await expect(renamePlayer("kitchen", "Attic")).resolves.toBe(false);
+
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+});
+
 /**
  * The labels a user actually sees, so an entry the menu hides counts as absent.
  */
@@ -340,18 +572,6 @@ function player(overrides: Partial<Player> = {}): Player {
     options: [{ key: "eq", name: "EQ" } as PlayerOption],
     ...overrides,
   } as Player;
-}
-
-function playerConfig(overrides: Partial<PlayerConfig> = {}): PlayerConfig {
-  return {
-    player_id: "kitchen",
-    provider: "chromecast--1",
-    enabled: true,
-    name: null,
-    default_name: "Chromecast",
-    values: {},
-    ...overrides,
-  };
 }
 
 function providerInstance(

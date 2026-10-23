@@ -8,8 +8,8 @@
 
 import { computed, ref } from "vue";
 
-const MIN_OFFSET = -9.9;
-const MAX_OFFSET = 9.9;
+const MIN_OFFSET = -600;
+const MAX_OFFSET = 60;
 
 const offset = ref(0);
 

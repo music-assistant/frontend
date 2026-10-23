@@ -25,6 +25,21 @@ const PROVIDER_SHARING_HINT_TRANSLATION_KEYS: Record<ProviderSharing, string> =
     [ProviderSharing.EVERYONE]: "settings.source_access.hints.everyone",
   };
 
+/** Whether the given user may use what the access record guards, read the way the server does. */
+export const accessAllows = (
+  access: ProviderAccess | null,
+  user: User,
+): boolean => {
+  if (access === null) return true;
+  if (access.owner === user.user_id) return true;
+  if (access.sharing === ProviderSharing.EVERYONE) return true;
+  if (access.sharing === ProviderSharing.MEMBERS)
+    return user.role !== UserRole.GUEST;
+  if (access.sharing === ProviderSharing.SELECTED)
+    return access.shared_users.includes(user.user_id);
+  return false;
+};
+
 /**
  * The access a music source has, with a missing record read the way the
  * server does: a household source available to everyone.
@@ -47,18 +62,60 @@ export const hasConfigurableAccess = (
   manifest?: ProviderManifest,
 ) => config.type === ProviderType.MUSIC && manifest?.builtin === false;
 
+/**
+ * Whether a member may set up (and reconfigure) a music source of the provider
+ * itself; a user who manages every music source may set up any provider.
+ *
+ * @param manifest - The manifest of the provider.
+ */
+export const isSelfServiceProvider = (manifest?: ProviderManifest) =>
+  manifest?.self_service === true;
+
 /** Whether the music source belongs to the given user. */
 export const isOwnMusicSource = (
   config: ProviderConfig,
   userId: string | undefined,
 ) => userId !== undefined && config.access?.owner === userId;
 
-export const getProviderSharingTranslationKey = (sharing: ProviderSharing) =>
-  PROVIDER_SHARING_TRANSLATION_KEYS[sharing];
+/** How many music sources the given user owns. */
+export const ownedMusicSourceCount = (
+  configs: ProviderConfig[],
+  userId: string | undefined,
+) => configs.filter((config) => isOwnMusicSource(config, userId)).length;
 
-export const getProviderSharingHintTranslationKey = (
+/**
+ * Whether nobody can use what this access record guards: it has no owner and
+ * is private, or is shared with selected members while nobody is picked.
+ */
+export const servesNobody = (access: ProviderAccess) =>
+  access.owner === null &&
+  (access.sharing === ProviderSharing.PRIVATE ||
+    (access.sharing === ProviderSharing.SELECTED &&
+      access.shared_users.length === 0));
+
+/**
+ * The translation key naming a sharing choice. Private sharing is named from
+ * the viewer's side: as their own for the owner, as not shared for others.
+ */
+export const getProviderSharingTranslationKey = (
   sharing: ProviderSharing,
-) => PROVIDER_SHARING_HINT_TRANSLATION_KEYS[sharing];
+  ownedByViewer: boolean,
+) =>
+  sharing === ProviderSharing.PRIVATE && !ownedByViewer
+    ? "settings.source_access.options.not_shared"
+    : PROVIDER_SHARING_TRANSLATION_KEYS[sharing];
+
+/**
+ * The translation key explaining who can use a music source with this access.
+ */
+export const getProviderSharingHintTranslationKey = (
+  access: ProviderAccess,
+) => {
+  if (servesNobody(access)) return "settings.source_access.hints.nobody";
+  if (access.owner === null && access.sharing === ProviderSharing.SELECTED)
+    return "settings.source_access.hints.selected_no_owner";
+  return PROVIDER_SHARING_HINT_TRANSLATION_KEYS[access.sharing];
+};
 
 /**
  * The users that may own a music source: every enabled member, so neither the
