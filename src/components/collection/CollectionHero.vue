@@ -50,7 +50,7 @@
 
           <div class="flex min-w-0 items-center gap-2 max-md:gap-2.5">
             <DetailHeroPlayButton :item="item" />
-            <DetailHeroPlayedState :item="item" />
+            <DetailHeroPlayedState v-if="playedState" :item="item" />
           </div>
         </div>
       </div>
@@ -65,6 +65,7 @@ import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue"
 import DetailHeroPlayedState from "@/components/details/DetailHeroPlayedState.vue";
 import MediaCollectionThumb from "@/components/MediaCollectionThumb.vue";
 import { formatTotalDuration } from "@/helpers/duration";
+import { getPlayedState } from "@/helpers/played_state";
 import {
   getAudiobookCollectionArtists,
   getImageThumbForItem,
@@ -86,6 +87,11 @@ const props = defineProps<Props>();
 
 // keeps the stacked covers inside the cover's square at any size
 const STACK_OFFSET_RATIO = 0.095;
+
+// no button follows the badge, so an unplayed collection leaves the play button its room
+const playedState = computed(() =>
+  props.item ? getPlayedState(props.item) : undefined,
+);
 
 const coverSize = computed(() => (isPhoneSizedScreen() ? 132 : 200));
 
