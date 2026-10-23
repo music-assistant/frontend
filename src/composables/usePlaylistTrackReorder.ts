@@ -108,9 +108,11 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
       return true;
     } catch {
       // the api already reports the failure to the user; a load that replaced
-      // the rows meanwhile has the order the server holds
-      if (toRaw(items.value) === optimistic.after) {
-        items.value = optimistic.before;
+      // the rows meanwhile has the order the server holds, and a page loaded
+      // meanwhile was appended to the moved rows
+      const { before, after } = optimistic;
+      if (toRaw(items.value) === after) {
+        items.value = [...before, ...after.slice(before.length)];
       }
       return false;
     } finally {
@@ -124,6 +126,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     const rows = [...new Set(indices)].sort((a, b) => a - b);
     if (id === undefined || saving.value || !inOwnOrder() || !rows.length)
       return;
+    if (rows[0] < 0 || rows[rows.length - 1] >= before.length) return;
     if (toIndex < 0 || toIndex + rows.length > before.length) return;
     if (rows.every((row, offset) => row === toIndex + offset)) return;
     const positions = rows.map((row) => playlistPosition(before[row]));
@@ -131,22 +134,25 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
 
     const after = moveListedItems(before, rows, toIndex);
     items.value = after;
-    if (await save(id, positions as number[], toIndex + 1, { before, after })) {
-      options.onMoved?.(toIndex, rows.length);
-    }
+    const saved = await save(id, positions as number[], toIndex + 1, {
+      before,
+      after,
+    });
+    // a search or sort changed meanwhile puts other rows at the block's place
+    if (saved && inOwnOrder()) options.onMoved?.(toIndex, rows.length);
   };
 
-  // Move a row one place by keyboard; returns the row it now is, when it moved.
-  const moveBy = (index: number, delta: number): number | undefined => {
-    const before = toRaw(items.value);
-    void moveRows([index], index + delta);
-    return toRaw(items.value) === before ? undefined : index + delta;
-  };
+  // The rows and playlist a drag started on; a drop on a listing that was
+  // replaced meanwhile would move a different track.
+  let dragRows: MediaItemType[] | undefined;
+  let dragPlaylistId: string | undefined;
 
   const drag = useListDragReorder({
     listEl,
     count: () => items.value.length,
     onCommit: (source, finalIndex) => {
+      if (toRaw(items.value) !== dragRows) return;
+      if (playlistId() !== dragPlaylistId) return;
       const selected = options.selectedIndices();
       if (selected.length > 1 && selected.includes(source)) {
         // the drop slot as an index before the drag lifted the source out
@@ -164,6 +170,8 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
 
   const startDrag = (evt: PointerEvent, index: number) => {
     if (saving.value) return;
+    dragRows = toRaw(items.value);
+    dragPlaylistId = playlistId();
     drag.startItemDrag(evt, index);
   };
 
@@ -171,8 +179,6 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     ...drag,
     startDrag,
     moveRows,
-    moveBy,
-    refresh,
     saving,
   };
 }
