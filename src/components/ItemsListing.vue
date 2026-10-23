@@ -1417,7 +1417,6 @@ const trackRowDragStyle = (index: number) =>
   isDragging.value
     ? { transform: `translateY(${rowOffset(index)}px)` }
     : undefined;
-// the grabbed row leaves a gap, the rest of a dragged block dims
 const trackRowDragClass = (item: MediaItemTypeOrItemMapping, index: number) => {
   if (draggingIndex.value === index) return "opacity-0";
   if (draggedCount.value > 1 && isSelected(item)) return "opacity-40";

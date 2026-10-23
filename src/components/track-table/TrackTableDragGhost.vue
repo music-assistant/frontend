@@ -1,5 +1,4 @@
 <template>
-  <!-- follows the pointer while rows are dragged; a block shows its size -->
   <div
     class="pointer-events-none absolute inset-x-0 z-10 rounded-md bg-accent shadow-lg"
     :style="{ top: `${top}px` }"
@@ -31,7 +30,6 @@ export interface Props {
   item: MediaItemType;
   index: number;
   columns: TrackColumn[];
-  // the number of rows being dragged
   count: number;
   // px from the top of the list
   top: number;

@@ -91,7 +91,6 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
   // Reads the rows back after the playlist changed.
   const refresh = () => settle();
 
-  // Save a move and read the rows back, restoring `before` when it fails.
   const save = async function (
     id: string,
     positions: number[],
@@ -119,7 +118,6 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     }
   };
 
-  // Move the rows at `indices` as one block that starts at row `toIndex`.
   const moveRows = async function (indices: number[], toIndex: number) {
     const id = playlistId();
     const before = toRaw(items.value);
