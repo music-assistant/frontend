@@ -24,6 +24,10 @@ import {
   type CommandMessage,
   type ErrorResultMessage,
   type EventMessage,
+  type StatisticsDistributionItem,
+  type StatisticsHeatmapPoint,
+  type StatisticsListeningTimeItem,
+  type StatisticsTimeSeriesPoint,
   type Genre,
   type MassEvent,
   type MediaItemType,
@@ -84,6 +88,7 @@ import {
   SortField,
   SmartPlaylistRules,
   SoundEffect,
+  StatisticsTopItemResult,
   SourceFolder,
   StorageInfo,
   StorageLocation,
@@ -1944,6 +1949,83 @@ export class MusicAssistantApi {
         provider,
         item_id,
         providers,
+      },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public async getTopItems(
+    media_type: MediaType,
+    period = "week",
+    limit = 50,
+  ): Promise<StatisticsTopItemResult[]> {
+    return this.sendCommand(
+      "statistics/top_items",
+      {
+        media_type,
+        period,
+        limit,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public async getPlaysOverTime(
+    period = "week",
+    granularity = "day",
+  ): Promise<StatisticsTimeSeriesPoint[]> {
+    return this.sendCommand(
+      "statistics/plays_over_time",
+      {
+        period,
+        granularity,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public async getListeningActivity(
+    period = "week",
+  ): Promise<StatisticsHeatmapPoint[]> {
+    return this.sendCommand(
+      "statistics/listening_activity",
+      {
+        period,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public async getListeningTime(
+    period = "week",
+    group_by = "artist",
+    limit = 10,
+  ): Promise<StatisticsListeningTimeItem[]> {
+    return this.sendCommand(
+      "statistics/listening_time",
+      {
+        period,
+        group_by,
+        limit,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public async getDecadeDistribution(
+    period = "all_time",
+    limit = 10,
+  ): Promise<StatisticsDistributionItem[]> {
+    return this.sendCommand(
+      "statistics/decade_distribution",
+      {
+        period,
+        limit,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
       { suppressGlobalError: true },
     );

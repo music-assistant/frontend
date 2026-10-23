@@ -1,0 +1,161 @@
+<template>
+  <BaseChartCard
+    :title="title"
+    :loading="loading"
+    :is-empty="!data || data.length === 0"
+  >
+    <Line
+      :data="chartData"
+      :options="chartOptions"
+      role="img"
+      :aria-label="accessibleSummary"
+    />
+  </BaseChartCard>
+</template>
+
+<script setup lang="ts">
+import { computed } from "vue";
+import { Line } from "vue-chartjs";
+import { useTheme } from "vuetify";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Filler,
+  type ChartData,
+  type ChartOptions,
+} from "chart.js";
+import BaseChartCard from "./BaseChartCard.vue";
+import { $t } from "@/plugins/i18n";
+import {
+  createTooltipConfig,
+  createAxisConfig,
+  CHART_COLORS,
+} from "./chartConfig";
+import {
+  fillPlaysOverTimeGaps,
+  formatPlaysOverTimeLabel,
+} from "./statisticsRequests";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Filler,
+);
+
+import type { StatisticsTimeSeriesPoint } from "@/plugins/api/interfaces";
+
+interface Props {
+  title: string;
+  data: StatisticsTimeSeriesPoint[];
+  period: string;
+  loading?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  loading: false,
+});
+const theme = useTheme();
+const trendData = computed(() =>
+  fillPlaysOverTimeGaps(props.data, props.period),
+);
+
+const accessibleSummary = computed(() =>
+  $t("statistics_chart_accessible_summary", {
+    title: props.title,
+    values: trendData.value
+      .map(
+        (point) =>
+          `${formatPlaysOverTimeLabel(point.timestamp, props.period)}: ${point.value} ${$t("plays")}`,
+      )
+      .join(", "),
+  }),
+);
+
+const chartData = computed<ChartData<"line">>(() => {
+  return {
+    labels: trendData.value.map((item) =>
+      formatPlaysOverTimeLabel(item.timestamp, props.period),
+    ),
+    datasets: [
+      {
+        label: $t("plays"),
+        data: trendData.value.map((item) => item.value),
+        borderColor: CHART_COLORS[0],
+        backgroundColor: "rgba(3, 169, 244, 0.15)",
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: CHART_COLORS[0],
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        pointHoverBorderWidth: 3,
+        borderWidth: 3,
+      },
+    ],
+  };
+});
+
+const chartOptions = computed<ChartOptions<"line">>(() => ({
+  responsive: true,
+  maintainAspectRatio: true,
+  interaction: {
+    mode: "index",
+    intersect: false,
+  },
+  plugins: {
+    legend: {
+      display: false,
+    },
+    tooltip: createTooltipConfig(),
+  },
+  scales: {
+    x: {
+      ...createAxisConfig(
+        "x",
+        theme.current.value.colors.fg,
+        theme.current.value.dark,
+      ),
+      grid: {
+        display: false,
+      },
+      ticks: {
+        ...createAxisConfig(
+          "x",
+          theme.current.value.colors.fg,
+          theme.current.value.dark,
+        ).ticks,
+        maxRotation: 45,
+        minRotation: 0,
+      },
+    },
+    y: {
+      beginAtZero: true,
+      ...createAxisConfig(
+        "y",
+        theme.current.value.colors.fg,
+        theme.current.value.dark,
+      ),
+      ticks: {
+        ...createAxisConfig(
+          "y",
+          theme.current.value.colors.fg,
+          theme.current.value.dark,
+        ).ticks,
+        precision: 0,
+      },
+    },
+  },
+}));
+</script>
+
+<style scoped></style>

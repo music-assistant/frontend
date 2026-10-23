@@ -302,6 +302,40 @@
               />
             </div>
           </section>
+
+          <StatisticsRow
+            v-else-if="row.kind === 'statistics'"
+            v-model:active-tab="activeStatTab"
+            v-model:period="activeStatPeriod"
+            :items="statisticsItems"
+            :charts="statisticsChartData"
+            :loading="statisticsLoading"
+            :error="statisticsError"
+            :charts-loading="chartsLoading"
+            :dimmed="editMode && row.hidden"
+          >
+            <template #edit-controls>
+              <div v-if="editMode" class="ed-edit-controls">
+                <button
+                  class="ed-drag-handle"
+                  :aria-label="$t('queue_reorder')"
+                  @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                  @click.stop
+                >
+                  <GripVertical />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :aria-label="$t('tooltip.toggle_row')"
+                  @click="toggleRow(row)"
+                >
+                  <Eye v-if="!row.hidden" />
+                  <EyeOff v-else />
+                </Button>
+              </div>
+            </template>
+          </StatisticsRow>
         </div>
 
         <!-- Floating ghost that follows the pointer while dragging a row -->
@@ -341,6 +375,8 @@ let prevState: DiscoverSnapshot | undefined;
 </script>
 
 <script setup lang="ts">
+import StatisticsRow from "@/components/statistics/StatisticsRow.vue";
+import { useStatistics } from "@/composables/useStatistics";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialGenreTile from "@/components/discover/EditorialGenreTile.vue";
 import EditorialHeroCard from "@/components/discover/EditorialHeroCard.vue";
@@ -354,6 +390,7 @@ import {
   GENRES_ROW_ID,
   IN_PROGRESS_ROW_ID,
   PLAYERS_ROW_ID,
+  STATISTICS_ROW_ID,
   TOP_PICKS_ROW_ID,
   resolveDiscoverRowsConfig,
   setDiscoverRowHidden,
@@ -616,7 +653,8 @@ const refreshTopPicks = async () => {
 };
 
 // --- Unified row list: visibility + ordering via the discover.rows pref ---
-type DiscoverRowKind = "players" | "top_picks" | "recommendation" | "genres";
+type DiscoverRowKind =
+  "players" | "top_picks" | "recommendation" | "genres" | "statistics";
 
 interface DiscoverRow {
   id: string;
@@ -650,6 +688,7 @@ const availableRowIds = computed<string[]>(() => {
   for (const uri of recUris) {
     if (!ids.includes(uri)) ids.push(uri);
   }
+  ids.push(STATISTICS_ROW_ID);
   if (genres.value.length > 0) ids.push(GENRES_ROW_ID);
   return ids;
 });
@@ -683,6 +722,13 @@ const allRows = computed<DiscoverRow[]>(() => {
         title: $t("browse_by_genre"),
         hidden: hidden.has(id),
       });
+    } else if (id === STATISTICS_ROW_ID) {
+      rows.push({
+        id,
+        kind: "statistics",
+        title: $t("statistics_charts"),
+        hidden: hidden.has(id),
+      });
     } else {
       const folder = folders.get(id);
       if (!folder) continue;
@@ -710,6 +756,22 @@ const displayedRows = computed(() =>
       : props.editMode || !row.hidden,
   ),
 );
+
+const statisticsRowVisible = computed(() => {
+  const rowIds = [...new Set([...availableRowIds.value, STATISTICS_ROW_ID])];
+  const { hidden } = resolveDiscoverRowsConfig(rowIds, defaultHiddenIds.value);
+  return !hidden.has(STATISTICS_ROW_ID);
+});
+
+const {
+  activeStatTab,
+  activeStatPeriod,
+  statisticsItems,
+  statisticsLoading,
+  statisticsError,
+  chartData: statisticsChartData,
+  chartsLoading,
+} = useStatistics(statisticsRowVisible);
 
 // The recommendation rows currently visible to the user (not hidden). The Top
 // Picks hero draws only from these, so an opted-out row never feeds it.
