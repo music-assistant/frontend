@@ -1340,6 +1340,7 @@ const {
   startDrag: startTrackDrag,
   moveBy: moveTrackRowBy,
   moveRows: moveTrackRows,
+  refresh: refreshTrackRows,
   draggingIndex,
   isDragging,
   ghostY,
@@ -1353,7 +1354,8 @@ const {
   selectedIndices: selectedRowIndices,
   rowHeight: TRACK_ROW_HEIGHT,
   reload: reloadLoadedItems,
-  // the selection keeps the rows that hold the selected tracks' positions
+  onReloaded: () => reselectReloadedRows(),
+  // the selection follows the moved tracks to their new places
   onRowsReplaced: (replacement) => {
     selectedItems.value = selectedItems.value.flatMap((item) => {
       const row = replacement(item as MediaItemType);

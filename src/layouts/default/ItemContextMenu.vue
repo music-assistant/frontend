@@ -387,8 +387,8 @@ import { toast } from "vue-sonner";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import {
-  isPlaylistMoveSaving,
-  sendPlaylistMove,
+  isPlaylistEditPending,
+  sendPlaylistEdit,
 } from "@/composables/usePlaylistTrackReorder";
 import {
   ArrowDown,
@@ -1067,7 +1067,7 @@ export const getContextMenuItems = async function (
         firstItem.media_type === MediaType.PODCAST_EPISODE ||
         firstItem.media_type === MediaType.AUDIOBOOK) &&
       canEditPlaylistItems(playlist, store.currentUser, managesLibrary) &&
-      // the listed positions are out of date while a move is saving
+      // the listed positions are out of date while another edit is pending
       !isPlaylistEditPending(playlist.item_id)
     ) {
       contextMenuItems.push({
@@ -1075,9 +1075,11 @@ export const getContextMenuItems = async function (
         labelArgs: [],
         action: () => {
           if (isPlaylistEditPending(playlist.item_id)) return;
-          api.removePlaylistTracks(
-            playlist.item_id,
-            items.map((x) => ("position" in x ? x.position : 0) as number),
+          void sendPlaylistEdit(playlist.item_id, () =>
+            api.removePlaylistTracks(
+              playlist.item_id,
+              items.map((x) => ("position" in x ? x.position : 0) as number),
+            ),
           );
         },
         icon: MinusCircle,
@@ -1094,7 +1096,7 @@ export const getContextMenuItems = async function (
       .every((position, index) => position === index + 1);
     if (
       positions.every((position) => position > 0) &&
-      !isPlaylistMoveSaving(playlist.item_id) &&
+      !isPlaylistEditPending(playlist.item_id) &&
       canReorderPlaylistItems(
         playlist,
         store.currentUser,
@@ -1107,8 +1109,8 @@ export const getContextMenuItems = async function (
           label: "playlist_move_to_top",
           labelArgs: [],
           action: () => {
-            if (isPlaylistMoveSaving(playlist.item_id)) return;
-            void sendPlaylistMove(playlist.item_id, () =>
+            if (isPlaylistEditPending(playlist.item_id)) return;
+            void sendPlaylistEdit(playlist.item_id, () =>
               api.movePlaylistTracks(playlist.item_id, positions, 1),
             );
             eventbus.emit("clearSelection");
@@ -1120,8 +1122,8 @@ export const getContextMenuItems = async function (
         label: "playlist_move_to_bottom",
         labelArgs: [],
         action: () => {
-          if (isPlaylistMoveSaving(playlist.item_id)) return;
-          void sendPlaylistMove(playlist.item_id, () =>
+          if (isPlaylistEditPending(playlist.item_id)) return;
+          void sendPlaylistEdit(playlist.item_id, () =>
             api.movePlaylistTracks(playlist.item_id, positions),
           );
           eventbus.emit("clearSelection");

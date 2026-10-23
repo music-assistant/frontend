@@ -4,7 +4,7 @@
  * may edit, on a provider that can store a new order, and save the move
  * straight away.
  */
-import { sendPlaylistMove } from "@/composables/usePlaylistTrackReorder";
+import { sendPlaylistEdit } from "@/composables/usePlaylistTrackReorder";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import {
   ProviderFeature,
@@ -145,7 +145,7 @@ describe("move playlist items context menu actions", () => {
 
   it("is not offered while another move of the playlist saves", async () => {
     let finishMove = () => {};
-    const sent = sendPlaylistMove(
+    const sent = sendPlaylistEdit(
       "42",
       () => new Promise<void>((resolve) => (finishMove = resolve)),
     );
@@ -154,6 +154,23 @@ describe("move playlist items context menu actions", () => {
     finishMove();
     await sent;
     expect(await moveLabels()).toEqual(MOVE_LABELS);
+  });
+
+  it("holds back removing tracks while another edit of the playlist saves", async () => {
+    const removeOffered = async () =>
+      (await getContextMenuItems([track({ position: 2 })], parent)).some(
+        (item) => item.label === "remove_playlist",
+      );
+    expect(await removeOffered()).toBe(true);
+    let finishMove = () => {};
+    const sent = sendPlaylistEdit(
+      "42",
+      () => new Promise<void>((resolve) => (finishMove = resolve)),
+    );
+
+    expect(await removeOffered()).toBe(false);
+    finishMove();
+    await sent;
   });
 
   it("is not offered on a dynamic playlist", async () => {

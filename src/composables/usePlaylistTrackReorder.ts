@@ -1,7 +1,7 @@
 // Reordering the tracks of a playlist listing by dragging one row or a block
-// of selected rows. A move shows at once, is saved on the provider and the
-// listed rows are then read again; when saving fails the previous order comes
-// back.
+// of selected rows. A move shows at once and is saved on the provider; nothing
+// moves or removes the playlist's tracks again until the listed rows are read
+// back, failed or not, so every listed position is the provider's.
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import {
   blockStartIndex,
@@ -13,11 +13,11 @@ import { api } from "@/plugins/api";
 import type { MediaItemType } from "@/plugins/api/interfaces";
 import { Ref, computed, reactive, toRaw, watch } from "vue";
 
-// Counts per playlist id, for moves on their way from outside the playlist's
-// listing (such as the track menu), and for every move that is saving or
+// Counts per playlist id, for edits on their way from outside the playlist's
+// listing (such as the track menu), and for every edit that is saving or
 // being read back; the listed positions are out of date until it is done.
-const outsideMoves = reactive(new Map<string, number>());
-const savingMoves = reactive(new Map<string, number>());
+const outsideEdits = reactive(new Map<string, number>());
+const pendingEdits = reactive(new Map<string, number>());
 
 const hold = (counts: Map<string, number>, id: string) =>
   counts.set(id, (counts.get(id) ?? 0) + 1);
@@ -27,23 +27,28 @@ const release = (counts: Map<string, number>, id: string) => {
   else counts.delete(id);
 };
 
-/** Whether a move of the playlist is saving, or its order is being read back. */
-export const isPlaylistMoveSaving = (id: string) => savingMoves.has(id);
+/** Whether an edit of the playlist's order is saving or being read back. */
+export const isPlaylistEditPending = (id: string) => pendingEdits.has(id);
 
-/** Send a move from outside the playlist's listing, holding back the listing's own. */
-export const sendPlaylistMove = async function (
+/**
+ * Send an edit of the playlist's order from outside its listing, such as a
+ * move or removal from the track menu; the listing reads its rows back once
+ * it is done and holds back its own moves until then.
+ */
+export const sendPlaylistEdit = async function (
   id: string,
-  move: () => Promise<void>,
+  edit: () => Promise<unknown>,
 ) {
-  hold(outsideMoves, id);
-  hold(savingMoves, id);
+  hold(outsideEdits, id);
+  hold(pendingEdits, id);
   try {
-    await move();
+    await edit();
   } catch {
     // the api already reports the failure to the user
   } finally {
-    release(outsideMoves, id);
-    release(savingMoves, id);
+    // the listing takes over the hold before this one ends
+    release(outsideEdits, id);
+    release(pendingEdits, id);
   }
 };
 
@@ -63,8 +68,10 @@ interface PlaylistTrackReorderOptions {
   rowHeight: number;
   // Re-reads the listed rows from the provider.
   reload: () => Promise<void>;
-  // Called when rows were replaced by others for the same tracks, with the
-  // row that now stands for an old one (undefined when that is unknown).
+  // Called each time the rows were read back.
+  onReloaded?: () => void;
+  // Called when a move replaced rows by copies at their new places, with the
+  // row that now stands for an old one.
   onRowsReplaced?: (
     replacement: (row: MediaItemType) => MediaItemType | undefined,
   ) => void;
@@ -80,27 +87,62 @@ export const isPlaylistEditPending = (id: string) => pendingEdits.has(id);
 export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
   const { listEl, items, playlistId, inOwnOrder, reload } = options;
 
-  // A move is being saved or read back, here or from outside the listing;
-  // another one waits for it, so the reload that follows can't overwrite the
-  // newer order.
+  // An edit is saving or being read back, here or from outside the listing;
+  // another move waits, so it never starts from positions the provider no
+  // longer holds.
   const saving = computed(() => {
     const id = playlistId();
-    return id !== undefined && isPlaylistMoveSaving(id);
+    return id !== undefined && isPlaylistEditPending(id);
   });
 
-  // Tells the listing which row now stands for each row it held.
-  const rowsReplaced = (pairs: Map<MediaItemType, MediaItemType>) =>
-    options.onRowsReplaced?.((row) => pairs.get(toRaw(row)));
+  // this listing is reading its rows back, and the playlist changed meanwhile
+  let settling = false;
+  let changedMeanwhile = false;
 
-  // The rows that took the place of `rows` in the listing, by index.
-  const rowsByIndex = (rows: MediaItemType[]) => {
-    const current = toRaw(items.value);
-    return new Map(
-      rows.flatMap((row, index) =>
-        index < current.length ? [[row, current[index]] as const] : [],
-      ),
-    );
+  // Saves a move, if any, and reads the rows back while holding off other
+  // edits; a change reported meanwhile is read back as well.
+  const settle = async function (save?: () => Promise<void>) {
+    if (settling) {
+      changedMeanwhile = true;
+      return;
+    }
+    const id = playlistId();
+    settling = true;
+    if (id !== undefined) hold(pendingEdits, id);
+    try {
+      try {
+        await save?.();
+      } catch {
+        // the api already reports the failure to the user; the provider may
+        // have stored part of the move, so its order is read back all the same
+      }
+      do {
+        changedMeanwhile = false;
+        await reload();
+        options.onReloaded?.();
+      } while (changedMeanwhile);
+    } finally {
+      settling = false;
+      if (id !== undefined) release(pendingEdits, id);
+    }
   };
+
+  // Reads the rows back after the playlist changed.
+  const refresh = () => settle();
+
+  // An edit sent from outside the listing has finished: read the order back
+  // before the listed positions are used again.
+  watch(
+    () => {
+      const id = playlistId();
+      return id !== undefined && outsideEdits.has(id);
+    },
+    (pending, wasPending) => {
+      if (!pending && wasPending) void settle();
+    },
+    // take over the hold before the edit releases it
+    { flush: "sync" },
+  );
 
   const moveRows = async function (indices: number[], toIndex: number) {
     const id = playlistId();
@@ -118,83 +160,58 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     const after = moveListedItems(before, rows, toIndex);
     const order = movedOrder(before.length, rows, toIndex);
     items.value = after;
-    rowsReplaced(
-      new Map(order.map((from, index) => [before[from], after[index]])),
+    const pairs = new Map(
+      order.map((from, index) => [before[from], after[index]]),
     );
-    hold(savingMoves, id);
-    try {
-      if (positions.length === 1) {
-        await api.movePlaylistTrack(id, positions[0]!, toIndex + 1);
-      } else {
-        await api.movePlaylistTracks(id, positions as number[], toIndex + 1);
-      }
-      await reload();
-      // a search or sort changed meanwhile puts other rows in the moved ones' place
-      if (inOwnOrder()) rowsReplaced(rowsByIndex(after));
-      else rowsReplaced(new Map());
-    } catch {
-      // the api already reports the failure to the user; a load that replaced
-      // the rows meanwhile has the order the server holds, and a page loaded
-      // meanwhile was appended to the moved rows
-      if (toRaw(items.value) === after) {
-        items.value = [...before, ...after.slice(before.length)];
-      }
-      // the provider may have stored part of the move, so read its order
-      // back; which rows the selection stood for is then unknown
-      rowsReplaced(new Map());
-      await reload();
-    } finally {
-      release(savingMoves, id);
-    }
+    options.onRowsReplaced?.((row) => pairs.get(toRaw(row)));
+    await settle(() =>
+      positions.length === 1
+        ? api.movePlaylistTrack(id, positions[0]!, toIndex + 1)
+        : api.movePlaylistTracks(id, positions as number[], toIndex + 1),
+    );
   };
-
-  // A move sent from outside the listing has finished: read the order back
-  // before the listed positions are used again.
-  watch(
-    () => {
-      const id = playlistId();
-      return id !== undefined && outsideMoves.has(id);
-    },
-    async (pending, wasPending) => {
-      const id = playlistId();
-      if (pending || !wasPending || id === undefined) return;
-      hold(savingMoves, id);
-      try {
-        await reload();
-      } finally {
-        release(savingMoves, id);
-      }
-    },
-    // hold the guard before anything else can run
-    { flush: "sync" },
-  );
 
   // Grabbing a selected row moves every selected row.
   const movesBlock = (source: number) => {
     const selected = options.selectedIndices();
     return selected.length > 1 && selected.includes(source);
   };
+  const rowsMovedBy = (source: number) =>
+    movesBlock(source)
+      ? [...new Set(options.selectedIndices())].sort((a, b) => a - b)
+      : [source];
 
-  // Move the row at `source` to rest at `finalIndex`, taking the selected rows
-  // along when it is one of them; returns the row it now is, when it moved.
-  const moveFrom = (source: number, finalIndex: number): number | undefined => {
+  // Move `rows` to start at `toIndex`; returns the row the one at `source`
+  // now is, when they moved.
+  const moveFrom = (
+    source: number,
+    rows: number[],
+    toIndex: number,
+  ): number | undefined => {
     const before = toRaw(items.value);
-    let rows = [source];
-    let toIndex = finalIndex;
-    if (movesBlock(source)) {
-      rows = [...new Set(options.selectedIndices())].sort((a, b) => a - b);
-      // the drop slot as an index before the drag lifted the source out
-      const dropBefore = finalIndex > source ? finalIndex + 1 : finalIndex;
-      toIndex = blockStartIndex(rows, dropBefore);
-    }
     void moveRows(rows, toIndex);
     if (toRaw(items.value) === before) return undefined;
     return toIndex + rows.indexOf(source);
   };
 
-  // Move a row one place by keyboard; returns the row it now is, when it moved.
-  const moveBy = (index: number, delta: number) =>
-    moveFrom(index, index + delta);
+  // A drag dropped the row at `source` to rest at `finalIndex`.
+  const dropAt = (source: number, finalIndex: number) => {
+    const rows = rowsMovedBy(source);
+    // the drop slot as an index before the drag lifted the source out
+    const dropBefore = finalIndex > source ? finalIndex + 1 : finalIndex;
+    return moveFrom(source, rows, blockStartIndex(rows, dropBefore));
+  };
+
+  // Move a row, or the block it is in, one place by keyboard; returns the row
+  // it now is, when it moved.
+  const moveBy = (index: number, delta: number) => {
+    const rows = rowsMovedBy(index);
+    // the block steps past the row beyond its edge in that direction
+    const edge =
+      delta > 0 ? rows[rows.length - 1] + 1 + delta : rows[0] + delta;
+    const dropBefore = Math.min(Math.max(edge, 0), items.value.length);
+    return moveFrom(index, rows, blockStartIndex(rows, dropBefore));
+  };
 
   // The rows and playlist a drag started on; a drop on a listing that was
   // replaced meanwhile would move a different track.
@@ -207,7 +224,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     onCommit: (source, finalIndex) => {
       if (toRaw(items.value) !== dragRows) return;
       if (playlistId() !== dragPlaylistId) return;
-      void moveFrom(source, finalIndex);
+      void dropAt(source, finalIndex);
     },
     // a scattered block dropped by its grabbed row still gathers there
     commitsInPlace: (source) => movesBlock(source),
@@ -229,6 +246,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     startDrag,
     moveRows,
     moveBy,
+    refresh,
     saving,
   };
 }

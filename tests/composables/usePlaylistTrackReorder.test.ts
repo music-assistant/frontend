@@ -1,6 +1,6 @@
 import {
-  isPlaylistMoveSaving,
-  sendPlaylistMove,
+  isPlaylistEditPending,
+  sendPlaylistEdit,
   usePlaylistTrackReorder,
 } from "@/composables/usePlaylistTrackReorder";
 import type { MediaItemType } from "@/plugins/api/interfaces";
@@ -47,6 +47,7 @@ function setup(ids: string[], selectedIndices: number[]) {
     selectedIndices.map((index) => items.value[index]),
   );
   const reload = vi.fn(async () => {});
+  const onReloaded = vi.fn();
   let reorder!: ReturnType<typeof usePlaylistTrackReorder>;
   const wrapper = mount(
     defineComponent({
@@ -59,6 +60,7 @@ function setup(ids: string[], selectedIndices: number[]) {
           selectedIndices: () => selectedIndices,
           rowHeight: 56,
           reload,
+          onReloaded,
           onRowsReplaced: (replacement) => {
             selection.value = selection.value.flatMap((item) => {
               const row = replacement(item);
@@ -71,7 +73,7 @@ function setup(ids: string[], selectedIndices: number[]) {
     }),
   );
   mounted.push(wrapper);
-  return { items, selection, reload, reorder };
+  return { items, selection, reload, onReloaded, reorder };
 }
 
 const ids = (items: MediaItemType[]) => items.map((item) => item.item_id);
@@ -101,41 +103,37 @@ describe("usePlaylistTrackReorder", () => {
     apiMock.movePlaylistTracks.mockImplementation(
       () => new Promise<void>((resolve) => (finishSave = resolve)),
     );
-    const { items, selection, reload, reorder } = setup(
+    const { items, selection, onReloaded, reorder } = setup(
       ["A", "B", "C", "D"],
       [1, 3],
     );
-    reload.mockImplementation(async () => {
-      items.value = listing("B", "D", "A", "C");
-    });
 
     const move = reorder.moveRows([1, 3], 0);
     await flushPromises();
 
     expect(ids(selection.value)).toEqual(["B", "D"]);
     expect(positions(selection.value)).toEqual([1, 2]);
+    // the selection holds the moved rows themselves, not copies of them
+    expect(toRaw(selection.value[0])).toBe(toRaw(items.value[0]));
 
     finishSave();
     await move;
-
-    expect(ids(selection.value)).toEqual(["B", "D"]);
-    // the selection holds the reloaded rows themselves, not copies of them
-    expect(toRaw(selection.value[0])).toBe(toRaw(items.value[0]));
-    expect(toRaw(selection.value[1])).toBe(toRaw(items.value[1]));
+    // the listing picks the selected tracks out of the rows read back
+    expect(onReloaded).toHaveBeenCalledOnce();
   });
 
-  it("reads the order back and clears the selection when the move fails", async () => {
+  it("reads the provider's order back when the move fails", async () => {
     apiMock.movePlaylistTracks.mockRejectedValue(new Error("failed"));
-    const { items, selection, reload, reorder } = setup(
-      ["A", "B", "C", "D"],
-      [1, 3],
-    );
+    const { items, reload, reorder } = setup(["A", "B", "C", "D"], [1, 3]);
+    reload.mockImplementation(async () => {
+      items.value = listing("A", "B", "C", "D");
+    });
 
     await reorder.moveRows([1, 3], 0);
 
-    expect(ids(items.value)).toEqual(["A", "B", "C", "D"]);
     expect(reload).toHaveBeenCalledOnce();
-    expect(selection.value).toEqual([]);
+    expect(ids(items.value)).toEqual(["A", "B", "C", "D"]);
+    expect(reorder.saving.value).toBe(false);
   });
 
   it("moves the selected block by keyboard and says where the row went", () => {
@@ -150,6 +148,72 @@ describe("usePlaylistTrackReorder", () => {
     expect(apiMock.movePlaylistTracks).toHaveBeenCalledWith("1", [2, 4], 4);
   });
 
+  it("moves a contiguous block down by keyboard from its first row", async () => {
+    apiMock.movePlaylistTracks.mockResolvedValue();
+    const { items, reorder } = setup(["A", "B", "C", "D"], [1, 2]);
+
+    expect(reorder.moveBy(1, 1)).toBe(2);
+    expect(ids(items.value)).toEqual(["A", "D", "B", "C"]);
+    await flushPromises();
+  });
+
+  it("moves a contiguous block up by keyboard from its last row", async () => {
+    apiMock.movePlaylistTracks.mockResolvedValue();
+    const { items, reorder } = setup(["A", "B", "C", "D"], [1, 2]);
+
+    expect(reorder.moveBy(2, -1)).toBe(1);
+    expect(ids(items.value)).toEqual(["B", "C", "A", "D"]);
+    await flushPromises();
+  });
+
+  it("moves a single row one place by keyboard", () => {
+    apiMock.movePlaylistTrack.mockResolvedValue();
+    const { items, reorder } = setup(["A", "B", "C"], []);
+
+    expect(reorder.moveBy(2, 1)).toBeUndefined();
+    expect(reorder.moveBy(1, 1)).toBe(2);
+    expect(ids(items.value)).toEqual(["A", "C", "B"]);
+    expect(apiMock.movePlaylistTrack).toHaveBeenCalledWith("1", 2, 3);
+  });
+
+  it("holds back other moves until the order is read back", async () => {
+    apiMock.movePlaylistTrack.mockResolvedValue();
+    let finishReload = () => {};
+    const { reload, reorder } = setup(["A", "B", "C"], []);
+    reload.mockImplementation(
+      () => new Promise<void>((resolve) => (finishReload = resolve)),
+    );
+
+    const move = reorder.moveRows([0], 1);
+    await flushPromises();
+
+    expect(reload).toHaveBeenCalledOnce();
+    expect(isPlaylistEditPending("1")).toBe(true);
+    expect(reorder.moveBy(0, 1)).toBeUndefined();
+    finishReload();
+    await move;
+    expect(isPlaylistEditPending("1")).toBe(false);
+  });
+
+  it("reads the order again when the playlist changed during a read back", async () => {
+    apiMock.movePlaylistTrack.mockResolvedValue();
+    let finishReload = () => {};
+    const { reload, reorder } = setup(["A", "B", "C"], []);
+    reload.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishReload = resolve)),
+    );
+
+    const move = reorder.moveRows([0], 1);
+    await flushPromises();
+    // another client changed the playlist after the rows were requested
+    await reorder.refresh();
+    expect(reload).toHaveBeenCalledOnce();
+    finishReload();
+    await move;
+
+    expect(reload).toHaveBeenCalledTimes(2);
+  });
+
   it("holds back other moves of the playlist while one saves", async () => {
     let finishSave = () => {};
     apiMock.movePlaylistTrack.mockImplementation(
@@ -159,18 +223,22 @@ describe("usePlaylistTrackReorder", () => {
 
     const move = reorder.moveRows([0], 2);
 
-    expect(isPlaylistMoveSaving("1")).toBe(true);
+    expect(isPlaylistEditPending("1")).toBe(true);
     expect(reorder.moveBy(0, 1)).toBeUndefined();
     finishSave();
     await move;
-    expect(isPlaylistMoveSaving("1")).toBe(false);
+    expect(isPlaylistEditPending("1")).toBe(false);
   });
 
-  it("reads the order back once a move from the menu is done", async () => {
+  it("reads the order back once an edit from the menu is done", async () => {
     let finishMove = () => {};
+    let finishReload = () => {};
     const { reload, reorder } = setup(["A", "B", "C"], []);
+    reload.mockImplementation(
+      () => new Promise<void>((resolve) => (finishReload = resolve)),
+    );
 
-    const sent = sendPlaylistMove(
+    const sent = sendPlaylistEdit(
       "1",
       () => new Promise<void>((resolve) => (finishMove = resolve)),
     );
@@ -180,6 +248,10 @@ describe("usePlaylistTrackReorder", () => {
     await flushPromises();
 
     expect(reload).toHaveBeenCalledOnce();
+    // the listing's hold took over from the edit's
+    expect(reorder.saving.value).toBe(true);
+    finishReload();
+    await flushPromises();
     expect(reorder.saving.value).toBe(false);
   });
 });
