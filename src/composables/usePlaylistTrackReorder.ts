@@ -77,7 +77,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
 
   // Tells the listing which row now stands for each row it held.
   const rowsReplaced = (pairs: Map<MediaItemType, MediaItemType>) =>
-    options.onRowsReplaced?.((row) => pairs.get(row));
+    options.onRowsReplaced?.((row) => pairs.get(toRaw(row)));
 
   // The rows that took the place of `rows` in the listing, by index.
   const rowsByIndex = (rows: MediaItemType[]) => {
