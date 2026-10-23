@@ -50,6 +50,8 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
       if (toRaw(items.value) === after) {
         items.value = [...before, ...after.slice(before.length)];
       }
+      // the provider may have stored part of the move, so read its order back
+      await reload();
     } finally {
       saving.value = false;
     }

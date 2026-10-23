@@ -121,8 +121,11 @@ export function useItemsListing(
   let pendingRefresh = false;
   let pendingParamsChange = false;
   let retryFromStart = false;
-  // counts the loads started, so a reload can tell a newer one replaced its rows
+  // counts the loads that replace the rows, so a reload can tell a newer one
+  // replaced them meanwhile
   let loadGeneration = 0;
+  // a reload was asked for while a page was loading; it runs once that is in
+  let pendingReload = false;
   // lets async work tell that the listing it is working for is already gone
   let disposed = false;
 
@@ -162,7 +165,6 @@ export function useItemsListing(
       return;
     }
     loading.value = true;
-    loadGeneration++;
     loadingTabId = currentTabId;
     // a reload the user asked for gets a fresh attempt
     if (clear || refresh || filterParamsChanged) loadError.value = false;
@@ -178,6 +180,7 @@ export function useItemsListing(
       allItemsReceived.value = false;
       newContentAvailable.value = false;
     }
+    if (offset === 0) loadGeneration++;
 
     const previousOffset = params.value.offset;
     try {
@@ -230,6 +233,11 @@ export function useItemsListing(
       pendingParamsChange = false;
       await loadData(replayClear, replayRefresh, replayParamsChange);
     }
+
+    if (pendingReload && !loading.value) {
+      pendingReload = false;
+      await reloadLoadedItems();
+    }
   };
 
   const loadNextPage = async function ({
@@ -279,18 +287,30 @@ export function useItemsListing(
   const reloadLoadedItems = async function () {
     const activeTab = props.toolBarTabs?.length ? getActiveTab() : undefined;
     const loadPagedData = activeTab?.loadPagedData ?? props.loadPagedData;
-    if (!loadPagedData || loading.value || disposed) return;
+    if (!loadPagedData || disposed) return;
+    // a page that is loading was read from the old rows
+    if (loading.value) {
+      pendingReload = true;
+      return;
+    }
     const generation = ++loadGeneration;
     // every page loaded so far, so the next page still follows on
-    const limit = params.value.offset + props.limit;
+    const offset = params.value.offset;
+    const limit = offset + props.limit;
     const requestedSort = {
       sortField: params.value.sortField,
       sortDirection: params.value.sortDirection,
     };
     try {
       const items = await loadPagedData({ ...params.value, offset: 0, limit });
-      // a load that started meanwhile has the newer items
+      // a load that replaced the rows meanwhile has the newer items
       if (disposed || generation !== loadGeneration) return;
+      // a page appended meanwhile followed the old rows, so read them all again
+      if (loading.value) {
+        pendingReload = true;
+        return;
+      }
+      if (params.value.offset !== offset) return reloadLoadedItems();
       pagedItems.value = items;
       displayedSort.value = requestedSort;
       allItemsReceived.value = isLastPage(items.length, limit);

@@ -320,6 +320,7 @@
             :is-available="itemIsAvailable(draggedTrack)"
             :parent-item="parentItem"
             aria-hidden="true"
+            inert
           />
         </div>
       </v-infinite-scroll>
@@ -435,6 +436,7 @@ import {
   subscribeOwnFavorites,
 } from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
+import { listsPlaylistFromStart } from "@/helpers/playlist_reorder";
 import {
   GRID_SIZE_DEFAULT,
   gridColumns,
@@ -1310,19 +1312,21 @@ const canDragTracks = computed(
     displayedSort.value.sortField === SortField.POSITION &&
     displayedSort.value.sortDirection !== SortDirection.DESC &&
     !hasActiveFilters.value &&
-    !showCheckboxes.value,
+    !showCheckboxes.value &&
+    listsPlaylistFromStart(pagedItems.value),
 );
 const trackRowColumns = computed<TrackColumn[]>(() =>
   canDragTracks.value ? ["handle", ...trackColumns.value] : trackColumns.value,
 );
 const listRowsEl = ref<HTMLElement | null>(null);
 const infiniteScrollEl = ref<{ reset: () => void } | null>(null);
-// re-reads the rows in place; a listing that grew past its end pages on again
-const reloadListedItems = async () => {
-  const wasComplete = allItemsReceived.value;
-  await reloadLoadedItems();
-  if (wasComplete && !allItemsReceived.value) infiniteScrollEl.value?.reset();
-};
+// a reload that finds the listing grew past its end pages on again; a load
+// that starts over re-creates the scroller instead
+watch(allItemsReceived, (received, wasReceived) => {
+  if (wasReceived && !received && !tempHide.value) {
+    infiniteScrollEl.value?.reset();
+  }
+});
 const {
   startDrag: startTrackDrag,
   move: moveTrack,
@@ -1336,7 +1340,7 @@ const {
   items: pagedItems,
   playlistId: () => props.parentItem?.item_id,
   rowHeight: TRACK_ROW_HEIGHT,
-  reload: reloadListedItems,
+  reload: reloadLoadedItems,
 });
 const draggedTrack = computed(() =>
   draggingIndex.value === null
@@ -2054,14 +2058,13 @@ watch(
 watch(
   () => props.parentItem,
   () => {
-    if (loading.value == true) return;
     if (props.refreshOnParentUpdate) {
       // a reorder that is saving reads its rows back itself
       if (reorderSaving.value) return;
       // re-read the rows in place, so the list neither collapses nor scrolls
-      if (pagedItems.value.length) reloadListedItems();
-      else loadData(true);
-    } else {
+      if (pagedItems.value.length) reloadLoadedItems();
+      else if (!loading.value) loadData(true);
+    } else if (!loading.value) {
       newContentAvailable.value = true;
     }
   },

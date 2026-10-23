@@ -1,7 +1,11 @@
 import { type MediaItemType } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { track } from "../../tests/fixtures/track";
-import { moveListedItem, playlistPosition } from "./playlist_reorder";
+import {
+  listsPlaylistFromStart,
+  moveListedItem,
+  playlistPosition,
+} from "./playlist_reorder";
 
 const listing = (count: number): MediaItemType[] =>
   Array.from({ length: count }, (_, index) =>
@@ -49,5 +53,18 @@ describe("playlistPosition", () => {
 
   it("is undefined for an item without one", () => {
     expect(playlistPosition(track())).toBeUndefined();
+  });
+});
+
+describe("listsPlaylistFromStart", () => {
+  it("holds for the playlist's first rows in order", () => {
+    expect(listsPlaylistFromStart(listing(3))).toBe(true);
+    expect(listsPlaylistFromStart([])).toBe(true);
+  });
+
+  it("fails when rows are left out or out of order", () => {
+    const items = listing(5);
+    expect(listsPlaylistFromStart([items[3], items[4]])).toBe(false);
+    expect(listsPlaylistFromStart([items[1], items[0]])).toBe(false);
   });
 });

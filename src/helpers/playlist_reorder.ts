@@ -7,6 +7,13 @@ export const playlistPosition = (item: MediaItemType): number | undefined =>
     : undefined;
 
 /**
+ * Whether the listing holds the start of the playlist with nothing left out,
+ * so a row's index is its position minus one.
+ */
+export const listsPlaylistFromStart = (items: readonly MediaItemType[]) =>
+  items.every((item, index) => playlistPosition(item) === index + 1);
+
+/**
  * The listing after moving the item at `from` to rest at `to` (0-based). The
  * positions stay with their slots, so every row keeps showing its place in
  * the playlist while the items move between them.

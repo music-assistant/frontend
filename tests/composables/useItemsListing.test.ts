@@ -370,7 +370,7 @@ describe("useItemsListing", () => {
       expect(listing.params.value.offset).toBe(2);
     });
 
-    it("keeps a page that finished loading while the reload was on its way", async () => {
+    it("reads the rows again when a page was appended while it was on its way", async () => {
       const loadPagedData = vi.fn<LoadPagedDataFn>();
       loadPagedData.mockResolvedValueOnce(tracks(2));
       const listing = setupItemsListing({ limit: 2, loadPagedData });
@@ -382,12 +382,39 @@ describe("useItemsListing", () => {
       const reload = listing.reloadLoadedItems();
       loadPagedData.mockResolvedValueOnce(tracks(2, "page2-"));
       await listing.loadNextPage({ done: () => {} });
+      loadPagedData.mockResolvedValueOnce(tracks(4, "new-"));
 
       finishReload(tracks(2, "stale-"));
       await reload;
 
-      expect(listing.pagedItems.value).toHaveLength(4);
-      expect(listing.pagedItems.value[0].item_id).toBe("t0");
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 0, limit: 4 }),
+      );
+      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual(
+        tracks(4, "new-").map((item) => item.item_id),
+      );
+    });
+
+    it("waits for a page that is loading before it reads the rows", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValueOnce(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      let finishPage: (items: Track[]) => void = () => {};
+      loadPagedData.mockImplementationOnce(
+        () => new Promise((resolve) => (finishPage = resolve)),
+      );
+      const page = listing.loadNextPage({ done: () => {} });
+      await listing.reloadLoadedItems();
+      loadPagedData.mockResolvedValueOnce(tracks(4, "new-"));
+
+      finishPage(tracks(2, "page2-"));
+      await page;
+
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 0, limit: 4 }),
+      );
+      expect(listing.pagedItems.value[0].item_id).toBe("new-0");
     });
 
     it("keeps the rows of a newer first page that finished before it", async () => {
