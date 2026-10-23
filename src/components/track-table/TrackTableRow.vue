@@ -15,8 +15,10 @@
           class="flex h-10 w-5 cursor-grab touch-none items-center justify-center rounded-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 active:cursor-grabbing"
           :aria-label="reorderLabel"
           :title="reorderLabel"
+          :data-reorder-index="index"
           @pointerdown.stop.prevent="emit('dragStart', $event)"
           @touchstart.stop
+          @contextmenu.stop.prevent
           @keydown.up.prevent="emit('moveBy', -1)"
           @keydown.down.prevent="emit('moveBy', 1)"
           @click.stop

@@ -62,6 +62,13 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
   let dragRows: MediaItemType[] | undefined;
   let dragPlaylistId: string | undefined;
 
+  // Move a row one place by keyboard; returns the row it now is, when it moved.
+  const moveBy = (index: number, delta: number): number | undefined => {
+    const before = toRaw(items.value);
+    void move(index, index + delta);
+    return toRaw(items.value) === before ? undefined : index + delta;
+  };
+
   const drag = useListDragReorder({
     listEl,
     count: () => items.value.length,
@@ -87,6 +94,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     ...drag,
     startDrag,
     move,
+    moveBy,
     saving,
   };
 }

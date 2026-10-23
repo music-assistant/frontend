@@ -55,6 +55,13 @@ export function useListDragReorder(options: ListDragReorderOptions) {
   let autoScrollRaf = 0;
   // Lets cleanup detach every drag listener at once.
   let dragAbort: AbortController | null = null;
+  // Where the pointer went down, and whether it has left that spot since; the
+  // click that ends a drag which moved is not a click on the row.
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragMoved = false;
+  // Pointer travel (px) after which a press counts as a drag.
+  const CLICK_SLOP = 4;
 
   const findScrollParent = (el: HTMLElement | null): HTMLElement | null => {
     let node = el?.parentElement ?? null;
@@ -190,6 +197,12 @@ export function useListDragReorder(options: ListDragReorderOptions) {
   const onDragPointerMove = (evt: PointerEvent) => {
     if (dragSourceIndex.value == null) return;
     evt.preventDefault();
+    if (
+      Math.hypot(evt.clientX - dragStartX, evt.clientY - dragStartY) >
+      CLICK_SLOP
+    ) {
+      dragMoved = true;
+    }
     updateAutoScroll(evt.clientY);
     updateDragPositions(evt.clientY);
   };
@@ -207,9 +220,23 @@ export function useListDragReorder(options: ListDragReorderOptions) {
     dragGrabOffset = 0;
   };
 
+  // Swallow the click the browser sends after the pointer is released; it is
+  // sent in the same task, so the listener goes again right after.
+  const suppressNextClick = () => {
+    const swallow = (evt: MouseEvent) => {
+      evt.stopPropagation();
+      evt.preventDefault();
+    };
+    window.addEventListener("click", swallow, { capture: true, once: true });
+    setTimeout(() =>
+      window.removeEventListener("click", swallow, { capture: true }),
+    );
+  };
+
   const finishDrag = (commit: boolean) => {
     const source = dragSourceIndex.value;
     const drop = dragDropIndex.value;
+    if (dragMoved) suppressNextClick();
     cleanupDrag();
     if (!commit || source == null || drop == null) return;
     // Removing the source first shifts everything after it down by one, so the
@@ -238,6 +265,9 @@ export function useListDragReorder(options: ListDragReorderOptions) {
     dragSourceIndex.value = index;
     dragDropIndex.value = index;
     dragPointerY = evt.clientY;
+    dragStartX = evt.clientX;
+    dragStartY = evt.clientY;
+    dragMoved = false;
     scrollParent = findScrollParent(el);
     autoScrollSpeed = 0;
     onDragStart?.();

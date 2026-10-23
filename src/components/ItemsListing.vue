@@ -282,7 +282,7 @@
                 :sort-direction="displayedSort.sortDirection"
                 @select="onSelect"
                 @drag-start="(evt: PointerEvent) => startTrackDrag(evt, index)"
-                @move-by="(delta: number) => moveTrack(index, index + delta)"
+                @move-by="(delta: number) => moveTrackBy(index, delta)"
               />
               <ListviewItem
                 v-else
@@ -1329,7 +1329,7 @@ watch(allItemsReceived, (received, wasReceived) => {
 });
 const {
   startDrag: startTrackDrag,
-  move: moveTrack,
+  moveBy: moveTrackRowBy,
   draggingIndex,
   isDragging,
   ghostY,
@@ -1342,6 +1342,29 @@ const {
   rowHeight: TRACK_ROW_HEIGHT,
   reload: reloadLoadedItems,
 });
+// the rows are keyed by index, so after a keyboard move the focus follows the
+// track to the row it moved to
+const moveTrackBy = (index: number, delta: number) => {
+  const movedTo = moveTrackRowBy(index, delta);
+  if (movedTo === undefined) return;
+  void nextTick(() =>
+    listRowsEl.value
+      ?.querySelector<HTMLElement>(`[data-reorder-index="${movedTo}"]`)
+      ?.focus(),
+  );
+};
+// rows read again are new objects, so the selection moves to the rows that
+// hold the same items
+const reselectReloadedRows = () => {
+  if (!selectedItems.value.length) return;
+  const key = (item: MediaItemTypeOrItemMapping) =>
+    `${item.uri}#${"position" in item ? item.position : ""}`;
+  const rows = new Map(pagedItems.value.map((row) => [key(row), row]));
+  selectedItems.value = selectedItems.value.flatMap((item) => {
+    const row = rows.get(key(item));
+    return row ? [row] : [];
+  });
+};
 const draggedTrack = computed(() =>
   draggingIndex.value === null
     ? undefined
@@ -2062,8 +2085,9 @@ watch(
       // a reorder that is saving reads its rows back itself
       if (reorderSaving.value) return;
       // re-read the rows in place, so the list neither collapses nor scrolls
-      if (pagedItems.value.length) reloadLoadedItems();
-      else if (!loading.value) loadData(true);
+      if (pagedItems.value.length) {
+        void reloadLoadedItems().then(reselectReloadedRows);
+      } else if (!loading.value) loadData(true);
     } else if (!loading.value) {
       newContentAvailable.value = true;
     }

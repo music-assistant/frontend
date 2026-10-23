@@ -1100,7 +1100,7 @@
         "columns": "Columns",
         "choose_columns": "Choose columns",
         "hidden_at_width": "Hidden at this width",
-        "reorder_track": "Drag to reorder {0}"
+        "reorder_track": "Drag or press the arrow keys to move {0}"
     },
     "tracks": "Tracks",
     "search_in": "Search in {0}...",

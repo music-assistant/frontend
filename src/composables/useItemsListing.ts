@@ -321,6 +321,7 @@ export function useItemsListing(
       displayedSort.value = requestedSort;
       allItemsReceived.value = isLastPage(items.length, limit);
       newContentAvailable.value = false;
+      loadError.value = false;
     } catch {
       // the api already reports the failure to the user
     }
