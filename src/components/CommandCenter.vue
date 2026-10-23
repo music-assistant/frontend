@@ -591,8 +591,16 @@ const onEnterKey = function (event: KeyboardEvent) {
   runSearch();
 };
 
+// Media types whose items are never collapsed by name: same-named playlists
+// are different lists, and same-named artists are different people (a real
+// library match is already removed by provider mapping in the search merge).
+const NAME_DEDUPE_EXEMPT_TYPES = new Set<MediaType>([
+  MediaType.PLAYLIST,
+  MediaType.ARTIST,
+]);
+
 const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
-  if (!item.name || item.media_type === MediaType.PLAYLIST) return null;
+  if (!item.name || NAME_DEDUPE_EXEMPT_TYPES.has(item.media_type)) return null;
   const artist =
     "artists" in item ? item.artists[0]?.name.toLowerCase() || "" : "";
   const version = (item.version ?? "").toLowerCase();

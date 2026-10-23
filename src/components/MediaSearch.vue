@@ -62,6 +62,12 @@
             <strong class="truncate">{{ item.name }}</strong>
             <small class="truncate">{{ itemSubtitle(item) }}</small>
           </span>
+          <div class="flex shrink-0 items-center justify-center">
+            <ProviderIcon
+              :domain="getListItemProviderIconDomain(item)"
+              :size="18"
+            />
+          </div>
         </button>
         <p v-if="loading" class="media-search-note">
           {{ $t("searching") }}
@@ -88,6 +94,7 @@
 <script setup lang="ts">
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
 import { InputGroupButton } from "@/components/ui/input-group";
 import {
   Popover,
@@ -101,6 +108,7 @@ import {
   useProgressiveSearch,
 } from "@/composables/useProgressiveSearch";
 import { getArtistsString } from "@/helpers/utils";
+import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
   MediaType,
   type MediaItemTypeOrItemMapping,
@@ -224,9 +232,15 @@ function onPointerDownOutside(event: CustomEvent<{ originalEvent: Event }>) {
 // multiple providers reads as a plain duplicate: collapse by name (and
 // artist), keeping the first occurrence - the library one, as the engine
 // merges library results first. Same-named playlists are genuinely
-// different lists and are never collapsed.
+// different lists and same-named artists are different people, so neither
+// is ever collapsed.
+const NAME_DEDUPE_EXEMPT_TYPES = new Set<MediaType>([
+  MediaType.PLAYLIST,
+  MediaType.ARTIST,
+]);
+
 const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
-  if (!item.name || item.media_type === MediaType.PLAYLIST) return null;
+  if (!item.name || NAME_DEDUPE_EXEMPT_TYPES.has(item.media_type)) return null;
   const artist =
     "artists" in item ? item.artists[0]?.name.toLowerCase() || "" : "";
   return `${item.media_type}:${item.name.toLowerCase()}:${artist}`;
@@ -322,7 +336,7 @@ onBeforeUnmount(() => {
 
 .media-search-result {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   width: 100%;
