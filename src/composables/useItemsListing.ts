@@ -124,13 +124,23 @@ export function useItemsListing(
   // counts the loads that replace the rows, so a reload can tell a newer one
   // replaced them meanwhile
   let loadGeneration = 0;
-  // a reload was asked for while a page was loading; it runs once that is in
-  let pendingReload = false;
+  // a reload was asked for while a page was loading; it runs once that is in,
+  // and the reloads that asked for it finish with it
+  let pendingReload: { done: Promise<void>; finish: () => void } | undefined;
+  const queueReload = () => {
+    if (!pendingReload) {
+      let finish = () => {};
+      const done = new Promise<void>((resolve) => (finish = resolve));
+      pendingReload = { done, finish };
+    }
+    return pendingReload.done;
+  };
   // lets async work tell that the listing it is working for is already gone
   let disposed = false;
 
   onScopeDispose(() => {
     disposed = true;
+    pendingReload?.finish();
   });
 
   const isDisposed = () => disposed;
@@ -235,8 +245,10 @@ export function useItemsListing(
     }
 
     if (pendingReload && !loading.value) {
-      pendingReload = false;
+      const { finish } = pendingReload;
+      pendingReload = undefined;
       await reloadLoadedItems();
+      finish();
     }
   };
 
@@ -289,10 +301,7 @@ export function useItemsListing(
     const loadPagedData = activeTab?.loadPagedData ?? props.loadPagedData;
     if (!loadPagedData || disposed) return;
     // a page that is loading was read from the old rows
-    if (loading.value) {
-      pendingReload = true;
-      return;
-    }
+    if (loading.value) return queueReload();
     const generation = ++loadGeneration;
     // every page loaded so far, so the next page still follows on
     const offset = params.value.offset;
@@ -306,10 +315,7 @@ export function useItemsListing(
       // a load that replaced the rows meanwhile has the newer items
       if (disposed || generation !== loadGeneration) return;
       // a page appended meanwhile followed the old rows, so read them all again
-      if (loading.value) {
-        pendingReload = true;
-        return;
-      }
+      if (loading.value) return queueReload();
       if (params.value.offset !== offset) return reloadLoadedItems();
       pagedItems.value = items;
       displayedSort.value = requestedSort;

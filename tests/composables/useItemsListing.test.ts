@@ -11,6 +11,7 @@ import {
   type SortOptionInfo,
   type Track,
 } from "@/plugins/api/interfaces";
+import { flushPromises } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { effectScope, type EffectScope } from "vue";
 import { track } from "../fixtures/track";
@@ -405,16 +406,35 @@ describe("useItemsListing", () => {
         () => new Promise((resolve) => (finishPage = resolve)),
       );
       const page = listing.loadNextPage({ done: () => {} });
-      await listing.reloadLoadedItems();
+      let reloaded = false;
+      const reload = listing.reloadLoadedItems().then(() => (reloaded = true));
       loadPagedData.mockResolvedValueOnce(tracks(4, "new-"));
+      await flushPromises();
+      // the reload is not done before it has read the rows
+      expect(reloaded).toBe(false);
 
       finishPage(tracks(2, "page2-"));
       await page;
+      await reload;
 
       expect(loadPagedData).toHaveBeenLastCalledWith(
         expect.objectContaining({ offset: 0, limit: 4 }),
       );
       expect(listing.pagedItems.value[0].item_id).toBe("new-0");
+    });
+
+    it("finishes a waiting reload when the listing goes away", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValueOnce(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      loadPagedData.mockImplementationOnce(() => new Promise(() => {}));
+      void listing.loadNextPage({ done: () => {} });
+      const reload = listing.reloadLoadedItems();
+
+      listing.scope.stop();
+
+      await expect(reload).resolves.toBeUndefined();
     });
 
     it("keeps the rows of a newer first page that finished before it", async () => {
