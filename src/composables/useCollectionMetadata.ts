@@ -12,10 +12,10 @@ import { onScopeDispose } from "vue";
 import { toast } from "vue-sonner";
 
 /**
- * Keep the played state of the listed collections current when one of their
- * audiobooks changes; the server computes it over all items of a collection.
+ * Keep the metadata of the listed collections current when the played state
+ * of one of their audiobooks changes; the server computes it over all items.
  */
-export function useCollectionStatistics(items: () => MediaItemType[]) {
+export function useCollectionMetadata(items: () => MediaItemType[]) {
   const unsubscribe = api.subscribe(
     EventType.PLAYLOG_UPDATED,
     (evt: EventMessage) => {
@@ -32,20 +32,18 @@ export function useCollectionStatistics(items: () => MediaItemType[]) {
           continue;
         // one book in progress settles it; playback reports this every 30 seconds
         if (!update.fully_played && update.seconds_played > 0) {
-          Object.assign(collection, { fully_played: false, in_progress: true });
+          Object.assign(collection.metadata, {
+            fully_played: false,
+            in_progress: true,
+          });
           continue;
         }
         // a finished or reset book depends on the others: a single item suffices,
-        // the statistics cover all of them
+        // the metadata covers all of them
         api
           .getAudiobookCollection(collection.item_id, undefined, 1)
-          .then(({ total_items, duration, fully_played, in_progress }) => {
-            Object.assign(collection, {
-              total_items,
-              duration,
-              fully_played,
-              in_progress,
-            });
+          .then(({ metadata }) => {
+            collection.metadata = metadata;
           })
           .catch(() => toast.error($t("collection_refresh_failed")));
       }

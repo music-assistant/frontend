@@ -1,4 +1,4 @@
-import { useCollectionStatistics } from "@/composables/useCollectionStatistics";
+import { useCollectionMetadata } from "@/composables/useCollectionMetadata";
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
   EventType,
@@ -39,10 +39,7 @@ function collection(itemId: string): MediaCollection<Audiobook> {
     media_type: MediaType.COLLECTION,
     item_id: itemId,
     items: [{ uri: BOOK_URI } as Audiobook],
-    total_items: 2,
-    duration: 100,
-    fully_played: false,
-    in_progress: false,
+    metadata: { total_items: 2, fully_played: false, in_progress: false },
   }) as MediaCollection<Audiobook>;
 }
 
@@ -64,10 +61,7 @@ let scope: EffectScope;
 beforeEach(() => {
   // what the server computes once the last book is finished
   getAudiobookCollection.mockReset().mockResolvedValue({
-    total_items: 2,
-    duration: 100,
-    fully_played: true,
-    in_progress: false,
+    metadata: { total_items: 2, fully_played: true, in_progress: false },
   } as MediaCollection<Audiobook>);
 });
 
@@ -76,7 +70,7 @@ afterEach(() => {
   expect(listeners).toHaveLength(0);
 });
 
-describe("useCollectionStatistics", () => {
+describe("useCollectionMetadata", () => {
   it.each([
     // settled without the server, which would report the collection finished
     ["in progress", { seconds_played: 60 }, false, true],
@@ -84,14 +78,14 @@ describe("useCollectionStatistics", () => {
   ])(
     "updates every collection holding a book played %s",
     async (_, update, fully_played, in_progress) => {
-      const items: MediaItemType[] = [collection("a"), collection("b")];
+      const items = [collection("a"), collection("b")];
       scope = effectScope();
-      scope.run(() => useCollectionStatistics(() => items));
+      scope.run(() => useCollectionMetadata(() => items));
 
       playlogUpdate(update);
       await flushPromises();
 
-      expect(items).toEqual([
+      expect(items.map((item) => item.metadata)).toEqual([
         expect.objectContaining({ fully_played, in_progress }),
         expect.objectContaining({ fully_played, in_progress }),
       ]);
@@ -103,13 +97,13 @@ describe("useCollectionStatistics", () => {
     ["a book outside the collection", { uri: "library://audiobook/2" }],
     ["a podcast episode", { media_type: MediaType.PODCAST_EPISODE }],
   ])("ignores %s", async (_, update) => {
-    const items: MediaItemType[] = [collection("a")];
+    const items = [collection("a")];
     scope = effectScope();
-    scope.run(() => useCollectionStatistics(() => items));
+    scope.run(() => useCollectionMetadata(() => items));
 
     playlogUpdate(update);
     await flushPromises();
 
-    expect("in_progress" in items[0] && items[0].in_progress).toBe(false);
+    expect(items[0].metadata.in_progress).toBe(false);
   });
 });

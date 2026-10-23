@@ -20,8 +20,7 @@ const collection = (
   ({
     media_type: MediaType.COLLECTION,
     items: [] as Audiobook[],
-    fully_played,
-    in_progress,
+    metadata: { fully_played, in_progress },
   }) as MediaCollection<Audiobook>;
 
 describe("getPlayedState", () => {

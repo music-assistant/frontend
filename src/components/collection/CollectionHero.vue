@@ -89,14 +89,10 @@ const STACK_OFFSET_RATIO = 0.095;
 
 const coverSize = computed(() => (isPhoneSizedScreen() ? 132 : 200));
 
-// a collection has no artwork of its own, so the first book cover is blurred
-// behind the hero
-const backdrop = computed(() => {
-  const book = props.item?.items.find((item) =>
-    getImageThumbForItem(item, ImageType.THUMB),
-  );
-  return getImageThumbForItem(book, ImageType.THUMB);
-});
+// the first cover of the stack is blurred behind the hero
+const backdrop = computed(() =>
+  getImageThumbForItem(props.item, ImageType.THUMB),
+);
 
 const authors = computed(() =>
   props.item
@@ -113,11 +109,11 @@ const narrators = computed(() =>
 // "Collection · 5 audiobooks · 42 h 10 min", without whatever is unknown
 const facts = computed(() => {
   const parts = [$t("collection")];
-  const count = props.item?.total_items;
+  const count = props.item?.metadata.total_items;
   if (count) {
     parts.push($t("n_audiobooks", count, { named: { count } }));
   }
-  const duration = props.item?.duration;
+  const duration = props.item?.metadata.duration;
   if (duration) parts.push(formatTotalDuration(duration));
   return parts;
 });

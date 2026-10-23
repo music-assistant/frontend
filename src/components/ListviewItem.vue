@@ -277,7 +277,7 @@
       <!-- only used for podcast-episodes, audiobooks and collections; the slot
       stays when unplayed so the durations line up across rows -->
       <span
-        v-if="'fully_played' in item"
+        v-if="'fully_played' in item || item.media_type == MediaType.COLLECTION"
         class="listitem-played-state"
         :role="playedStateLabel ? 'img' : undefined"
         :title="playedStateLabel"

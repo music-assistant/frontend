@@ -1,4 +1,8 @@
-import type { ItemMapping, MediaItemType } from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  type ItemMapping,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 
 export type PlayedState = "fully_played" | "in_progress";
 
@@ -9,8 +13,11 @@ export type PlayedState = "fully_played" | "in_progress";
 export const getPlayedState = function (
   item: MediaItemType | ItemMapping,
 ): PlayedState | undefined {
+  if (item.media_type === MediaType.COLLECTION && "items" in item) {
+    if (item.metadata.fully_played) return "fully_played";
+    return item.metadata.in_progress ? "in_progress" : undefined;
+  }
   if ("fully_played" in item && item.fully_played) return "fully_played";
-  if ("in_progress" in item && item.in_progress) return "in_progress";
   if ("resume_position_ms" in item && item.resume_position_ms)
     return "in_progress";
   return undefined;
