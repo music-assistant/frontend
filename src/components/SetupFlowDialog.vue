@@ -837,4 +837,3 @@ function isDisabled(entry: ConfigEntry): boolean {
   return isEntryDisabled(entry, formEntries.value);
 }
 </script>
-
