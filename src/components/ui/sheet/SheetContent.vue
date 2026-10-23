@@ -10,12 +10,13 @@ import {
   DialogPortal,
   useForwardPropsEmits,
 } from "reka-ui";
-import type { HTMLAttributes } from "vue";
+import type { HTMLAttributes, StyleValue } from "vue";
 import SheetOverlay from "./SheetOverlay.vue";
 
 interface SheetContentProps extends DialogContentProps {
   class?: HTMLAttributes["class"];
   overlayClass?: HTMLAttributes["class"];
+  overlayStyle?: StyleValue;
   showClose?: boolean;
   side?: "top" | "right" | "bottom" | "left";
 }
@@ -28,6 +29,7 @@ const props = withDefaults(defineProps<SheetContentProps>(), {
   side: "right",
   class: undefined,
   overlayClass: undefined,
+  overlayStyle: undefined,
   showClose: true,
 });
 const emits = defineEmits<DialogContentEmits>();
@@ -36,6 +38,7 @@ const delegatedProps = reactiveOmit(
   props,
   "class",
   "overlayClass",
+  "overlayStyle",
   "showClose",
   "side",
 );
@@ -45,7 +48,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
 
 <template>
   <DialogPortal>
-    <SheetOverlay :class="overlayClass" />
+    <SheetOverlay :class="overlayClass" :style="overlayStyle" />
     <DialogContent
       data-slot="sheet-content"
       :class="

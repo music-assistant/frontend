@@ -15,6 +15,7 @@
             'content-section',
             { 'content-section--mobile': store.mobileLayout },
             { 'content-section--frameless': store.frameless },
+            { 'content-section--sidebar-editing': store.navMenuEditMode },
             { 'party-view-active': route.meta.partyView === true },
           ]"
         >
@@ -37,6 +38,7 @@
           <player-rename-dialog />
           <item-context-menu />
           <command-center />
+          <KeyboardShortcutsDialog />
           <!-- kept last so it portals after the other dialogs, which share
                its z-index, and a confirmation asked from one of them (e.g.
                the search popup) appears on top -->
@@ -62,6 +64,7 @@ import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import AppSidebar from "@/components/navigation/AppSidebar.vue";
+import KeyboardShortcutsDialog from "@/components/navigation/KeyboardShortcutsDialog.vue";
 import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
 import PlayerGroupPlaybackDialog from "@/components/PlayerGroupPlaybackDialog.vue";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
@@ -144,5 +147,11 @@ onMounted(() => {
 
 .content-section--frameless {
   padding-bottom: 0;
+}
+
+.content-section--sidebar-editing {
+  opacity: 0.058;
+  pointer-events: none;
+  transition: opacity 180ms ease-out;
 }
 </style>

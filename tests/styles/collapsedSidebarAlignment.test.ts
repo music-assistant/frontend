@@ -114,6 +114,47 @@ describe("collapsed sidebar alignment", () => {
     expect(menuButton("").matches(anchor.selector)).toBe(false);
   });
 
+  it("enables the ripple explicitly for main navigation items", () => {
+    expect(navMainSource).toContain(':ripple="true"');
+    expect(navShortcutsSource).toContain(':ripple="true"');
+  });
+
+  it("removes the search menu item on mobile", () => {
+    expect(appSidebarSource).toMatch(
+      /item\.group === "explore"[\s\S]*!isMobile\.value \|\| item\.id !== "search"/,
+    );
+  });
+
+  it("keeps the section menu mounted while switching customization modes", () => {
+    expect(navMainSource).toContain('ref="listEl"');
+    expect(navMainSource).toContain('class="relative"');
+    expect(navMainSource).toContain("<SidebarMenu>");
+    expect(navMainSource).toContain('<template v-if="editMode">');
+    expect(navMainSource).toContain("<template v-else>");
+    expect(navMainSource).toContain("sidebar-customization-surface--edit");
+    expect(navMainSource).toContain("sidebar-customization-surface--normal");
+    expect(navShortcutsSource).toContain("sidebar-customization-surface--edit");
+    expect(navShortcutsSource).toContain(
+      "sidebar-customization-surface--normal",
+    );
+    expect(navMainSource).not.toContain("sidebar-mode");
+  });
+
+  it("uses a dashed outline for editable menu items", () => {
+    expect(navMainSource).toContain(
+      "border border-dashed border-sidebar-border",
+    );
+  });
+
+  it("keeps edit-mode item icons in the normal navigation wrapper", () => {
+    expect(navMainSource).toContain(
+      "nav-edit-item flex min-w-0 flex-1 items-center gap-4",
+    );
+    expect(navMainSource).toContain(
+      'class="h-6 w-6 shrink-0 flex items-center justify-center"',
+    );
+  });
+
   it("anchors off the rail width at the utilities' importance", () => {
     const anchor = cssRule(
       appSource,

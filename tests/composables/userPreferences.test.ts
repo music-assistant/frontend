@@ -164,6 +164,28 @@ afterEach(() => {
 });
 
 describe("writing preferences", () => {
+  it("merges simultaneous changes to the same listing", async () => {
+    const { setItemsListingPreference } = useUserPreferences();
+    await Promise.all([
+      setItemsListingPreference(
+        "librarygenres",
+        "genres",
+        "favoriteFilter",
+        true,
+      ),
+      setItemsListingPreference(
+        "librarygenres",
+        "genres",
+        "hideEmptyFilter",
+        true,
+      ),
+    ]);
+    expect(readPrefs("librarygenres", "genres")).toEqual({
+      favoriteFilter: true,
+      hideEmptyFilter: true,
+    });
+  });
+
   beforeEach(() => {
     mockUpdateUser.mockReset();
     mockUpdateUser.mockResolvedValue(user());

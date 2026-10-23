@@ -2,25 +2,16 @@ import NavUser from "@/components/navigation/NavUser.vue";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const {
-  buttonHost,
-  logout,
-  routerPush,
-  setOpenMobile,
-  slotHost,
-  startTour,
-  tourState,
-} = vi.hoisted(() => ({
-  // the menu's shell is reka's to test; the items only have to be clickable
-  buttonHost: { template: "<button><slot /></button>" },
-  slotHost: { template: "<div><slot /></div>" },
-  logout: vi.fn(),
-  routerPush: vi.fn(),
-  setOpenMobile: vi.fn(),
-  startTour: vi.fn(),
-  // replaced with a ref by the tour mock factory below
-  tourState: { active: { value: false } as { value: boolean } },
-}));
+const { buttonHost, logout, routerPush, setOpenMobile, slotHost } = vi.hoisted(
+  () => ({
+    // the menu's shell is reka's to test; the items only have to be clickable
+    buttonHost: { template: "<button><slot /></button>" },
+    slotHost: { template: "<div><slot /></div>" },
+    logout: vi.fn(),
+    routerPush: vi.fn(),
+    setOpenMobile: vi.fn(),
+  }),
+);
 
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
@@ -35,13 +26,45 @@ vi.mock("@/plugins/store", async () => {
 
 vi.mock("@/plugins/auth", () => ({ authManager: { logout } }));
 
-vi.mock("vue-router", () => ({ useRouter: () => ({ push: routerPush }) }));
+vi.mock("@/plugins/api", () => ({
+  api: {
+    serverInfo: { value: null },
+    transportState: { value: "initialized" },
+  },
+}));
 
-vi.mock("@/composables/useTour", async () => {
-  const { ref } = await vi.importActual<typeof import("vue")>("vue");
-  tourState.active = ref(false);
-  return { useTour: () => ({ active: tourState.active, start: startTour }) };
+vi.mock("vue-i18n", () => ({
+  useI18n: () => ({ t: (key: string) => key }),
+}));
+
+vi.mock("@/composables/useScrobblingStatus", async () => {
+  const { ref } = await import("vue");
+  return {
+    useScrobblingStatus: () => ({
+      status: ref({ configured: false, providerNames: [] }),
+      providerSummary: ref(""),
+    }),
+  };
 });
+
+vi.mock("@/composables/useAccountSwitcher", () => ({
+  useAccountSwitcher: () => ({
+    availableAccounts: [],
+    loadAccounts: vi.fn(),
+    openAccountSwitcher: vi.fn(),
+    selectAccount: vi.fn(),
+  }),
+}));
+
+vi.mock("@/composables/userPreferences", () => ({
+  runAfterPreferenceWrites: (task: () => Promise<unknown>) => task(),
+}));
+
+vi.mock("@/components/profile/ProfileAvatarEditor.vue", () => ({
+  default: { template: "<div />" },
+}));
+
+vi.mock("vue-router", () => ({ useRouter: () => ({ push: routerPush }) }));
 
 vi.mock("@/components/ui/sidebar", () => ({
   SidebarMenu: slotHost,
@@ -61,6 +84,9 @@ vi.mock("@/components/ui/dropdown-menu", () => ({
   DropdownMenuItem: buttonHost,
   DropdownMenuLabel: slotHost,
   DropdownMenuSeparator: { template: "<hr />" },
+  DropdownMenuSub: slotHost,
+  DropdownMenuSubTrigger: slotHost,
+  DropdownMenuSubContent: slotHost,
 }));
 
 vi.mock("@/components/ui/avatar", () => ({
@@ -75,18 +101,7 @@ beforeEach(() => {
   logout.mockReset();
   routerPush.mockReset();
   setOpenMobile.mockReset();
-  startTour.mockReset();
-  tourState.active.value = false;
 });
-
-/** What the menu does with focus as it closes. */
-function closeMenu(wrapper: ReturnType<typeof mountMenu>) {
-  const closing = new Event("closeAutoFocus", { cancelable: true });
-  wrapper
-    .findComponent({ name: "DropdownMenuContent" })
-    .vm.$emit("closeAutoFocus", closing);
-  return closing.defaultPrevented;
-}
 
 function mountMenu() {
   return mount(NavUser, {
@@ -95,30 +110,6 @@ function mountMenu() {
 }
 
 describe("NavUser", () => {
-  it("starts the tour from the menu, out from under the sidebar sheet", async () => {
-    const wrapper = mountMenu();
-
-    await wrapper.find("[data-testid=nav-user-tour]").trigger("click");
-
-    // the sheet would cover the very things the tour points at
-    expect(setOpenMobile).toHaveBeenCalledWith(false);
-    expect(startTour).toHaveBeenCalledTimes(1);
-  });
-
-  it("leaves focus with the tour as it closes behind one", () => {
-    const wrapper = mountMenu();
-    tourState.active.value = true;
-
-    // the tour's card holds focus by then, and the menu is not to take it back
-    expect(closeMenu(wrapper)).toBe(true);
-  });
-
-  it("hands focus back as usual when it closes for anything else", () => {
-    const wrapper = mountMenu();
-
-    expect(closeMenu(wrapper)).toBe(false);
-  });
-
   it("is the tour's stop for the profile", () => {
     const wrapper = mountMenu();
 

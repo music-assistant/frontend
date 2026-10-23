@@ -31,7 +31,7 @@
       :arrow-padding="ARROW_PADDING"
       :aria-label="$t(`tour.stops.${current}.title`)"
       :aria-describedby="descriptionId"
-      class="z-[100003] flex w-80 max-w-[calc(100vw-1.5rem)] flex-col gap-3"
+      class="z-[100006] flex w-80 max-w-[calc(100vw-1.5rem)] flex-col gap-3"
       data-testid="tour-card"
       @interact-outside.prevent
       @open-auto-focus="focusNext"
@@ -353,7 +353,7 @@ onBeforeUnmount(() => {
    sliding shut as the first stop appears */
 .tour-spotlight {
   position: fixed;
-  z-index: 100002;
+  z-index: 100005;
   border-radius: 10px;
   /* the shadow is the scrim: it reaches past every edge of the screen, so the
      stop is the one thing left undimmed */

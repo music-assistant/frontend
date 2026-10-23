@@ -2,8 +2,9 @@
 import { cn } from "@/lib/utils";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
-import { defaultDocument, useEventListener, useVModel } from "@vueuse/core";
+import { defaultDocument, useVModel } from "@vueuse/core";
 import { TooltipProvider } from "reka-ui";
+import { useHotkey, type RegisterableHotkey } from "@tanstack/vue-hotkeys";
 import type { HTMLAttributes, Ref } from "vue";
 import { computed, ref } from "vue";
 import {
@@ -67,19 +68,18 @@ function toggleSidebar() {
     : setOpen(!open.value);
 }
 
-useEventListener("keydown", (event: KeyboardEvent) => {
-  if (
-    event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
-    (event.metaKey || event.ctrlKey)
-  ) {
-    event.preventDefault();
-    toggleSidebar();
-  }
-});
+useHotkey(
+  `Mod+${SIDEBAR_KEYBOARD_SHORTCUT.toUpperCase()}` as RegisterableHotkey,
+  toggleSidebar,
+);
 
-// We add a state so that we can do data-state="expanded" or "collapsed".
-// This makes it easier to style the sidebar with Tailwind classes.
-const state = computed(() => (open.value ? "expanded" : "collapsed"));
+// The persisted `open` value belongs to the desktop sidebar. A desktop
+// collapsed state must not leak into the mobile sheet, where the navigation
+// is always full-width and labelled. Keep `open` unchanged so returning to a
+// desktop viewport restores the user's collapsed preference.
+const state = computed(() =>
+  isMobile.value || open.value ? "expanded" : "collapsed",
+);
 
 provideSidebarContext({
   state,

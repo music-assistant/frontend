@@ -161,6 +161,57 @@ describe("AuthManager guest sessions", () => {
     expect(sessionStorage.getItem("music_quiz_guest_affinity")).toBeNull();
   });
 
+  it("keeps a remembered session usable when adding another account", () => {
+    const authManager = new AuthManager();
+    const token = createToken("regular-token", "alice");
+    authManager.setToken(token);
+    authManager.setCurrentUser(user({ username: "alice" }));
+    const reload = vi
+      .spyOn(window.location, "reload")
+      .mockImplementation(() => {});
+    const logout = vi.spyOn(authManager, "logout");
+
+    authManager.addAccount();
+
+    expect(logout).not.toHaveBeenCalled();
+    expect(authManager.getToken()).toBeNull();
+    expect(store.currentUser).toBeUndefined();
+    expect(authManager.getSavedAccounts()).toMatchObject([
+      { username: "alice", token },
+    ]);
+    expect(reload).toHaveBeenCalledOnce();
+    reload.mockRestore();
+    logout.mockRestore();
+  });
+
+  it("replaces an older remembered token for the same username", () => {
+    const authManager = new AuthManager();
+    authManager.setToken(createToken("alice-old", "alice"));
+    authManager.setCurrentUser(user({ username: "alice" }));
+    authManager.setToken(createToken("bob-token", "bob"));
+    authManager.setCurrentUser(user({ username: "bob" }));
+    const token = createToken("alice-new", "alice");
+
+    authManager.setToken(token);
+    authManager.setCurrentUser(
+      user({ username: "alice", display_name: "Alice" }),
+    );
+
+    expect(authManager.getSavedAccounts()).toMatchObject([
+      { username: "alice", token, displayName: "Alice" },
+      { username: "bob" },
+    ]);
+    expect(authManager.getSavedAccounts()).toHaveLength(2);
+  });
+
+  it("does not remember session-only dashboard viewers as accounts", () => {
+    const authManager = new AuthManager();
+    authManager.setToken(createToken("dashboard-token", "dashboard_viewer"));
+    authManager.setCurrentUser(user({ username: "dashboard_viewer" }));
+
+    expect(authManager.getSavedAccounts()).toEqual([]);
+  });
+
   it("restores the saved regular token when a dashboard viewer session is cleared", () => {
     const regularToken = createToken("regular-token", "admin");
     const dashboardToken = createToken("dashboard-token", "dashboard_viewer");

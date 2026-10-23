@@ -1,7 +1,7 @@
 import { ref } from "vue";
 
 // Whether the tour is running. Module-level so it can be started from the
-// profile menu and from the end of onboarding alike, and the overlay in the
+// sidebar header menu and from the end of onboarding alike, and the overlay in the
 // layout picks it up wherever the app is.
 const active = ref(false);
 

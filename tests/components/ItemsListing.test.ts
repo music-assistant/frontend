@@ -412,6 +412,91 @@ describe("ItemsListing per-page search", () => {
     store.mobileLayout = false;
   });
 
+  it.each([
+    { key: "A", shiftKey: true },
+    { key: "?", shiftKey: true },
+    { key: "é" },
+    { key: "字" },
+  ])("opens search for printable input $key", async (event) => {
+    const listing = mountListingRaw({ allowKeyHooks: true });
+    await flushPromises();
+    expect(listing.find("input").exists()).toBe(false);
+    document.dispatchEvent(new KeyboardEvent("keydown", event));
+    await flushPromises();
+    expect(listing.find("input").exists()).toBe(true);
+  });
+
+  it("closes a search opened by typing with the Escape shortcut", async () => {
+    const listing = mountListingRaw({ allowKeyHooks: true });
+    await flushPromises();
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "é" }));
+    await flushPromises();
+    expect(listing.find("input").exists()).toBe(true);
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await flushPromises();
+    expect(listing.find("input").exists()).toBe(false);
+  });
+
+  it("leaves shortcuts and printable input alone when key hooks are disabled", async () => {
+    const listing = mountListingRaw({ allowKeyHooks: false });
+    await flushPromises();
+    const event = new KeyboardEvent("keydown", {
+      key: "a",
+      ctrlKey: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(event);
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "é" }));
+    await flushPromises();
+    expect(event.defaultPrevented).toBe(false);
+    expect(listing.find("input").exists()).toBe(false);
+  });
+
+  it.each(["ctrlKey", "metaKey"])(
+    "prevents browser selection for %s+A",
+    async (modifier) => {
+      mountListingRaw({ allowKeyHooks: true });
+      await flushPromises();
+      const event = new KeyboardEvent("keydown", {
+        key: "a",
+        [modifier]: true,
+        cancelable: true,
+      });
+      document.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+    },
+  );
+
+  it("leaves typing in another input alone and removes its listener on unmount", async () => {
+    const listing = mountListingRaw({ allowKeyHooks: true });
+    await flushPromises();
+    const input = document.createElement("input");
+    document.body.append(input);
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "é", bubbles: true }),
+    );
+    const selectText = new KeyboardEvent("keydown", {
+      key: "a",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    input.dispatchEvent(selectText);
+    await flushPromises();
+    expect(listing.find("input").exists()).toBe(false);
+    expect(selectText.defaultPrevented).toBe(false);
+    input.remove();
+    listing.unmount();
+    const event = new KeyboardEvent("keydown", {
+      key: "a",
+      ctrlKey: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
   // the one button, which is a magnifier until the field is open and a close
   // cross after that
   const SEARCH_BUTTON_LABELS = [
@@ -436,7 +521,7 @@ describe("ItemsListing per-page search", () => {
   it.each(
     [true, false].flatMap((backFirst) =>
       [true, false].flatMap((focused) =>
-        [true, undefined].map((allowKeyHooks) => ({
+        [true, false, undefined].map((allowKeyHooks) => ({
           backFirst,
           focused,
           allowKeyHooks,

@@ -447,6 +447,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { useHotkeys } from "@tanstack/vue-hotkeys";
 import {
   CheckCheck,
   ChevronDown,
@@ -1873,8 +1874,9 @@ const restoreSettings = async function () {
   }
 };
 
-// lifecycle hooks
-const keyListener = function (e: KeyboardEvent) {
+// Keep the same focus and dialog guards for explicit shortcuts and typing.
+const handleSearchHotkey = function (e: KeyboardEvent) {
+  if (e.isComposing) return;
   if (store.dialogActive || store.showPlayersMenu) return;
   if (e.key === "Escape") {
     if (showSearchInput.value) {
@@ -1899,7 +1901,7 @@ const keyListener = function (e: KeyboardEvent) {
     return;
   }
 
-  if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
+  if (e.key.toLowerCase() === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectAll();
   } else if (!searchHasFocus.value && e.key == "Backspace") {
@@ -1917,11 +1919,35 @@ const keyListener = function (e: KeyboardEvent) {
   }
 };
 
-// Always listen: an open search claims Escape before the window-level
-// back navigation (useEscapeBack) sees it, even without key hooks
-document.addEventListener("keydown", keyListener);
+useHotkeys(
+  [
+    { hotkey: "Control+A", callback: handleSearchHotkey },
+    { hotkey: "Meta+A", callback: handleSearchHotkey },
+    { hotkey: "Backspace", callback: handleSearchHotkey },
+    {
+      hotkey: "Escape",
+      callback: handleSearchHotkey,
+      options: { enabled: true },
+    },
+  ],
+  {
+    enabled: () => props.allowKeyHooks,
+    preventDefault: false,
+    stopPropagation: false,
+    ignoreInputs: false,
+  },
+);
+
+// Printable input includes punctuation, shifted keys and non-Latin characters.
+// Leave modifier shortcuts and non-printable keys to TanStack above.
+const handlePrintableSearchKey = (e: KeyboardEvent) => {
+  if (e.key.length !== 1 || e.ctrlKey || e.metaKey) return;
+  handleSearchHotkey(e);
+};
+
+document.addEventListener("keydown", handlePrintableSearchKey);
 onBeforeUnmount(() => {
-  document.removeEventListener("keydown", keyListener);
+  document.removeEventListener("keydown", handlePrintableSearchKey);
 });
 
 if (props.restoreState) {

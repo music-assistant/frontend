@@ -38,6 +38,9 @@ importers:
       '@tanstack/vue-form':
         specifier: ^1.33.5
         version: 1.33.5(vue@3.5.44(typescript@6.0.3))
+      '@tanstack/vue-hotkeys':
+        specifier: ^0.10.0
+        version: 0.10.0(vue@3.5.44(typescript@6.0.3))
       '@tanstack/vue-table':
         specifier: ^8.21.3
         version: 8.21.3(vue@3.5.44(typescript@6.0.3))
@@ -1971,6 +1974,10 @@ packages:
   '@tanstack/form-core@1.33.5':
     resolution: {integrity: sha512-3dfx9MBP0aq5sXKteikG629X9oviptrQj0IFRk9YGcb+lB7Kv5x8S17oOSk1wUWgjQZ4xVJEMbKwOAODymocgA==}
 
+  '@tanstack/hotkeys@0.8.0':
+    resolution: {integrity: sha512-vqH7X9nb0MTJ/O08++dB5bP9jgj4+BIPOUu/U+6myG86lDsirZSVSobpq5UQpE7nBuk62i8eIYeOhd+OMl/UrA==}
+    engines: {node: '>=18'}
+
   '@tanstack/pacer-lite@0.1.1':
     resolution: {integrity: sha512-y/xtNPNt/YeyoVxE/JCx+T7yjEzpezmbb+toK8DDD1P4m7Kzs5YR956+7OKexG3f8aXgC3rLZl7b1V+yNUSy5w==}
     engines: {node: '>=18'}
@@ -1989,6 +1996,12 @@ packages:
     resolution: {integrity: sha512-IvNlJ1LGFqt2pkwwCM+ltMWeBpF/qUeP9vlQwknMJphrIjJtZfmVr+VaN4BsOEbZQVK2vDkglqT+u64LTTjyoA==}
     peerDependencies:
       vue: ^3.4.0
+
+  '@tanstack/vue-hotkeys@0.10.0':
+    resolution: {integrity: sha512-ZhhiOORPtHdjW1/ZgwKCiXdSNuTSwAxyPhDHDy7VCb5jV6eMICoCZvIdhJZb07gzy3D93R1J6OMr8Mx0V5rBPw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      vue: '>=3.0.0'
 
   '@tanstack/vue-store@0.11.0':
     resolution: {integrity: sha512-w1lE4D7oo6nIUhTQvL/RoTgcvoYJw+KvttWPNJd/Xu+MvNxMnjxFF/LgFp9vwmbNbiGhGCg3ZoPJptwjrfwNYw==}
@@ -6171,6 +6184,10 @@ snapshots:
       '@tanstack/pacer-lite': 0.1.1
       '@tanstack/store': 0.11.0
 
+  '@tanstack/hotkeys@0.8.0':
+    dependencies:
+      '@tanstack/store': 0.11.0
+
   '@tanstack/pacer-lite@0.1.1': {}
 
   '@tanstack/store@0.11.0': {}
@@ -6182,6 +6199,14 @@ snapshots:
   '@tanstack/vue-form@1.33.5(vue@3.5.44(typescript@6.0.3))':
     dependencies:
       '@tanstack/form-core': 1.33.5
+      '@tanstack/vue-store': 0.11.0(vue@3.5.44(typescript@6.0.3))
+      vue: 3.5.44(typescript@6.0.3)
+    transitivePeerDependencies:
+      - '@vue/composition-api'
+
+  '@tanstack/vue-hotkeys@0.10.0(vue@3.5.44(typescript@6.0.3))':
+    dependencies:
+      '@tanstack/hotkeys': 0.8.0
       '@tanstack/vue-store': 0.11.0(vue@3.5.44(typescript@6.0.3))
       vue: 3.5.44(typescript@6.0.3)
     transitivePeerDependencies:

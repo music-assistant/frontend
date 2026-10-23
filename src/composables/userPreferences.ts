@@ -134,7 +134,10 @@ async function writeUserPreferences(
     const latest = store.currentUser;
     // the store hands the preferences back as a reactive proxy, so the write
     // is told apart from a later one by the object underneath it
-    if (latest && toRaw(latest.preferences) === updatedPreferences) {
+    if (
+      latest?.user_id === userId &&
+      toRaw(latest.preferences) === updatedPreferences
+    ) {
       latest.preferences = previousPreferences;
     }
     return false;
@@ -202,13 +205,15 @@ export function useUserPreferences() {
     const storKey = `${path}.${itemtype}`;
     const prefKey = `itemsListing.${storKey}`;
 
-    const currentPrefs = getItemsListingPreferences(path, itemtype);
-    const updatedPrefs = {
-      ...currentPrefs.value,
-      [key]: value,
-    };
-
-    await setPreference(prefKey, updatedPrefs);
+    const plainValue = JSON.parse(JSON.stringify({ [key]: value }));
+    await updateUserPreferences((current) => ({
+      ...current,
+      [prefKey]: {
+        ...(current[prefKey] as ItemsListingPreferences | undefined),
+        // Keep an undefined value so clearing a listing filter removes it.
+        [key]: plainValue[key],
+      },
+    }));
   }
 
   return {

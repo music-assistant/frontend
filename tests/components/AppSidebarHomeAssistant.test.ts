@@ -17,6 +17,13 @@ vi.mock("@/plugins/store", async () => {
   return { store: reactive({ navMenuEditMode: false, mobileLayout: false }) };
 });
 
+vi.mock("@/composables/useThemePreference", () => ({
+  useThemePreference: () => ({
+    isDarkTheme: { value: false },
+    setThemePreference: vi.fn(),
+  }),
+}));
+
 vi.mock("@/components/navigation/utils/getMenuItems", () => ({
   getMenuItems: () => [],
   resolveMenuConfig: () => ({ sections: {} }),
@@ -32,6 +39,7 @@ vi.mock("@/components/ui/sidebar", () => {
     SidebarFooter: slotHost,
     SidebarHeader: slotHost,
     SidebarMenu: slotHost,
+    SidebarMenuItem: slotHost,
     SidebarTrigger: slotHost,
     useSidebar: () => ({
       toggleSidebar: vi.fn(),

@@ -1,8 +1,9 @@
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
+import { setUserPreference } from "@/composables/userPreferences";
 import { setStatusBarThemeColor } from "./useStatusBarColor";
 import { useColorMode } from "@vueuse/core";
-import { readonly, ref } from "vue";
+import { computed, readonly, ref } from "vue";
 import { useTheme } from "vuetify";
 
 const THEME_STORAGE_KEY = "frontend.settings.theme";
@@ -30,6 +31,7 @@ export function useThemePreference() {
     storageKey: null,
   });
   const themePreference = ref(initialThemePreference);
+  const isDarkTheme = computed(() => theme.current.value.dark);
 
   function applyThemePreference(): void {
     applyTheme(getThemePreference());
@@ -40,9 +42,24 @@ export function useThemePreference() {
     applyTheme(preference);
   }
 
+  async function setThemePreference(
+    preference: ThemePreference,
+  ): Promise<void> {
+    if (authManager.isGuestAccessSession()) {
+      setGuestThemePreference(preference);
+      return;
+    }
+
+    localStorage.setItem(THEME_STORAGE_KEY, preference);
+    applyTheme(preference);
+    await setUserPreference("theme", preference);
+  }
+
   return {
     themePreference: readonly(themePreference),
+    isDarkTheme,
     applyThemePreference,
+    setThemePreference,
     setGuestThemePreference,
   };
 
