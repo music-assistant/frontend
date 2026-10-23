@@ -1384,14 +1384,19 @@ export class MusicAssistantApi {
     limit?: number,
     offset?: number,
     favorite?: boolean,
+    options?: CommandOptions,
   ): Promise<MediaCollection<Audiobook>> {
-    return this.sendCommand("music/audiobooks/get_collection", {
-      item_id,
-      search,
-      limit,
-      offset,
-      favorite,
-    });
+    return this.sendCommand(
+      "music/audiobooks/get_collection",
+      {
+        item_id,
+        search,
+        limit,
+        offset,
+        favorite,
+      },
+      options,
+    );
   }
 
   public getAudiobookVersions(

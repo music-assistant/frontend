@@ -42,9 +42,17 @@ export function useCollectionMetadata(items: () => MediaItemType[]) {
         }
         // a finished or reset book depends on the others, once it is stored
         if (evt.event !== EventType.PLAYLOG_UPDATED) continue;
-        // only the played state: count, duration and covers keep the listing's scope
+        // only the played state: count, duration and covers keep the listing's scope;
+        // the catch below is the one error toast
         api
-          .getAudiobookCollection(collection.item_id, undefined, 1)
+          .getAudiobookCollection(
+            collection.item_id,
+            undefined,
+            1,
+            undefined,
+            undefined,
+            { suppressGlobalError: true },
+          )
           .then(({ metadata: { fully_played, in_progress } }) => {
             Object.assign(collection.metadata, { fully_played, in_progress });
           })

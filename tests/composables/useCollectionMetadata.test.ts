@@ -17,9 +17,10 @@ interface Listener {
   callback: (evt: EventMessage) => void;
 }
 
-const { getAudiobookCollection, listeners } = vi.hoisted(() => ({
+const { getAudiobookCollection, listeners, toastError } = vi.hoisted(() => ({
   getAudiobookCollection: vi.fn<MusicAssistantApi["getAudiobookCollection"]>(),
   listeners: [] as Listener[],
+  toastError: vi.fn(),
 }));
 vi.mock("@/plugins/api", () => ({
   api: {
@@ -38,7 +39,7 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/plugins/store", () => ({
   store: { currentUser: { user_id: "me" } },
 }));
-vi.mock("vue-sonner", () => ({ toast: { error: vi.fn() } }));
+vi.mock("vue-sonner", () => ({ toast: { error: toastError } }));
 
 const BOOK_URI = "library://audiobook/1";
 
@@ -69,6 +70,7 @@ function played(event: EventType, update: Partial<PlaylogUpdate>) {
 let scope: EffectScope;
 
 beforeEach(() => {
+  toastError.mockReset();
   // the whole series once the last book is finished, across all authors
   getAudiobookCollection.mockReset().mockResolvedValue({
     metadata: { total_items: 5, fully_played: true, in_progress: false },
@@ -114,6 +116,28 @@ describe("useCollectionMetadata", () => {
       ]);
     },
   );
+
+  it("shows one error toast when the refresh fails", async () => {
+    getAudiobookCollection.mockReset().mockRejectedValue(new Error("server"));
+    const items = [collection("a")];
+    scope = effectScope();
+    scope.run(() => useCollectionMetadata(() => items));
+
+    played(EventType.PLAYLOG_UPDATED, FINISHED);
+    await flushPromises();
+
+    expect(items[0].metadata.fully_played).toBe(false);
+    // the global error toast stays quiet, so this is the only one
+    expect(getAudiobookCollection).toHaveBeenCalledWith(
+      "a",
+      undefined,
+      1,
+      undefined,
+      undefined,
+      { suppressGlobalError: true },
+    );
+    expect(toastError.mock.calls).toEqual([["collection_refresh_failed"]]);
+  });
 
   it.each([
     ["another user's progress", { userid: "someone-else" }],
