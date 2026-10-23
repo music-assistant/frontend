@@ -1052,7 +1052,6 @@ const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
   }
 };
 
-// the item last (de)selected, where a shift-click range starts
 let selectionAnchor: MediaItemTypeOrItemMapping | undefined;
 const shiftHeld = useKeyModifier("Shift");
 
@@ -1072,7 +1071,6 @@ const setSelected = function (
   }
 };
 
-// a shift-click gives every item from the previous click on the same state
 const onSelect = function (
   item: MediaItemTypeOrItemMapping,
   selected: boolean,
