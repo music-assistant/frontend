@@ -70,12 +70,12 @@ export interface SharedTrack {
   isrc?: string | null;
   mbid?: string | null;
   mb_track?: string | null;
+  duration?: number | null;
 }
 
 export function encodeSharedTrack(track: SharedTrack): string {
   const bytes = new TextEncoder().encode(
     JSON.stringify({
-      v: 2,
       type: "track",
       title: track.title,
       artist: track.artist,
@@ -105,7 +105,7 @@ export function decodeSharePreview(
   if (!payload || typeof payload !== "object")
     throw new Error("Invalid share payload");
   const candidate = payload as Record<string, unknown>;
-  if (candidate.v !== 2 || typeof candidate.title !== "string")
+  if (typeof candidate.title !== "string")
     throw new Error("Invalid share payload");
   const links = Object.entries(
     expandShareProviderRefs(candidate.provider_refs),

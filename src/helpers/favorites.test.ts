@@ -48,7 +48,7 @@ describe("share preview favorite state", () => {
   it("does not allow unresolved shared tracks to hold favorites", () => {
     const preview = track({
       provider: "builtin",
-      item_id: "share://track/encoded",
+      item_id: "share-preview://track/encoded",
     });
     expect(canHoldFavorite(preview)).toBe(false);
     setFavoriteState(preview, true);
