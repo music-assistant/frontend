@@ -745,14 +745,6 @@ async function copyExternalText() {
   }
 }
 
-function openLink(url: string) {
-  const a = document.createElement("a");
-  a.setAttribute("href", url);
-  a.setAttribute("target", "_blank");
-  a.setAttribute("rel", "noopener");
-  a.click();
-}
-
 function openInstanceSettings() {
   const instanceId = step.value?.result?.instance_id;
   if (!instanceId) return;
