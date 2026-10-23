@@ -268,8 +268,9 @@ describe("ItemsListing unmount cleanup", () => {
     await flushPromises();
 
     expect(clearSelectionHandlers()).toBe(1);
-    // the media item events and the user's own favorite changes
-    expect(events.listeners).toHaveLength(2);
+    // the media item events, the user's own favorite changes and the played
+    // state of the listed collections
+    expect(events.listeners).toHaveLength(3);
 
     listing.unmount();
 

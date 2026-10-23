@@ -1566,6 +1566,7 @@
     "edit": "Edit",
     "authors": "Authors",
     "collection": "Collection",
+    "collection_refresh_failed": "Could not update the played state of the collection",
     "collections": "Collections",
     "narrators": "Narrators",
     "queue_move_end": "Move to end",
