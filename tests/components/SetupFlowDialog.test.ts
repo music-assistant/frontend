@@ -26,6 +26,7 @@ const {
 } = vi.hoisted(() => ({
   apiMock: {
     abortSetupFlow: vi.fn<MusicAssistantApi["abortSetupFlow"]>(),
+    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
     players: {
       "player-1": { name: "Living Room" },
     },
@@ -38,6 +39,7 @@ const {
     },
     reconfigureProvider: vi.fn<MusicAssistantApi["reconfigureProvider"]>(),
     setupPlayer: vi.fn<MusicAssistantApi["setupPlayer"]>(),
+    setupProvider: vi.fn<MusicAssistantApi["setupProvider"]>(),
     state: {
       value: "authenticated",
     },
@@ -104,7 +106,7 @@ vi.mock("vue-router", async (importOriginal) => {
     ...actual,
     useRouter: () => routerMock,
   };
-}));
+});
 
 vi.mock("vue-sonner", () => ({
   toast: toastMock,
