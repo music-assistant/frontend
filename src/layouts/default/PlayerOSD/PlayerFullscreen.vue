@@ -47,14 +47,6 @@
           </Button>
         </template>
         <template #append>
-          <ProviderLinkButton
-            v-if="
-              store.curQueueItem?.media_item &&
-              'provider_mappings' in store.curQueueItem.media_item
-            "
-            :mappings="store.curQueueItem.media_item.provider_mappings"
-            :title="store.curQueueItem.media_item.name"
-          />
           <PlayerFullscreenHeaderControls
             :lyrics-state="lyricsState"
             :lyrics-active="showLyrics"
@@ -524,7 +516,6 @@
 </template>
 
 <script setup lang="ts">
-import ProviderLinkButton from "@/components/ProviderLinkButton.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
@@ -542,6 +533,7 @@ import { playbackSpeedSupported } from "@/helpers/elapsed";
 import { expertModeSetting } from "@/helpers/expert_mode";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
+import { getItemShareMenuItem } from "@/composables/useItemSharing";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import { getPlayerDisplayName, getPlayerName } from "@/helpers/players";
 import {
@@ -1279,6 +1271,11 @@ const openQueueMenu = function (evt: Event) {
       hideShuffleRepeat: mdAndUp.value && !showSkip.value,
     },
   );
+  const mediaItem = store.curQueueItem?.media_item;
+  if (mediaItem) {
+    const shareItem = getItemShareMenuItem(mediaItem);
+    if (shareItem) menuItems.push(shareItem);
+  }
   // playback speed only means something for spoken-word content, which is also
   // the only content anyone plays at anything but 1x
   if (speedSupported.value) {

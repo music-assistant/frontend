@@ -72,10 +72,6 @@
             </ItemDescription>
           </ItemContent>
           <ItemActions class="gap-1">
-            <ProviderLinkButton
-              :mappings="[providerMapping]"
-              :title="itemDetails.name"
-            />
             <img
               v-if="providerMapping.audio_format.bit_depth > 16"
               :src="iconHiRes"
@@ -183,7 +179,6 @@ import {
 import Container from "@/components/Container.vue";
 import GenreExclusionManager from "@/components/genre/GenreExclusionManager.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import ProviderLinkButton from "@/components/ProviderLinkButton.vue";
 import { iconHiRes } from "@/components/QualityDetailsBtn.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Badge } from "@/components/ui/badge";

@@ -1,4 +1,3 @@
-import ProviderLinkButton from "@/components/ProviderLinkButton.vue";
 import Player from "@/layouts/default/PlayerOSD/Player.vue";
 import PlayerBarGroupControl from "@/layouts/default/PlayerOSD/PlayerBarGroupControl.vue";
 import PlayerBarMobileVolumeSheet from "@/layouts/default/PlayerOSD/PlayerBarMobileVolumeSheet.vue";
@@ -16,9 +15,6 @@ import { store } from "@/plugins/store";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import { queueItem } from "../fixtures/queueItem";
-import { track } from "../fixtures/track";
 
 vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 
@@ -148,36 +144,6 @@ describe("Player floating mobile bar", () => {
 });
 
 describe("Player desktop bar", () => {
-  it.each([1099, 1100, 1300])(
-    "offers sharing beside favorite only when it fits at %i px",
-    (width) => {
-      mockStore.curQueueItem = queueItem({ media_item: track() });
-      setViewportWidth(width);
-      const player = mountPlayer(false);
-      const sharing = player.findComponent(ProviderLinkButton);
-      expect(sharing.exists()).toBe(width >= SLEEP_TIMER_BREAKPOINT);
-      if (sharing.exists()) {
-        expect(sharing.props("size")).toBe("icon-lg");
-        expect(
-          player.find(".mediacontrols-left provider-link-button-stub").exists(),
-        ).toBe(false);
-        expect(
-          player
-            .find(".player-center-transport provider-link-button-stub")
-            .exists(),
-        ).toBe(false);
-      }
-      expect(player.findComponent(FavoriteMenuBtn).exists()).toBe(true);
-    },
-  );
-
-  it("hides sharing without a current media item", () => {
-    setViewportWidth(PLAYBACK_SPEED_BREAKPOINT);
-    expect(mountPlayer(false).findComponent(ProviderLinkButton).exists()).toBe(
-      false,
-    );
-  });
-
   it("leaves the desktop player outside the floating container", () => {
     const player = mountPlayer(false);
 

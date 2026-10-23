@@ -40,11 +40,6 @@
       :menu-items="menuItems"
     >
       <template #append>
-        <ProviderLinkButton
-          v-if="item && 'provider_mappings' in item"
-          :mappings="item.provider_mappings"
-          :title="item.name"
-        />
         <slot name="toolbar-append"></slot>
       </template>
     </Toolbar>
@@ -83,11 +78,6 @@
       @back="backButtonClick"
     >
       <template #append>
-        <ProviderLinkButton
-          v-if="item && 'provider_mappings' in item"
-          :mappings="item.provider_mappings"
-          :title="item.name"
-        />
         <slot name="toolbar-append"></slot>
       </template>
     </DetailHeroStickyBar>
@@ -96,7 +86,6 @@
 
 <script setup lang="ts">
 import DetailHeroStickyBar from "@/components/details/DetailHeroStickyBar.vue";
-import ProviderLinkButton from "@/components/ProviderLinkButton.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserPreferences } from "@/composables/userPreferences";
