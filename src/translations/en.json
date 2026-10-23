@@ -112,6 +112,7 @@
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
     "review": "Review",
+    "review_setup": "Review",
     "search": "Search",
     "settings": {
         "add_new": "Add new",
@@ -2466,6 +2467,7 @@
     "select_all": "Select all",
     "n_selected": "{count} selected | {count} selected",
     "n_episodes": "{count} episode | {count} episodes",
+    "n_audiobooks": "{count} audiobook | {count} audiobooks",
     "more_from_artist": "More from this artist",
     "more_from_artist_name": "More from {name}",
     "artist_view_library_tracks": "View {count} library track | View {count} library tracks",
