@@ -140,6 +140,41 @@ describe("userPreferences - itemsListing", () => {
 
     expect(readPrefs("librarygenres", "genres").favoriteFilter).toBeUndefined();
   });
+
+  it("keeps both changes when two writes to one listing overlap", async () => {
+    const { setItemsListingPreference } = useUserPreferences();
+
+    await Promise.all([
+      setItemsListingPreference(
+        "libraryalbums",
+        "albums",
+        "showActions",
+        false,
+      ),
+      setItemsListingPreference("libraryalbums", "albums", "gridSize", -2),
+    ]);
+
+    expect(readPrefs("libraryalbums", "albums")).toEqual({
+      showActions: false,
+      gridSize: -2,
+    });
+  });
+
+  it("preserves compact mode's action preference when changing views", async () => {
+    storeMock.currentUser!.preferences = {
+      "itemsListing.libraryalbums.albums": { viewMode: "panel_compact" },
+    };
+    await useUserPreferences().setItemsListingPreference(
+      "libraryalbums",
+      "albums",
+      "viewMode",
+      "list",
+    );
+    expect(readPrefs("libraryalbums", "albums")).toEqual({
+      viewMode: "list",
+      showActions: false,
+    });
+  });
 });
 
 /** Wait for the writes in flight to have reached the server. */

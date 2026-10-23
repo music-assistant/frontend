@@ -139,16 +139,6 @@
             <PanelViewSkeleton />
           </v-col>
         </v-row>
-        <v-row v-else-if="viewMode === 'panel_compact'">
-          <v-col
-            v-for="n in 12"
-            :key="'skeleton-compact-' + n"
-            cols="12"
-            :class="`col-${gridColumnCount}`"
-          >
-            <PanelViewSkeleton />
-          </v-col>
-        </v-row>
       </template>
 
       <!-- the infinite scroller can't show its own retry before any item is loaded -->
@@ -191,7 +181,7 @@
           </div>
         </template>
         <!-- panel view -->
-        <v-row v-if="viewMode == 'panel'">
+        <v-row v-if="viewMode == 'panel'" ref="panelRow">
           <v-col
             v-for="item in pagedItems"
             :key="item.uri"
@@ -202,40 +192,8 @@
               :item="item"
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
-              :show-actions="
-                [
-                  'tracks',
-                  'albums',
-                  'albumtracks',
-                  'artists',
-                  'genres',
-                ].includes(itemtype)
-              "
+              :show-actions="showGridActions && supportsGridActions"
               :show-track-number="showTrackNumber"
-              :is-available="itemIsAvailable(item)"
-              :is-playing="isPlaying(item, itemtype)"
-              :disable-play-button="isPlayActionInProgress"
-              :parent-item="parentItem"
-              :sort-by="props.sortListing ? undefined : params.sortBy"
-              :sort-field="displayedSort.sortField"
-              :sort-direction="displayedSort.sortDirection"
-              @select="onSelect"
-            />
-          </v-col>
-        </v-row>
-
-        <!-- compact panel view -->
-        <v-row v-if="viewMode == 'panel_compact'">
-          <v-col
-            v-for="item in pagedItems"
-            :key="item.uri"
-            cols="12"
-            :class="`col-${gridColumnCount}`"
-          >
-            <PanelviewItemCompact
-              :item="item"
-              :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
@@ -414,6 +372,7 @@ import {
   GRID_SIZE_DEFAULT,
   gridColumns,
   normalizeGridSize,
+  PANEL_ACTIONS_MIN_WIDTH,
 } from "@/helpers/grid_size";
 import { returnedByHistory } from "@/helpers/navigation";
 import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
@@ -477,16 +436,18 @@ import {
   nextTick,
   onBeforeUnmount,
   onMounted,
+  reactive,
   ref,
+  useTemplateRef,
   watch,
   watchEffect,
 } from "vue";
+import { unrefElement, useResizeObserver } from "@vueuse/core";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
-import PanelviewItemCompact from "./PanelviewItemCompact.vue";
 
 // properties
 export interface Props {
@@ -554,7 +515,9 @@ export interface Props {
   restoreState?: boolean;
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
-  forcedViewMode?: "list" | "panel" | "panel_compact";
+  forcedViewMode?: "list" | "panel";
+  // the cards start without their action buttons until the user picks
+  hideActionsByDefault?: boolean;
   toolBarTabs?: ToolBarTab[];
   // the list view shows tracks as a table with columns
   trackTable?: boolean;
@@ -604,6 +567,7 @@ const props = withDefaults(defineProps<Props>(), {
   onTitleClick: undefined,
   refreshOnParentUpdate: false,
   forcedViewMode: undefined,
+  hideActionsByDefault: false,
   toolBarTabs: undefined,
   trackTable: false,
 });
@@ -708,6 +672,12 @@ const {
   props.trackTable ? listContainer.value : undefined,
 );
 const gridSize = ref(GRID_SIZE_DEFAULT);
+const showGridActions = ref(true);
+const supportsGridActions = computed(() =>
+  ["tracks", "albums", "albumtracks", "artists", "genres"].includes(
+    props.itemtype,
+  ),
+);
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
 const searchInputRef = ref<InstanceType<typeof SearchInput>>();
@@ -876,9 +846,38 @@ const commitGridSize = function (size: number) {
   );
 };
 
-const getViewModeLabel = function (mode: string) {
-  return t(`view.${mode}`);
+// the cards hide their action row when the covers get too small for it
+const panelRow = useTemplateRef("panelRow");
+const gridActionsFit = ref(true);
+const updateGridActionsFit = () => {
+  const width = unrefElement(panelRow)
+    ?.querySelector(".ed-card__art")
+    ?.getBoundingClientRect().width;
+  gridActionsFit.value = !width || width >= PANEL_ACTIONS_MIN_WIDTH;
 };
+useResizeObserver(panelRow, updateGridActionsFit);
+watch(gridColumnCount, updateGridActionsFit, { flush: "post" });
+
+// The desktop menu snapshots its items; keep the control's props live.
+const gridControlProps = reactive({
+  size: gridSize,
+  showActions: showGridActions,
+  actionsFit: gridActionsFit,
+  supportsActions: supportsGridActions,
+  onChange: (size: number) => {
+    gridSize.value = size;
+  },
+  onCommit: commitGridSize,
+  onToggleActions: (show: boolean) => {
+    showGridActions.value = show;
+    setItemsListingPreference(
+      props.path || props.itemtype,
+      props.itemtype,
+      "showActions",
+      show,
+    );
+  },
+});
 
 watch(
   () => props.forcedViewMode,
@@ -1665,18 +1664,20 @@ const menuItems = computed(() => {
     });
   }
 
-  // toggle view mode (hidden when view mode is controlled externally)
-  if (!props.forcedViewMode)
+  // toggle view mode; when it is controlled externally only the thumbs
+  // controls stay
+  if (props.forcedViewMode !== "list")
     items.push({
-      label: "tooltip.view_mode_current",
-      labelArgs: [getViewModeLabel(viewMode.value)],
+      label: "tooltip.view_mode",
       icon: viewMode.value == "list" ? LayoutList : LayoutGrid,
       overflowAllowed: true,
       subItems: [
         {
           label: "view.list",
           icon: LayoutList,
+          hide: !!props.forcedViewMode,
           selected: viewMode.value == "list",
+          close_on_click: false,
           action: () => {
             selectViewMode("list");
           },
@@ -1684,17 +1685,11 @@ const menuItems = computed(() => {
         {
           label: "view.panel",
           icon: LayoutGrid,
+          hide: !!props.forcedViewMode,
           selected: viewMode.value == "panel",
+          close_on_click: false,
           action: () => {
             selectViewMode("panel");
-          },
-        },
-        {
-          label: "view.panel_compact",
-          icon: LayoutGrid,
-          selected: viewMode.value == "panel_compact",
-          action: () => {
-            selectViewMode("panel_compact");
           },
         },
         {
@@ -1703,13 +1698,7 @@ const menuItems = computed(() => {
           // markRaw: the menu items land in a reactive array; a bare component
           // definition there would be needlessly made reactive.
           component: markRaw(GridSizeSlider),
-          componentProps: {
-            size: gridSize.value,
-            onChange: (size: number) => {
-              gridSize.value = size;
-            },
-            onCommit: commitGridSize,
-          },
+          componentProps: gridControlProps,
         },
       ],
     });
@@ -1754,21 +1743,20 @@ const restoreSettings = async function () {
   if (props.forcedViewMode) {
     viewMode.value = props.forcedViewMode;
   } else if (prefs.viewMode) {
-    viewMode.value = prefs.viewMode;
+    viewMode.value =
+      prefs.viewMode === "panel_compact" ? "panel" : prefs.viewMode;
   } else if (
-    props.itemtype == "artists" ||
-    props.itemtype == "similarartists"
+    ["artists", "similarartists", "albums", "genres"].includes(props.itemtype)
   ) {
     viewMode.value = "panel";
-  } else if (props.itemtype == "albums") {
-    viewMode.value = "panel";
-  } else if (props.itemtype == "genres") {
-    viewMode.value = "panel_compact";
   } else {
     viewMode.value = "list";
   }
 
   gridSize.value = normalizeGridSize(prefs.gridSize);
+  showGridActions.value =
+    prefs.showActions ??
+    !(props.hideActionsByDefault || prefs.viewMode === "panel_compact");
 
   // get stored/default sortBy for this itemtype
   if (props.sortListing) {
