@@ -1443,7 +1443,6 @@
         "reconnecting": "Wiederverbinden",
         "reconnecting_message": "Es wird versucht, die Verbindung zum Server wiederherzustellen...",
         "error_ingress_failed": "Anmeldung über Home Assistant nicht möglich",
-        "error_invalid_credentials": "Die Anmeldung ist fehlgeschlagen. Bitte überprüfe deinen Benutzernamen und dein Passwort.",
         "guest_ended_party_title": "Deine Party-Session ist beendet",
         "guest_ended_party_message": "Bitte den Gastgeber, den Party-Link oder den QR-Code noch einmal zu teilen, damit du wieder beitreten kannst.",
         "guest_ended_quiz_title": "Deine Quizrunde ist beendet.",
