@@ -1330,6 +1330,7 @@ watch(allItemsReceived, (received, wasReceived) => {
 const {
   startDrag: startTrackDrag,
   moveBy: moveTrackRowBy,
+  refresh: refreshTrackRows,
   draggingIndex,
   isDragging,
   ghostY,
@@ -1341,6 +1342,7 @@ const {
   playlistId: () => props.parentItem?.item_id,
   rowHeight: TRACK_ROW_HEIGHT,
   reload: reloadLoadedItems,
+  onReloaded: () => reselectReloadedRows(),
 });
 // the rows are keyed by index, so after a keyboard move the focus follows the
 // track to the row it moved to
@@ -2029,7 +2031,8 @@ onBeforeUnmount(() => {
 if (props.restoreState) {
   // handle restore state
   onBeforeUnmount(() => {
-    if (loading.value || loadError.value) {
+    // rows of a move that is still saving may not be the order it ends with
+    if (loading.value || loadError.value || reorderSaving.value) {
       store.prevState = undefined;
       return;
     }
@@ -2082,12 +2085,10 @@ watch(
   () => props.parentItem,
   () => {
     if (props.refreshOnParentUpdate) {
-      // a reorder that is saving reads its rows back itself
-      if (reorderSaving.value) return;
-      // re-read the rows in place, so the list neither collapses nor scrolls
-      if (pagedItems.value.length) {
-        void reloadLoadedItems().then(reselectReloadedRows);
-      } else if (!loading.value) loadData(true);
+      // re-read the rows in place, so the list neither collapses nor scrolls;
+      // a move that is saving reads them back once more when it is done
+      if (pagedItems.value.length) void refreshTrackRows();
+      else if (!loading.value) loadData(true);
     } else if (!loading.value) {
       newContentAvailable.value = true;
     }

@@ -295,8 +295,9 @@ export function useItemsListing(
   };
 
   // re-reads the listed items without clearing them, so the rows stay mounted
-  // and the scroll position holds
-  const reloadLoadedItems = async function () {
+  // and the scroll position holds; rows that can't be read again are dropped
+  // and loaded from the start, so none keeps showing what the source changed
+  const reloadLoadedItems = async function (): Promise<void> {
     const activeTab = props.toolBarTabs?.length ? getActiveTab() : undefined;
     const loadPagedData = activeTab?.loadPagedData ?? props.loadPagedData;
     if (!loadPagedData || disposed) return;
@@ -310,21 +311,29 @@ export function useItemsListing(
       sortField: params.value.sortField,
       sortDirection: params.value.sortDirection,
     };
+    let items: MediaItemType[] | undefined;
     try {
-      const items = await loadPagedData({ ...params.value, offset: 0, limit });
-      // a load that replaced the rows meanwhile has the newer items
-      if (disposed || generation !== loadGeneration) return;
-      // a page appended meanwhile followed the old rows, so read them all again
-      if (loading.value) return queueReload();
+      items = await loadPagedData({ ...params.value, offset: 0, limit });
+    } catch {
+      // the api already reports the failure to the user
+    }
+    if (disposed) return;
+    // a page appended meanwhile followed the old rows, so read them all again
+    if (loading.value) return queueReload();
+    const replaced = generation !== loadGeneration;
+    // a load that replaced the rows meanwhile has the newer items
+    if (replaced && !loadError.value) return;
+    if (items && !replaced) {
       if (params.value.offset !== offset) return reloadLoadedItems();
       pagedItems.value = items;
       displayedSort.value = requestedSort;
       allItemsReceived.value = isLastPage(items.length, limit);
       newContentAvailable.value = false;
       loadError.value = false;
-    } catch {
-      // the api already reports the failure to the user
+      return;
     }
+    pagedItems.value = [];
+    await loadData(true);
   };
 
   return {

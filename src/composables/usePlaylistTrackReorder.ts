@@ -1,6 +1,7 @@
 // Drag-to-reorder for the tracks of a playlist listing. A drop moves the row
-// straight away, saves the new order on the provider and then re-reads the
-// listed rows; when saving fails the previous order comes back.
+// straight away and saves the new order on the provider; nothing moves the
+// rows again until they are read back, failed or not, so every listed
+// position is the provider's.
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { moveListedItem, playlistPosition } from "@/helpers/playlist_reorder";
 import { api } from "@/plugins/api";
@@ -16,16 +17,48 @@ interface PlaylistTrackReorderOptions {
   playlistId: () => string | undefined;
   // Height of every row in px; the list is virtualized, so rows are not measured.
   rowHeight: number;
-  // Re-reads the listed rows once the provider holds the new order.
+  // Re-reads the listed rows from the provider.
   reload: () => Promise<void>;
+  // Called each time the rows were read back.
+  onReloaded?: () => void;
 }
 
 export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
   const { listEl, items, playlistId, rowHeight, reload } = options;
 
-  // A move is being saved; another drag waits for it, so the reload that
-  // follows can't overwrite the newer order.
+  // A move is saving or the rows are being read back; another move waits, so
+  // it never starts from positions the provider no longer holds.
   const saving = ref(false);
+  // the playlist changed while its rows were being read back
+  let changedMeanwhile = false;
+
+  // Saves a move, if any, and reads the rows back while holding off other
+  // moves; a change reported meanwhile is read back as well.
+  const settle = async function (save?: () => Promise<void>) {
+    if (saving.value) {
+      changedMeanwhile = true;
+      return;
+    }
+    saving.value = true;
+    try {
+      try {
+        await save?.();
+      } catch {
+        // the api already reports the failure to the user; the provider may
+        // have stored part of the move, so its order is read back all the same
+      }
+      do {
+        changedMeanwhile = false;
+        await reload();
+        options.onReloaded?.();
+      } while (changedMeanwhile);
+    } finally {
+      saving.value = false;
+    }
+  };
+
+  // Reads the rows back after the playlist changed.
+  const refresh = () => settle();
 
   const move = async function (from: number, to: number) {
     const id = playlistId();
@@ -37,24 +70,8 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     const toPosition = playlistPosition(before[to]);
     if (fromPosition === undefined || toPosition === undefined) return;
 
-    const after = moveListedItem(before, from, to);
-    items.value = after;
-    saving.value = true;
-    try {
-      await api.movePlaylistTrack(id, fromPosition, toPosition);
-      await reload();
-    } catch {
-      // the api already reports the failure to the user; a load that replaced
-      // the rows meanwhile has the order the server holds, and a page loaded
-      // meanwhile was appended to the moved rows
-      if (toRaw(items.value) === after) {
-        items.value = [...before, ...after.slice(before.length)];
-      }
-      // the provider may have stored part of the move, so read its order back
-      await reload();
-    } finally {
-      saving.value = false;
-    }
+    items.value = moveListedItem(before, from, to);
+    await settle(() => api.movePlaylistTrack(id, fromPosition, toPosition));
   };
 
   // The rows and playlist a drag started on; a drop on a listing that was
@@ -95,6 +112,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     startDrag,
     move,
     moveBy,
+    refresh,
     saving,
   };
 }

@@ -456,6 +456,51 @@ describe("useItemsListing", () => {
       expect(listing.pagedItems.value[0].item_id).toBe("new-0");
     });
 
+    it("loads the listing from the start when the rows can't be read again", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValueOnce(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      loadPagedData.mockRejectedValueOnce(new Error("offline"));
+      loadPagedData.mockImplementationOnce(async () => {
+        // the rows that may be out of date are gone meanwhile
+        expect(listing.pagedItems.value).toEqual([]);
+        return tracks(2, "new-");
+      });
+
+      await listing.reloadLoadedItems();
+
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 0, limit: 2 }),
+      );
+      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual([
+        "new-0",
+        "new-1",
+      ]);
+    });
+
+    it("loads from the start when a newer first page failed meanwhile", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValueOnce(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      let finishReload: (items: Track[]) => void = () => {};
+      loadPagedData.mockImplementationOnce(
+        () => new Promise((resolve) => (finishReload = resolve)),
+      );
+      const reload = listing.reloadLoadedItems();
+      loadPagedData.mockRejectedValueOnce(new Error("offline"));
+      await listing.loadData(true);
+      expect(listing.loadError.value).toBe(true);
+      loadPagedData.mockResolvedValueOnce(tracks(2, "new-"));
+
+      finishReload(tracks(2, "stale-"));
+      await reload;
+
+      expect(listing.pagedItems.value[0].item_id).toBe("new-0");
+      expect(listing.loadError.value).toBe(false);
+    });
+
     it("shows the sort it read the rows with", async () => {
       const loadPagedData = vi.fn<LoadPagedDataFn>();
       loadPagedData.mockResolvedValue(tracks(2));
