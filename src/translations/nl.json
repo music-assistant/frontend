@@ -157,7 +157,12 @@
                 "el_GR": "Grieks",
                 "lt_LT": "Litouws",
                 "lv_LV": "Lets",
-                "bg_BG": "Bulgaars"
+                "bg_BG": "Bulgaars",
+                "ca": "Catalaans",
+                "fi_FI": "Fins",
+                "he": "Hebreeuws",
+                "zh_TW": "Chinees (traditioneel)",
+                "sk_SK": "Slowaaks"
             }
         },
         "dynamic_members": {
@@ -424,14 +429,14 @@
         "remote_access_description": "Krijg vanaf elke locatie veilige toegang tot Music Assistant",
         "remote_access_title": "Beveiligde Externe Toegang",
         "remote_access_explanation_intro": "Met Externe Toegang kun je overal ter wereld veilig verbinding maken met jouw Music Assistant server.",
-        "remote_access_explanation_ha_cloud": "Voor de beste ervaring en betrouwbaarheid is een Home Assistant Cloud-abonnement vereist.",
+        "remote_access_explanation_ha_cloud": "Voor de beste ervaring en betrouwbaarheid is een Home Assistant Link-abonnement vereist",
         "remote_access_feature_webrtc": "Gebaseerd op WebRTC-technologie voor peer-to-peer verbindingen",
-        "remote_access_feature_encrypted": "End-to-end versleuteld - je gegevens blijven privé.",
+        "remote_access_feature_encrypted": "End-to-end versleuteld - je gegevens blijven privé",
         "remote_access_feature_no_port_forwarding": "Geen port forwarding of VPN nodig",
         "remote_access_mode_optimized": "Geoptimaliseerde Modus (HA cloud)",
         "remote_access_mode_basic": "Draait in Basismodus",
-        "remote_access_mode_basic_description": "Gebruik van openbare STUN-servers. Dit werkt mogelijk niet in complexe netwerkconfiguraties. Upgrade naar Home Assistant Cloud voor de beste ervaring.",
-        "remote_access_upgrade_to_optimized": "Upgrade naar Home Assistant Cloud",
+        "remote_access_mode_basic_description": "Gebruik van openbare STUN-servers. Dit werkt mogelijk niet in complexe netwerkconfiguraties. Upgrade naar Home Assistant Link voor de beste ervaring.",
+        "remote_access_upgrade_to_optimized": "Upgrade naar Home Assistant Link",
         "remote_access_status": "Externe Toegang Status",
         "remote_access_enabled": "Externe Toegang is ingeschakeld",
         "remote_access_disabled": "Externe Toegang is uitgeschakeld",
@@ -457,7 +462,7 @@
         "remote_access_disabled_success": "Externe Toegang is uitgeschakeld",
         "remote_access_signaling_server_description": "Signaleringsserver in de cloud, gehost door de Open Home Foundation.",
         "remote_access_protocol_basic": "WebRTC met openbare STUN-servers (werkt mogelijk niet in complexe netwerkconfiguraties).",
-        "remote_access_protocol_optimized": "WebRTC met geoptimaliseerde STUN\/TURN-servers van Home Assistant Cloud (werkt in alle netwerkconfiguraties).",
+        "remote_access_protocol_optimized": "WebRTC met geoptimaliseerde STUN\/TURN-servers van Home Assistant Link (werkt in alle netwerkconfiguraties).",
         "remote_access_encryption_description": "End-to-end-versleuteling met DTLS-SRTP zorgt ervoor dat jouw gegevens privé en veilig blijven.",
         "frontend": "Gebruikersinterface",
         "view_players": "Bekijk spelers",
@@ -889,10 +894,10 @@
             "use_remote_access": "Gebruik externe toegang",
             "remote_access_description": "Links die met gasten worden gedeeld, worden via externe toegang geopend.",
             "remote_access_hint": "Niet bereikbaar via internet? Externe toegang werkt ook zonder openbare URL.",
-            "set_up_remote_access": "Externe toegang instellen",
+            "set_up_remote_access": "Externe Toegang instellen",
             "automatic": "Automatisch",
             "detected_after_save": "Wordt automatisch gedetecteerd na het opslaan",
-            "copy_remote": "Kopieer de link voor externe toegang",
+            "copy_remote": "Kopieer de link voor Externe Toegang",
             "copy_detected": "Lokale netwerk-URL kopiëren",
             "copied": "URL gekopieerd",
             "copy_failed": "De URL kon niet worden gekopieerd"
@@ -938,10 +943,11 @@
         "ascending_abbreviation": "Opl.",
         "descending": "Aflopend",
         "descending_abbreviation": "Afl.",
-        "favorite_timestamp": "Datum toegevoegd aan favorieten",
+        "favorite_timestamp": "Favorietdatum",
         "artist_name": "Artiest",
         "random": "Willekeurig",
-        "random_play_count": "Willekeurig (minst afgespeelde eerst)"
+        "random_play_count": "Willekeurig (minst afgespeelde eerst)",
+        "album_name": "Album"
     },
     "state": {
         "idle": "gestopt",
@@ -1025,7 +1031,7 @@
         "scroll_right": "Scrol naar rechts",
         "hide_provider": "Verberg muziekbron",
         "exit_select_items": "Bulkselectie verlaten",
-        "playing_from": "Afspelen vanaf {0}",
+        "playing_from": "Speelt af van {0}",
         "open_documentation": "Open de {provider} documentatie",
         "view_mode_current": "Huidige weergave: {0}. Weergavemodus wijzigen",
         "view_mode_switch": "Huidige weergave: {0}. Schakel over naar {1}",
@@ -1217,7 +1223,8 @@
             "mixed_to_mono": "Naar mono gemixt"
         },
         "processing_header": "Verwerking",
-        "more_info_for": "Meer informatie over {item}"
+        "more_info_for": "Meer informatie over {item}",
+        "open_played_from": "Open {0}"
     },
     "select_source": "Bron selecteren",
     "play_replace_next": "Hierna afspelen (wachtrij wissen)",
@@ -1448,7 +1455,6 @@
         "reconnecting": "Opnieuw verbinden",
         "reconnecting_message": "Er wordt geprobeerd opnieuw verbinding te maken met de server...",
         "error_ingress_failed": "Kon niet inloggen via Home Assistant",
-        "error_invalid_credentials": "Het is niet gelukt om je in te loggen. Controleer je gebruikersnaam en wachtwoord.",
         "guest_ended_party_title": "Je quizsessie is afgelopen",
         "guest_ended_party_message": "Vraag de host om de quizlink of QR-code opnieuw te delen, zodat je weer kunt deelnemen.",
         "guest_ended_quiz_title": "Je quizsessie is afgelopen",
@@ -1889,12 +1895,14 @@
                 "shuffle_playlist_tracks": "Nummers In afspeellijst shufflen",
                 "voice": "Stem",
                 "host": "Presentator",
-                "language": "Taal"
+                "language": "Taal",
+                "allow_post": "Praat over de intro"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximale totale afspeeltijd van de bronmuziek, in minuten. Nummers worden willekeurig geselecteerd totdat de limiet is bereikt, zodat je een willekeurige selectie uit de afspeellijst krijgt in plaats van alleen het eerste deel ervan. Laat dit veld op 0 staan als je geen limiet wilt instellen.",
                 "instructions": "Hierin wordt de persoonlijkheid van de presentator beschreven en aangegeven hoe de segmenten moeten worden geschreven. Dit wordt bij elk segment naar de AI gestuurd.",
-                "shuffle_playlist_tracks": "Speel de afspeellijst van de bron in willekeurige volgorde af. Schakel deze optie uit om de volgorde van de afspeellijst zelf te volgen."
+                "shuffle_playlist_tracks": "Speel de afspeellijst van de bron in willekeurige volgorde af. Schakel deze optie uit om de volgorde van de afspeellijst zelf te volgen.",
+                "allow_post": "Het einde van dit segment loopt door in het begin van het volgende nummer, waarbij de muziek zachter wordt gezet onder de stem en net voordat het zingen begint, stopt. Dit gebeurt alleen als Music Assistant weet waar het zingen begint en de intro lang genoeg is. Wanneer meerdere segmenten als één pauze worden afgespeeld, moet deze functie voor alle segmenten zijn ingeschakeld."
             },
             "web_search": {
                 "disabled": "gedeactiveerd (geen webtool)",
@@ -2276,7 +2284,10 @@
         "last_played_ago": "geleden",
         "op_greater_than": "groter dan",
         "op_less_than": "minder dan",
-        "picker_search": "Zoek {label}"
+        "picker_search": "Zoek {label}",
+        "field_folder": "Map",
+        "field_folder_is": "Map is",
+        "picker_empty_folder_sources": "Er is geen muziekbron met mappen ingesteld."
     },
     "explore": "Verkennen",
     "shortcuts": "Snelkoppelingen",
@@ -2551,7 +2562,6 @@
     "screens": "Beeldschermen",
     "play_from_here_to_latest": "Speel vanaf hier tot de laatste",
     "players_need_setup": "Er is een nieuw apparaat ontdekt dat moet worden ingesteld | er zijn {count} nieuwe apparaten ontdekt die ingesteld moeten worden.",
-    "review": "Beoordeel",
     "import_playlist_search_providers_description": "Geselecteerde muziekbronnen worden gebruikt als alternatieve bronnen wanneer de oorspronkelijke bron van een nummer niet beschikbaar is.",
     "import_playlist_match_policy_label": "Nummer matching",
     "import_playlist_match_policy_exact_title": "Exacte release",
@@ -2663,7 +2673,8 @@
                 "no_provider_hint": "Voeg een spelerprovider toe, daarna zullen de bijbehorende spelers hier verschijnen.",
                 "discovering_hint": "Het kan even duren voordat spelers worden gevonden. Zorg ervoor dat je luidsprekers zijn ingeschakeld en zich op hetzelfde netwerk bevinden als Music Assistant.",
                 "add_more": "Voeg meer spelers toe",
-                "rename": "Hernoem {name}"
+                "rename": "Hernoem {name}",
+                "discovered_by": "Ontdekt door"
             },
             "plugins": {
                 "title": "Plug-ins toevoegen",
@@ -2772,7 +2783,14 @@
         "description": "Stel Music Assistant stap voor stap in.",
         "step_completed": "{step}, voltooid",
         "welcome_description": "Een korte rondleiding door Music Assistant.",
-        "more_count": "+{count} meer"
+        "more_count": "+{count} meer",
+        "paused_title": "Instellen gepauzeerd",
+        "paused_text": "Ga verder waar je was gebleven, nu of later via de instellingen.",
+        "resume": "Hervatten",
+        "pause": "Instellen pauzeren",
+        "dismiss": "Sluiten",
+        "music_sources_count": "{count} muziekbron | {count} muziekbronnen",
+        "plugins_count": "{count} plug-in | {count} plug-ins"
     },
     "share_playlist": "Deel afspeellijst",
     "playlist_access": {
@@ -2887,13 +2905,33 @@
     "grid_size_default": "Standaardformaat",
     "grid_size_smaller": "{count} stap kleiner | {count} stappen kleiner",
     "grid_size_larger": "{count} stap groter | {count} stappen groter",
+    "episode_number": "Aflevering {0}",
+    "episode_number_short": "A{0}",
+    "season_episode_number": "Seizoen {0}, aflevering {1}",
+    "season_episode_number_short": "S{0} A{1}",
     "edit_rows_subtitle_podcast": "Van toepassing op elke podcastpagina",
     "playlist_radio": "Afspeellijst Endless Mix",
     "edit_rows_subtitle_playlist": "Van toepassing op elke afspeellijstpagina",
-    "duration_hours_minutes": "{hours} H {minutes} min",
-    "duration_hours": "{hours} H",
-    "duration_minutes": "{minutes} min",
+    "duration_hours_minutes": "{hours} u. {minutes} min.",
+    "duration_hours": "{hours} u.",
+    "duration_minutes": "{minutes} min.",
     "tracklist_heading": "Nummers",
     "skip_back_seconds": "Spoel {0} seconden terug",
-    "skip_forward_seconds": "Spring {0} seconden vooruit"
+    "skip_forward_seconds": "Spring {0} seconden vooruit",
+    "track_table": {
+        "title": "Titel",
+        "track_number": "Tracknummer",
+        "year": "Jaar",
+        "duration": "Duur",
+        "columns": "Kolommen",
+        "choose_columns": "Selecteer kolommen",
+        "hidden_at_width": "Verborgen bij deze breedte"
+    },
+    "selection_actions": "Selectieacties",
+    "n_selected": "{count} geselecteerd | {count} geselecteerd",
+    "folder": "Map",
+    "select_all": "Alles selecteren",
+    "no_content_filter_hint": "Probeer een andere zoekopdracht of pas de filters aan.",
+    "items_load_failed": "De items konden niet worden geladen.",
+    "featured_artists": "Uitgelichte artiesten"
 }

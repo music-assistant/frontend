@@ -909,7 +909,7 @@
         "duration": "Varaktighet",
         "position": "Position",
         "provider": "Källa",
-        "sort_name": "Sortera på namn",
+        "sort_name": "Alfabetiskt efter sorteringsnamn",
         "track_number": "Låtnummer",
         "year": "Utgivningsår",
         "position_desc": "Position (fallande)",
@@ -920,7 +920,7 @@
         "year_desc": "Utgivningsår (fallande)",
         "duration_desc": "Varaktighet (fallande)",
         "original": "Original",
-        "sort_name_desc": "Sortera namn (fallande)",
+        "sort_name_desc": "Alfabetiskt efter sorteringsnamn (fallande)",
         "timestamp_added": "Datum tillagt",
         "timestamp_added_desc": "Datum tillagt (fallande)",
         "timestamp_modified": "Datum uppdaterat",
@@ -941,7 +941,8 @@
         "favorite_timestamp": "Datum då objektet markerades som favorit",
         "artist_name": "Artist",
         "random": "Slumpmässig",
-        "random_play_count": "Slumpmässigt (minst spelade först)"
+        "random_play_count": "Slumpmässigt (minst spelade först)",
+        "album_name": "Album"
     },
     "state": {
         "idle": "vilande",
@@ -1217,7 +1218,8 @@
             "mixed_to_mono": "Blandat till mono"
         },
         "processing_header": "Bearbetning",
-        "more_info_for": "Mer information om {item}"
+        "more_info_for": "Mer information om {item}",
+        "open_played_from": "Öppna {0}"
     },
     "select_source": "Välj källa",
     "play_replace_next": "Spela härnäst (rensa kön)",
@@ -1448,7 +1450,6 @@
         "reconnecting": "Återansluter",
         "reconnecting_message": "Försöker återansluta till servern...",
         "error_ingress_failed": "Kunde inte logga in via Home Assistant",
-        "error_invalid_credentials": "Det gick inte att logga in dig. Kontrollera ditt användarnamn och lösenord.",
         "guest_ended_party_title": "Din festsession är avslutad",
         "guest_ended_party_message": "Be värden att dela länken eller QR-koden till festen igen för att återansluta.",
         "guest_ended_quiz_title": "Din quizsession är avslutad",
@@ -1945,7 +1946,8 @@
                 "station_duplicated": "Stationen duplicerad",
                 "host_saved": "Värd sparad",
                 "host_deleted": "Värd borttagen",
-                "tts_engines_load_failed": "Det gick inte att läsa in röstalternativen"
+                "tts_engines_load_failed": "Det gick inte att läsa in röstalternativen",
+                "show_stopped": "Föreställningen avbruten"
             },
             "header": {
                 "subtitle": "Förvandla en spellista till ett radioprogram med en AI värd."
@@ -2664,7 +2666,8 @@
                 "no_provider_hint": "Lägg till en spelarleverantör, så visas dess spelare här.",
                 "discovering_hint": "Det kan ta en stund att hitta spelare. Se till att högtalarna är påslagna och anslutna till samma nätverk som Music Assistant.",
                 "add_more": "Lägg till fler spelare",
-                "rename": "Döp om {name}"
+                "rename": "Döp om {name}",
+                "discovered_by": "Upptäckt av"
             },
             "plugins": {
                 "title": "Lägg till insticksprogram",
@@ -2773,7 +2776,14 @@
         "description": "Konfigurera Music Assistant, steg för steg.",
         "step_completed": "{step}, avslutad",
         "welcome_description": "En snabb rundtur i Music Assistant.",
-        "more_count": "+{count} mer"
+        "more_count": "+{count} mer",
+        "paused_title": "Installation pausad",
+        "paused_text": "Fortsätt där du slutade – nu eller senare via inställningarna.",
+        "resume": "Återuppta",
+        "pause": "Pausa konfigurationen",
+        "dismiss": "Avfärda",
+        "music_sources_count": "{count} musikkälla | {count} musikkällor",
+        "plugins_count": "{count} insticksprogram | {count} insticksprogram"
     },
     "share_playlist": "Dela spellista",
     "playlist_access": {
@@ -2893,5 +2903,24 @@
     "edit_rows_subtitle_playlist": "Gäller varje spellistesida",
     "duration_hours_minutes": "{hours} timmar {minutes} minuter",
     "duration_hours": "{hours} timmar",
-    "duration_minutes": "{minutes} minuter"
+    "duration_minutes": "{minutes} minuter",
+    "tracklist_heading": "Spår",
+    "skip_back_seconds": "Hoppa tillbaka {0} sekunder",
+    "skip_forward_seconds": "Hoppa framåt {0} sekunder",
+    "track_table": {
+        "title": "Titel",
+        "track_number": "Spårnummer",
+        "year": "År",
+        "duration": "Varaktighet",
+        "columns": "Kolumner",
+        "choose_columns": "Välj kolumner",
+        "hidden_at_width": "Dold vid denna bredd"
+    },
+    "selection_actions": "Urvalsåtgärder",
+    "n_selected": "{count}vald | {count} vald",
+    "folder": "Mapp",
+    "select_all": "Markera alla",
+    "no_content_filter_hint": "Prova en annan sökning eller ändra filtren.",
+    "items_load_failed": "Kunde inte läsa in objekten.",
+    "featured_artists": "Utvalda artister"
 }
