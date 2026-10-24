@@ -6,7 +6,19 @@ import { useListDragReorder } from "@/composables/useListDragReorder";
 import { moveListedItem, playlistPosition } from "@/helpers/playlist_reorder";
 import { api, ConnectionState } from "@/plugins/api";
 import type { MediaItemType } from "@/plugins/api/interfaces";
-import { Ref, ref, toRaw } from "vue";
+import { Ref, computed, reactive, toRaw } from "vue";
+
+// Counts per playlist id of the edits that are saving or being read back; the
+// listed positions are out of date until they are done.
+const pendingEdits = reactive(new Map<string, number>());
+
+const hold = (counts: Map<string, number>, id: string) =>
+  counts.set(id, (counts.get(id) ?? 0) + 1);
+const release = (counts: Map<string, number>, id: string) => {
+  const left = (counts.get(id) ?? 1) - 1;
+  if (left > 0) counts.set(id, left);
+  else counts.delete(id);
+};
 
 interface PlaylistTrackReorderOptions {
   // Element holding the rows, anchoring the ghost and the row positions.
@@ -27,23 +39,34 @@ interface PlaylistTrackReorderOptions {
 export const canSavePlaylistMoves = () =>
   api.state.value === ConnectionState.INITIALIZED;
 
+/** Whether an edit of the playlist's order is saving or being read back. */
+export const isPlaylistEditPending = (id: string) => pendingEdits.has(id);
+
 export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
   const { listEl, items, playlistId, rowHeight, reload } = options;
 
-  // A move is saving or the rows are being read back; another move waits, so
-  // it never starts from positions the provider no longer holds.
-  const saving = ref(false);
-  // the playlist changed while its rows were being read back
+  // A move is saving or the rows are being read back; another move or a
+  // removal waits, so it never starts from positions the provider no longer
+  // holds.
+  const saving = computed(() => {
+    const id = playlistId();
+    return id !== undefined && isPlaylistEditPending(id);
+  });
+
+  // this listing is reading its rows back, and the playlist changed meanwhile
+  let settling = false;
   let changedMeanwhile = false;
 
   // Saves a move, if any, and reads the rows back while holding off other
   // moves; a change reported meanwhile is read back as well.
   const settle = async function (save?: () => Promise<void>) {
-    if (saving.value) {
+    if (settling) {
       changedMeanwhile = true;
       return;
     }
-    saving.value = true;
+    const id = playlistId();
+    settling = true;
+    if (id !== undefined) hold(pendingEdits, id);
     try {
       try {
         await save?.();
@@ -57,7 +80,8 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
         options.onReloaded?.();
       } while (changedMeanwhile);
     } finally {
-      saving.value = false;
+      settling = false;
+      if (id !== undefined) release(pendingEdits, id);
     }
   };
 

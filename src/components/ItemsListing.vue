@@ -267,7 +267,7 @@
                 :index="index"
                 :columns="trackRowColumns"
                 :class="[
-                  { 'opacity-0': draggingIndex === index },
+                  { invisible: draggingIndex === index },
                   isDragging && 'transition-transform duration-200 ease-out',
                 ]"
                 :style="trackRowDragStyle(index)"

@@ -1,4 +1,7 @@
-import { usePlaylistTrackReorder } from "@/composables/usePlaylistTrackReorder";
+import {
+  isPlaylistEditPending,
+  usePlaylistTrackReorder,
+} from "@/composables/usePlaylistTrackReorder";
 import type { MediaItemType } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -109,11 +112,14 @@ describe("usePlaylistTrackReorder", () => {
     await flushPromises();
 
     expect(reload).toHaveBeenCalledOnce();
+    // the track menu holds back removals of the playlist as well
+    expect(isPlaylistEditPending("1")).toBe(true);
     expect(reorder.moveBy(0, 1)).toBeUndefined();
     expect(ids(items.value)).toEqual(["B", "A", "C"]);
     finishReload();
     await move;
     expect(apiMock.movePlaylistTrack).toHaveBeenCalledOnce();
+    expect(isPlaylistEditPending("1")).toBe(false);
   });
 
   it("reads the order again when the playlist changed during a read back", async () => {

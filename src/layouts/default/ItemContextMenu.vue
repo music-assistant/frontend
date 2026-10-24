@@ -384,6 +384,7 @@ import { $t } from "@/plugins/i18n";
 import { toast } from "vue-sonner";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
+import { isPlaylistEditPending } from "@/composables/usePlaylistTrackReorder";
 import {
   ArrowDown,
   ArrowRightLeft,
@@ -1058,12 +1059,15 @@ export const getContextMenuItems = async function (
         firstItem.media_type === MediaType.RADIO ||
         firstItem.media_type === MediaType.PODCAST_EPISODE ||
         firstItem.media_type === MediaType.AUDIOBOOK) &&
-      canEditPlaylistItems(playlist, store.currentUser, managesLibrary)
+      canEditPlaylistItems(playlist, store.currentUser, managesLibrary) &&
+      // the listed positions are out of date while a move is saving
+      !isPlaylistEditPending(playlist.item_id)
     ) {
       contextMenuItems.push({
         label: "remove_playlist",
         labelArgs: [],
         action: () => {
+          if (isPlaylistEditPending(playlist.item_id)) return;
           api.removePlaylistTracks(
             playlist.item_id,
             items.map((x) => ("position" in x ? x.position : 0) as number),
