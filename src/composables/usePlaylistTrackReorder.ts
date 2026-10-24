@@ -9,7 +9,12 @@ import {
   moveListedItems,
   playlistPosition,
 } from "@/helpers/playlist_reorder";
-import { api, ApiCommandError, ConnectionState } from "@/plugins/api";
+import {
+  api,
+  ApiCommandError,
+  ConnectionLostError,
+  ConnectionState,
+} from "@/plugins/api";
 import {
   EventType,
   TaskStatus,
@@ -27,6 +32,8 @@ const FINISHED_TASK_STATUSES = new Set([
 ]);
 // the server's error for a task it no longer holds
 const INVALID_DATA_ERROR_CODE = 3;
+// the server tags the task removing tracks from a playlist with this domain
+const PLAYLIST_REMOVAL_TASK_DOMAIN = "playlist_remove_tracks";
 
 /**
  * Resolves once a background task has finished or is no longer listed. A
@@ -73,6 +80,43 @@ export const untilTaskEnds = (task: BackgroundTask) =>
     ) as () => void;
   });
 
+/**
+ * Resolves once the server is reached again and no removal of the playlist's
+ * tracks is left running there. An edit whose reply was lost may still be
+ * queued, and its task is not known here; a lookup that fails waits for the
+ * next connection.
+ */
+export const untilPlaylistRemovalsEnd = (id: string) =>
+  new Promise<void>((resolve) => {
+    let lookingUp = false;
+    const lookUp = async function () {
+      if (lookingUp) return;
+      lookingUp = true;
+      try {
+        const removals = (await api.getTasks()).filter(
+          (task) =>
+            task.metadata?.task_domain === PLAYLIST_REMOVAL_TASK_DOMAIN &&
+            task.metadata?.playlist_id === id &&
+            !FINISHED_TASK_STATUSES.has(task.status),
+        );
+        stopWatchingConnection();
+        await Promise.all(removals.map(untilTaskEnds));
+        resolve();
+      } catch {
+        // looked up again on the next connection
+      } finally {
+        lookingUp = false;
+      }
+    };
+    const stopWatchingConnection = watch(
+      () => api.state.value,
+      (state) => {
+        if (state === ConnectionState.INITIALIZED) void lookUp();
+      },
+      { immediate: true },
+    );
+  });
+
 // Counts per playlist id, for edits on their way from outside the playlist's
 // listing (such as the track menu), and for every edit that is saving or
 // being read back; the listed positions are out of date until it is done.
@@ -109,8 +153,10 @@ export const sendPlaylistEdit = async function (
   hold(pendingEdits, id);
   try {
     await edit();
-  } catch {
-    // the api already reports the failure to the user
+  } catch (err) {
+    // the api already reports the failure to the user; a reply lost with the
+    // connection leaves the edit unknown, and a removal may still be queued
+    if (err instanceof ConnectionLostError) await untilPlaylistRemovalsEnd(id);
   } finally {
     // the listing takes over the hold before this one ends
     release(outsideEdits, id);
@@ -200,6 +246,18 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
       if (!pending && wasPending) void settle();
     },
     // take over the hold before the edit releases it
+    { flush: "sync" },
+  );
+
+  // The playlist may have changed while the server was out of reach: read the
+  // rows back before the listed positions are used again.
+  watch(
+    () => api.state.value === ConnectionState.INITIALIZED,
+    (connected, wasConnected) => {
+      if (connected && !wasConnected && playlistId() !== undefined)
+        void settle();
+    },
+    // hold the edits before the reconnected listing offers them again
     { flush: "sync" },
   );
 
