@@ -4,7 +4,7 @@ import {
   resolveQueueElapsedTime,
   resolveQueueTiming,
 } from "@/helpers/activeElapsedTime";
-import { PlaybackState } from "@/plugins/api/interfaces";
+import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Only the fields the helper actually reads are mocked.
@@ -22,6 +22,8 @@ interface MockPlayer {
   elapsed_time?: number;
   elapsed_time_last_updated?: number;
   current_media?: {
+    media_type?: MediaType;
+    duration?: number;
     elapsed_time?: number;
     elapsed_time_last_updated?: number;
   };
@@ -157,6 +159,62 @@ describe("resolveActiveTiming / resolveActiveElapsedTime", () => {
 
     vi.setSystemTime((NOW + 4) * 1000);
     expect(resolveActiveElapsedTime()).toBeCloseTo(14, 6);
+  });
+
+  it("times a radio song from the stream's own position, not the station's", () => {
+    seedQueue({ queue_id: "q1", state: PlaybackState.PLAYING, active: true });
+    // the queue counts from when the station was tuned in
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 1289,
+      elapsed_time_last_updated: NOW,
+    };
+    seedPlayer({
+      playback_state: PlaybackState.PLAYING,
+      current_media: {
+        media_type: MediaType.RADIO,
+        duration: 430,
+        elapsed_time: 100,
+        elapsed_time_last_updated: NOW,
+      },
+    });
+
+    vi.setSystemTime((NOW + 4) * 1000);
+    expect(resolveActiveElapsedTime()).toBeCloseTo(104, 6);
+  });
+
+  it("holds a radio song's position while the queue is paused", () => {
+    seedQueue({ queue_id: "q1", state: PlaybackState.PAUSED, active: true });
+    seedPlayer({
+      playback_state: PlaybackState.PLAYING,
+      current_media: {
+        media_type: MediaType.RADIO,
+        duration: 430,
+        elapsed_time: 100,
+        elapsed_time_last_updated: NOW,
+      },
+    });
+
+    vi.setSystemTime((NOW + 4) * 1000);
+    expect(resolveActiveElapsedTime()).toBe(100);
+  });
+
+  it("keeps the queue's position for a radio stream without song durations", () => {
+    seedQueue({ queue_id: "q1", state: PlaybackState.PLAYING, active: true });
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 1289,
+      elapsed_time_last_updated: NOW,
+    };
+    seedPlayer({
+      playback_state: PlaybackState.PLAYING,
+      current_media: {
+        media_type: MediaType.RADIO,
+        elapsed_time: 1289,
+        elapsed_time_last_updated: NOW,
+      },
+    });
+
+    vi.setSystemTime((NOW + 4) * 1000);
+    expect(resolveActiveElapsedTime()).toBeCloseTo(1293, 6);
   });
 
   it("does not advance when the queue is paused, even if the player is playing", () => {
