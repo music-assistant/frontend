@@ -342,13 +342,8 @@ const playerCurTimeStr = computed(() => {
 
 const playerTotalTimeStr = computed(() => {
   const duration = timelineDuration.value;
-  // If radio/streaming with unknown duration, don't show
-  if (
-    !duration ||
-    store.activePlayer?.current_media?.media_type == MediaType.RADIO
-  ) {
-    return "";
-  }
+  // A stream of unknown duration (most radio) has no end to show
+  if (!duration) return "";
   return formatDuration(duration);
 });
 
