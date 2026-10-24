@@ -1351,7 +1351,11 @@ const {
 } = usePlaylistTrackReorder({
   listEl: listRowsEl,
   items: pagedItems,
-  playlistId: () => props.parentItem?.item_id,
+  // albums re-read their rows the same way, but only a playlist's edits are held
+  playlistId: () =>
+    props.parentItem?.media_type === MediaType.PLAYLIST
+      ? props.parentItem.item_id
+      : undefined,
   inOwnOrder: () => canDragTracks.value,
   selectedIndices: selectedRowIndices,
   rowHeight: TRACK_ROW_HEIGHT,

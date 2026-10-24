@@ -2550,8 +2550,23 @@ describe("ItemsListing playlist reorder", () => {
     mockSubscribe.mockReset();
     mockSubscribe.mockImplementation(events.subscribe);
     mockMovePlaylistTrack.mockReset();
+    // the rows show the playlist's own order, so they can be moved
+    mockGetSortOptions.mockReset().mockResolvedValue([
+      {
+        field: SortField.POSITION,
+        supports_direction: true,
+        default_direction: SortDirection.ASC,
+        label_key: "position",
+      },
+    ]);
     store.prevState = undefined;
-    store.currentUser = undefined;
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.playlist.1.library.playlisttracks": {
+          sortBy: "position",
+        },
+      },
+    });
   });
 
   function mountPlaylist(
@@ -2566,6 +2581,7 @@ describe("ItemsListing playlist reorder", () => {
         forcedViewMode: "list",
         trackTable: true,
         reorderable: true,
+        sortListing: ListingType.PLAYLIST_TRACKS,
         parentItem: playlist({ item_id: "1" }),
         loadPagedData,
         ...props,

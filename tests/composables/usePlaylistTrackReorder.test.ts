@@ -50,8 +50,14 @@ const listing = (...ids: string[]): MediaItemType[] =>
 
 const mounted: { unmount: () => void }[] = [];
 
-function setup(ids: string[], selectedIndices: number[]) {
+function setup(
+  ids: string[],
+  selectedIndices: number[],
+  playlistId = ref("1"),
+) {
   const items = ref<MediaItemType[]>(listing(...ids));
+  const listEl = document.createElement("div");
+  document.body.append(listEl);
   // the listing hands out reactive rows, as a selection holds them
   const selection = ref<MediaItemType[]>(
     selectedIndices.map((index) => items.value[index]),
@@ -65,7 +71,7 @@ function setup(ids: string[], selectedIndices: number[]) {
         reorder = usePlaylistTrackReorder({
           listEl: ref(listEl),
           items,
-          playlistId: () => "1",
+          playlistId: () => playlistId.value,
           inOwnOrder: () => true,
           selectedIndices: () => selectedIndices,
           rowHeight: 56,
@@ -82,7 +88,12 @@ function setup(ids: string[], selectedIndices: number[]) {
       },
     }),
   );
-  mounted.push(wrapper);
+  mounted.push({
+    unmount: () => {
+      wrapper.unmount();
+      listEl.remove();
+    },
+  });
   return { items, selection, reload, onReloaded, reorder };
 }
 
@@ -265,6 +276,45 @@ describe("usePlaylistTrackReorder", () => {
     finishReload();
     await flushPromises();
     expect(reorder.saving.value).toBe(false);
+  });
+
+  it("moves the dragged row where it is dropped", async () => {
+    apiMock.movePlaylistTrack.mockResolvedValue();
+    const { items, reorder } = setup(["A", "B", "C"], []);
+
+    dragFirstRowToThird(reorder);
+    window.dispatchEvent(pointer("pointerup", 140));
+    await flushPromises();
+
+    expect(ids(items.value)).toEqual(["B", "C", "A"]);
+    expect(apiMock.movePlaylistTrack).toHaveBeenCalledWith("1", 1, 3);
+  });
+
+  it("drops nothing when the rows were replaced during the drag", async () => {
+    const { items, reorder } = setup(["A", "B", "C"], []);
+
+    dragFirstRowToThird(reorder);
+    // a playlist update read the rows again meanwhile
+    items.value = listing("C", "A", "B");
+    window.dispatchEvent(pointer("pointerup", 140));
+    await flushPromises();
+
+    expect(ids(items.value)).toEqual(["C", "A", "B"]);
+    expect(apiMock.movePlaylistTrack).not.toHaveBeenCalled();
+  });
+
+  it("drops nothing when the listing moved to another playlist", async () => {
+    const playlistId = ref("1");
+    const { items, reorder } = setup(["A", "B", "C"], [], playlistId);
+
+    dragFirstRowToThird(reorder);
+    playlistId.value = "2";
+    window.dispatchEvent(pointer("pointerup", 140));
+    await flushPromises();
+
+    expect(ids(items.value)).toEqual(["A", "B", "C"]);
+    expect(apiMock.movePlaylistTrack).not.toHaveBeenCalled();
+    expect(apiMock.movePlaylistTracks).not.toHaveBeenCalled();
   });
 
   describe("untilTaskEnds", () => {
