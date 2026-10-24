@@ -27,6 +27,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
 import { genre } from "../fixtures/genre";
+import { playlist } from "../fixtures/playlist";
 import { track } from "../fixtures/track";
 import { user } from "../fixtures/user";
 
@@ -889,6 +890,45 @@ describe("ItemsListing failed load", () => {
     expect(loadPagedData.mock.calls[1][0]).toMatchObject({ offset: 0 });
     // loaded, so the scroller finds the end instead of the failure
     expect(await scrollerLoads(listing)).toHaveBeenCalledWith("empty");
+  });
+
+  it("lets the scroller page on once a playlist update read the rows again", async () => {
+    const reset = vi.fn();
+    const ResettableScrollerStub = {
+      ...InfiniteScrollStub,
+      setup(props: { onLoad?: OnLoad }, context: SetupContext) {
+        context.expose({ reset });
+        return InfiniteScrollStub.setup(props, context);
+      },
+    };
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
+      .mockResolvedValueOnce([track({ item_id: "1" }), track({ item_id: "2" })])
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce([
+        track({ item_id: "1" }),
+        track({ item_id: "2" }),
+      ]);
+    const listing = mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.library",
+        showGenreFilter: false,
+        loadPagedData,
+        limit: 2,
+        parentItem: playlist({ item_id: "1" }),
+        refreshOnParentUpdate: true,
+      },
+      { VInfiniteScroll: ResettableScrollerStub },
+    );
+    await flushPromises();
+    expect(await scrollerLoads(listing)).toHaveBeenCalledWith("error");
+
+    await listing.setProps({ parentItem: playlist({ item_id: "1" }) });
+    await flushPromises();
+
+    expect(loadPagedData.mock.calls[2][0]).toMatchObject({ offset: 0 });
+    expect(reset).toHaveBeenCalledOnce();
   });
 
   it("remounts an errored scroller after retrying a failed first-page reload", async () => {

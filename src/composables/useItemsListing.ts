@@ -330,6 +330,7 @@ export function useItemsListing(
       allItemsReceived.value = isLastPage(items.length, limit);
       newContentAvailable.value = false;
       loadError.value = false;
+      retryFromStart = false;
       return;
     }
     pagedItems.value = [];

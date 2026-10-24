@@ -456,6 +456,35 @@ describe("useItemsListing", () => {
       expect(listing.pagedItems.value[0].item_id).toBe("new-0");
     });
 
+    it("pages on again once the rows were read after a failed page", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData
+        .mockResolvedValueOnce(tracks(2))
+        .mockRejectedValueOnce(new Error("offline"));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      await listing.loadNextPage({ done: () => {} });
+      expect(listing.loadError.value).toBe(true);
+      loadPagedData
+        .mockResolvedValueOnce(tracks(2, "new-"))
+        .mockResolvedValueOnce(tracks(1, "page2-"));
+
+      await listing.reloadLoadedItems();
+      expect(listing.loadError.value).toBe(false);
+      const done = vi.fn();
+      await listing.loadNextPage({ done });
+
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 2 }),
+      );
+      expect(done).toHaveBeenCalledWith("ok");
+      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual([
+        "new-0",
+        "new-1",
+        "page2-0",
+      ]);
+    });
+
     it("loads the listing from the start when the rows can't be read again", async () => {
       const loadPagedData = vi.fn<LoadPagedDataFn>();
       loadPagedData.mockResolvedValueOnce(tracks(2));
