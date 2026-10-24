@@ -147,6 +147,7 @@ interface SharedPayload {
   type: "track" | "album" | "artist" | "playlist";
   title: string;
   artist?: string;
+  version?: string;
   art_ref?: string;
   tracks: SharedTrack[];
 }
@@ -158,6 +159,7 @@ const loading = ref(true);
 const errorKey = ref("");
 const importing = ref(false);
 const confirmImportOpen = ref(false);
+let importRequestId = 0;
 const canWrite = computed(() => authManager.hasScope(Scope.LIBRARY_WRITE));
 const artwork = computed(() =>
   expandShareArtworkRef(decodedPayload.value?.art_ref),
@@ -180,8 +182,10 @@ watch(
     let active = true;
     onCleanup(() => {
       active = false;
+      importRequestId++;
     });
     confirmImportOpen.value = false;
+    importing.value = false;
     decodedPayload.value = undefined;
     artworkFailed.value = false;
     errorKey.value = "";
@@ -228,16 +232,24 @@ async function importPlaylist(): Promise<void> {
     return;
   }
 
+  const encodedPayload = props.payload;
+  const requestId = ++importRequestId;
   importing.value = true;
   try {
-    const playlist = await api.importSharedPlaylist(props.payload);
+    const playlist = await api.importSharedPlaylist(encodedPayload);
+    if (requestId !== importRequestId || encodedPayload !== props.payload)
+      return;
     toast.success($t("share.imported"));
     confirmImportOpen.value = false;
     await openItem(playlist);
   } catch {
-    toast.error($t("share.import_failed"));
+    if (requestId === importRequestId && encodedPayload === props.payload) {
+      toast.error($t("share.import_failed"));
+    }
   } finally {
-    importing.value = false;
+    if (requestId === importRequestId && encodedPayload === props.payload) {
+      importing.value = false;
+    }
   }
 }
 

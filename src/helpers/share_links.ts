@@ -66,6 +66,7 @@ export interface SharePreview {
 export interface SharedTrack {
   title: string;
   artist?: string | null;
+  version?: string | null;
   album?: string | null;
   isrc?: string | null;
   mbid?: string | null;
@@ -79,6 +80,7 @@ export function encodeSharedTrack(track: SharedTrack): string {
       type: "track",
       title: track.title,
       artist: track.artist,
+      version: track.version,
       album: track.album,
       isrc: track.isrc,
       mbid: track.mbid,

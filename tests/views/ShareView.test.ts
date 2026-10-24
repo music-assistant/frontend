@@ -159,4 +159,86 @@ describe("ShareView async state", () => {
     expect(apiMock.importSharedPlaylist).not.toHaveBeenCalled();
     wrapper.unmount();
   });
+
+  it("ignores an old import response after the payload changes", async () => {
+    const pending = deferred<{
+      media_type: string;
+      provider: string;
+      item_id: string;
+    }>();
+    const oldPayload = playlist("Playlist A");
+    apiMock.importSharedPlaylist.mockReturnValueOnce(pending.promise);
+    const wrapper = mount(ShareView, { props: { payload: oldPayload } });
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().trim() === "share.import")
+      ?.trigger("click");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().trim() === "share.confirm_import")
+      ?.trigger("click");
+    expect(apiMock.importSharedPlaylist).toHaveBeenCalledWith(oldPayload);
+
+    await wrapper.setProps({ payload: playlist("Playlist B") });
+    pending.resolve({
+      media_type: "playlist",
+      provider: "library",
+      item_id: "playlist-a",
+    });
+    await flushPromises();
+
+    expect(routerMock.replace).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("Playlist B");
+    wrapper.unmount();
+  });
+
+  it("ignores an import response after leaving the share view", async () => {
+    const pending = deferred<{
+      media_type: string;
+      provider: string;
+      item_id: string;
+    }>();
+    apiMock.importSharedPlaylist.mockReturnValueOnce(pending.promise);
+    const wrapper = mount(ShareView, {
+      props: { payload: playlist("Playlist A") },
+    });
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().trim() === "share.import")
+      ?.trigger("click");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().trim() === "share.confirm_import")
+      ?.trigger("click");
+    wrapper.unmount();
+    pending.resolve({
+      media_type: "playlist",
+      provider: "library",
+      item_id: "playlist-a",
+    });
+    await flushPromises();
+
+    expect(routerMock.replace).not.toHaveBeenCalled();
+  });
+
+  it("decodes a playlist payload larger than one MiB from a URL fragment", () => {
+    const encoded = encode({
+      type: "playlist",
+      title: "Large playlist",
+      tracks: Array.from({ length: 7000 }, (_, index) => ({
+        title: `Track ${index} ${"x".repeat(100)}`,
+      })),
+    });
+    const shareUrl = new URL(`https://share.music-assistant.io/#${encoded}`);
+
+    expect(shareUrl.hash.length).toBeGreaterThan(1024 * 1024);
+    const wrapper = mount(ShareView, {
+      props: { payload: shareUrl.hash.slice(1) },
+    });
+
+    expect(wrapper.text()).toContain("Large playlist");
+    wrapper.unmount();
+  });
 });
