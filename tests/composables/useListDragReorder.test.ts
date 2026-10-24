@@ -50,6 +50,26 @@ describe("useListDragReorder", () => {
     mounted.splice(0).forEach((wrapper) => wrapper.unmount());
   });
 
+  it("does not commit a press that only jittered across a row edge", () => {
+    const { drag, onCommit } = setup();
+
+    press(drag, 10, 48);
+    window.dispatchEvent(pointer("pointermove", 10, 52));
+    window.dispatchEvent(pointer("pointerup", 10, 52));
+
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  it("commits a drag that moved the row", () => {
+    const { drag, onCommit } = setup();
+
+    press(drag, 10, 10);
+    window.dispatchEvent(pointer("pointermove", 10, 110));
+    window.dispatchEvent(pointer("pointerup", 10, 110));
+
+    expect(onCommit).toHaveBeenCalledWith(0, 2);
+  });
+
   it("swallows the click that ends a drag which moved", () => {
     const { drag, row } = setup();
     const onClick = vi.fn();

@@ -4,7 +4,7 @@
 // position is the provider's.
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { moveListedItem, playlistPosition } from "@/helpers/playlist_reorder";
-import { api } from "@/plugins/api";
+import { api, ConnectionState } from "@/plugins/api";
 import type { MediaItemType } from "@/plugins/api/interfaces";
 import { Ref, ref, toRaw } from "vue";
 
@@ -22,6 +22,10 @@ interface PlaylistTrackReorderOptions {
   // Called each time the rows were read back.
   onReloaded?: () => void;
 }
+
+/** Whether the server takes commands, so a move can be saved and read back. */
+export const canSavePlaylistMoves = () =>
+  api.state.value === ConnectionState.INITIALIZED;
 
 export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
   const { listEl, items, playlistId, rowHeight, reload } = options;
@@ -64,6 +68,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     const id = playlistId();
     const before = toRaw(items.value);
     if (id === undefined || saving.value || from === to) return;
+    if (!canSavePlaylistMoves()) return;
     if (from < 0 || from >= before.length) return;
     if (to < 0 || to >= before.length) return;
     const fromPosition = playlistPosition(before[from]);

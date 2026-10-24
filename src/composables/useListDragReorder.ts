@@ -236,9 +236,11 @@ export function useListDragReorder(options: ListDragReorderOptions) {
   const finishDrag = (commit: boolean) => {
     const source = dragSourceIndex.value;
     const drop = dragDropIndex.value;
-    if (dragMoved) suppressNextClick();
+    const moved = dragMoved;
+    if (moved) suppressNextClick();
     cleanupDrag();
-    if (!commit || source == null || drop == null) return;
+    // a press that barely moved is a click, even when it crossed a row edge
+    if (!commit || !moved || source == null || drop == null) return;
     // Removing the source first shifts everything after it down by one, so the
     // final resting index is one lower when dropping below the original spot.
     const finalIndex = drop > source ? drop - 1 : drop;

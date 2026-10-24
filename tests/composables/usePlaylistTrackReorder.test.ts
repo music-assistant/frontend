@@ -8,10 +8,15 @@ import { track } from "../fixtures/track";
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     movePlaylistTrack: vi.fn<() => Promise<void>>(),
+    state: { value: "initialized" },
   },
 }));
 
-vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+vi.mock("@/plugins/api", () => ({
+  api: apiMock,
+  default: apiMock,
+  ConnectionState: { INITIALIZED: "initialized" },
+}));
 
 const listing = (...ids: string[]): MediaItemType[] =>
   ids.map((id, index) => track({ item_id: id, position: index + 1 }));
@@ -48,6 +53,18 @@ describe("usePlaylistTrackReorder", () => {
   afterEach(() => {
     mounted.splice(0).forEach((wrapper) => wrapper.unmount());
     vi.clearAllMocks();
+    apiMock.state.value = "initialized";
+  });
+
+  it("leaves the rows alone while the server is out of reach", async () => {
+    apiMock.state.value = "reconnecting";
+    const { items, reload, reorder } = setup(["A", "B", "C"]);
+
+    await reorder.move(0, 2);
+
+    expect(ids(items.value)).toEqual(["A", "B", "C"]);
+    expect(apiMock.movePlaylistTrack).not.toHaveBeenCalled();
+    expect(reload).not.toHaveBeenCalled();
   });
 
   it("shows the move at once and reads the order back once it is saved", async () => {

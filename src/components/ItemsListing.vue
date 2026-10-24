@@ -421,7 +421,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GridSizeSlider from "@/components/GridSizeSlider.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import { useItemsListing } from "@/composables/useItemsListing";
-import { usePlaylistTrackReorder } from "@/composables/usePlaylistTrackReorder";
+import {
+  canSavePlaylistMoves,
+  usePlaylistTrackReorder,
+} from "@/composables/usePlaylistTrackReorder";
 import type {
   LoadDataParams,
   LoadPagedDataFn,
@@ -1313,6 +1316,8 @@ const canDragTracks = computed(
     displayedSort.value.sortDirection !== SortDirection.DESC &&
     !hasActiveFilters.value &&
     !showCheckboxes.value &&
+    // a move made while reconnecting could not be saved nor read back
+    canSavePlaylistMoves() &&
     listsPlaylistFromStart(pagedItems.value),
 );
 const trackRowColumns = computed<TrackColumn[]>(() =>
@@ -1341,7 +1346,14 @@ const {
   items: pagedItems,
   playlistId: () => props.parentItem?.item_id,
   rowHeight: TRACK_ROW_HEIGHT,
-  reload: reloadLoadedItems,
+  reload: async () => {
+    const failed = loadError.value;
+    await reloadLoadedItems();
+    // rows read again after a failed page let the scroller page on again
+    if (failed && !loadError.value && !tempHide.value) {
+      infiniteScrollEl.value?.reset();
+    }
+  },
   onReloaded: () => reselectReloadedRows(),
 });
 // the rows are keyed by index, so after a keyboard move the focus follows the
