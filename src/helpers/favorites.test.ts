@@ -44,6 +44,22 @@ const itemMapping: ItemMapping = {
   available: true,
 };
 
+describe("share preview favorite state", () => {
+  it("does not allow unresolved shared tracks to hold favorites", () => {
+    const preview = track({
+      provider: "builtin",
+      item_id: "share-preview://track/encoded",
+    });
+    expect(canHoldFavorite(preview)).toBe(false);
+    setFavoriteState(preview, true);
+    expect(preview.favorite).toBeNull();
+  });
+
+  it("still allows a normal unavailable library track to hold its favorite state", () => {
+    expect(canHoldFavorite(track({ provider_mappings: [] }))).toBe(true);
+  });
+});
+
 describe("keepOwnFavorite", () => {
   it("keeps the favorite state of the item the caller holds", () => {
     const merged = keepOwnFavorite(
