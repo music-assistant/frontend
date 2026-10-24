@@ -4,7 +4,7 @@
       class="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden p-4 sm:max-w-[560px]"
     >
       <DialogTitle class="sr-only">
-        {{ $t("share.preview_title", [preview?.title ?? ""]) }}
+        {{ $t("share.preview_title", { title: preview?.title ?? "" }) }}
       </DialogTitle>
       <DialogDescription class="sr-only">
         {{ $t("share.preview_description") }}

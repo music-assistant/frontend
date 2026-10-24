@@ -9,10 +9,11 @@ import {
 } from "./share_links";
 
 describe("encodeSharedTrack", () => {
-  it("preserves Unicode metadata and external IDs without a version field", () => {
+  it("preserves Unicode metadata, version, and external IDs", () => {
     const track = {
       title: "Musik \u00fcberall",
       artist: "Bj\u00f6rk",
+      version: "Live",
       isrc: "USRC17607839",
       mbid: "recording-id",
       mb_track: "release-track-id",
