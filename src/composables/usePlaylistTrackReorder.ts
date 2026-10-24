@@ -9,7 +9,7 @@ import {
   moveListedItems,
   playlistPosition,
 } from "@/helpers/playlist_reorder";
-import { api, ConnectionState } from "@/plugins/api";
+import { api, ApiCommandError, ConnectionState } from "@/plugins/api";
 import {
   EventType,
   TaskStatus,
@@ -25,11 +25,13 @@ const FINISHED_TASK_STATUSES = new Set([
   TaskStatus.FAILED,
   TaskStatus.CANCELLED,
 ]);
+// the server's error for a task it no longer holds
+const INVALID_DATA_ERROR_CODE = 3;
+
 /**
- * Resolves once a background task has finished, is no longer listed, or the
- * connection to the server was made again. Its end can't be looked up without
- * the right to read every task, and a report sent while disconnected is lost,
- * so a reconnect ends the wait and the rows are read back instead.
+ * Resolves once a background task has finished or is no longer listed. A
+ * report sent while disconnected is lost, so the task is looked up again once
+ * the server is reached; a lookup that fails keeps waiting for the next one.
  */
 export const untilTaskEnds = (task: BackgroundTask) =>
   new Promise<void>((resolve) => {
@@ -42,10 +44,22 @@ export const untilTaskEnds = (task: BackgroundTask) =>
       stopWatchingConnection();
       resolve();
     };
+    const lookUp = async function () {
+      try {
+        const current = await api.getTask(task.id);
+        if (FINISHED_TASK_STATUSES.has(current.status)) stop();
+      } catch (err) {
+        if (
+          err instanceof ApiCommandError &&
+          err.error_code === INVALID_DATA_ERROR_CODE
+        )
+          stop();
+      }
+    };
     const stopWatchingConnection = watch(
       () => api.state.value,
       (state) => {
-        if (state === ConnectionState.INITIALIZED) stop();
+        if (state === ConnectionState.INITIALIZED) void lookUp();
       },
     );
     const unsubscribe = api.subscribe(

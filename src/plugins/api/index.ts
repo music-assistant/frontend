@@ -3038,6 +3038,15 @@ export class MusicAssistantApi {
   public getTasks(): Promise<BackgroundTask[]> {
     return this.sendCommand("tasks/list");
   }
+  // A task the user started can be looked up; a missing one rejects with the
+  // invalid data error, which the caller expects and handles.
+  public getTask(taskId: string): Promise<BackgroundTask> {
+    return this.sendCommand(
+      "tasks/get",
+      { task_id: taskId },
+      { suppressGlobalError: true },
+    );
+  }
 
   public runTask(
     task_id: string,
