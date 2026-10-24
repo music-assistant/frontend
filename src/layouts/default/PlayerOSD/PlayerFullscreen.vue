@@ -533,6 +533,7 @@ import { playbackSpeedSupported } from "@/helpers/elapsed";
 import { expertModeSetting } from "@/helpers/expert_mode";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
+import { getItemShareMenuItem } from "@/composables/useItemSharing";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import { getPlayerDisplayName, getPlayerName } from "@/helpers/players";
 import {
@@ -1270,6 +1271,11 @@ const openQueueMenu = function (evt: Event) {
       hideShuffleRepeat: mdAndUp.value && !showSkip.value,
     },
   );
+  const mediaItem = store.curQueueItem?.media_item;
+  if (mediaItem) {
+    const shareItem = getItemShareMenuItem(mediaItem);
+    if (shareItem) menuItems.push(shareItem);
+  }
   // playback speed only means something for spoken-word content, which is also
   // the only content anyone plays at anything but 1x
   if (speedSupported.value) {

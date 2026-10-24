@@ -1,4 +1,5 @@
 // shared logic to build the per-item context menu for the fullscreen queue list
+import { getItemShareMenuItem } from "@/composables/useItemSharing";
 import {
   gotoRadio,
   radioActionLabelKey,
@@ -43,6 +44,10 @@ export const getQueueItemMenuItems = (
 
   // go to this item's radio (a dynamic playlist generated from it as the seed)
   const mediaItem = item.media_item;
+  if (mediaItem) {
+    const shareItem = getItemShareMenuItem(mediaItem);
+    if (shareItem) menuItems.push(shareItem);
+  }
   if (mediaItem && radioSupported(mediaItem)) {
     menuItems.push({
       label: radioActionLabelKey(mediaItem),

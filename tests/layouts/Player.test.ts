@@ -7,7 +7,10 @@ import PlaybackSpeedBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/Playb
 import QueueBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/QueueBtn.vue";
 import SleepTimerBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SleepTimerBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
-import type { Player as PlayerModel } from "@/plugins/api/interfaces";
+import type {
+  QueueItem,
+  Player as PlayerModel,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
@@ -41,6 +44,7 @@ vi.mock("@/plugins/store", async () => {
 const mockStore = store as unknown as {
   activePlayer?: PlayerModel;
   activePlayerId?: string;
+  curQueueItem?: QueueItem;
 };
 
 // bp7: the width from which the countdown fits beside the queue button
@@ -86,6 +90,7 @@ afterEach(() => {
   wrapper = undefined;
   mockStore.activePlayer = undefined;
   mockStore.activePlayerId = undefined;
+  mockStore.curQueueItem = undefined;
   if (originalInnerWidth) {
     Object.defineProperty(window, "innerWidth", originalInnerWidth);
   }

@@ -10,6 +10,7 @@ export interface ContextMenuItem {
   // positional for a `{0}` message, named for a `{name}` one
   labelArgs?: Array<string | number> | Record<string, string | number>;
   action?: () => void;
+  prepare?: () => Promise<void>;
   icon?: string | Component;
   disabled?: boolean;
   hide?: boolean;
