@@ -1157,6 +1157,30 @@ export class MusicAssistantApi {
     });
   }
 
+  public movePlaylistTrack(
+    db_playlist_id: string | number,
+    from_position: number,
+    to_position: number,
+  ): Promise<void> {
+    return this.sendCommand("music/playlists/move_playlist_track", {
+      db_playlist_id,
+      from_position,
+      to_position,
+    });
+  }
+
+  public movePlaylistTracks(
+    db_playlist_id: string | number,
+    positions: number[],
+    to_position?: number,
+  ): Promise<void> {
+    return this.sendCommand("music/playlists/move_playlist_tracks", {
+      db_playlist_id,
+      positions,
+      to_position,
+    });
+  }
+
   public createPlaylist(
     name: string,
     provider_instance_or_domain?: string,
@@ -3014,6 +3038,15 @@ export class MusicAssistantApi {
   public getTasks(): Promise<BackgroundTask[]> {
     return this.sendCommand("tasks/list");
   }
+  // A task the user started can be looked up; a missing one rejects with the
+  // invalid data error, which the caller expects and handles.
+  public getTask(taskId: string): Promise<BackgroundTask> {
+    return this.sendCommand(
+      "tasks/get",
+      { task_id: taskId },
+      { suppressGlobalError: true },
+    );
+  }
 
   public runTask(
     task_id: string,
@@ -3434,8 +3467,9 @@ export class MusicAssistantApi {
    * Signal an event to all registered listeners.
    */
   public signalEvent(evt: MassEvent) {
-    // signal event to all listeners
-    for (const listener of this.eventCallbacks) {
+    // signal event to all listeners; a listener may unsubscribe while this
+    // runs, which must not skip the one after it
+    for (const listener of this.eventCallbacks.slice()) {
       if (listener[0] === EventType.ALL || listener[0] === evt.event) {
         if (listener[1] == "*" || listener[1] === evt.object_id) {
           listener[2](evt);

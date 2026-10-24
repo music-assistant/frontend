@@ -2,7 +2,7 @@ import ItemsListing from "@/components/ItemsListing.vue";
 import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
-import { defineComponent, h, type SetupContext } from "vue";
+import { defineComponent, h, nextTick, ref, type SetupContext } from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   EventType,
@@ -27,6 +27,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
 import { genre } from "../fixtures/genre";
+import { playlist } from "../fixtures/playlist";
 import { track } from "../fixtures/track";
 import { user } from "../fixtures/user";
 
@@ -55,6 +56,7 @@ const mockGetSortOptions = vi.hoisted(() => vi.fn());
 const mockToastError = vi.hoisted(() => vi.fn());
 const mockSubscribeMulti = vi.hoisted(() => vi.fn());
 const mockSubscribe = vi.hoisted(() => vi.fn());
+const mockMovePlaylistTrack = vi.hoisted(() => vi.fn());
 
 vi.mock("@/plugins/api", () => {
   const api = {
@@ -64,8 +66,14 @@ vi.mock("@/plugins/api", () => {
     getSortOptions: mockGetSortOptions,
     subscribe_multi: mockSubscribeMulti,
     subscribe: mockSubscribe,
+    movePlaylistTrack: mockMovePlaylistTrack,
+    state: { value: "initialized" },
   };
-  return { api, default: api };
+  return {
+    api,
+    default: api,
+    ConnectionState: { INITIALIZED: "initialized" },
+  };
 });
 
 vi.mock("@/plugins/store", async () => {
@@ -175,9 +183,13 @@ vi.mock("@/components/PanelviewItemCompact.vue", () =>
 vi.mock("@/components/track-table/TrackTableHeader.vue", () =>
   stubComponent("TrackTableHeader"),
 );
-vi.mock("@/components/track-table/TrackTableRow.vue", () =>
-  stubComponent("TrackTableRow"),
-);
+// a row with its reorder handle, so a test can see which row holds the focus
+vi.mock("@/components/track-table/TrackTableRow.vue", () => ({
+  default: {
+    name: "TrackTableRow",
+    template: '<div><button :data-reorder-index="$attrs.index" /></div>',
+  },
+}));
 vi.mock("@/composables/useTrackTableColumns", async () => {
   const { ref } = await import("vue");
   return {
@@ -805,6 +817,15 @@ describe("ItemsListing failed load", () => {
     store.currentUser = undefined;
   });
 
+  // the scroller with the reset that lets it page on after it stopped
+  const resettableScroller = (reset: () => void) => ({
+    ...InfiniteScrollStub,
+    setup(props: { onLoad?: OnLoad }, context: SetupContext) {
+      context.expose({ reset });
+      return InfiniteScrollStub.setup(props, context);
+    },
+  });
+
   function mountFailingListing(loadPagedData: LoadPagedData) {
     return mountListingRaw(
       {
@@ -889,6 +910,71 @@ describe("ItemsListing failed load", () => {
     expect(loadPagedData.mock.calls[1][0]).toMatchObject({ offset: 0 });
     // loaded, so the scroller finds the end instead of the failure
     expect(await scrollerLoads(listing)).toHaveBeenCalledWith("empty");
+  });
+
+  it("lets the scroller page on when a fully loaded playlist grew", async () => {
+    const reset = vi.fn();
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
+      .mockResolvedValueOnce([track({ item_id: "0" })])
+      .mockResolvedValueOnce(
+        Array.from({ length: 15 }, (_, index) =>
+          track({ item_id: `${index}` }),
+        ),
+      );
+    const listing = mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.library",
+        showGenreFilter: false,
+        loadPagedData,
+        limit: 20,
+        parentItem: playlist({ item_id: "1" }),
+        refreshOnParentUpdate: true,
+      },
+      { VInfiniteScroll: resettableScroller(reset) },
+    );
+    await flushPromises();
+    expect(reset).not.toHaveBeenCalled();
+
+    // tracks were added elsewhere, so the playlist may hold more than a page
+    await listing.setProps({ parentItem: playlist({ item_id: "1" }) });
+    await flushPromises();
+
+    expect(rows(listing)).toHaveLength(15);
+    expect(reset).toHaveBeenCalledOnce();
+  });
+
+  it("lets the scroller page on once a playlist update read the rows again", async () => {
+    const reset = vi.fn();
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
+      .mockResolvedValueOnce([track({ item_id: "1" }), track({ item_id: "2" })])
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce([
+        track({ item_id: "1" }),
+        track({ item_id: "2" }),
+      ]);
+    const listing = mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.library",
+        showGenreFilter: false,
+        loadPagedData,
+        limit: 2,
+        parentItem: playlist({ item_id: "1" }),
+        refreshOnParentUpdate: true,
+      },
+      { VInfiniteScroll: resettableScroller(reset) },
+    );
+    await flushPromises();
+    expect(await scrollerLoads(listing)).toHaveBeenCalledWith("error");
+
+    await listing.setProps({ parentItem: playlist({ item_id: "1" }) });
+    await flushPromises();
+
+    expect(loadPagedData.mock.calls[2][0]).toMatchObject({ offset: 0 });
+    expect(reset).toHaveBeenCalledOnce();
   });
 
   it("remounts an errored scroller after retrying a failed first-page reload", async () => {
@@ -2432,5 +2518,179 @@ describe("ItemsListing server sort options", () => {
         sortDirection: SortDirection.ASC,
       }),
     );
+  });
+});
+
+describe("ItemsListing playlist reorder", () => {
+  type LoadPagedData = NonNullable<
+    InstanceType<typeof ItemsListing>["$props"]["loadPagedData"]
+  >;
+  const RowsScrollerStub = {
+    props: ["items"],
+    template:
+      '<div><slot v-for="(item, index) in items" :key="index" :item="item" :index="index" /></div>',
+  };
+  const playlistRows = () =>
+    ["A", "B", "C"].map((name, index) =>
+      track({
+        item_id: name,
+        name,
+        uri: `library://track/${name}`,
+        position: index + 1,
+      }),
+    );
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
+    mockMovePlaylistTrack.mockReset();
+    // the rows show the playlist's own order, so they can be moved
+    mockGetSortOptions.mockReset().mockResolvedValue([
+      {
+        field: SortField.POSITION,
+        supports_direction: true,
+        default_direction: SortDirection.ASC,
+        label_key: "position",
+      },
+    ]);
+    store.prevState = undefined;
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.playlist.1.library.playlisttracks": {
+          sortBy: "position",
+        },
+      },
+    });
+  });
+
+  function mountPlaylist(
+    loadPagedData: LoadPagedData,
+    props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+  ) {
+    return mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.library",
+        showGenreFilter: false,
+        forcedViewMode: "list",
+        trackTable: true,
+        reorderable: true,
+        sortListing: ListingType.PLAYLIST_TRACKS,
+        parentItem: playlist({ item_id: "1" }),
+        loadPagedData,
+        ...props,
+      },
+      { VVirtualScroll: RowsScrollerStub },
+    );
+  }
+
+  function handle(listing: ReturnType<typeof mountListingRaw>, index: number) {
+    return listing.find(`[data-reorder-index="${index}"]`)
+      .element as HTMLElement;
+  }
+
+  it("keeps the focus on a track whose keyboard move failed", async () => {
+    mockMovePlaylistTrack.mockRejectedValue(new Error("refused"));
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
+      .mockImplementation(async () => playlistRows());
+    const listing = mountPlaylist(loadPagedData);
+    await flushPromises();
+    handle(listing, 0).focus();
+
+    listing
+      .findAllComponents({ name: "TrackTableRow" })[0]
+      .vm.$emit("moveBy", 1);
+    await nextTick();
+    // the focus follows the track to the row it moved to
+    expect(document.activeElement).toBe(handle(listing, 1));
+    await flushPromises();
+
+    // the provider kept the old order, so the track is back in the first row
+    expect(rows(listing).map((item) => item.name)).toEqual(["A", "B", "C"]);
+    expect(document.activeElement).toBe(handle(listing, 0));
+  });
+
+  it("scrolls a track moved out of the rendered rows into view and focuses it", async () => {
+    // the scroller renders the first two rows until the rest scroll into view
+    const rendered = ref(2);
+    const WindowedScrollerStub = {
+      props: ["items"],
+      setup: () => ({ rendered }),
+      template:
+        '<div><template v-for="(item, index) in items" :key="index"><slot v-if="index < rendered" :item="item" :index="index" /></template></div>',
+    };
+    const scrollIntoView = vi
+      .spyOn(HTMLElement.prototype, "scrollIntoView")
+      .mockImplementation(() => {
+        rendered.value = 3;
+      });
+    let finishSave = () => {};
+    mockMovePlaylistTrack.mockReturnValue(
+      new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const listing = mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.library",
+        showGenreFilter: false,
+        forcedViewMode: "list",
+        trackTable: true,
+        reorderable: true,
+        sortListing: ListingType.PLAYLIST_TRACKS,
+        parentItem: playlist({ item_id: "1" }),
+        loadPagedData: vi
+          .fn<LoadPagedData>()
+          .mockImplementation(async () => playlistRows()),
+      },
+      { VVirtualScroll: WindowedScrollerStub },
+    );
+    await flushPromises();
+    handle(listing, 1).focus();
+
+    listing
+      .findAllComponents({ name: "TrackTableRow" })[1]
+      .vm.$emit("moveBy", 1);
+
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(handle(listing, 2)),
+    );
+    expect(scrollIntoView).toHaveBeenCalled();
+    finishSave();
+    await flushPromises();
+    scrollIntoView.mockRestore();
+    listing.unmount();
+  });
+
+  it("does not keep the rows of a move that is saving when the page closes", async () => {
+    let finishSave = () => {};
+    mockMovePlaylistTrack.mockReturnValue(
+      new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const first = mountPlaylist(
+      vi.fn<LoadPagedData>().mockImplementation(async () => playlistRows()),
+      { restoreState: true },
+    );
+    await flushPromises();
+    first.findAllComponents({ name: "TrackTableRow" })[0].vm.$emit("moveBy", 1);
+    await flushPromises();
+    first.unmount();
+
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
+      .mockImplementation(async () => playlistRows());
+    mountPlaylist(loadPagedData, { restoreState: true });
+    await flushPromises();
+
+    // the unsaved order is read from the provider instead of restored
+    expect(loadPagedData).toHaveBeenCalled();
+    finishSave();
+    await flushPromises();
   });
 });

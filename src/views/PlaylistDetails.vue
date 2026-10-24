@@ -45,6 +45,7 @@
             :load-paged-data="loadPlaylistTracks"
             :update-available="updateAvailable"
             :track-table="true"
+            :reorderable="canReorder"
             :title="$t('tracks')"
             :allow-key-hooks="true"
             :path="`playlist.${props.itemId}.${props.provider}`"
@@ -145,9 +146,13 @@ import {
 } from "@/components/ui/dialog";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { usePlaylistTracks } from "@/composables/usePlaylistTracks";
-import { canSharePlaylist } from "@/helpers/playlist_access";
+import {
+  canReorderPlaylistItems,
+  canSharePlaylist,
+} from "@/helpers/playlist_access";
 import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
 import { api } from "@/plugins/api";
+import { providerSupportsPlaylistMove } from "@/plugins/api/helpers";
 import {
   Scope,
   ListingType,
@@ -194,6 +199,18 @@ const canShare = computed(
       itemDetails.value,
       store.currentUser,
       authManager.hasScope(Scope.LIBRARY_MANAGE),
+    ),
+);
+
+const canReorder = computed(
+  () =>
+    canEditLibrary.value &&
+    itemDetails.value !== undefined &&
+    canReorderPlaylistItems(
+      itemDetails.value,
+      store.currentUser,
+      authManager.hasScope(Scope.LIBRARY_MANAGE),
+      providerSupportsPlaylistMove,
     ),
 );
 

@@ -11,6 +11,7 @@ import {
   type SortOptionInfo,
   type Track,
 } from "@/plugins/api/interfaces";
+import { flushPromises } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { effectScope, type EffectScope } from "vue";
 import { track } from "../fixtures/track";
@@ -335,5 +336,215 @@ describe("useItemsListing", () => {
     await loadAll;
 
     expect(loadPagedData).toHaveBeenCalledTimes(1);
+  });
+
+  describe("reloadLoadedItems", () => {
+    const tracks = (count: number, prefix = "t") =>
+      Array.from({ length: count }, (_, index) =>
+        track({ item_id: `${prefix}${index}` }),
+      );
+
+    it("re-reads every loaded page in one request without clearing the list", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData
+        .mockResolvedValueOnce(tracks(2))
+        .mockResolvedValueOnce(tracks(2, "page2-"));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      await listing.loadNextPage({ done: () => {} });
+      const reloaded = tracks(4, "new-");
+      loadPagedData.mockImplementationOnce(async () => {
+        // the old rows stay listed while the reload is on its way
+        expect(listing.pagedItems.value).toHaveLength(4);
+        return reloaded;
+      });
+
+      await listing.reloadLoadedItems();
+
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 0, limit: 4 }),
+      );
+      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual(
+        reloaded.map((item) => item.item_id),
+      );
+      // the next page still follows on from the pages already loaded
+      expect(listing.params.value.offset).toBe(2);
+    });
+
+    it("reads the rows again when a page was appended while it was on its way", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValueOnce(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      let finishReload: (items: Track[]) => void = () => {};
+      loadPagedData.mockImplementationOnce(
+        () => new Promise((resolve) => (finishReload = resolve)),
+      );
+      const reload = listing.reloadLoadedItems();
+      loadPagedData.mockResolvedValueOnce(tracks(2, "page2-"));
+      await listing.loadNextPage({ done: () => {} });
+      loadPagedData.mockResolvedValueOnce(tracks(4, "new-"));
+
+      finishReload(tracks(2, "stale-"));
+      await reload;
+
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 0, limit: 4 }),
+      );
+      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual(
+        tracks(4, "new-").map((item) => item.item_id),
+      );
+    });
+
+    it("waits for a page that is loading before it reads the rows", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValueOnce(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      let finishPage: (items: Track[]) => void = () => {};
+      loadPagedData.mockImplementationOnce(
+        () => new Promise((resolve) => (finishPage = resolve)),
+      );
+      const page = listing.loadNextPage({ done: () => {} });
+      let reloaded = false;
+      const reload = listing.reloadLoadedItems().then(() => (reloaded = true));
+      loadPagedData.mockResolvedValueOnce(tracks(4, "new-"));
+      await flushPromises();
+      // the reload is not done before it has read the rows
+      expect(reloaded).toBe(false);
+
+      finishPage(tracks(2, "page2-"));
+      await page;
+      await reload;
+
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 0, limit: 4 }),
+      );
+      expect(listing.pagedItems.value[0].item_id).toBe("new-0");
+    });
+
+    it("finishes a waiting reload when the listing goes away", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValueOnce(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      loadPagedData.mockImplementationOnce(() => new Promise(() => {}));
+      void listing.loadNextPage({ done: () => {} });
+      const reload = listing.reloadLoadedItems();
+
+      listing.scope.stop();
+
+      await expect(reload).resolves.toBeUndefined();
+    });
+
+    it("keeps the rows of a newer first page that finished before it", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValueOnce(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      let finishReload: (items: Track[]) => void = () => {};
+      loadPagedData.mockImplementationOnce(
+        () => new Promise((resolve) => (finishReload = resolve)),
+      );
+      const reload = listing.reloadLoadedItems();
+      loadPagedData.mockResolvedValueOnce(tracks(2, "new-"));
+      await listing.loadData(true);
+
+      finishReload(tracks(2, "stale-"));
+      await reload;
+
+      expect(listing.pagedItems.value[0].item_id).toBe("new-0");
+    });
+
+    it("pages on again once the rows were read after a failed page", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData
+        .mockResolvedValueOnce(tracks(2))
+        .mockRejectedValueOnce(new Error("offline"));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      await listing.loadNextPage({ done: () => {} });
+      expect(listing.loadError.value).toBe(true);
+      loadPagedData
+        .mockResolvedValueOnce(tracks(2, "new-"))
+        .mockResolvedValueOnce(tracks(1, "page2-"));
+
+      await listing.reloadLoadedItems();
+      expect(listing.loadError.value).toBe(false);
+      const done = vi.fn();
+      await listing.loadNextPage({ done });
+
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 2 }),
+      );
+      expect(done).toHaveBeenCalledWith("ok");
+      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual([
+        "new-0",
+        "new-1",
+        "page2-0",
+      ]);
+    });
+
+    it("loads the listing from the start when the rows can't be read again", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValueOnce(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      loadPagedData.mockRejectedValueOnce(new Error("offline"));
+      loadPagedData.mockImplementationOnce(async () => {
+        // the rows that may be out of date are gone meanwhile
+        expect(listing.pagedItems.value).toEqual([]);
+        return tracks(2, "new-");
+      });
+
+      await listing.reloadLoadedItems();
+
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 0, limit: 2 }),
+      );
+      expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual([
+        "new-0",
+        "new-1",
+      ]);
+    });
+
+    it("loads from the start when a newer first page failed meanwhile", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValueOnce(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      let finishReload: (items: Track[]) => void = () => {};
+      loadPagedData.mockImplementationOnce(
+        () => new Promise((resolve) => (finishReload = resolve)),
+      );
+      const reload = listing.reloadLoadedItems();
+      loadPagedData.mockRejectedValueOnce(new Error("offline"));
+      await listing.loadData(true);
+      expect(listing.loadError.value).toBe(true);
+      loadPagedData.mockResolvedValueOnce(tracks(2, "new-"));
+
+      finishReload(tracks(2, "stale-"));
+      await reload;
+
+      expect(listing.pagedItems.value[0].item_id).toBe("new-0");
+      expect(listing.loadError.value).toBe(false);
+    });
+
+    it("shows the sort it read the rows with", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData.mockResolvedValue(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      // a sort change whose load failed left its sort in the params
+      listing.params.value.sortField = SortField.SORT_NAME;
+      listing.params.value.sortDirection = SortDirection.DESC;
+
+      await listing.reloadLoadedItems();
+
+      expect(listing.displayedSort.value).toEqual({
+        sortField: SortField.SORT_NAME,
+        sortDirection: SortDirection.DESC,
+      });
+    });
   });
 });
