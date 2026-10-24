@@ -4,6 +4,7 @@ import { track } from "../../tests/fixtures/track";
 import {
   listsPlaylistFromStart,
   moveListedItem,
+  nearestIndexOf,
   playlistPosition,
 } from "./playlist_reorder";
 
@@ -66,5 +67,21 @@ describe("listsPlaylistFromStart", () => {
     const items = listing(5);
     expect(listsPlaylistFromStart([items[3], items[4]])).toBe(false);
     expect(listsPlaylistFromStart([items[1], items[0]])).toBe(false);
+  });
+});
+
+describe("nearestIndexOf", () => {
+  const rows = ["A", "B", "A", "C"].map((name, index) =>
+    track({ item_id: `${index}`, uri: `library://track/${name}` }),
+  );
+
+  it("finds the row holding the track nearest to the given index", () => {
+    expect(nearestIndexOf(rows, "library://track/A", 3)).toBe(2);
+    expect(nearestIndexOf(rows, "library://track/A", 0)).toBe(0);
+    expect(nearestIndexOf(rows, "library://track/C", 0)).toBe(3);
+  });
+
+  it("finds nothing when no row holds the track", () => {
+    expect(nearestIndexOf(rows, "library://track/D", 1)).toBe(-1);
   });
 });

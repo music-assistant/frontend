@@ -439,7 +439,10 @@ import {
   subscribeOwnFavorites,
 } from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
-import { listsPlaylistFromStart } from "@/helpers/playlist_reorder";
+import {
+  listsPlaylistFromStart,
+  nearestIndexOf,
+} from "@/helpers/playlist_reorder";
 import {
   GRID_SIZE_DEFAULT,
   gridColumns,
@@ -1344,7 +1347,11 @@ const {
 } = usePlaylistTrackReorder({
   listEl: listRowsEl,
   items: pagedItems,
-  playlistId: () => props.parentItem?.item_id,
+  // albums re-read their rows the same way, but only a playlist's edits are held
+  playlistId: () =>
+    props.parentItem?.media_type === MediaType.PLAYLIST
+      ? props.parentItem.item_id
+      : undefined,
   rowHeight: TRACK_ROW_HEIGHT,
   reload: async () => {
     const failed = loadError.value;
@@ -1356,16 +1363,35 @@ const {
   },
   onReloaded: () => reselectReloadedRows(),
 });
+let stopFollowingMovedTrack: (() => void) | undefined;
+const focusReorderHandle = (index: number) => {
+  const handle = listRowsEl.value?.querySelector<HTMLElement>(
+    `[data-reorder-index="${index}"]`,
+  );
+  handle?.focus();
+  handle?.scrollIntoView({ block: "nearest" });
+};
 // the rows are keyed by index, so after a keyboard move the focus follows the
-// track to the row it moved to
+// track to the row it moved to, and to where it is once the order is read back
 const moveTrackBy = (index: number, delta: number) => {
+  const uri = pagedItems.value[index]?.uri;
   const movedTo = moveTrackRowBy(index, delta);
   if (movedTo === undefined) return;
-  void nextTick(() =>
-    listRowsEl.value
-      ?.querySelector<HTMLElement>(`[data-reorder-index="${movedTo}"]`)
-      ?.focus(),
-  );
+  void nextTick(() => focusReorderHandle(movedTo));
+  stopFollowingMovedTrack?.();
+  const stop = watch(reorderSaving, (saving) => {
+    if (saving) return;
+    stop();
+    // a failed move reads the old order back; the track nearest to where it
+    // was moved is the one moved, as a playlist can hold a track twice
+    if (uri === undefined || pagedItems.value[movedTo]?.uri === uri) return;
+    const found = nearestIndexOf(pagedItems.value, uri, movedTo);
+    // only while the focus is still on the rows
+    if (found === -1 || !listRowsEl.value?.contains(document.activeElement))
+      return;
+    void nextTick(() => focusReorderHandle(found));
+  });
+  stopFollowingMovedTrack = stop;
 };
 // rows read again are new objects, so the selection moves to the rows that
 // hold the same items
@@ -2206,6 +2232,7 @@ const allSelected = computed(
 );
 
 onBeforeUnmount(() => {
+  stopFollowingMovedTrack?.();
   eventbus.off("clearSelection", clearSelection);
   _unsubscribeMediaEvents?.();
   _unsubscribeFavorites?.();

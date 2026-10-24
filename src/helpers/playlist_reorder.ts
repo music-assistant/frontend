@@ -14,6 +14,24 @@ export const listsPlaylistFromStart = (items: readonly MediaItemType[]) =>
   items.every((item, index) => playlistPosition(item) === index + 1);
 
 /**
+ * The index of the row holding `uri` that is nearest to `near`, or -1 when no
+ * row holds it; a playlist can hold a track more than once.
+ */
+export const nearestIndexOf = (
+  items: readonly MediaItemType[],
+  uri: string,
+  near: number,
+) => {
+  let found = -1;
+  items.forEach((item, index) => {
+    if (item.uri !== uri) return;
+    if (found === -1 || Math.abs(index - near) < Math.abs(found - near))
+      found = index;
+  });
+  return found;
+};
+
+/**
  * The listing after moving the item at `from` to rest at `to` (0-based). The
  * positions stay with their slots, so every row keeps showing its place in
  * the playlist while the items move between them.
