@@ -26,6 +26,7 @@ const { apiMock, authMock, storeMock, mockEventbusEmit } = vi.hoisted(() => ({
     getLibraryItem: vi.fn(),
     movePlaylistTracks: vi.fn(),
     players: {},
+    state: { value: "initialized" },
   },
   authMock: {
     hasScope: vi.fn<(scope: Scope) => boolean>(),
@@ -37,7 +38,11 @@ const { apiMock, authMock, storeMock, mockEventbusEmit } = vi.hoisted(() => ({
   mockEventbusEmit: vi.fn(),
 }));
 
-vi.mock("@/plugins/api", () => ({ default: apiMock, api: apiMock }));
+vi.mock("@/plugins/api", () => ({
+  default: apiMock,
+  api: apiMock,
+  ConnectionState: { INITIALIZED: "initialized" },
+}));
 vi.mock("@/plugins/auth", () => ({ authManager: authMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/eventbus", () => ({

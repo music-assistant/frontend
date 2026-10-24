@@ -9,7 +9,7 @@ import {
   moveListedItems,
   playlistPosition,
 } from "@/helpers/playlist_reorder";
-import { api } from "@/plugins/api";
+import { api, ConnectionState } from "@/plugins/api";
 import {
   EventType,
   TaskStatus,
@@ -25,11 +25,11 @@ const FINISHED_TASK_STATUSES = new Set([
   TaskStatus.FAILED,
   TaskStatus.CANCELLED,
 ]);
-// The longest an edit waits for its background task, should its end go
-// unreported (e.g. while the connection is down).
-const TASK_END_TIMEOUT_MS = 120_000;
-
-/** Resolves once a background task has finished, or is no longer listed. */
+/**
+ * Resolves once a background task has finished, or is no longer listed. Its
+ * end can't be looked up without the right to read every task, so a task
+ * whose end goes unreported keeps waiting rather than guess.
+ */
 export const untilTaskEnds = (task: BackgroundTask) =>
   new Promise<void>((resolve) => {
     if (FINISHED_TASK_STATUSES.has(task.status)) {
@@ -38,7 +38,6 @@ export const untilTaskEnds = (task: BackgroundTask) =>
     }
     const stop = () => {
       unsubscribe();
-      clearTimeout(timer);
       resolve();
     };
     const unsubscribe = api.subscribe(
@@ -50,7 +49,6 @@ export const untilTaskEnds = (task: BackgroundTask) =>
         if (!current || FINISHED_TASK_STATUSES.has(current.status)) stop();
       },
     ) as () => void;
-    const timer = setTimeout(stop, TASK_END_TIMEOUT_MS);
   });
 
 // Counts per playlist id, for edits on their way from outside the playlist's
@@ -67,6 +65,10 @@ const release = (counts: Map<string, number>, id: string) => {
   else counts.delete(id);
 };
 
+/** Whether the server takes commands, so a move can be saved and read back. */
+export const canSavePlaylistMoves = () =>
+  api.state.value === ConnectionState.INITIALIZED;
+
 /** Whether an edit of the playlist's order is saving or being read back. */
 export const isPlaylistEditPending = (id: string) => pendingEdits.has(id);
 
@@ -79,6 +81,8 @@ export const sendPlaylistEdit = async function (
   id: string,
   edit: () => Promise<unknown>,
 ) {
+  // an edit sent while reconnecting fails, and its rows could not be read back
+  if (!canSavePlaylistMoves()) return;
   hold(outsideEdits, id);
   hold(pendingEdits, id);
   try {
@@ -116,13 +120,6 @@ interface PlaylistTrackReorderOptions {
     replacement: (row: MediaItemType) => MediaItemType | undefined,
   ) => void;
 }
-
-/** Whether the server takes commands, so a move can be saved and read back. */
-export const canSavePlaylistMoves = () =>
-  api.state.value === ConnectionState.INITIALIZED;
-
-/** Whether an edit of the playlist's order is saving or being read back. */
-export const isPlaylistEditPending = (id: string) => pendingEdits.has(id);
 
 export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
   const { listEl, items, playlistId, inOwnOrder, reload } = options;
@@ -190,6 +187,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     const rows = [...new Set(indices)].sort((a, b) => a - b);
     if (id === undefined || saving.value || !inOwnOrder() || !rows.length)
       return;
+    if (!canSavePlaylistMoves()) return;
     if (rows[0] < 0 || rows[rows.length - 1] >= before.length) return;
     if (toIndex < 0 || toIndex + rows.length > before.length) return;
     if (rows.every((row, offset) => row === toIndex + offset)) return;

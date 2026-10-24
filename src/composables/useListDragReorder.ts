@@ -248,8 +248,7 @@ export function useListDragReorder(options: ListDragReorderOptions) {
     // Removing the source first shifts everything after it down by one, so the
     // final resting index is one lower when dropping below the original spot.
     const finalIndex = drop > source ? drop - 1 : drop;
-    // a press that never moved is no drop, even for a row that commits in place
-    if (finalIndex === source && !(moved && commitsInPlace?.(source))) return;
+    if (finalIndex === source && !commitsInPlace?.(source)) return;
     onCommit(source, finalIndex);
   };
 

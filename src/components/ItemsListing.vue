@@ -1316,6 +1316,8 @@ const canDragTracks = computed(
     displayedSort.value.sortField === SortField.POSITION &&
     displayedSort.value.sortDirection !== SortDirection.DESC &&
     !hasActiveFilters.value &&
+    // a move made while reconnecting could not be saved nor read back
+    canSavePlaylistMoves() &&
     listsPlaylistFromStart(pagedItems.value),
 );
 const trackRowColumns = computed<TrackColumn[]>(() =>
@@ -1353,7 +1355,14 @@ const {
   inOwnOrder: () => canDragTracks.value,
   selectedIndices: selectedRowIndices,
   rowHeight: TRACK_ROW_HEIGHT,
-  reload: reloadLoadedItems,
+  reload: async () => {
+    const failed = loadError.value;
+    await reloadLoadedItems();
+    // rows read again after a failed page let the scroller page on again
+    if (failed && !loadError.value && !tempHide.value) {
+      infiniteScrollEl.value?.reset();
+    }
+  },
   onReloaded: () => reselectReloadedRows(),
   // the selection follows the moved tracks to their new places
   onRowsReplaced: (replacement) => {

@@ -19,6 +19,7 @@ const { apiMock } = vi.hoisted(() => ({
     movePlaylistTrack: vi.fn<() => Promise<void>>(),
     movePlaylistTracks: vi.fn<() => Promise<void>>(),
     subscribe: vi.fn(),
+    state: { value: "initialized" },
   },
 }));
 
@@ -95,13 +96,15 @@ describe("usePlaylistTrackReorder", () => {
 
   it("leaves the rows alone while the server is out of reach", async () => {
     apiMock.state.value = "reconnecting";
-    const { items, reload, reorder } = setup(["A", "B", "C"]);
+    const { items, reload, reorder } = setup(["A", "B", "C"], []);
 
-    await reorder.move(0, 2);
+    await reorder.moveRows([0], 2);
+    await sendPlaylistEdit("1", async () => {});
 
     expect(ids(items.value)).toEqual(["A", "B", "C"]);
     expect(apiMock.movePlaylistTrack).not.toHaveBeenCalled();
     expect(reload).not.toHaveBeenCalled();
+    expect(isPlaylistEditPending("1")).toBe(false);
   });
 
   it("keeps the moved tracks selected, with their new positions", async () => {
@@ -286,15 +289,16 @@ describe("usePlaylistTrackReorder", () => {
       expect(unsubscribe).toHaveBeenCalledOnce();
     });
 
-    it("resolves when the task's end goes unreported", async () => {
-      vi.useFakeTimers();
+    it("keeps waiting while the task's end goes unreported", async () => {
       apiMock.subscribe.mockReturnValue(vi.fn());
-      const waiting = untilTaskEnds(task("t1", TaskStatus.PENDING));
+      let ended = false;
+      void untilTaskEnds(task("t1", TaskStatus.PENDING)).then(
+        () => (ended = true),
+      );
 
-      vi.advanceTimersByTime(120_000);
-      vi.useRealTimers();
+      await flushPromises();
 
-      await expect(waiting).resolves.toBeUndefined();
+      expect(ended).toBe(false);
     });
   });
 });
