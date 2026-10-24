@@ -92,6 +92,7 @@ import {
   playerBelongsToProviders,
 } from "@/helpers/player_config";
 import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import { isPlayerManagedExternally } from "@/helpers/players";
 
 import { api } from "@/plugins/api";
 import {
@@ -172,6 +173,8 @@ const startPlayerSetup = function (playerId: string) {
 };
 
 const handlePlayerClick = function (playerConfig: PlayerConfig) {
+  // managed outside of Music Assistant: it has no settings to open
+  if (isPlayerManagedExternally(api.players[playerConfig.player_id])) return;
   if (
     playerConfig.enabled &&
     api.players[playerConfig.player_id]?.needs_setup
@@ -183,6 +186,7 @@ const handlePlayerClick = function (playerConfig: PlayerConfig) {
 };
 
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
+  if (isPlayerManagedExternally(api.players[playerConfig.player_id])) return;
   // the list has no PLAYER_REMOVED/PLAYER_CONFIG_REMOVED subscription, so a
   // deleted player has to be dropped from it here
   const menuItems = getPlayerSettingsMenuItems(playerConfig, {

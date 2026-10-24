@@ -810,6 +810,7 @@
         "provider_status_disabled": "Disabled",
         "provider_status_unknown": "Unknown",
         "player_saved": "Player settings saved",
+        "player_managed_externally": "Managed outside of Music Assistant: nothing about this player can be changed here",
         "provider_settings": "{name} settings",
         "protocol_native_badge": "Native",
         "visualizer_description": "Quality, presets and favorites for the MilkDrop music visualizer",

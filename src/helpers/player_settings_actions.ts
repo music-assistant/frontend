@@ -5,7 +5,10 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { getPlayerName } from "@/helpers/player_config";
 import { getPlayerSetupMenuItem } from "@/helpers/player_menu_items";
-import { isSelectablePlayer } from "@/helpers/players";
+import {
+  isPlayerManagedExternally,
+  isSelectablePlayer,
+} from "@/helpers/players";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { setUserPreference } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
@@ -68,6 +71,8 @@ export const getPlayerSettingsMenuItems = (
   const provider = api.getProvider(config.provider);
   const manifest = api.getProviderManifest(config.provider);
   const menuItems: ContextMenuItem[] = [];
+  // managed outside of Music Assistant: nothing about it can be changed here
+  if (isPlayerManagedExternally(player)) return menuItems;
 
   if (options.includeSections) {
     const sections = getPlayerSettingsSections(playerId);
