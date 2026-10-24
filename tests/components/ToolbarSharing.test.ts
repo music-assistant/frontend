@@ -8,8 +8,9 @@ import { getItemShareMenuItem } from "@/composables/useItemSharing";
 import type { ItemShareInfo } from "@/plugins/api/sharing";
 import { track } from "../fixtures/track";
 
-const { getItemShareInfo, copyToClipboard } = vi.hoisted(() => ({
+const { getItemShareInfo, copyToClipboard, toast } = vi.hoisted(() => ({
   getItemShareInfo: vi.fn(),
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
   copyToClipboard: vi.fn().mockResolvedValue(true),
 }));
 vi.mock("@/plugins/api", () => ({
@@ -20,9 +21,7 @@ vi.mock("@/plugins/auth", () => ({
 }));
 vi.mock("@/helpers/device", () => ({ IS_MOBILE_UA: false }));
 vi.mock("@/helpers/utils", () => ({ copyToClipboard }));
-vi.mock("vue-sonner", () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
-}));
+vi.mock("vue-sonner", () => ({ toast }));
 
 vi.mock("@/plugins/breakpoint", () => ({ getBreakpointValue: () => false }));
 vi.mock("@/plugins/store", () => ({ store: {} }));
@@ -106,5 +105,55 @@ it("prepares replacement sharing items while open and ignores stale responses", 
   });
   await flushPromises();
   expect(getItemShareInfo).toHaveBeenCalledTimes(2);
+  wrapper.unmount();
+});
+
+it("silently hides rejected sharing preloads, keeps other actions usable and retries on reopen", async () => {
+  vi.clearAllMocks();
+  getItemShareInfo.mockReset();
+  getItemShareInfo
+    .mockRejectedValueOnce(new Error("Unsupported URL item"))
+    .mockResolvedValueOnce({ title: "Song", text: "Song", links: [] });
+  const item = track({ uri: "url://track/example" });
+  const otherAction = vi.fn();
+  const wrapper = mount(Toolbar, {
+    props: {
+      enforceOverflowMenu: true,
+      menuItems: [
+        getItemShareMenuItem(item)!,
+        { label: "other_action", action: otherAction },
+      ],
+    },
+    global: {
+      mocks: { $t: (key: string) => key },
+      stubs: {
+        ...dropdownMenuStubs,
+        VToolbar: { template: '<div><slot name="append" /></div>' },
+      },
+    },
+  });
+  expect(getItemShareInfo).not.toHaveBeenCalled();
+  await wrapper.get('[aria-label="menu"]').trigger("click");
+  await flushPromises();
+  expect(getItemShareInfo).toHaveBeenCalledExactlyOnceWith(item.uri);
+  expect(wrapper.findAll(".dropdown-item")).toHaveLength(1);
+  expect(wrapper.get(".dropdown-item").text()).toBe("other_action");
+  expect(toast.error).not.toHaveBeenCalled();
+  expect(toast.success).not.toHaveBeenCalled();
+  expect(toast.info).not.toHaveBeenCalled();
+  await wrapper.get(".dropdown-item").trigger("click");
+  expect(otherAction).toHaveBeenCalledOnce();
+  await wrapper.get(".dropdown-dismiss").trigger("click");
+  await wrapper.get('[aria-label="menu"]').trigger("click");
+  await flushPromises();
+  expect(getItemShareInfo).toHaveBeenCalledTimes(2);
+  expect(getItemShareInfo).toHaveBeenLastCalledWith(item.uri);
+  const share = wrapper
+    .findAll(".dropdown-item")
+    .find((entry) => entry.text() === "provider_links.share")!;
+  expect(share.attributes("disabled")).toBeUndefined();
+  await share.trigger("click");
+  expect(copyToClipboard).toHaveBeenLastCalledWith("Song");
+  expect(toast.success).toHaveBeenCalledWith("provider_links.copied");
   wrapper.unmount();
 });

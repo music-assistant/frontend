@@ -127,7 +127,7 @@ describe("server-backed sharing menu", () => {
     await menu.action!();
     expect(copyToClipboard).toHaveBeenCalledWith("Station");
   });
-  it("hides an empty payload or failed lookup and reports failure", async () => {
+  it("hides an empty payload or failed preload silently and retries preparation", async () => {
     const menu = getItemShareMenuItem(track())!;
     api.getItemShareInfo.mockResolvedValue({
       title: "",
@@ -140,7 +140,17 @@ describe("server-backed sharing menu", () => {
     await menu.prepare!();
     expect(menu.hide).toBe(true);
     expect(menu.action).toBeUndefined();
-    expect(toast.error).toHaveBeenCalledWith("provider_links.load_failed");
+    expect(menu.subItems).toBeUndefined();
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(toast.info).not.toHaveBeenCalled();
+    api.getItemShareInfo.mockResolvedValue({ title: "Song", links: [link] });
+    await menu.prepare!();
+    expect(api.getItemShareInfo).toHaveBeenCalledTimes(3);
+    expect(menu.hide).toBe(false);
+    expect(menu.disabled).toBe(false);
+    await menu.action!();
+    expect(copyToClipboard).toHaveBeenCalledWith(url);
   });
   it("guards read permission and connection availability", () => {
     hasScope.mockReturnValue(false);

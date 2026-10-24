@@ -90,7 +90,6 @@ export function getItemShareMenuItem(
         menuItem.disabled = false;
       } catch {
         menuItem.hide = true;
-        toast.error($t("provider_links.load_failed"));
       }
     },
   });
