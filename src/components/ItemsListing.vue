@@ -1087,14 +1087,20 @@ const onSelect = function (
         item,
       )
     : [item];
-  if (selected && range.length > 1) {
-    // the range joins the selection in listing order, whichever way it ran
-    selectedItems.value = selectedItems.value.filter(
-      (selectedItem) => !range.includes(selectedItem),
-    );
-  }
-  for (const rangeItem of range) setSelected(rangeItem, selected);
   selectionAnchor = item;
+  if (range.length === 1) {
+    setSelected(item, selected);
+    return;
+  }
+  // a range can hold every loaded row, so the selection is rebuilt in one
+  // pass; it joins the selection in listing order, whichever way it ran
+  const inRange = new Set(range);
+  const kept = selectedItems.value.filter(
+    (selectedItem) => !inRange.has(selectedItem),
+  );
+  selectedItems.value = selected
+    ? [...kept, ...range.filter((rangeItem) => !isParentDirItem(rangeItem))]
+    : kept;
 };
 
 const toggleCheckboxes = function () {
