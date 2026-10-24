@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { activateItemShare, getItemShareMenuItem } from "./useItemSharing";
 import { track } from "../../tests/fixtures/track";
 import { radio } from "../../tests/fixtures/radio";
+import { user } from "../../tests/fixtures/user";
+import type { ItemShareInfo } from "@/plugins/api/sharing";
+import { store } from "@/plugins/store";
 
 const { api, copyToClipboard, toast, device, hasScope } = vi.hoisted(() => ({
   api: {
@@ -17,6 +20,7 @@ const { api, copyToClipboard, toast, device, hasScope } = vi.hoisted(() => ({
 }));
 vi.mock("@/plugins/api", () => ({ default: api, api }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
+vi.mock("@/plugins/store", () => ({ store: {} }));
 vi.mock("@/helpers/device", () => ({
   get IS_MOBILE_UA() {
     return device.mobile;
@@ -31,11 +35,34 @@ const link = {
   provider_domain: "spotify",
   provider_instance: "spotify--1",
 };
+const shareResponses: { kind: string; info: ItemShareInfo }[] = [
+  { kind: "URL", info: { title: "Song", text: null, links: [link] } },
+  {
+    kind: "text",
+    info: { title: "Song", text: "Artist - Song", links: [] },
+  },
+  {
+    kind: "provider choices",
+    info: {
+      title: "Song",
+      text: null,
+      links: [
+        link,
+        {
+          provider_domain: "ytmusic",
+          provider_instance: "ytmusic--1",
+          url: "https://music.youtube.com/watch?v=id",
+        },
+      ],
+    },
+  },
+];
 
 beforeEach(() => {
   vi.resetAllMocks();
   device.mobile = false;
   api.state.value = "initialized";
+  store.currentUser = user();
   hasScope.mockReturnValue(true);
   copyToClipboard.mockResolvedValue(true);
   api.getItemShareInfo.mockResolvedValue({
@@ -158,6 +185,120 @@ describe("server-backed sharing menu", () => {
     hasScope.mockReturnValue(true);
     api.state.value = "disconnected";
     expect(getItemShareMenuItem(track())).toBeUndefined();
+  });
+  it.each(shareResponses)(
+    "discards $kind returned after read access is revoked during preload",
+    async ({ info }) => {
+      const request = Promise.withResolvers<ItemShareInfo>();
+      api.getItemShareInfo.mockReturnValue(request.promise);
+      const menu = getItemShareMenuItem(track())!;
+      const pending = menu.prepare!();
+      hasScope.mockReturnValue(false);
+      request.resolve(info);
+      await pending;
+
+      expect(menu.action).toBeUndefined();
+      expect(menu.subItems).toBeUndefined();
+      expect(menu.hide).toBe(true);
+      expect(menu.disabled).toBe(true);
+      expect(copyToClipboard).not.toHaveBeenCalled();
+      expect(toast.success).not.toHaveBeenCalled();
+      expect(toast.error).not.toHaveBeenCalled();
+      expect(toast.info).not.toHaveBeenCalled();
+      await menu.prepare!();
+      expect(api.getItemShareInfo).toHaveBeenCalledOnce();
+    },
+  );
+  describe.each([false, true])("revoked access on mobile=%s", (mobile) => {
+    it.each(shareResponses)(
+      "blocks retained $kind callbacks immediately after successful preload",
+      async ({ info }) => {
+        device.mobile = mobile;
+        const share = vi.fn().mockResolvedValue(undefined);
+        vi.stubGlobal("navigator", { share });
+        api.getItemShareInfo.mockResolvedValue(info);
+        const menu = getItemShareMenuItem(track())!;
+        await menu.prepare!();
+        const actions = menu.subItems
+          ? menu.subItems.map((choice) => choice.action!)
+          : [menu.action!];
+        hasScope.mockReturnValue(false);
+
+        for (const action of actions) {
+          const pending = action();
+          expect(share).not.toHaveBeenCalled();
+          expect(copyToClipboard).not.toHaveBeenCalled();
+          await pending;
+        }
+        expect(toast.success).not.toHaveBeenCalled();
+        expect(toast.info).not.toHaveBeenCalled();
+        expect(toast.error).toHaveBeenCalledTimes(actions.length);
+        expect(toast.error).toHaveBeenCalledWith(
+          mobile ? "provider_links.share_failed" : "provider_links.copy_failed",
+        );
+        expect(menu.hide).toBe(true);
+        expect(menu.disabled).toBe(true);
+        expect(menu.action).toBeUndefined();
+        expect(menu.subItems).toBeUndefined();
+        expect(api.getItemShareInfo).toHaveBeenCalledOnce();
+      },
+    );
+
+    it("checks live access at the payload activation boundary", async () => {
+      device.mobile = mobile;
+      const share = vi.fn().mockResolvedValue(undefined);
+      vi.stubGlobal("navigator", { share });
+      hasScope.mockReturnValue(false);
+
+      const pending = activateItemShare({ url });
+      expect(share).not.toHaveBeenCalled();
+      expect(copyToClipboard).not.toHaveBeenCalled();
+      await pending;
+      expect(toast.success).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalledWith(
+        mobile ? "provider_links.share_failed" : "provider_links.copy_failed",
+      );
+    });
+  });
+  it.each(["connection", "user", "item"])(
+    "invalidates a prepared payload when its %s context changes",
+    async (context) => {
+      const item = track();
+      const menu = getItemShareMenuItem(item)!;
+      await menu.prepare!();
+      const action = menu.action!;
+      if (context === "connection") api.state.value = "reconnecting";
+      else if (context === "user") {
+        store.currentUser = user({ provider_filter: ["different-provider"] });
+      } else item.uri = "library://track/another";
+
+      await action();
+      expect(copyToClipboard).not.toHaveBeenCalled();
+      expect(toast.success).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalledWith("provider_links.copy_failed");
+      expect(menu.hide).toBe(true);
+      expect(menu.disabled).toBe(true);
+      expect(menu.action).toBeUndefined();
+    },
+  );
+  it("rejects a retained callback from an earlier preparation without invalidating the new request", async () => {
+    const menu = getItemShareMenuItem(track())!;
+    await menu.prepare!();
+    const oldAction = menu.action!;
+    const request = Promise.withResolvers<ItemShareInfo>();
+    api.getItemShareInfo.mockReturnValue(request.promise);
+    const pending = menu.prepare!();
+
+    await oldAction();
+    expect(copyToClipboard).not.toHaveBeenCalled();
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith("provider_links.copy_failed");
+    request.resolve({ title: "Fresh", text: "Fresh text", links: [] });
+    await pending;
+    expect(menu.hide).toBe(false);
+    expect(menu.disabled).toBe(false);
+    await menu.action!();
+    expect(copyToClipboard).toHaveBeenCalledExactlyOnceWith("Fresh text");
   });
   it("reports cancellation and native failure without copying", async () => {
     device.mobile = true;

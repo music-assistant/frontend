@@ -10,6 +10,7 @@ import {
 import type { ItemShareInfo } from "@/plugins/api/sharing";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import { Share2 } from "@lucide/vue";
 import { reactive, markRaw } from "vue";
 import { toast } from "vue-sonner";
@@ -27,6 +28,10 @@ const SHARE_MEDIA_TYPES = [
 
 /** Use only the payload prepared by the server before the final user click. */
 export async function activateItemShare(payload: ShareData): Promise<void> {
+  if (!hasShareAccess()) {
+    reportShareFailure();
+    return;
+  }
   if (IS_MOBILE_UA && typeof navigator.share === "function") {
     try {
       await navigator.share(payload);
@@ -52,24 +57,64 @@ export function getItemShareMenuItem(
   item: MediaItemTypeOrItemMapping,
 ): ContextMenuItem | undefined {
   if (
-    !authManager.hasScope(Scope.LIBRARY_READ) ||
-    !["authenticated", "initialized"].includes(api.state?.value) ||
+    !hasShareAccess() ||
     !item.uri ||
     !SHARE_MEDIA_TYPES.includes(item.media_type)
   )
     return;
 
+  let prepareGeneration = 0;
+  let context: { uri: string; user: typeof store.currentUser } | undefined = {
+    uri: item.uri,
+    user: store.currentUser,
+  };
+  const state = reactive({ disabled: true, hide: false });
+  const checkContext = () => {
+    if (!context) return false;
+    if (
+      hasShareAccess() &&
+      context.uri === item.uri &&
+      context.user === store.currentUser
+    )
+      return true;
+    context = undefined;
+    prepareGeneration++;
+    state.disabled = true;
+    state.hide = true;
+    menuItem.action = undefined;
+    menuItem.subItems = undefined;
+    return false;
+  };
   const menuItem: ContextMenuItem = reactive<ContextMenuItem>({
     label: "provider_links.share",
     icon: markRaw(Share2),
-    disabled: true,
+    // Menus can be built outside setup; these getters track live access without
+    // leaving a watcher behind after the menu is discarded.
+    get disabled() {
+      return state.disabled || !checkContext();
+    },
+    get hide() {
+      return state.hide || !checkContext();
+    },
     prepare: async () => {
-      menuItem.disabled = true;
-      menuItem.hide = false;
+      const generation = ++prepareGeneration;
+      context = { uri: item.uri, user: store.currentUser };
+      state.disabled = true;
+      state.hide = false;
       menuItem.action = undefined;
       menuItem.subItems = undefined;
+      if (!checkContext()) return;
+      const activate = (payload: ShareData) => {
+        if (generation !== prepareGeneration || !checkContext()) {
+          reportShareFailure();
+          return;
+        }
+        return activateItemShare(payload);
+      };
       try {
         const info: ItemShareInfo = await api.getItemShareInfo(item.uri);
+        if (generation !== prepareGeneration) return;
+        if (!checkContext()) return;
         const choices = info.links.map((link) => ({
           label: "provider_links.destination",
           labelArgs: {
@@ -79,19 +124,37 @@ export function getItemShareMenuItem(
               link.provider_domain,
           },
           icon: markRaw(Share2),
-          action: () => activateItemShare({ url: link.url, title: info.title }),
+          action: () => activate({ url: link.url, title: info.title }),
         }));
         if (choices.length > 1) menuItem.subItems = choices;
         else if (choices.length === 1) menuItem.action = choices[0].action;
         else if (info.text) {
           const text = info.text;
-          menuItem.action = () => activateItemShare({ text });
-        } else menuItem.hide = true;
-        menuItem.disabled = false;
+          menuItem.action = () => activate({ text });
+        } else state.hide = true;
+        state.disabled = false;
       } catch {
-        menuItem.hide = true;
+        if (generation !== prepareGeneration) return;
+        state.hide = true;
       }
     },
   });
   return menuItem;
+}
+
+function hasShareAccess(): boolean {
+  return (
+    authManager.hasScope(Scope.LIBRARY_READ) &&
+    ["authenticated", "initialized"].includes(api.state?.value)
+  );
+}
+
+function reportShareFailure(): void {
+  toast.error(
+    $t(
+      IS_MOBILE_UA && typeof navigator.share === "function"
+        ? "provider_links.share_failed"
+        : "provider_links.copy_failed",
+    ),
+  );
 }
