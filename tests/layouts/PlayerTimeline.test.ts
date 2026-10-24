@@ -483,6 +483,39 @@ describe("PlayerTimeline", () => {
     expect(await elapsedLabelAfter(20)).toBe("00:34");
   });
 
+  it.each([
+    [
+      "with its position",
+      { elapsed_time: 100, elapsed_time_last_updated: NOW },
+      "07:10",
+    ],
+    ["without its position", {}, ""],
+  ])("shows a radio song's length only %s", (_case, songTiming, total) => {
+    api.queues["q1"] = {
+      queue_id: "q1",
+      state: PlaybackState.PLAYING,
+      active: true,
+    };
+    // the queue counts from when the station was tuned in
+    api.queueElapsedTime["q1"] = {
+      elapsed_time: 1289,
+      elapsed_time_last_updated: NOW,
+    };
+    store.activePlayer = {
+      player_id: "p1",
+      active_source: "q1",
+      playback_state: PlaybackState.PLAYING,
+      current_media: {
+        media_type: MediaType.RADIO,
+        duration: 430,
+        ...songTiming,
+      },
+    };
+
+    mountTimeline();
+    expect(wrapper!.find(".time-text-right").text()).toBe(total);
+  });
+
   it("shows no position when no source reports one", async () => {
     store.activePlayer = {
       player_id: "p1",

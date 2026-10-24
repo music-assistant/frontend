@@ -141,6 +141,7 @@ import { formatDuration } from "@/helpers/utils";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { ref, computed, watch, toRef, onUnmounted } from "vue";
 import {
+  hasRadioSongTiming,
   resolveActiveElapsedTime,
   resolveQueueElapsedTime,
   resolveActiveTiming,
@@ -313,12 +314,21 @@ const currentChapter = computed(() => {
   return resolved && Number.isFinite(resolved.duration) ? resolved : undefined;
 });
 
-const timelineDuration = computed(
-  () =>
+const timelineDuration = computed(() => {
+  // A radio stream's duration is its song's. Without the position in that song
+  // the timeline only knows how long the station has played, which has no end.
+  if (
+    store.activePlayer?.current_media?.media_type == MediaType.RADIO &&
+    !hasRadioSongTiming()
+  ) {
+    return 0;
+  }
+  return (
     currentChapter.value?.duration ??
     store.activePlayer?.current_media?.duration ??
-    0,
-);
+    0
+  );
+});
 
 const displayedAbsoluteTime = computed(() => {
   if (isDragging.value) return undefined;

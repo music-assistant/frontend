@@ -165,6 +165,13 @@ export function toElapsedTime(
  * It advances with the queue playing the stream, or with the player when no
  * queue is active.
  */
+/**
+ * Whether the player plays a radio stream that reports where in its song it is.
+ */
+export function hasRadioSongTiming(player_id?: string): boolean {
+  return resolveRadioSongTiming(player_id) !== undefined;
+}
+
 function resolveRadioSongTiming(player_id?: string): ActiveTiming | undefined {
   const player = resolvePlayer(player_id);
   const media = player?.current_media;

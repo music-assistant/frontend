@@ -1,4 +1,5 @@
 import {
+  hasRadioSongTiming,
   resolveActiveElapsedTime,
   resolveActiveTiming,
   resolveQueueElapsedTime,
@@ -213,6 +214,22 @@ describe("resolveActiveTiming / resolveActiveElapsedTime", () => {
       },
     });
 
+    vi.setSystemTime((NOW + 4) * 1000);
+    expect(resolveActiveElapsedTime()).toBeCloseTo(1293, 6);
+  });
+
+  it("keeps the queue's position for a radio song reported without its position", () => {
+    seedQueue({ queue_id: "q1", state: PlaybackState.PLAYING, active: true });
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 1289,
+      elapsed_time_last_updated: NOW,
+    };
+    seedPlayer({
+      playback_state: PlaybackState.PLAYING,
+      current_media: { media_type: MediaType.RADIO, duration: 430 },
+    });
+
+    expect(hasRadioSongTiming()).toBe(false);
     vi.setSystemTime((NOW + 4) * 1000);
     expect(resolveActiveElapsedTime()).toBeCloseTo(1293, 6);
   });
