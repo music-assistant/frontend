@@ -1431,7 +1431,7 @@ const trackRowDragStyle = (index: number) =>
     ? { transform: `translateY(${rowOffset(index)}px)` }
     : undefined;
 const trackRowDragClass = (item: MediaItemTypeOrItemMapping, index: number) => {
-  if (draggingIndex.value === index) return "opacity-0";
+  if (draggingIndex.value === index) return "invisible";
   if (draggedCount.value > 1 && isSelected(item)) return "opacity-40";
   return undefined;
 };

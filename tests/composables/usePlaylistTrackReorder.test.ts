@@ -19,7 +19,7 @@ const { apiMock } = vi.hoisted(() => ({
     movePlaylistTrack: vi.fn<() => Promise<void>>(),
     movePlaylistTracks: vi.fn<() => Promise<void>>(),
     subscribe: vi.fn(),
-    state: { value: "initialized" },
+    state: { value: "initialized" } as { value: string },
   },
 }));
 
@@ -91,7 +91,7 @@ describe("usePlaylistTrackReorder", () => {
   afterEach(() => {
     mounted.splice(0).forEach((wrapper) => wrapper.unmount());
     vi.clearAllMocks();
-    apiMock.state.value = "initialized";
+    apiMock.state = { value: "initialized" };
   });
 
   it("leaves the rows alone while the server is out of reach", async () => {
@@ -284,6 +284,26 @@ describe("usePlaylistTrackReorder", () => {
       await flushPromises();
       expect(ended).toBe(false);
       report({ data: [task("t1", TaskStatus.SUCCESS)] });
+      await waiting;
+
+      expect(unsubscribe).toHaveBeenCalledOnce();
+    });
+
+    it("stops waiting once the server is reached again", async () => {
+      const unsubscribe = vi.fn();
+      apiMock.subscribe.mockReturnValue(unsubscribe);
+      const state = ref("initialized");
+      apiMock.state = state;
+      let ended = false;
+      const waiting = untilTaskEnds(task("t1", TaskStatus.PENDING)).then(
+        () => (ended = true),
+      );
+
+      // the end could have been reported while the connection was down
+      state.value = "reconnecting";
+      await flushPromises();
+      expect(ended).toBe(false);
+      state.value = "initialized";
       await waiting;
 
       expect(unsubscribe).toHaveBeenCalledOnce();

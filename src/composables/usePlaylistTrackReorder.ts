@@ -26,9 +26,10 @@ const FINISHED_TASK_STATUSES = new Set([
   TaskStatus.CANCELLED,
 ]);
 /**
- * Resolves once a background task has finished, or is no longer listed. Its
- * end can't be looked up without the right to read every task, so a task
- * whose end goes unreported keeps waiting rather than guess.
+ * Resolves once a background task has finished, is no longer listed, or the
+ * connection to the server was made again. Its end can't be looked up without
+ * the right to read every task, and a report sent while disconnected is lost,
+ * so a reconnect ends the wait and the rows are read back instead.
  */
 export const untilTaskEnds = (task: BackgroundTask) =>
   new Promise<void>((resolve) => {
@@ -38,8 +39,15 @@ export const untilTaskEnds = (task: BackgroundTask) =>
     }
     const stop = () => {
       unsubscribe();
+      stopWatchingConnection();
       resolve();
     };
+    const stopWatchingConnection = watch(
+      () => api.state.value,
+      (state) => {
+        if (state === ConnectionState.INITIALIZED) stop();
+      },
+    );
     const unsubscribe = api.subscribe(
       EventType.TASKS_UPDATED,
       (event: EventMessage) => {

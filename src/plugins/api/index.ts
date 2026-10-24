@@ -3458,8 +3458,9 @@ export class MusicAssistantApi {
    * Signal an event to all registered listeners.
    */
   public signalEvent(evt: MassEvent) {
-    // signal event to all listeners
-    for (const listener of this.eventCallbacks) {
+    // signal event to all listeners; a listener may unsubscribe while this
+    // runs, which must not skip the one after it
+    for (const listener of this.eventCallbacks.slice()) {
       if (listener[0] === EventType.ALL || listener[0] === evt.event) {
         if (listener[1] == "*" || listener[1] === evt.object_id) {
           listener[2](evt);
