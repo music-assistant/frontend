@@ -1377,12 +1377,43 @@ const {
   },
 });
 let stopFollowingMovedTrack: (() => void) | undefined;
-const focusReorderHandle = (index: number) => {
-  const handle = listRowsEl.value?.querySelector<HTMLElement>(
+// frames to wait for the virtual scroller to render a row scrolled into view
+const FOCUS_RENDER_FRAMES = 10;
+let focusFrame: number | undefined;
+// scroll a row's place into view, rendered or not, as the rows are virtualized
+const scrollRowSlotIntoView = (list: HTMLElement, index: number) => {
+  const slot = document.createElement("div");
+  slot.style.cssText = `position:absolute;left:0;right:0;top:${index * TRACK_ROW_HEIGHT}px;height:${TRACK_ROW_HEIGHT}px`;
+  list.append(slot);
+  slot.scrollIntoView({ block: "nearest" });
+  slot.remove();
+};
+const focusReorderHandle = (
+  index: number,
+  framesLeft = FOCUS_RENDER_FRAMES,
+) => {
+  if (focusFrame !== undefined) cancelAnimationFrame(focusFrame);
+  focusFrame = undefined;
+  const list = listRowsEl.value;
+  if (!list) return;
+  const handle = list.querySelector<HTMLElement>(
     `[data-reorder-index="${index}"]`,
   );
-  handle?.focus();
-  handle?.scrollIntoView({ block: "nearest" });
+  if (handle) {
+    handle.focus();
+    handle.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  if (framesLeft === FOCUS_RENDER_FRAMES) scrollRowSlotIntoView(list, index);
+  if (framesLeft > 0) {
+    focusFrame = requestAnimationFrame(() =>
+      focusReorderHandle(index, framesLeft - 1),
+    );
+    return;
+  }
+  // the focused row now holds another track, which an arrow key would move
+  if (list.contains(document.activeElement))
+    (document.activeElement as HTMLElement).blur();
 };
 // the rows are keyed by index, so after a keyboard move the focus follows the
 // track to the row it moved to, and to where it is once the order is read back
@@ -2258,6 +2289,7 @@ const allSelected = computed(
 
 onBeforeUnmount(() => {
   stopFollowingMovedTrack?.();
+  if (focusFrame !== undefined) cancelAnimationFrame(focusFrame);
   eventbus.off("clearSelection", clearSelection);
   _unsubscribeMediaEvents?.();
   _unsubscribeFavorites?.();

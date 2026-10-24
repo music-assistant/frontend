@@ -2,7 +2,7 @@ import ItemsListing from "@/components/ItemsListing.vue";
 import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
-import { defineComponent, h, nextTick, type SetupContext } from "vue";
+import { defineComponent, h, nextTick, ref, type SetupContext } from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   EventType,
@@ -2615,6 +2615,57 @@ describe("ItemsListing playlist reorder", () => {
     // the provider kept the old order, so the track is back in the first row
     expect(rows(listing).map((item) => item.name)).toEqual(["A", "B", "C"]);
     expect(document.activeElement).toBe(handle(listing, 0));
+  });
+
+  it("scrolls a track moved out of the rendered rows into view and focuses it", async () => {
+    // the scroller renders the first two rows until the rest scroll into view
+    const rendered = ref(2);
+    const WindowedScrollerStub = {
+      props: ["items"],
+      setup: () => ({ rendered }),
+      template:
+        '<div><template v-for="(item, index) in items" :key="index"><slot v-if="index < rendered" :item="item" :index="index" /></template></div>',
+    };
+    const scrollIntoView = vi
+      .spyOn(HTMLElement.prototype, "scrollIntoView")
+      .mockImplementation(() => {
+        rendered.value = 3;
+      });
+    let finishSave = () => {};
+    mockMovePlaylistTrack.mockReturnValue(
+      new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const listing = mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.library",
+        showGenreFilter: false,
+        forcedViewMode: "list",
+        trackTable: true,
+        reorderable: true,
+        sortListing: ListingType.PLAYLIST_TRACKS,
+        parentItem: playlist({ item_id: "1" }),
+        loadPagedData: vi
+          .fn<LoadPagedData>()
+          .mockImplementation(async () => playlistRows()),
+      },
+      { VVirtualScroll: WindowedScrollerStub },
+    );
+    await flushPromises();
+    handle(listing, 1).focus();
+
+    listing
+      .findAllComponents({ name: "TrackTableRow" })[1]
+      .vm.$emit("moveBy", 1);
+
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(handle(listing, 2)),
+    );
+    expect(scrollIntoView).toHaveBeenCalled();
+    finishSave();
+    await flushPromises();
+    scrollIntoView.mockRestore();
+    listing.unmount();
   });
 
   it("does not keep the rows of a move that is saving when the page closes", async () => {

@@ -95,6 +95,7 @@ beforeEach(() => {
   apiMock.getLibraryItem.mockResolvedValue(null);
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
   storeMock.currentUser = user({ user_id: "me" });
+  apiMock.state.value = "initialized";
   setMoveSupport(true);
   apiMock.getProvider.mockImplementation((id: string) => apiMock.providers[id]);
 });
@@ -176,6 +177,23 @@ describe("move playlist items context menu actions", () => {
     expect(await removeOffered()).toBe(false);
     finishMove();
     await sent;
+  });
+
+  it("offers no edits of the playlist while reconnecting", async () => {
+    const items = [track({ position: 2 })];
+    const menu = await getContextMenuItems(items, parent);
+    apiMock.state.value = "reconnecting";
+
+    // a menu opened before the connection dropped keeps the selection
+    menu.find((item) => item.label === "playlist_move_to_top")?.action?.();
+    expect(apiMock.movePlaylistTracks).not.toHaveBeenCalled();
+    expect(mockEventbusEmit).not.toHaveBeenCalledWith("clearSelection");
+
+    const labels = (await getContextMenuItems(items, parent)).map(
+      (item) => item.label,
+    );
+    expect(labels).not.toContain("remove_playlist");
+    expect(labels.filter((label) => MOVE_LABELS.includes(label))).toEqual([]);
   });
 
   it("is not offered on a dynamic playlist", async () => {
