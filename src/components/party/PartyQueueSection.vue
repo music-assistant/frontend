@@ -100,6 +100,7 @@ const props = defineProps<{
   skipVotesRequired: number;
   hasVotedToSkip: boolean;
   canRetrySkip: boolean;
+  hasCurrentItem: boolean;
   boostBadgeColor: string;
   requestBadgeColor: string;
   boostEnabled: boolean;
@@ -120,7 +121,9 @@ const skipDisabled = computed(
       props.skipSongTokens <= 0 &&
       !props.canRetrySkip) ||
     props.skippingSong ||
-    props.hasVotedToSkip,
+    props.hasVotedToSkip ||
+    // a vote is for the track the guest sees, so wait until it is known
+    !props.hasCurrentItem,
 );
 
 const expandedQueueItemId = ref("");

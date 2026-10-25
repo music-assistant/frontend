@@ -356,6 +356,7 @@ describe("PartyGuestView skip voting", () => {
   beforeEach(() => {
     vi.mocked(toast.info).mockClear();
     vi.mocked(toast.success).mockClear();
+    vi.mocked(api.sendCommand).mockClear();
     skipState.skipSongEnabled.value = true;
     partyConfig.config.value = {
       skip_votes_required: 2,
@@ -380,6 +381,21 @@ describe("PartyGuestView skip voting", () => {
     skipState.currentQueue.value = null;
     partyConfig.config.value = null;
     vi.mocked(api.sendCommand).mockResolvedValue(null as never);
+  });
+
+  it("does not vote before the playing track is known", async () => {
+    const view = mountViewRaw();
+    await flushPromises();
+
+    const section = view.findComponent(PartyQueueSection);
+    expect(section.props("hasCurrentItem")).toBe(false);
+    section.vm.$emit("skip");
+    await flushPromises();
+
+    expect(api.sendCommand).not.toHaveBeenCalledWith(
+      "party/skip",
+      expect.anything(),
+    );
   });
 
   it("tells the server which track the guest voted on", async () => {

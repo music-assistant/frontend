@@ -154,6 +154,7 @@
       :skip-votes-required="skipVotesRequired"
       :has-voted-to-skip="hasVotedToSkip"
       :can-retry-skip="canRetrySkip"
+      :has-current-item="!!currentQueueItemId"
       :boost-badge-color="boostBadgeColor"
       :request-badge-color="requestBadgeColor"
       :boost-enabled="boostEnabled"
@@ -489,6 +490,9 @@ const skipCurrentSong = async () => {
     return;
   }
 
+  // A vote is always for the track the guest sees, so wait until it is known
+  if (!currentQueueItemId.value) return;
+
   if (hasVotedToSkip.value) {
     toast.info($t("providers.party.guest_page.skip_already_voted"));
     return;
@@ -511,10 +515,9 @@ const skipCurrentSong = async () => {
   try {
     // Tell the server which track the guest saw, so a vote that arrives after
     // the track changed does not count towards the next one
-    const result = (await api.sendCommand(
-      "party/skip",
-      votedItemId ? { queue_item_id: votedItemId } : undefined,
-    )) as {
+    const result = (await api.sendCommand("party/skip", {
+      queue_item_id: votedItemId,
+    })) as {
       success: boolean;
       skipped: boolean;
       vote_counted: boolean;
