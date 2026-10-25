@@ -23,6 +23,15 @@
         :player-id="store.activePlayer?.player_id"
         :force-dark-palette="visualizerOpacityPref > 50"
       />
+      <PlayerArtworkOnly
+        v-if="showArtworkOnly"
+        :image-url="
+          getMediaImageUrl(store.activePlayer?.current_media?.image_url)
+        "
+        :title="store.activePlayer?.current_media?.title"
+        :playing="store.activePlayer?.playback_state === PlaybackState.PLAYING"
+        @close="showArtworkOnly = false"
+      />
       <PanelDragHandle
         v-if="store.mobileLayout"
         swipe-anywhere
@@ -89,6 +98,12 @@
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
               :alt="$t('tooltip.artwork')"
+              class="artwork-only-trigger"
+              role="button"
+              tabindex="0"
+              :aria-label="$t('tooltip.show_artwork_only')"
+              @click="showArtworkOnly = true"
+              @keydown.enter="showArtworkOnly = true"
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
@@ -521,6 +536,7 @@ import MarqueeText from "@/components/MarqueeText.vue";
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
+import PlayerArtworkOnly from "./PlayerArtworkOnly.vue";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
@@ -768,6 +784,14 @@ const lyricsState = computed<
 // Lyrics are reached through a dedicated button in the header and shown in
 // their own panel, independent of the queue list (which has its own toggle).
 const showLyrics = ref(false);
+// The current artwork alone, over everything; closing the player drops it.
+const showArtworkOnly = ref(false);
+watch(
+  () => store.showFullscreenPlayer,
+  (open) => {
+    if (!open) showArtworkOnly.value = false;
+  },
+);
 
 // Whether the transcript auto-scrolls with playback. Only relevant for episodes;
 // the user can disconnect it when ad insertions drift the position out of sync.
@@ -1951,5 +1975,9 @@ button {
   .main-media-details-track-info {
     padding: 8px 0;
   }
+}
+
+.artwork-only-trigger {
+  cursor: pointer;
 }
 </style>
