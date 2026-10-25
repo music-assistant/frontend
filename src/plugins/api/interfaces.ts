@@ -423,6 +423,12 @@ export enum PlaybackState {
   PLAYING = "playing",
 }
 
+export enum SleepTimerMode {
+  DURATION = "duration",
+  END_OF_ITEM = "end_of_item",
+  END_OF_CHAPTER = "end_of_chapter",
+}
+
 export enum PlayerType {
   PLAYER = "player", // A regular player.
   STEREO_PAIR = "stereo_pair",
@@ -1650,6 +1656,12 @@ export interface Player {
   // sleep_timer_expires_at: unix (utc) timestamp at which the active sleep timer
   // will stop playback, or null when no sleep timer is set.
   sleep_timer_expires_at: number | null;
+
+  // sleep_timer_mode: the point at which the active sleep timer stops playback, or
+  // null when no sleep timer is set. Missing on servers that only know a duration.
+  // For END_OF_ITEM/END_OF_CHAPTER, sleep_timer_expires_at is an estimate while
+  // playing and null while paused.
+  sleep_timer_mode?: SleepTimerMode | null;
 
   // active_source_audio: audio-path snapshot for a live external source (e.g.
   // Spotify Connect) playing on active_source; null while a queue item is
