@@ -46,6 +46,16 @@ const skipState = await vi.hoisted(async () => {
   };
 });
 
+// shared so tests can turn on rate limiting and check the skip tokens
+const rateState = await vi.hoisted(async () => {
+  const { ref } = await import("vue");
+  return {
+    rateLimitingEnabled: ref(false),
+    skipSongTokens: ref(0),
+    consumeSkipSongToken: vi.fn(),
+  };
+});
+
 // shared so tests can set the party config before mounting the view
 const partyConfig = await vi.hoisted(async () => {
   const { ref } = await import("vue");
@@ -80,7 +90,7 @@ vi.mock("@/composables/usePartyConfig", () => ({
 
 vi.mock("@/composables/useRateLimiting", () => ({
   useRateLimiting: () => ({
-    rateLimitingEnabled: ref(false),
+    rateLimitingEnabled: rateState.rateLimitingEnabled,
     boostEnabled: ref(false),
     addQueueEnabled: ref(true),
     skipSongEnabled: skipState.skipSongEnabled,
@@ -88,7 +98,7 @@ vi.mock("@/composables/useRateLimiting", () => ({
     boostBadgeColor: ref("#FF5722"),
     boostTokens: ref(0),
     addQueueTokens: ref(0),
-    skipSongTokens: ref(0),
+    skipSongTokens: rateState.skipSongTokens,
     BOOST_MAX_TOKENS: 3,
     ADD_QUEUE_MAX_TOKENS: 3,
     nextTokenCountdown: ref(""),
@@ -96,7 +106,7 @@ vi.mock("@/composables/useRateLimiting", () => ({
     skipTokenCountdown: ref(""),
     consumeBoostToken: vi.fn(),
     consumeAddQueueToken: vi.fn(),
-    consumeSkipSongToken: vi.fn(),
+    consumeSkipSongToken: rateState.consumeSkipSongToken,
     getTimeUntilNextToken: vi.fn(),
     getTimeUntilNextAddQueueToken: vi.fn(),
     getTimeUntilNextSkipToken: vi.fn(),
@@ -377,6 +387,9 @@ describe("PartyGuestView skip voting", () => {
   });
 
   afterEach(() => {
+    rateState.rateLimitingEnabled.value = false;
+    rateState.skipSongTokens.value = 0;
+    rateState.consumeSkipSongToken.mockClear();
     skipState.skipSongEnabled.value = false;
     skipState.currentQueue.value = null;
     partyConfig.config.value = null;
@@ -591,5 +604,117 @@ describe("PartyGuestView skip voting", () => {
     expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
       false,
     );
+  });
+
+  describe("with rate limiting", () => {
+    const skipResult = (result: Record<string, unknown>) =>
+      vi.mocked(api.sendCommand).mockImplementation(async (command: unknown) =>
+        command === "party/skip"
+          ? {
+              success: true,
+              skipped: false,
+              vote_counted: true,
+              song_changed: false,
+              no_next_track: false,
+              votes: 1,
+              votes_required: 2,
+              ...result,
+            }
+          : null,
+      );
+    const skipCalls = () =>
+      vi
+        .mocked(api.sendCommand)
+        .mock.calls.filter(([command]) => command === "party/skip").length;
+
+    beforeEach(() => {
+      rateState.rateLimitingEnabled.value = true;
+      rateState.skipSongTokens.value = 1;
+    });
+
+    it("uses one token for a newly counted vote", async () => {
+      skipResult({});
+      playItem("item_a");
+      const view = mountViewRaw();
+      await flushPromises();
+
+      view.findComponent(PartyQueueSection).vm.$emit("skip");
+      await flushPromises();
+
+      expect(rateState.consumeSkipSongToken).toHaveBeenCalledTimes(1);
+    });
+
+    it("uses no token for a vote that was already counted", async () => {
+      skipResult({ vote_counted: false });
+      playItem("item_a");
+      const view = mountViewRaw();
+      await flushPromises();
+
+      view.findComponent(PartyQueueSection).vm.$emit("skip");
+      await flushPromises();
+
+      expect(rateState.consumeSkipSongToken).not.toHaveBeenCalled();
+    });
+
+    it("lets a counted voter without tokens retry when there was no next track", async () => {
+      skipResult({ no_next_track: true, votes: 1, votes_required: 1 });
+      playItem("item_a");
+      const view = mountViewRaw();
+      await flushPromises();
+      view.findComponent(PartyQueueSection).vm.$emit("skip");
+      await flushPromises();
+      // the vote used the guest's last token
+      rateState.skipSongTokens.value = 0;
+      await flushPromises();
+
+      skipResult({ skipped: true, vote_counted: false });
+      const section = view.findComponent(PartyQueueSection);
+      expect(section.props("canRetrySkip")).toBe(true);
+      section.vm.$emit("skip");
+      await flushPromises();
+
+      expect(skipCalls()).toBe(2);
+      expect(rateState.consumeSkipSongToken).toHaveBeenCalledTimes(1);
+      expect(toast.success).toHaveBeenCalledWith(
+        "providers.party.guest_page.song_skipped",
+      );
+    });
+
+    it("lets a counted voter without tokens retry once the tally reaches the threshold", async () => {
+      skipResult({});
+      playItem("item_a");
+      const view = mountViewRaw();
+      await flushPromises();
+      view.findComponent(PartyQueueSection).vm.$emit("skip");
+      await flushPromises();
+      rateState.skipSongTokens.value = 0;
+      // another guest casts the deciding vote, but there is no next track
+      skipState.currentQueue.value = {
+        current_item: {
+          queue_item_id: "item_a",
+          extra_attributes: { party_skip_votes: 2 },
+        },
+      };
+      await flushPromises();
+
+      skipResult({ no_next_track: true, vote_counted: false, votes: 2 });
+      view.findComponent(PartyQueueSection).vm.$emit("skip");
+      await flushPromises();
+
+      expect(skipCalls()).toBe(2);
+      expect(rateState.consumeSkipSongToken).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not vote without tokens when the guest has no counted vote", async () => {
+      rateState.skipSongTokens.value = 0;
+      playItem("item_a");
+      const view = mountViewRaw();
+      await flushPromises();
+
+      view.findComponent(PartyQueueSection).vm.$emit("skip");
+      await flushPromises();
+
+      expect(skipCalls()).toBe(0);
+    });
   });
 });
