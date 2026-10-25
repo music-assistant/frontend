@@ -56,7 +56,7 @@ import ShareArtworkPreview from "@/components/share/ShareArtworkPreview.vue";
 import ShareProviderLinkList from "@/components/share/ShareProviderLinkList.vue";
 import { decodeSharePreview, type SharePreview } from "@/helpers/share_links";
 import { copyToClipboard } from "@/helpers/utils";
-import api from "@/plugins/api";
+import api, { ApiCommandError } from "@/plugins/api";
 import { eventbus, type ShareLinkPreviewEvent } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -101,10 +101,14 @@ async function loadSharePreview(uri: string): Promise<void> {
     preview.value = decodeSharePreview(url, (domain) =>
       api.getProviderName(domain),
     );
-  } catch {
+  } catch (error) {
     if (currentRequest === requestId) {
       showDialog.value = false;
-      toast.error($t("share.preview_failed"));
+      toast.error(
+        error instanceof ApiCommandError && error.details
+          ? error.details
+          : $t("share.preview_failed"),
+      );
     }
   } finally {
     if (currentRequest === requestId) loading.value = false;
