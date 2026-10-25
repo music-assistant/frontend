@@ -22,12 +22,11 @@ vi.mock("@/plugins/api/helpers", () => ({
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
-function player(sleepTimerMode?: SleepTimerMode | null) {
-  // a server that only knows a duration sends no sleep_timer_mode at all
+function player(sleepTimerMode: SleepTimerMode | null) {
   return {
     player_id: "p1",
     sleep_timer_expires_at: null,
-    ...(sleepTimerMode !== undefined && { sleep_timer_mode: sleepTimerMode }),
+    sleep_timer_mode: sleepTimerMode,
   } as Player;
 }
 
@@ -66,12 +65,6 @@ describe("sleep timer menu", () => {
   });
 
   it.each([
-    {
-      name: "a server that only knows a duration",
-      mode: undefined,
-      queue: queue(MediaType.AUDIOBOOK, 600, { hasChapters: true }),
-      labels: [],
-    },
     {
       name: "a track",
       mode: null,

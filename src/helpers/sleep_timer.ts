@@ -99,8 +99,7 @@ export const getSleepTimerMenuItems = (player: Player): ContextMenuItem[] => {
     [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(queue.state)
       ? queue.current_item
       : undefined;
-  // a server without sleep_timer_mode only takes a duration
-  if (player.sleep_timer_mode !== undefined && currentItem?.duration) {
+  if (currentItem?.duration) {
     const modes: EndOfContentMode[] = [SleepTimerMode.END_OF_ITEM];
     if (currentItem.media_item?.metadata?.chapters?.length) {
       modes.push(SleepTimerMode.END_OF_CHAPTER);

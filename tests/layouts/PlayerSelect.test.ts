@@ -288,6 +288,7 @@ function createPlayer(
     active_group: null,
     synced_to: null,
     sleep_timer_expires_at: null,
+    sleep_timer_mode: null,
     active_source_audio: null,
   };
 }
