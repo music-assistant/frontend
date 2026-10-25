@@ -1,5 +1,6 @@
 import TrackTableRow from "@/components/track-table/TrackTableRow.vue";
 import { album } from "../../fixtures/album";
+import { artist } from "../../fixtures/artist";
 import { track } from "../../fixtures/track";
 import { mount } from "@vue/test-utils";
 import { defineComponent } from "vue";
@@ -47,19 +48,35 @@ function mountTrackRow(item: ReturnType<typeof track>, columns: TrackColumn[]) {
 
 describe("TrackTableRow shared preview album metadata", () => {
   it.each([
-    { columns: ["title"] as TrackColumn[] },
-    { columns: ["title", "album"] as TrackColumn[] },
+    {
+      itemId: "share-preview://track/encoded",
+      columns: ["title"] as TrackColumn[],
+    },
+    {
+      itemId: "share-preview://track/encoded",
+      columns: ["title", "album"] as TrackColumn[],
+    },
+    { itemId: "share://track/0", columns: ["title"] as TrackColumn[] },
+    {
+      itemId: "share://track/0",
+      columns: ["title", "album"] as TrackColumn[],
+    },
   ])(
-    "renders an unresolved preview album as text for columns $columns",
-    ({ columns }) => {
+    "renders unresolved share artists and albums as text for $itemId in $columns",
+    ({ itemId, columns }) => {
       const item = track({
         provider: "builtin",
-        item_id: "share-preview://track/encoded",
+        item_id: itemId,
+        artists: [
+          artist({ item_id: "artist", provider: "builtin", name: "Artist" }),
+        ],
         album: album({ item_id: "Album", provider: "builtin", name: "Album" }),
       });
       const wrapper = mountTrackRow(item, columns);
 
+      expect(wrapper.text()).toContain("Artist");
       expect(wrapper.text()).toContain("Album");
+      expect(wrapper.find('[data-route="artist"]').exists()).toBe(false);
       expect(wrapper.find('[data-route="album"]').exists()).toBe(false);
     },
   );
@@ -67,13 +84,20 @@ describe("TrackTableRow shared preview album metadata", () => {
   it.each([
     { columns: ["title"] as TrackColumn[] },
     { columns: ["title", "album"] as TrackColumn[] },
-  ])("keeps resolved track album links for columns $columns", ({ columns }) => {
-    const item = track({
-      provider: "library",
-      album: album({ item_id: "Album", provider: "library", name: "Album" }),
-    });
-    const wrapper = mountTrackRow(item, columns);
+  ])(
+    "keeps resolved track artist and album links for columns $columns",
+    ({ columns }) => {
+      const item = track({
+        provider: "library",
+        artists: [
+          artist({ item_id: "artist", provider: "library", name: "Artist" }),
+        ],
+        album: album({ item_id: "Album", provider: "library", name: "Album" }),
+      });
+      const wrapper = mountTrackRow(item, columns);
 
-    expect(wrapper.find('[data-route="album"]').text()).toBe("Album");
-  });
+      expect(wrapper.find('[data-route="artist"]').text()).toBe("Artist");
+      expect(wrapper.find('[data-route="album"]').text()).toBe("Album");
+    },
+  );
 });

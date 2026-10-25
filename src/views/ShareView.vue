@@ -112,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 import { useRouter } from "vue-router";
 
@@ -133,6 +133,7 @@ import api from "@/plugins/api";
 import { MediaType, Scope, type MediaItemType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { authManager } from "@/plugins/auth";
+import { store } from "@/plugins/store";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { expandShareArtworkRef, type SharedTrack } from "@/helpers/share_links";
 import {
@@ -160,6 +161,7 @@ const errorKey = ref("");
 const importing = ref(false);
 const confirmImportOpen = ref(false);
 let importRequestId = 0;
+let dialogActiveBeforeOpen = false;
 const canWrite = computed(() => authManager.hasScope(Scope.LIBRARY_WRITE));
 const artwork = computed(() =>
   expandShareArtworkRef(decodedPayload.value?.art_ref),
@@ -175,6 +177,17 @@ const playlistFacts = computed(() => [
 function goBack(): void {
   backFromMediaDetails(router);
 }
+
+watch(confirmImportOpen, (open) => {
+  if (open) dialogActiveBeforeOpen = store.dialogActive;
+  store.dialogActive = open || (dialogActiveBeforeOpen && store.dialogActive);
+});
+
+onBeforeUnmount(() => {
+  if (confirmImportOpen.value) {
+    store.dialogActive = dialogActiveBeforeOpen && store.dialogActive;
+  }
+});
 
 watch(
   () => props.payload,
@@ -200,6 +213,12 @@ watch(
       return;
     }
     decodedPayload.value = shared;
+
+    if (!store.enabledPlugins.has("share_provider")) {
+      errorKey.value = "share.plugin_unavailable";
+      loading.value = false;
+      return;
+    }
 
     if (shared.type === "playlist") {
       loading.value = false;
