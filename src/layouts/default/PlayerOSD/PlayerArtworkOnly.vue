@@ -4,7 +4,7 @@
   <Teleport to="body">
     <div
       ref="root"
-      class="artwork-only fixed inset-0 z-[9003] cursor-pointer touch-manipulation overflow-hidden bg-[#0b0b0f]"
+      class="artwork-only group fixed inset-0 z-[9003] cursor-pointer touch-manipulation overflow-hidden bg-[#0b0b0f]"
       :class="{ 'artwork-only--paused': !playing }"
       role="button"
       tabindex="0"
@@ -19,8 +19,16 @@
       <!-- The backdrop is the artwork itself: blurred hard, livelier and darker,
          and cross-faded when the music changes. It is oversized so the blur
          has pixels to sample at the edges instead of fading to transparent. -->
-      <div class="artwork-only__bg absolute inset-0 will-change-transform">
-        <Transition name="artwork-only-xfade">
+      <!-- a still backdrop says the music is too -->
+      <div
+        class="artwork-only__bg absolute inset-0 will-change-transform group-[.artwork-only--paused]:[animation-play-state:paused] motion-reduce:animate-none"
+      >
+        <Transition
+          enter-active-class="transition-opacity duration-[800ms] ease-[ease]"
+          leave-active-class="transition-opacity duration-[800ms] ease-[ease]"
+          enter-from-class="opacity-0"
+          leave-to-class="opacity-0"
+        >
           <img
             v-if="shownUrl"
             :key="shownUrl"
@@ -31,12 +39,17 @@
           />
         </Transition>
         <div
-          class="artwork-only__scrim absolute inset-0 bg-[rgba(11,11,15,0.45)]"
+          class="artwork-only__scrim absolute inset-0 bg-[rgba(11,11,15,0.45)] group-[.artwork-only--paused]:[animation-play-state:paused] motion-reduce:animate-none"
         ></div>
       </div>
       <!-- old and new cover share the one cell while they cross-fade -->
       <div class="absolute inset-0 grid place-items-center">
-        <Transition name="artwork-only-xfade">
+        <Transition
+          enter-active-class="transition-opacity duration-[800ms] ease-[ease]"
+          leave-active-class="transition-opacity duration-[800ms] ease-[ease]"
+          enter-from-class="opacity-0"
+          leave-to-class="opacity-0"
+        >
           <img
             v-if="shownUrl"
             :key="shownUrl"
@@ -66,8 +79,10 @@ const emit = defineEmits<{ close: [] }>();
 // Escape that reaches the window.
 // A Ctrl/Cmd shortcut, such as the command center's, leaves the view and goes
 // on to open what it opens, which would otherwise be hidden behind the view.
+const MODIFIER_KEYS = new Set(["Control", "Meta", "Shift", "Alt"]);
 const onKeydown = (event: KeyboardEvent) => {
-  if (event.ctrlKey || event.metaKey) {
+  // the modifier alone is not a shortcut yet
+  if ((event.ctrlKey || event.metaKey) && !MODIFIER_KEYS.has(event.key)) {
     emit("close");
     return;
   }
@@ -172,29 +187,14 @@ onUnmounted(() => {
 
 <style scoped>
 /* The backdrop breathes: a slow swell of the container, and of the scrim over
-   it. Transform and opacity only, so the blur is not recomputed every frame. */
+   it. Transform and opacity only, so the blur is not recomputed every frame.
+   The animations stay next to their keyframes, which Vue scopes by renaming. */
 .artwork-only__bg {
   animation: artwork-only-breathe 9s ease-in-out infinite;
 }
 
 .artwork-only__scrim {
   animation: artwork-only-swell 9s ease-in-out infinite;
-}
-
-/* A still backdrop says the music is too. */
-.artwork-only--paused .artwork-only__bg,
-.artwork-only--paused .artwork-only__scrim {
-  animation-play-state: paused;
-}
-
-.artwork-only-xfade-enter-active,
-.artwork-only-xfade-leave-active {
-  transition: opacity 800ms ease;
-}
-
-.artwork-only-xfade-enter-from,
-.artwork-only-xfade-leave-to {
-  opacity: 0;
 }
 
 @keyframes artwork-only-breathe {
@@ -214,13 +214,6 @@ onUnmounted(() => {
   }
   50% {
     opacity: 0.8;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .artwork-only__bg,
-  .artwork-only__scrim {
-    animation: none;
   }
 }
 </style>

@@ -108,6 +108,23 @@ describe("PlayerArtworkOnly", () => {
     expect(onWindowKeydown).toHaveBeenCalledTimes(1);
   });
 
+  it("stays open while Ctrl/Cmd is only held, before a shortcut is chosen", () => {
+    const wrapper = mountArtwork();
+
+    for (const key of ["Meta", "Control"]) {
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key,
+          metaKey: key === "Meta",
+          ctrlKey: key === "Control",
+          bubbles: true,
+        }),
+      );
+    }
+
+    expect(wrapper.emitted("close")).toBeUndefined();
+  });
+
   it("takes the focus while open and gives it back on leaving", () => {
     const trigger = document.createElement("button");
     document.body.appendChild(trigger);
