@@ -127,7 +127,6 @@
         "player_disabled": "This player is disabled",
         "player_name": "Custom player name",
         "player_not_available": "This player is not (yet) available",
-        "player_option_error": "Error while setting player option: {key} {value}",
         "server_logs_load_failed": "Failed to load server logs",
         "player_provider": "Player provider",
         "player_settings": "Player settings",
@@ -1627,8 +1626,9 @@
     "link_to_genre_failed": "Failed to link to genre",
     "player_options": {
         "open": "Open player options",
-        "settable": "Settable player options for player {0}",
-        "read_only": "Read-only player options for player {0}"
+        "controls": "Controls",
+        "status": "Status",
+        "none": "This player has no options."
     },
     "select_sound_mode": "Select sound mode",
     "refresh": "Refresh",

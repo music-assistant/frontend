@@ -1,134 +1,157 @@
 <template>
-  <!-- drop down for multiple options -->
-  <div v-if="playerOption.options && playerOption.options.length > 0">
-    <v-select
-      :model-value="playerOption.value"
-      :items="selectOptions"
-      :label="playerOption.name"
-      variant="outlined"
-      :readonly="playerOption.read_only"
-      @update:model-value="uiSetPlayerOption(playerOption.key, $event)"
-    />
-  </div>
-
-  <!-- toggle for boolean values -->
-  <div v-else-if="playerOption.type === PlayerOptionType.BOOLEAN">
-    <v-switch
-      :label="playerOption.name"
-      :model-value="playerOption.value"
-      :readonly="playerOption.read_only"
-      hide-details
-      @update:model-value="uiSetPlayerOption(playerOption.key, $event)"
-    />
-  </div>
-
-  <!-- slider for int/ float with min/max -->
   <div
-    v-else-if="
-      (playerOption.type === PlayerOptionType.INTEGER ||
-        playerOption.type === PlayerOptionType.FLOAT) &&
-      playerOption.min_value &&
-      playerOption.max_value &&
-      playerOption.step
-    "
+    class="flex flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
   >
-    <div style="padding-bottom: 25px">
-      {{ playerOption.name }}
-    </div>
-    <v-slider
-      :model-value="playerOption.value as number"
-      :min="playerOption.min_value"
-      :max="playerOption.max_value"
-      :step="playerOption.step"
-      thumb-label="always"
-      :thumb-size="20"
-      show-ticks="always"
-      :tick-size="4"
-      :readonly="playerOption.read_only"
-      @end="uiSetPlayerOption(playerOption.key, $event)"
+    <!-- the slider is named by its thumb -->
+    <label
+      :for="control === 'slider' ? undefined : inputId"
+      class="text-sm font-medium"
     >
-      <template #prepend>
-        <v-label :text="playerOption.min_value as unknown as string" />
-      </template>
-      <template #append>
-        <v-label :text="playerOption.max_value as unknown as string" />
-      </template>
-    </v-slider>
-  </div>
+      {{ playerOption.name }}
+    </label>
 
-  <!-- text field for int/ float where some of the above are missing -->
-  <div
-    v-else-if="
-      playerOption.type === PlayerOptionType.INTEGER ||
-      playerOption.type === PlayerOptionType.FLOAT
-    "
-  >
-    <v-text-field
-      :model-value="playerOption.value"
-      :label="playerOption.name"
-      :clearable="false"
-      :min="playerOption.min_value"
-      :max="playerOption.max_value"
-      :step="playerOption.step"
-      type="number"
-      variant="outlined"
-      density="comfortable"
-      :readonly="playerOption.read_only"
-      @update:model-value="uiSetPlayerOption(playerOption.key, $event)"
+    <Switch
+      v-if="control === 'switch'"
+      :id="inputId"
+      :model-value="playerOption.value === true"
+      @update:model-value="setOption"
     />
-  </div>
 
-  <!-- text field for string -->
-  <div v-else-if="playerOption.type === PlayerOptionType.STRING">
-    <v-text-field
-      :model-value="playerOption.value"
-      :label="playerOption.name"
-      :clearable="false"
-      type="string"
-      variant="outlined"
-      density="comfortable"
-      :readonly="playerOption.read_only"
-      @update:model-value="uiSetPlayerOption(playerOption.key, $event)"
+    <Select
+      v-else-if="control === 'select'"
+      :model-value="selectedEntryKey"
+      @update:model-value="onSelect"
+    >
+      <SelectTrigger :id="inputId" class="w-full shrink-0 sm:w-56">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem
+          v-for="entry in playerOption.options"
+          :key="entry.key"
+          :value="entry.key"
+        >
+          {{ entry.name }}
+        </SelectItem>
+      </SelectContent>
+    </Select>
+
+    <div
+      v-else-if="control === 'slider'"
+      class="flex w-full items-center gap-3 sm:w-72"
+    >
+      <Slider
+        :model-value="[sliderValue]"
+        :min="playerOption.min_value ?? undefined"
+        :max="playerOption.max_value ?? undefined"
+        :step="playerOption.step ?? undefined"
+        :thumb-label="playerOption.name"
+        @update:model-value="onSlide"
+        @value-commit="onSlideCommit"
+      />
+      <span class="w-12 shrink-0 text-right text-sm tabular-nums">
+        {{ sliderValue }}
+      </span>
+    </div>
+
+    <!-- typed values are sent once the field is left or Enter is pressed -->
+    <Input
+      v-else
+      :id="inputId"
+      v-model="draft"
+      :type="control === 'number' ? 'number' : 'text'"
+      :min="playerOption.min_value ?? undefined"
+      :max="playerOption.max_value ?? undefined"
+      :step="playerOption.step ?? 'any'"
+      class="w-full shrink-0 sm:w-56"
+      @change="onInputCommit"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import api from "@/plugins/api";
+import { Input } from "@/components/ui/input";
 import {
-  PlayerOption,
-  PlayerOptionType,
-  PlayerOptionValueType,
-} from "@/plugins/api/interfaces";
-import { $t } from "@/plugins/i18n";
-import { computed } from "vue";
-import { toast } from "vue-sonner";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import {
+  getPlayerOptionControl,
+  parsePlayerOptionInput,
+} from "@/helpers/player_options";
+import api from "@/plugins/api";
+import { PlayerOption, PlayerOptionValueType } from "@/plugins/api/interfaces";
+import { computed, ref, watch } from "vue";
 
 const props = defineProps<{
   playerOption: PlayerOption;
   playerId: string;
 }>();
 
-const uiSetPlayerOption = async (
-  key: string,
-  value: PlayerOptionValueType | PlayerOptionValueType[] | null | undefined,
-) => {
-  if (!props.playerId || value === null || value === undefined) return;
-  // we only have single numbers
-  if (Array.isArray(value)) value = value[0];
-  try {
-    await api.playerCommandSetOption(props.playerId, key, value);
-  } catch (error) {
-    toast.error($t("settings.player_option_error", { key, value }));
-  }
-};
+// local copies of the value while it is edited, reset to the server's value
+// whenever that changes; v-model gives a number field's value as a number
+const draft = ref<string | number>("");
+const sliderValue = ref(0);
 
-// labels and option titles are localized server-side, so the resolved name is rendered directly
-const selectOptions = computed(() => {
-  if (!props.playerOption.options) return [];
-  return props.playerOption.options.map((option) => ({
-    title: option.name,
-    value: option.value,
-  }));
-});
+const control = computed(() => getPlayerOptionControl(props.playerOption));
+const inputId = computed(() => `player-option-${props.playerOption.key}`);
+// null, not undefined: reka-ui's Select stops following a model that is
+// undefined when it mounts
+const selectedEntryKey = computed(
+  () =>
+    props.playerOption.options?.find(
+      (x) => x.value === props.playerOption.value,
+    )?.key ?? null,
+);
+
+watch(
+  () => props.playerOption.value,
+  () => resetToServerValue(),
+  { immediate: true },
+);
+
+function resetToServerValue() {
+  draft.value = String(props.playerOption.value);
+  sliderValue.value = Number(props.playerOption.value);
+}
+
+async function setOption(value: PlayerOptionValueType) {
+  try {
+    await api.playerCommandSetOption(
+      props.playerId,
+      props.playerOption.key,
+      value,
+    );
+  } catch {
+    // a failed command is already reported by the api layer
+    resetToServerValue();
+  }
+}
+
+function onSelect(entryKey: unknown) {
+  const entry = props.playerOption.options?.find((x) => x.key === entryKey);
+  if (entry) void setOption(entry.value);
+}
+
+function onSlide(value?: number[]) {
+  if (value?.length) sliderValue.value = value[0];
+}
+
+function onSlideCommit(value: number[]) {
+  if (value[0] !== props.playerOption.value) void setOption(value[0]);
+}
+
+function onInputCommit() {
+  const value = parsePlayerOptionInput(props.playerOption, String(draft.value));
+  if (value === undefined) {
+    resetToServerValue();
+    return;
+  }
+  void setOption(value);
+}
 </script>

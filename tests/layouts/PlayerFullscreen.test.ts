@@ -171,6 +171,7 @@ interface TestStore {
     group_members?: string[];
     source_list?: unknown[];
     sound_mode_list?: unknown[];
+    options?: unknown[];
     playback_state?: PlaybackState;
     current_media?: {
       media_type?: MediaType;
@@ -677,6 +678,7 @@ describe("PlayerFullscreen overflow menu", () => {
       group_members: [],
       source_list: [],
       sound_mode_list: [],
+      options: [],
     };
     // a track sends the view looking for lyrics on the way past
     testStore.curQueueItem = {
