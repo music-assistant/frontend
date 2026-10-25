@@ -490,6 +490,7 @@ const skipCurrentSong = async () => {
       skipped: boolean;
       vote_counted: boolean;
       song_changed: boolean;
+      no_next_track: boolean;
       votes: number;
       votes_required: number;
     };
@@ -511,6 +512,12 @@ const skipCurrentSong = async () => {
 
     if (rateLimitingEnabled.value) {
       consumeSkipSongToken();
+    }
+
+    if (result.no_next_track) {
+      votedSkipItemId.value = votedItemId;
+      toast.info($t("providers.party.guest_page.skip_no_next_track"));
+      return;
     }
 
     if (!result.skipped) {

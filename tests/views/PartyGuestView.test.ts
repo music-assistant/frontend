@@ -362,6 +362,7 @@ describe("PartyGuestView skip voting", () => {
             skipped: false,
             vote_counted: true,
             song_changed: false,
+            no_next_track: false,
             votes: 1,
             votes_required: 2,
           }
@@ -389,6 +390,35 @@ describe("PartyGuestView skip voting", () => {
     });
   });
 
+  it("explains when there is no next track to skip to", async () => {
+    vi.mocked(api.sendCommand).mockImplementation(async (command: unknown) =>
+      command === "party/skip"
+        ? {
+            success: true,
+            skipped: false,
+            vote_counted: true,
+            song_changed: false,
+            no_next_track: true,
+            votes: 2,
+            votes_required: 2,
+          }
+        : null,
+    );
+    playItem("item_a");
+    const view = mountViewRaw();
+    await flushPromises();
+
+    view.findComponent(PartyQueueSection).vm.$emit("skip");
+    await flushPromises();
+
+    expect(toast.info).toHaveBeenCalledWith(
+      "providers.party.guest_page.skip_no_next_track",
+    );
+    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
+      true,
+    );
+  });
+
   it("does not count a vote for a track that already changed", async () => {
     vi.mocked(api.sendCommand).mockImplementation(async (command: unknown) =>
       command === "party/skip"
@@ -397,6 +427,7 @@ describe("PartyGuestView skip voting", () => {
             skipped: false,
             vote_counted: false,
             song_changed: true,
+            no_next_track: false,
             votes: 0,
             votes_required: 2,
           }
