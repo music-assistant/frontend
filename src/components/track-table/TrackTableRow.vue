@@ -86,7 +86,8 @@
             <!-- the album moves under the title when its own column is hidden -->
             <template v-if="albumInSubtitle">
               <span v-if="artists.length"> • </span>
-              <TrackTableLinks :targets="[album!]" route-name="album" />
+              <span v-if="isUnresolvedSharedTrack">{{ album!.name }}</span>
+              <TrackTableLinks v-else :targets="[album!]" route-name="album" />
             </template>
           </div>
         </div>
@@ -96,7 +97,10 @@
         v-else-if="column === 'album'"
         class="truncate text-sm text-muted-foreground"
       >
-        <TrackTableLinks v-if="album" :targets="[album]" route-name="album" />
+        <template v-if="album">
+          <span v-if="isUnresolvedSharedTrack">{{ album.name }}</span>
+          <TrackTableLinks v-else :targets="[album]" route-name="album" />
+        </template>
       </div>
 
       <div
@@ -190,6 +194,7 @@ import {
 import { camelotColor } from "@/helpers/camelot";
 import { formatDuration } from "@/helpers/utils";
 import {
+  MediaType,
   Scope,
   type MediaItemType,
   type SortDirection,
@@ -275,6 +280,13 @@ const artists = computed(() =>
 
 const albumInSubtitle = computed(
   () => !!album.value && !props.columns.includes("album"),
+);
+
+const isUnresolvedSharedTrack = computed(
+  () =>
+    props.item.media_type === MediaType.TRACK &&
+    props.item.provider === "builtin" &&
+    props.item.item_id.startsWith("share-preview://track/"),
 );
 
 // favouring an item changes the library
