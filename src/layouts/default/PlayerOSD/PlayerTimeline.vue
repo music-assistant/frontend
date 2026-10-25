@@ -13,6 +13,7 @@
         :min="0"
         :max="timelineDuration"
         :step="0.1"
+        :thumb-alignment="hasWaveform ? 'overflow' : 'contain'"
         @value-commit="stopDragging"
         @pointerenter="isThumbHidden = !canSeek"
         @pointermove="onTrackPointerMove"

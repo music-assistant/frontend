@@ -1,7 +1,6 @@
 import { computed, onScopeDispose, ref } from "vue";
 
 import { useLibrarySorting } from "@/composables/useLibrarySorting";
-import { filterAndSortItems } from "@/helpers/itemListing";
 import {
   ListingType,
   MediaItemType,
@@ -52,17 +51,15 @@ export interface StoredState {
   carried: boolean;
   scrollPos: number;
   pagedItems: MediaItemType[];
-  allItems: MediaItemType[];
   allItemsReceived: boolean;
-  initialDataReceived: boolean;
   params: LoadDataParams;
+  displayedSort: Pick<LoadDataParams, "sortField" | "sortDirection">;
 }
 
 interface ItemsListingDataOptions {
   sortListing?: ListingType;
   sortOptionExcludeFields?: SortField[];
   loadPagedData?: LoadPagedDataFn;
-  loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   limit: number;
   toolBarTabs?: ToolBarTab[];
 }
@@ -80,13 +77,14 @@ export function useItemsListing(
     genreIds: undefined,
   });
   const pagedItems = ref<MediaItemType[]>([]);
-  const allItems = ref<MediaItemType[]>([]);
+  const displayedSort = ref<
+    Pick<LoadDataParams, "sortField" | "sortDirection">
+  >({});
   const loading = ref(false);
   const newContentAvailable = ref(false);
   const allItemsReceived = ref(false);
   // set when the last load failed; scrolling does not retry it, the user does
   const loadError = ref(false);
-  const initialDataReceived = ref(false);
   const tempHide = ref(false);
   const serverSortOptions = ref<SortOptionInfo[]>([]);
   const sortOptionsLoaded = ref(false);
@@ -115,6 +113,7 @@ export function useItemsListing(
   let pendingClear = false;
   let pendingRefresh = false;
   let pendingParamsChange = false;
+  let retryFromStart = false;
   // lets async work tell that the listing it is working for is already gone
   let disposed = false;
 
@@ -167,7 +166,6 @@ export function useItemsListing(
       // and then we load new items with a different size
       if (allItemsReceived.value) tempHide.value = true;
       allItemsReceived.value = false;
-      initialDataReceived.value = false;
       newContentAvailable.value = false;
     }
 
@@ -176,39 +174,33 @@ export function useItemsListing(
       params.value.offset = offset;
       params.value.limit = props.limit;
       params.value.refresh = refresh;
-      // a listing without sort keys keeps the order its items are loaded in
-      const currentSort = params.value.sortBy
-        ? librarySorting.current.value
-        : undefined;
-      const sortField = currentSort?.field as SortField | undefined;
+      const currentSort = librarySorting.current.value;
       const selectedSortOption = librarySorting.selectedOption.value;
-      params.value.sortField = sortField;
+      params.value.sortField = currentSort.field as SortField;
       params.value.sortDirection =
         selectedSortOption?.supports_direction === false
           ? undefined
-          : currentSort?.direction;
+          : currentSort.direction;
 
       if (loadPagedData) {
-        const nextItems = await loadPagedData(params.value);
+        const requestedSort = {
+          sortField: params.value.sortField,
+          sortDirection: params.value.sortDirection,
+        };
+        const nextItems = await loadPagedData({ ...params.value });
         if (params.value.offset) pagedItems.value.push(...nextItems);
         else pagedItems.value = nextItems;
+        displayedSort.value = requestedSort;
+        retryFromStart = false;
         if (Math.abs(nextItems.length - props.limit) > 10) {
           allItemsReceived.value = true;
         }
-      } else if (props.loadItems) {
-        if (!initialDataReceived.value || refresh) {
-          allItems.value = await props.loadItems(params.value);
-          initialDataReceived.value = true;
-        }
-        const nextItems = filterAndSortItems(allItems.value, params.value);
-        if (params.value.offset) pagedItems.value.push(...nextItems);
-        else pagedItems.value = nextItems;
-        allItemsReceived.value = nextItems.length < props.limit;
       }
     } catch {
       // the api already reports the failure to the user; the failed page is
       // loaded next
       params.value.offset = previousOffset;
+      retryFromStart = offset === 0;
       loadError.value = true;
     } finally {
       params.value.refresh = false;
@@ -257,9 +249,11 @@ export function useItemsListing(
 
   const retryLoad = (loadNext: () => void) => {
     loadError.value = false;
-    // nothing loaded yet, so the failed load was the first one
-    if (pagedItems.value.length === 0) loadData(true);
-    else loadNext();
+    if (retryFromStart || pagedItems.value.length === 0) {
+      tempHide.value = true;
+      return loadData(true);
+    }
+    loadNext();
   };
 
   const loadAllItems = async () => {
@@ -271,9 +265,8 @@ export function useItemsListing(
   };
 
   return {
-    allItems,
     allItemsReceived,
-    initialDataReceived,
+    displayedSort,
     isDisposed,
     librarySorting,
     loadAllItems,

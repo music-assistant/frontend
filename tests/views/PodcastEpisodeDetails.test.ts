@@ -1,5 +1,12 @@
 import type { MusicAssistantApi } from "@/plugins/api";
-import type { Podcast, PodcastEpisode } from "@/plugins/api/interfaces";
+import type { LoadDataParams } from "@/composables/useItemsListing";
+import {
+  ListingType,
+  SortDirection,
+  SortField,
+  type Podcast,
+  type PodcastEpisode,
+} from "@/plugins/api/interfaces";
 import PodcastEpisodeDetails from "@/views/PodcastEpisodeDetails.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -55,7 +62,7 @@ vi.mock("@/components/details/DetailTextRow.vue", () => ({
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["parentItem", "loadItems", "path"],
+    props: ["parentItem", "loadPagedData", "path", "sortListing"],
     template: "<div data-listing />",
   },
 }));
@@ -151,11 +158,39 @@ describe("PodcastEpisodeDetails", () => {
     const wrapper = await mountDetails(EPISODES[1]);
 
     expect(listing(wrapper).props("parentItem")).toEqual(SHOW);
-    const others = await listing(wrapper).props("loadItems")();
+    mockGetPodcastEpisodes.mockImplementation(async (...args) =>
+      EPISODES.filter((episode) => episode.item_id !== args[8]),
+    );
+    const params: LoadDataParams = {
+      offset: 0,
+      limit: 50,
+      sortBy: "position:desc",
+      sortField: SortField.POSITION,
+      sortDirection: SortDirection.DESC,
+      search: "",
+    };
+    const loadPagedData = listing(wrapper).props("loadPagedData") as (
+      params: LoadDataParams,
+    ) => Promise<PodcastEpisode[]>;
+    const others = await loadPagedData(params);
     expect(others.map((episode: PodcastEpisode) => episode.item_id)).toEqual([
       "ep1",
       "ep3",
     ]);
+    expect(listing(wrapper).props("sortListing")).toBe(
+      ListingType.PODCAST_EPISODES,
+    );
+    expect(mockGetPodcastEpisodes).toHaveBeenLastCalledWith(
+      SHOW.item_id,
+      SHOW.provider,
+      undefined,
+      "",
+      50,
+      0,
+      SortField.POSITION,
+      SortDirection.DESC,
+      "ep2",
+    );
   });
 
   it("shares the list settings of a library podcast with its podcast page", async () => {

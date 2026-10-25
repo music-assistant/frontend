@@ -40,18 +40,13 @@
       :show-hide-fully-played-filter="true"
       :show-track-number="true"
       :show-refresh-button="false"
-      :load-items="loadOtherEpisodes"
-      :sort-keys="[
-        'position_desc',
-        'position',
-        'name',
-        'duration',
-        'duration_desc',
-      ]"
+      :sort-listing="ListingType.PODCAST_EPISODES"
+      :load-paged-data="loadOtherEpisodes"
       :title="$t('other_episodes')"
       :hide-on-empty="true"
       :allow-collapse="true"
       :path="`podcast.${podcastKey}`"
+      :restore-state="false"
     />
 
     <Dialog v-model:open="showTranscript">
@@ -81,7 +76,9 @@
 <script setup lang="ts">
 import Chapters from "@/components/Chapters.vue";
 import DetailTextRow from "@/components/details/DetailTextRow.vue";
-import ItemsListing from "@/components/ItemsListing.vue";
+import ItemsListing, {
+  type LoadDataParams,
+} from "@/components/ItemsListing.vue";
 import {
   podcastEpisodeBackdrop,
   type PodcastEpisodeBackdrop,
@@ -100,6 +97,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/plugins/api";
 import {
   EventType,
+  ListingType,
   type EventMessage,
   type PlaylogUpdate,
   type Podcast,
@@ -132,9 +130,8 @@ const transcriptLoaded = ref(false);
 const transcriptLoading = ref(false);
 
 // the episodes listing reloads as soon as the route changes, a moment before
-// the new details arrive; sharing the requests keeps the two on one episode
+// the new details arrive; sharing the request keeps the two on one episode
 let detailsRequest: Promise<PodcastEpisode> | undefined;
-let episodesRequest: Promise<PodcastEpisode[]> | undefined;
 
 // A provider that cannot tell reports null, in which case the transcript is
 // worth offering: the episode itself is the only place left to find out.
@@ -206,14 +203,23 @@ const openEpisode = function (episode?: PodcastEpisode) {
   });
 };
 
-const loadOtherEpisodes = async function () {
-  const [episode, episodes] = await Promise.all([
-    // an episode that failed to load has no other episodes to list
-    detailsRequest?.catch(() => undefined),
-    episodesRequest,
-  ]);
-  if (!episode || !episodes) return [];
-  return episodes.filter((other) => other.item_id !== episode.item_id);
+const loadOtherEpisodes = async function (
+  params: LoadDataParams,
+): Promise<PodcastEpisode[]> {
+  const requested = detailsRequest;
+  const episode = await requested?.catch(() => undefined);
+  if (!episode || requested !== detailsRequest) return [];
+  return await api.getPodcastEpisodes(
+    episode.podcast.item_id,
+    episode.podcast.provider,
+    params.hideFullyPlayed ? false : undefined,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+    episode.item_id,
+  );
 };
 
 const openTranscript = async function () {
@@ -248,16 +254,19 @@ watch(
     showTranscript.value = false;
     checkedEpisodeKey.value = undefined;
     const details = (detailsRequest = api.getPodcastEpisode(itemId, provider));
-    const episodes = (episodesRequest = details
+    const episodes = details
       .then((episode) =>
         api.getPodcastEpisodes(
           episode.podcast.item_id,
           episode.podcast.provider,
+          undefined,
+          undefined,
+          0,
         ),
       )
-      // an episode listing we cannot fetch leaves the steppers and the listing
-      // empty rather than failing the page
-      .catch(() => []));
+      // an episode listing we cannot fetch leaves the steppers empty rather
+      // than failing the page
+      .catch(() => []);
     const episode = await details.catch((error) => {
       console.error("Failed to fetch podcast episode:", error);
       return undefined;
