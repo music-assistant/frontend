@@ -36,7 +36,7 @@ describe("getPlayerOptionControl", () => {
       option: { type: PlayerOptionType.BOOLEAN, value: true },
       control: "switch",
     },
-    // a range starting at 0 is still a range
+    // 0 is falsy, but a valid min_value
     {
       option: {
         type: PlayerOptionType.INTEGER,

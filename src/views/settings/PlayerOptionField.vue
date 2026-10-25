@@ -2,7 +2,7 @@
   <div
     class="flex flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
   >
-    <!-- the slider is named by its thumb -->
+    <!-- the slider gets its name from thumb-label -->
     <label
       :for="control === 'slider' ? undefined : inputId"
       class="text-sm font-medium"
@@ -54,7 +54,7 @@
       </span>
     </div>
 
-    <!-- typed values are sent once the field is left or Enter is pressed -->
+    <!-- on change, not on input: send only once typing is done -->
     <Input
       v-else
       :id="inputId"
@@ -93,15 +93,13 @@ const props = defineProps<{
   playerId: string;
 }>();
 
-// local copies of the value while it is edited, reset to the server's value
-// whenever that changes; v-model gives a number field's value as a number
+// v-model yields a number for a number input
 const draft = ref<string | number>("");
 const sliderValue = ref(0);
 
 const control = computed(() => getPlayerOptionControl(props.playerOption));
 const inputId = computed(() => `player-option-${props.playerOption.key}`);
-// null, not undefined: reka-ui's Select stops following a model that is
-// undefined when it mounts
+// reka-ui's Select goes uncontrolled if its model is undefined on mount
 const selectedEntryKey = computed(
   () =>
     props.playerOption.options?.find(

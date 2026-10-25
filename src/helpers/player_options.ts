@@ -7,7 +7,6 @@ import {
 export type PlayerOptionControl =
   "switch" | "slider" | "number" | "text" | "select";
 
-// the order the controls of the adjustable options are listed in
 const CONTROL_ORDER: PlayerOptionControl[] = [
   "switch",
   "slider",
@@ -20,7 +19,6 @@ const isNumberOption = (option: PlayerOption) =>
   option.type === PlayerOptionType.INTEGER ||
   option.type === PlayerOptionType.FLOAT;
 
-/** The control that edits an option. */
 export const getPlayerOptionControl = (
   option: PlayerOption,
 ): PlayerOptionControl => {
@@ -36,7 +34,6 @@ export const getPlayerOptionControl = (
   return "text";
 };
 
-/** Options grouped by their control, then by name. */
 export const sortPlayerOptions = (options: PlayerOption[]): PlayerOption[] =>
   [...options].sort(
     (a, b) =>
@@ -45,10 +42,7 @@ export const sortPlayerOptions = (options: PlayerOption[]): PlayerOption[] =>
       a.name.localeCompare(b.name),
   );
 
-/**
- * The value to send for what was typed into an option's field, or undefined
- * when there is nothing to send: unchanged, or not a number for a number option.
- */
+/** undefined when there is nothing to send. */
 export const parsePlayerOptionInput = (
   option: PlayerOption,
   input: string,
@@ -65,7 +59,6 @@ export const parsePlayerOptionInput = (
   return value === option.value ? undefined : value;
 };
 
-/** The text a read-only option shows for its value. */
 export const formatPlayerOptionValue = (option: PlayerOption): string => {
   const entry = option.options?.find((x) => x.value === option.value);
   return entry ? entry.name : String(option.value);

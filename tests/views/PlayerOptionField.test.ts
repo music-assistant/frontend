@@ -34,8 +34,7 @@ function mountField(overrides: Partial<PlayerOption>) {
   });
 }
 
-// one input event per keystroke; setValue would also fire change, which only
-// leaving the field or pressing Enter does
+// setValue also fires change, which would commit the value
 async function typeInto(
   input: Omit<DOMWrapper<HTMLInputElement>, "exists">,
   text: string,
