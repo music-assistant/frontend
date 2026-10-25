@@ -106,7 +106,8 @@
               tabindex="0"
               :aria-label="$t('tooltip.show_artwork_only')"
               @click="showArtworkOnly = true"
-              @keydown.enter="showArtworkOnly = true"
+              @keydown.enter.prevent="showArtworkOnly = true"
+              @keydown.space.prevent="showArtworkOnly = true"
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
@@ -384,7 +385,8 @@
               tabindex="0"
               :aria-label="$t('tooltip.show_artwork_only')"
               @click="showArtworkOnly = true"
-              @keydown.enter="showArtworkOnly = true"
+              @keydown.enter.prevent="showArtworkOnly = true"
+              @keydown.space.prevent="showArtworkOnly = true"
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
@@ -405,7 +407,9 @@
       <div class="player-bottom">
         <!-- timeline / progressbar-->
         <div class="row" style="margin-left: 5%; margin-right: 5%">
+          <!-- its clock rests while the artwork view covers it -->
           <PlayerTimeline
+            v-if="!showArtworkOnly"
             :show-labels="true"
             :color="sliderColor"
             :waveform="waveformData"
@@ -834,7 +838,8 @@ const toggleLyrics = () => {
 // keeps its state across open/close, so both are checked: the ~60fps loop only
 // runs while the lyrics viewer it feeds is actually on screen.
 const lyricsVisible = computed(
-  () => store.showFullscreenPlayer && showLyrics.value,
+  () =>
+    store.showFullscreenPlayer && showLyrics.value && !showArtworkOnly.value,
 );
 const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime(lyricsVisible);
 

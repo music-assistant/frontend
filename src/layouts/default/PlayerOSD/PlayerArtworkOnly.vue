@@ -20,10 +20,10 @@
       <div class="artwork-only__bg">
         <Transition name="artwork-only-xfade">
           <img
-            v-if="imageUrl"
-            :key="imageUrl"
+            v-if="shownUrl"
+            :key="shownUrl"
             class="artwork-only__bg-img"
-            :src="imageUrl"
+            :src="shownUrl"
             alt=""
             draggable="false"
           />
@@ -33,10 +33,10 @@
       <div class="artwork-only__stage">
         <Transition name="artwork-only-xfade">
           <img
-            v-if="imageUrl"
-            :key="imageUrl"
+            v-if="shownUrl"
+            :key="shownUrl"
             class="artwork-only__cover"
-            :src="imageUrl"
+            :src="shownUrl"
             :alt="title ?? $t('tooltip.artwork')"
             draggable="false"
           />
@@ -64,6 +64,33 @@ const onKeydown = (event: KeyboardEvent) => {
   event.stopPropagation();
   emit("close");
 };
+
+// A new cover is shown once it has loaded, so the cross-fade never fades to a
+// blank; one that fails to load leaves the current cover in place.
+const shownUrl = ref(props.imageUrl);
+let loading: HTMLImageElement | null = null;
+const stopLoading = () => {
+  if (loading) loading.onload = loading.onerror = null;
+  loading = null;
+};
+watch(
+  () => props.imageUrl,
+  (url) => {
+    stopLoading();
+    if (!url) {
+      shownUrl.value = url;
+      return;
+    }
+    const image = new Image();
+    image.onload = () => {
+      shownUrl.value = url;
+      stopLoading();
+    };
+    image.onerror = stopLoading;
+    loading = image;
+    image.src = url;
+  },
+);
 
 // Keyboard users land in the view and return to where they came from.
 const root = ref<HTMLElement | null>(null);
@@ -124,6 +151,7 @@ onUnmounted(() => {
   document.removeEventListener("keydown", onKeydown);
   document.removeEventListener("visibilitychange", onVisibilityChange);
   void holdScreen(false);
+  stopLoading();
   focusBefore?.focus();
 });
 </script>

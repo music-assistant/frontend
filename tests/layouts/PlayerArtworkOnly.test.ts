@@ -1,6 +1,7 @@
 import PlayerArtworkOnly from "@/layouts/default/PlayerOSD/PlayerArtworkOnly.vue";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
 
 const IMAGE = "https://artwork.test/molly.jpg";
 
@@ -10,6 +11,17 @@ function mountArtwork(playing = true, imageUrl = IMAGE) {
     global: { mocks: { $t: (key: string) => key }, stubs: { teleport: true } },
     attachTo: document.body,
   });
+}
+
+// An image that loads, or fails, when the test says so.
+class TestImage {
+  static last: TestImage | undefined;
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  src = "";
+  constructor() {
+    TestImage.last = this;
+  }
 }
 
 // A wake lock the test grants when it chooses, as the browser does in its own time.
@@ -35,6 +47,7 @@ describe("PlayerArtworkOnly", () => {
   afterEach(() => {
     document.body.innerHTML = "";
     Reflect.deleteProperty(navigator, "wakeLock");
+    vi.unstubAllGlobals();
   });
 
   it("shows the artwork as cover and as backdrop", () => {
@@ -104,6 +117,30 @@ describe("PlayerArtworkOnly", () => {
     await flushPromises();
 
     expect(wakeLock.release).toHaveBeenCalledTimes(1);
+  });
+
+  it("changes to a new cover once it has loaded", async () => {
+    vi.stubGlobal("Image", TestImage);
+    const next = "https://artwork.test/next.jpg";
+    const wrapper = mountArtwork();
+
+    await wrapper.setProps({ imageUrl: next });
+    expect(wrapper.find(".artwork-only__cover").attributes("src")).toBe(IMAGE);
+
+    TestImage.last?.onload?.();
+    await nextTick();
+    expect(wrapper.find(".artwork-only__cover").attributes("src")).toBe(next);
+  });
+
+  it("keeps the cover when the new one fails to load", async () => {
+    vi.stubGlobal("Image", TestImage);
+    const wrapper = mountArtwork();
+
+    await wrapper.setProps({ imageUrl: "https://artwork.test/broken.jpg" });
+    TestImage.last?.onerror?.();
+    await nextTick();
+
+    expect(wrapper.find(".artwork-only__cover").attributes("src")).toBe(IMAGE);
   });
 
   it("holds the backdrop still while the music is paused", () => {
