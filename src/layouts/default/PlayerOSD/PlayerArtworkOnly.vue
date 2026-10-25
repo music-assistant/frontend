@@ -42,7 +42,8 @@
           class="artwork-only__scrim absolute inset-0 bg-[rgba(11,11,15,0.45)] group-[.artwork-only--paused]:[animation-play-state:paused] motion-reduce:animate-none"
         ></div>
       </div>
-      <!-- old and new cover share the one cell while they cross-fade -->
+      <!-- old and new cover share the one cell while they cross-fade; the whole
+           cover shows, whatever its shape, with the shadow following it -->
       <div class="absolute inset-0 grid place-items-center">
         <Transition
           enter-active-class="transition-opacity duration-[800ms] ease-[ease]"
@@ -53,7 +54,7 @@
           <img
             v-if="shownUrl"
             :key="shownUrl"
-            class="artwork-only__cover aspect-square w-[min(90vw,90dvh,1000px)] rounded-2xl object-cover shadow-[0_24px_64px_rgba(0,0,0,0.5)] [grid-area:1/1]"
+            class="artwork-only__cover aspect-square w-[min(90vw,90dvh,1000px)] rounded-2xl object-contain drop-shadow-[0_24px_64px_rgba(0,0,0,0.5)] [grid-area:1/1]"
             :src="shownUrl"
             :alt="title ?? $t('tooltip.artwork')"
             draggable="false"
