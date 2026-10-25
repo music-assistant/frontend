@@ -9,9 +9,12 @@
     persistent
     no-click-animation
   >
+    <!-- the artwork view, teleported out of it, covers it whole: screen readers
+         must not reach the controls behind it either -->
     <v-card
       ref="cardRef"
       data-player-panel
+      :inert="showArtworkOnly"
       class="fullscreen-player-card"
       :style="[{ background: backgroundColor }, overlayVars]"
     >

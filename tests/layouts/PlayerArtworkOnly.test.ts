@@ -174,6 +174,49 @@ describe("PlayerArtworkOnly", () => {
     expect(wakeLock.request).toHaveBeenCalledTimes(2);
   });
 
+  it("asks again when the page came back while a refused request was pending", async () => {
+    let refuse: (error: Error) => void = () => {};
+    const request = vi
+      .fn()
+      .mockImplementationOnce(
+        () => new Promise((_resolve, reject) => (refuse = reject)),
+      )
+      .mockResolvedValue({ release: vi.fn(), addEventListener: vi.fn() });
+    Object.defineProperty(navigator, "wakeLock", {
+      value: { request },
+      configurable: true,
+    });
+    let hidden = false;
+    Object.defineProperty(document, "hidden", {
+      get: () => hidden,
+      configurable: true,
+    });
+    mountArtwork(true);
+
+    for (const now of [true, false]) {
+      hidden = now;
+      document.dispatchEvent(new Event("visibilitychange"));
+      await nextTick();
+    }
+    refuse(new Error("NotAllowedError"));
+    await flushPromises();
+    Reflect.deleteProperty(document, "hidden");
+
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not ask again after a refusal when nothing changed", async () => {
+    const request = vi.fn().mockRejectedValue(new Error("NotAllowedError"));
+    Object.defineProperty(navigator, "wakeLock", {
+      value: { request },
+      configurable: true,
+    });
+    mountArtwork(true);
+    await flushPromises();
+
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+
   it("changes to a new cover once it has loaded", async () => {
     vi.stubGlobal("Image", TestImage);
     const next = "https://artwork.test/next.jpg";

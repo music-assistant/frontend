@@ -126,19 +126,26 @@ let focusBefore: HTMLElement | null = null;
 // A screen showing nothing but the artwork is there to be looked at, so it
 // stays on while there is music. The system drops the lock when the tab is
 // hidden, hence asking again when it becomes visible.
-// A lock granted after it stopped being wanted is let go at once.
+// A lock granted after it stopped being wanted is let go at once, and a wish
+// that changed while a request was pending is settled once it is answered.
 let wakeLock: WakeLockSentinel | null = null;
 let wantLock = false;
 let acquiring = false;
+let changedWhileAcquiring = false;
 const visible = ref(!document.hidden);
 const onVisibilityChange = () => {
   visible.value = !document.hidden;
 };
 const holdScreen = async (want: boolean) => {
   wantLock = want;
+  if (acquiring) {
+    changedWhileAcquiring = true;
+    return;
+  }
   try {
-    if (want && !wakeLock && !acquiring && "wakeLock" in navigator) {
+    if (want && !wakeLock && "wakeLock" in navigator) {
       acquiring = true;
+      changedWhileAcquiring = false;
       try {
         const lock = await navigator.wakeLock.request("screen");
         lock.addEventListener("release", () => {
@@ -149,8 +156,15 @@ const holdScreen = async (want: boolean) => {
         });
         if (wantLock) wakeLock = lock;
         else await lock.release();
+      } catch (error) {
+        console.debug("Screen wake lock:", error);
       } finally {
         acquiring = false;
+      }
+      // a refusal is not asked again unless the wish changed meanwhile
+      if (changedWhileAcquiring) {
+        changedWhileAcquiring = false;
+        void holdScreen(wantLock);
       }
     } else if (!want && wakeLock) {
       const lock = wakeLock;
