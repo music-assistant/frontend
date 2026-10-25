@@ -425,6 +425,31 @@ describe("PartyGuestView skip voting", () => {
     expect(section.props("canRetrySkip")).toBe(true);
   });
 
+  it("lets an earlier voter retry once the tally reaches the threshold", async () => {
+    playItem("item_a");
+    const view = mountViewRaw();
+    await flushPromises();
+    // this guest casts the first of two votes
+    view.findComponent(PartyQueueSection).vm.$emit("skip");
+    await flushPromises();
+    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
+      true,
+    );
+
+    // another guest casts the second vote on the last track, so nothing was skipped
+    skipState.currentQueue.value = {
+      current_item: {
+        queue_item_id: "item_a",
+        extra_attributes: { party_skip_votes: 2 },
+      },
+    };
+    await flushPromises();
+
+    const section = view.findComponent(PartyQueueSection);
+    expect(section.props("hasVotedToSkip")).toBe(false);
+    expect(section.props("canRetrySkip")).toBe(true);
+  });
+
   it("skips on a retry once a next track was added", async () => {
     const skipResult = {
       success: true,

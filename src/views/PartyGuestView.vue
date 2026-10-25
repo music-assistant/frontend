@@ -153,7 +153,7 @@
       :skip-votes="skipVotes"
       :skip-votes-required="skipVotesRequired"
       :has-voted-to-skip="hasVotedToSkip"
-      :can-retry-skip="isAwaitingNextTrack"
+      :can-retry-skip="canRetrySkip"
       :boost-badge-color="boostBadgeColor"
       :request-badge-color="requestBadgeColor"
       :boost-enabled="boostEnabled"
@@ -471,8 +471,16 @@ const isAwaitingNextTrack = computed(
     !!currentQueueItemId.value &&
     awaitingNextTrackItemId.value === currentQueueItemId.value,
 );
+// The tally only stays at the threshold when there was no next track to skip
+// to, so every guest whose vote counts can then try again, not only the one
+// who cast the deciding vote
+const canRetrySkip = computed(
+  () =>
+    hasCountedSkipVote.value &&
+    (isAwaitingNextTrack.value || skipVotes.value >= skipVotesRequired.value),
+);
 const hasVotedToSkip = computed(
-  () => hasCountedSkipVote.value && !isAwaitingNextTrack.value,
+  () => hasCountedSkipVote.value && !canRetrySkip.value,
 );
 
 const skipCurrentSong = async () => {
