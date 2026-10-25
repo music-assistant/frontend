@@ -101,7 +101,7 @@
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
               :alt="$t('tooltip.artwork')"
-              class="artwork-only-trigger"
+              class="artwork-only-trigger cursor-pointer"
               role="button"
               tabindex="0"
               :aria-label="$t('tooltip.show_artwork_only')"
@@ -380,7 +380,7 @@
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
               :alt="$t('tooltip.artwork')"
-              class="artwork-only-trigger"
+              class="artwork-only-trigger cursor-pointer"
               role="button"
               tabindex="0"
               :aria-label="$t('tooltip.show_artwork_only')"
@@ -1989,9 +1989,5 @@ button {
   .main-media-details-track-info {
     padding: 8px 0;
   }
-}
-
-.artwork-only-trigger {
-  cursor: pointer;
 }
 </style>

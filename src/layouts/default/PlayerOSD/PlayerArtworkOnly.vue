@@ -1,9 +1,10 @@
 <template>
-  <!-- Above the fullscreen player and its controls, not inside its card. -->
+  <!-- Above the fullscreen player and its controls, not inside its card, and
+       below the shared dialogs, which open on top of it (see global.css). -->
   <Teleport to="body">
     <div
       ref="root"
-      class="artwork-only"
+      class="artwork-only fixed inset-0 z-[9003] cursor-pointer touch-manipulation overflow-hidden bg-[#0b0b0f]"
       :class="{ 'artwork-only--paused': !playing }"
       role="button"
       tabindex="0"
@@ -16,26 +17,30 @@
       <!-- The artwork alone fills the screen, so a click anywhere is the way back.
            It holds the focus while open: Tab has nothing else to reach. -->
       <!-- The backdrop is the artwork itself: blurred hard, livelier and darker,
-         and cross-faded when the music changes. -->
-      <div class="artwork-only__bg">
+         and cross-faded when the music changes. It is oversized so the blur
+         has pixels to sample at the edges instead of fading to transparent. -->
+      <div class="artwork-only__bg absolute inset-0 will-change-transform">
         <Transition name="artwork-only-xfade">
           <img
             v-if="shownUrl"
             :key="shownUrl"
-            class="artwork-only__bg-img"
+            class="artwork-only__bg-img absolute inset-[-15%] h-[130%] w-[130%] object-cover blur-[56px] brightness-[0.68] saturate-[1.7] [transform:translateZ(0)]"
             :src="shownUrl"
             alt=""
             draggable="false"
           />
         </Transition>
-        <div class="artwork-only__scrim"></div>
+        <div
+          class="artwork-only__scrim absolute inset-0 bg-[rgba(11,11,15,0.45)]"
+        ></div>
       </div>
-      <div class="artwork-only__stage">
+      <!-- old and new cover share the one cell while they cross-fade -->
+      <div class="absolute inset-0 grid place-items-center">
         <Transition name="artwork-only-xfade">
           <img
             v-if="shownUrl"
             :key="shownUrl"
-            class="artwork-only__cover"
+            class="artwork-only__cover aspect-square w-[min(90vw,90dvh,1000px)] rounded-2xl object-cover shadow-[0_24px_64px_rgba(0,0,0,0.5)] [grid-area:1/1]"
             :src="shownUrl"
             :alt="title ?? $t('tooltip.artwork')"
             draggable="false"
@@ -59,7 +64,13 @@ const emit = defineEmits<{ close: [] }>();
 
 // Escape leaves only this view: the fullscreen player under it closes on an
 // Escape that reaches the window.
+// A Ctrl/Cmd shortcut, such as the command center's, leaves the view and goes
+// on to open what it opens, which would otherwise be hidden behind the view.
 const onKeydown = (event: KeyboardEvent) => {
+  if (event.ctrlKey || event.metaKey) {
+    emit("close");
+    return;
+  }
   if (event.key !== "Escape") return;
   event.stopPropagation();
   emit("close");
@@ -160,41 +171,13 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.artwork-only {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  overflow: hidden;
-  background: #0b0b0f;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
 /* The backdrop breathes: a slow swell of the container, and of the scrim over
    it. Transform and opacity only, so the blur is not recomputed every frame. */
 .artwork-only__bg {
-  position: absolute;
-  inset: 0;
   animation: artwork-only-breathe 9s ease-in-out infinite;
-  will-change: transform;
-}
-
-/* Oversized so the blur has pixels to sample at the edges instead of fading
-   to transparent. */
-.artwork-only__bg-img {
-  position: absolute;
-  inset: -15%;
-  width: 130%;
-  height: 130%;
-  object-fit: cover;
-  filter: blur(56px) saturate(1.7) brightness(0.68);
-  transform: translateZ(0);
 }
 
 .artwork-only__scrim {
-  position: absolute;
-  inset: 0;
-  background: rgba(11, 11, 15, 0.45);
   animation: artwork-only-swell 9s ease-in-out infinite;
 }
 
@@ -202,23 +185,6 @@ onUnmounted(() => {
 .artwork-only--paused .artwork-only__bg,
 .artwork-only--paused .artwork-only__scrim {
   animation-play-state: paused;
-}
-
-.artwork-only__stage {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-}
-
-/* Old and new cover share the one cell while they cross-fade. */
-.artwork-only__cover {
-  grid-area: 1 / 1;
-  width: min(90vw, 90dvh, 1000px);
-  aspect-ratio: 1;
-  object-fit: cover;
-  border-radius: 16px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
 }
 
 .artwork-only-xfade-enter-active,

@@ -94,6 +94,20 @@ describe("PlayerArtworkOnly", () => {
     expect(onWindowKeydown).not.toHaveBeenCalled();
   });
 
+  it("leaves on a Ctrl/Cmd shortcut and lets it open what it opens", () => {
+    const wrapper = mountArtwork();
+    const onWindowKeydown = vi.fn();
+    window.addEventListener("keydown", onWindowKeydown);
+
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }),
+    );
+    window.removeEventListener("keydown", onWindowKeydown);
+
+    expect(wrapper.emitted("close")).toHaveLength(1);
+    expect(onWindowKeydown).toHaveBeenCalledTimes(1);
+  });
+
   it("takes the focus while open and gives it back on leaving", () => {
     const trigger = document.createElement("button");
     document.body.appendChild(trigger);
