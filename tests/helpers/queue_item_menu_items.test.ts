@@ -2,6 +2,7 @@ import { getQueueItemMenuItems } from "@/helpers/queue_item_menu_items";
 import type { PlayerQueue } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playerQueue } from "../fixtures/playerQueue";
+import { providerMapping } from "../fixtures/providerMapping";
 import { queueItem } from "../fixtures/queueItem";
 import { track } from "../fixtures/track";
 
@@ -9,12 +10,19 @@ const { storeMock } = vi.hoisted(() => ({
   storeMock: {
     activePlayerQueue: undefined as PlayerQueue | undefined,
     showFullscreenPlayer: true,
+    enabledPlugins: new Set<string>(),
   },
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope: () => true },
 }));
 
 vi.mock("@/plugins/api", () => ({
   default: {
-    providers: {},
+    providers: {
+      "test_provider--1": { available: true, supported_features: [] },
+    },
     queueCommandPlayIndex: vi.fn(),
     queueCommandMoveNext: vi.fn(),
     queueCommandMoveItemEnd: vi.fn(),
@@ -60,5 +68,17 @@ describe("getQueueItemMenuItems", () => {
       "queue_delete",
       "show_info",
     ]);
+  });
+
+  it("adds the existing share preview action for a supported queue track", () => {
+    storeMock.enabledPlugins.add("share_provider");
+    const mediaItem = track({ provider_mappings: [providerMapping()] });
+
+    const items = getQueueItemMenuItems(
+      queueItem({ media_item: mediaItem }),
+      3,
+    );
+
+    expect(labels(items)).toContain("share.open_preview");
   });
 });

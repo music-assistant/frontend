@@ -1017,6 +1017,7 @@ const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
   switch (itemtype) {
     case "tracks":
     case "playlisttracks":
+    case "sharedtracks":
     case "albumtracks":
     case "artisttracks": {
       return item.item_id === current.item_id;

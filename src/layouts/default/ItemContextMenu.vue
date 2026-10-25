@@ -339,6 +339,7 @@ import {
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { getPlayerDisplayName, playerVisible } from "@/helpers/players";
+import { useShareLinkPreviewMenuItem } from "@/composables/useShareLinkPreviewMenuItem";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import {
   canAddToPlaylist,
@@ -644,9 +645,6 @@ export const getContextMenuItems = async function (
   const managesLibrary = authManager.hasScope(Scope.LIBRARY_MANAGE);
   // favorites, library membership, playlists and played state change the library
   const canEditLibrary = authManager.hasScope(Scope.LIBRARY_WRITE);
-  const canGenerateShareLink =
-    store.enabledPlugins?.has("share_provider") === true &&
-    authManager.hasScope(Scope.LIBRARY_READ);
 
   // show info
   if (
@@ -683,26 +681,9 @@ export const getContextMenuItems = async function (
     });
   }
 
-  if (
-    canGenerateShareLink &&
-    items.length === 1 &&
-    itemIsAvailable(firstItem) &&
-    (firstItem.media_type === MediaType.TRACK ||
-      firstItem.media_type === MediaType.ALBUM ||
-      firstItem.media_type === MediaType.ARTIST ||
-      firstItem.media_type === MediaType.PLAYLIST) &&
-    typeof firstItem.uri === "string"
-  ) {
-    contextMenuItems.push({
-      label: "share.open_preview",
-      labelArgs: [],
-      action: () => {
-        const uri = firstItem.uri;
-        if (!uri || !itemIsAvailable(firstItem)) return;
-        eventbus.emit("shareLinkPreview", { uri });
-      },
-      icon: Share2,
-    });
+  if (items.length === 1) {
+    const sharePreviewItem = useShareLinkPreviewMenuItem(firstItem);
+    if (sharePreviewItem) contextMenuItems.push(sharePreviewItem);
   }
 
   // creates an AI Radio show from the playlist, which takes config.providers.write

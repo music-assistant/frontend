@@ -8,6 +8,7 @@ import {
   EventType,
   ListingType,
   MediaType,
+  PlaybackState,
   SortDirection,
   SortField,
   type Album,
@@ -175,9 +176,14 @@ vi.mock("@/components/PanelviewItemCompact.vue", () =>
 vi.mock("@/components/track-table/TrackTableHeader.vue", () =>
   stubComponent("TrackTableHeader"),
 );
-vi.mock("@/components/track-table/TrackTableRow.vue", () =>
-  stubComponent("TrackTableRow"),
-);
+vi.mock("@/components/track-table/TrackTableRow.vue", () => ({
+  default: {
+    name: "TrackTableRow",
+    props: { item: Object, isPlaying: Boolean },
+    template:
+      '<div data-testid="track-row" :data-is-playing="String(isPlaying)" />',
+  },
+}));
 vi.mock("@/composables/useTrackTableColumns", async () => {
   const { ref } = await import("vue");
   return {
@@ -247,6 +253,45 @@ function mountListingRaw(
     },
   });
 }
+
+describe("ItemsListing shared playlist playback", () => {
+  it("marks the current shared track as playing", async () => {
+    const preview = track({
+      provider: "builtin",
+      item_id: "share-preview://track/encoded",
+    });
+    const mutableStore = store as unknown as {
+      activePlayer: { playback_state: PlaybackState } | undefined;
+      curQueueItem: { media_item: Track } | undefined;
+    };
+    mutableStore.activePlayer = {
+      playback_state: PlaybackState.PLAYING,
+    };
+    mutableStore.curQueueItem = {
+      media_item: preview,
+    };
+    const listing = mountListingRaw(
+      {
+        itemtype: "sharedtracks",
+        trackTable: true,
+        forcedViewMode: "list",
+        loadPagedData: vi.fn().mockResolvedValue([preview]),
+      },
+      {
+        VVirtualScroll: {
+          props: ["items"],
+          template:
+            '<div><slot v-for="(item, index) in items" :key="item.uri" :item="item" :index="index" /></div>',
+        },
+      },
+    );
+    await flushPromises();
+
+    expect(
+      listing.get('[data-testid="track-row"]').attributes("data-is-playing"),
+    ).toBe("true");
+  });
+});
 
 enableAutoUnmount(afterEach);
 
