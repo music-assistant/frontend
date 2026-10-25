@@ -17,11 +17,7 @@
         </span>
         <Button
           size="sm"
-          :disabled="
-            (rateLimitingEnabled && skipSongTokens <= 0) ||
-            skippingSong ||
-            hasVotedToSkip
-          "
+          :disabled="skipDisabled"
           class="skip-btn"
           @click="$emit('skip')"
         >
@@ -86,7 +82,7 @@ import Spinner from "@/components/ui/spinner/Spinner.vue";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Clock, ListMusic, SkipForward } from "@lucide/vue";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import PartyQueueItem from "./PartyQueueItem.vue";
 
 const props = defineProps<{
@@ -103,6 +99,7 @@ const props = defineProps<{
   skipVotes: number;
   skipVotesRequired: number;
   hasVotedToSkip: boolean;
+  canRetrySkip: boolean;
   boostBadgeColor: string;
   requestBadgeColor: string;
   boostEnabled: boolean;
@@ -115,6 +112,16 @@ const emit = defineEmits<{
   queueScroll: [event: Event];
   boostQueueItem: [item: QueueItem];
 }>();
+
+// A guest whose vote already counts can retry the skip without a token
+const skipDisabled = computed(
+  () =>
+    (props.rateLimitingEnabled &&
+      props.skipSongTokens <= 0 &&
+      !props.canRetrySkip) ||
+    props.skippingSong ||
+    props.hasVotedToSkip,
+);
 
 const expandedQueueItemId = ref("");
 

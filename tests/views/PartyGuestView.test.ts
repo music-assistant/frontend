@@ -8,10 +8,13 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import PartyGuestView from "@/views/PartyGuestView.vue";
-import { flushPromises, mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
 import { toast } from "vue-sonner";
+
+// Views left mounted keep their listeners and watchers running into later tests
+enableAutoUnmount(afterEach);
 
 // Tracks live subscriptions the way the api does, so one that outlives the
 // view stays listed here.
@@ -351,6 +354,8 @@ describe("PartyGuestView skip voting", () => {
   };
 
   beforeEach(() => {
+    vi.mocked(toast.info).mockClear();
+    vi.mocked(toast.success).mockClear();
     skipState.skipSongEnabled.value = true;
     partyConfig.config.value = {
       skip_votes_required: 2,
@@ -414,8 +419,45 @@ describe("PartyGuestView skip voting", () => {
     expect(toast.info).toHaveBeenCalledWith(
       "providers.party.guest_page.skip_no_next_track",
     );
-    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
-      true,
+    // the vote counts, but the guest can try again once a track was added
+    const section = view.findComponent(PartyQueueSection);
+    expect(section.props("hasVotedToSkip")).toBe(false);
+    expect(section.props("canRetrySkip")).toBe(true);
+  });
+
+  it("skips on a retry once a next track was added", async () => {
+    const skipResult = {
+      success: true,
+      skipped: false,
+      vote_counted: true,
+      song_changed: false,
+      no_next_track: true,
+      votes: 1,
+      votes_required: 1,
+    };
+    vi.mocked(api.sendCommand).mockImplementation(async (command: unknown) =>
+      command === "party/skip" ? { ...skipResult } : null,
+    );
+    playItem("item_a");
+    const view = mountViewRaw();
+    await flushPromises();
+    view.findComponent(PartyQueueSection).vm.$emit("skip");
+    await flushPromises();
+
+    // a track was added: the retry skips, without counting a new vote
+    Object.assign(skipResult, {
+      skipped: true,
+      vote_counted: false,
+      no_next_track: false,
+    });
+    view.findComponent(PartyQueueSection).vm.$emit("skip");
+    await flushPromises();
+
+    expect(toast.success).toHaveBeenCalledWith(
+      "providers.party.guest_page.song_skipped",
+    );
+    expect(toast.info).not.toHaveBeenCalledWith(
+      "providers.party.guest_page.skip_already_voted",
     );
   });
 

@@ -153,6 +153,7 @@
       :skip-votes="skipVotes"
       :skip-votes-required="skipVotesRequired"
       :has-voted-to-skip="hasVotedToSkip"
+      :can-retry-skip="isAwaitingNextTrack"
       :boost-badge-color="boostBadgeColor"
       :request-badge-color="requestBadgeColor"
       :boost-enabled="boostEnabled"
@@ -442,20 +443,36 @@ const skipVotes = computed(
     currentQueue.value?.current_item?.extra_attributes?.party_skip_votes ?? 0,
 );
 const votedSkipItemId = ref("");
+// Set when enough guests voted but there was no next track to skip to yet. The
+// guest's vote already counts, so they can try again without a token once a
+// track was added.
+const awaitingNextTrackItemId = ref("");
 // The server drops the votes once the track stops playing, so a track that
 // plays again can be voted on again
 watch(currentQueueItemId, () => {
   votedSkipItemId.value = "";
+  awaitingNextTrackItemId.value = "";
 });
 // Every counted vote shows in the tally, so a tally back at zero means the
 // server dropped the votes, for example when the Party plugin reloaded
 watch(skipVotes, (votes) => {
-  if (votes === 0) votedSkipItemId.value = "";
+  if (votes === 0) {
+    votedSkipItemId.value = "";
+    awaitingNextTrackItemId.value = "";
+  }
 });
-const hasVotedToSkip = computed(
+const hasCountedSkipVote = computed(
   () =>
     !!currentQueueItemId.value &&
     votedSkipItemId.value === currentQueueItemId.value,
+);
+const isAwaitingNextTrack = computed(
+  () =>
+    !!currentQueueItemId.value &&
+    awaitingNextTrackItemId.value === currentQueueItemId.value,
+);
+const hasVotedToSkip = computed(
+  () => hasCountedSkipVote.value && !isAwaitingNextTrack.value,
 );
 
 const skipCurrentSong = async () => {
@@ -469,7 +486,11 @@ const skipCurrentSong = async () => {
     return;
   }
 
-  if (rateLimitingEnabled.value && skipSongTokens.value <= 0) {
+  if (
+    rateLimitingEnabled.value &&
+    skipSongTokens.value <= 0 &&
+    !hasCountedSkipVote.value
+  ) {
     const minutesUntilNext = getTimeUntilNextSkipToken();
     toast.warning(
       $t("providers.party.guest_page.skip_limit_reached", [minutesUntilNext]),
@@ -504,34 +525,37 @@ const skipCurrentSong = async () => {
       return;
     }
 
+    // Only a newly counted vote uses up a skip token, a retry does not
+    if (result.vote_counted) {
+      votedSkipItemId.value = votedItemId;
+      if (rateLimitingEnabled.value) {
+        consumeSkipSongToken();
+      }
+    }
+
+    if (result.skipped) {
+      toast.success($t("providers.party.guest_page.song_skipped"));
+      return;
+    }
+
+    if (result.no_next_track) {
+      awaitingNextTrackItemId.value = votedItemId;
+      toast.info($t("providers.party.guest_page.skip_no_next_track"));
+      return;
+    }
+
     if (!result.vote_counted) {
       votedSkipItemId.value = votedItemId;
       toast.info($t("providers.party.guest_page.skip_already_voted"));
       return;
     }
 
-    if (rateLimitingEnabled.value) {
-      consumeSkipSongToken();
-    }
-
-    if (result.no_next_track) {
-      votedSkipItemId.value = votedItemId;
-      toast.info($t("providers.party.guest_page.skip_no_next_track"));
-      return;
-    }
-
-    if (!result.skipped) {
-      votedSkipItemId.value = votedItemId;
-      toast.success(
-        $t("providers.party.guest_page.skip_vote_counted", [
-          result.votes,
-          result.votes_required,
-        ]),
-      );
-      return;
-    }
-
-    toast.success($t("providers.party.guest_page.song_skipped"));
+    toast.success(
+      $t("providers.party.guest_page.skip_vote_counted", [
+        result.votes,
+        result.votes_required,
+      ]),
+    );
   } catch (error) {
     console.error("Failed to skip song:", error);
     toast.error($t("providers.party.guest_page.skip_failed"));
