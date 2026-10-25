@@ -4,7 +4,7 @@
   <Teleport to="body">
     <div
       ref="root"
-      class="artwork-only group fixed inset-0 z-[9003] cursor-pointer touch-manipulation overflow-hidden bg-[#0b0b0f]"
+      class="artwork-only group fixed inset-0 z-[9003] cursor-pointer touch-pinch-zoom overflow-hidden bg-[#0b0b0f]"
       :class="{ 'artwork-only--paused': !playing }"
       role="button"
       tabindex="0"
@@ -15,7 +15,9 @@
       @keydown.tab.prevent
     >
       <!-- The artwork alone fills the screen, so a click anywhere is the way back.
-           It holds the focus while open: Tab has nothing else to reach. -->
+           It holds the focus while open: Tab has nothing else to reach. It
+           refuses panning, as the player panel does embedded (global.css), so
+           a drag cannot reach a host's pull-to-refresh. -->
       <!-- The backdrop is the artwork itself: blurred hard, livelier and darker,
          and cross-faded when the music changes. It is oversized so the blur
          has pixels to sample at the edges instead of fading to transparent. -->
