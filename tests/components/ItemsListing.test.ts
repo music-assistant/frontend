@@ -291,6 +291,42 @@ describe("ItemsListing shared playlist playback", () => {
       listing.get('[data-testid="track-row"]').attributes("data-is-playing"),
     ).toBe("true");
   });
+
+  it("does not mark a shared track with a colliding provider ID as playing", async () => {
+    const sharedTrack = track({ provider: "tidal--1", item_id: "123" });
+    const queuedTrack = track({ provider: "library", item_id: "123" });
+    const mutableStore = store as unknown as {
+      activePlayer: { playback_state: PlaybackState } | undefined;
+      curQueueItem: { media_item: Track } | undefined;
+    };
+    mutableStore.activePlayer = {
+      playback_state: PlaybackState.PLAYING,
+    };
+    mutableStore.curQueueItem = { media_item: queuedTrack };
+    const listing = mountListingRaw(
+      {
+        itemtype: "sharedtracks",
+        trackTable: true,
+        forcedViewMode: "list",
+        loadPagedData: vi.fn().mockResolvedValue([sharedTrack]),
+      },
+      {
+        VVirtualScroll: {
+          props: ["items"],
+          template:
+            '<div><slot v-for="(item, index) in items" :key="item.uri" :item="item" :index="index" /></div>',
+        },
+      },
+    );
+    await flushPromises();
+
+    expect(
+      listing.get('[data-testid="track-row"]').attributes("data-is-playing"),
+    ).toBe("false");
+
+    mutableStore.activePlayer = undefined;
+    mutableStore.curQueueItem = undefined;
+  });
 });
 
 enableAutoUnmount(afterEach);

@@ -70,14 +70,17 @@ const loading = ref(false);
 const shareUrl = ref("");
 const preview = ref<SharePreview>();
 let requestId = 0;
+let copyRequestId = 0;
 
 watch(showDialog, (open) => {
+  if (!open) copyRequestId++;
   store.dialogActive = open;
 });
 
 onMounted(() => {
   eventbus.on("shareLinkPreview", (event: ShareLinkPreviewEvent) => {
     dialogKey.value++;
+    copyRequestId++;
     showDialog.value = true;
     void loadSharePreview(event.uri);
   });
@@ -86,6 +89,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   eventbus.off("shareLinkPreview");
   requestId++;
+  copyRequestId++;
 });
 
 async function loadSharePreview(uri: string): Promise<void> {
@@ -116,15 +120,21 @@ async function loadSharePreview(uri: string): Promise<void> {
 }
 
 async function copyText(value: string): Promise<void> {
-  if (!value) return;
+  if (!value || !showDialog.value) return;
+  const currentCopyRequest = ++copyRequestId;
+  const isCurrentCopyRequest = () =>
+    currentCopyRequest === copyRequestId && showDialog.value;
   try {
     if (!(await copyToClipboard(value))) {
+      if (!isCurrentCopyRequest()) return;
       toast.error($t("share.link_copy_failed"));
       return;
     }
+    if (!isCurrentCopyRequest()) return;
     toast.success($t("share.link_copied"));
     showDialog.value = false;
   } catch {
+    if (!isCurrentCopyRequest()) return;
     toast.error($t("share.link_copy_failed"));
   }
 }

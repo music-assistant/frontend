@@ -2294,6 +2294,7 @@
         "preview_failed": "Could not create a share preview.",
         "preview_loading": "Preparing share preview…",
         "loading": "Finding this item in your library…",
+        "plugin_unavailable": "This link requires the Share Links plugin. Ask the server administrator to enable it.",
         "playlist_tracks": "{count} tracks",
         "show_track": "Show {0}",
         "search_track": "Search for {0}",

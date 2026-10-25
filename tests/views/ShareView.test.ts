@@ -2,18 +2,23 @@ import ShareView from "@/views/ShareView.vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, routerMock } = vi.hoisted(() => ({
+const { apiMock, routerMock, storeMock } = vi.hoisted(() => ({
   apiMock: {
     resolveSharedItem: vi.fn(),
     importSharedPlaylist: vi.fn(),
   },
   routerMock: { replace: vi.fn(), push: vi.fn() },
+  storeMock: {
+    enabledPlugins: new Set(["share_provider"]),
+    dialogActive: false,
+  },
 }));
 
 vi.mock("@/plugins/api", () => ({ default: apiMock }));
 vi.mock("@/plugins/auth", () => ({
   authManager: { hasScope: () => true },
 }));
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/helpers/navigation", () => ({ backFromMediaDetails: vi.fn() }));
 vi.mock("vue-router", () => ({ useRouter: () => routerMock }));
@@ -74,9 +79,25 @@ function deferred<T>() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  storeMock.enabledPlugins = new Set(["share_provider"]);
+  storeMock.dialogActive = false;
 });
 
 describe("ShareView async state", () => {
+  it.each([encode({ type: "track", title: "Track" }), playlist("Playlist")])(
+    "does not call share commands when the plugin is unavailable",
+    async (payload) => {
+      storeMock.enabledPlugins = new Set();
+      const wrapper = mount(ShareView, { props: { payload } });
+      await flushPromises();
+
+      expect(wrapper.text()).toContain("share.plugin_unavailable");
+      expect(apiMock.resolveSharedItem).not.toHaveBeenCalled();
+      expect(apiMock.importSharedPlaylist).not.toHaveBeenCalled();
+      wrapper.unmount();
+    },
+  );
+
   it("ignores an old resolution after the payload changes", async () => {
     const pending = deferred<{
       media_type: string;
@@ -134,12 +155,47 @@ describe("ShareView async state", () => {
       .find((button) => button.text().includes("share.import"));
     await importButton?.trigger("click");
     expect(wrapper.getComponent({ name: "Dialog" }).props("open")).toBe(true);
+    expect(storeMock.dialogActive).toBe(true);
 
     await wrapper.setProps({ payload: playlist("Playlist B") });
 
     expect(wrapper.getComponent({ name: "Dialog" }).props("open")).toBe(false);
+    expect(storeMock.dialogActive).toBe(false);
     expect(apiMock.importSharedPlaylist).not.toHaveBeenCalled();
     wrapper.unmount();
+  });
+
+  it("clears its dialog active state when unmounted while confirmation is open", async () => {
+    const wrapper = mount(ShareView, {
+      props: { payload: playlist("Playlist") },
+    });
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("share.import"))
+      ?.trigger("click");
+
+    expect(storeMock.dialogActive).toBe(true);
+    wrapper.unmount();
+    expect(storeMock.dialogActive).toBe(false);
+  });
+
+  it("preserves a dialog active state that was already set before confirmation", async () => {
+    storeMock.dialogActive = true;
+    const wrapper = mount(ShareView, {
+      props: { payload: playlist("Playlist") },
+    });
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("share.import"))
+      ?.trigger("click");
+    await wrapper
+      .getComponent({ name: "Dialog" })
+      .vm.$emit("update:open", false);
+
+    expect(storeMock.dialogActive).toBe(true);
+    wrapper.unmount();
+    expect(storeMock.dialogActive).toBe(true);
+    storeMock.dialogActive = false;
   });
 
   it("does not import a new payload after confirming an older playlist", async () => {

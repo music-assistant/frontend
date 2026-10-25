@@ -69,7 +69,8 @@
             {{ item.name }}
           </div>
           <div class="truncate text-sm text-muted-foreground">
-            <TrackTableLinks :targets="artists" route-name="artist" />
+            <span v-if="isUnresolvedSharedTrack">{{ artistNames }}</span>
+            <TrackTableLinks v-else :targets="artists" route-name="artist" />
             <!-- the album moves under the title when its own column is hidden -->
             <template v-if="albumInSubtitle">
               <span v-if="artists.length"> • </span>
@@ -266,15 +267,21 @@ const artists = computed(() =>
   "artists" in props.item ? props.item.artists : [],
 );
 
+const artistNames = computed(() =>
+  artists.value.map((artist) => artist.name).join(", "),
+);
+
 const albumInSubtitle = computed(
   () => !!album.value && !props.columns.includes("album"),
 );
 
+// Share placeholders contain display names without resolvable artist or album IDs.
 const isUnresolvedSharedTrack = computed(
   () =>
     props.item.media_type === MediaType.TRACK &&
     props.item.provider === "builtin" &&
-    props.item.item_id.startsWith("share-preview://track/"),
+    (props.item.item_id.startsWith("share-preview://track/") ||
+      props.item.item_id.startsWith("share://track/")),
 );
 
 // favouring an item changes the library
