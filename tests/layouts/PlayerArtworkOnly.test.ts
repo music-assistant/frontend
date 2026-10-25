@@ -27,18 +27,30 @@ class TestImage {
 // A wake lock the test grants when it chooses, as the browser does in its own time.
 function deferredWakeLock() {
   const release = vi.fn(() => Promise.resolve());
+  const onRelease: (() => void)[] = [];
   let grant: () => void = () => {};
   const request = vi.fn(
     () =>
       new Promise((resolve) => {
-        grant = () => resolve({ release, addEventListener: vi.fn() });
+        grant = () =>
+          resolve({
+            release,
+            addEventListener: (_type: string, listener: () => void) =>
+              onRelease.push(listener),
+          });
       }),
   );
   Object.defineProperty(navigator, "wakeLock", {
     value: { request },
     configurable: true,
   });
-  return { request, release, grant: () => grant() };
+  return {
+    request,
+    release,
+    grant: () => grant(),
+    // the system letting go of the lock on its own
+    drop: () => onRelease.forEach((listener) => listener()),
+  };
 }
 
 describe("PlayerArtworkOnly", () => {
@@ -117,6 +129,18 @@ describe("PlayerArtworkOnly", () => {
     await flushPromises();
 
     expect(wakeLock.release).toHaveBeenCalledTimes(1);
+  });
+
+  it("asks again for a wake lock the system let go of while playing", async () => {
+    const wakeLock = deferredWakeLock();
+    mountArtwork(true);
+    wakeLock.grant();
+    await flushPromises();
+
+    wakeLock.drop();
+    await flushPromises();
+
+    expect(wakeLock.request).toHaveBeenCalledTimes(2);
   });
 
   it("changes to a new cover once it has loaded", async () => {

@@ -115,7 +115,10 @@ const holdScreen = async (want: boolean) => {
       try {
         const lock = await navigator.wakeLock.request("screen");
         lock.addEventListener("release", () => {
-          if (wakeLock === lock) wakeLock = null;
+          if (wakeLock !== lock) return;
+          wakeLock = null;
+          // the system can let go on its own; ask again while still wanted
+          if (wantLock && !document.hidden) void holdScreen(true);
         });
         if (wantLock) wakeLock = lock;
         else await lock.release();
