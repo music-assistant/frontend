@@ -237,6 +237,7 @@ describe("getPlayerMenuItems settings shortcuts", () => {
     "open_player_settings",
     "open_queue_settings",
     "open_dsp_settings",
+    "player_options.open",
     "reconfigure_player",
     "configure_player",
   ];
@@ -271,51 +272,6 @@ describe("getPlayerMenuItems settings shortcuts", () => {
     },
   );
 
-  it.each([
-    {
-      role: "an admin",
-      scopes: BUILTIN_ROLE_SCOPES.admin,
-      options: 1,
-      shown: true,
-    },
-    {
-      role: "a guest",
-      scopes: BUILTIN_ROLE_SCOPES.guest,
-      options: 1,
-      shown: true,
-    },
-    {
-      role: "an admin",
-      scopes: BUILTIN_ROLE_SCOPES.admin,
-      options: 0,
-      shown: false,
-    },
-  ])(
-    "offers the player options to $role with $options options: $shown",
-    ({ scopes, options, shown }) => {
-      hasScope.mockImplementation(scopeChecker(scopes));
-      const menuItems = getPlayerMenuItems(
-        makePlayer({
-          options: [{ key: "eq", name: "EQ" } as PlayerOption].slice(
-            0,
-            options,
-          ),
-        }),
-        makeQueue(),
-        { context: "queue" },
-      );
-      const optionsItem = menuItems.find(
-        (item) => item.label === "player_options.open",
-      );
-
-      optionsItem?.action?.();
-
-      expect(routerPush.mock.calls.flat()).toEqual(
-        shown ? ["/settings/editplayer/kitchen/options"] : [],
-      );
-    },
-  );
-
   it("opens the player settings page from the player menu", () => {
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "player",
@@ -331,15 +287,18 @@ describe("getPlayerMenuItems settings shortcuts", () => {
   });
 
   it("picks a settings page from the fullscreen player", () => {
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
-      context: "queue",
-    });
+    const menuItems = getPlayerMenuItems(
+      makePlayer({ options: [{ key: "eq", name: "EQ" } as PlayerOption] }),
+      makeQueue(),
+      { context: "queue" },
+    );
     const subItems = openSettingsItem(menuItems)?.subItems ?? [];
 
     expect(subItems.map((item) => item.label)).toEqual([
       "settings.queue_settings",
       "settings.player_settings",
       "settings.category.dsp",
+      "settings.category.options",
     ]);
     for (const subItem of subItems) subItem.action?.();
 
@@ -347,6 +306,7 @@ describe("getPlayerMenuItems settings shortcuts", () => {
       "/settings/editqueue/kitchen",
       "/settings/editplayer/kitchen",
       "/settings/editplayer/kitchen/dsp",
+      "/settings/editplayer/kitchen/options",
     ]);
     expect(storeMock.showFullscreenPlayer).toBe(false);
     expect(storeMock.showPlayersMenu).toBe(false);

@@ -20,7 +20,7 @@ import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
 import { visualizerEnabledForPlayer } from "@/composables/visualizer/useVisualizer";
 import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
-import { Droplet, Megaphone, SlidersHorizontal, Sparkles } from "@lucide/vue";
+import { Droplet, Megaphone, Sparkles } from "@lucide/vue";
 import { h, markRaw } from "vue";
 import { useHosts } from "@/composables/ai-radio/useHosts";
 import { authManager } from "@/plugins/auth";
@@ -379,14 +379,13 @@ export const getPlayerMenuItems = (
     });
   }
 
-  const openSettings = (path: string) => () => {
-    store.showFullscreenPlayer = false;
-    store.showPlayersMenu = false;
-    router.push(path);
-  };
-
   // open the settings (both menus, for a role that changes player settings)
   if (authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)) {
+    const openSettings = (path: string) => () => {
+      store.showFullscreenPlayer = false;
+      store.showPlayersMenu = false;
+      router.push(path);
+    };
     if (isPlayer) {
       // the player settings page links on to the other sections from there
       menuItems.push({
@@ -416,6 +415,15 @@ export const getPlayerMenuItems = (
           action: openSettings(`/settings/editplayer/${player.player_id}/dsp`),
         });
       }
+      if (player.options.length > 0) {
+        subItems.push({
+          label: "settings.category.options",
+          labelArgs: [],
+          action: openSettings(
+            `/settings/editplayer/${player.player_id}/options`,
+          ),
+        });
+      }
       menuItems.push({
         label: "open_settings",
         labelArgs: [],
@@ -423,20 +431,6 @@ export const getPlayerMenuItems = (
         subItems,
       });
     }
-  }
-
-  // open the player options (both menus); setting one takes the scope of
-  // controlling the player, not of changing its settings
-  if (
-    player.options.length > 0 &&
-    authManager.hasScope(Scope.PLAYERS_CONTROL)
-  ) {
-    menuItems.push({
-      label: "player_options.open",
-      labelArgs: [],
-      action: openSettings(`/settings/editplayer/${player.player_id}/options`),
-      icon: markRaw(SlidersHorizontal),
-    });
   }
 
   return menuItems;
