@@ -2,6 +2,7 @@
   <!-- Above the fullscreen player and its controls, not inside its card. -->
   <Teleport to="body">
     <div
+      ref="root"
       class="artwork-only"
       :class="{ 'artwork-only--paused': !playing }"
       role="button"
@@ -10,8 +11,10 @@
       @click="emit('close')"
       @keydown.enter.prevent="emit('close')"
       @keydown.space.prevent="emit('close')"
+      @keydown.tab.prevent
     >
-      <!-- The artwork alone fills the screen, so a click anywhere is the way back. -->
+      <!-- The artwork alone fills the screen, so a click anywhere is the way back.
+           It holds the focus while open: Tab has nothing else to reach. -->
       <!-- The backdrop is the artwork itself: blurred hard, livelier and darker,
          and cross-faded when the music changes. -->
       <div class="artwork-only__bg">
@@ -54,29 +57,48 @@ export interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{ close: [] }>();
 
+// Escape leaves only this view: the fullscreen player under it closes on an
+// Escape that reaches the window.
 const onKeydown = (event: KeyboardEvent) => {
-  if (event.key === "Escape") emit("close");
+  if (event.key !== "Escape") return;
+  event.stopPropagation();
+  emit("close");
 };
+
+// Keyboard users land in the view and return to where they came from.
+const root = ref<HTMLElement | null>(null);
+let focusBefore: HTMLElement | null = null;
 
 // A screen showing nothing but the artwork is there to be looked at, so it
 // stays on while there is music. The system drops the lock when the tab is
 // hidden, hence asking again when it becomes visible.
+// A lock granted after it stopped being wanted is let go at once.
 let wakeLock: WakeLockSentinel | null = null;
+let wantLock = false;
+let acquiring = false;
 const visible = ref(!document.hidden);
 const onVisibilityChange = () => {
   visible.value = !document.hidden;
 };
 const holdScreen = async (want: boolean) => {
+  wantLock = want;
   try {
-    if (want && !wakeLock && "wakeLock" in navigator) {
-      const lock = await navigator.wakeLock.request("screen");
-      lock.addEventListener("release", () => {
-        if (wakeLock === lock) wakeLock = null;
-      });
-      wakeLock = lock;
+    if (want && !wakeLock && !acquiring && "wakeLock" in navigator) {
+      acquiring = true;
+      try {
+        const lock = await navigator.wakeLock.request("screen");
+        lock.addEventListener("release", () => {
+          if (wakeLock === lock) wakeLock = null;
+        });
+        if (wantLock) wakeLock = lock;
+        else await lock.release();
+      } finally {
+        acquiring = false;
+      }
     } else if (!want && wakeLock) {
-      await wakeLock.release();
+      const lock = wakeLock;
       wakeLock = null;
+      await lock.release();
     }
   } catch (error) {
     console.debug("Screen wake lock:", error);
@@ -89,6 +111,11 @@ watch(
 );
 
 onMounted(() => {
+  focusBefore =
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+  root.value?.focus();
   document.addEventListener("keydown", onKeydown);
   document.addEventListener("visibilitychange", onVisibilityChange);
 });
@@ -97,6 +124,7 @@ onUnmounted(() => {
   document.removeEventListener("keydown", onKeydown);
   document.removeEventListener("visibilitychange", onVisibilityChange);
   void holdScreen(false);
+  focusBefore?.focus();
 });
 </script>
 

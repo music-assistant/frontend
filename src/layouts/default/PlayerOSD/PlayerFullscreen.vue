@@ -15,8 +15,11 @@
       class="fullscreen-player-card"
       :style="[{ background: backgroundColor }, overlayVars]"
     >
+      <!-- nothing of it shows under the artwork view, so it rests meanwhile -->
       <VisualizerCanvas
-        v-if="store.showFullscreenPlayer && visualizerActive"
+        v-if="
+          store.showFullscreenPlayer && visualizerActive && !showArtworkOnly
+        "
         :preset="visualizerPresetPref"
         :blur="visualizerBlurPref"
         :opacity="visualizerOpacityPref"
@@ -376,6 +379,12 @@
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
               :alt="$t('tooltip.artwork')"
+              class="artwork-only-trigger"
+              role="button"
+              tabindex="0"
+              :aria-label="$t('tooltip.show_artwork_only')"
+              @click="showArtworkOnly = true"
+              @keydown.enter="showArtworkOnly = true"
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
