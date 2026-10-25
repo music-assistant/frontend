@@ -129,9 +129,6 @@ async function mountChapters(
   return wrapper;
 }
 
-const tabLabels = (wrapper: VueWrapper) =>
-  wrapper.findAll('[role="tab"]').map((x) => x.text());
-
 async function showTab(wrapper: VueWrapper, label: string) {
   await wrapper
     .findAll('[role="tab"]')
@@ -174,35 +171,30 @@ describe("Chapters", () => {
     };
   });
 
+  // a single tab says no more than the header, so there is none
   it.each([
-    [book, [], "Chapters"],
-    [book, [bookmark(LOCAL, "Local file", 30, true)], "Chapters & Bookmarks"],
+    [book, [], "Chapters", []],
+    [
+      book,
+      [bookmark(LOCAL, "Local file", 30, true)],
+      "Chapters & Bookmarks",
+      ["Chapters", "Bookmarks", "All"],
+    ],
     [
       { ...book, metadata: {} },
       [bookmark(LOCAL, "Local file", 30, true)],
       "Bookmarks",
+      [],
     ],
-  ])("names the list after what it holds", async (item, bookmarks, title) => {
-    const wrapper = await mountChapters(bookmarks, item as Audiobook);
-
-    expect(wrapper.get(".toolbar").text()).toBe(title);
-  });
-
-  // a single tab says no more than the header, so there is none
-  it.each([
-    [
-      book,
-      [bookmark(LOCAL, "Local file", 30, true)],
-      ["Chapters", "Bookmarks", "All"],
-    ],
-    [book, [], []],
-    [{ ...book, metadata: {} }, [bookmark(LOCAL, "Local file", 30, true)], []],
   ])(
-    "offers a tab per kind, and both together",
-    async (item, bookmarks, tabs) => {
+    "names the list and its tabs after what it holds",
+    async (item, bookmarks, title, tabs) => {
       const wrapper = await mountChapters(bookmarks, item as Audiobook);
 
-      expect(tabLabels(wrapper)).toEqual(tabs);
+      expect(wrapper.get(".toolbar").text()).toBe(title);
+      expect(wrapper.findAll('[role="tab"]').map((x) => x.text())).toEqual(
+        tabs,
+      );
     },
   );
 

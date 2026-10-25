@@ -1,6 +1,5 @@
 // Global, simple eventbus
 
-import type { NewBookmark } from "@/helpers/bookmarks";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import mitt, { Emitter } from "mitt";
 import {
@@ -145,7 +144,6 @@ export type Events = {
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;
   genreExcluded: void;
-  addBookmark: NewBookmark;
   "mobile-sidebar-open": void;
 };
 

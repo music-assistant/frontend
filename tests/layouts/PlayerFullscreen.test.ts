@@ -1,4 +1,5 @@
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
+import BookmarkDialog from "@/components/BookmarkDialog.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import PlayerFullscreen from "@/layouts/default/PlayerOSD/PlayerFullscreen.vue";
@@ -6,11 +7,15 @@ import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vu
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import SkipBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBtn.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
-import { eventbus } from "@/plugins/eventbus";
+import {
+  MediaType,
+  PlaybackState,
+  ProviderFeature,
+} from "@/plugins/api/interfaces";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
+import { providerInstance } from "../fixtures/providerInstance";
 
 // Only the fields the lyrics clock and its gate read are mocked; the elapsed
 // time resolver reaches the queue through the player's active_source, so both
@@ -29,6 +34,7 @@ vi.mock("@/plugins/api", async () => {
     playerCommandSeek: vi.fn<MusicAssistantApi["playerCommandSeek"]>(),
     playMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
     getBookmarks: vi.fn<MusicAssistantApi["getBookmarks"]>(),
+    setBookmark: vi.fn<MusicAssistantApi["setBookmark"]>(),
   });
   return { api, default: api };
 });
@@ -371,74 +377,100 @@ describe("PlayerFullscreen chapter queue", () => {
     expect(api.playMedia).not.toHaveBeenCalled();
   });
 
-  // a bookmark of another copy of the book does not fit the one playing
-  it("lists the playing copy's bookmarks under their chapters and seeks to one", async () => {
-    const api = (await import("@/plugins/api")).default as unknown as {
-      playerCommandSeek: ReturnType<typeof vi.fn>;
-      getBookmarks: ReturnType<typeof vi.fn>;
-    };
-    const bookmark = {
-      name: "In the second",
-      start: 90,
-      provider_instance_id: "audiobookshelf--1",
-      provider_item_id: "book1",
-      stored_by_music_assistant: false,
-    };
-    api.getBookmarks.mockResolvedValue([
-      { ...bookmark, name: "In the first", start: 30 },
-      bookmark,
-      { ...bookmark, name: "Other copy", provider_item_id: "dune.m4b" },
-    ]);
-    api.playerCommandSeek.mockClear();
+  // a bookmark of another copy of the book does not fit the one playing; a new
+  // one goes on the playing copy, kept by its provider where it can
+  it.each([
+    [[ProviderFeature.AUDIOBOOK_BOOKMARKS_EDIT], "Audiobookshelf"],
+    [[], "Music Assistant"],
+  ])(
+    "lists the playing copy's bookmarks and adds one",
+    async (features, storedIn) => {
+      const api = (await import("@/plugins/api")).default as unknown as {
+        providers: Record<string, unknown>;
+        playerCommandSeek: ReturnType<typeof vi.fn>;
+        getBookmarks: ReturnType<typeof vi.fn>;
+        setBookmark: ReturnType<typeof vi.fn>;
+      };
+      api.providers = {
+        "audiobookshelf--1": providerInstance({
+          domain: "audiobookshelf",
+          name: "Audiobookshelf",
+          instance_id: "audiobookshelf--1",
+          supported_features: features,
+        }),
+      };
+      const bookmark = {
+        name: "In the second",
+        start: 90,
+        provider_instance_id: "audiobookshelf--1",
+        provider_item_id: "book1",
+        stored_by_music_assistant: false,
+      };
+      api.getBookmarks.mockResolvedValue([
+        { ...bookmark, name: "In the first", start: 30 },
+        bookmark,
+        { ...bookmark, name: "Other copy", provider_item_id: "dune.m4b" },
+      ]);
+      api.playerCommandSeek.mockClear();
 
-    const fullscreen = await mountChapterQueue();
-    // the stream details arrive once the copy to play is chosen
-    const { store } = await import("@/plugins/store");
-    const queueItem = (store as unknown as TestStore).curQueueItem!;
-    queueItem.media_item!.item_id = "1";
-    queueItem.media_item!.provider = "library";
-    queueItem.streamdetails = {
-      provider: "audiobookshelf--1",
-      item_id: "book1",
-    };
-    await nextTick();
-    expect(api.getBookmarks).toHaveBeenCalledWith(
-      MediaType.AUDIOBOOK,
-      "1",
-      "library",
-    );
-    // the clock is faked here, so let the fetch settle through it
-    await vi.advanceTimersByTimeAsync(0);
-    await nextTick();
-    const rows = fullscreen.findAll(".queue-chapter");
+      const fullscreen = await mountChapterQueue();
+      // the stream details arrive once the copy to play is chosen
+      const { store } = await import("@/plugins/store");
+      const queueItem = (store as unknown as TestStore).curQueueItem!;
+      queueItem.media_item!.item_id = "1";
+      queueItem.media_item!.provider = "library";
+      queueItem.streamdetails = {
+        provider: "audiobookshelf--1",
+        item_id: "book1",
+      };
+      await nextTick();
+      expect(api.getBookmarks).toHaveBeenCalledWith(
+        MediaType.AUDIOBOOK,
+        "1",
+        "library",
+      );
+      // the clock is faked here, so let the fetch settle through it
+      await vi.advanceTimersByTimeAsync(0);
+      await nextTick();
+      const rows = fullscreen.findAll(".queue-chapter");
 
-    expect(
-      rows.map((x) => [
-        x.get(".queue-chapter__name").text(),
-        x.classes().includes("queue-bookmark--in-chapter"),
-      ]),
-    ).toEqual([
-      // a new one goes on the playing copy, at the playing position
-      ["add_bookmark_at", false],
-      ["First", false],
-      ["In the first", true],
-      ["Second", false],
-      ["In the second", true],
-    ]);
-    expect(fullscreen.find(".queue-bookmark-add__divider").exists()).toBe(true);
-    await rows[4].trigger("click");
-    expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 90);
+      expect(
+        rows.map((x) => [
+          x.get(".queue-chapter__name").text(),
+          x.classes().includes("queue-bookmark--in-chapter"),
+        ]),
+      ).toEqual([
+        // a new one goes on the playing copy, at the playing position
+        ["add_bookmark_at", false],
+        ["First", false],
+        ["In the first", true],
+        ["Second", false],
+        ["In the second", true],
+      ]);
+      expect(fullscreen.find(".queue-bookmark-add__divider").exists()).toBe(
+        true,
+      );
+      await rows[4].trigger("click");
+      expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 90);
 
-    vi.mocked(eventbus.emit).mockClear();
-    await rows[0].trigger("click");
-    expect(eventbus.emit).toHaveBeenCalledWith("addBookmark", {
-      mediaType: MediaType.AUDIOBOOK,
-      providerInstanceId: "audiobookshelf--1",
-      providerItemId: "book1",
-      storedIn: "Music Assistant",
-      start: 10,
-    });
-  });
+      await rows[0].trigger("click");
+      const dialog = fullscreen.findComponent(BookmarkDialog);
+      expect(dialog.props()).toMatchObject({
+        open: true,
+        initialName: "00:10",
+        storedIn,
+      });
+      dialog.vm.$emit("save", "Arrakis");
+      expect(api.setBookmark).toHaveBeenCalledWith(
+        MediaType.AUDIOBOOK,
+        "audiobookshelf--1",
+        "book1",
+        10,
+        "Arrakis",
+      );
+      api.providers = {};
+    },
+  );
 });
 
 describe("PlayerFullscreen lyrics clock", () => {

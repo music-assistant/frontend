@@ -1,5 +1,5 @@
 <template>
-  <section v-if="groups.length" style="margin-bottom: 10px">
+  <section v-if="titleKey" style="margin-bottom: 10px">
     <Toolbar
       :title="$t(titleKey)"
       :menu-items="toolbarMenuItems"
@@ -119,7 +119,7 @@ import Container from "@/components/Container.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BOOKMARK_FEATURES } from "@/helpers/bookmarks";
+import { providerEditsBookmarks } from "@/helpers/bookmarks";
 import { groupBookmarksByChapter } from "@/helpers/chapters";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -164,18 +164,6 @@ const toolbarMenuItems = computed(() => {
   ];
 });
 
-const groups = computed(() =>
-  groupBookmarksByChapter(
-    props.itemDetails.metadata?.chapters,
-    bookmarks.value,
-  ),
-);
-
-const titleKey = computed(() => {
-  if (!props.itemDetails.metadata?.chapters?.length) return "bookmarks";
-  return bookmarks.value.length ? "chapters_and_bookmarks" : "chapters";
-});
-
 type ChapterTab = "chapters" | "bookmarks" | "all";
 
 // a tab per kind the item has, and the combined one when it has both
@@ -190,6 +178,11 @@ const tabs = computed(() => {
   }
   return result;
 });
+
+// a single kind names the list after itself, both kinds after the two of them
+const titleKey = computed(() =>
+  tabs.value.length > 1 ? "chapters_and_bookmarks" : tabs.value[0]?.labelKey,
+);
 
 const activeTab = ref<ChapterTab>("chapters");
 
@@ -224,7 +217,10 @@ const rows = computed<ChapterRow[]>(() => {
       .map((bookmark) => ({ key: bookmarkKey(bookmark), bookmark }));
   }
   // each chapter is followed by the bookmarks inside it
-  return groups.value.flatMap((group) => [
+  return groupBookmarksByChapter(
+    props.itemDetails.metadata?.chapters,
+    bookmarks.value,
+  ).flatMap((group) => [
     ...(group.chapter
       ? [{ key: `chapter-${group.chapter.position}`, chapter: group.chapter }]
       : []),
@@ -262,17 +258,12 @@ const storeName = function (bookmark: MediaItemBookmark) {
         bookmark.provider_instance_id);
 };
 
-const isEditable = function (bookmark: MediaItemBookmark) {
-  if (bookmark.stored_by_music_assistant) return true;
-  const feature = BOOKMARK_FEATURES[props.itemDetails.media_type]?.edit;
-  return (
-    !!feature &&
-    (api.providers[bookmark.provider_instance_id]?.supported_features.includes(
-      feature,
-    ) ??
-      false)
+const isEditable = (bookmark: MediaItemBookmark) =>
+  bookmark.stored_by_music_assistant ||
+  providerEditsBookmarks(
+    bookmark.provider_instance_id,
+    props.itemDetails.media_type,
   );
-};
 
 const loadBookmarks = async function () {
   bookmarks.value = await api.getBookmarks(

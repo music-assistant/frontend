@@ -568,11 +568,19 @@
       </div>
 
       <PlaybackSpeedDialog v-model:open="playbackSpeedDialogOpen" />
+      <BookmarkDialog
+        v-model:open="bookmarkDialogOpen"
+        :title="$t('add_bookmark')"
+        :initial-name="newBookmark ? formatDuration(newBookmark.start) : ''"
+        :stored-in="newBookmark?.storedIn ?? ''"
+        @save="bookmarkSaved"
+      />
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
+import BookmarkDialog from "@/components/BookmarkDialog.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
@@ -619,8 +627,9 @@ import {
   resolveQueueElapsedTime,
 } from "@/helpers/activeElapsedTime";
 import {
-  BOOKMARK_FEATURES,
+  BOOKMARK_EDIT_FEATURES,
   newBookmarkOfPlayingItem,
+  type NewBookmark,
 } from "@/helpers/bookmarks";
 import {
   groupBookmarksByChapter,
@@ -745,9 +754,24 @@ const playingPosition = computed(() => {
   return Math.floor(resolveActiveElapsedTime() ?? 0);
 });
 
+const bookmarkDialogOpen = ref(false);
+// taken on the click, the position moves on while the name is typed
+const newBookmark = ref<NewBookmark>();
+
 const addBookmarkClicked = function () {
-  const bookmark = newBookmarkOfPlayingItem();
-  if (bookmark) eventbus.emit("addBookmark", bookmark);
+  newBookmark.value = newBookmarkOfPlayingItem();
+  bookmarkDialogOpen.value = !!newBookmark.value;
+};
+
+const bookmarkSaved = async function (name: string) {
+  if (!newBookmark.value) return;
+  await api.setBookmark(
+    newBookmark.value.mediaType,
+    newBookmark.value.providerInstanceId,
+    newBookmark.value.providerItemId,
+    newBookmark.value.start,
+    name,
+  );
 };
 
 const chapterTimerNeeded = computed(
@@ -1338,7 +1362,9 @@ const playbackSpeedDialogOpen = ref(false);
 watch(
   () => store.showFullscreenPlayer,
   (open) => {
-    if (!open) playbackSpeedDialogOpen.value = false;
+    if (open) return;
+    playbackSpeedDialogOpen.value = false;
+    bookmarkDialogOpen.value = false;
   },
 );
 
@@ -1352,7 +1378,7 @@ const loadPlayingBookmarks = async function () {
   if (
     !store.showFullscreenPlayer ||
     !media ||
-    !BOOKMARK_FEATURES[media.media_type] ||
+    !(media.media_type in BOOKMARK_EDIT_FEATURES) ||
     !streamdetails
   ) {
     playingBookmarks.value = [];
