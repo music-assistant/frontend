@@ -68,7 +68,12 @@ function mountDialog() {
     global: {
       stubs: {
         Dialog: dialogStub,
-        DialogContent: { template: "<div><slot /></div>" },
+        DialogContent: {
+          inheritAttrs: false,
+          props: ["overlayClass"],
+          template:
+            '<div data-testid="dialog-content" :class="$attrs.class" :data-overlay-class="overlayClass"><slot /></div>',
+        },
         DialogDescription: { template: "<div><slot /></div>" },
         DialogTitle: { template: "<div><slot /></div>" },
         Button: {
@@ -98,6 +103,16 @@ beforeEach(() => {
 });
 
 describe("ShareLinkDialog clipboard request state", () => {
+  it("layers the preview and backdrop above the mobile sidebar", async () => {
+    const wrapper = mountDialog();
+    openPreview("uri");
+    await flushPromises();
+
+    const dialogContent = wrapper.get('[data-testid="dialog-content"]');
+    expect(dialogContent.classes()).toContain("z-[100001]");
+    expect(dialogContent.attributes("data-overlay-class")).toBe("z-[100001]");
+  });
+
   it.each(["resolve", "reject"] as const)(
     "ignores a stale generation %s after the dialog closes",
     async (outcome) => {
