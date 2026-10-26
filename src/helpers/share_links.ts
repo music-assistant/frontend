@@ -207,5 +207,5 @@ export function expandShareArtworkRef(value: unknown): string | undefined {
     return undefined;
   }
   const url = `https://${subdomain ? `${subdomain}.` : ""}${suffix}${path}`;
-  return isSafeArtworkUrl(url) ? url : undefined;
+  return isSafeArtworkUrl(url) ? new URL(url).href : undefined;
 }
