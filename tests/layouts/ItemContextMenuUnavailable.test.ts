@@ -204,7 +204,7 @@ describe("the context menu of an unresolved shared track", () => {
       const confirmation = await requestSearch();
       const request = confirmation.onConfirm();
       if (dismissOrNavigate === "dismiss") confirmation.onDismiss?.();
-      else routerMock.currentRoute.value.fullPath = "/playlist/other";
+      else routerMock.currentRoute.value = { fullPath: "/playlist/other" };
       resolveRequest(track({ item_id: "matched" }));
       await request;
 
@@ -212,6 +212,23 @@ describe("the context menu of an unresolved shared track", () => {
       expect(toastMock.error).not.toHaveBeenCalled();
     },
   );
+
+  it("ignores a late search response after leaving and returning to the same route", async () => {
+    let resolveRequest!: (value: ReturnType<typeof track> | null) => void;
+    const pending = new Promise<ReturnType<typeof track> | null>((resolve) => {
+      resolveRequest = resolve;
+    });
+    apiMock.resolveSharedItem.mockReturnValueOnce(pending);
+    const confirmation = await requestSearch();
+    const request = confirmation.onConfirm();
+    routerMock.currentRoute.value = { fullPath: "/playlist/other" };
+    routerMock.currentRoute.value = { fullPath: "/share" };
+    resolveRequest(track({ item_id: "matched" }));
+    await request;
+
+    expect(routerMock.push).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
 
   it.each([false, true])(
     "reports failed search without opening details (error: %s)",

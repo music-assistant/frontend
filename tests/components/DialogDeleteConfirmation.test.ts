@@ -145,6 +145,44 @@ describe("DialogDeleteConfirmation", () => {
     expect(onDismiss).toHaveBeenCalledOnce();
   });
 
+  it("does not let an older confirmation close or reset a newer dialog", async () => {
+    vi.useFakeTimers();
+    const wrapper = mountDialog();
+    const pending = deferred<void>();
+    const firstOnDismiss = vi.fn();
+    const secondOnDismiss = vi.fn();
+    await openDialog({
+      message: "First dialog",
+      onConfirm: () => pending.promise,
+      onDismiss: firstOnDismiss,
+    });
+
+    await wrapper
+      .get('[data-testid="delete-confirmation-confirm"]')
+      .trigger("click");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "cancel")
+      ?.trigger("click");
+    expect(firstOnDismiss).toHaveBeenCalledOnce();
+
+    await openDialog({
+      message: "Second dialog",
+      onDismiss: secondOnDismiss,
+    });
+    pending.resolve();
+    await flushPromises();
+    vi.advanceTimersByTime(200);
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Second dialog");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "cancel")
+      ?.trigger("click");
+    expect(secondOnDismiss).toHaveBeenCalledOnce();
+  });
+
   it("starts a later acknowledgement unticked", async () => {
     vi.useFakeTimers();
     const wrapper = mountDialog();
