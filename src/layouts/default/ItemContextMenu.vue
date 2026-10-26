@@ -617,7 +617,7 @@ export const getContextMenuItems = async function (
         labelArgs: [firstItem.name],
         icon: Search,
         action: () => {
-          const originatingRoute = router.currentRoute.value.fullPath;
+          const originatingRoute = router.currentRoute.value;
           let searchActive = true;
           eventbus.emit("deleteConfirmationDialog", {
             title: $t("share.search_confirm_title"),
@@ -630,7 +630,7 @@ export const getContextMenuItems = async function (
             onConfirm: async () => {
               if (
                 !searchActive ||
-                router.currentRoute.value.fullPath !== originatingRoute
+                router.currentRoute.value !== originatingRoute
               ) {
                 return;
               }
@@ -641,7 +641,7 @@ export const getContextMenuItems = async function (
                 );
                 if (
                   !searchActive ||
-                  router.currentRoute.value.fullPath !== originatingRoute
+                  router.currentRoute.value !== originatingRoute
                 ) {
                   return;
                 }
@@ -656,7 +656,7 @@ export const getContextMenuItems = async function (
               } catch {
                 if (
                   !searchActive ||
-                  router.currentRoute.value.fullPath !== originatingRoute
+                  router.currentRoute.value !== originatingRoute
                 ) {
                   return;
                 }

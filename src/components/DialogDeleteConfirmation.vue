@@ -70,8 +70,10 @@ const acknowledgementId = useId();
 let onConfirm: (() => void | Promise<void>) | undefined;
 let onDismiss: (() => void) | undefined;
 let dismissOnClose = true;
+let dialogGeneration = 0;
 
 const handleConfirm = async () => {
+  const confirmingGeneration = dialogGeneration;
   if (!onConfirm) {
     open.value = false;
     return;
@@ -80,8 +82,10 @@ const handleConfirm = async () => {
     loading.value = true;
     await onConfirm();
   } finally {
-    dismissOnClose = false;
-    open.value = false;
+    if (confirmingGeneration === dialogGeneration) {
+      dismissOnClose = false;
+      open.value = false;
+    }
   }
 };
 
@@ -103,20 +107,27 @@ const reset = () => {
 // rather than clearing it for the dialog underneath
 let dialogActiveBeforeOpen = false;
 
-watch(open, (v) => {
-  store.dialogActive = v || (dialogActiveBeforeOpen && store.dialogActive);
-  if (!v) {
-    if (dismissOnClose) onDismiss?.();
-    dismissOnClose = true;
-    // Reset after close animation
-    setTimeout(reset, 200);
-  }
-});
+watch(
+  open,
+  (v) => {
+    store.dialogActive = v || (dialogActiveBeforeOpen && store.dialogActive);
+    if (!v) {
+      if (dismissOnClose) onDismiss?.();
+      dismissOnClose = true;
+      const closedGeneration = dialogGeneration;
+      setTimeout(() => {
+        if (!open.value && closedGeneration === dialogGeneration) reset();
+      }, 200);
+    }
+  },
+  { flush: "sync" },
+);
 
 onMounted(() => {
   eventbus.on(
     "deleteConfirmationDialog",
     (evt: DeleteConfirmationDialogEvent) => {
+      dialogGeneration += 1;
       reset();
       if (!open.value) dialogActiveBeforeOpen = store.dialogActive;
       title.value = evt.title ?? t("delete");
