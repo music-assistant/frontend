@@ -1,9 +1,10 @@
 import {
   cleanupCompanionIntegration,
+  executeCompanionVolume,
   initializeCompanionIntegration,
   NowPlaying,
 } from "@/plugins/companion";
-import { PlaybackState } from "@/plugins/api/interfaces";
+import { PlaybackState, PlayerFeature } from "@/plugins/api/interfaces";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 
@@ -17,6 +18,10 @@ interface MockQueue {
 
 interface MockPlayer {
   player_id: string;
+  available?: boolean;
+  powered?: boolean;
+  supported_features?: PlayerFeature[];
+  volume_level?: number | null;
   name?: string;
   active_source?: string;
   playback_state?: PlaybackState;
@@ -40,6 +45,16 @@ const { apiMock, storeMock } = await vi.hoisted(async () => {
   return {
     apiMock: reactive({
       players: {} as Record<string, MockPlayer>,
+      getPlayer: vi
+        .fn()
+        .mockImplementation(async (playerId: string) =>
+          storeMock.activePlayer?.player_id === playerId
+            ? storeMock.activePlayer
+            : undefined,
+        ),
+      playerCommandVolumeSet: vi.fn().mockResolvedValue(undefined),
+      playerCommandVolumeUp: vi.fn().mockResolvedValue(undefined),
+      playerCommandVolumeDown: vi.fn().mockResolvedValue(undefined),
       queues: {} as Record<string, MockQueue>,
       queueElapsedTime: {} as Record<
         string,
@@ -55,6 +70,7 @@ const { apiMock, storeMock } = await vi.hoisted(async () => {
 
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
+  api: apiMock,
 }));
 
 vi.mock("@/plugins/store", () => ({
@@ -131,6 +147,10 @@ beforeEach(() => {
   apiMock.queues = {};
   apiMock.queueElapsedTime = {};
   storeMock.activePlayer = undefined;
+  apiMock.getPlayer.mockClear();
+  apiMock.playerCommandVolumeSet.mockClear();
+  apiMock.playerCommandVolumeUp.mockClear();
+  apiMock.playerCommandVolumeDown.mockClear();
   invoke.mockClear();
   window.__COMPANION__ = { invoke };
 });
@@ -139,6 +159,84 @@ afterEach(() => {
   cleanupCompanionIntegration();
   delete window.__COMPANION__;
   vi.useRealTimers();
+});
+
+describe("companion selected-player volume", () => {
+  function volumePlayer(
+    player_id: string,
+    volume_level: number | null = 42,
+  ): MockPlayer {
+    return {
+      player_id,
+      available: true,
+      powered: true,
+      supported_features: [PlayerFeature.VOLUME_SET],
+      volume_level,
+    };
+  }
+
+  it("uses the selected player at request time, not a delayed now-playing push", async () => {
+    storeMock.activePlayer = volumePlayer("local", 23);
+    await initializeAndSettle();
+    expect(lastNowPlaying().player_id).toBe("local");
+    storeMock.activePlayer = volumePlayer("remote", 71);
+    expect(await executeCompanionVolume("get")).toBe(71);
+    expect(apiMock.getPlayer).toHaveBeenCalledWith("remote");
+    await executeCompanionVolume("set", 45);
+    await executeCompanionVolume("up");
+    await executeCompanionVolume("down");
+    expect(apiMock.playerCommandVolumeSet).toHaveBeenCalledWith("remote", 45);
+    expect(apiMock.playerCommandVolumeUp).toHaveBeenCalledWith("remote");
+    expect(apiMock.playerCommandVolumeDown).toHaveBeenCalledWith("remote");
+    expect(lastNowPlaying().player_id).toBe("local");
+  });
+
+  it("rejects missing/unsupported volume and invalid values without calling the API", async () => {
+    await expect(executeCompanionVolume("get")).rejects.toThrow(
+      "No selected player",
+    );
+    storeMock.activePlayer = volumePlayer("remote", null);
+    await expect(executeCompanionVolume("get")).rejects.toThrow(
+      "no available volume",
+    );
+    for (const value of [-1, 101, 3.5, NaN]) {
+      await expect(executeCompanionVolume("set", value)).rejects.toThrow(
+        "integer",
+      );
+    }
+    storeMock.activePlayer.supported_features = [];
+    await expect(executeCompanionVolume("up")).rejects.toThrow(
+      "does not support",
+    );
+    expect(apiMock.playerCommandVolumeSet).not.toHaveBeenCalled();
+  });
+
+  it("reports API rejection and clears the bridge on disconnect", async () => {
+    storeMock.activePlayer = volumePlayer("remote");
+    apiMock.playerCommandVolumeSet.mockRejectedValueOnce(
+      new Error("server rejected"),
+    );
+    await expect(executeCompanionVolume("set", 50)).rejects.toThrow(
+      "server rejected",
+    );
+    await initializeCompanionIntegration("");
+    expect(window.__COMPANION_VOLUME_COMMAND__).toBeTypeOf("function");
+    await window.__COMPANION_VOLUME_COMMAND__!("request-17", "get");
+    expect(invoke).toHaveBeenCalledWith("complete_applescript_volume", {
+      requestId: "request-17",
+      volume: 42,
+      error: null,
+    });
+    storeMock.activePlayer = undefined;
+    await window.__COMPANION_VOLUME_COMMAND__!("request-18", "get");
+    expect(invoke).toHaveBeenCalledWith("complete_applescript_volume", {
+      requestId: "request-18",
+      volume: null,
+      error: "No selected player",
+    });
+    cleanupCompanionIntegration();
+    expect(window.__COMPANION_VOLUME_COMMAND__).toBeUndefined();
+  });
 });
 
 describe("companion now-playing position", () => {
