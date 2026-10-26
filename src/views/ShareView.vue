@@ -86,7 +86,9 @@
       </template>
     </DetailHero>
 
-    <template v-if="decodedPayload?.type === 'playlist'">
+    <template
+      v-if="!loading && !errorKey && decodedPayload?.type === 'playlist'"
+    >
       <SharedPlaylistTracks :key="payload" :payload="payload" />
     </template>
   </section>
