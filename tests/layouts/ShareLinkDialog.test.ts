@@ -3,17 +3,17 @@ import { eventbus } from "@/plugins/eventbus";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, copyToClipboardMock, toastError, toastSuccess } = vi.hoisted(
-  () => ({
+const { apiMock, copyToClipboardMock, storeMock, toastError, toastSuccess } =
+  vi.hoisted(() => ({
     apiMock: {
       generateShareLink: vi.fn(),
       getProviderName: vi.fn((domain: string) => domain),
     },
     copyToClipboardMock: vi.fn(),
+    storeMock: { dialogActive: false },
     toastError: vi.fn(),
     toastSuccess: vi.fn(),
-  }),
-);
+  }));
 
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
@@ -26,7 +26,7 @@ vi.mock("@/plugins/eventbus", () => ({
   eventbus: { on: vi.fn(), off: vi.fn() },
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
-vi.mock("@/plugins/store", () => ({ store: { dialogActive: false } }));
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("vue-sonner", () => ({
   toast: { error: toastError, success: toastSuccess },
 }));
@@ -92,11 +92,36 @@ function mountDialog() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  storeMock.dialogActive = false;
   apiMock.generateShareLink.mockResolvedValue(shareUrl("Track"));
   copyToClipboardMock.mockResolvedValue(true);
 });
 
 describe("ShareLinkDialog clipboard request state", () => {
+  it("restores an already active background dialog when Share closes", async () => {
+    storeMock.dialogActive = true;
+    const wrapper = mountDialog();
+    openPreview("uri");
+    await flushPromises();
+
+    await wrapper.get('[data-testid="close-dialog"]').trigger("click");
+
+    expect(storeMock.dialogActive).toBe(true);
+    wrapper.unmount();
+    expect(storeMock.dialogActive).toBe(true);
+    storeMock.dialogActive = false;
+  });
+
+  it("clears its active state when unmounted while open", async () => {
+    const wrapper = mountDialog();
+    openPreview("uri");
+    await flushPromises();
+
+    expect(storeMock.dialogActive).toBe(true);
+    wrapper.unmount();
+    expect(storeMock.dialogActive).toBe(false);
+  });
+
   it.each(["resolve", "reject"] as const)(
     "ignores a stale clipboard %s after a newer preview opens",
     async (outcome) => {

@@ -71,10 +71,12 @@ const shareUrl = ref("");
 const preview = ref<SharePreview>();
 let requestId = 0;
 let copyRequestId = 0;
+let dialogActiveBeforeOpen = false;
 
 watch(showDialog, (open) => {
+  if (open) dialogActiveBeforeOpen = store.dialogActive;
   if (!open) copyRequestId++;
-  store.dialogActive = open;
+  store.dialogActive = open || (dialogActiveBeforeOpen && store.dialogActive);
 });
 
 onMounted(() => {
@@ -90,6 +92,9 @@ onBeforeUnmount(() => {
   eventbus.off("shareLinkPreview");
   requestId++;
   copyRequestId++;
+  if (showDialog.value) {
+    store.dialogActive = dialogActiveBeforeOpen && store.dialogActive;
+  }
 });
 
 async function loadSharePreview(uri: string): Promise<void> {
