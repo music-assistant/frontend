@@ -122,4 +122,14 @@ describe("compact share references", () => {
     );
     expect(expandShareArtworkRef("x:evil.example:/image.jpg")).toBeUndefined();
   });
+
+  it("canonicalizes quotes in approved artwork paths before CSS use", () => {
+    const expanded = expandShareArtworkRef(
+      'm:/"), url("https://attacker.example/pixel.png',
+    );
+
+    expect(expanded).toBeDefined();
+    expect(expanded).toContain("%22");
+    expect(isSafeArtworkUrl(expanded!)).toBe(true);
+  });
 });
