@@ -2,17 +2,19 @@ import ShareView from "@/views/ShareView.vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, routerMock, storeMock } = vi.hoisted(() => ({
-  apiMock: {
-    resolveSharedItem: vi.fn(),
-    importSharedPlaylist: vi.fn(),
-  },
-  routerMock: { replace: vi.fn(), push: vi.fn() },
-  storeMock: {
-    enabledPlugins: new Set(["share_provider"]),
-    dialogActive: false,
-  },
-}));
+const { apiMock, routerMock, sharedPlaylistTracksMounted, storeMock } =
+  vi.hoisted(() => ({
+    apiMock: {
+      resolveSharedItem: vi.fn(),
+      importSharedPlaylist: vi.fn(),
+    },
+    routerMock: { replace: vi.fn(), push: vi.fn() },
+    sharedPlaylistTracksMounted: vi.fn(),
+    storeMock: {
+      enabledPlugins: new Set(["share_provider"]),
+      dialogActive: false,
+    },
+  }));
 
 vi.mock("@/plugins/api", () => ({ default: apiMock }));
 vi.mock("@/plugins/auth", () => ({
@@ -28,7 +30,10 @@ vi.mock("@/components/Toolbar.vue", () => ({
   default: { template: "<div />" },
 }));
 vi.mock("@/components/share/SharedPlaylistTracks.vue", () => ({
-  default: { template: "<div data-playlist-tracks />" },
+  default: {
+    mounted: () => sharedPlaylistTracksMounted(),
+    template: "<div data-playlist-tracks />",
+  },
 }));
 vi.mock("@/components/details/DetailHero.vue", () => ({
   default: {
@@ -100,6 +105,7 @@ describe("ShareView async state", () => {
       expect(wrapper.text()).toContain("share.plugin_unavailable");
       expect(apiMock.resolveSharedItem).not.toHaveBeenCalled();
       expect(apiMock.importSharedPlaylist).not.toHaveBeenCalled();
+      expect(sharedPlaylistTracksMounted).not.toHaveBeenCalled();
       wrapper.unmount();
     },
   );
