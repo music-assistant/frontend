@@ -31,6 +31,12 @@ const DialogStub = {
   template: '<div v-if="open"><slot /></div>',
 };
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((complete) => (resolve = complete));
+  return { promise, resolve };
+}
+
 function mountDialog() {
   return mount(DialogDeleteConfirmation, {
     global: {
@@ -113,6 +119,30 @@ describe("DialogDeleteConfirmation", () => {
     await confirm.trigger("click");
     await flushPromises();
     expect(event.onConfirm).toHaveBeenCalledOnce();
+  });
+
+  it("notifies the caller when the dialog is dismissed during confirmation", async () => {
+    const wrapper = mountDialog();
+    const pending = deferred<void>();
+    const onDismiss = vi.fn();
+    await openDialog({
+      onConfirm: () => pending.promise,
+      onDismiss,
+    });
+
+    await wrapper
+      .get('[data-testid="delete-confirmation-confirm"]')
+      .trigger("click");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "cancel")
+      ?.trigger("click");
+    await flushPromises();
+
+    expect(onDismiss).toHaveBeenCalledOnce();
+    pending.resolve();
+    await flushPromises();
+    expect(onDismiss).toHaveBeenCalledOnce();
   });
 
   it("starts a later acknowledgement unticked", async () => {

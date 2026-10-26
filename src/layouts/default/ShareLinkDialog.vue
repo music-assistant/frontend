@@ -75,7 +75,11 @@ let dialogActiveBeforeOpen = false;
 
 watch(showDialog, (open) => {
   if (open) dialogActiveBeforeOpen = store.dialogActive;
-  if (!open) copyRequestId++;
+  if (!open) {
+    requestId++;
+    copyRequestId++;
+    loading.value = false;
+  }
   store.dialogActive = open || (dialogActiveBeforeOpen && store.dialogActive);
 });
 

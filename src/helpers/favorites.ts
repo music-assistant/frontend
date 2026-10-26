@@ -7,6 +7,7 @@ import {
   type MediaItem,
   type MediaItemTypeOrItemMapping,
 } from "@/plugins/api/interfaces";
+import { isUnresolvedSharedTrack } from "@/helpers/share_links";
 import { store } from "@/plugins/store";
 
 interface FavoriteHolder {
@@ -83,14 +84,7 @@ export function favoriteState(item: unknown): boolean | null {
 export function canHoldFavorite(
   item: MediaItemTypeOrItemMapping,
 ): item is FavoritableItem {
-  if (
-    item.media_type === MediaType.TRACK &&
-    item.provider === "builtin" &&
-    (item.item_id.startsWith("share-preview://track/") ||
-      item.item_id.startsWith("share://track/"))
-  ) {
-    return false;
-  }
+  if (isUnresolvedSharedTrack(item)) return false;
   // the media type decides whether there is a state to hold at all, and the
   // provider mappings are what an item mapping or a browse folder lacks; the
   // favorite key itself is absent whenever there is no state

@@ -71,7 +71,6 @@
                 v-if="canWrite"
                 size="lg"
                 class="max-w-full whitespace-normal"
-                :disabled="decodedPayload.tracks.length === 0"
                 @click="confirmImportOpen = true"
               >
                 <ListPlus class="size-5" />
@@ -137,21 +136,16 @@ import { MediaType, Scope, type MediaItemType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { expandShareArtworkRef, type SharedTrack } from "@/helpers/share_links";
+import {
+  decodeSharePayload,
+  expandShareArtworkRef,
+  type DecodedSharePayload,
+} from "@/helpers/share_links";
 import { CircleAlert, LoaderCircle, ListMusic, ListPlus } from "@lucide/vue";
-
-interface SharedPayload {
-  type: "track" | "album" | "artist" | "playlist";
-  title: string;
-  artist?: string;
-  version?: string;
-  art_ref?: string;
-  tracks: SharedTrack[];
-}
 
 const props = defineProps<{ payload: string }>();
 const router = useRouter();
-const decodedPayload = ref<SharedPayload>();
+const decodedPayload = ref<DecodedSharePayload>();
 const loading = ref(true);
 const errorKey = ref("");
 const importing = ref(false);
@@ -196,9 +190,9 @@ watch(
     errorKey.value = "";
     loading.value = true;
 
-    let shared: SharedPayload;
+    let shared: DecodedSharePayload;
     try {
-      shared = decodePayload(encoded);
+      shared = decodeSharePayload(encoded);
     } catch {
       errorKey.value = "share.invalid_link";
       loading.value = false;
@@ -280,44 +274,5 @@ async function openItem(item: MediaItemType): Promise<void> {
     name,
     params: { provider: item.provider, itemId: item.item_id },
   });
-}
-
-function decodePayload(encoded: string): SharedPayload {
-  if (!encoded) throw new Error("Missing payload");
-  const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
-  const bytes = Uint8Array.from(
-    atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")),
-    (character) => character.charCodeAt(0),
-  );
-  const value: unknown = JSON.parse(new TextDecoder().decode(bytes));
-  if (!value || typeof value !== "object") throw new Error("Invalid payload");
-  const candidate = value as Record<string, unknown>;
-  if (
-    !["track", "album", "artist", "playlist"].includes(
-      String(candidate.type),
-    ) ||
-    typeof candidate.title !== "string" ||
-    !candidate.title.trim()
-  ) {
-    throw new Error("Invalid payload");
-  }
-  if (candidate.type === "playlist") {
-    if (
-      !Array.isArray(candidate.tracks) ||
-      candidate.tracks.some(
-        (track) => !track || typeof track.title !== "string",
-      )
-    ) {
-      throw new Error("Invalid playlist payload");
-    }
-  }
-  return {
-    type: candidate.type as SharedPayload["type"],
-    title: candidate.title,
-    artist: typeof candidate.artist === "string" ? candidate.artist : undefined,
-    art_ref:
-      typeof candidate.art_ref === "string" ? candidate.art_ref : undefined,
-    tracks: (candidate.tracks ?? []) as SharedTrack[],
-  };
 }
 </script>
