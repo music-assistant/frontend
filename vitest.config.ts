@@ -18,7 +18,13 @@ export default mergeConfig(
       setupFiles: [
         "./tests/setup/blockNetworkAccess.ts",
         "./tests/setup/failOnUnhandledErrors.ts",
+        "./tests/setup/singleLineStyles.ts",
       ],
+      // happy-dom 21 no longer loads iframe pages by default; the tests only
+      // create empty local frames, which need a window of their own
+      environmentOptions: {
+        happyDOM: { settings: { enableIframePageLoading: true } },
+      },
       // Errors that escape a test must never be silently dropped; the
       // failOnUnhandledErrors setup file additionally surfaces them in the
       // pass/fail tally.
