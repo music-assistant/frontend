@@ -30,6 +30,12 @@ vi.mock("@/components/Toolbar.vue", () => ({
 vi.mock("@/components/share/SharedPlaylistTracks.vue", () => ({
   default: { template: "<div data-playlist-tracks />" },
 }));
+vi.mock("@/components/details/DetailHero.vue", () => ({
+  default: {
+    props: ["title", "backdrop", "blurBackdrop", "editableRows"],
+    template: '<header data-testid="detail-hero"><slot name="main" /></header>',
+  },
+}));
 vi.mock("@/components/details/DetailHeroFacts.vue", () => ({
   default: { template: "<div />" },
 }));
