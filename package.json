@@ -41,8 +41,8 @@
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "color": "5.0.3",
-        "dompurify": "^3.4.16",
-        "happy-dom": "^20.11.6",
+        "dompurify": "^3.4.17",
+        "happy-dom": "^21.0.4",
         "marked": "^18.0.14",
         "mitt": "3.0.1",
         "mobile-detect": "1.4.5",
@@ -59,7 +59,7 @@
         "vue-router": "5.4.0",
         "vue-sonner": "^2.0.9",
         "vuetify": "3.12.0",
-        "zod": "^4.6.5"
+        "zod": "^4.6.6"
     },
     "devDependencies": {
         "@fontsource/roboto": "5.3.0",
@@ -68,7 +68,7 @@
         "@types/node": "26.6.5",
         "@vitejs/plugin-vue": "6.0.10",
         "@vitest/coverage-v8": "^4.1.10",
-        "@vitest/ui": "5.0.0",
+        "@vitest/ui": "5.0.5",
         "@vue/eslint-config-typescript": "14.9.0",
         "@vue/test-utils": "^2.5.1",
         "@vue/tsconfig": "0.9.1",
