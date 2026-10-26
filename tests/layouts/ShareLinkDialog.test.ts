@@ -98,6 +98,26 @@ beforeEach(() => {
 });
 
 describe("ShareLinkDialog clipboard request state", () => {
+  it.each(["resolve", "reject"] as const)(
+    "ignores a stale generation %s after the dialog closes",
+    async (outcome) => {
+      const pending = deferred<string>();
+      apiMock.generateShareLink.mockReturnValueOnce(pending.promise);
+      const wrapper = mountDialog();
+      openPreview("pending-uri");
+      await flushPromises();
+      await wrapper.get('[data-testid="close-dialog"]').trigger("click");
+
+      if (outcome === "resolve") pending.resolve(shareUrl("Old track"));
+      else pending.reject(new Error("server unavailable"));
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid="share-dialog"]').exists()).toBe(false);
+      expect(toastError).not.toHaveBeenCalled();
+      wrapper.unmount();
+    },
+  );
+
   it("restores an already active background dialog when Share closes", async () => {
     storeMock.dialogActive = true;
     const wrapper = mountDialog();

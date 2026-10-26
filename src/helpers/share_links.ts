@@ -1,3 +1,11 @@
+import {
+  MediaType,
+  type MediaItemTypeOrItemMapping,
+} from "@/plugins/api/interfaces";
+
+export const SHARE_PREVIEW_TRACK_PREFIX = "share-preview://track/";
+export const IMPORTED_SHARE_TRACK_PREFIX = "share://track/";
+
 const PROVIDER_HOSTS: Record<string, readonly string[]> = {
   spotify: ["open.spotify.com"],
   tidal: ["tidal.com", "www.tidal.com"],
@@ -74,6 +82,17 @@ export interface SharedTrack {
   duration?: number | null;
 }
 
+export interface DecodedSharePayload {
+  type: "track" | "album" | "artist" | "playlist";
+  title: string;
+  artist?: string;
+  album?: string;
+  version?: string;
+  art_ref?: string;
+  provider_refs?: unknown;
+  tracks: SharedTrack[];
+}
+
 export function encodeSharedTrack(track: SharedTrack): string {
   const bytes = new TextEncoder().encode(
     JSON.stringify({
@@ -97,32 +116,74 @@ export function decodeSharePreview(
   value: string,
   getProviderName: (domain: string) => string,
 ): SharePreview {
-  const encoded = new URL(value).hash.slice(1);
-  const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
-  const bytes = Uint8Array.from(
-    atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")),
-    (character) => character.charCodeAt(0),
-  );
-  const payload: unknown = JSON.parse(new TextDecoder().decode(bytes));
-  if (!payload || typeof payload !== "object")
-    throw new Error("Invalid share payload");
-  const candidate = payload as Record<string, unknown>;
-  if (typeof candidate.title !== "string")
-    throw new Error("Invalid share payload");
+  const payload = decodeSharePayload(new URL(value).hash.slice(1));
   const links = Object.entries(
-    expandShareProviderRefs(candidate.provider_refs),
+    expandShareProviderRefs(payload.provider_refs),
   ).map(([domain, url]) => ({
     domain,
     name: getProviderName(domain),
     url,
   }));
   return {
+    title: payload.title,
+    artist: payload.artist,
+    album: payload.album,
+    art: expandShareArtworkRef(payload.art_ref),
+    links,
+  };
+}
+
+export function decodeSharePayload(encoded: string): DecodedSharePayload {
+  if (!encoded) throw new Error("Missing payload");
+  const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
+  const bytes = Uint8Array.from(
+    atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")),
+    (character) => character.charCodeAt(0),
+  );
+  const value: unknown = JSON.parse(new TextDecoder().decode(bytes));
+  if (!value || typeof value !== "object") throw new Error("Invalid payload");
+  const candidate = value as Record<string, unknown>;
+  if (
+    !["track", "album", "artist", "playlist"].includes(
+      String(candidate.type),
+    ) ||
+    typeof candidate.title !== "string" ||
+    !candidate.title.trim()
+  ) {
+    throw new Error("Invalid payload");
+  }
+  if (
+    candidate.type === "playlist" &&
+    (!Array.isArray(candidate.tracks) ||
+      candidate.tracks.some(
+        (track) => !track || typeof track.title !== "string",
+      ))
+  ) {
+    throw new Error("Invalid playlist payload");
+  }
+  return {
+    type: candidate.type as DecodedSharePayload["type"],
     title: candidate.title,
     artist: typeof candidate.artist === "string" ? candidate.artist : undefined,
     album: typeof candidate.album === "string" ? candidate.album : undefined,
-    art: expandShareArtworkRef(candidate.art_ref),
-    links,
+    version:
+      typeof candidate.version === "string" ? candidate.version : undefined,
+    art_ref:
+      typeof candidate.art_ref === "string" ? candidate.art_ref : undefined,
+    provider_refs: candidate.provider_refs,
+    tracks: (candidate.tracks ?? []) as SharedTrack[],
   };
+}
+
+export function isUnresolvedSharedTrack(
+  item: MediaItemTypeOrItemMapping,
+): boolean {
+  return (
+    item.media_type === MediaType.TRACK &&
+    item.provider === "builtin" &&
+    (item.item_id.startsWith(SHARE_PREVIEW_TRACK_PREFIX) ||
+      item.item_id.startsWith(IMPORTED_SHARE_TRACK_PREFIX))
+  );
 }
 
 export function isSafeProviderUrl(domain: string, value: string): boolean {

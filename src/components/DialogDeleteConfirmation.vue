@@ -68,6 +68,8 @@ const acknowledgement = ref("");
 const acknowledged = ref<boolean | "indeterminate">(false);
 const acknowledgementId = useId();
 let onConfirm: (() => void | Promise<void>) | undefined;
+let onDismiss: (() => void) | undefined;
+let dismissOnClose = true;
 
 const handleConfirm = async () => {
   if (!onConfirm) {
@@ -78,6 +80,7 @@ const handleConfirm = async () => {
     loading.value = true;
     await onConfirm();
   } finally {
+    dismissOnClose = false;
     open.value = false;
   }
 };
@@ -91,6 +94,8 @@ const reset = () => {
   acknowledged.value = false;
   loading.value = false;
   onConfirm = undefined;
+  onDismiss = undefined;
+  dismissOnClose = true;
 };
 
 // the confirmation can be asked on top of another dialog that stays open
@@ -101,6 +106,8 @@ let dialogActiveBeforeOpen = false;
 watch(open, (v) => {
   store.dialogActive = v || (dialogActiveBeforeOpen && store.dialogActive);
   if (!v) {
+    if (dismissOnClose) onDismiss?.();
+    dismissOnClose = true;
     // Reset after close animation
     setTimeout(reset, 200);
   }
@@ -118,6 +125,7 @@ onMounted(() => {
       destructive.value = evt.destructive ?? true;
       acknowledgement.value = evt.acknowledgement ?? "";
       onConfirm = evt.onConfirm;
+      onDismiss = evt.onDismiss;
       open.value = true;
     },
   );

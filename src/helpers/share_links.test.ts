@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
+  decodeSharePayload,
   decodeSharePreview,
   encodeSharedTrack,
   expandShareArtworkRef,
   expandShareProviderRefs,
+  IMPORTED_SHARE_TRACK_PREFIX,
+  isUnresolvedSharedTrack,
   isSafeArtworkUrl,
   isSafeProviderUrl,
+  SHARE_PREVIEW_TRACK_PREFIX,
 } from "./share_links";
+import { track } from "../../tests/fixtures/track";
 
 describe("encodeSharedTrack", () => {
   it("preserves Unicode metadata, version, and external IDs", () => {
@@ -36,6 +41,7 @@ describe("decodeSharePreview", () => {
   it("decodes compact references without a version field", () => {
     const payload = {
       title: "Track",
+      type: "track",
       artist: "Artist",
       art_ref: "m:is1-ssl:/image/cover.jpg",
       provider_refs: { spotify: "/track/123" },
@@ -131,5 +137,55 @@ describe("compact share references", () => {
     expect(expanded).toBeDefined();
     expect(expanded).toContain("%22");
     expect(isSafeArtworkUrl(expanded!)).toBe(true);
+  });
+});
+
+describe("decodeSharePayload", () => {
+  it("decodes a playlist once for both preview and page rendering", () => {
+    const encoded = btoa(
+      JSON.stringify({
+        type: "playlist",
+        title: "Shared list",
+        tracks: [{ title: "Track" }],
+      }),
+    )
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_");
+
+    expect(decodeSharePayload(encoded)).toEqual({
+      type: "playlist",
+      title: "Shared list",
+      artist: undefined,
+      album: undefined,
+      version: undefined,
+      art_ref: undefined,
+      provider_refs: undefined,
+      tracks: [{ title: "Track" }],
+    });
+  });
+});
+
+describe("isUnresolvedSharedTrack", () => {
+  it.each([SHARE_PREVIEW_TRACK_PREFIX, IMPORTED_SHARE_TRACK_PREFIX])(
+    "recognizes the builtin placeholder prefix %s",
+    (prefix) => {
+      expect(
+        isUnresolvedSharedTrack(
+          track({ provider: "builtin", item_id: `${prefix}payload` }),
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it("does not match the same ID prefix from a real provider", () => {
+    expect(
+      isUnresolvedSharedTrack(
+        track({
+          provider: "tidal--1",
+          item_id: `${SHARE_PREVIEW_TRACK_PREFIX}payload`,
+        }),
+      ),
+    ).toBe(false);
   });
 });

@@ -147,6 +147,10 @@ import {
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getLucideIcon, PLAYER_ICON_FALLBACK } from "@/helpers/icon";
+import {
+  isUnresolvedSharedTrack,
+  SHARE_PREVIEW_TRACK_PREFIX,
+} from "@/helpers/share_links";
 import api from "@/plugins/api";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -601,11 +605,9 @@ export const getContextMenuItems = async function (
   }
 
   const firstItem = items[0];
-  const sharedTrackPrefix = "share-preview://track/";
   if (
-    firstItem.media_type === MediaType.TRACK &&
-    firstItem.provider === "builtin" &&
-    firstItem.item_id.startsWith(sharedTrackPrefix)
+    isUnresolvedSharedTrack(firstItem) &&
+    firstItem.item_id.startsWith(SHARE_PREVIEW_TRACK_PREFIX)
   ) {
     if (items.length !== 1 || !authManager.hasScope(Scope.LIBRARY_READ))
       return [];
@@ -614,18 +616,35 @@ export const getContextMenuItems = async function (
         label: "share.search_track",
         labelArgs: [firstItem.name],
         icon: Search,
-        action: () =>
+        action: () => {
+          const originatingRoute = router.currentRoute.value.fullPath;
+          let searchActive = true;
           eventbus.emit("deleteConfirmationDialog", {
             title: $t("share.search_confirm_title"),
             message: $t("share.search_confirm_description", [firstItem.name]),
             confirmLabel: $t("share.search_anyway"),
             destructive: false,
+            onDismiss: () => {
+              searchActive = false;
+            },
             onConfirm: async () => {
+              if (
+                !searchActive ||
+                router.currentRoute.value.fullPath !== originatingRoute
+              ) {
+                return;
+              }
               try {
                 const item = await api.resolveSharedItem(
-                  firstItem.item_id.slice(sharedTrackPrefix.length),
+                  firstItem.item_id.slice(SHARE_PREVIEW_TRACK_PREFIX.length),
                   true,
                 );
+                if (
+                  !searchActive ||
+                  router.currentRoute.value.fullPath !== originatingRoute
+                ) {
+                  return;
+                }
                 if (!item || item.media_type !== MediaType.TRACK) {
                   toast.error($t("share.resolve_failed"));
                   return;
@@ -635,10 +654,17 @@ export const getContextMenuItems = async function (
                   params: { provider: item.provider, itemId: item.item_id },
                 });
               } catch {
+                if (
+                  !searchActive ||
+                  router.currentRoute.value.fullPath !== originatingRoute
+                ) {
+                  return;
+                }
                 toast.error($t("share.resolve_failed"));
               }
             },
-          }),
+          });
+        },
       },
     ];
   }

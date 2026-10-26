@@ -181,6 +181,7 @@ import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { canHoldFavorite, favoriteState } from "@/helpers/favorites";
+import { isUnresolvedSharedTrack as isUnresolvedShareTrack } from "@/helpers/share_links";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
@@ -189,7 +190,6 @@ import {
 import { camelotColor } from "@/helpers/camelot";
 import { formatDuration } from "@/helpers/utils";
 import {
-  MediaType,
   Scope,
   type MediaItemType,
   type SortDirection,
@@ -276,12 +276,8 @@ const albumInSubtitle = computed(
 );
 
 // Share placeholders contain display names without resolvable artist or album IDs.
-const isUnresolvedSharedTrack = computed(
-  () =>
-    props.item.media_type === MediaType.TRACK &&
-    props.item.provider === "builtin" &&
-    (props.item.item_id.startsWith("share-preview://track/") ||
-      props.item.item_id.startsWith("share://track/")),
+const isUnresolvedSharedTrack = computed(() =>
+  isUnresolvedShareTrack(props.item),
 );
 
 // favouring an item changes the library
