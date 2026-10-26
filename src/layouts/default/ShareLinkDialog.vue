@@ -1,7 +1,8 @@
 <template>
   <Dialog :key="dialogKey" v-model:open="showDialog">
     <DialogContent
-      class="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden p-4 sm:max-w-[560px]"
+      class="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden p-4 z-[100001] sm:max-w-[560px]"
+      overlay-class="z-[100001]"
     >
       <DialogTitle class="sr-only">
         {{ $t("share.preview_title", { title: preview?.title ?? "" }) }}
