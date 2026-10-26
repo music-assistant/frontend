@@ -1,7 +1,5 @@
 <template>
   <section class="w-full" :aria-busy="loading">
-    <Toolbar :icon="ArrowLeft" :icon-action="goBack" />
-
     <div v-if="loading" role="status" class="space-y-6 px-4 py-6 md:px-6">
       <div class="flex items-end gap-5">
         <Skeleton class="size-32 shrink-0 rounded-md md:size-44" />
@@ -25,30 +23,29 @@
       <h1 class="max-w-md text-xl font-semibold">{{ $t(errorKey) }}</h1>
     </div>
 
-    <template v-else-if="decodedPayload?.type === 'playlist'">
-      <header
-        class="relative isolate flex min-h-[336px] items-end overflow-hidden bg-black px-4 py-6 text-white md:min-h-[400px] md:px-6 md:py-8"
-      >
-        <img
-          v-if="artwork && !artworkFailed"
-          :src="artwork"
-          alt=""
-          aria-hidden="true"
-          class="absolute inset-0 -z-20 size-full scale-110 object-cover blur-[44px]"
-        />
-        <div
-          class="absolute inset-0 -z-10 bg-black/60"
-          aria-hidden="true"
-        ></div>
+    <DetailHero
+      v-else-if="decodedPayload?.type === 'playlist'"
+      :title="decodedPayload.title"
+      :backdrop="artwork"
+      :blur-backdrop="!!artwork"
+      :height="400"
+      :phone-height="360"
+      :editable-rows="false"
+    >
+      <template #main>
         <div
           class="flex w-full min-w-0 items-end gap-6 max-md:flex-col max-md:items-stretch max-md:gap-3"
         >
           <div
-            class="relative flex size-[200px] flex-none items-center justify-center overflow-hidden rounded-lg bg-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.5)] max-md:size-[132px]"
+            class="detail-hero-cover relative size-[200px] flex-none overflow-hidden rounded-lg bg-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.5)] max-md:size-[132px]"
           >
-            <ListMusic class="size-16 text-white/60" aria-hidden="true" />
+            <ListMusic
+              v-if="!artwork || artworkFailed"
+              class="absolute inset-0 m-auto size-16 text-white/60"
+              aria-hidden="true"
+            />
             <img
-              v-if="artwork && !artworkFailed"
+              v-else
               :src="artwork"
               alt=""
               class="absolute inset-0 size-full object-cover"
@@ -57,11 +54,13 @@
           </div>
           <div class="flex min-w-0 flex-1 flex-col gap-2.5 pb-1">
             <h1
-              class="m-0 text-[44px] leading-[1.2] font-medium break-words [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] max-md:text-[30px]"
+              class="m-0 line-clamp-2 text-[44px] leading-[1.2] font-medium break-words [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] max-md:text-[30px]"
             >
               {{ decodedPayload.title }}
             </h1>
-            <div class="space-y-1 text-[15px] text-white/85 max-md:text-sm">
+            <div
+              class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] max-md:text-sm"
+            >
               <p v-if="decodedPayload.artist" class="break-words">
                 {{ decodedPayload.artist }}
               </p>
@@ -84,8 +83,10 @@
             </div>
           </div>
         </div>
-      </header>
+      </template>
+    </DetailHero>
 
+    <template v-if="decodedPayload?.type === 'playlist'">
       <SharedPlaylistTracks :key="payload" :payload="payload" />
     </template>
   </section>
@@ -116,8 +117,8 @@ import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 import { useRouter } from "vue-router";
 
-import Toolbar from "@/components/Toolbar.vue";
 import SharedPlaylistTracks from "@/components/share/SharedPlaylistTracks.vue";
+import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -134,15 +135,8 @@ import { MediaType, Scope, type MediaItemType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { backFromMediaDetails } from "@/helpers/navigation";
 import { expandShareArtworkRef, type SharedTrack } from "@/helpers/share_links";
-import {
-  ArrowLeft,
-  CircleAlert,
-  LoaderCircle,
-  ListMusic,
-  ListPlus,
-} from "@lucide/vue";
+import { CircleAlert, LoaderCircle, ListMusic, ListPlus } from "@lucide/vue";
 
 interface SharedPayload {
   type: "track" | "album" | "artist" | "playlist";
@@ -173,10 +167,6 @@ const playlistFacts = computed(() => [
     count: decodedPayload.value?.tracks.length ?? 0,
   }),
 ]);
-
-function goBack(): void {
-  backFromMediaDetails(router);
-}
 
 watch(confirmImportOpen, (open) => {
   if (open) dialogActiveBeforeOpen = store.dialogActive;

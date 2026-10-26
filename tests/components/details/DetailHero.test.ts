@@ -146,6 +146,28 @@ describe("DetailHero backdrop", () => {
   });
 });
 
+describe("DetailHero payload title", () => {
+  beforeEach(() => {
+    vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("renders main content without a media item when a payload title is supplied", () => {
+    const hero = mount(DetailHero, {
+      props: { title: "Shared playlist", editableRows: false },
+      slots: { main: "<h1>Shared playlist</h1>" },
+      global: { mocks: { $t: (key: string) => key } },
+    });
+
+    expect(hero.get(".detail-hero__main h1").text()).toBe("Shared playlist");
+    expect(hero.find(".detail-hero__body > div").exists()).toBe(true);
+    hero.unmount();
+  });
+});
+
 describe("DetailHero on a phone", () => {
   beforeEach(() => {
     vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
