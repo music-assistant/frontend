@@ -121,6 +121,100 @@ describe("DialogDeleteConfirmation", () => {
     expect(event.onConfirm).toHaveBeenCalledOnce();
   });
 
+  it("keeps dialogs active when opened from the context menu", async () => {
+    const wrapper = mountDialog();
+    storeMock.dialogActive = true;
+    const event: DeleteConfirmationDialogEvent = {
+      message: "Confirm search?",
+      onConfirm: vi.fn(),
+    };
+
+    eventbus.emit("deleteConfirmationDialog", event);
+    storeMock.dialogActive = false;
+    await flushPromises();
+
+    expect(storeMock.dialogActive).toBe(true);
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "cancel")
+      ?.trigger("click");
+    expect(storeMock.dialogActive).toBe(false);
+  });
+
+  it("notifies the previous caller when an open dialog is replaced", async () => {
+    const wrapper = mountDialog();
+    const firstOnDismiss = vi.fn();
+    const secondOnDismiss = vi.fn();
+    await openDialog({ message: "First dialog", onDismiss: firstOnDismiss });
+
+    await openDialog({ message: "Second dialog", onDismiss: secondOnDismiss });
+
+    expect(firstOnDismiss).toHaveBeenCalledOnce();
+    expect(secondOnDismiss).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("Second dialog");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "cancel")
+      ?.trigger("click");
+    expect(secondOnDismiss).toHaveBeenCalledOnce();
+  });
+
+  it("does not restore a background dialog that closed before replacement", async () => {
+    const wrapper = mountDialog();
+    storeMock.dialogActive = true;
+    await openDialog({ message: "First dialog" });
+
+    storeMock.dialogActive = false;
+    await openDialog({ message: "Replacement dialog" });
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "cancel")
+      ?.trigger("click");
+
+    expect(storeMock.dialogActive).toBe(false);
+  });
+
+  it("keeps a reentrant replacement", async () => {
+    const wrapper = mountDialog();
+    const nestedEvent: DeleteConfirmationDialogEvent = {
+      message: "Nested dialog",
+      onConfirm: vi.fn(),
+    };
+    await openDialog({
+      message: "First dialog",
+      onDismiss: () => eventbus.emit("deleteConfirmationDialog", nestedEvent),
+    });
+
+    eventbus.emit("deleteConfirmationDialog", {
+      message: "Outer replacement",
+      onConfirm: vi.fn(),
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Nested dialog");
+    expect(wrapper.text()).not.toContain("Outer replacement");
+  });
+
+  it("opens a replacement and rethrows errors from the previous dismissal", async () => {
+    const wrapper = mountDialog();
+    await openDialog({
+      message: "First dialog",
+      onDismiss: () => {
+        throw new Error("dismiss failed");
+      },
+    });
+
+    expect(() =>
+      eventbus.emit("deleteConfirmationDialog", {
+        message: "Replacement dialog",
+        onConfirm: vi.fn(),
+      }),
+    ).toThrow("dismiss failed");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Replacement dialog");
+  });
+
   it("notifies the caller when the dialog is dismissed during confirmation", async () => {
     const wrapper = mountDialog();
     const pending = deferred<void>();
