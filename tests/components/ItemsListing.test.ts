@@ -1918,7 +1918,8 @@ describe("ItemsListing server sort options", () => {
       document.body.querySelector<HTMLElement>(
         '[role="menuitemradio"][aria-checked="true"]',
       );
-    expect(checked()?.querySelector("svg.lucide-check")).not.toBeNull();
+    // the sort it is on is shown in blue, without a check mark
+    expect(checked()?.querySelector("svg.lucide-check")).toBeNull();
     // the arrow beside the sort it is on shows its order
     expect(checked()?.querySelector("svg.lucide-arrow-down")).not.toBeNull();
 
@@ -1928,6 +1929,10 @@ describe("ItemsListing server sort options", () => {
     expect(loadPagedData).toHaveBeenLastCalledWith(
       expect.objectContaining({ sortBy: "name:asc" }),
     );
+    // and the menu stays open for another pick
+    expect(
+      document.body.querySelectorAll('[role="menuitemradio"]').length,
+    ).toBeGreaterThan(0);
 
     const playCountChip = listing
       .findAll("button")

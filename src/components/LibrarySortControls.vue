@@ -32,18 +32,17 @@
         <DropdownMenuLabel v-if="titled" :class="MENU_SECTION_LABEL_CLASS">
           {{ $t("sort.sort_by") }}
         </DropdownMenuLabel>
-        <!-- picking the sort it is on flips its order, as the arrow shows -->
+        <!-- picking the sort it is on flips its order, as the arrow shows; the
+             menu stays open for another pick until a click outside closes it -->
         <DropdownMenuRadioGroup :model-value="current.field">
           <DropdownMenuRadioItem
             v-for="option in options"
             :key="option.field"
             :value="option.field"
-            class="gap-3"
-            @select="changeQuickSort(option)"
+            class="gap-3 pl-2 data-[state=checked]:text-primary"
+            @select="(event: Event) => pickSortOption(event, option)"
           >
-            <template #indicator-icon>
-              <Check class="size-3.5" />
-            </template>
+            <template #indicator-icon><span></span></template>
             <span class="min-w-0 flex-1 truncate">{{
               sortOptionLabel(option)
             }}</span>
@@ -54,7 +53,6 @@
                 :is="
                   current.direction === SortDirection.DESC ? ArrowDown : ArrowUp
                 "
-                class="text-muted-foreground"
                 aria-hidden="true"
               />
               <span class="sr-only">{{
@@ -124,7 +122,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SortDirection, type SortOptionInfo } from "@/plugins/api/interfaces";
 import { useLibrarySorting } from "@/composables/useLibrarySorting";
-import { ArrowDown, ArrowUp, ArrowUpDown, Check } from "@lucide/vue";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -187,4 +185,9 @@ const quickSortAriaLabel = (option: SortOptionInfo) =>
 
 const changeQuickSort = (option: SortOptionInfo) =>
   emit("sort-by", sortByQuickOption(option));
+
+const pickSortOption = (event: Event, option: SortOptionInfo) => {
+  event.preventDefault();
+  changeQuickSort(option);
+};
 </script>
