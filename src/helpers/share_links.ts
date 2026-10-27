@@ -74,6 +74,7 @@ export interface SharePreview {
 export interface SharedTrack {
   title: string;
   artist?: string | null;
+  artists?: string[] | null;
   version?: string | null;
   album?: string | null;
   isrc?: string | null;
@@ -86,6 +87,7 @@ export interface DecodedSharePayload {
   type: "track" | "album" | "artist" | "playlist";
   title: string;
   artist?: string;
+  artists?: string[];
   album?: string;
   version?: string;
   duration?: number;
@@ -100,6 +102,7 @@ export function encodeSharedTrack(track: SharedTrack): string {
       type: "track",
       title: track.title,
       artist: track.artist,
+      artists: track.artists,
       version: track.version,
       album: track.album,
       isrc: track.isrc,
@@ -163,6 +166,15 @@ export function decodeSharePayload(encoded: string): DecodedSharePayload {
     throw new Error("Invalid track duration");
   }
   if (
+    candidate.artists !== undefined &&
+    (!Array.isArray(candidate.artists) ||
+      candidate.artists.some(
+        (artist) => typeof artist !== "string" || !artist.trim(),
+      ))
+  ) {
+    throw new Error("Invalid artist credits");
+  }
+  if (
     candidate.type === "playlist" &&
     (!Array.isArray(candidate.tracks) ||
       candidate.tracks.some(
@@ -172,7 +184,13 @@ export function decodeSharePayload(encoded: string): DecodedSharePayload {
           (track.duration !== undefined &&
             (typeof track.duration !== "number" ||
               !Number.isInteger(track.duration) ||
-              track.duration < 0)),
+              track.duration < 0)) ||
+          (track.artists !== undefined &&
+            (!Array.isArray(track.artists) ||
+              track.artists.some(
+                (artist: unknown) =>
+                  typeof artist !== "string" || !artist.trim(),
+              ))),
       ))
   ) {
     throw new Error("Invalid playlist payload");
@@ -181,6 +199,9 @@ export function decodeSharePayload(encoded: string): DecodedSharePayload {
     type: candidate.type as DecodedSharePayload["type"],
     title: candidate.title,
     artist: typeof candidate.artist === "string" ? candidate.artist : undefined,
+    artists: Array.isArray(candidate.artists)
+      ? (candidate.artists as string[])
+      : undefined,
     album: typeof candidate.album === "string" ? candidate.album : undefined,
     version:
       typeof candidate.version === "string" ? candidate.version : undefined,
