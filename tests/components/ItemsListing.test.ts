@@ -2642,6 +2642,16 @@ describe("ItemsListing library toolbar", () => {
       },
     });
     await flushPromises();
+    // then the Favorites save itself, merged onto it
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.libraryartists.artists": {
+          sortBy: "name_desc",
+          favoriteFilter: true,
+        },
+      },
+    });
+    await flushPromises();
     finishSave();
     await flushPromises();
 
@@ -2650,6 +2660,37 @@ describe("ItemsListing library toolbar", () => {
     ).toBe(1);
     expect(loadPagedData).toHaveBeenLastCalledWith(
       expect.objectContaining({ favoritesOnly: true }),
+    );
+  });
+
+  it("goes back to the saved settings after a save fails", async () => {
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({ loadPagedData });
+    const favorites = (
+      listing
+        .findComponent(ListingToolbarControls)
+        .props("filters") as ListingFilter[]
+    ).find((filter) => filter.id === "favorites") as ListingToggleFilter;
+
+    favorites.toggle();
+    await flushPromises();
+    // the server would not take it, so the account's settings are put back
+    store.currentUser = user({
+      preferences: { "itemsListing.libraryartists.artists": {} },
+    });
+    await flushPromises();
+    finishSave();
+    await flushPromises();
+
+    expect(
+      listing.findComponent(ListingToolbarControls).props("activeFilterCount"),
+    ).toBe(0);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ favoritesOnly: false }),
     );
   });
 

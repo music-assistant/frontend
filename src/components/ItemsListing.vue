@@ -708,12 +708,18 @@ const {
 // this listing's own saves still on their way: while one is, the settings an
 // earlier save hands back can predate an edit made since, so they wait
 let pendingSaves = 0;
+// a restore that waited for them, and runs once the last one has settled
+let restoreSkipped = false;
 const trackSave = async (save: Promise<void>) => {
   pendingSaves++;
   try {
     await save;
   } finally {
     pendingSaves--;
+    if (pendingSaves === 0 && restoreSkipped) {
+      restoreSkipped = false;
+      reconcileSavedSettings();
+    }
   }
 };
 const setItemsListingPreference: typeof writeListingPreference = (...args) =>
@@ -2266,11 +2272,24 @@ watch(
 watch(
   savedPrefs,
   () => {
-    if (pendingSaves > 0) return;
+    if (pendingSaves > 0) {
+      restoreSkipped = true;
+      return;
+    }
     restoreSettings();
   },
   { immediate: true },
 );
+
+// what the saves made the listing wait for: nothing changes after they went
+// through, and after one failed the listing goes back to what is saved
+const reconcileSavedSettings = function () {
+  const filtersKey = () =>
+    JSON.stringify({ ...params.value, offset: undefined, limit: undefined });
+  const before = filtersKey();
+  restoreSettings();
+  if (filtersKey() !== before) loadData(true, undefined, true);
+};
 
 // the page is told which provider the listing is on, a restored visit
 // included, so it can show that without a load of its own
