@@ -2284,6 +2284,9 @@ watch(
 // what the saves made the listing wait for: nothing changes after they went
 // through, and after one failed the listing goes back to what is saved
 const reconcileSavedSettings = function () {
+  // a listing that was left meanwhile has nothing to catch up on, and its
+  // params now belong to the cached visit
+  if (isDisposed()) return;
   const filtersKey = () =>
     JSON.stringify({ ...params.value, offset: undefined, limit: undefined });
   const before = filtersKey();

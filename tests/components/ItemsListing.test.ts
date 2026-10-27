@@ -2697,6 +2697,33 @@ describe("ItemsListing library toolbar", () => {
     );
   });
 
+  it("leaves a listing that was left alone when its failed save settles", async () => {
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({ loadPagedData });
+    const favorites = (
+      listing
+        .findComponent(ListingToolbarControls)
+        .props("filters") as ListingFilter[]
+    ).find((filter) => filter.id === "favorites") as ListingToggleFilter;
+
+    favorites.toggle();
+    await flushPromises();
+    store.currentUser = user({
+      preferences: { "itemsListing.libraryartists.artists": {} },
+    });
+    await flushPromises();
+    listing.unmount();
+    loadPagedData.mockClear();
+    finishSave();
+    await flushPromises();
+
+    expect(loadPagedData).not.toHaveBeenCalled();
+  });
+
   it("turns a filter off when the saved settings later leave it off", async () => {
     signInWithSavedFilters({ favoriteFilter: true });
     const listing = await mountLibraryPage();
