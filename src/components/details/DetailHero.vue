@@ -94,7 +94,11 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
-import { ImageType, type MediaItemType } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  MediaType,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { ArrowLeft, Rows3 } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
@@ -163,9 +167,12 @@ useIntersectionObserver(
   { root: pageScroller, rootMargin: `-${STICKY_BAR_HEIGHT}px 0px 0px 0px` },
 );
 
-// a phone shows the item's own artwork across the top, faded into the page
+// a phone shows the item's own artwork across the top, faded into the page; a
+// collection's images are the covers of its stack, which it shows instead
 const phoneArtwork = computed(() =>
-  isPhone.value ? getImageThumbForItem(props.item, ImageType.THUMB) : undefined,
+  isPhone.value && props.item?.media_type !== MediaType.COLLECTION
+    ? getImageThumbForItem(props.item, ImageType.THUMB)
+    : undefined,
 );
 const artworkLayout = computed(() => !!phoneArtwork.value);
 

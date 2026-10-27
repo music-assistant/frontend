@@ -57,7 +57,7 @@
         :title="playedStateLabel"
         :aria-label="playedStateLabel"
       >
-        <Check v-if="isFullyPlayed" :size="16" />
+        <Check v-if="playedState === 'fully_played'" :size="16" />
         <ClockFading v-else :size="16" />
       </span>
       <slot name="art-overlay"></slot>
@@ -114,6 +114,7 @@ import {
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
+import { getPlayedState } from "@/helpers/played_state";
 import {
   getArtistsString,
   getAuthorsNarratorsArray,
@@ -123,7 +124,6 @@ import {
   getListItemProviderIconDomain,
   getProviderRootDomain,
   isMusicBrainzItem,
-  itemSupportsPlayLog,
 } from "@/plugins/api/helpers";
 import {
   type Album,
@@ -236,16 +236,11 @@ const providerDomain = computed<string | undefined>(() => {
   return getListItemProviderIconDomain(it);
 });
 
-const isFullyPlayed = computed(
-  () => itemSupportsPlayLog(props.item) && !!props.item.fully_played,
-);
-const isInProgress = computed(
-  () => itemSupportsPlayLog(props.item) && !!props.item.resume_position_ms,
-);
+const playedState = computed(() => getPlayedState(props.item));
 // undefined while unplayed, when the cover shows no played state
 const playedStateLabel = computed(() => {
-  if (isFullyPlayed.value) return t("item_fully_played");
-  return isInProgress.value ? t("item_in_progress") : undefined;
+  if (playedState.value === "fully_played") return t("item_fully_played");
+  return playedState.value ? t("item_in_progress") : undefined;
 });
 
 const displayName = computed(() => {
