@@ -1948,11 +1948,13 @@ const restoreSettings = async function () {
   // restore settings for this path/itemtype
   const prefs = savedPrefs.value;
 
-  if (
-    prefs.activeTab &&
-    props.toolBarTabs?.some((tab) => tab.id === prefs.activeTab)
-  ) {
-    activeTabId.value = prefs.activeTab;
+  // a tab never saved, or no longer offered, is the first one
+  if (props.toolBarTabs?.length) {
+    activeTabId.value = props.toolBarTabs.some(
+      (tab) => tab.id === prefs.activeTab,
+    )
+      ? prefs.activeTab!
+      : props.toolBarTabs[0].id;
   }
 
   // get stored/default viewMode for this itemtype
@@ -2071,9 +2073,10 @@ const restoreSettings = async function () {
     ];
   }
 
-  // get stored searchquery (but only if we're allowed to store the state)
-  if (props.restoreState && prefs.search) {
-    params.value.search = prefs.search;
+  // get stored searchquery (but only if we're allowed to store the state);
+  // none saved is no search
+  if (props.restoreState) {
+    params.value.search = prefs.search ?? "";
   }
 };
 
@@ -2220,13 +2223,15 @@ const reconcileSavedSettings = function () {
   // a listing that was left meanwhile has nothing to catch up on, and its
   // params now belong to the cached visit
   if (isDisposed()) return;
-  // a restored search reloads by itself, from its own watcher
+  // a restored search reloads by itself, from its own watcher; a restored tab
+  // does not, so it counts
   const filtersKey = () =>
     JSON.stringify({
       ...params.value,
       offset: undefined,
       limit: undefined,
       search: undefined,
+      tab: activeTabId.value,
     });
   const before = filtersKey();
   restoreSettings();

@@ -2913,6 +2913,75 @@ describe("ItemsListing library toolbar", () => {
     );
   });
 
+  it("clears a search that failed to save when none was saved before", async () => {
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({
+      loadPagedData,
+      restoreState: true,
+    });
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    await listing.find('button[aria-label="search"]').trigger("click");
+    await listing.find("input").setValue("beatles");
+    await flushPromises();
+    // the server would not take it, so the account holds no search again
+    store.currentUser = user({
+      preferences: { "itemsListing.libraryartists.artists": {} },
+    });
+    await flushPromises();
+    finishSave();
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ search: "" }),
+    );
+  });
+
+  it("reloads the saved tab's rows after a tab save fails", async () => {
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.libraryaudiobooks.audiobooks": { activeTab: "books" },
+      },
+    });
+    const books = vi.fn().mockResolvedValue([]);
+    const authors = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "audiobooks",
+      path: "libraryaudiobooks",
+      libraryToolbar: true,
+      showGenreFilter: false,
+      toolBarTabs: [
+        { id: "books", label: "books", loadPagedData: books },
+        { id: "authors", label: "authors", loadPagedData: authors },
+      ],
+    });
+    await flushPromises();
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+
+    listing
+      .findComponent({ name: "Tabs" })
+      .vm.$emit("update:modelValue", "authors");
+    await flushPromises();
+    expect(authors).toHaveBeenCalled();
+    // the server would not take it, so the account is back on Books
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.libraryaudiobooks.audiobooks": { activeTab: "books" },
+      },
+    });
+    await flushPromises();
+    books.mockClear();
+    finishSave();
+    await flushPromises();
+
+    expect(books).toHaveBeenCalledOnce();
+  });
+
   it("turns a filter off when the saved settings later leave it off", async () => {
     signInWithSavedFilters({ favoriteFilter: true });
     const listing = await mountLibraryPage();
