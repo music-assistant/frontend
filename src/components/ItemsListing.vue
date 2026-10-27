@@ -50,6 +50,7 @@
             !searchButtonCloses &&
             !searchSlotShown
           "
+          ref="searchButtonRef"
           variant="ghost"
           size="icon-lg"
           :title="$t('search')"
@@ -63,7 +64,8 @@
           v-if="!store.mobileLayout"
           name="listing-search"
           @before-enter="searchSlotShown = true"
-          @after-leave="searchSlotShown = false"
+          @before-leave="onSearchSlotLeave"
+          @after-leave="onSearchSlotLeft"
         >
           <!-- the input follows the slot's edge as it opens, and the padding
                keeps its 3px focus ring inside the clipped area -->
@@ -1063,7 +1065,11 @@ const toggleGenreFilter = function (genreId: number) {
   } else {
     ids.push(genreId);
   }
+  setGenreFilter(ids);
+};
 
+// the whole genre selection at once, with a single reload
+const setGenreFilter = function (ids: number[]) {
   if (ids.length === 0) {
     params.value.genreIds = undefined;
   } else {
@@ -1193,14 +1199,17 @@ const changeSort = function (sort_key?: string) {
 };
 
 const changeAlbumTypeFilter = function (albumType: string) {
-  if (params.value.albumType?.includes(albumType))
-    params.value.albumType = params.value.albumType?.filter(
-      (type) => type !== albumType,
-    );
-  else {
-    params.value.albumType = params.value.albumType || [];
-    params.value.albumType.push(albumType);
-  }
+  const current = params.value.albumType ?? [];
+  setAlbumTypeFilter(
+    current.includes(albumType)
+      ? current.filter((type) => type !== albumType)
+      : [...current, albumType],
+  );
+};
+
+// the whole album type selection at once, with a single save and reload
+const setAlbumTypeFilter = function (albumTypes: string[]) {
+  params.value.albumType = albumTypes;
   setItemsListingPreference(
     props.path || props.itemtype,
     props.itemtype,
@@ -1395,6 +1404,29 @@ const showSearchInput = computed(() => {
 
 // the field stays on screen while it closes, and its icon waits for it to go
 const searchSlotShown = ref(false);
+const searchButtonRef = ref<InstanceType<typeof Button>>();
+// focus was in the field as it closed, so it goes to the icon that replaces it
+let refocusSearchButton = false;
+
+const onSearchSlotLeave = (el: Element) => {
+  refocusSearchButton = el.contains(document.activeElement);
+};
+const onSearchSlotLeft = () => {
+  searchSlotShown.value = false;
+  if (!refocusSearchButton) return;
+  refocusSearchButton = false;
+  nextTick(() =>
+    (searchButtonRef.value?.$el as HTMLElement | undefined)?.focus(),
+  );
+};
+
+// a phone drops the inline field without letting it finish closing
+watch(
+  () => store.mobileLayout,
+  (mobile) => {
+    if (mobile) searchSlotShown.value = false;
+  },
+);
 
 const searchButtonCloses = computed(
   () => showSearchInput.value && !store.mobileLayout,
@@ -1545,7 +1577,9 @@ const listingFilters = useListingFilters(
     toggleCollapseCollections: toggleCollapseCollections,
     setHideEmpty: setHideEmptyFilter,
     toggleGenre: toggleGenreFilter,
+    setGenres: setGenreFilter,
     toggleAlbumType: changeAlbumTypeFilter,
+    setAlbumTypes: setAlbumTypeFilter,
     toggleProvider: changeProviderFilter,
   },
 );

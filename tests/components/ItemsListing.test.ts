@@ -2,6 +2,10 @@ import ItemsListing from "@/components/ItemsListing.vue";
 import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import ListingToolbarControls from "@/components/listing-toolbar/ListingToolbarControls.vue";
+import type {
+  ListingFilter,
+  ListingMultiFilter,
+} from "@/helpers/listing_filters";
 import ListingViewToggle from "@/components/listing-toolbar/ListingViewToggle.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { defineComponent, h, type SetupContext } from "vue";
@@ -2481,18 +2485,22 @@ describe("ItemsListing library toolbar", () => {
 
   async function mountLibraryPage(
     props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+    stubs: Record<string, unknown> = {},
   ) {
-    const listing = mountListingRaw({
-      itemtype: "artists",
-      path: "libraryartists",
-      sortListing: ListingType.LIBRARY_ARTISTS,
-      libraryToolbar: true,
-      showGenreFilter: false,
-      showFavoritesOnlyFilter: true,
-      showAlbumArtistsOnlyFilter: true,
-      showSearchButton: true,
-      ...props,
-    });
+    const listing = mountListingRaw(
+      {
+        itemtype: "artists",
+        path: "libraryartists",
+        sortListing: ListingType.LIBRARY_ARTISTS,
+        libraryToolbar: true,
+        showGenreFilter: false,
+        showFavoritesOnlyFilter: true,
+        showAlbumArtistsOnlyFilter: true,
+        showSearchButton: true,
+        ...props,
+      },
+      stubs,
+    );
     await flushPromises();
     return listing;
   }
@@ -2643,6 +2651,71 @@ describe("ItemsListing library toolbar", () => {
 
     expect(restored.find(".toolbar-stub").text()).toContain("12");
     expect(restored.find(".toolbar-stub").text()).not.toContain("128");
+  });
+
+  // the field's own open and close transition, which the hooks hang off
+  const realTransitions = { transition: false };
+  const nextFrames = async () => {
+    for (let i = 0; i < 3; i++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await flushPromises();
+    }
+  };
+
+  it("gives focus back to the search icon when the field closes", async () => {
+    const listing = await mountLibraryPage({}, realTransitions);
+    await listing.find('button[aria-label="search"]').trigger("click");
+    await nextFrames();
+    const close = listing.find('button[aria-label="close"]');
+    (close.element as HTMLElement).focus();
+
+    await close.trigger("click");
+    await nextFrames();
+
+    expect(document.activeElement).toBe(
+      listing.find('button[aria-label="search"]').element,
+    );
+  });
+
+  it("brings the search icon back after the search moved to a phone", async () => {
+    const listing = await mountLibraryPage({}, realTransitions);
+    await listing.find('button[aria-label="search"]').trigger("click");
+    await nextFrames();
+
+    store.mobileLayout = true;
+    await nextFrames();
+    await listing.find('button[aria-label="close"]').trigger("click");
+    await nextFrames();
+
+    expect(listing.find('button[aria-label="search"]').exists()).toBe(true);
+  });
+
+  it("takes a new album type selection with one save and one reload", async () => {
+    signInWithSavedFilters({ albumType: ["album", "single"] });
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({
+      showAlbumTypeFilter: true,
+      loadPagedData,
+    });
+    mockSetItemsListingPreference.mockClear();
+    loadPagedData.mockClear();
+
+    const albumTypes = (
+      listing
+        .findComponent(ListingToolbarControls)
+        .props("filters") as ListingFilter[]
+    ).find((filter) => filter.id === "album_type") as ListingMultiFilter;
+    albumTypes.set?.([]);
+    await flushPromises();
+
+    expect(mockSetItemsListingPreference).toHaveBeenCalledOnce();
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "libraryartists",
+      "artists",
+      "albumType",
+      [],
+    );
+    expect(loadPagedData).toHaveBeenCalledOnce();
   });
 
   it("counts the items only while the page's total covers the filters", async () => {

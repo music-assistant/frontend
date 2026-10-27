@@ -74,9 +74,14 @@ const summary = computed(() => {
     .join(", ");
 });
 
-// the dropdown hands back the whole selection; the filter flips one value at a time
+// the dropdown hands back the whole selection, which a filter takes in one go
+// where it can, and otherwise flips one value at a time
 const applySelection = (next: string[]) => {
-  const { selected, toggle } = props.filter;
+  const { selected, toggle, set } = props.filter;
+  if (set) {
+    set(next);
+    return;
+  }
   for (const value of selected) if (!next.includes(value)) toggle(value);
   for (const value of next) if (!selected.includes(value)) toggle(value);
 };

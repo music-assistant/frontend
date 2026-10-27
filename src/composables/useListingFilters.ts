@@ -66,7 +66,9 @@ export interface ListingFilterActions {
   toggleCollapseCollections: () => void;
   setHideEmpty: (hideEmpty: boolean | null) => void;
   toggleGenre: (genreId: number) => void;
+  setGenres: (genreIds: number[]) => void;
   toggleAlbumType: (albumType: string) => void;
+  setAlbumTypes: (albumTypes: string[]) => void;
   toggleProvider: (providerId: string) => void;
 }
 
@@ -176,6 +178,7 @@ export function useListingFilters(
         })),
         selected: genreIdsOf(params.genreIds).map(String),
         toggle: (value) => actions.toggleGenre(Number(value)),
+        set: (values) => actions.setGenres(values.map(Number)),
       });
     }
     if (flags.showAlbumTypeFilter) {
@@ -191,6 +194,7 @@ export function useListingFilters(
         })),
         selected: params.albumType ?? [],
         toggle: actions.toggleAlbumType,
+        set: actions.setAlbumTypes,
       });
     }
     if (state.providerOptions.value.length) {

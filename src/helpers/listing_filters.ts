@@ -30,6 +30,8 @@ export interface ListingMultiFilter {
   options: ListingFilterOption[];
   selected: string[];
   toggle: (value: string) => void;
+  // takes a whole selection in one go, as a dropdown hands it back
+  set?: (values: string[]) => void;
 }
 
 /** A filter with exactly one of a few choices picked. */
