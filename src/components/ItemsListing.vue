@@ -2292,8 +2292,14 @@ const reconcileSavedSettings = function () {
   // a listing that was left meanwhile has nothing to catch up on, and its
   // params now belong to the cached visit
   if (isDisposed()) return;
+  // a restored search reloads by itself, from its own watcher
   const filtersKey = () =>
-    JSON.stringify({ ...params.value, offset: undefined, limit: undefined });
+    JSON.stringify({
+      ...params.value,
+      offset: undefined,
+      limit: undefined,
+      search: undefined,
+    });
   const before = filtersKey();
   restoreSettings();
   if (filtersKey() !== before) loadData(true, undefined, true);

@@ -2795,6 +2795,36 @@ describe("ItemsListing library toolbar", () => {
     }
   });
 
+  it("reloads once when a failed save brings back another search", async () => {
+    signInWithSavedFilters({ search: "adele" });
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({
+      loadPagedData,
+      restoreState: true,
+    });
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    await listing.find("input").setValue("beatles");
+    await flushPromises();
+    // the server would not take it, so the saved search is put back
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.libraryartists.artists": { search: "adele" },
+      },
+    });
+    await flushPromises();
+    loadPagedData.mockClear();
+    finishSave();
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenCalledOnce();
+    expect(loadPagedData).toHaveBeenCalledWith(
+      expect.objectContaining({ search: "adele" }),
+    );
+  });
+
   it("turns a filter off when the saved settings later leave it off", async () => {
     signInWithSavedFilters({ favoriteFilter: true });
     const listing = await mountLibraryPage();
