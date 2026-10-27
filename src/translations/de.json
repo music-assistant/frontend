@@ -157,7 +157,12 @@
                 "el_GR": "Griechisch",
                 "lt_LT": "Litauisch",
                 "lv_LV": "Lettisch",
-                "bg_BG": "Bulgarisch"
+                "bg_BG": "Bulgarisch",
+                "ca": "Katalanisch",
+                "fi_FI": "Finnisch",
+                "he": "Hebräisch",
+                "zh_TW": "Chinesisch (Traditionell)",
+                "sk_SK": "Slowakisch"
             }
         },
         "dynamic_members": {
@@ -899,7 +904,8 @@
         },
         "unsupported_install_title": "Nicht unterstützte Installation",
         "unsupported_install_description": "Dieser Server wurde nicht über eine der {0} installiert. Einige Funktionen funktionieren möglicherweise nicht wie erwartet, und von diesem Server gemeldete Probleme werden möglicherweise ohne Support geschlossen.",
-        "unsupported_install_link": "Unterstützte Installationsmethoden"
+        "unsupported_install_link": "Unterstützte Installationsmethoden",
+        "error_loading_sort_options": "Fehler beim Laden der Sortieroptionen"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -908,7 +914,7 @@
         "duration": "Dauer",
         "position": "Position",
         "provider": "Quelle",
-        "sort_name": "Sortiername",
+        "sort_name": "Alphabetisch nach Sortiername",
         "track_number": "Titelnummer",
         "year": "Erscheinungsjahr",
         "position_desc": "Position (absteigend)",
@@ -919,7 +925,7 @@
         "year_desc": "Erscheinungsjahr (absteigend)",
         "duration_desc": "Dauer (absteigend)",
         "original": "Standard",
-        "sort_name_desc": "Sortiername (absteigend)",
+        "sort_name_desc": "Alphabetisch nach Sortiername (absteigend)",
         "timestamp_added": "Datum des Hinzufügens",
         "timestamp_added_desc": "Datum des Hinzufügens (absteigend)",
         "timestamp_modified": "Änderungsdatum",
@@ -936,7 +942,12 @@
         "ascending": "Ansteigend",
         "ascending_abbreviation": "Anst.",
         "descending": "Absteigend",
-        "descending_abbreviation": "Abst."
+        "descending_abbreviation": "Abst.",
+        "favorite_timestamp": "Datum bevorzugt",
+        "artist_name": "Interpret",
+        "random": "Zufällig",
+        "random_play_count": "Zufällig (die am wenigsten gespielten zuerst)",
+        "album_name": "Album"
     },
     "state": {
         "idle": "Inaktiv",
@@ -1212,7 +1223,8 @@
             "mixed_to_mono": "Gemischt zu Mono"
         },
         "processing_header": "Verarbeitung",
-        "more_info_for": "Weitere Informationen über {item}"
+        "more_info_for": "Weitere Informationen über {item}",
+        "open_played_from": "{0} öffnen"
     },
     "select_source": "Quelle auswählen",
     "play_replace_next": "Nächstes abspielen (Warteschlange leeren)",
@@ -1939,7 +1951,8 @@
                 "station_duplicated": "Station dupliziert",
                 "host_saved": "Host gespeichert",
                 "host_deleted": "Host gelöscht",
-                "tts_engines_load_failed": "Sprachoptionen konnten nicht geladen werden"
+                "tts_engines_load_failed": "Sprachoptionen konnten nicht geladen werden",
+                "show_stopped": "Die Show wurde abgebrochen"
             },
             "header": {
                 "subtitle": "Verwandle eine Wiedergabeliste in eine Radiosendung mit einem AI-Moderator."
@@ -2271,7 +2284,10 @@
         "last_played_ago": "vor",
         "op_greater_than": "größer als",
         "op_less_than": "weniger als",
-        "picker_search": "Suche {label}"
+        "picker_search": "Suche {label}",
+        "field_folder": "Ordner",
+        "field_folder_is": "Ordner ist",
+        "picker_empty_folder_sources": "Es ist keine Musikquelle mit Ordnern eingerichtet."
     },
     "explore": "Erkunden",
     "shortcuts": "Abkürzungen",
@@ -2658,7 +2674,8 @@
                 "no_provider_hint": "Füge einen Wiedergabegeräte-Anbieter hinzu und dessen Wiedergabegeräte werden hier angezeigt.",
                 "discovering_hint": "Das Auffinden von Wiedergabegeräten kann einen Moment dauern. Stelle sicher, dass deine Lautsprecher eingeschaltet sind und sich im selben Netzwerk wie Music Assistant befinden.",
                 "add_more": "Weitere Wiedergabegeräte hinzufügen",
-                "rename": "{name} umbenennen"
+                "rename": "{name} umbenennen",
+                "discovered_by": "Entdeckt von"
             },
             "plugins": {
                 "title": "Plugins hinzufügen",
@@ -2767,7 +2784,14 @@
         "description": "Richte Music Assistant Schritt für Schritt ein.",
         "step_completed": "{step}, abgeschlossen",
         "welcome_description": "Ein kurzer Überblick über Music Assistant.",
-        "more_count": "+{count} mehr"
+        "more_count": "+{count} mehr",
+        "paused_title": "Einrichtung pausiert",
+        "paused_text": "Setze deine Arbeit jetzt oder später in den Einstellungen dort fort, wo du aufgehört hast.",
+        "resume": "Wieder aufnehmen",
+        "pause": "Einrichtung pausieren",
+        "dismiss": "Zurückweisen",
+        "music_sources_count": "{count} Musikquelle | {count} Musikquellen",
+        "plugins_count": "{count} Plugin | {count} Plugins"
     },
     "share_playlist": "Wiedergabeliste teilen",
     "playlist_access": {
@@ -2881,5 +2905,36 @@
     "grid_size": "Cover-Größe",
     "grid_size_default": "Standardgröße",
     "grid_size_smaller": "{count} Schritt kleiner | {count} Schritte kleiner",
-    "grid_size_larger": "{count} Schritt größer | {count} Schritte größer"
+    "grid_size_larger": "{count} Schritt größer | {count} Schritte größer",
+    "episode_number": "Folge {0}",
+    "episode_number_short": "E{0}",
+    "season_episode_number": "Staffel {0}, Folge {1}",
+    "season_episode_number_short": "S{0} E{1}",
+    "edit_rows_subtitle_podcast": "Gilt für jede Podcast-Seite",
+    "playlist_radio": "Wiedergabeliste endloser Mix",
+    "edit_rows_subtitle_playlist": "Gilt für jede Wiedergabelisten-Seite",
+    "duration_hours_minutes": "{hours} h {minutes} min",
+    "duration_hours": "{hours} h",
+    "duration_minutes": "{minutes} min",
+    "tracklist_heading": "Titel",
+    "skip_back_seconds": "{0} Sekunden zurückspringen",
+    "skip_forward_seconds": "{0} Sekunden vorspulen",
+    "track_table": {
+        "title": "Titel",
+        "track_number": "Titelnummer",
+        "year": "Jahr",
+        "duration": "Dauer",
+        "columns": "Spalten",
+        "choose_columns": "Spalten auswählen",
+        "hidden_at_width": "Bei dieser Breite ausgeblendet"
+    },
+    "selection_actions": "Auswahlaktionen",
+    "n_selected": "{count} ausgewählt | {count} ausgewählt",
+    "folder": "Ordner",
+    "select_all": "Alle auswählen",
+    "no_content_filter_hint": "Versuche eine andere Suche oder ändere die Filter.",
+    "items_load_failed": "Die Elemente konnten nicht geladen werden.",
+    "featured_artists": "Ausgewählte Interpreten",
+    "review_setup": "Rezension",
+    "n_audiobooks": "{count} Hörbuch | {count} Hörbücher"
 }

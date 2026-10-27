@@ -157,7 +157,12 @@
                 "el_GR": "Grekiska",
                 "lt_LT": "Litauiska",
                 "lv_LV": "Lettiska",
-                "bg_BG": "Bulgariska"
+                "bg_BG": "Bulgariska",
+                "ca": "Katalanska",
+                "fi_FI": "Finska",
+                "he": "Hebreiska",
+                "zh_TW": "Kinesiska (traditionell)",
+                "sk_SK": "Slovakiska"
             }
         },
         "dynamic_members": {
@@ -2279,7 +2284,10 @@
         "last_played_ago": "sedan",
         "op_greater_than": "större än",
         "op_less_than": "mindre än",
-        "picker_search": "Sök {label}"
+        "picker_search": "Sök {label}",
+        "field_folder": "Mapp",
+        "field_folder_is": "Mappen är",
+        "picker_empty_folder_sources": "Ingen musikkälla med mappar är konfigurerad."
     },
     "explore": "Utforska",
     "shortcuts": "Genvägar",
@@ -2898,6 +2906,10 @@
     "grid_size_default": "Standardstorlek",
     "grid_size_smaller": "{count} ett steg mindre | {count} mindre steg",
     "grid_size_larger": "{count} ett steg större | {count} större steg",
+    "episode_number": "Episod {0}",
+    "episode_number_short": "E{0}",
+    "season_episode_number": "Säsong {0}, episod {1}",
+    "season_episode_number_short": "S{0} E{1}",
     "edit_rows_subtitle_podcast": "Gäller varje podcastsida",
     "playlist_radio": "Spellista med oändlig mix",
     "edit_rows_subtitle_playlist": "Gäller varje spellistesida",
@@ -2922,5 +2934,7 @@
     "select_all": "Markera alla",
     "no_content_filter_hint": "Prova en annan sökning eller ändra filtren.",
     "items_load_failed": "Kunde inte läsa in objekten.",
-    "featured_artists": "Utvalda artister"
+    "featured_artists": "Utvalda artister",
+    "review_setup": "Recension",
+    "n_audiobooks": "{count} ljudbok | {count} ljudböcker"
 }

@@ -2934,5 +2934,7 @@
     "select_all": "Выбрать все",
     "no_content_filter_hint": "Попробуйте ввести другой запрос или изменить фильтры.",
     "items_load_failed": "Не удалось загрузить элементы.",
-    "featured_artists": "Избранные исполнители"
+    "featured_artists": "Избранные исполнители",
+    "review_setup": "Просмотр",
+    "n_audiobooks": "{count} аудиокнига | {count} аудиокниг"
 }
