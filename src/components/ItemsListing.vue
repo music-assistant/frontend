@@ -68,11 +68,16 @@
           @after-leave="onSearchSlotLeft"
         >
           <!-- the input follows the slot's edge as it opens, and the padding
-               keeps its 3px focus ring inside the clipped area -->
+               keeps its 3px focus ring inside the clipped area. On a library
+               page it grows out of the search icon's width and shrinks back
+               to it, so the controls beside it do not jump -->
           <div
             v-if="showSearchInput"
             class="listing-search-slot -m-[3px] box-content p-[3px]"
-            :class="{ 'listing-search-slot--from-icon': libraryToolbar }"
+            :class="{
+              '[&.listing-search-enter-from]:w-10 [&.listing-search-leave-to]:w-10':
+                libraryToolbar,
+            }"
           >
             <SearchInput
               ref="searchInputRef"
@@ -2571,14 +2576,6 @@ async function selectEveryItem() {
 .listing-search-enter-from,
 .listing-search-leave-to {
   width: 0;
-}
-
-/* the field takes the place of the search icon it opens from, so it grows out
-   of the icon's width, and shrinks back to it, instead of leaving a gap for the
-   controls to jump into */
-.listing-search-slot--from-icon.listing-search-enter-from,
-.listing-search-slot--from-icon.listing-search-leave-to {
-  width: 40px;
 }
 
 .listing-search--inline {
