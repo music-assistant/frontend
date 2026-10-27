@@ -18,6 +18,7 @@ describe("encodeSharedTrack", () => {
     const track = {
       title: "Musik \u00fcberall",
       artist: "Bj\u00f6rk",
+      artists: ["Bj\u00f6rk", "Featured Artist"],
       version: "Live",
       isrc: "USRC17607839",
       mbid: "recording-id",
@@ -151,6 +152,22 @@ describe("decodeSharePayload", () => {
       .replace(/\//g, "_");
 
     expect(decodeSharePayload(encoded).duration).toBe(218);
+  });
+
+  it("preserves structured artist credits for single-track links", () => {
+    const encoded = btoa(
+      JSON.stringify({
+        type: "track",
+        title: "Song",
+        artist: "First, Second",
+        artists: ["First", "Second"],
+      }),
+    )
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_");
+
+    expect(decodeSharePayload(encoded).artists).toEqual(["First", "Second"]);
   });
 
   it.each([true, -1, "218", 1.5])(
