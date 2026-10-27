@@ -88,6 +88,7 @@ export interface DecodedSharePayload {
   artist?: string;
   album?: string;
   version?: string;
+  duration?: number;
   art_ref?: string;
   provider_refs?: unknown;
   tracks: SharedTrack[];
@@ -104,6 +105,7 @@ export function encodeSharedTrack(track: SharedTrack): string {
       isrc: track.isrc,
       mbid: track.mbid,
       mb_track: track.mb_track,
+      duration: track.duration,
     }),
   );
   return btoa(Array.from(bytes, (byte) => String.fromCharCode(byte)).join(""))
@@ -153,10 +155,24 @@ export function decodeSharePayload(encoded: string): DecodedSharePayload {
     throw new Error("Invalid payload");
   }
   if (
+    candidate.duration !== undefined &&
+    (typeof candidate.duration !== "number" ||
+      !Number.isInteger(candidate.duration) ||
+      candidate.duration < 0)
+  ) {
+    throw new Error("Invalid track duration");
+  }
+  if (
     candidate.type === "playlist" &&
     (!Array.isArray(candidate.tracks) ||
       candidate.tracks.some(
-        (track) => !track || typeof track.title !== "string",
+        (track) =>
+          !track ||
+          typeof track.title !== "string" ||
+          (track.duration !== undefined &&
+            (typeof track.duration !== "number" ||
+              !Number.isInteger(track.duration) ||
+              track.duration < 0)),
       ))
   ) {
     throw new Error("Invalid playlist payload");
@@ -168,6 +184,8 @@ export function decodeSharePayload(encoded: string): DecodedSharePayload {
     album: typeof candidate.album === "string" ? candidate.album : undefined,
     version:
       typeof candidate.version === "string" ? candidate.version : undefined,
+    duration:
+      typeof candidate.duration === "number" ? candidate.duration : undefined,
     art_ref:
       typeof candidate.art_ref === "string" ? candidate.art_ref : undefined,
     provider_refs: candidate.provider_refs,

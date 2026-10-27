@@ -68,8 +68,6 @@ const acknowledgement = ref("");
 const acknowledged = ref<boolean | "indeterminate">(false);
 const acknowledgementId = useId();
 let onConfirm: (() => void | Promise<void>) | undefined;
-let onDismiss: (() => void) | undefined;
-let dismissOnClose = true;
 let dialogGeneration = 0;
 
 const handleConfirm = async () => {
@@ -83,7 +81,6 @@ const handleConfirm = async () => {
     await onConfirm();
   } finally {
     if (confirmingGeneration === dialogGeneration) {
-      dismissOnClose = false;
       open.value = false;
     }
   }
@@ -98,8 +95,6 @@ const reset = () => {
   acknowledged.value = false;
   loading.value = false;
   onConfirm = undefined;
-  onDismiss = undefined;
-  dismissOnClose = true;
 };
 
 // the confirmation can be asked on top of another dialog that stays open
@@ -116,8 +111,6 @@ watch(
       store.dialogActive = dialogActiveBeforeOpen && store.dialogActive;
       dialogActiveSnapshotCaptured = false;
     }
-    if (dismissOnClose) onDismiss?.();
-    dismissOnClose = true;
     const closedGeneration = dialogGeneration;
     setTimeout(() => {
       if (!open.value && closedGeneration === dialogGeneration) reset();
@@ -132,21 +125,7 @@ onMounted(() => {
     (evt: DeleteConfirmationDialogEvent) => {
       const wasOpen = open.value;
       const openingGeneration = ++dialogGeneration;
-      let dismissError: unknown;
-      let dismissFailed = false;
       if (wasOpen) {
-        const previousOnDismiss = onDismiss;
-        onDismiss = undefined;
-        try {
-          previousOnDismiss?.();
-        } catch (err) {
-          dismissError = err;
-          dismissFailed = true;
-        }
-        if (openingGeneration !== dialogGeneration) {
-          if (dismissFailed) throw dismissError;
-          return;
-        }
         if (!store.dialogActive) dialogActiveBeforeOpen = false;
       } else {
         dialogActiveSnapshotCaptured = false;
@@ -158,7 +137,6 @@ onMounted(() => {
       destructive.value = evt.destructive ?? true;
       acknowledgement.value = evt.acknowledgement ?? "";
       onConfirm = evt.onConfirm;
-      onDismiss = evt.onDismiss;
       open.value = true;
       nextTick(() => {
         if (!open.value || openingGeneration !== dialogGeneration) return;
@@ -168,7 +146,6 @@ onMounted(() => {
         }
         store.dialogActive = true;
       });
-      if (dismissFailed) throw dismissError;
     },
   );
 });

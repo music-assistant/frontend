@@ -22,6 +22,7 @@ describe("encodeSharedTrack", () => {
       isrc: "USRC17607839",
       mbid: "recording-id",
       mb_track: "release-track-id",
+      duration: 218,
     };
     const encoded = encodeSharedTrack(track);
     expect(encoded).toMatch(/^[A-Za-z0-9_-]+$/);
@@ -141,6 +142,33 @@ describe("compact share references", () => {
 });
 
 describe("decodeSharePayload", () => {
+  it("preserves a validated single-track duration", () => {
+    const encoded = btoa(
+      JSON.stringify({ type: "track", title: "Track", duration: 218 }),
+    )
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_");
+
+    expect(decodeSharePayload(encoded).duration).toBe(218);
+  });
+
+  it.each([true, -1, "218", 1.5])(
+    "rejects invalid single-track durations (%s)",
+    (duration) => {
+      const encoded = btoa(
+        JSON.stringify({ type: "track", title: "Track", duration }),
+      )
+        .replace(/=/g, "")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_");
+
+      expect(() => decodeSharePayload(encoded)).toThrow(
+        "Invalid track duration",
+      );
+    },
+  );
+
   it("decodes a playlist once for both preview and page rendering", () => {
     const encoded = btoa(
       JSON.stringify({
@@ -159,6 +187,7 @@ describe("decodeSharePayload", () => {
       artist: undefined,
       album: undefined,
       version: undefined,
+      duration: undefined,
       art_ref: undefined,
       provider_refs: undefined,
       tracks: [{ title: "Track" }],

@@ -616,54 +616,32 @@ export const getContextMenuItems = async function (
         label: "share.search_track",
         labelArgs: [firstItem.name],
         icon: Search,
-        action: () => {
+        action: async () => {
           const originatingRoute = router.currentRoute.value;
-          let searchActive = true;
-          eventbus.emit("deleteConfirmationDialog", {
-            title: $t("share.search_confirm_title"),
-            message: $t("share.search_confirm_description", [firstItem.name]),
-            confirmLabel: $t("share.search_anyway"),
-            destructive: false,
-            onDismiss: () => {
-              searchActive = false;
-            },
-            onConfirm: async () => {
-              if (
-                !searchActive ||
-                router.currentRoute.value !== originatingRoute
-              ) {
-                return;
-              }
-              try {
-                const item = await api.resolveSharedItem(
-                  firstItem.item_id.slice(SHARE_PREVIEW_TRACK_PREFIX.length),
-                  true,
-                );
-                if (
-                  !searchActive ||
-                  router.currentRoute.value !== originatingRoute
-                ) {
-                  return;
-                }
-                if (!item || item.media_type !== MediaType.TRACK) {
-                  toast.error($t("share.resolve_failed"));
-                  return;
-                }
-                await router.push({
-                  name: "track",
-                  params: { provider: item.provider, itemId: item.item_id },
-                });
-              } catch {
-                if (
-                  !searchActive ||
-                  router.currentRoute.value !== originatingRoute
-                ) {
-                  return;
-                }
-                toast.error($t("share.resolve_failed"));
-              }
-            },
+          const loadingToastId = toast.loading($t("share.loading"), {
+            duration: Infinity,
           });
+          try {
+            const item = await api.resolveSharedItem(
+              firstItem.item_id.slice(SHARE_PREVIEW_TRACK_PREFIX.length),
+              true,
+            );
+            toast.dismiss(loadingToastId);
+            if (router.currentRoute.value !== originatingRoute) return;
+            if (!item || item.media_type !== MediaType.TRACK) {
+              toast.error($t("share.resolve_failed"));
+              return;
+            }
+            await router.push({
+              name: "track",
+              params: { provider: item.provider, itemId: item.item_id },
+            });
+            toast.success($t("share.resolve_success"));
+          } catch {
+            toast.dismiss(loadingToastId);
+            if (router.currentRoute.value !== originatingRoute) return;
+            toast.error($t("share.resolve_failed"));
+          }
         },
       },
     ];
