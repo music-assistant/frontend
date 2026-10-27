@@ -199,16 +199,31 @@ export function useUserPreferences() {
     key: keyof ItemsListingPreferences,
     value: ItemsListingPreferences[keyof ItemsListingPreferences],
   ): Promise<void> {
-    const storKey = `${path}.${itemtype}`;
-    const prefKey = `itemsListing.${storKey}`;
+    await setItemsListingPreferences(path, itemtype, { [key]: value });
+  }
 
-    const currentPrefs = getItemsListingPreferences(path, itemtype);
-    const updatedPrefs = {
-      ...currentPrefs.value,
-      [key]: value,
-    };
-
-    await setPreference(prefKey, updatedPrefs);
+  /**
+   * Set several ItemsListing preferences for a specific path/itemtype at once.
+   *
+   * They are merged onto the listing's settings as they stand when the write's
+   * turn comes, so saves made in quick succession all keep their change.
+   */
+  async function setItemsListingPreferences(
+    path: string,
+    itemtype: string,
+    values: Partial<ItemsListingPreferences>,
+  ): Promise<void> {
+    const prefKey = `itemsListing.${path}.${itemtype}`;
+    await updateUserPreferences((current) => ({
+      ...current,
+      // a value set to undefined is dropped here, which clears it
+      [prefKey]: JSON.parse(
+        JSON.stringify({
+          ...(current[prefKey] as ItemsListingPreferences | undefined),
+          ...values,
+        }),
+      ),
+    }));
   }
 
   return {
@@ -217,6 +232,7 @@ export function useUserPreferences() {
     setPreference,
     getItemsListingPreferences,
     setItemsListingPreference,
+    setItemsListingPreferences,
   };
 }
 

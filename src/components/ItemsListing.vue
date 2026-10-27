@@ -467,7 +467,10 @@ import type {
 } from "@/composables/useItemsListing";
 import { useTrackTableColumns } from "@/composables/useTrackTableColumns";
 import { SEARCHABLE_MEDIA_TYPES } from "@/composables/useProgressiveSearch";
-import { useUserPreferences } from "@/composables/userPreferences";
+import {
+  useUserPreferences,
+  type ItemsListingPreferences,
+} from "@/composables/userPreferences";
 import {
   keepOwnFavorite,
   setFavoriteState,
@@ -690,8 +693,11 @@ const router = useRouter();
 const route = useRoute();
 const { t, te } = useI18n();
 const { open: openCommandCenter } = useCommandCenter();
-const { getItemsListingPreferences, setItemsListingPreference } =
-  useUserPreferences();
+const {
+  getItemsListingPreferences,
+  setItemsListingPreference,
+  setItemsListingPreferences,
+} = useUserPreferences();
 const activeTabId = ref(props.toolBarTabs?.[0]?.id || "");
 let restoredFromPrevState = false;
 
@@ -1541,9 +1547,49 @@ const activeFilterChipList = computed(() =>
   activeFilterChips(listingFilters.value),
 );
 
-// turns every active filter off; the reloads they ask for coalesce into one
+// turns every filter the panel offers back off, with a single save and reload
 const clearFilters = function () {
-  for (const chip of activeFilterChipList.value) chip.remove();
+  const offered = new Set(listingFilters.value.map((filter) => filter.id));
+  const p = params.value;
+  const prefs: Partial<ItemsListingPreferences> = {};
+  if (offered.has("favorites")) {
+    p.favoritesOnly = prefs.favoriteFilter = false;
+  }
+  if (offered.has("album_artists")) {
+    p.albumArtistsFilter = prefs.albumArtistsFilter = false;
+  }
+  if (offered.has("library_only")) {
+    p.libraryOnly = prefs.libraryFilter = false;
+  }
+  if (offered.has("hide_fully_played")) {
+    p.hideFullyPlayed = prefs.hideFullyPlayedFilter = false;
+  }
+  if (offered.has("collapse_collections")) {
+    p.collapseCollections = prefs.collapseCollections = false;
+  }
+  if (offered.has("genres_shown")) {
+    p.hideEmptyFilter = prefs.hideEmptyFilter = true;
+  }
+  if (offered.has("album_type")) {
+    p.albumType = prefs.albumType = [];
+  }
+  if (offered.has("provider")) {
+    p.provider = prefs.providerFilter = undefined;
+    carriedProvider = undefined;
+  }
+  setItemsListingPreferences(
+    props.path || props.itemtype,
+    props.itemtype,
+    prefs,
+  );
+  if (offered.has("genre") && p.genreIds !== undefined) {
+    p.genreIds = undefined;
+    const query = { ...route.query };
+    delete query.genre_id;
+    delete query.genre_ids;
+    router.replace({ query });
+  }
+  loadData(true, undefined, true);
 };
 
 // the page's count request only takes the filters it was written for

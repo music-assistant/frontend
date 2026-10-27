@@ -88,6 +88,7 @@ vi.mock("@/plugins/store", async () => {
 });
 
 const mockSetItemsListingPreference = vi.hoisted(() => vi.fn());
+const mockSetItemsListingPreferences = vi.hoisted(() => vi.fn());
 
 // reads the saved listing settings off the signed-in user the way the real
 // composable does, so a test can seed them and replace them to stand in for a
@@ -105,6 +106,7 @@ vi.mock("@/composables/userPreferences", async () => {
             ] ?? {},
         ),
       setItemsListingPreference: mockSetItemsListingPreference,
+      setItemsListingPreferences: mockSetItemsListingPreferences,
     }),
   };
 });
@@ -2608,25 +2610,21 @@ describe("ItemsListing library toolbar", () => {
     );
   });
 
-  it("clears every filter at once", async () => {
+  it("clears every filter at once, in a single save", async () => {
     signInWithSavedFilters({ favoriteFilter: true, albumArtistsFilter: true });
     const listing = await mountLibraryPage();
+    mockSetItemsListingPreferences.mockClear();
 
     listing.findComponent(ListingActiveFilters).vm.$emit("clear");
     await flushPromises();
 
-    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+    expect(mockSetItemsListingPreferences).toHaveBeenCalledOnce();
+    expect(mockSetItemsListingPreferences).toHaveBeenCalledWith(
       "libraryartists",
       "artists",
-      "favoriteFilter",
-      false,
+      { favoriteFilter: false, albumArtistsFilter: false },
     );
-    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
-      "libraryartists",
-      "artists",
-      "albumArtistsFilter",
-      false,
-    );
+    expect(listing.findComponent(ListingActiveFilters).exists()).toBe(false);
   });
 
   it("has no chips row while nothing is filtered", async () => {
