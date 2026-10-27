@@ -2,6 +2,7 @@ import { Heart } from "@lucide/vue";
 import { describe, expect, it, vi } from "vitest";
 import {
   activeFilterCount,
+  clearedFilters,
   listingItemCount,
   type ListingChoiceFilter,
   type ListingMultiFilter,
@@ -126,5 +127,36 @@ describe("listingItemCount", () => {
         narrowedBeyondTotal: false,
       }),
     ).toBe(12);
+  });
+});
+
+describe("clearedFilters", () => {
+  it("turns off only the filters the listing offers", () => {
+    expect(clearedFilters(new Set(["favorites", "album_type"]))).toEqual({
+      params: { favoritesOnly: false, albumType: [] },
+      prefs: { favoriteFilter: false, albumType: [] },
+    });
+  });
+
+  it("puts the genres listing back to hiding empty genres", () => {
+    expect(clearedFilters(new Set(["genres_shown"]))).toEqual({
+      params: { hideEmptyFilter: true },
+      prefs: { hideEmptyFilter: true },
+    });
+  });
+
+  it("clears a source with undefined, so the save drops it", () => {
+    const { params, prefs } = clearedFilters(new Set(["provider"]));
+
+    expect(Object.keys(params)).toEqual(["provider"]);
+    expect(params.provider).toBeUndefined();
+    expect(Object.keys(prefs)).toEqual(["providerFilter"]);
+  });
+
+  it("leaves the genre to the address", () => {
+    expect(clearedFilters(new Set(["genre"]))).toEqual({
+      params: {},
+      prefs: {},
+    });
   });
 });

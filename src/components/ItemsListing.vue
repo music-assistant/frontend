@@ -471,6 +471,8 @@ import {
   ALBUM_TYPE_FILTER_KEYS,
   useListingFilters,
 } from "@/composables/useListingFilters";
+import { useListingCount } from "@/composables/useListingCount";
+import { useListingSaves } from "@/composables/useListingSaves";
 import type {
   LoadDataParams,
   LoadPagedDataFn,
@@ -478,10 +480,7 @@ import type {
 } from "@/composables/useItemsListing";
 import { useTrackTableColumns } from "@/composables/useTrackTableColumns";
 import { SEARCHABLE_MEDIA_TYPES } from "@/composables/useProgressiveSearch";
-import {
-  useUserPreferences,
-  type ItemsListingPreferences,
-} from "@/composables/userPreferences";
+import { useUserPreferences } from "@/composables/userPreferences";
 import {
   keepOwnFavorite,
   setFavoriteState,
@@ -494,7 +493,7 @@ import {
   gridColumns,
   normalizeGridSize,
 } from "@/helpers/grid_size";
-import { activeFilterCount, listingItemCount } from "@/helpers/listing_filters";
+import { activeFilterCount, clearedFilters } from "@/helpers/listing_filters";
 import { returnedByHistory } from "@/helpers/navigation";
 import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -704,33 +703,10 @@ const router = useRouter();
 const route = useRoute();
 const { t, te } = useI18n();
 const { open: openCommandCenter } = useCommandCenter();
-const {
-  getItemsListingPreferences,
-  setItemsListingPreference: writeListingPreference,
-  setItemsListingPreferences: writeListingPreferences,
-} = useUserPreferences();
+const { getItemsListingPreferences } = useUserPreferences();
+const { setItemsListingPreference, setItemsListingPreferences, holdRestore } =
+  useListingSaves(() => reconcileSavedSettings());
 
-// this listing's own saves still on their way: while one is, the settings an
-// earlier save hands back can predate an edit made since, so they wait
-let pendingSaves = 0;
-// a restore that waited for them, and runs once the last one has settled
-let restoreSkipped = false;
-const trackSave = async (save: Promise<void>) => {
-  pendingSaves++;
-  try {
-    await save;
-  } finally {
-    pendingSaves--;
-    if (pendingSaves === 0 && restoreSkipped) {
-      restoreSkipped = false;
-      reconcileSavedSettings();
-    }
-  }
-};
-const setItemsListingPreference: typeof writeListingPreference = (...args) =>
-  trackSave(writeListingPreference(...args));
-const setItemsListingPreferences: typeof writeListingPreferences = (...args) =>
-  trackSave(writeListingPreferences(...args));
 const activeTabId = ref(props.toolBarTabs?.[0]?.id || "");
 let restoredFromPrevState = false;
 
@@ -1623,36 +1599,13 @@ const activeFilters = computed(() => activeFilterCount(listingFilters.value));
 const clearFilters = function () {
   const offered = new Set(listingFilters.value.map((filter) => filter.id));
   const p = params.value;
-  const prefs: Partial<ItemsListingPreferences> = {};
-  if (offered.has("favorites")) {
-    p.favoritesOnly = prefs.favoriteFilter = false;
-  }
-  if (offered.has("album_artists")) {
-    p.albumArtistsFilter = prefs.albumArtistsFilter = false;
-  }
-  if (offered.has("library_only")) {
-    p.libraryOnly = prefs.libraryFilter = false;
-  }
-  if (offered.has("hide_fully_played")) {
-    p.hideFullyPlayed = prefs.hideFullyPlayedFilter = false;
-  }
-  if (offered.has("collapse_collections")) {
-    p.collapseCollections = prefs.collapseCollections = false;
-  }
-  if (offered.has("genres_shown")) {
-    p.hideEmptyFilter = prefs.hideEmptyFilter = true;
-  }
-  if (offered.has("album_type")) {
-    p.albumType = prefs.albumType = [];
-  }
-  if (offered.has("provider")) {
-    p.provider = prefs.providerFilter = undefined;
-    carriedProvider = undefined;
-  }
+  const cleared = clearedFilters(offered);
+  Object.assign(p, cleared.params);
+  if (offered.has("provider")) carriedProvider = undefined;
   setItemsListingPreferences(
     props.path || props.itemtype,
     props.itemtype,
-    prefs,
+    cleared.prefs,
   );
   if (offered.has("genre") && p.genreIds !== undefined) {
     p.genreIds = undefined;
@@ -1664,36 +1617,11 @@ const clearFilters = function () {
   loadData(true, undefined, true);
 };
 
-// the count a cached visit came back with: the next page of the same visit
-// keeps it, and a load from the first page brings the page's own count again
-const restoredCount = ref<{ count?: number }>();
-// the offset too: a reload queued behind a page that was loading turns the
-// loading flag off and on in one go, which leaves only the offset to tell
-watch([loading, () => params.value.offset], ([isLoading, offset]) => {
-  if (isLoading && !offset) restoredCount.value = undefined;
-});
-
-// the page's count request only takes the filters it was written for
-const listingCount = computed(() => {
-  if (restoredCount.value && !allItemsReceived.value) {
-    return restoredCount.value.count;
-  }
-  const p = params.value;
-  return listingItemCount({
-    total: props.total,
-    loaded: pagedItems.value.length,
-    allLoaded: allItemsReceived.value,
-    narrowedBeyondTotal: Boolean(
-      p.search ||
-      (Array.isArray(p.genreIds)
-        ? p.genreIds.length
-        : p.genreIds !== undefined) ||
-      (p.provider?.length && !props.requireProviderSelection) ||
-      p.libraryOnly ||
-      p.hideFullyPlayed ||
-      (props.showCollapseCollections && p.collapseCollections),
-    ),
-  });
+const { listingCount, restoreCount } = useListingCount(props, {
+  params,
+  pagedItems,
+  allItemsReceived,
+  loading,
 });
 
 watchEffect(() => {
@@ -2280,10 +2208,7 @@ watch(
 watch(
   savedPrefs,
   () => {
-    if (pendingSaves > 0) {
-      restoreSkipped = true;
-      return;
-    }
+    if (holdRestore()) return;
     restoreSettings();
   },
   { immediate: true },
@@ -2432,7 +2357,7 @@ onMounted(async () => {
     pagedItems.value = store.prevState.pagedItems;
     displayedSort.value = store.prevState.displayedSort;
     allItemsReceived.value = store.prevState.allItemsReceived;
-    restoredCount.value = { count: store.prevState.count };
+    restoreCount(store.prevState.count);
     if (props.sortListing) {
       params.value.sortBy = librarySorting.normalizeSortBy(params.value.sortBy);
     }
