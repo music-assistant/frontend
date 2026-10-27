@@ -763,6 +763,126 @@ describe("ItemsListing select all", () => {
   });
 });
 
+describe("ItemsListing shift-click range", () => {
+  const items = ["A", "B", "C", "D", "E"].map((name) =>
+    track({ item_id: name, name, uri: `library://track/${name}` }),
+  );
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
+    store.prevState = undefined;
+    store.currentUser = undefined;
+  });
+
+  afterEach(() => {
+    holdShift(false);
+  });
+
+  /** A tracks grid of A to E, so each item is a row that can be clicked. */
+  async function mountGrid() {
+    const listing = mountListingRaw({
+      forcedViewMode: "panel",
+      loadPagedData: vi.fn().mockResolvedValue(items),
+    });
+    await flushPromises();
+    return listing;
+  }
+
+  function holdShift(held: boolean) {
+    document.dispatchEvent(
+      new KeyboardEvent(held ? "keydown" : "keyup", {
+        key: "Shift",
+        shiftKey: held,
+      }),
+    );
+  }
+
+  /** Ticks or unticks the item's checkbox, with Shift held or not. */
+  async function click(
+    listing: ReturnType<typeof mountListingRaw>,
+    name: string,
+    { selected = true, shift = false } = {},
+  ) {
+    holdShift(shift);
+    const index = items.findIndex((item) => item.name === name);
+    const row = listing.findAllComponents({ name: "PanelviewItem" })[index];
+    row.vm.$emit("select", rows(listing)[index], selected);
+    await flushPromises();
+  }
+
+  function selectedNames(listing: ReturnType<typeof mountListingRaw>) {
+    return selection(listing).map((item) => item.name);
+  }
+
+  it("selects everything between the last click and a shift-click", async () => {
+    const listing = await mountGrid();
+
+    await click(listing, "B");
+    await click(listing, "D", { shift: true });
+
+    expect(selectedNames(listing)).toEqual(["B", "C", "D"]);
+  });
+
+  it("keeps a range picked upwards in listing order", async () => {
+    const listing = await mountGrid();
+
+    await click(listing, "E");
+    await click(listing, "D");
+    await click(listing, "A", { shift: true });
+
+    // E was picked outside the range and keeps its place ahead of it
+    expect(selectedNames(listing)).toEqual(["E", "A", "B", "C", "D"]);
+  });
+
+  it("clears a range with a shift-click that unticks", async () => {
+    const listing = await mountGrid();
+    await click(listing, "A");
+    await click(listing, "E", { shift: true });
+
+    await click(listing, "B", { selected: false });
+    await click(listing, "D", { selected: false, shift: true });
+
+    expect(selectedNames(listing)).toEqual(["A", "E"]);
+  });
+
+  it("changes only the clicked item without Shift", async () => {
+    const listing = await mountGrid();
+
+    await click(listing, "B");
+    await click(listing, "D");
+
+    expect(selectedNames(listing)).toEqual(["B", "D"]);
+  });
+
+  it("starts no range after the selection was cleared", async () => {
+    const listing = await mountGrid();
+    await click(listing, "A");
+
+    eventbus.emit("clearSelection");
+    await click(listing, "C", { shift: true });
+
+    expect(selectedNames(listing)).toEqual(["C"]);
+  });
+
+  it("starts no range after moving to another folder", async () => {
+    const listing = await mountGrid();
+    await click(listing, "A");
+
+    await listing.setProps({ path: "otherfolder" });
+    await flushPromises();
+    await click(listing, "C", { shift: true });
+
+    expect(selectedNames(listing)).toEqual(["C"]);
+  });
+});
+
 describe("ItemsListing failed load", () => {
   type LoadStatus = "ok" | "empty" | "loading" | "error";
   type LoadPagedData = NonNullable<

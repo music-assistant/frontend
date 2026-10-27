@@ -133,10 +133,7 @@
                   class="mb-4 text-none"
                   :loading="isConnecting"
                   :disabled="
-                    (isRemoteOnlyMode &&
-                      !remoteIdParts.every(
-                        (p, i) => p.length === REMOTE_ID_GROUPS[i],
-                      )) ||
+                    (isRemoteOnlyMode && !remoteIdComplete) ||
                     (showServerAddressInput && !serverAddress.trim())
                   "
                   @click="
@@ -591,6 +588,10 @@ const serverAddress = ref("");
 const remoteIdParts = ref(["", "", "", ""]);
 const remoteIdLayout = REMOTE_ID_GROUPS.map((length) => ({ length }));
 const remoteId = computed(() => remoteIdParts.value.join(""));
+// every group of the remote ID is filled in
+const remoteIdComplete = computed(() =>
+  remoteIdParts.value.every((p, i) => p.length === REMOTE_ID_GROUPS[i]),
+);
 
 // QR Scanner state
 const showQrScanner = ref(false);
@@ -1784,8 +1785,7 @@ const connectToLocal = async () => {
  * Connect to remote server
  */
 const connectToRemote = async () => {
-  if (!remoteIdParts.value.every((p, i) => p.length === REMOTE_ID_GROUPS[i]))
-    return;
+  if (!remoteIdComplete.value) return;
 
   isConnecting.value = true;
   connectionError.value = null;

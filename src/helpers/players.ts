@@ -118,7 +118,16 @@ export const playerVisible = function (
   if (isBuiltinPlayer(player)) {
     return true;
   }
-  if (player.hide_in_ui) {
+  // Audio inputs are hidden by default, so keep one that needs setup listed
+  // where its setup can start.
+  if (
+    player.hide_in_ui &&
+    !(
+      player.type === PlayerType.SOURCE &&
+      player.needs_setup &&
+      allowNeedsSetup
+    )
+  ) {
     return false;
   }
   if (
