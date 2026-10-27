@@ -175,6 +175,19 @@ describe("userPreferences - itemsListing", () => {
       showActions: false,
     });
   });
+
+  it("keeps the genres default of hidden actions when changing views", async () => {
+    await useUserPreferences().setItemsListingPreference(
+      "librarygenres",
+      "genres",
+      "viewMode",
+      "list",
+    );
+    expect(readPrefs("librarygenres", "genres")).toEqual({
+      viewMode: "list",
+      showActions: false,
+    });
+  });
 });
 
 /** Wait for the writes in flight to have reached the server. */

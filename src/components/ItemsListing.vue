@@ -822,17 +822,14 @@ const toggleExpand = function () {
 
 const selectViewMode = function (newMode: string) {
   viewMode.value = newMode;
-  if (props.forcedViewMode) return;
-  const prefPath = props.path || props.itemtype;
-  // persist actions hidden by a default so saving a view doesn't show them
-  if (
-    !showGridActions.value &&
-    getItemsListingPreferences(prefPath, props.itemtype).value.showActions ===
-      undefined
-  ) {
-    setItemsListingPreference(prefPath, props.itemtype, "showActions", false);
+  if (!props.forcedViewMode) {
+    setItemsListingPreference(
+      props.path || props.itemtype,
+      props.itemtype,
+      "viewMode",
+      newMode,
+    );
   }
-  setItemsListingPreference(prefPath, props.itemtype, "viewMode", newMode);
 };
 
 // follows resizes: the breakpoints it looks up are reactive

@@ -1018,7 +1018,6 @@ describe("ItemsListing cover size", () => {
   interface SliderItem {
     label?: string;
     hide?: boolean;
-    action?: () => void;
     componentProps?: {
       size: number;
       showActions: boolean;
@@ -1087,39 +1086,6 @@ describe("ItemsListing cover size", () => {
 
     expect(columns(listing)).toBe("col-2");
     expect(slider(listing)?.componentProps?.showActions).toBe(false);
-  });
-
-  function selectList(listing: ReturnType<typeof mountListingRaw>) {
-    const items = listing
-      .findComponent({ name: "Toolbar" })
-      .props("menuItems") as { subItems?: SliderItem[] }[];
-    items
-      .flatMap((item) => item.subItems ?? [])
-      .find((item) => item.label === "view.list")!.action!();
-  }
-
-  it("keeps the actions of a compact thumbs view hidden after a view change", async () => {
-    signInWithSavedGrid({ viewMode: "panel_compact" });
-    selectList(await mountGrid());
-
-    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
-      "libraryalbums",
-      "albums",
-      "showActions",
-      false,
-    );
-  });
-
-  it("does not save the actions on a view change once they are chosen", async () => {
-    signInWithSavedGrid({ viewMode: "panel", showActions: false });
-    selectList(await mountGrid());
-
-    expect(mockSetItemsListingPreference).not.toHaveBeenCalledWith(
-      "libraryalbums",
-      "albums",
-      "showActions",
-      expect.anything(),
-    );
   });
 
   it("keeps captured menu props live across size and fit changes", async () => {

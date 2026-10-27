@@ -3,6 +3,7 @@ import { api, type CommandOptions } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
+import { defaultShowActions } from "@/helpers/grid_size";
 
 export interface ItemsListingPreferences {
   viewMode?: string;
@@ -214,7 +215,8 @@ export function useUserPreferences() {
         [prefKey]: {
           ...listing,
           // Preserve compact mode's action preference when viewMode is replaced.
-          ...(listing.viewMode === "panel_compact"
+          ...(key === "viewMode" &&
+          !defaultShowActions(listing.viewMode, itemtype)
             ? { showActions: listing.showActions ?? false }
             : {}),
           [key]: plainValue,
