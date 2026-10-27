@@ -32,6 +32,7 @@ import AddManualLink from "@/components/AddManualLink.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
+import { useListingTotal } from "@/composables/useListingTotal";
 import api from "@/plugins/api";
 import {
   EventMessage,
@@ -50,7 +51,9 @@ defineOptions({
 });
 
 const updateAvailable = ref<boolean>(false);
-const total = ref(store.libraryRadiosCount);
+const { total, setTotal, loadTotal } = useListingTotal(
+  store.libraryRadiosCount,
+);
 const showAddEditDialog = ref(false);
 const itemsListing = ref<InstanceType<typeof ItemsListing>>();
 
@@ -107,15 +110,15 @@ const loadItems = async function (params: LoadDataParams) {
 
 const setTotals = async function (params: LoadDataParams) {
   if (!params.favoritesOnly && !params.provider) {
-    total.value = store.libraryRadiosCount;
+    setTotal(store.libraryRadiosCount);
     return;
   }
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
+    setTotal(undefined);
     return;
   }
-  total.value = await api.getLibraryRadiosCount(params.favoritesOnly || false);
+  await loadTotal(api.getLibraryRadiosCount(params.favoritesOnly || false));
 };
 </script>

@@ -25,6 +25,7 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
+import { useListingTotal } from "@/composables/useListingTotal";
 import api from "@/plugins/api";
 import {
   ArtistType,
@@ -40,7 +41,7 @@ defineOptions({
 });
 
 const updateAvailable = ref(false);
-const total = ref<number | undefined>(undefined);
+const { total, setTotal, loadTotal } = useListingTotal();
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
@@ -63,13 +64,15 @@ const setTotals = async function (params: LoadDataParams) {
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
+    setTotal(undefined);
     return;
   }
-  total.value = await api.getLibraryArtistsCount(
-    params.favoritesOnly || false,
-    params.albumArtistsFilter || false,
-    ArtistType.SINGER,
+  await loadTotal(
+    api.getLibraryArtistsCount(
+      params.favoritesOnly || false,
+      params.albumArtistsFilter || false,
+      ArtistType.SINGER,
+    ),
   );
 };
 

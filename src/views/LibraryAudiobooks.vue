@@ -31,6 +31,7 @@ import ItemsListing, {
   ToolBarTab,
 } from "@/components/ItemsListing.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
+import { useListingTotal } from "@/composables/useListingTotal";
 import api from "@/plugins/api";
 import {
   ArtistType,
@@ -51,7 +52,9 @@ defineOptions({
 });
 
 const updateAvailable = ref(false);
-const total = ref(store.libraryAudiobooksCount);
+const { total, setTotal, loadTotal } = useListingTotal(
+  store.libraryAudiobooksCount,
+);
 const supportedArtistTypes = ref<ArtistType[]>([]);
 
 const loadItems = async function (params: LoadDataParams) {
@@ -104,24 +107,24 @@ const setTotals = async function (
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
+    setTotal(undefined);
     return;
   }
   if (artistType !== undefined) {
-    total.value = await api.getLibraryArtistsCount(
-      params.favoritesOnly || false,
-      false,
-      artistType,
+    await loadTotal(
+      api.getLibraryArtistsCount(
+        params.favoritesOnly || false,
+        false,
+        artistType,
+      ),
     );
     return;
   }
   if (!params.favoritesOnly) {
-    total.value = store.libraryAudiobooksCount;
+    setTotal(store.libraryAudiobooksCount);
     return;
   }
-  total.value = await api.getLibraryAudiobooksCount(
-    params.favoritesOnly || false,
-  );
+  await loadTotal(api.getLibraryAudiobooksCount(params.favoritesOnly || false));
 };
 
 // we switch to a tabbed view if more than just singers are supported
