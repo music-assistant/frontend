@@ -8,6 +8,9 @@ import {
 } from "@/plugins/api/interfaces";
 import { onScopeDispose, type Ref } from "vue";
 
+// waits out the burst of updates a server action touching many items sends
+const ITEM_UPDATE_DELAY_MS = 2000;
+
 /** Options for useDetailItemUpdates. */
 export interface DetailItemUpdatesOptions {
   /**
@@ -23,8 +26,9 @@ export interface DetailItemUpdatesOptions {
  * Keeps the item of a detail page in step with the server.
  *
  * An updated item with the same uri replaces it, keeping the signed-in user's
- * favorite state, and that user's own likes and dislikes are applied to it. Both
- * subscriptions end with the calling component or scope.
+ * favorite state, once its updates have stopped for two seconds; only the last
+ * one is applied. That user's own likes and dislikes are applied to it straight
+ * away. Both subscriptions end with the calling component or scope.
  *
  * :param item: The item shown on the page.
  * :param options: See DetailItemUpdatesOptions.
@@ -33,18 +37,29 @@ export function useDetailItemUpdates<T extends MediaItem>(
   item: Ref<T | undefined>,
   options: DetailItemUpdatesOptions = {},
 ): void {
+  const matches = (updatedItem: MediaItemType) =>
+    item.value?.uri === updatedItem.uri ||
+    mapsToProviderItem(updatedItem, options.providerItem);
+
+  let pending: MediaItemType | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const applyPending = () => {
+    const updatedItem = pending!;
+    pending = undefined;
+    // the page may have moved on to another item meanwhile
+    if (!matches(updatedItem)) return;
+    item.value = keepOwnFavorite(updatedItem, item.value) as T;
+    options.onUpdate?.();
+  };
+
   const unsubItem = api.subscribe(
     EventType.MEDIA_ITEM_UPDATED,
     (evt: EventMessage) => {
       const updatedItem = evt.data as MediaItemType;
-      if (
-        item.value?.uri !== updatedItem.uri &&
-        !mapsToProviderItem(updatedItem, options.providerItem)
-      ) {
-        return;
-      }
-      item.value = keepOwnFavorite(updatedItem, item.value) as T;
-      options.onUpdate?.();
+      if (!matches(updatedItem)) return;
+      pending = updatedItem;
+      clearTimeout(timer);
+      timer = setTimeout(applyPending, ITEM_UPDATE_DELAY_MS);
     },
   );
 
@@ -54,6 +69,7 @@ export function useDetailItemUpdates<T extends MediaItem>(
   });
 
   onScopeDispose(() => {
+    clearTimeout(timer);
     unsubItem();
     unsubFavorite();
   });
