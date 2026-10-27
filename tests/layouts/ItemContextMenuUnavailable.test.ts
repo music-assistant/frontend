@@ -133,10 +133,11 @@ describe("the context menu of an unresolved shared track", () => {
 
   async function searchAction() {
     await showContextMenuForMediaItem(preview);
-    expect(emittedMenus[0].items.map((entry) => entry.label)).toEqual([
+    const menu = emittedMenus[emittedMenus.length - 1];
+    expect(menu.items.map((entry) => entry.label)).toEqual([
       "share.search_track",
     ]);
-    return emittedMenus[0].items[0].action;
+    return menu.items[0].action;
   }
 
   it("searches immediately and opens the matched track with feedback", async () => {
@@ -160,6 +161,46 @@ describe("the context menu of an unresolved shared track", () => {
     });
     expect(apiMock.getLibraryItem).not.toHaveBeenCalled();
     expect(apiMock.playMedia).not.toHaveBeenCalled();
+  });
+
+  it("only lets the newest overlapping search navigate", async () => {
+    let resolveOlder!: (value: ReturnType<typeof track> | null) => void;
+    let resolveNewer!: (value: ReturnType<typeof track> | null) => void;
+    const olderRequest = new Promise<ReturnType<typeof track> | null>(
+      (resolve) => {
+        resolveOlder = resolve;
+      },
+    );
+    const newerRequest = new Promise<ReturnType<typeof track> | null>(
+      (resolve) => {
+        resolveNewer = resolve;
+      },
+    );
+    apiMock.resolveSharedItem
+      .mockReturnValueOnce(olderRequest)
+      .mockReturnValueOnce(newerRequest);
+    toastMock.loading
+      .mockReturnValueOnce("older-search-toast")
+      .mockReturnValueOnce("newer-search-toast");
+
+    const olderAction = await searchAction();
+    const olderCompletion = olderAction?.();
+    const newerAction = await searchAction();
+    const newerCompletion = newerAction?.();
+
+    resolveOlder(track({ item_id: "older-match" }));
+    await olderCompletion;
+    expect(routerMock.push).not.toHaveBeenCalled();
+    expect(toastMock.dismiss).toHaveBeenCalledWith("older-search-toast");
+
+    resolveNewer(track({ item_id: "newer-match" }));
+    await newerCompletion;
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "track",
+      params: { provider: "library", itemId: "newer-match" },
+    });
+    expect(toastMock.dismiss).toHaveBeenCalledWith("newer-search-toast");
+    expect(toastMock.success).toHaveBeenCalledOnce();
   });
 
   it("keeps normal playlist removal for imported unresolved tracks", async () => {
