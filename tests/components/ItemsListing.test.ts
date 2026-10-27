@@ -1,6 +1,7 @@
 import ItemsListing from "@/components/ItemsListing.vue";
 import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
+import ListingSortMenu from "@/components/listing-toolbar/ListingSortMenu.vue";
 import ListingToolbarControls from "@/components/listing-toolbar/ListingToolbarControls.vue";
 import type {
   ListingFilter,
@@ -1912,27 +1913,18 @@ describe("ItemsListing server sort options", () => {
         (option) =>
           option.field !== SortField.RANDOM &&
           option.field !== SortField.RANDOM_PLAY_COUNT,
-      ).length,
+      ).length + 2,
     );
-    const checked = () =>
-      document.body.querySelector<HTMLElement>(
-        '[role="menuitemradio"][aria-checked="true"]',
-      );
-    // the sort it is on is shown in blue, without a check mark
-    expect(checked()?.querySelector("svg.lucide-check")).toBeNull();
-    // the arrow beside the sort it is on shows its order
-    expect(checked()?.querySelector("svg.lucide-arrow-down")).not.toBeNull();
-
-    // picking that sort again flips it
-    checked()?.click();
-    await flushPromises();
-    expect(loadPagedData).toHaveBeenLastCalledWith(
-      expect.objectContaining({ sortBy: "name:asc" }),
-    );
-    // and the menu stays open for another pick
     expect(
-      document.body.querySelectorAll('[role="menuitemradio"]').length,
-    ).toBeGreaterThan(0);
+      document.body.querySelectorAll(
+        '[role="menuitemradio"][aria-checked="true"]',
+      ),
+    ).toHaveLength(2);
+    expect(
+      document.body.querySelectorAll(
+        '[role="menuitemradio"][aria-checked="true"] svg.lucide-check',
+      ),
+    ).toHaveLength(2);
 
     const playCountChip = listing
       .findAll("button")
@@ -2526,18 +2518,49 @@ describe("ItemsListing library toolbar", () => {
     const listing = await mountLibraryPage();
 
     expect(listing.find(".listing-sort-chips-row").exists()).toBe(false);
-    expect(listing.findComponent(LibrarySortControls).props("mode")).toBe(
-      "button",
+    expect(listing.findComponent(LibrarySortControls).exists()).toBe(false);
+    expect(listing.findComponent(ListingSortMenu).props("compact")).toBe(false);
+  });
+
+  it("flips the sort it is on when picked again, with the menu left open", async () => {
+    mockGetSortOptions.mockResolvedValueOnce([
+      { field: SortField.SORT_NAME, supports_direction: true },
+      { field: SortField.TIMESTAMP_ADDED, supports_direction: true },
+    ] as SortOptionInfo[]);
+    signInWithSavedFilters({ sortBy: "sort_name:asc" });
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({ loadPagedData });
+
+    await listing
+      .findComponent(ListingSortMenu)
+      .find("button")
+      .trigger("click");
+    await flushPromises();
+    const checked = () =>
+      document.body.querySelector<HTMLElement>(
+        '[role="menuitemradio"][aria-checked="true"]',
+      );
+    // the sort it is on is shown in blue with its arrow, without a check mark
+    expect(checked()?.querySelector("svg.lucide-check")).toBeNull();
+    expect(checked()?.querySelector("svg.lucide-arrow-up")).not.toBeNull();
+
+    checked()?.click();
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "sort_name:desc" }),
     );
+    expect(
+      document.body.querySelectorAll('[role="menuitemradio"]').length,
+    ).toBeGreaterThan(0);
+    listing.unmount();
   });
 
   it("sorts from an icon on a phone", async () => {
     store.mobileLayout = true;
     const listing = await mountLibraryPage();
 
-    expect(listing.findComponent(LibrarySortControls).props("mode")).toBe(
-      "menu",
-    );
+    expect(listing.findComponent(ListingSortMenu).props("compact")).toBe(true);
   });
 
   it("keeps search and the filters out of the overflow menu", async () => {
@@ -2552,7 +2575,7 @@ describe("ItemsListing library toolbar", () => {
   it("picks the view in the sort menu, leaving the cover size to the overflow menu", async () => {
     signInWithSavedFilters({ viewMode: "panel" });
     const listing = await mountLibraryPage();
-    const sortMenu = listing.findComponent(LibrarySortControls);
+    const sortMenu = listing.findComponent(ListingSortMenu);
 
     expect(sortMenu.props("viewMode")).toBe("panel");
     expect(menuLabels(listing)).toContain("grid_size");
@@ -2574,7 +2597,7 @@ describe("ItemsListing library toolbar", () => {
     signInWithSavedFilters({ viewMode: "panel" });
     const listing = await mountLibraryPage();
 
-    expect(listing.findComponent(LibrarySortControls).props("viewMode")).toBe(
+    expect(listing.findComponent(ListingSortMenu).props("viewMode")).toBe(
       "panel",
     );
     expect(menuLabels(listing)).not.toContain("tooltip.view_mode_current");

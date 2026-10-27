@@ -5,9 +5,9 @@
     class="flex items-center"
     :class="compact ? 'gap-0' : 'mx-2 gap-2'"
   >
-    <LibrarySortControls
+    <ListingSortMenu
       v-if="sortOptions.length || showViewModes"
-      :mode="compact ? 'menu' : 'button'"
+      :compact="compact"
       :options="sortOptions"
       :sort-by="sortBy"
       :view-mode="showViewModes ? viewMode : undefined"
@@ -25,11 +25,11 @@
 </template>
 
 <script setup lang="ts">
-import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import type { ListingFilter } from "@/helpers/listing_filters";
 import type { SortOptionInfo } from "@/plugins/api/interfaces";
 import type { ListingViewMode } from "./constants";
 import ListingFiltersButton from "./ListingFiltersButton.vue";
+import ListingSortMenu from "./ListingSortMenu.vue";
 
 defineProps<{
   sortOptions: SortOptionInfo[];
