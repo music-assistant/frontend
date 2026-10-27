@@ -22,6 +22,7 @@
     </PopoverTrigger>
     <PopoverContent
       align="end"
+      :aria-label="$t('listing_filters.title')"
       class="max-h-(--reka-popover-content-available-height) w-[min(340px,calc(100vw-32px))] overflow-y-auto"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
