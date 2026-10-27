@@ -4,7 +4,11 @@ import {
   initializeCompanionIntegration,
   NowPlaying,
 } from "@/plugins/companion";
-import { PlaybackState, PlayerFeature } from "@/plugins/api/interfaces";
+import {
+  PlaybackState,
+  PlayerFeature,
+  PlayerType,
+} from "@/plugins/api/interfaces";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 
@@ -22,6 +26,9 @@ interface MockPlayer {
   powered?: boolean;
   supported_features?: PlayerFeature[];
   volume_level?: number | null;
+  group_volume?: number | null;
+  group_members?: string[];
+  type?: PlayerType;
   name?: string;
   active_source?: string;
   playback_state?: PlaybackState;
@@ -55,6 +62,9 @@ const { apiMock, storeMock } = await vi.hoisted(async () => {
       playerCommandVolumeSet: vi.fn().mockResolvedValue(undefined),
       playerCommandVolumeUp: vi.fn().mockResolvedValue(undefined),
       playerCommandVolumeDown: vi.fn().mockResolvedValue(undefined),
+      playerCommandGroupVolume: vi.fn().mockResolvedValue(undefined),
+      playerCommandGroupVolumeUp: vi.fn().mockResolvedValue(undefined),
+      playerCommandGroupVolumeDown: vi.fn().mockResolvedValue(undefined),
       queues: {} as Record<string, MockQueue>,
       queueElapsedTime: {} as Record<
         string,
@@ -151,6 +161,9 @@ beforeEach(() => {
   apiMock.playerCommandVolumeSet.mockClear();
   apiMock.playerCommandVolumeUp.mockClear();
   apiMock.playerCommandVolumeDown.mockClear();
+  apiMock.playerCommandGroupVolume.mockClear();
+  apiMock.playerCommandGroupVolumeUp.mockClear();
+  apiMock.playerCommandGroupVolumeDown.mockClear();
   invoke.mockClear();
   window.__COMPANION__ = { invoke };
 });
@@ -172,6 +185,8 @@ describe("companion selected-player volume", () => {
       powered: true,
       supported_features: [PlayerFeature.VOLUME_SET],
       volume_level,
+      group_members: [],
+      type: PlayerType.PLAYER,
     };
   }
 
@@ -189,6 +204,101 @@ describe("companion selected-player volume", () => {
     expect(apiMock.playerCommandVolumeUp).toHaveBeenCalledWith("remote");
     expect(apiMock.playerCommandVolumeDown).toHaveBeenCalledWith("remote");
     expect(lastNowPlaying().player_id).toBe("local");
+  });
+
+  it("reads group volume even when the individual volume is null", async () => {
+    storeMock.activePlayer = {
+      ...volumePlayer("group", null),
+      type: PlayerType.GROUP,
+      group_members: ["child"],
+      group_volume: 68,
+    };
+    expect(await executeCompanionVolume("get")).toBe(68);
+    expect(apiMock.getPlayer).toHaveBeenCalledWith("group");
+    apiMock.getPlayer.mockResolvedValueOnce({
+      ...storeMock.activePlayer,
+      volume_level: 25,
+      group_volume: null,
+    });
+    await expect(executeCompanionVolume("get")).rejects.toThrow(
+      "no available volume",
+    );
+  });
+
+  it("reads the fresh group volume for a sync leader, not its own volume", async () => {
+    storeMock.activePlayer = {
+      ...volumePlayer("leader", 12),
+      group_members: ["leader", "child"],
+      group_volume: 15,
+    };
+    apiMock.getPlayer.mockResolvedValueOnce({
+      ...storeMock.activePlayer,
+      volume_level: 18,
+      group_volume: 73,
+    });
+    expect(await executeCompanionVolume("get")).toBe(73);
+  });
+
+  it("routes set and adjustments to the group or individual commands", async () => {
+    storeMock.activePlayer = {
+      ...volumePlayer("leader", 12),
+      group_members: ["leader", "child"],
+      group_volume: 73,
+    };
+    await executeCompanionVolume("set", 55);
+    await executeCompanionVolume("up");
+    await executeCompanionVolume("down");
+    expect(apiMock.playerCommandGroupVolume).toHaveBeenCalledWith("leader", 55);
+    expect(apiMock.playerCommandGroupVolumeUp).toHaveBeenCalledWith("leader");
+    expect(apiMock.playerCommandGroupVolumeDown).toHaveBeenCalledWith("leader");
+    expect(apiMock.playerCommandVolumeSet).not.toHaveBeenCalled();
+    expect(apiMock.playerCommandVolumeUp).not.toHaveBeenCalled();
+    expect(apiMock.playerCommandVolumeDown).not.toHaveBeenCalled();
+
+    storeMock.activePlayer = volumePlayer("solo", 32);
+    expect(await executeCompanionVolume("get")).toBe(32);
+    await executeCompanionVolume("set", 30);
+    await executeCompanionVolume("up");
+    await executeCompanionVolume("down");
+    expect(apiMock.playerCommandVolumeSet).toHaveBeenCalledWith("solo", 30);
+    expect(apiMock.playerCommandVolumeUp).toHaveBeenCalledWith("solo");
+    expect(apiMock.playerCommandVolumeDown).toHaveBeenCalledWith("solo");
+  });
+
+  it("keeps the selected ID and fresh player's grouping while a read is pending", async () => {
+    storeMock.activePlayer = volumePlayer("first", 20);
+    let resolvePlayer!: (player: MockPlayer) => void;
+    apiMock.getPlayer.mockImplementationOnce(
+      () => new Promise<MockPlayer>((resolve) => (resolvePlayer = resolve)),
+    );
+    const result = executeCompanionVolume("get");
+    storeMock.activePlayer = volumePlayer("second", 80);
+    resolvePlayer({
+      ...volumePlayer("first", null),
+      group_members: ["first", "member"],
+      group_volume: 47,
+    });
+    expect(await result).toBe(47);
+    expect(apiMock.getPlayer).toHaveBeenCalledWith("first");
+  });
+
+  it("reports a rejected group set to the companion completion callback", async () => {
+    storeMock.activePlayer = {
+      ...volumePlayer("group", null),
+      type: PlayerType.GROUP,
+      group_members: ["child"],
+      group_volume: 40,
+    };
+    apiMock.playerCommandGroupVolume.mockRejectedValueOnce(
+      new Error("group set rejected"),
+    );
+    await initializeCompanionIntegration("");
+    await window.__COMPANION_VOLUME_COMMAND__!("group-request", "set", 60);
+    expect(invoke).toHaveBeenCalledWith("complete_applescript_volume", {
+      requestId: "group-request",
+      volume: null,
+      error: "group set rejected",
+    });
   });
 
   it("rejects missing/unsupported volume and invalid values without calling the API", async () => {

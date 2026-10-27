@@ -24,6 +24,7 @@ import {
   resolveActiveTiming,
   toElapsedTime,
 } from "@/helpers/activeElapsedTime";
+import { isPlayerGrouped } from "@/helpers/player_grouping";
 import { getMediaImageUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -343,24 +344,41 @@ export const executeCompanionVolume = async (
     throw new Error("Selected player does not support volume control");
   }
   const playerId = player.player_id;
+  const grouped = isPlayerGrouped(player);
   if (operation === "set") {
     if (!Number.isInteger(value) || value! < 0 || value! > 100)
       throw new Error("Volume must be an integer from 0 to 100");
-    await api.playerCommandVolumeSet(playerId, value!);
+    if (grouped) {
+      await api.playerCommandGroupVolume(playerId, value!);
+    } else {
+      await api.playerCommandVolumeSet(playerId, value!);
+    }
     return null;
   }
   if (value !== undefined) throw new Error("Unexpected volume value");
   if (operation === "up") {
-    await api.playerCommandVolumeUp(playerId);
+    if (grouped) {
+      await api.playerCommandGroupVolumeUp(playerId);
+    } else {
+      await api.playerCommandVolumeUp(playerId);
+    }
     return null;
   }
   if (operation === "down") {
-    await api.playerCommandVolumeDown(playerId);
+    if (grouped) {
+      await api.playerCommandGroupVolumeDown(playerId);
+    } else {
+      await api.playerCommandVolumeDown(playerId);
+    }
     return null;
   }
   if (operation !== "get") throw new Error("Unknown volume operation");
   const current = await api.getPlayer(playerId);
-  const volume = current?.volume_level;
+  const volume = current
+    ? isPlayerGrouped(current)
+      ? current.group_volume
+      : current.volume_level
+    : undefined;
   if (!Number.isInteger(volume) || volume == null || volume < 0 || volume > 100)
     throw new Error("Selected player has no available volume");
   return volume;
