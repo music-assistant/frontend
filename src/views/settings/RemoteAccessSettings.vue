@@ -126,7 +126,7 @@
 
       <!-- Two-card layout for ID and QR code -->
       <div
-        v-if="remoteAccessInfo.enabled && remoteAccessInfo.remote_id"
+        v-if="remoteAccessInfo?.enabled && remoteAccessInfo.remote_id"
         class="remote-id-grid mb-6"
       >
         <!-- Text ID Card -->
@@ -194,7 +194,7 @@
       </div>
 
       <v-card
-        v-if="remoteAccessInfo.enabled && remoteAccessInfo.remote_id"
+        v-if="remoteAccessInfo?.enabled && remoteAccessInfo.remote_id"
         class="usage-card mb-6"
         elevation="0"
         rounded="lg"
@@ -241,7 +241,7 @@
 
       <!-- Technical Details -->
       <v-expansion-panels
-        v-if="remoteAccessInfo.enabled"
+        v-if="remoteAccessInfo?.enabled"
         class="technical-panels"
       >
         <v-expansion-panel>
@@ -300,7 +300,7 @@
                     {{ $t("settings.remote_access_protocol") }}
                   </div>
                   <div class="spec-description">
-                    <span v-if="remoteAccessInfo.using_ha_cloud">
+                    <span v-if="remoteAccessInfo?.using_ha_cloud">
                       {{ $t("settings.remote_access_protocol_optimized") }}
                     </span>
                     <span v-else>
