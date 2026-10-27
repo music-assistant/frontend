@@ -2728,6 +2728,33 @@ describe("ItemsListing library toolbar", () => {
     expect(loadPagedData).not.toHaveBeenCalled();
   });
 
+  it("turns album artists back off when its first save fails", async () => {
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const listing = await mountLibraryPage();
+    const albumArtists = (
+      listing
+        .findComponent(ListingToolbarControls)
+        .props("filters") as ListingFilter[]
+    ).find((filter) => filter.id === "album_artists") as ListingToggleFilter;
+
+    albumArtists.toggle();
+    await flushPromises();
+    // never saved before, so the account goes back to holding nothing for it
+    store.currentUser = user({
+      preferences: { "itemsListing.libraryartists.artists": {} },
+    });
+    await flushPromises();
+    finishSave();
+    await flushPromises();
+
+    expect(
+      listing.findComponent(ListingToolbarControls).props("activeFilterCount"),
+    ).toBe(0);
+  });
+
   it("turns a filter off when the saved settings later leave it off", async () => {
     signInWithSavedFilters({ favoriteFilter: true });
     const listing = await mountLibraryPage();

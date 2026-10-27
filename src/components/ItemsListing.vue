@@ -2072,19 +2072,13 @@ const restoreSettings = async function () {
   }
 
   // get stored/default albumArtistsOnlyFilter for this itemtype
-  if (
-    props.showAlbumArtistsOnlyFilter !== false &&
-    prefs.albumArtistsFilter !== undefined
-  ) {
-    params.value.albumArtistsFilter = prefs.albumArtistsFilter;
+  if (props.showAlbumArtistsOnlyFilter !== false) {
+    params.value.albumArtistsFilter = Boolean(prefs.albumArtistsFilter);
   }
 
   // get stored/default collapse Collection for this itemtype
-  if (
-    props.showCollapseCollections !== false &&
-    prefs.collapseCollections !== undefined
-  ) {
-    params.value.collapseCollections = prefs.collapseCollections;
+  if (props.showCollapseCollections !== false) {
+    params.value.collapseCollections = Boolean(prefs.collapseCollections);
   }
 
   // get stored/default hideEmptyFilter for this itemtype (default: true = hide empty)
