@@ -1912,18 +1912,22 @@ describe("ItemsListing server sort options", () => {
         (option) =>
           option.field !== SortField.RANDOM &&
           option.field !== SortField.RANDOM_PLAY_COUNT,
-      ).length + 2,
+      ).length,
     );
-    expect(
-      document.body.querySelectorAll(
+    const checked = () =>
+      document.body.querySelector<HTMLElement>(
         '[role="menuitemradio"][aria-checked="true"]',
-      ),
-    ).toHaveLength(2);
-    expect(
-      document.body.querySelectorAll(
-        '[role="menuitemradio"][aria-checked="true"] svg.lucide-check',
-      ),
-    ).toHaveLength(2);
+      );
+    expect(checked()?.querySelector("svg.lucide-check")).not.toBeNull();
+    // the arrow beside the sort it is on shows its order
+    expect(checked()?.querySelector("svg.lucide-arrow-down")).not.toBeNull();
+
+    // picking that sort again flips it
+    checked()?.click();
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "name:asc" }),
+    );
 
     const playCountChip = listing
       .findAll("button")

@@ -1,19 +1,20 @@
 <template>
   <div v-if="mode !== 'chips'" class="flex min-w-0 items-center gap-1">
     <DropdownMenu>
-      <!-- the field names the current sort and opens the menu -->
+      <!-- the field names the current sort, and shows the view, and opens the menu -->
       <DropdownMenuTrigger v-if="mode === 'button'" as-child>
         <Button
           variant="outline"
-          class="w-46 min-w-0 justify-start gap-2 px-3"
+          class="max-w-44 min-w-0 gap-2 px-3"
           :aria-label="$t('sort.sort_by_current', [currentLabel])"
           :disabled="!hasMenu"
         >
-          <ArrowUpDown class="text-muted-foreground" />
-          <span class="min-w-0 flex-1 truncate text-left">
-            {{ currentLabel }}
-          </span>
-          <ChevronDown class="text-muted-foreground" />
+          <span class="min-w-0 truncate">{{ currentLabel }}</span>
+          <component
+            :is="currentView.icon"
+            v-if="currentView"
+            class="text-muted-foreground"
+          />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuTrigger v-else as-child>
@@ -31,15 +32,14 @@
         <DropdownMenuLabel v-if="titled" :class="MENU_SECTION_LABEL_CLASS">
           {{ $t("sort.sort_by") }}
         </DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          :model-value="current.field"
-          @update:model-value="selectSortOption"
-        >
+        <!-- picking the sort it is on flips its order, as the arrow shows -->
+        <DropdownMenuRadioGroup :model-value="current.field">
           <DropdownMenuRadioItem
             v-for="option in options"
             :key="option.field"
             :value="option.field"
             class="gap-3"
+            @select="changeQuickSort(option)"
           >
             <template #indicator-icon>
               <Check class="size-3.5" />
@@ -47,59 +47,28 @@
             <span class="min-w-0 flex-1 truncate">{{
               sortOptionLabel(option)
             }}</span>
+            <template
+              v-if="current.field === option.field && option.supports_direction"
+            >
+              <component
+                :is="
+                  current.direction === SortDirection.DESC ? ArrowDown : ArrowUp
+                "
+                class="text-muted-foreground"
+                aria-hidden="true"
+              />
+              <span class="sr-only">{{
+                sortDirectionLabel(current.direction)
+              }}</span>
+            </template>
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
-        <template v-if="selectedOption?.supports_direction">
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel v-if="titled" :class="MENU_SECTION_LABEL_CLASS">
-            {{ $t("sort.order") }}
-          </DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            :model-value="current.direction"
-            @update:model-value="selectSortDirection"
-          >
-            <DropdownMenuRadioItem :value="SortDirection.ASC" class="gap-3">
-              <template #indicator-icon>
-                <Check class="size-3.5" />
-              </template>
-              <ArrowUp class="size-4" />
-              <span class="min-w-0 flex-1 truncate">{{
-                $t("sort.ascending")
-              }}</span>
-            </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem :value="SortDirection.DESC" class="gap-3">
-              <template #indicator-icon>
-                <Check class="size-3.5" />
-              </template>
-              <ArrowDown class="size-4" />
-              <span class="min-w-0 flex-1 truncate">{{
-                $t("sort.descending")
-              }}</span>
-            </DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </template>
         <template v-if="viewMode !== undefined">
           <DropdownMenuSeparator />
-          <DropdownMenuLabel :class="MENU_SECTION_LABEL_CLASS">
-            {{ $t("view.view_as") }}
-          </DropdownMenuLabel>
-          <DropdownMenuRadioGroup
+          <ListingViewModeRow
             :model-value="viewMode"
-            @update:model-value="selectViewMode"
-          >
-            <DropdownMenuRadioItem
-              v-for="view in VIEW_MODES"
-              :key="view.value"
-              :value="view.value"
-              class="gap-3"
-            >
-              <template #indicator-icon>
-                <Check class="size-3.5" />
-              </template>
-              <component :is="view.icon" class="size-4" />
-              <span class="min-w-0 flex-1 truncate">{{ $t(view.label) }}</span>
-            </DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
+            @update:model-value="(value) => emit('view-mode', value)"
+          />
         </template>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -142,6 +111,7 @@ import {
   VIEW_MODES,
   type ListingViewMode,
 } from "@/components/listing-toolbar/constants";
+import ListingViewModeRow from "@/components/listing-toolbar/ListingViewModeRow.vue";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -154,19 +124,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SortDirection, type SortOptionInfo } from "@/plugins/api/interfaces";
 import { useLibrarySorting } from "@/composables/useLibrarySorting";
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Check,
-  ChevronDown,
-} from "@lucide/vue";
+import { ArrowDown, ArrowUp, ArrowUpDown, Check } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
 interface Props {
   // menu: an icon that opens the sort menu; button: the current sort, opening
-  // the menu; chips: the quick sorts
+  // the menu; chips: the quick sorts. Picking the sort it is on flips its order
   mode: "menu" | "button" | "chips";
   options: SortOptionInfo[];
   sortBy: string;
@@ -187,31 +151,10 @@ const sorting = useLibrarySorting(
   computed(() => props.options),
   computed(() => props.sortBy),
 );
-const {
-  current,
-  selectedOption,
-  quickOptions,
-  sortByOption,
-  sortByDirection,
-  sortByQuickOption,
-} = sorting;
+const { current, selectedOption, quickOptions, sortByQuickOption } = sorting;
 
 const sortOptionLabel = (option: SortOptionInfo) =>
   t(`sort.${option.label_key ?? option.field}`);
-
-const selectSortOption = (field: unknown) => {
-  if (typeof field !== "string") return;
-  const option = props.options.find((item) => item.field === field);
-  if (option) emit("sort-by", sortByOption(option));
-};
-
-const selectSortDirection = (direction: unknown) => {
-  if (!selectedOption.value?.supports_direction) return;
-  if (direction === SortDirection.ASC || direction === SortDirection.DESC) {
-    const nextSortBy = sortByDirection(direction);
-    if (nextSortBy) emit("sort-by", nextSortBy);
-  }
-};
 
 const sortDirectionLabel = (direction: SortDirection) =>
   t(direction === SortDirection.ASC ? "sort.ascending" : "sort.descending");
@@ -229,10 +172,10 @@ const titled = computed(
   () => props.mode === "button" || props.viewMode !== undefined,
 );
 
-const selectViewMode = (value: unknown) => {
-  const mode = VIEW_MODES.find((item) => item.value === value);
-  if (mode) emit("view-mode", mode.value);
-};
+// the field shows the view the listing is in beside the sort
+const currentView = computed(() =>
+  VIEW_MODES.find((view) => view.value === props.viewMode),
+);
 
 const quickSortDirection = (option: SortOptionInfo) =>
   current.value.field === option.field

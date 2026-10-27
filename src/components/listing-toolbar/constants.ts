@@ -10,9 +10,24 @@ export const MENU_SECTION_LABEL_CLASS =
 
 // the ways a library page can show its items
 export const VIEW_MODES = [
-  { value: "panel", label: "view.panel", icon: LayoutGrid },
-  { value: "panel_compact", label: "view.panel_compact", icon: Grid3x3 },
-  { value: "list", label: "view.list", icon: LayoutList },
+  {
+    value: "panel",
+    label: "view.panel",
+    shortLabel: "view.panel_short",
+    icon: LayoutGrid,
+  },
+  {
+    value: "panel_compact",
+    label: "view.panel_compact",
+    shortLabel: "view.panel_compact_short",
+    icon: Grid3x3,
+  },
+  {
+    value: "list",
+    label: "view.list",
+    shortLabel: "view.list_short",
+    icon: LayoutList,
+  },
 ] as const;
 
 export type ListingViewMode = (typeof VIEW_MODES)[number]["value"];
