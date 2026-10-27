@@ -167,6 +167,7 @@
         :mode="infiniteScroll ? 'intersect' : 'manual'"
         :load-more-text="$t('load_more_items')"
         :empty-text="''"
+        :class="{ 'select-none': shiftSelecting }"
         style="overflow: hidden"
       >
         <template #error="{ props: errorProps }">
@@ -368,6 +369,7 @@ import {
   subscribeOwnFavorites,
 } from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
+import { selectionRange } from "@/helpers/selection_range";
 import {
   GRID_SIZE_DEFAULT,
   gridColumns,
@@ -443,7 +445,7 @@ import {
   watch,
   watchEffect,
 } from "vue";
-import { unrefElement, useResizeObserver } from "@vueuse/core";
+import { unrefElement, useKeyModifier, useResizeObserver } from "@vueuse/core";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -1050,7 +1052,14 @@ const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
   }
 };
 
-const onSelect = function (
+let selectionAnchor: MediaItemTypeOrItemMapping | undefined;
+const shiftHeld = useKeyModifier("Shift");
+// a shift-click would otherwise also select the text of the rows in between
+const shiftSelecting = computed(
+  () => showCheckboxes.value && !!shiftHeld.value,
+);
+
+const setSelected = function (
   item: MediaItemTypeOrItemMapping,
   selected: boolean,
 ) {
@@ -1066,10 +1075,38 @@ const onSelect = function (
   }
 };
 
+const onSelect = function (
+  item: MediaItemTypeOrItemMapping,
+  selected: boolean,
+) {
+  const range = shiftHeld.value
+    ? selectionRange<MediaItemTypeOrItemMapping>(
+        pagedItems.value,
+        selectionAnchor,
+        item,
+      )
+    : [item];
+  selectionAnchor = item;
+  if (range.length === 1) {
+    setSelected(item, selected);
+    return;
+  }
+  // a range can hold every loaded row, so the selection is rebuilt in one
+  // pass; it joins the selection in listing order, whichever way it ran
+  const inRange = new Set(range);
+  const kept = selectedItems.value.filter(
+    (selectedItem) => !inRange.has(selectedItem),
+  );
+  selectedItems.value = selected
+    ? [...kept, ...range.filter((rangeItem) => !isParentDirItem(rangeItem))]
+    : kept;
+};
+
 const toggleCheckboxes = function () {
   if (showCheckboxes.value) {
     // clear selection
     selectedItems.value = [];
+    selectionAnchor = undefined;
   }
   showCheckboxes.value = !showCheckboxes.value;
 };
@@ -1962,6 +1999,7 @@ watch(
     // always leave selection mode: the selection belongs to the previous
     // folder, and the target may not offer the toggle to turn it off
     selectedItems.value = [];
+    selectionAnchor = undefined;
     showCheckboxes.value = false;
     if (loading.value == true) return;
     // completely reset if the path changes
@@ -2068,6 +2106,7 @@ let _unsubscribeFavorites: (() => void) | undefined;
 
 const clearSelection = () => {
   selectedItems.value = [];
+  selectionAnchor = undefined;
   showCheckboxes.value = false;
 };
 
