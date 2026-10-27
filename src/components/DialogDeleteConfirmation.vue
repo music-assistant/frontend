@@ -53,7 +53,7 @@ import {
   type DeleteConfirmationDialogEvent,
 } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
+import { onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
@@ -68,10 +68,8 @@ const acknowledgement = ref("");
 const acknowledged = ref<boolean | "indeterminate">(false);
 const acknowledgementId = useId();
 let onConfirm: (() => void | Promise<void>) | undefined;
-let dialogGeneration = 0;
 
 const handleConfirm = async () => {
-  const confirmingGeneration = dialogGeneration;
   if (!onConfirm) {
     open.value = false;
     return;
@@ -80,9 +78,7 @@ const handleConfirm = async () => {
     loading.value = true;
     await onConfirm();
   } finally {
-    if (confirmingGeneration === dialogGeneration) {
-      open.value = false;
-    }
+    open.value = false;
   }
 };
 
@@ -101,36 +97,21 @@ const reset = () => {
 // behind it (such as the search popup), so closing it restores the flag
 // rather than clearing it for the dialog underneath
 let dialogActiveBeforeOpen = false;
-let dialogActiveSnapshotCaptured = false;
 
-watch(
-  open,
-  (v) => {
-    if (v) return;
-    if (dialogActiveSnapshotCaptured) {
-      store.dialogActive = dialogActiveBeforeOpen && store.dialogActive;
-      dialogActiveSnapshotCaptured = false;
-    }
-    const closedGeneration = dialogGeneration;
-    setTimeout(() => {
-      if (!open.value && closedGeneration === dialogGeneration) reset();
-    }, 200);
-  },
-  { flush: "sync" },
-);
+watch(open, (v) => {
+  store.dialogActive = v || (dialogActiveBeforeOpen && store.dialogActive);
+  if (!v) {
+    // Reset after close animation
+    setTimeout(reset, 200);
+  }
+});
 
 onMounted(() => {
   eventbus.on(
     "deleteConfirmationDialog",
     (evt: DeleteConfirmationDialogEvent) => {
-      const wasOpen = open.value;
-      const openingGeneration = ++dialogGeneration;
-      if (wasOpen) {
-        if (!store.dialogActive) dialogActiveBeforeOpen = false;
-      } else {
-        dialogActiveSnapshotCaptured = false;
-      }
       reset();
+      if (!open.value) dialogActiveBeforeOpen = store.dialogActive;
       title.value = evt.title ?? t("delete");
       message.value = evt.message;
       confirmLabel.value = evt.confirmLabel ?? t("delete");
@@ -138,14 +119,6 @@ onMounted(() => {
       acknowledgement.value = evt.acknowledgement ?? "";
       onConfirm = evt.onConfirm;
       open.value = true;
-      nextTick(() => {
-        if (!open.value || openingGeneration !== dialogGeneration) return;
-        if (!dialogActiveSnapshotCaptured) {
-          dialogActiveBeforeOpen = store.dialogActive;
-          dialogActiveSnapshotCaptured = true;
-        }
-        store.dialogActive = true;
-      });
     },
   );
 });

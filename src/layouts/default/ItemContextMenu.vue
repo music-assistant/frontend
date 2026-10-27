@@ -433,6 +433,8 @@ import {
 } from "@/helpers/context_menu_item";
 export type { ContextMenuItem } from "@/helpers/context_menu_item";
 
+let shareTrackSearchGeneration = 0;
+
 export const showContextMenuForMediaItem = async function (
   item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
   parentItem?: MediaItemType,
@@ -617,17 +619,21 @@ export const getContextMenuItems = async function (
         labelArgs: [firstItem.name],
         icon: Search,
         action: async () => {
+          const searchGeneration = ++shareTrackSearchGeneration;
           const originatingRoute = router.currentRoute.value;
           const loadingToastId = toast.loading($t("share.loading"), {
             duration: Infinity,
           });
+          const isCurrentSearch = () =>
+            searchGeneration === shareTrackSearchGeneration &&
+            router.currentRoute.value === originatingRoute;
           try {
             const item = await api.resolveSharedItem(
               firstItem.item_id.slice(SHARE_PREVIEW_TRACK_PREFIX.length),
               true,
             );
             toast.dismiss(loadingToastId);
-            if (router.currentRoute.value !== originatingRoute) return;
+            if (!isCurrentSearch()) return;
             if (!item || item.media_type !== MediaType.TRACK) {
               toast.error($t("share.resolve_failed"));
               return;
@@ -639,7 +645,7 @@ export const getContextMenuItems = async function (
             toast.success($t("share.resolve_success"));
           } catch {
             toast.dismiss(loadingToastId);
-            if (router.currentRoute.value !== originatingRoute) return;
+            if (!isCurrentSearch()) return;
             toast.error($t("share.resolve_failed"));
           }
         },

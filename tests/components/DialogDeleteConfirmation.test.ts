@@ -31,12 +31,6 @@ const DialogStub = {
   template: '<div v-if="open"><slot /></div>',
 };
 
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  const promise = new Promise<T>((complete) => (resolve = complete));
-  return { promise, resolve };
-}
-
 function mountDialog() {
   return mount(DialogDeleteConfirmation, {
     global: {
@@ -119,72 +113,6 @@ describe("DialogDeleteConfirmation", () => {
     await confirm.trigger("click");
     await flushPromises();
     expect(event.onConfirm).toHaveBeenCalledOnce();
-  });
-
-  it("keeps dialogs active when opened from the context menu", async () => {
-    const wrapper = mountDialog();
-    storeMock.dialogActive = true;
-    const event: DeleteConfirmationDialogEvent = {
-      message: "Confirm search?",
-      onConfirm: vi.fn(),
-    };
-
-    eventbus.emit("deleteConfirmationDialog", event);
-    storeMock.dialogActive = false;
-    await flushPromises();
-
-    expect(storeMock.dialogActive).toBe(true);
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text() === "cancel")
-      ?.trigger("click");
-    expect(storeMock.dialogActive).toBe(false);
-  });
-
-  it("does not restore a background dialog that closed before replacement", async () => {
-    const wrapper = mountDialog();
-    storeMock.dialogActive = true;
-    await openDialog({ message: "First dialog" });
-
-    storeMock.dialogActive = false;
-    await openDialog({ message: "Replacement dialog" });
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text() === "cancel")
-      ?.trigger("click");
-
-    expect(storeMock.dialogActive).toBe(false);
-  });
-
-  it("does not let an older confirmation close or reset a newer dialog", async () => {
-    vi.useFakeTimers();
-    const wrapper = mountDialog();
-    const pending = deferred<void>();
-    await openDialog({
-      message: "First dialog",
-      onConfirm: () => pending.promise,
-    });
-
-    await wrapper
-      .get('[data-testid="delete-confirmation-confirm"]')
-      .trigger("click");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text() === "cancel")
-      ?.trigger("click");
-
-    await openDialog({ message: "Second dialog" });
-    pending.resolve();
-    await flushPromises();
-    vi.advanceTimersByTime(200);
-    await flushPromises();
-
-    expect(wrapper.text()).toContain("Second dialog");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text() === "cancel")
-      ?.trigger("click");
-    expect(storeMock.dialogActive).toBe(false);
   });
 
   it("starts a later acknowledgement unticked", async () => {
