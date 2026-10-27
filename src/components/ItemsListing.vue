@@ -371,6 +371,7 @@ import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import {
   GRID_SIZE_DEFAULT,
   gridColumns,
+  defaultShowActions,
   normalizeGridSize,
   PANEL_ACTIONS_MIN_WIDTH,
 } from "@/helpers/grid_size";
@@ -821,14 +822,17 @@ const toggleExpand = function () {
 
 const selectViewMode = function (newMode: string) {
   viewMode.value = newMode;
-  if (!props.forcedViewMode) {
-    setItemsListingPreference(
-      props.path || props.itemtype,
-      props.itemtype,
-      "viewMode",
-      newMode,
-    );
+  if (props.forcedViewMode) return;
+  const prefPath = props.path || props.itemtype;
+  // persist actions hidden by a default so saving a view doesn't show them
+  if (
+    !showGridActions.value &&
+    getItemsListingPreferences(prefPath, props.itemtype).value.showActions ===
+      undefined
+  ) {
+    setItemsListingPreference(prefPath, props.itemtype, "showActions", false);
   }
+  setItemsListingPreference(prefPath, props.itemtype, "viewMode", newMode);
 };
 
 // follows resizes: the breakpoints it looks up are reactive
@@ -1756,7 +1760,11 @@ const restoreSettings = async function () {
   gridSize.value = normalizeGridSize(prefs.gridSize);
   showGridActions.value =
     prefs.showActions ??
-    !(props.hideActionsByDefault || prefs.viewMode === "panel_compact");
+    defaultShowActions(
+      prefs.viewMode,
+      props.itemtype,
+      props.hideActionsByDefault,
+    );
 
   // get stored/default sortBy for this itemtype
   if (props.sortListing) {

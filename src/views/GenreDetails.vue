@@ -193,8 +193,13 @@ import InfoHeader from "@/components/InfoHeader.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { Button } from "@/components/ui/button";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
-import { useUserPreferences } from "@/composables/userPreferences";
+import {
+  updateUserPreferences,
+  useUserPreferences,
+} from "@/composables/userPreferences";
 import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
+import { applyGenreView, GENRE_VIEW_PREFERENCE } from "@/helpers/genre_view";
+import { LEGACY_COMPACT_VIEW_MODE } from "@/helpers/grid_size";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
@@ -239,20 +244,20 @@ const canManageLibrary = computed(() =>
 
 type GenreViewMode = "discovery" | "list" | "panel";
 
-const { getPreference, setPreference } = useUserPreferences();
+const { getPreference } = useUserPreferences();
 const savedViewMode = getPreference<GenreViewMode>(
-  "genre_detail_view",
+  GENRE_VIEW_PREFERENCE,
   "discovery",
 );
 // the compact thumbs view became thumbs without the action buttons
-const wasCompact = (savedViewMode.value as string) === "panel_compact";
+const wasCompact = (savedViewMode.value as string) === LEGACY_COMPACT_VIEW_MODE;
 const viewMode = ref<GenreViewMode>(wasCompact ? "panel" : savedViewMode.value);
 const itemsViewMode = computed(() =>
   viewMode.value !== "discovery" ? viewMode.value : undefined,
 );
 
 watch(viewMode, (newVal) => {
-  setPreference("genre_detail_view", newVal);
+  void updateUserPreferences((current) => applyGenreView(current, newVal));
 });
 
 const displayRows = computed(() =>
