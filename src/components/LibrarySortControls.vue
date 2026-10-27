@@ -1,15 +1,25 @@
 <template>
   <div v-if="mode !== 'chips'" class="flex min-w-0 items-center gap-1">
     <DropdownMenu>
-      <!-- the field names the current sort, and shows the view, and opens the menu -->
+      <!-- the field names the current sort with its order right beside it, and
+           a little further the view, and opens the menu -->
       <DropdownMenuTrigger v-if="mode === 'button'" as-child>
         <Button
           variant="outline"
-          class="max-w-44 min-w-0 gap-2 px-3"
-          :aria-label="$t('sort.sort_by_current', [currentLabel])"
+          class="max-w-48 min-w-0 gap-3 px-3"
+          :aria-label="$t('sort.sort_by_current', [triggerLabel])"
           :disabled="!hasMenu"
         >
-          <span class="min-w-0 truncate">{{ currentLabel }}</span>
+          <span class="flex min-w-0 items-center gap-1">
+            <span class="min-w-0 truncate">{{ currentLabel }}</span>
+            <component
+              :is="
+                current.direction === SortDirection.DESC ? ArrowDown : ArrowUp
+              "
+              v-if="selectedOption?.supports_direction"
+              aria-hidden="true"
+            />
+          </span>
           <component
             :is="currentView.icon"
             v-if="currentView"
@@ -159,6 +169,13 @@ const sortDirectionLabel = (direction: SortDirection) =>
 
 const currentLabel = computed(() =>
   selectedOption.value ? sortOptionLabel(selectedOption.value) : "",
+);
+
+// the field's name for screen readers, with the order it shows as an arrow
+const triggerLabel = computed(() =>
+  selectedOption.value?.supports_direction
+    ? `${currentLabel.value}, ${sortDirectionLabel(current.value.direction)}`
+    : currentLabel.value,
 );
 
 const hasMenu = computed(
