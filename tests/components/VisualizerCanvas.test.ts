@@ -74,16 +74,8 @@ vi.mock("@/plugins/store", () => ({
 }));
 
 const themeIsDark = vi.hoisted(() => ({ value: false }));
-vi.mock("@/plugins/vuetify", () => ({
-  default: {
-    theme: {
-      current: {
-        get value() {
-          return { dark: themeIsDark.value };
-        },
-      },
-    },
-  },
+vi.mock("@/composables/useThemePreference", () => ({
+  isDark: themeIsDark,
 }));
 
 function mountCanvas(playerId: string) {
