@@ -18,6 +18,7 @@
       v-if="filters.length"
       :filters="filters"
       :active-count="activeFilterCount"
+      :compact="compact"
       @clear="emit('clear-filters')"
     />
   </div>
@@ -38,7 +39,7 @@ defineProps<{
   showViewModes: boolean;
   filters: ListingFilter[];
   activeFilterCount: number;
-  // a phone has room for the sort's icon only
+  // a phone has room for icons only
   compact: boolean;
 }>();
 

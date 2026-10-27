@@ -11,7 +11,7 @@ describe("ListingFiltersButton", () => {
   it("names the panel it opens", async () => {
     const button = mount(ListingFiltersButton, {
       attachTo: document.body,
-      props: { filters: [], activeCount: 0 },
+      props: { filters: [], activeCount: 0, compact: false },
       global: { mocks: { $t: (key: string) => key } },
     });
 
