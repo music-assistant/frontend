@@ -21,7 +21,10 @@ vi.mock("@/plugins/auth", () => ({
   authManager: { hasScope: () => true },
 }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string, count?: number) =>
+    key === "n_tracks" ? `${count} ${count === 1 ? "track" : "tracks"}` : key,
+}));
 vi.mock("@/helpers/navigation", () => ({ backFromMediaDetails: vi.fn() }));
 vi.mock("vue-router", () => ({ useRouter: () => routerMock }));
 vi.mock("vue-sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -42,7 +45,10 @@ vi.mock("@/components/details/DetailHero.vue", () => ({
   },
 }));
 vi.mock("@/components/details/DetailHeroFacts.vue", () => ({
-  default: { template: "<div />" },
+  default: {
+    props: ["facts"],
+    template: '<div data-testid="detail-facts">{{ facts.join(" ") }}</div>',
+  },
 }));
 vi.mock("@/components/ui/button", () => ({
   Button: {
@@ -78,8 +84,14 @@ function encode(payload: object): string {
     .replace(/\//g, "_");
 }
 
-function playlist(title: string): string {
-  return encode({ type: "playlist", title, tracks: [{ title: "Track" }] });
+function playlist(title: string, trackCount = 1): string {
+  return encode({
+    type: "playlist",
+    title,
+    tracks: Array.from({ length: trackCount }, (_, index) => ({
+      title: `Track ${index + 1}`,
+    })),
+  });
 }
 
 function deferred<T>() {
@@ -95,6 +107,19 @@ beforeEach(() => {
 });
 
 describe("ShareView async state", () => {
+  it.each([
+    [1, "1 track"],
+    [2, "2 tracks"],
+  ])("uses the correct track plural for %i tracks", async (count, label) => {
+    const wrapper = mount(ShareView, {
+      props: { payload: playlist("Playlist", count) },
+    });
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="detail-facts"]').text()).toContain(label);
+    wrapper.unmount();
+  });
+
   it.each([encode({ type: "track", title: "Track" }), playlist("Playlist")])(
     "does not call share commands when the plugin is unavailable",
     async (payload) => {
