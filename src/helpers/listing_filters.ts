@@ -47,55 +47,19 @@ export interface ListingChoiceFilter {
 export type ListingFilter =
   ListingToggleFilter | ListingMultiFilter | ListingChoiceFilter;
 
-/** One narrowing that is in effect, shown as a removable chip. */
-export interface ActiveFilterChip {
-  key: string;
-  label: string;
-  // the filter a picked value belongs to, such as "Source" for "Spotify"
-  group?: string;
-  icon?: Component;
-  remove: () => void;
-}
-
-const optionLabel = (options: ListingFilterOption[], value: string) =>
-  options.find((option) => option.value === value)?.label ?? value;
-
-/** The chips for every narrowing the filters put on the listing. */
-export function activeFilterChips(
-  filters: ListingFilter[],
-): ActiveFilterChip[] {
-  return filters.flatMap((filter): ActiveFilterChip[] => {
+/** How many narrowings the filters put on the listing: one per active
+ * toggle, picked value or narrowing choice. */
+export function activeFilterCount(filters: ListingFilter[]): number {
+  return filters.reduce((count, filter) => {
     switch (filter.kind) {
       case "toggle":
-        return filter.active
-          ? [
-              {
-                key: filter.id,
-                label: filter.label,
-                icon: filter.icon,
-                remove: filter.toggle,
-              },
-            ]
-          : [];
+        return count + Number(filter.active);
       case "multi":
-        return filter.selected.map((value) => ({
-          key: `${filter.id}:${value}`,
-          label: optionLabel(filter.options, value),
-          group: filter.label,
-          remove: () => filter.toggle(value),
-        }));
+        return count + filter.selected.length;
       case "choice":
-        return filter.selected === filter.unfiltered
-          ? []
-          : [
-              {
-                key: filter.id,
-                label: optionLabel(filter.options, filter.selected),
-                remove: () => filter.select(filter.unfiltered),
-              },
-            ];
+        return count + Number(filter.selected !== filter.unfiltered);
     }
-  });
+  }, 0);
 }
 
 interface ListingCountSource {

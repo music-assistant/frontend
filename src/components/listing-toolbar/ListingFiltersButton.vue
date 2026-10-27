@@ -30,7 +30,7 @@
     </PopoverTrigger>
     <PopoverContent
       align="end"
-      class="w-[min(340px,calc(100vw-32px))]"
+      class="max-h-(--reka-popover-content-available-height) w-[min(340px,calc(100vw-32px))] overflow-y-auto"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
       <ListingFiltersPanel
@@ -78,7 +78,7 @@ const triggerClass = computed(() => {
     );
   }
   return cn(
-    "h-10 gap-1.5",
+    "gap-1.5",
     props.activeCount
       ? "border-primary bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary dark:border-primary dark:bg-primary/10 dark:hover:bg-primary/15"
       : "border-dashed",

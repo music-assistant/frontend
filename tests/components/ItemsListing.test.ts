@@ -1,7 +1,6 @@
 import ItemsListing from "@/components/ItemsListing.vue";
 import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
-import ListingActiveFilters from "@/components/listing-toolbar/ListingActiveFilters.vue";
 import ListingToolbarControls from "@/components/listing-toolbar/ListingToolbarControls.vue";
 import ListingViewToggle from "@/components/listing-toolbar/ListingViewToggle.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
@@ -2506,13 +2505,6 @@ describe("ItemsListing library toolbar", () => {
     ).map((item) => item.label);
   }
 
-  function chipLabels(listing: ReturnType<typeof mountListingRaw>) {
-    return listing
-      .findComponent(ListingActiveFilters)
-      .findAll("li")
-      .map((chip) => chip.text());
-  }
-
   it("sorts from the title bar instead of a row of chips", async () => {
     const listing = await mountLibraryPage();
 
@@ -2584,30 +2576,13 @@ describe("ItemsListing library toolbar", () => {
     expect(searchIcon().exists()).toBe(true);
   });
 
-  it("shows every active filter as a chip that turns it off", async () => {
+  it("counts every active filter on the Filters button", async () => {
     signInWithSavedFilters({ favoriteFilter: true, albumArtistsFilter: true });
     const listing = await mountLibraryPage();
 
-    expect(chipLabels(listing)).toEqual([
-      "listing_filters.favorites_only",
-      "listing_filters.album_artists_only",
-      "listing_filters.clear_all",
-    ]);
     expect(
       listing.findComponent(ListingToolbarControls).props("activeFilterCount"),
     ).toBe(2);
-
-    await listing
-      .findComponent(ListingActiveFilters)
-      .find('button[aria-label="listing_filters.remove"]')
-      .trigger("click");
-
-    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
-      "libraryartists",
-      "artists",
-      "favoriteFilter",
-      false,
-    );
   });
 
   it("clears every filter at once, in a single save", async () => {
@@ -2615,7 +2590,7 @@ describe("ItemsListing library toolbar", () => {
     const listing = await mountLibraryPage();
     mockSetItemsListingPreferences.mockClear();
 
-    listing.findComponent(ListingActiveFilters).vm.$emit("clear");
+    listing.findComponent(ListingToolbarControls).vm.$emit("clear-filters");
     await flushPromises();
 
     expect(mockSetItemsListingPreferences).toHaveBeenCalledOnce();
@@ -2624,13 +2599,50 @@ describe("ItemsListing library toolbar", () => {
       "artists",
       { favoriteFilter: false, albumArtistsFilter: false },
     );
-    expect(listing.findComponent(ListingActiveFilters).exists()).toBe(false);
+    expect(
+      listing.findComponent(ListingToolbarControls).props("activeFilterCount"),
+    ).toBe(0);
   });
 
-  it("has no chips row while nothing is filtered", async () => {
-    const listing = await mountLibraryPage();
+  it("hides the search icon while the section is collapsed", async () => {
+    signInWithSavedFilters({ expand: false });
+    const listing = await mountLibraryPage({ allowCollapse: true });
 
-    expect(listing.findComponent(ListingActiveFilters).exists()).toBe(false);
+    expect(listing.find('button[aria-label="search"]').exists()).toBe(false);
+  });
+
+  it("turns a filter off when the saved settings later leave it off", async () => {
+    signInWithSavedFilters({ favoriteFilter: true });
+    const listing = await mountLibraryPage();
+    const filterCount = () =>
+      listing.findComponent(ListingToolbarControls).props("activeFilterCount");
+    expect(filterCount()).toBe(1);
+
+    // a save queued behind an earlier one lands, and clears what that restored
+    store.currentUser!.preferences = {
+      "itemsListing.libraryartists.artists": { favoriteFilter: false },
+    };
+    await flushPromises();
+
+    expect(filterCount()).toBe(0);
+  });
+
+  it("comes back to a cached visit with the count it showed", async () => {
+    signInWithSavedFilters({ favoriteFilter: true });
+    const props = {
+      total: 12,
+      restoreState: true,
+      loadPagedData: vi.fn().mockResolvedValue([artist()]),
+    };
+    const listing = await mountLibraryPage(props);
+    expect(listing.find(".toolbar-stub").text()).toContain("12");
+    listing.unmount();
+
+    // the page starts over from the whole library's count
+    const restored = await mountLibraryPage({ ...props, total: 128 });
+
+    expect(restored.find(".toolbar-stub").text()).toContain("12");
+    expect(restored.find(".toolbar-stub").text()).not.toContain("128");
   });
 
   it("counts the items only while the page's total covers the filters", async () => {

@@ -43,7 +43,13 @@
           @sort-by="changeSort"
         />
         <Button
-          v-if="libraryToolbar && searchAvailable && !searchButtonCloses"
+          v-if="
+            libraryToolbar &&
+            searchAvailable &&
+            expanded &&
+            !searchButtonCloses &&
+            !searchSlotShown
+          "
           variant="ghost"
           size="icon-lg"
           :title="$t('search')"
@@ -53,12 +59,18 @@
         >
           <Search class="size-[22px]" />
         </Button>
-        <Transition v-if="!store.mobileLayout" name="listing-search">
+        <Transition
+          v-if="!store.mobileLayout"
+          name="listing-search"
+          @before-enter="searchSlotShown = true"
+          @after-leave="searchSlotShown = false"
+        >
           <!-- the input follows the slot's edge as it opens, and the padding
                keeps its 3px focus ring inside the clipped area -->
           <div
             v-if="showSearchInput"
             class="listing-search-slot -m-[3px] box-content p-[3px]"
+            :class="{ 'listing-search-slot--from-icon': libraryToolbar }"
           >
             <SearchInput
               ref="searchInputRef"
@@ -94,7 +106,7 @@
           :view-mode="viewMode"
           :show-view-toggle="!forcedViewMode"
           :filters="listingFilters"
-          :active-filter-count="activeFilterChipList.length"
+          :active-filter-count="activeFilters"
           :compact="store.mobileLayout"
           @sort-by="changeSort"
           @view-mode="selectViewMode"
@@ -102,13 +114,6 @@
         />
       </template>
     </Toolbar>
-
-    <ListingActiveFilters
-      v-if="libraryToolbar && activeFilterChipList.length"
-      :chips="activeFilterChipList"
-      :compact="store.mobileLayout"
-      @clear="clearFilters"
-    />
 
     <div v-if="showSortChipsRow" class="listing-sort-chips-row h-12">
       <LibrarySortControls
@@ -439,7 +444,6 @@ import TrackTableRow from "@/components/track-table/TrackTableRow.vue";
 import { TRACK_ROW_HEIGHT } from "@/components/track-table/trackTableColumns";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
-import ListingActiveFilters from "@/components/listing-toolbar/ListingActiveFilters.vue";
 import ListingToolbarControls from "@/components/listing-toolbar/ListingToolbarControls.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -483,7 +487,7 @@ import {
   gridColumns,
   normalizeGridSize,
 } from "@/helpers/grid_size";
-import { activeFilterChips, listingItemCount } from "@/helpers/listing_filters";
+import { activeFilterCount, listingItemCount } from "@/helpers/listing_filters";
 import { returnedByHistory } from "@/helpers/navigation";
 import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -1389,6 +1393,9 @@ const showSearchInput = computed(() => {
   return searchAvailable.value && showSearch.value && expanded.value;
 });
 
+// the field stays on screen while it closes, and its icon waits for it to go
+const searchSlotShown = ref(false);
+
 const searchButtonCloses = computed(
   () => showSearchInput.value && !store.mobileLayout,
 );
@@ -1543,9 +1550,7 @@ const listingFilters = useListingFilters(
   },
 );
 
-const activeFilterChipList = computed(() =>
-  activeFilterChips(listingFilters.value),
-);
+const activeFilters = computed(() => activeFilterCount(listingFilters.value));
 
 // turns every filter the panel offers back off, with a single save and reload
 const clearFilters = function () {
@@ -1592,8 +1597,15 @@ const clearFilters = function () {
   loadData(true, undefined, true);
 };
 
+// the count a cached visit came back with, kept until the listing loads again
+const restoredCount = ref<{ count?: number }>();
+watch(loading, (isLoading) => {
+  if (isLoading) restoredCount.value = undefined;
+});
+
 // the page's count request only takes the filters it was written for
 const listingCount = computed(() => {
+  if (restoredCount.value) return restoredCount.value.count;
   const p = params.value;
   return listingItemCount({
     total: props.total,
@@ -1984,18 +1996,21 @@ const restoreSettings = async function () {
     }
   }
 
+  // a filter the saved settings leave off is turned off here too: a save that
+  // lands while a later one is still queued restores what it carried, and the
+  // later one has to be able to take that back
   // get stored/default favoriteOnlyFilter for this itemtype
-  if (props.showFavoritesOnlyFilter !== false && prefs.favoriteFilter) {
-    params.value.favoritesOnly = prefs.favoriteFilter;
+  if (props.showFavoritesOnlyFilter !== false) {
+    params.value.favoritesOnly = Boolean(prefs.favoriteFilter);
   }
 
-  if (props.showHideFullyPlayedFilter === true && prefs.hideFullyPlayedFilter) {
-    params.value.hideFullyPlayed = prefs.hideFullyPlayedFilter;
+  if (props.showHideFullyPlayedFilter === true) {
+    params.value.hideFullyPlayed = Boolean(prefs.hideFullyPlayedFilter);
   }
 
   // get stored/default libraryOnlyFilter for this itemtype
-  if (props.showLibraryOnlyFilter !== false && prefs.libraryFilter) {
-    params.value.libraryOnly = prefs.libraryFilter;
+  if (props.showLibraryOnlyFilter !== false) {
+    params.value.libraryOnly = Boolean(prefs.libraryFilter);
   }
 
   // get stored/default albumArtistsOnlyFilter for this itemtype
@@ -2026,16 +2041,18 @@ const restoreSettings = async function () {
   }
 
   // get stored/default albumType filter for this itemtype
-  if (props.showAlbumTypeFilter === true && prefs.albumType) {
+  if (props.showAlbumTypeFilter === true) {
     params.value.albumType = prefs.albumType;
   }
 
   // get stored/default provider filter for this itemtype
   // only apply stored filter if there are multiple providers available
   // with a single provider, any stored filter is either redundant or stale
-  if (providerFilterAvailable.value && prefs.providerFilter) {
+  if (providerFilterAvailable.value) {
     const validIds = new Set(musicProviders.value.map((p) => p.value));
-    const filtered = prefs.providerFilter.filter((id) => validIds.has(id));
+    const filtered = (prefs.providerFilter ?? []).filter((id) =>
+      validIds.has(id),
+    );
     // single-select mode keeps at most one provider, so collapse any stored
     // multi-select value (e.g. left over from a previous multi-select listing).
     const next = singleProviderSelect.value ? filtered.slice(0, 1) : filtered;
@@ -2134,6 +2151,7 @@ if (props.restoreState) {
       scrollPos: el?.scrollTop || 0,
       pagedItems: pagedItems.value,
       allItemsReceived: allItemsReceived.value,
+      count: listingCount.value,
       params: params.value,
       displayedSort: displayedSort.value,
     };
@@ -2317,6 +2335,7 @@ onMounted(async () => {
     pagedItems.value = store.prevState.pagedItems;
     displayedSort.value = store.prevState.displayedSort;
     allItemsReceived.value = store.prevState.allItemsReceived;
+    restoredCount.value = { count: store.prevState.count };
     if (props.sortListing) {
       params.value.sortBy = librarySorting.normalizeSortBy(params.value.sortBy);
     }
@@ -2469,6 +2488,14 @@ async function selectEveryItem() {
 .listing-search-enter-from,
 .listing-search-leave-to {
   width: 0;
+}
+
+/* the field takes the place of the search icon it opens from, so it grows out
+   of the icon's width, and shrinks back to it, instead of leaving a gap for the
+   controls to jump into */
+.listing-search-slot--from-icon.listing-search-enter-from,
+.listing-search-slot--from-icon.listing-search-leave-to {
+  width: 40px;
 }
 
 .listing-search--inline {

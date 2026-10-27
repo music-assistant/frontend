@@ -4,7 +4,7 @@
       v-for="mode in VIEW_MODES"
       :key="mode.value"
       variant="outline"
-      size="icon-lg"
+      size="icon"
       :class="
         modelValue === mode.value
           ? 'bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary dark:bg-primary/15 dark:hover:bg-primary/20'

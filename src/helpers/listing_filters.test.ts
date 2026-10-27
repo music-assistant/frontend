@@ -1,7 +1,7 @@
 import { Heart } from "@lucide/vue";
 import { describe, expect, it, vi } from "vitest";
 import {
-  activeFilterChips,
+  activeFilterCount,
   listingItemCount,
   type ListingChoiceFilter,
   type ListingMultiFilter,
@@ -44,51 +44,25 @@ const choiceFilter = (selected: string): ListingChoiceFilter => ({
   select: vi.fn(),
 });
 
-describe("activeFilterChips", () => {
-  it("has no chips while nothing narrows the listing", () => {
+describe("activeFilterCount", () => {
+  it("counts nothing while nothing narrows the listing", () => {
     expect(
-      activeFilterChips([
+      activeFilterCount([
         toggleFilter(false),
         multiFilter([]),
         choiceFilter("all"),
       ]),
-    ).toEqual([]);
+    ).toBe(0);
   });
 
-  it("gives an active toggle a chip that turns it off", () => {
-    const filter = toggleFilter(true);
-    const [chip] = activeFilterChips([filter]);
-
-    expect(chip).toMatchObject({ label: "Only favorites", icon: Heart });
-    chip.remove();
-    expect(filter.toggle).toHaveBeenCalledOnce();
-  });
-
-  it("gives every picked value its own chip, named after its filter", () => {
-    const filter = multiFilter(["spotify--1", "tidal--1"]);
-    const chips = activeFilterChips([filter]);
-
-    expect(chips.map((chip) => [chip.group, chip.label])).toEqual([
-      ["Source", "Spotify"],
-      ["Source", "Tidal"],
-    ]);
-    chips[1].remove();
-    expect(filter.toggle).toHaveBeenCalledWith("tidal--1");
-  });
-
-  it("names a picked value that is not offered (yet) by its value", () => {
-    const [chip] = activeFilterChips([multiFilter(["plex--1"])]);
-
-    expect(chip.label).toBe("plex--1");
-  });
-
-  it("puts a narrowing choice back to the unfiltered one", () => {
-    const filter = choiceFilter("hide_empty");
-    const [chip] = activeFilterChips([filter]);
-
-    expect(chip.label).toBe("Hide empty genres");
-    chip.remove();
-    expect(filter.select).toHaveBeenCalledWith("all");
+  it("counts an active toggle, each picked value and a narrowing choice", () => {
+    expect(
+      activeFilterCount([
+        toggleFilter(true),
+        multiFilter(["spotify--1", "tidal--1"]),
+        choiceFilter("hide_empty"),
+      ]),
+    ).toBe(4);
   });
 });
 

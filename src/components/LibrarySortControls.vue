@@ -6,7 +6,7 @@
         <DropdownMenuTrigger as-child>
           <Button
             variant="outline"
-            class="h-10 min-w-0 flex-1 justify-start gap-2 px-3"
+            class="min-w-0 flex-1 justify-start gap-2 px-3"
             :aria-label="$t('sort.sort_by_current', [currentLabel])"
             :disabled="!options.length"
           >
@@ -19,7 +19,7 @@
         </DropdownMenuTrigger>
         <Button
           variant="outline"
-          size="icon-lg"
+          size="icon"
           :title="directionToggleLabel"
           :aria-label="directionToggleLabel"
           :disabled="!selectedOption?.supports_direction"
