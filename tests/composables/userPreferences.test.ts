@@ -165,6 +165,25 @@ describe("userPreferences - itemsListing", () => {
     });
   });
 
+  it("saves a selection as it was when the save was asked for", async () => {
+    const { setItemsListingPreference } = useUserPreferences();
+    const picked = ["spotify--1"];
+
+    const save = setItemsListingPreference(
+      "libraryartists",
+      "artists",
+      "providerFilter",
+      picked,
+    );
+    // the listing picks another source while the first save waits its turn
+    picked.push("tidal--1");
+    await save;
+
+    expect(readPrefs("libraryartists", "artists").providerFilter).toEqual([
+      "spotify--1",
+    ]);
+  });
+
   it("saves several filters of a listing in one write", async () => {
     storeMock.currentUser = {
       user_id: "u1",
