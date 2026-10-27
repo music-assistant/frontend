@@ -159,8 +159,8 @@ const artwork = computed(() =>
 const artworkFailed = ref(false);
 const playlistFacts = computed(() => [
   $t("playlist"),
-  $t("share.playlist_tracks", {
-    count: decodedPayload.value?.tracks.length ?? 0,
+  $t("n_tracks", decodedPayload.value?.tracks.length ?? 0, {
+    named: { count: decodedPayload.value?.tracks.length ?? 0 },
   }),
 ]);
 
