@@ -125,64 +125,6 @@ watch(
 const root = ref<HTMLElement | null>(null);
 let focusBefore: HTMLElement | null = null;
 
-// A screen showing nothing but the artwork is there to be looked at, so it
-// stays on while there is music. The system drops the lock when the tab is
-// hidden, hence asking again when it becomes visible.
-// A lock granted after it stopped being wanted is let go at once, and a wish
-// that changed while a request was pending is settled once it is answered.
-let wakeLock: WakeLockSentinel | null = null;
-let wantLock = false;
-let acquiring = false;
-let changedWhileAcquiring = false;
-const visible = ref(!document.hidden);
-const onVisibilityChange = () => {
-  visible.value = !document.hidden;
-};
-const holdScreen = async (want: boolean) => {
-  wantLock = want;
-  if (acquiring) {
-    changedWhileAcquiring = true;
-    return;
-  }
-  try {
-    if (want && !wakeLock && "wakeLock" in navigator) {
-      acquiring = true;
-      changedWhileAcquiring = false;
-      try {
-        const lock = await navigator.wakeLock.request("screen");
-        lock.addEventListener("release", () => {
-          if (wakeLock !== lock) return;
-          wakeLock = null;
-          // the system can let go on its own; ask again while still wanted
-          if (wantLock && !document.hidden) void holdScreen(true);
-        });
-        if (wantLock) wakeLock = lock;
-        else await lock.release();
-      } catch (error) {
-        console.debug("Screen wake lock:", error);
-      } finally {
-        acquiring = false;
-      }
-      // a refusal is not asked again unless the wish changed meanwhile
-      if (changedWhileAcquiring) {
-        changedWhileAcquiring = false;
-        void holdScreen(wantLock);
-      }
-    } else if (!want && wakeLock) {
-      const lock = wakeLock;
-      wakeLock = null;
-      await lock.release();
-    }
-  } catch (error) {
-    console.debug("Screen wake lock:", error);
-  }
-};
-watch(
-  () => props.playing && visible.value,
-  (want) => holdScreen(want),
-  { immediate: true },
-);
-
 onMounted(() => {
   focusBefore =
     document.activeElement instanceof HTMLElement
@@ -190,13 +132,10 @@ onMounted(() => {
       : null;
   root.value?.focus();
   document.addEventListener("keydown", onKeydown);
-  document.addEventListener("visibilitychange", onVisibilityChange);
 });
 
 onUnmounted(() => {
   document.removeEventListener("keydown", onKeydown);
-  document.removeEventListener("visibilitychange", onVisibilityChange);
-  void holdScreen(false);
   stopLoading();
   focusBefore?.focus();
 });

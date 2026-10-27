@@ -1,5 +1,5 @@
 import PlayerArtworkOnly from "@/layouts/default/PlayerOSD/PlayerArtworkOnly.vue";
-import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 
@@ -24,41 +24,11 @@ class TestImage {
   }
 }
 
-// A wake lock the test grants when it chooses, as the browser does in its own time.
-function deferredWakeLock() {
-  const release = vi.fn(() => Promise.resolve());
-  const onRelease: (() => void)[] = [];
-  let grant: () => void = () => {};
-  const request = vi.fn(
-    () =>
-      new Promise((resolve) => {
-        grant = () =>
-          resolve({
-            release,
-            addEventListener: (_type: string, listener: () => void) =>
-              onRelease.push(listener),
-          });
-      }),
-  );
-  Object.defineProperty(navigator, "wakeLock", {
-    value: { request },
-    configurable: true,
-  });
-  return {
-    request,
-    release,
-    grant: () => grant(),
-    // the system letting go of the lock on its own
-    drop: () => onRelease.forEach((listener) => listener()),
-  };
-}
-
 describe("PlayerArtworkOnly", () => {
   // unmounting runs the component's own cleanup, which clearing the DOM does not
   enableAutoUnmount(afterEach);
   afterEach(() => {
     document.body.innerHTML = "";
-    Reflect.deleteProperty(navigator, "wakeLock");
     vi.unstubAllGlobals();
   });
 
@@ -148,73 +118,6 @@ describe("PlayerArtworkOnly", () => {
     wrapper.find(".artwork-only").element.dispatchEvent(tab);
 
     expect(tab.defaultPrevented).toBe(true);
-  });
-
-  it("lets go of a wake lock granted after the view was left", async () => {
-    const wakeLock = deferredWakeLock();
-    const wrapper = mountArtwork(true);
-    expect(wakeLock.request).toHaveBeenCalledTimes(1);
-
-    wrapper.unmount();
-    wakeLock.grant();
-    await flushPromises();
-
-    expect(wakeLock.release).toHaveBeenCalledTimes(1);
-  });
-
-  it("asks again for a wake lock the system let go of while playing", async () => {
-    const wakeLock = deferredWakeLock();
-    mountArtwork(true);
-    wakeLock.grant();
-    await flushPromises();
-
-    wakeLock.drop();
-    await flushPromises();
-
-    expect(wakeLock.request).toHaveBeenCalledTimes(2);
-  });
-
-  it("asks again when the page came back while a refused request was pending", async () => {
-    let refuse: (error: Error) => void = () => {};
-    const request = vi
-      .fn()
-      .mockImplementationOnce(
-        () => new Promise((_resolve, reject) => (refuse = reject)),
-      )
-      .mockResolvedValue({ release: vi.fn(), addEventListener: vi.fn() });
-    Object.defineProperty(navigator, "wakeLock", {
-      value: { request },
-      configurable: true,
-    });
-    let hidden = false;
-    Object.defineProperty(document, "hidden", {
-      get: () => hidden,
-      configurable: true,
-    });
-    mountArtwork(true);
-
-    for (const now of [true, false]) {
-      hidden = now;
-      document.dispatchEvent(new Event("visibilitychange"));
-      await nextTick();
-    }
-    refuse(new Error("NotAllowedError"));
-    await flushPromises();
-    Reflect.deleteProperty(document, "hidden");
-
-    expect(request).toHaveBeenCalledTimes(2);
-  });
-
-  it("does not ask again after a refusal when nothing changed", async () => {
-    const request = vi.fn().mockRejectedValue(new Error("NotAllowedError"));
-    Object.defineProperty(navigator, "wakeLock", {
-      value: { request },
-      configurable: true,
-    });
-    mountArtwork(true);
-    await flushPromises();
-
-    expect(request).toHaveBeenCalledTimes(1);
   });
 
   it("changes to a new cover once it has loaded", async () => {
