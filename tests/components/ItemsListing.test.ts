@@ -7,7 +7,6 @@ import type {
   ListingMultiFilter,
   ListingToggleFilter,
 } from "@/helpers/listing_filters";
-import ListingViewToggle from "@/components/listing-toolbar/ListingViewToggle.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { defineComponent, h, type SetupContext } from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
@@ -2519,7 +2518,7 @@ describe("ItemsListing library toolbar", () => {
 
     expect(listing.find(".listing-sort-chips-row").exists()).toBe(false);
     expect(listing.findComponent(LibrarySortControls).props("mode")).toBe(
-      "split",
+      "button",
     );
   });
 
@@ -2541,15 +2540,15 @@ describe("ItemsListing library toolbar", () => {
     expect(menuLabels(listing)).not.toContain("tooltip.view_mode_current");
   });
 
-  it("leaves only the cover size of the view in a wide screen's menu", async () => {
+  it("picks the view in the sort menu, leaving the cover size to the overflow menu", async () => {
     signInWithSavedFilters({ viewMode: "panel" });
     const listing = await mountLibraryPage();
+    const sortMenu = listing.findComponent(LibrarySortControls);
 
+    expect(sortMenu.props("viewMode")).toBe("panel");
     expect(menuLabels(listing)).toContain("grid_size");
 
-    listing
-      .findComponent(ListingViewToggle)
-      .vm.$emit("update:modelValue", "list");
+    sortMenu.vm.$emit("view-mode", "list");
     await flushPromises();
 
     expect(menuLabels(listing)).not.toContain("grid_size");
@@ -2561,12 +2560,16 @@ describe("ItemsListing library toolbar", () => {
     );
   });
 
-  it("switches the view from the menu on a phone", async () => {
+  it("picks the view in the sort menu on a phone too", async () => {
     store.mobileLayout = true;
+    signInWithSavedFilters({ viewMode: "panel" });
     const listing = await mountLibraryPage();
 
-    expect(listing.findComponent(ListingViewToggle).exists()).toBe(false);
-    expect(menuLabels(listing)).toContain("tooltip.view_mode_current");
+    expect(listing.findComponent(LibrarySortControls).props("viewMode")).toBe(
+      "panel",
+    );
+    expect(menuLabels(listing)).not.toContain("tooltip.view_mode_current");
+    expect(menuLabels(listing)).toContain("grid_size");
   });
 
   it("opens the search field from its icon and closes it from inside", async () => {

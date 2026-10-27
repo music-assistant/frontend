@@ -106,7 +106,7 @@
           :sort-options="sortOptionsLoaded ? sortOptions : []"
           :sort-by="params.sortBy"
           :view-mode="viewMode"
-          :show-view-toggle="!forcedViewMode"
+          :show-view-modes="!forcedViewMode"
           :filters="listingFilters"
           :active-filter-count="activeFilters"
           :compact="store.mobileLayout"
@@ -1931,9 +1931,9 @@ const menuItems = computed(() => {
   }
 
   // toggle view mode (hidden when view mode is controlled externally). A
-  // library page switches views from its title bar, so on a wide screen only
-  // the cover size is left for the menu.
-  if (props.libraryToolbar && !store.mobileLayout) {
+  // library page switches views from its sort menu, so only the cover size
+  // is left for this one.
+  if (props.libraryToolbar) {
     if (!props.forcedViewMode && viewMode.value != "list") {
       items.push({
         label: "grid_size",

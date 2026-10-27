@@ -1001,8 +1001,7 @@
         "track_artist_name_desc": "Track artist (descending)",
         "sort_by": "Sort by",
         "sort_by_current": "Sort by: {0}",
-        "order": "Order",
-        "switch_direction": "{0}. Switch to {1}"
+        "order": "Order"
     },
     "pagination": {
         "first_page": "Go to first page",
@@ -1155,7 +1154,7 @@
     "new_playlist": "New playlist",
     "create_playlist_on": "Create new playlist on {0}",
     "view": {
-        "title": "View",
+        "view_as": "View as",
         "list": "List view",
         "card": "Card view",
         "panel": "Thumbs view",

@@ -1,50 +1,34 @@
 <template>
   <div v-if="mode !== 'chips'" class="flex min-w-0 items-center gap-1">
     <DropdownMenu>
-      <!-- the field opens the menu, and the arrow beside it flips the order -->
-      <ButtonGroup v-if="mode === 'split'" class="w-46">
-        <DropdownMenuTrigger as-child>
-          <Button
-            variant="outline"
-            class="min-w-0 flex-1 justify-start gap-2 px-3"
-            :aria-label="$t('sort.sort_by_current', [currentLabel])"
-            :disabled="!options.length"
-          >
-            <ArrowUpDown class="text-muted-foreground" />
-            <span class="min-w-0 flex-1 truncate text-left">
-              {{ currentLabel }}
-            </span>
-            <ChevronDown class="text-muted-foreground" />
-          </Button>
-        </DropdownMenuTrigger>
+      <!-- the field names the current sort and opens the menu -->
+      <DropdownMenuTrigger v-if="mode === 'button'" as-child>
         <Button
           variant="outline"
-          size="icon"
-          :title="directionToggleLabel"
-          :aria-label="directionToggleLabel"
-          :disabled="!selectedOption?.supports_direction"
-          @click="flipSortDirection"
+          class="w-46 min-w-0 justify-start gap-2 px-3"
+          :aria-label="$t('sort.sort_by_current', [currentLabel])"
+          :disabled="!hasMenu"
         >
-          <ArrowDown v-if="current.direction === SortDirection.DESC" />
-          <ArrowUp v-else />
+          <ArrowUpDown class="text-muted-foreground" />
+          <span class="min-w-0 flex-1 truncate text-left">
+            {{ currentLabel }}
+          </span>
+          <ChevronDown class="text-muted-foreground" />
         </Button>
-      </ButtonGroup>
+      </DropdownMenuTrigger>
       <DropdownMenuTrigger v-else as-child>
         <Button
           variant="ghost"
           size="icon-lg"
           :title="$t('tooltip.sort_options')"
           :aria-label="$t('tooltip.sort_options')"
-          :disabled="!options.length"
+          :disabled="!hasMenu"
         >
           <ArrowUpDown class="size-[22px]" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" class="min-w-56">
-        <DropdownMenuLabel
-          v-if="mode === 'split'"
-          class="text-xs text-muted-foreground uppercase"
-        >
+        <DropdownMenuLabel v-if="titled" :class="MENU_SECTION_LABEL_CLASS">
           {{ $t("sort.sort_by") }}
         </DropdownMenuLabel>
         <DropdownMenuRadioGroup
@@ -67,10 +51,7 @@
         </DropdownMenuRadioGroup>
         <template v-if="selectedOption?.supports_direction">
           <DropdownMenuSeparator />
-          <DropdownMenuLabel
-            v-if="mode === 'split'"
-            class="text-xs text-muted-foreground uppercase"
-          >
+          <DropdownMenuLabel v-if="titled" :class="MENU_SECTION_LABEL_CLASS">
             {{ $t("sort.order") }}
           </DropdownMenuLabel>
           <DropdownMenuRadioGroup
@@ -94,6 +75,29 @@
               <span class="min-w-0 flex-1 truncate">{{
                 $t("sort.descending")
               }}</span>
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </template>
+        <template v-if="viewMode !== undefined">
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel :class="MENU_SECTION_LABEL_CLASS">
+            {{ $t("view.view_as") }}
+          </DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            :model-value="viewMode"
+            @update:model-value="selectViewMode"
+          >
+            <DropdownMenuRadioItem
+              v-for="view in VIEW_MODES"
+              :key="view.value"
+              :value="view.value"
+              class="gap-3"
+            >
+              <template #indicator-icon>
+                <Check class="size-3.5" />
+              </template>
+              <component :is="view.icon" class="size-4" />
+              <span class="min-w-0 flex-1 truncate">{{ $t(view.label) }}</span>
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </template>
@@ -133,8 +137,12 @@
 </template>
 
 <script setup lang="ts">
+import {
+  MENU_SECTION_LABEL_CLASS,
+  VIEW_MODES,
+  type ListingViewMode,
+} from "@/components/listing-toolbar/constants";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -157,17 +165,20 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
 interface Props {
-  // menu: an icon that opens the sort menu; split: the current sort opening
-  // the menu, beside a button that flips its order; chips: the quick sorts
-  mode: "menu" | "split" | "chips";
+  // menu: an icon that opens the sort menu; button: the current sort, opening
+  // the menu; chips: the quick sorts
+  mode: "menu" | "button" | "chips";
   options: SortOptionInfo[];
   sortBy: string;
+  // given, the menu also picks how the listing is shown
+  viewMode?: string;
 }
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
   "sort-by": [value: string];
+  "view-mode": [value: ListingViewMode];
 }>();
 
 const { t } = useI18n();
@@ -205,22 +216,23 @@ const selectSortDirection = (direction: unknown) => {
 const sortDirectionLabel = (direction: SortDirection) =>
   t(direction === SortDirection.ASC ? "sort.ascending" : "sort.descending");
 
-const oppositeDirection = (direction: SortDirection) =>
-  direction === SortDirection.ASC ? SortDirection.DESC : SortDirection.ASC;
-
 const currentLabel = computed(() =>
   selectedOption.value ? sortOptionLabel(selectedOption.value) : "",
 );
 
-const directionToggleLabel = computed(() =>
-  t("sort.switch_direction", [
-    sortDirectionLabel(current.value.direction),
-    sortDirectionLabel(oppositeDirection(current.value.direction)),
-  ]),
+const hasMenu = computed(
+  () => props.options.length > 0 || props.viewMode !== undefined,
 );
 
-const flipSortDirection = () =>
-  selectSortDirection(oppositeDirection(current.value.direction));
+// with more than the sort in it, or opened from the field, each part gets a title
+const titled = computed(
+  () => props.mode === "button" || props.viewMode !== undefined,
+);
+
+const selectViewMode = (value: unknown) => {
+  const mode = VIEW_MODES.find((item) => item.value === value);
+  if (mode) emit("view-mode", mode.value);
+};
 
 const quickSortDirection = (option: SortOptionInfo) =>
   current.value.field === option.field
