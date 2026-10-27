@@ -2934,5 +2934,7 @@
     "select_all": "Seleccionar todo",
     "no_content_filter_hint": "Prueba una búsqueda diferente o cambia los filtros.",
     "items_load_failed": "No se han podido cargar los elementos.",
-    "featured_artists": "Artistas destacados"
+    "featured_artists": "Artistas destacados",
+    "review_setup": "Revisar",
+    "n_audiobooks": "{count} audiolibro | {count} audiolibros"
 }

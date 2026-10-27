@@ -524,7 +524,7 @@
             }
         },
         "add_group_player_desc_sync": "Vytvorte trvalú SyncGroup z prehrávačov, ktoré sú kompatibilné so synchronizáciou. Keď budete prehrávať do tejto skupiny prehrávačov, jej členovia sa automaticky zosynchronizujú.",
-        "genre_management": "Správa žánrov",
+        "genre_management": "Spravovanie žánrov",
         "genre_management_description": "Spravujte predvolené žánre a obnovte predvolené nastavenia žánrov",
         "restore_missing_defaults": "Obnoviť chýbajúce predvolené",
         "restore_missing_defaults_description": "Pridá všetky chýbajúce predvolené žánre bez vplyvu na vaše existujúce žánre alebo vlastné priradenia.",
@@ -536,7 +536,7 @@
         "restore_success": "Počet obnovených chýbajúcich žánrov: {0}.",
         "restore_all_present": "Všetky predvolené žánre už existujú.",
         "full_restore_success": "Úplné obnovenie je dokončené. Počet obnovených predvolených žánrov: {0}.",
-        "genre_statistics": "Správa knižnice žánrov",
+        "genre_statistics": "Spravovanie knižnice žánrov",
         "restore_defaults_failed": "Nepodarilo sa obnoviť predvolené žánre",
         "full_restore_failed": "Nepodarilo sa vykonať úplné obnovenie žánrov",
         "error_loading_genres": "Chyba pri načítavaní žánrov",
@@ -1299,7 +1299,7 @@
         "manage_tokens": "Spravovať prístupové tokeny",
         "token_created": "Token bol úspešne vytvorený",
         "token_create_failed": "Token sa nepodarilo vytvoriť. Skúste to, prosím, znova.",
-        "user_management": "Správa používateľov",
+        "user_management": "Spravovanie používateľov",
         "users": "Používatelia",
         "create_user": "Vytvoriť používateľa",
         "edit_user": "Upraviť používateľa",
@@ -1358,7 +1358,7 @@
         "no_custom_roles": "Zatiaľ žiadne vlastné roly",
         "no_custom_roles_hint": "Vytvorte rolu a určite presne, čo môže daná osoba robiť.",
         "admin_role_permissions": "Správcovia môžu robiť všetko.",
-        "admin_only_permissions": "Správa používateľov, celej knižnice, všetkých hudobných zdrojov, nastavení servera a údržba systému zostávajú v kompetencii správcov.",
+        "admin_only_permissions": "Spravovanie používateľov, celej knižnice, všetkých hudobných zdrojov, nastavení servera a údržba systému zostávajú v kompetencii správcov.",
         "builtin_role_hint": "Vstavané roly nie je možné meniť.",
         "custom_role_readonly_hint": "Roly môžu meniť iba správcovia.",
         "confirm_delete_role": "Naozaj chcete vymazať rolu {name}? Túto akciu nie je možné vrátiť späť.",
@@ -2930,5 +2930,6 @@
     "select_all": "Vybrať všetko",
     "no_content_filter_hint": "Skúste iné vyhľadávanie alebo upravte filtre.",
     "items_load_failed": "Nepodarilo sa načítať položky.",
-    "featured_artists": "Vybraní interpreti"
+    "featured_artists": "Vybraní interpreti",
+    "n_audiobooks": "{count} audiokniha | {count} audioknihy | {count} audiokníh"
 }

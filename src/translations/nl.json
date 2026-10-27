@@ -76,7 +76,7 @@
     "queue_options": "Wachtrij opties",
     "queue_previous_items": "Afgespeelde items",
     "radios": "Radio",
-    "read_more": "Meer lezen",
+    "read_more": "Lees verder",
     "refresh_item": "Vernieuwen",
     "remove_library": "Verwijder uit bibliotheek",
     "remove_playlist": "Verwijder uit afspeellijst",
@@ -1031,7 +1031,7 @@
         "scroll_right": "Scrol naar rechts",
         "hide_provider": "Verberg muziekbron",
         "exit_select_items": "Bulkselectie verlaten",
-        "playing_from": "Speelt af van {0}",
+        "playing_from": "Speelt vanaf {0}",
         "open_documentation": "Open de {provider} documentatie",
         "view_mode_current": "Huidige weergave: {0}. Weergavemodus wijzigen",
         "view_mode_switch": "Huidige weergave: {0}. Schakel over naar {1}",
@@ -2562,6 +2562,7 @@
     "screens": "Beeldschermen",
     "play_from_here_to_latest": "Speel vanaf hier tot de laatste",
     "players_need_setup": "Er is een nieuw apparaat ontdekt dat moet worden ingesteld | er zijn {count} nieuwe apparaten ontdekt die ingesteld moeten worden.",
+    "review": "Recensie",
     "import_playlist_search_providers_description": "Geselecteerde muziekbronnen worden gebruikt als alternatieve bronnen wanneer de oorspronkelijke bron van een nummer niet beschikbaar is.",
     "import_playlist_match_policy_label": "Nummer matching",
     "import_playlist_match_policy_exact_title": "Exacte release",
@@ -2933,5 +2934,7 @@
     "select_all": "Alles selecteren",
     "no_content_filter_hint": "Probeer een andere zoekopdracht of pas de filters aan.",
     "items_load_failed": "De items konden niet worden geladen.",
-    "featured_artists": "Uitgelichte artiesten"
+    "featured_artists": "Uitgelichte artiesten",
+    "review_setup": "Beoordeel",
+    "n_audiobooks": "{count} luisterboek | {count} luisterboeken"
 }
