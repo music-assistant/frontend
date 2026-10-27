@@ -16,6 +16,14 @@ describe("useListingTotal", () => {
     expect(total.value).toBe(12);
   });
 
+  it("shows no count while a new one is on its way", () => {
+    const { total, loadTotal } = useListingTotal(128);
+
+    void loadTotal(deferred<number>().promise);
+
+    expect(total.value).toBeUndefined();
+  });
+
   it("drops a count that comes back after the filters were cleared", async () => {
     const { total, setTotal, loadTotal } = useListingTotal(128);
     const favorites = deferred<number>();

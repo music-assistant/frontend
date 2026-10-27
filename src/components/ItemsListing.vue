@@ -701,9 +701,25 @@ const { t, te } = useI18n();
 const { open: openCommandCenter } = useCommandCenter();
 const {
   getItemsListingPreferences,
-  setItemsListingPreference,
-  setItemsListingPreferences,
+  setItemsListingPreference: writeListingPreference,
+  setItemsListingPreferences: writeListingPreferences,
 } = useUserPreferences();
+
+// this listing's own saves still on their way: while one is, the settings an
+// earlier save hands back can predate an edit made since, so they wait
+let pendingSaves = 0;
+const trackSave = async (save: Promise<void>) => {
+  pendingSaves++;
+  try {
+    await save;
+  } finally {
+    pendingSaves--;
+  }
+};
+const setItemsListingPreference: typeof writeListingPreference = (...args) =>
+  trackSave(writeListingPreference(...args));
+const setItemsListingPreferences: typeof writeListingPreferences = (...args) =>
+  trackSave(writeListingPreferences(...args));
 const activeTabId = ref(props.toolBarTabs?.[0]?.id || "");
 let restoredFromPrevState = false;
 
@@ -1639,7 +1655,9 @@ watch(loading, (isLoading) => {
 
 // the page's count request only takes the filters it was written for
 const listingCount = computed(() => {
-  if (restoredCount.value) return restoredCount.value.count;
+  if (restoredCount.value && !allItemsReceived.value) {
+    return restoredCount.value.count;
+  }
   const p = params.value;
   return listingItemCount({
     total: props.total,
@@ -2242,8 +2260,17 @@ watch(
   { immediate: true },
 );
 
-// Watch savedPrefs and restore settings when they change (e.g., when user loads)
-watch(savedPrefs, () => restoreSettings(), { immediate: true });
+// Watch savedPrefs and restore settings when they change (e.g., when user loads),
+// but not while this listing's own edits are still being saved: the listing
+// already shows those, and what lands first may not have them yet
+watch(
+  savedPrefs,
+  () => {
+    if (pendingSaves > 0) return;
+    restoreSettings();
+  },
+  { immediate: true },
+);
 
 // the page is told which provider the listing is on, a restored visit
 // included, so it can show that without a load of its own

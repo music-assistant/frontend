@@ -75,12 +75,12 @@ interface ListingCountSource {
 
 /**
  * The item count a listing can stand behind, or undefined when it does not
- * know one. A narrowing the page's count request is not told about makes that
- * count wrong, and then only a fully loaded listing knows how many it holds.
+ * know one. A fully loaded listing counts what it holds, which also follows
+ * deletions. Otherwise the page's count stands, unless a narrowing its count
+ * request is not told about makes it wrong.
  */
 export function listingItemCount(source: ListingCountSource) {
-  if (!source.narrowedBeyondTotal && source.total !== undefined) {
-    return source.total;
-  }
-  return source.allLoaded ? source.loaded : undefined;
+  // every item is on screen, so counting them beats any total fetched earlier
+  if (source.allLoaded) return source.loaded;
+  return source.narrowedBeyondTotal ? undefined : source.total;
 }

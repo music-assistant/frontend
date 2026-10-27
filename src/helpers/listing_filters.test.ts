@@ -89,6 +89,17 @@ describe("listingItemCount", () => {
     ).toBe(23);
   });
 
+  it("counts a fully loaded listing over the page's count, after a delete", () => {
+    expect(
+      listingItemCount({
+        total: 3,
+        loaded: 2,
+        allLoaded: true,
+        narrowedBeyondTotal: false,
+      }),
+    ).toBe(2);
+  });
+
   it("knows no count while a narrowed listing is still loading pages", () => {
     expect(
       listingItemCount({

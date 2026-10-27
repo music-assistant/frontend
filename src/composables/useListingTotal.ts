@@ -16,6 +16,8 @@ export function useListingTotal(initial?: number) {
 
   async function loadTotal(request: Promise<number>) {
     const current = ++latest;
+    // the old count belongs to the old filters: nothing beats a wrong number
+    total.value = undefined;
     const value = await request;
     if (current === latest) total.value = value;
   }

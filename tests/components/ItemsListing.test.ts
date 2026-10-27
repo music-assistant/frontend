@@ -5,6 +5,7 @@ import ListingToolbarControls from "@/components/listing-toolbar/ListingToolbarC
 import type {
   ListingFilter,
   ListingMultiFilter,
+  ListingToggleFilter,
 } from "@/helpers/listing_filters";
 import ListingViewToggle from "@/components/listing-toolbar/ListingViewToggle.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
@@ -2619,6 +2620,39 @@ describe("ItemsListing library toolbar", () => {
     expect(listing.find('button[aria-label="search"]').exists()).toBe(false);
   });
 
+  it("keeps an edit that is still being saved when an earlier save lands", async () => {
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({ loadPagedData });
+    const favorites = (
+      listing
+        .findComponent(ListingToolbarControls)
+        .props("filters") as ListingFilter[]
+    ).find((filter) => filter.id === "favorites") as ListingToggleFilter;
+
+    favorites.toggle();
+    await flushPromises();
+    // an earlier sort save lands, from before Favorites was turned on
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.libraryartists.artists": { sortBy: "name_desc" },
+      },
+    });
+    await flushPromises();
+    finishSave();
+    await flushPromises();
+
+    expect(
+      listing.findComponent(ListingToolbarControls).props("activeFilterCount"),
+    ).toBe(1);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ favoritesOnly: true }),
+    );
+  });
+
   it("turns a filter off when the saved settings later leave it off", async () => {
     signInWithSavedFilters({ favoriteFilter: true });
     const listing = await mountLibraryPage();
@@ -2637,8 +2671,10 @@ describe("ItemsListing library toolbar", () => {
 
   it("comes back to a cached visit with the count it showed", async () => {
     signInWithSavedFilters({ favoriteFilter: true });
+    // a full page, so the listing does not know it holds everything
     const props = {
       total: 12,
+      limit: 1,
       restoreState: true,
       loadPagedData: vi.fn().mockResolvedValue([artist()]),
     };
