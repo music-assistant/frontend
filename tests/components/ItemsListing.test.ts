@@ -1834,21 +1834,32 @@ describe("ItemsListing play all", () => {
     mockSubscribeMulti.mockReset().mockImplementation(events.subscribeMulti);
     mockSubscribe.mockReset().mockImplementation(events.subscribe);
     mockPlayMedia.mockReset().mockResolvedValue(undefined);
+    mockToastError.mockReset();
     playerState.activePlayer = { player_id: "player1" };
     store.prevState = undefined;
   });
 
   /** Mount an artist album listing, in the order the albums are given. */
   async function mountAlbums(albums = discography) {
+    return mountPages(({ offset, limit }) =>
+      Promise.resolve(albums.slice(offset, offset + limit)),
+    );
+  }
+
+  /** Mount the same listing, with the test in charge of handing out the pages. */
+  async function mountPages(
+    loadPagedData: (params: {
+      offset: number;
+      limit: number;
+    }) => Promise<Album[]>,
+  ) {
     const listing = mountListingRaw({
       itemtype: "artistalbums",
       path: "artistalbums",
       showGenreFilter: false,
       showPlayAll: true,
       limit: 12,
-      loadPagedData: vi.fn(({ offset, limit }) =>
-        Promise.resolve(albums.slice(offset, offset + limit)),
-      ),
+      loadPagedData: vi.fn(loadPagedData),
     });
     await flushPromises();
     return listing;
@@ -1901,6 +1912,41 @@ describe("ItemsListing play all", () => {
     playerState.activePlayer = undefined;
 
     expect(playAll(await mountAlbums())?.disabled).toBe(true);
+  });
+
+  it("plays nothing when a page fails to load", async () => {
+    const listing = await mountPages(({ offset, limit }) =>
+      offset === 0
+        ? Promise.resolve(discography.slice(offset, offset + limit))
+        : Promise.reject(new Error("page failed")),
+    );
+
+    playAll(listing)!.action!();
+    await flushPromises();
+
+    expect(mockPlayMedia).not.toHaveBeenCalled();
+  });
+
+  it("plays nothing when another player is picked while the pages load", async () => {
+    const listing = await mountPages(({ offset, limit }) => {
+      if (offset > 0) playerState.activePlayer = { player_id: "player2" };
+      return Promise.resolve(discography.slice(offset, offset + limit));
+    });
+
+    playAll(listing)!.action!();
+    await flushPromises();
+
+    expect(mockPlayMedia).not.toHaveBeenCalled();
+  });
+
+  it("says so when the playback request fails", async () => {
+    mockPlayMedia.mockRejectedValue(new Error("connection lost"));
+    const listing = await mountAlbums();
+
+    playAll(listing)!.action!();
+    await flushPromises();
+
+    expect(mockToastError).toHaveBeenCalledWith("play_failed");
   });
 
   it("is left out of a listing that does not ask for it", async () => {

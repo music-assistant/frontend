@@ -2276,12 +2276,21 @@ async function selectEveryItem() {
 
 /** Loads the remaining pages and plays every item, in the order shown. */
 async function playAll() {
+  const target = store.activePlayer?.player_id;
   await loadAllItems();
+  // the paging can fail, outlive the listing, or end after another player was picked
+  if (isDisposed() || loadError.value || !allItemsReceived.value) return;
+  if (store.activePlayer?.player_id !== target) return;
   const uris = pagedItems.value.filter((x) => x.is_playable).map((x) => x.uri);
-  // the order only holds for the options that start playing right away, not for the
-  // configured default, which may just add to the queue
-  if (uris.length)
+  if (!uris.length) return;
+  try {
+    // the order only holds for the options that start playing right away
     await api.playMedia(uris, QueueOption.REPLACE, { shuffle: false });
+  } catch (err) {
+    // a lost connection rejects without the api layer's own toast
+    console.error("[ItemsListing] play all failed", err);
+    toast.error(t("play_failed"));
+  }
 }
 </script>
 
