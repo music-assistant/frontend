@@ -2665,6 +2665,54 @@ describe("ItemsListing library toolbar", () => {
     expect(restored.find(".toolbar-stub").text()).not.toContain("128");
   });
 
+  it("drops a cached visit's count when a filter changes while a page loads", async () => {
+    signInWithSavedFilters({ favoriteFilter: true });
+    const scroller = {
+      name: "VInfiniteScroll",
+      props: { onLoad: { type: Function, default: undefined } },
+      template: "<div><slot /></div>",
+    };
+    const loadPagedData = vi.fn().mockResolvedValue([artist()]);
+    const props = { total: 12, limit: 1, restoreState: true, loadPagedData };
+    const listing = await mountLibraryPage(props, {
+      VInfiniteScroll: scroller,
+    });
+    listing.unmount();
+    const restored = await mountLibraryPage(
+      { ...props, total: 128 },
+      { VInfiniteScroll: scroller },
+    );
+
+    // the next page is still on its way when Favorites is turned off
+    let finishPage!: (items: unknown[]) => void;
+    loadPagedData.mockImplementationOnce(
+      () => new Promise((resolve) => (finishPage = resolve)),
+    );
+    const onLoad = restored
+      .findComponent({ name: "VInfiniteScroll" })
+      .props("onLoad") as (options: {
+      side: string;
+      done: () => void;
+    }) => Promise<void>;
+    void onLoad({ side: "end", done: () => {} });
+    await flushPromises();
+    (
+      (
+        restored
+          .findComponent(ListingToolbarControls)
+          .props("filters") as ListingFilter[]
+      ).find((filter) => filter.id === "favorites") as ListingToggleFilter
+    ).toggle();
+    await flushPromises();
+    finishPage([artist()]);
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ offset: 0, favoritesOnly: false }),
+    );
+    expect(restored.find(".toolbar-stub").text()).toContain("128");
+  });
+
   it("hides the search icon while the section is collapsed", async () => {
     signInWithSavedFilters({ expand: false });
     const listing = await mountLibraryPage({ allowCollapse: true });

@@ -1667,8 +1667,10 @@ const clearFilters = function () {
 // the count a cached visit came back with: the next page of the same visit
 // keeps it, and a load from the first page brings the page's own count again
 const restoredCount = ref<{ count?: number }>();
-watch(loading, (isLoading) => {
-  if (isLoading && !params.value.offset) restoredCount.value = undefined;
+// the offset too: a reload queued behind a page that was loading turns the
+// loading flag off and on in one go, which leaves only the offset to tell
+watch([loading, () => params.value.offset], ([isLoading, offset]) => {
+  if (isLoading && !offset) restoredCount.value = undefined;
 });
 
 // the page's count request only takes the filters it was written for
