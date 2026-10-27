@@ -339,7 +339,13 @@ const displayedTimelineTime = computed(() => {
   if (isDragging.value) return curTimeValue.value;
   const chapter = currentChapter.value;
   const absoluteTime = displayedAbsoluteTime.value ?? absoluteElapsedTime.value;
-  if (!chapter) return absoluteTime;
+  // The position runs on until the source reports the next item, which for a
+  // radio song can take a while; it never shows past the end.
+  if (!chapter) {
+    return timelineDuration.value
+      ? Math.min(timelineDuration.value, absoluteTime)
+      : absoluteTime;
+  }
   return Math.max(0, Math.min(chapter.duration, absoluteTime - chapter.start));
 });
 

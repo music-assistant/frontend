@@ -516,6 +516,25 @@ describe("PlayerTimeline", () => {
     expect(wrapper!.find(".time-text-right").text()).toBe(total);
   });
 
+  it("stops a radio song's position at its end until the next song arrives", async () => {
+    store.activePlayer = {
+      player_id: "p1",
+      playback_state: PlaybackState.PLAYING,
+      current_media: {
+        media_type: MediaType.RADIO,
+        duration: 301,
+        elapsed_time: 290,
+        elapsed_time_last_updated: NOW,
+      },
+    };
+
+    mountTimeline();
+    expect(await elapsedLabelAfter(20)).toBe("05:01");
+
+    await wrapper!.find(".time-text-left").trigger("click");
+    expect(elapsedLabel()).toBe("-00:00");
+  });
+
   it("shows no position when no source reports one", async () => {
     store.activePlayer = {
       player_id: "p1",

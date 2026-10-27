@@ -199,6 +199,63 @@ describe("resolveActiveTiming / resolveActiveElapsedTime", () => {
     expect(resolveActiveElapsedTime()).toBe(100);
   });
 
+  it("holds a stopped radio song at the position it stopped at", () => {
+    seedQueue({ queue_id: "q1", state: PlaybackState.IDLE, active: true });
+    // the queue was stopped 30 s after the song was tuned in
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 1319,
+      elapsed_time_last_updated: NOW + 30,
+    };
+    seedPlayer({
+      playback_state: PlaybackState.IDLE,
+      current_media: {
+        media_type: MediaType.RADIO,
+        duration: 430,
+        elapsed_time: 100,
+        elapsed_time_last_updated: NOW,
+      },
+    });
+
+    vi.setSystemTime((NOW + 90) * 1000);
+    expect(resolveActiveElapsedTime()).toBe(130);
+  });
+
+  it("holds a stopped radio song at the player's stop time when no queue plays it", () => {
+    seedPlayer({
+      playback_state: PlaybackState.PAUSED,
+      elapsed_time: 1319,
+      elapsed_time_last_updated: NOW + 30,
+      current_media: {
+        media_type: MediaType.RADIO,
+        duration: 430,
+        elapsed_time: 100,
+        elapsed_time_last_updated: NOW,
+      },
+    });
+
+    vi.setSystemTime((NOW + 90) * 1000);
+    expect(resolveActiveElapsedTime()).toBe(130);
+  });
+
+  it("holds a radio song stopped after its end at its end", () => {
+    seedQueue({ queue_id: "q1", state: PlaybackState.IDLE, active: true });
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 1800,
+      elapsed_time_last_updated: NOW + 400,
+    };
+    seedPlayer({
+      playback_state: PlaybackState.IDLE,
+      current_media: {
+        media_type: MediaType.RADIO,
+        duration: 430,
+        elapsed_time: 100,
+        elapsed_time_last_updated: NOW,
+      },
+    });
+
+    expect(resolveActiveElapsedTime()).toBe(430);
+  });
+
   it("keeps the queue's position for a radio stream without song durations", () => {
     seedQueue({ queue_id: "q1", state: PlaybackState.PLAYING, active: true });
     apiMock.queueElapsedTime["q1"] = {
