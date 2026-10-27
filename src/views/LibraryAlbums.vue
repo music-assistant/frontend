@@ -67,7 +67,9 @@ onMounted(() => {
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
-  setTotals(params);
+  // the count only changes with the filters, and those start over from the
+  // first page: the pages after it keep the count they have
+  if (!params.offset) setTotals(params);
   return await api.getLibraryAlbums(
     params.favoritesOnly || undefined,
     params.search,
