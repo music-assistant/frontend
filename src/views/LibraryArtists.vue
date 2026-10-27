@@ -13,6 +13,7 @@
     :show-search-button="true"
     :show-genre-filter="true"
     :sort-listing="ListingType.LIBRARY_ARTISTS"
+    library-toolbar
     :icon="ArtistIcon"
     :restore-state="true"
     :total="total"

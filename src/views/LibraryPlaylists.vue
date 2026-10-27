@@ -10,6 +10,7 @@
     :load-paged-data="loadItems"
     :show-library="true"
     :sort-listing="ListingType.LIBRARY_PLAYLISTS"
+    library-toolbar
     :update-available="updateAvailable"
     :title="$t('playlists')"
     :allow-key-hooks="true"

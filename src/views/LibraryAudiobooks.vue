@@ -9,6 +9,7 @@
     :load-paged-data="loadItems"
     :show-library="true"
     :sort-listing="ListingType.LIBRARY_AUDIOBOOKS"
+    library-toolbar
     :sort-option-exclude-fields="audiobookSortOptionExclusions"
     :update-available="updateAvailable"
     :title="$t('audiobooks')"

@@ -9,6 +9,7 @@
     :show-track-number="false"
     :load-paged-data="loadItems"
     :sort-listing="ListingType.LIBRARY_TRACKS"
+    library-toolbar
     :show-album="true"
     :update-available="updateAvailable"
     :title="$t('tracks')"

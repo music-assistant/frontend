@@ -1,6 +1,9 @@
 import ItemsListing from "@/components/ItemsListing.vue";
 import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
+import ListingActiveFilters from "@/components/listing-toolbar/ListingActiveFilters.vue";
+import ListingToolbarControls from "@/components/listing-toolbar/ListingToolbarControls.vue";
+import ListingViewToggle from "@/components/listing-toolbar/ListingViewToggle.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { defineComponent, h, type SetupContext } from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
@@ -2432,5 +2435,221 @@ describe("ItemsListing server sort options", () => {
         sortDirection: SortDirection.ASC,
       }),
     );
+  });
+});
+
+describe("ItemsListing library toolbar", () => {
+  const sortOptions: SortOptionInfo[] = [
+    {
+      field: SortField.SORT_NAME,
+      supports_direction: true,
+      default_direction: SortDirection.ASC,
+      label_key: "sort_name",
+    },
+    {
+      field: SortField.TIMESTAMP_ADDED,
+      supports_direction: true,
+      default_direction: SortDirection.DESC,
+      label_key: "timestamp_added",
+    },
+  ];
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset().mockResolvedValue([]);
+    mockGetSortOptions.mockReset().mockResolvedValue(sortOptions);
+    mockSubscribeMulti.mockReset().mockImplementation(events.subscribeMulti);
+    mockSetItemsListingPreference.mockClear();
+    store.prevState = undefined;
+    store.currentUser = undefined;
+    store.mobileLayout = false;
+  });
+
+  afterEach(() => {
+    store.currentUser = undefined;
+    store.mobileLayout = false;
+  });
+
+  /** Signs in a user who saved these settings for the artists page. */
+  function signInWithSavedFilters(settings: Record<string, unknown>) {
+    store.currentUser = user({
+      preferences: { "itemsListing.libraryartists.artists": settings },
+    });
+  }
+
+  async function mountLibraryPage(
+    props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+  ) {
+    const listing = mountListingRaw({
+      itemtype: "artists",
+      path: "libraryartists",
+      sortListing: ListingType.LIBRARY_ARTISTS,
+      libraryToolbar: true,
+      showGenreFilter: false,
+      showFavoritesOnlyFilter: true,
+      showAlbumArtistsOnlyFilter: true,
+      showSearchButton: true,
+      ...props,
+    });
+    await flushPromises();
+    return listing;
+  }
+
+  function menuLabels(listing: ReturnType<typeof mountListingRaw>) {
+    return (
+      listing.findComponent({ name: "Toolbar" }).props("menuItems") as {
+        label?: string;
+      }[]
+    ).map((item) => item.label);
+  }
+
+  function chipLabels(listing: ReturnType<typeof mountListingRaw>) {
+    return listing
+      .findComponent(ListingActiveFilters)
+      .findAll("li")
+      .map((chip) => chip.text());
+  }
+
+  it("sorts from the title bar instead of a row of chips", async () => {
+    const listing = await mountLibraryPage();
+
+    expect(listing.find(".listing-sort-chips-row").exists()).toBe(false);
+    expect(listing.findComponent(LibrarySortControls).props("mode")).toBe(
+      "split",
+    );
+  });
+
+  it("sorts from an icon on a phone", async () => {
+    store.mobileLayout = true;
+    const listing = await mountLibraryPage();
+
+    expect(listing.findComponent(LibrarySortControls).props("mode")).toBe(
+      "menu",
+    );
+  });
+
+  it("keeps search and the filters out of the overflow menu", async () => {
+    const listing = await mountLibraryPage();
+
+    expect(menuLabels(listing)).not.toContain("tooltip.search");
+    expect(menuLabels(listing)).not.toContain("tooltip.filter_favorites");
+    expect(menuLabels(listing)).not.toContain("tooltip.album_artist_filter");
+    expect(menuLabels(listing)).not.toContain("tooltip.view_mode_current");
+  });
+
+  it("leaves only the cover size of the view in a wide screen's menu", async () => {
+    signInWithSavedFilters({ viewMode: "panel" });
+    const listing = await mountLibraryPage();
+
+    expect(menuLabels(listing)).toContain("grid_size");
+
+    listing
+      .findComponent(ListingViewToggle)
+      .vm.$emit("update:modelValue", "list");
+    await flushPromises();
+
+    expect(menuLabels(listing)).not.toContain("grid_size");
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "libraryartists",
+      "artists",
+      "viewMode",
+      "list",
+    );
+  });
+
+  it("switches the view from the menu on a phone", async () => {
+    store.mobileLayout = true;
+    const listing = await mountLibraryPage();
+
+    expect(listing.findComponent(ListingViewToggle).exists()).toBe(false);
+    expect(menuLabels(listing)).toContain("tooltip.view_mode_current");
+  });
+
+  it("opens the search field from its icon and closes it from inside", async () => {
+    const listing = await mountLibraryPage();
+    const searchIcon = () => listing.find('button[aria-label="search"]');
+
+    await searchIcon().trigger("click");
+    await flushPromises();
+
+    expect(searchIcon().exists()).toBe(false);
+    expect(listing.find("input").exists()).toBe(true);
+
+    await listing.find('button[aria-label="close"]').trigger("click");
+    await flushPromises();
+
+    expect(searchIcon().exists()).toBe(true);
+  });
+
+  it("shows every active filter as a chip that turns it off", async () => {
+    signInWithSavedFilters({ favoriteFilter: true, albumArtistsFilter: true });
+    const listing = await mountLibraryPage();
+
+    expect(chipLabels(listing)).toEqual([
+      "listing_filters.favorites_only",
+      "listing_filters.album_artists_only",
+      "listing_filters.clear_all",
+    ]);
+    expect(
+      listing.findComponent(ListingToolbarControls).props("activeFilterCount"),
+    ).toBe(2);
+
+    await listing
+      .findComponent(ListingActiveFilters)
+      .find('button[aria-label="listing_filters.remove"]')
+      .trigger("click");
+
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "libraryartists",
+      "artists",
+      "favoriteFilter",
+      false,
+    );
+  });
+
+  it("clears every filter at once", async () => {
+    signInWithSavedFilters({ favoriteFilter: true, albumArtistsFilter: true });
+    const listing = await mountLibraryPage();
+
+    listing.findComponent(ListingActiveFilters).vm.$emit("clear");
+    await flushPromises();
+
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "libraryartists",
+      "artists",
+      "favoriteFilter",
+      false,
+    );
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "libraryartists",
+      "artists",
+      "albumArtistsFilter",
+      false,
+    );
+  });
+
+  it("has no chips row while nothing is filtered", async () => {
+    const listing = await mountLibraryPage();
+
+    expect(listing.findComponent(ListingActiveFilters).exists()).toBe(false);
+  });
+
+  it("counts the items only while the page's total covers the filters", async () => {
+    // a full page, so the listing does not know it holds everything
+    const listing = await mountLibraryPage({
+      total: 128,
+      limit: 1,
+      loadPagedData: vi.fn().mockResolvedValue([artist()]),
+    });
+
+    expect(listing.find(".toolbar-stub").text()).toContain("128");
+
+    // the page's count request is not told about a search
+    await listing.find('button[aria-label="search"]').trigger("click");
+    await listing.find("input").setValue("be");
+    await flushPromises();
+
+    expect(listing.find(".toolbar-stub").text()).not.toContain("128");
   });
 });

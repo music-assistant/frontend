@@ -9,6 +9,7 @@
     :load-paged-data="loadItems"
     :show-library="true"
     :sort-listing="ListingType.LIBRARY_PODCASTS"
+    library-toolbar
     :update-available="updateAvailable"
     :title="$t('podcasts')"
     :allow-key-hooks="true"

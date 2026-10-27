@@ -1,7 +1,35 @@
 <template>
-  <div v-if="mode === 'menu'" class="flex min-w-0 items-center gap-1">
+  <div v-if="mode !== 'chips'" class="flex min-w-0 items-center gap-1">
     <DropdownMenu>
-      <DropdownMenuTrigger as-child>
+      <!-- the field opens the menu, and the arrow beside it flips the order -->
+      <ButtonGroup v-if="mode === 'split'" class="w-46">
+        <DropdownMenuTrigger as-child>
+          <Button
+            variant="outline"
+            class="h-10 min-w-0 flex-1 justify-start gap-2 px-3"
+            :aria-label="$t('sort.sort_by_current', [currentLabel])"
+            :disabled="!options.length"
+          >
+            <ArrowUpDown class="text-muted-foreground" />
+            <span class="min-w-0 flex-1 truncate text-left">
+              {{ currentLabel }}
+            </span>
+            <ChevronDown class="text-muted-foreground" />
+          </Button>
+        </DropdownMenuTrigger>
+        <Button
+          variant="outline"
+          size="icon-lg"
+          :title="directionToggleLabel"
+          :aria-label="directionToggleLabel"
+          :disabled="!selectedOption?.supports_direction"
+          @click="flipSortDirection"
+        >
+          <ArrowDown v-if="current.direction === SortDirection.DESC" />
+          <ArrowUp v-else />
+        </Button>
+      </ButtonGroup>
+      <DropdownMenuTrigger v-else as-child>
         <Button
           variant="ghost"
           size="icon-lg"
@@ -13,6 +41,12 @@
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" class="min-w-56">
+        <DropdownMenuLabel
+          v-if="mode === 'split'"
+          class="text-xs text-muted-foreground uppercase"
+        >
+          {{ $t("sort.sort_by") }}
+        </DropdownMenuLabel>
         <DropdownMenuRadioGroup
           :model-value="current.field"
           @update:model-value="selectSortOption"
@@ -33,6 +67,12 @@
         </DropdownMenuRadioGroup>
         <template v-if="selectedOption?.supports_direction">
           <DropdownMenuSeparator />
+          <DropdownMenuLabel
+            v-if="mode === 'split'"
+            class="text-xs text-muted-foreground uppercase"
+          >
+            {{ $t("sort.order") }}
+          </DropdownMenuLabel>
           <DropdownMenuRadioGroup
             :model-value="current.direction"
             @update:model-value="selectSortDirection"
@@ -94,9 +134,11 @@
 
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
@@ -104,12 +146,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SortDirection, type SortOptionInfo } from "@/plugins/api/interfaces";
 import { useLibrarySorting } from "@/composables/useLibrarySorting";
-import { ArrowDown, ArrowUp, ArrowUpDown, Check } from "@lucide/vue";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Check,
+  ChevronDown,
+} from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
 interface Props {
-  mode: "menu" | "chips";
+  // menu: an icon that opens the sort menu; split: the current sort opening
+  // the menu, beside a button that flips its order; chips: the quick sorts
+  mode: "menu" | "split" | "chips";
   options: SortOptionInfo[];
   sortBy: string;
 }
@@ -154,6 +204,23 @@ const selectSortDirection = (direction: unknown) => {
 
 const sortDirectionLabel = (direction: SortDirection) =>
   t(direction === SortDirection.ASC ? "sort.ascending" : "sort.descending");
+
+const oppositeDirection = (direction: SortDirection) =>
+  direction === SortDirection.ASC ? SortDirection.DESC : SortDirection.ASC;
+
+const currentLabel = computed(() =>
+  selectedOption.value ? sortOptionLabel(selectedOption.value) : "",
+);
+
+const directionToggleLabel = computed(() =>
+  t("sort.switch_direction", [
+    sortDirectionLabel(current.value.direction),
+    sortDirectionLabel(oppositeDirection(current.value.direction)),
+  ]),
+);
+
+const flipSortDirection = () =>
+  selectSortDirection(oppositeDirection(current.value.direction));
 
 const quickSortDirection = (option: SortOptionInfo) =>
   current.value.field === option.field

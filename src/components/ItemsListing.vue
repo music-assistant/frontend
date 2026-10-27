@@ -16,21 +16,43 @@
       color="transparent"
       :menu-items="menuItems"
       :enforce-overflow-menu="true"
-      :menu-active="hasActiveFilters"
+      :menu-active="hasActiveFilters && !libraryToolbar"
       @title-clicked="toggleExpand"
     >
       <template #title>
         <slot name="title">{{ title }}</slot>
+        <span
+          v-if="libraryToolbar && listingCount !== undefined"
+          class="ms-2 text-base font-normal text-muted-foreground"
+        >
+          {{ listingCount }}
+        </span>
       </template>
 
       <template #append>
         <LibrarySortControls
-          v-if="props.sortListing && sortOptionsLoaded && sortOptions.length"
+          v-if="
+            !libraryToolbar &&
+            props.sortListing &&
+            sortOptionsLoaded &&
+            sortOptions.length
+          "
           mode="menu"
           :options="sortOptions"
           :sort-by="params.sortBy"
           @sort-by="changeSort"
         />
+        <Button
+          v-if="libraryToolbar && searchAvailable && !searchButtonCloses"
+          variant="ghost"
+          size="icon-lg"
+          :title="$t('search')"
+          :aria-label="$t('search')"
+          :aria-expanded="showSearchInput"
+          @click="toggleSearch"
+        >
+          <Search class="size-[22px]" />
+        </Button>
         <Transition v-if="!store.mobileLayout" name="listing-search">
           <!-- the input follows the slot's edge as it opens, and the padding
                keeps its 3px focus ring inside the clipped area -->
@@ -41,17 +63,52 @@
             <SearchInput
               ref="searchInputRef"
               v-model="params.search"
-              clearable
+              :clearable="!libraryToolbar"
               class="listing-search listing-search--inline"
               :placeholder="searchLabel"
               :aria-label="searchLabel"
               @focus="searchHasFocus = true"
               @blur="searchHasFocus = false"
-            />
+            >
+              <!-- the search icon gives way to the field, so it closes here -->
+              <template v-if="libraryToolbar" #append>
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    size="icon-xs"
+                    class="text-muted-foreground"
+                    :title="$t('close')"
+                    :aria-label="$t('close')"
+                    @click="closeSearch"
+                  >
+                    <X />
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </template>
+            </SearchInput>
           </div>
         </Transition>
+        <ListingToolbarControls
+          v-if="libraryToolbar"
+          :sort-options="sortOptionsLoaded ? sortOptions : []"
+          :sort-by="params.sortBy"
+          :view-mode="viewMode"
+          :show-view-toggle="!forcedViewMode"
+          :filters="listingFilters"
+          :active-filter-count="activeFilterChipList.length"
+          :compact="store.mobileLayout"
+          @sort-by="changeSort"
+          @view-mode="selectViewMode"
+          @clear-filters="clearFilters"
+        />
       </template>
     </Toolbar>
+
+    <ListingActiveFilters
+      v-if="libraryToolbar && activeFilterChipList.length"
+      :chips="activeFilterChipList"
+      :compact="store.mobileLayout"
+      @clear="clearFilters"
+    />
 
     <div v-if="showSortChipsRow" class="listing-sort-chips-row h-12">
       <LibrarySortControls
@@ -382,6 +439,8 @@ import TrackTableRow from "@/components/track-table/TrackTableRow.vue";
 import { TRACK_ROW_HEIGHT } from "@/components/track-table/trackTableColumns";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
+import ListingActiveFilters from "@/components/listing-toolbar/ListingActiveFilters.vue";
+import ListingToolbarControls from "@/components/listing-toolbar/ListingToolbarControls.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -391,11 +450,16 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
 import { SearchInput } from "@/components/ui/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GridSizeSlider from "@/components/GridSizeSlider.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import { useItemsListing } from "@/composables/useItemsListing";
+import {
+  ALBUM_TYPE_FILTER_KEYS,
+  useListingFilters,
+} from "@/composables/useListingFilters";
 import type {
   LoadDataParams,
   LoadPagedDataFn,
@@ -409,12 +473,14 @@ import {
   setFavoriteState,
   subscribeOwnFavorites,
 } from "@/helpers/favorites";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import {
   GRID_SIZE_DEFAULT,
   gridColumns,
   normalizeGridSize,
 } from "@/helpers/grid_size";
+import { activeFilterChips, listingItemCount } from "@/helpers/listing_filters";
 import { returnedByHistory } from "@/helpers/navigation";
 import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -457,6 +523,7 @@ import {
   EyeOff,
   Files,
   FilterX,
+  Grid3x3,
   Heart,
   Layers,
   LayoutGrid,
@@ -558,6 +625,9 @@ export interface Props {
   toolBarTabs?: ToolBarTab[];
   // the list view shows tracks as a table with columns
   trackTable?: boolean;
+  // a library page: search, sort, view and filters sit in the title bar, and
+  // the active filters show as chips below it
+  libraryToolbar?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortListing: undefined,
@@ -606,6 +676,7 @@ const props = withDefaults(defineProps<Props>(), {
   forcedViewMode: undefined,
   toolBarTabs: undefined,
   trackTable: false,
+  libraryToolbar: false,
 });
 
 const emit = defineEmits<{
@@ -653,10 +724,12 @@ const loadPending = computed(
   () => loading.value || (!!props.sortListing && !sortOptionsLoaded.value),
 );
 // the desktop row of quick sorts keeps its height while the sort options load,
-// so the items do not shift; a listing without quick sorts has no row
+// so the items do not shift; a listing without quick sorts has no row, and a
+// library page sorts from its title bar
 const showSortChipsRow = computed(
   () =>
     !!props.sortListing &&
+    !props.libraryToolbar &&
     !store.mobileLayout &&
     (!sortOptionsLoaded.value || librarySorting.quickOptions.value.length > 0),
 );
@@ -946,12 +1019,16 @@ const toggleHideEmptyFilter = function () {
   const current = params.value.hideEmptyFilter;
   // cycle: undefined/false (all) → true (hide empty) → null (defaults only) → false (all)
   if (current === true) {
-    params.value.hideEmptyFilter = null;
+    setHideEmptyFilter(null);
   } else if (current === null) {
-    params.value.hideEmptyFilter = false;
+    setHideEmptyFilter(false);
   } else {
-    params.value.hideEmptyFilter = true;
+    setHideEmptyFilter(true);
   }
+};
+
+const setHideEmptyFilter = function (hideEmpty: boolean | null) {
+  params.value.hideEmptyFilter = hideEmpty;
   setItemsListingPreference(
     props.path || props.itemtype,
     props.itemtype,
@@ -1434,47 +1511,86 @@ const singleProviderSelect = computed(
   () => props.singleProviderFilter || props.requireProviderSelection,
 );
 
+// the sources a library page's Filters panel offers, each marked by its icon
+const sourceFilterOptions = computed(() =>
+  providerFilterAvailable.value && !props.requireProviderSelection
+    ? musicProviders.value.map((provider) => ({
+        ...provider,
+        domain: api.providers[provider.value]?.domain,
+      }))
+    : [],
+);
+
+const listingFilters = useListingFilters(
+  props,
+  { params, genreOptions, providerOptions: sourceFilterOptions },
+  {
+    toggleFavorites: toggleFavoriteFilter,
+    toggleAlbumArtists: toggleAlbumArtistsFilter,
+    toggleLibraryOnly: toggleLibraryOnlyFilter,
+    toggleHideFullyPlayed: toggleHideFullyPlayedFilter,
+    toggleCollapseCollections: toggleCollapseCollections,
+    setHideEmpty: setHideEmptyFilter,
+    toggleGenre: toggleGenreFilter,
+    toggleAlbumType: changeAlbumTypeFilter,
+    toggleProvider: changeProviderFilter,
+  },
+);
+
+const activeFilterChipList = computed(() =>
+  activeFilterChips(listingFilters.value),
+);
+
+// turns every active filter off; the reloads they ask for coalesce into one
+const clearFilters = function () {
+  for (const chip of activeFilterChipList.value) chip.remove();
+};
+
+// the page's count request only takes the filters it was written for
+const listingCount = computed(() => {
+  const p = params.value;
+  return listingItemCount({
+    total: props.total,
+    loaded: pagedItems.value.length,
+    allLoaded: allItemsReceived.value,
+    narrowedBeyondTotal: Boolean(
+      p.search ||
+      (Array.isArray(p.genreIds)
+        ? p.genreIds.length
+        : p.genreIds !== undefined) ||
+      (p.provider?.length && !props.requireProviderSelection) ||
+      p.libraryOnly ||
+      p.hideFullyPlayed ||
+      (props.showCollapseCollections && p.collapseCollections),
+    ),
+  });
+});
+
 watchEffect(() => {
   if (!showSearchInput.value) {
     searchHasFocus.value = false;
   }
 });
 
-const menuItems = computed(() => {
-  // toggle expand
-  if (props.allowCollapse === true && !expanded.value) {
-    return [
-      {
-        label: "tooltip.collapse_expand",
-        icon: ChevronDown,
-        action: toggleExpand,
-        overflowAllowed: false,
-      },
-    ];
-  }
+// the cover size slider, as a row of the menu
+const gridSizeMenuItem = (): ContextMenuItem => ({
+  label: "grid_size",
+  // markRaw: the menu items land in a reactive array; a bare component
+  // definition there would be needlessly made reactive.
+  component: markRaw(GridSizeSlider),
+  componentProps: {
+    size: gridSize.value,
+    onChange: (size: number) => {
+      gridSize.value = size;
+    },
+    onCommit: commitGridSize,
+  },
+});
 
+// the filters a listing offers in its menu
+const filterMenuItems = function () {
   const items: ToolBarMenuItem[] = [];
 
-  // toggle select menu item
-  if (props.showSelectButton !== false) {
-    if (showCheckboxes.value) {
-      items.push({
-        label: "tooltip.select_all",
-        icon: CheckCheck,
-        action: selectAll,
-        overflowAllowed: true,
-      });
-    }
-    items.push({
-      label: showCheckboxes.value
-        ? "tooltip.exit_select_items"
-        : "tooltip.select_items",
-      icon: ListChecks,
-      action: toggleCheckboxes,
-      active: showCheckboxes.value,
-      overflowAllowed: true,
-    });
-  }
   // library only filter
   if (props.showLibraryOnlyFilter === true) {
     items.push({
@@ -1582,15 +1698,7 @@ const menuItems = computed(() => {
       active: params.value.albumType && params.value.albumType.length > 0,
       closeOnContentClick: false,
       overflowAllowed: true,
-      subItems: [
-        "album",
-        "single",
-        "ep",
-        "compilation",
-        "live",
-        "soundtrack",
-        "unknown",
-      ].map((key) => {
+      subItems: ALBUM_TYPE_FILTER_KEYS.map((key) => {
         return {
           label: `album_type.${key}`,
           selected: params.value.albumType?.includes(key),
@@ -1617,6 +1725,47 @@ const menuItems = computed(() => {
     });
   }
 
+  return items;
+};
+
+const menuItems = computed(() => {
+  // toggle expand
+  if (props.allowCollapse === true && !expanded.value) {
+    return [
+      {
+        label: "tooltip.collapse_expand",
+        icon: ChevronDown,
+        action: toggleExpand,
+        overflowAllowed: false,
+      },
+    ];
+  }
+
+  const items: ToolBarMenuItem[] = [];
+
+  // toggle select menu item
+  if (props.showSelectButton !== false) {
+    if (showCheckboxes.value) {
+      items.push({
+        label: "tooltip.select_all",
+        icon: CheckCheck,
+        action: selectAll,
+        overflowAllowed: true,
+      });
+    }
+    items.push({
+      label: showCheckboxes.value
+        ? "tooltip.exit_select_items"
+        : "tooltip.select_items",
+      icon: ListChecks,
+      action: toggleCheckboxes,
+      active: showCheckboxes.value,
+      overflowAllowed: true,
+    });
+  }
+  // the filters; a library page has them in its Filters panel instead
+  if (!props.libraryToolbar) items.push(...filterMenuItems());
+
   // refresh action
   if (
     props.showRefreshButton !== false ||
@@ -1634,8 +1783,8 @@ const menuItems = computed(() => {
     });
   }
 
-  // toggle search (auto-hidden for small listings)
-  if (searchAvailable.value) {
+  // toggle search (auto-hidden for small listings); a library page has its own
+  if (searchAvailable.value && !props.libraryToolbar) {
     items.push({
       label: searchButtonCloses.value
         ? "close"
@@ -1665,8 +1814,19 @@ const menuItems = computed(() => {
     });
   }
 
-  // toggle view mode (hidden when view mode is controlled externally)
-  if (!props.forcedViewMode)
+  // toggle view mode (hidden when view mode is controlled externally). A
+  // library page switches views from its title bar, so on a wide screen only
+  // the cover size is left for the menu.
+  if (props.libraryToolbar && !store.mobileLayout) {
+    if (!props.forcedViewMode && viewMode.value != "list") {
+      items.push({
+        label: "grid_size",
+        icon: Grid3x3,
+        overflowAllowed: true,
+        subItems: [gridSizeMenuItem()],
+      });
+    }
+  } else if (!props.forcedViewMode)
     items.push({
       label: "tooltip.view_mode_current",
       labelArgs: [getViewModeLabel(viewMode.value)],
@@ -1697,20 +1857,7 @@ const menuItems = computed(() => {
             selectViewMode("panel_compact");
           },
         },
-        {
-          label: "grid_size",
-          hide: viewMode.value == "list",
-          // markRaw: the menu items land in a reactive array; a bare component
-          // definition there would be needlessly made reactive.
-          component: markRaw(GridSizeSlider),
-          componentProps: {
-            size: gridSize.value,
-            onChange: (size: number) => {
-              gridSize.value = size;
-            },
-            onCommit: commitGridSize,
-          },
-        },
+        { ...gridSizeMenuItem(), hide: viewMode.value == "list" },
       ],
     });
 

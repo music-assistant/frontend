@@ -7,6 +7,7 @@
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :sort-listing="ListingType.LIBRARY_ALBUMS"
+    library-toolbar
     :update-available="updateAvailable"
     :title="$t('albums')"
     :allow-key-hooks="true"

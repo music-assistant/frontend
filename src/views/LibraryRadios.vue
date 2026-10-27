@@ -9,6 +9,7 @@
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :sort-listing="ListingType.LIBRARY_RADIOS"
+    library-toolbar
     :update-available="updateAvailable"
     :title="$t('radios')"
     :show-search-button="true"
