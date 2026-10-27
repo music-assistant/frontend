@@ -2625,6 +2625,46 @@ describe("ItemsListing library toolbar", () => {
     ).toBe(0);
   });
 
+  it("keeps a cached visit's count while scrolling to its next page", async () => {
+    signInWithSavedFilters({ favoriteFilter: true });
+    const scroller = {
+      name: "VInfiniteScroll",
+      props: { onLoad: { type: Function, default: undefined } },
+      template: "<div><slot /></div>",
+    };
+    // a full page, so there is a next one to scroll to
+    const props = {
+      total: 12,
+      limit: 1,
+      restoreState: true,
+      loadPagedData: vi.fn().mockResolvedValue([artist()]),
+    };
+    const listing = await mountLibraryPage(props, {
+      VInfiniteScroll: scroller,
+    });
+    listing.unmount();
+
+    // the page starts over from the whole library's count
+    const restored = await mountLibraryPage(
+      { ...props, total: 128 },
+      { VInfiniteScroll: scroller },
+    );
+    const onLoad = restored
+      .findComponent({ name: "VInfiniteScroll" })
+      .props("onLoad") as (options: {
+      side: string;
+      done: () => void;
+    }) => Promise<void>;
+    await onLoad({ side: "end", done: () => {} });
+    await flushPromises();
+
+    expect(props.loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ offset: 1 }),
+    );
+    expect(restored.find(".toolbar-stub").text()).toContain("12");
+    expect(restored.find(".toolbar-stub").text()).not.toContain("128");
+  });
+
   it("hides the search icon while the section is collapsed", async () => {
     signInWithSavedFilters({ expand: false });
     const listing = await mountLibraryPage({ allowCollapse: true });

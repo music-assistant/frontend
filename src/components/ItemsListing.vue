@@ -1664,10 +1664,11 @@ const clearFilters = function () {
   loadData(true, undefined, true);
 };
 
-// the count a cached visit came back with, kept until the listing loads again
+// the count a cached visit came back with: the next page of the same visit
+// keeps it, and a load from the first page brings the page's own count again
 const restoredCount = ref<{ count?: number }>();
 watch(loading, (isLoading) => {
-  if (isLoading) restoredCount.value = undefined;
+  if (isLoading && !params.value.offset) restoredCount.value = undefined;
 });
 
 // the page's count request only takes the filters it was written for
