@@ -79,7 +79,7 @@ const genreIdsOf = (genreIds: LoadDataParams["genreIds"]) => {
 
 /**
  * The filters a library listing offers, each with its current state, for the
- * Filters panel and the active filter chips.
+ * Filters panel and the count on its button.
  */
 export function useListingFilters(
   flags: Readonly<ListingFilterFlags>,
@@ -165,18 +165,25 @@ export function useListingFilters(
         select: (value) => actions.setHideEmpty(hideEmptyFor(value)),
       });
     }
-    if (flags.showGenreFilter && state.genreOptions.value.length) {
+    const pickedGenres = genreIdsOf(params.genreIds).map(String);
+    // a genre picked by a link stays on show, and clearable, while the genre
+    // list is still loading or could not be loaded, named by its id until then
+    const genreOptions = state.genreOptions.value.map((genre) => ({
+      label: genre.label,
+      value: String(genre.value),
+    }));
+    const unlistedGenres = pickedGenres
+      .filter((id) => !genreOptions.some((option) => option.value === id))
+      .map((id) => ({ label: id, value: id }));
+    if (flags.showGenreFilter && (genreOptions.length || pickedGenres.length)) {
       filters.push({
         kind: "multi",
         id: "genre",
         label: t("listing_filters.genre"),
         placeholder: t("listing_filters.any_genre"),
         layout: "dropdown",
-        options: state.genreOptions.value.map((genre) => ({
-          label: genre.label,
-          value: String(genre.value),
-        })),
-        selected: genreIdsOf(params.genreIds).map(String),
+        options: [...genreOptions, ...unlistedGenres],
+        selected: pickedGenres,
         toggle: (value) => actions.toggleGenre(Number(value)),
         set: (values) => actions.setGenres(values.map(Number)),
       });
