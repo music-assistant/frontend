@@ -2755,6 +2755,41 @@ describe("ItemsListing library toolbar", () => {
     ).toBe(0);
   });
 
+  it("keeps a picked source on offer once it is the only one left", async () => {
+    for (const [instanceId, name] of [
+      ["spotify--1", "Spotify"],
+      ["tidal--1", "Tidal"],
+    ]) {
+      api.providers[instanceId] = {
+        instance_id: instanceId,
+        name,
+        domain: name.toLowerCase(),
+      } as ProviderInstance;
+    }
+    try {
+      const listing = await mountLibraryPage({
+        providerFilterOptions: ["spotify--1", "tidal--1"],
+      });
+      const controls = () => listing.findComponent(ListingToolbarControls);
+      const source = () =>
+        (controls().props("filters") as ListingFilter[]).find(
+          (filter) => filter.id === "provider",
+        ) as ListingMultiFilter | undefined;
+
+      source()?.toggle("spotify--1");
+      await flushPromises();
+      // the other source goes away while Spotify is picked
+      await listing.setProps({ providerFilterOptions: ["spotify--1"] });
+      await flushPromises();
+
+      expect(source()?.selected).toEqual(["spotify--1"]);
+      expect(controls().props("activeFilterCount")).toBe(1);
+    } finally {
+      delete api.providers["spotify--1"];
+      delete api.providers["tidal--1"];
+    }
+  });
+
   it("turns a filter off when the saved settings later leave it off", async () => {
     signInWithSavedFilters({ favoriteFilter: true });
     const listing = await mountLibraryPage();

@@ -1579,14 +1579,20 @@ const singleProviderSelect = computed(
 );
 
 // the sources a library page's Filters panel offers, each marked by its icon
-const sourceFilterOptions = computed(() =>
-  providerFilterAvailable.value && !props.requireProviderSelection
-    ? musicProviders.value.map((provider) => ({
-        ...provider,
-        domain: api.providers[provider.value]?.domain,
-      }))
-    : [],
-);
+const sourceFilterOptions = computed(() => {
+  if (props.requireProviderSelection || props.showProviderFilter === false) {
+    return [];
+  }
+  // a source picked while there were more stays on offer, and clearable,
+  // once it is the only one left
+  if (!providerFilterAvailable.value && !params.value.provider?.length) {
+    return [];
+  }
+  return musicProviders.value.map((provider) => ({
+    ...provider,
+    domain: api.providers[provider.value]?.domain,
+  }));
+});
 
 const listingFilters = useListingFilters(
   props,
