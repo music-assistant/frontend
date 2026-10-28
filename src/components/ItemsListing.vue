@@ -436,6 +436,7 @@ import {
   PodcastEpisode,
   ProviderFeature,
   ProviderType,
+  QueueOption,
   SortDirection,
   Radio,
   SortField,
@@ -468,6 +469,7 @@ import {
   ListMusic,
   MicVocal,
   Package,
+  Play,
   RefreshCw,
   Search,
   TriangleAlert,
@@ -508,6 +510,7 @@ export interface Props {
   showRefreshButton?: boolean;
   showSelectButton?: boolean;
   showAlbumTypeFilter?: boolean;
+  showPlayAll?: boolean;
   showProviderFilter?: boolean;
   showCollapseCollections?: boolean;
   // when set, the provider filter allows only a single selection at a time
@@ -579,6 +582,7 @@ const props = withDefaults(defineProps<Props>(), {
   showRefreshButton: undefined,
   showSelectButton: undefined,
   showAlbumTypeFilter: undefined,
+  showPlayAll: false,
   showProviderFilter: undefined,
   showCollapseCollections: undefined,
   singleProviderFilter: false,
@@ -1493,6 +1497,17 @@ const menuItems = computed(() => {
 
   const items: ToolBarMenuItem[] = [];
 
+  if (props.showPlayAll) {
+    items.push({
+      label: "tooltip.play_all",
+      icon: Play,
+      action: playAll,
+      disabled:
+        loading.value || !pagedItems.value.length || !store.activePlayer,
+      overflowAllowed: true,
+    });
+  }
+
   // toggle select menu item
   if (props.showSelectButton !== false) {
     if (showCheckboxes.value) {
@@ -2297,6 +2312,25 @@ async function selectEveryItem() {
   await loadAllItems();
   selectedItems.value = pagedItems.value.filter((x) => !isParentDirItem(x));
   showCheckboxes.value = true;
+}
+
+/** Loads the remaining pages and plays every item, in the order shown. */
+async function playAll() {
+  const target = store.activePlayer?.player_id;
+  await loadAllItems();
+  // the paging can fail, outlive the listing, or end after another player was picked
+  if (isDisposed() || loadError.value || !allItemsReceived.value) return;
+  if (store.activePlayer?.player_id !== target) return;
+  const uris = pagedItems.value.filter((x) => x.is_playable).map((x) => x.uri);
+  if (!uris.length) return;
+  try {
+    // the order only holds for the options that start playing right away
+    await api.playMedia(uris, QueueOption.REPLACE, { shuffle: false });
+  } catch (err) {
+    // a lost connection rejects without the api layer's own toast
+    console.error("[ItemsListing] play all failed", err);
+    toast.error(t("play_failed"));
+  }
 }
 </script>
 
