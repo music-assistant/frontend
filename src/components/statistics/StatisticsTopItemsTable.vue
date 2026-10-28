@@ -11,11 +11,13 @@
     <template #header>
       <Tabs v-model="activeTab">
         <TabsList :aria-label="$t('statistics_top_items')">
+          <!-- Vuetify's own .border colours the trigger's transparent border;
+               the state variant outranks it -->
           <TabsTrigger
             v-for="(_, mediaType) in TABS"
             :key="mediaType"
             :value="mediaType"
-            class="px-3 text-[13px]"
+            class="px-3 text-[13px] data-[state=inactive]:border-transparent"
           >
             {{ $t(TAB_LABELS[mediaType]) }}
           </TabsTrigger>
