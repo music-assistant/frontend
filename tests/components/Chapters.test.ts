@@ -325,4 +325,25 @@ describe("Chapters", () => {
     eventbus.off("deleteConfirmationDialog", onConfirmation);
     wrapper.unmount();
   });
+
+  // the episode page steps to the next item while the last one may still load
+  it("keeps a late answer for the previous item off the next one", async () => {
+    let answerFirst!: (bookmarks: MediaItemBookmark[]) => void;
+    apiMock.getBookmarks.mockReturnValueOnce(
+      new Promise<MediaItemBookmark[]>((resolve) => (answerFirst = resolve)),
+    );
+    const wrapper = await mountChapters(
+      [bookmark(ABS, "Of the episode", 30, false)],
+      { ...book, metadata: {} } as Audiobook,
+    );
+    expect(rowTexts(wrapper)).toEqual([]);
+
+    await wrapper.setProps({ itemDetails: { ...episode, metadata: {} } });
+    await flushPromises();
+    expect(rowTexts(wrapper)).toEqual([["Of the episode", "00:30"]]);
+
+    answerFirst([bookmark(LOCAL, "Of the book", 90, true)]);
+    await flushPromises();
+    expect(rowTexts(wrapper)).toEqual([["Of the episode", "00:30"]]);
+  });
 });

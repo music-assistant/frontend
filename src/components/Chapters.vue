@@ -266,11 +266,14 @@ const isEditable = (bookmark: MediaItemBookmark) =>
   );
 
 const loadBookmarks = async function () {
-  bookmarks.value = await api.getBookmarks(
-    props.itemDetails.media_type,
-    props.itemDetails.item_id,
-    props.itemDetails.provider,
+  const item = props.itemDetails;
+  const loaded = await api.getBookmarks(
+    item.media_type,
+    item.item_id,
+    item.provider,
   );
+  // stepping to another item while this was in flight leaves it for that item's load
+  if (props.itemDetails.uri === item.uri) bookmarks.value = loaded;
 };
 
 const bookmarkClicked = function (bookmark: MediaItemBookmark) {
@@ -318,7 +321,10 @@ const removeClicked = function (bookmark: MediaItemBookmark) {
 
 watch(
   () => props.itemDetails.uri,
-  () => loadBookmarks(),
+  () => {
+    bookmarks.value = [];
+    loadBookmarks();
+  },
   { immediate: true },
 );
 
