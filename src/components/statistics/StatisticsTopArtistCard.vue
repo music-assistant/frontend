@@ -10,7 +10,7 @@
         <ChartContainer
           :config="chartConfig"
           class="aspect-square size-[112px] flex-none"
-          :style="donutLabelStyle"
+          :style="donutStyle"
           role="img"
           :aria-label="accessibleLabel"
         >
@@ -88,7 +88,9 @@ const chartConfig = {
   artist: { label: $t("artists"), color: "var(--primary)" },
   rest: { color: "var(--muted)" },
 } satisfies ChartConfig;
-const donutLabelStyle = {
+const donutStyle = {
+  // Unovis outlines each segment in white, which shows as lines on a dark card
+  "--vis-donut-segment-stroke-width": "0",
   "--vis-donut-central-label-font-size": "22px",
   "--vis-donut-central-label-font-weight": "700",
   "--vis-donut-central-label-text-color": "var(--foreground)",
