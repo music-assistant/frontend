@@ -43,7 +43,7 @@
                property, which Android TV's Chrome ignores. Everything below
                centres via the track box or an explicit transform instead. -->
           <SliderRange
-            v-if="!hasWaveform"
+            v-if="!hasWaveform && !hidesRadioPosition"
             data-slot="slider-range"
             class="absolute inset-y-0 rounded-full"
             :style="{ 'background-color': color }"
@@ -138,6 +138,7 @@ import {
   type ResolvedChapter,
 } from "@/helpers/chapters";
 import { formatDuration } from "@/helpers/utils";
+import { $t } from "@/plugins/i18n";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { ref, computed, watch, toRef, onUnmounted } from "vue";
 import {
@@ -314,7 +315,15 @@ const currentChapter = computed(() => {
   return resolved && Number.isFinite(resolved.duration) ? resolved : undefined;
 });
 
+// A radio stream resumes live, so a stopped one has no position to show.
+const hidesRadioPosition = computed(
+  () =>
+    store.activePlayer?.current_media?.media_type == MediaType.RADIO &&
+    serverTiming.value?.playbackState !== PlaybackState.PLAYING,
+);
+
 const timelineDuration = computed(() => {
+  if (hidesRadioPosition.value) return 0;
   // A radio stream's duration is its song's. Without the position in that song
   // the timeline only knows how long the station has played, which has no end.
   if (
@@ -337,6 +346,7 @@ const displayedAbsoluteTime = computed(() => {
 
 const displayedTimelineTime = computed(() => {
   if (isDragging.value) return curTimeValue.value;
+  if (hidesRadioPosition.value) return 0;
   const chapter = currentChapter.value;
   const absoluteTime = displayedAbsoluteTime.value ?? absoluteElapsedTime.value;
   // The position runs on until the source reports the next item, which for a
@@ -350,6 +360,7 @@ const displayedTimelineTime = computed(() => {
 });
 
 const playerCurTimeStr = computed(() => {
+  if (hidesRadioPosition.value) return $t("radio_live");
   if (showRemainingTime.value && timelineDuration.value) {
     return `-${formatDuration(timelineDuration.value - displayedTimelineTime.value)}`;
   }
