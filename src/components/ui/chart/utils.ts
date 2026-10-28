@@ -31,12 +31,12 @@ interface Constructor<P = unknown> {
 }
 
 /**
- * A Unovis tooltip template that renders `component` to HTML. `props` may be
- * a getter, read on every render, for values that change after mount such as
- * the locale.
+ * A Unovis tooltip template that renders `component` to HTML. `config` and
+ * `props` may be getters, read on every render, for values that change after
+ * mount such as translated labels and the locale.
  */
 export function componentToString<P>(
-  config: ChartConfig,
+  config: ChartConfig | (() => ChartConfig),
   component: Constructor<P>,
   props?: P | (() => P),
 ) {
@@ -51,9 +51,14 @@ export function componentToString<P>(
       string,
       unknown
     >;
+    const resolvedConfig = typeof config === "function" ? config() : config;
     const resolvedProps =
       typeof props === "function" ? (props as () => P)() : props;
-    const serializedKey = `${id}-${serializeKey({
+    // the labels are part of the key, so a change of language renders anew
+    const labels = Object.values(resolvedConfig)
+      .map((entry) => entry.label)
+      .join("|");
+    const serializedKey = `${id}-${labels}-${serializeKey({
       ...(resolvedProps as Record<string, unknown>),
       ...data,
     })}`;
@@ -63,7 +68,7 @@ export function componentToString<P>(
     const vnode = h<unknown>(component, {
       ...resolvedProps,
       payload: data,
-      config,
+      config: resolvedConfig,
       x,
     });
     const div = document.createElement("div");

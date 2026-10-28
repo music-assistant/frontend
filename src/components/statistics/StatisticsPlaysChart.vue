@@ -62,9 +62,13 @@ const props = defineProps<{
 // the 8 days of the rolling week, so each of them gets a label
 const MAX_AXIS_TICKS = 8;
 
-const chartConfig = {
-  plays: { label: $t("statistics_plays_label"), color: "var(--primary)" },
-} satisfies ChartConfig;
+// computed, so the tooltip label follows a change of language
+const chartConfig = computed(
+  () =>
+    ({
+      plays: { label: $t("statistics_plays_label"), color: "var(--primary)" },
+    }) satisfies ChartConfig,
+);
 
 const gradientId = `statistics-plays-${useId()}`;
 const svgDefs = `
@@ -82,7 +86,7 @@ const tickValues = computed(() =>
 const tickFormat = (index: number) => props.data[index]?.axisLabel ?? "";
 const locale = useCanonicalLocale();
 const tooltipTemplate = componentToString(
-  chartConfig,
+  () => chartConfig.value,
   ChartTooltipContent,
   () => ({ labelKey: "label", locale: locale.value }),
 );

@@ -89,12 +89,16 @@ const AXIS_HOURS = [0, 6, 12, 18];
 const BAR_RADIUS = 2;
 const BAR_PADDING = 0.2;
 
-const chartConfig = {
-  plays: { label: $t("statistics_plays_label"), color: "var(--primary)" },
-} satisfies ChartConfig;
+// computed, so the tooltip label follows a change of language
+const chartConfig = computed(
+  () =>
+    ({
+      plays: { label: $t("statistics_plays_label"), color: "var(--primary)" },
+    }) satisfies ChartConfig,
+);
 const locale = useCanonicalLocale();
 const tooltipTemplate = componentToString(
-  chartConfig,
+  () => chartConfig.value,
   ChartTooltipContent,
   () => ({ labelKey: "label", locale: locale.value }),
 );
