@@ -11,8 +11,8 @@ const { providers, providerManifests, providerIcons } = vi.hoisted(() => ({
   providerIcons: {} as Record<string, string>,
 }));
 
-vi.mock("vuetify", () => ({
-  useTheme: () => ({ current: { value: { dark: false } } }),
+vi.mock("@/composables/useThemePreference", () => ({
+  isDark: { value: false },
 }));
 vi.mock("@/plugins/api", () => ({
   api: {

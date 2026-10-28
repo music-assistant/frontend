@@ -116,8 +116,9 @@ describe("player bar popout inset", () => {
       document.documentElement.style.setProperty(token, value);
     }
 
+    // no popover measures the room here, so the ceiling resolves to its fallback
     expect(popoutStyle().maxHeight.replace(/\s+/g, "")).toBe(
-      `var(--reka-popover-content-available-height,calc(100dvh-${TOP_GAP}-${INSET_TOP}-${GAP}))`,
+      `calc(100dvh-${TOP_GAP}-${INSET_TOP}-${GAP})`,
     );
   });
 

@@ -43,7 +43,7 @@
                property, which Android TV's Chrome ignores. Everything below
                centres via the track box or an explicit transform instead. -->
           <SliderRange
-            v-if="!hasWaveform"
+            v-if="!hasWaveform && !hidesRadioPosition"
             data-slot="slider-range"
             class="absolute inset-y-0 rounded-full"
             :style="{ 'background-color': color }"
@@ -162,9 +162,11 @@ import {
   type ResolvedChapter,
 } from "@/helpers/chapters";
 import { formatDuration } from "@/helpers/utils";
+import { $t } from "@/plugins/i18n";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { ref, computed, watch, toRef, onUnmounted } from "vue";
 import {
+  hasRadioSongTiming,
   resolveActiveElapsedTime,
   resolveQueueElapsedTime,
   resolveActiveTiming,
@@ -341,12 +343,34 @@ const currentChapter = computed(() => {
   return resolved && Number.isFinite(resolved.duration) ? resolved : undefined;
 });
 
-const timelineDuration = computed(
+// A radio stream resumes live, so a stopped one has no position to show.
+const hidesRadioPosition = computed(
   () =>
+    store.activePlayer?.current_media?.media_type == MediaType.RADIO &&
+    serverTiming.value?.playbackState !== PlaybackState.PLAYING,
+);
+
+// Nothing reads the position behind the label, so the tick has to be released here.
+watch(hidesRadioPosition, (hidden) => {
+  if (hidden) stopTick();
+});
+
+const timelineDuration = computed(() => {
+  if (hidesRadioPosition.value) return 0;
+  // A radio stream's duration is its song's. Without the position in that song
+  // the timeline only knows how long the station has played, which has no end.
+  if (
+    store.activePlayer?.current_media?.media_type == MediaType.RADIO &&
+    !hasRadioSongTiming()
+  ) {
+    return 0;
+  }
+  return (
     currentChapter.value?.duration ??
     store.activePlayer?.current_media?.duration ??
-    0,
-);
+    0
+  );
+});
 
 const displayedAbsoluteTime = computed(() => {
   if (isDragging.value) return undefined;
@@ -355,13 +379,21 @@ const displayedAbsoluteTime = computed(() => {
 
 const displayedTimelineTime = computed(() => {
   if (isDragging.value) return curTimeValue.value;
+  if (hidesRadioPosition.value) return 0;
   const chapter = currentChapter.value;
   const absoluteTime = displayedAbsoluteTime.value ?? absoluteElapsedTime.value;
-  if (!chapter) return absoluteTime;
+  // The position runs on until the source reports the next item, which for a
+  // radio song can take a while; it never shows past the end.
+  if (!chapter) {
+    return timelineDuration.value
+      ? Math.min(timelineDuration.value, absoluteTime)
+      : absoluteTime;
+  }
   return Math.max(0, Math.min(chapter.duration, absoluteTime - chapter.start));
 });
 
 const playerCurTimeStr = computed(() => {
+  if (hidesRadioPosition.value) return $t("radio_live");
   if (showRemainingTime.value && timelineDuration.value) {
     return `-${formatDuration(timelineDuration.value - displayedTimelineTime.value)}`;
   }
@@ -370,13 +402,8 @@ const playerCurTimeStr = computed(() => {
 
 const playerTotalTimeStr = computed(() => {
   const duration = timelineDuration.value;
-  // If radio/streaming with unknown duration, don't show
-  if (
-    !duration ||
-    store.activePlayer?.current_media?.media_type == MediaType.RADIO
-  ) {
-    return "";
-  }
+  // A stream of unknown duration (most radio) has no end to show
+  if (!duration) return "";
   return formatDuration(duration);
 });
 

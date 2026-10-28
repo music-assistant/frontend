@@ -52,6 +52,9 @@ export interface StoredState {
   scrollPos: number;
   pagedItems: MediaItemType[];
   allItemsReceived: boolean;
+  // the count the title showed: the page's own total covers the whole library
+  // until it loads again, not the filters the visit was left on
+  count?: number;
   params: LoadDataParams;
   displayedSort: Pick<LoadDataParams, "sortField" | "sortDirection">;
 }

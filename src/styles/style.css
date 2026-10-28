@@ -30,8 +30,8 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
-  --color-warning: rgb(var(--v-theme-warning));
-  --color-warning-foreground: rgb(var(--v-theme-on-warning));
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -40,6 +40,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-surface-variant: var(--surface-variant);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -79,6 +80,8 @@
   --accent: #e7e7e7;
   --accent-foreground: #000000;
   --destructive: #d23939;
+  --warning: #fb8c00;
+  --warning-foreground: #ffffff;
   --border: #d4d4d4;
   --input: #d4d4d4;
   --ring: #03a9f4;
@@ -87,10 +90,8 @@
   --chart-3: #ff9800;
   --chart-4: #9c27b0;
   --chart-5: #f44336;
-  /* Sidebar tokens hardcoded (not indirected through --v-theme-*) because the
-     Vuetify theme vars are only defined on .v-application; declared at :root
-     they evaluate to the first-listed theme (light) and inherit downward,
-     defeating .dark. Keep these in lockstep with vuetify.ts panel colors. */
+  --surface-variant: #424242;
+  /* Keep the sidebar colors in lockstep with the vuetify.ts panel colors. */
   --sidebar: #ffffff;
   --sidebar-foreground: #000000;
   --sidebar-primary: #03a9f4;
@@ -119,6 +120,8 @@
   --accent: #2d2d2d;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
+  --warning: #fb8c00;
+  --warning-foreground: #ffffff;
   --border: #3d3d3d;
   --input: #3d3d3d;
   --ring: #03a9f4;
@@ -127,6 +130,7 @@
   --chart-3: #ff9800;
   --chart-4: #9c27b0;
   --chart-5: #f44336;
+  --surface-variant: #c8c8c8;
   --sidebar: #232323;
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #03a9f4;
