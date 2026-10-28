@@ -183,7 +183,7 @@
     <div
       v-if="expanded"
       ref="listContainer"
-      class="overflow-hidden p-[10px]"
+      class="overflow-hidden p-2.5"
       :class="{
         'bg-background dark:bg-transparent': viewMode != 'list',
         'flex flex-1 flex-col': fillsHeight,

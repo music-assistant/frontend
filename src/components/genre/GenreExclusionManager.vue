@@ -10,10 +10,7 @@
       @title-clicked="toggleSection"
     />
     <v-divider />
-    <div
-      v-if="sectionExpanded"
-      class="p-[10px] in-[.detail-admin]:px-3 in-[.detail-admin]:pt-0 in-[.detail-admin]:pb-3"
-    >
+    <div v-if="sectionExpanded" :class="bodyPadding">
       <v-list>
         <ListItem
           v-for="genre in exclusions"
@@ -46,6 +43,7 @@
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import { useSectionBodyPadding } from "@/composables/useDetailAdminCard";
 import { api } from "@/plugins/api";
 import { Genre, MediaType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -67,6 +65,7 @@ const canManageLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_MANAGE),
 );
 const sectionExpanded = ref(false);
+const bodyPadding = useSectionBodyPadding();
 const operationInProgress = ref(false);
 const exclusions = ref<Genre[]>([]);
 

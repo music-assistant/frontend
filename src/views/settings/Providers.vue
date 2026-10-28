@@ -21,7 +21,7 @@
     }}
   </div>
   <div
-    class="mt-4 px-5 py-[10px]"
+    class="mt-4 px-5 py-2.5"
     :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
   >
     <div class="space-y-6">

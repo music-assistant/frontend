@@ -4,6 +4,12 @@
   </div>
 </template>
 
+<script setup lang="ts">
+import { provideDetailAdminCard } from "@/composables/useDetailAdminCard";
+
+provideDetailAdminCard();
+</script>
+
 <style scoped>
 /* the shared admin sections keep their own toolbar and content, but take the
    page's row title and gutter and sit in a card each; their inline bottom margin

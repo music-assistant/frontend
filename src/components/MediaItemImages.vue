@@ -6,10 +6,7 @@
       @title-clicked="toggleExpand"
     />
     <v-divider />
-    <div
-      v-if="expanded"
-      class="p-[10px] in-[.detail-admin]:px-3 in-[.detail-admin]:pt-0 in-[.detail-admin]:pb-3"
-    >
+    <div v-if="expanded" :class="bodyPadding">
       <v-row v-for="imgType of ImageType" :key="imgType">
         <v-col
           v-for="(image, idx) in modelValue.filter((x) => x.type == imgType)"
@@ -95,6 +92,7 @@
 import { ChevronDown, ChevronUp } from "@lucide/vue";
 import { getMediaItemImageUrl, panelViewItemResponsive } from "@/helpers/utils";
 import Toolbar from "@/components/Toolbar.vue";
+import { useSectionBodyPadding } from "@/composables/useDetailAdminCard";
 import { api } from "@/plugins/api";
 import { ImageType, type MediaItemImage } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -106,6 +104,7 @@ export interface Props {
 const compProps = defineProps<Props>();
 
 const expanded = ref(false);
+const bodyPadding = useSectionBodyPadding();
 
 const emit = defineEmits(["update:modelValue"]);
 

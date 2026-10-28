@@ -6,10 +6,7 @@
       @title-clicked="toggleExpand"
     />
     <Separator />
-    <div
-      v-if="expanded"
-      class="p-[10px] in-[.detail-admin]:px-3 in-[.detail-admin]:pt-0 in-[.detail-admin]:pb-3"
-    >
+    <div v-if="expanded" :class="bodyPadding">
       <ItemGroup>
         <Item
           v-for="providerMapping in itemDetails?.provider_mappings"
@@ -191,6 +188,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Separator } from "@/components/ui/separator";
+import { useSectionBodyPadding } from "@/composables/useDetailAdminCard";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { copyToClipboard } from "@/helpers/utils";
@@ -215,6 +213,7 @@ const props = defineProps<Props>();
 
 const { t } = useI18n();
 const expanded = ref(false);
+const bodyPadding = useSectionBodyPadding();
 const mappingSearchInProgress = ref(false);
 
 const openLinkInNewTab = function (url: string) {

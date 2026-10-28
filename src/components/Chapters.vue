@@ -6,7 +6,7 @@
       @title-clicked="toggleExpand"
     />
     <v-divider />
-    <div v-if="expanded" class="p-[10px]">
+    <div v-if="expanded" class="p-2.5">
       <v-list>
         <v-list-item
           v-for="chapter in itemDetails?.metadata?.chapters"

@@ -1,5 +1,5 @@
 <template>
-  <div class="p-[10px]">
+  <div class="p-2.5">
     <div v-if="loading" class="loading-wrapper">
       <v-progress-circular indeterminate size="64" color="primary" />
     </div>
