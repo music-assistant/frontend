@@ -58,7 +58,8 @@ const props = defineProps<{
   data: PlaysChartDatum[];
 }>();
 
-const MAX_AXIS_TICKS = 7;
+// the 8 days of the rolling week, so each of them gets a label
+const MAX_AXIS_TICKS = 8;
 
 const chartConfig = {
   plays: { label: $t("statistics_plays_label"), color: "var(--primary)" },

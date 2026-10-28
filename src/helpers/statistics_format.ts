@@ -4,16 +4,19 @@ import { DAYS_PER_WEEK } from "./statistics_activity";
 const REFERENCE_MONDAY = Date.UTC(2024, 0, 1);
 const MS_PER_DAY = 86_400_000;
 const MAX_AVERAGE_FRACTION_DIGITS = 1;
+// from here on a decimal adds noise rather than information
+const WHOLE_AVERAGE_FROM = 10;
 
 /** A count for display, grouped the locale's way. */
 export function formatCount(value: number, locale: string): string {
   return new Intl.NumberFormat(locale).format(value);
 }
 
-/** An average with at most one decimal, so 4.25 reads as 4.3 and 4 as 4. */
+/** An average with one decimal below 10, so 4.25 reads as 4.3 and 43.4 as 43. */
 export function formatAverage(value: number, locale: string): string {
   return new Intl.NumberFormat(locale, {
-    maximumFractionDigits: MAX_AVERAGE_FRACTION_DIGITS,
+    maximumFractionDigits:
+      value >= WHOLE_AVERAGE_FROM ? 0 : MAX_AVERAGE_FRACTION_DIGITS,
   }).format(value);
 }
 

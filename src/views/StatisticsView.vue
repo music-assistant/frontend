@@ -27,7 +27,10 @@
         :peak-hour="peakHour"
       />
 
-      <div class="grid grid-cols-[repeat(auto-fit,minmax(290px,1fr))] gap-4">
+      <!-- two by two until all four fit in a row, so none sits alone -->
+      <div
+        class="grid grid-cols-1 gap-4 sm:grid-cols-2 min-[1600px]:grid-cols-4"
+      >
         <StatisticsTopArtistCard
           :top-artists="data.topArtists"
           :total-plays="totalPlays"

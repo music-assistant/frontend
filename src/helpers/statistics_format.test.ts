@@ -19,6 +19,12 @@ describe("formatAverage", () => {
     expect(formatAverage(4, "en-GB")).toBe("4");
     expect(formatAverage(0.04, "en-GB")).toBe("0");
   });
+
+  it("rounds averages of 10 and more to whole numbers", () => {
+    expect(formatAverage(43.4, "en-GB")).toBe("43");
+    expect(formatAverage(9.96, "en-GB")).toBe("10");
+    expect(formatAverage(1234.5, "en-GB")).toBe("1,235");
+  });
 });
 
 describe("formatHour", () => {
