@@ -1,3 +1,4 @@
+import StatisticsPeriodSelect from "@/components/statistics/StatisticsPeriodSelect.vue";
 import type {
   StatisticsData,
   StatisticsSection,
@@ -172,7 +173,9 @@ describe("StatisticsView", () => {
   it("keeps a new period in the url", async () => {
     const wrapper = mountView();
 
-    await wrapper.find("select").setValue("year");
+    wrapper
+      .findComponent(StatisticsPeriodSelect)
+      .vm.$emit("update:modelValue", "year");
     await flushPromises();
 
     expect(routerReplace).toHaveBeenCalledWith({ query: { period: "year" } });

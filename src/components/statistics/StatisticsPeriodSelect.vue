@@ -6,27 +6,31 @@
     >
       {{ $t("statistics_period") }}
     </label>
-    <NativeSelect
-      :id="selectId"
-      v-model="selected"
-      class="w-auto cursor-pointer"
-    >
-      <NativeSelectOption
-        v-for="option in STATISTICS_PERIODS"
-        :key="option"
-        :value="option"
-      >
-        {{ $t(`period_${option}`) }}
-      </NativeSelectOption>
-    </NativeSelect>
+    <Select v-model="selected">
+      <SelectTrigger :id="selectId" class="w-auto cursor-pointer">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem
+          v-for="option in STATISTICS_PERIODS"
+          :key="option"
+          :value="option"
+        >
+          {{ $t(`period_${option}`) }}
+        </SelectItem>
+      </SelectContent>
+    </Select>
   </div>
 </template>
 
 <script setup lang="ts">
 import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@/components/ui/native-select";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   isStatisticsPeriod,
   STATISTICS_PERIODS,
