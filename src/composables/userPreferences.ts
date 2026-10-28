@@ -201,26 +201,46 @@ export function useUserPreferences() {
     key: keyof ItemsListingPreferences,
     value: ItemsListingPreferences[keyof ItemsListingPreferences],
   ): Promise<void> {
-    const prefKey = `itemsListing.${path}.${itemtype}`;
-    // a plain copy, so a reactive array is not stored by reference
-    const plainValue =
-      value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+    await setItemsListingPreferences(path, itemtype, { [key]: value });
+  }
 
-    // merged when the write's turn comes, so overlapping changes to the same
-    // listing all land
+  /**
+   * Set several ItemsListing preferences for a specific path/itemtype at once.
+   *
+   * The values are copied as they are now, since the listing goes on changing
+   * its own arrays, and merged onto the listing's settings as they stand when
+   * the write's turn comes, so saves made in quick succession all keep their
+   * change.
+   */
+  async function setItemsListingPreferences(
+    path: string,
+    itemtype: string,
+    values: Partial<ItemsListingPreferences>,
+  ): Promise<void> {
+    const prefKey = `itemsListing.${path}.${itemtype}`;
+    // a value set to undefined is kept here, so the merge below clears it
+    const snapshot = Object.fromEntries(
+      Object.entries(values).map(([key, value]) => [
+        key,
+        value === undefined ? undefined : JSON.parse(JSON.stringify(value)),
+      ]),
+    );
     await updateUserPreferences((current) => {
-      const listing = (current[prefKey] as ItemsListingPreferences) ?? {};
+      const listing = current[prefKey] as ItemsListingPreferences | undefined;
       return {
         ...current,
-        [prefKey]: {
-          ...listing,
-          // Preserve compact mode's action preference when viewMode is replaced.
-          ...(key === "viewMode" &&
-          !defaultShowActions(listing.viewMode, itemtype)
-            ? { showActions: listing.showActions ?? false }
-            : {}),
-          [key]: plainValue,
-        },
+        // and dropped from what is stored
+        [prefKey]: JSON.parse(
+          JSON.stringify({
+            // a compact view's hidden actions outlive its view mode
+            ...("viewMode" in values &&
+            !defaultShowActions(listing?.viewMode, itemtype)
+              ? { showActions: false }
+              : {}),
+            ...listing,
+            ...snapshot,
+          }),
+        ),
       };
     });
   }
@@ -231,6 +251,7 @@ export function useUserPreferences() {
     setPreference,
     getItemsListingPreferences,
     setItemsListingPreference,
+    setItemsListingPreferences,
   };
 }
 

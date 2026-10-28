@@ -40,6 +40,7 @@ import {
   type VisualizerEngine,
   isVisualizerSupported,
 } from "@/composables/visualizer/useVisualizerEngine";
+import { isDark } from "@/composables/useThemePreference";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
   currentVisualizerPreset,
@@ -56,7 +57,6 @@ import {
   type ColorPalette,
   VisualizerRelayClient,
 } from "@/plugins/visualizer-relay";
-import vuetify from "@/plugins/vuetify";
 
 // Settle time before winding down: track changes and buffer stalls drop a
 // player out of "playing" for a moment, and halting on those reads as a stutter.
@@ -159,7 +159,7 @@ const serverPalette = computed<MediaItemPalette>(() => {
 // tint rather than a stand-in color the rest of the app would never show.
 const tintColor = computed(() => {
   const { lightColor, darkColor } = paletteFromServer(serverPalette.value);
-  const useDark = props.forceDarkPalette || vuetify.theme.current.value.dark;
+  const useDark = props.forceDarkPalette || isDark.value;
   return (useDark ? darkColor : lightColor) || null;
 });
 

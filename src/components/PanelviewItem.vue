@@ -29,9 +29,7 @@
           <!-- hi res icon -->
           <span
             v-if="HiResDetails"
-            :class="
-              $vuetify.theme.current.dark ? 'hiresicon' : 'hiresiconinverted'
-            "
+            :class="isDark ? 'hiresicon' : 'hiresiconinverted'"
           >
             <img :src="iconHiRes" width="30" alt="" />
             <v-tooltip activator="parent" location="bottom">
@@ -82,6 +80,7 @@
 import MAButton from "@/components/Button.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
+import { isDark } from "@/composables/useThemePreference";
 import { canHoldFavorite } from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";

@@ -26,6 +26,17 @@ export const defaultShowActions = (
     (!savedViewMode && COMPACT_BY_DEFAULT_ITEMTYPES.includes(itemtype))
   );
 
+/** The live props of the cover size slider and its action buttons toggle. */
+export interface GridSizeControls {
+  size: number;
+  showActions: boolean;
+  actionsFit: boolean;
+  supportsActions: boolean;
+  onChange: (size: number) => void;
+  onCommit: (size: number) => void;
+  onToggleActions: (show: boolean) => void;
+}
+
 // the range the `col-N` classes in the listing cover
 const MIN_COLUMNS = 2;
 const MAX_COLUMNS = 12;
