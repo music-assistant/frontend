@@ -864,7 +864,6 @@
         "reconnecting": "Kobler til igjen",
         "reconnecting_message": "Prøver å koble til serveren på nytt...",
         "error_ingress_failed": "Kunne ikke logge på via Home Assistant",
-        "error_invalid_credentials": "Kunne ikke logge deg inn. Vennligst sjekk brukernavn og passord.",
         "continue_to_app": "Fortsett til Music Assistant",
         "scan_qr_hint_guest": "Rett kameraet mot QR-koden som verten viser."
     },

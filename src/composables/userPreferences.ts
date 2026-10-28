@@ -199,16 +199,40 @@ export function useUserPreferences() {
     key: keyof ItemsListingPreferences,
     value: ItemsListingPreferences[keyof ItemsListingPreferences],
   ): Promise<void> {
-    const storKey = `${path}.${itemtype}`;
-    const prefKey = `itemsListing.${storKey}`;
+    await setItemsListingPreferences(path, itemtype, { [key]: value });
+  }
 
-    const currentPrefs = getItemsListingPreferences(path, itemtype);
-    const updatedPrefs = {
-      ...currentPrefs.value,
-      [key]: value,
-    };
-
-    await setPreference(prefKey, updatedPrefs);
+  /**
+   * Set several ItemsListing preferences for a specific path/itemtype at once.
+   *
+   * The values are copied as they are now, since the listing goes on changing
+   * its own arrays, and merged onto the listing's settings as they stand when
+   * the write's turn comes, so saves made in quick succession all keep their
+   * change.
+   */
+  async function setItemsListingPreferences(
+    path: string,
+    itemtype: string,
+    values: Partial<ItemsListingPreferences>,
+  ): Promise<void> {
+    const prefKey = `itemsListing.${path}.${itemtype}`;
+    // a value set to undefined is kept here, so the merge below clears it
+    const snapshot = Object.fromEntries(
+      Object.entries(values).map(([key, value]) => [
+        key,
+        value === undefined ? undefined : JSON.parse(JSON.stringify(value)),
+      ]),
+    );
+    await updateUserPreferences((current) => ({
+      ...current,
+      // and dropped from what is stored
+      [prefKey]: JSON.parse(
+        JSON.stringify({
+          ...(current[prefKey] as ItemsListingPreferences | undefined),
+          ...snapshot,
+        }),
+      ),
+    }));
   }
 
   return {
@@ -217,6 +241,7 @@ export function useUserPreferences() {
     setPreference,
     getItemsListingPreferences,
     setItemsListingPreference,
+    setItemsListingPreferences,
   };
 }
 

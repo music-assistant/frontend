@@ -13,6 +13,7 @@
     :show-search-button="true"
     :show-genre-filter="true"
     :sort-listing="ListingType.LIBRARY_ARTISTS"
+    library-toolbar
     :icon="ArtistIcon"
     :restore-state="true"
     :total="total"
@@ -24,6 +25,7 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
+import { useListingTotal } from "@/composables/useListingTotal";
 import api from "@/plugins/api";
 import {
   ArtistType,
@@ -39,11 +41,13 @@ defineOptions({
 });
 
 const updateAvailable = ref(false);
-const total = ref<number | undefined>(undefined);
+const { total, setTotal, loadTotal } = useListingTotal();
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
-  setTotals(params);
+  // the count only changes with the filters, and those start over from the
+  // first page: the pages after it keep the count they have
+  if (!params.offset) setTotals(params);
   return await api.getLibraryArtists(
     params.favoritesOnly || undefined,
     params.search,
@@ -62,13 +66,15 @@ const setTotals = async function (params: LoadDataParams) {
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
+    setTotal(undefined);
     return;
   }
-  total.value = await api.getLibraryArtistsCount(
-    params.favoritesOnly || false,
-    params.albumArtistsFilter || false,
-    ArtistType.SINGER,
+  await loadTotal(
+    api.getLibraryArtistsCount(
+      params.favoritesOnly || false,
+      params.albumArtistsFilter || false,
+      ArtistType.SINGER,
+    ),
   );
 };
 
