@@ -378,7 +378,6 @@ describe("PartyGuestView skip voting", () => {
             skipped: false,
             vote_counted: true,
             song_changed: false,
-            no_next_track: false,
             votes: 1,
             votes_required: 2,
           }
@@ -424,97 +423,6 @@ describe("PartyGuestView skip voting", () => {
     });
   });
 
-  it("explains when there is no next track to skip to", async () => {
-    vi.mocked(api.sendCommand).mockImplementation(async (command: unknown) =>
-      command === "party/skip"
-        ? {
-            success: true,
-            skipped: false,
-            vote_counted: true,
-            song_changed: false,
-            no_next_track: true,
-            votes: 2,
-            votes_required: 2,
-          }
-        : null,
-    );
-    playItem("item_a");
-    const view = mountViewRaw();
-    await flushPromises();
-
-    view.findComponent(PartyQueueSection).vm.$emit("skip");
-    await flushPromises();
-
-    expect(toast.info).toHaveBeenCalledWith(
-      "providers.party.guest_page.skip_no_next_track",
-    );
-    // the vote counts, but the guest can try again once a track was added
-    const section = view.findComponent(PartyQueueSection);
-    expect(section.props("hasVotedToSkip")).toBe(false);
-    expect(section.props("canRetrySkip")).toBe(true);
-  });
-
-  it("lets an earlier voter retry once the tally reaches the threshold", async () => {
-    playItem("item_a");
-    const view = mountViewRaw();
-    await flushPromises();
-    // this guest casts the first of two votes
-    view.findComponent(PartyQueueSection).vm.$emit("skip");
-    await flushPromises();
-    expect(view.findComponent(PartyQueueSection).props("hasVotedToSkip")).toBe(
-      true,
-    );
-
-    // another guest casts the second vote on the last track, so nothing was skipped
-    skipState.currentQueue.value = {
-      current_item: {
-        queue_item_id: "item_a",
-        extra_attributes: { party_skip_votes: 2 },
-      },
-    };
-    await flushPromises();
-
-    const section = view.findComponent(PartyQueueSection);
-    expect(section.props("hasVotedToSkip")).toBe(false);
-    expect(section.props("canRetrySkip")).toBe(true);
-  });
-
-  it("skips on a retry once a next track was added", async () => {
-    const skipResult = {
-      success: true,
-      skipped: false,
-      vote_counted: true,
-      song_changed: false,
-      no_next_track: true,
-      votes: 1,
-      votes_required: 1,
-    };
-    vi.mocked(api.sendCommand).mockImplementation(async (command: unknown) =>
-      command === "party/skip" ? { ...skipResult } : null,
-    );
-    playItem("item_a");
-    const view = mountViewRaw();
-    await flushPromises();
-    view.findComponent(PartyQueueSection).vm.$emit("skip");
-    await flushPromises();
-
-    // a track was added: the retry skips, without counting a new vote
-    Object.assign(skipResult, {
-      skipped: true,
-      vote_counted: false,
-      no_next_track: false,
-    });
-    view.findComponent(PartyQueueSection).vm.$emit("skip");
-    await flushPromises();
-
-    expect(toast.success).toHaveBeenCalledWith(
-      "providers.party.guest_page.song_skipped",
-    );
-    expect(toast.info).not.toHaveBeenCalledWith(
-      "providers.party.guest_page.skip_already_voted",
-    );
-  });
-
   it("does not count a vote for a track that already changed", async () => {
     vi.mocked(api.sendCommand).mockImplementation(async (command: unknown) =>
       command === "party/skip"
@@ -523,7 +431,6 @@ describe("PartyGuestView skip voting", () => {
             skipped: false,
             vote_counted: false,
             song_changed: true,
-            no_next_track: false,
             votes: 0,
             votes_required: 2,
           }
@@ -615,7 +522,6 @@ describe("PartyGuestView skip voting", () => {
               skipped: false,
               vote_counted: true,
               song_changed: false,
-              no_next_track: false,
               votes: 1,
               votes_required: 2,
               ...result,
@@ -656,56 +562,7 @@ describe("PartyGuestView skip voting", () => {
       expect(rateState.consumeSkipSongToken).not.toHaveBeenCalled();
     });
 
-    it("lets a counted voter without tokens retry when there was no next track", async () => {
-      skipResult({ no_next_track: true, votes: 1, votes_required: 1 });
-      playItem("item_a");
-      const view = mountViewRaw();
-      await flushPromises();
-      view.findComponent(PartyQueueSection).vm.$emit("skip");
-      await flushPromises();
-      // the vote used the guest's last token
-      rateState.skipSongTokens.value = 0;
-      await flushPromises();
-
-      skipResult({ skipped: true, vote_counted: false });
-      const section = view.findComponent(PartyQueueSection);
-      expect(section.props("canRetrySkip")).toBe(true);
-      section.vm.$emit("skip");
-      await flushPromises();
-
-      expect(skipCalls()).toBe(2);
-      expect(rateState.consumeSkipSongToken).toHaveBeenCalledTimes(1);
-      expect(toast.success).toHaveBeenCalledWith(
-        "providers.party.guest_page.song_skipped",
-      );
-    });
-
-    it("lets a counted voter without tokens retry once the tally reaches the threshold", async () => {
-      skipResult({});
-      playItem("item_a");
-      const view = mountViewRaw();
-      await flushPromises();
-      view.findComponent(PartyQueueSection).vm.$emit("skip");
-      await flushPromises();
-      rateState.skipSongTokens.value = 0;
-      // another guest casts the deciding vote, but there is no next track
-      skipState.currentQueue.value = {
-        current_item: {
-          queue_item_id: "item_a",
-          extra_attributes: { party_skip_votes: 2 },
-        },
-      };
-      await flushPromises();
-
-      skipResult({ no_next_track: true, vote_counted: false, votes: 2 });
-      view.findComponent(PartyQueueSection).vm.$emit("skip");
-      await flushPromises();
-
-      expect(skipCalls()).toBe(2);
-      expect(rateState.consumeSkipSongToken).toHaveBeenCalledTimes(1);
-    });
-
-    it("does not vote without tokens when the guest has no counted vote", async () => {
+    it("does not vote without a skip token", async () => {
       rateState.skipSongTokens.value = 0;
       playItem("item_a");
       const view = mountViewRaw();

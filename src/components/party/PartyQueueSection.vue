@@ -99,7 +99,6 @@ const props = defineProps<{
   skipVotes: number;
   skipVotesRequired: number;
   hasVotedToSkip: boolean;
-  canRetrySkip: boolean;
   hasCurrentItem: boolean;
   boostBadgeColor: string;
   requestBadgeColor: string;
@@ -114,12 +113,9 @@ const emit = defineEmits<{
   boostQueueItem: [item: QueueItem];
 }>();
 
-// A guest whose vote already counts can retry the skip without a token
 const skipDisabled = computed(
   () =>
-    (props.rateLimitingEnabled &&
-      props.skipSongTokens <= 0 &&
-      !props.canRetrySkip) ||
+    (props.rateLimitingEnabled && props.skipSongTokens <= 0) ||
     props.skippingSong ||
     props.hasVotedToSkip ||
     // a vote is for the track the guest sees, so wait until it is known

@@ -1673,7 +1673,6 @@
                 "skip_vote_counted": "Vote counted! {0} of {1} votes needed to skip.",
                 "skip_already_voted": "You already voted to skip this song.",
                 "skip_song_changed": "That song has already changed, so your vote wasn't counted.",
-                "skip_no_next_track": "Enough votes, but there's no next song to skip to yet.",
                 "try_different_search": "Try a different search term",
                 "unknown_artist": "Unknown Artist",
                 "view_songs": "View Songs",
