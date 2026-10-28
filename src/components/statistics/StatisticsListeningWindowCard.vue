@@ -92,11 +92,12 @@ const BAR_PADDING = 0.2;
 const chartConfig = {
   plays: { label: $t("statistics_plays_label"), color: "var(--primary)" },
 } satisfies ChartConfig;
-const tooltipTemplate = componentToString(chartConfig, ChartTooltipContent, {
-  labelKey: "label",
-});
-
 const locale = useCanonicalLocale();
+const tooltipTemplate = componentToString(
+  chartConfig,
+  ChartTooltipContent,
+  () => ({ labelKey: "label", locale: locale.value }),
+);
 const hourly = computed(() => hourlyTotals(props.activity));
 const peakWindow = computed(() => peakListeningWindow(hourly.value));
 const windowStart = computed(() =>

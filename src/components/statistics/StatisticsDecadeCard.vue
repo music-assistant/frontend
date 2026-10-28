@@ -48,6 +48,7 @@ import {
   componentToString,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { useCanonicalLocale } from "@/composables/useCanonicalLocale";
 import {
   sharePercent,
   sortDecades,
@@ -76,9 +77,12 @@ const BAR_PADDING = 0.15;
 const chartConfig = {
   plays: { label: $t("statistics_plays_label"), color: "var(--primary)" },
 } satisfies ChartConfig;
-const tooltipTemplate = componentToString(chartConfig, ChartTooltipContent, {
-  labelKey: "label",
-});
+const locale = useCanonicalLocale();
+const tooltipTemplate = componentToString(
+  chartConfig,
+  ChartTooltipContent,
+  () => ({ labelKey: "label", locale: locale.value }),
+);
 
 const topDecade = computed(() => topEntry(props.decades));
 const decadeData = computed<DecadeDatum[]>(() =>

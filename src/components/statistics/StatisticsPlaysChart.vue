@@ -40,6 +40,7 @@ import {
   componentToString,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { useCanonicalLocale } from "@/composables/useCanonicalLocale";
 import { evenlySpacedIndices } from "@/helpers/statistics_time_series";
 import { $t } from "@/plugins/i18n";
 import { VisArea, VisAxis, VisLine, VisXYContainer } from "@unovis/vue";
@@ -79,9 +80,12 @@ const tickValues = computed(() =>
   evenlySpacedIndices(props.data.length, MAX_AXIS_TICKS),
 );
 const tickFormat = (index: number) => props.data[index]?.axisLabel ?? "";
-const tooltipTemplate = componentToString(chartConfig, ChartTooltipContent, {
-  labelKey: "label",
-});
+const locale = useCanonicalLocale();
+const tooltipTemplate = componentToString(
+  chartConfig,
+  ChartTooltipContent,
+  () => ({ labelKey: "label", locale: locale.value }),
+);
 
 const accessibleLabel = computed(() =>
   $t("statistics_chart_accessible_summary", {

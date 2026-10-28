@@ -17,6 +17,8 @@ const props = withDefaults(
     class?: HTMLAttributes["class"];
     color?: string;
     x?: number | Date;
+    // BCP 47 tag numbers are formatted in; the tooltip renders outside the app
+    locale?: string;
   }>(),
   {
     nameKey: undefined,
@@ -27,6 +29,7 @@ const props = withDefaults(
     class: undefined,
     color: undefined,
     x: undefined,
+    locale: undefined,
     indicator: "dot",
   },
 );
@@ -124,10 +127,14 @@ const tooltipLabel = computed(() => {
               </span>
             </div>
             <span
-              v-if="value"
+              v-if="value !== undefined && value !== null && value !== ''"
               class="text-foreground font-mono font-medium tabular-nums"
             >
-              {{ typeof value === "number" ? value.toLocaleString() : value }}
+              {{
+                typeof value === "number"
+                  ? value.toLocaleString(props.locale)
+                  : value
+              }}
             </span>
           </div>
         </div>
