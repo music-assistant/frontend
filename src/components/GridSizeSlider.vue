@@ -30,7 +30,7 @@
       :step="1"
       :thumb-label="$t('grid_size')"
       :thumb-value-text="valueText"
-      class="flex-auto"
+      class="flex-auto cursor-pointer"
       @update:model-value="onUpdate"
       @value-commit="onCommit"
     />
@@ -53,7 +53,7 @@
         <Button
           variant="ghost"
           size="icon-sm"
-          :class="actionsShown ? 'bg-accent' : 'opacity-60'"
+          :class="['cursor-pointer', actionsShown ? 'bg-accent' : 'opacity-60']"
           :disabled="!actionsFit"
           :aria-pressed="actionsShown"
           :aria-label="actionsLabel"

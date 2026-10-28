@@ -46,7 +46,7 @@
           v-for="option in options"
           :key="option.field"
           :value="option.field"
-          class="gap-3 pl-2 data-[state=checked]:text-primary"
+          class="cursor-pointer gap-3 pl-2 data-[state=checked]:text-primary"
           @select="(event: Event) => pickSortOption(event, option)"
         >
           <template #indicator-icon><span></span></template>
