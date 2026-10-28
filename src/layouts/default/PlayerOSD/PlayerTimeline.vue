@@ -322,6 +322,11 @@ const hidesRadioPosition = computed(
     serverTiming.value?.playbackState !== PlaybackState.PLAYING,
 );
 
+// Nothing reads the position behind the label, so the tick has to be released here.
+watch(hidesRadioPosition, (hidden) => {
+  if (hidden) stopTick();
+});
+
 const timelineDuration = computed(() => {
   if (hidesRadioPosition.value) return 0;
   // A radio stream's duration is its song's. Without the position in that song
