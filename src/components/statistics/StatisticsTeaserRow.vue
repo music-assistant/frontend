@@ -9,7 +9,7 @@
         <Button as-child variant="ghost" size="sm">
           <RouterLink
             :to="{ name: 'statistics', query: { period } }"
-            class="no-underline"
+            class="text-foreground no-underline"
           >
             {{ $t("statistics_all") }}
             <ChevronRight aria-hidden="true" />
