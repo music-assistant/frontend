@@ -6,7 +6,10 @@
       @title-clicked="toggleExpand"
     />
     <Separator />
-    <Container v-if="expanded">
+    <div
+      v-if="expanded"
+      class="p-[10px] in-[.detail-admin]:px-3 in-[.detail-admin]:pt-0 in-[.detail-admin]:pb-3"
+    >
       <ItemGroup>
         <Item
           v-for="providerMapping in itemDetails?.provider_mappings"
@@ -148,7 +151,7 @@
           </ItemActions>
         </Item>
       </ItemGroup>
-    </Container>
+    </div>
   </section>
   <GenreExclusionManager
     v-if="
@@ -172,7 +175,6 @@ import {
   Play,
   Trash2,
 } from "@lucide/vue";
-import Container from "@/components/Container.vue";
 import GenreExclusionManager from "@/components/genre/GenreExclusionManager.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { iconHiRes } from "@/components/QualityDetailsBtn.vue";

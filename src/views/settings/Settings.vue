@@ -25,11 +25,7 @@
 
     <Separator />
 
-    <Container
-      v-if="isOverview"
-      variant="comfortable"
-      class="mx-auto max-w-[1200px] max-md:px-3 max-md:py-4"
-    >
+    <div v-if="isOverview" class="p-5 max-md:px-3 max-md:py-4">
       <div v-if="settingsViewMode === 'card'" class="flex flex-col gap-4">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <SettingsSectionLink
@@ -72,7 +68,7 @@
           {{ t(onboardingLinkKey) }}
         </Button>
       </div>
-    </Container>
+    </div>
 
     <router-view v-else v-slot="{ Component }">
       <component :is="Component" v-if="Component" />
@@ -81,7 +77,6 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import SettingsSectionLink from "@/components/settings/SettingsSectionLink.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import ToolbarHeading, {

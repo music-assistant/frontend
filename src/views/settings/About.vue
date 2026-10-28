@@ -1,5 +1,5 @@
 <template>
-  <Container class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+  <div class="space-y-6 px-4 py-6">
     <UnsupportedInstallBanner />
 
     <!-- Server Information -->
@@ -405,12 +405,11 @@
         </a>
       </CardContent>
     </Card>
-  </Container>
+  </div>
 </template>
 
 <script setup lang="ts">
 import openHomeFoundationLogo from "@/assets/open-home-foundation-logo.svg";
-import Container from "@/components/Container.vue";
 import UnsupportedInstallBanner from "@/components/UnsupportedInstallBanner.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

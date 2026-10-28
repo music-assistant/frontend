@@ -22,9 +22,9 @@
       }}
     </div>
 
-    <Container
-      :variant="viewMode === 'list' ? 'default' : 'panel'"
-      class="mt-4 px-5"
+    <div
+      class="mt-4 px-5 py-[10px]"
+      :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
     >
       <div v-if="showInitialLoading" class="flex justify-center py-16">
         <Spinner class="size-12" />
@@ -65,7 +65,7 @@
         <EmptyTitle>{{ emptyTitle }}</EmptyTitle>
         <EmptyDescription>{{ emptyDescription }}</EmptyDescription>
       </Empty>
-    </Container>
+    </div>
 
     <BackgroundTaskDetailsDialog
       v-model:open="detailsDialogOpen"
@@ -87,7 +87,6 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import BackgroundTaskDetailsDialog from "@/components/settings/background-tasks/BackgroundTaskDetailsDialog.vue";
 import BackgroundTaskFilters from "@/components/settings/background-tasks/BackgroundTaskFilters.vue";
 import BackgroundTaskItem from "@/components/settings/background-tasks/BackgroundTaskItem.vue";

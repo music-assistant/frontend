@@ -165,10 +165,6 @@ vi.mock("@/components/Toolbar.vue", () => ({
       '<div class="toolbar-stub"><slot name="title" /><slot name="append" /></div>',
   },
 }));
-// renders what it holds, so the grid inside it can be looked at
-vi.mock("@/components/Container.vue", () => ({
-  default: { name: "Container", template: "<div><slot /></div>" },
-}));
 vi.mock("@/components/icons/GenreIcon.vue", () => stubComponent("GenreIcon"));
 vi.mock("@/components/skeletons/ListViewSkeleton.vue", () =>
   stubComponent("ListViewSkeleton"),
@@ -1603,9 +1599,6 @@ describe("ItemsListing empty-state source shortcuts", () => {
           $vuetify: { display: { width: 1280 } },
         },
         stubs: {
-          // the shared Container stub drops its slot; render it so the empty
-          // state inside it shows, while the list chrome stays stubbed
-          Container: { template: "<div><slot /></div>" },
           "v-infinite-scroll": true,
           "v-virtual-scroll": true,
           Tabs: true,

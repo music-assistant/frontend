@@ -1,5 +1,5 @@
 <template>
-  <Container variant="default">
+  <div class="p-[10px]">
     <Toolbar
       :title="mappedAliasesTitle"
       :menu-items="aliasToolbarMenuItems"
@@ -40,7 +40,7 @@
         </template>
       </ListItem>
     </v-list>
-  </Container>
+  </div>
 
   <LinkAliasDialog
     v-model="showLinkDialog"
@@ -70,7 +70,6 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import CreateAliasDialog from "@/components/genre/CreateAliasDialog.vue";
 import LinkAliasDialog from "@/components/genre/LinkAliasDialog.vue";
 import PromoteAliasDialog from "@/components/genre/PromoteAliasDialog.vue";

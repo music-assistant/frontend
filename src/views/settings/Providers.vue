@@ -20,9 +20,9 @@
       })
     }}
   </div>
-  <Container
-    :variant="viewMode === 'list' ? 'default' : 'panel'"
-    class="mt-4 px-5"
+  <div
+    class="mt-4 px-5 py-[10px]"
+    :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
   >
     <div class="space-y-6">
       <section
@@ -106,7 +106,7 @@
       :icon="Puzzle"
       data-testid="providers-empty"
     />
-  </Container>
+  </div>
 
   <!-- Audio analysis status hint -->
   <div
@@ -140,7 +140,6 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";

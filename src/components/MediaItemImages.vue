@@ -6,7 +6,10 @@
       @title-clicked="toggleExpand"
     />
     <v-divider />
-    <Container v-if="expanded">
+    <div
+      v-if="expanded"
+      class="p-[10px] in-[.detail-admin]:px-3 in-[.detail-admin]:pt-0 in-[.detail-admin]:pb-3"
+    >
       <v-row v-for="imgType of ImageType" :key="imgType">
         <v-col
           v-for="(image, idx) in modelValue.filter((x) => x.type == imgType)"
@@ -84,13 +87,12 @@
           </v-hover>
         </v-col>
       </v-row>
-    </Container>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ChevronDown, ChevronUp } from "@lucide/vue";
-import Container from "@/components/Container.vue";
 import { getMediaItemImageUrl, panelViewItemResponsive } from "@/helpers/utils";
 import Toolbar from "@/components/Toolbar.vue";
 import { api } from "@/plugins/api";

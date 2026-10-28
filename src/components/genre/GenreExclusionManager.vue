@@ -10,7 +10,10 @@
       @title-clicked="toggleSection"
     />
     <v-divider />
-    <Container v-if="sectionExpanded">
+    <div
+      v-if="sectionExpanded"
+      class="p-[10px] in-[.detail-admin]:px-3 in-[.detail-admin]:pt-0 in-[.detail-admin]:pb-3"
+    >
       <v-list>
         <ListItem
           v-for="genre in exclusions"
@@ -35,12 +38,11 @@
           <template #title>{{ genre.name }}</template>
         </ListItem>
       </v-list>
-    </Container>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";

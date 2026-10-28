@@ -1,5 +1,5 @@
 <template>
-  <Container>
+  <div class="p-[10px]">
     <div v-if="loading" class="loading-wrapper">
       <v-progress-circular indeterminate size="64" color="primary" />
     </div>
@@ -337,12 +337,11 @@
     <v-alert v-else type="error" variant="tonal" class="error-alert">
       {{ $t("settings.remote_access_error_loading") }}
     </v-alert>
-  </Container>
+  </div>
 </template>
 
 <script setup lang="ts">
 import remoteAccessDiagram from "@/assets/remote-access-diagram.svg";
-import Container from "@/components/Container.vue";
 import SegmentedCodeInput from "@/components/SegmentedCodeInput.vue";
 import { REMOTE_ID_GROUPS, splitCode } from "@/helpers/segmented_code";
 import { copyToClipboard } from "@/helpers/utils";

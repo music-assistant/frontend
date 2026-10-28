@@ -23,9 +23,6 @@
   display: none;
 }
 /* the lists and image tiles inside sit on the card instead of painting their own surface */
-.detail-admin :deep(.v-container) {
-  padding: 0 12px 12px;
-}
 .detail-admin :deep(.v-list),
 .detail-admin :deep(.panel-item) {
   background: transparent;
