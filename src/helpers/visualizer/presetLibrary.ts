@@ -34,20 +34,26 @@ function packPresets(module: unknown): PresetMap {
  */
 export async function loadPresetLibrary(): Promise<PresetMap> {
   if (cache) return cache;
-  loading ??= (async () => {
-    const presets: PresetMap = {};
-    const base: unknown = await import("butterchurn-presets");
-    Object.assign(presets, packPresets(base));
-    try {
-      const extra: unknown =
-        await import("butterchurn-presets/lib/butterchurnPresetsExtra.min.js");
-      Object.assign(presets, packPresets(extra));
-    } catch {
-      // Extra pack is optional; the base pack alone is fine.
-    }
-    cache = presets;
-    return presets;
-  })();
+  if (!loading) {
+    const request = (async () => {
+      const presets: PresetMap = {};
+      const base: unknown = await import("butterchurn-presets");
+      Object.assign(presets, packPresets(base));
+      try {
+        const extra: unknown =
+          await import("butterchurn-presets/lib/butterchurnPresetsExtra.min.js");
+        Object.assign(presets, packPresets(extra));
+      } catch {
+        // Extra pack is optional; the base pack alone is fine.
+      }
+      cache = presets;
+      return presets;
+    })();
+    loading = request;
+    void request.catch(() => {
+      if (loading === request) loading = null;
+    });
+  }
   return loading;
 }
 

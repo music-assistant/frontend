@@ -103,6 +103,8 @@ export const MIN_SERVER_SCHEMA_VERSION = 96;
 // Server error codes of a missing or rejected sign-in; the login UI reports these itself
 const AUTHENTICATION_REQUIRED_ERROR_CODE = 20;
 const AUTHENTICATION_FAILED_ERROR_CODE = 21;
+const CONNECTION_PROBE_INTERVAL_MS = 30_000;
+const CONNECTION_PROBE_TIMEOUT_MS = 10_000;
 
 export interface CommandOptions {
   /**
@@ -155,6 +157,15 @@ export class ConnectionLostError extends Error {
 export class MusicAssistantApi {
   private transport?: ITransport;
   private _throttleId?: ReturnType<typeof setTimeout>;
+  private connectionProbeInterval?: ReturnType<typeof setInterval>;
+  private connectionProbeDeadline?: ReturnType<typeof setTimeout>;
+  private connectionProbeId?: string;
+  private connectionProbeGeneration = 0;
+  private lastConnectionProbeAt = 0;
+  private connectionProbePrefix?: string;
+  private connectionProbeCounter = 0;
+  private connectionWasHidden = false;
+  private consecutiveLateConnectionProbes = 0;
   public baseUrl?: string; // HTTP base URL for image proxy etc.
   public isRemoteConnection = ref<boolean>(false);
   public state = ref<ConnectionState>(ConnectionState.DISCONNECTED);
@@ -435,6 +446,7 @@ export class MusicAssistantApi {
    * Disconnect from the server
    */
   public disconnect(): void {
+    this.stopConnectionProbes();
     if (this.transport) {
       this.transport.disconnect();
       this.transport = undefined;
@@ -3270,6 +3282,7 @@ export class MusicAssistantApi {
       state === "failed" ||
       state === "disconnected"
     ) {
+      this.stopConnectionProbes();
       this._failPendingCommands();
     }
 
@@ -3316,6 +3329,14 @@ export class MusicAssistantApi {
   }
 
   private handleResultMessage(msg: SuccessResultMessage | ErrorResultMessage) {
+    // A replaced probe may still reply on the same socket. Its message ID is
+    // identifiable without retaining one entry for every probe ever retired.
+    if (
+      this.connectionProbePrefix &&
+      msg.message_id.startsWith(this.connectionProbePrefix) &&
+      msg.message_id !== this.connectionProbeId
+    )
+      return;
     // Handle result of a command
     const resultPromise = this.commands.get(msg.message_id);
 
@@ -3361,6 +3382,10 @@ export class MusicAssistantApi {
     }
 
     this.commands.delete(msg.message_id);
+    if (msg.message_id === this.connectionProbeId) {
+      this.consecutiveLateConnectionProbes = 0;
+      this.clearConnectionProbe();
+    }
     if ("error_code" in msg) {
       resultPromise.reject(
         new ApiCommandError(
@@ -3393,6 +3418,7 @@ export class MusicAssistantApi {
     // server timestamps render correctly even when one of the two clocks is unsynced.
     // The command needs no authentication, so this also covers the pre-auth phase.
     startServerTimeSync(() => this.getServerTime());
+    this.startConnectionProbes();
     this.signalEvent({
       event: EventType.CONNECTED,
       object_id: "",
@@ -3410,6 +3436,120 @@ export class MusicAssistantApi {
     return await this.sendCommand<number>("time", undefined, {
       suppressGlobalError: true,
     });
+  }
+
+  private startConnectionProbes(): void {
+    if (!(this.transport instanceof WebSocketTransport)) return;
+    this.stopConnectionProbes();
+    this.connectionProbePrefix = `${this._genCmdId()}:probe:`;
+    this.connectionProbeCounter = 0;
+    this.consecutiveLateConnectionProbes = 0;
+    this.connectionWasHidden = document.visibilityState !== "visible";
+    this.connectionProbeInterval = setInterval(
+      () => this.checkConnection(),
+      CONNECTION_PROBE_INTERVAL_MS,
+    );
+    document.addEventListener("visibilitychange", this.checkConnectionOnWake);
+    window.addEventListener("focus", this.checkConnectionOnWake);
+    window.addEventListener("online", this.checkConnectionOnWake);
+  }
+
+  private checkConnectionOnWake = (): void => {
+    if (document.visibilityState !== "visible") {
+      this.connectionWasHidden = true;
+      this.consecutiveLateConnectionProbes = 0;
+      this.clearConnectionProbe();
+      return;
+    }
+    // Background timers may pause, including the monotonic clock on some
+    // platforms. Always replace a probe after a known hidden period.
+    const resumed = this.connectionWasHidden;
+    this.connectionWasHidden = false;
+    if (!resumed && this.connectionProbeId) return;
+    this.clearConnectionProbe();
+    this.checkConnection();
+  };
+
+  private checkConnection(): void {
+    if (
+      !(this.transport instanceof WebSocketTransport) ||
+      !this.transport.isConnected ||
+      this.connectionProbeId ||
+      document.visibilityState !== "visible"
+    )
+      return;
+    const id = `${this.connectionProbePrefix}${++this.connectionProbeCounter}`;
+    const generation = ++this.connectionProbeGeneration;
+    this.connectionProbeId = id;
+    this.lastConnectionProbeAt = performance.now();
+    // The time command is read-only and does not require authentication. Do not
+    // impose deadlines on ordinary commands, which may legitimately run longer.
+    this.commands.set(id, {
+      resolve: () => undefined,
+      reject: () => undefined,
+      suppressGlobalError: true,
+    });
+    try {
+      this._sendCommand("time", undefined, id);
+    } catch {
+      this.clearConnectionProbe();
+      this.transport.reconnectUnresponsive();
+      return;
+    }
+    this.connectionProbeDeadline = setTimeout(() => {
+      if (
+        generation !== this.connectionProbeGeneration ||
+        this.connectionProbeId !== id
+      )
+        return;
+      const elapsed = performance.now() - this.lastConnectionProbeAt;
+      this.clearConnectionProbe();
+      if (document.visibilityState !== "visible") {
+        this.connectionWasHidden = true;
+        this.consecutiveLateConnectionProbes = 0;
+        return;
+      }
+      if (elapsed > CONNECTION_PROBE_TIMEOUT_MS * 2) {
+        // A delayed callback may follow suspension. Give the first unanswered
+        // probe another chance, but repeated late callbacks must not defer
+        // recovery forever while the page remains visible.
+        this.consecutiveLateConnectionProbes++;
+        if (this.consecutiveLateConnectionProbes === 1) {
+          this.checkConnection();
+          return;
+        }
+      }
+      if (this.transport instanceof WebSocketTransport) {
+        this.transport.reconnectUnresponsive();
+      }
+    }, CONNECTION_PROBE_TIMEOUT_MS);
+  }
+
+  private clearConnectionProbe(): void {
+    this.connectionProbeGeneration++;
+    if (this.connectionProbeDeadline)
+      clearTimeout(this.connectionProbeDeadline);
+    this.connectionProbeDeadline = undefined;
+    if (this.connectionProbeId) this.commands.delete(this.connectionProbeId);
+    this.connectionProbeId = undefined;
+  }
+
+  private stopConnectionProbes(): void {
+    if (this.connectionProbeInterval)
+      clearInterval(this.connectionProbeInterval);
+    this.connectionProbeInterval = undefined;
+    if (typeof document !== "undefined") {
+      document.removeEventListener(
+        "visibilitychange",
+        this.checkConnectionOnWake,
+      );
+      window.removeEventListener("focus", this.checkConnectionOnWake);
+      window.removeEventListener("online", this.checkConnectionOnWake);
+    }
+    this.clearConnectionProbe();
+    this.connectionProbePrefix = undefined;
+    this.connectionWasHidden = false;
+    this.consecutiveLateConnectionProbes = 0;
   }
 
   /** Whether the connected server is too old for this frontend and needs an update. */

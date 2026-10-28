@@ -11,6 +11,9 @@ export default mergeConfig(
       // markdown pin themselves to jsdom with an @vitest-environment docblock.
       environment: "happy-dom",
       globals: true,
+      // Vuetify generates Sass modules in a plugin-local map. Persisted transforms
+      // retain imports of those modules across runs, but the new plugin map is empty.
+      fsModuleCache: false,
       // The popout inset test asserts a real cascade result, so the app
       // stylesheet has to be compiled instead of stubbed out. Component styles
       // stay unprocessed, so the rest of the suite is unaffected.

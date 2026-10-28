@@ -4,6 +4,24 @@
   <!-- Only the public web app can reach a server older than this frontend supports -->
   <ServerOutdated v-if="api.serverOutdated" />
 
+  <!-- A failed startup can be retried without signing out or looping automatically. -->
+  <main
+    v-else-if="initializationError && !recovering"
+    class="flex min-h-screen items-center justify-center p-6"
+  >
+    <div class="max-w-md text-center">
+      <p role="alert" class="mb-4">{{ initializationError }}</p>
+      <Button
+        type="button"
+        :loading="initializationLoading"
+        :disabled="initializationLoading"
+        @click="retryInitialization"
+      >
+        {{ $t("login.try_again", "Try Again") }}
+      </Button>
+    </div>
+  </main>
+
   <!-- Login screen (when not authenticated). On a fresh server's first run
        there is no account to sign in with until the setup wizard has made
        one, so the sign-in waits for that account and stays out of sight
@@ -50,6 +68,7 @@
 <script setup lang="ts">
 import HomeAssistantMenuButton from "@/components/HomeAssistantMenuButton.vue";
 import ServerOutdated from "@/components/ServerOutdated.vue";
+import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { loadRoles } from "@/composables/roles";
 import { useReconnectGrace } from "@/composables/useReconnectGrace";
@@ -74,7 +93,7 @@ import {
   isMediaSessionDisabled,
   resetMediaSession,
 } from "@/helpers/mediaSession";
-import { api, ConnectionState } from "@/plugins/api";
+import { api, ConnectionLostError, ConnectionState } from "@/plugins/api";
 import { CoreState, EventType, Scope } from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
@@ -184,8 +203,13 @@ const loginComponent = ref<InstanceType<typeof Login> | null>(null);
 // through the login screen.
 const recovering = useReconnectGrace(api.state);
 
+const initializationError = ref<string | null>(null);
+const initializationLoading = ref(false);
 const showLogin = computed(
-  () => api.state.value !== ConnectionState.INITIALIZED && !recovering.value,
+  () =>
+    api.state.value !== ConnectionState.INITIALIZED &&
+    !recovering.value &&
+    !initializationError.value,
 );
 
 // Show main app when API is initialized or recovering AND (not remote OR service worker is ready)
@@ -293,6 +317,42 @@ const handleLocalConnect = async (serverAddress: string) => {
 };
 
 let initializationCompleted = false;
+interface InitializationAttempt {
+  serverInfo: typeof api.serverInfo.value;
+  serverId: string | undefined;
+  userId?: string;
+}
+let activeInitialization: InitializationAttempt | undefined;
+const isCurrentInitialization = (attempt: InitializationAttempt) =>
+  activeInitialization === attempt &&
+  api.state.value === ConnectionState.AUTHENTICATED &&
+  !!api.serverInfo.value &&
+  api.serverInfo.value.server_id === attempt.serverId &&
+  (!attempt.userId || store.currentUser?.user_id === attempt.userId);
+let unsubscribeCoreState: (() => void) | undefined;
+let startingToastId: string | number | undefined;
+
+const showServerStateToast = (status: CoreState | undefined) => {
+  if (status === CoreState.RUNNING && startingToastId) {
+    toast.dismiss(startingToastId);
+    startingToastId = undefined;
+    return;
+  }
+  if (!status || status === CoreState.RUNNING) return;
+
+  const { t } = i18n.global;
+  if (status === CoreState.STARTING) {
+    if (startingToastId) toast.dismiss(startingToastId);
+    startingToastId = toast.info(t("server_state.starting"), {
+      duration: Infinity,
+    });
+  } else if (status === CoreState.STOPPING) {
+    toast.warning(t("server_state.stopping"), { duration: 5000 });
+  } else if (status === CoreState.STOPPED) {
+    toast.warning(t("server_state.stopped"), { duration: 5000 });
+  }
+};
+
 // the user's role and its sorted scopes at the last completed initialization
 let initializedAccess: string | undefined;
 
@@ -329,7 +389,7 @@ async function migrateLocalStorageToUserPreferences() {
   }
 }
 
-const completeInitialization = async () => {
+const performInitialization = async (attempt: InitializationAttempt) => {
   // Read the onboarding request before anything can return early: the server's
   // setup flow appends ?onboard=true, and dropping it right away keeps a reload
   // from sending the user back into the wizard.
@@ -344,15 +404,9 @@ const completeInitialization = async () => {
     window.history.replaceState({}, "", cleanUrl);
   }
 
-  // Guard against multiple initializations
-  if (initializationCompleted || api.serverOutdated) {
-    return;
-  }
-
-  const serverInfo = api.serverInfo.value;
+  const serverInfo = attempt.serverInfo;
   if (!serverInfo) {
-    console.error("[App] No server info received");
-    return;
+    throw new Error("No server info received");
   }
 
   // Home Assistant pads its ingress iframe for the device safe area, leaving a
@@ -369,15 +423,17 @@ const completeInitialization = async () => {
   }
 
   const userInfo = await api.getCurrentUserInfo();
+  if (!isCurrentInitialization(attempt)) return;
   if (!userInfo) {
-    console.error("[App] No user info received");
-    return;
+    throw new Error("No user info received");
   }
   authManager.setCurrentUser(userInfo);
   store.currentUser = userInfo;
+  attempt.userId = userInfo.user_id;
   store.serverInfo = serverInfo;
   // the roles, with the scopes each grants for the parts of the ui gated on one
   await loadRoles();
+  if (!isCurrentInitialization(attempt)) return;
   // sharing tells a guest from a member by the role itself, so the role counts too
   const userAccess = [
     userInfo.role,
@@ -401,6 +457,7 @@ const completeInitialization = async () => {
   // Migrate localStorage settings to user preferences (one-time migration)
   if (!isGuestAccessSession && !isDashboardViewer) {
     await migrateLocalStorageToUserPreferences();
+    if (!isCurrentInitialization(attempt)) return;
   }
 
   if (api.baseUrl) {
@@ -410,23 +467,40 @@ const completeInitialization = async () => {
   if (!isGuestAccessSession && !isDashboardViewer) {
     // Full initialization for regular users
     await api.fetchState();
+    if (!isCurrentInitialization(attempt)) return;
     // Drop persisted filters for providers that are no longer installed.
     await pruneStaleProviderFilters();
-    store.libraryArtistsCount = await api.getLibraryArtistsCount();
-    store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
-    store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
-    store.libraryRadiosCount = await api.getLibraryRadiosCount();
-    store.libraryTracksCount = await api.getLibraryTracksCount();
-    store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
-    store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
-    store.libraryGenresCount = await api.getLibraryGenresCount();
+    if (!isCurrentInitialization(attempt)) return;
+    const counts = [
+      await api.getLibraryArtistsCount(),
+      await api.getLibraryAlbumsCount(),
+      await api.getLibraryPlaylistsCount(),
+      await api.getLibraryRadiosCount(),
+      await api.getLibraryTracksCount(),
+      await api.getLibraryPodcastsCount(),
+      await api.getLibraryAudiobooksCount(),
+      await api.getLibraryGenresCount(),
+    ];
+    if (!isCurrentInitialization(attempt)) return;
+    [
+      store.libraryArtistsCount,
+      store.libraryAlbumsCount,
+      store.libraryPlaylistsCount,
+      store.libraryRadiosCount,
+      store.libraryTracksCount,
+      store.libraryPodcastsCount,
+      store.libraryAudiobooksCount,
+      store.libraryGenresCount,
+    ] = counts;
   } else if (isDashboardViewer) {
     console.debug("[App] Dashboard viewer - fetching player/queue state only");
     // Dashboards render live player/queue state, which regular guests don't need
     await api.fetchState();
+    if (!isCurrentInitialization(attempt)) return;
   } else {
     console.debug("[App] Guest user - skipping regular user initialization");
     await api.fetchProviders();
+    if (!isCurrentInitialization(attempt)) return;
   }
 
   if (
@@ -452,59 +526,69 @@ const completeInitialization = async () => {
   }
   // Don't push to any route here - let the router handle navigation naturally
   // from the URL hash. The router config already redirects "/" to "/discover"
+  await initializeWebPlayerModeSync();
+  if (!isCurrentInitialization(attempt)) return;
   api.state.value = ConnectionState.INITIALIZED;
   initializationCompleted = true;
   initializedAccess = userAccess;
-  await initializeWebPlayerModeSync();
 
   // Initialize companion app integration
   if (api.baseUrl) {
     initializeCompanionIntegration(api.baseUrl);
   }
 
-  // Helper function to show server state notifications
-  let startingToastId: string | number | undefined;
-  const showServerStateToast = (status: CoreState | undefined) => {
-    // Dismiss the starting toast if server is now running
-    if (status === CoreState.RUNNING && startingToastId) {
-      toast.dismiss(startingToastId);
-      startingToastId = undefined;
-      return;
-    }
+  showServerStateToast(api.serverInfo.value?.status);
+};
 
-    if (status && status !== CoreState.RUNNING) {
-      const { t } = i18n.global;
-      if (status === CoreState.STARTING) {
-        // Dismiss any existing starting toast before showing a new one
-        if (startingToastId) {
-          toast.dismiss(startingToastId);
-        }
-        startingToastId = toast.info(t("server_state.starting"), {
-          duration: Infinity,
-        });
-      } else if (status === CoreState.STOPPING) {
-        toast.warning(t("server_state.stopping"), { duration: 5000 });
-      } else if (status === CoreState.STOPPED) {
-        toast.warning(t("server_state.stopped"), { duration: 5000 });
-      }
-    }
+const completeInitialization = async () => {
+  if (
+    initializationCompleted ||
+    api.serverOutdated ||
+    api.state.value !== ConnectionState.AUTHENTICATED
+  ) {
+    return;
+  }
+  if (activeInitialization) return;
+  const attempt: InitializationAttempt = {
+    serverInfo: api.serverInfo.value,
+    serverId: api.serverInfo.value?.server_id,
   };
+  activeInitialization = attempt;
+  initializationLoading.value = true;
+  try {
+    await performInitialization(attempt);
+    if (activeInitialization === attempt && initializationCompleted) {
+      initializationError.value = null;
+    }
+  } catch (error) {
+    if (
+      isCurrentInitialization(attempt) &&
+      !(error instanceof ConnectionLostError)
+    ) {
+      console.error("[App] Failed to initialize:", error);
+      initializationError.value = i18n.global.t("login.setup_error");
+      toast.error(initializationError.value);
+    }
+  } finally {
+    if (activeInitialization === attempt) {
+      activeInitialization = undefined;
+      initializationLoading.value = false;
+    }
+  }
+};
 
-  // Check initial server state
-  const initialStatus = api.serverInfo.value?.status;
-  showServerStateToast(initialStatus);
+const retryInitialization = () => {
+  void completeInitialization();
+};
 
-  // Subscribe to core state updates to show notifications
-  api.subscribe(
+onMounted(async () => {
+  initGlobalShortcutsSync();
+  unsubscribeCoreState = api.subscribe(
     EventType.CORE_STATE_UPDATED,
     (event: { data: { status: CoreState } }) => {
       showServerStateToast(event.data?.status);
     },
   );
-};
-
-onMounted(async () => {
-  initGlobalShortcutsSync();
 
   // TODO: Remove localStorage fallback once migration period is over (language moved to user preferences)
   const langPref =
@@ -592,6 +676,14 @@ onMounted(async () => {
   watch(
     () => api.state.value,
     async (newState, oldState) => {
+      if (
+        newState !== ConnectionState.AUTHENTICATED &&
+        newState !== ConnectionState.INITIALIZED
+      ) {
+        activeInitialization = undefined;
+        initializationLoading.value = false;
+        initializationError.value = null;
+      }
       // Re-authenticate on reconnection (not initial connection - Login.vue handles that)
       if (
         newState === ConnectionState.CONNECTED &&
@@ -629,7 +721,10 @@ onMounted(async () => {
                 "[App] Re-authentication after reconnect failed:",
                 error,
               );
-              if (!handleEndedGuestSession()) {
+              if (
+                !(error instanceof ConnectionLostError) &&
+                !handleEndedGuestSession()
+              ) {
                 api.requireAuthentication();
               }
             }
@@ -694,6 +789,8 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  unsubscribeCoreState?.();
+  if (startingToastId) toast.dismiss(startingToastId);
   unsubscribeFromHAProperties();
 });
 

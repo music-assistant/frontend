@@ -190,7 +190,12 @@ import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
 import { panelViewItemResponsive } from "@/helpers/utils";
-import { api } from "@/plugins/api";
+import {
+  api,
+  ApiCommandError,
+  ConnectionLostError,
+  ConnectionState,
+} from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   Genre,
@@ -202,9 +207,10 @@ import {
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { SquareArrowRightEnter } from "@lucide/vue";
-import { computed, ref, watch, type Component } from "vue";
+import { computed, onUnmounted, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 
 export interface Props {
   itemId: string;
@@ -320,25 +326,73 @@ const navigateTo = (routeName: string) => {
   });
 };
 
+let requestGeneration = 0;
+let failedItem: string | undefined;
+let reconnecting = api.state.value !== ConnectionState.INITIALIZED;
+let retryAfterInFlightFailure = false;
+let disposed = false;
+const showLoadError = (error: unknown, key: string) => {
+  if (
+    error instanceof ApiCommandError ||
+    (error instanceof ConnectionLostError && reconnecting)
+  )
+    return;
+  toast.error(t(key));
+};
+const currentItem = () => `${props.provider}:${props.itemId}`;
+
 const loadItemDetails = async () => {
+  const generation = ++requestGeneration;
+  const item = currentItem();
   loading.value = true;
-  itemDetails.value = await api.getGenre(props.itemId, props.provider);
-  const allGenres = await api.getLibraryGenres();
-  existingGenreNames.value = new Set(
-    allGenres.map((g) => g.name.toLowerCase()),
-  );
-  loading.value = false;
+  failedItem = undefined;
+  retryAfterInFlightFailure = false;
+  try {
+    const genre = await api.getGenre(props.itemId, props.provider);
+    if (generation !== requestGeneration) return;
+    itemDetails.value = genre;
+    try {
+      const allGenres = await api.getLibraryGenres();
+      if (generation !== requestGeneration) return;
+      existingGenreNames.value = new Set(
+        allGenres.map((g) => g.name.toLowerCase()),
+      );
+    } catch (error) {
+      if (generation !== requestGeneration) return;
+      failedItem = item;
+      showLoadError(error, "settings.error_loading_genres");
+    }
+  } catch (error) {
+    if (generation !== requestGeneration) return;
+    failedItem = item;
+    showLoadError(error, "items_load_failed");
+  } finally {
+    if (generation === requestGeneration) {
+      loading.value = false;
+      if (retryAfterInFlightFailure && failedItem === item) {
+        retryAfterInFlightFailure = false;
+        void loadItemDetails();
+      }
+    }
+  }
 };
 
+let rowsGeneration = 0;
 const loadOverviewRows = async () => {
-  if (!itemDetails.value) return;
+  const genre = itemDetails.value;
+  const generation = ++rowsGeneration;
+  if (!genre) {
+    loadingRows.value = false;
+    return;
+  }
   loadingRows.value = true;
 
   try {
     const recommendationFolders = await api.getGenreOverviewRows(
-      itemDetails.value.item_id,
-      itemDetails.value.provider,
+      genre.item_id,
+      genre.provider,
     );
+    if (generation !== rowsGeneration) return;
 
     if (recommendationFolders && recommendationFolders.length > 0) {
       overviewRows.value = recommendationFolders.map((folder) => {
@@ -361,15 +415,16 @@ const loadOverviewRows = async () => {
     } else {
       overviewRows.value = [];
     }
-  } catch (error) {
-    console.error("Failed to load genre overview:", error);
+  } catch {
+    if (generation !== rowsGeneration) return;
     overviewRows.value = [];
   }
 
   // Fallback: if no overview rows returned, try loading the genre's tracks
   if (overviewRows.value.length === 0) {
     try {
-      const tracks = await api.getGenreTracks(itemDetails.value.item_id);
+      const tracks = await api.getGenreTracks(genre.item_id);
+      if (generation !== rowsGeneration) return;
       overviewRows.value = [
         {
           title: t("tracks"),
@@ -378,12 +433,13 @@ const loadOverviewRows = async () => {
         },
       ];
     } catch (error) {
-      console.error("Failed to load genre tracks:", error);
+      if (generation !== rowsGeneration) return;
+      showLoadError(error, "items_load_failed");
       overviewRows.value = [];
     }
   }
 
-  loadingRows.value = false;
+  if (generation === rowsGeneration) loadingRows.value = false;
 };
 
 const genreId = () => parseInt(itemDetails.value!.item_id);
@@ -475,19 +531,47 @@ const loadGenreAudiobooks = async (params: LoadDataParams) => {
 };
 
 watch(
-  () => props.itemId,
-  (val) => {
-    if (val) loadItemDetails();
+  () => [props.itemId, props.provider],
+  ([itemId]) => {
+    ++requestGeneration;
+    failedItem = undefined;
+    retryAfterInFlightFailure = false;
+    itemDetails.value = undefined;
+    existingGenreNames.value = new Set();
+    ++rowsGeneration;
+    loadingRows.value = false;
+    overviewRows.value = [];
+    loading.value = false;
+    if (itemId) void loadItemDetails();
   },
   { immediate: true },
 );
 
 watch(
-  () => itemDetails.value?.uri,
-  () => {
-    loadOverviewRows();
+  () => api.state.value,
+  (state) => {
+    if (disposed) return;
+    if (state !== ConnectionState.INITIALIZED) reconnecting = true;
+    else if (reconnecting) {
+      reconnecting = false;
+      if (failedItem === currentItem()) void loadItemDetails();
+      else if (loading.value) retryAfterInFlightFailure = true;
+    }
   },
 );
+
+watch(
+  () => itemDetails.value?.uri,
+  () => {
+    void loadOverviewRows();
+  },
+);
+
+onUnmounted(() => {
+  disposed = true;
+  ++requestGeneration;
+  ++rowsGeneration;
+});
 
 useDetailItemUpdates(itemDetails);
 </script>

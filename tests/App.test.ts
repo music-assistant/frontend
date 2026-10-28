@@ -13,7 +13,7 @@ import {
 } from "@/composables/useFirstRunSetup";
 import { saveDeviceSetting } from "@/helpers/device_settings";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
-import type { MusicAssistantApi } from "@/plugins/api";
+import { ConnectionLostError, type MusicAssistantApi } from "@/plugins/api";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -168,6 +168,7 @@ vi.mock("@/plugins/api", async () => {
   apiMock.state = ref(apiMock.state.value);
   return {
     api: apiMock,
+    ConnectionLostError: class ConnectionLostError extends Error {},
     ConnectionState: {
       AUTHENTICATED: "authenticated",
       CONNECTED: "connected",
@@ -297,6 +298,7 @@ vi.mock("vue-router", async () => {
 vi.mock("vue-sonner", () => ({
   toast: {
     dismiss: vi.fn(),
+    error: vi.fn(),
     info: vi.fn(),
     loading: vi.fn(() => 1),
     warning: vi.fn(),
@@ -486,6 +488,279 @@ describe("App initialization", () => {
     expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(false);
     expect(apiMock.getCurrentUserInfo).not.toHaveBeenCalled();
     expect(apiMock.state.value).toBe("authenticated");
+  });
+
+  it.each(["user", "roles", "counts"] as const)(
+    "offers a bounded startup retry when %s data fails",
+    async (failure) => {
+      if (failure === "user") {
+        apiMock.getCurrentUserInfo.mockResolvedValueOnce(null);
+      } else if (failure === "roles") {
+        apiMock.getRoles.mockRejectedValueOnce(new Error("roles unavailable"));
+      } else {
+        apiMock.getLibraryArtistsCount.mockRejectedValueOnce(
+          new Error("counts unavailable"),
+        );
+      }
+      wrapper = mountAppWithoutSettling();
+      await flushPromises();
+
+      expect(apiMock.state.value).toBe("authenticated");
+      expect(wrapper.find('[role="alert"]').exists()).toBe(true);
+      expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(false);
+      expect(toast.error).toHaveBeenCalledOnce();
+      const initialCalls = apiMock.getCurrentUserInfo.mock.calls.length;
+      await flushPromises();
+      expect(apiMock.getCurrentUserInfo).toHaveBeenCalledTimes(initialCalls);
+
+      const retry = wrapper.find('[data-slot="button"]');
+      expect(retry.exists()).toBe(true);
+      await retry.trigger("click");
+      await flushPromises();
+      expect(apiMock.state.value).toBe("initialized");
+      expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    },
+  );
+
+  it("keeps the retry panel visible and prevents repeat actions until the retry settles", async () => {
+    apiMock.getCurrentUserInfo.mockResolvedValueOnce(null);
+    wrapper = mountAppWithoutSettling();
+    await flushPromises();
+    const retry = wrapper.find('[data-slot="button"]');
+    expect(retry.exists()).toBe(true);
+    const pendingUser = createDeferred<User | null>();
+    apiMock.getCurrentUserInfo.mockReturnValueOnce(pendingUser.promise);
+
+    await retry.trigger("click");
+    await nextTick();
+    expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(false);
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true);
+    expect(
+      wrapper.find('[data-slot="button"]').attributes("disabled"),
+    ).toBeDefined();
+    expect(wrapper.find('[data-slot="button"]').attributes("aria-busy")).toBe(
+      "true",
+    );
+    await wrapper.find('[data-slot="button"]').trigger("click");
+    expect(apiMock.getCurrentUserInfo).toHaveBeenCalledTimes(2);
+
+    pendingUser.resolve(user({ role: UserRole.USER, user_id: "user-id" }));
+    await flushPromises();
+    expect(apiMock.state.value).toBe("initialized");
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(false);
+  });
+
+  it("keeps the retry panel after another failed attempt and enables retry again", async () => {
+    apiMock.getCurrentUserInfo.mockResolvedValueOnce(null);
+    wrapper = mountAppWithoutSettling();
+    await flushPromises();
+    apiMock.getCurrentUserInfo.mockRejectedValueOnce(
+      new Error("still unavailable"),
+    );
+
+    await wrapper.find('[data-slot="button"]').trigger("click");
+    await flushPromises();
+
+    expect(apiMock.getCurrentUserInfo).toHaveBeenCalledTimes(2);
+    expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(false);
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true);
+    expect(
+      wrapper.find('[data-slot="button"]').attributes("disabled"),
+    ).toBeUndefined();
+    expect(toast.error).toHaveBeenCalledTimes(2);
+  });
+
+  it("finishes startup when server state refreshes with the same server ID", async () => {
+    const pendingRoles = createDeferred<Role[]>();
+    apiMock.getRoles.mockReturnValueOnce(pendingRoles.promise);
+    wrapper = mountAppWithoutSettling();
+    await flushPromises();
+    expect(apiMock.getRoles).toHaveBeenCalledOnce();
+    expect(apiMock.state.value).toBe("authenticated");
+
+    apiMock.serverInfo.value = {
+      ...apiMock.serverInfo.value,
+      status: "starting",
+    };
+    pendingRoles.resolve([]);
+    await flushPromises();
+
+    expect(apiMock.state.value).toBe("initialized");
+    expectLibraryCountsCalled();
+    expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("finishes startup when the signed-in user is refreshed", async () => {
+    const pendingRoles = createDeferred<Role[]>();
+    apiMock.getRoles.mockReturnValueOnce(pendingRoles.promise);
+    wrapper = mountAppWithoutSettling();
+    await flushPromises();
+    expect(apiMock.getRoles).toHaveBeenCalledOnce();
+    const signedInUser = storeMock.currentUser;
+    expect(signedInUser?.user_id).toBe("user-id");
+
+    storeMock.currentUser = { ...signedInUser!, username: "updated-user" };
+    pendingRoles.resolve([]);
+    await flushPromises();
+
+    expect(apiMock.state.value).toBe("initialized");
+    expect(storeMock.currentUser?.username).toBe("updated-user");
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("does not commit startup for a different server ID", async () => {
+    const pendingRoles = createDeferred<Role[]>();
+    apiMock.getRoles.mockReturnValueOnce(pendingRoles.promise);
+    wrapper = mountAppWithoutSettling();
+    await flushPromises();
+    expect(apiMock.getRoles).toHaveBeenCalledOnce();
+
+    apiMock.serverInfo.value = {
+      ...apiMock.serverInfo.value,
+      server_id: "different-server",
+    };
+    pendingRoles.resolve([]);
+    await flushPromises();
+
+    expect(apiMock.state.value).toBe("authenticated");
+    expectLibraryCountsNotCalled();
+    expect(mockInitializeWebPlayerModeSync).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("allows the next reconnect to retry initialization after a dropped startup request", async () => {
+    apiMock.getRoles.mockRejectedValueOnce(new ConnectionLostError());
+    wrapper = mountAppWithoutSettling();
+    await flushPromises();
+
+    expect(apiMock.state.value).toBe("authenticated");
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+
+    await startReconnect();
+    apiMock.state.value = "authenticated";
+    await flushPromises();
+
+    expect(apiMock.getRoles).toHaveBeenCalledTimes(2);
+    expect(apiMock.state.value).toBe("initialized");
+  });
+
+  it.each(["rejects", "resolves"] as const)(
+    "starts a new account without waiting for an old pending attempt that %s",
+    async (oldResult) => {
+      const oldSync = createDeferred();
+      mockInitializeWebPlayerModeSync.mockImplementationOnce(
+        () => oldSync.promise,
+      );
+      const originalUser = user({
+        role: UserRole.USER,
+        user_id: "original-user",
+        username: "original",
+      });
+      const newUser = user({
+        role: UserRole.USER,
+        user_id: "new-user",
+        username: "new",
+      });
+      apiMock.getCurrentUserInfo.mockResolvedValueOnce(originalUser);
+      wrapper = mountAppWithoutSettling();
+      await flushPromises();
+      expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
+      expect(apiMock.state.value).toBe("authenticated");
+
+      authManagerMock.getToken.mockReturnValue("new-token");
+      apiMock.authenticateWithToken.mockResolvedValue({ user: newUser });
+      apiMock.getCurrentUserInfo.mockResolvedValue(newUser);
+      await startReconnect();
+      apiMock.state.value = "authenticated";
+      await flushPromises();
+
+      // The old non-API operation is still unresolved, but the new account is ready.
+      expect(apiMock.getCurrentUserInfo).toHaveBeenCalledTimes(2);
+      expect(storeMock.currentUser?.user_id).toBe("new-user");
+      expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledTimes(2);
+      expect(apiMock.state.value).toBe("initialized");
+      expect(toast.error).not.toHaveBeenCalled();
+      expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+      const countCalls = apiMock.getLibraryArtistsCount.mock.calls.length;
+      const companionCalls =
+        mockInitializeCompanionIntegration.mock.calls.length;
+
+      if (oldResult === "rejects") {
+        oldSync.reject(new Error("old startup failed"));
+      } else {
+        oldSync.resolve();
+      }
+      await flushPromises();
+
+      expect(apiMock.getLibraryArtistsCount).toHaveBeenCalledTimes(countCalls);
+      expect(mockInitializeCompanionIntegration).toHaveBeenCalledTimes(
+        companionCalls,
+      );
+      expect(storeMock.currentUser?.user_id).toBe("new-user");
+      expect(apiMock.state.value).toBe("initialized");
+      expect(toast.error).not.toHaveBeenCalled();
+      expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    },
+  );
+
+  it("does not let an old attempt finish a new account's startup", async () => {
+    const oldSync = createDeferred();
+    mockInitializeWebPlayerModeSync.mockImplementationOnce(
+      () => oldSync.promise,
+    );
+    apiMock.getCurrentUserInfo.mockResolvedValueOnce(
+      user({ role: UserRole.USER, user_id: "original-user" }),
+    );
+    wrapper = mountAppWithoutSettling();
+    await flushPromises();
+
+    const newUser = user({ role: UserRole.USER, user_id: "new-user" });
+    const pendingUser = createDeferred<User | null>();
+    authManagerMock.getToken.mockReturnValue("new-token");
+    apiMock.authenticateWithToken.mockResolvedValue({ user: newUser });
+    apiMock.getCurrentUserInfo.mockReturnValueOnce(pendingUser.promise);
+    await startReconnect();
+    apiMock.state.value = "authenticated";
+    await nextTick();
+    expect(apiMock.getCurrentUserInfo).toHaveBeenCalledTimes(2);
+
+    oldSync.resolve();
+    await flushPromises();
+    expect(apiMock.state.value).toBe("authenticated");
+    expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
+
+    pendingUser.resolve(newUser);
+    await flushPromises();
+    expect(apiMock.state.value).toBe("initialized");
+    expect(storeMock.currentUser?.user_id).toBe("new-user");
+    expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledTimes(2);
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("subscribes to server state once across reconnects and unsubscribes on unmount", async () => {
+    const unsubscribe = vi.fn();
+    apiMock.subscribe.mockImplementation((event) =>
+      event === EventType.CORE_STATE_UPDATED ? unsubscribe : () => {},
+    );
+    wrapper = await mountApp();
+    await reconnectAndInitialize();
+    await reconnectAndInitialize();
+
+    const callbacks = apiMock.subscribe.mock.calls.filter(
+      ([event]) => event === EventType.CORE_STATE_UPDATED,
+    );
+    expect(callbacks).toHaveLength(1);
+    const callback = callbacks[0][1] as (event: {
+      data: { status: string };
+    }) => void;
+    callback({ data: { status: "stopped" } });
+    expect(toast.warning).toHaveBeenCalledOnce();
+    wrapper.unmount();
+    wrapper = undefined;
+    expect(unsubscribe).toHaveBeenCalledOnce();
   });
 
   it("follows the force mobile layout setting without a reload", async () => {
@@ -1141,6 +1416,29 @@ describe("App initialization", () => {
     },
   );
 
+  it.each(["party", "music_quiz"] as const)(
+    "preserves a %s guest token after a dropped reconnect authentication",
+    async (type) => {
+      guestType.value = type;
+      wrapper = await mountApp();
+      authManagerMock.getToken.mockReturnValue("guest-token");
+      apiMock.authenticateWithToken.mockRejectedValueOnce(
+        new ConnectionLostError(),
+      );
+
+      await reconnect();
+
+      expect(authManagerMock.endRejectedGuestSession).not.toHaveBeenCalled();
+      expect(apiMock.requireAuthentication).not.toHaveBeenCalled();
+      expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
+
+      await reconnect();
+      expect(apiMock.authenticateWithToken).toHaveBeenCalledTimes(2);
+      expect(authManagerMock.getToken).toHaveBeenCalledTimes(2);
+      expect(authManagerMock.clearGuestSession).not.toHaveBeenCalled();
+    },
+  );
+
   it("hands a reconnecting guest back to its own session when it has one", async () => {
     guestType.value = "party";
     wrapper = await mountApp();
@@ -1477,7 +1775,9 @@ function mountAppWithoutSettling() {
   // and corrupts every later test.
   wrapper = shallowMount(App, {
     global: {
+      mocks: { $t: (key: string) => key },
       stubs: {
+        Button: false,
         RouterView: true,
       },
     },
@@ -1543,10 +1843,12 @@ function expectStartupDataRequestedBeforeReveal() {
  */
 function createDeferred<T = void>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((resolvePromise) => {
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
     resolve = resolvePromise;
+    reject = rejectPromise;
   });
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }
 
 /**

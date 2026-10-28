@@ -43,6 +43,16 @@
           @sort-by="changeSort"
         />
         <Button
+          v-else-if="sortOptionsError"
+          variant="ghost"
+          size="icon"
+          :aria-label="$t('settings.retry')"
+          :title="$t('settings.retry')"
+          @click="retrySortOptions"
+        >
+          <RefreshCw class="size-[18px]" />
+        </Button>
+        <Button
           v-if="
             libraryToolbar &&
             searchAvailable &&
@@ -499,7 +509,7 @@ import {
 import { activeFilterCount, clearedFilters } from "@/helpers/listing_filters";
 import { returnedByHistory } from "@/helpers/navigation";
 import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
-import { api } from "@/plugins/api";
+import { api, ApiCommandError, ConnectionState } from "@/plugins/api";
 import {
   isMusicBrainzItem,
   itemIsAvailable,
@@ -731,6 +741,7 @@ const {
   newContentAvailable,
   pagedItems,
   params,
+  recoverFailedLoad,
   retryLoad,
   serverSortOptions,
   sortOptions,
@@ -740,7 +751,11 @@ const {
 // the first load waits for the sort options; until then the scroller must not
 // load a page of its own
 const loadPending = computed(
-  () => loading.value || (!!props.sortListing && !sortOptionsLoaded.value),
+  () =>
+    loading.value ||
+    (!!props.sortListing &&
+      !sortOptionsLoaded.value &&
+      !sortOptionsError.value),
 );
 // the desktop row of quick sorts keeps its height while the sort options load,
 // so the items do not shift; a listing without quick sorts has no row, and a
@@ -2373,18 +2388,76 @@ onBeforeUnmount(() => {
   _unsubscribeFavorites?.();
 });
 
+let sortOptionsRequest: Promise<void> | undefined;
+let retrySortOptionsOnReady = false;
+const sortOptionsError = ref(false);
+let initialListingReady = false;
+const AUTHENTICATION_ERROR_CODES = new Set([20, 21]);
+
+const loadSortOptions = () => {
+  if (!props.sortListing || sortOptionsRequest || sortOptionsLoaded.value)
+    return;
+  sortOptionsError.value = false;
+  sortOptionsRequest = (async () => {
+    try {
+      const options = await api.getSortOptions(props.sortListing!);
+      if (isDisposed()) return;
+      const previousSort = params.value.sortBy;
+      serverSortOptions.value = options;
+      sortOptionsLoaded.value = true;
+      restoreSettings();
+      // An in-flight request uses the old sort; loadData coalesces parameter
+      // changes into one request after it finishes.
+      if (initialListingReady && params.value.sortBy !== previousSort) {
+        void loadData(true, false, true);
+      }
+    } catch (error) {
+      if (isDisposed()) return;
+      sortOptionsError.value = true;
+      // API command errors already show a toast except authentication errors,
+      // which the API leaves to the login screen. A metadata failure still
+      // needs local feedback while the retry control remains available.
+      if (
+        !(error instanceof ApiCommandError) ||
+        AUTHENTICATION_ERROR_CODES.has(error.error_code)
+      ) {
+        toast.error(t("settings.error_loading_sort_options"), {
+          id: "library-sort-options-error",
+        });
+      }
+    } finally {
+      sortOptionsRequest = undefined;
+      if (retrySortOptionsOnReady && !isDisposed()) {
+        retrySortOptionsOnReady = false;
+        loadSortOptions();
+      }
+    }
+  })();
+};
+
+const retrySortOptions = () => {
+  loadSortOptions();
+};
+
+watch(
+  () => api.state.value,
+  (state) => {
+    if (state !== ConnectionState.INITIALIZED || isDisposed()) return;
+    if (sortOptionsRequest) retrySortOptionsOnReady = true;
+    else loadSortOptions();
+    void recoverFailedLoad(
+      () => !isDisposed() && api.state.value === ConnectionState.INITIALIZED,
+    );
+  },
+);
+
 onMounted(async () => {
   if (props.sortListing) {
-    try {
-      serverSortOptions.value = await api.getSortOptions(props.sortListing);
-    } catch {
-      toast.error(t("settings.error_loading_sort_options"), {
-        id: "library-sort-options-error",
-      });
+    loadSortOptions();
+    while (sortOptionsRequest) {
+      await sortOptionsRequest;
+      if (isDisposed()) return;
     }
-    sortOptionsLoaded.value = true;
-    if (isDisposed()) return;
-    restoreSettings();
   }
 
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
@@ -2436,6 +2509,7 @@ onMounted(async () => {
   }
 
   await loadGenreOptions();
+  initialListingReady = true;
   // The await can outlast the listing, and the unmount hook only reaches what
   // was already set up by the time it ran.
   if (isDisposed()) return;

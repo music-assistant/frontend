@@ -215,7 +215,12 @@ import ProviderDetails from "@/components/ProviderDetails.vue";
 import { isAuthorOrNarrator } from "@/helpers/author_narrator";
 import { useArtistRowData } from "@/composables/useArtistRowData";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
-import { api } from "@/plugins/api";
+import {
+  api,
+  ApiCommandError,
+  ConnectionLostError,
+  ConnectionState,
+} from "@/plugins/api";
 import {
   ArtistType,
   ListingType,
@@ -226,8 +231,9 @@ import {
 import { authManager } from "@/plugins/auth";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
-import { computed, ref, watch } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
+import { toast } from "vue-sonner";
 
 export interface Props {
   itemId: string;
@@ -372,25 +378,73 @@ const activeAudiobookProvider = computed(
   () => api.providers[audiobookSourceProviderIds.value[0]]?.name || "",
 );
 
+let requestGeneration = 0;
+let failedItem: string | undefined;
+let reconnecting = api.state.value !== ConnectionState.INITIALIZED;
+let retryAfterInFlightFailure = false;
+let disposed = false;
+const currentItem = () => `${props.provider}:${props.itemId}`;
+
 const loadItemDetails = async function () {
+  const generation = ++requestGeneration;
   const { itemId, provider } = props;
-  // the previous artist must not stay actionable under the new route
-  itemDetails.value = undefined;
   loading.value = true;
-  const artist = await api.getArtist(itemId, provider);
-  // a slower response for a previous artist must not replace the current one
-  if (itemId !== props.itemId || provider !== props.provider) return;
-  itemDetails.value = artist;
-  loading.value = false;
+  failedItem = undefined;
+  retryAfterInFlightFailure = false;
+  try {
+    const artist = await api.getArtist(itemId, provider);
+    if (generation !== requestGeneration) return;
+    itemDetails.value = artist;
+  } catch (error) {
+    if (generation !== requestGeneration) return;
+    failedItem = currentItem();
+    if (
+      !(error instanceof ApiCommandError) &&
+      !(error instanceof ConnectionLostError && reconnecting)
+    )
+      toast.error($t("items_load_failed"));
+  } finally {
+    if (generation === requestGeneration) {
+      loading.value = false;
+      if (retryAfterInFlightFailure && failedItem === currentItem()) {
+        retryAfterInFlightFailure = false;
+        void loadItemDetails();
+      }
+    }
+  }
 };
 
 watch(
   () => [props.itemId, props.provider],
   ([itemId]) => {
-    if (itemId) loadItemDetails();
+    ++requestGeneration;
+    failedItem = undefined;
+    retryAfterInFlightFailure = false;
+    // the previous artist must not stay actionable under the new route
+    itemDetails.value = undefined;
+    loading.value = false;
+    if (itemId) void loadItemDetails();
   },
   { immediate: true },
 );
+
+watch(
+  () => api.state.value,
+  (state) => {
+    if (disposed) return;
+    if (state !== ConnectionState.INITIALIZED) reconnecting = true;
+    else if (reconnecting) {
+      reconnecting = false;
+      if (failedItem === currentItem()) void loadItemDetails();
+      else if (loading.value) retryAfterInFlightFailure = true;
+    }
+  },
+);
+
+onUnmounted(() => {
+  disposed = true;
+  ++requestGeneration;
+});
 
 // a new artist starts at the top of the page; anything else (a favorite
 // toggle, a metadata update) leaves the page where the user left it

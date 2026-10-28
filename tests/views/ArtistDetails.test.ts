@@ -46,7 +46,9 @@ const {
 }));
 
 vi.mock("@/plugins/api", () => ({
+  ConnectionState: { INITIALIZED: "initialized" },
   api: {
+    state: { value: "initialized" },
     getArtist: mockGetArtist,
     getArtistAudiobooks: mockGetArtistAudiobooks,
     subscribe: mockSubscribe,

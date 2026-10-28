@@ -1606,6 +1606,8 @@
     "genre_added_successfully": "Genre added successfully",
     "genre_add_failed": "Failed to add genre",
     "genre_deleted": "Genre deleted successfully",
+    "delete_genre_failed": "Failed to delete genre",
+    "delete_genres_failed": "Failed to delete genres",
     "alias": "Alias",
     "aliases": "Aliases",
     "confirm_delete_genre": "Are you sure you want to delete this genre? The genre itself will be removed, along with its alias mappings.",

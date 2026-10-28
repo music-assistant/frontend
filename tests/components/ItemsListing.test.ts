@@ -10,7 +10,12 @@ import type {
 } from "@/helpers/listing_filters";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { defineComponent, h, type SetupContext } from "vue";
-import { api, type MusicAssistantApi } from "@/plugins/api";
+import {
+  api,
+  ApiCommandError,
+  ConnectionState,
+  type MusicAssistantApi,
+} from "@/plugins/api";
 import {
   EventType,
   ListingType,
@@ -63,8 +68,11 @@ const mockToastError = vi.hoisted(() => vi.fn());
 const mockSubscribeMulti = vi.hoisted(() => vi.fn());
 const mockSubscribe = vi.hoisted(() => vi.fn());
 
-vi.mock("@/plugins/api", () => {
+vi.mock("@/plugins/api", async () => {
+  const { ref } = await import("vue");
+  const { ApiCommandError } = await import("@/plugins/api/errors");
   const api = {
+    state: ref("initialized"),
     providers: {},
     providerManifests: {},
     getLibraryGenres: mockGetLibraryGenres,
@@ -72,7 +80,17 @@ vi.mock("@/plugins/api", () => {
     subscribe_multi: mockSubscribeMulti,
     subscribe: mockSubscribe,
   };
-  return { api, default: api };
+  return {
+    api,
+    default: api,
+    ApiCommandError,
+    ConnectionState: {
+      INITIALIZED: "initialized",
+      RECONNECTING: "reconnecting",
+      CONNECTED: "connected",
+      AUTHENTICATING: "authenticating",
+    },
+  };
 });
 
 vi.mock("@/plugins/store", async () => {
@@ -240,7 +258,7 @@ function mountListingRaw(
         EmptyContent: true,
         EmptyDescription: true,
         EmptyHeader: true,
-        EmptyTitle: true,
+        EmptyTitle: { template: '<div data-slot="empty-title"><slot /></div>' },
         Tabs: true,
         TabsList: true,
         TabsTrigger: true,
@@ -1987,6 +2005,7 @@ describe("ItemsListing server sort options", () => {
   beforeEach(() => {
     mockGetLibraryGenres.mockReset().mockResolvedValue([]);
     mockGetSortOptions.mockReset().mockResolvedValue(sortOptions);
+    api.state.value = ConnectionState.INITIALIZED;
     mockToastError.mockReset();
     mockSubscribeMulti.mockReset().mockImplementation(events.subscribeMulti);
     mockSubscribe.mockReset().mockImplementation(events.subscribe);
@@ -2361,6 +2380,240 @@ describe("ItemsListing server sort options", () => {
     listings.forEach((listing) => listing.unmount());
   });
 
+  it.each([
+    { name: "empty data", fails: false },
+    { name: "failed data", fails: true },
+  ])("ends metadata loading after failure with $name", async ({ fails }) => {
+    mockGetSortOptions.mockRejectedValue(new Error("metadata unavailable"));
+    const loadPagedData = vi
+      .fn()
+      .mockImplementation(() =>
+        fails
+          ? Promise.reject(new Error("data unavailable"))
+          : Promise.resolve([]),
+      );
+    const listing = mountListingRaw(
+      {
+        sortListing: ListingType.LIBRARY_TRACKS,
+        showGenreFilter: false,
+        loadPagedData,
+      },
+      fails
+        ? {
+            Empty: { template: "<div><slot /></div>" },
+            EmptyHeader: { template: "<div><slot /></div>" },
+          }
+        : {},
+    );
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+    expect(loadPagedData).toHaveBeenCalledWith(
+      expect.objectContaining({ offset: 0 }),
+    );
+    expect(listing.findComponent({ name: "ListViewSkeleton" }).exists()).toBe(
+      false,
+    );
+    expect(listing.find('button[title="settings.retry"]').exists()).toBe(true);
+    if (fails) expect(listing.text()).toContain("items_load_failed");
+  });
+
+  it("does not duplicate the API error toast for failed sort metadata", async () => {
+    mockGetSortOptions.mockRejectedValue(
+      new ApiCommandError("server failed", 500),
+    );
+    mountListingRaw({
+      sortListing: ListingType.LIBRARY_TRACKS,
+      showGenreFilter: false,
+    });
+    await flushPromises();
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it.each([20, 21])(
+    "shows local feedback for sort metadata authentication error %i",
+    async (errorCode) => {
+      mockGetSortOptions.mockRejectedValue(
+        new ApiCommandError("authentication failed", errorCode),
+      );
+      const listing = mountListingRaw({
+        sortListing: ListingType.LIBRARY_TRACKS,
+        showGenreFilter: false,
+      });
+      await flushPromises();
+
+      expect(mockToastError).toHaveBeenCalledWith(
+        "settings.error_loading_sort_options",
+        { id: "library-sort-options-error" },
+      );
+      expect(listing.find('button[title="settings.retry"]').exists()).toBe(
+        true,
+      );
+    },
+  );
+
+  it("retries rejected sort options after reconnect and restores the saved sort", async () => {
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.librarytracks.tracks": { sortBy: "timestamp_added:desc" },
+      },
+    });
+    let rejectInitial!: (error: Error) => void;
+    mockGetSortOptions
+      .mockReturnValueOnce(
+        new Promise<SortOptionInfo[]>((_, reject) => {
+          rejectInitial = reject;
+        }),
+      )
+      .mockResolvedValueOnce(sortOptions);
+    const loadPagedData = vi.fn().mockResolvedValue([track()]);
+    const listing = mountListingRaw({
+      sortListing: ListingType.LIBRARY_TRACKS,
+      showGenreFilter: false,
+      loadPagedData,
+    });
+    expect(loadPagedData).not.toHaveBeenCalled();
+    rejectInitial(new Error("connection lost"));
+    await flushPromises();
+    expect(mockToastError).toHaveBeenCalledWith(
+      "settings.error_loading_sort_options",
+      { id: "library-sort-options-error" },
+    );
+    expect(listing.findComponent(LibrarySortControls).exists()).toBe(false);
+
+    api.state.value = ConnectionState.RECONNECTING;
+    await flushPromises();
+    api.state.value = ConnectionState.INITIALIZED;
+    await flushPromises();
+
+    expect(mockGetSortOptions).toHaveBeenCalledTimes(2);
+    expect(listing.findComponent(LibrarySortControls).exists()).toBe(true);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "timestamp_added:desc", offset: 0 }),
+    );
+  });
+
+  it("retries a dropped sort request without overlapping it when initialization runs first", async () => {
+    let rejectInitial!: (error: Error) => void;
+    mockGetSortOptions
+      .mockReturnValueOnce(
+        new Promise<SortOptionInfo[]>((_, reject) => {
+          rejectInitial = reject;
+        }),
+      )
+      .mockResolvedValueOnce(sortOptions);
+    const loadPagedData = vi.fn().mockResolvedValue([track()]);
+    const listing = mountListingRaw({
+      sortListing: ListingType.LIBRARY_TRACKS,
+      showGenreFilter: false,
+      loadPagedData,
+    });
+    // Keep the request pending across a reconnect; initialization can reach
+    // Vue's watcher before the rejected request's catch/finally finishes.
+    api.state.value = ConnectionState.RECONNECTING;
+    await flushPromises();
+    // Reject just before initialization, as the transport does. The request's
+    // catch/finally and the state watcher may run in either order.
+    rejectInitial(new Error("connection lost"));
+    api.state.value = ConnectionState.INITIALIZED;
+    await flushPromises();
+
+    expect(mockGetSortOptions).toHaveBeenCalledTimes(2);
+    const options = listing
+      .findComponent(LibrarySortControls)
+      .props("options") as SortOptionInfo[];
+    expect(options.map((option) => option.field)).toContain(
+      SortField.TIMESTAMP_ADDED,
+    );
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+  });
+
+  it("recovers a first-page failure when reconnect completes before genre setup", async () => {
+    let resolveGenres!: (genres: never[]) => void;
+    mockGetLibraryGenres.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveGenres = resolve;
+      }),
+    );
+    let rejectInitial!: (error: Error) => void;
+    const loadPagedData = vi
+      .fn()
+      .mockReturnValueOnce(
+        new Promise<Track[]>((_, reject) => {
+          rejectInitial = reject;
+        }),
+      )
+      .mockResolvedValueOnce([track()]);
+    const listing = mountListingRaw({ showGenreFilter: true, loadPagedData });
+    await flushPromises();
+    rejectInitial(new Error("connection lost"));
+    api.state.value = ConnectionState.RECONNECTING;
+    await flushPromises();
+    api.state.value = ConnectionState.INITIALIZED;
+    await flushPromises();
+    // Genre setup still holds the mount hook, but page recovery must not wait.
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
+    resolveGenres([]);
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
+    expect(loadPagedData.mock.calls[1][0]).toMatchObject({ offset: 0 });
+    expect(
+      (listing.vm as unknown as { pagedItems: Track[] }).pagedItems,
+    ).toHaveLength(1);
+  });
+
+  it.each([
+    ConnectionState.RECONNECTING,
+    ConnectionState.CONNECTED,
+    ConnectionState.AUTHENTICATING,
+  ])(
+    "recovers a failed mount after joining connection state %s",
+    async (mountState) => {
+      api.state.value = mountState;
+      let rejectInitial!: (error: Error) => void;
+      const loadPagedData = vi
+        .fn()
+        .mockReturnValueOnce(
+          new Promise<Track[]>((_, reject) => {
+            rejectInitial = reject;
+          }),
+        )
+        .mockResolvedValueOnce([track()]);
+      mountListingRaw({ showGenreFilter: false, loadPagedData });
+      await flushPromises();
+      rejectInitial(new Error("connection lost"));
+      api.state.value = ConnectionState.INITIALIZED;
+      await flushPromises();
+      expect(loadPagedData).toHaveBeenCalledTimes(2);
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 0 }),
+      );
+    },
+  );
+
+  it("does not reload a successful listing on reconnect", async () => {
+    const loadPagedData = vi.fn().mockResolvedValue([track()]);
+    const listing = mountListingRaw({
+      sortListing: ListingType.LIBRARY_TRACKS,
+      showGenreFilter: false,
+      loadPagedData,
+    });
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+
+    api.state.value = ConnectionState.RECONNECTING;
+    await flushPromises();
+    api.state.value = ConnectionState.INITIALIZED;
+    await flushPromises();
+
+    expect(mockGetSortOptions).toHaveBeenCalledTimes(1);
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+    expect(
+      (listing.vm as unknown as { pagedItems: Track[] }).pagedItems,
+    ).toHaveLength(1);
+  });
+
   it("preserves ascending semantics for unsuffixed legacy sort preferences", async () => {
     store.currentUser = user({
       preferences: {
@@ -2412,7 +2665,7 @@ describe("ItemsListing server sort options", () => {
     { tabbed: false, firstLoad: "listing:0" },
     { tabbed: true, firstLoad: "books:0" },
   ])(
-    "loads the first page while the sort options are still loading (tabbed: $tabbed)",
+    "waits for sort options before loading the first page (tabbed: $tabbed)",
     async ({ tabbed, firstLoad }) => {
       let resolveSortOptions!: (options: SortOptionInfo[]) => void;
       mockGetSortOptions.mockReturnValue(
@@ -2426,13 +2679,10 @@ describe("ItemsListing server sort options", () => {
         loads.push(`${source}:${params.offset}`);
         return new Promise<Track[]>((resolve) => pages.push(resolve));
       };
-      // the real scroller loads a page as soon as it shows up
+      // Once the listing's first request begins, the scroller can request
+      // subsequent pages. It must not initiate page 50 as the first page.
       const LoadingScroller = {
         name: "VInfiniteScroll",
-        props: { onLoad: { type: Function, default: undefined } },
-        mounted(this: { onLoad: (options: { done: () => void }) => void }) {
-          this.onLoad({ done: () => {} });
-        },
         template: "<div><slot /></div>",
       };
       const listing = mountListingRaw(
@@ -2455,6 +2705,7 @@ describe("ItemsListing server sort options", () => {
         { VInfiniteScroll: LoadingScroller },
       );
       await flushPromises();
+      expect(loads).toEqual([]);
 
       resolveSortOptions(sortOptions);
       await flushPromises();
@@ -2505,6 +2756,49 @@ describe("ItemsListing server sort options", () => {
     await flushPromises();
 
     expect(listing.findAll(".disc-header")).toHaveLength(2);
+  });
+
+  it("coalesces a saved sort restored while the first page is in flight", async () => {
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.librarytracks.tracks": {
+          sortBy: "timestamp_added:desc",
+          favoriteFilter: true,
+        },
+      },
+    });
+    mockGetSortOptions
+      .mockRejectedValueOnce(new Error("metadata unavailable"))
+      .mockResolvedValueOnce(sortOptions);
+    let resolveFirst!: (items: Track[]) => void;
+    const loadPagedData = vi
+      .fn()
+      .mockReturnValueOnce(
+        new Promise<Track[]>((resolve) => {
+          resolveFirst = resolve;
+        }),
+      )
+      .mockResolvedValueOnce([track({ item_id: "sorted" })]);
+    const listing = mountListingRaw({
+      sortListing: ListingType.LIBRARY_TRACKS,
+      showGenreFilter: false,
+      loadPagedData,
+    });
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+    await listing.find('button[title="settings.retry"]').trigger("click");
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+    resolveFirst([track({ item_id: "old" })]);
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        offset: 0,
+        sortBy: "timestamp_added:desc",
+        favoritesOnly: true,
+      }),
+    );
   });
 
   it("reloads with the normalized sort when options change during a request", async () => {

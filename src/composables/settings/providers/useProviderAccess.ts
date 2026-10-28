@@ -74,25 +74,44 @@ export function useProviderAccess(options: UseProviderAccessOptions) {
     return `${owner} · ${sharing}`;
   };
 
-  const openAccessDialog = function (config: ProviderConfig) {
-    accessDialogConfig.value = config;
-    showAccessDialog.value = true;
-  };
-
+  let usersLoaded = false;
+  let usersLoading = false;
   const loadUsers = async function () {
+    if (usersLoaded || usersLoading) return;
+    usersLoading = true;
     try {
       users.value = await api.getAllUsers();
+      usersLoaded = true;
     } catch {
       toast.error($t("auth.users_load_failed"));
+    } finally {
+      usersLoading = false;
     }
   };
 
+  let candidatesLoading = false;
   const loadShareCandidates = async function () {
+    if (memberShareCandidates.value !== null || candidatesLoading) return;
+    candidatesLoading = true;
     try {
       memberShareCandidates.value = await api.getShareCandidates();
     } catch {
       toast.error($t("auth.users_load_failed"));
+    } finally {
+      candidatesLoading = false;
     }
+  };
+
+  const requestUsers = function () {
+    // Listing users is an admin call; members use the share candidates list.
+    if (toValue(options.managesAllSources)) void loadUsers();
+    else if (toValue(options.canOwnSources)) void loadShareCandidates();
+  };
+
+  const openAccessDialog = function (config: ProviderConfig) {
+    if (!showAccessDialog.value) requestUsers();
+    accessDialogConfig.value = config;
+    showAccessDialog.value = true;
   };
 
   // a user that is no longer in the list is shown by its id
@@ -107,10 +126,7 @@ export function useProviderAccess(options: UseProviderAccessOptions) {
     (needed) => {
       if (!needed || usersRequested) return;
       usersRequested = true;
-      // listing the users is an admin call, so a member picks from the share
-      // candidates; the server lists them to whoever may own a source
-      if (toValue(options.managesAllSources)) loadUsers();
-      else if (toValue(options.canOwnSources)) loadShareCandidates();
+      requestUsers();
     },
     { immediate: true },
   );

@@ -151,6 +151,66 @@ describe("useItemsListing", () => {
     });
   });
 
+  it("retries only a failed page after reconnect without clearing prior pages or filters", async () => {
+    const loadPagedData = vi
+      .fn()
+      .mockResolvedValueOnce([track({ item_id: "first" })])
+      .mockRejectedValueOnce(new Error("connection lost"))
+      .mockResolvedValueOnce([track({ item_id: "second" })]);
+    const listing = setupItemsListing({ limit: 1, loadPagedData });
+    listing.params.value.search = "liked";
+    await listing.loadData(true);
+    await listing.loadNextPage({ done: vi.fn() });
+    expect(listing.loadError.value).toBe(true);
+
+    await listing.recoverFailedLoad();
+    await listing.recoverFailedLoad();
+
+    expect(loadPagedData).toHaveBeenCalledTimes(3);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ offset: 1, search: "liked" }),
+    );
+    expect(listing.pagedItems.value.map((item) => item.item_id)).toEqual([
+      "first",
+      "second",
+    ]);
+    expect(listing.loadError.value).toBe(false);
+  });
+
+  it("waits for an in-flight failure before recovering and skips a successful request", async () => {
+    let rejectRequest!: (error: Error) => void;
+    const loadPagedData = vi
+      .fn()
+      .mockReturnValueOnce(
+        new Promise<Track[]>((_, reject) => {
+          rejectRequest = reject;
+        }),
+      )
+      .mockResolvedValueOnce([track()]);
+    const listing = setupItemsListing({ loadPagedData });
+    const initialLoad = listing.loadData(true);
+    await listing.recoverFailedLoad();
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+
+    rejectRequest(new Error("connection lost"));
+    await initialLoad;
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
+    expect(listing.loadError.value).toBe(false);
+    await listing.recoverFailedLoad();
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not recover after its scope is disposed", async () => {
+    const loadPagedData = vi
+      .fn()
+      .mockRejectedValue(new Error("connection lost"));
+    const listing = setupItemsListing({ loadPagedData });
+    await listing.loadData(true);
+    listing.scope.stop();
+    await listing.recoverFailedLoad();
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps request parameters stable when filters change while loading", async () => {
     let resolveFirstPage!: (items: Track[]) => void;
     const firstPage = new Promise<Track[]>((resolve) => {

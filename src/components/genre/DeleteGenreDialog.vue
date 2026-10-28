@@ -1,6 +1,11 @@
 <template>
-  <Dialog v-model:open="open">
-    <DialogContent class="sm:max-w-[520px]">
+  <Dialog :open="open" @update:open="handleOpenChange">
+    <DialogContent
+      class="sm:max-w-[520px]"
+      :show-close-button="!loading"
+      @escape-key-down="preventDismissWhileLoading"
+      @interact-outside="preventDismissWhileLoading"
+    >
       <DialogHeader>
         <DialogTitle>{{
           genreIds.length > 1
@@ -14,7 +19,12 @@
         </p>
       </div>
       <DialogFooter>
-        <Button type="button" variant="outline" @click="open = false">
+        <Button
+          type="button"
+          variant="outline"
+          :disabled="loading"
+          @click="handleOpenChange(false)"
+        >
           {{ $t("cancel") }}
         </Button>
         <Button
@@ -40,7 +50,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { backFromMediaDetails } from "@/helpers/navigation";
-import { api } from "@/plugins/api";
+import { api, ApiCommandError } from "@/plugins/api";
 import { eventbus, type DeleteGenreDialogEvent } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
@@ -56,6 +66,7 @@ const loading = ref(false);
 const step = ref(1);
 const genreIds = ref<string[]>([]);
 const navigateBack = ref(false);
+let disposed = false;
 
 const confirmationMessage = computed(() => {
   if (step.value === 1) {
@@ -66,53 +77,68 @@ const confirmationMessage = computed(() => {
   return t("confirm_delete_genre_2");
 });
 
-const handleConfirm = () => {
+const handleOpenChange = (value: boolean) => {
+  if (!loading.value) open.value = value;
+};
+
+const preventDismissWhileLoading = (event: Event) => {
+  if (loading.value) event.preventDefault();
+};
+
+const reportSuccess = (count: number) => {
+  toast.success(count > 1 ? t("genres_deleted", [count]) : t("genre_deleted"));
+};
+
+const handleConfirm = async () => {
+  if (loading.value || disposed) return;
   if (step.value === 1) {
     step.value = 2;
-  } else {
-    if (genreIds.value.length === 0) return;
-    loading.value = true;
-    for (const id of genreIds.value) {
-      api.removeGenreFromLibrary(id);
+    return;
+  }
+  if (genreIds.value.length === 0) return;
+  const count = genreIds.value.length;
+  loading.value = true;
+  try {
+    while (genreIds.value.length > 0) {
+      await api.removeGenreFromLibrary(genreIds.value[0]);
+      if (disposed) return;
+      genreIds.value = genreIds.value.slice(1);
     }
-    toast.success(
-      genreIds.value.length > 1
-        ? t("genres_deleted", [genreIds.value.length])
-        : t("genre_deleted"),
-    );
+    reportSuccess(count);
     open.value = false;
-    if (navigateBack.value) {
-      backFromMediaDetails(router);
-    }
+    if (navigateBack.value) backFromMediaDetails(router);
     eventbus.emit("clearSelection");
+  } catch (failure) {
+    if (disposed) return;
+    const removed = count - genreIds.value.length;
+    if (removed > 0) reportSuccess(removed);
+    // API command failures already produce feedback from the API client.
+    if (!(failure instanceof ApiCommandError)) {
+      toast.error(
+        count > 1 ? t("delete_genres_failed") : t("delete_genre_failed"),
+      );
+    }
+  } finally {
+    if (!disposed) loading.value = false;
   }
 };
 
-const reset = () => {
-  genreIds.value = [];
-  navigateBack.value = false;
-  loading.value = false;
-  step.value = 1;
-};
-
-watch(open, (v) => {
-  store.dialogActive = v;
-  if (!v) {
-    // Reset after close animation
-    setTimeout(reset, 200);
-  }
+watch(open, (value) => {
+  store.dialogActive = value;
 });
 
 onMounted(() => {
   eventbus.on("deleteGenreDialog", (evt: DeleteGenreDialogEvent) => {
-    reset();
-    genreIds.value = evt.genreIds;
+    if (loading.value) return;
+    genreIds.value = [...evt.genreIds];
     navigateBack.value = evt.navigateBack ?? false;
+    step.value = 1;
     open.value = true;
   });
 });
 
 onBeforeUnmount(() => {
+  disposed = true;
   eventbus.off("deleteGenreDialog");
 });
 </script>

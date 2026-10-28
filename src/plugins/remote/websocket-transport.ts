@@ -45,16 +45,20 @@ export class WebSocketTransport extends BaseTransport {
 
     return new Promise((resolve, reject) => {
       try {
-        this.ws = new WebSocket(this.options.url);
+        const socket = new WebSocket(this.options.url);
+        this.ws = socket;
 
-        this.ws.onopen = () => {
+        socket.onopen = () => {
+          if (socket !== this.ws) return;
           this.reconnectAttempts = 0;
           this.setState(TransportState.CONNECTED);
           this.emit("open");
           resolve();
         };
 
-        this.ws.onclose = (event) => {
+        socket.onclose = (event) => {
+          if (socket !== this.ws) return;
+          this.ws = null;
           this.setState(TransportState.DISCONNECTED);
           this.emit("close", event.reason);
 
@@ -63,7 +67,8 @@ export class WebSocketTransport extends BaseTransport {
           }
         };
 
-        this.ws.onerror = () => {
+        socket.onerror = () => {
+          if (socket !== this.ws) return;
           const error = new Error("WebSocket error");
           this.emit("error", error);
 
@@ -74,7 +79,8 @@ export class WebSocketTransport extends BaseTransport {
           }
         };
 
-        this.ws.onmessage = (event) => {
+        socket.onmessage = (event) => {
+          if (socket !== this.ws) return;
           this.emit("message", event.data);
         };
       } catch (error) {
@@ -87,12 +93,21 @@ export class WebSocketTransport extends BaseTransport {
   disconnect(): void {
     this.intentionalClose = true;
     this.clearReconnectTimer();
-
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
+    const socket = this.ws;
+    this.ws = null;
+    socket?.close();
     this.setState(TransportState.DISCONNECTED);
+  }
+
+  /** Replace a socket that remains OPEN but no longer answers API probes. */
+  reconnectUnresponsive(): void {
+    if (this.intentionalClose || this._state !== TransportState.CONNECTED)
+      return;
+    const socket = this.ws;
+    this.ws = null;
+    socket?.close();
+    this.setState(TransportState.DISCONNECTED);
+    if (this.options.reconnect) this.scheduleReconnect();
   }
 
   send(data: string): void {

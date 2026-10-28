@@ -29,6 +29,33 @@ describe("presetLibrary", () => {
     ]);
   });
 
+  it("retries a failed base pack load without reusing its rejected promise", async () => {
+    const getPresets = vi
+      .fn()
+      .mockImplementationOnce(() => {
+        throw new Error("temporary load failure");
+      })
+      .mockReturnValue({ "Recovered preset": {} });
+    vi.doMock("butterchurn-presets", () => ({
+      getPresets,
+      default: undefined,
+    }));
+    try {
+      const { loadPresetLibrary } = await import("./presetLibrary");
+      const first = loadPresetLibrary();
+      const concurrent = loadPresetLibrary();
+      await expect(first).rejects.toThrow("temporary load failure");
+      await expect(concurrent).rejects.toThrow("temporary load failure");
+      expect(getPresets).toHaveBeenCalledTimes(1);
+      await expect(loadPresetLibrary()).resolves.toHaveProperty(
+        "Recovered preset",
+      );
+      expect(getPresets).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.doUnmock("butterchurn-presets");
+    }
+  });
+
   it("returns presets by name", async () => {
     const { getPreset } = await import("./presetLibrary");
     expect(await getPreset("Gamma - three")).toEqual({ c: 3 });

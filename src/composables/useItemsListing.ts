@@ -117,6 +117,7 @@ export function useItemsListing(
   let pendingRefresh = false;
   let pendingParamsChange = false;
   let retryFromStart = false;
+  let pendingRecovery: (() => boolean) | undefined;
   // lets async work tell that the listing it is working for is already gone
   let disposed = false;
 
@@ -222,7 +223,29 @@ export function useItemsListing(
       pendingRefresh = false;
       pendingParamsChange = false;
       await loadData(replayClear, replayRefresh, replayParamsChange);
+    } else if (pendingRecovery) {
+      const isReady = pendingRecovery;
+      pendingRecovery = undefined;
+      await recoverFailedLoad(isReady);
     }
+  };
+
+  // Reconnect only replays an interrupted read. A successful request or a user
+  // change that replaced it does not need another load.
+  const recoverFailedLoad = async (isReady: () => boolean = () => true) => {
+    if (disposed || !isReady()) return;
+    if (loading.value) {
+      pendingRecovery = isReady;
+      return;
+    }
+    if (!loadError.value) return;
+    loadError.value = false;
+    await loadData(
+      retryFromStart || pagedItems.value.length === 0,
+      false,
+      false,
+      retryFromStart ? 0 : params.value.offset + props.limit,
+    );
   };
 
   const loadNextPage = async function ({
@@ -280,6 +303,7 @@ export function useItemsListing(
     newContentAvailable,
     pagedItems,
     params,
+    recoverFailedLoad,
     retryLoad,
     serverSortOptions,
     sortOptions,
