@@ -198,6 +198,7 @@ describe("MusicAssistantApi error handling", () => {
     "plays_over_time",
     "listening_activity",
     "listening_time",
+    "genre_distribution",
     "decade_distribution",
   ])("sends the browser IANA timezone for statistics/%s", async (command) => {
     const resolvedOptions = Intl.DateTimeFormat().resolvedOptions();
@@ -210,6 +211,7 @@ describe("MusicAssistantApi error handling", () => {
       plays_over_time: () => api.getPlaysOverTime(),
       listening_activity: () => api.getListeningActivity(),
       listening_time: () => api.getListeningTime(),
+      genre_distribution: () => api.getGenreDistribution(),
       decade_distribution: () => api.getDecadeDistribution(),
     };
 

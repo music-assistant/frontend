@@ -303,16 +303,11 @@
             </div>
           </section>
 
-          <StatisticsRow
+          <StatisticsTeaserRow
             v-else-if="row.kind === 'statistics'"
-            v-model:active-tab="activeStatTab"
-            v-model:period="activeStatPeriod"
-            :items="statisticsItems"
-            :charts="statisticsChartData"
-            :loading="statisticsLoading"
-            :error="statisticsError"
-            :charts-loading="chartsLoading"
-            :dimmed="editMode && row.hidden"
+            class="ed-section"
+            :class="{ 'ed-dimmed': editMode && row.hidden }"
+            :active="!row.hidden"
           >
             <template #edit-controls>
               <div v-if="editMode" class="ed-edit-controls">
@@ -335,7 +330,7 @@
                 </Button>
               </div>
             </template>
-          </StatisticsRow>
+          </StatisticsTeaserRow>
         </div>
 
         <!-- Floating ghost that follows the pointer while dragging a row -->
@@ -375,8 +370,6 @@ let prevState: DiscoverSnapshot | undefined;
 </script>
 
 <script setup lang="ts">
-import StatisticsRow from "@/components/statistics/StatisticsRow.vue";
-import { useStatistics } from "@/composables/useStatistics";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialGenreTile from "@/components/discover/EditorialGenreTile.vue";
 import EditorialHeroCard from "@/components/discover/EditorialHeroCard.vue";
@@ -431,6 +424,7 @@ import { store } from "@/plugins/store";
 import { Eye, EyeOff, GripVertical, ListFilter, RefreshCw } from "@lucide/vue";
 import {
   computed,
+  defineAsyncComponent,
   nextTick,
   onBeforeUnmount,
   onMounted,
@@ -438,6 +432,11 @@ import {
   watch,
 } from "vue";
 import { useRouter } from "vue-router";
+
+// the chart library loads with the statistics row, not with Discover
+const StatisticsTeaserRow = defineAsyncComponent(
+  () => import("@/components/statistics/StatisticsTeaserRow.vue"),
+);
 
 const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
   editMode: false,
@@ -726,7 +725,7 @@ const allRows = computed<DiscoverRow[]>(() => {
       rows.push({
         id,
         kind: "statistics",
-        title: $t("statistics_charts"),
+        title: $t("statistics"),
         hidden: hidden.has(id),
       });
     } else {
@@ -756,22 +755,6 @@ const displayedRows = computed(() =>
       : props.editMode || !row.hidden,
   ),
 );
-
-const statisticsRowVisible = computed(() => {
-  const rowIds = [...new Set([...availableRowIds.value, STATISTICS_ROW_ID])];
-  const { hidden } = resolveDiscoverRowsConfig(rowIds, defaultHiddenIds.value);
-  return !hidden.has(STATISTICS_ROW_ID);
-});
-
-const {
-  activeStatTab,
-  activeStatPeriod,
-  statisticsItems,
-  statisticsLoading,
-  statisticsError,
-  chartData: statisticsChartData,
-  chartsLoading,
-} = useStatistics(statisticsRowVisible);
 
 // The recommendation rows currently visible to the user (not hidden). The Top
 // Picks hero draws only from these, so an opted-out row never feeds it.

@@ -1,14 +1,22 @@
-import { useStatistics } from "@/composables/useStatistics";
+import {
+  PLAYLOG_REFRESH_DEBOUNCE_MS,
+  TOP_ITEMS_LIMIT,
+  useStatistics,
+  useStatisticsTopItems,
+  type StatisticsSection,
+  type TopItemsMediaType,
+} from "@/composables/useStatistics";
+import { ConnectionState } from "@/plugins/api";
 import {
   EventType,
   MediaType,
   type EventMessage,
+  type StatisticsPeriod,
   type StatisticsTopItemResult,
 } from "@/plugins/api/interfaces";
-import { ConnectionState } from "@/plugins/api";
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { effectScope, nextTick, ref, type EffectScope } from "vue";
+import { effectScope, ref, type EffectScope } from "vue";
 
 const { api, unsubscribe, toastError } = vi.hoisted(() => ({
   api: {
@@ -17,13 +25,13 @@ const { api, unsubscribe, toastError } = vi.hoisted(() => ({
     getPlaysOverTime: vi.fn(),
     getListeningActivity: vi.fn(),
     getListeningTime: vi.fn(),
+    getGenreDistribution: vi.fn(),
     getDecadeDistribution: vi.fn(),
     subscribe: vi.fn(),
   },
   unsubscribe: vi.fn(),
   toastError: vi.fn(),
 }));
-const STATISTICS_LOAD_ERROR_TOAST_ID = "statistics-load-failed";
 
 vi.mock("@/plugins/api", () => ({
   default: api,
@@ -38,14 +46,42 @@ vi.mock("@/plugins/store", () => ({
 }));
 vi.mock("vue-sonner", () => ({ toast: { error: toastError } }));
 
+const ALL_SECTIONS: StatisticsSection[] = [
+  "playsOverTime",
+  "topTracks",
+  "topArtists",
+  "listeningActivity",
+  "listeningTime",
+  "genreDistribution",
+  "decadeDistribution",
+];
+
 const scopes: EffectScope[] = [];
 
-function setupStatistics(isVisible = true) {
-  const visible = ref(isVisible);
+function setupStatistics(
+  sections: StatisticsSection[] = ALL_SECTIONS,
+  isActive = true,
+) {
+  const active = ref(isActive);
+  const period = ref<StatisticsPeriod>("week");
   const scope = effectScope();
   scopes.push(scope);
-  const statistics = scope.run(() => useStatistics(visible))!;
-  return { visible, scope, ...statistics };
+  const statistics = scope.run(() =>
+    useStatistics({ active, period, sections }),
+  )!;
+  return { active, period, scope, ...statistics };
+}
+
+function setupTopItems() {
+  const active = ref(true);
+  const period = ref<StatisticsPeriod>("week");
+  const mediaType = ref<TopItemsMediaType>(MediaType.ALBUM);
+  const scope = effectScope();
+  scopes.push(scope);
+  const topItems = scope.run(() =>
+    useStatisticsTopItems({ active, period, mediaType }),
+  )!;
+  return { active, period, mediaType, ...topItems };
 }
 
 function deferred<T>() {
@@ -76,13 +112,12 @@ function topItem(
 }
 
 function emitPlaylog(userid: string | null, fullyPlayed: boolean): void {
-  const listener = api.subscribe.mock.calls[0][1] as (
-    event: EventMessage,
-  ) => void;
-  listener({
-    event: EventType.PLAYLOG_UPDATED,
-    data: { userid, fully_played: fullyPlayed },
-  } as EventMessage);
+  for (const [, listener] of api.subscribe.mock.calls) {
+    (listener as (event: EventMessage) => void)({
+      event: EventType.PLAYLOG_UPDATED,
+      data: { userid, fully_played: fullyPlayed },
+    } as EventMessage);
+  }
 }
 
 describe("useStatistics", () => {
@@ -94,6 +129,7 @@ describe("useStatistics", () => {
       api.getPlaysOverTime,
       api.getListeningActivity,
       api.getListeningTime,
+      api.getGenreDistribution,
       api.getDecadeDistribution,
     ]) {
       request.mockResolvedValue([]);
@@ -103,321 +139,232 @@ describe("useStatistics", () => {
 
   afterEach(() => {
     scopes.splice(0).forEach((scope) => scope.stop());
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
-  it("loads visible statistics once with the existing defaults", async () => {
+  it("loads every requested section of the period in parallel", async () => {
     const statistics = setupStatistics();
+    expect(statistics.loading.value).toBe(true);
     await flushPromises();
 
-    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.TRACK, "week", 50);
-    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ARTIST, "week", 10);
     expect(api.getPlaysOverTime).toHaveBeenCalledExactlyOnceWith("week", "day");
-    expect(statistics.statisticsLoading.value).toBe(false);
-    expect(statistics.chartsLoading.value).toBe(false);
+    expect(api.getTopItems).toHaveBeenCalledWith(
+      MediaType.TRACK,
+      "week",
+      TOP_ITEMS_LIMIT,
+    );
+    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ARTIST, "week", 10);
+    expect(api.getListeningActivity).toHaveBeenCalledWith("week");
+    expect(api.getListeningTime).toHaveBeenCalledWith("week", "artist", 10);
+    expect(api.getGenreDistribution).toHaveBeenCalledWith("week", 10);
+    expect(api.getDecadeDistribution).toHaveBeenCalledWith("week", 10);
+    expect(statistics.loading.value).toBe(false);
+    expect(statistics.failed.value.size).toBe(0);
   });
 
-  it("requests nothing while hidden and loads when revealed", async () => {
-    const statistics = setupStatistics(false);
-    statistics.refresh();
-    emitPlaylog("self", true);
+  it("requests only the sections asked for", async () => {
+    setupStatistics(["playsOverTime"]);
     await flushPromises();
+
+    expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
     expect(api.getTopItems).not.toHaveBeenCalled();
-
-    statistics.visible.value = true;
-    await flushPromises();
-    expect(api.getTopItems).toHaveBeenCalledTimes(2);
+    expect(api.getListeningActivity).not.toHaveBeenCalled();
   });
 
-  it("changes tabs without refetching the period-wide charts", async () => {
-    const statistics = setupStatistics();
-    await flushPromises();
-    statistics.activeStatTab.value = MediaType.ALBUM;
+  it("gap-fills plays over time", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 14, 12));
+    api.getPlaysOverTime.mockResolvedValue([
+      { timestamp: "2026-10-12", value: 3 },
+    ]);
+    const statistics = setupStatistics(["playsOverTime"]);
     await flushPromises();
 
-    expect(api.getTopItems).toHaveBeenLastCalledWith(
-      MediaType.ALBUM,
-      "week",
-      50,
-    );
-    expect(api.getTopItems).toHaveBeenCalledTimes(3);
+    expect(statistics.data.value.playsOverTime).toHaveLength(8);
+    expect(statistics.data.value.playsOverTime[5]).toEqual({
+      timestamp: "2026-10-12",
+      value: 3,
+    });
   });
 
-  it("reuses artist ranking data instead of requesting the artist chart twice", async () => {
-    const statistics = setupStatistics();
+  it("requests nothing while inactive and loads once active", async () => {
+    const statistics = setupStatistics(["playsOverTime"], false);
     await flushPromises();
-    const artistRequests = () =>
-      api.getTopItems.mock.calls.filter(
-        ([mediaType]) => mediaType === MediaType.ARTIST,
-      );
-    expect(artistRequests()).toHaveLength(1);
+    expect(api.getPlaysOverTime).not.toHaveBeenCalled();
+    expect(statistics.loading.value).toBe(false);
 
-    statistics.activeStatTab.value = MediaType.ARTIST;
+    statistics.active.value = true;
     await flushPromises();
-
-    expect(artistRequests()).toHaveLength(2);
-    expect(api.getTopItems).toHaveBeenLastCalledWith(
-      MediaType.ARTIST,
-      "week",
-      50,
-    );
-  });
-
-  it("retries failed artist distribution on a tab change without reloading charts", async () => {
-    const artist = topItem("artist-retry", MediaType.ARTIST);
-    api.getTopItems
-      .mockResolvedValueOnce([topItem("track-ranking")])
-      .mockRejectedValueOnce(new Error("artist chart failed"))
-      .mockResolvedValueOnce([topItem("album-ranking", MediaType.ALBUM)])
-      .mockResolvedValueOnce([artist]);
-    const statistics = setupStatistics();
-    await flushPromises();
-
-    expect(statistics.artistDistribution.value).toEqual([]);
-    expect(api.getTopItems).toHaveBeenCalledTimes(2);
-    expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
-
-    statistics.activeStatTab.value = MediaType.ALBUM;
-    await flushPromises();
-
-    expect(statistics.artistDistribution.value).toEqual([artist]);
-    expect(api.getTopItems).toHaveBeenCalledTimes(4);
     expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
   });
 
-  it("ignores a pending artist retry after returning to the artist tab", async () => {
-    const pendingRetry = deferred<StatisticsTopItemResult[]>();
-    const selectedArtist = topItem("selected-artist", MediaType.ARTIST);
-    api.getTopItems
-      .mockResolvedValueOnce([topItem("track-ranking")])
-      .mockRejectedValueOnce(new Error("artist chart failed"))
-      .mockResolvedValueOnce([topItem("album-ranking", MediaType.ALBUM)])
-      .mockReturnValueOnce(pendingRetry.promise)
-      .mockResolvedValueOnce([selectedArtist]);
-    const statistics = setupStatistics();
-    await flushPromises();
-
-    statistics.activeStatTab.value = MediaType.ALBUM;
-    await flushPromises();
-    expect(api.getTopItems).toHaveBeenCalledTimes(4);
-
-    statistics.activeStatTab.value = MediaType.ARTIST;
-    await flushPromises();
-    expect(statistics.artistDistribution.value).toEqual([selectedArtist]);
-
-    pendingRetry.resolve([topItem("stale-artist", MediaType.ARTIST)]);
-    await flushPromises();
-
-    expect(statistics.artistDistribution.value).toEqual([selectedArtist]);
-  });
-
-  it("does not let a pending chart response overwrite artist tab rankings", async () => {
-    const pendingArtistChart = deferred<StatisticsTopItemResult[]>();
-    const selectedArtist = topItem("selected-artist", MediaType.ARTIST);
-    api.getTopItems
-      .mockResolvedValueOnce([topItem("track-ranking")])
-      .mockReturnValueOnce(pendingArtistChart.promise)
-      .mockResolvedValueOnce([selectedArtist]);
-    const statistics = setupStatistics();
-    await flushPromises();
-
-    statistics.activeStatTab.value = MediaType.ARTIST;
-    await flushPromises();
-    expect(statistics.artistDistribution.value).toEqual([selectedArtist]);
-
-    pendingArtistChart.resolve([topItem("stale-artist", MediaType.ARTIST)]);
-    await flushPromises();
-
-    expect(statistics.artistDistribution.value).toEqual([selectedArtist]);
-  });
-
-  it("reloads visible statistics when the API finishes reconnecting", async () => {
-    const statistics = setupStatistics();
-    await flushPromises();
-    expect(api.getTopItems).toHaveBeenCalledTimes(2);
-
+  it("requests nothing until the connection is ready", async () => {
     api.state.value = ConnectionState.RECONNECTING;
-    await nextTick();
+    setupStatistics(["playsOverTime"]);
+    await flushPromises();
+    expect(api.getPlaysOverTime).not.toHaveBeenCalled();
+
     api.state.value = ConnectionState.INITIALIZED;
     await flushPromises();
+    expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
+  });
 
-    expect(api.getTopItems).toHaveBeenCalledTimes(4);
+  it("keeps the sections that loaded and marks the failed ones", async () => {
+    api.getListeningActivity.mockRejectedValue(new Error("offline"));
+    api.getTopItems.mockResolvedValue([topItem("track")]);
+    const statistics = setupStatistics();
+    await flushPromises();
+
+    expect([...statistics.failed.value]).toEqual(["listeningActivity"]);
+    expect(statistics.data.value.topTracks).toEqual([topItem("track")]);
+    expect(statistics.data.value.listeningActivity).toEqual([]);
+  });
+
+  it("shows no toast when an automatic load fails", async () => {
+    api.getPlaysOverTime.mockRejectedValue(new Error("offline"));
+    setupStatistics(["playsOverTime"]);
+    await flushPromises();
+
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("toasts when a load the user asked for by changing the period fails", async () => {
+    const statistics = setupStatistics(["playsOverTime"]);
+    await flushPromises();
+    api.getPlaysOverTime.mockRejectedValue(new Error("offline"));
+
+    statistics.period.value = "month";
+    await flushPromises();
+
+    expect(api.getPlaysOverTime).toHaveBeenLastCalledWith("month", "day");
+    expect(toastError).toHaveBeenCalledExactlyOnceWith(
+      "statistics_load_failed",
+      { id: "statistics-load-failed" },
+    );
+    expect(statistics.failed.value.has("playsOverTime")).toBe(true);
+  });
+
+  it("ignores a slower response for an earlier period", async () => {
+    const earlier = deferred<StatisticsTopItemResult[]>();
+    api.getTopItems
+      .mockReturnValueOnce(earlier.promise)
+      .mockResolvedValueOnce([topItem("current")]);
+    const statistics = setupStatistics(["topTracks"]);
+
+    statistics.period.value = "year";
+    await flushPromises();
+    earlier.resolve([topItem("stale")]);
+    await flushPromises();
+
+    expect(statistics.data.value.topTracks).toEqual([topItem("current")]);
+    expect(statistics.loading.value).toBe(false);
+  });
+
+  it("drops a response that arrives after becoming inactive", async () => {
+    const pending = deferred<StatisticsTopItemResult[]>();
+    api.getTopItems.mockReturnValueOnce(pending.promise);
+    const statistics = setupStatistics(["topTracks"]);
+
+    statistics.active.value = false;
+    await flushPromises();
+    pending.resolve([topItem("late")]);
+    await flushPromises();
+
+    expect(statistics.data.value.topTracks).toEqual([]);
+    expect(statistics.loading.value).toBe(false);
+  });
+
+  it("refreshes once, debounced, when the current user finishes tracks", async () => {
+    vi.useFakeTimers();
+    setupStatistics(["playsOverTime"]);
+    await flushPromises();
+    expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
+
+    emitPlaylog("self", true);
+    emitPlaylog(null, true);
+    emitPlaylog("self", false);
+    emitPlaylog("someone-else", true);
+    vi.advanceTimersByTime(PLAYLOG_REFRESH_DEBOUNCE_MS - 1);
+    expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(1);
+    await flushPromises();
     expect(api.getPlaysOverTime).toHaveBeenCalledTimes(2);
   });
 
-  it("ignores request failures during reconnect and retries after initialization", async () => {
-    const pendingTopItems = deferred<StatisticsTopItemResult[]>();
-    const pendingArtistItems = deferred<StatisticsTopItemResult[]>();
-    api.getTopItems
-      .mockReturnValueOnce(pendingTopItems.promise)
-      .mockReturnValueOnce(pendingArtistItems.promise)
-      .mockResolvedValue([]);
-    const statistics = setupStatistics();
-
-    api.state.value = ConnectionState.RECONNECTING;
-    await nextTick();
-    pendingTopItems.reject(new Error("connection lost"));
-    pendingArtistItems.reject(new Error("connection lost"));
+  it("stops listening and cancels a pending refresh when disposed", async () => {
+    vi.useFakeTimers();
+    const statistics = setupStatistics(["playsOverTime"]);
     await flushPromises();
-
-    expect(toastError).not.toHaveBeenCalled();
-    expect(statistics.statisticsError.value).toBe(false);
-    expect(statistics.statisticsLoading.value).toBe(false);
-    expect(statistics.chartsLoading.value).toBe(false);
-
-    api.state.value = ConnectionState.INITIALIZED;
-    await flushPromises();
-
-    expect(api.getTopItems).toHaveBeenCalledTimes(4);
-    expect(statistics.statisticsLoading.value).toBe(false);
-    expect(statistics.chartsLoading.value).toBe(false);
-    expect(toastError).not.toHaveBeenCalled();
-  });
-
-  it("loads playlist rankings with a playlist result fixture", async () => {
-    const playlist = topItem("playlist-1", MediaType.PLAYLIST);
-    api.getTopItems
-      .mockResolvedValueOnce([topItem("track-1")])
-      .mockResolvedValueOnce([topItem("artist-1", MediaType.ARTIST)])
-      .mockResolvedValueOnce([playlist]);
-    const statistics = setupStatistics();
-    await flushPromises();
-
-    statistics.activeStatTab.value = MediaType.PLAYLIST;
-    await flushPromises();
-
-    expect(api.getTopItems).toHaveBeenLastCalledWith(
-      MediaType.PLAYLIST,
-      "week",
-      50,
-    );
-    expect(statistics.statisticsItems.value).toEqual([playlist]);
-  });
-
-  it("refreshes both datasets and hourly buckets when the period changes", async () => {
-    const statistics = setupStatistics();
-    await flushPromises();
-    statistics.activeStatPeriod.value = "today";
-    await flushPromises();
-
-    expect(api.getTopItems).toHaveBeenLastCalledWith(
-      MediaType.ARTIST,
-      "today",
-      10,
-    );
-    expect(api.getPlaysOverTime).toHaveBeenLastCalledWith("today", "hour");
-    expect(api.getTopItems).toHaveBeenCalledTimes(4);
-  });
-
-  it("drops stale top-item and chart responses after a period change", async () => {
-    const oldItems = deferred<StatisticsTopItemResult[]>();
-    const oldArtists = deferred<StatisticsTopItemResult[]>();
-    api.getTopItems
-      .mockReturnValueOnce(oldItems.promise)
-      .mockReturnValueOnce(oldArtists.promise)
-      .mockResolvedValueOnce([topItem("new")])
-      .mockResolvedValueOnce([topItem("new-artist", MediaType.ARTIST)]);
-    const statistics = setupStatistics();
-    statistics.activeStatPeriod.value = "month";
-    await flushPromises();
-    oldItems.resolve([topItem("old")]);
-    oldArtists.resolve([topItem("old")]);
-    await flushPromises();
-
-    expect(statistics.statisticsItems.value).toEqual([topItem("new")]);
-    expect(statistics.artistDistribution.value).toEqual([
-      topItem("new-artist", MediaType.ARTIST),
-    ]);
-  });
-
-  it("invalidates pending results when the row is hidden", async () => {
-    const pending = deferred<StatisticsTopItemResult[]>();
-    api.getTopItems.mockReturnValueOnce(pending.promise);
-    const statistics = setupStatistics();
-    statistics.visible.value = false;
-    await flushPromises();
-    pending.resolve([topItem("hidden")]);
-    await flushPromises();
-
-    expect(statistics.statisticsItems.value).toEqual([]);
-    expect(statistics.statisticsLoading.value).toBe(false);
-    expect(statistics.chartsLoading.value).toBe(false);
-  });
-
-  it("reports top-item failures with the shared toast id", async () => {
-    api.getTopItems.mockRejectedValueOnce(new Error("failed"));
-    const statistics = setupStatistics();
-    await flushPromises();
-
-    expect(statistics.statisticsError.value).toBe(true);
-    expect(toastError).toHaveBeenCalledExactlyOnceWith(
-      "statistics_load_failed",
-      { id: STATISTICS_LOAD_ERROR_TOAST_ID },
-    );
-  });
-
-  it("deduplicates notifications when ranking and chart requests both fail", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    api.getTopItems
-      .mockRejectedValueOnce(new Error("ranking failed"))
-      .mockRejectedValueOnce(new Error("artist chart failed"));
-    const statistics = setupStatistics();
-    await flushPromises();
-
-    expect(statistics.statisticsError.value).toBe(true);
-    expect(toastError).toHaveBeenCalledTimes(2);
-    expect(toastError.mock.calls.map(([, options]) => options?.id)).toEqual([
-      STATISTICS_LOAD_ERROR_TOAST_ID,
-      STATISTICS_LOAD_ERROR_TOAST_ID,
-    ]);
-  });
-
-  it("keeps successful chart data when another chart fails", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    api.getListeningActivity.mockRejectedValueOnce(new Error("failed"));
-    api.getPlaysOverTime.mockResolvedValueOnce([
-      { timestamp: "2026-10-20", value: 3 },
-    ]);
-    const statistics = setupStatistics();
-    await flushPromises();
-
-    expect(statistics.playsOverTime.value).toEqual([
-      { timestamp: "2026-10-20", value: 3 },
-    ]);
-    expect(statistics.listeningActivity.value).toEqual([]);
-    expect(toastError).toHaveBeenCalledExactlyOnceWith(
-      "statistics_load_failed",
-      { id: STATISTICS_LOAD_ERROR_TOAST_ID },
-    );
-  });
-
-  it("refreshes only completed plays belonging to the current user", async () => {
-    setupStatistics();
-    await flushPromises();
-    emitPlaylog("other", true);
-    emitPlaylog("self", false);
-    await flushPromises();
-    expect(api.getTopItems).toHaveBeenCalledTimes(2);
-
     emitPlaylog("self", true);
-    await flushPromises();
-    expect(api.getTopItems).toHaveBeenCalledTimes(4);
-  });
 
-  it("disposes subscriptions and ignores late failures when the scope stops", async () => {
-    const pending = deferred<StatisticsTopItemResult[]>();
-    api.getTopItems.mockReturnValueOnce(pending.promise);
-    const statistics = setupStatistics();
     statistics.scope.stop();
-    statistics.activeStatTab.value = MediaType.ALBUM;
-    statistics.refresh();
-    pending.reject(new Error("late failure"));
+    vi.advanceTimersByTime(PLAYLOG_REFRESH_DEBOUNCE_MS);
     await flushPromises();
 
     expect(unsubscribe).toHaveBeenCalledTimes(1);
+    expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("useStatisticsTopItems", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    api.state = ref(ConnectionState.INITIALIZED);
+    api.getTopItems.mockResolvedValue([]);
+    api.subscribe.mockReturnValue(unsubscribe);
+  });
+
+  afterEach(() => {
+    scopes.splice(0).forEach((scope) => scope.stop());
+  });
+
+  it("loads the chosen media type and reloads when it changes", async () => {
+    api.getTopItems.mockResolvedValueOnce([topItem("album", MediaType.ALBUM)]);
+    const topItems = setupTopItems();
+    await flushPromises();
+
+    expect(api.getTopItems).toHaveBeenCalledWith(
+      MediaType.ALBUM,
+      "week",
+      TOP_ITEMS_LIMIT,
+    );
+    expect(topItems.items.value).toEqual([topItem("album", MediaType.ALBUM)]);
+
+    topItems.mediaType.value = MediaType.PLAYLIST;
+    await flushPromises();
+    expect(api.getTopItems).toHaveBeenLastCalledWith(
+      MediaType.PLAYLIST,
+      "week",
+      TOP_ITEMS_LIMIT,
+    );
     expect(api.getTopItems).toHaveBeenCalledTimes(2);
-    expect(statistics.statisticsError.value).toBe(false);
-    expect(statistics.statisticsLoading.value).toBe(false);
+  });
+
+  it("shows an error and toasts when a tab the user picked fails", async () => {
+    const topItems = setupTopItems();
+    await flushPromises();
+    api.getTopItems.mockRejectedValueOnce(new Error("offline"));
+
+    topItems.mediaType.value = MediaType.ARTIST;
+    await flushPromises();
+
+    expect(topItems.error.value).toBe(true);
+    expect(topItems.items.value).toEqual([]);
+    expect(toastError).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not count becoming active as the user's choice", async () => {
+    const topItems = setupTopItems();
+    topItems.active.value = false;
+    await flushPromises();
+    api.getTopItems.mockRejectedValueOnce(new Error("offline"));
+
+    topItems.active.value = true;
+    await flushPromises();
+
+    expect(topItems.error.value).toBe(true);
     expect(toastError).not.toHaveBeenCalled();
   });
 });

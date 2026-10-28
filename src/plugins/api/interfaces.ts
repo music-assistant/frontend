@@ -1108,6 +1108,15 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number | null;
 }
 
+/** The time window a statistics command covers. */
+export type StatisticsPeriod = "today" | "week" | "month" | "year" | "all_time";
+
+/** The bucket size of `statistics/plays_over_time`. */
+export type StatisticsGranularity = "hour" | "day" | "week" | "month";
+
+/** How `statistics/listening_time` groups its minutes. */
+export type StatisticsGroupBy = "artist" | "genre";
+
 /** A ranked media item and its completed-play count from statistics endpoints. */
 export interface StatisticsTopItemResult {
   item: ItemMapping;
@@ -1124,12 +1133,14 @@ export interface StatisticsTimeSeriesPoint {
   value: number;
 }
 
+/** Plays in one weekday (0 is Monday) and local hour (0-23) cell. */
 export interface StatisticsHeatmapPoint {
   hour: number;
   weekday: number;
   value: number;
 }
 
+/** Minutes of completed plays for one artist or genre. */
 export interface StatisticsListeningTimeItem {
   name: string;
   minutes: number;
@@ -1285,25 +1296,6 @@ export interface RecommendationFolder extends BrowseFolder {
   enabled_by_default: boolean;
   type: RecommendationFolderType;
   supports_provider_filter: boolean;
-}
-
-export interface DailyStats {
-  date: string;
-  seconds_listened: number;
-  tracks_played: number;
-  unique_artists: number;
-}
-
-export interface ListeningSummary {
-  period: string;
-  period_start: number;
-  period_end: number;
-  total_listening_seconds: number;
-  total_plays: number;
-  unique_tracks: number;
-  unique_albums: number;
-  unique_artists: number;
-  top_genre: string | null;
 }
 
 export interface MediaCollection<M extends MediaItemType> extends MediaItem {
