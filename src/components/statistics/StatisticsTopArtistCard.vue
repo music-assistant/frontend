@@ -19,7 +19,7 @@
               :value="(datum: DonutDatum) => datum.value"
               :color="(datum: DonutDatum) => chartConfig[datum.key].color"
               :arc-width="DONUT_ARC_WIDTH"
-              :corner-radius="DONUT_ARC_WIDTH / 2"
+              :corner-radius="DONUT_CORNER_RADIUS"
               :central-label="`${share}%`"
               :central-sub-label="$t('statistics_of_plays')"
             />
@@ -80,6 +80,8 @@ interface DonutDatum {
 }
 
 const DONUT_ARC_WIDTH = 14;
+// small enough that a short arc keeps its shape instead of turning into a blob
+const DONUT_CORNER_RADIUS = 3;
 const PERCENT = 100;
 
 const chartConfig = {
