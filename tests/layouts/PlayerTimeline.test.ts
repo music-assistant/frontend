@@ -483,6 +483,30 @@ describe("PlayerTimeline", () => {
     expect(await elapsedLabelAfter(20)).toBe("00:34");
   });
 
+  it("shows Live and stops ticking once a radio stream stops", async () => {
+    store.activePlayer = {
+      player_id: "p1",
+      playback_state: PlaybackState.PLAYING,
+      current_media: {
+        media_type: MediaType.RADIO,
+        duration: 300,
+        elapsed_time: 30,
+        elapsed_time_last_updated: NOW,
+      },
+    };
+
+    mountTimeline();
+    expect(await elapsedLabelAfter(4)).toBe("00:34");
+
+    store.activePlayer = {
+      ...store.activePlayer,
+      playback_state: PlaybackState.IDLE,
+    };
+    await nextTick();
+    expect(timerCount()).toEqual({ raf: 0, interval: 0 });
+    expect(elapsedLabel()).toBe("Live");
+  });
+
   it.each([
     [
       "with its position",

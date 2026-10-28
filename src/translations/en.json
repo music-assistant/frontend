@@ -1126,6 +1126,7 @@
     "recently_played": "Recently played",
     "load_more_items": "Load more items...",
     "radio": "Radio",
+    "radio_live": "Live",
     "muted": "muted",
     "enter_name": "Enter a new (custom) name",
     "image_url": "Input the URL to an image or icon (optional)",
