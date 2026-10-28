@@ -36,6 +36,7 @@ vi.mock("@/composables/useThemePreference", () => ({
 vi.mock("@/plugins/auth", () => ({
   authManager: {
     isGuestAccessSession: () => mocks.isGuestSession.value,
+    isDashboardViewer: () => false,
     leaveGuestSession: mocks.leaveGuestSession,
   },
 }));

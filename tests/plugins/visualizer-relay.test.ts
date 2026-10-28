@@ -1,10 +1,10 @@
 /**
  * VisualizerRelayClient color handling.
  *
- * Color payloads accumulate into a merged palette, and a stream/start that no
- * longer advertises the "color" type (color_tint disabled server-side) must
- * drop the palette a canvas kept across the reconnect, or the stale tint
- * would paint until the player changes.
+ * Color payloads accumulate into a merged palette that survives a reconnect,
+ * and a stream/start that no longer advertises the "color" type (color_tint
+ * disabled server-side) must drop it, or the engine would go on recoloring
+ * from a dead track's artwork until the player changes.
  */
 import { VisualizerRelayClient } from "@/plugins/visualizer-relay";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
