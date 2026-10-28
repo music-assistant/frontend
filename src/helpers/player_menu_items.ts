@@ -245,9 +245,11 @@ export const getPlayerMenuItems = (
         return {
           label: getPlayerDisplayName(p),
           labelArgs: [],
-          icon: builtin
-            ? DEVICE_TYPE_ICONS[store.deviceType]
-            : (getLucideIcon(p.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK)),
+          // this device keeps its form-factor icon until the user picks another one
+          icon:
+            builtin && p.icon === PLAYER_ICON_FALLBACK
+              ? DEVICE_TYPE_ICONS[store.deviceType]
+              : (getLucideIcon(p.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK)),
           separatorAfter:
             builtin && next !== undefined && !isBuiltinPlayer(next),
           action: () => {

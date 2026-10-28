@@ -17,6 +17,7 @@ import {
   RepeatMode,
   Scope,
 } from "@/plugins/api/interfaces";
+import { getLucideIcon } from "@/helpers/icon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playerQueue } from "../fixtures/playerQueue";
 import { playerSource } from "../fixtures/playerSource";
@@ -976,6 +977,19 @@ describe("transfer queue", () => {
 
     expect(items.map(targetOf)).toEqual(["this_browser", "attic"]);
     expect(items.map((item) => item.separatorAfter)).toEqual([true, false]);
+  });
+
+  it("shows the icon the user picked for this device", () => {
+    const [device] = transferItems([
+      target({
+        player_id: "this_browser",
+        hide_in_ui: true,
+        private: true,
+        icon: "headphones",
+      }),
+    ]);
+
+    expect(device.icon).toBe(getLucideIcon("headphones"));
   });
 
   it("leaves out the separator when this device is the only target", () => {
