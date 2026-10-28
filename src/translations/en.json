@@ -36,6 +36,24 @@
         "search_for": "Search {title}",
         "selected": "{count} selected"
     },
+    "listing_filters": {
+        "title": "Filters",
+        "title_active": "Filters, {count} active",
+        "controls": "Listing controls",
+        "clear_all": "Clear all",
+        "favorites_only": "Only favorites",
+        "album_artists_only": "Only album artists",
+        "library_only": "Only in library",
+        "hide_fully_played": "Hide fully played",
+        "collapse_collections": "Collapse collections",
+        "genres_shown": "Show",
+        "genre": "Genre",
+        "any_genre": "Any genre",
+        "album_type": "Album type",
+        "any_album_type": "Any album type",
+        "source": "Source",
+        "any_source": "Any source"
+    },
     "close": "Close",
     "create_playlist": "Create new playlist on {0}",
     "dark_mode": "Dark mode",
@@ -980,7 +998,9 @@
         "album_artist_name": "Album artist",
         "album_artist_name_desc": "Album artist (descending)",
         "track_artist_name": "Track artist",
-        "track_artist_name_desc": "Track artist (descending)"
+        "track_artist_name_desc": "Track artist (descending)",
+        "sort_by": "Sort by",
+        "sort_by_current": "Sort by: {0}"
     },
     "pagination": {
         "first_page": "Go to first page",
@@ -1134,6 +1154,10 @@
     "new_playlist": "New playlist",
     "create_playlist_on": "Create new playlist on {0}",
     "view": {
+        "view_as": "View as",
+        "panel_short": "Thumbs",
+        "panel_compact_short": "Compact",
+        "list_short": "List",
         "list": "List view",
         "card": "Card view",
         "panel": "Thumbs view",
