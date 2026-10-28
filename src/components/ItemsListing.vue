@@ -175,6 +175,7 @@
         "
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
+        :margin="INFINITE_SCROLL_MARGIN"
         :load-more-text="$t('load_more_items')"
         :empty-text="''"
         :class="{ 'select-none': shiftSelecting }"
@@ -868,6 +869,8 @@ const selectViewMode = function (newMode: string) {
 const gridColumnCount = computed(() =>
   gridColumns(panelViewItemResponsive(0), gridSize.value),
 );
+
+const INFINITE_SCROLL_MARGIN = 600;
 
 const commitGridSize = function (size: number) {
   gridSize.value = size;
