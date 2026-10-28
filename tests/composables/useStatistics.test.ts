@@ -1,4 +1,5 @@
 import {
+  GENRE_DISTRIBUTION_LIMIT,
   PLAYLOG_REFRESH_DEBOUNCE_MS,
   TOP_ITEMS_LIMIT,
   useStatistics,
@@ -12,6 +13,7 @@ import {
   MediaType,
   type EventMessage,
   type StatisticsPeriod,
+  type StatisticsTimeSeriesPoint,
   type StatisticsTopItemResult,
 } from "@/plugins/api/interfaces";
 import { flushPromises } from "@vue/test-utils";
@@ -157,7 +159,10 @@ describe("useStatistics", () => {
     expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ARTIST, "week", 10);
     expect(api.getListeningActivity).toHaveBeenCalledWith("week");
     expect(api.getListeningTime).toHaveBeenCalledWith("week", "artist", 10);
-    expect(api.getGenreDistribution).toHaveBeenCalledWith("week", 10);
+    expect(api.getGenreDistribution).toHaveBeenCalledWith(
+      "week",
+      GENRE_DISTRIBUTION_LIMIT,
+    );
     expect(api.getDecadeDistribution).toHaveBeenCalledWith("week", 10);
     expect(statistics.loading.value).toBe(false);
     expect(statistics.failed.value.size).toBe(0);
@@ -291,6 +296,38 @@ describe("useStatistics", () => {
     vi.advanceTimersByTime(1);
     await flushPromises();
     expect(api.getPlaysOverTime).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the current data on screen during a background refresh", async () => {
+    vi.useFakeTimers();
+    api.getTopItems.mockResolvedValueOnce([topItem("first")]);
+    const statistics = setupStatistics(["topTracks"]);
+    await flushPromises();
+    expect(statistics.data.value.topTracks).toEqual([topItem("first")]);
+    const refreshed = deferred<StatisticsTopItemResult[]>();
+    api.getTopItems.mockReturnValueOnce(refreshed.promise);
+
+    emitPlaylog("self", true);
+    vi.advanceTimersByTime(PLAYLOG_REFRESH_DEBOUNCE_MS);
+    await flushPromises();
+    expect(statistics.loading.value).toBe(false);
+
+    refreshed.resolve([topItem("second")]);
+    await flushPromises();
+    expect(statistics.data.value.topTracks).toEqual([topItem("second")]);
+  });
+
+  it("shows loading again when the user picks another period", async () => {
+    const statistics = setupStatistics(["playsOverTime"]);
+    await flushPromises();
+    api.getPlaysOverTime.mockReturnValueOnce(
+      deferred<StatisticsTimeSeriesPoint[]>().promise,
+    );
+
+    statistics.period.value = "month";
+    await flushPromises();
+
+    expect(statistics.loading.value).toBe(true);
   });
 
   it("stops listening and cancels a pending refresh when disposed", async () => {

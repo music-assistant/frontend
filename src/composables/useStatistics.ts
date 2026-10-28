@@ -26,6 +26,11 @@ export const TOP_ITEMS_LIMIT = 50;
 export const TOP_ARTISTS_LIMIT = 10;
 /** Entries asked for from the distribution and listening time commands. */
 export const DISTRIBUTION_LIMIT = 10;
+/**
+ * The server's cap on statistics results, so the genre shares and "other"
+ * are taken from every genre rather than only the top ten.
+ */
+export const GENRE_DISTRIBUTION_LIMIT = 500;
 /** Waits for a burst of finished tracks to settle before refreshing. */
 export const PLAYLOG_REFRESH_DEBOUNCE_MS = 5000;
 const LOAD_FAILED_TOAST_ID = "statistics-load-failed";
@@ -64,7 +69,7 @@ const REQUESTS: StatisticsRequests = {
   listeningTime: (period) =>
     api.getListeningTime(period, "artist", DISTRIBUTION_LIMIT),
   genreDistribution: (period) =>
-    api.getGenreDistribution(period, DISTRIBUTION_LIMIT),
+    api.getGenreDistribution(period, GENRE_DISTRIBUTION_LIMIT),
   decadeDistribution: (period) =>
     api.getDecadeDistribution(period, DISTRIBUTION_LIMIT),
 };
@@ -91,13 +96,16 @@ interface LatestLoadOptions<Result> {
 /**
  * Loads statistics while `active` and connected, again when the key changes
  * and, debounced, when the current user finishes a track. Only the latest
- * request is applied. A failure toasts only when the user changed the key;
+ * request is applied. `loading` is only set for the first load and for a
+ * change of key; any other reload keeps the current data on screen until the
+ * new data arrives. A failure toasts only when the user changed the key;
  * views show their own inline error for every failure.
  */
 function useLatestLoad<Result>(options: LatestLoadOptions<Result>) {
   const loading = ref(false);
   let generation = 0;
   let disposed = false;
+  let hasLoaded = false;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 
   const canLoad = () =>
@@ -112,10 +120,11 @@ function useLatestLoad<Result>(options: LatestLoadOptions<Result>) {
       return;
     }
     const isCurrent = () => current === generation && canLoad();
-    loading.value = true;
+    if (userTriggered || !hasLoaded) loading.value = true;
     try {
       const result = await options.request();
       if (!isCurrent()) return;
+      hasLoaded = true;
       if (options.apply(result) && userTriggered) {
         toast.error($t("statistics_load_failed"), { id: LOAD_FAILED_TOAST_ID });
       }
