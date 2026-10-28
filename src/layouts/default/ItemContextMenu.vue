@@ -100,21 +100,25 @@
             :side-offset="6"
             class="max-h-[70vh] overflow-y-auto"
           >
-            <DropdownMenuItem
+            <template
               v-for="subMenuItem of menuItem.subItems.filter((x) => !x.hide)"
               :key="subMenuItem.label"
-              :disabled="subMenuItem.disabled === true"
-              :variant="
-                subMenuItem.color === 'error' ? 'destructive' : 'default'
-              "
-              @select="onSelect($event, subMenuItem)"
             >
-              <MenuItemIcon :icon="subMenuItem.icon" />
-              <span class="flex-1 truncate min-w-0">{{
-                menuItemLabel(subMenuItem)
-              }}</span>
-              <Check v-if="subMenuItem.selected" class="ml-auto size-4" />
-            </DropdownMenuItem>
+              <DropdownMenuItem
+                :disabled="subMenuItem.disabled === true"
+                :variant="
+                  subMenuItem.color === 'error' ? 'destructive' : 'default'
+                "
+                @select="onSelect($event, subMenuItem)"
+              >
+                <MenuItemIcon :icon="subMenuItem.icon" />
+                <span class="flex-1 truncate min-w-0">{{
+                  menuItemLabel(subMenuItem)
+                }}</span>
+                <Check v-if="subMenuItem.selected" class="ml-auto size-4" />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator v-if="subMenuItem.separatorAfter" />
+            </template>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <!-- leaf item -->

@@ -16,6 +16,8 @@ export interface ContextMenuItem {
   selected?: boolean;
   subItems?: ContextMenuItem[];
   close_on_click?: boolean;
+  // Draws a separator below this item.
+  separatorAfter?: boolean;
   color?: string;
   // Renders a custom control in place of the standard row (label/icon/action
   // are ignored except for the list key). Used for inline controls like the

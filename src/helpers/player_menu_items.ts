@@ -11,7 +11,11 @@ import {
   Scope,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
-import { getPlayerDisplayName, isSelectablePlayer } from "@/helpers/players";
+import {
+  getPlayerDisplayName,
+  isBuiltinPlayer,
+  isSelectablePlayer,
+} from "@/helpers/players";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { resolveExternalSource } from "@/composables/externalSource";
 import { resolveActiveSourceId } from "@/composables/activeSource";
@@ -28,6 +32,11 @@ import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
+import {
+  DEVICE_TYPE_ICONS,
+  getLucideIcon,
+  PLAYER_ICON_FALLBACK,
+} from "@/helpers/icon";
 import { togglePlayerPower } from "@/helpers/player_group_playback";
 import { errorMessage } from "@/helpers/ai_radio";
 import { canUseQueueDj } from "@/helpers/ai_radio_access";
@@ -209,31 +218,44 @@ export const getPlayerMenuItems = (
 
   // transfer queue (both menus; only when the queue is the active source)
   if (playerQueue?.active && playerQueue.items > 0) {
+    const targets = Object.values(api.players)
+      .filter(
+        (p) =>
+          p.player_id != playerQueue!.queue_id &&
+          p.player_id != player.player_id &&
+          isSelectablePlayer(p) &&
+          !p.synced_to &&
+          (!p.hide_in_ui || isBuiltinPlayer(p)),
+      )
+      .sort(
+        (a, b) =>
+          Number(isBuiltinPlayer(b)) - Number(isBuiltinPlayer(a)) ||
+          getPlayerDisplayName(a).localeCompare(
+            getPlayerDisplayName(b),
+            undefined,
+            { sensitivity: "base" },
+          ),
+      );
     menuItems.push({
       label: "transfer_queue",
       icon: "mdi-swap-horizontal",
-      subItems: Object.values(api.players)
-        .filter(
-          (p) =>
-            p.player_id != playerQueue!.queue_id &&
-            p.player_id != player.player_id &&
-            isSelectablePlayer(p) &&
-            !p.synced_to &&
-            !p.hide_in_ui,
-        )
-        .map((p) => {
-          return {
-            label: getPlayerDisplayName(p),
-            labelArgs: [],
-            action: () => {
-              api.queueCommandTransfer(playerQueue!.queue_id, p.player_id);
-              store.activePlayerId = p.player_id;
-            },
-          };
-        })
-        .sort((a, b) =>
-          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
-        ),
+      subItems: targets.map((p, index) => {
+        const builtin = isBuiltinPlayer(p);
+        const next = targets[index + 1];
+        return {
+          label: getPlayerDisplayName(p),
+          labelArgs: [],
+          icon: builtin
+            ? DEVICE_TYPE_ICONS[store.deviceType]
+            : (getLucideIcon(p.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK)),
+          separatorAfter:
+            builtin && next !== undefined && !isBuiltinPlayer(next),
+          action: () => {
+            api.queueCommandTransfer(playerQueue!.queue_id, p.player_id);
+            store.activePlayerId = p.player_id;
+          },
+        };
+      }),
     });
   }
 

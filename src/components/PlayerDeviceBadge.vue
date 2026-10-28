@@ -14,8 +14,8 @@
 
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
+import { DEVICE_TYPE_ICONS } from "@/helpers/icon";
 import { store } from "@/plugins/store";
-import { Monitor, Smartphone, Tablet } from "@lucide/vue";
 import { computed } from "vue";
 
 defineProps<{
@@ -23,11 +23,5 @@ defineProps<{
   label?: boolean;
 }>();
 
-const DEVICE_ICONS = {
-  desktop: Monitor,
-  phone: Smartphone,
-  tablet: Tablet,
-};
-
-const deviceIcon = computed(() => DEVICE_ICONS[store.deviceType]);
+const deviceIcon = computed(() => DEVICE_TYPE_ICONS[store.deviceType]);
 </script>
