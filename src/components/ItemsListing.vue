@@ -175,6 +175,7 @@
         "
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
+        :margin="infiniteScrollMargin"
         :load-more-text="$t('load_more_items')"
         :empty-text="''"
         :class="{ 'select-none': shiftSelecting }"
@@ -194,8 +195,15 @@
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'">
           <v-col
-            v-for="item in pagedItems"
+            v-for="(item, index) in pagedItems"
             :key="item.uri"
+            :ref="
+              (el) => {
+                if (index === 0)
+                  firstGridItemEl = el as
+                    ComponentPublicInstance | HTMLElement | null;
+              }
+            "
             cols="12"
             :class="`col-${gridColumnCount}`"
           >
@@ -228,8 +236,15 @@
         <!-- compact panel view -->
         <v-row v-if="viewMode == 'panel_compact'">
           <v-col
-            v-for="item in pagedItems"
+            v-for="(item, index) in pagedItems"
             :key="item.uri"
+            :ref="
+              (el) => {
+                if (index === 0)
+                  firstGridItemEl = el as
+                    ComponentPublicInstance | HTMLElement | null;
+              }
+            "
             cols="12"
             :class="`col-${gridColumnCount}`"
           >
@@ -370,7 +385,7 @@ export type {
 </script>
 
 <script setup lang="ts">
-import type { Component } from "vue";
+import type { Component, ComponentPublicInstance } from "vue";
 
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
@@ -483,7 +498,7 @@ import {
   watch,
   watchEffect,
 } from "vue";
-import { useKeyModifier } from "@vueuse/core";
+import { useKeyModifier, useElementSize } from "@vueuse/core";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -868,6 +883,22 @@ const selectViewMode = function (newMode: string) {
 const gridColumnCount = computed(() =>
   gridColumns(panelViewItemResponsive(0), gridSize.value),
 );
+
+const firstGridItemEl = ref<ComponentPublicInstance | HTMLElement | null>(null);
+const { height: measuredItemHeight } = useElementSize(firstGridItemEl);
+
+const estimatedRowHeight = computed(() => {
+  if (viewMode.value === "list") {
+    return showTrackTable.value ? TRACK_ROW_HEIGHT : 70;
+  }
+  return measuredItemHeight.value || 300;
+});
+
+// Lookahead prefetch margin: dynamic based on viewing type (approx. 2 rows)
+const infiniteScrollMargin = computed(() => {
+  const rowsToPrefetch = 2;
+  return Math.round(Math.max(300, estimatedRowHeight.value * rowsToPrefetch));
+});
 
 const commitGridSize = function (size: number) {
   gridSize.value = size;

@@ -1191,6 +1191,33 @@ describe("ItemsListing cover size", () => {
   });
 });
 
+describe("ItemsListing infinite scroll prefetch margin", () => {
+  it("provides a dynamic prefetch margin to v-infinite-scroll based on viewing mode", async () => {
+    const listing = mountListingRaw(
+      {
+        itemtype: "albums",
+        path: "libraryalbums",
+        showGenreFilter: false,
+        loadPagedData: vi.fn().mockResolvedValue([album()]),
+      },
+      {
+        VInfiniteScroll: {
+          props: ["margin"],
+          template:
+            '<div class="infinite-scroll-stub" :data-margin="margin"><slot /></div>',
+        },
+      },
+    );
+    await flushPromises();
+
+    const scrollStub = listing.find(".infinite-scroll-stub");
+    expect(scrollStub.exists()).toBe(true);
+    const margin = Number(scrollStub.attributes("data-margin"));
+    expect(margin).toBeGreaterThanOrEqual(300);
+    listing.unmount();
+  });
+});
+
 describe("ItemsListing source selector", () => {
   beforeEach(() => {
     eventbus.all.clear();
