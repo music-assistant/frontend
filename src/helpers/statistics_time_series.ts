@@ -10,7 +10,7 @@ export type PlayBucket = "hour" | "day" | "month" | "year";
 /** Totals that can be derived from a gap-filled plays-over-time series. */
 export interface PlaysSummary {
   total: number;
-  // plays per bucket, over every bucket of the period
+  // plays per day for a rolling period, else per bucket
   average: number;
   // the bucket with the most plays; undefined when nothing was played
   busiest?: StatisticsTimeSeriesPoint;
@@ -128,9 +128,14 @@ export function fillPlaysOverTimeGaps(
   return filledPoints;
 }
 
-/** Total, per-bucket average and busiest bucket of a gap-filled series. */
+/**
+ * Total, average and busiest bucket of a gap-filled series. A rolling period
+ * touches one more calendar day than it is long (8 for a week), so its
+ * average is per day of the period rather than per bucket.
+ */
 export function summarizePlays(
   points: StatisticsTimeSeriesPoint[],
+  period?: StatisticsPeriod,
 ): PlaysSummary {
   let total = 0;
   let busiest: StatisticsTimeSeriesPoint | undefined;
@@ -140,9 +145,11 @@ export function summarizePlays(
       busiest = point;
     }
   }
+  const divisor =
+    (period && PERIOD_LENGTH_DAYS[period]) ?? (points.length || undefined);
   return {
     total,
-    average: points.length > 0 ? total / points.length : 0,
+    average: points.length > 0 && divisor ? total / divisor : 0,
     busiest,
   };
 }

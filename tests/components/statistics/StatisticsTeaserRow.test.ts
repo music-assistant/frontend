@@ -102,15 +102,22 @@ describe("StatisticsTeaserRow", () => {
 
   it("summarises the period's plays", () => {
     statistics.data.value = {
+      // the 8 calendar days a rolling week touches
       playsOverTime: [
+        { timestamp: "2026-10-11", value: 0 },
         { timestamp: "2026-10-12", value: 1 },
         { timestamp: "2026-10-13", value: 0 },
         { timestamp: "2026-10-14", value: 5 },
+        { timestamp: "2026-10-15", value: 2 },
+        { timestamp: "2026-10-16", value: 3 },
+        { timestamp: "2026-10-17", value: 2 },
+        { timestamp: "2026-10-18", value: 1 },
       ],
     };
     const wrapper = mountTeaser();
 
-    expect(wrapper.text()).toContain("6 plays");
+    expect(wrapper.text()).toContain("14 plays");
+    // per day of the 7-day period, not per calendar day shown
     expect(wrapper.text()).toContain("2 a day on average.");
     expect(wrapper.text()).toContain(
       "Wednesday 14 October was your busiest day.",

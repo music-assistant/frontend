@@ -98,7 +98,7 @@ interface HeroStat {
 }
 
 const locale = useCanonicalLocale();
-const summary = computed(() => summarizePlays(props.points));
+const summary = computed(() => summarizePlays(props.points, props.period));
 const bucket = computed<PlayBucket>(
   () =>
     getPlayBucket(props.points[0]?.timestamp ?? "") ??

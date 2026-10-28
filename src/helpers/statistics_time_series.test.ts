@@ -157,6 +157,27 @@ describe("summarizePlays", () => {
     expect(summary.busiest).toEqual({ timestamp: "2026-10-14", value: 7 });
   });
 
+  it("averages a rolling period per day of the period, not per bucket", () => {
+    // a rolling week touches 8 calendar days
+    const week = Array.from({ length: 8 }, (_, day) => ({
+      timestamp: `2026-10-${String(10 + day).padStart(2, "0")}`,
+      value: day === 0 ? 0 : 10,
+    }));
+
+    expect(summarizePlays(week, "week").average).toBe(10);
+    expect(summarizePlays(week).average).toBe(8.75);
+  });
+
+  it("averages today and all time per bucket", () => {
+    const hours = [
+      { timestamp: "2026-10-14 08:00:00", value: 3 },
+      { timestamp: "2026-10-14 09:00:00", value: 5 },
+    ];
+
+    expect(summarizePlays(hours, "today").average).toBe(4);
+    expect(summarizePlays(hours, "all_time").average).toBe(4);
+  });
+
   it("has no busiest bucket when nothing was played", () => {
     expect(summarizePlays([])).toEqual({ total: 0, average: 0 });
     expect(
