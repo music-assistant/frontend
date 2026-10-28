@@ -245,7 +245,7 @@
         :src="iconHiRes"
         width="30"
         alt=""
-        :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
+        :class="isDark ? 'hiresicondark' : 'hiresicon'"
       >
         <v-tooltip activator="parent" location="bottom">
           {{ HiResDetails }}
@@ -332,6 +332,7 @@ import FavouriteButton from "@/components/FavoriteButton.vue";
 import ListItem from "@/components/ListItem.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import { podcastEpisodeNumber } from "@/components/podcast/podcastEpisodeData";
+import { isDark } from "@/composables/useThemePreference";
 import { canHoldFavorite } from "@/helpers/favorites";
 import {
   handleMediaItemClick,
