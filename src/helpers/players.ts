@@ -1,5 +1,10 @@
 // Shared helpers that decide which players this device owns, how players are
 // named and which of them may be shown in the UI.
+import {
+  DEVICE_TYPE_ICONS,
+  getLucideIcon,
+  PLAYER_ICON_FALLBACK,
+} from "@/helpers/icon";
 import { truncateString } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { getDeviceInfo, getDeviceName } from "@/plugins/api/helpers";
@@ -13,6 +18,7 @@ import {
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
+import type { Component } from "vue";
 
 /**
  * Check if the player is (or streams to) the built-in player of this device.
@@ -41,6 +47,24 @@ export const getPlayerDisplayName = function (
   player: Pick<Player, "player_id" | "name" | "output_protocols">,
 ): string {
   return isBuiltinPlayer(player) ? $t("this_device") : player.name;
+};
+
+/**
+ * Return the icon to show for the player in menus.
+ *
+ * The built-in player of this device keeps its form-factor icon until the user
+ * picks another one.
+ */
+export const getPlayerIcon = function (
+  player: Pick<Player, "player_id" | "icon" | "output_protocols">,
+): Component | undefined {
+  if (
+    isBuiltinPlayer(player) &&
+    (!player.icon || player.icon === PLAYER_ICON_FALLBACK)
+  ) {
+    return DEVICE_TYPE_ICONS[store.deviceType];
+  }
+  return getLucideIcon(player.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK);
 };
 
 /**

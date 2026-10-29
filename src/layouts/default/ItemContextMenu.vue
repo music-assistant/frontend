@@ -150,7 +150,6 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getLucideIcon, PLAYER_ICON_FALLBACK } from "@/helpers/icon";
 import api from "@/plugins/api";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -199,7 +198,7 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
     action: () => {
       store.activePlayerId = player.player_id;
     },
-    icon: getLucideIcon(player.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK),
+    icon: getPlayerIcon(player),
     selected: store.activePlayerId == player.player_id,
     close_on_click: false,
   }));
@@ -342,7 +341,11 @@ import {
 } from "@/helpers/favorites";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
-import { getPlayerDisplayName, playerVisible } from "@/helpers/players";
+import {
+  getPlayerDisplayName,
+  getPlayerIcon,
+  playerVisible,
+} from "@/helpers/players";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import {
   canAddToPlaylist,

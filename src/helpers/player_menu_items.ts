@@ -13,6 +13,7 @@ import {
 } from "@/plugins/api/interfaces";
 import {
   getPlayerDisplayName,
+  getPlayerIcon,
   isBuiltinPlayer,
   isSelectablePlayer,
 } from "@/helpers/players";
@@ -32,11 +33,6 @@ import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
-import {
-  DEVICE_TYPE_ICONS,
-  getLucideIcon,
-  PLAYER_ICON_FALLBACK,
-} from "@/helpers/icon";
 import { togglePlayerPower } from "@/helpers/player_group_playback";
 import { errorMessage } from "@/helpers/ai_radio";
 import { canUseQueueDj } from "@/helpers/ai_radio_access";
@@ -240,18 +236,13 @@ export const getPlayerMenuItems = (
       label: "transfer_queue",
       icon: "mdi-swap-horizontal",
       subItems: targets.map((p, index) => {
-        const builtin = isBuiltinPlayer(p);
         const next = targets[index + 1];
         return {
           label: getPlayerDisplayName(p),
           labelArgs: [],
-          // this device keeps its form-factor icon until the user picks another one
-          icon:
-            builtin && p.icon === PLAYER_ICON_FALLBACK
-              ? DEVICE_TYPE_ICONS[store.deviceType]
-              : (getLucideIcon(p.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK)),
+          icon: getPlayerIcon(p),
           separatorAfter:
-            builtin && next !== undefined && !isBuiltinPlayer(next),
+            isBuiltinPlayer(p) && next !== undefined && !isBuiltinPlayer(next),
           action: () => {
             api.queueCommandTransfer(playerQueue!.queue_id, p.player_id);
             store.activePlayerId = p.player_id;
