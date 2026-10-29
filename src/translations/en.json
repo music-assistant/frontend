@@ -2577,6 +2577,7 @@
     "find_on_music_services": "Find on your music services",
     "edit_rows": "Edit rows",
     "edit_rows_subtitle": "Applies to every artist page",
+    "edit_rows_subtitle_genre": "Applies to every genre page",
     "reset_to_default": "Reset to default",
     "rows_shown": "{shown} of {total} rows shown",
     "row_source": "Source",
