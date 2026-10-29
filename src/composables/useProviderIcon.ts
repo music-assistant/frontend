@@ -1,8 +1,8 @@
+import { isDark } from "@/composables/useThemePreference";
 import { resolveProviderDomain } from "@/helpers/provider_domain";
 import { api } from "@/plugins/api";
 import { ProviderIconVariant } from "@/plugins/api/interfaces";
 import { computed, type MaybeRefOrGetter, toValue, watchEffect } from "vue";
-import { useTheme } from "vuetify";
 
 interface ProviderIconOptions {
   monochrome?: MaybeRefOrGetter<boolean | undefined>;
@@ -18,8 +18,6 @@ export function useProviderIcon(
   domain: MaybeRefOrGetter<string | undefined>,
   options?: ProviderIconOptions,
 ) {
-  const theme = useTheme();
-
   // a domain or an instance id, also of an instance that is not loaded (e.g. a
   // source not shared with this user)
   const providerDomain = computed(() => {
@@ -43,10 +41,7 @@ export function useProviderIcon(
       available.includes(ProviderIconVariant.MONOCHROME)
     )
       return ProviderIconVariant.MONOCHROME;
-    if (
-      theme.current.value.dark &&
-      available.includes(ProviderIconVariant.DARK)
-    )
+    if (isDark.value && available.includes(ProviderIconVariant.DARK))
       return ProviderIconVariant.DARK;
     if (available.includes(ProviderIconVariant.DEFAULT))
       return ProviderIconVariant.DEFAULT;
@@ -54,9 +49,7 @@ export function useProviderIcon(
   });
 
   const applyInvert = computed(
-    () =>
-      variant.value === ProviderIconVariant.MONOCHROME &&
-      !theme.current.value.dark,
+    () => variant.value === ProviderIconVariant.MONOCHROME && !isDark.value,
   );
 
   const iconKey = computed(() =>
