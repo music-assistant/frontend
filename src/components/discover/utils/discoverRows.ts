@@ -14,6 +14,7 @@ import { store } from "@/plugins/store";
 export const PLAYERS_ROW_ID = "players";
 export const TOP_PICKS_ROW_ID = "top_picks";
 export const GENRES_ROW_ID = "genres";
+export const STATISTICS_ROW_ID = "statistics";
 export const RECENTLY_PLAYED_ROW_ID = "library://folder/recently_played";
 export const IN_PROGRESS_ROW_ID = "library://folder/in_progress";
 

@@ -4,7 +4,6 @@ import { useLibrarySorting } from "@/composables/useLibrarySorting";
 import {
   ListingType,
   MediaItemType,
-  MediaType,
   ProviderInstance,
   SortDirection,
   SortField,
