@@ -5,13 +5,11 @@
     :tiles-per-view="tilesPerView"
   >
     <template #header>
-      <div
-        v-hold="onHold"
-        class="release-shelf__titles"
-        @touchstart.passive="onTouchStart"
-        @click.capture="swallowClickAfterHold"
+      <DetailSectionTitle
+        :title="title"
+        :meta="sourceLabel ? undefined : meta"
+        @edit-rows="emit('edit-rows')"
       >
-        <h2 class="release-shelf__title">{{ title }}</h2>
         <RowSourceBadge
           v-if="sourceLabel"
           :label="sourceLabel"
@@ -20,8 +18,7 @@
           :selected="sourceValue"
           @select="(source) => emit('select-source', source)"
         />
-        <span v-else-if="meta" class="release-shelf__meta">{{ meta }}</span>
-      </div>
+      </DetailSectionTitle>
     </template>
     <template v-if="viewAllTo" #actions>
       <RouterLink
@@ -68,13 +65,13 @@
 </template>
 
 <script setup lang="ts">
+import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
 import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
-import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { parseBool } from "@/helpers/parse";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
@@ -129,10 +126,6 @@ const SKELETONS = 6;
 
 const tilesPerView = computed(() => shelfTilesPerView());
 
-const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
-  emit("edit-rows"),
-);
-
 // the item's type, so every card says what it is; the year already sits on the
 // artwork, so it isn't repeated here. A release that is not in the library says
 // that instead, which is the more useful thing to know about it.
@@ -164,27 +157,6 @@ function shelfTilesPerView(): number {
 </script>
 
 <style scoped>
-.release-shelf__titles {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-.release-shelf__title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-  color: rgb(var(--v-theme-on-background));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.release-shelf__meta {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  white-space: nowrap;
-}
 .release-shelf__more {
   flex: none;
   font-size: 13px;
@@ -225,11 +197,5 @@ function shelfTilesPerView(): number {
   padding: 8px 4px;
   font-size: 14px;
   color: rgba(var(--v-theme-on-surface), 0.6);
-}
-
-@media (max-width: 768px) {
-  .release-shelf__title {
-    font-size: 19px;
-  }
 }
 </style>
