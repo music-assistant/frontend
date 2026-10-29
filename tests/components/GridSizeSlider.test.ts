@@ -5,9 +5,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { defineComponent, h } from "vue";
+import { defineComponent, h, reactive } from "vue";
 
 // shows which count a plural message was asked for with
 vi.mock("@/plugins/i18n", () => ({
@@ -19,13 +20,21 @@ enableAutoUnmount(afterEach);
 
 /** The slider as the listing's menu shows it: last, beneath an ordinary row. */
 async function mountInMenu(size = 0) {
-  const onChange = vi.fn();
+  const state = reactive({
+    size,
+    showActions: true,
+    actionsFit: true,
+    supportsActions: true,
+  });
+  const onChange = vi.fn((size: number) => {
+    state.size = size;
+  });
   const onCommit = vi.fn();
   const Menu = defineComponent(
     () => () =>
       h(
         DropdownMenu,
-        { open: true, modal: false },
+        { open: true },
         {
           default: () => [
             h(DropdownMenuTrigger, null, { default: () => "menu" }),
@@ -35,7 +44,14 @@ async function mountInMenu(size = 0) {
               {
                 default: () => [
                   h(DropdownMenuItem, null, { default: () => "Thumbs view" }),
-                  h(GridSizeSlider, { size, onChange, onCommit }),
+                  h(GridSizeSlider, {
+                    ...state,
+                    onChange,
+                    onCommit,
+                    onToggleActions: (show: boolean) => {
+                      state.showActions = show;
+                    },
+                  }),
                 ],
               },
             ),
@@ -43,14 +59,26 @@ async function mountInMenu(size = 0) {
         },
       ),
   );
-  const wrapper = mount(Menu, { attachTo: document.body });
+  const wrapper = mount(TooltipProvider, {
+    attachTo: document.body,
+    props: { delayDuration: 0 },
+    slots: { default: () => h(Menu) },
+  });
   await flushPromises();
   const content = document.querySelector<HTMLElement>(
     "[data-reka-menu-content]",
   )!;
   const rows = [...content.querySelectorAll<HTMLElement>('[role="menuitem"]')];
   const thumb = content.querySelector<HTMLElement>('[role="slider"]')!;
-  return { wrapper, content, rows, thumb, onChange, onCommit };
+  return {
+    wrapper,
+    content,
+    rows,
+    thumb,
+    state,
+    onChange,
+    onCommit,
+  };
 }
 
 describe("GridSizeSlider", () => {
@@ -114,5 +142,58 @@ describe("GridSizeSlider", () => {
       await flushPromises();
       expect(thumb.getAttribute("aria-valuetext")).toBe(expected);
     }
+  });
+
+  it("allows Tab and Shift+Tab between the slider and the eye", async () => {
+    const { content, thumb } = await mountInMenu();
+    const eye = content.querySelector<HTMLButtonElement>("button")!;
+    expect(thumb.tabIndex).toBe(0);
+    expect(eye.tabIndex).toBe(0);
+
+    for (const [target, shiftKey] of [
+      [thumb, false],
+      [eye, true],
+    ] as const) {
+      target.focus();
+      const tab = new KeyboardEvent("keydown", {
+        key: "Tab",
+        shiftKey,
+        bubbles: true,
+        cancelable: true,
+      });
+      target.dispatchEvent(tab);
+      expect(tab.defaultPrevented).toBe(false);
+    }
+  });
+
+  it("toggles actions and follows the available space", async () => {
+    const { content, state } = await mountInMenu();
+    const eye = content.querySelector<HTMLButtonElement>("button")!;
+    eye.click();
+    await flushPromises();
+    expect(eye.getAttribute("aria-pressed")).toBe("false");
+
+    eye.click();
+    await flushPromises();
+    expect(eye.getAttribute("aria-pressed")).toBe("true");
+    state.actionsFit = false;
+    await flushPromises();
+    expect(eye.disabled).toBe(true);
+    content
+      .querySelector<HTMLElement>('[data-slot="tooltip-trigger"]')!
+      .focus();
+    await flushPromises();
+    expect(document.querySelector('[role="tooltip"]')?.textContent).toBe(
+      "action_buttons_too_small",
+    );
+
+    state.actionsFit = true;
+    await flushPromises();
+    expect(eye.disabled).toBe(false);
+    expect(eye.getAttribute("aria-pressed")).toBe("true");
+
+    state.supportsActions = false;
+    await flushPromises();
+    expect(content.querySelector("button")).toBeNull();
   });
 });

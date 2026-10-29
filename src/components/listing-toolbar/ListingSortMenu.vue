@@ -46,7 +46,7 @@
           v-for="option in options"
           :key="option.field"
           :value="option.field"
-          class="gap-3 pl-2 data-[state=checked]:text-primary"
+          class="cursor-pointer gap-3 pl-2 data-[state=checked]:text-primary"
           @select="(event: Event) => pickSortOption(event, option)"
         >
           <template #indicator-icon><span></span></template>
@@ -69,12 +69,17 @@
           :model-value="viewMode"
           @update:model-value="(value) => emit('view-mode', value)"
         />
+        <GridSizeSlider
+          v-if="gridControls && viewMode === 'panel'"
+          v-bind="gridControls"
+        />
       </template>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
 
 <script setup lang="ts">
+import GridSizeSlider from "@/components/GridSizeSlider.vue";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -86,6 +91,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLibrarySorting } from "@/composables/useLibrarySorting";
+import type { GridSizeControls } from "@/helpers/grid_size";
 import { SortDirection, type SortOptionInfo } from "@/plugins/api/interfaces";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "@lucide/vue";
 import { computed } from "vue";
@@ -106,6 +112,8 @@ const props = defineProps<{
   sortBy: string;
   // off where the page picks the view itself
   viewMode?: string;
+  // the cover size and action buttons, shown under the thumbs view
+  gridControls?: GridSizeControls;
   // a phone has room for the icon only
   compact: boolean;
 }>();

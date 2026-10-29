@@ -11,6 +11,7 @@
       :options="sortOptions"
       :sort-by="sortBy"
       :view-mode="showViewModes ? viewMode : undefined"
+      :grid-controls="gridControls"
       @sort-by="(value) => emit('sort-by', value)"
       @view-mode="(value) => emit('view-mode', value)"
     />
@@ -25,6 +26,7 @@
 </template>
 
 <script setup lang="ts">
+import type { GridSizeControls } from "@/helpers/grid_size";
 import type { ListingFilter } from "@/helpers/listing_filters";
 import type { SortOptionInfo } from "@/plugins/api/interfaces";
 import type { ListingViewMode } from "./constants";
@@ -37,6 +39,7 @@ defineProps<{
   viewMode: string;
   // off where the page picks the view itself
   showViewModes: boolean;
+  gridControls: GridSizeControls;
   filters: ListingFilter[];
   activeFilterCount: number;
   // a phone has room for icons only
