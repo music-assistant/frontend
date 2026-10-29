@@ -1,6 +1,5 @@
 <template>
   <DetailHero
-    class="genre-hero"
     :item="item"
     :backdrop="backdrop"
     :editable-rows="editableRows"
@@ -12,8 +11,16 @@
     </template>
 
     <template v-if="item" #main>
-      <h1 class="genre-hero__name">{{ item.name }}</h1>
-      <div class="genre-hero__actions">
+      <h1
+        class="m-0 max-w-full leading-[1.2] font-medium [overflow-wrap:anywhere] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)]"
+        :class="isPhone ? 'text-[34px]' : 'text-[48px]'"
+      >
+        {{ item.name }}
+      </h1>
+      <div
+        class="flex min-w-0 flex-nowrap items-center self-stretch"
+        :class="isPhone ? 'gap-2.5' : 'gap-2'"
+      >
         <DetailHeroPlayButton :item="item" />
         <DetailHeroButton
           v-if="canManageGenre"
@@ -42,6 +49,7 @@ import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vu
 import { getImageThumbForItem } from "@/helpers/utils";
 import { ImageType, Scope, type Genre } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { Merge, Trash2 } from "@lucide/vue";
 import { computed } from "vue";
@@ -58,6 +66,9 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
+
+// matches the hero's own phone layout, which a width breakpoint alone misses
+const isPhone = computed(() => isPhoneSizedScreen());
 
 const canManageGenre = computed(
   () =>
@@ -93,32 +104,3 @@ const deleteGenre = () => {
   });
 };
 </script>
-
-<style scoped>
-.genre-hero__name {
-  max-width: 100%;
-  margin: 0;
-  font-size: 48px;
-  font-weight: 500;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-}
-
-.genre-hero__actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  gap: 8px;
-  align-self: stretch;
-  min-width: 0;
-}
-
-.genre-hero.detail-hero--phone .genre-hero__name {
-  font-size: 34px;
-}
-
-.genre-hero.detail-hero--phone .genre-hero__actions {
-  gap: 10px;
-}
-</style>
