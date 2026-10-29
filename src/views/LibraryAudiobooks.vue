@@ -9,6 +9,7 @@
     :load-paged-data="loadItems"
     :show-library="true"
     :sort-listing="ListingType.LIBRARY_AUDIOBOOKS"
+    library-toolbar
     :sort-option-exclude-fields="audiobookSortOptionExclusions"
     :update-available="updateAvailable"
     :title="$t('audiobooks')"
@@ -30,6 +31,7 @@ import ItemsListing, {
   ToolBarTab,
 } from "@/components/ItemsListing.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
+import { useListingTotal } from "@/composables/useListingTotal";
 import api from "@/plugins/api";
 import {
   ArtistType,
@@ -50,12 +52,16 @@ defineOptions({
 });
 
 const updateAvailable = ref(false);
-const total = ref(store.libraryAudiobooksCount);
+const { total, setTotal, loadTotal } = useListingTotal(
+  store.libraryAudiobooksCount,
+);
 const supportedArtistTypes = ref<ArtistType[]>([]);
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
-  setTotals(params);
+  // the count only changes with the filters, and those start over from the
+  // first page: the pages after it keep the count they have
+  if (!params.offset) setTotals(params);
   return await api.getLibraryAudiobooks(
     params.favoritesOnly || undefined,
     params.search,
@@ -74,7 +80,9 @@ const loadItemsAuthorsNarrators = async (
   artistType: ArtistType,
 ) => {
   updateAvailable.value = false;
-  setTotals(params, artistType);
+  // the count only changes with the filters, and those start over from the
+  // first page: the pages after it keep the count they have
+  if (!params.offset) setTotals(params, artistType);
 
   return await api.getLibraryArtists(
     params.favoritesOnly || undefined,
@@ -103,24 +111,24 @@ const setTotals = async function (
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
+    setTotal(undefined);
     return;
   }
   if (artistType !== undefined) {
-    total.value = await api.getLibraryArtistsCount(
-      params.favoritesOnly || false,
-      false,
-      artistType,
+    await loadTotal(
+      api.getLibraryArtistsCount(
+        params.favoritesOnly || false,
+        false,
+        artistType,
+      ),
     );
     return;
   }
   if (!params.favoritesOnly) {
-    total.value = store.libraryAudiobooksCount;
+    setTotal(store.libraryAudiobooksCount);
     return;
   }
-  total.value = await api.getLibraryAudiobooksCount(
-    params.favoritesOnly || false,
-  );
+  await loadTotal(api.getLibraryAudiobooksCount(params.favoritesOnly || false));
 };
 
 // we switch to a tabbed view if more than just singers are supported

@@ -9,7 +9,7 @@
     :class="{ rounded: rounded }"
     :style="imageStyle"
     contain
-    :lazy-src="theme.current.value.dark ? imgCoverDark : imgCoverLight"
+    :lazy-src="isDark ? imgCoverDark : imgCoverLight"
   />
 </template>
 
@@ -21,7 +21,6 @@ import type {
   QueueItem,
 } from "@/plugins/api/interfaces";
 import { ImageType, MediaType } from "@/plugins/api/interfaces";
-import { useTheme } from "vuetify";
 import {
   imgCoverDark,
   imgCoverLight,
@@ -29,6 +28,7 @@ import {
 } from "@/components/QualityDetailsBtn.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { useProviderIcon } from "@/composables/useProviderIcon";
+import { isDark } from "@/composables/useThemePreference";
 import { getProviderRootDomain } from "@/plugins/api/helpers";
 
 export interface Props {
@@ -50,8 +50,6 @@ const props = withDefaults(defineProps<Props>(), {
   scale: 1,
   alt: undefined,
 });
-
-const theme = useTheme();
 
 const imageStyle = computed(() => ({
   transform: `scale(${props.scale})`,
@@ -84,11 +82,7 @@ function getFallbackImage() {
   if (!props.item) return "";
   if (!props.item.name) return "";
 
-  return getAvatarImage(
-    props.item.name,
-    theme.current.value.dark,
-    thumbSize || 256,
-  );
+  return getAvatarImage(props.item.name, isDark.value, thumbSize || 256);
 }
 
 const fallbackImage = getFallbackImage();

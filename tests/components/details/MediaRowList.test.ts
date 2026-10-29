@@ -117,7 +117,7 @@ describe("MediaRowList", () => {
     const wrapper = mountList({ items: TRACKS, meta: "3" });
 
     expect(wrapper.get("h2").text()).toBe("Appears on");
-    expect(wrapper.get(".media-rows__meta").text()).toBe("3");
+    expect(wrapper.get(".detail-section-title__meta").text()).toBe("3");
     const rows = wrapper.findAll(".media-rows__row[role=button]");
     expect(rows).toHaveLength(3);
     expect(rows[0].get(".media-rows__name").text()).toBe("One");
