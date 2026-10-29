@@ -405,14 +405,14 @@ describe("PlayerFullscreen chapter queue", () => {
       const bookmark = {
         name: "In the second",
         start: 90,
-        provider_instance_id: "audiobookshelf--1",
-        provider_item_id: "book1",
+        provider_instance: "audiobookshelf--1",
+        item_id: "book1",
         stored_by_music_assistant: false,
       };
       api.getBookmarks.mockResolvedValue([
         { ...bookmark, name: "In the first", start: 30 },
         bookmark,
-        { ...bookmark, name: "Other copy", provider_item_id: "dune.m4b" },
+        { ...bookmark, name: "Other copy", item_id: "dune.m4b" },
       ]);
       api.playerCommandSeek.mockClear();
 

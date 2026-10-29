@@ -1041,8 +1041,8 @@ export interface MediaItemChapter {
 export interface MediaItemBookmark {
   name: string;
   start: number;
-  provider_instance_id: string;
-  provider_item_id: string;
+  provider_instance: string;
+  item_id: string;
   stored_by_music_assistant: boolean;
 }
 

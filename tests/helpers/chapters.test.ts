@@ -117,8 +117,8 @@ describe("groupBookmarksByChapter", () => {
   const bookmark = (start: number): MediaItemBookmark => ({
     name: `at ${start}`,
     start,
-    provider_instance_id: "abs--1",
-    provider_item_id: "book1",
+    provider_instance: "abs--1",
+    item_id: "book1",
     stored_by_music_assistant: false,
   });
 

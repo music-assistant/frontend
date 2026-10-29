@@ -200,7 +200,7 @@ interface ChapterRow {
 }
 
 const bookmarkKey = (bookmark: MediaItemBookmark) =>
-  `${bookmark.provider_instance_id}-${bookmark.provider_item_id}-${bookmark.start}`;
+  `${bookmark.provider_instance}-${bookmark.item_id}-${bookmark.start}`;
 
 const rows = computed<ChapterRow[]>(() => {
   const tab = shownTab.value;
@@ -245,22 +245,22 @@ const chapterClicked = function (chapter: MediaItemChapter) {
 
 const providerDomain = function (bookmark: MediaItemBookmark) {
   return (
-    api.providers[bookmark.provider_instance_id]?.domain ??
-    bookmark.provider_instance_id
+    api.providers[bookmark.provider_instance]?.domain ??
+    bookmark.provider_instance
   );
 };
 
 const storeName = function (bookmark: MediaItemBookmark) {
   return bookmark.stored_by_music_assistant
     ? "Music Assistant"
-    : (api.providers[bookmark.provider_instance_id]?.name ??
-        bookmark.provider_instance_id);
+    : (api.providers[bookmark.provider_instance]?.name ??
+        bookmark.provider_instance);
 };
 
 const isEditable = (bookmark: MediaItemBookmark) =>
   bookmark.stored_by_music_assistant ||
   providerEditsBookmarks(
-    bookmark.provider_instance_id,
+    bookmark.provider_instance,
     props.itemDetails.media_type,
   );
 
@@ -279,7 +279,7 @@ const bookmarkClicked = function (bookmark: MediaItemBookmark) {
   if (!itemIsAvailable(props.itemDetails)) return;
   // play the copy the bookmark was made on, its position may not fit another one
   api.playMedia(
-    `${bookmark.provider_instance_id}://${props.itemDetails.media_type}/${bookmark.provider_item_id}`,
+    `${bookmark.provider_instance}://${props.itemDetails.media_type}/${bookmark.item_id}`,
     undefined,
     { start_position: bookmark.start },
   );
@@ -295,8 +295,8 @@ const renameSaved = async function (name: string) {
   if (!bookmark) return;
   await api.setBookmark(
     props.itemDetails.media_type,
-    bookmark.provider_instance_id,
-    bookmark.provider_item_id,
+    bookmark.provider_instance,
+    bookmark.item_id,
     bookmark.start,
     name,
   );
@@ -310,8 +310,8 @@ const removeClicked = function (bookmark: MediaItemBookmark) {
     onConfirm: async () => {
       await api.removeBookmark(
         props.itemDetails.media_type,
-        bookmark.provider_instance_id,
-        bookmark.provider_item_id,
+        bookmark.provider_instance,
+        bookmark.item_id,
         bookmark.start,
       );
     },

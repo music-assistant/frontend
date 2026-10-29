@@ -1392,8 +1392,8 @@ const loadPlayingBookmarks = async function () {
   if (store.curQueueItem?.queue_item_id !== queueItem?.queue_item_id) return;
   playingBookmarks.value = bookmarks.filter(
     (x) =>
-      x.provider_instance_id === streamdetails.provider &&
-      x.provider_item_id === streamdetails.item_id,
+      x.provider_instance === streamdetails.provider &&
+      x.item_id === streamdetails.item_id,
   );
 };
 

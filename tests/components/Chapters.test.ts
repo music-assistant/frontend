@@ -94,7 +94,7 @@ const episode = {
 } as unknown as PodcastEpisode;
 
 function bookmark(
-  provider_instance_id: string,
+  provider_instance: string,
   name: string,
   start: number,
   stored_by_music_assistant: boolean,
@@ -102,8 +102,8 @@ function bookmark(
   return {
     name,
     start,
-    provider_instance_id,
-    provider_item_id: "book1",
+    provider_instance,
+    item_id: "book1",
     stored_by_music_assistant,
   };
 }

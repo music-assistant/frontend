@@ -356,8 +356,8 @@ describe("PlayerTimeline", () => {
         SliderTrack: { template: "<div><slot /></div>" },
       });
       const bookmark = {
-        provider_instance_id: "audiobookshelf--1",
-        provider_item_id: "book1",
+        provider_instance: "audiobookshelf--1",
+        item_id: "book1",
         stored_by_music_assistant: false,
       };
       await wrapper!.setProps({
