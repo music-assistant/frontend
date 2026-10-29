@@ -59,7 +59,6 @@
         <StatisticsArtistTimeCard
           class="flex-[2_1_460px] px-6 py-5"
           :listening-time="data.listeningTime"
-          :top-artists="data.topArtists"
           :loading="loading"
           :error="failed.has('listeningTime')"
         />

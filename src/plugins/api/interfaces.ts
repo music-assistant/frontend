@@ -1144,6 +1144,8 @@ export interface StatisticsHeatmapPoint {
 export interface StatisticsListeningTimeItem {
   name: string;
   minutes: number;
+  // the artist when grouped by artist, null for a genre
+  item?: ItemMapping | null;
 }
 
 export interface Artist extends MediaItem {

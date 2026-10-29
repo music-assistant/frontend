@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   MediaType,
-  type StatisticsTopItemResult,
+  type ItemMapping,
+  type StatisticsListeningTimeItem,
 } from "@/plugins/api/interfaces";
 import {
-  findByName,
+  findListeningTime,
   sharePercent,
   shareSegments,
   sortDecades,
@@ -104,28 +105,34 @@ describe("sortDecades", () => {
   });
 });
 
-describe("findByName", () => {
-  const artist = (name: string): StatisticsTopItemResult => ({
-    item: {
-      item_id: name,
-      provider: "library",
-      media_type: MediaType.ARTIST,
-      name,
-      uri: `library://artist/${name}`,
-      available: true,
-    } as StatisticsTopItemResult["item"],
-    play_count: 1,
-  });
-  const nameOf = (entry: StatisticsTopItemResult) => entry.item.name;
-
-  it("matches names regardless of case and surrounding spaces", () => {
-    const items = [artist("Royal Blood"), artist("TRYM")];
-
-    expect(findByName(" royal blood ", items, nameOf)).toBe(items[0]);
-    expect(findByName("Trym", items, nameOf)).toBe(items[1]);
+describe("findListeningTime", () => {
+  const artist = (item_id: string, provider = "library"): ItemMapping => ({
+    item_id,
+    provider,
+    media_type: MediaType.ARTIST,
+    name: "Royal Blood",
+    uri: `${provider}://artist/${item_id}`,
+    version: "",
+    external_ids: [],
+    available: true,
+    is_playable: true,
   });
 
-  it("is undefined for an unknown name", () => {
-    expect(findByName("Space 92", [artist("TRYM")], nameOf)).toBeUndefined();
+  it("matches the artist by provider and id, not by name", () => {
+    const entries: StatisticsListeningTimeItem[] = [
+      { name: "Royal Blood", minutes: 12, item: artist("1") },
+      { name: "Royal Blood", minutes: 30, item: artist("2") },
+    ];
+
+    expect(findListeningTime(artist("2"), entries)).toBe(entries[1]);
+  });
+
+  it("is undefined when no entry has that artist", () => {
+    const entries: StatisticsListeningTimeItem[] = [
+      { name: "Royal Blood", minutes: 12, item: artist("1", "spotify") },
+      { name: "Rock", minutes: 40, item: null },
+    ];
+
+    expect(findListeningTime(artist("1"), entries)).toBeUndefined();
   });
 });

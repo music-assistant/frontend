@@ -1,4 +1,8 @@
-import type { StatisticsDistributionItem } from "@/plugins/api/interfaces";
+import type {
+  ItemMapping,
+  StatisticsDistributionItem,
+  StatisticsListeningTimeItem,
+} from "@/plugins/api/interfaces";
 
 /** One slice of a share bar: a named entry, or the rest summed as "other". */
 export interface ShareSegment {
@@ -67,17 +71,14 @@ export function sortDecades(
   return [...items].sort((left, right) => left.name.localeCompare(right.name));
 }
 
-/**
- * The entry with this name, ignoring case and surrounding spaces, to link
- * name-only statistics (listening time per artist) to the ranked artist.
- */
-export function findByName<T>(
-  name: string,
-  entries: readonly T[],
-  nameOf: (entry: T) => string,
-): T | undefined {
-  const wanted = name.trim().toLocaleLowerCase();
+/** The listening time of this artist, matched by identity rather than name. */
+export function findListeningTime(
+  artist: ItemMapping,
+  entries: readonly StatisticsListeningTimeItem[],
+): StatisticsListeningTimeItem | undefined {
   return entries.find(
-    (entry) => nameOf(entry).trim().toLocaleLowerCase() === wanted,
+    (entry) =>
+      entry.item?.provider === artist.provider &&
+      entry.item.item_id === artist.item_id,
   );
 }

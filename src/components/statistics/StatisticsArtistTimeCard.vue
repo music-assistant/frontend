@@ -13,7 +13,7 @@
       class="m-0 flex list-none flex-col gap-2 p-0"
       :aria-label="$t('statistics_artist_time')"
     >
-      <li v-for="row in rows" :key="row.name" class="flex items-center gap-3">
+      <li v-for="row in rows" :key="row.key" class="flex items-center gap-3">
         <component
           :is="row.artist ? 'button' : 'span'"
           :type="row.artist ? 'button' : undefined"
@@ -51,24 +51,23 @@ import StatisticsCard from "@/components/statistics/StatisticsCard.vue";
 import { useCanonicalLocale } from "@/composables/useCanonicalLocale";
 import { handleMediaItemClick } from "@/helpers/media_item_actions";
 import { formatCount } from "@/helpers/statistics_format";
-import { findByName, sharePercent } from "@/helpers/statistics_rankings";
+import { sharePercent } from "@/helpers/statistics_rankings";
 import type {
   ItemMapping,
   StatisticsListeningTimeItem,
-  StatisticsTopItemResult,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
 const props = defineProps<{
   listeningTime: StatisticsListeningTimeItem[];
-  // ranked artists, to link a row to its artist page by name
-  topArtists: StatisticsTopItemResult[];
   loading?: boolean;
   error?: boolean;
 }>();
 
 interface ArtistTimeRow {
+  // two artists can share a name
+  key: string;
   name: string;
   minutesLabel: string;
   width: number;
@@ -93,14 +92,14 @@ const rows = computed<ArtistTimeRow[]>(() => {
   return props.listeningTime.map((entry, index) => {
     const minutes = Math.round(entry.minutes);
     return {
+      key: entry.item?.uri ?? entry.name,
       name: entry.name,
       minutesLabel: $t("statistics_minutes", minutes, {
         named: { count: formatCount(minutes, locale.value) },
       }),
       width: sharePercent(entry.minutes, longest),
       barClass: BAR_CLASSES[Math.min(index, BAR_CLASSES.length - 1)],
-      artist: findByName(entry.name, props.topArtists, (top) => top.item.name)
-        ?.item,
+      artist: entry.item ?? undefined,
     };
   });
 });

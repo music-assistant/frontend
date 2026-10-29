@@ -54,7 +54,7 @@ import {
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
 import { formatCount } from "@/helpers/statistics_format";
-import { findByName, sharePercent } from "@/helpers/statistics_rankings";
+import { findListeningTime, sharePercent } from "@/helpers/statistics_rankings";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import type {
   StatisticsListeningTimeItem,
@@ -122,11 +122,7 @@ const detail = computed(() => {
   const plays = $t("statistics_plays", count, {
     named: { count: formatCount(count, locale.value) },
   });
-  const time = findByName(
-    topArtist.value.item.name,
-    props.listeningTime,
-    (entry) => entry.name,
-  );
+  const time = findListeningTime(topArtist.value.item, props.listeningTime);
   if (!time) return plays;
   const minutes = Math.round(time.minutes);
   const duration = $t("statistics_minutes", minutes, {
