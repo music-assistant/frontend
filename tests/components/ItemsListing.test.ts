@@ -178,9 +178,6 @@ vi.mock("@/components/skeletons/PanelViewSkeleton.vue", () =>
 );
 vi.mock("@/components/ListviewItem.vue", () => stubComponent("ListviewItem"));
 vi.mock("@/components/PanelviewItem.vue", () => stubComponent("PanelviewItem"));
-vi.mock("@/components/PanelviewItemCompact.vue", () =>
-  stubComponent("PanelviewItemCompact"),
-);
 vi.mock("@/components/track-table/TrackTableHeader.vue", () =>
   stubComponent("TrackTableHeader"),
 );
@@ -1120,12 +1117,21 @@ describe("ItemsListing cover size", () => {
 
   /** An albums grid, whose window width alone would give it two columns. */
   async function mountGrid() {
-    const listing = mountListingRaw({
-      itemtype: "albums",
-      path: "libraryalbums",
-      showGenreFilter: false,
-      loadPagedData: vi.fn().mockResolvedValue([album()]),
-    });
+    const listing = mountListingRaw(
+      {
+        itemtype: "albums",
+        path: "libraryalbums",
+        showGenreFilter: false,
+        loadPagedData: vi.fn().mockResolvedValue([album()]),
+      },
+      {
+        PanelviewItem: {
+          name: "PanelviewItem",
+          props: ["showActions"],
+          template: '<div class="ed-card__art" />',
+        },
+      },
+    );
     await flushPromises();
     return listing;
   }
@@ -1138,15 +1144,19 @@ describe("ItemsListing cover size", () => {
       .find((name) => /^col-\d+$/.test(name));
   }
 
-  type SliderItem = {
+  interface SliderItem {
     label?: string;
     hide?: boolean;
     componentProps?: {
       size: number;
+      showActions: boolean;
+      actionsFit: boolean;
+      supportsActions: boolean;
       onChange: (size: number) => void;
       onCommit: (size: number) => void;
+      onToggleActions: (show: boolean) => void;
     };
-  };
+  }
 
   function slider(listing: ReturnType<typeof mountListingRaw>) {
     const items = listing
@@ -1197,6 +1207,58 @@ describe("ItemsListing cover size", () => {
     const listing = await mountGrid();
 
     expect(slider(listing)?.hide).toBe(true);
+  });
+
+  it("shows the thumbs view without actions for a saved compact thumbs view", async () => {
+    signInWithSavedGrid({ viewMode: "panel_compact" });
+    const listing = await mountGrid();
+
+    expect(columns(listing)).toBe("col-2");
+    expect(slider(listing)?.componentProps?.showActions).toBe(false);
+  });
+
+  it("keeps captured menu props live across size and fit changes", async () => {
+    signInWithSavedGrid({ viewMode: "panel" });
+    const listing = await mountGrid();
+    const captured = slider(listing)!.componentProps!;
+    const cover = listing.get(".ed-card__art").element;
+    const measure = vi.spyOn(cover, "getBoundingClientRect");
+    try {
+      for (const [size, width, fits] of [
+        [-1, 149.75, false],
+        [0, 150, true],
+        [-1, 149, false],
+      ] as const) {
+        measure.mockReturnValue(new DOMRect(0, 0, width, width));
+        captured.onChange(size);
+        await flushPromises();
+        expect(captured.size).toBe(size);
+        expect(captured.actionsFit).toBe(fits);
+        expect(slider(listing)?.componentProps).toBe(captured);
+      }
+    } finally {
+      measure.mockRestore();
+    }
+  });
+
+  it("updates the cards and captured menu props and saves the action toggle", async () => {
+    signInWithSavedGrid({ viewMode: "panel" });
+    const listing = await mountGrid();
+    const captured = slider(listing)!.componentProps!;
+
+    captured.onToggleActions(false);
+    await flushPromises();
+
+    expect(captured.showActions).toBe(false);
+    expect(
+      listing.findComponent({ name: "PanelviewItem" }).props("showActions"),
+    ).toBe(false);
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "libraryalbums",
+      "albums",
+      "showActions",
+      false,
+    );
   });
 });
 
@@ -2620,7 +2682,8 @@ describe("ItemsListing library toolbar", () => {
         showSearchButton: true,
         ...props,
       },
-      stubs,
+      // its tooltip needs the provider the app's sidebar gives
+      { GridSizeSlider: true, ...stubs },
     );
     await flushPromises();
     return listing;
@@ -2692,18 +2755,18 @@ describe("ItemsListing library toolbar", () => {
     expect(menuLabels(listing)).not.toContain("tooltip.view_mode_current");
   });
 
-  it("picks the view in the sort menu, leaving the cover size to the overflow menu", async () => {
-    signInWithSavedFilters({ viewMode: "panel" });
+  it("picks the view and cover size in the sort menu", async () => {
+    signInWithSavedFilters({ viewMode: "panel", gridSize: -1 });
     const listing = await mountLibraryPage();
     const sortMenu = listing.findComponent(ListingSortMenu);
 
     expect(sortMenu.props("viewMode")).toBe("panel");
-    expect(menuLabels(listing)).toContain("grid_size");
+    expect(sortMenu.props("gridControls")?.size).toBe(-1);
+    expect(menuLabels(listing)).not.toContain("grid_size");
 
     sortMenu.vm.$emit("view-mode", "list");
     await flushPromises();
 
-    expect(menuLabels(listing)).not.toContain("grid_size");
     expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
       "libraryartists",
       "artists",
@@ -2721,7 +2784,7 @@ describe("ItemsListing library toolbar", () => {
       "panel",
     );
     expect(menuLabels(listing)).not.toContain("tooltip.view_mode_current");
-    expect(menuLabels(listing)).toContain("grid_size");
+    expect(menuLabels(listing)).not.toContain("grid_size");
   });
 
   it("opens the search field from its icon and closes it from inside", async () => {

@@ -208,6 +208,35 @@ describe("userPreferences - itemsListing", () => {
       favoriteFilter: false,
     });
   });
+
+  it("preserves compact mode's action preference when changing views", async () => {
+    storeMock.currentUser!.preferences = {
+      "itemsListing.libraryalbums.albums": { viewMode: "panel_compact" },
+    };
+    await useUserPreferences().setItemsListingPreference(
+      "libraryalbums",
+      "albums",
+      "viewMode",
+      "list",
+    );
+    expect(readPrefs("libraryalbums", "albums")).toEqual({
+      viewMode: "list",
+      showActions: false,
+    });
+  });
+
+  it("keeps the genres default of hidden actions when changing views", async () => {
+    await useUserPreferences().setItemsListingPreference(
+      "librarygenres",
+      "genres",
+      "viewMode",
+      "list",
+    );
+    expect(readPrefs("librarygenres", "genres")).toEqual({
+      viewMode: "list",
+      showActions: false,
+    });
+  });
 });
 
 /** Wait for the writes in flight to have reached the server. */
