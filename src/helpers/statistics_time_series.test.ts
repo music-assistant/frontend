@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   evenlySpacedIndices,
-  fillPlaysOverTimeGaps,
   formatBucketAxisLabel,
   formatBucketLabel,
   getPlayBucket,
   getPlaysOverTimeGranularity,
+  groupLongHistoryByYear,
   parsePlayBucket,
   summarizePlays,
 } from "./statistics_time_series";
@@ -21,7 +21,7 @@ describe("getPlaysOverTimeGranularity", () => {
 });
 
 describe("getPlayBucket and parsePlayBucket", () => {
-  it("recognises each bucket format the server and the gap filler write", () => {
+  it("recognises each bucket format the server and the yearly grouping write", () => {
     expect(getPlayBucket("2026")).toBe("year");
     expect(getPlayBucket("2026-10")).toBe("month");
     expect(getPlayBucket("2026-10-14")).toBe("day");
@@ -40,105 +40,39 @@ describe("getPlayBucket and parsePlayBucket", () => {
   });
 });
 
-describe("fillPlaysOverTimeGaps", () => {
-  it("returns nothing for an empty series", () => {
-    expect(fillPlaysOverTimeGaps([], "week")).toEqual([]);
+describe("groupLongHistoryByYear", () => {
+  const months = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      timestamp: `${2020 + Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`,
+      value: 1,
+    }));
+
+  it("keeps five years of months as they are", () => {
+    const points = months(60);
+
+    expect(groupLongHistoryByYear(points, "all_time")).toBe(points);
   });
 
-  it("fills missing all-time monthly buckets for shorter histories", () => {
-    const points = fillPlaysOverTimeGaps(
-      [
-        { timestamp: "2026-11", value: 1 },
-        { timestamp: "2026-09", value: 3 },
-      ],
-      "all_time",
-      new Date(2026, 10, 14, 12),
-    );
+  it("sums a longer all-time history into years", () => {
+    const points = months(62);
 
-    expect(points).toEqual([
-      { timestamp: "2026-09", value: 3 },
-      { timestamp: "2026-10", value: 0 },
-      { timestamp: "2026-11", value: 1 },
+    expect(groupLongHistoryByYear(points, "all_time")).toEqual([
+      { timestamp: "2020", value: 12 },
+      { timestamp: "2021", value: 12 },
+      { timestamp: "2022", value: 12 },
+      { timestamp: "2023", value: 12 },
+      { timestamp: "2024", value: 12 },
+      { timestamp: "2025", value: 2 },
     ]);
   });
 
-  it("sums longer all-time histories into yearly buckets", () => {
-    const points = fillPlaysOverTimeGaps(
-      [
-        { timestamp: "2020-11", value: 3 },
-        { timestamp: "2020-12", value: 2 },
-        { timestamp: "2021-01", value: 4 },
-      ],
-      "all_time",
-      new Date(2026, 9, 14),
-    );
+  it("leaves the other periods alone", () => {
+    const days = Array.from({ length: 366 }, (_, index) => ({
+      timestamp: `day ${index}`,
+      value: 1,
+    }));
 
-    expect(points).toEqual([
-      { timestamp: "2020", value: 5 },
-      { timestamp: "2021", value: 4 },
-      { timestamp: "2022", value: 0 },
-      { timestamp: "2023", value: 0 },
-      { timestamp: "2024", value: 0 },
-      { timestamp: "2025", value: 0 },
-      { timestamp: "2026", value: 0 },
-    ]);
-  });
-
-  it("fills today from midnight through the current hour", () => {
-    const points = fillPlaysOverTimeGaps(
-      [
-        { timestamp: "2026-10-14 08:00:00", value: 2 },
-        { timestamp: "2026-10-14 10:00:00", value: 1 },
-      ],
-      "today",
-      new Date(2026, 9, 14, 10, 35),
-    );
-
-    expect(points).toHaveLength(11);
-    expect(points[0]).toEqual({ timestamp: "2026-10-14 00:00:00", value: 0 });
-    expect(points[8]).toEqual({ timestamp: "2026-10-14 08:00:00", value: 2 });
-    expect(points[9]).toEqual({ timestamp: "2026-10-14 09:00:00", value: 0 });
-    expect(points[10]).toEqual({ timestamp: "2026-10-14 10:00:00", value: 1 });
-  });
-
-  it("covers every day of a rolling week, including today", () => {
-    const points = fillPlaysOverTimeGaps(
-      [{ timestamp: "2026-10-12", value: 4 }],
-      "week",
-      new Date(2026, 9, 14, 18),
-    );
-
-    expect(points.map((point) => point.timestamp)).toEqual([
-      "2026-10-07",
-      "2026-10-08",
-      "2026-10-09",
-      "2026-10-10",
-      "2026-10-11",
-      "2026-10-12",
-      "2026-10-13",
-      "2026-10-14",
-    ]);
-    expect(points[5].value).toBe(4);
-  });
-
-  it("covers a rolling 30 and 365 days", () => {
-    const now = new Date(2026, 9, 14);
-    const point = [{ timestamp: "2026-10-01", value: 1 }];
-
-    expect(fillPlaysOverTimeGaps(point, "month", now)).toHaveLength(31);
-    expect(fillPlaysOverTimeGaps(point, "year", now)).toHaveLength(366);
-  });
-
-  it("keeps a series it cannot parse as it is, sorted", () => {
-    const points = [
-      { timestamp: "b", value: 1 },
-      { timestamp: "a", value: 2 },
-    ];
-
-    expect(fillPlaysOverTimeGaps(points, "week")).toEqual([
-      { timestamp: "a", value: 2 },
-      { timestamp: "b", value: 1 },
-    ]);
+    expect(groupLongHistoryByYear(days, "year")).toBe(days);
   });
 });
 

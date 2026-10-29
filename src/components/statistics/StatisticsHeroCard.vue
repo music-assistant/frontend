@@ -81,7 +81,7 @@ import { computed } from "vue";
 
 const props = withDefaults(
   defineProps<{
-    // gap-filled over the whole period
+    // every bucket of the period, empty ones included
     points: StatisticsTimeSeriesPoint[];
     period: StatisticsPeriod;
     loading?: boolean;

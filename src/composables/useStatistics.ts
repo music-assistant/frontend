@@ -1,6 +1,6 @@
 import {
-  fillPlaysOverTimeGaps,
   getPlaysOverTimeGranularity,
+  groupLongHistoryByYear,
 } from "@/helpers/statistics_time_series";
 import api, { ConnectionState } from "@/plugins/api";
 import {
@@ -22,8 +22,8 @@ import { toast } from "vue-sonner";
 
 /** Rows in the top items table. */
 export const TOP_ITEMS_LIMIT = 50;
-/** Artists ranked for the number one card and to link listening time rows. */
-export const TOP_ARTISTS_LIMIT = 10;
+/** The number one artist card only needs the first artist. */
+export const TOP_ARTISTS_LIMIT = 1;
 /** Entries asked for from the distribution and listening time commands. */
 export const DISTRIBUTION_LIMIT = 10;
 /**
@@ -37,7 +37,6 @@ const LOAD_FAILED_TOAST_ID = "statistics-load-failed";
 
 /** Everything the statistics views show for one period. */
 export interface StatisticsData {
-  // gap-filled over the whole period
   playsOverTime: StatisticsTimeSeriesPoint[];
   topTracks: StatisticsTopItemResult[];
   topArtists: StatisticsTopItemResult[];
@@ -57,7 +56,7 @@ type StatisticsRequests = {
 
 const REQUESTS: StatisticsRequests = {
   playsOverTime: async (period) =>
-    fillPlaysOverTimeGaps(
+    groupLongHistoryByYear(
       await api.getPlaysOverTime(period, getPlaysOverTimeGranularity(period)),
       period,
     ),

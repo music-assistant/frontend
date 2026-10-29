@@ -156,7 +156,7 @@ describe("useStatistics", () => {
       "week",
       TOP_ITEMS_LIMIT,
     );
-    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ARTIST, "week", 10);
+    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ARTIST, "week", 1);
     expect(api.getListeningActivity).toHaveBeenCalledWith("week");
     expect(api.getListeningTime).toHaveBeenCalledWith("week", "artist", 10);
     expect(api.getGenreDistribution).toHaveBeenCalledWith(
@@ -177,19 +177,22 @@ describe("useStatistics", () => {
     expect(api.getListeningActivity).not.toHaveBeenCalled();
   });
 
-  it("gap-fills plays over time", async () => {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date(2026, 9, 14, 12));
-    api.getPlaysOverTime.mockResolvedValue([
-      { timestamp: "2026-10-12", value: 3 },
-    ]);
+  it("sums a long all-time history of plays into years", async () => {
+    api.getPlaysOverTime.mockResolvedValue(
+      Array.from({ length: 72 }, (_, index) => ({
+        timestamp: `${2020 + Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`,
+        value: 1,
+      })),
+    );
     const statistics = setupStatistics(["playsOverTime"]);
+    statistics.period.value = "all_time";
     await flushPromises();
 
-    expect(statistics.data.value.playsOverTime).toHaveLength(8);
-    expect(statistics.data.value.playsOverTime[5]).toEqual({
-      timestamp: "2026-10-12",
-      value: 3,
+    expect(api.getPlaysOverTime).toHaveBeenLastCalledWith("all_time", "month");
+    expect(statistics.data.value.playsOverTime).toHaveLength(6);
+    expect(statistics.data.value.playsOverTime[0]).toEqual({
+      timestamp: "2020",
+      value: 12,
     });
   });
 
