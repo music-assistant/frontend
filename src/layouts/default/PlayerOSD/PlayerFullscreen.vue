@@ -638,7 +638,6 @@ import {
 } from "@/helpers/chapters";
 import api from "@/plugins/api";
 import {
-  BookmarksUpdate,
   EventMessage,
   EventType,
   MediaItemBookmark,
@@ -1412,11 +1411,11 @@ onMounted(() => {
   const unsub = api.subscribe(
     EventType.BOOKMARKS_UPDATED,
     (evt: EventMessage) => {
-      const update = evt.data as BookmarksUpdate;
       const streamdetails = store.curQueueItem?.streamdetails;
       if (
-        update.provider_instance_id === streamdetails?.provider &&
-        update.provider_item_id === streamdetails?.item_id
+        streamdetails &&
+        evt.object_id ===
+          `${streamdetails.provider}://${streamdetails.media_type}/${streamdetails.item_id}`
       ) {
         loadPlayingBookmarks();
       }

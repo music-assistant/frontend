@@ -489,7 +489,7 @@ export enum EventType {
   PLAYLOG_UPDATED = "playlog_updated",
   // a user's like, dislike or unset on an item changed; object_id is the item uri
   FAVORITE_UPDATED = "favorite_updated",
-  // a user's bookmarks of one copy changed; object_id is the copy's uri
+  // a user's bookmarks of one copy changed; object_id is the copy's uri, data the user id
   BOOKMARKS_UPDATED = "bookmarks_updated",
   PROVIDERS_UPDATED = "providers_updated",
   TASKS_UPDATED = "tasks_updated",
@@ -722,15 +722,6 @@ export interface FavoriteUpdate {
   favorite: boolean | null;
   // the user the change applies to; the server only sends the event to that
   // user, but it is checked anyway
-  user_id: string;
-}
-
-// data of the BOOKMARKS_UPDATED event: the copy whose bookmarks changed
-export interface BookmarksUpdate {
-  media_type: MediaType;
-  provider_instance_id: string;
-  provider_item_id: string;
-  // the server only sends the event to this user
   user_id: string;
 }
 

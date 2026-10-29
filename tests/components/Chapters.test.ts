@@ -45,13 +45,8 @@ async function bookmarksUpdated(
     if (event !== EventType.BOOKMARKS_UPDATED) continue;
     callback({
       event,
-      object_id: "",
-      data: {
-        media_type: MediaType.AUDIOBOOK,
-        provider_instance_id,
-        provider_item_id,
-        user_id: "user1",
-      },
+      object_id: `${provider_instance_id}://audiobook/${provider_item_id}`,
+      data: "user1",
     } as EventMessage);
   }
   await flushPromises();

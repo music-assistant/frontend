@@ -131,7 +131,6 @@ import {
   type MediaItemChapter,
   type PodcastEpisode,
   EventType,
-  type BookmarksUpdate,
   type EventMessage,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -333,20 +332,14 @@ onMounted(() => {
   const unsub = api.subscribe(
     EventType.BOOKMARKS_UPDATED,
     (evt: EventMessage) => {
-      const update = evt.data as BookmarksUpdate;
       const item = props.itemDetails;
-      if (
-        update.media_type === item.media_type &&
-        ((update.provider_instance_id === item.provider &&
-          update.provider_item_id === item.item_id) ||
-          item.provider_mappings.some(
-            (x) =>
-              x.provider_instance === update.provider_instance_id &&
-              x.item_id === update.provider_item_id,
-          ))
-      ) {
-        loadBookmarks();
-      }
+      const copies = [
+        item.uri,
+        ...item.provider_mappings.map(
+          (x) => `${x.provider_instance}://${item.media_type}/${x.item_id}`,
+        ),
+      ];
+      if (evt.object_id && copies.includes(evt.object_id)) loadBookmarks();
     },
   );
   onBeforeUnmount(unsub);
