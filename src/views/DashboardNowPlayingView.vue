@@ -1,5 +1,10 @@
 <template>
-  <div class="now-playing-view" :style="{ background: backgroundGradient }">
+  <div
+    class="now-playing-view"
+    :class="{ 'now-playing-view--on-device': onDevice }"
+    :style="{ background: backgroundGradient }"
+    @click="leave"
+  >
     <VisualizerCanvas
       v-if="visualizerActive"
       :preset="visualizerPresetPref"
@@ -45,7 +50,8 @@
         </template>
       </div>
 
-      <div class="now-playing-timeline">
+      <!-- seeking or switching the time display is not a way out -->
+      <div class="now-playing-timeline" @click.stop>
         <PlayerTimeline
           :show-labels="true"
           :color="timelineColor"
@@ -70,11 +76,13 @@ import {
   paletteFromServer,
 } from "@/helpers/utils";
 import PlayerTimeline from "@/layouts/default/PlayerOSD/PlayerTimeline.vue";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
+import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { useColorMode } from "@vueuse/core";
 import Color from "color";
-import { computed, onMounted } from "vue";
+import { computed, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
@@ -85,6 +93,37 @@ onMounted(() => {
   if (typeof playerId === "string" && playerId) {
     store.activePlayerId = playerId;
   }
+});
+
+// Opened from the player on this device, rather than cast to a display or
+// opened as a kiosk link (?frameless), the view hides the app's chrome while it
+// is shown and leaves on Escape or a click, back to the player.
+const onDevice =
+  !authManager.isDashboardViewer?.() && route.query.frameless === undefined;
+const framelessBefore = store.frameless;
+
+const leave = () => {
+  if (!onDevice) return;
+  if (router.options.history.state.back) router.back();
+  else void router.push("/");
+};
+
+const onKeydown = (event: KeyboardEvent) => {
+  if (event.key === "Escape") leave();
+};
+
+onMounted(() => {
+  if (!onDevice) return;
+  store.frameless = true;
+  document.addEventListener("keydown", onKeydown);
+});
+
+onUnmounted(() => {
+  if (!onDevice) return;
+  document.removeEventListener("keydown", onKeydown);
+  store.frameless = framelessBefore;
+  // the player it was opened from is where it leaves to
+  store.showFullscreenPlayer = true;
 });
 
 // Synced marquee scrolling for the title/artist, same as the fullscreen player.
@@ -142,6 +181,11 @@ const backgroundGradient = computed(() => {
   padding: 5vh 5vw 9vh;
   box-sizing: border-box;
   color: var(--text-color, #fff);
+}
+
+/* on this device a click anywhere leaves */
+.now-playing-view--on-device {
+  cursor: pointer;
 }
 
 /* Lift content above the visualizer layer (z-index 0). */
