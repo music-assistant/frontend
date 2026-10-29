@@ -143,6 +143,16 @@ export const playerVisible = function (
 };
 
 /**
+ * Check if a player is managed outside of Music Assistant (e.g. a group formed from
+ * an Apple Home grouping): nothing about it can be changed here.
+ */
+export const isPlayerManagedExternally = function (
+  player: Player | null | undefined,
+): boolean {
+  return player?.managed_externally === true;
+};
+
+/**
  * Check if the player is unavailable.
  *
  * A needs_setup player is also serialized as unavailable, but it has its own

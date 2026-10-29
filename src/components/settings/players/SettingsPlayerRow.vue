@@ -3,8 +3,9 @@
     v-hold="onHold"
     variant="outline"
     size="sm"
-    class="player-row cursor-pointer rounded-(--radius-xl) hover:bg-accent/50"
+    class="player-row rounded-(--radius-xl)"
     :class="{
+      'cursor-pointer hover:bg-accent/50': !isManagedExternally,
       'player-disabled opacity-60': !playerConfig.enabled,
       'player-unavailable opacity-70': isUnavailable,
     }"
@@ -63,6 +64,7 @@
         size="icon-sm"
         :aria-label="menuLabel"
         :title="menuLabel"
+        :disabled="isManagedExternally"
         @click.stop="handleMenu"
       >
         <MoreVertical class="size-4" />
@@ -106,13 +108,18 @@ const {
   player,
   playerName,
   isUnavailable,
+  isManagedExternally,
   isThisDevice,
   needsSetup,
   providerName,
   outputProtocols,
 } = useSettingsPlayer(toRef(props, "playerConfig"));
 
-const menuLabel = computed(() => `${$t("more_options")}: ${playerName.value}`);
+const menuLabel = computed(() =>
+  isManagedExternally.value
+    ? $t("settings.player_managed_externally")
+    : `${$t("more_options")}: ${playerName.value}`,
+);
 
 const handleMenu = (event: Event) => {
   emit("menu", event, props.playerConfig);

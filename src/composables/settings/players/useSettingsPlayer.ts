@@ -1,5 +1,9 @@
 import { getPlayerName } from "@/helpers/player_config";
-import { isBuiltinPlayer, isPlayerUnavailable } from "@/helpers/players";
+import {
+  isBuiltinPlayer,
+  isPlayerManagedExternally,
+  isPlayerUnavailable,
+} from "@/helpers/players";
 import { api } from "@/plugins/api";
 import type { PlayerConfig } from "@/plugins/api/interfaces";
 import { computed, type Ref } from "vue";
@@ -9,6 +13,10 @@ export function useSettingsPlayer(playerConfig: Ref<PlayerConfig>) {
   const player = computed(() => api.players[playerConfig.value.player_id]);
   const playerName = computed(() => getPlayerName(playerConfig.value));
   const isUnavailable = computed(() => isPlayerUnavailable(player.value));
+  // nothing about it can be changed here: no settings page and no menu
+  const isManagedExternally = computed(() =>
+    isPlayerManagedExternally(player.value),
+  );
   const isThisDevice = computed(
     () => player.value !== undefined && isBuiltinPlayer(player.value),
   );
@@ -30,6 +38,7 @@ export function useSettingsPlayer(playerConfig: Ref<PlayerConfig>) {
     player,
     playerName,
     isUnavailable,
+    isManagedExternally,
     isThisDevice,
     needsSetup,
     providerName,

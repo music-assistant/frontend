@@ -2,6 +2,7 @@ import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { returnedByHistory } from "@/helpers/navigation";
+import { isPlayerManagedExternally } from "@/helpers/players";
 import { $t } from "@/plugins/i18n";
 import { nextTick, watch } from "vue";
 import {
@@ -21,6 +22,9 @@ declare module "vue-router" {
   interface RouteMeta {
     // only a role granting this scope may open the route
     requiresScope?: Scope;
+    // the route changes the player its playerId/queueId param names: one managed
+    // outside of Music Assistant is turned away, as nothing about it can be changed
+    changesPlayer?: boolean;
   }
 }
 
@@ -636,7 +640,10 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayer.vue"
               ),
             props: true,
-            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
+            meta: {
+              requiresScope: Scope.CONFIG_PLAYERS_WRITE,
+              changesPlayer: true,
+            },
           },
           {
             path: "editplayer/:playerId/options",
@@ -656,7 +663,10 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editdsp" */ "@/views/settings/EditPlayerDsp.vue"
               ),
             props: true,
-            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
+            meta: {
+              requiresScope: Scope.CONFIG_PLAYERS_WRITE,
+              changesPlayer: true,
+            },
           },
           {
             path: "editqueue/:queueId",
@@ -666,7 +676,10 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editqueue" */ "@/views/settings/EditPlayerQueue.vue"
               ),
             props: true,
-            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
+            meta: {
+              requiresScope: Scope.CONFIG_PLAYERS_WRITE,
+              changesPlayer: true,
+            },
           },
           {
             path: "editcore/:domain",
@@ -824,6 +837,16 @@ router.beforeEach(async (to) => {
     if (missingScope) {
       console.warn(`The ${missingScope} scope is required for`, to.path);
       return { name: "discover" };
+    }
+  }
+
+  if (to.matched.some((record) => record.meta.changesPlayer)) {
+    const playerId = to.params.playerId ?? to.params.queueId;
+    if (
+      typeof playerId === "string" &&
+      isPlayerManagedExternally(api.players[playerId])
+    ) {
+      return { name: "playersettings" };
     }
   }
 });

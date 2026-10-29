@@ -118,6 +118,8 @@ import {
 import AutoplayRepeatLockButton from "@/layouts/default/PlayerOSD/AutoplayRepeatLockButton.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useQueueModes } from "@/layouts/default/PlayerOSD/useQueueModes";
+import { isPlayerManagedExternally } from "@/helpers/players";
+import { api } from "@/plugins/api";
 import { Scope, type ItemMapping } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
@@ -192,8 +194,11 @@ const description = computed(() => {
 });
 
 // The full queue settings page needs the scope to change player settings (matches the menu).
-const canConfigure = computed(() =>
-  authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
+// A player managed outside of Music Assistant has no settings to change here.
+const canConfigure = computed(
+  () =>
+    authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE) &&
+    !isPlayerManagedExternally(api.players[queue.value?.queue_id ?? ""]),
 );
 
 // Collapsed state is remembered per user (server-side preference, so it syncs

@@ -1,8 +1,10 @@
 <template>
   <Card
     v-hold="onHold"
-    class="player-card min-h-[120px] cursor-pointer gap-3 rounded-(--radius-xl) p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
+    class="player-card min-h-[120px] gap-3 rounded-(--radius-xl) p-5 transition duration-200"
     :class="{
+      'cursor-pointer hover:-translate-y-0.5 hover:shadow-md':
+        !isManagedExternally,
       'player-disabled opacity-60': !playerConfig.enabled,
       'player-unavailable opacity-70': isUnavailable,
     }"
@@ -42,6 +44,7 @@
         class="-mt-1 -mr-2 shrink-0 self-start"
         :aria-label="menuLabel"
         :title="menuLabel"
+        :disabled="isManagedExternally"
         @click.stop="handleMenu"
       >
         <MoreVertical class="size-4" />
@@ -96,13 +99,18 @@ const {
   player,
   playerName,
   isUnavailable,
+  isManagedExternally,
   isThisDevice,
   needsSetup,
   providerName,
   outputProtocols,
 } = useSettingsPlayer(toRef(props, "playerConfig"));
 
-const menuLabel = computed(() => `${$t("more_options")}: ${playerName.value}`);
+const menuLabel = computed(() =>
+  isManagedExternally.value
+    ? $t("settings.player_managed_externally")
+    : `${$t("more_options")}: ${playerName.value}`,
+);
 
 const handleClick = () => {
   emit("click", props.playerConfig);
