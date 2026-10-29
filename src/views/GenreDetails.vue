@@ -55,6 +55,7 @@
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
         :forced-view-mode="itemsViewMode"
+        :hide-actions-by-default="wasCompact"
       >
         <template #title>
           <span>{{ $t("artists") }}</span>
@@ -75,6 +76,7 @@
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
         :forced-view-mode="itemsViewMode"
+        :hide-actions-by-default="wasCompact"
       >
         <template #title>
           <span>{{ $t("albums") }}</span>
@@ -96,6 +98,7 @@
         :show-track-number="false"
         :hide-on-empty="true"
         :forced-view-mode="itemsViewMode"
+        :hide-actions-by-default="wasCompact"
       >
         <template #title>
           <span>{{ $t("tracks") }}</span>
@@ -116,6 +119,7 @@
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
         :forced-view-mode="itemsViewMode"
+        :hide-actions-by-default="wasCompact"
       >
         <template #title>
           <span>{{ $t("playlists") }}</span>
@@ -136,6 +140,7 @@
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
         :forced-view-mode="itemsViewMode"
+        :hide-actions-by-default="wasCompact"
       >
         <template #title>
           <span>{{ $t("podcasts") }}</span>
@@ -156,6 +161,7 @@
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
         :forced-view-mode="itemsViewMode"
+        :hide-actions-by-default="wasCompact"
       >
         <template #title>
           <span>{{ $t("audiobooks") }}</span>
@@ -187,8 +193,13 @@ import InfoHeader from "@/components/InfoHeader.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { Button } from "@/components/ui/button";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
-import { useUserPreferences } from "@/composables/userPreferences";
+import {
+  updateUserPreferences,
+  useUserPreferences,
+} from "@/composables/userPreferences";
 import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
+import { applyGenreView, GENRE_VIEW_PREFERENCE } from "@/helpers/genre_view";
+import { LEGACY_COMPACT_VIEW_MODE } from "@/helpers/grid_size";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
@@ -231,22 +242,22 @@ const canManageLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_MANAGE),
 );
 
-type GenreViewMode = "discovery" | "list" | "panel" | "panel_compact";
+type GenreViewMode = "discovery" | "list" | "panel";
 
-const { getPreference, setPreference } = useUserPreferences();
+const { getPreference } = useUserPreferences();
 const savedViewMode = getPreference<GenreViewMode>(
-  "genre_detail_view",
+  GENRE_VIEW_PREFERENCE,
   "discovery",
 );
-const viewMode = ref<GenreViewMode>(savedViewMode.value);
+// the compact thumbs view became thumbs without the action buttons
+const wasCompact = (savedViewMode.value as string) === LEGACY_COMPACT_VIEW_MODE;
+const viewMode = ref<GenreViewMode>(wasCompact ? "panel" : savedViewMode.value);
 const itemsViewMode = computed(() =>
-  viewMode.value !== "discovery"
-    ? (viewMode.value as "list" | "panel" | "panel_compact")
-    : undefined,
+  viewMode.value !== "discovery" ? viewMode.value : undefined,
 );
 
 watch(viewMode, (newVal) => {
-  setPreference("genre_detail_view", newVal);
+  void updateUserPreferences((current) => applyGenreView(current, newVal));
 });
 
 const displayRows = computed(() =>
@@ -259,7 +270,6 @@ const tilesPerView = computed(() => panelViewItemResponsive(0) + 0.5);
 const viewModeIcon = computed(() => {
   if (viewMode.value === "discovery") return "mdi-view-dashboard";
   if (viewMode.value === "panel") return "mdi-grid";
-  if (viewMode.value === "panel_compact") return "mdi-view-comfy";
   return "mdi-view-list";
 });
 
@@ -296,14 +306,6 @@ const openViewModeMenu = (e: MouseEvent) => {
         selected: viewMode.value === "panel",
         action: () => {
           viewMode.value = "panel";
-        },
-      },
-      {
-        label: "view.panel_compact",
-        icon: "mdi-view-comfy",
-        selected: viewMode.value === "panel_compact",
-        action: () => {
-          viewMode.value = "panel_compact";
         },
       },
     ],

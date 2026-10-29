@@ -2934,5 +2934,7 @@
     "select_all": "Izaberi sve",
     "no_content_filter_hint": "Pokušajte drugu pretragu ili promenite filtere.",
     "items_load_failed": "Nije bilo moguće učitati stavke.",
-    "featured_artists": "Istaknuti izvođači"
+    "featured_artists": "Istaknuti izvođači",
+    "review_setup": "Pregled",
+    "n_audiobooks": "{count} audio-knjiga | {count} audio-knjige | {count} audio-knjiga"
 }

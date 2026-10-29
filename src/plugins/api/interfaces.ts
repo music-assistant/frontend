@@ -1109,6 +1109,46 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number | null;
 }
 
+/** The time window a statistics command covers. */
+export type StatisticsPeriod = "today" | "week" | "month" | "year" | "all_time";
+
+/** The bucket size of `statistics/plays_over_time`. */
+export type StatisticsGranularity = "hour" | "day" | "week" | "month";
+
+/** How `statistics/listening_time` groups its minutes. */
+export type StatisticsGroupBy = "artist" | "genre";
+
+/** A ranked media item and its completed-play count from statistics endpoints. */
+export interface StatisticsTopItemResult {
+  item: ItemMapping;
+  play_count: number;
+}
+
+export interface StatisticsDistributionItem {
+  name: string;
+  value: number;
+}
+
+export interface StatisticsTimeSeriesPoint {
+  timestamp: string;
+  value: number;
+}
+
+/** Plays in one weekday (0 is Monday) and local hour (0-23) cell. */
+export interface StatisticsHeatmapPoint {
+  hour: number;
+  weekday: number;
+  value: number;
+}
+
+/** Minutes of completed plays for one artist or genre. */
+export interface StatisticsListeningTimeItem {
+  name: string;
+  minutes: number;
+  // the artist when grouped by artist, null for a genre
+  item?: ItemMapping | null;
+}
+
 export interface Artist extends MediaItem {
   artist_type: ArtistType;
 }

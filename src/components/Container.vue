@@ -11,6 +11,7 @@ export type {
   ContainerEmits,
   ContainerProps,
 } from "@/composables/useContainer";
+import { isDark } from "@/composables/useThemePreference";
 </script>
 
 <script setup lang="ts">
@@ -20,8 +21,6 @@ import {
   type ContainerEmits,
   type ContainerProps,
 } from "@/composables/useContainer";
-import { computed } from "vue";
-import { useTheme } from "vuetify";
 
 const props = withDefaults(
   defineProps<ContainerProps>(),
@@ -29,9 +28,6 @@ const props = withDefaults(
 );
 
 defineEmits<ContainerEmits>();
-
-const theme = useTheme();
-const isDark = computed(() => theme.current.value.dark);
 
 const { containerProps, containerClasses } = useContainer(props, isDark.value);
 </script>
