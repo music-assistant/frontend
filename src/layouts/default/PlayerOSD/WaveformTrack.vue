@@ -18,7 +18,7 @@
       <path
         :d="barsPath"
         :stroke="color"
-        :stroke-opacity="HOVER_ALPHA"
+        :stroke-opacity="HOVER_OVERLAY_ALPHA"
         :stroke-width="BAR_WIDTH"
         stroke-linecap="round"
         fill="none"
@@ -65,6 +65,9 @@ const BAR_WIDTH = 2;
 const MIN_BAR_HEIGHT = 2;
 const DIM_ALPHA = 0.3;
 const HOVER_ALPHA = 0.5;
+// The hover layer is painted over the dim layer, so its own opacity is chosen to
+// composite to HOVER_ALPHA rather than adding to DIM_ALPHA.
+const HOVER_OVERLAY_ALPHA = (HOVER_ALPHA - DIM_ALPHA) / (1 - DIM_ALPHA);
 
 const containerEl = ref<HTMLDivElement>();
 
