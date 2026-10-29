@@ -390,7 +390,6 @@ import {
   canSavePlaylistMoves,
   isPlaylistEditPending,
   sendPlaylistEdit,
-  untilTaskEnds,
 } from "@/composables/usePlaylistTrackReorder";
 import {
   ArrowDown,
@@ -1080,14 +1079,10 @@ export const getContextMenuItems = async function (
         labelArgs: [],
         action: () => {
           if (!canEditOrder()) return;
-          // the removal runs as a background task; the positions hold until
-          // it is done
-          void sendPlaylistEdit(playlist.item_id, async () =>
-            untilTaskEnds(
-              await api.removePlaylistTracks(
-                playlist.item_id,
-                items.map((x) => ("position" in x ? x.position : 0) as number),
-              ),
+          void sendPlaylistEdit(playlist.item_id, () =>
+            api.removePlaylistTracks(
+              playlist.item_id,
+              items.map((x) => ("position" in x ? x.position : 0) as number),
             ),
           );
         },

@@ -457,10 +457,8 @@ import {
 } from "@/composables/useListingFilters";
 import { useListingCount } from "@/composables/useListingCount";
 import { useListingSaves } from "@/composables/useListingSaves";
-import {
-  canSavePlaylistMoves,
-  usePlaylistTrackReorder,
-} from "@/composables/usePlaylistTrackReorder";
+import { canSavePlaylistMoves } from "@/composables/usePlaylistTrackReorder";
+import { useTrackReorderRows } from "@/composables/useTrackReorderRows";
 import type {
   LoadDataParams,
   LoadPagedDataFn,
@@ -476,10 +474,7 @@ import {
 } from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import { selectionRange } from "@/helpers/selection_range";
-import {
-  listsPlaylistFromStart,
-  nearestIndexOf,
-} from "@/helpers/playlist_reorder";
+import { listsPlaylistFromStart } from "@/helpers/playlist_reorder";
 import {
   GRID_SIZE_DEFAULT,
   gridColumns,
@@ -1461,12 +1456,6 @@ const canDragTracks = computed(
 const trackRowColumns = computed<TrackColumn[]>(() =>
   canDragTracks.value ? ["handle", ...trackColumns.value] : trackColumns.value,
 );
-const selectedRowIndices = () =>
-  showCheckboxes.value
-    ? pagedItems.value.flatMap((item, index) =>
-        isSelected(item) ? [index] : [],
-      )
-    : [];
 const listRowsEl = ref<HTMLElement | null>(null);
 const infiniteScrollEl = ref<{ reset: () => void } | null>(null);
 // a reload that finds the listing grew past its end pages on again; a load
@@ -1478,15 +1467,17 @@ watch(allItemsReceived, (received, wasReceived) => {
 });
 const {
   startDrag: startTrackDrag,
-  moveBy: moveTrackRowBy,
-  moveRows: moveTrackRows,
+  moveBy: moveTrackBy,
   refresh: refreshTrackRows,
+  saving: reorderSaving,
   draggingIndex,
   isDragging,
   ghostY,
-  rowOffset,
-  saving: reorderSaving,
-} = usePlaylistTrackReorder({
+  draggedTrack,
+  draggedCount,
+  rowDragStyle: trackRowDragStyle,
+  rowDragClass: trackRowDragClass,
+} = useTrackReorderRows({
   listEl: listRowsEl,
   items: pagedItems,
   // albums re-read their rows the same way, but only a playlist's edits are held
@@ -1495,7 +1486,8 @@ const {
       ? props.parentItem.item_id
       : undefined,
   inOwnOrder: () => canDragTracks.value,
-  selectedIndices: selectedRowIndices,
+  selected: selectedItems,
+  selecting: () => showCheckboxes.value,
   rowHeight: TRACK_ROW_HEIGHT,
   reload: async () => {
     const failed = loadError.value;
@@ -1505,109 +1497,7 @@ const {
       infiniteScrollEl.value?.reset();
     }
   },
-  onReloaded: () => reselectReloadedRows(),
-  // the selection follows the moved tracks to their new places
-  onRowsReplaced: (replacement) => {
-    selectedItems.value = selectedItems.value.flatMap((item) => {
-      const row = replacement(item as MediaItemType);
-      return row ? [row] : [];
-    });
-  },
 });
-let stopFollowingMovedTrack: (() => void) | undefined;
-// frames to wait for the virtual scroller to render a row scrolled into view
-const FOCUS_RENDER_FRAMES = 10;
-let focusFrame: number | undefined;
-// scroll a row's place into view, rendered or not, as the rows are virtualized
-const scrollRowSlotIntoView = (list: HTMLElement, index: number) => {
-  const slot = document.createElement("div");
-  slot.style.cssText = `position:absolute;left:0;right:0;top:${index * TRACK_ROW_HEIGHT}px;height:${TRACK_ROW_HEIGHT}px`;
-  list.append(slot);
-  slot.scrollIntoView({ block: "nearest" });
-  slot.remove();
-};
-const focusReorderHandle = (
-  index: number,
-  framesLeft = FOCUS_RENDER_FRAMES,
-) => {
-  if (focusFrame !== undefined) cancelAnimationFrame(focusFrame);
-  focusFrame = undefined;
-  const list = listRowsEl.value;
-  if (!list) return;
-  const handle = list.querySelector<HTMLElement>(
-    `[data-reorder-index="${index}"]`,
-  );
-  if (handle) {
-    handle.focus();
-    handle.scrollIntoView({ block: "nearest" });
-    return;
-  }
-  if (framesLeft === FOCUS_RENDER_FRAMES) scrollRowSlotIntoView(list, index);
-  if (framesLeft > 0) {
-    focusFrame = requestAnimationFrame(() =>
-      focusReorderHandle(index, framesLeft - 1),
-    );
-    return;
-  }
-  // the focused row now holds another track, which an arrow key would move
-  if (list.contains(document.activeElement))
-    (document.activeElement as HTMLElement).blur();
-};
-// the rows are keyed by index, so after a keyboard move the focus follows the
-// track to the row it moved to, and to where it is once the order is read back
-const moveTrackBy = (index: number, delta: number) => {
-  const uri = pagedItems.value[index]?.uri;
-  const movedTo = moveTrackRowBy(index, delta);
-  if (movedTo === undefined) return;
-  void nextTick(() => focusReorderHandle(movedTo));
-  stopFollowingMovedTrack?.();
-  const stop = watch(reorderSaving, (saving) => {
-    if (saving) return;
-    stop();
-    // a failed move reads the old order back; the track nearest to where it
-    // was moved is the one moved, as a playlist can hold a track twice
-    if (uri === undefined || pagedItems.value[movedTo]?.uri === uri) return;
-    const found = nearestIndexOf(pagedItems.value, uri, movedTo);
-    // only while the focus is still on the rows
-    if (found === -1 || !listRowsEl.value?.contains(document.activeElement))
-      return;
-    void nextTick(() => focusReorderHandle(found));
-  });
-  stopFollowingMovedTrack = stop;
-};
-// rows read again are new objects, so the selection moves to the rows that
-// hold the same items
-const reselectReloadedRows = () => {
-  if (!selectedItems.value.length) return;
-  const key = (item: MediaItemTypeOrItemMapping) =>
-    `${item.uri}#${"position" in item ? item.position : ""}`;
-  const rows = new Map(pagedItems.value.map((row) => [key(row), row]));
-  selectedItems.value = selectedItems.value.flatMap((item) => {
-    const row = rows.get(key(item));
-    return row ? [row] : [];
-  });
-};
-const draggedTrack = computed(() =>
-  draggingIndex.value === null
-    ? undefined
-    : pagedItems.value[draggingIndex.value],
-);
-// grabbing a selected row drags every selected row
-const draggedCount = computed(() => {
-  const source = draggingIndex.value;
-  if (source === null) return 0;
-  const selected = selectedRowIndices();
-  return selected.length > 1 && selected.includes(source) ? selected.length : 1;
-});
-const trackRowDragStyle = (index: number) =>
-  isDragging.value
-    ? { transform: `translateY(${rowOffset(index)}px)` }
-    : undefined;
-const trackRowDragClass = (item: MediaItemTypeOrItemMapping, index: number) => {
-  if (draggingIndex.value === index) return "invisible";
-  if (draggedCount.value > 1 && isSelected(item)) return "opacity-40";
-  return undefined;
-};
 
 // Server-paged listings only know their total when the parent passes it. An
 // unfiltered listing that is loaded to its end, or holds less than a page,
@@ -2547,8 +2437,6 @@ const allSelected = computed(
 );
 
 onBeforeUnmount(() => {
-  stopFollowingMovedTrack?.();
-  if (focusFrame !== undefined) cancelAnimationFrame(focusFrame);
   eventbus.off("clearSelection", clearSelection);
   _unsubscribeMediaEvents?.();
   _unsubscribeFavorites?.();

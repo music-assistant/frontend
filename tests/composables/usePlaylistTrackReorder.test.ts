@@ -1,39 +1,27 @@
 import {
   isPlaylistEditPending,
   sendPlaylistEdit,
-  untilPlaylistRemovalsEnd,
-  untilTaskEnds,
   usePlaylistTrackReorder,
 } from "@/composables/usePlaylistTrackReorder";
-import {
-  TaskStatus,
-  type BackgroundTask,
-  type MediaItemType,
-} from "@/plugins/api/interfaces";
-import { ApiCommandError } from "@/plugins/api/errors";
+import type { MediaItemType } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, ref, toRaw } from "vue";
 import { track } from "../fixtures/track";
 
-const { apiMock, ConnectionLostError } = vi.hoisted(() => ({
-  ConnectionLostError: class ConnectionLostError extends Error {},
+const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     movePlaylistTrack: vi.fn<() => Promise<void>>(),
     movePlaylistTracks: vi.fn<() => Promise<void>>(),
     subscribe: vi.fn(),
-    getTask: vi.fn<() => Promise<BackgroundTask>>(),
-    getTasks: vi.fn<() => Promise<BackgroundTask[]>>(),
     state: { value: "initialized" } as { value: string },
   },
 }));
 
-vi.mock("@/plugins/api", async () => ({
+vi.mock("@/plugins/api", () => ({
   api: apiMock,
   default: apiMock,
   ConnectionState: { INITIALIZED: "initialized" },
-  ConnectionLostError,
-  ApiCommandError: (await import("@/plugins/api/errors")).ApiCommandError,
 }));
 
 const pointer = (type: string, y: number) =>
@@ -145,44 +133,6 @@ describe("usePlaylistTrackReorder", () => {
     finishReload();
     await flushPromises();
     expect(reorder.saving.value).toBe(false);
-  });
-
-  it("keeps the playlist's edits held until a removal with a lost reply ends", async () => {
-    const state = ref("initialized");
-    apiMock.state = state;
-    apiMock.subscribe.mockReturnValue(vi.fn());
-    let done = false;
-    void sendPlaylistEdit("1", async () => {
-      state.value = "reconnecting";
-      throw new ConnectionLostError();
-    }).then(() => (done = true));
-    await flushPromises();
-    expect(isPlaylistEditPending("1")).toBe(true);
-
-    // the removal is still queued on the server once it is reached again
-    apiMock.getTasks.mockResolvedValue([
-      {
-        id: "t1",
-        status: TaskStatus.PENDING,
-        metadata: { task_domain: "playlist_remove_tracks", playlist_id: "1" },
-      } as unknown as BackgroundTask,
-    ]);
-    apiMock.getTask.mockResolvedValue({
-      id: "t1",
-      status: TaskStatus.SUCCESS,
-    } as BackgroundTask);
-    state.value = "initialized";
-    await flushPromises();
-    expect(done).toBe(false);
-    expect(isPlaylistEditPending("1")).toBe(true);
-
-    // its end is only seen on the next lookup
-    state.value = "reconnecting";
-    await flushPromises();
-    state.value = "initialized";
-    await flushPromises();
-    expect(done).toBe(true);
-    expect(isPlaylistEditPending("1")).toBe(false);
   });
 
   it("keeps the moved tracks selected, with their new positions", async () => {
@@ -317,6 +267,19 @@ describe("usePlaylistTrackReorder", () => {
     expect(isPlaylistEditPending("1")).toBe(false);
   });
 
+  it("reads the order back when the server turns a menu edit away", async () => {
+    const { reload, reorder } = setup(["A", "B", "C"], []);
+
+    await sendPlaylistEdit("1", async () => {
+      throw new Error("Another edit of this playlist is running");
+    });
+    await flushPromises();
+
+    expect(reload).toHaveBeenCalledOnce();
+    expect(reorder.saving.value).toBe(false);
+    expect(isPlaylistEditPending("1")).toBe(false);
+  });
+
   it("reads the order back once an edit from the menu is done", async () => {
     let finishMove = () => {};
     let finishReload = () => {};
@@ -379,162 +342,5 @@ describe("usePlaylistTrackReorder", () => {
     expect(ids(items.value)).toEqual(["A", "B", "C"]);
     expect(apiMock.movePlaylistTrack).not.toHaveBeenCalled();
     expect(apiMock.movePlaylistTracks).not.toHaveBeenCalled();
-  });
-
-  describe("untilPlaylistRemovalsEnd", () => {
-    const removal = (id: string, playlistId: string, status: TaskStatus) =>
-      ({
-        id,
-        status,
-        metadata: {
-          task_domain: "playlist_remove_tracks",
-          playlist_id: playlistId,
-        },
-      }) as unknown as BackgroundTask;
-
-    it("resolves when no removal of the playlist is running", async () => {
-      apiMock.getTasks.mockResolvedValue([
-        removal("t1", "2", TaskStatus.RUNNING),
-        removal("t2", "1", TaskStatus.SUCCESS),
-        {
-          id: "t3",
-          status: TaskStatus.RUNNING,
-          metadata: {},
-        } as BackgroundTask,
-      ]);
-      let ended = false;
-      void untilPlaylistRemovalsEnd("1").then(() => (ended = true));
-      await flushPromises();
-
-      expect(ended).toBe(true);
-    });
-
-    it("waits for a running removal of the playlist", async () => {
-      let report: (event: { data: BackgroundTask[] }) => void = () => {};
-      apiMock.subscribe.mockImplementation((_type, callback) => {
-        report = callback;
-        return vi.fn();
-      });
-      apiMock.getTasks.mockResolvedValue([
-        removal("t1", "1", TaskStatus.RUNNING),
-      ]);
-      let ended = false;
-      void untilPlaylistRemovalsEnd("1").then(() => (ended = true));
-      await flushPromises();
-      expect(ended).toBe(false);
-
-      report({ data: [removal("t1", "1", TaskStatus.SUCCESS)] });
-      await flushPromises();
-      expect(ended).toBe(true);
-    });
-
-    it("waits for the server to be reached before looking", async () => {
-      const state = ref("reconnecting");
-      apiMock.state = state;
-      apiMock.getTasks.mockResolvedValue([]);
-      let ended = false;
-      void untilPlaylistRemovalsEnd("1").then(() => (ended = true));
-      await flushPromises();
-      expect(apiMock.getTasks).not.toHaveBeenCalled();
-
-      state.value = "initialized";
-      await flushPromises();
-      expect(ended).toBe(true);
-    });
-  });
-
-  describe("untilTaskEnds", () => {
-    const task = (id: string, status: TaskStatus) =>
-      ({ id, status }) as BackgroundTask;
-
-    it("resolves once the task is reported finished", async () => {
-      let report: (event: { data: BackgroundTask[] }) => void = () => {};
-      const unsubscribe = vi.fn();
-      apiMock.subscribe.mockImplementation((_type, callback) => {
-        report = callback;
-        return unsubscribe;
-      });
-      let ended = false;
-      const waiting = untilTaskEnds(task("t1", TaskStatus.PENDING)).then(
-        () => (ended = true),
-      );
-
-      report({ data: [task("t1", TaskStatus.RUNNING)] });
-      await flushPromises();
-      expect(ended).toBe(false);
-      report({ data: [task("t1", TaskStatus.SUCCESS)] });
-      await waiting;
-
-      expect(unsubscribe).toHaveBeenCalledOnce();
-    });
-
-    /** Waits on a pending task across a dropped and restored connection. */
-    async function waitAcrossReconnect() {
-      const unsubscribe = vi.fn();
-      apiMock.subscribe.mockReturnValue(unsubscribe);
-      const state = ref("initialized");
-      apiMock.state = state;
-      let ended = false;
-      void untilTaskEnds(task("t1", TaskStatus.PENDING)).then(
-        () => (ended = true),
-      );
-      // the end could have been reported while the connection was down
-      state.value = "reconnecting";
-      await flushPromises();
-      expect(ended).toBe(false);
-      state.value = "initialized";
-      await flushPromises();
-      return { ended: () => ended, unsubscribe };
-    }
-
-    it("stops waiting when the task finished while disconnected", async () => {
-      apiMock.getTask.mockResolvedValue(task("t1", TaskStatus.SUCCESS));
-
-      const { ended, unsubscribe } = await waitAcrossReconnect();
-
-      expect(apiMock.getTask).toHaveBeenCalledWith("t1");
-      expect(ended()).toBe(true);
-      expect(unsubscribe).toHaveBeenCalledOnce();
-    });
-
-    it("stops waiting when the server no longer holds the task", async () => {
-      apiMock.getTask.mockRejectedValue(
-        new ApiCommandError("Task t1 not found", 3),
-      );
-
-      const { ended } = await waitAcrossReconnect();
-
-      expect(ended()).toBe(true);
-    });
-
-    it("keeps waiting when the task still runs after a reconnect", async () => {
-      apiMock.getTask.mockResolvedValue(task("t1", TaskStatus.RUNNING));
-
-      const { ended } = await waitAcrossReconnect();
-
-      expect(ended()).toBe(false);
-    });
-
-    it("keeps waiting when the task can't be looked up", async () => {
-      apiMock.getTask.mockRejectedValue(
-        new ApiCommandError("Insufficient permissions", 22),
-      );
-
-      const { ended } = await waitAcrossReconnect();
-
-      expect(ended()).toBe(false);
-    });
-
-    it("keeps waiting while the task's end goes unreported", async () => {
-      apiMock.subscribe.mockReturnValue(vi.fn());
-      let ended = false;
-      void untilTaskEnds(task("t1", TaskStatus.PENDING)).then(
-        () => (ended = true),
-      );
-
-      await flushPromises();
-
-      expect(ended).toBe(false);
-    });
   });
 });

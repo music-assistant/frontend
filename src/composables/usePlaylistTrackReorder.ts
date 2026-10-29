@@ -9,113 +9,9 @@ import {
   moveListedItems,
   playlistPosition,
 } from "@/helpers/playlist_reorder";
-import {
-  api,
-  ApiCommandError,
-  ConnectionLostError,
-  ConnectionState,
-} from "@/plugins/api";
-import {
-  EventType,
-  TaskStatus,
-  type BackgroundTask,
-  type EventMessage,
-  type MediaItemType,
-} from "@/plugins/api/interfaces";
+import { api, ConnectionState } from "@/plugins/api";
+import type { MediaItemType } from "@/plugins/api/interfaces";
 import { Ref, computed, reactive, toRaw, watch } from "vue";
-
-const FINISHED_TASK_STATUSES = new Set([
-  TaskStatus.SUCCESS,
-  TaskStatus.PARTIAL_SUCCESS,
-  TaskStatus.FAILED,
-  TaskStatus.CANCELLED,
-]);
-// the server's error for a task it no longer holds
-const INVALID_DATA_ERROR_CODE = 3;
-// the server tags the task removing tracks from a playlist with this domain
-const PLAYLIST_REMOVAL_TASK_DOMAIN = "playlist_remove_tracks";
-
-/**
- * Resolves once a background task has finished or is no longer listed. A
- * report sent while disconnected is lost, so the task is looked up again once
- * the server is reached; a lookup that fails keeps waiting for the next one.
- */
-export const untilTaskEnds = (task: BackgroundTask) =>
-  new Promise<void>((resolve) => {
-    if (FINISHED_TASK_STATUSES.has(task.status)) {
-      resolve();
-      return;
-    }
-    const stop = () => {
-      unsubscribe();
-      stopWatchingConnection();
-      resolve();
-    };
-    const lookUp = async function () {
-      try {
-        const current = await api.getTask(task.id);
-        if (FINISHED_TASK_STATUSES.has(current.status)) stop();
-      } catch (err) {
-        if (
-          err instanceof ApiCommandError &&
-          err.error_code === INVALID_DATA_ERROR_CODE
-        )
-          stop();
-      }
-    };
-    const stopWatchingConnection = watch(
-      () => api.state.value,
-      (state) => {
-        if (state === ConnectionState.INITIALIZED) void lookUp();
-      },
-    );
-    const unsubscribe = api.subscribe(
-      EventType.TASKS_UPDATED,
-      (event: EventMessage) => {
-        const current = (event.data as BackgroundTask[]).find(
-          (listed) => listed.id === task.id,
-        );
-        if (!current || FINISHED_TASK_STATUSES.has(current.status)) stop();
-      },
-    ) as () => void;
-  });
-
-/**
- * Resolves once the server is reached again and no removal of the playlist's
- * tracks is left running there. An edit whose reply was lost may still be
- * queued, and its task is not known here; a lookup that fails waits for the
- * next connection.
- */
-export const untilPlaylistRemovalsEnd = (id: string) =>
-  new Promise<void>((resolve) => {
-    let lookingUp = false;
-    const lookUp = async function () {
-      if (lookingUp) return;
-      lookingUp = true;
-      try {
-        const removals = (await api.getTasks()).filter(
-          (task) =>
-            task.metadata?.task_domain === PLAYLIST_REMOVAL_TASK_DOMAIN &&
-            task.metadata?.playlist_id === id &&
-            !FINISHED_TASK_STATUSES.has(task.status),
-        );
-        stopWatchingConnection();
-        await Promise.all(removals.map(untilTaskEnds));
-        resolve();
-      } catch {
-        // looked up again on the next connection
-      } finally {
-        lookingUp = false;
-      }
-    };
-    const stopWatchingConnection = watch(
-      () => api.state.value,
-      (state) => {
-        if (state === ConnectionState.INITIALIZED) void lookUp();
-      },
-      { immediate: true },
-    );
-  });
 
 // Counts per playlist id, for edits on their way from outside the playlist's
 // listing (such as the track menu), and for every edit that is saving or
@@ -153,10 +49,10 @@ export const sendPlaylistEdit = async function (
   hold(pendingEdits, id);
   try {
     await edit();
-  } catch (err) {
-    // the api already reports the failure to the user; a reply lost with the
-    // connection leaves the edit unknown, and a removal may still be queued
-    if (err instanceof ConnectionLostError) await untilPlaylistRemovalsEnd(id);
+  } catch {
+    // the api already reports the failure to the user, such as the server
+    // turning the edit away while another one is running; the listing reads
+    // the order back all the same
   } finally {
     // the listing takes over the hold before this one ends
     release(outsideEdits, id);

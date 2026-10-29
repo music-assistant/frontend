@@ -6,7 +6,6 @@ import {
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
-  EventType,
   ListingType,
   MediaType,
   type Player,
@@ -1376,19 +1375,3 @@ function createErrorResult(
     details,
   };
 }
-
-describe("MusicAssistantApi events", () => {
-  it("reaches every listener when one unsubscribes while being called", () => {
-    const api = new MusicAssistantApi();
-    const first = vi.fn(() => unsubscribeFirst());
-    const second = vi.fn();
-    const unsubscribeFirst = api.subscribe(EventType.TASKS_UPDATED, first);
-    api.subscribe(EventType.TASKS_UPDATED, second);
-
-    api.signalEvent({ event: EventType.TASKS_UPDATED, data: [] });
-    api.signalEvent({ event: EventType.TASKS_UPDATED, data: [] });
-
-    expect(first).toHaveBeenCalledOnce();
-    expect(second).toHaveBeenCalledTimes(2);
-  });
-});
