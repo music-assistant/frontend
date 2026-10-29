@@ -27,11 +27,7 @@
           :label="$t('delete_genre')"
           @click="deleteGenre"
         />
-        <ItemSourceBadge
-          class="size-9 rounded-md border border-white/25 bg-black/40"
-          :item="item"
-          :size="20"
-        />
+        <DetailHeroSourceBadge :item="item" />
       </div>
     </template>
   </DetailHero>
@@ -42,13 +38,13 @@ import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
-import ItemSourceBadge from "@/components/ItemSourceBadge.vue";
+import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { ImageType, Scope, type Genre } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { Merge, Trash2 } from "@lucide/vue";
-import { computed, type Component } from "vue";
+import { computed } from "vue";
 
 export interface Props {
   item?: Genre;
