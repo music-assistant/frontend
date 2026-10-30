@@ -697,10 +697,41 @@ describe("useMusicQuizPlayer", () => {
       object_id: "quiz-instance",
       data: { event: "game_updated", state: QUIZ_INFO },
     });
+    // The unjoined info refresh is debounced; let it fire.
+    await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
 
     expect(player.gameRemoved.value).toBe(false);
     expect(player.info.value).toEqual(QUIZ_INFO);
+  });
+
+  it("coalesces a burst of unjoined updates into one background refresh without flashing loading", async () => {
+    mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    // Initial (foreground) load only.
+    expect(mockGetMusicQuizInfo).toHaveBeenCalledTimes(1);
+    expect(player.loading.value).toBe(false);
+
+    // A full lobby: many other players joining in quick succession.
+    for (let i = 0; i < 5; i++) {
+      providerHandlers[0]({
+        object_id: "quiz-instance",
+        data: { event: "game_updated", state: QUIZ_INFO },
+      });
+    }
+
+    // No extra fetch yet and no loading flash while the burst is in flight.
+    expect(mockGetMusicQuizInfo).toHaveBeenCalledTimes(1);
+    expect(player.loading.value).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
+
+    // The whole burst collapsed into a single background refresh.
+    expect(mockGetMusicQuizInfo).toHaveBeenCalledTimes(2);
+    expect(player.loading.value).toBe(false);
   });
 
   it("ignores pending info after the game is removed", async () => {
@@ -826,6 +857,8 @@ describe("useMusicQuizPlayer", () => {
       object_id: "quiz-instance",
       data: { event: "game_updated", state: PUBLIC_STATE },
     });
+    // Now unjoined, so the info refresh is debounced; let it fire.
+    await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
     expect(player.gameRemoved.value).toBe(false);
 
@@ -1126,6 +1159,8 @@ describe("useMusicQuizPlayer", () => {
       object_id: "quiz-instance",
       data: { event: "game_updated", state: PUBLIC_STATE },
     });
+    // The unjoined info refresh (which drives the auto-join) is debounced.
+    await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
 
     expect(mockJoinMusicQuiz).toHaveBeenCalledTimes(2);
@@ -1159,6 +1194,8 @@ describe("useMusicQuizPlayer", () => {
       object_id: "quiz-instance",
       data: { event: "game_updated", state: PUBLIC_STATE },
     });
+    // The unjoined info refresh (which drives the auto-join) is debounced.
+    await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
 
     expect(mockJoinMusicQuiz).toHaveBeenCalledTimes(2);

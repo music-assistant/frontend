@@ -261,6 +261,11 @@ const unsupportedGame = computed(() => {
 const showLanding = computed(
   () =>
     !!resolvedDefinition.value &&
+    // `loading` is only raised by foreground loads (initial load and
+    // `resetToJoinInfo`), never by event-driven background refreshes, so
+    // gating on it shows the spinner instead of a stale previous-game landing
+    // while a refetch is in flight, without remounting the join form (and
+    // wiping the half-typed name) whenever another player joins.
     ((!!activeInfo.value && !playerId.value && !loading.value) ||
       (!!playerId.value && !!activeState.value && !landingSeen.value)),
 );

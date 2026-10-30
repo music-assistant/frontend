@@ -196,7 +196,10 @@ function hero(wrapper: VueWrapper) {
   return wrapper.findComponent({ name: "AlbumHero" });
 }
 
-/** Catches the page's item updates, to hand it an updated album. */
+/**
+ * Catches the page's item updates, to hand it an updated album. The page
+ * applies an update once updates stop, so the wait is run straight away.
+ */
 function captureAlbumUpdates() {
   const onUpdated: Array<(evt: EventMessage) => void> = [];
   mockSubscribe.mockImplementation(((
@@ -206,8 +209,12 @@ function captureAlbumUpdates() {
     if (type === EventType.MEDIA_ITEM_UPDATED) onUpdated.push(callback);
     return () => {};
   }) as never);
-  return (data: Album) =>
+  return (data: Album) => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     onUpdated.forEach((callback) => callback({ data } as EventMessage));
+    vi.runAllTimers();
+    vi.useRealTimers();
+  };
 }
 
 /** Runs the loader the tracks listing was handed, the way the listing does. */

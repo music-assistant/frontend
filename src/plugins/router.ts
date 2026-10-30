@@ -2,6 +2,7 @@ import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { returnedByHistory } from "@/helpers/navigation";
+import { parseStatisticsPeriod } from "@/helpers/statistics_period";
 import { $t } from "@/plugins/i18n";
 import { nextTick, watch } from "vue";
 import {
@@ -181,6 +182,17 @@ export const routes: RouteRecordRaw[] = [
             typeof route.query.payload === "string" ? route.query.payload : "",
         }),
         meta: { requiresScope: Scope.LIBRARY_READ },
+      },
+      {
+        path: "/statistics",
+        name: "statistics",
+        component: () =>
+          import(
+            /* webpackChunkName: "statistics" */ "@/views/StatisticsView.vue"
+          ),
+        props: (route: { query: Record<string, unknown> }) => ({
+          period: parseStatisticsPeriod(route.query.period),
+        }),
       },
       {
         path: "/ai-radio",
