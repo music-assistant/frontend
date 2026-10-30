@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CommandOptions } from "./commandOptions";
-import { AccountApi } from "./account";
+import type { CommandOptions } from "@/plugins/api/commandOptions";
+import { AccountApi } from "@/plugins/api/account";
 
 describe("account API", () => {
   it("sends role updates with the shared error-handling options", async () => {

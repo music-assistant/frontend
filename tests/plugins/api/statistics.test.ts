@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CommandOptions } from "./commandOptions";
-import { StatisticsApi } from "./statistics";
+import type { CommandOptions } from "@/plugins/api/commandOptions";
+import { StatisticsApi } from "@/plugins/api/statistics";
 
 describe("statistics API", () => {
   it("includes the local timezone and suppresses the global error toast", async () => {
