@@ -247,6 +247,14 @@
                   }}
                 </v-btn>
 
+                <OidcLoginButton
+                  v-if="hasOidcAuth && oidcProvider"
+                  :provider="oidcProvider"
+                  :disabled="isAuthenticating"
+                  @busy="isAuthenticating = $event"
+                  @error="loginError = $event"
+                />
+
                 <!-- Back button (only show for remote connections or when not hosted with API) -->
                 <v-btn
                   v-if="isRemoteConnection || !isHostedWithAPI"
@@ -474,6 +482,7 @@ import type { ITransport } from "@/plugins/remote/transport";
 import { authManager } from "@/plugins/auth";
 import { remoteConnectionManager } from "@/plugins/remote";
 import SegmentedCodeInput from "@/components/SegmentedCodeInput.vue";
+import OidcLoginButton from "@/components/OidcLoginButton.vue";
 import { REMOTE_ID_GROUPS, splitCode } from "@/helpers/segmented_code";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -634,6 +643,14 @@ const hasHomeAssistantAuth = computed(
     (!isRemoteConnection.value ||
       canReturnToRemoteApp.value ||
       !!api.serverInfo.value?.external_url),
+);
+const oidcProvider = computed(() =>
+  authProviders.value.find((provider) => provider.provider_id === "oidc"),
+);
+const hasOidcAuth = computed(
+  () =>
+    !!oidcProvider.value &&
+    (!isRemoteConnection.value || !!api.serverInfo.value?.external_url),
 );
 
 // Computed

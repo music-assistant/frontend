@@ -1919,6 +1919,7 @@ export enum Scope {
 export enum AuthProviderType {
   BUILTIN = "builtin",
   OAUTH_HOMEASSISTANT = "oauth_homeassistant",
+  OIDC = "oidc",
 }
 
 export interface User {
@@ -1970,6 +1971,7 @@ export interface AuthProvider {
   provider_id: string;
   provider_type: AuthProviderType;
   requires_redirect: boolean;
+  name?: string;
   // whether a sign-in can return to the remote app; servers before schema 87 omit it
   supports_remote_app?: boolean;
 }

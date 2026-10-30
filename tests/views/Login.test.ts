@@ -1,6 +1,7 @@
 import Login from "@/views/Login.vue";
+import OidcLoginButton from "@/components/OidcLoginButton.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { UserRole } from "@/plugins/api/interfaces";
+import { UserRole, type AuthorizationStart } from "@/plugins/api/interfaces";
 import {
   enableAutoUnmount,
   flushPromises,
@@ -51,6 +52,12 @@ const mocks = vi.hoisted(() => ({
   },
   setToken: vi.fn(),
   startAuthorization: vi.fn<MusicAssistantApi["startAuthorization"]>(),
+  toastError: vi.fn(),
+  toastSuccess: vi.fn(),
+}));
+
+vi.mock("vue-sonner", () => ({
+  toast: { error: mocks.toastError, success: mocks.toastSuccess },
 }));
 
 vi.mock("@/plugins/api", async () => {
@@ -107,7 +114,8 @@ vi.mock("@/plugins/remote", () => ({
   },
 }));
 
-vi.mock("vue-i18n", () => ({
+vi.mock("vue-i18n", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-i18n")>()),
   useI18n: () => ({
     t: (_key: string, fallback: string) => fallback,
   }),
@@ -180,13 +188,19 @@ const textFieldStub = {
     '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
 };
 
-function mountLogin(): VueWrapper {
+function mountLogin(realOidcButton = false): VueWrapper {
   return mount(Login, {
     global: {
       mocks: {
         $t: (_key: string, fallback: string) => fallback,
       },
       stubs: {
+        OidcLoginButton: realOidcButton
+          ? false
+          : {
+              props: ["provider"],
+              template: "<button>Sign in with {{ provider.name }}</button>",
+            },
         VAlert: layoutStub,
         VApp: layoutStub,
         VBtn: buttonStub,
@@ -970,6 +984,134 @@ describe("Home Assistant sign in", () => {
 
     expect(wrapper.text()).toContain("Sign in with Home Assistant");
   });
+});
+
+describe("OIDC sign in visibility", () => {
+  const remoteId = "ABCDEFGH1234512345ABCDEFGH";
+
+  afterEach(() => {
+    mocks.startAuthorization.mockReset();
+    vi.restoreAllMocks();
+  });
+
+  beforeEach(() => {
+    mocks.sendCommand.mockImplementation((command: string) =>
+      Promise.resolve(
+        command === "auth/providers"
+          ? [
+              { provider_id: "homeassistant" },
+              {
+                provider_id: "oidc",
+                name: "Authentik",
+                requires_redirect: true,
+              },
+            ]
+          : [],
+      ),
+    );
+  });
+
+  it("offers OIDC alongside the existing local and Home Assistant sign-ins", async () => {
+    mockHostedFrontend();
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Sign in with Authentik");
+    expect(wrapper.text()).toContain("Sign in with Home Assistant");
+    expect(wrapper.text()).toContain("Username");
+  });
+
+  it("hides OIDC when a remote browser cannot reach the callback server", async () => {
+    setLocation(`?remote=1&remote_id=${remoteId}`);
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("Sign in with Authentik");
+    expect(wrapper.text()).toContain("Username");
+  });
+
+  it("offers OIDC remotely when an External URL can serve the browser callback", async () => {
+    setLocation(`?remote=1&remote_id=${remoteId}`);
+    mocks.serverInfo.value = {
+      homeassistant_addon: false,
+      server_id: "server-id",
+      external_url: "https://music.example.com",
+    };
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Sign in with Authentik");
+  });
+
+  it.each(["success", "failure"])(
+    "allows another sign-in after reconnecting and ignores the old request's %s",
+    async (outcome) => {
+      mockHostedFrontend();
+      const replace = vi
+        .spyOn(window.location, "replace")
+        .mockImplementation(() => {});
+      const first = Promise.withResolvers<AuthorizationStart>();
+      const second = Promise.withResolvers<AuthorizationStart>();
+      mocks.startAuthorization
+        .mockReturnValueOnce(first.promise)
+        .mockReturnValueOnce(second.promise);
+      const wrapper = mountLogin(true);
+      await flushPromises();
+
+      await wrapper
+        .getComponent(OidcLoginButton)
+        .get("button")
+        .trigger("click");
+      expect(
+        wrapper
+          .get('input[placeholder="Enter your username"]')
+          .attributes("disabled"),
+      ).toBeDefined();
+
+      mocks.apiState.value = "reconnecting";
+      await flushPromises();
+      expect(wrapper.findComponent(OidcLoginButton).exists()).toBe(false);
+
+      mocks.apiState.value = "auth_required";
+      await flushPromises();
+      await wrapper
+        .findAll("button")
+        .find((button) => button.text() === "Connect")!
+        .trigger("click");
+      await flushPromises();
+
+      const button = wrapper.getComponent(OidcLoginButton).get("button");
+      expect(button.attributes("disabled")).toBeUndefined();
+      expect(
+        wrapper
+          .get('input[placeholder="Enter your username"]')
+          .attributes("disabled"),
+      ).toBeUndefined();
+      await button.trigger("click");
+      expect(mocks.startAuthorization).toHaveBeenCalledTimes(2);
+
+      if (outcome === "success") {
+        first.resolve({ authorization_url: "https://music.example/stale" });
+      } else {
+        first.reject(new Error("Old connection lost"));
+      }
+      await flushPromises();
+
+      expect(replace).not.toHaveBeenCalled();
+      expect(mocks.toastSuccess).not.toHaveBeenCalled();
+      expect(mocks.toastError).not.toHaveBeenCalled();
+      expect(wrapper.text()).not.toContain("Old connection lost");
+      expect(button.attributes("disabled")).toBeDefined();
+
+      second.resolve({
+        authorization_url: "https://music.example/auth/oidc/start",
+      });
+      await flushPromises();
+      expect(replace).toHaveBeenCalledExactlyOnceWith(
+        "https://music.example/auth/oidc/start",
+      );
+    },
+  );
 });
 
 describe("Home Assistant sign in over Remote Access", () => {
