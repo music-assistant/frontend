@@ -1165,6 +1165,30 @@ export class MusicAssistantApi {
     });
   }
 
+  public movePlaylistTrack(
+    db_playlist_id: string | number,
+    from_position: number,
+    to_position: number,
+  ): Promise<void> {
+    return this.sendCommand("music/playlists/move_playlist_track", {
+      db_playlist_id,
+      from_position,
+      to_position,
+    });
+  }
+
+  public movePlaylistTracks(
+    db_playlist_id: string | number,
+    positions: number[],
+    to_position?: number,
+  ): Promise<void> {
+    return this.sendCommand("music/playlists/move_playlist_tracks", {
+      db_playlist_id,
+      positions,
+      to_position,
+    });
+  }
+
   public createPlaylist(
     name: string,
     provider_instance_or_domain?: string,
