@@ -28,7 +28,14 @@
 
     <!-- Discovery view -->
     <template v-if="viewMode === 'discovery'">
-      <Skeleton v-if="loadingRows" class="rows-loading h-1 w-full" />
+      <Skeleton
+        v-if="loadingRows"
+        role="progressbar"
+        :aria-label="$t('loading_short')"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        class="rows-loading h-1 w-full"
+      />
 
       <div class="overview-container">
         <EditorialShelf
