@@ -102,7 +102,7 @@
           >
             <DropdownMenuItem
               v-for="subMenuItem of menuItem.subItems.filter((x) => !x.hide)"
-              :key="subMenuItem.label"
+              :key="subMenuItem.label + JSON.stringify(subMenuItem.labelArgs)"
               :disabled="subMenuItem.disabled === true"
               :variant="
                 subMenuItem.color === 'error' ? 'destructive' : 'default'
@@ -230,6 +230,10 @@ onMounted(() => {
       show.value = true;
       store.dialogActive = true;
     });
+    const preparations = evt.items.filter((item) => item.prepare);
+    if (preparations.length) {
+      await Promise.all(preparations.map((item) => item.prepare?.()));
+    }
   });
   document.addEventListener("keydown", markKeyboardInteraction, true);
   document.addEventListener("pointerdown", markPointerInteraction, true);
@@ -319,6 +323,7 @@ const onSelect = function (evt: Event, menuItem: ContextMenuItem) {
 <script lang="ts">
 // Helpers and utilities for Contextmenu items
 
+import { getItemShareMenuItem } from "@/composables/useItemSharing";
 import router from "@/plugins/router";
 
 import {
@@ -599,6 +604,10 @@ export const getContextMenuItems = async function (
   }
 
   const firstItem = items[0];
+  if (items.length === 1) {
+    const shareItem = getItemShareMenuItem(firstItem);
+    if (shareItem) contextMenuItems.push(shareItem);
+  }
   const managesLibrary = authManager.hasScope(Scope.LIBRARY_MANAGE);
   // favorites, library membership, playlists and played state change the library
   const canEditLibrary = authManager.hasScope(Scope.LIBRARY_WRITE);

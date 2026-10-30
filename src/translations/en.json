@@ -1574,6 +1574,17 @@
     },
     "yes": "Yes",
     "no": "No",
+    "provider_links": {
+        "share": "Share",
+        "open_on": "Open on {provider}",
+        "copied": "Copied to clipboard",
+        "copy_failed": "Failed to copy",
+        "share_failed": "Failed to share",
+        "shared": "Shared successfully",
+        "cancelled": "Sharing cancelled",
+        "load_failed": "Failed to load sharing details",
+        "destination": "{provider}"
+    },
     "uri_copied": "URI copied to clipboard",
     "uri_copy_failed": "Failed to copy URI to clipboard",
     "search_all_providers": "Search all music sources for matches",

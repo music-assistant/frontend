@@ -58,7 +58,11 @@
                   !providerMapping.provider_domain.startsWith('file')
                 "
                 class="cursor-pointer opacity-60"
-                :title="$t('tooltip.open_provider_link')"
+                :title="
+                  $t('provider_links.open_on', {
+                    provider: getProviderName(providerMapping),
+                  })
+                "
                 @click.prevent="openLinkInNewTab(providerMapping.url)"
                 >{{ getProviderUri(providerMapping) }}</a
               >
@@ -305,7 +309,7 @@ const openMappingMenu = function (evt: Event, providerInstance: string) {
   onMenu(evt, mapping);
 };
 
-const getProviderName = function (providerMapping: ProviderMapping) {
+const getProviderName = function (providerMapping: ProviderMappingRef) {
   const providerInstance = api.getProvider(providerMapping.provider_instance);
   if (providerInstance) {
     return providerInstance.name;
@@ -341,7 +345,9 @@ const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
     !providerMapping.provider_domain.startsWith("file")
   ) {
     menuItems.push({
-      label: t("tooltip.open_provider_link"),
+      label: t("provider_links.open_on", {
+        provider: getProviderName(providerMapping),
+      }),
       icon: ExternalLink,
       action: () => {
         openLinkInNewTab(providerMapping.url!);

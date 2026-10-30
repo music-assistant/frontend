@@ -17,6 +17,8 @@ import { nextTick } from "vue";
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
+    state: { value: "initialized" },
+    getItemShareInfo: vi.fn<MusicAssistantApi["getItemShareInfo"]>(),
     queues: {},
     queueElapsedTime: {},
     // the menu's ai dj entry derives availability from the provider list
@@ -195,6 +197,7 @@ interface TestStore {
     queue_item_id?: string;
     name?: string;
     media_item?: {
+      uri?: string;
       item_id?: string;
       provider?: string;
       media_type: MediaType;
@@ -683,7 +686,11 @@ describe("PlayerFullscreen overflow menu", () => {
     };
     // a track sends the view looking for lyrics on the way past
     testStore.curQueueItem = {
-      media_item: { media_type: mediaType, metadata: {} },
+      media_item: {
+        media_type: mediaType,
+        metadata: {},
+        uri: `library://${mediaType}/1`,
+      },
     };
     testStore.showFullscreenPlayer = true;
 
@@ -714,6 +721,13 @@ describe("PlayerFullscreen overflow menu", () => {
     if (!call) throw new Error("the overflow button opened no menu");
     return call[1].items.map((item) => item.label);
   }
+
+  it("offers sharing in the existing expanded-player overflow", async () => {
+    const api = (await import("@/plugins/api")).default;
+    const labels = await openOverflowMenu(MediaType.RADIO);
+    expect(labels).toContain("provider_links.share");
+    expect(api.getItemShareInfo).not.toHaveBeenCalled();
+  });
 
   // the playback speed is a per-item setting, so it only belongs to the
   // spoken-word content that carries one
