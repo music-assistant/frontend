@@ -315,7 +315,7 @@
               :show-duration="showDuration"
               :show-favorite="showFavorite ?? showFavoritesOnlyFilter"
               :show-menu="item.is_playable || isMusicBrainzItem(item)"
-              :show-provider="showProvider"
+              :show-provider="showProviderIcon"
               :show-album="showAlbum"
               :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :is-selected="isSelected(item)"
@@ -612,7 +612,7 @@ const props = withDefaults(defineProps<Props>(), {
   sortListing: undefined,
   sortOptionExcludeFields: () => [],
   showTrackNumber: true,
-  showProvider: Object.keys(api.providers).length > 1,
+  showProvider: undefined,
   showAlbum: true,
   showFavoritesOnlyFilter: true,
   showFavorite: undefined,
@@ -752,6 +752,9 @@ const onTabChange = function (tabId: string) {
 
 const viewMode = ref("list");
 const listContainer = ref<InstanceType<typeof Container>>();
+const showProviderIcon = computed(
+  () => props.showProvider ?? Object.keys(api.providers).length > 1,
+);
 const showTrackTable = computed(
   () => props.trackTable && viewMode.value == "list",
 );
