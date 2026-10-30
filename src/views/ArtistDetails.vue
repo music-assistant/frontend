@@ -1,5 +1,5 @@
 <template>
-  <section class="artist-details">
+  <section ref="pageRoot" class="artist-details">
     <ArtistHero :item="itemDetails" @edit-rows="rowsEditorOpen = true" />
 
     <template v-if="itemDetails">
@@ -215,6 +215,7 @@ import ProviderDetails from "@/components/ProviderDetails.vue";
 import { isAuthorOrNarrator } from "@/helpers/author_narrator";
 import { useArtistRowData } from "@/composables/useArtistRowData";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
+import { useHistoryScrollRestore } from "@/composables/useHistoryScrollRestore";
 import { api } from "@/plugins/api";
 import {
   ArtistType,
@@ -238,6 +239,8 @@ const props = defineProps<Props>();
 const itemDetails = ref<Artist>();
 const loading = ref(false);
 const rowsEditorOpen = ref(false);
+const pageRoot = ref<HTMLElement>();
+const scrollRestore = useHistoryScrollRestore(pageRoot);
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
@@ -397,6 +400,7 @@ watch(
 watch(
   () => itemDetails.value?.uri,
   () => {
+    if (scrollRestore.returning()) return;
     document.querySelector(".content-section")?.scrollTo({ top: 0 });
   },
 );
