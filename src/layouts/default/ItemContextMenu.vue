@@ -147,6 +147,10 @@ import {
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getLucideIcon, PLAYER_ICON_FALLBACK } from "@/helpers/icon";
+import {
+  isUnresolvedSharedTrack,
+  SHARE_PREVIEW_TRACK_PREFIX,
+} from "@/helpers/share_links";
 import api from "@/plugins/api";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -339,6 +343,7 @@ import {
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { getPlayerDisplayName, playerVisible } from "@/helpers/players";
+import { useShareLinkPreviewMenuItem } from "@/composables/useShareLinkPreviewMenuItem";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import {
   canAddToPlaylist,
@@ -410,6 +415,7 @@ import {
   PlusCircle,
   RefreshCw,
   RotateCcw,
+  Search,
   Share2,
   Shuffle,
   SkipForward,
@@ -426,6 +432,8 @@ import {
   type ContextMenuItem,
 } from "@/helpers/context_menu_item";
 export type { ContextMenuItem } from "@/helpers/context_menu_item";
+
+let shareTrackSearchGeneration = 0;
 
 export const showContextMenuForMediaItem = async function (
   item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
@@ -599,6 +607,51 @@ export const getContextMenuItems = async function (
   }
 
   const firstItem = items[0];
+  if (
+    isUnresolvedSharedTrack(firstItem) &&
+    firstItem.item_id.startsWith(SHARE_PREVIEW_TRACK_PREFIX)
+  ) {
+    if (items.length !== 1 || !authManager.hasScope(Scope.LIBRARY_READ))
+      return [];
+    return [
+      {
+        label: "share.search_track",
+        labelArgs: [firstItem.name],
+        icon: Search,
+        action: async () => {
+          const searchGeneration = ++shareTrackSearchGeneration;
+          const originatingRoute = router.currentRoute.value;
+          const loadingToastId = toast.loading($t("share.loading"), {
+            duration: Infinity,
+          });
+          const isCurrentSearch = () =>
+            searchGeneration === shareTrackSearchGeneration &&
+            router.currentRoute.value === originatingRoute;
+          try {
+            const item = await api.resolveSharedItem(
+              firstItem.item_id.slice(SHARE_PREVIEW_TRACK_PREFIX.length),
+              true,
+            );
+            toast.dismiss(loadingToastId);
+            if (!isCurrentSearch()) return;
+            if (!item || item.media_type !== MediaType.TRACK) {
+              toast.error($t("share.resolve_failed"));
+              return;
+            }
+            await router.push({
+              name: "track",
+              params: { provider: item.provider, itemId: item.item_id },
+            });
+            toast.success($t("share.resolve_success"));
+          } catch {
+            toast.dismiss(loadingToastId);
+            if (!isCurrentSearch()) return;
+            toast.error($t("share.resolve_failed"));
+          }
+        },
+      },
+    ];
+  }
   const managesLibrary = authManager.hasScope(Scope.LIBRARY_MANAGE);
   // favorites, library membership, playlists and played state change the library
   const canEditLibrary = authManager.hasScope(Scope.LIBRARY_WRITE);
@@ -636,6 +689,11 @@ export const getContextMenuItems = async function (
       },
       icon: Info,
     });
+  }
+
+  if (items.length === 1) {
+    const sharePreviewItem = useShareLinkPreviewMenuItem(firstItem);
+    if (sharePreviewItem) contextMenuItems.push(sharePreviewItem);
   }
 
   // creates an AI Radio show from the playlist, which takes config.providers.write

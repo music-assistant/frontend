@@ -4,6 +4,7 @@ import {
   radioActionLabelKey,
   radioSupported,
 } from "@/helpers/radio";
+import { useShareLinkPreviewMenuItem } from "@/composables/useShareLinkPreviewMenuItem";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import api from "@/plugins/api";
 import { MediaType, QueueItem } from "@/plugins/api/interfaces";
@@ -43,6 +44,10 @@ export const getQueueItemMenuItems = (
 
   // go to this item's radio (a dynamic playlist generated from it as the seed)
   const mediaItem = item.media_item;
+  if (mediaItem) {
+    const sharePreviewItem = useShareLinkPreviewMenuItem(mediaItem);
+    if (sharePreviewItem) menuItems.push(sharePreviewItem);
+  }
   if (mediaItem && radioSupported(mediaItem)) {
     menuItems.push({
       label: radioActionLabelKey(mediaItem),

@@ -1115,6 +1115,9 @@ const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
     Track | Radio | PodcastEpisode | undefined;
   if (!current) return false;
   switch (itemtype) {
+    case "sharedtracks": {
+      return item.uri === current.uri;
+    }
     case "tracks":
     case "playlisttracks":
     case "albumtracks":

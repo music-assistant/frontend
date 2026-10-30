@@ -526,6 +526,7 @@ import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime"
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { useCommandCenter } from "@/composables/useCommandCenter";
+import { useShareLinkPreviewMenuItem } from "@/composables/useShareLinkPreviewMenuItem";
 import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { isDark } from "@/composables/useThemePreference";
 import { useUserPreferences } from "@/composables/userPreferences";
@@ -1270,6 +1271,11 @@ const openQueueMenu = function (evt: Event) {
       hideShuffleRepeat: mdAndUp.value && !showSkip.value,
     },
   );
+  const currentMediaItem = store.curQueueItem?.media_item;
+  if (currentMediaItem) {
+    const sharePreviewItem = useShareLinkPreviewMenuItem(currentMediaItem);
+    if (sharePreviewItem) menuItems.push(sharePreviewItem);
+  }
   // playback speed only means something for spoken-word content, which is also
   // the only content anyone plays at anything but 1x
   if (speedSupported.value) {

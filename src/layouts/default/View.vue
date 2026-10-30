@@ -28,6 +28,7 @@
           <import-playlist-dialog />
           <migrate-playlist-dialog />
           <playlist-access-dialog />
+          <share-link-dialog />
           <play-announcement-dialog />
           <merge-genre-dialog />
           <delete-genre-dialog />
@@ -87,6 +88,7 @@ import MigratePlaylistDialog from "./MigratePlaylistDialog.vue";
 import PlayAnnouncementDialog from "./PlayAnnouncementDialog.vue";
 import PlayerSelect from "./PlayerSelect.vue";
 import PlaylistAccessDialog from "./PlaylistAccessDialog.vue";
+import ShareLinkDialog from "./ShareLinkDialog.vue";
 
 const route = useRoute();
 
