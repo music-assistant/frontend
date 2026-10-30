@@ -53,6 +53,25 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Verify the release branch
+        run: |
+          # Stable patch builds (.post releases) are cut from `stable` on top of the
+          # version they patch, every other release from main.
+          if [[ "$RELEASE_VERSION" =~ ^([0-9]+\.[0-9]+\.[0-9]+)\.post[0-9]+$ ]]; then
+            BASE="${BASH_REMATCH[1]}"
+            if [[ "$GITHUB_REF" != "refs/heads/stable" ]]; then
+              echo "::error::Release $RELEASE_VERSION must run on stable, not $GITHUB_REF."
+              exit 1
+            fi
+            if ! git merge-base --is-ancestor "refs/tags/$BASE" HEAD; then
+              echo "::error::stable is not based on $BASE, so it cannot release $RELEASE_VERSION."
+              exit 1
+            fi
+          elif [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Release $RELEASE_VERSION must run on main, not $GITHUB_REF."
+            exit 1
+          fi
+
       - name: Create immutable settings token
         id: immutable_settings_token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -156,7 +175,7 @@ jobs:
         if: steps.inspect_release.outputs.already_published != 'true'
         run: |
           pnpm install --frozen-lockfile
-          python3 -m pip install build tomli tomli-w
+          python3 -m pip install build pyyaml tomli tomli-w
 
       - name: Set Python project version
         if: steps.inspect_release.outputs.already_published != 'true'
@@ -214,7 +233,7 @@ jobs:
 
       - name: Generate release notes with Release Drafter
         id: release_drafter
-        if: steps.inspect_release.outputs.already_published != 'true'
+        if: steps.inspect_release.outputs.already_published != 'true' && !contains(inputs.version, '.post')
         uses: release-drafter/release-drafter@978bb0b30c5ee8cdd332ced253758157150d43f0 # v7.10.0
         with:
           config-name: release-drafter.yml
@@ -226,6 +245,19 @@ jobs:
           commitish: ${{ steps.inspect_release.outputs.target_sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Release Drafter only sees the backport PR, not the PRs cherry-picked in it.
+      - name: Generate stable release notes
+        id: stable_notes
+        if: steps.inspect_release.outputs.already_published != 'true' && contains(inputs.version, '.post')
+        run: |
+          {
+            echo 'body<<RELEASE_NOTES_EOF'
+            python3 .github/scripts/stable_release_notes.py "$RELEASE_VERSION"
+            echo 'RELEASE_NOTES_EOF'
+          } >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create or update draft release
         id: prepare_draft
@@ -268,7 +300,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_NAME: ${{ steps.release_drafter.outputs.name }}
-          RELEASE_NOTES: ${{ steps.release_drafter.outputs.body }}
+          RELEASE_NOTES: ${{ steps.release_drafter.outputs.body || steps.stable_notes.outputs.body }}
 
       - name: Upload draft release assets
         if: steps.inspect_release.outputs.already_published != 'true'
@@ -344,10 +376,12 @@ jobs:
           gh api --method PATCH \
             "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
             -F draft=false \
-            -f make_latest=true \
+            -f make_latest="$MAKE_LATEST" \
             --jq '.html_url'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # A stable patch build is older than the latest main release.
+          MAKE_LATEST: ${{ contains(inputs.version, '.post') && 'false' || 'true' }}
 
   verify-release:
     name: Verify Immutable Release
@@ -428,17 +462,6 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Determine server target branch
-        id: target
-        run: |
-          # Stable patch builds (PEP 440 .post releases) bump the server `stable`
-          # branch; regular releases bump the default (dev) branch.
-          if [[ "$RELEASE_VERSION" == *.post* ]]; then
-            echo "branch=stable" >> $GITHUB_OUTPUT
-          else
-            echo "branch=dev" >> $GITHUB_OUTPUT
-          fi
-
       - name: Wait for PyPI availability
         run: |
           echo "Waiting 5 minutes for PyPI to propagate music-assistant-frontend $RELEASE_VERSION..."
@@ -476,6 +499,25 @@ jobs:
           repositories: server
           permission-contents: write
           permission-pull-requests: write
+
+      - name: Determine server target branch
+        id: target
+        run: |
+          # Regular releases bump the default (dev) branch. Stable patch builds
+          # (PEP 440 .post releases) go into the open server backport branch, so
+          # they ship with the next server patch release, or else into `stable`.
+          if [[ "$RELEASE_VERSION" != *.post* ]]; then
+            echo "branch=dev" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          BRANCH=$(gh pr list --repo music-assistant/server --base stable --state open \
+            --json headRefName,isCrossRepository \
+            --jq '.[] | select(.isCrossRepository | not) | .headRefName | select(startswith("backport/"))' |
+            sort -V | tail -1)
+          echo "Server target branch: ${BRANCH:-stable}"
+          echo "branch=${BRANCH:-stable}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.server_repo_token.outputs.token }}
 
       - name: Checkout server repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
