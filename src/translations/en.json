@@ -2654,6 +2654,13 @@
         "60": "1 hour",
         "120": "2 hours"
     },
+    "sleep_timer_end_of_chapter": "End of chapter",
+    "sleep_timer_end_of_item": {
+        "track": "End of track",
+        "podcast_episode": "End of episode",
+        "audiobook": "End of audiobook",
+        "other": "End of current item"
+    },
     "shuffle_smart_active": "Smart shuffle is on. Click to turn it off.",
     "goto_album_radio": "View album endless mix",
     "goto_artist_radio": "View artist endless mix",
