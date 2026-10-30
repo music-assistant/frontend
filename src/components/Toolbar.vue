@@ -81,7 +81,7 @@
                 align="start"
                 :align-offset="-5"
                 :side-offset="6"
-                class="max-h-[70vh] overflow-y-auto"
+                class="max-h-[70vh] min-w-56 overflow-y-auto"
               >
                 <template
                   v-for="subItem of menuItem.subItems.filter((x) => !x.hide)"
