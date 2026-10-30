@@ -18,6 +18,7 @@ import type { CommandOptions } from "./commandOptions";
 export type { CommandOptions } from "./commandOptions";
 import { ApiCommandError } from "./errors";
 import { getDeviceName, itemSupportsPlayLog } from "./helpers";
+import { StatisticsApi } from "./statistics";
 import {
   type Album,
   type AnnouncementTtsEngine,
@@ -153,6 +154,7 @@ export class ConnectionLostError extends Error {
 
 export class MusicAssistantApi {
   private accountApi: AccountApi;
+  private statisticsApi: StatisticsApi;
   private transport?: ITransport;
   private _throttleId?: ReturnType<typeof setTimeout>;
   public baseUrl?: string; // HTTP base URL for image proxy etc.
@@ -203,6 +205,9 @@ export class MusicAssistantApi {
     this.accountApi = new AccountApi(
       (command, args, options) => this.sendCommand(command, args, options),
       getDeviceName,
+    );
+    this.statisticsApi = new StatisticsApi((command, args, options) =>
+      this.sendCommand(command, args, options),
     );
   }
 
@@ -1958,29 +1963,20 @@ export class MusicAssistantApi {
     period: StatisticsPeriod = "week",
     limit = 50,
   ): Promise<StatisticsTopItemResult[]> {
-    return this.sendStatisticsCommand("statistics/top_items", {
-      media_type,
-      period,
-      limit,
-    });
+    return this.statisticsApi.getTopItems(media_type, period, limit);
   }
 
   public async getPlaysOverTime(
     period: StatisticsPeriod = "week",
     granularity: StatisticsGranularity = "day",
   ): Promise<StatisticsTimeSeriesPoint[]> {
-    return this.sendStatisticsCommand("statistics/plays_over_time", {
-      period,
-      granularity,
-    });
+    return this.statisticsApi.getPlaysOverTime(period, granularity);
   }
 
   public async getListeningActivity(
     period: StatisticsPeriod = "week",
   ): Promise<StatisticsHeatmapPoint[]> {
-    return this.sendStatisticsCommand("statistics/listening_activity", {
-      period,
-    });
+    return this.statisticsApi.getListeningActivity(period);
   }
 
   public async getListeningTime(
@@ -1988,44 +1984,21 @@ export class MusicAssistantApi {
     group_by: StatisticsGroupBy = "artist",
     limit = 10,
   ): Promise<StatisticsListeningTimeItem[]> {
-    return this.sendStatisticsCommand("statistics/listening_time", {
-      period,
-      group_by,
-      limit,
-    });
+    return this.statisticsApi.getListeningTime(period, group_by, limit);
   }
 
   public async getGenreDistribution(
     period: StatisticsPeriod = "week",
     limit = 10,
   ): Promise<StatisticsDistributionItem[]> {
-    return this.sendStatisticsCommand("statistics/genre_distribution", {
-      period,
-      limit,
-    });
+    return this.statisticsApi.getGenreDistribution(period, limit);
   }
 
   public async getDecadeDistribution(
     period: StatisticsPeriod = "all_time",
     limit = 10,
   ): Promise<StatisticsDistributionItem[]> {
-    return this.sendStatisticsCommand("statistics/decade_distribution", {
-      period,
-      limit,
-    });
-  }
-
-  // statistics bucket by calendar day and hour, so every command gets the
-  // browser's IANA timezone; callers show their own inline error states
-  private sendStatisticsCommand<T>(
-    command: string,
-    args: Record<string, unknown>,
-  ): Promise<T> {
-    return this.sendCommand<T>(
-      command,
-      { ...args, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-      { suppressGlobalError: true },
-    );
+    return this.statisticsApi.getDecadeDistribution(period, limit);
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {
