@@ -14,6 +14,20 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 
+export const ARTIST_RELEASE_TYPES: Record<
+  "albums" | "singles_eps",
+  AlbumType[]
+> = {
+  albums: [
+    AlbumType.ALBUM,
+    AlbumType.COMPILATION,
+    AlbumType.LIVE,
+    AlbumType.SOUNDTRACK,
+    AlbumType.UNKNOWN,
+  ],
+  singles_eps: [AlbumType.SINGLE, AlbumType.EP],
+};
+
 /**
  * The artist's releases, from the library or from a single provider's own
  * catalog. See artistAlbumsBySource for how `source` selects the provider.
@@ -21,8 +35,9 @@ import {
 export async function loadArtistReleases(
   artist: Artist,
   source: RowSource,
+  options?: ArtistAlbumsListingOptions,
 ): Promise<Album[]> {
-  return await artistAlbumsBySource(artist, source);
+  return await artistAlbumsBySource(artist, source, options);
 }
 
 interface ArtistAlbumsListingOptions {
@@ -50,6 +65,8 @@ export async function artistAlbumsBySource(
   source: RowSource,
   options?: ArtistAlbumsListingOptions,
 ): Promise<Album[]> {
+  const target = artistListingSource(artist, source);
+  if (!target) return [];
   const getAlbums = (itemId: string, provider: string) =>
     options
       ? api.getArtistAlbums(
@@ -65,16 +82,23 @@ export async function artistAlbumsBySource(
           options.favoritesOnly || undefined,
         )
       : api.getArtistAlbums(itemId, provider, undefined, undefined, 0);
-  if (source === "library" || artist.provider !== "library") {
-    return await getAlbums(artist.item_id, artist.provider);
-  }
-  const mappings =
-    "provider_mappings" in artist ? artist.provider_mappings : [];
-  const mapping = mappings.find(
-    (candidate) => candidate.provider_instance === source,
+  return await getAlbums(target.itemId, target.provider);
+}
+
+export async function artistAlbumsCountBySource(
+  artist: Artist,
+  source: RowSource,
+  albumTypes: AlbumType[],
+): Promise<number> {
+  const target = artistListingSource(artist, source);
+  if (!target) return 0;
+  return await api.getArtistAlbumsCount(
+    target.itemId,
+    target.provider,
+    undefined,
+    undefined,
+    albumTypes,
   );
-  if (!mapping) return [];
-  return await getAlbums(mapping.item_id, mapping.provider_instance);
 }
 
 /**
@@ -100,6 +124,13 @@ export async function loadArtistDiscography(
     sortField,
     sortDirection,
   );
+}
+
+export async function loadArtistDiscographyCount(
+  artist: Artist,
+): Promise<number> {
+  if (artist.provider !== "library") return 0;
+  return await api.getArtistDiscographyCount(artist.item_id);
 }
 
 /**
@@ -130,6 +161,23 @@ export function artistProvidersForFeature(
   );
 }
 
+function artistListingSource(
+  artist: ItemMapping | Artist,
+  source: RowSource,
+): { itemId: string; provider: string } | undefined {
+  if (source === "library" || artist.provider !== "library") {
+    return { itemId: artist.item_id, provider: artist.provider };
+  }
+  const mappings =
+    "provider_mappings" in artist ? artist.provider_mappings : [];
+  const mapping = mappings.find(
+    (candidate) => candidate.provider_instance === source,
+  );
+  return mapping
+    ? { itemId: mapping.item_id, provider: mapping.provider_instance }
+    : undefined;
+}
+
 /**
  * The artist's tracks, optionally limited to a single provider: those in the
  * library for a library artist, its provider's own for a provider artist.
@@ -158,6 +206,10 @@ export async function loadArtistTracks(
   );
 }
 
+export async function loadArtistTracksCount(artist: Artist): Promise<number> {
+  return await api.getArtistTracksCount(artist.item_id, artist.provider);
+}
+
 /**
  * Albums the artist appears on without being an album artist, newest first.
  * All of them, or one page when a limit is given.
@@ -182,6 +234,13 @@ export async function loadArtistAppearsOn(
     sortField,
     sortDirection,
   );
+}
+
+export async function loadArtistAppearsOnCount(
+  artist: Artist,
+): Promise<number> {
+  if (artist.provider !== "library") return 0;
+  return await api.getArtistAppearsOnCount(artist.item_id, artist.provider);
 }
 
 /** The artist's most popular tracks, as reported by `source`. */

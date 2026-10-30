@@ -2058,7 +2058,7 @@ describe("ItemsListing server sort options", () => {
     store.mobileLayout = false;
   });
 
-  it("loads server options, migrates saved sorts, and toggles a quick sort direction", async () => {
+  it("shows server random options, migrates saved sorts, and toggles quick sorts", async () => {
     store.currentUser = user({
       preferences: {
         "itemsListing.librarytracks.tracks": { sortBy: "name_desc" },
@@ -2082,21 +2082,15 @@ describe("ItemsListing server sort options", () => {
     const visibleFields = (
       sortControls.props("options") as SortOptionInfo[]
     ).map((option) => option.field);
-    expect(visibleFields).not.toContain(SortField.RANDOM);
-    expect(visibleFields).not.toContain(SortField.RANDOM_PLAY_COUNT);
+    expect(visibleFields).toContain(SortField.RANDOM);
+    expect(visibleFields).toContain(SortField.RANDOM_PLAY_COUNT);
 
     const sortMenu = listing.findComponent(LibrarySortControls);
     await sortMenu.find("button").trigger("click");
     await flushPromises();
     expect(
       document.body.querySelectorAll('[role="menuitemradio"]'),
-    ).toHaveLength(
-      sortOptions.filter(
-        (option) =>
-          option.field !== SortField.RANDOM &&
-          option.field !== SortField.RANDOM_PLAY_COUNT,
-      ).length + 2,
-    );
+    ).toHaveLength(sortOptions.length + 2);
     expect(
       document.body.querySelectorAll(
         '[role="menuitemradio"][aria-checked="true"]',

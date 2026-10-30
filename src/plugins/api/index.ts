@@ -106,7 +106,7 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 96;
+export const MIN_SERVER_SCHEMA_VERSION = 98;
 
 // Server error codes of a missing or rejected sign-in; the login UI reports these itself
 const AUTHENTICATION_REQUIRED_ERROR_CODE = 20;
@@ -533,6 +533,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Track[]> {
     return this.sendCommand("music/tracks/library_items", {
       favorite,
@@ -543,6 +544,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -731,6 +733,7 @@ export class MusicAssistantApi {
     provider?: string | string[],
     genre?: number | number[],
     artist_type?: ArtistType,
+    random_seed?: number,
   ): Promise<Artist[]> {
     return this.sendCommand("music/artists/library_items", {
       favorite,
@@ -743,6 +746,7 @@ export class MusicAssistantApi {
       provider,
       genre,
       artist_type,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -778,6 +782,22 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+      favorite,
+    });
+  }
+
+  public getArtistTracksCount(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+    search?: string,
+    favorite?: boolean,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/artist_tracks_count", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+      search,
       favorite,
     });
   }
@@ -830,6 +850,24 @@ export class MusicAssistantApi {
     });
   }
 
+  public getArtistAlbumsCount(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+    search?: string,
+    album_types?: AlbumType[],
+    favorite?: boolean,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/artist_albums_count", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+      search,
+      album_types,
+      favorite,
+    });
+  }
+
   public getArtistAppearsOn(
     item_id: string,
     provider_instance_id_or_domain: string,
@@ -849,6 +887,20 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+    });
+  }
+
+  public getArtistAppearsOnCount(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+    search?: string,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/artist_appears_on_count", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+      search,
     });
   }
 
@@ -898,6 +950,17 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+    });
+  }
+
+  public getArtistDiscographyCount(
+    item_id: string,
+    search?: string,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/discography_count", {
+      item_id,
+      provider_instance_id_or_domain: "library",
+      search,
     });
   }
 
@@ -977,6 +1040,7 @@ export class MusicAssistantApi {
     album_types?: Array<AlbumType | string>,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Album[]> {
     return this.sendCommand("music/albums/library_items", {
       favorite,
@@ -988,6 +1052,7 @@ export class MusicAssistantApi {
       album_types,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1065,6 +1130,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Playlist[]> {
     return this.sendCommand("music/playlists/library_items", {
       favorite,
@@ -1075,6 +1141,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1287,6 +1354,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Radio[]> {
     return this.sendCommand("music/radios/library_items", {
       favorite,
@@ -1297,6 +1365,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1362,6 +1431,7 @@ export class MusicAssistantApi {
     provider?: string | string[],
     genre?: number | number[],
     collapse_collections?: boolean,
+    random_seed?: number,
   ): Promise<(Audiobook | MediaCollection<Audiobook>)[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
@@ -1373,6 +1443,7 @@ export class MusicAssistantApi {
       provider,
       genre,
       collapse_collections,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1443,6 +1514,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Podcast[]> {
     return this.sendCommand("music/podcasts/library_items", {
       favorite,
@@ -1453,6 +1525,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1483,6 +1556,7 @@ export class MusicAssistantApi {
       hide_empty?: boolean | null;
       media_type?: MediaType;
       content_type?: MediaType | "music";
+      random_seed?: number;
     } = {},
   ): Promise<Genre[]> {
     return this.sendCommand("music/genres/library_items", opts);

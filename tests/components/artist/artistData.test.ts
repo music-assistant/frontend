@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     getArtistAlbums: vi.fn().mockResolvedValue([]),
+    getArtistAlbumsCount: vi.fn().mockResolvedValue(0),
     getArtistAppearsOn: vi.fn().mockResolvedValue([]),
     getArtistDiscography: vi.fn().mockResolvedValue([]),
     getArtistTracks: vi.fn().mockResolvedValue([]),
@@ -20,6 +21,7 @@ vi.mock("@/plugins/api", () => ({
 
 import {
   artistAlbumsBySource,
+  artistAlbumsCountBySource,
   artistProvidersForFeature,
   isSingleOrEp,
   loadArtistAppearsOn,
@@ -72,6 +74,7 @@ function albumMapping(overrides: Partial<ItemMapping> = {}): ItemMapping {
 describe("artistData", () => {
   beforeEach(() => {
     apiMock.getArtistAlbums.mockClear();
+    apiMock.getArtistAlbumsCount.mockClear();
     apiMock.getArtistTopTracks.mockClear();
     apiMock.getSimilarArtists.mockClear();
     apiMock.getArtistTracks.mockClear();
@@ -140,6 +143,31 @@ describe("artistData", () => {
         undefined,
         0,
       );
+    });
+  });
+
+  describe("artistAlbumsCountBySource", () => {
+    it("uses the matching provider artist id and album type filter", async () => {
+      await artistAlbumsCountBySource(LIBRARY_ARTIST, "spotify--abc", [
+        AlbumType.SINGLE,
+      ]);
+
+      expect(apiMock.getArtistAlbumsCount).toHaveBeenCalledWith(
+        "sp1",
+        "spotify--abc",
+        undefined,
+        undefined,
+        [AlbumType.SINGLE],
+      );
+    });
+
+    it("does not request a count from an unmapped provider", async () => {
+      expect(
+        await artistAlbumsCountBySource(LIBRARY_ARTIST, "tidal--def", [
+          AlbumType.ALBUM,
+        ]),
+      ).toBe(0);
+      expect(apiMock.getArtistAlbumsCount).not.toHaveBeenCalled();
     });
   });
 
