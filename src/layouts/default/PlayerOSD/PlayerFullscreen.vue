@@ -300,35 +300,91 @@
                     ></div>
                   </div>
                 </div>
-                <!-- chapters for the current audiobook item -->
+                <!-- chapters of the current audiobook item, each followed by
+                     the bookmarks inside it -->
                 <div
                   v-if="
                     row.state === 'playing' &&
-                    row.item?.media_item?.metadata?.chapters?.length
+                    row.item?.media_item &&
+                    (queueChapterGroups.length || canAddBookmark)
                   "
                   class="queue-chapters"
                 >
-                  <button
-                    v-for="chapter in row.item.media_item.metadata.chapters"
-                    :key="chapter.position"
-                    type="button"
-                    class="queue-chapter"
-                    :class="{
-                      'queue-chapter--active': isActiveChapter(
-                        row.item,
-                        chapter,
-                      ),
-                    }"
-                    :aria-current="
-                      isActiveChapter(row.item, chapter) ? 'true' : undefined
-                    "
-                    @click.stop="chapterClicked(row.item.media_item, chapter)"
+                  <!-- on top, so a long chapter list does not hide it -->
+                  <template v-if="canAddBookmark">
+                    <button
+                      type="button"
+                      class="queue-chapter queue-bookmark-add"
+                      @click.stop="addBookmarkClicked"
+                    >
+                      <span class="queue-bookmark__label">
+                        <BookmarkPlus :size="14" />
+                        <span class="queue-chapter__name">{{
+                          $t("add_bookmark_at", {
+                            time: formatDuration(playingPosition),
+                          })
+                        }}</span>
+                      </span>
+                    </button>
+                    <div
+                      v-if="queueChapterGroups.length"
+                      class="queue-bookmark-add__divider"
+                    ></div>
+                  </template>
+                  <template
+                    v-for="group in queueChapterGroups"
+                    :key="group.chapter?.position ?? 'bookmarks'"
                   >
-                    <span class="queue-chapter__name">{{ chapter.name }}</span>
-                    <span v-if="chapter.end" class="queue-chapter__time">
-                      {{ formatDuration(chapter.end - chapter.start) }}
-                    </span>
-                  </button>
+                    <button
+                      v-if="group.chapter"
+                      type="button"
+                      class="queue-chapter"
+                      :class="{
+                        'queue-chapter--active': isActiveChapter(
+                          row.item,
+                          group.chapter,
+                        ),
+                      }"
+                      :aria-current="
+                        isActiveChapter(row.item, group.chapter)
+                          ? 'true'
+                          : undefined
+                      "
+                      @click.stop="
+                        chapterClicked(row.item.media_item, group.chapter)
+                      "
+                    >
+                      <span class="queue-chapter__name">{{
+                        group.chapter.name
+                      }}</span>
+                      <span
+                        v-if="group.chapter.end"
+                        class="queue-chapter__time"
+                      >
+                        {{
+                          formatDuration(
+                            group.chapter.end - group.chapter.start,
+                          )
+                        }}
+                      </span>
+                    </button>
+                    <button
+                      v-for="bookmark in group.bookmarks"
+                      :key="`bookmark-${bookmark.start}`"
+                      type="button"
+                      class="queue-chapter"
+                      :class="{ 'queue-bookmark--in-chapter': group.chapter }"
+                      @click.stop="bookmarkClicked(bookmark)"
+                    >
+                      <!-- no time: the chapters beside it show durations, not positions -->
+                      <span class="queue-bookmark__label">
+                        <BookmarkIcon :size="14" class="queue-bookmark__icon" />
+                        <span class="queue-chapter__name">{{
+                          bookmark.name
+                        }}</span>
+                      </span>
+                    </button>
+                  </template>
                 </div>
               </div>
               <!-- floating ghost of the dragged item; tracks the pointer -->
@@ -385,6 +441,7 @@
             :show-labels="true"
             :color="sliderColor"
             :waveform="waveformData"
+            :bookmarks="playingBookmarks"
           />
         </div>
 
@@ -511,11 +568,19 @@
       </div>
 
       <PlaybackSpeedDialog v-model:open="playbackSpeedDialogOpen" />
+      <BookmarkDialog
+        v-model:open="bookmarkDialogOpen"
+        :title="$t('add_bookmark')"
+        :initial-name="newBookmark ? formatDuration(newBookmark.start) : ''"
+        :stored-in="newBookmark?.storedIn ?? ''"
+        @save="bookmarkSaved"
+      />
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
+import BookmarkDialog from "@/components/BookmarkDialog.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
@@ -562,9 +627,20 @@ import {
   resolveActiveElapsedTime,
   resolveQueueElapsedTime,
 } from "@/helpers/activeElapsedTime";
-import { resolveCurrentChapter } from "@/helpers/chapters";
+import {
+  BOOKMARK_EDIT_FEATURES,
+  newBookmarkOfPlayingItem,
+  type NewBookmark,
+} from "@/helpers/bookmarks";
+import {
+  groupBookmarksByChapter,
+  resolveCurrentChapter,
+} from "@/helpers/chapters";
 import api from "@/plugins/api";
 import {
+  EventMessage,
+  EventType,
+  MediaItemBookmark,
   MediaItemChapter,
   MediaType,
   PlaybackState,
@@ -579,7 +655,12 @@ import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
-import { ChevronDownIcon, EllipsisVerticalIcon } from "@lucide/vue";
+import {
+  BookmarkIcon,
+  BookmarkPlus,
+  ChevronDownIcon,
+  EllipsisVerticalIcon,
+} from "@lucide/vue";
 import Color from "color";
 import {
   computed,
@@ -665,13 +746,41 @@ const updateChapterTimer = (needed: boolean) => {
   }
 };
 
+// the playing item takes a new bookmark at its current position
+const canAddBookmark = computed(() => !!newBookmarkOfPlayingItem());
+
+const playingPosition = computed(() => {
+  void nowTick.value;
+  return Math.floor(resolveActiveElapsedTime() ?? 0);
+});
+
+const bookmarkDialogOpen = ref(false);
+// taken on the click, the position moves on while the name is typed
+const newBookmark = ref<NewBookmark>();
+
+const addBookmarkClicked = function () {
+  newBookmark.value = newBookmarkOfPlayingItem();
+  bookmarkDialogOpen.value = !!newBookmark.value;
+};
+
+const bookmarkSaved = async function (name: string) {
+  if (!newBookmark.value) return;
+  await api.setBookmark(
+    newBookmark.value.mediaType,
+    newBookmark.value.providerInstanceId,
+    newBookmark.value.providerItemId,
+    newBookmark.value.start,
+    name,
+  );
+};
+
 const chapterTimerNeeded = computed(
   () =>
     store.showFullscreenPlayer &&
     store.showQueueItems &&
     store.activePlayer?.playback_state === PlaybackState.PLAYING &&
-    !!chapterQueueItem.value &&
-    showChapterProgress.value,
+    ((!!chapterQueueItem.value && showChapterProgress.value) ||
+      canAddBookmark.value),
 );
 
 watch(chapterTimerNeeded, updateChapterTimer, { immediate: true });
@@ -1252,8 +1361,80 @@ const playbackSpeedDialogOpen = ref(false);
 watch(
   () => store.showFullscreenPlayer,
   (open) => {
-    if (!open) playbackSpeedDialogOpen.value = false;
+    if (open) return;
+    playbackSpeedDialogOpen.value = false;
+    bookmarkDialogOpen.value = false;
   },
+);
+
+// only the copy that is playing: a bookmark's position does not fit another copy
+const playingBookmarks = ref<MediaItemBookmark[]>([]);
+
+const loadPlayingBookmarks = async function () {
+  const queueItem = store.curQueueItem;
+  const media = queueItem?.media_item;
+  const streamdetails = queueItem?.streamdetails;
+  if (
+    !store.showFullscreenPlayer ||
+    !media ||
+    !(media.media_type in BOOKMARK_EDIT_FEATURES) ||
+    !streamdetails
+  ) {
+    playingBookmarks.value = [];
+    return;
+  }
+  const bookmarks = await api.getBookmarks(
+    media.media_type,
+    media.item_id,
+    media.provider,
+  );
+  // the queue may have moved on while the bookmarks were fetched
+  if (store.curQueueItem?.queue_item_id !== queueItem?.queue_item_id) return;
+  playingBookmarks.value = bookmarks.filter(
+    (x) =>
+      x.provider_instance === streamdetails.provider &&
+      x.item_id === streamdetails.item_id,
+  );
+};
+
+watch(
+  () => [
+    store.showFullscreenPlayer,
+    store.curQueueItem?.queue_item_id,
+    store.curQueueItem?.streamdetails?.item_id,
+  ],
+  () => loadPlayingBookmarks(),
+  { immediate: true },
+);
+
+onMounted(() => {
+  const unsub = api.subscribe(
+    EventType.BOOKMARKS_UPDATED,
+    (evt: EventMessage) => {
+      const streamdetails = store.curQueueItem?.streamdetails;
+      if (
+        streamdetails &&
+        evt.object_id ===
+          `${streamdetails.provider}://${streamdetails.media_type}/${streamdetails.item_id}`
+      ) {
+        loadPlayingBookmarks();
+      }
+    },
+  );
+  onBeforeUnmount(unsub);
+});
+
+const bookmarkClicked = function (bookmark: MediaItemBookmark) {
+  const player = store.activePlayer;
+  if (!player) return;
+  api.playerCommandSeek(player.player_id, bookmark.start);
+};
+
+const queueChapterGroups = computed(() =>
+  groupBookmarksByChapter(
+    store.curQueueItem?.media_item?.metadata?.chapters,
+    playingBookmarks.value,
+  ),
 );
 
 const speedSupported = computed(() =>
@@ -1642,6 +1823,37 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   font-size: 0.72rem;
   opacity: 0.6;
+}
+
+.queue-bookmark__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.queue-bookmark__icon {
+  flex: 0 0 auto;
+  opacity: 0.6;
+}
+
+.queue-bookmark--in-chapter {
+  padding-left: 24px;
+}
+
+/* an action, not content: accent colored, without the active chapter's fill */
+.queue-bookmark-add {
+  color: var(--primary);
+}
+
+.queue-bookmark-add__divider {
+  height: 1px;
+  margin: 4px 8px;
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 15%,
+    transparent
+  );
 }
 
 .queue-empty {

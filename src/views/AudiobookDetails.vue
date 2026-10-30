@@ -1,11 +1,8 @@
 <template>
   <InfoHeader :item="itemDetails" />
 
-  <!-- audiobook chapters -->
-  <Chapters
-    v-if="itemDetails && itemDetails.metadata?.chapters"
-    :item-details="itemDetails"
-  />
+  <!-- audiobook chapters, with the user's bookmarks inside them -->
+  <Chapters v-if="itemDetails" :item-details="itemDetails" />
 
   <!-- provider mapping details -->
   <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />

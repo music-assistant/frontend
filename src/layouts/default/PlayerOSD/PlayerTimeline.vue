@@ -68,6 +68,29 @@
               aria-hidden="true"
             ></span>
           </button>
+          <!-- the bookmark icon, so a bookmark does not read as a chapter tick -->
+          <button
+            v-for="tick in bookmarkTicks"
+            :key="`bookmark-${tick.start}`"
+            type="button"
+            class="absolute top-1/2 flex h-4 w-4 items-center justify-center"
+            :style="{
+              left: `${tick.percent}%`,
+              transform: 'translate(-50%, -50%)',
+            }"
+            :aria-label="tick.name"
+            :title="tick.name"
+            :disabled="!canSeek"
+            @pointerdown.stop
+            @click.stop="bookmarkClicked(tick)"
+          >
+            <Bookmark
+              :size="14"
+              :color="color"
+              class="fill-background"
+              aria-hidden="true"
+            />
+          </button>
         </SliderTrack>
         <SliderThumb
           data-slot="slider-thumb"
@@ -127,6 +150,7 @@ import api from "@/plugins/api";
 import {
   MediaType,
   PlaybackState,
+  type MediaItemBookmark,
   type MediaItemChapter,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -147,6 +171,7 @@ import {
   resolveQueueElapsedTime,
   resolveActiveTiming,
 } from "@/helpers/activeElapsedTime";
+import { Bookmark } from "@lucide/vue";
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from "reka-ui";
 import { cn } from "@/lib/utils";
 import WaveformTrack from "./WaveformTrack.vue";
@@ -157,12 +182,15 @@ export interface Props {
   color?: string;
   // Precomputed waveform bins (0.0-1.0); when set, replaces the flat track.
   waveform?: number[] | null;
+  // Bookmarks of the copy that is playing, marked on the track.
+  bookmarks?: MediaItemBookmark[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showLabels: false,
   color: "var(--foreground)",
   waveform: null,
+  bookmarks: () => [],
 });
 
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
@@ -389,6 +417,19 @@ const chapterTicks = computed(() => {
   );
 });
 
+// With chapter progress the track spans the current chapter, so only its own
+// bookmarks fit on it.
+const bookmarkTicks = computed(() => {
+  const chapter = currentChapter.value;
+  const start = chapter?.start ?? 0;
+  const duration =
+    chapter?.duration ?? store.activePlayer?.current_media?.duration;
+  if (!duration) return [];
+  return props.bookmarks
+    .filter((x) => x.start >= start && x.start <= start + duration)
+    .map((x) => ({ ...x, percent: ((x.start - start) / duration) * 100 }));
+});
+
 // Waveform bins cover the full audiobook, so they no longer line up with the
 // slider when chapter-relative progress is enabled.
 const hasWaveform = computed(
@@ -471,6 +512,11 @@ const stopDragging = () => {
 const chapterClicked = function (chapter: MediaItemChapter) {
   if (!canSeek.value || !store.activePlayer) return;
   api.playerCommandSeek(store.activePlayer.player_id, chapter.start);
+};
+
+const bookmarkClicked = function (bookmark: MediaItemBookmark) {
+  if (!canSeek.value || !store.activePlayer) return;
+  api.playerCommandSeek(store.activePlayer.player_id, bookmark.start);
 };
 
 const setPendingSeek = (position: number) => {

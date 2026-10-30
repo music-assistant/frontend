@@ -65,6 +65,7 @@ import {
   EventType,
   ItemMapping,
   ListingType,
+  MediaItemBookmark,
   MediaItemTypeOrItemMapping,
   MediaType,
   PlayableMediaItemType,
@@ -132,6 +133,8 @@ export interface PlayMediaOptions {
   /** @deprecated Use sort_field and sort_direction. */
   sort_by?: string;
   start_from_beginning?: boolean;
+  /** Seconds to start an audiobook or episode at, e.g. a bookmark, instead of its resume position. */
+  start_position?: number;
   /** Set playback order for immediate-play options; omit to let the server decide. */
   shuffle?: boolean;
   /** Keep the global error toast quiet for a caller that reports the failure itself. */
@@ -1422,6 +1425,48 @@ export class MusicAssistantApi {
     });
   }
 
+  public getBookmarks(
+    media_type: MediaType,
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<MediaItemBookmark[]> {
+    return this.sendCommand("music/bookmarks", {
+      media_type,
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public setBookmark(
+    media_type: MediaType,
+    provider_instance_id: string,
+    provider_item_id: string,
+    start: number,
+    name: string,
+  ): Promise<void> {
+    return this.sendCommand("music/set_bookmark", {
+      media_type,
+      provider_instance_id,
+      provider_item_id,
+      start,
+      name,
+    });
+  }
+
+  public removeBookmark(
+    media_type: MediaType,
+    provider_instance_id: string,
+    provider_item_id: string,
+    start: number,
+  ): Promise<void> {
+    return this.sendCommand("music/remove_bookmark", {
+      media_type,
+      provider_instance_id,
+      provider_item_id,
+      start,
+    });
+  }
+
   // Podcast related endpoints
   /**
    * Get Podcasts listing from the server.
@@ -2646,6 +2691,7 @@ export class MusicAssistantApi {
       sort_direction: options.sort_direction,
       start_from_beginning: options.start_from_beginning,
       shuffle: options.shuffle,
+      start_position: options.start_position,
     };
     return options.suppressGlobalError === undefined
       ? this.sendCommand("player_queues/play_media", payload)

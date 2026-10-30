@@ -53,6 +53,9 @@ vi.mock("@/components/podcast/PodcastEpisodeHero.vue", () => ({
     template: "<div data-hero />",
   },
 }));
+vi.mock("@/components/Chapters.vue", () => ({
+  default: { name: "Chapters", template: "<div />" },
+}));
 vi.mock("@/components/details/DetailTextRow.vue", () => ({
   default: { name: "DetailTextRow", template: "<div />" },
 }));

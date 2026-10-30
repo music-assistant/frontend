@@ -1,4 +1,7 @@
-import type { MediaItemChapter } from "@/plugins/api/interfaces";
+import type {
+  MediaItemBookmark,
+  MediaItemChapter,
+} from "@/plugins/api/interfaces";
 
 export interface ChapterTick extends MediaItemChapter {
   // position along the track as percentage
@@ -74,5 +77,33 @@ export function computeChapterTicks(
   return chapters.map((chapter) => ({
     ...chapter,
     percent: Math.min(100, Math.max(0, (chapter.start / duration) * 100)),
+  }));
+}
+
+export interface ChapterBookmarks {
+  // undefined for an item without chapters
+  chapter?: MediaItemChapter;
+  bookmarks: MediaItemBookmark[];
+}
+
+/**
+ * place each bookmark under the last chapter starting at or before it, so it
+ * shows where it is in the item; without chapters all bookmarks form one group
+ */
+export function groupBookmarksByChapter(
+  chapters: MediaItemChapter[] | null | undefined,
+  bookmarks: MediaItemBookmark[],
+): ChapterBookmarks[] {
+  const ordered = [...bookmarks].sort((a, b) => a.start - b.start);
+  if (!chapters?.length) {
+    return ordered.length ? [{ bookmarks: ordered }] : [];
+  }
+  return chapters.map((chapter, index) => ({
+    chapter,
+    bookmarks: ordered.filter(
+      (x) =>
+        (index === 0 || x.start >= chapter.start) &&
+        (index === chapters.length - 1 || x.start < chapters[index + 1].start),
+    ),
   }));
 }
