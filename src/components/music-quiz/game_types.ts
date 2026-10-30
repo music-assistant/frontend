@@ -2,18 +2,15 @@ import {
   getMusicQuizAnswerType,
   type MusicQuizAnswerTypeDefinition,
 } from "@/components/music-quiz/answer_types";
-import GuessTheSongHostPanel from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongHostPanel.vue";
 import GuessTheSongHostRound from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongHostRound.vue";
 import GuessTheSongPlayerRound from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongPlayerRound.vue";
 import GuessTheSongPresentRound from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongPresentRound.vue";
 import GuessTheSongSetup from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongSetup.vue";
-import MusicTimelineHostPanel from "@/components/music-quiz/game-types/music-timeline/MusicTimelineHostPanel.vue";
 import MusicTimelineHostRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelineHostRound.vue";
 import MusicTimelinePlayerRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePlayerRound.vue";
 import MusicTimelinePresentBody from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePresentBody.vue";
 import MusicTimelinePresentRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePresentRound.vue";
 import MusicTimelineSetup from "@/components/music-quiz/game-types/music-timeline/MusicTimelineSetup.vue";
-import TriviaHostPanel from "@/components/music-quiz/game-types/trivia/TriviaHostPanel.vue";
 import TriviaHostRound from "@/components/music-quiz/game-types/trivia/TriviaHostRound.vue";
 import TriviaPlayerRound from "@/components/music-quiz/game-types/trivia/TriviaPlayerRound.vue";
 import TriviaPresentRound from "@/components/music-quiz/game-types/trivia/TriviaPresentRound.vue";
@@ -56,7 +53,6 @@ export interface MusicQuizGameDefinition<
   adapters: {
     setup: Component;
     player: Component;
-    hostPanel: Component;
     host: Component;
     present: Component;
     presentBody?: Component;
@@ -83,7 +79,6 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     adapters: {
       setup: markRaw(GuessTheSongSetup),
       player: markRaw(GuessTheSongPlayerRound),
-      hostPanel: markRaw(GuessTheSongHostPanel),
       host: markRaw(GuessTheSongHostRound),
       present: markRaw(GuessTheSongPresentRound),
     },
@@ -102,7 +97,6 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     adapters: {
       setup: markRaw(MusicTimelineSetup),
       player: markRaw(MusicTimelinePlayerRound),
-      hostPanel: markRaw(MusicTimelineHostPanel),
       host: markRaw(MusicTimelineHostRound),
       present: markRaw(MusicTimelinePresentRound),
       presentBody: markRaw(MusicTimelinePresentBody),
@@ -124,7 +118,6 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     adapters: {
       setup: markRaw(TriviaSetup),
       player: markRaw(TriviaPlayerRound),
-      hostPanel: markRaw(TriviaHostPanel),
       host: markRaw(TriviaHostRound),
       present: markRaw(TriviaPresentRound),
     },

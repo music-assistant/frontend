@@ -104,6 +104,10 @@ function onSourceSelect(item: MediaItemTypeOrItemMapping) {
   addSource(item);
 }
 
+// A suggested source (step-by-step setup) is added the same way, and its
+// summary reads the picks' names.
+defineExpose({ add: onSourceSelect, selected: selectedSources });
+
 async function onSourceRemove(uri: string) {
   const removedIndex = selectedSources.value.findIndex(
     (source) => source.uri === uri,

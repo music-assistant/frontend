@@ -76,10 +76,11 @@ describe("Timeline player bonus flow", () => {
       },
     });
 
+    // The bonus questions follow the placed song, in the song's own row.
     const followUp = wrapper.get('[data-testid="timeline-post-placement"]');
     expect(
       wrapper
-        .get('button[data-selected="true"]')
+        .get('[data-testid="timeline-drag-song"]')
         .element.closest("li")
         ?.contains(followUp.element),
     ).toBe(true);

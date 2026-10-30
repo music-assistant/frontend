@@ -23,8 +23,9 @@
         'min-w-0 overflow-x-auto overscroll-x-contain pb-1': horizontal,
       }"
     >
+      <!-- list-none: the app's base styles bring list numbers back. -->
       <ol
-        class="flex"
+        class="flex list-none"
         :class="
           horizontal
             ? 'w-max min-w-full flex-row items-stretch gap-2'

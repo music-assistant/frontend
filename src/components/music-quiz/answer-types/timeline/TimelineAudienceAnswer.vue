@@ -16,7 +16,14 @@
         'lg:order-2 lg:justify-center': present && dashboard,
       }"
     >
+      <MusicQuizTimerBar
+        v-if="slimTimer"
+        class="w-full"
+        :fraction="remainingFraction"
+        :label="remainingLabel || '…'"
+      />
       <MusicQuizCountdown
+        v-else
         :size="present ? 150 : 112"
         :fraction="remainingFraction"
         :label="remainingLabel || '…'"
@@ -138,6 +145,7 @@
 import TimelineDisplay from "@/components/music-quiz/answer-types/timeline/TimelineDisplay.vue";
 import TimelineProgress from "@/components/music-quiz/answer-types/timeline/TimelineProgress.vue";
 import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
+import MusicQuizTimerBar from "@/components/music-quiz/MusicQuizTimerBar.vue";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
   MusicQuizTimelinePublicState,
@@ -156,11 +164,14 @@ const props = withDefaults(
     present?: boolean;
     showTimeline?: boolean;
     dashboard?: boolean;
+    /** The slim bar instead of the big ring (host page). */
+    slimTimer?: boolean;
   }>(),
   {
     present: false,
     showTimeline: true,
     dashboard: false,
+    slimTimer: false,
   },
 );
 defineSlots<{ leaderboard: () => VNode[] }>();

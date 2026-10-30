@@ -1,6 +1,6 @@
-import MultipleChoiceGrid from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceGrid.vue";
 import MultipleChoiceHostAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceHostAnswer.vue";
 import MultipleChoicePlayerAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoicePlayerAnswer.vue";
+import MultipleChoicePlayerGrid from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoicePlayerGrid.vue";
 import MultipleChoicePresentAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoicePresentAnswer.vue";
 import MultipleChoiceProgress from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceProgress.vue";
 import type {
@@ -66,7 +66,7 @@ describe("multiple-choice adapters", () => {
       },
     });
 
-    wrapper.getComponent(MultipleChoiceGrid).vm.$emit("select", "two");
+    wrapper.getComponent(MultipleChoicePlayerGrid).vm.$emit("select", "two");
 
     expect(wrapper.emitted("submit")).toEqual([
       [
@@ -79,45 +79,92 @@ describe("multiple-choice adapters", () => {
     wrapper.unmount();
   });
 
-  it("restores the server-selected answer and locks the grid", () => {
-    const state = {
-      ...playerState,
-      you: {
-        ...playerState.you,
-        answer: {
-          suggestion_id: "two",
-          answered_at: 10,
+  it.each([
+    {
+      name: "others are still answering",
+      otherAnswered: false,
+      status: "providers.music_quiz.locked_in_waiting",
+    },
+    {
+      name: "everyone has answered",
+      otherAnswered: true,
+      status: "providers.music_quiz.locked_in_everyone",
+    },
+  ])(
+    "restores the server-selected answer and locks the grid when $name",
+    ({ otherAnswered, status }) => {
+      const state = {
+        ...playerState,
+        players: [
+          { ...playerState.players[0], answered: true },
+          {
+            name: "Other",
+            score: 0,
+            ready: false,
+            answered: otherAnswered,
+            active_from_round: 0,
+          },
+        ],
+        you: {
+          ...playerState.you,
+          answer: {
+            suggestion_id: "two",
+            answered_at: 10,
+          },
         },
-      },
-    } satisfies MusicQuizGuessTheSongPersonalizedState;
+      } satisfies MusicQuizGuessTheSongPersonalizedState;
 
+      const wrapper = shallowMount(MultipleChoicePlayerAnswer, {
+        props: {
+          state,
+          currentRound,
+          busy: false,
+        },
+      });
+      const grid = wrapper.getComponent(MultipleChoicePlayerGrid);
+
+      expect(grid.props("disabled")).toBe(true);
+      expect(grid.props("selectedSuggestionId")).toBe("two");
+      expect(wrapper.get('[role="status"]').text()).toBe(status);
+      wrapper.unmount();
+    },
+  );
+
+  it("shows no locked-in line before the player answers", () => {
     const wrapper = shallowMount(MultipleChoicePlayerAnswer, {
       props: {
-        state,
+        state: playerState,
         currentRound,
         busy: false,
       },
     });
-    const grid = wrapper.getComponent(MultipleChoiceGrid);
 
-    expect(grid.props("disabled")).toBe(true);
-    expect(grid.props("selectedSuggestionId")).toBe("two");
-    expect(wrapper.text()).toContain("providers.music_quiz.answered");
+    expect(
+      wrapper.getComponent(MultipleChoicePlayerGrid).props("disabled"),
+    ).toBe(false);
+    expect(wrapper.find('[role="status"]').exists()).toBe(false);
     wrapper.unmount();
   });
 
-  it("renders no result banner on reveal since results live in the player header", () => {
+  it.each([
+    {
+      name: "a submitted answer",
+      answer: {
+        suggestion_id: "two",
+        answered_at: 10,
+        correct: true,
+        points: 7,
+      },
+    },
+    { name: "no answer", answer: undefined },
+  ])("renders nothing on reveal with $name", ({ answer }) => {
+    // The round result banner above the stage says how the answer went.
     const state = {
       ...playerState,
       phase: "reveal",
       you: {
         ...playerState.you,
-        answer: {
-          suggestion_id: "two",
-          answered_at: 10,
-          correct: true,
-          points: 7,
-        },
+        answer,
       },
     } satisfies MusicQuizGuessTheSongPersonalizedState;
 
@@ -129,10 +176,8 @@ describe("multiple-choice adapters", () => {
       },
     });
 
-    expect(wrapper.text()).not.toContain("providers.music_quiz.correct");
-    expect(wrapper.text()).not.toContain(
-      "providers.music_quiz.no_answer_submitted",
-    );
+    expect(wrapper.text()).toBe("");
+    expect(wrapper.find('[role="status"]').exists()).toBe(false);
     wrapper.unmount();
   });
 

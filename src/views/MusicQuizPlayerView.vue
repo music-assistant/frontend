@@ -1,5 +1,13 @@
 <template>
   <div class="music-quiz-player mx-auto flex w-full max-w-3xl flex-col gap-3">
+    <MusicQuizListenControl
+      v-if="listenInEnabled"
+      ref="listenControlRef"
+      :mode="mode"
+      :labels="listenInLabels"
+      :recheck-events="listenInRecheckEvents"
+      :get-error-message="getMusicQuizErrorMessage"
+    />
     <Card v-if="gameRemoved">
       <CardHeader class="justify-items-center text-center" role="status">
         <CircleStop class="text-muted-foreground size-10" aria-hidden="true" />
@@ -27,14 +35,7 @@
     <MusicQuizUnsupportedGame v-else-if="unsupportedGame" />
 
     <template v-else-if="showLanding && resolvedDefinition">
-      <MusicQuizSessionHeader
-        :game="resolvedDefinition.game"
-        :name="landingQuiz?.name"
-        :phase-label="landingPhaseLabel"
-        :round-label="landingRoundLabel"
-        :mode="mode"
-        :listen-in-enabled="listenInEnabled"
-      />
+      <!-- The game is named once, in this card. -->
 
       <Card>
         <CardContent class="flex flex-col items-center gap-2 text-center">
@@ -48,8 +49,17 @@
             />
           </span>
           <div>
-            <h2 class="text-xl font-bold">
+            <p
+              v-if="landingQuiz?.name"
+              class="text-muted-foreground text-sm font-medium"
+            >
               {{ $t(resolvedDefinition.game.labelKey) }}
+            </p>
+            <h2
+              class="text-xl font-bold"
+              data-testid="music-quiz-landing-title"
+            >
+              {{ landingQuiz?.name || $t(resolvedDefinition.game.labelKey) }}
             </h2>
             <p class="text-muted-foreground">
               {{ $t(resolvedDefinition.game.howToPlayDescriptionKey) }}
@@ -57,16 +67,6 @@
           </div>
         </CardContent>
       </Card>
-
-      <ListenIn
-        v-if="listenInEnabled"
-        ref="listenInRef"
-        domain="music_quiz"
-        :mode="mode"
-        :labels="listenInLabels"
-        :recheck-events="listenInRecheckEvents"
-        :get-error-message="getMusicQuizErrorMessage"
-      />
 
       <Card v-if="!playerId && activeInfo">
         <CardContent>
@@ -97,29 +97,18 @@
     <template v-else-if="activeState && resolvedDefinition">
       <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
 
-      <MusicQuizSessionHeader
-        :game="resolvedDefinition.game"
-        :name="activeState.name"
-        :phase-label="phaseText"
-        :round-label="roundProgress"
-        :mode="activeState.mode"
-        :listen-in-enabled="listenInEnabled"
-      />
-
-      <MusicQuizPlayerHeader
-        :player-name="activeState.you.name"
-        :rank="playerRank"
-        :score="activeState.you.score"
-        :score-delta="playerRoundScoreLabel"
-        :round-results="playerRoundResults"
+      <MusicQuizRoundResultBanner
+        v-if="activeState.phase === 'reveal' && playedThisRound"
+        :results="playerRoundResults"
+        :answered="!!activeState.you.answer"
       />
 
       <MusicQuizPlayerStage
         :state="activeState"
         :current-round="currentRound"
         :busy="busy"
+        :player-id="playerId"
         :leaderboard-rows="leaderboardRows"
-        :winner-text="winnerText"
         :game-component="resolvedDefinition.game.adapters.player"
         :answer-component="resolvedDefinition.answer.adapters.player"
         @submit-answer="handleSubmitAnswer"
@@ -156,21 +145,19 @@
 </template>
 
 <script setup lang="ts">
-import ListenIn, { type ListenInLabels } from "@/components/ListenIn.vue";
+import type { ListenInLabels } from "@/components/ListenIn.vue";
 import MusicQuizAutoStartStatus from "@/components/music-quiz/MusicQuizAutoStartStatus.vue";
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
 import {
-  getMusicQuizPhaseLabelKey,
   resolveMusicQuizDefinition,
   supportsMusicQuizListenIn,
 } from "@/components/music-quiz/game_types";
 import MusicQuizJoinForm from "@/components/music-quiz/MusicQuizJoinForm.vue";
+import MusicQuizListenControl from "@/components/music-quiz/MusicQuizListenControl.vue";
 import { type MusicQuizLeaderboardRow } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
-import MusicQuizPlayerHeader, {
-  type MusicQuizRoundResult,
-} from "@/components/music-quiz/MusicQuizPlayerHeader.vue";
+import type { MusicQuizRoundResult } from "@/components/music-quiz/MusicQuizPlayerHeader.vue";
 import MusicQuizPlayerStage from "@/components/music-quiz/MusicQuizPlayerStage.vue";
-import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
+import MusicQuizRoundResultBanner from "@/components/music-quiz/MusicQuizRoundResultBanner.vue";
 import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -189,7 +176,6 @@ import {
 import {
   getMusicQuizErrorMessage,
   getMusicQuizRoundScoreLabel,
-  getMusicQuizWinnerText,
   rankMusicQuizPlayers,
 } from "@/helpers/music_quiz";
 import api, { ConnectionState } from "@/plugins/api";
@@ -219,8 +205,6 @@ const {
   landingSeen,
   currentRound,
 } = player;
-
-const listenInRef = ref<InstanceType<typeof ListenIn> | null>(null);
 
 const resolvedDefinition = computed(() => {
   const activeGame = state.value ?? info.value;
@@ -270,7 +254,10 @@ const showLanding = computed(
       (!!playerId.value && !!activeState.value && !landingSeen.value)),
 );
 const landingQuiz = computed(() => activeState.value ?? activeInfo.value);
-const listenInBusy = computed(() => listenInRef.value?.busy ?? false);
+const listenControlRef = ref<InstanceType<
+  typeof MusicQuizListenControl
+> | null>(null);
+const listenInBusy = computed(() => listenControlRef.value?.busy ?? false);
 
 const { celebrate } = useMusicQuizCelebration();
 
@@ -296,15 +283,6 @@ const rankedPlayers = computed(() =>
   activeState.value ? rankMusicQuizPlayers(activeState.value.players) : [],
 );
 
-const playerRank = computed(() => {
-  const currentState = activeState.value;
-  if (!currentState) return null;
-  return (
-    rankedPlayers.value.find((row) => row.name === currentState.you.name)
-      ?.rank ?? null
-  );
-});
-
 const leaderboardRows = computed<MusicQuizLeaderboardRow[]>(() => {
   const currentState = activeState.value;
   if (!currentState) return [];
@@ -314,23 +292,12 @@ const leaderboardRows = computed<MusicQuizLeaderboardRow[]>(() => {
   }));
 });
 
-const winnerText = computed(() => getMusicQuizWinnerText(rankedPlayers.value));
-
-const roundProgress = computed(() => {
-  const currentState = activeState.value;
-  if (!currentState || currentState.phase === "lobby") return "";
-  const label = $t("providers.music_quiz.round_label");
-  if (!currentRound.value) {
-    return `${label} ${currentState.round_count}/${currentState.round_count}`;
-  }
-  return `${label} ${currentRound.value.round_index + 1}/${currentState.round_count}`;
+// Someone who joined mid-round had no question to answer: no right/wrong panel.
+const playedThisRound = computed(() => {
+  const round = activeState.value?.current_round;
+  const you = activeState.value?.you;
+  return !!round && !!you && you.active_from_round <= round.round_index;
 });
-
-const playerRoundScoreLabel = computed(() =>
-  activeState.value
-    ? getMusicQuizRoundScoreLabel(activeState.value, activeState.value.you.name)
-    : "",
-);
 
 const playerRoundResults = computed<MusicQuizRoundResult[]>(() => {
   const currentState = activeState.value;
@@ -373,32 +340,6 @@ const playerRoundResults = computed<MusicQuizRoundResult[]>(() => {
   ];
 });
 
-const phaseText = computed(() => {
-  const currentState = activeState.value;
-  const definition = resolvedDefinition.value;
-  return currentState && definition
-    ? $t(getMusicQuizPhaseLabelKey(definition.game, currentState.phase))
-    : "";
-});
-const infoPhaseText = computed(() => {
-  const currentInfo = activeInfo.value;
-  const definition = resolvedDefinition.value;
-  return currentInfo && definition
-    ? $t(getMusicQuizPhaseLabelKey(definition.game, currentInfo.phase))
-    : "";
-});
-
-const landingPhaseLabel = computed(() =>
-  activeState.value ? phaseText.value : infoPhaseText.value,
-);
-const landingRoundLabel = computed(() => {
-  if (activeState.value) return roundProgress.value;
-  const currentInfo = activeInfo.value;
-  return currentInfo
-    ? $t("providers.music_quiz.rounds_count", [currentInfo.round_count])
-    : "";
-});
-
 const isConnectionDegraded = computed(
   () =>
     api.state.value === ConnectionState.RECONNECTING ||
@@ -417,14 +358,17 @@ async function handleJoin(name: string) {
   await player.join(name);
   // A join failure leaves no player_id, and the landing stays up to retry.
   if (!playerId.value) return;
-  await listenInRef.value?.requestAutoEnable();
   player.markLandingSeen();
+  // Remote games ask whether to play the music on this phone.
+  await listenControlRef.value?.askAfterJoin(playerId.value);
 }
 
 async function handleContinue() {
   webPlayer.primeAudio();
-  await listenInRef.value?.requestAutoEnable();
   player.markLandingSeen();
+  if (playerId.value) {
+    await listenControlRef.value?.askAfterJoin(playerId.value);
+  }
 }
 
 async function handleSubmitAnswer(submission: MusicQuizAnswerSubmission) {

@@ -1,8 +1,13 @@
 <template>
   <Avatar :class="cn('size-8', props.class)">
+    <!-- The fallback's own bg-muted utility wins over an inline colour, so
+         the colour goes in through variables these utilities read. -->
     <AvatarFallback
-      class="font-semibold"
-      :style="{ backgroundColor: style.background, color: style.color }"
+      class="bg-(--quiz-avatar-bg) text-(--quiz-avatar-fg) font-semibold"
+      :style="{
+        '--quiz-avatar-bg': style.background,
+        '--quiz-avatar-fg': style.color,
+      }"
     >
       {{ initials }}
     </AvatarFallback>

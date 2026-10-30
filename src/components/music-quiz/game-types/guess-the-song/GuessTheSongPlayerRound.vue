@@ -13,9 +13,9 @@
     <Button
       class="w-full max-w-sm"
       size="lg"
-      :disabled="busy || state.you.ready"
+      :disabled="busy || isReady"
       data-testid="guess-the-song-ready"
-      @click="emit('ready')"
+      @click="markReady"
     >
       <Check class="size-4" />
       {{ readyLabel }}
@@ -37,7 +37,7 @@ import type {
 import { copyToClipboard, getMediaImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { Check } from "@lucide/vue";
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
 const props =
@@ -49,11 +49,43 @@ const props =
   >();
 const emit = defineEmits<MusicQuizPlayerGameAdapterEmits>();
 
-const readyLabel = computed(() =>
-  props.state.you.ready
-    ? $t("providers.music_quiz.waiting_for_next")
-    : $t("providers.music_quiz.ready"),
+const isFinalRound = computed(
+  () => props.currentRound.round_index + 1 >= props.state.round_count,
 );
+// The server takes a few seconds to confirm; show the tap straight away.
+const readyRequested = ref(false);
+const isReady = computed(() => props.state.you.ready || readyRequested.value);
+watch(
+  () => props.currentRound.round_index,
+  () => {
+    readyRequested.value = false;
+  },
+);
+watch(
+  () => props.busy,
+  (busy, wasBusy) => {
+    if (wasBusy && !busy && !props.state.you.ready) {
+      readyRequested.value = false;
+    }
+  },
+);
+
+function markReady() {
+  if (props.busy || isReady.value) return;
+  readyRequested.value = true;
+  emit("ready");
+}
+
+const readyLabel = computed(() => {
+  if (isReady.value) {
+    return isFinalRound.value
+      ? $t("providers.music_quiz.waiting_for_final_results")
+      : $t("providers.music_quiz.waiting_for_next");
+  }
+  return isFinalRound.value
+    ? $t("providers.music_quiz.ready_last_round")
+    : $t("providers.music_quiz.ready");
+});
 const currentRoundImageUrl = computed(() =>
   getMediaImageUrl(props.currentRound.image_url ?? ""),
 );

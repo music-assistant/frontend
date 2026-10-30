@@ -1,3 +1,4 @@
+import TimelineDisplay from "@/components/music-quiz/answer-types/timeline/TimelineDisplay.vue";
 import TimelinePlayerAnswer from "@/components/music-quiz/answer-types/timeline/TimelinePlayerAnswer.vue";
 import type {
   MusicQuizTimelinePersonalizedState,
@@ -87,19 +88,24 @@ describe("Timeline player reveal", () => {
     );
   });
 
-  it("does not mark a late joiner as missing an answer", () => {
+  it("shows the revealed timeline without a line of its own for a missed answer", () => {
+    const revealedEntry = {
+      ...anchor,
+      entry_id: "current",
+      release_year: 2000,
+      title: "Revealed Song",
+      is_anchor: false,
+    };
     const currentRound = {
       ...baseRound,
+      timeline: [anchor, revealedEntry],
+      revealed_entry: revealedEntry,
       ended_at: 20,
     } satisfies MusicQuizTimelineRound;
     const state = {
       ...baseState,
       phase: "reveal",
       current_round: currentRound,
-      you: {
-        ...baseState.you,
-        active_from_round: 1,
-      },
     } satisfies MusicQuizTimelinePersonalizedState;
     const wrapper = shallowMount(TimelinePlayerAnswer, {
       props: {
@@ -109,7 +115,10 @@ describe("Timeline player reveal", () => {
       },
     });
 
-    expect(wrapper.text()).toContain("providers.music_quiz.waiting_for_next");
+    expect(
+      wrapper.getComponent(TimelineDisplay).props("highlightedEntryId"),
+    ).toBe("current");
+    // The round result banner above already says no answer came in.
     expect(wrapper.text()).not.toContain(
       "providers.music_quiz.no_answer_submitted",
     );

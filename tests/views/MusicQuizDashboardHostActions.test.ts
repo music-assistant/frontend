@@ -123,6 +123,8 @@ let starting: Ref<boolean>;
 
 describe("MusicQuizDashboardView host actions", () => {
   beforeEach(() => {
+    // the invite popup remembers which game it already opened for
+    localStorage.clear();
     state = ref({ ...HOST_STATE });
     busy = ref(false);
     starting = ref(false);
@@ -193,7 +195,7 @@ describe("MusicQuizDashboardView host actions", () => {
 
     expect(mockReplay).toHaveBeenCalledOnce();
     expect(mockDeleteGame).not.toHaveBeenCalled();
-    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="stepped-setup"]').exists()).toBe(false);
   });
 
   it("keeps the finished game when replay reset fails", async () => {
@@ -205,13 +207,13 @@ describe("MusicQuizDashboardView host actions", () => {
 
     expect(state.value?.phase).toBe("finished");
     expect(wrapper.find('[data-testid="play-again"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="stepped-setup"]').exists()).toBe(false);
   });
 
   it("starts a scheduled replay early exactly once", async () => {
     const wrapper = mountDashboard();
 
-    await wrapper.get('[data-testid="start-now"]').trigger("click");
+    await wrapper.get('[data-testid="start-quiz"]').trigger("click");
 
     expect(mockStart).toHaveBeenCalledOnce();
   });
@@ -231,7 +233,7 @@ describe("MusicQuizDashboardView host actions", () => {
     );
     const wrapper = mountDashboard();
 
-    await wrapper.get('[data-testid="start-now"]').trigger("click");
+    await wrapper.get('[data-testid="start-quiz"]').trigger("click");
 
     const status = wrapper.get('[data-testid="music-quiz-preparing"]');
     expect(status.attributes("role")).toBe("status");
@@ -239,7 +241,7 @@ describe("MusicQuizDashboardView host actions", () => {
     expect(
       wrapper.findComponent(MusicQuizPreparingState).props("autofocus"),
     ).toBe(true);
-    expect(wrapper.find('[data-testid="start-now"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="start-quiz"]').exists()).toBe(false);
 
     finishStart();
     await flushPromises();
@@ -286,11 +288,11 @@ describe("MusicQuizDashboardView host actions", () => {
 
     await wrapper.get('[data-testid="set-up-new-game"]').trigger("click");
     expect(mockDeleteGame).toHaveBeenCalledOnce();
-    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="stepped-setup"]').exists()).toBe(false);
 
     finishDelete();
     await flushPromises();
-    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="stepped-setup"]').exists()).toBe(true);
     expect(mockFetchPlaybackOptions).toHaveBeenCalledOnce();
   });
 
@@ -303,7 +305,7 @@ describe("MusicQuizDashboardView host actions", () => {
 
     expect(mockDeleteGame).toHaveBeenCalledOnce();
     expect(state.value).toEqual(HOST_STATE);
-    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="stepped-setup"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="play-again"]').exists()).toBe(true);
   });
 
@@ -333,12 +335,19 @@ describe("MusicQuizDashboardView host actions", () => {
     );
     expect(root.classes()).not.toContain("lg:h-full");
     expect(wrapper.find('[data-testid="music-quiz-cast"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="music-quiz-player-bar"]').exists()).toBe(
+      true,
+    );
 
     await wrapper.get('[data-testid="enter-present"]').trigger("click");
 
     expect(wrapper.find('[data-testid="present-stage"]').exists()).toBe(true);
-    // the header (and its cast button) gives way to the present stage
+    // the header (and its cast button) and the quiz bar give way to the
+    // present stage
     expect(wrapper.find('[data-testid="music-quiz-cast"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="music-quiz-player-bar"]').exists()).toBe(
       false,
     );
     expect(root.classes()).toEqual(
@@ -353,50 +362,104 @@ describe("MusicQuizDashboardView host actions", () => {
     expect(root.classes()).not.toContain("p-4");
   });
 
-  it("shows the host playback badge only for reveal-audio Trivia", async () => {
+  it("keeps the playback badge to the present stage of reveal-audio Trivia", async () => {
     state.value = {
       ...TRIVIA_HOST_STATE,
-      play_reveal_audio: false,
+      play_reveal_audio: true,
     };
     const wrapper = mountDashboard();
     await nextTick();
 
+    // the quiz bar is the one place on the host page that says where the
+    // music plays, so the compact header never gets the mode chip
     expect(
       wrapper
         .get('[data-testid="session-header"]')
         .attributes("data-listen-in-enabled"),
     ).toBe("false");
+    expect(wrapper.find('[data-testid="music-quiz-player-bar"]').exists()).toBe(
+      true,
+    );
+
+    await wrapper.get('[data-testid="enter-present"]').trigger("click");
+    expect(
+      wrapper
+        .get('[data-testid="present-stage"]')
+        .attributes("data-listen-in-enabled"),
+    ).toBe("true");
 
     state.value = {
       ...TRIVIA_HOST_STATE,
-      play_reveal_audio: true,
+      play_reveal_audio: false,
     };
     await nextTick();
 
     expect(
       wrapper
-        .get('[data-testid="session-header"]')
+        .get('[data-testid="present-stage"]')
         .attributes("data-listen-in-enabled"),
-    ).toBe("true");
+    ).toBe("false");
+  });
+
+  it("leaves out the quiz bar in Trivia without music", async () => {
+    state.value = { ...TRIVIA_HOST_STATE, play_reveal_audio: false };
+    const wrapper = mountDashboard();
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="music-quiz-player-bar"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("opens the invite popup by itself once per game, in the lobby", async () => {
+    state.value = { ...HOST_STATE, phase: "lobby", created_at: 1 };
+    const wrapper = mountDashboard();
+    await nextTick();
+
+    // no QR card on the page: the join link lives in the popup
+    const invite = wrapper.get('[data-testid="invite-dialog"]');
+    expect(
+      invite.get('[data-testid="qr-card"]').attributes("data-join-link"),
+    ).toBe(HOST_STATE.join_url);
+    expect(wrapper.findAll('[data-testid="qr-card"]')).toHaveLength(1);
+
+    // the popup shouldn't sit over a round that has started
+    state.value = { ...HOST_STATE, phase: "answering", created_at: 1 };
+    await nextTick();
+    expect(wrapper.find('[data-testid="invite-dialog"]').exists()).toBe(false);
+
+    await wrapper.get('[data-testid="music-quiz-invite"]').trigger("click");
+    expect(wrapper.find('[data-testid="invite-dialog"]').exists()).toBe(true);
+    wrapper.unmount();
+
+    // coming back to the same game doesn't reopen it, a new game does
+    state.value = { ...HOST_STATE, phase: "lobby", created_at: 1 };
+    const sameGame = mountDashboard();
+    await nextTick();
+    expect(sameGame.find('[data-testid="invite-dialog"]').exists()).toBe(false);
+
+    state.value = { ...HOST_STATE, phase: "lobby", created_at: 2 };
+    await nextTick();
+    expect(sameGame.find('[data-testid="invite-dialog"]').exists()).toBe(true);
   });
 
   it("returns to the compact empty state when the host state is cleared", async () => {
     const wrapper = mountDashboard();
 
-    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="stepped-setup"]').exists()).toBe(false);
     state.value = null;
     await nextTick();
 
-    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="stepped-setup"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="new-game-empty"]').exists()).toBe(true);
 
     await wrapper.get('[data-testid="new-game-empty"]').trigger("click");
-    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="stepped-setup"]').exists()).toBe(true);
     expect(mockFetchPlaybackOptions).toHaveBeenCalledOnce();
 
     state.value = { ...HOST_STATE };
     await nextTick();
-    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="stepped-setup"]').exists()).toBe(false);
     expect(wrapper.text()).not.toContain("Game Ended");
   });
 });
@@ -433,22 +496,33 @@ function mountDashboard() {
         },
         MusicQuizConnectionBanners: true,
         MusicQuizSessionHeader: {
-          props: ["listenInEnabled"],
+          // typed, so a missing prop reads as the real component's default
+          props: { listenInEnabled: Boolean },
           template:
-            '<div data-testid="session-header" :data-listen-in-enabled="String(listenInEnabled)" />',
+            '<div data-testid="session-header" :data-listen-in-enabled="String(listenInEnabled)"><slot name="actions" /></div>',
         },
-        MusicQuizHostPanel: {
+        MusicQuizHostControlStrip: {
           props: ["busy"],
           emits: ["endGame", "present", "reset", "setUpNewGame", "start"],
           template:
-            '<div><button data-testid="open-end-dialog" @click="$emit(\'endGame\')" /><button data-testid="enter-present" :disabled="busy" @click="$emit(\'present\')" /><button data-testid="start-now" :disabled="busy" @click="$emit(\'start\')" /><button data-testid="play-again" :disabled="busy" @click="$emit(\'reset\')" /><button data-testid="set-up-new-game" :disabled="busy" @click="$emit(\'setUpNewGame\')" /></div>',
+            '<div data-testid="host-control-strip"><button data-testid="open-end-dialog" @click="$emit(\'endGame\')" /><button data-testid="enter-present" :disabled="busy" @click="$emit(\'present\')" /><button data-testid="start-quiz" :disabled="busy" @click="$emit(\'start\')" /><button data-testid="play-again" :disabled="busy" @click="$emit(\'reset\')" /><button data-testid="set-up-new-game" :disabled="busy" @click="$emit(\'setUpNewGame\')" /></div>',
         },
+        MusicQuizPlayerBar: {
+          template: '<div data-testid="music-quiz-player-bar" />',
+        },
+        MusicQuizQrCard: {
+          props: ["joinLink"],
+          template: '<div data-testid="qr-card" :data-join-link="joinLink" />',
+        },
+        MusicQuizGameSettingsSheet: true,
         MusicQuizPresentStage: {
-          template: '<div data-testid="present-stage" />',
+          props: { listenInEnabled: Boolean },
+          template:
+            '<div data-testid="present-stage" :data-listen-in-enabled="String(listenInEnabled)" />',
         },
         MusicQuizSessionPanels: true,
-        MusicQuizSetupWizard: {
-          template: '<div data-testid="setup-wizard" />',
+        MusicQuizSteppedSetup: {
+          template: '<div data-testid="stepped-setup" />',
         },
         ShowDashboardButton: {
           template: '<button data-testid="music-quiz-cast" />',

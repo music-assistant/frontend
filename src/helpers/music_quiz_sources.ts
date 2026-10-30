@@ -74,3 +74,12 @@ function normalizeSourceType(mediaType?: string | null): SourceType {
   const type = SOURCE_TYPES.find((candidate) => candidate === mediaType);
   return type ?? MediaType.TRACK;
 }
+
+/** "From Summer hits" / "From Summer hits + 2 more": a one-line music summary. */
+export function getMusicQuizSourceHeadline(sources: Array<{ name: string }>) {
+  const [first, ...rest] = sources;
+  if (!first) return "";
+  return rest.length
+    ? $t("providers.music_quiz.music_from_more", [first.name, rest.length])
+    : $t("providers.music_quiz.music_from", [first.name]);
+}

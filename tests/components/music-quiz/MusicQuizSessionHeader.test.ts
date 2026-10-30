@@ -11,7 +11,6 @@ const icon = { template: '<svg data-testid="game-icon" />' };
 const adapters = {
   setup: icon,
   player: icon,
-  hostPanel: icon,
   host: icon,
   present: icon,
 };

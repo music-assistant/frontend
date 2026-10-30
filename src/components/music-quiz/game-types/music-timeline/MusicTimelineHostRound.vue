@@ -1,5 +1,7 @@
 <template>
+  <!-- The control strip already says the song is hidden while answering. -->
   <MusicTimelineRound
+    v-if="state.phase !== 'answering'"
     :phase="state.phase"
     :round="currentRound"
     :is-final-round="currentRound.round_index + 1 >= state.round_count"

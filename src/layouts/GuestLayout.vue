@@ -14,7 +14,10 @@
         alt="Music Assistant"
         class="h-6 w-auto justify-self-center opacity-85"
       />
-      <div class="justify-self-end">
+      <div class="flex items-center gap-1 justify-self-end">
+        <!-- Pages can add their own top-bar actions here, such as the quiz's
+             headphones toggle. -->
+        <div id="guest-header-actions" class="contents"></div>
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <Button

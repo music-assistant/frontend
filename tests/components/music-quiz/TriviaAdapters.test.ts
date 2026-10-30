@@ -1,6 +1,7 @@
-import MultipleChoiceGrid from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceGrid.vue";
 import MultipleChoicePlayerAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoicePlayerAnswer.vue";
-import TriviaHostPanel from "@/components/music-quiz/game-types/trivia/TriviaHostPanel.vue";
+import MultipleChoicePlayerGrid from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoicePlayerGrid.vue";
+import { getMusicQuizGameType } from "@/components/music-quiz/game_types";
+import MusicQuizGameSettingsSheet from "@/components/music-quiz/MusicQuizGameSettingsSheet.vue";
 import TriviaHostRound from "@/components/music-quiz/game-types/trivia/TriviaHostRound.vue";
 import TriviaPlayerRound from "@/components/music-quiz/game-types/trivia/TriviaPlayerRound.vue";
 import TriviaPresentRound from "@/components/music-quiz/game-types/trivia/TriviaPresentRound.vue";
@@ -113,50 +114,71 @@ describe("Trivia adapters", () => {
     vi.useRealTimers();
   });
 
+  // Mid-game, the host checks the question language and reveal audio in the
+  // game settings panel.
+  const passThrough = { template: "<div><slot /></div>" };
+  function mountGameSettings(state: MusicQuizTriviaHostState) {
+    return mount(MusicQuizGameSettingsSheet, {
+      props: {
+        open: true,
+        state,
+        game: getMusicQuizGameType("trivia")!,
+        showPluginSettings: false,
+      },
+      global: {
+        stubs: {
+          Sheet: passThrough,
+          SheetContent: passThrough,
+          SheetHeader: passThrough,
+          SheetTitle: passThrough,
+          SheetDescription: passThrough,
+        },
+      },
+    });
+  }
+  function settingValue(
+    wrapper: ReturnType<typeof mountGameSettings>,
+    label: string,
+  ) {
+    return wrapper
+      .findAll("dl > div")
+      .find((row) => row.get("dt").text() === label)
+      ?.get("dd")
+      .text();
+  }
+
   it("shows the canonical server language after a host state refresh", async () => {
     const displayNames = new Intl.DisplayNames(["en"], {
       type: "language",
       fallback: "code",
       languageDisplay: "dialect",
     });
-    const wrapper = mount(TriviaHostPanel, {
-      props: {
-        state: { ...hostState, language: "pt-BR" },
-        currentRound: hostState.current_round,
-      },
-    });
+    const wrapper = mountGameSettings({ ...hostState, language: "pt-BR" });
 
-    expect(wrapper.get('[data-testid="trivia-language"]').text()).toBe(
-      displayNames.of("pt-BR"),
-    );
+    expect(
+      settingValue(wrapper, "providers.music_quiz.question_language"),
+    ).toBe(displayNames.of("pt-BR"));
 
-    await wrapper.setProps({
-      state: { ...hostState, language: "sr-Latn" },
-    });
-    expect(wrapper.get('[data-testid="trivia-language"]').text()).toBe(
-      displayNames.of("sr-Latn"),
-    );
+    await wrapper.setProps({ state: { ...hostState, language: "sr-Latn" } });
+    expect(
+      settingValue(wrapper, "providers.music_quiz.question_language"),
+    ).toBe(displayNames.of("sr-Latn"));
   });
 
   it.each([
-    [true, "providers.music_quiz.reveal_audio_on"],
-    [false, "providers.music_quiz.reveal_audio_off"],
+    [true, "yes"],
+    [false, "no"],
   ] as const)(
     "shows the reveal-audio setting after reconnect when set to %s",
     (playRevealAudio, expectedLabel) => {
-      const wrapper = mount(TriviaHostPanel, {
-        props: {
-          state: {
-            ...hostState,
-            play_reveal_audio: playRevealAudio,
-          },
-          currentRound: hostState.current_round,
-        },
+      const wrapper = mountGameSettings({
+        ...hostState,
+        play_reveal_audio: playRevealAudio,
       });
 
       expect(
-        wrapper.get('[data-testid="trivia-reveal-audio"]').text(),
-      ).toContain(expectedLabel);
+        settingValue(wrapper, "providers.music_quiz.play_revealed_songs"),
+      ).toBe(expectedLabel);
     },
   );
 
@@ -245,7 +267,7 @@ describe("Trivia adapters", () => {
     });
 
     answerWrapper
-      .getComponent(MultipleChoiceGrid)
+      .getComponent(MultipleChoicePlayerGrid)
       .vm.$emit("select", "daft-punk");
     expect(answerWrapper.emitted("submit")).toEqual([
       [
@@ -278,7 +300,8 @@ describe("Trivia adapters", () => {
       },
     });
 
-    expect(revealWrapper.text()).not.toContain("providers.music_quiz.correct");
+    // The round result banner above the stage says how the answer went.
+    expect(revealWrapper.text()).toBe("");
   });
 
   it.each([
@@ -298,7 +321,7 @@ describe("Trivia adapters", () => {
       name: "final Ready",
       isFinal: true,
       ready: false,
-      label: "providers.music_quiz.ready_for_final_results_countdown",
+      label: "providers.music_quiz.ready_last_round_countdown",
     },
     {
       name: "final waiting",
@@ -350,6 +373,26 @@ describe("Trivia adapters", () => {
       expect(countdown.attributes("role")).toBe("timer");
     },
   );
+
+  it("pins the Ready button to the bottom of the stage like Guess the Song", () => {
+    const round = scheduledRevealRound();
+    const wrapper = mount(TriviaPlayerRound, {
+      props: {
+        state: revealPlayerState(round, { roundCount: 2 }),
+        currentRound: round,
+        busy: false,
+      },
+    });
+    const footer = wrapper.get('[data-testid="trivia-ready"]').element
+      .parentElement;
+
+    expect(footer?.classList.contains("sticky")).toBe(true);
+    expect(
+      footer?.classList.contains("bottom-[var(--device-inset-bottom,0px)]"),
+    ).toBe(true);
+    expect(footer?.classList.contains("order-last")).toBe(true);
+    wrapper.unmount();
+  });
 
   it("derives a reconnected countdown only from auto_advance_at", () => {
     const round = scheduledRevealRound();
@@ -501,7 +544,7 @@ describe("Trivia adapters", () => {
     const nextButton = wrapper.get('[data-testid="trivia-ready"]');
 
     expect(nextButton.text()).toContain(
-      "providers.music_quiz.ready_for_final_results_countdown",
+      "providers.music_quiz.ready_last_round_countdown",
     );
     expect(nextButton.attributes("disabled")).toBeUndefined();
 

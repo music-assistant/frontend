@@ -155,9 +155,9 @@ describe("MusicQuizDashboardView", () => {
     expect(wrapper.text()).toContain("providers.music_quiz.no_active_game");
     expect(wrapper.find('[data-testid="new-game"]').exists()).toBe(false);
     expect(wrapper.findAll('[data-testid="new-game-empty"]')).toHaveLength(1);
-    expect(wrapper.find('[data-testid="music-quiz-setup"]').exists()).toBe(
-      false,
-    );
+    expect(
+      wrapper.find('[data-testid="music-quiz-stepped-setup"]').exists(),
+    ).toBe(false);
 
     await wrapper.get('[data-testid="new-game-empty"]').trigger("click");
 
@@ -166,9 +166,9 @@ describe("MusicQuizDashboardView", () => {
       expect.arrayContaining(["sm:max-w-[calc(100%-2rem)]", "lg:max-w-3xl"]),
     );
     expect(setupDialog.classes()).not.toContain("sm:max-w-3xl");
-    expect(wrapper.find('[data-testid="music-quiz-setup"]').exists()).toBe(
-      true,
-    );
+    expect(
+      wrapper.find('[data-testid="music-quiz-stepped-setup"]').exists(),
+    ).toBe(true);
 
     wrapper.unmount();
   });
@@ -196,9 +196,9 @@ describe("MusicQuizDashboardView", () => {
       .trigger("click");
     await wrapper.get('[data-testid="cancel-setup"]').trigger("click");
 
-    expect(wrapper.find('[data-testid="music-quiz-setup"]').exists()).toBe(
-      false,
-    );
+    expect(
+      wrapper.find('[data-testid="music-quiz-stepped-setup"]').exists(),
+    ).toBe(false);
 
     await wrapper.get('[data-testid="new-game-empty"]').trigger("click");
     await flushPromises();
@@ -271,34 +271,7 @@ describe("MusicQuizDashboardView", () => {
   });
 
   it("opens the participant view in the current tab", async () => {
-    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition());
-    mockSendCommand.mockImplementation((command: string) => {
-      if (command === "music_quiz/get") {
-        return Promise.resolve({
-          quiz_type: "guess_the_song",
-          answer_type: "multiple_choice",
-          phase: "lobby",
-          name: "Quiz",
-          round_count: 3,
-          players: [],
-          current_round: null,
-          mode: "venue",
-        });
-      }
-      if (command === "music_quiz/available_quiz_types") {
-        return Promise.resolve(["guess_the_song"]);
-      }
-      if (command === "music_quiz/playback_options") {
-        return Promise.resolve({
-          default_playback_mode: "venue",
-          default_venue_player_id: "living-room",
-          venue_available: true,
-          remote_available: true,
-          venue_players: [],
-        });
-      }
-      return Promise.resolve(null);
-    });
+    mockActiveLobbyGame();
     const wrapper = mountDashboard();
     await flushPromises();
 
@@ -306,7 +279,69 @@ describe("MusicQuizDashboardView", () => {
 
     expect(mockRouterPush).toHaveBeenCalledWith({ name: "guest-quiz" });
   });
+
+  it("opens this game's settings during a game, with the plugin settings one tap further", async () => {
+    if (mockAdminState.current) mockAdminState.current.value = true;
+    mockGetProviderConfigs.mockResolvedValue([
+      musicQuizProviderConfig("music_quiz--instance"),
+    ]);
+    mockActiveLobbyGame();
+    const wrapper = mountDashboard();
+    await flushPromises();
+
+    const settings = wrapper.get('[data-testid="music-quiz-settings"]');
+    expect(settings.attributes("aria-label")).toBe(
+      "providers.music_quiz.game_settings_title",
+    );
+    expect(settings.attributes("title")).toBe(
+      "providers.music_quiz.game_settings_title",
+    );
+
+    await settings.trigger("click");
+
+    // during a game, Settings stays on the quiz page
+    expect(mockRouterPush).not.toHaveBeenCalled();
+    const sheet = wrapper.get('[data-testid="game-settings-sheet"]');
+    expect(sheet.attributes("data-show-plugin-settings")).toBe("true");
+
+    await sheet.get('[data-testid="sheet-plugin-settings"]').trigger("click");
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      name: "editprovider",
+      params: { instanceId: "music_quiz--instance" },
+    });
+  });
 });
+
+function mockActiveLobbyGame() {
+  mockResolveMusicQuizDefinition.mockReturnValue(createDefinition());
+  mockSendCommand.mockImplementation((command: string) => {
+    if (command === "music_quiz/get") {
+      return Promise.resolve({
+        quiz_type: "guess_the_song",
+        answer_type: "multiple_choice",
+        phase: "lobby",
+        name: "Quiz",
+        round_count: 3,
+        players: [],
+        current_round: null,
+        mode: "venue",
+      });
+    }
+    if (command === "music_quiz/available_quiz_types") {
+      return Promise.resolve(["guess_the_song"]);
+    }
+    if (command === "music_quiz/playback_options") {
+      return Promise.resolve({
+        default_playback_mode: "venue",
+        default_venue_player_id: "living-room",
+        venue_available: true,
+        remote_available: true,
+        venue_players: [],
+      });
+    }
+    return Promise.resolve(null);
+  });
+}
 
 function musicQuizProviderConfig(instanceId: string): ProviderConfig {
   return providerConfig({
@@ -344,8 +379,14 @@ function mountDashboard() {
           template: "<div><slot /></div>",
         },
         MusicQuizConnectionBanners: true,
-        MusicQuizHostPanel: {
-          template: '<div><slot name="game" /></div>',
+        MusicQuizHostControlStrip: true,
+        MusicQuizPlayerBar: true,
+        MusicQuizQrCard: true,
+        MusicQuizGameSettingsSheet: {
+          props: ["open", "showPluginSettings"],
+          emits: ["update:open", "plugin-settings"],
+          template:
+            '<div v-if="open" data-testid="game-settings-sheet" :data-show-plugin-settings="String(showPluginSettings)"><button data-testid="sheet-plugin-settings" @click="$emit(\'plugin-settings\')" /></div>',
         },
         ShowDashboardButton: {
           props: ["dashboard"],
@@ -356,11 +397,11 @@ function mountDashboard() {
           template: '<header><slot name="actions" /></header>',
         },
         MusicQuizSessionPanels: true,
-        MusicQuizSetupWizard: {
+        MusicQuizSteppedSetup: {
           props: ["playbackSelection"],
           emits: ["update:playbackSelection"],
           template:
-            '<div data-testid="music-quiz-setup"><span data-testid="playback-mode">{{ playbackSelection.mode }}</span><button data-testid="select-remote-playback" @click="$emit(\'update:playbackSelection\', { mode: \'remote\', venuePlayerId: \'living-room\' })">Remote</button></div>',
+            '<div data-testid="music-quiz-stepped-setup"><span data-testid="playback-mode">{{ playbackSelection.mode }}</span><button data-testid="select-remote-playback" @click="$emit(\'update:playbackSelection\', { mode: \'remote\', venuePlayerId: \'living-room\' })">Remote</button></div>',
         },
       },
     },
@@ -372,7 +413,6 @@ function createDefinition() {
     game: {
       adapters: {
         host: { template: "<div />" },
-        hostPanel: { template: "<div />" },
         present: { template: "<div />" },
       },
       icon: { template: "<span />" },

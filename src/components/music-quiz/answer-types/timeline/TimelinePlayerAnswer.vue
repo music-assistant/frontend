@@ -1,156 +1,90 @@
 <template>
-  <template v-if="state.phase === 'answering'">
-    <template v-if="canAnswerRound">
-      <p class="text-center text-lg font-bold">
-        {{
-          placementLocked
-            ? $t("providers.music_quiz.timeline_placement_locked")
-            : $t("providers.music_quiz.timeline_choose_position")
-        }}
-      </p>
-
-      <TimelineDisplay
-        :entries="currentRound.timeline"
-        :selectable="true"
-        :disabled="busy || placementLocked"
-        :selected-previous-entry-id="
-          selectedPlacement?.previousEntryId ?? undefined
-        "
-        :selected-next-entry-id="selectedPlacement?.nextEntryId ?? undefined"
-        @select="place"
-      >
-        <template #selected-boundary>
-          <div
-            v-if="state.you.answer"
-            ref="postPlacementRef"
-            data-testid="timeline-post-placement"
-            class="scroll-mt-36"
-            tabindex="-1"
-            aria-live="polite"
-          >
-            <Card
-              v-if="!state.you.answer.finished && activeBonus"
-              class="border-primary/30 bg-primary/5"
-            >
-              <CardContent class="flex flex-col gap-4">
-                <div>
-                  <h2 class="font-semibold">{{ activeBonusLabel }}</h2>
-                  <p class="text-muted-foreground text-sm">
-                    {{ $t("providers.music_quiz.timeline_bonus_optional") }}
-                  </p>
-                </div>
-
-                <form
-                  v-if="activeBonus.mode === 'free_text'"
-                  class="flex flex-col gap-3"
-                  @submit.prevent="submitTextBonus"
-                >
-                  <Label :for="`timeline-${activeBonus.bonus_type}-answer`">
-                    {{ activeBonusLabel }}
-                  </Label>
-                  <Input
-                    :id="`timeline-${activeBonus.bonus_type}-answer`"
-                    v-model="bonusText"
-                    :disabled="busy"
-                    :maxlength="MAX_BONUS_TEXT_LENGTH"
-                    autocomplete="off"
-                  />
-                  <Button type="submit" :disabled="busy || !bonusText.trim()">
-                    <Send class="size-4" />
-                    {{ $t("providers.music_quiz.timeline_submit_bonus") }}
-                  </Button>
-                </form>
-
-                <div v-else class="grid gap-2 sm:grid-cols-2">
-                  <Button
-                    v-for="option in activeBonus.options"
-                    :key="option.option_id"
-                    type="button"
-                    variant="outline"
-                    class="h-auto min-h-14 justify-start whitespace-normal text-left"
-                    :disabled="busy"
-                    @click="submitChoiceBonus(option.option_id)"
-                  >
-                    {{ option.label }}
-                  </Button>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  :disabled="busy"
-                  @click="skipRemainingBonuses"
-                >
-                  <SkipForward class="size-4" />
-                  {{
-                    $t("providers.music_quiz.timeline_skip_remaining_bonuses")
-                  }}
-                </Button>
-              </CardContent>
-            </Card>
-
-            <p
-              v-else-if="state.you.answer.finished"
-              class="text-muted-foreground text-center"
-              role="status"
-            >
-              {{ $t("providers.music_quiz.answered") }}
-            </p>
-          </div>
-        </template>
-      </TimelineDisplay>
-    </template>
-
-    <p v-else class="text-muted-foreground text-center" role="status">
-      {{ $t("providers.music_quiz.waiting_for_next") }}
-    </p>
-
-    <TimelineProgress :statuses="roundPlayerStatuses" />
-  </template>
-
-  <template v-else-if="state.phase === 'reveal'">
-    <TimelineDisplay
+  <!-- A player who joined mid-round sees the stage's own notice instead. -->
+  <template v-if="state.phase === 'answering' && canAnswerRound">
+    <!-- The song card itself says what to do: drag it, or tap it. -->
+    <TimelineDragPlace
+      v-model:position="dragPosition"
       :entries="currentRound.timeline"
-      :highlighted-entry-id="currentRound.revealed_entry?.entry_id"
-    />
+      :locked="placementLocked"
+      :disabled="busy"
+      @lock="lockIn"
+    >
+      <template #after-song>
+        <div
+          v-if="state.you.answer"
+          ref="postPlacementRef"
+          data-testid="timeline-post-placement"
+          class="scroll-mt-36"
+          tabindex="-1"
+          aria-live="polite"
+        >
+          <TimelineBonusCard
+            v-if="!state.you.answer.finished && activeBonus"
+            v-model:text="bonusText"
+            :bonus="activeBonus"
+            :label="activeBonusLabel"
+            :busy="busy"
+            :max-length="MAX_BONUS_TEXT_LENGTH"
+            @submit-text="submitTextBonus"
+            @choose="submitChoiceBonus"
+            @skip="skipRemainingBonuses"
+          />
+          <p
+            v-else-if="state.you.answer.finished"
+            class="text-muted-foreground text-center"
+            role="status"
+          >
+            {{ $t("providers.music_quiz.answered") }}
+          </p>
+        </div>
+      </template>
+    </TimelineDragPlace>
 
-    <p
-      v-if="!state.you.answer && !canAnswerRound"
-      class="text-muted-foreground text-center"
-      role="status"
+    <!-- Right under the timeline, above the leaderboard; on a long timeline
+           it sticks to the bottom of the screen. Sticky only works as a
+           direct child of the stage's flex section. -->
+    <div
+      v-if="dragPosition !== null && !placementLocked"
+      class="bg-background sticky bottom-[var(--device-inset-bottom,0px)] z-10 flex justify-center pt-2 pb-1"
     >
-      {{ $t("providers.music_quiz.waiting_for_next") }}
-    </p>
-    <p
-      v-else-if="!state.you.answer"
-      class="text-destructive text-center font-semibold"
-      role="status"
-    >
-      {{ $t("providers.music_quiz.no_answer_submitted") }}
-    </p>
+      <Button
+        class="w-full max-w-sm"
+        size="lg"
+        :disabled="busy"
+        data-testid="timeline-lock-in"
+        @click="lockIn"
+      >
+        <Lock class="size-4" />
+        {{ $t("providers.music_quiz.timeline_lock_in") }}
+      </Button>
+    </div>
   </template>
+
+  <!-- No answer is covered by the result panel above. -->
+  <TimelineDisplay
+    v-else-if="state.phase === 'reveal'"
+    :entries="currentRound.timeline"
+    :highlighted-entry-id="currentRound.revealed_entry?.entry_id"
+  />
 </template>
 
 <script setup lang="ts">
+import TimelineBonusCard from "@/components/music-quiz/answer-types/timeline/TimelineBonusCard.vue";
 import TimelineDisplay from "@/components/music-quiz/answer-types/timeline/TimelineDisplay.vue";
-import TimelineProgress from "@/components/music-quiz/answer-types/timeline/TimelineProgress.vue";
+import TimelineDragPlace from "@/components/music-quiz/answer-types/timeline/TimelineDragPlace.vue";
 import { useTimelinePostPlacementFocus } from "@/components/music-quiz/answer-types/timeline/useTimelinePostPlacementFocus";
 import type {
   MusicQuizPlayerAnswerAdapterEmits,
   MusicQuizPlayerAnswerAdapterProps,
 } from "@/components/music-quiz/adapter_contracts";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import type {
   MusicQuizTimelinePersonalizedState,
   MusicQuizTimelineRound,
   MusicQuizTimelineBonusType,
 } from "@/composables/music-quiz/useMusicQuiz";
-import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
-import { Send, SkipForward } from "@lucide/vue";
+import { Lock } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 
 const MAX_BONUS_TEXT_LENGTH = 200;
@@ -168,7 +102,6 @@ const props =
     >
   >();
 const emit = defineEmits<MusicQuizPlayerAnswerAdapterEmits<"timeline">>();
-
 const bonusText = ref("");
 const pendingPlacement = ref<TimelinePlacementSelection>();
 const answeredBonusTypes = computed(
@@ -204,13 +137,47 @@ const selectedPlacement = computed<TimelinePlacementSelection | undefined>(
 const canAnswerRound = computed(
   () => props.state.you.active_from_round <= props.currentRound.round_index,
 );
-const roundPlayerStatuses = computed(() =>
-  getMusicQuizRoundPlayers(props.state.players, props.currentRound.round_index),
-);
 const { postPlacementRef } = useTimelinePostPlacementFocus(
   () => activeBonus.value?.bonus_type,
   () => props.busy,
 );
+
+// Dragging: where the song sits before it's locked in (null = not moved yet).
+const draggedPosition = ref<number | null>(null);
+const dragPosition = computed<number | null>({
+  get: () => {
+    const placed = selectedPlacement.value;
+    return placed
+      ? positionOf(placed.previousEntryId, placed.nextEntryId)
+      : draggedPosition.value;
+  },
+  set: (position) => {
+    draggedPosition.value = position;
+  },
+});
+
+function positionOf(
+  previousEntryId: string | null,
+  nextEntryId: string | null,
+) {
+  const timeline = props.currentRound.timeline;
+  const next = timeline.findIndex((entry) => entry.entry_id === nextEntryId);
+  if (nextEntryId && next >= 0) return next;
+  const previous = timeline.findIndex(
+    (entry) => entry.entry_id === previousEntryId,
+  );
+  return previousEntryId && previous >= 0 ? previous + 1 : 0;
+}
+
+function lockIn() {
+  const position = dragPosition.value;
+  if (position === null) return;
+  const timeline = props.currentRound.timeline;
+  place(
+    timeline[position - 1]?.entry_id ?? null,
+    timeline[position]?.entry_id ?? null,
+  );
+}
 
 watch(
   () => activeBonus.value?.bonus_type,
@@ -236,6 +203,7 @@ watch(
   () => props.currentRound.round_index,
   () => {
     pendingPlacement.value = undefined;
+    draggedPosition.value = null;
   },
 );
 

@@ -1,5 +1,9 @@
 <template>
-  <TimelineAudienceAnswer :state="state" :current-round="currentRound">
+  <TimelineAudienceAnswer
+    :state="state"
+    :current-round="currentRound"
+    slim-timer
+  >
     <template #leaderboard>
       <slot name="leaderboard"></slot>
     </template>

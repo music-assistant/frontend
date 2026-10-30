@@ -60,7 +60,7 @@ const readyLabel = computed(() =>
       )
     : $t(
         isFinalRound.value
-          ? "providers.music_quiz.ready_for_final_results"
+          ? "providers.music_quiz.ready_last_round"
           : "providers.music_quiz.ready",
       ),
 );
