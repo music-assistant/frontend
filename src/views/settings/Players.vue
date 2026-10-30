@@ -26,9 +26,9 @@
         })
       }}
     </div>
-    <Container
-      :variant="viewMode === 'list' ? 'default' : 'panel'"
-      class="mt-4 px-5"
+    <div
+      class="mt-4 px-5 py-2.5"
+      :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
     >
       <ItemGroup v-if="viewMode === 'list'" class="gap-2">
         <SettingsPlayerRow
@@ -57,7 +57,7 @@
         :icon="VolumeOff"
         data-testid="players-empty"
       />
-    </Container>
+    </div>
     <div
       v-if="canAddPlayerProviders"
       class="missing-players-hint flex items-center justify-center gap-1.5 px-5 py-4 text-[13px] text-muted-foreground"
@@ -77,7 +77,6 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
 import SettingsPlayerRow from "@/components/settings/players/SettingsPlayerRow.vue";

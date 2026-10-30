@@ -6,7 +6,7 @@
       @title-clicked="toggleExpand"
     />
     <Separator />
-    <Container v-if="expanded">
+    <div v-if="expanded" :class="bodyPadding">
       <ItemGroup>
         <Item
           v-for="providerMapping in itemDetails?.provider_mappings"
@@ -148,7 +148,7 @@
           </ItemActions>
         </Item>
       </ItemGroup>
-    </Container>
+    </div>
   </section>
   <GenreExclusionManager
     v-if="
@@ -172,7 +172,6 @@ import {
   Play,
   Trash2,
 } from "@lucide/vue";
-import Container from "@/components/Container.vue";
 import GenreExclusionManager from "@/components/genre/GenreExclusionManager.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { iconHiRes } from "@/components/QualityDetailsBtn.vue";
@@ -189,6 +188,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Separator } from "@/components/ui/separator";
+import { useSectionBodyPadding } from "@/composables/useDetailAdminCard";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { copyToClipboard } from "@/helpers/utils";
@@ -213,6 +213,7 @@ const props = defineProps<Props>();
 
 const { t } = useI18n();
 const expanded = ref(false);
+const bodyPadding = useSectionBodyPadding();
 const mappingSearchInProgress = ref(false);
 
 const openLinkInNewTab = function (url: string) {

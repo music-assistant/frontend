@@ -6,7 +6,7 @@
       @title-clicked="toggleExpand"
     />
     <v-divider />
-    <Container v-if="expanded">
+    <div v-if="expanded" :class="bodyPadding">
       <v-row v-for="imgType of ImageType" :key="imgType">
         <v-col
           v-for="(image, idx) in modelValue.filter((x) => x.type == imgType)"
@@ -84,15 +84,15 @@
           </v-hover>
         </v-col>
       </v-row>
-    </Container>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ChevronDown, ChevronUp } from "@lucide/vue";
-import Container from "@/components/Container.vue";
 import { getMediaItemImageUrl, panelViewItemResponsive } from "@/helpers/utils";
 import Toolbar from "@/components/Toolbar.vue";
+import { useSectionBodyPadding } from "@/composables/useDetailAdminCard";
 import { api } from "@/plugins/api";
 import { ImageType, type MediaItemImage } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -104,6 +104,7 @@ export interface Props {
 const compProps = defineProps<Props>();
 
 const expanded = ref(false);
+const bodyPadding = useSectionBodyPadding();
 
 const emit = defineEmits(["update:modelValue"]);
 
