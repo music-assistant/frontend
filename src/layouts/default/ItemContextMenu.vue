@@ -100,21 +100,25 @@
             :side-offset="6"
             class="max-h-[70vh] overflow-y-auto"
           >
-            <DropdownMenuItem
+            <template
               v-for="subMenuItem of menuItem.subItems.filter((x) => !x.hide)"
               :key="subMenuItem.label"
-              :disabled="subMenuItem.disabled === true"
-              :variant="
-                subMenuItem.color === 'error' ? 'destructive' : 'default'
-              "
-              @select="onSelect($event, subMenuItem)"
             >
-              <MenuItemIcon :icon="subMenuItem.icon" />
-              <span class="flex-1 truncate min-w-0">{{
-                menuItemLabel(subMenuItem)
-              }}</span>
-              <Check v-if="subMenuItem.selected" class="ml-auto size-4" />
-            </DropdownMenuItem>
+              <DropdownMenuItem
+                :disabled="subMenuItem.disabled === true"
+                :variant="
+                  subMenuItem.color === 'error' ? 'destructive' : 'default'
+                "
+                @select="onSelect($event, subMenuItem)"
+              >
+                <MenuItemIcon :icon="subMenuItem.icon" />
+                <span class="flex-1 truncate min-w-0">{{
+                  menuItemLabel(subMenuItem)
+                }}</span>
+                <Check v-if="subMenuItem.selected" class="ml-auto size-4" />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator v-if="subMenuItem.separatorAfter" />
+            </template>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <!-- leaf item -->
@@ -146,7 +150,6 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getLucideIcon, PLAYER_ICON_FALLBACK } from "@/helpers/icon";
 import api from "@/plugins/api";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -195,7 +198,7 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
     action: () => {
       store.activePlayerId = player.player_id;
     },
-    icon: getLucideIcon(player.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK),
+    icon: getPlayerIcon(player),
     selected: store.activePlayerId == player.player_id,
     close_on_click: false,
   }));
@@ -338,7 +341,11 @@ import {
 } from "@/helpers/favorites";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
-import { getPlayerDisplayName, playerVisible } from "@/helpers/players";
+import {
+  getPlayerDisplayName,
+  getPlayerIcon,
+  playerVisible,
+} from "@/helpers/players";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import {
   canAddToPlaylist,

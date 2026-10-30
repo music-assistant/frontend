@@ -17,6 +17,7 @@ import {
   RepeatMode,
   Scope,
 } from "@/plugins/api/interfaces";
+import { getLucideIcon } from "@/helpers/icon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playerQueue } from "../fixtures/playerQueue";
 import { playerSource } from "../fixtures/playerSource";
@@ -57,7 +58,12 @@ vi.mock("@/plugins/api", () => ({
     players: {},
     playerCommandShuffle: vi.fn(),
     playerCommandRepeat: vi.fn(),
+    queueCommandTransfer: vi.fn(),
   },
+}));
+
+vi.mock("@/plugins/web_player", () => ({
+  webPlayer: { player_id: "this_browser" },
 }));
 
 vi.mock("@/plugins/auth", () => ({
@@ -929,5 +935,68 @@ describe("shuffle and repeat", () => {
 
     expect(shown).not.toContain("shuffle_enable");
     expect(shown).not.toContain("select_repeat_mode");
+  });
+});
+
+describe("transfer queue", () => {
+  function transferItems(players: Player[]): ContextMenuItem[] {
+    api.players = Object.fromEntries(
+      players.map((p) => [p.player_id, p]),
+    ) as unknown as typeof api.players;
+    const menuItems = getPlayerMenuItems(
+      makePlayer(),
+      makeQueue({ active: true, items: 3 }),
+      { context: "queue" },
+    );
+    return (
+      menuItems.find((item) => item.label === "transfer_queue")?.subItems ?? []
+    );
+  }
+
+  function targetOf(item: ContextMenuItem): string {
+    item.action?.();
+    return vi.mocked(api.queueCommandTransfer).mock.lastCall![1];
+  }
+
+  function target(overrides: Partial<Player>): Player {
+    return makePlayer({
+      enabled: true,
+      available: true,
+      output_protocols: [],
+      ...overrides,
+    });
+  }
+
+  it("offers this device first even though it is hidden", () => {
+    const items = transferItems([
+      target({ player_id: "kitchen" }),
+      target({ player_id: "attic", name: "Attic" }),
+      target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+      target({ player_id: "garage", name: "Garage", hide_in_ui: true }),
+    ]);
+
+    expect(items.map(targetOf)).toEqual(["this_browser", "attic"]);
+    expect(items.map((item) => item.separatorAfter)).toEqual([true, false]);
+  });
+
+  it("shows the icon the user picked for this device", () => {
+    const [device] = transferItems([
+      target({
+        player_id: "this_browser",
+        hide_in_ui: true,
+        private: true,
+        icon: "headphones",
+      }),
+    ]);
+
+    expect(device.icon).toBe(getLucideIcon("headphones"));
+  });
+
+  it("leaves out the separator when this device is the only target", () => {
+    const items = transferItems([
+      target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+    ]);
+
+    expect(items[0].separatorAfter).toBe(false);
   });
 });
