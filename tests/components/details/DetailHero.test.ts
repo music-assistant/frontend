@@ -1,4 +1,5 @@
 import DetailHero from "@/components/details/DetailHero.vue";
+import Toolbar from "@/components/Toolbar.vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
@@ -14,7 +15,7 @@ vi.mock("@/composables/userPreferences", () => ({
 vi.mock("@/composables/useEscapeBack", () => ({ useEscapeBack: vi.fn() }));
 vi.mock("vue-router", () => ({ useRouter: () => ({ back: vi.fn() }) }));
 vi.mock("@/components/Toolbar.vue", () => ({
-  default: { template: "<div />" },
+  default: { props: ["menuItems"], template: "<div />" },
 }));
 // only the item named "With art" has artwork of its own
 vi.mock("@/helpers/utils", async (importOriginal) => ({
@@ -182,5 +183,36 @@ describe("DetailHero on a phone", () => {
     expect(hero.get(".detail-hero__main").classes()).not.toContain(
       "[&_.detail-hero-cover]:hidden",
     );
+  });
+});
+
+describe("DetailHero menu", () => {
+  beforeEach(() => {
+    vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.body.innerHTML = "";
+  });
+
+  const menuLabels = (wrapper: ReturnType<typeof mount>) =>
+    (
+      wrapper.findComponent(Toolbar).props("menuItems") as Array<{
+        label: string;
+      }>
+    ).map((item) => item.label);
+
+  it("adds Edit rows once the page becomes editable", async () => {
+    const wrapper = mount(DetailHero, {
+      props: { item: track({ name: "Happy Hits" }), editableRows: false },
+      global: { mocks: { $t: (key: string) => key } },
+    });
+    await flushPromises();
+    expect(menuLabels(wrapper)).not.toContain("edit_rows");
+
+    await wrapper.setProps({ editableRows: true });
+    await flushPromises();
+    expect(menuLabels(wrapper)).toContain("edit_rows");
   });
 });
