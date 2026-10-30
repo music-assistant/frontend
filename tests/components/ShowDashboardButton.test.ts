@@ -16,9 +16,12 @@ const {
   apiMock,
   mockWaitForApiInitialization,
   isDashboardViewerMock,
+  isGuestAccessSessionMock,
   hasScopeMock,
   toastMock,
   copyToClipboardMock,
+  routerMock,
+  storeMock,
 } = vi.hoisted(() => ({
   apiMock: {
     sendCommand: vi.fn(),
@@ -34,6 +37,9 @@ const {
   },
   mockWaitForApiInitialization: vi.fn(),
   isDashboardViewerMock: vi.fn(() => false),
+  isGuestAccessSessionMock: vi.fn(() => false),
+  routerMock: { push: vi.fn() },
+  storeMock: { showFullscreenPlayer: true },
   hasScopeMock: vi.fn<(scope: Scope) => boolean>(),
   toastMock: { success: vi.fn(), error: vi.fn() },
   copyToClipboardMock: vi.fn(),
@@ -51,7 +57,16 @@ vi.mock("@/plugins/auth", () => ({
   authManager: {
     hasScope: hasScopeMock,
     isDashboardViewer: isDashboardViewerMock,
+    isGuestAccessSession: isGuestAccessSessionMock,
   },
+}));
+
+vi.mock("@/plugins/router", () => ({
+  default: routerMock,
+}));
+
+vi.mock("@/plugins/store", () => ({
+  store: storeMock,
 }));
 
 vi.mock("vue-sonner", () => ({
@@ -150,6 +165,10 @@ describe("ShowDashboardButton", () => {
     mockCommands();
     isDashboardViewerMock.mockReset();
     isDashboardViewerMock.mockReturnValue(false);
+    isGuestAccessSessionMock.mockReset();
+    isGuestAccessSessionMock.mockReturnValue(false);
+    routerMock.push.mockReset();
+    storeMock.showFullscreenPlayer = true;
     hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
     toastMock.success.mockReset();
     toastMock.error.mockReset();
@@ -241,6 +260,68 @@ describe("ShowDashboardButton", () => {
     expect(wrapper.find("button").exists()).toBe(false);
     expect(apiMock.sendCommand).not.toHaveBeenCalled();
     expect(apiMock.subscribe).not.toHaveBeenCalled();
+  });
+
+  describe("on this device", () => {
+    it("offers the now playing dashboard here to a role that may not cast, without asking for devices", async () => {
+      hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
+
+      const wrapper = mountButton({ dashboard: "now_playing", playerId: "p1" });
+      await flushAsync();
+      await wrapper.get("button").trigger("click");
+      await flushAsync();
+
+      expect(
+        wrapper.find('[data-testid="cast-dashboard-this-device"]').exists(),
+      ).toBe(true);
+      expect(
+        wrapper.find('[data-testid="cast-dashboard-get-url"]').exists(),
+      ).toBe(false);
+      expect(apiMock.sendCommand).not.toHaveBeenCalled();
+    });
+
+    it("lists this device first, above the cast devices", async () => {
+      const wrapper = mountButton({ dashboard: "now_playing", playerId: "p1" });
+      await flushAsync();
+      await wrapper.get("button").trigger("click");
+      await flushAsync();
+
+      const items = wrapper
+        .findAll("button[data-testid]")
+        .map((item) => item.attributes("data-testid"));
+      expect(items.slice(0, 2)).toEqual([
+        "cast-dashboard-this-device",
+        "cast-dashboard-device",
+      ]);
+    });
+
+    it("opens the now playing screen here, for its player, in place of the fullscreen player", async () => {
+      const wrapper = mountButton({ dashboard: "now_playing", playerId: "p1" });
+      await flushAsync();
+
+      await wrapper
+        .get('[data-testid="cast-dashboard-this-device"]')
+        .trigger("click");
+
+      expect(storeMock.showFullscreenPlayer).toBe(false);
+      expect(routerMock.push).toHaveBeenCalledWith({
+        name: "now-playing",
+        query: { player: "p1" },
+      });
+    });
+
+    it.each([
+      ["another dashboard", { dashboard: "party" as DashboardType }, false],
+      ["a guest session", { dashboard: "now_playing" as DashboardType }, true],
+    ])("is not offered for %s", async (_case, props, guest) => {
+      isGuestAccessSessionMock.mockReturnValue(guest);
+      mockCommands({ "dashboard/dashboards": () => [] });
+
+      const wrapper = mountButton(props);
+      await flushAsync();
+
+      expect(wrapper.find("button").exists()).toBe(false);
+    });
   });
 
   it("defers fetching until the API connection is initialized", async () => {
