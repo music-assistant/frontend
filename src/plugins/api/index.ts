@@ -2560,7 +2560,10 @@ export class MusicAssistantApi {
 
   // PlayerGroup related functions/commands
 
-  public playerCommandGroupVolume(playerId: string, newVolume: number) {
+  public playerCommandGroupVolume(
+    playerId: string,
+    newVolume: number,
+  ): Promise<void> {
     /*
       Send VOLUME_SET command to given playergroup.
 
@@ -2568,10 +2571,11 @@ export class MusicAssistantApi {
         - playerId: player_id of the playergroup to handle the command.
         - newVolume: volume level (0..100) to set on the player.
     */
-    this.playerCommand(playerId, "group_volume", {
+    const command = this.playerCommand(playerId, "group_volume", {
       volume_level: newVolume,
     });
     this.players[playerId].group_volume = newVolume;
+    return command;
   }
   public playerCommandGroupVolumeUp(playerId: string): Promise<void> {
     return this.playerCommand(playerId, "group_volume_up");
