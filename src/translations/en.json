@@ -763,8 +763,8 @@
             "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
         },
         "audiobook_chapter_progress": {
-            "label": "Show audiobook chapter progress",
-            "description": "Show elapsed and remaining time for the current audiobook chapter instead of the full audiobook."
+            "label": "Show chapter progress",
+            "description": "Show elapsed and remaining time for the current chapter of an audiobook or podcast episode instead of the whole item."
         },
         "download_diagnostics": "Download diagnostics",
         "diagnostics": "Diagnostics",

@@ -299,7 +299,8 @@ const currentChapter = computed(() => {
   const queueItem = store.curQueueItem;
   if (
     !showChapterProgress.value ||
-    media?.media_type !== MediaType.AUDIOBOOK ||
+    (media?.media_type !== MediaType.AUDIOBOOK &&
+      media?.media_type !== MediaType.PODCAST_EPISODE) ||
     (media.queue_item_id !== null &&
       media.queue_item_id !== queueItem?.queue_item_id)
   ) {

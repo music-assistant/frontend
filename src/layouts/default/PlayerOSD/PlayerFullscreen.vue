@@ -306,7 +306,9 @@
                     row.state === 'playing' &&
                     row.item?.media_item?.metadata?.chapters?.length
                   "
+                  ref="chapterLists"
                   class="queue-chapters"
+                  @scroll="onChapterListScroll"
                 >
                   <button
                     v-for="chapter in row.item.media_item.metadata.chapters"
@@ -589,6 +591,7 @@ import {
   onMounted,
   onUnmounted,
   ref,
+  useTemplateRef,
   watch,
   watchEffect,
   type ComponentPublicInstance,
@@ -636,7 +639,8 @@ const currentChapter = computed(() => {
   const queueItem = chapterQueueItem.value;
   if (
     !showChapterProgress.value ||
-    media?.media_type !== MediaType.AUDIOBOOK ||
+    (media?.media_type !== MediaType.AUDIOBOOK &&
+      media?.media_type !== MediaType.PODCAST_EPISODE) ||
     !queueItem
   ) {
     return undefined;
@@ -653,6 +657,38 @@ const activeChapter = computed(() => currentChapter.value?.chapter);
 const isActiveChapter = (item: QueueItem, chapter: MediaItemChapter) =>
   item.queue_item_id === chapterQueueItem.value?.queue_item_id &&
   chapter.position === activeChapter.value?.position;
+
+// keep the active chapter in view, with the previous one peeking above it
+const chapterLists = useTemplateRef<HTMLElement[]>("chapterLists");
+const scrollToActiveChapter = (
+  list: HTMLElement,
+  behavior: ScrollBehavior = "auto",
+) => {
+  const active = list.querySelector("[aria-current]");
+  if (!(active instanceof HTMLElement)) return;
+  const target = (active.previousElementSibling ?? active) as HTMLElement;
+  list.scrollTo({ top: target.offsetTop, behavior });
+};
+watch(
+  [activeChapter, () => chapterLists.value?.[0]],
+  ([chapter, list]) => {
+    if (chapter && list) scrollToActiveChapter(list);
+  },
+  { flush: "post" },
+);
+
+// return to the active chapter once the user stops browsing the list
+const CHAPTER_REFOCUS_DELAY_MS = 5000;
+let chapterRefocusTimer: ReturnType<typeof setTimeout> | undefined;
+const onChapterListScroll = (event: Event) => {
+  const list = event.currentTarget as HTMLElement;
+  clearTimeout(chapterRefocusTimer);
+  chapterRefocusTimer = setTimeout(
+    () => scrollToActiveChapter(list, "smooth"),
+    CHAPTER_REFOCUS_DELAY_MS,
+  );
+};
+onUnmounted(() => clearTimeout(chapterRefocusTimer));
 
 const updateChapterTimer = (needed: boolean) => {
   if (needed && chapterTimer === null) {
@@ -1591,9 +1627,12 @@ onBeforeUnmount(() => {
 
 /* Audiobook chapters under the current item. */
 .queue-chapters {
+  position: relative;
   display: flex;
   flex-direction: column;
+  max-height: 13rem;
   margin: 2px 0 6px 60px;
+  overflow-y: auto;
 }
 
 .queue-chapter {
