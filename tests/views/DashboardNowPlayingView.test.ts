@@ -148,9 +148,37 @@ describe("DashboardNowPlayingView", () => {
     it("leaves on Escape", () => {
       mountView();
 
-      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      escape();
 
       expect(routerMock.back).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves a dialog, menu or popover open above it to handle Escape first", () => {
+      mountView();
+      document.body.innerHTML += '<div role="dialog"></div>';
+
+      escape();
+
+      expect(routerMock.back).not.toHaveBeenCalled();
+      document.querySelector('[role="dialog"]')?.remove();
+    });
+
+    it("shows a labelled close control that leaves, back to the player", async () => {
+      const wrapper = mountView();
+      const close = wrapper.get('[aria-label="close"]');
+
+      await close.trigger("click");
+
+      expect(routerMock.back).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not reopen the player for an unmount this view did not ask for", () => {
+      const wrapper = mountView();
+
+      // e.g. the command center opening another page over this one
+      wrapper.unmount();
+
+      expect(storeMock.showFullscreenPlayer).toBe(false);
     });
 
     it("stays while the timeline is used", async () => {
@@ -179,8 +207,9 @@ describe("DashboardNowPlayingView", () => {
     setUp();
     const wrapper = mountView();
 
+    expect(wrapper.find('[aria-label="close"]').exists()).toBe(false);
     await wrapper.get(".now-playing-view").trigger("click");
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    escape();
     wrapper.unmount();
 
     expect(routerMock.back).not.toHaveBeenCalled();
@@ -188,3 +217,11 @@ describe("DashboardNowPlayingView", () => {
     expect(storeMock.showFullscreenPlayer).toBe(false);
   });
 });
+
+// useEscapeBack listens on window and only acts on an event that actually
+// bubbles there, the way a real keypress does.
+function escape() {
+  document.body.dispatchEvent(
+    new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+  );
+}

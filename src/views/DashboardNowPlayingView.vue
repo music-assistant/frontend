@@ -1,10 +1,22 @@
 <template>
   <div
     class="now-playing-view"
-    :class="{ 'now-playing-view--on-device': onDevice }"
+    :class="{ 'cursor-pointer': onDevice }"
     :style="{ background: backgroundGradient }"
     @click="leave"
   >
+    <!-- the click-anywhere and Escape exits are invisible to screen readers,
+         so a touch user who relies on one needs a labelled control as well -->
+    <Button
+      v-if="onDevice"
+      variant="ghost"
+      size="icon-sm"
+      class="now-playing-close"
+      :aria-label="$t('close')"
+      @click.stop="leave"
+    >
+      <X class="size-5" />
+    </Button>
     <VisualizerCanvas
       v-if="visualizerActive"
       :preset="visualizerPresetPref"
@@ -66,7 +78,9 @@
 import MarqueeText from "@/components/MarqueeText.vue";
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import { Button } from "@/components/ui/button";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
+import { useEscapeBack } from "@/composables/useEscapeBack";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerDisplayName } from "@/helpers/players";
@@ -82,6 +96,7 @@ import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { useColorMode } from "@vueuse/core";
 import Color from "color";
+import { X } from "@lucide/vue";
 import { computed, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 
@@ -97,33 +112,36 @@ onMounted(() => {
 
 // Opened from the player on this device, rather than cast to a display or
 // opened as a kiosk link (?frameless), the view hides the app's chrome while it
-// is shown and leaves on Escape or a click, back to the player.
+// is shown and leaves on Escape, the close button, or a click, back to the
+// player it was opened from.
 const onDevice =
   !authManager.isDashboardViewer?.() && route.query.frameless === undefined;
 const framelessBefore = store.frameless;
+// Only a leave this view itself asked for reopens the player it came from; an
+// unmount for another reason, e.g. the command center navigating elsewhere,
+// must not pop the player up over that destination.
+let leftExplicitly = false;
 
 const leave = () => {
   if (!onDevice) return;
+  leftExplicitly = true;
   if (router.options.history.state.back) router.back();
   else void router.push("/");
 };
 
-const onKeydown = (event: KeyboardEvent) => {
-  if (event.key === "Escape") leave();
-};
+// Escape already has a job while a dialog, menu or popover is open above this
+// view, so useEscapeBack defers to those (and to an editable field) before
+// leaving here.
+useEscapeBack(leave, () => onDevice);
 
 onMounted(() => {
-  if (!onDevice) return;
-  store.frameless = true;
-  document.addEventListener("keydown", onKeydown);
+  if (onDevice) store.frameless = true;
 });
 
 onUnmounted(() => {
   if (!onDevice) return;
-  document.removeEventListener("keydown", onKeydown);
   store.frameless = framelessBefore;
-  // the player it was opened from is where it leaves to
-  store.showFullscreenPlayer = true;
+  if (leftExplicitly) store.showFullscreenPlayer = true;
 });
 
 // Synced marquee scrolling for the title/artist, same as the fullscreen player.
@@ -183,15 +201,19 @@ const backgroundGradient = computed(() => {
   color: var(--text-color, #fff);
 }
 
-/* on this device a click anywhere leaves */
-.now-playing-view--on-device {
-  cursor: pointer;
-}
-
 /* Lift content above the visualizer layer (z-index 0). */
 .now-playing-view > *:not(.visualizer-layer) {
   position: relative;
   z-index: 1;
+}
+
+/* Same specificity as the lift rule above and later in the stylesheet, so it
+   wins: the close button sits out of flow, clear of the artwork below it. */
+.now-playing-view > .now-playing-close {
+  position: absolute;
+  top: max(1rem, 2vh);
+  left: max(1rem, 2vw);
+  z-index: 2;
 }
 
 /* Keep the vh fallback in a separate rule: the minifier collapses duplicate
