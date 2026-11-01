@@ -181,12 +181,14 @@
       </Button>
     </div>
 
-    <Container
+    <div
       v-if="expanded"
       ref="listContainer"
-      :variant="viewMode == 'list' ? 'default' : 'panel'"
-      :class="{ 'flex flex-1 flex-col': fillsHeight }"
-      style="overflow: hidden"
+      class="overflow-hidden p-2.5"
+      :class="{
+        'bg-background dark:bg-transparent': viewMode != 'list',
+        'flex flex-1 flex-col': fillsHeight,
+      }"
     >
       <TrackTableHeader
         v-if="showTrackTable && (loadPending || pagedItems.length)"
@@ -386,7 +388,7 @@
             )
         "
       />
-    </Container>
+    </div>
   </section>
 </template>
 
@@ -401,7 +403,6 @@ export type {
 <script setup lang="ts">
 import type { Component } from "vue";
 
-import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
@@ -751,7 +752,7 @@ const onTabChange = function (tabId: string) {
 };
 
 const viewMode = ref("list");
-const listContainer = ref<InstanceType<typeof Container>>();
+const listContainer = ref<HTMLElement>();
 const showTrackTable = computed(
   () => props.trackTable && viewMode.value == "list",
 );
