@@ -238,7 +238,12 @@
         :margin="INFINITE_SCROLL_MARGIN"
         :load-more-text="$t('load_more_items')"
         :empty-text="''"
-        :class="{ 'select-none': shiftSelecting }"
+        :class="{
+          'select-none': shiftSelecting,
+          // a list shorter than the margin never reaches its end marker, so the
+          // scroller keeps its spinner unless it is hidden once all items are in
+          '[&>:last-child]:hidden': allItemsReceived,
+        }"
         style="overflow: hidden"
       >
         <template #error="{ props: errorProps }">
