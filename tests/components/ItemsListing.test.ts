@@ -3307,3 +3307,47 @@ describe("ItemsListing library toolbar", () => {
     expect(listing.find(".toolbar-stub").text()).not.toContain("128");
   });
 });
+
+describe("ItemsListing prefetch margin", () => {
+  // the infinite scroller as a box that only keeps the margin it was given
+  const MarginStub = {
+    name: "VInfiniteScroll",
+    props: { margin: { type: [Number, String], default: undefined } },
+    template: "<div><slot /></div>",
+  };
+
+  const tracks = (count: number) =>
+    Array.from({ length: count }, (_, i) =>
+      track({ item_id: `${i}`, name: `Track ${i}` }),
+    );
+
+  async function scrollerMargin(pageSize: number) {
+    const listing = mountListingRaw(
+      {
+        showGenreFilter: false,
+        loadPagedData: vi.fn().mockResolvedValue(tracks(pageSize)),
+      },
+      { VInfiniteScroll: MarginStub },
+    );
+    await flushPromises();
+    return listing.findComponent({ name: "VInfiniteScroll" }).props("margin");
+  }
+
+  beforeEach(() => {
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
+  });
+
+  it("loads ahead while more pages may follow", async () => {
+    // a full page, so the listing does not know it holds everything
+    expect(await scrollerMargin(50)).toBeGreaterThan(0);
+  });
+
+  it("drops the margin once every item is loaded, so a short list reaches its end", async () => {
+    expect(await scrollerMargin(2)).toBe(0);
+  });
+});

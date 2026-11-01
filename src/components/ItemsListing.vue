@@ -235,7 +235,7 @@
         "
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
-        :margin="allItemsReceived ? 0 : INFINITE_SCROLL_MARGIN"
+        :margin="infiniteScrollMargin"
         :load-more-text="$t('load_more_items')"
         :empty-text="''"
         :class="{ 'select-none': shiftSelecting }"
@@ -928,6 +928,13 @@ const gridColumnCount = computed(() =>
 );
 
 const INFINITE_SCROLL_MARGIN = 600;
+
+// the scroller's end marker sits this far above the end of the list, so a list
+// shorter than the margin never reaches it and the spinner would stay; once
+// every item is in, the marker goes back to the end so the scroller can finish
+const infiniteScrollMargin = computed(() =>
+  allItemsReceived.value ? 0 : INFINITE_SCROLL_MARGIN,
+);
 
 const commitGridSize = function (size: number) {
   gridSize.value = size;
