@@ -57,13 +57,13 @@
 
       <div class="flex flex-wrap gap-4">
         <StatisticsArtistTimeCard
-          class="flex-[2_1_460px] px-6 py-5"
+          class="flex-[2_1_360px] px-6 py-5"
           :listening-time="data.listeningTime"
           :loading="loading"
           :error="failed.has('listeningTime')"
         />
         <ListeningHeatmapCard
-          class="flex-[3_1_560px] px-6 py-5"
+          class="flex-[3_1_520px] px-6 py-5"
           :data="data.listeningActivity"
           :loading="loading"
           :error="failed.has('listeningActivity')"
