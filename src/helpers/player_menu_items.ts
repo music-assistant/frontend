@@ -14,6 +14,7 @@ import {
 import {
   getPlayerDisplayName,
   getPlayerIcon,
+  getPlayerName,
   isBuiltinPlayer,
   isSelectablePlayer,
 } from "@/helpers/players";
@@ -220,7 +221,8 @@ export const getPlayerMenuItems = (
       .filter(
         (p) =>
           p.player_id != playerQueue!.queue_id &&
-          p.player_id != player.player_id &&
+          // this device may pull the queue of the group it is shown in
+          (p.player_id != player.player_id || isBuiltinPlayer(p)) &&
           isSelectablePlayer(p) &&
           // the server ungroups a synced target before it moves the queue, so
           // this device may take the queue of the group it plays in
@@ -242,16 +244,18 @@ export const getPlayerMenuItems = (
       subItems: targets.map((p, index) => {
         const next = targets[index + 1];
         return {
-          label: getPlayerDisplayName(p),
+          // "+N" marks a leader whose group plays the queue too
+          label: getPlayerName(p, 40),
           labelArgs: [],
           icon: getPlayerIcon(p),
           separatorAfter:
             isBuiltinPlayer(p) && next !== undefined && !isBuiltinPlayer(next),
-          action: () => {
+          action: async () => {
             // Playback on this tab's web player starts after the transfer, so
-            // unlock its audio within this click; iOS keeps it silent otherwise.
-            // The companion app and another tab's player play on their own.
-            if (playsInThisTab(p) && !webPlayer.primeAudio()) {
+            // start unlocking its audio within this click (iOS keeps it silent
+            // otherwise) and only move the queue once that worked. The
+            // companion app and another tab's player play on their own.
+            if (playsInThisTab(p) && !(await webPlayer.unlockAudio())) {
               toast.error($t("transfer_queue_no_audio"));
               return;
             }

@@ -36,13 +36,19 @@ export const isPlaybackMode = (mode: WebPlayerMode) =>
 // audio output from within a user gesture. Listen-in audio starts
 // asynchronously, so iOS would otherwise block it; priming during the gesture
 // keeps playback reliable. See SendspinPlayer.vue and useListenIn.
-let audioUnlockHandler: (() => boolean) | null = null;
+// The handler returns false when no audio output is ready, or else a promise
+// that settles with whether the unlock succeeded.
+export type WebPlayerAudioUnlock = () => Promise<boolean> | false;
 
-export function registerWebPlayerAudioUnlock(handler: () => boolean): void {
+let audioUnlockHandler: WebPlayerAudioUnlock | null = null;
+
+export function registerWebPlayerAudioUnlock(
+  handler: WebPlayerAudioUnlock,
+): void {
   audioUnlockHandler = handler;
 }
 
-export function clearWebPlayerAudioUnlock(handler: () => boolean): void {
+export function clearWebPlayerAudioUnlock(handler: WebPlayerAudioUnlock): void {
   if (audioUnlockHandler === handler) audioUnlockHandler = null;
 }
 
@@ -419,7 +425,15 @@ export const webPlayer = reactive({
   // Unlock this browser's audio output from within a user gesture so
   // asynchronously-started listen-in audio can play (notably on iOS).
   primeAudio() {
-    return audioUnlockHandler?.() ?? false;
+    const unlock = audioUnlockHandler?.() ?? false;
+    if (unlock === false) return false;
+    void unlock;
+    return true;
+  },
+  // Like primeAudio, but settles with whether the unlock succeeded. Call it
+  // within the user gesture; awaiting the result may happen afterwards.
+  unlockAudio(): Promise<boolean> {
+    return audioUnlockHandler?.() || Promise.resolve(false);
   },
   timedOutDueToThrottling() {
     return Date.now() - webPlayer.lastUpdate >= TIMEOUT_DURATION_MS;
