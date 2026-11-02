@@ -243,6 +243,11 @@
         :class="{ 'select-none': shiftSelecting }"
         style="overflow: hidden"
       >
+        <!-- the end marker sits INFINITE_SCROLL_MARGIN above the end of the list,
+        so a shorter list clips it and never reports that it has no more items -->
+        <template #loading>
+          <Spinner v-if="!allItemsReceived" class="size-8" />
+        </template>
         <template #error="{ props: errorProps }">
           <div class="flex justify-center py-4">
             <Button
@@ -425,6 +430,7 @@ import {
 } from "@/components/ui/empty";
 import { InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
 import { SearchInput } from "@/components/ui/search-input";
+import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GridSizeSlider from "@/components/GridSizeSlider.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
