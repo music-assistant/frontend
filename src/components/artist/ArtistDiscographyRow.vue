@@ -3,6 +3,7 @@
     :title="$t('discography')"
     :meta="isPhone ? undefined : $t('discography_hint')"
     :hide-title="!showHeading"
+    :class="{ 'mt-[-16px] max-[600px]:mt-[-8px]': !showHeading }"
     :items="shelfItems"
     :view-all-to="viewAllTo"
     :view-all-name="typeNames"
@@ -10,10 +11,18 @@
     @edit-rows="emit('edit-rows')"
   >
     <template #label>
-      <DiscographyTypePicker
-        :model-value="types"
-        @update:model-value="(picked) => setDiscographyTypes(rowId, picked)"
-      />
+      <div class="flex items-center gap-[10px]">
+        <DiscographyTypePicker
+          :model-value="types"
+          @update:model-value="(picked) => setDiscographyTypes(rowId, picked)"
+        />
+        <span
+          v-if="items?.length"
+          class="text-[13px] whitespace-nowrap text-[color:rgba(var(--v-theme-on-surface),0.6)]"
+        >
+          {{ items.length }}
+        </span>
+      </div>
     </template>
   </ReleaseShelf>
 </template>
@@ -39,7 +48,8 @@ export interface Props {
   artist: Artist;
   // undefined while the row is still loading
   items?: Album[];
-  // off for a row right below another discography row, which already has it
+  // off for a row right below another discography row, which already has it;
+  // the row then also sits closer to that one
   showHeading?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
