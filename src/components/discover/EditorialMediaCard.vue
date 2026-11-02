@@ -38,10 +38,13 @@
       />
       <span
         v-else-if="art.placeholderIcon"
-        class="ed-card__placeholder"
+        class="ed-card__placeholder absolute inset-0 flex items-center justify-center"
         aria-hidden="true"
       >
-        <component :is="art.placeholderIcon" class="size-[40%]" />
+        <component
+          :is="art.placeholderIcon"
+          class="size-[40%] text-white/92 drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
+        />
       </span>
       <ProviderIcon
         v-if="providerDomain"
@@ -410,15 +413,6 @@ const onMenu = (e: MouseEvent) => {
 }
 .ed-card--round .ed-card__art {
   border-radius: 999px;
-}
-.ed-card__placeholder {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.92);
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.25));
 }
 .ed-card__provider {
   position: absolute;
