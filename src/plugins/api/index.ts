@@ -3857,13 +3857,17 @@ export class MusicAssistantApi {
       };
     }
 
-    for (const prov of await this.sendCommand<ProviderManifest[]>(
+    await this.fetchProviderManifests();
+    await this.fetchProviders();
+  }
+
+  public async fetchProviderManifests() {
+    const manifests = await this.sendCommand<ProviderManifest[]>(
       "providers/manifests",
-    )) {
+    );
+    for (const prov of manifests) {
       this.providerManifests[prov.domain] = prov;
     }
-
-    await this.fetchProviders();
   }
 
   public async fetchProviders() {
