@@ -1,5 +1,12 @@
 <template>
-  <section class="px-7 pt-7 pb-16 text-foreground max-md:px-4 max-md:pt-4">
+  <section
+    :class="
+      cn(
+        'px-7 pt-7 pb-16 text-foreground max-md:px-4 max-md:pt-4',
+        store.mobileLayout && 'pb-0',
+      )
+    "
+  >
     <div class="mx-auto flex max-w-[1320px] flex-col gap-4">
       <header class="flex flex-wrap items-center gap-3">
         <Button
@@ -103,12 +110,14 @@ import { Button } from "@/components/ui/button";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { useStatistics } from "@/composables/useStatistics";
 import { goBack } from "@/helpers/navigation";
+import { cn } from "@/lib/utils";
 import {
   hourlyTotals,
   peakListeningWindow,
 } from "@/helpers/statistics_activity";
 import { summarizePlays } from "@/helpers/statistics_time_series";
 import type { StatisticsPeriod } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { ArrowLeft } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
