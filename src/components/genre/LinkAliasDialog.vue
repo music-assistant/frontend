@@ -28,7 +28,7 @@
           <ComboboxTrigger :aria-label="$t('tooltip.open_options')" />
         </ComboboxAnchor>
         <ComboboxList>
-          <ComboboxEmpty>{{ $t("no_content") }}</ComboboxEmpty>
+          <ComboboxEmpty>{{ emptyText }}</ComboboxEmpty>
           <ComboboxItem
             v-for="alias in availableAliases"
             :key="alias"
@@ -108,24 +108,32 @@ const availableAliases = computed(() => {
   return aliasOptions.value.filter((a) => !current.has(a.toLowerCase()));
 });
 
+const emptyText = computed(() => {
+  if (!aliasSearch.value) return t("link_alias_search_hint");
+  if (aliasLoading.value) return t("searching");
+  return t("no_content");
+});
+
 watch(
   () => aliasSearch.value,
-  () => {
+  (search) => {
     clearTimeout(searchThrottle.value);
+    if (!search) {
+      aliasOptions.value = [];
+      aliasLoading.value = false;
+      return;
+    }
+    aliasLoading.value = true;
     searchThrottle.value = window.setTimeout(async () => {
-      if (!aliasSearch.value) {
-        aliasOptions.value = [];
-        return;
-      }
-      aliasLoading.value = true;
       try {
         const genres = await api.getLibraryGenres({
-          search: aliasSearch.value,
+          search,
           limit: SEARCH_RESULT_LIMIT,
           offset: 0,
           sort_field: SortField.NAME,
           summary: false,
         });
+        if (search !== aliasSearch.value) return;
         const allAliases = new Set<string>();
         for (const genre of genres) {
           for (const alias of genre.genre_aliases || []) {
@@ -134,7 +142,7 @@ watch(
         }
         aliasOptions.value = [...allAliases].sort((a, b) => a.localeCompare(b));
       } finally {
-        aliasLoading.value = false;
+        if (search === aliasSearch.value) aliasLoading.value = false;
       }
     }, SEARCH_THROTTLE_MS);
   },

@@ -1620,6 +1620,7 @@
     "link": "Link",
     "link_alias": "Link alias",
     "link_alias_failed": "Failed to link alias",
+    "link_alias_search_hint": "Type to search for an alias",
     "alias_linked_successfully": "Alias linked successfully",
     "mapped_aliases": "Mapped Aliases",
     "no_aliases": "No aliases linked yet.",
