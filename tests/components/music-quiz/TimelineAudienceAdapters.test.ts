@@ -14,7 +14,6 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 vi.mock("@/helpers/utils", () => ({
-  getAvatarImage: () => "",
   getMediaImageUrl: (url: string) => url,
 }));
 
