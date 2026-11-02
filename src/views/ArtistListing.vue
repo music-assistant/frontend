@@ -21,6 +21,7 @@
       :default-provider="config.defaultProvider"
       :provider-override="config.providerOverride"
       :show-album-type-filter="config.showAlbumTypeFilter"
+      :album-type-filter-options="config.albumTypeFilterOptions"
       :show-track-number="config.showTrackNumber"
       :show-refresh-button="false"
       :sort-listing="config.sortListing"
@@ -40,12 +41,18 @@ import {
   loadArtistTracks,
 } from "@/components/artist/artistData";
 import { artistRows } from "@/components/artist/artistRows";
+import { DISCOGRAPHY_TYPES_QUERY } from "@/components/artist/discographyTypes";
 import {
   rowSourceLabel,
   type RowSource,
 } from "@/components/details/rowRegistry";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
+import { useUserPreferences } from "@/composables/userPreferences";
+import {
+  DISCOGRAPHY_TYPES,
+  validDiscographyTypes,
+} from "@/helpers/discography_types";
 import { goBack } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
 import {
@@ -55,6 +62,7 @@ import {
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import { ArrowLeft } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -74,6 +82,8 @@ interface ListingConfig {
   loadPagedData: (params: LoadDataParams) => Promise<MediaItemType[]>;
   sortListing: ListingType;
   showAlbumTypeFilter: boolean;
+  // the album types the filter offers, when not every type
+  albumTypeFilterOptions?: string[];
   showFavoritesOnlyFilter: boolean;
   showProviderFilter: boolean;
   showTrackNumber: boolean;
@@ -100,8 +110,12 @@ const RELEASE_TYPES: Record<"albums" | "singles_eps", AlbumType[]> = {
   singles_eps: [AlbumType.SINGLE, AlbumType.EP],
 };
 
+const DISCOGRAPHY_PATH = "artistdiscography";
+const RELEASES_ITEMTYPE = "artistalbums";
+
 const router = useRouter();
 const route = useRoute();
+const { setItemsListingPreference } = useUserPreferences();
 const itemDetails = ref<Artist>();
 // the source of the releases on screen: the one the listing is on, or the one
 // they were last loaded from, so the header names it
@@ -114,7 +128,7 @@ let linkedSource: string | undefined;
 watch(
   () => [props.itemId, props.provider],
   async ([itemId, provider]) => {
-    linkedSource = takeLinkedSource();
+    linkedSource = takeLinkedQuery();
     // the listing remounts for the new artist instead of keeping the old items
     itemDetails.value = undefined;
     activeSource.value = undefined;
@@ -132,7 +146,7 @@ watch(
   () => props.listing,
   () => {
     activeSource.value = undefined;
-    linkedSource = takeLinkedSource();
+    linkedSource = takeLinkedQuery();
   },
 );
 
@@ -210,10 +224,11 @@ const config = computed<ListingConfig | undefined>(() => {
     case "discography":
       return {
         ...listingDefaults(),
-        labelKey: artistRows.definition("discography").labelKey,
-        path: "artistdiscography",
+        labelKey: "discography",
+        path: DISCOGRAPHY_PATH,
         sortListing: ListingType.ARTIST_DISCOGRAPHY,
-        showAlbumTypeFilter: false,
+        showAlbumTypeFilter: true,
+        albumTypeFilterOptions: [...DISCOGRAPHY_TYPES],
         showFavoritesOnlyFilter: false,
         showProviderFilter: false,
         emptyMessage: $t("artist_row_empty"),
@@ -264,7 +279,7 @@ function listingDefaults(): Omit<
   "labelKey" | "path" | "loadPagedData" | "sortListing"
 > {
   return {
-    itemtype: "artistalbums",
+    itemtype: RELEASES_ITEMTYPE,
     showAlbumTypeFilter: false,
     showFavoritesOnlyFilter: true,
     showProviderFilter: true,
@@ -292,14 +307,34 @@ function sourceSelection(rowId: "albums" | "singles_eps") {
   };
 }
 
-/** The source named in the url's query, if any, taken off the url. */
-function takeLinkedSource(): string | undefined {
-  const source = route.query.source;
-  if (typeof source !== "string") return undefined;
-  const query = { ...route.query };
-  delete query.source;
-  router.replace({ query });
-  return source;
+/**
+ * The source named in the url's query, if any. The discography types a link
+ * carries become the discography listing's album type filter. Both are taken
+ * off the url.
+ */
+function takeLinkedQuery(): string | undefined {
+  const { source, [DISCOGRAPHY_TYPES_QUERY]: types, ...rest } = route.query;
+  if (source === undefined && types === undefined) return undefined;
+  router.replace({ query: rest });
+  if (typeof types === "string" && props.listing === "discography") {
+    applyLinkedTypes(validDiscographyTypes(types.split(",")));
+  }
+  return typeof source === "string" ? source : undefined;
+}
+
+/**
+ * Starts the discography listing on the types a "View all" link carried in,
+ * as a fresh visit rather than a return to the last one.
+ */
+function applyLinkedTypes(types: AlbumType[]) {
+  if (!types.length) return;
+  store.prevState = undefined;
+  setItemsListingPreference(
+    DISCOGRAPHY_PATH,
+    RELEASES_ITEMTYPE,
+    "albumType",
+    types,
+  );
 }
 
 /**
@@ -343,14 +378,19 @@ async function loadArtistAlbumPage(
   });
 }
 
-/** Everything MusicBrainz credits to the artist; only a library artist has one. */
+/**
+ * Everything MusicBrainz credits to the artist, of the filtered types when any;
+ * only a library artist has one.
+ */
 async function loadDiscography(
   params: LoadDataParams,
 ): Promise<MediaItemType[]> {
   const artist = itemDetails.value;
   if (artist?.provider !== "library") return [];
+  const albumTypes = validDiscographyTypes(params.albumType);
   return await loadArtistDiscography(
     artist,
+    albumTypes.length ? albumTypes : undefined,
     params.search,
     params.limit,
     params.offset,

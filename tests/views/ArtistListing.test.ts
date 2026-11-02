@@ -8,6 +8,7 @@ import {
   type Artist,
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import ArtistListing, { type Props } from "@/views/ArtistListing.vue";
 import type { LoadDataParams } from "@/components/ItemsListing.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
@@ -23,6 +24,7 @@ const {
   mockGetArtistAppearsOn,
   mockGetArtistDiscography,
   mockReplace,
+  mockSetItemsListingPreference,
   routeQuery,
 } = vi.hoisted(() => ({
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
@@ -31,6 +33,7 @@ const {
   mockGetArtistAppearsOn: vi.fn<MusicAssistantApi["getArtistAppearsOn"]>(),
   mockGetArtistDiscography: vi.fn<MusicAssistantApi["getArtistDiscography"]>(),
   mockReplace: vi.fn(),
+  mockSetItemsListingPreference: vi.fn(),
   routeQuery: {} as Record<string, string>,
 }));
 
@@ -50,6 +53,13 @@ vi.mock("@/plugins/api", () => ({
 vi.mock("@/plugins/i18n", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/plugins/i18n")>()),
   $t: (key: string) => key,
+}));
+
+vi.mock("@/composables/userPreferences", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/composables/userPreferences")>()),
+  useUserPreferences: () => ({
+    setItemsListingPreference: mockSetItemsListingPreference,
+  }),
 }));
 
 vi.mock("vue-router", () => ({
@@ -77,6 +87,7 @@ vi.mock("@/components/ItemsListing.vue", () => ({
       "providerFilterOptions",
       "showProviderFilter",
       "showAlbumTypeFilter",
+      "albumTypeFilterOptions",
       "sortKeys",
     ],
     template:
@@ -117,6 +128,7 @@ describe("ArtistListing", () => {
     mockGetArtistTracks.mockReset().mockResolvedValue([]);
     mockGetArtistAlbums.mockReset().mockResolvedValue([]);
     mockReplace.mockReset();
+    mockSetItemsListingPreference.mockReset();
     mockGetArtistAppearsOn.mockReset().mockResolvedValue([]);
     mockGetArtistDiscography.mockReset().mockResolvedValue([]);
     for (const key of Object.keys(api.providers)) delete api.providers[key];
@@ -465,7 +477,6 @@ describe("ArtistListing", () => {
     expect(listing(wrapper).props("sortListing")).toBe(
       ListingType.ARTIST_DISCOGRAPHY,
     );
-    expect(listing(wrapper).props("showAlbumTypeFilter")).toBe(false);
     expect(mockGetArtistDiscography).toHaveBeenCalledWith(
       "artist-1",
       "jazz",
@@ -473,7 +484,67 @@ describe("ArtistListing", () => {
       40,
       SortField.YEAR,
       SortDirection.DESC,
+      undefined,
     );
+  });
+
+  it("filters the discography by the release types the artist page offers", async () => {
+    const wrapper = await mountListing(
+      "discography",
+      artist({ item_id: "artist-1" }),
+    );
+
+    expect(listing(wrapper).props("showAlbumTypeFilter")).toBe(true);
+    expect(listing(wrapper).props("albumTypeFilterOptions")).toEqual([
+      AlbumType.ALBUM,
+      AlbumType.SINGLE,
+      AlbumType.EP,
+      AlbumType.COMPILATION,
+      AlbumType.LIVE,
+      AlbumType.SOUNDTRACK,
+    ]);
+
+    await listing(wrapper).props("loadPagedData")({
+      offset: 0,
+      limit: 20,
+      sortBy: "year:desc",
+      search: "",
+      albumType: [AlbumType.LIVE, AlbumType.UNKNOWN, AlbumType.ALBUM],
+    });
+
+    expect(mockGetArtistDiscography).toHaveBeenLastCalledWith(
+      "artist-1",
+      "",
+      20,
+      0,
+      undefined,
+      undefined,
+      [AlbumType.ALBUM, AlbumType.LIVE],
+    );
+  });
+
+  it("starts the discography on the types a link carries, as a fresh visit", async () => {
+    routeQuery.types = "live,album,bogus";
+    routeQuery.other = "kept";
+    store.prevState = { path: "artistdiscography" } as typeof store.prevState;
+
+    await mountListing("discography");
+
+    expect(mockReplace).toHaveBeenCalledWith({ query: { other: "kept" } });
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "artistdiscography",
+      "artistalbums",
+      "albumType",
+      [AlbumType.ALBUM, AlbumType.LIVE],
+    );
+    expect(store.prevState).toBeUndefined();
+  });
+
+  it("leaves the album type filter alone without types in the link", async () => {
+    await mountListing("discography");
+
+    expect(mockSetItemsListingPreference).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it("lists a library artist's appearances as the server sends them", async () => {

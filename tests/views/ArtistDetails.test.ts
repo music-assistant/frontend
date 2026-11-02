@@ -323,6 +323,55 @@ describe("ArtistDetails", () => {
     expect(shelf?.props("items")).toHaveLength(50);
   });
 
+  describe("discography heading", () => {
+    // which discography rows render, and whether each shows the heading
+    function discographyHeadings(wrapper: VueWrapper) {
+      return wrapper
+        .findAllComponents({ name: "ArtistDiscographyRow" })
+        .map((row) => [row.props("rowId"), row.props("showHeading")]);
+    }
+
+    function showRows(rows: string[]) {
+      mockAvailableArtistRowIds.mockReturnValue(rows);
+    }
+
+    it("shows once above discography rows next to each other", async () => {
+      showRows(["albums", "discography", "discography_more", "appears_on"]);
+
+      const wrapper = await mountDetails(artist());
+
+      expect(discographyHeadings(wrapper)).toEqual([
+        ["discography", true],
+        ["discography_more", false],
+      ]);
+    });
+
+    it("shows above each discography row once they are apart", async () => {
+      showRows(["discography", "appears_on", "discography_more"]);
+
+      const wrapper = await mountDetails(artist());
+
+      expect(discographyHeadings(wrapper)).toEqual([
+        ["discography", true],
+        ["discography_more", true],
+      ]);
+    });
+
+    it("moves to the second row when the first comes up empty", async () => {
+      showRows(["discography", "discography_more"]);
+      mockLoadArtistDiscography.mockImplementation(
+        async (_artist: Artist, types: AlbumType[]) =>
+          types.includes(AlbumType.LIVE) ? [album()] : [],
+      );
+
+      const wrapper = await mountDetails(artist());
+
+      expect(discographyHeadings(wrapper)).toEqual([
+        ["discography_more", true],
+      ]);
+    });
+  });
+
   // MusicBrainz is not loaded, or does not know the artist
   it("hides the discography once it comes up empty", async () => {
     mockLoadArtistDiscography.mockResolvedValue([]);

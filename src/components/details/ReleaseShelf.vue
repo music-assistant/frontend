@@ -4,8 +4,18 @@
     :gap="14"
     :tiles-per-view="tilesPerView"
   >
-    <template #header>
+    <!-- with a label, the title heads the shelf from above the label's line -->
+    <template v-if="$slots.label && !hideTitle" #heading>
       <DetailSectionTitle
+        :title="title"
+        :meta="meta"
+        @edit-rows="emit('edit-rows')"
+      />
+    </template>
+    <template #header>
+      <slot v-if="$slots.label" name="label"></slot>
+      <DetailSectionTitle
+        v-else
         :title="title"
         :meta="sourceLabel ? undefined : meta"
         @edit-rows="emit('edit-rows')"
@@ -24,7 +34,7 @@
       <RouterLink
         :to="viewAllTo"
         class="release-shelf__more"
-        :aria-label="$t('tooltip.view_all', { name: title })"
+        :aria-label="$t('tooltip.view_all', { name: viewAllName ?? title })"
       >
         {{ $t("view_all") }}
       </RouterLink>
@@ -101,9 +111,13 @@ export interface Props {
   // undefined while the row is still loading
   items?: Array<Album | ItemMapping>;
   viewAllTo?: RouteLocationRaw;
+  // what "View all" opens, for screen readers, when the title doesn't say it
+  viewAllName?: string;
   // shown in place of the tiles when the row loaded nothing
   emptyMessage?: string;
   parentItem?: MediaItemType;
+  // with a label, leaves the title out, for a shelf continuing the one above
+  hideTitle?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   meta: undefined,
@@ -113,13 +127,21 @@ const props = withDefaults(defineProps<Props>(), {
   sourceValue: undefined,
   items: undefined,
   viewAllTo: undefined,
+  viewAllName: undefined,
   emptyMessage: undefined,
   parentItem: undefined,
+  hideTitle: false,
 });
 
 const emit = defineEmits<{
   (e: "edit-rows"): void;
   (e: "select-source", source: RowSource): void;
+}>();
+
+defineSlots<{
+  // in place of the title on the line with "View all", e.g. a filter; the
+  // title then sits above that line
+  label?: () => unknown;
 }>();
 
 const SKELETONS = 6;

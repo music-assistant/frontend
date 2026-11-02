@@ -79,14 +79,16 @@
           @edit-rows="rowsEditorOpen = true"
         />
 
-        <!-- discography (every release MusicBrainz lists, in the library or not) -->
-        <ReleaseShelf
-          v-else-if="rowId === 'discography' && showRow(discographyItems)"
-          :title="$t('discography')"
-          :meta="isPhone ? undefined : $t('discography_hint')"
-          :items="discographyShelfItems"
-          :view-all-to="listingRoute('discography')"
-          :parent-item="itemDetails"
+        <!-- discography (every release MusicBrainz lists, in the library or
+             not), in two rows each showing the release types the user picked -->
+        <ArtistDiscographyRow
+          v-else-if="
+            isDiscographyRow(rowId) && showRow(discographyRowItems[rowId])
+          "
+          :row-id="rowId"
+          :artist="itemDetails"
+          :items="discographyRowItems[rowId]"
+          :show-heading="discographyHeadingRows.has(rowId)"
           @edit-rows="rowsEditorOpen = true"
         />
 
@@ -192,6 +194,7 @@
 </template>
 
 <script setup lang="ts">
+import ArtistDiscographyRow from "@/components/artist/ArtistDiscographyRow.vue";
 import ArtistHero from "@/components/artist/ArtistHero.vue";
 import {
   artistRows,
@@ -200,6 +203,11 @@ import {
 } from "@/components/artist/artistRows";
 import ArtistSimilarShelf from "@/components/artist/ArtistSimilarShelf.vue";
 import ArtistTopTracksRow from "@/components/artist/ArtistTopTracksRow.vue";
+import {
+  discographyTypes,
+  isDiscographyRow,
+  type DiscographyRowId,
+} from "@/components/artist/discographyTypes";
 import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
 import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import ReleaseShelf from "@/components/details/ReleaseShelf.vue";
@@ -213,6 +221,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import { isAuthorOrNarrator } from "@/helpers/author_narrator";
+import { discographyTypesSummary } from "@/helpers/discography_types";
 import { useArtistRowData } from "@/composables/useArtistRowData";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
@@ -221,6 +230,7 @@ import {
   ListingType,
   ProviderFeature,
   Scope,
+  type Album,
   type Artist,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -266,6 +276,7 @@ const {
   singleItems,
   appearsOnItems,
   discographyItems,
+  discographyMoreItems,
   similarArtistItems,
   albumsMeta,
   albumsSource,
@@ -290,12 +301,27 @@ function selectRowSource(rowId: ArtistRowId, source: RowSource) {
   artistRows.setSource(rowId, source);
 }
 
-// a prolific artist's discography runs to hundreds of releases: the shelf
-// shows the newest, "View all" has them all
-const DISCOGRAPHY_SHELF_LIMIT = 50;
-const discographyShelfItems = computed(() =>
-  discographyItems.value?.slice(0, DISCOGRAPHY_SHELF_LIMIT),
-);
+const discographyRowItems = computed<
+  Record<DiscographyRowId, Album[] | undefined>
+>(() => ({
+  discography: discographyItems.value,
+  discography_more: discographyMoreItems.value,
+}));
+
+// discography rows next to each other share one heading, above the first
+const discographyHeadingRows = computed(() => {
+  const shown = visibleRows.value.filter(
+    (rowId) =>
+      !isDiscographyRow(rowId) || showRow(discographyRowItems.value[rowId]),
+  );
+  return new Set(
+    shown.filter(
+      (rowId, index) =>
+        isDiscographyRow(rowId) &&
+        (index === 0 || !isDiscographyRow(shown[index - 1])),
+    ),
+  );
+});
 
 // an empty release row explains the library case; from a provider source the
 // badge already names it, so a neutral line is enough
@@ -321,9 +347,8 @@ const rowMeta = computed<Partial<Record<ArtistRowId, string>>>(() => ({
     ? String(singleItems.value.length)
     : undefined,
   appears_on: $t("appears_on_hint"),
-  discography: discographyItems.value?.length
-    ? String(discographyItems.value.length)
-    : undefined,
+  discography: discographyMeta("discography"),
+  discography_more: discographyMeta("discography_more"),
 }));
 
 // library audiobooks can be filtered to the providers the artist is mapped to
@@ -465,6 +490,7 @@ function rowApplies(rowId: ArtistRowId): boolean {
     case "audiobooks":
       return isLibraryItem;
     case "discography":
+    case "discography_more":
       return isLibraryItem;
     case "audiobooks_all":
       return audiobookSourceProviderIds.value.length > 0;
@@ -480,6 +506,15 @@ function topTracksMeta(count: number): string {
   return itemDetails.value?.provider === "library"
     ? $t("n_in_library", { count })
     : $t("n_tracks", count, { named: { count } });
+}
+
+/** A discography row's types for the rows editor, with its count once loaded. */
+function discographyMeta(rowId: DiscographyRowId): string {
+  const summary = discographyTypesSummary(discographyTypes(rowId), (type) =>
+    $t(`album_type_plural.${type}`),
+  );
+  const count = discographyRowItems.value[rowId]?.length;
+  return count ? `${summary} · ${count}` : summary;
 }
 
 /** A row is rendered while it loads and once it has something to show. */

@@ -45,6 +45,7 @@ const MUSIC_ROWS: ArtistRowId[] = [
   "singles_eps",
   "appears_on",
   "discography",
+  "discography_more",
   "similar_artists",
 ];
 
@@ -204,6 +205,7 @@ describe("artistRows", () => {
         "singles_eps",
         "appears_on",
         "discography",
+        "discography_more",
         "similar_artists",
         "bio",
         "top_tracks",
@@ -221,6 +223,23 @@ describe("artistRows", () => {
       const { order, hidden } = artistRows.resolve(MUSIC_ROWS);
       expect(order).not.toContain("audiobooks");
       expect(hidden.size).toBe(0);
+    });
+
+    it("puts the second discography row right after a moved first one", () => {
+      setPreferences({
+        [ARTIST_ROWS_PREFERENCE_KEY]: {
+          order: [
+            "discography",
+            ...MUSIC_ROWS.filter((id) => !id.startsWith("discography")),
+          ],
+        },
+      });
+      const { order } = artistRows.resolve(MUSIC_ROWS);
+      expect(order.slice(0, 3)).toEqual([
+        "discography",
+        "discography_more",
+        "bio",
+      ]);
     });
   });
 
@@ -241,6 +260,7 @@ describe("artistRows", () => {
         "singles_eps",
         "appears_on",
         "discography",
+        "discography_more",
         "similar_artists",
       ];
       await artistRows.setOrder(reordered, MUSIC_ROWS);

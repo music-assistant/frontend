@@ -19,6 +19,7 @@ export type ArtistRowId =
   | "singles_eps"
   | "appears_on"
   | "discography"
+  | "discography_more"
   | "similar_artists"
   | "audiobooks"
   | "audiobooks_all" // authors / narrators only
@@ -53,7 +54,16 @@ export const ARTIST_ROWS: readonly ArtistRowDefinition[] = [
     supportsSource: true,
   },
   { id: "appears_on", labelKey: "appears_on", audience: "music" },
-  { id: "discography", labelKey: "discography", audience: "music" },
+  {
+    id: "discography",
+    labelKey: "discography_first_row",
+    audience: "music",
+  },
+  {
+    id: "discography_more",
+    labelKey: "discography_second_row",
+    audience: "music",
+  },
   {
     id: "similar_artists",
     labelKey: "similar_artists",

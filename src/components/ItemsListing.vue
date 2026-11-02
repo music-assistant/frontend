@@ -556,6 +556,8 @@ export interface Props {
   showRefreshButton?: boolean;
   showSelectButton?: boolean;
   showAlbumTypeFilter?: boolean;
+  // the album types the album type filter offers (default: every type)
+  albumTypeFilterOptions?: string[];
   showProviderFilter?: boolean;
   showCollapseCollections?: boolean;
   // when set, the provider filter allows only a single selection at a time
@@ -632,6 +634,7 @@ const props = withDefaults(defineProps<Props>(), {
   showRefreshButton: undefined,
   showSelectButton: undefined,
   showAlbumTypeFilter: undefined,
+  albumTypeFilterOptions: () => ALBUM_TYPE_FILTER_KEYS,
   showProviderFilter: undefined,
   showCollapseCollections: undefined,
   singleProviderFilter: false,
@@ -1787,7 +1790,7 @@ const filterMenuItems = function () {
       active: params.value.albumType && params.value.albumType.length > 0,
       closeOnContentClick: false,
       overflowAllowed: true,
-      subItems: ALBUM_TYPE_FILTER_KEYS.map((key) => {
+      subItems: props.albumTypeFilterOptions.map((key) => {
         return {
           label: `album_type.${key}`,
           selected: params.value.albumType?.includes(key),

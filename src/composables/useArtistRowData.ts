@@ -10,6 +10,10 @@ import {
 } from "@/components/artist/artistData";
 import { artistRows, type ArtistRowId } from "@/components/artist/artistRows";
 import {
+  discographyTypes,
+  type DiscographyRowId,
+} from "@/components/artist/discographyTypes";
+import {
   rowSourceDisplay,
   type RowSource,
 } from "@/components/details/rowRegistry";
@@ -41,9 +45,10 @@ export function useArtistRowData(
   const topTracks = ref(new Map<RowSource, Track[]>());
   const similarArtists = ref(new Map<RowSource, Artist[]>());
   const artistTracks = ref<Track[]>();
-  // fed by the artist alone, so these need no per-source cache
+  // fed by the artist alone, so this needs no per-source cache
   const appearsOn = ref<Album[]>();
-  const discography = ref<Album[]>();
+  // the discography per selection of release types, e.g. "album,live"
+  const discography = ref(new Map<string, Album[]>());
 
   // a new artist, or new provider mappings, start from empty rows; anything
   // else (a favorite toggle, a metadata update) keeps what is already loaded
@@ -56,7 +61,7 @@ export function useArtistRowData(
       similarArtists.value = new Map();
       artistTracks.value = undefined;
       appearsOn.value = undefined;
-      discography.value = undefined;
+      discography.value = new Map();
       loadRowData();
     },
   );
@@ -78,6 +83,8 @@ export function useArtistRowData(
   const singlesSource = computed(() => rowSource("singles_eps"));
   const topTracksSource = computed(() => rowSource("top_tracks"));
   const similarArtistsSource = computed(() => rowSource("similar_artists"));
+  const discographyKey = computed(() => typesKey("discography"));
+  const discographyMoreKey = computed(() => typesKey("discography_more"));
 
   // releases sorted newest first, from the source that feeds the given row
   const sortedReleases = function (source?: RowSource) {
@@ -108,7 +115,12 @@ export function useArtistRowData(
   const appearsOnItems = computed(() => appearsOn.value);
 
   // kept in the order the server sent it, which is newest first
-  const discographyItems = computed(() => discography.value);
+  const discographyItems = computed(() =>
+    discography.value.get(discographyKey.value),
+  );
+  const discographyMoreItems = computed(() =>
+    discography.value.get(discographyMoreKey.value),
+  );
 
   // falls back to the artist's newest tracks when no provider supplies top
   // tracks (for a provider artist, those of its own provider)
@@ -146,8 +158,9 @@ export function useArtistRowData(
     rowSourceDisplay(similarArtistsSource.value),
   );
 
-  // unhiding a row or switching its source in the editor loads what it needs,
-  // without re-requesting what the visible rows already share
+  // unhiding a row, switching its source in the editor or changing a
+  // discography row's types loads what it needs, without re-requesting what
+  // the visible rows already share
   watch(
     [
       visibleRows,
@@ -155,6 +168,8 @@ export function useArtistRowData(
       singlesSource,
       topTracksSource,
       similarArtistsSource,
+      discographyKey,
+      discographyMoreKey,
     ],
     () => loadRowData(),
   );
@@ -166,7 +181,10 @@ export function useArtistRowData(
     if (rows.includes("albums")) fetchReleases(albumsSource.value!);
     if (rows.includes("singles_eps")) fetchReleases(singlesSource.value!);
     if (rows.includes("appears_on")) fetchAppearsOn();
-    if (rows.includes("discography")) fetchDiscography();
+    if (rows.includes("discography")) fetchDiscography("discography");
+    if (rows.includes("discography_more")) {
+      fetchDiscography("discography_more");
+    }
     if (rows.includes("top_tracks")) {
       fetchArtistTracks();
       fetchTopTracks(topTracksSource.value!);
@@ -206,11 +224,14 @@ export function useArtistRowData(
     );
   }
 
-  function fetchDiscography() {
+  /** One request per selection of types, shared by rows showing the same. */
+  function fetchDiscography(rowId: DiscographyRowId) {
+    const types = discographyTypes(rowId);
+    const key = types.join(",");
     return fetchOnce(
-      "discography",
-      (artist) => loadArtistDiscography(artist),
-      (items) => (discography.value = items),
+      `discography:${key}`,
+      (artist) => loadArtistDiscography(artist, types),
+      (items) => discography.value.set(key, items),
     );
   }
 
@@ -243,6 +264,7 @@ export function useArtistRowData(
     singleItems,
     appearsOnItems,
     discographyItems,
+    discographyMoreItems,
     similarArtistItems,
     albumsMeta,
     albumsSource,
@@ -254,6 +276,11 @@ export function useArtistRowData(
     topTracksSourceDisplay,
     similarArtistsSourceDisplay,
   };
+}
+
+/** A discography row's types as its cache key, e.g. "album,live". */
+function typesKey(rowId: DiscographyRowId): string {
+  return discographyTypes(rowId).join(",");
 }
 
 /** The cached items of a source, undefined while unknown or still loading. */
