@@ -1,3 +1,4 @@
+import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
 import {
   ImageType,
@@ -5,6 +6,8 @@ import {
   type MediaItemType,
   MediaType,
 } from "@/plugins/api/interfaces";
+import { Disc3 } from "@lucide/vue";
+import type { Component } from "vue";
 
 type AnyItem = MediaItemType | ItemMapping;
 
@@ -21,6 +24,12 @@ export const bannerBackground = `url("${bannerArtwork}") center / cover no-repea
 
 /** Flat tile background for art that should not sit on the banner. */
 export const placeholderBackground = "rgba(var(--v-theme-on-surface), 0.08)";
+
+// the icon the navigation menu shows for each media type that gets one
+const PLACEHOLDER_ICONS: Partial<Record<MediaType, Component>> = {
+  [MediaType.ARTIST]: ArtistIcon,
+  [MediaType.ALBUM]: Disc3,
+};
 
 /** Up-to-two-letter initials from a name (first letters of the first two
  * words, or the first two characters of a single word). */
@@ -39,7 +48,11 @@ export function itemArtwork(
   item: AnyItem,
   size = 320,
   preferFanart = false,
-): { image: string | undefined; gradient: string; initials?: string } {
+): {
+  image: string | undefined;
+  gradient: string;
+  placeholderIcon?: Component;
+} {
   // When requested, prefer wide fanart for the background and fall back to the
   // regular thumbnail art (which itself falls back to landscape) when none.
   const image = preferFanart
@@ -59,21 +72,17 @@ export function itemArtwork(
 
 /**
  * The look of an item whose artwork can not be shown: the banner background,
- * with the item's initials over it where there are any. Use it when the real
+ * with the menu icon of an artist or album over it. Use it when the real
  * artwork turns out to be unloadable.
  */
 export function placeholderArtwork(item: AnyItem): {
   image: undefined;
   gradient: string;
-  initials?: string;
+  placeholderIcon?: Component;
 } {
-  // For artists/albums with no artwork, surface the initials over the banner.
-  const showInitials =
-    item.media_type === MediaType.ARTIST || item.media_type === MediaType.ALBUM;
-
   return {
     image: undefined,
     gradient: bannerBackground,
-    initials: showInitials ? itemInitials(item.name) : undefined,
+    placeholderIcon: PLACEHOLDER_ICONS[item.media_type],
   };
 }

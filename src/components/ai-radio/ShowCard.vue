@@ -295,7 +295,6 @@ function onDelete() {
   align-items: center;
   justify-content: center;
 }
-/* mirrors .ed-card__initials on EditorialMediaCard */
 .show-card__initials {
   font-size: 34cqw;
   font-weight: 700;

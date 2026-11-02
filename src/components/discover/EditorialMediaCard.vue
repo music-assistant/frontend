@@ -37,15 +37,11 @@
         :thumb-offset="22"
       />
       <span
-        v-else-if="art.initials"
+        v-else-if="art.placeholderIcon"
         class="ed-card__placeholder"
         aria-hidden="true"
       >
-        <ArtistIcon
-          v-if="props.item.media_type === MediaType.ARTIST"
-          class="size-[40%]"
-        />
-        <Disc3 v-else class="size-[40%]" />
+        <component :is="art.placeholderIcon" class="size-[40%]" />
       </span>
       <ProviderIcon
         v-if="providerDomain"
@@ -149,8 +145,7 @@ import {
   SortField,
   type Track,
 } from "@/plugins/api/interfaces";
-import ArtistIcon from "@/components/icons/ArtistIcon.vue";
-import { Check, ClockFading, Disc3, Play } from "@lucide/vue";
+import { Check, ClockFading, Play } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import MediaCollectionThumb from "../MediaCollectionThumb.vue";
