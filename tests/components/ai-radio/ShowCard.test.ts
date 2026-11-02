@@ -3,6 +3,7 @@ import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { showUri, useShows } from "@/composables/ai-radio/useShows";
 import api, { type MusicAssistantApi } from "@/plugins/api";
 import type { AIRadioStation, Scope, Player } from "@/plugins/api/interfaces";
+import { Sparkles } from "@lucide/vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
@@ -197,5 +198,15 @@ describe("ShowCard editing rights", () => {
     await wrapper.trigger("click");
     expect(wrapper.emitted("customize")).toBeUndefined();
     expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);
+  });
+});
+
+describe("ShowCard artwork", () => {
+  it("shows the AI Radio icon while the show's playlist is unknown", () => {
+    const wrapper = renderCard();
+
+    expect(
+      wrapper.get(".show-card__fallback").findComponent(Sparkles).exists(),
+    ).toBe(true);
   });
 });

@@ -21,7 +21,11 @@
         class="show-card__fallback"
         :style="{ background: bannerBackground }"
       >
-        <span class="show-card__initials">{{ itemInitials(show.name) }}</span>
+        <!-- the AI Radio icon of the navigation menu -->
+        <Sparkles
+          class="size-[40%] text-white/92 drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
+          aria-hidden="true"
+        />
       </div>
 
       <Badge
@@ -109,10 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  bannerBackground,
-  itemInitials,
-} from "@/components/discover/editorialArtwork";
+import { bannerBackground } from "@/components/discover/editorialArtwork";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -137,7 +138,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import api from "@/plugins/api";
-import { MoreVertical, Play, Square } from "@lucide/vue";
+import { MoreVertical, Play, Sparkles, Square } from "@lucide/vue";
 import { computed } from "vue";
 import { toast } from "vue-sonner";
 
@@ -290,18 +291,9 @@ function onDelete() {
 .show-card__fallback {
   position: absolute;
   inset: 0;
-  container-type: inline-size;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.show-card__initials {
-  font-size: 34cqw;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  user-select: none;
 }
 .show-card__onair {
   position: absolute;

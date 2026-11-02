@@ -11,7 +11,7 @@ import {
   type Album,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
-import { Disc3 } from "@lucide/vue";
+import { Disc3, Podcast } from "@lucide/vue";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { album } from "../../fixtures/album";
@@ -131,6 +131,14 @@ describe("EditorialMediaCard", () => {
 
     expect(
       wrapper.get(".ed-card__placeholder").findComponent(ArtistIcon).exists(),
+    ).toBe(true);
+  });
+
+  it("shows the podcast icon for an episode without a cover", () => {
+    const wrapper = mountCard(podcastEpisode());
+
+    expect(
+      wrapper.get(".ed-card__placeholder").findComponent(Podcast).exists(),
     ).toBe(true);
   });
 

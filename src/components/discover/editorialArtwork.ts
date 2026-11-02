@@ -1,4 +1,4 @@
-import ArtistIcon from "@/components/icons/ArtistIcon.vue";
+import { getMediaTypeIcon } from "@/helpers/media_type_icon";
 import { getImageThumbForItem } from "@/helpers/utils";
 import {
   ImageType,
@@ -6,7 +6,6 @@ import {
   type MediaItemType,
   MediaType,
 } from "@/plugins/api/interfaces";
-import { Disc3 } from "@lucide/vue";
 import type { Component } from "vue";
 
 type AnyItem = MediaItemType | ItemMapping;
@@ -24,21 +23,6 @@ export const bannerBackground = `url("${bannerArtwork}") center / cover no-repea
 
 /** Flat tile background for art that should not sit on the banner. */
 export const placeholderBackground = "rgba(var(--v-theme-on-surface), 0.08)";
-
-// the icon the navigation menu shows for each media type that gets one
-const PLACEHOLDER_ICONS: Partial<Record<MediaType, Component>> = {
-  [MediaType.ARTIST]: ArtistIcon,
-  [MediaType.ALBUM]: Disc3,
-};
-
-/** Up-to-two-letter initials from a name (first letters of the first two
- * words, or the first two characters of a single word). */
-export function itemInitials(name: string): string {
-  const words = (name || "").trim().split(/\s+/).filter(Boolean);
-  if (!words.length) return "";
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return (words[0][0] + words[1][0]).toUpperCase();
-}
 
 /**
  * Resolve the real cover-art URL for a media item, falling back to the MA
@@ -72,7 +56,7 @@ export function itemArtwork(
 
 /**
  * The look of an item whose artwork can not be shown: the banner background,
- * with the menu icon of an artist or album over it. Use it when the real
+ * with the menu icon of its media type over it. Use it when the real
  * artwork turns out to be unloadable.
  */
 export function placeholderArtwork(item: AnyItem): {
@@ -83,6 +67,6 @@ export function placeholderArtwork(item: AnyItem): {
   return {
     image: undefined,
     gradient: bannerBackground,
-    placeholderIcon: PLACEHOLDER_ICONS[item.media_type],
+    placeholderIcon: getMediaTypeIcon(item.media_type),
   };
 }
