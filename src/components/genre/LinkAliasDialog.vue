@@ -8,18 +8,38 @@
       <DialogHeader>
         <DialogTitle>{{ $t("link_alias") }}</DialogTitle>
       </DialogHeader>
-      <v-autocomplete
+      <Combobox
         v-model="selectedAlias"
-        v-model:search="aliasSearch"
-        :items="availableAliases"
-        :item-title="(alias: string) => formatAliasName(alias)"
-        :item-value="(alias: string) => alias"
-        clearable
-        hide-details
-        :label="$t('link_alias')"
-        :loading="aliasLoading"
-        :menu-props="{ zIndex: 10000 }"
-      />
+        open-on-click
+        reset-model-value-on-clear
+      >
+        <ComboboxAnchor>
+          <ComboboxInput
+            v-model="aliasSearch"
+            :display-value="displayAlias"
+            :placeholder="$t('link_alias')"
+            :aria-label="$t('link_alias')"
+          />
+          <Spinner v-if="aliasLoading" />
+          <ComboboxCancel
+            v-if="selectedAlias || aliasSearch"
+            :aria-label="$t('clear')"
+          />
+          <ComboboxTrigger :aria-label="$t('tooltip.open_options')" />
+        </ComboboxAnchor>
+        <ComboboxList>
+          <ComboboxEmpty>{{ $t("no_content") }}</ComboboxEmpty>
+          <ComboboxItem
+            v-for="alias in availableAliases"
+            :key="alias"
+            :value="alias"
+            :text-value="formatAliasName(alias)"
+          >
+            {{ formatAliasName(alias) }}
+            <ComboboxItemIndicator />
+          </ComboboxItem>
+        </ComboboxList>
+      </Combobox>
       <DialogFooter>
         <Button variant="outline" @click="model = false">
           {{ $t("cancel") }}
@@ -35,12 +55,24 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import {
+  Combobox,
+  ComboboxAnchor,
+  ComboboxCancel,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxItemIndicator,
+  ComboboxList,
+  ComboboxTrigger,
+} from "@/components/ui/combobox";
+import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { formatAliasName } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { SortField } from "@/plugins/api/interfaces";
@@ -67,6 +99,9 @@ const loading = ref(false);
 const aliasOptions = ref<string[]>([]);
 const selectedAlias = ref<string | null>(null);
 const searchThrottle = ref<number | undefined>();
+
+const displayAlias = (alias: string | null) =>
+  alias ? formatAliasName(alias) : "";
 
 const availableAliases = computed(() => {
   const current = new Set(props.currentAliases.map((a) => a.toLowerCase()));
