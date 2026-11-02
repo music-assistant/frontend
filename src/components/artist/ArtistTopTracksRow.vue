@@ -2,13 +2,10 @@
   <section class="artist-top-tracks">
     <div class="artist-top-tracks__main">
       <div class="artist-top-tracks__head">
-        <div
-          v-hold="onHold"
-          class="artist-top-tracks__titles"
-          @touchstart.passive="onTouchStart"
-          @click.capture="swallowClickAfterHold"
+        <DetailSectionTitle
+          :title="$t('artist_toptracks')"
+          @edit-rows="emit('edit-rows')"
         >
-          <h2 class="artist-top-tracks__title">{{ $t("artist_toptracks") }}</h2>
           <RowSourceBadge
             v-if="sourceLabel"
             :label="sourceLabel"
@@ -17,7 +14,7 @@
             :selected="sourceValue"
             @select="(source) => emit('select-source', source)"
           />
-        </div>
+        </DetailSectionTitle>
         <RouterLink
           v-if="artistTrackCount"
           :to="allTracksRoute"
@@ -109,6 +106,7 @@
 </template>
 
 <script setup lang="ts">
+import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
 import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
@@ -191,10 +189,6 @@ const allTracksRoute = computed<RouteLocationRaw>(() => ({
   },
 }));
 
-const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
-  emit("edit-rows"),
-);
-
 const {
   onHold: onTrackHold,
   onTouchStart: onTrackTouchStart,
@@ -252,22 +246,6 @@ function releaseYear(album?: Album | ItemMapping | null): number | undefined {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 14px;
-}
-.artist-top-tracks__titles {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-.artist-top-tracks__title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-  color: rgb(var(--v-theme-on-background));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .artist-top-tracks__more {
   flex: none;
@@ -389,9 +367,6 @@ function releaseYear(album?: Album | ItemMapping | null): number | undefined {
   }
   .artist-top-tracks__head {
     margin-bottom: 8px;
-  }
-  .artist-top-tracks__title {
-    font-size: 19px;
   }
   .artist-top-tracks__grid {
     grid-template-columns: minmax(0, 1fr);

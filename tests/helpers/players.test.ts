@@ -339,6 +339,35 @@ describe("playerVisible", () => {
     expect(playerVisible(player, false, false, true)).toBe(true);
   });
 
+  it("lists a hidden audio input only while it needs setup", () => {
+    const player = createPlayer({
+      type: PlayerType.SOURCE,
+      hide_in_ui: true,
+      available: false,
+      needs_setup: true,
+    });
+
+    expect(playerVisible(player, false, true, true)).toBe(true);
+    expect(
+      playerVisible(
+        { ...player, available: true, needs_setup: false },
+        false,
+        true,
+        true,
+      ),
+    ).toBe(false);
+  });
+
+  it("keeps a hidden speaker that needs setup hidden", () => {
+    const player = createPlayer({
+      hide_in_ui: true,
+      available: false,
+      needs_setup: true,
+    });
+
+    expect(playerVisible(player, false, true)).toBe(false);
+  });
+
   it("shows the hidden player of this device", () => {
     const player = createPlayer({
       player_id: "local-web-player",

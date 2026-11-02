@@ -527,6 +527,7 @@ import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
+import { isDark } from "@/composables/useThemePreference";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { playbackSpeedSupported } from "@/helpers/elapsed";
@@ -682,8 +683,7 @@ interface Props {
 const compProps = defineProps<Props>();
 
 const playBtnStyle = computed(() => {
-  const isDark = vuetify.theme.current.value.dark;
-  const color = isDark
+  const color = isDark.value
     ? compProps.colorPalette.darkColor
     : compProps.colorPalette.lightColor;
   if (!color) return {};
@@ -1385,7 +1385,7 @@ watchEffect(() => {
     backgroundColor.value = `linear-gradient(to bottom, ${darkBase.lighten(0.25).hex()}, ${darkBase.darken(0.25).hex()})`;
     return;
   }
-  const isDarkTheme = vuetify.theme.current.value.dark;
+  const isDarkTheme = isDark.value;
   const bgHex = isDarkTheme
     ? compProps.colorPalette.darkColor || "#000"
     : compProps.colorPalette.lightColor || "#fff";

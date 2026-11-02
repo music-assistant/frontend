@@ -157,7 +157,12 @@
                 "el_GR": "Griego",
                 "lt_LT": "Lituano",
                 "lv_LV": "Letón",
-                "bg_BG": "Búlgaro"
+                "bg_BG": "Búlgaro",
+                "ca": "Catalán",
+                "fi_FI": "Finés",
+                "he": "Hebreo",
+                "zh_TW": "Chino tradicional",
+                "sk_SK": "Eslovaco"
             }
         },
         "dynamic_members": {
@@ -899,7 +904,8 @@
         },
         "unsupported_install_title": "Instalación no compatible",
         "unsupported_install_description": "Este servidor no se ha instalado mediante uno de los {0}. Es posible que algunas funciones no funcionen como se espera y que los problemas notificados se cierren sin ofrecer asistencia.",
-        "unsupported_install_link": "Métodos de instalación compatibles"
+        "unsupported_install_link": "Métodos de instalación compatibles",
+        "error_loading_sort_options": "Error al cargar las opciones de ordenación"
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
@@ -908,7 +914,7 @@
         "duration": "Duración",
         "position": "Posición",
         "provider": "Origen",
-        "sort_name": "Alfabéticamente",
+        "sort_name": "Orden alfabético por nombre",
         "track_number": "Número de canción",
         "year": "Año de lanzamiento",
         "position_desc": "Posición (descendente)",
@@ -919,7 +925,7 @@
         "year_desc": "Año de lanzamiento (descendiente)",
         "duration_desc": "Duración (descendente)",
         "original": "Original",
-        "sort_name_desc": "Ordenar por nombre (descendente)",
+        "sort_name_desc": "Orden alfabético descendente por nombre",
         "timestamp_added": "Fecha de incorporación",
         "timestamp_added_desc": "Fecha de incorporación (descendente)",
         "timestamp_modified": "Fecha de actualización",
@@ -936,7 +942,12 @@
         "ascending": "Ascendente",
         "ascending_abbreviation": "Asc",
         "descending": "Descendente",
-        "descending_abbreviation": "Desc"
+        "descending_abbreviation": "Desc",
+        "favorite_timestamp": "Fecha en que se añadió a favoritos",
+        "artist_name": "Artista",
+        "random": "Aleatorio",
+        "random_play_count": "Aleatorio (primero las canciones menos reproducidas)",
+        "album_name": "Álbum"
     },
     "state": {
         "idle": "inactivo",
@@ -1212,7 +1223,8 @@
             "mixed_to_mono": "Mezclar a mono"
         },
         "processing_header": "Procesando",
-        "more_info_for": "Más información sobre {item}"
+        "more_info_for": "Más información sobre {item}",
+        "open_played_from": "Abrir {0}"
     },
     "select_source": "Selecciona origen",
     "play_replace_next": "Reproducir a continuación (vaciar cola)",
@@ -1443,7 +1455,6 @@
         "reconnecting": "Reconectando",
         "reconnecting_message": "Intentando volver a conectar con el servidor...",
         "error_ingress_failed": "No se pudo iniciar sesión mediante Home Assistant",
-        "error_invalid_credentials": "No se pudo iniciar sesión. Comprueba tu nombre de usuario y contraseña.",
         "guest_ended_party_title": "Tu sesión de Party ha finalizado",
         "guest_ended_party_message": "Pide al anfitrión que comparta de nuevo el enlace de la partida o el código QR para volver a unirse.",
         "guest_ended_quiz_title": "Tu sesión de Quiz ha finalizado",
@@ -1940,7 +1951,8 @@
                 "station_duplicated": "Emisora duplicada",
                 "host_saved": "Host guardado",
                 "host_deleted": "Host eliminado",
-                "tts_engines_load_failed": "No se han podido cargar las opciones de voz"
+                "tts_engines_load_failed": "No se han podido cargar las opciones de voz",
+                "show_stopped": "Mostrar detenidos"
             },
             "header": {
                 "subtitle": "Convierte una lista de reproducción en un programa de radio con una AI host."
@@ -2272,7 +2284,10 @@
         "last_played_ago": "hace",
         "op_greater_than": "mayor que",
         "op_less_than": "menor que",
-        "picker_search": "Buscar {label}"
+        "picker_search": "Buscar {label}",
+        "field_folder": "Carpeta",
+        "field_folder_is": "La carpeta es",
+        "picker_empty_folder_sources": "No hay ninguna fuente de música con carpetas configurada."
     },
     "explore": "Explorar",
     "shortcuts": "Accesos directos",
@@ -2659,7 +2674,8 @@
                 "no_provider_hint": "Añade un proveedor de reproductores y sus reproductores aparecerán aquí.",
                 "discovering_hint": "Encontrar reproductores puede tardar un momento. Asegúrate de que los altavoces estén encendidos y en la misma red que Music Assistant.",
                 "add_more": "Añadir más reproductores",
-                "rename": "Cambiar el nombre de {name}"
+                "rename": "Cambiar el nombre de {name}",
+                "discovered_by": "Descubierto por"
             },
             "plugins": {
                 "title": "Añadir complementos",
@@ -2768,7 +2784,14 @@
         "description": "Configura Music Assistant paso a paso.",
         "step_completed": "{step}, completado",
         "welcome_description": "Un breve recorrido por Music Assistant",
-        "more_count": "+{count} más"
+        "more_count": "+{count} más",
+        "paused_title": "Configuración pausada",
+        "paused_text": "Continúa por donde lo dejaste, ahora o más tarde desde los ajustes.",
+        "resume": "Reanudar",
+        "pause": "Pausar configuración",
+        "dismiss": "Descartar",
+        "music_sources_count": "{count} origen de música | {count} orígenes de música",
+        "plugins_count": "{count} complemento | {count} complementos"
     },
     "share_playlist": "Compartir lista de reproducción.",
     "playlist_access": {
@@ -2882,5 +2905,36 @@
     "grid_size": "Tamaño de la carátula",
     "grid_size_default": "Tamaño predeterminado",
     "grid_size_smaller": "{count} paso más pequeño | {count} pasos más pequeños",
-    "grid_size_larger": "{count} paso más grande | {count} pasos más grandes"
+    "grid_size_larger": "{count} paso más grande | {count} pasos más grandes",
+    "episode_number": "Episodio {0}",
+    "episode_number_short": "E{0}",
+    "season_episode_number": "Temporada {0}, episodio {1}",
+    "season_episode_number_short": "T{0} E{1}",
+    "edit_rows_subtitle_podcast": "Se aplica a todas las páginas de podcasts",
+    "playlist_radio": "Mezcla continua de canciones de la lista de reproducción",
+    "edit_rows_subtitle_playlist": "Se aplica a todas las páginas de listas de reproducción",
+    "duration_hours_minutes": "{hours} h {minutes} min",
+    "duration_hours": "{hours} h",
+    "duration_minutes": "{minutes} min",
+    "tracklist_heading": "Canciones",
+    "skip_back_seconds": "Retroceder {0} segundos",
+    "skip_forward_seconds": "Avanzar {0} segundos",
+    "track_table": {
+        "title": "Título",
+        "track_number": "Número de canción",
+        "year": "Año",
+        "duration": "Duración",
+        "columns": "Columnas",
+        "choose_columns": "Elegir columnas",
+        "hidden_at_width": "Oculto con este ancho"
+    },
+    "selection_actions": "Acciones de selección",
+    "n_selected": "{count} seleccionado | {count} seleccionados",
+    "folder": "Carpeta",
+    "select_all": "Seleccionar todo",
+    "no_content_filter_hint": "Prueba una búsqueda diferente o cambia los filtros.",
+    "items_load_failed": "No se han podido cargar los elementos.",
+    "featured_artists": "Artistas destacados",
+    "review_setup": "Revisar",
+    "n_audiobooks": "{count} audiolibro | {count} audiolibros"
 }

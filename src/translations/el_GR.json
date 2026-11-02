@@ -762,5 +762,6 @@
     "artist_no_library_tracks": "Δεν υπάρχουν κομμάτια αυτού του καλλιτέχνη στη βιβλιοθήκη σας.",
     "artist_all_albums": "Ολα τα άλμπουμ",
     "artist_all_tracks": "Ολα τα κομμάτια",
-    "on_provider": "Ενεργό {0}"
+    "on_provider": "Ενεργό {0}",
+    "n_audiobooks": "{count} ηχητικό βιβλίο | {count} ηχητικά βιβλία"
 }

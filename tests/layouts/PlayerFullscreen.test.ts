@@ -118,17 +118,20 @@ vi.mock("@/composables/useActiveTrackWaveform", async () => {
   };
 });
 
-const vuetifyTheme = vi.hoisted(() => ({ dark: true }));
+const themeIsDark = vi.hoisted(() => ({ value: true }));
 
 vi.mock("@/plugins/vuetify", async () => {
   const { ref: vueRef } = await vi.importActual<typeof import("vue")>("vue");
   return {
     default: {
       display: { height: vueRef(900), mdAndUp: vueRef(true) },
-      theme: { current: vueRef(vuetifyTheme) },
     },
   };
 });
+
+vi.mock("@/composables/useThemePreference", () => ({
+  isDark: themeIsDark,
+}));
 
 vi.mock("vuetify", async () => {
   const { ref: vueRef } = await vi.importActual<typeof import("vue")>("vue");
@@ -631,7 +634,7 @@ describe("PlayerFullscreen player select button", () => {
 
 describe("PlayerFullscreen overlay buttons", () => {
   afterEach(() => {
-    vuetifyTheme.dark = true;
+    themeIsDark.value = true;
   });
 
   async function mountCard(): Promise<VueWrapper> {
@@ -659,7 +662,7 @@ describe("PlayerFullscreen overlay buttons", () => {
   });
 
   it("mirrors the overlay buttons for dark text on a light palette", async () => {
-    vuetifyTheme.dark = false;
+    themeIsDark.value = false;
 
     const card = (await mountCard()).get("[data-player-panel]");
 

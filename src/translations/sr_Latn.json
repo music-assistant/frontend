@@ -157,7 +157,12 @@
                 "el_GR": "Grčki",
                 "lt_LT": "Litvanski",
                 "lv_LV": "letonski",
-                "bg_BG": "Bugarski"
+                "bg_BG": "Bugarski",
+                "ca": "Katalonski",
+                "fi_FI": "Finski",
+                "he": "Hebrejski",
+                "zh_TW": "Kineski (tradicionalni)",
+                "sk_SK": "Slovački"
             }
         },
         "dynamic_members": {
@@ -909,7 +914,7 @@
         "duration": "Trajanje",
         "position": "Pozicija",
         "provider": "Izvor",
-        "sort_name": "Naziv za sortiranje",
+        "sort_name": "Abecedno prema nazivu za sortiranje",
         "track_number": "Broj numere",
         "year": "Godina izdanja",
         "position_desc": "Pozicija (opadajuće)",
@@ -920,7 +925,7 @@
         "year_desc": "Godina izdanja (opadajuće)",
         "duration_desc": "Trajanje (opadajuće)",
         "original": "Izvorni redosled",
-        "sort_name_desc": "Naziv za sortiranje (opadajuće)",
+        "sort_name_desc": "Abecedno prema nazivu za sortiranje (opadajuće)",
         "timestamp_added": "Datum dodavanja",
         "timestamp_added_desc": "Datum dodavanja (opadajuće)",
         "timestamp_modified": "Datum ažuriranja",
@@ -941,7 +946,8 @@
         "favorite_timestamp": "Datum dodavanja u omiljeno",
         "artist_name": "Izvođač",
         "random": "Nasumično",
-        "random_play_count": "Nasumično (najmanje puštano prvo)"
+        "random_play_count": "Nasumično (najmanje puštano prvo)",
+        "album_name": "Album"
     },
     "state": {
         "idle": "mirovanje",
@@ -1217,7 +1223,8 @@
             "mixed_to_mono": "Spojeno u mono"
         },
         "processing_header": "Obrada",
-        "more_info_for": "Više informacija o {item}"
+        "more_info_for": "Više informacija o {item}",
+        "open_played_from": "Otvori {0}"
     },
     "select_source": "Izaberi izvor",
     "play_replace_next": "Pusti sledeće (isprazni red)",
@@ -1448,7 +1455,6 @@
         "reconnecting": "Ponovno povezivanje",
         "reconnecting_message": "Pokušaj ponovnog povezivanja sa serverom...",
         "error_ingress_failed": "Prijava putem Home Assistant-a nije uspela",
-        "error_invalid_credentials": "Prijava nije uspela. Proverite korisničko ime i lozinku.",
         "guest_ended_party_title": "Vaša sesija žurke je završena",
         "guest_ended_party_message": "Zatražite od domaćina da ponovo podeli vezu do žurke ili QR kod da biste se ponovo pridružili.",
         "guest_ended_quiz_title": "Vaša sesija kviza je završena",
@@ -2278,7 +2284,10 @@
         "last_played_ago": "pre",
         "op_greater_than": "veće od",
         "op_less_than": "manje od",
-        "picker_search": "Pretraži {label}"
+        "picker_search": "Pretraži {label}",
+        "field_folder": "Fascikla",
+        "field_folder_is": "Fascikla je",
+        "picker_empty_folder_sources": "Nije podešen nijedan muzički izvor sa fasciklama."
     },
     "explore": "Istraživanje",
     "shortcuts": "Prečice",
@@ -2665,7 +2674,8 @@
                 "no_provider_hint": "Dodajte integraciju plejera i njegovi plejeri će se pojaviti ovde.",
                 "discovering_hint": "Pronalaženje plejera može potrajati. Proverite da li su Vam zvučnici uključeni i na istoj mreži kao i Music Assistant.",
                 "add_more": "Dodaj još plejera",
-                "rename": "Preimenuj: {name}"
+                "rename": "Preimenuj: {name}",
+                "discovered_by": "Otkriveno od"
             },
             "plugins": {
                 "title": "Dodavanje dodataka",
@@ -2774,7 +2784,14 @@
         "description": "Podesite Music Assistant, korak po korak.",
         "step_completed": "{step}, završeno",
         "welcome_description": "Kratak pregled aplikacije Music Assistant.",
-        "more_count": "Još +{count}"
+        "more_count": "Još +{count}",
+        "paused_title": "Podešavanje pauzirano",
+        "paused_text": "Nastavite tamo gde ste stali, odmah ili kasnije kroz podešavanja.",
+        "resume": "Nastavi",
+        "pause": "Pauziraj podešavanje",
+        "dismiss": "Odbaci",
+        "music_sources_count": "{count} muzički izvor | {count} muzička izvora | {count} muzičkih izvora",
+        "plugins_count": "{count} dodatak | {count} dodatka | {count} dodataka"
     },
     "share_playlist": "Podeli plejlistu",
     "playlist_access": {
@@ -2889,6 +2906,10 @@
     "grid_size_default": "Podrazumevana veličina",
     "grid_size_smaller": "{count} korak manje | {count} koraka manje",
     "grid_size_larger": "{count} korak veće | {count} koraka veće",
+    "episode_number": "Epizoda {0}",
+    "episode_number_short": "E{0}",
+    "season_episode_number": "Sezona {0}, epizoda {1}",
+    "season_episode_number_short": "S{0} E{1}",
     "edit_rows_subtitle_podcast": "Primenjuje se na svaku stranicu sa podkastom",
     "playlist_radio": "Beskonačni miks plejliste",
     "edit_rows_subtitle_playlist": "Primenjuje se na svaku stranicu sa plejlistom",
@@ -2897,5 +2918,23 @@
     "duration_minutes": "{minutes} min",
     "tracklist_heading": "Numere",
     "skip_back_seconds": "Preskoči {0} sekundi unazad",
-    "skip_forward_seconds": "Preskoči {0} sekundi unapred"
+    "skip_forward_seconds": "Preskoči {0} sekundi unapred",
+    "track_table": {
+        "title": "Naslov",
+        "track_number": "Broj numere",
+        "year": "Godina",
+        "duration": "Trajanje",
+        "columns": "Kolone",
+        "choose_columns": "Izaberi kolone",
+        "hidden_at_width": "Skriveno pri ovoj širini"
+    },
+    "selection_actions": "Akcije nad izabranim stavkama",
+    "n_selected": "Izabrana je {count} stavka | Izabrano: {count}",
+    "folder": "Fascikla",
+    "select_all": "Izaberi sve",
+    "no_content_filter_hint": "Pokušajte drugu pretragu ili promenite filtere.",
+    "items_load_failed": "Nije bilo moguće učitati stavke.",
+    "featured_artists": "Istaknuti izvođači",
+    "review_setup": "Pregled",
+    "n_audiobooks": "{count} audio-knjiga | {count} audio-knjige | {count} audio-knjiga"
 }
