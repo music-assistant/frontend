@@ -2,6 +2,7 @@ import RadioDetails from "@/views/RadioDetails.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { LoadDataParams } from "@/components/ItemsListing.vue";
 import {
+  EventType,
   ListingType,
   SortDirection,
   SortField,
@@ -10,6 +11,7 @@ import {
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { radio } from "../fixtures/radio";
+import { providerMapping } from "../fixtures/providerMapping";
 
 const {
   mockGetRadio,
@@ -20,7 +22,7 @@ const {
 } = vi.hoisted(() => ({
   mockGetRadio: vi.fn<MusicAssistantApi["getRadio"]>(),
   mockGetRadioVersions: vi.fn<MusicAssistantApi["getRadioVersions"]>(),
-  mockSubscribe: vi.fn(() => () => {}),
+  mockSubscribe: vi.fn<MusicAssistantApi["subscribe"]>(() => () => {}),
   mockStore: {
     currentUser: null as { preferences?: Record<string, unknown> } | null,
   },
@@ -91,6 +93,7 @@ vi.mock("vue-i18n", async (importOriginal) => ({
 }));
 
 enableAutoUnmount(afterEach);
+afterEach(() => vi.useRealTimers());
 
 const BASE_RADIO = radio({
   item_id: "radio-1",
@@ -156,6 +159,49 @@ describe("RadioDetails", () => {
       "provider_mappings",
     ]);
   });
+
+  it.each([{ is_dynamic: true }, { is_dynamic: false, is_endless: false }])(
+    "keeps the sample ID and provider paired after a mapped library update (%j)",
+    async (stationType) => {
+      vi.useFakeTimers();
+      const station = radio({
+        item_id: "provider-radio",
+        provider: "radio-provider",
+        ...stationType,
+      });
+      const libraryStation = radio({
+        item_id: "42",
+        provider: "library",
+        provider_mappings: [
+          providerMapping({
+            item_id: station.item_id,
+            provider_instance: station.provider,
+            provider_domain: "radiobrowser",
+            available: true,
+          }),
+        ],
+        ...stationType,
+      });
+      const wrapper = await mountDetails(station);
+      const sample = wrapper.findComponent({ name: "DynamicItemSample" });
+      expect(sample.props("provider")).toBe(station.provider);
+
+      const subscription = mockSubscribe.mock.calls.find(
+        ([event]) => event === EventType.MEDIA_ITEM_UPDATED,
+      );
+      expect(subscription).toBeDefined();
+      subscription![1]({
+        event: EventType.MEDIA_ITEM_UPDATED,
+        object_id: libraryStation.uri,
+        data: libraryStation,
+      });
+      await vi.advanceTimersByTimeAsync(2000);
+      await flushPromises();
+
+      expect(sample.props("itemDetails").item_id).toBe(libraryStation.item_id);
+      expect(sample.props("provider")).toBe(libraryStation.provider);
+    },
+  );
 
   it("shows other versions when a static station has no finite-station flag", async () => {
     const wrapper = await mountDetails(

@@ -16,7 +16,7 @@
         <DynamicItemSample
           v-else-if="rowId === 'dynamic_sample' || rowId === 'tracklist'"
           :item-details="itemDetails"
-          :provider="props.provider"
+          :provider="itemDetails.provider"
         />
 
         <ItemsListing
