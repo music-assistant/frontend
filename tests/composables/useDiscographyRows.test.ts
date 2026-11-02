@@ -15,8 +15,8 @@ vi.mock("@/plugins/i18n", async (importOriginal) => ({
 /** The page's discography rows with these items, undefined while loading. */
 function setup(
   rows: ArtistRowId[],
-  first: Album[] | undefined = [album()],
-  second: Album[] | undefined = [album()],
+  first: Album[] | undefined,
+  second: Album[] | undefined,
 ) {
   return useDiscographyRows(ref(rows), {
     discography: ref(first),
@@ -30,7 +30,11 @@ describe("useDiscographyRows", () => {
   });
 
   it("heads two rows next to each other once, and tightens the gap between them", () => {
-    const rows = setup(["albums", "discography", "discography_second"]);
+    const rows = setup(
+      ["albums", "discography", "discography_second"],
+      [album()],
+      [album()],
+    );
 
     expect(rows.showsHeading("discography")).toBe(true);
     expect(rows.showsHeading("discography_second")).toBe(false);
@@ -39,7 +43,11 @@ describe("useDiscographyRows", () => {
   });
 
   it("heads each row once they are apart", () => {
-    const rows = setup(["discography", "appears_on", "discography_second"]);
+    const rows = setup(
+      ["discography", "appears_on", "discography_second"],
+      [album()],
+      [album()],
+    );
 
     expect(rows.showsHeading("discography")).toBe(true);
     expect(rows.showsHeading("discography_second")).toBe(true);
@@ -47,14 +55,16 @@ describe("useDiscographyRows", () => {
   });
 
   it("hands the heading to the second row when the first comes up empty", () => {
-    const rows = setup(["discography", "discography_second"], []);
+    const rows = setup(["discography", "discography_second"], [], [album()]);
 
     expect(rows.isShown("discography")).toBe(false);
     expect(rows.showsHeading("discography_second")).toBe(true);
   });
 
   it("keeps a row shown while it loads", () => {
-    const rows = setup(["discography", "discography_second"], undefined);
+    const rows = setup(["discography", "discography_second"], undefined, [
+      album(),
+    ]);
 
     expect(rows.isShown("discography")).toBe(true);
     expect(rows.rowItems.value.discography).toBeUndefined();

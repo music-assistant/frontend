@@ -19,7 +19,7 @@
         :model-value="modelValue.includes(type)"
         :disabled="isLastTicked(type)"
         @select.prevent
-        @update:model-value="toggle(type)"
+        @update:model-value="emit('toggle', type)"
       >
         {{ $t(`album_type.${type}`) }}
       </DropdownMenuCheckboxItem>
@@ -36,10 +36,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  DISCOGRAPHY_TYPES,
-  withDiscographyTypeToggled,
-} from "@/helpers/discography_types";
+import { DISCOGRAPHY_TYPES } from "@/helpers/discography_types";
 import type { AlbumType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
@@ -51,7 +48,7 @@ export interface Props {
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: "update:modelValue", types: AlbumType[]): void;
+  (e: "toggle", type: AlbumType): void;
 }>();
 
 // e.g. "Albums +2"
@@ -60,9 +57,5 @@ const summary = computed(() => discographyTypesLabel(props.modelValue));
 /** The only ticked type can't be unticked. */
 function isLastTicked(type: AlbumType): boolean {
   return props.modelValue.length === 1 && props.modelValue[0] === type;
-}
-
-function toggle(type: AlbumType) {
-  emit("update:modelValue", withDiscographyTypeToggled(props.modelValue, type));
 }
 </script>

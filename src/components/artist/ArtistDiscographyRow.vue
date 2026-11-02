@@ -13,7 +13,7 @@
       <div class="flex items-center gap-[10px]">
         <DiscographyTypePicker
           :model-value="types"
-          @update:model-value="(picked) => setDiscographyTypes(rowId, picked)"
+          @toggle="(type) => toggleDiscographyType(rowId, type)"
         />
         <span
           v-if="items?.length"
@@ -30,7 +30,7 @@
 import {
   DISCOGRAPHY_TYPES_QUERY,
   discographyTypes,
-  setDiscographyTypes,
+  toggleDiscographyType,
   type DiscographyRowId,
 } from "@/components/artist/discographyRows";
 import DiscographyTypePicker from "@/components/artist/DiscographyTypePicker.vue";

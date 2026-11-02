@@ -3,6 +3,7 @@ import { updateUserPreferences } from "@/composables/userPreferences";
 import {
   discographyTypesSummary,
   validDiscographyTypes,
+  withDiscographyTypeToggled,
 } from "@/helpers/discography_types";
 import { AlbumType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -38,8 +39,7 @@ export function isDiscographyRow(
 
 /** The release types a discography row shows, the same for every artist. */
 export function discographyTypes(rowId: DiscographyRowId): AlbumType[] {
-  const saved = validDiscographyTypes(savedTypes()[rowId]);
-  return saved.length ? saved : DEFAULT_TYPES[rowId];
+  return typesIn(store.currentUser?.preferences ?? {}, rowId);
 }
 
 /** A short summary of release types, e.g. "Albums +2". */
@@ -51,25 +51,31 @@ export function discographyTypesLabel(types: readonly AlbumType[]): string {
   );
 }
 
-/** Save the release types a discography row shows; at least one is expected. */
-export async function setDiscographyTypes(
+/** Tick or untick a release type on a discography row; its last type stays. */
+export async function toggleDiscographyType(
   rowId: DiscographyRowId,
-  types: AlbumType[],
+  type: AlbumType,
 ): Promise<void> {
+  // toggled on the types saved when this write's turn comes, so quick ticks
+  // queued behind a save build on each other
   await updateUserPreferences((current) => ({
     ...current,
     [DISCOGRAPHY_TYPES_PREFERENCE_KEY]: {
       ...asObject(current[DISCOGRAPHY_TYPES_PREFERENCE_KEY]),
-      [rowId]: [...types],
+      [rowId]: withDiscographyTypeToggled(typesIn(current, rowId), type),
     },
   }));
 }
 
-/** The saved `{ [rowId]: types }` object, empty when unset or invalid. */
-function savedTypes(): Partial<Record<DiscographyRowId, unknown>> {
-  return asObject(
-    store.currentUser?.preferences?.[DISCOGRAPHY_TYPES_PREFERENCE_KEY],
+/** The row's types in these preferences, or its default when unset or invalid. */
+function typesIn(
+  preferences: Record<string, unknown>,
+  rowId: DiscographyRowId,
+): AlbumType[] {
+  const saved = validDiscographyTypes(
+    asObject(preferences[DISCOGRAPHY_TYPES_PREFERENCE_KEY])[rowId],
   );
+  return saved.length ? saved : DEFAULT_TYPES[rowId];
 }
 
 function asObject(value: unknown): Record<string, unknown> {

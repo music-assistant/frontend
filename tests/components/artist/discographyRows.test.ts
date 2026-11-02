@@ -25,7 +25,7 @@ import {
   discographyTypes,
   discographyTypesLabel,
   isDiscographyRow,
-  setDiscographyTypes,
+  toggleDiscographyType,
 } from "@/components/artist/discographyRows";
 import { AlbumType } from "@/plugins/api/interfaces";
 
@@ -69,11 +69,8 @@ describe("discographyTypes", () => {
     },
   );
 
-  it("saves a row's types next to the other row's", async () => {
-    await setDiscographyTypes("discography_second", [
-      AlbumType.LIVE,
-      AlbumType.COMPILATION,
-    ]);
+  it("saves a ticked type next to the other row's types", async () => {
+    await toggleDiscographyType("discography_second", AlbumType.COMPILATION);
 
     const [change] = mockUpdateUserPreferences.mock.lastCall!;
     expect(
@@ -85,8 +82,35 @@ describe("discographyTypes", () => {
       theme: "dark",
       [DISCOGRAPHY_TYPES_PREFERENCE_KEY]: {
         discography: [AlbumType.EP],
-        discography_second: [AlbumType.LIVE, AlbumType.COMPILATION],
+        discography_second: [AlbumType.COMPILATION, AlbumType.LIVE],
       },
+    });
+  });
+
+  it("toggles on the types saved when the write runs, not when it was asked", async () => {
+    await toggleDiscographyType("discography", AlbumType.LIVE);
+
+    const [change] = mockUpdateUserPreferences.mock.lastCall!;
+    // an earlier queued save already added EP
+    expect(
+      change({
+        [DISCOGRAPHY_TYPES_PREFERENCE_KEY]: {
+          discography: [AlbumType.ALBUM, AlbumType.EP],
+        },
+      }),
+    ).toEqual({
+      [DISCOGRAPHY_TYPES_PREFERENCE_KEY]: {
+        discography: [AlbumType.ALBUM, AlbumType.EP, AlbumType.LIVE],
+      },
+    });
+  });
+
+  it("keeps a row's last type ticked", async () => {
+    await toggleDiscographyType("discography", AlbumType.ALBUM);
+
+    const [change] = mockUpdateUserPreferences.mock.lastCall!;
+    expect(change({})).toEqual({
+      [DISCOGRAPHY_TYPES_PREFERENCE_KEY]: { discography: [AlbumType.ALBUM] },
     });
   });
 
