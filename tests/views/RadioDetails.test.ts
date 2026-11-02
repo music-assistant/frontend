@@ -7,17 +7,25 @@ import {
   SortField,
   type Radio,
 } from "@/plugins/api/interfaces";
-import { flushPromises, mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { radio } from "../fixtures/radio";
 
-const { mockGetRadio, mockGetRadioVersions, mockSubscribe } = vi.hoisted(
-  () => ({
-    mockGetRadio: vi.fn<MusicAssistantApi["getRadio"]>(),
-    mockGetRadioVersions: vi.fn<MusicAssistantApi["getRadioVersions"]>(),
-    mockSubscribe: vi.fn(() => () => {}),
-  }),
-);
+const {
+  mockGetRadio,
+  mockGetRadioVersions,
+  mockSubscribe,
+  mockStore,
+  mockSetUserPreference,
+} = vi.hoisted(() => ({
+  mockGetRadio: vi.fn<MusicAssistantApi["getRadio"]>(),
+  mockGetRadioVersions: vi.fn<MusicAssistantApi["getRadioVersions"]>(),
+  mockSubscribe: vi.fn(() => () => {}),
+  mockStore: {
+    currentUser: null as { preferences?: Record<string, unknown> } | null,
+  },
+  mockSetUserPreference: vi.fn(),
+}));
 
 vi.mock("@/plugins/api", () => ({
   api: {
@@ -26,30 +34,71 @@ vi.mock("@/plugins/api", () => ({
     subscribe: mockSubscribe,
   },
 }));
-
-vi.mock("@/components/InfoHeader.vue", () => ({
-  default: { name: "InfoHeader", template: "<div />" },
+vi.mock("@/plugins/store", () => ({ store: mockStore }));
+vi.mock("@/composables/userPreferences", () => ({
+  setUserPreference: mockSetUserPreference,
 }));
-// stubs identify which branch RadioDetails picked; their own machinery
-// (router, auth, i18n composables) is irrelevant to that choice
-vi.mock("@/components/ItemsListing.vue", () => ({
+vi.mock("@/components/radio/RadioHero.vue", () => ({
   default: {
-    name: "ItemsListing",
-    props: ["loadPagedData", "sortListing"],
-    template: '<div class="items-listing-stub" />',
+    name: "RadioHero",
+    props: ["item"],
+    emits: ["edit-rows"],
+    template: "<div data-hero />",
+  },
+}));
+vi.mock("@/components/details/DetailAdminCard.vue", () => ({
+  default: {
+    name: "DetailAdminCard",
+    template: '<div data-row="provider_mappings" />',
+  },
+}));
+vi.mock("@/components/details/DetailTextRow.vue", () => ({
+  default: {
+    name: "DetailTextRow",
+    props: ["text"],
+    emits: ["edit-rows"],
+    template: '<div data-row="description" :data-text="text" />',
   },
 }));
 vi.mock("@/components/ProviderDetails.vue", () => ({
   default: { name: "ProviderDetails", template: "<div />" },
 }));
+vi.mock("@/components/ItemsListing.vue", () => ({
+  default: {
+    name: "ItemsListing",
+    props: ["loadPagedData", "sortListing"],
+    template: '<div data-row="other_versions" />',
+  },
+}));
 vi.mock("@/components/DynamicItemSample.vue", () => ({
   default: {
     name: "DynamicItemSample",
-    template: '<div class="dynamic-item-sample-stub" />',
+    props: ["itemDetails", "provider"],
+    template: '<div data-row="track_sample" />',
   },
 }));
+vi.mock("@/components/details/RowsEditor.vue", () => ({
+  default: {
+    name: "RowsEditor",
+    props: ["open", "item", "registry", "availableIds", "subtitle"],
+    emits: ["update:open"],
+    template: "<div data-rows-editor />",
+  },
+}));
+vi.mock("vue-i18n", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-i18n")>()),
+  useI18n: () => ({ t: (key: string) => key }),
+}));
 
-async function mountDetails(item: Radio) {
+enableAutoUnmount(afterEach);
+
+const BASE_RADIO = radio({
+  item_id: "radio-1",
+  provider: "library",
+  metadata: { description: "About the station" },
+});
+
+async function mountDetails(item: Radio = BASE_RADIO) {
   mockGetRadio.mockResolvedValue(item);
   const wrapper = mount(RadioDetails, {
     props: { itemId: item.item_id, provider: item.provider },
@@ -59,25 +108,64 @@ async function mountDetails(item: Radio) {
   return wrapper;
 }
 
+function renderedRows(wrapper: ReturnType<typeof mount>) {
+  return wrapper.findAll("[data-row]").map((row) => row.attributes("data-row"));
+}
+
 describe("RadioDetails", () => {
   beforeEach(() => {
     mockGetRadio.mockReset();
     mockGetRadioVersions.mockReset().mockResolvedValue([]);
     mockSubscribe.mockReset().mockReturnValue(() => {});
+    mockStore.currentUser = { preferences: {} };
+    mockSetUserPreference.mockReset();
   });
 
-  it("shows the dynamic sample for a dynamic station", async () => {
+  it("renders description, radio content and provider details in the default order", async () => {
+    const wrapper = await mountDetails();
+
+    expect(renderedRows(wrapper)).toEqual([
+      "description",
+      "other_versions",
+      "provider_mappings",
+    ]);
+    expect(wrapper.findComponent({ name: "DetailTextRow" }).props("text")).toBe(
+      "About the station",
+    );
+  });
+
+  it("shows a dynamic sample instead of other versions for a dynamic station", async () => {
     const wrapper = await mountDetails(radio({ is_dynamic: true }));
 
-    expect(wrapper.find(".dynamic-item-sample-stub").exists()).toBe(true);
-    expect(wrapper.find(".items-listing-stub").exists()).toBe(false);
+    expect(renderedRows(wrapper)).toEqual([
+      "track_sample",
+      "provider_mappings",
+    ]);
+    expect(wrapper.findComponent({ name: "ItemsListing" }).exists()).toBe(
+      false,
+    );
   });
 
-  it("shows other versions for a non-dynamic station", async () => {
-    const wrapper = await mountDetails(radio({ is_dynamic: false }));
+  it("shows the full tracklist for a finite static station", async () => {
+    const wrapper = await mountDetails(
+      radio({ is_dynamic: false, is_endless: false }),
+    );
 
-    expect(wrapper.find(".items-listing-stub").exists()).toBe(true);
-    expect(wrapper.find(".dynamic-item-sample-stub").exists()).toBe(false);
+    expect(renderedRows(wrapper)).toEqual([
+      "track_sample",
+      "provider_mappings",
+    ]);
+  });
+
+  it("shows other versions when a static station has no finite-station flag", async () => {
+    const wrapper = await mountDetails(
+      radio({ is_dynamic: false, is_endless: undefined }),
+    );
+
+    expect(renderedRows(wrapper)).toEqual([
+      "other_versions",
+      "provider_mappings",
+    ]);
   });
 
   it("loads radio versions with server search, sort and paging", async () => {
@@ -107,19 +195,58 @@ describe("RadioDetails", () => {
     );
   });
 
-  it("shows the tracklist for a finite station", async () => {
-    const wrapper = await mountDetails(radio({ is_endless: false }));
+  it("follows saved row order and visibility", async () => {
+    mockStore.currentUser = {
+      preferences: {
+        "radio.rows": {
+          order: ["provider_mappings", "other_versions", "description"],
+          hidden: ["description"],
+        },
+      },
+    };
 
-    expect(wrapper.find(".dynamic-item-sample-stub").exists()).toBe(true);
-    expect(wrapper.find(".items-listing-stub").exists()).toBe(false);
+    const wrapper = await mountDetails();
+
+    expect(renderedRows(wrapper)).toEqual([
+      "provider_mappings",
+      "other_versions",
+    ]);
   });
 
-  it("shows other versions for a station that does not report is_endless", async () => {
+  it("opens the rows editor from the hero and description row", async () => {
+    const wrapper = await mountDetails();
+    const editor = wrapper.findComponent({ name: "RowsEditor" });
+
+    expect(editor.props("open")).toBe(false);
+    wrapper.findComponent({ name: "RadioHero" }).vm.$emit("edit-rows");
+    await flushPromises();
+    expect(editor.props("open")).toBe(true);
+
+    editor.vm.$emit("update:open", false);
+    wrapper.findComponent({ name: "DetailTextRow" }).vm.$emit("edit-rows");
+    await flushPromises();
+    expect(editor.props("open")).toBe(true);
+  });
+
+  it("gives the editor the current station rows and radio-wide preference label", async () => {
+    const wrapper = await mountDetails(radio({ is_dynamic: true }));
+    const editor = wrapper.findComponent({ name: "RowsEditor" });
+
+    expect(editor.props("availableIds")).toEqual([
+      "description",
+      "dynamic_sample",
+      "provider_mappings",
+    ]);
+    expect(editor.props("subtitle")).toBe("Applies to every radio page");
+  });
+
+  it("uses copyright when the station has no description", async () => {
     const wrapper = await mountDetails(
-      radio({ is_dynamic: false, is_endless: undefined }),
+      radio({ metadata: { copyright: "Station copyright" } }),
     );
 
-    expect(wrapper.find(".items-listing-stub").exists()).toBe(true);
-    expect(wrapper.find(".dynamic-item-sample-stub").exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "DetailTextRow" }).props("text")).toBe(
+      "Station copyright",
+    );
   });
 });
