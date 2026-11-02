@@ -10,7 +10,14 @@
     :style="imageStyle"
     contain
     :lazy-src="isDark ? imgCoverDark : imgCoverLight"
-  />
+  >
+    <div
+      v-if="placeholderIcon"
+      class="absolute inset-0 flex items-center justify-center bg-muted text-muted-foreground"
+    >
+      <component :is="placeholderIcon" class="size-[45%]" aria-hidden="true" />
+    </div>
+  </v-img>
 </template>
 
 <script setup lang="ts">
@@ -20,12 +27,12 @@ import type {
   MediaItemType,
   QueueItem,
 } from "@/plugins/api/interfaces";
-import { ImageType, MediaType } from "@/plugins/api/interfaces";
+import { ImageType } from "@/plugins/api/interfaces";
 import {
   imgCoverDark,
   imgCoverLight,
-  iconFolder,
 } from "@/components/QualityDetailsBtn.vue";
+import { getMediaTypeIcon } from "@/helpers/media_type_icon";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { useProviderIcon } from "@/composables/useProviderIcon";
 import { isDark } from "@/composables/useThemePreference";
@@ -68,24 +75,7 @@ function getThumbSize() {
 
 const thumbSize = getThumbSize();
 
-function getFallbackImage() {
-  if (props.fallback) return props.fallback;
-
-  if (
-    props.item &&
-    "media_type" in props.item &&
-    props.item.media_type === MediaType.FOLDER
-  ) {
-    return iconFolder;
-  }
-
-  if (!props.item) return "";
-  if (!props.item.name) return "";
-
-  return getAvatarImage(props.item.name, isDark.value, thumbSize || 256);
-}
-
-const fallbackImage = getFallbackImage();
+const fallbackImage = props.fallback ?? "";
 
 // provider entries in the browse root show the provider icon
 const { iconDataUri: providerIcon } = useProviderIcon(() =>
@@ -99,26 +89,16 @@ const imgData = computed(() =>
       fallbackImage
     : fallbackImage,
 );
-</script>
 
-<script lang="ts">
-//// utility functions for images
-
-export const getAvatarImage = function (
-  name: string,
-  dark = false,
-  size = 256,
-): string {
-  // get url to avatar image for a string or sentence
-  if (dark)
-    return `https://ui-avatars.com/api/?name=${name}&size=${
-      size || 256
-    }&bold=true&background=1d1d1d&color=383838`;
-  else
-    return `https://ui-avatars.com/api/?name=${name}&size=${
-      size || 256
-    }&bold=true&background=a0a0a0&color=cccccc`;
-};
+// without any image, the media type's menu icon stands in for the artwork
+const placeholderIcon = computed(() => {
+  if (imgData.value || !props.item) return undefined;
+  const mediaType =
+    "media_type" in props.item
+      ? props.item.media_type
+      : props.item.media_item?.media_type;
+  return getMediaTypeIcon(mediaType);
+});
 </script>
 
 <style scoped>

@@ -1,4 +1,4 @@
-import { Grid3x3, LayoutGrid, LayoutList } from "@lucide/vue";
+import { LayoutGrid, LayoutList } from "@lucide/vue";
 
 // the small heading above each group of controls in the Filters panel
 export const SECTION_LABEL_CLASS =
@@ -15,12 +15,6 @@ export const VIEW_MODES = [
     label: "view.panel",
     shortLabel: "view.panel_short",
     icon: LayoutGrid,
-  },
-  {
-    value: "panel_compact",
-    label: "view.panel_compact",
-    shortLabel: "view.panel_compact_short",
-    icon: Grid3x3,
   },
   {
     value: "list",

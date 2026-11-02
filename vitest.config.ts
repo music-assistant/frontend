@@ -29,6 +29,10 @@ export default mergeConfig(
       // failOnUnhandledErrors setup file additionally surfaces them in the
       // pass/fail tally.
       dangerouslyIgnoreUnhandledErrors: false,
+      // vite-plugin-vuetify only registers its virtual component stylesheets
+      // while resolving imports, so a run that reuses transformed modules from
+      // the file system cache cannot load them.
+      fsModuleCache: false,
       server: {
         deps: {
           // sendspin-js ships ESM whose relative imports carry no file extension,

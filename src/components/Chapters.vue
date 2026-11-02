@@ -19,7 +19,7 @@
         </TabsList>
       </Tabs>
     </div>
-    <Container v-if="expanded">
+    <div v-if="expanded" class="p-2.5">
       <v-list>
         <template v-for="row in rows" :key="row.key">
           <v-list-item
@@ -101,7 +101,7 @@
           </v-list-item>
         </template>
       </v-list>
-    </Container>
+    </div>
     <BookmarkDialog
       v-model:open="renameDialogOpen"
       :title="$t('rename_bookmark')"
@@ -115,7 +115,6 @@
 <script setup lang="ts">
 import { ChevronDown, ChevronUp, Pencil, Trash2 } from "@lucide/vue";
 import BookmarkDialog from "@/components/BookmarkDialog.vue";
-import Container from "@/components/Container.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";

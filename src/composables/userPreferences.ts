@@ -3,10 +3,12 @@ import { api, type CommandOptions } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
+import { defaultShowActions } from "@/helpers/grid_size";
 
 export interface ItemsListingPreferences {
   viewMode?: string;
   gridSize?: number;
+  showActions?: boolean;
   sortBy?: string;
   favoriteFilter?: boolean;
   libraryFilter?: boolean;
@@ -223,16 +225,24 @@ export function useUserPreferences() {
         value === undefined ? undefined : JSON.parse(JSON.stringify(value)),
       ]),
     );
-    await updateUserPreferences((current) => ({
-      ...current,
-      // and dropped from what is stored
-      [prefKey]: JSON.parse(
-        JSON.stringify({
-          ...(current[prefKey] as ItemsListingPreferences | undefined),
-          ...snapshot,
-        }),
-      ),
-    }));
+    await updateUserPreferences((current) => {
+      const listing = current[prefKey] as ItemsListingPreferences | undefined;
+      return {
+        ...current,
+        // and dropped from what is stored
+        [prefKey]: JSON.parse(
+          JSON.stringify({
+            // a compact view's hidden actions outlive its view mode
+            ...("viewMode" in values &&
+            !defaultShowActions(listing?.viewMode, itemtype)
+              ? { showActions: false }
+              : {}),
+            ...listing,
+            ...snapshot,
+          }),
+        ),
+      };
+    });
   }
 
   return {
