@@ -65,7 +65,7 @@ import RadioHero from "@/components/radio/RadioHero.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
-import { ListingType, type Radio } from "@/plugins/api/interfaces";
+import { ListingType, MediaType, type Radio } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed, ref, watch } from "vue";
 
@@ -97,6 +97,7 @@ const loadItemDetails = async function () {
   rowsEditorOpen.value = false;
   const radio = await api.getRadio(itemId, provider);
   if (itemId !== props.itemId || provider !== props.provider) return;
+  if (itemDetails.value) return;
   itemDetails.value = radio;
 };
 
@@ -108,7 +109,11 @@ watch(
   { immediate: true },
 );
 
-useDetailItemUpdates(itemDetails, { providerItem: props });
+useDetailItemUpdates(itemDetails, {
+  get providerItem() {
+    return { ...props, mediaType: MediaType.RADIO };
+  },
+});
 
 const loadRadioVersions = async function (params: LoadDataParams) {
   const radio = itemDetails.value;

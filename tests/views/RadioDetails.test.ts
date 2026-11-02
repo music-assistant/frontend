@@ -11,6 +11,7 @@ import {
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { radio } from "../fixtures/radio";
+import { track } from "../fixtures/track";
 import { providerMapping } from "../fixtures/providerMapping";
 
 const {
@@ -212,6 +213,90 @@ describe("RadioDetails", () => {
       "other_versions",
       "provider_mappings",
     ]);
+  });
+
+  it("ignores a track update with the same provider mapping as the radio", async () => {
+    vi.useFakeTimers();
+    const station = radio({
+      item_id: "https://example.com/stream",
+      provider: "builtin",
+      is_dynamic: true,
+    });
+
+    const wrapper = await mountDetails(station);
+    const subscription = mockSubscribe.mock.calls.find(
+      ([event]) => event === EventType.MEDIA_ITEM_UPDATED,
+    );
+    const libraryTrack = track({
+      provider_mappings: [
+        providerMapping({
+          item_id: station.item_id,
+          provider_instance: station.provider,
+          provider_domain: station.provider,
+        }),
+      ],
+    });
+    expect(subscription).toBeDefined();
+    subscription![1]({
+      event: EventType.MEDIA_ITEM_UPDATED,
+      object_id: libraryTrack.uri,
+      data: libraryTrack,
+    });
+    await vi.advanceTimersByTimeAsync(2000);
+    await flushPromises();
+
+    expect(wrapper.findComponent({ name: "RadioHero" }).props("item")).toEqual(
+      station,
+    );
+    expect(
+      wrapper.findComponent({ name: "DynamicItemSample" }).props("itemDetails"),
+    ).toEqual(station);
+  });
+
+  it("keeps a mapped library update when the initial radio request finishes later", async () => {
+    vi.useFakeTimers();
+    const station = radio({
+      item_id: "provider-radio",
+      provider: "radio-provider",
+      is_dynamic: true,
+    });
+    const libraryStation = radio({
+      item_id: "42",
+      is_dynamic: true,
+      provider_mappings: [
+        providerMapping({
+          item_id: station.item_id,
+          provider_instance: station.provider,
+        }),
+      ],
+    });
+    const pending = Promise.withResolvers<Radio>();
+    mockGetRadio.mockReturnValue(pending.promise);
+    const wrapper = mount(RadioDetails, {
+      props: { itemId: station.item_id, provider: station.provider },
+      global: { mocks: { $t: (key: string) => key } },
+    });
+    const subscription = mockSubscribe.mock.calls.find(
+      ([event]) => event === EventType.MEDIA_ITEM_UPDATED,
+    );
+    expect(subscription).toBeDefined();
+    subscription![1]({
+      event: EventType.MEDIA_ITEM_UPDATED,
+      object_id: libraryStation.uri,
+      data: libraryStation,
+    });
+    await vi.advanceTimersByTimeAsync(2000);
+    await flushPromises();
+    expect(wrapper.findComponent({ name: "RadioHero" }).props("item")).toEqual(
+      libraryStation,
+    );
+
+    pending.resolve(station);
+    await flushPromises();
+
+    expect(wrapper.findComponent({ name: "RadioHero" }).props("item")).toEqual(
+      libraryStation,
+    );
   });
 
   it("loads radio versions with server search, sort and paging", async () => {
