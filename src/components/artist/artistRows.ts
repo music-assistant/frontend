@@ -1,4 +1,5 @@
 import { artistProvidersForFeature } from "@/components/artist/artistData";
+import { DISCOGRAPHY_TYPES_PREFERENCE_KEY } from "@/components/artist/discographyRows";
 import {
   createRowRegistry,
   rowSourceLabel,
@@ -19,7 +20,7 @@ export type ArtistRowId =
   | "singles_eps"
   | "appears_on"
   | "discography"
-  | "discography_more"
+  | "discography_second"
   | "similar_artists"
   | "audiobooks"
   | "audiobooks_all" // authors / narrators only
@@ -60,7 +61,7 @@ export const ARTIST_ROWS: readonly ArtistRowDefinition[] = [
     audience: "music",
   },
   {
-    id: "discography_more",
+    id: "discography_second",
     labelKey: "discography_second_row",
     audience: "music",
   },
@@ -108,6 +109,7 @@ export const artistRows = createRowRegistry<ArtistRowId, Artist>({
   rows: ARTIST_ROWS,
   preferenceKey: ARTIST_ROWS_PREFERENCE_KEY,
   sourcesPreferenceKey: ARTIST_ROW_SOURCES_PREFERENCE_KEY,
+  extraPreferenceKeys: [DISCOGRAPHY_TYPES_PREFERENCE_KEY],
   sourceCandidates: rowSourceCandidates,
   defaultSource: (_id, artist, candidates) =>
     artist.provider === "library" ? candidates[0] : artist.provider,

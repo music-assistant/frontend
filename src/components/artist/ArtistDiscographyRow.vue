@@ -3,7 +3,6 @@
     :title="$t('discography')"
     :meta="isPhone ? undefined : $t('discography_hint')"
     :hide-title="!showHeading"
-    :class="{ 'mt-[-16px] max-[600px]:mt-[-8px]': !showHeading }"
     :items="shelfItems"
     :view-all-to="viewAllTo"
     :view-all-name="typeNames"
@@ -18,7 +17,7 @@
         />
         <span
           v-if="items?.length"
-          class="text-[13px] whitespace-nowrap text-[color:rgba(var(--v-theme-on-surface),0.6)]"
+          class="text-[13px] whitespace-nowrap text-muted-foreground"
         >
           {{ items.length }}
         </span>
@@ -33,7 +32,7 @@ import {
   discographyTypes,
   setDiscographyTypes,
   type DiscographyRowId,
-} from "@/components/artist/discographyTypes";
+} from "@/components/artist/discographyRows";
 import DiscographyTypePicker from "@/components/artist/DiscographyTypePicker.vue";
 import ReleaseShelf from "@/components/details/ReleaseShelf.vue";
 import type { Album, Artist } from "@/plugins/api/interfaces";
@@ -48,8 +47,7 @@ export interface Props {
   artist: Artist;
   // undefined while the row is still loading
   items?: Album[];
-  // off for a row right below another discography row, which already has it;
-  // the row then also sits closer to that one
+  // off for a row right below another discography row, which already has it
   showHeading?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {

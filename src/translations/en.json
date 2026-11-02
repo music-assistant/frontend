@@ -2576,6 +2576,7 @@
     "discography_hint": "From MusicBrainz",
     "discography_first_row": "Discography (first row)",
     "discography_second_row": "Discography (second row)",
+    "discography_types_summary": "{first} +{count}",
     "album_type_plural": {
         "album": "Albums",
         "single": "Singles",

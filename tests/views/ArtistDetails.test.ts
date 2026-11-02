@@ -336,29 +336,41 @@ describe("ArtistDetails", () => {
     }
 
     it("shows once above discography rows next to each other", async () => {
-      showRows(["albums", "discography", "discography_more", "appears_on"]);
+      showRows(["albums", "discography", "discography_second", "appears_on"]);
 
       const wrapper = await mountDetails(artist());
 
       expect(discographyHeadings(wrapper)).toEqual([
         ["discography", true],
-        ["discography_more", false],
+        ["discography_second", false],
       ]);
     });
 
+    it("tightens the gap above a continuing discography row", async () => {
+      showRows(["discography", "discography_second", "appears_on"]);
+
+      const wrapper = await mountDetails(artist());
+
+      const [first, second] = wrapper.findAllComponents({
+        name: "ArtistDiscographyRow",
+      });
+      expect(first.classes()).toContain("mb-[16px]");
+      expect(second.classes()).not.toContain("mb-[16px]");
+    });
+
     it("shows above each discography row once they are apart", async () => {
-      showRows(["discography", "appears_on", "discography_more"]);
+      showRows(["discography", "appears_on", "discography_second"]);
 
       const wrapper = await mountDetails(artist());
 
       expect(discographyHeadings(wrapper)).toEqual([
         ["discography", true],
-        ["discography_more", true],
+        ["discography_second", true],
       ]);
     });
 
     it("moves to the second row when the first comes up empty", async () => {
-      showRows(["discography", "discography_more"]);
+      showRows(["discography", "discography_second"]);
       mockLoadArtistDiscography.mockImplementation(
         async (_artist: Artist, types: AlbumType[]) =>
           types.includes(AlbumType.LIVE) ? [album()] : [],
@@ -367,7 +379,7 @@ describe("ArtistDetails", () => {
       const wrapper = await mountDetails(artist());
 
       expect(discographyHeadings(wrapper)).toEqual([
-        ["discography_more", true],
+        ["discography_second", true],
       ]);
     });
   });

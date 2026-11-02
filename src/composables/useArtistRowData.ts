@@ -12,7 +12,7 @@ import { artistRows, type ArtistRowId } from "@/components/artist/artistRows";
 import {
   discographyTypes,
   type DiscographyRowId,
-} from "@/components/artist/discographyTypes";
+} from "@/components/artist/discographyRows";
 import {
   rowSourceDisplay,
   type RowSource,
@@ -84,7 +84,7 @@ export function useArtistRowData(
   const topTracksSource = computed(() => rowSource("top_tracks"));
   const similarArtistsSource = computed(() => rowSource("similar_artists"));
   const discographyKey = computed(() => typesKey("discography"));
-  const discographyMoreKey = computed(() => typesKey("discography_more"));
+  const discographySecondKey = computed(() => typesKey("discography_second"));
 
   // releases sorted newest first, from the source that feeds the given row
   const sortedReleases = function (source?: RowSource) {
@@ -118,8 +118,8 @@ export function useArtistRowData(
   const discographyItems = computed(() =>
     discography.value.get(discographyKey.value),
   );
-  const discographyMoreItems = computed(() =>
-    discography.value.get(discographyMoreKey.value),
+  const discographySecondItems = computed(() =>
+    discography.value.get(discographySecondKey.value),
   );
 
   // falls back to the artist's newest tracks when no provider supplies top
@@ -169,7 +169,7 @@ export function useArtistRowData(
       topTracksSource,
       similarArtistsSource,
       discographyKey,
-      discographyMoreKey,
+      discographySecondKey,
     ],
     () => loadRowData(),
   );
@@ -182,8 +182,8 @@ export function useArtistRowData(
     if (rows.includes("singles_eps")) fetchReleases(singlesSource.value!);
     if (rows.includes("appears_on")) fetchAppearsOn();
     if (rows.includes("discography")) fetchDiscography("discography");
-    if (rows.includes("discography_more")) {
-      fetchDiscography("discography_more");
+    if (rows.includes("discography_second")) {
+      fetchDiscography("discography_second");
     }
     if (rows.includes("top_tracks")) {
       fetchArtistTracks();
@@ -264,7 +264,7 @@ export function useArtistRowData(
     singleItems,
     appearsOnItems,
     discographyItems,
-    discographyMoreItems,
+    discographySecondItems,
     similarArtistItems,
     albumsMeta,
     albumsSource,

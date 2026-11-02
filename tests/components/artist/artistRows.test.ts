@@ -1,14 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { storeMock, mockSetUserPreference, providersMock, manifestsMock } =
-  vi.hoisted(() => ({
-    storeMock: {
-      currentUser: null as { preferences?: Record<string, unknown> } | null,
-    },
-    mockSetUserPreference: vi.fn(),
-    providersMock: {} as Record<string, unknown>,
-    manifestsMock: {} as Record<string, { name: string }>,
-  }));
+const {
+  storeMock,
+  mockSetUserPreference,
+  mockSetUserPreferences,
+  providersMock,
+  manifestsMock,
+} = vi.hoisted(() => ({
+  storeMock: {
+    currentUser: null as { preferences?: Record<string, unknown> } | null,
+  },
+  mockSetUserPreference: vi.fn(),
+  mockSetUserPreferences: vi.fn(),
+  providersMock: {} as Record<string, unknown>,
+  manifestsMock: {} as Record<string, { name: string }>,
+}));
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
@@ -21,6 +27,7 @@ vi.mock("@/plugins/api", () => {
 
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: mockSetUserPreference,
+  setUserPreferences: mockSetUserPreferences,
 }));
 
 import {
@@ -30,6 +37,7 @@ import {
   availableArtistRowIds,
   type ArtistRowId,
 } from "@/components/artist/artistRows";
+import { DISCOGRAPHY_TYPES_PREFERENCE_KEY } from "@/components/artist/discographyRows";
 import {
   ArtistType,
   ProviderFeature,
@@ -45,7 +53,7 @@ const MUSIC_ROWS: ArtistRowId[] = [
   "singles_eps",
   "appears_on",
   "discography",
-  "discography_more",
+  "discography_second",
   "similar_artists",
 ];
 
@@ -81,6 +89,7 @@ function addProvider(
 describe("artistRows", () => {
   beforeEach(() => {
     mockSetUserPreference.mockReset();
+    mockSetUserPreferences.mockReset();
     setPreferences({});
     for (const key of Object.keys(providersMock)) delete providersMock[key];
     for (const key of Object.keys(manifestsMock)) delete manifestsMock[key];
@@ -205,7 +214,7 @@ describe("artistRows", () => {
         "singles_eps",
         "appears_on",
         "discography",
-        "discography_more",
+        "discography_second",
         "similar_artists",
         "bio",
         "top_tracks",
@@ -237,7 +246,7 @@ describe("artistRows", () => {
       const { order } = artistRows.resolve(MUSIC_ROWS);
       expect(order.slice(0, 3)).toEqual([
         "discography",
-        "discography_more",
+        "discography_second",
         "bio",
       ]);
     });
@@ -260,7 +269,7 @@ describe("artistRows", () => {
         "singles_eps",
         "appears_on",
         "discography",
-        "discography_more",
+        "discography_second",
         "similar_artists",
       ];
       await artistRows.setOrder(reordered, MUSIC_ROWS);
@@ -275,16 +284,14 @@ describe("artistRows", () => {
       expect(mockSetUserPreference).not.toHaveBeenCalled();
     });
 
-    it("clears both preferences", async () => {
+    it("clears the row preferences and the discography types", async () => {
       await artistRows.reset();
-      expect(mockSetUserPreference).toHaveBeenCalledWith(
-        ARTIST_ROWS_PREFERENCE_KEY,
-        { hidden: [], shown: [], order: [] },
-      );
-      expect(mockSetUserPreference).toHaveBeenLastCalledWith(
-        ARTIST_ROW_SOURCES_PREFERENCE_KEY,
-        {},
-      );
+      expect(mockSetUserPreferences).toHaveBeenCalledOnce();
+      expect(mockSetUserPreferences).toHaveBeenCalledWith({
+        [ARTIST_ROWS_PREFERENCE_KEY]: { hidden: [], shown: [], order: [] },
+        [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: {},
+        [DISCOGRAPHY_TYPES_PREFERENCE_KEY]: null,
+      });
     });
   });
 

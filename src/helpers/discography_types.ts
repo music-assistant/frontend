@@ -33,14 +33,15 @@ export function withDiscographyTypeToggled(
 }
 
 /**
- * A short summary of a selection: the first type's label, plus the number of
- * the others, e.g. "Albums +2".
+ * A short summary of a selection: the first type's label alone, or put together
+ * with the number of the others by `withOthers`, e.g. "Albums +2".
  */
 export function discographyTypesSummary(
   types: readonly AlbumType[],
   label: (type: AlbumType) => string,
+  withOthers: (first: string, count: number) => string,
 ): string {
   const [first, ...others] = types;
   if (!first) return "";
-  return others.length ? `${label(first)} +${others.length}` : label(first);
+  return others.length ? withOthers(label(first), others.length) : label(first);
 }

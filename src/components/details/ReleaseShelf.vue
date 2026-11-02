@@ -116,7 +116,8 @@ export interface Props {
   // shown in place of the tiles when the row loaded nothing
   emptyMessage?: string;
   parentItem?: MediaItemType;
-  // with a label, leaves the title out, for a shelf continuing the one above
+  // with a label, leaves the title out, for a shelf continuing the one above;
+  // the source badge is not shown with a label either
   hideTitle?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
@@ -140,7 +141,8 @@ const emit = defineEmits<{
 
 defineSlots<{
   // in place of the title on the line with "View all", e.g. a filter; the
-  // title then sits above that line
+  // title then sits above that line. It replaces the source badge, so the two
+  // don't combine
   label?: () => unknown;
 }>();
 

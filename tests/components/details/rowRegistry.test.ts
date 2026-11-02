@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   storeMock,
   mockSetUserPreference,
+  mockSetUserPreferences,
   mockGetProvider,
   providersMock,
   manifestsMock,
@@ -11,6 +12,7 @@ const {
     currentUser: null as { preferences?: Record<string, unknown> } | null,
   },
   mockSetUserPreference: vi.fn(),
+  mockSetUserPreferences: vi.fn(),
   mockGetProvider: vi.fn(),
   providersMock: {} as Record<
     string,
@@ -34,6 +36,7 @@ vi.mock("@/plugins/api", () => {
 
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: mockSetUserPreference,
+  setUserPreferences: mockSetUserPreferences,
 }));
 
 import {
@@ -80,6 +83,7 @@ function setPreferences(preferences: Record<string, unknown>) {
 describe("rowRegistry", () => {
   beforeEach(() => {
     mockSetUserPreference.mockReset();
+    mockSetUserPreferences.mockReset();
     mockGetProvider.mockReset();
     for (const key of Object.keys(providersMock)) delete providersMock[key];
     for (const key of Object.keys(manifestsMock)) delete manifestsMock[key];
@@ -193,14 +197,27 @@ describe("rowRegistry", () => {
     });
   });
 
-  it("clears both preferences on reset", async () => {
+  it("clears both preferences on reset, in one write", async () => {
     await registry.reset();
-    expect(mockSetUserPreference).toHaveBeenCalledWith(ROWS_KEY, {
-      hidden: [],
-      shown: [],
-      order: [],
+    expect(mockSetUserPreferences).toHaveBeenCalledOnce();
+    expect(mockSetUserPreferences).toHaveBeenCalledWith({
+      [ROWS_KEY]: { hidden: [], shown: [], order: [] },
+      [SOURCES_KEY]: {},
     });
-    expect(mockSetUserPreference).toHaveBeenLastCalledWith(SOURCES_KEY, {});
+  });
+
+  it("clears the extra preferences on reset too", async () => {
+    const withExtras = createRowRegistry<"plain", Item>({
+      rows: [{ id: "plain", labelKey: "plain" }],
+      preferenceKey: ROWS_KEY,
+      extraPreferenceKeys: ["test.rowTypes"],
+    });
+    await withExtras.reset();
+    expect(mockSetUserPreferences).toHaveBeenCalledOnce();
+    expect(mockSetUserPreferences).toHaveBeenCalledWith({
+      [ROWS_KEY]: { hidden: [], shown: [], order: [] },
+      "test.rowTypes": null,
+    });
   });
 
   it("keeps only the row preference when no row has a source picker", async () => {
@@ -210,11 +227,10 @@ describe("rowRegistry", () => {
     });
     await plain.setSource("plain", "spotify--abc");
     await plain.reset();
-    expect(mockSetUserPreference).toHaveBeenCalledTimes(1);
-    expect(mockSetUserPreference).toHaveBeenCalledWith(ROWS_KEY, {
-      hidden: [],
-      shown: [],
-      order: [],
+    expect(mockSetUserPreference).not.toHaveBeenCalled();
+    expect(mockSetUserPreferences).toHaveBeenCalledOnce();
+    expect(mockSetUserPreferences).toHaveBeenCalledWith({
+      [ROWS_KEY]: { hidden: [], shown: [], order: [] },
     });
   });
 

@@ -57,9 +57,12 @@ describe("withDiscographyTypeToggled", () => {
 
 describe("discographyTypesSummary", () => {
   const label = (type: AlbumType) => `${type}s`;
+  const withOthers = (first: string, count: number) => `${first} +${count}`;
 
   it("names a single type", () => {
-    expect(discographyTypesSummary([AlbumType.ALBUM], label)).toBe("albums");
+    expect(discographyTypesSummary([AlbumType.ALBUM], label, withOthers)).toBe(
+      "albums",
+    );
   });
 
   it("names the first type and counts the others", () => {
@@ -67,11 +70,12 @@ describe("discographyTypesSummary", () => {
       discographyTypesSummary(
         [AlbumType.ALBUM, AlbumType.EP, AlbumType.LIVE],
         label,
+        withOthers,
       ),
     ).toBe("albums +2");
   });
 
   it("is empty without types", () => {
-    expect(discographyTypesSummary([], label)).toBe("");
+    expect(discographyTypesSummary([], label, withOthers)).toBe("");
   });
 });

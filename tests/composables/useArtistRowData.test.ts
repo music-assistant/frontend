@@ -2,7 +2,7 @@ import {
   ARTIST_ROW_SOURCES_PREFERENCE_KEY,
   type ArtistRowId,
 } from "@/components/artist/artistRows";
-import { DISCOGRAPHY_TYPES_PREFERENCE_KEY } from "@/components/artist/discographyTypes";
+import { DISCOGRAPHY_TYPES_PREFERENCE_KEY } from "@/components/artist/discographyRows";
 import type { RowSource } from "@/components/details/rowRegistry";
 import { useArtistRowData } from "@/composables/useArtistRowData";
 import {
@@ -392,7 +392,7 @@ describe("useArtistRowData", () => {
   });
 
   it("requests each discography row's own release types", async () => {
-    const page = setupRowData({ rows: ["discography", "discography_more"] });
+    const page = setupRowData({ rows: ["discography", "discography_second"] });
     mockLoadArtistDiscography.mockImplementation(async (_artist, types) => [
       album({ item_id: types!.join(",") }),
     ]);
@@ -404,18 +404,18 @@ describe("useArtistRowData", () => {
       [AlbumType.LIVE],
     ]);
     expect(itemIds(page.discographyItems.value)).toEqual(["album"]);
-    expect(itemIds(page.discographyMoreItems.value)).toEqual(["live"]);
+    expect(itemIds(page.discographySecondItems.value)).toEqual(["live"]);
   });
 
   it("shares one request between discography rows showing the same types", async () => {
     store.currentUser = user({
       preferences: {
         [DISCOGRAPHY_TYPES_PREFERENCE_KEY]: {
-          discography_more: [AlbumType.ALBUM],
+          discography_second: [AlbumType.ALBUM],
         },
       },
     });
-    const page = setupRowData({ rows: ["discography", "discography_more"] });
+    const page = setupRowData({ rows: ["discography", "discography_second"] });
 
     await showArtist(page, libraryArtist());
 

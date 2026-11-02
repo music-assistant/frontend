@@ -28,6 +28,7 @@
 </template>
 
 <script setup lang="ts">
+import { discographyTypesLabel } from "@/components/artist/discographyRows";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -37,7 +38,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   DISCOGRAPHY_TYPES,
-  discographyTypesSummary,
   withDiscographyTypeToggled,
 } from "@/helpers/discography_types";
 import type { AlbumType } from "@/plugins/api/interfaces";
@@ -55,11 +55,7 @@ const emit = defineEmits<{
 }>();
 
 // e.g. "Albums +2"
-const summary = computed(() =>
-  discographyTypesSummary(props.modelValue, (type) =>
-    $t(`album_type_plural.${type}`),
-  ),
-);
+const summary = computed(() => discographyTypesLabel(props.modelValue));
 
 /** The only ticked type can't be unticked. */
 function isLastTicked(type: AlbumType): boolean {

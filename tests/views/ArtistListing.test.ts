@@ -8,7 +8,6 @@ import {
   type Artist,
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
 import ArtistListing, { type Props } from "@/views/ArtistListing.vue";
 import type { LoadDataParams } from "@/components/ItemsListing.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
@@ -24,7 +23,6 @@ const {
   mockGetArtistAppearsOn,
   mockGetArtistDiscography,
   mockReplace,
-  mockSetItemsListingPreference,
   routeQuery,
 } = vi.hoisted(() => ({
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
@@ -33,7 +31,6 @@ const {
   mockGetArtistAppearsOn: vi.fn<MusicAssistantApi["getArtistAppearsOn"]>(),
   mockGetArtistDiscography: vi.fn<MusicAssistantApi["getArtistDiscography"]>(),
   mockReplace: vi.fn(),
-  mockSetItemsListingPreference: vi.fn(),
   routeQuery: {} as Record<string, string>,
 }));
 
@@ -53,13 +50,6 @@ vi.mock("@/plugins/api", () => ({
 vi.mock("@/plugins/i18n", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/plugins/i18n")>()),
   $t: (key: string) => key,
-}));
-
-vi.mock("@/composables/userPreferences", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/composables/userPreferences")>()),
-  useUserPreferences: () => ({
-    setItemsListingPreference: mockSetItemsListingPreference,
-  }),
 }));
 
 vi.mock("vue-router", () => ({
@@ -88,6 +78,7 @@ vi.mock("@/components/ItemsListing.vue", () => ({
       "showProviderFilter",
       "showAlbumTypeFilter",
       "albumTypeFilterOptions",
+      "albumTypeOverride",
       "sortKeys",
     ],
     template:
@@ -128,7 +119,6 @@ describe("ArtistListing", () => {
     mockGetArtistTracks.mockReset().mockResolvedValue([]);
     mockGetArtistAlbums.mockReset().mockResolvedValue([]);
     mockReplace.mockReset();
-    mockSetItemsListingPreference.mockReset();
     mockGetArtistAppearsOn.mockReset().mockResolvedValue([]);
     mockGetArtistDiscography.mockReset().mockResolvedValue([]);
     for (const key of Object.keys(api.providers)) delete api.providers[key];
@@ -523,27 +513,24 @@ describe("ArtistListing", () => {
     );
   });
 
-  it("starts the discography on the types a link carries, as a fresh visit", async () => {
+  it("starts the discography on the types a link carries", async () => {
     routeQuery.types = "live,album,bogus";
     routeQuery.other = "kept";
-    store.prevState = { path: "artistdiscography" } as typeof store.prevState;
 
-    await mountListing("discography");
+    const wrapper = await mountListing("discography");
 
+    expect(listing(wrapper).props("albumTypeOverride")).toEqual([
+      AlbumType.ALBUM,
+      AlbumType.LIVE,
+    ]);
+    // a reload of, or a return to, this page must not carry them in again
     expect(mockReplace).toHaveBeenCalledWith({ query: { other: "kept" } });
-    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
-      "artistdiscography",
-      "artistalbums",
-      "albumType",
-      [AlbumType.ALBUM, AlbumType.LIVE],
-    );
-    expect(store.prevState).toBeUndefined();
   });
 
-  it("leaves the album type filter alone without types in the link", async () => {
-    await mountListing("discography");
+  it("carries no album types in without types in the link", async () => {
+    const wrapper = await mountListing("discography");
 
-    expect(mockSetItemsListingPreference).not.toHaveBeenCalled();
+    expect(listing(wrapper).props("albumTypeOverride")).toBeUndefined();
     expect(mockReplace).not.toHaveBeenCalled();
   });
 

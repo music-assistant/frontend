@@ -22,6 +22,7 @@
       :provider-override="config.providerOverride"
       :show-album-type-filter="config.showAlbumTypeFilter"
       :album-type-filter-options="config.albumTypeFilterOptions"
+      :album-type-override="config.albumTypeOverride"
       :show-track-number="config.showTrackNumber"
       :show-refresh-button="false"
       :sort-listing="config.sortListing"
@@ -41,14 +42,13 @@ import {
   loadArtistTracks,
 } from "@/components/artist/artistData";
 import { artistRows } from "@/components/artist/artistRows";
-import { DISCOGRAPHY_TYPES_QUERY } from "@/components/artist/discographyTypes";
+import { DISCOGRAPHY_TYPES_QUERY } from "@/components/artist/discographyRows";
 import {
   rowSourceLabel,
   type RowSource,
 } from "@/components/details/rowRegistry";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
-import { useUserPreferences } from "@/composables/userPreferences";
 import {
   DISCOGRAPHY_TYPES,
   validDiscographyTypes,
@@ -62,7 +62,6 @@ import {
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { store } from "@/plugins/store";
 import { ArrowLeft } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -84,6 +83,8 @@ interface ListingConfig {
   showAlbumTypeFilter: boolean;
   // the album types the filter offers, when not every type
   albumTypeFilterOptions?: string[];
+  // album types carried in by a link, shown on arrival instead of the saved ones
+  albumTypeOverride?: string[];
   showFavoritesOnlyFilter: boolean;
   showProviderFilter: boolean;
   showTrackNumber: boolean;
@@ -110,12 +111,8 @@ const RELEASE_TYPES: Record<"albums" | "singles_eps", AlbumType[]> = {
   singles_eps: [AlbumType.SINGLE, AlbumType.EP],
 };
 
-const DISCOGRAPHY_PATH = "artistdiscography";
-const RELEASES_ITEMTYPE = "artistalbums";
-
 const router = useRouter();
 const route = useRoute();
-const { setItemsListingPreference } = useUserPreferences();
 const itemDetails = ref<Artist>();
 // the source of the releases on screen: the one the listing is on, or the one
 // they were last loaded from, so the header names it
@@ -124,11 +121,14 @@ const activeSource = ref<RowSource>();
 // soon as it is read: it is honoured on arrival only, and a return to or
 // reload of this page lands on what the user has picked since
 let linkedSource: string | undefined;
+// the discography types a "view all" link carried in, taken off the url the
+// same way
+let linkedTypes: AlbumType[] | undefined;
 
 watch(
   () => [props.itemId, props.provider],
   async ([itemId, provider]) => {
-    linkedSource = takeLinkedQuery();
+    takeLinkedQuery();
     // the listing remounts for the new artist instead of keeping the old items
     itemDetails.value = undefined;
     activeSource.value = undefined;
@@ -146,7 +146,7 @@ watch(
   () => props.listing,
   () => {
     activeSource.value = undefined;
-    linkedSource = takeLinkedQuery();
+    takeLinkedQuery();
   },
 );
 
@@ -225,10 +225,11 @@ const config = computed<ListingConfig | undefined>(() => {
       return {
         ...listingDefaults(),
         labelKey: "discography",
-        path: DISCOGRAPHY_PATH,
+        path: "artistdiscography",
         sortListing: ListingType.ARTIST_DISCOGRAPHY,
         showAlbumTypeFilter: true,
         albumTypeFilterOptions: [...DISCOGRAPHY_TYPES],
+        albumTypeOverride: linkedTypes,
         showFavoritesOnlyFilter: false,
         showProviderFilter: false,
         emptyMessage: $t("artist_row_empty"),
@@ -279,7 +280,7 @@ function listingDefaults(): Omit<
   "labelKey" | "path" | "loadPagedData" | "sortListing"
 > {
   return {
-    itemtype: RELEASES_ITEMTYPE,
+    itemtype: "artistalbums",
     showAlbumTypeFilter: false,
     showFavoritesOnlyFilter: true,
     showProviderFilter: true,
@@ -307,34 +308,17 @@ function sourceSelection(rowId: "albums" | "singles_eps") {
   };
 }
 
-/**
- * The source named in the url's query, if any. The discography types a link
- * carries become the discography listing's album type filter. Both are taken
- * off the url.
- */
-function takeLinkedQuery(): string | undefined {
+/** Reads the source and discography types a link carried in, off the url. */
+function takeLinkedQuery() {
   const { source, [DISCOGRAPHY_TYPES_QUERY]: types, ...rest } = route.query;
-  if (source === undefined && types === undefined) return undefined;
-  router.replace({ query: rest });
-  if (typeof types === "string" && props.listing === "discography") {
-    applyLinkedTypes(validDiscographyTypes(types.split(",")));
+  linkedSource = typeof source === "string" ? source : undefined;
+  linkedTypes =
+    typeof types === "string"
+      ? validDiscographyTypes(types.split(","))
+      : undefined;
+  if (source !== undefined || types !== undefined) {
+    router.replace({ query: rest });
   }
-  return typeof source === "string" ? source : undefined;
-}
-
-/**
- * Starts the discography listing on the types a "View all" link carried in,
- * as a fresh visit rather than a return to the last one.
- */
-function applyLinkedTypes(types: AlbumType[]) {
-  if (!types.length) return;
-  store.prevState = undefined;
-  setItemsListingPreference(
-    DISCOGRAPHY_PATH,
-    RELEASES_ITEMTYPE,
-    "albumType",
-    types,
-  );
 }
 
 /**
