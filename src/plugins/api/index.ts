@@ -124,7 +124,6 @@ export interface PlayMediaOptions {
   sort_direction?: SortDirection;
   /** @deprecated Use sort_field and sort_direction. */
   sort_by?: string;
-  start_from_beginning?: boolean;
   /** Seconds to start an audiobook or episode at, e.g. a bookmark, instead of its resume position. */
   start_position?: number;
   /** Set playback order for immediate-play options; omit to let the server decide. */
@@ -2602,7 +2601,6 @@ export class MusicAssistantApi {
       sort_by: options.sort_by,
       sort_field: options.sort_field,
       sort_direction: options.sort_direction,
-      start_from_beginning: options.start_from_beginning,
       shuffle: options.shuffle,
       start_position: options.start_position,
     };
