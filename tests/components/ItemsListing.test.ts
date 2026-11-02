@@ -1087,6 +1087,57 @@ describe("ItemsListing failed load", () => {
   });
 });
 
+describe("ItemsListing load more indicator", () => {
+  // in intersect mode the scroller shows its loading slot, or its own spinner,
+  // until a load reports there is nothing more, which a list shorter than its
+  // margin never does
+  const InfiniteScrollStub = {
+    name: "VInfiniteScroll",
+    setup(_: unknown, { slots }: SetupContext) {
+      return () =>
+        h("div", [
+          slots.default?.(),
+          slots.loading?.() ?? h("div", { role: "status" }),
+        ]);
+    },
+  };
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    store.prevState = undefined;
+    store.currentUser = undefined;
+  });
+
+  function mountWithItems(count: number) {
+    return mountListingRaw(
+      {
+        loadPagedData: vi
+          .fn()
+          .mockResolvedValue(
+            Array.from({ length: count }, (_, i) =>
+              track({ item_id: `track-${i}` }),
+            ),
+          ),
+      },
+      { VInfiniteScroll: InfiniteScrollStub },
+    );
+  }
+
+  it("stops spinning once every item is loaded", async () => {
+    const listing = mountWithItems(2);
+    await flushPromises();
+
+    expect(listing.find('[role="status"]').exists()).toBe(false);
+  });
+
+  it("spins while more items can follow", async () => {
+    const listing = mountWithItems(50);
+    await flushPromises();
+
+    expect(listing.find('[role="status"]').exists()).toBe(true);
+  });
+});
+
 describe("ItemsListing cover size", () => {
   beforeEach(() => {
     eventbus.all.clear();
