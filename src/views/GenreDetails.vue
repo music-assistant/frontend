@@ -1,23 +1,41 @@
 <template>
   <section>
-    <InfoHeader :item="itemDetails" :active-provider="provider">
+    <GenreHero
+      :item="itemDetails"
+      :editable-rows="viewMode !== 'discovery'"
+      @edit-rows="rowsEditorOpen = true"
+    >
       <template #toolbar-append>
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-lg"
+          class="mr-2 rounded-lg bg-black/35 hover:bg-black/45"
           :title="viewModeMenuLabel"
-          @click="(e: MouseEvent) => openViewModeMenu(e)"
+          :aria-label="viewModeMenuLabel"
+          @click="openViewModeMenu"
         >
-          <v-icon :icon="viewModeIcon" />
+          <component :is="viewModeIcon" class="size-5" />
         </Button>
       </template>
-    </InfoHeader>
+    </GenreHero>
+
+    <DetailTextRow
+      v-if="itemDetails && itemDescription"
+      :text="itemDescription"
+      :dialog-title="itemDetails.name"
+      markdown
+    />
 
     <!-- Discovery view -->
     <template v-if="viewMode === 'discovery'">
-      <div v-if="loadingRows" class="rows-loading">
-        <v-progress-linear color="accent" height="4" indeterminate rounded />
-      </div>
+      <Skeleton
+        v-if="loadingRows"
+        role="progressbar"
+        :aria-label="$t('loading_short')"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        class="rows-loading h-1 w-full"
+      />
 
       <div class="overview-container">
         <EditorialShelf
@@ -47,134 +65,40 @@
 
     <!-- Traditional view -->
     <template v-else-if="itemDetails && !loading">
-      <ItemsListing
-        itemtype="artists"
-        :load-paged-data="loadGenreArtists"
-        :sort-listing="ListingType.LIBRARY_ARTISTS"
-        :allow-collapse="true"
-        :show-favorites-only-filter="true"
-        :hide-on-empty="true"
-        :forced-view-mode="itemsViewMode"
-        :hide-actions-by-default="wasCompact"
-      >
-        <template #title>
-          <span>{{ $t("artists") }}</span>
-          <SquareArrowRightEnter
-            :size="18"
-            class="navigate-icon"
-            :aria-label="$t('tooltip.view_all', { name: $t('artists') })"
-            @click.stop="navigateTo('artists')"
-          />
-        </template>
-      </ItemsListing>
-      <br />
-      <ItemsListing
-        itemtype="albums"
-        :load-paged-data="loadGenreAlbums"
-        :sort-listing="ListingType.LIBRARY_ALBUMS"
-        :allow-collapse="true"
-        :show-favorites-only-filter="true"
-        :hide-on-empty="true"
-        :forced-view-mode="itemsViewMode"
-        :hide-actions-by-default="wasCompact"
-      >
-        <template #title>
-          <span>{{ $t("albums") }}</span>
-          <SquareArrowRightEnter
-            :size="18"
-            class="navigate-icon"
-            :aria-label="$t('tooltip.view_all', { name: $t('albums') })"
-            @click.stop="navigateTo('albums')"
-          />
-        </template>
-      </ItemsListing>
-      <br />
-      <ItemsListing
-        itemtype="tracks"
-        :load-paged-data="loadGenreTracks"
-        :sort-listing="ListingType.LIBRARY_TRACKS"
-        :allow-collapse="true"
-        :show-favorites-only-filter="true"
-        :show-track-number="false"
-        :hide-on-empty="true"
-        :forced-view-mode="itemsViewMode"
-        :hide-actions-by-default="wasCompact"
-      >
-        <template #title>
-          <span>{{ $t("tracks") }}</span>
-          <SquareArrowRightEnter
-            :size="18"
-            class="navigate-icon"
-            :aria-label="$t('tooltip.view_all', { name: $t('tracks') })"
-            @click.stop="navigateTo('tracks')"
-          />
-        </template>
-      </ItemsListing>
-      <br />
-      <ItemsListing
-        itemtype="playlists"
-        :load-paged-data="loadGenrePlaylists"
-        :sort-listing="ListingType.LIBRARY_PLAYLISTS"
-        :allow-collapse="true"
-        :show-favorites-only-filter="true"
-        :hide-on-empty="true"
-        :forced-view-mode="itemsViewMode"
-        :hide-actions-by-default="wasCompact"
-      >
-        <template #title>
-          <span>{{ $t("playlists") }}</span>
-          <SquareArrowRightEnter
-            :size="18"
-            class="navigate-icon"
-            :aria-label="$t('tooltip.view_all', { name: $t('playlists') })"
-            @click.stop="navigateTo('playlists')"
-          />
-        </template>
-      </ItemsListing>
-      <br />
-      <ItemsListing
-        itemtype="podcasts"
-        :load-paged-data="loadGenrePodcasts"
-        :sort-listing="ListingType.LIBRARY_PODCASTS"
-        :allow-collapse="true"
-        :show-favorites-only-filter="true"
-        :hide-on-empty="true"
-        :forced-view-mode="itemsViewMode"
-        :hide-actions-by-default="wasCompact"
-      >
-        <template #title>
-          <span>{{ $t("podcasts") }}</span>
-          <SquareArrowRightEnter
-            :size="18"
-            class="navigate-icon"
-            :aria-label="$t('tooltip.view_all', { name: $t('podcasts') })"
-            @click.stop="navigateTo('podcasts')"
-          />
-        </template>
-      </ItemsListing>
-      <br />
-      <ItemsListing
-        itemtype="audiobooks"
-        :load-paged-data="loadGenreAudiobooks"
-        :sort-listing="ListingType.LIBRARY_AUDIOBOOKS"
-        :allow-collapse="true"
-        :show-favorites-only-filter="true"
-        :hide-on-empty="true"
-        :forced-view-mode="itemsViewMode"
-        :hide-actions-by-default="wasCompact"
-      >
-        <template #title>
-          <span>{{ $t("audiobooks") }}</span>
-          <SquareArrowRightEnter
-            :size="18"
-            class="navigate-icon"
-            :aria-label="$t('tooltip.view_all', { name: $t('audiobooks') })"
-            @click.stop="navigateTo('audiobooks')"
-          />
-        </template>
-      </ItemsListing>
-      <br />
+      <template v-for="rowId in visibleRows" :key="rowId">
+        <ItemsListing
+          :itemtype="rowId"
+          :load-paged-data="genreListingLoaders[rowId]"
+          :sort-listing="genreListingSorts[rowId]"
+          :allow-collapse="true"
+          :show-favorites-only-filter="true"
+          :show-track-number="rowId !== 'tracks'"
+          :hide-on-empty="true"
+          :forced-view-mode="itemsViewMode"
+          :hide-actions-by-default="wasCompact"
+        >
+          <template #title>
+            <span>{{ $t(rowId) }}</span>
+            <SquareArrowRightEnter
+              :size="18"
+              class="navigate-icon"
+              :aria-label="$t('tooltip.view_all', { name: $t(rowId) })"
+              @click.stop="navigateTo(rowId)"
+            />
+          </template>
+        </ItemsListing>
+        <br />
+      </template>
     </template>
+
+    <RowsEditor
+      v-if="itemDetails && viewMode !== 'discovery'"
+      v-model:open="rowsEditorOpen"
+      :item="itemDetails"
+      :registry="genreRows"
+      :available-ids="availableRows"
+      :subtitle="$t('edit_rows_subtitle_genre')"
+    />
 
     <GenreAliasManager
       v-if="itemDetails && canManageLibrary"
@@ -188,11 +112,20 @@
 <script setup lang="ts">
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
+import DetailTextRow from "@/components/details/DetailTextRow.vue";
+import RowsEditor from "@/components/details/RowsEditor.vue";
 import GenreAliasManager from "@/components/genre/GenreAliasManager.vue";
-import InfoHeader from "@/components/InfoHeader.vue";
+import GenreHero from "@/components/genre/GenreHero.vue";
+import {
+  GENRE_ROW_IDS,
+  genreRows,
+  type GenreRowId,
+} from "@/components/genre/genreRows";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
+import type { LoadPagedDataFn } from "@/composables/useItemsListing";
 import {
   updateUserPreferences,
   useUserPreferences,
@@ -212,7 +145,12 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { SquareArrowRightEnter } from "@lucide/vue";
+import {
+  Grid2x2,
+  LayoutDashboard,
+  List,
+  SquareArrowRightEnter,
+} from "@lucide/vue";
 import { computed, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -225,6 +163,7 @@ const props = defineProps<Props>();
 const itemDetails = ref<Genre>();
 const loading = ref(false);
 const loadingRows = ref(false);
+const rowsEditorOpen = ref(false);
 const overviewRows = ref<
   Array<{
     title: string;
@@ -241,6 +180,11 @@ const router = useRouter();
 const canManageLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_MANAGE),
 );
+const itemDescription = computed(
+  () =>
+    itemDetails.value?.metadata?.description ||
+    itemDetails.value?.metadata?.copyright,
+);
 
 type GenreViewMode = "discovery" | "list" | "panel";
 
@@ -256,6 +200,12 @@ const itemsViewMode = computed(() =>
   viewMode.value !== "discovery" ? viewMode.value : undefined,
 );
 
+const availableRows = computed(() => [...GENRE_ROW_IDS]);
+const visibleRows = computed(() => {
+  const { order, hidden } = genreRows.resolve(availableRows.value);
+  return order.filter((rowId) => !hidden.has(rowId));
+});
+
 watch(viewMode, (newVal) => {
   void updateUserPreferences((current) => applyGenreView(current, newVal));
 });
@@ -268,9 +218,9 @@ const displayRows = computed(() =>
 const tilesPerView = computed(() => panelViewItemResponsive(0) + 0.5);
 
 const viewModeIcon = computed(() => {
-  if (viewMode.value === "discovery") return "mdi-view-dashboard";
-  if (viewMode.value === "panel") return "mdi-grid";
-  return "mdi-view-list";
+  if (viewMode.value === "discovery") return LayoutDashboard;
+  if (viewMode.value === "panel") return Grid2x2;
+  return List;
 });
 
 const getViewModeLabel = function (mode: GenreViewMode) {
@@ -286,7 +236,7 @@ const openViewModeMenu = (e: MouseEvent) => {
     items: [
       {
         label: "view.discovery",
-        icon: "mdi-view-dashboard",
+        icon: LayoutDashboard,
         selected: viewMode.value === "discovery",
         action: () => {
           viewMode.value = "discovery";
@@ -294,7 +244,7 @@ const openViewModeMenu = (e: MouseEvent) => {
       },
       {
         label: "view.list",
-        icon: "mdi-view-list",
+        icon: List,
         selected: viewMode.value === "list",
         action: () => {
           viewMode.value = "list";
@@ -302,7 +252,7 @@ const openViewModeMenu = (e: MouseEvent) => {
       },
       {
         label: "view.panel",
-        icon: "mdi-grid",
+        icon: Grid2x2,
         selected: viewMode.value === "panel",
         action: () => {
           viewMode.value = "panel";
@@ -474,6 +424,24 @@ const loadGenreAudiobooks = async (params: LoadDataParams) => {
     params.provider?.length ? params.provider : undefined,
     genreId(),
   );
+};
+
+const genreListingLoaders: Record<GenreRowId, LoadPagedDataFn> = {
+  artists: loadGenreArtists,
+  albums: loadGenreAlbums,
+  tracks: loadGenreTracks,
+  playlists: loadGenrePlaylists,
+  podcasts: loadGenrePodcasts,
+  audiobooks: loadGenreAudiobooks,
+};
+
+const genreListingSorts: Record<GenreRowId, ListingType> = {
+  artists: ListingType.LIBRARY_ARTISTS,
+  albums: ListingType.LIBRARY_ALBUMS,
+  tracks: ListingType.LIBRARY_TRACKS,
+  playlists: ListingType.LIBRARY_PLAYLISTS,
+  podcasts: ListingType.LIBRARY_PODCASTS,
+  audiobooks: ListingType.LIBRARY_AUDIOBOOKS,
 };
 
 watch(
