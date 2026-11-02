@@ -124,6 +124,7 @@ watch(
           limit: SEARCH_RESULT_LIMIT,
           offset: 0,
           sort_field: SortField.NAME,
+          summary: false,
         });
         const allAliases = new Set<string>();
         for (const genre of genres) {
