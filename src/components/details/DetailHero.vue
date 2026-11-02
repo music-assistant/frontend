@@ -179,6 +179,10 @@ const backdropStyle = computed(() =>
 );
 
 watch(() => props.item, buildMenu, { immediate: true });
+watch(
+  () => props.editableRows,
+  () => buildMenu(props.item),
+);
 
 // pinning or unpinning the item in the sidebar changes its menu entry
 const { getPreference } = useUserPreferences();

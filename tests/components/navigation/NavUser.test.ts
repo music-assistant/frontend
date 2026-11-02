@@ -105,6 +105,15 @@ describe("NavUser", () => {
     expect(startTour).toHaveBeenCalledTimes(1);
   });
 
+  it("opens the statistics page, out from under the sidebar sheet", async () => {
+    const wrapper = mountMenu();
+
+    await wrapper.find("[data-testid=nav-user-statistics]").trigger("click");
+
+    expect(setOpenMobile).toHaveBeenCalledWith(false);
+    expect(routerPush).toHaveBeenCalledWith({ name: "statistics" });
+  });
+
   it("leaves focus with the tour as it closes behind one", () => {
     const wrapper = mountMenu();
     tourState.active.value = true;

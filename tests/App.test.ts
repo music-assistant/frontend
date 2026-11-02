@@ -53,6 +53,8 @@ const {
     authenticateWithToken: vi.fn<MusicAssistantApi["authenticateWithToken"]>(),
     baseUrl: "http://music-assistant.test",
     fetchState: vi.fn<MusicAssistantApi["fetchState"]>(),
+    fetchProviderManifests:
+      vi.fn<MusicAssistantApi["fetchProviderManifests"]>(),
     fetchProviders: vi.fn<MusicAssistantApi["fetchProviders"]>(),
     getCurrentUserInfo: vi.fn<MusicAssistantApi["getCurrentUserInfo"]>(),
     getLibraryAlbumsCount: vi.fn<MusicAssistantApi["getLibraryAlbumsCount"]>(),
@@ -355,6 +357,7 @@ describe("App initialization", () => {
       }),
     );
     apiMock.fetchState.mockResolvedValue(undefined);
+    apiMock.fetchProviderManifests.mockResolvedValue(undefined);
     apiMock.fetchProviders.mockResolvedValue(undefined);
     apiMock.initialize.mockResolvedValue(undefined);
     apiMock.setLocale.mockResolvedValue(undefined);
@@ -462,6 +465,7 @@ describe("App initialization", () => {
       expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
       expect(mockRememberCurrentRemoteConnection).not.toHaveBeenCalled();
       expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+      expect(apiMock.fetchProviderManifests).toHaveBeenCalledOnce();
       expect(apiMock.fetchProviders).toHaveBeenCalledOnce();
       expectLibraryCountsNotCalled();
       expect(webPlayerMock.setBaseUrl).toHaveBeenCalledWith(apiMock.baseUrl);
@@ -733,6 +737,7 @@ describe("App initialization", () => {
     expect(storeMock.roles).toEqual([userRole]);
     expect(storeMock.roleScopes).toEqual({ user: ["library.read"] });
     expect(apiMock.fetchState).toHaveBeenCalledOnce();
+    expect(apiMock.fetchProviderManifests).not.toHaveBeenCalled();
     expect(apiMock.fetchProviders).not.toHaveBeenCalled();
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledOnce();
     expectLibraryCountsCalled();

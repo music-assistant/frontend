@@ -6,7 +6,7 @@
       @title-clicked="toggleExpand"
     />
     <v-divider />
-    <Container v-if="expanded">
+    <div v-if="expanded" class="p-2.5">
       <v-list>
         <v-list-item
           v-for="chapter in itemDetails?.metadata?.chapters"
@@ -31,13 +31,12 @@
           </template>
         </v-list-item>
       </v-list>
-    </Container>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ChevronDown, ChevronUp } from "@lucide/vue";
-import Container from "@/components/Container.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";

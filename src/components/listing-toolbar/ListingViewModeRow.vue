@@ -14,7 +14,7 @@
       :key="view.value"
       :value="view.value"
       :aria-label="$t(view.label)"
-      class="flex-1 flex-col justify-center gap-1 rounded-md px-1 py-2 text-xs data-[state=checked]:bg-primary/15 data-[state=checked]:text-primary"
+      class="flex-1 cursor-pointer flex-col justify-center gap-1 rounded-md px-1 py-2 text-xs data-[state=checked]:bg-primary/15 data-[state=checked]:text-primary"
       @select="(event: Event) => event.preventDefault()"
     >
       <template #indicator-icon><span></span></template>

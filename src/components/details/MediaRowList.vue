@@ -1,15 +1,12 @@
 <template>
   <section class="media-rows">
     <div class="media-rows__head">
-      <div
-        v-hold="onHold"
-        class="media-rows__titles"
-        @touchstart.passive="onTouchStart"
-        @click.capture="swallowClickAfterHold"
-      >
-        <h2 class="media-rows__title">{{ title }}</h2>
-        <span v-if="meta" class="media-rows__meta">{{ meta }}</span>
-      </div>
+      <DetailSectionTitle
+        :title="title"
+        :meta="meta"
+        align="baseline"
+        @edit-rows="emit('edit-rows')"
+      />
       <RouterLink
         v-if="viewAllTo"
         :to="viewAllTo"
@@ -99,6 +96,7 @@
 </template>
 
 <script setup lang="ts">
+import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import FavoriteMenu from "@/components/FavoriteMenu.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
@@ -184,10 +182,6 @@ function sourceName(item: RowItem): string {
   );
 }
 
-const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
-  emit("edit-rows"),
-);
-
 const {
   onHold: onItemHold,
   onTouchStart: onItemTouchStart,
@@ -255,27 +249,6 @@ function itemDuration(item: RowItem): number | undefined {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 8px;
-}
-.media-rows__titles {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  min-width: 0;
-}
-.media-rows__title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-  color: rgb(var(--v-theme-on-background));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.media-rows__meta {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  white-space: nowrap;
 }
 .media-rows__more {
   flex: none;
@@ -395,9 +368,6 @@ function itemDuration(item: RowItem): number | undefined {
 @media (max-width: 768px) {
   .media-rows {
     padding: 20px 16px 0;
-  }
-  .media-rows__title {
-    font-size: 19px;
   }
   .media-rows__list {
     margin: 0;

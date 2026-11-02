@@ -43,6 +43,13 @@ vi.mock("@/components/MediaItemThumb.vue", () => ({
   },
 }));
 
+vi.mock("@/components/ProviderIcon.vue", () => ({
+  default: {
+    name: "ProviderIcon",
+    template: "<div />",
+  },
+}));
+
 type DeferredSearch = {
   promise: Promise<SearchResults>;
   resolve: (value: SearchResults) => void;
