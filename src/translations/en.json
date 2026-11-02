@@ -68,6 +68,7 @@
     "items_selected": "{0} item(s) selected",
     "items_total": "{0} total item(s)",
     "items_load_failed": "Couldn't load the items.",
+    "open_item_failed": "Couldn't open this item.",
     "selection_actions": "Selection actions",
     "library": "Library",
     "loading": "Data is being retrieved from the server.",
