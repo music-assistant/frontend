@@ -5,6 +5,7 @@ import {
 import {
   readRowsConfig,
   resolveRowsConfig,
+  storedRowsConfig,
   withRowHidden,
   withRowsOrder,
   writeRowsConfig,
@@ -139,7 +140,7 @@ export function createRowRegistry<Id extends string, Item>(
     },
     async reset() {
       const cleared: Record<string, unknown> = {
-        [preferenceKey]: { hidden: [], shown: [], order: [] },
+        [preferenceKey]: storedRowsConfig({}),
       };
       if (sourcesPreferenceKey) cleared[sourcesPreferenceKey] = {};
       for (const key of extraPreferenceKeys) cleared[key] = null;
