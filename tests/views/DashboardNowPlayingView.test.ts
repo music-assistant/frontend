@@ -181,6 +181,20 @@ describe("DashboardNowPlayingView", () => {
       expect(storeMock.showFullscreenPlayer).toBe(false);
     });
 
+    it("clears a fullscreen-player flag a browser Forward brings back stale", async () => {
+      const first = mountView();
+      // leaving sets the flag for the player page this unmount lands on
+      await first.get(".now-playing-view").trigger("click");
+      first.unmount();
+      expect(storeMock.showFullscreenPlayer).toBe(true);
+
+      // Forward reopens this view; nothing here covers it, so the flag from
+      // the page just left must not survive into this mount
+      mountView();
+
+      expect(storeMock.showFullscreenPlayer).toBe(false);
+    });
+
     it("stays while the timeline is used", async () => {
       storeMock.activePlayer = { name: "Kitchen" };
       const wrapper = mountView();

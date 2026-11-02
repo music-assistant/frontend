@@ -11,7 +11,7 @@
       v-if="onDevice"
       variant="ghost"
       size="icon-sm"
-      class="now-playing-close"
+      class="absolute top-[max(1rem,2vh)] left-[max(1rem,2vw)] z-2"
       :aria-label="$t('close')"
       @click.stop="leave"
     >
@@ -135,7 +135,12 @@ const leave = () => {
 useEscapeBack(leave, () => onDevice);
 
 onMounted(() => {
-  if (onDevice) store.frameless = true;
+  if (!onDevice) return;
+  store.frameless = true;
+  // Browser Forward can remount this view with the flag a previous visit's
+  // leave() set, which would wrongly reserve Escape for a fullscreen player
+  // that isn't actually covering this one and suspend the visualizer under it.
+  store.showFullscreenPlayer = false;
 });
 
 onUnmounted(() => {
@@ -201,19 +206,12 @@ const backgroundGradient = computed(() => {
   color: var(--text-color, #fff);
 }
 
-/* Lift content above the visualizer layer (z-index 0). */
+/* Lift content above the visualizer layer (z-index 0). Tailwind's utilities
+   carry !important (src/styles/style.css), so the close button's own
+   `absolute`/`z-2` utilities still win over this. */
 .now-playing-view > *:not(.visualizer-layer) {
   position: relative;
   z-index: 1;
-}
-
-/* Same specificity as the lift rule above and later in the stylesheet, so it
-   wins: the close button sits out of flow, clear of the artwork below it. */
-.now-playing-view > .now-playing-close {
-  position: absolute;
-  top: max(1rem, 2vh);
-  left: max(1rem, 2vw);
-  z-index: 2;
 }
 
 /* Keep the vh fallback in a separate rule: the minifier collapses duplicate
