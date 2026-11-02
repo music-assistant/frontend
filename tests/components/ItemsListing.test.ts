@@ -165,10 +165,6 @@ vi.mock("@/components/Toolbar.vue", () => ({
       '<div class="toolbar-stub"><slot name="title" /><slot name="append" /></div>',
   },
 }));
-// renders what it holds, so the grid inside it can be looked at
-vi.mock("@/components/Container.vue", () => ({
-  default: { name: "Container", template: "<div><slot /></div>" },
-}));
 vi.mock("@/components/icons/GenreIcon.vue", () => stubComponent("GenreIcon"));
 vi.mock("@/components/skeletons/ListViewSkeleton.vue", () =>
   stubComponent("ListViewSkeleton"),
@@ -1091,6 +1087,57 @@ describe("ItemsListing failed load", () => {
   });
 });
 
+describe("ItemsListing load more indicator", () => {
+  // in intersect mode the scroller shows its loading slot, or its own spinner,
+  // until a load reports there is nothing more, which a list shorter than its
+  // margin never does
+  const InfiniteScrollStub = {
+    name: "VInfiniteScroll",
+    setup(_: unknown, { slots }: SetupContext) {
+      return () =>
+        h("div", [
+          slots.default?.(),
+          slots.loading?.() ?? h("div", { role: "status" }),
+        ]);
+    },
+  };
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    store.prevState = undefined;
+    store.currentUser = undefined;
+  });
+
+  function mountWithItems(count: number) {
+    return mountListingRaw(
+      {
+        loadPagedData: vi
+          .fn()
+          .mockResolvedValue(
+            Array.from({ length: count }, (_, i) =>
+              track({ item_id: `track-${i}` }),
+            ),
+          ),
+      },
+      { VInfiniteScroll: InfiniteScrollStub },
+    );
+  }
+
+  it("stops spinning once every item is loaded", async () => {
+    const listing = mountWithItems(2);
+    await flushPromises();
+
+    expect(listing.find('[role="status"]').exists()).toBe(false);
+  });
+
+  it("spins while more items can follow", async () => {
+    const listing = mountWithItems(50);
+    await flushPromises();
+
+    expect(listing.find('[role="status"]').exists()).toBe(true);
+  });
+});
+
 describe("ItemsListing cover size", () => {
   beforeEach(() => {
     eventbus.all.clear();
@@ -1665,9 +1712,6 @@ describe("ItemsListing empty-state source shortcuts", () => {
           $vuetify: { display: { width: 1280 } },
         },
         stubs: {
-          // the shared Container stub drops its slot; render it so the empty
-          // state inside it shows, while the list chrome stays stubbed
-          Container: { template: "<div><slot /></div>" },
           "v-infinite-scroll": true,
           "v-virtual-scroll": true,
           Tabs: true,

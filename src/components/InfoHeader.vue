@@ -386,31 +386,6 @@
               />
               <!-- slot for extra action buttons (e.g. smart playlist edit) -->
               <slot name="append-actions"></slot>
-              <!-- merge genre button (admin only) -->
-              <Button
-                v-if="canManageGenre"
-                type="button"
-                variant="ghost-icon"
-                size="icon-xs"
-                :aria-label="$t('merge_into')"
-                :title="$t('merge_into')"
-                @click="mergeGenre"
-              >
-                <Merge class="size-5.5" />
-              </Button>
-              <!-- delete genre button (admin only) -->
-              <Button
-                v-if="canManageGenre"
-                type="button"
-                variant="ghost-icon"
-                size="icon-xs"
-                class="ml-2"
-                :aria-label="$t('delete_genre')"
-                :title="$t('delete_genre')"
-                @click="deleteGenre"
-              >
-                <Trash2 class="size-5.5" />
-              </Button>
             </div>
           </div>
           <div
@@ -542,7 +517,7 @@ import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
+import { ArrowLeft } from "@lucide/vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -758,31 +733,6 @@ const artistLogo = computed(() => {
 const canManageLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_MANAGE),
 );
-// merging and deleting a genre is limited to library genres and library managers
-const canManageGenre = computed(
-  () =>
-    compProps.item?.media_type === MediaType.GENRE &&
-    compProps.item.provider === "library" &&
-    canManageLibrary.value,
-);
-
-const mergeGenre = () => {
-  if (!compProps.item) return;
-  eventbus.emit("mergeGenreDialog", {
-    genreIds: [compProps.item.item_id],
-    genreNames: [compProps.item.name],
-    genreContentTypes: [(compProps.item as Genre).content_type],
-  });
-};
-
-const deleteGenre = () => {
-  if (!compProps.item) return;
-  eventbus.emit("deleteGenreDialog", {
-    genreIds: [compProps.item.item_id],
-    navigateBack: true,
-  });
-};
-
 const collectionMediaType = computed(() => {
   if (compProps.item?.media_type != MediaType.COLLECTION)
     return MediaType.UNKNOWN;

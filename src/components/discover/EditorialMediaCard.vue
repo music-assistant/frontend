@@ -4,6 +4,7 @@
     class="ed-card ma-tap"
     role="button"
     tabindex="0"
+    :aria-busy="resolving || undefined"
     :class="{
       'ed-card--unavailable': !isAvailable && !notInLibrary,
       'ed-card--not-in-library': notInLibrary,
@@ -61,6 +62,7 @@
         <ClockFading v-else :size="16" />
       </span>
       <slot name="art-overlay"></slot>
+      <ArtworkSpinner v-if="resolving" spinner-class="size-8" />
       <div
         v-if="showCheckboxes"
         class="ed-card__select"
@@ -101,6 +103,7 @@
 </template>
 
 <script setup lang="ts">
+import ArtworkSpinner from "@/components/ArtworkSpinner.vue";
 import {
   itemArtwork,
   placeholderArtwork,
@@ -109,6 +112,7 @@ import {
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { useProviderIcon } from "@/composables/useProviderIcon";
+import { useResolvingItems } from "@/composables/useResolvingItems";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
@@ -201,6 +205,9 @@ const isGenre = computed(() => props.item.media_type === MediaType.GENRE);
 // a release only MusicBrainz knows: muted rather than shown as unavailable,
 // since it can be opened and added to the library
 const notInLibrary = computed(() => isMusicBrainzItem(props.item));
+
+const { isResolving } = useResolvingItems();
+const resolving = computed(() => isResolving(props.item.uri));
 
 // provider entries in the browse root show the provider icon
 const { iconDataUri: providerRootIcon } = useProviderIcon(() =>

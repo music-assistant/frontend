@@ -1,5 +1,6 @@
 // Shared handlers for the click/play/menu interactions on a media item,
 // dispatching to the details views and the item context menu.
+import { openMusicBrainzItem } from "@/helpers/open_musicbrainz_item";
 import {
   showContextMenuForMediaItem,
   showPlayMenuForMediaItem,
@@ -132,16 +133,9 @@ export const handleMediaItemClick = async function (
   parentItem?: MediaItemType,
 ) {
   // a MusicBrainz release has nothing to play: the server resolves it to the
-  // same album on one of the user's music services when its page opens
+  // same album on one of the user's music services, whose page then opens
   if (isMusicBrainzItem(item)) {
-    router.push({
-      name: item.media_type,
-      params: {
-        itemId: item.item_id,
-        provider: item.provider,
-      },
-    });
-    return;
+    return openMusicBrainzItem(item);
   }
 
   // open menu when item is unavailable so the user has a way to remove/refresh the item
