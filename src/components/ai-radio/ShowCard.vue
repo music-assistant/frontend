@@ -10,8 +10,8 @@
   >
     <div class="show-card__art">
       <MediaItemThumb
-        v-if="playlist"
-        :item="playlist"
+        v-if="artworkPlaylist"
+        :item="artworkPlaylist"
         :size="320"
         :rounded="false"
         class="show-card__img"
@@ -132,6 +132,7 @@ import {
   resolveShowPlayerId,
   slugify,
 } from "@/helpers/ai_radio";
+import { getMediaItemImage } from "@/helpers/utils";
 import { Scope, type AIRadioStation } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
@@ -183,6 +184,13 @@ const playlist = computed(() =>
     props.show.source_playlist_provider,
     props.show.source_playlist_id,
   ),
+);
+
+// a playlist without artwork leaves the card to the AI Radio icon
+const artworkPlaylist = computed(() =>
+  playlist.value && getMediaItemImage(playlist.value)
+    ? playlist.value
+    : undefined,
 );
 
 const onAirQueue = computed(() => onAirQueueId(props.show.id));

@@ -1,6 +1,6 @@
 /**
  * The thumbnail's stand-in for missing artwork: the media type's menu icon,
- * while real artwork, a folder and an explicit fallback keep their image.
+ * while real artwork and an explicit fallback keep their image.
  */
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import {
@@ -9,7 +9,7 @@ import {
   type MediaItemType,
   type QueueItem,
 } from "@/plugins/api/interfaces";
-import { Disc3, Music2 } from "@lucide/vue";
+import { Disc3, Folder, Music2 } from "@lucide/vue";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
@@ -36,7 +36,6 @@ vi.mock("@/components/QualityDetailsBtn.vue", () => ({
   default: {},
   imgCoverDark: "cover_dark.png",
   imgCoverLight: "cover_light.png",
-  iconFolder: "folder.svg",
 }));
 
 // a data uri keeps the cover out of the image proxy
@@ -91,15 +90,14 @@ describe("MediaItemThumb", () => {
     expect(wrapper.findComponent(Disc3).exists()).toBe(false);
   });
 
-  it("keeps the folder image for a folder", () => {
+  it("shows the folder icon for a folder", () => {
     const folder = {
       ...album(),
       media_type: MediaType.FOLDER,
     } as unknown as MediaItemType;
     const wrapper = mountThumb(folder);
 
-    expect(wrapper.get(".v-img").attributes("data-src")).toBe("folder.svg");
-    expect(wrapper.find("svg").exists()).toBe(false);
+    expect(wrapper.findComponent(Folder).exists()).toBe(true);
   });
 
   it("prefers the given fallback image over the icon", () => {

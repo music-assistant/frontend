@@ -27,11 +27,10 @@ import type {
   MediaItemType,
   QueueItem,
 } from "@/plugins/api/interfaces";
-import { ImageType, MediaType } from "@/plugins/api/interfaces";
+import { ImageType } from "@/plugins/api/interfaces";
 import {
   imgCoverDark,
   imgCoverLight,
-  iconFolder,
 } from "@/components/QualityDetailsBtn.vue";
 import { getMediaTypeIcon } from "@/helpers/media_type_icon";
 import { getImageThumbForItem } from "@/helpers/utils";
@@ -76,21 +75,7 @@ function getThumbSize() {
 
 const thumbSize = getThumbSize();
 
-function getFallbackImage() {
-  if (props.fallback) return props.fallback;
-
-  if (
-    props.item &&
-    "media_type" in props.item &&
-    props.item.media_type === MediaType.FOLDER
-  ) {
-    return iconFolder;
-  }
-
-  return "";
-}
-
-const fallbackImage = getFallbackImage();
+const fallbackImage = props.fallback ?? "";
 
 // provider entries in the browse root show the provider icon
 const { iconDataUri: providerIcon } = useProviderIcon(() =>
