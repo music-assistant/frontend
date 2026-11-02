@@ -36,9 +36,17 @@
         :item="props.item as MediaCollection<MediaItemType>"
         :thumb-offset="22"
       />
-      <span v-else-if="art.initials" class="ed-card__initials">{{
-        art.initials
-      }}</span>
+      <span
+        v-else-if="art.initials"
+        class="ed-card__placeholder"
+        aria-hidden="true"
+      >
+        <ArtistIcon
+          v-if="props.item.media_type === MediaType.ARTIST"
+          class="size-[40%]"
+        />
+        <Disc3 v-else class="size-[40%]" />
+      </span>
       <ProviderIcon
         v-if="providerDomain"
         class="ed-card__provider"
@@ -141,7 +149,8 @@ import {
   SortField,
   type Track,
 } from "@/plugins/api/interfaces";
-import { Check, ClockFading, Play } from "@lucide/vue";
+import ArtistIcon from "@/components/icons/ArtistIcon.vue";
+import { Check, ClockFading, Disc3, Play } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import MediaCollectionThumb from "../MediaCollectionThumb.vue";
@@ -407,18 +416,14 @@ const onMenu = (e: MouseEvent) => {
 .ed-card--round .ed-card__art {
   border-radius: 999px;
 }
-.ed-card__initials {
+.ed-card__placeholder {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 34cqw;
-  font-weight: 700;
-  letter-spacing: 0.02em;
   color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  user-select: none;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.25));
 }
 .ed-card__provider {
   position: absolute;
