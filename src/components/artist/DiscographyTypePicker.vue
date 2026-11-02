@@ -5,11 +5,10 @@
         as="button"
         type="button"
         variant="secondary"
-        class="cursor-pointer gap-1 bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        class="cursor-pointer gap-1.5 bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         :aria-label="`${$t('tooltip.album_type')}: ${summary}`"
       >
         {{ summary }}
-        <ChevronDown />
       </Badge>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="start">
@@ -43,7 +42,6 @@ import {
 } from "@/helpers/discography_types";
 import type { AlbumType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { ChevronDown } from "@lucide/vue";
 import { computed } from "vue";
 
 export interface Props {
