@@ -64,6 +64,8 @@ export const ARTIST_ROWS: readonly ArtistRowDefinition[] = [
     id: "discography_second",
     labelKey: "discography_second_row",
     audience: "music",
+    // a split of the discography row, so it starts out hidden along with it
+    hiddenWith: "discography",
   },
   {
     id: "similar_artists",

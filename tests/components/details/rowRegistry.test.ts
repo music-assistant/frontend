@@ -46,7 +46,7 @@ import {
   type RowSource,
 } from "@/components/details/rowRegistry";
 
-type RowId = "with_picker" | "plain" | "admin";
+type RowId = "with_picker" | "plain" | "admin" | "follower";
 
 // the item decides what a row can be fed from
 interface Item {
@@ -61,6 +61,7 @@ const registry = createRowRegistry<RowId, Item>({
     { id: "with_picker", labelKey: "with_picker", supportsSource: true },
     { id: "plain", labelKey: "plain" },
     { id: "admin", labelKey: "admin", adminOnly: true },
+    { id: "follower", labelKey: "follower", hiddenWith: "plain" },
   ],
   preferenceKey: ROWS_KEY,
   sourcesPreferenceKey: SOURCES_KEY,
@@ -95,6 +96,7 @@ describe("rowRegistry", () => {
       "with_picker",
       "plain",
       "admin",
+      "follower",
     ]);
     expect(registry.preferenceKey).toBe(ROWS_KEY);
     expect(registry.sourcesPreferenceKey).toBe(SOURCES_KEY);
@@ -176,6 +178,21 @@ describe("rowRegistry", () => {
     const { order, hidden } = registry.resolve(["with_picker", "plain"]);
     expect(order).toEqual(["plain", "with_picker"]);
     expect(hidden).toEqual(new Set(["plain"]));
+  });
+
+  it("hides a row along with the row it follows until it is set itself", () => {
+    const available: RowId[] = ["plain", "follower"];
+
+    setPreferences({ [ROWS_KEY]: { hidden: ["plain"] } });
+    expect(registry.resolve(available).hidden).toEqual(
+      new Set(["plain", "follower"]),
+    );
+
+    setPreferences({ [ROWS_KEY]: { hidden: ["plain"], shown: ["follower"] } });
+    expect(registry.resolve(available).hidden).toEqual(new Set(["plain"]));
+
+    setPreferences({ [ROWS_KEY]: { hidden: ["follower"] } });
+    expect(registry.resolve(available).hidden).toEqual(new Set(["follower"]));
   });
 
   it("writes a row's visibility, order and source", async () => {

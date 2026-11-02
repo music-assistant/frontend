@@ -25,6 +25,8 @@ export interface RowDefinition<Id extends string> {
   adminOnly?: boolean;
   // gets a "Source" picker in Edit rows
   supportsSource?: boolean;
+  // hidden while this other row is, until the user shows or hides this one
+  hiddenWith?: Id;
 }
 
 export interface RowRegistryConfig<Id extends string, Item> {
@@ -117,9 +119,14 @@ export function createRowRegistry<Id extends string, Item>(
     sourcesPreferenceKey,
     definition: (id) => byId[id],
     resolve(availableIds) {
+      const cfg = readRowsConfig(preferenceKey);
+      const followingHidden = rows
+        .filter((row) => row.hiddenWith && cfg.hidden?.includes(row.hiddenWith))
+        .map((row) => row.id);
       const { order, hidden } = resolveRowsConfig(
-        readRowsConfig(preferenceKey),
+        cfg,
         availableIds,
+        followingHidden,
       );
       return { order: order as Id[], hidden: hidden as Set<Id> };
     },

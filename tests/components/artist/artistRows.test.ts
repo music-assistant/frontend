@@ -234,6 +234,14 @@ describe("artistRows", () => {
       expect(hidden.size).toBe(0);
     });
 
+    it("keeps the second discography row hidden for whoever hid the discography", () => {
+      setPreferences({
+        [ARTIST_ROWS_PREFERENCE_KEY]: { hidden: ["discography"] },
+      });
+      const { hidden } = artistRows.resolve(MUSIC_ROWS);
+      expect(hidden).toEqual(new Set(["discography", "discography_second"]));
+    });
+
     it("puts the second discography row right after a moved first one", () => {
       setPreferences({
         [ARTIST_ROWS_PREFERENCE_KEY]: {
