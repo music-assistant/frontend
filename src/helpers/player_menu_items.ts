@@ -245,7 +245,7 @@ export const getPlayerMenuItems = (
         const next = targets[index + 1];
         return {
           // "+N" marks a leader whose group plays the queue too
-          label: getPlayerName(p, 40),
+          label: getPlayerName(p, Infinity),
           labelArgs: [],
           icon: getPlayerIcon(p),
           separatorAfter:
