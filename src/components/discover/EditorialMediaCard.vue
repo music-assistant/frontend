@@ -43,7 +43,7 @@
       >
         <component
           :is="art.placeholderIcon"
-          class="size-[40%] text-white/92 drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
+          class="size-[40%] text-white/55 drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
         />
       </span>
       <ProviderIcon
