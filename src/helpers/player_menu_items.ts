@@ -36,6 +36,8 @@ import { getPlayerSetupLabel } from "@/helpers/player_config";
 import { togglePlayerPower } from "@/helpers/player_group_playback";
 import { errorMessage } from "@/helpers/ai_radio";
 import { canUseQueueDj } from "@/helpers/ai_radio_access";
+import { $t } from "@/plugins/i18n";
+import { isPlaybackMode, webPlayer } from "@/plugins/web_player";
 import { toast } from "vue-sonner";
 
 export const getPlayerSetupMenuItem = (
@@ -220,7 +222,9 @@ export const getPlayerMenuItems = (
           p.player_id != playerQueue!.queue_id &&
           p.player_id != player.player_id &&
           isSelectablePlayer(p) &&
-          !p.synced_to &&
+          // the server ungroups a synced target before it moves the queue, so
+          // this device may take the queue of the group it plays in
+          (!p.synced_to || isBuiltinPlayer(p)) &&
           (!p.hide_in_ui || isBuiltinPlayer(p)),
       )
       .sort(
@@ -244,6 +248,13 @@ export const getPlayerMenuItems = (
           separatorAfter:
             isBuiltinPlayer(p) && next !== undefined && !isBuiltinPlayer(next),
           action: () => {
+            // Playback on this tab's web player starts after the transfer, so
+            // unlock its audio within this click; iOS keeps it silent otherwise.
+            // The companion app and another tab's player play on their own.
+            if (playsInThisTab(p) && !webPlayer.primeAudio()) {
+              toast.error($t("transfer_queue_no_audio"));
+              return;
+            }
             api.queueCommandTransfer(playerQueue!.queue_id, p.player_id);
             store.activePlayerId = p.player_id;
           },
@@ -441,6 +452,18 @@ export const getPlayerMenuItems = (
 
   return menuItems;
 };
+
+/** Whether the player is (or streams to) the web player this tab plays audio on. */
+function playsInThisTab(
+  player: Pick<Player, "player_id" | "output_protocols">,
+): boolean {
+  const id = webPlayer.player_id;
+  if (!id || !isPlaybackMode(webPlayer.tabMode)) return false;
+  return (
+    player.player_id === id ||
+    player.output_protocols.some((x) => x.output_protocol_id === id)
+  );
+}
 
 /** Assigns (or clears) a queue's AI DJ host, reporting a failed command to the user. */
 async function assignQueueDj(

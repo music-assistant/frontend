@@ -62,8 +62,17 @@ vi.mock("@/plugins/api", () => ({
   },
 }));
 
+const { webPlayerMock } = vi.hoisted(() => ({
+  webPlayerMock: {
+    player_id: "this_browser",
+    tabMode: "sendspin",
+    primeAudio: vi.fn(() => true),
+  },
+}));
+
 vi.mock("@/plugins/web_player", () => ({
-  webPlayer: { player_id: "this_browser" },
+  webPlayer: webPlayerMock,
+  isPlaybackMode: (mode: string) => mode === "sendspin",
 }));
 
 vi.mock("@/plugins/auth", () => ({
@@ -998,5 +1007,72 @@ describe("transfer queue", () => {
     ]);
 
     expect(items[0].separatorAfter).toBe(false);
+  });
+
+  it("offers this device while it plays in the source group", () => {
+    const items = transferItems([
+      target({
+        player_id: "this_browser",
+        hide_in_ui: true,
+        private: true,
+        synced_to: "kitchen",
+      }),
+      target({ player_id: "attic", synced_to: "kitchen" }),
+    ]);
+
+    expect(items.map(targetOf)).toEqual(["this_browser"]);
+  });
+
+  it("unlocks this tab's audio before moving the queue to it", () => {
+    vi.mocked(api.queueCommandTransfer).mockClear();
+    webPlayerMock.primeAudio.mockClear();
+    const [device] = transferItems([
+      target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+    ]);
+
+    device.action?.();
+
+    expect(webPlayerMock.primeAudio).toHaveBeenCalledOnce();
+    expect(api.queueCommandTransfer).toHaveBeenCalledWith(
+      expect.anything(),
+      "this_browser",
+    );
+  });
+
+  it("keeps the queue when this tab cannot play audio", async () => {
+    const { toast } = await import("vue-sonner");
+    vi.mocked(api.queueCommandTransfer).mockClear();
+    webPlayerMock.primeAudio.mockReturnValueOnce(false);
+    const [device] = transferItems([
+      target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+    ]);
+
+    device.action?.();
+
+    expect(api.queueCommandTransfer).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalled();
+  });
+
+  it("does not unlock audio when another tab plays for this device", () => {
+    webPlayerMock.tabMode = "controls_only";
+    webPlayerMock.primeAudio.mockClear();
+    try {
+      const [device] = transferItems([
+        target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+      ]);
+
+      expect(targetOf(device)).toBe("this_browser");
+      expect(webPlayerMock.primeAudio).not.toHaveBeenCalled();
+    } finally {
+      webPlayerMock.tabMode = "sendspin";
+    }
+  });
+
+  it("does not unlock audio for another player", () => {
+    webPlayerMock.primeAudio.mockClear();
+    const [attic] = transferItems([target({ player_id: "attic" })]);
+
+    expect(targetOf(attic)).toBe("attic");
+    expect(webPlayerMock.primeAudio).not.toHaveBeenCalled();
   });
 });
