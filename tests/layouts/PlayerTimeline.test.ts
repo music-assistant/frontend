@@ -306,11 +306,11 @@ describe("PlayerTimeline", () => {
     [
       false,
       [
-        ["In the first", "25%"],
-        ["In the second", "75%"],
+        ["In the first", "00:30 · First", "25%"],
+        ["In the second", "01:30 · Second", "75%"],
       ],
     ],
-    [true, [["In the second", "50%"]]],
+    [true, [["In the second", "01:30 · Second", "50%"]]],
   ])(
     "marks the bookmarks on the track, chapter progress %s",
     async (chapterProgress, expected) => {
@@ -366,11 +366,12 @@ describe("PlayerTimeline", () => {
           { ...bookmark, name: "In the second", start: 90 },
         ],
       });
-      const markers = wrapper!.findAll("button[title]");
+      const markers = wrapper!.findAll('[data-testid="bookmark-tick"]');
 
+      // named with its position and chapter, as its tooltip shows it
       expect(
         markers.map((x) => [
-          x.attributes("title"),
+          ...x.attributes("aria-label")!.split(", "),
           (x.element as HTMLElement).style.left,
         ]),
       ).toEqual(expected);

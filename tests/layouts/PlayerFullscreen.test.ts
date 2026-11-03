@@ -3,6 +3,7 @@ import BookmarkDialog from "@/components/BookmarkDialog.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import PlayerFullscreen from "@/layouts/default/PlayerOSD/PlayerFullscreen.vue";
+import QueueBookmarkRow from "@/layouts/default/PlayerOSD/QueueBookmarkRow.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import SkipBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBtn.vue";
@@ -437,29 +438,52 @@ describe("PlayerFullscreen chapter queue", () => {
       // the clock is faked here, so let the fetch settle through it
       await vi.advanceTimersByTimeAsync(0);
       await nextTick();
-      const rows = fullscreen.findAll(".queue-chapter");
-
+      // in order: the action to add one, each chapter and the bookmarks in it
+      const rows = fullscreen.findAll(
+        ".queue-chapter, queue-bookmark-row-stub",
+      );
       expect(
-        rows.map((x) => [
-          x.get(".queue-chapter__name").text(),
-          x.attributes("data-in-chapter") === "true",
-        ]),
+        rows.map((x) =>
+          x.classes("queue-chapter")
+            ? [
+                x.get(".queue-chapter__name").text(),
+                x.get(".queue-chapter__time").text(),
+              ]
+            : [
+                x.findComponent(QueueBookmarkRow).props("bookmark").name,
+                x.findComponent(QueueBookmarkRow).props("inChapter"),
+              ],
+        ),
       ).toEqual([
-        // a new one goes on the playing copy, at the playing position
-        ["add_bookmark_at", false],
-        ["First", false],
+        // with the position it takes
+        ["add_bookmark", "00:10"],
+        ["First", "01:00"],
         ["In the first", true],
-        ["Second", false],
+        ["Second", "01:00"],
         ["In the second", true],
       ]);
-      expect(
-        fullscreen.find('[data-testid="add-bookmark-divider"]').exists(),
-      ).toBe(true);
-      await rows[4].trigger("click");
+      const bookmarkRows = fullscreen.findAllComponents(QueueBookmarkRow);
+      // edits where the provider takes them, or Music Assistant keeps them
+      expect(bookmarkRows.map((x) => x.props("editable"))).toEqual([
+        features.length > 0,
+        features.length > 0,
+      ]);
+      bookmarkRows[1].vm.$emit("seek");
       expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 90);
 
-      await rows[0].trigger("click");
-      const dialog = fullscreen.findComponent(BookmarkDialog);
+      const dialogs = () => fullscreen.findAllComponents(BookmarkDialog);
+      const dialogTitled = (title: string) =>
+        dialogs().find((x) => x.props("title") === title)!;
+      bookmarkRows[1].vm.$emit("rename");
+      await nextTick();
+      expect(dialogTitled("rename_bookmark").props()).toMatchObject({
+        open: true,
+        initialName: "In the second",
+      });
+
+      // a new one goes on the playing copy, at the playing position
+      await fullscreen.get('[data-testid="add-bookmark"]').trigger("click");
+      const dialog = dialogTitled("add_bookmark");
       expect(dialog.props()).toMatchObject({
         open: true,
         initialName: "00:10",

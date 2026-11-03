@@ -9,7 +9,10 @@ import {
   type MediaItemBookmark,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import { eventbus } from "@/plugins/eventbus";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { toast } from "vue-sonner";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // the provider feature to edit bookmarks, per media type that has bookmarks
@@ -31,6 +34,16 @@ export function providerEditsBookmarks(
     (api.providers[providerInstanceId]?.supported_features.includes(feature) ??
       false)
   );
+}
+
+// the provider, or Music Assistant, that keeps bookmarks of the copy
+export function bookmarkStoreName(
+  providerInstanceId: string,
+  storedByMusicAssistant: boolean,
+): string {
+  return storedByMusicAssistant
+    ? "Music Assistant"
+    : (api.providers[providerInstanceId]?.name ?? providerInstanceId);
 }
 
 export interface NewBookmark {
@@ -62,9 +75,10 @@ export function newBookmarkOfPlayingItem(): NewBookmark | undefined {
     mediaType: media.media_type,
     providerInstanceId: streamdetails.provider,
     providerItemId: streamdetails.item_id,
-    storedIn: providerEditsBookmarks(streamdetails.provider, media.media_type)
-      ? api.providers[streamdetails.provider].name
-      : "Music Assistant",
+    storedIn: bookmarkStoreName(
+      streamdetails.provider,
+      !providerEditsBookmarks(streamdetails.provider, media.media_type),
+    ),
     // whole seconds, as the Audiobookshelf web client sets them
     start: Math.floor(resolveActiveElapsedTime() ?? 0),
   };
@@ -125,4 +139,78 @@ export function useBookmarks(item: () => BookmarkedItem | undefined) {
   });
 
   return { bookmarks };
+}
+
+/**
+ * Renaming and deleting the user's bookmarks of an item of the media type: a
+ * rename goes through a dialog, a delete through the confirmation dialog.
+ */
+export function useBookmarkActions(mediaType: () => MediaType | undefined) {
+  const renameDialogOpen = ref(false);
+  const renamedBookmark = ref<MediaItemBookmark>();
+
+  // where somebody can make edits, on a copy that takes them
+  const isEditable = function (bookmark: MediaItemBookmark) {
+    const type = mediaType();
+    return (
+      !!type &&
+      authManager.hasScope(Scope.LIBRARY_WRITE) &&
+      (bookmark.stored_by_music_assistant ||
+        providerEditsBookmarks(bookmark.provider_instance, type))
+    );
+  };
+
+  const storeName = (bookmark: MediaItemBookmark) =>
+    bookmarkStoreName(
+      bookmark.provider_instance,
+      bookmark.stored_by_music_assistant,
+    );
+
+  const renameClicked = function (bookmark: MediaItemBookmark) {
+    renamedBookmark.value = bookmark;
+    renameDialogOpen.value = true;
+  };
+
+  const renameSaved = async function (name: string) {
+    const bookmark = renamedBookmark.value;
+    const type = mediaType();
+    if (!bookmark || !type) return;
+    await api.setBookmark(
+      type,
+      bookmark.provider_instance,
+      bookmark.item_id,
+      bookmark.start,
+      name,
+    );
+    toast.success($t("bookmark_renamed"));
+  };
+
+  const removeClicked = function (bookmark: MediaItemBookmark) {
+    const type = mediaType();
+    if (!type) return;
+    eventbus.emit("deleteConfirmationDialog", {
+      title: $t("delete_bookmark"),
+      message: $t("delete_bookmark_confirm", { name: bookmark.name }),
+      confirmLabel: $t("delete"),
+      onConfirm: async () => {
+        await api.removeBookmark(
+          type,
+          bookmark.provider_instance,
+          bookmark.item_id,
+          bookmark.start,
+        );
+        toast.success($t("bookmark_deleted"));
+      },
+    });
+  };
+
+  return {
+    renameDialogOpen,
+    renamedBookmark,
+    isEditable,
+    storeName,
+    renameClicked,
+    renameSaved,
+    removeClicked,
+  };
 }

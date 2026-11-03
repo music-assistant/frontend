@@ -311,29 +311,24 @@
                   class="queue-chapters"
                 >
                   <!-- on top, so a long chapter list does not hide it -->
-                  <template v-if="canAddBookmark">
-                    <!-- an action, not content: accent colored, without the active chapter's fill -->
-                    <button
-                      type="button"
-                      class="queue-chapter text-primary!"
-                      data-testid="add-bookmark"
-                      @click.stop="addBookmarkClicked"
-                    >
-                      <span class="flex min-w-0 items-center gap-1.5">
-                        <BookmarkPlus :size="14" />
-                        <span class="queue-chapter__name">{{
-                          $t("add_bookmark_at", {
-                            time: formatDuration(playingPosition),
-                          })
-                        }}</span>
-                      </span>
-                    </button>
-                    <div
-                      v-if="queueChapterGroups.length"
-                      class="mx-2 my-1 h-px bg-[color-mix(in_srgb,var(--text-color,currentColor)_15%,transparent)]"
-                      data-testid="add-bookmark-divider"
-                    ></div>
-                  </template>
+                  <button
+                    v-if="canAddBookmark"
+                    type="button"
+                    class="queue-chapter mb-1 font-medium"
+                    data-testid="add-bookmark"
+                    @click.stop="addBookmarkClicked"
+                  >
+                    <span class="flex min-w-0 items-center gap-1.5">
+                      <BookmarkPlus :size="14" class="shrink-0 text-primary" />
+                      <span class="queue-chapter__name">{{
+                        $t("add_bookmark")
+                      }}</span>
+                    </span>
+                    <!-- the position it takes, in the column of the bookmarks' positions -->
+                    <span class="queue-chapter__time tabular-nums">
+                      {{ formatDuration(playingPosition) }}
+                    </span>
+                  </button>
                   <template
                     v-for="group in queueChapterGroups"
                     :key="group.chapter?.position ?? 'bookmarks'"
@@ -371,33 +366,16 @@
                         }}
                       </span>
                     </button>
-                    <button
+                    <QueueBookmarkRow
                       v-for="bookmark in group.bookmarks"
                       :key="`bookmark-${bookmark.start}`"
-                      type="button"
-                      class="queue-chapter"
-                      :class="{ 'pl-6!': group.chapter }"
-                      :data-in-chapter="!!group.chapter"
-                      @click.stop="
-                        chapterClicked(row.item.media_item, bookmark)
-                      "
-                    >
-                      <span class="flex min-w-0 items-center gap-1.5">
-                        <BookmarkIcon
-                          :size="14"
-                          class="shrink-0 fill-primary text-primary"
-                        />
-                        <span class="queue-chapter__name">{{
-                          bookmark.name
-                        }}</span>
-                      </span>
-                      <!-- a position, so it is tinted apart from the chapter durations -->
-                      <span
-                        class="shrink-0 rounded bg-primary/12 px-1.5 text-[0.72rem] font-medium tabular-nums"
-                      >
-                        {{ formatDuration(bookmark.start) }}
-                      </span>
-                    </button>
+                      :bookmark="bookmark"
+                      :editable="bookmarkActions.isEditable(bookmark)"
+                      :in-chapter="!!group.chapter"
+                      @seek="chapterClicked(row.item.media_item, bookmark)"
+                      @rename="bookmarkActions.renameClicked(bookmark)"
+                      @remove="bookmarkActions.removeClicked(bookmark)"
+                    />
                   </template>
                 </div>
               </div>
@@ -583,6 +561,17 @@
 
       <PlaybackSpeedDialog v-model:open="playbackSpeedDialogOpen" />
       <BookmarkDialog
+        v-model:open="bookmarkActions.renameDialogOpen.value"
+        :title="$t('rename_bookmark')"
+        :initial-name="bookmarkActions.renamedBookmark.value?.name ?? ''"
+        :stored-in="
+          bookmarkActions.renamedBookmark.value
+            ? bookmarkActions.storeName(bookmarkActions.renamedBookmark.value)
+            : ''
+        "
+        @save="bookmarkActions.renameSaved"
+      />
+      <BookmarkDialog
         v-model:open="bookmarkDialogOpen"
         :title="$t('add_bookmark')"
         :initial-name="newBookmark ? formatDuration(newBookmark.start) : ''"
@@ -632,6 +621,7 @@ import SkipBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBtn.vue";
 import NowPlayingSourceBadge from "@/layouts/default/PlayerOSD/NowPlayingSourceBadge.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
+import QueueBookmarkRow from "@/layouts/default/PlayerOSD/QueueBookmarkRow.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
@@ -640,6 +630,7 @@ import { useSkipControls } from "@/composables/useSkipControls";
 import {
   BOOKMARK_EDIT_FEATURES,
   newBookmarkOfPlayingItem,
+  useBookmarkActions,
   useBookmarks,
   type NewBookmark,
 } from "@/composables/useBookmarks";
@@ -1412,6 +1403,11 @@ const playingBookmarks = computed(() => {
       x.item_id === streamdetails?.item_id,
   );
 });
+
+// rename and delete the playing item's bookmarks from the queue
+const bookmarkActions = useBookmarkActions(
+  () => store.curQueueItem?.media_item?.media_type,
+);
 
 const queueChapterGroups = computed(() =>
   groupBookmarksByChapter(

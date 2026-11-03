@@ -74,26 +74,19 @@ import BookmarkDialog from "@/components/BookmarkDialog.vue";
 import BookmarkRow from "@/components/BookmarkRow.vue";
 import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  providerEditsBookmarks,
-  useBookmarks,
-} from "@/composables/useBookmarks";
+import { useBookmarkActions, useBookmarks } from "@/composables/useBookmarks";
 import { groupBookmarksByChapter } from "@/helpers/chapters";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   MediaType,
-  Scope,
   type Audiobook,
   type MediaItemBookmark,
   type MediaItemChapter,
   type PodcastEpisode,
 } from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
-import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { toast } from "vue-sonner";
 import { computed, ref } from "vue";
 
 export interface Props {
@@ -139,6 +132,16 @@ const titleKey = computed(() =>
 );
 
 const activeTab = ref<ChapterTab>("chapters");
+
+const {
+  renameDialogOpen,
+  renamedBookmark,
+  isEditable,
+  storeName,
+  renameClicked,
+  renameSaved,
+  removeClicked,
+} = useBookmarkActions(() => props.itemDetails.media_type);
 
 // the picked tab while the item has it, the first one otherwise
 const shownTab = computed(() =>
@@ -196,22 +199,6 @@ const chapterClicked = function (chapter: MediaItemChapter) {
   );
 };
 
-// the provider, or Music Assistant, that keeps the bookmark
-const storeName = function (bookmark: MediaItemBookmark) {
-  return bookmark.stored_by_music_assistant
-    ? "Music Assistant"
-    : (api.providers[bookmark.provider_instance]?.name ??
-        bookmark.provider_instance);
-};
-
-const isEditable = (bookmark: MediaItemBookmark) =>
-  authManager.hasScope(Scope.LIBRARY_WRITE) &&
-  (bookmark.stored_by_music_assistant ||
-    providerEditsBookmarks(
-      bookmark.provider_instance,
-      props.itemDetails.media_type,
-    ));
-
 const bookmarkClicked = function (bookmark: MediaItemBookmark) {
   if (!itemIsAvailable(props.itemDetails)) return;
   // play the copy the bookmark was made on, its position may not fit another one
@@ -220,43 +207,5 @@ const bookmarkClicked = function (bookmark: MediaItemBookmark) {
     undefined,
     { start_position: bookmark.start },
   );
-};
-
-const renameDialogOpen = ref(false);
-const renamedBookmark = ref<MediaItemBookmark>();
-
-const renameClicked = function (bookmark: MediaItemBookmark) {
-  renamedBookmark.value = bookmark;
-  renameDialogOpen.value = true;
-};
-
-const renameSaved = async function (name: string) {
-  const bookmark = renamedBookmark.value;
-  if (!bookmark) return;
-  await api.setBookmark(
-    props.itemDetails.media_type,
-    bookmark.provider_instance,
-    bookmark.item_id,
-    bookmark.start,
-    name,
-  );
-  toast.success($t("bookmark_renamed"));
-};
-
-const removeClicked = function (bookmark: MediaItemBookmark) {
-  eventbus.emit("deleteConfirmationDialog", {
-    title: $t("delete_bookmark"),
-    message: $t("delete_bookmark_confirm", { name: bookmark.name }),
-    confirmLabel: $t("delete"),
-    onConfirm: async () => {
-      await api.removeBookmark(
-        props.itemDetails.media_type,
-        bookmark.provider_instance,
-        bookmark.item_id,
-        bookmark.start,
-      );
-      toast.success($t("bookmark_deleted"));
-    },
-  });
 };
 </script>
