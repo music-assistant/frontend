@@ -130,45 +130,12 @@ describe("reloadedRowLocator", () => {
         position: index + 1,
       }),
     );
-  // the second A of A/B/A/C moved to the top, as listed before saving
-  const moved = () => {
-    const before = rows("A", "B", "A", "C");
-    const after = moveListedItems(before, [2], 0);
-    const indexBefore = new Map(
-      movedOrder(before.length, [2], 0).map((from, index) => [
-        after[index],
-        from,
-      ]),
-    );
-    return { before, after, indexBefore };
-  };
-
   it("matches a row by track and position", () => {
-    const { after } = moved();
+    // the second A of A/B/A/C moved to the top, as listed before saving
+    const after = moveListedItems(rows("A", "B", "A", "C"), [2], 0);
     const reloaded = rows("A", "A", "B", "C");
     const locate = reloadedRowLocator(reloaded);
 
     expect(after.map(locate)).toEqual(reloaded);
-  });
-
-  it("puts the rows of a failed move back where they were", () => {
-    const { before, after, indexBefore } = moved();
-    const reloaded = rows("A", "B", "A", "C");
-    const locate = reloadedRowLocator(reloaded, { before, indexBefore });
-
-    // the moved A is the second one again, not the first
-    expect(locate(after[0])).toBe(reloaded[2]);
-    expect(locate(after[1])).toBe(reloaded[0]);
-    expect(locate(after[2])).toBe(reloaded[1]);
-  });
-
-  it("only finds a track listed once when a failed move left another order", () => {
-    const { before, after, indexBefore } = moved();
-    const reloaded = rows("B", "A", "C", "A");
-    const locate = reloadedRowLocator(reloaded, { before, indexBefore });
-
-    expect(locate(after[0])).toBeUndefined();
-    expect(locate(after[2])).toBe(reloaded[0]);
-    expect(locate(after[3])).toBe(reloaded[2]);
   });
 });
