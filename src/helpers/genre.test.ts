@@ -49,6 +49,12 @@ describe("rankedAliases", () => {
     ).toEqual(["Hip Hop Soul"]);
   });
 
+  it("offers every alias when the server matched a localized name", () => {
+    expect(
+      rankedAliases([genre("Classical", ["Opera", "Baroque"])], "Klassik"),
+    ).toEqual(["Baroque", "Opera"]);
+  });
+
   it("ignores accents and lists an alias shared by two genres once", () => {
     expect(
       rankedAliases(

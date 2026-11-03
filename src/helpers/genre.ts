@@ -55,6 +55,13 @@ export function rankedAliases(genres: Genre[], search: string): string[] {
       }
     }
   }
+  // the server also finds a genre through its localized name, which none of
+  // its aliases may contain, so then offer everything it returned
+  if (!aliases.size) {
+    for (const genre of genres) {
+      for (const alias of genre.genre_aliases || []) aliases.add(alias);
+    }
+  }
   return [...aliases].sort(
     (a, b) =>
       aliasRank(a, compactSearch) - aliasRank(b, compactSearch) ||
