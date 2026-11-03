@@ -12,7 +12,8 @@
       <div v-if="column === 'handle'" class="flex justify-center">
         <button
           type="button"
-          class="flex h-10 w-5 cursor-grab touch-none items-center justify-center rounded-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 active:cursor-grabbing"
+          class="flex h-10 w-5 cursor-grab touch-none items-center justify-center rounded-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 active:cursor-grabbing aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:text-muted-foreground"
+          :aria-disabled="reorderDisabled || undefined"
           :aria-label="reorderLabel"
           :title="reorderLabel"
           :data-reorder-index="index"
@@ -231,6 +232,9 @@ export interface Props {
   isPlaying?: boolean;
   showCheckboxes?: boolean;
   disablePlayButton?: boolean;
+  // the handle stays focusable, so a keyboard move keeps its place while an
+  // edit of the playlist is held
+  reorderDisabled?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
   sortField?: SortField;
@@ -242,6 +246,7 @@ const props = withDefaults(defineProps<Props>(), {
   isPlaying: false,
   showCheckboxes: false,
   disablePlayButton: false,
+  reorderDisabled: false,
   parentItem: undefined,
   sortBy: undefined,
   sortField: undefined,

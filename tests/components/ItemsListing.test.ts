@@ -189,7 +189,9 @@ vi.mock("@/components/track-table/TrackTableHeader.vue", () =>
 vi.mock("@/components/track-table/TrackTableRow.vue", () => ({
   default: {
     name: "TrackTableRow",
-    template: '<div><button :data-reorder-index="$attrs.index" /></div>',
+    props: ["index", "reorderDisabled"],
+    template:
+      '<div><button :data-reorder-index="index" :aria-disabled="reorderDisabled || undefined" /></div>',
   },
 }));
 vi.mock("@/composables/useTrackTableColumns", async () => {
@@ -2850,6 +2852,32 @@ describe("ItemsListing playlist reorder", () => {
     // the provider kept the old order, so the track is back in the first row
     expect(rows(listing).map((item) => item.name)).toEqual(["A", "B", "C"]);
     expect(document.activeElement).toBe(handle(listing, 0));
+  });
+
+  it("marks the handles disabled, keeping their focus, while a move saves", async () => {
+    let finishMove = () => {};
+    mockMovePlaylistTrack.mockImplementation(
+      () => new Promise<void>((resolve) => (finishMove = resolve)),
+    );
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
+      .mockImplementation(async () => playlistRows());
+    const listing = mountPlaylist(loadPagedData);
+    await flushPromises();
+    expect(handle(listing, 0).getAttribute("aria-disabled")).toBeNull();
+    handle(listing, 0).focus();
+
+    listing
+      .findAllComponents({ name: "TrackTableRow" })[0]
+      .vm.$emit("moveBy", 1);
+    await nextTick();
+
+    expect(handle(listing, 0).getAttribute("aria-disabled")).toBe("true");
+    expect(handle(listing, 1).getAttribute("aria-disabled")).toBe("true");
+    expect(document.activeElement).toBe(handle(listing, 1));
+    finishMove();
+    await flushPromises();
+    expect(handle(listing, 0).getAttribute("aria-disabled")).toBeNull();
   });
 
   it("scrolls a track moved out of the rendered rows into view and focuses it", async () => {

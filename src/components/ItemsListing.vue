@@ -287,7 +287,12 @@
         </v-row>
 
         <!-- list view -->
-        <div v-if="viewMode == 'list'" ref="listRowsEl" class="relative h-full">
+        <div
+          v-if="viewMode == 'list'"
+          ref="listRowsEl"
+          class="relative h-full"
+          :aria-busy="reorderSaving || undefined"
+        >
           <v-virtual-scroll
             :item-height="showTrackTable ? TRACK_ROW_HEIGHT : 70"
             height="100%"
@@ -313,6 +318,7 @@
                 :is-available="itemIsAvailable(item)"
                 :is-playing="isPlaying(item, itemtype)"
                 :disable-play-button="isPlayActionInProgress"
+                :reorder-disabled="reorderSaving"
                 :parent-item="parentItem"
                 :sort-by="props.sortListing ? undefined : params.sortBy"
                 :sort-field="displayedSort.sortField"
