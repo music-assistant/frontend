@@ -181,12 +181,14 @@
       </Button>
     </div>
 
-    <Container
+    <div
       v-if="expanded"
       ref="listContainer"
-      :variant="viewMode == 'list' ? 'default' : 'panel'"
-      :class="{ 'flex flex-1 flex-col': fillsHeight }"
-      style="overflow: hidden"
+      class="overflow-hidden p-2.5"
+      :class="{
+        'bg-background dark:bg-transparent': viewMode != 'list',
+        'flex flex-1 flex-col': fillsHeight,
+      }"
     >
       <TrackTableHeader
         v-if="showTrackTable && (loadPending || pagedItems.length)"
@@ -242,6 +244,11 @@
         :class="{ 'select-none': shiftSelecting }"
         style="overflow: hidden"
       >
+        <!-- the end marker sits INFINITE_SCROLL_MARGIN above the end of the list,
+        so a shorter list clips it and never reports that it has no more items -->
+        <template #loading>
+          <Spinner v-if="!allItemsReceived" class="size-8" />
+        </template>
         <template #error="{ props: errorProps }">
           <div class="flex justify-center py-4">
             <Button
@@ -405,7 +412,7 @@
             )
         "
       />
-    </Container>
+    </div>
   </section>
 </template>
 
@@ -420,7 +427,6 @@ export type {
 <script setup lang="ts">
 import type { Component } from "vue";
 
-import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
@@ -447,6 +453,7 @@ import {
 } from "@/components/ui/empty";
 import { InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
 import { SearchInput } from "@/components/ui/search-input";
+import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GridSizeSlider from "@/components/GridSizeSlider.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
@@ -782,7 +789,7 @@ const onTabChange = function (tabId: string) {
 };
 
 const viewMode = ref("list");
-const listContainer = ref<InstanceType<typeof Container>>();
+const listContainer = ref<HTMLElement>();
 const showTrackTable = computed(
   () => props.trackTable && viewMode.value == "list",
 );

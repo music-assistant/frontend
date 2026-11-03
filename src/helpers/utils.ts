@@ -356,7 +356,7 @@ const imageProviderIsAvailable = function (provider: string) {
  * This matters for artwork written by a provider that is no longer loaded - a
  * metadata provider that has since been disabled, for instance. Such an image
  * stays perfectly servable, but gating it on provider availability discards it
- * and leaves the item to fall back to a generated initials avatar.
+ * and leaves the item to fall back to its media type icon.
  */
 const imageIsUsable = function (img: MediaItemImage) {
   if (img.remotely_accessible) return true;

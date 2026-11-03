@@ -29,6 +29,14 @@ export function formatHour(hour: number, locale: string): string {
   }).format(new Date(Date.UTC(2024, 0, 1, hour)));
 }
 
+/** An hour without minutes, such as "6 AM" or "06", for narrow axes. */
+export function formatShortHour(hour: number, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(2024, 0, 1, hour)));
+}
+
 /** Weekday names, Monday first, in the given style. */
 export function weekdayNames(
   locale: string,

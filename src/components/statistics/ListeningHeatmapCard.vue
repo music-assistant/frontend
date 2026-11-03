@@ -23,9 +23,10 @@
         {{ $t("statistics_heatmap_more") }}
       </div>
     </template>
-    <div class="overflow-x-auto">
+    <!-- centred when the card stretches to its neighbour in the row -->
+    <div class="relative my-auto overflow-x-auto">
       <table
-        class="w-full min-w-[520px] border-separate border-spacing-1 [table-layout:fixed]"
+        class="w-full border-separate border-spacing-1 [table-layout:fixed] max-sm:border-spacing-[2px]"
       >
         <caption class="sr-only">
           {{
@@ -34,7 +35,7 @@
         </caption>
         <thead>
           <tr>
-            <th scope="col" class="w-[34px]">
+            <th scope="col" class="w-[34px] max-sm:w-[30px]">
               <span class="sr-only">{{ $t("statistics_heatmap") }}</span>
             </th>
             <th
@@ -61,7 +62,7 @@
             <td
               v-for="hour in hours"
               :key="hour"
-              class="h-[22px] rounded-[3px] p-0"
+              class="h-[22px] rounded-[3px] p-0 max-sm:h-4 max-sm:rounded-[2px]"
               :style="{
                 backgroundColor: cellColor(grid[weekdayIndex][hour] / maxPlays),
               }"

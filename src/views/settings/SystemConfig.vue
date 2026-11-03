@@ -1,5 +1,5 @@
 <template>
-  <Container variant="comfortable" class="settings-overview">
+  <div class="settings-overview">
     <UnsupportedInstallBanner class="mb-4" />
     <div v-if="viewMode === 'card'" class="settings-grid">
       <Card
@@ -119,11 +119,10 @@
         </template>
       </ListItem>
     </v-list>
-  </Container>
+  </div>
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
@@ -252,8 +251,6 @@ onMounted(async () => {
 <style scoped>
 .settings-overview {
   padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
 }
 
 .settings-list {

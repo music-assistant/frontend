@@ -338,6 +338,7 @@ import {
 } from "@/helpers/favorites";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
+import { openMusicBrainzItem } from "@/helpers/open_musicbrainz_item";
 import { getPlayerDisplayName, playerVisible } from "@/helpers/players";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import {
@@ -632,6 +633,10 @@ export const getContextMenuItems = async function (
       label: "show_info",
       labelArgs: [],
       action: () => {
+        if (isMusicBrainzItem(firstItem)) {
+          openMusicBrainzItem(firstItem);
+          return;
+        }
         router.push({
           name: firstItem.media_type,
           params: {
