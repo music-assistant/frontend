@@ -1,7 +1,12 @@
-import type { MediaItemType } from "@/plugins/api/interfaces";
+import type {
+  MediaItemType,
+  MediaItemTypeOrItemMapping,
+} from "@/plugins/api/interfaces";
 
 /** The 1-based playlist position of a listed item, or undefined without one. */
-export const playlistPosition = (item: MediaItemType): number | undefined =>
+export const playlistPosition = (
+  item: MediaItemTypeOrItemMapping,
+): number | undefined =>
   "position" in item && typeof item.position === "number"
     ? item.position
     : undefined;
