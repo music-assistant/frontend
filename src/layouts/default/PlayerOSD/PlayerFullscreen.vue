@@ -633,6 +633,7 @@ import {
   saveNewBookmark,
   useBookmarkActions,
   useBookmarks,
+  usePlayingPodcastLibraryCheck,
   type NewBookmark,
 } from "@/composables/useBookmarks";
 import {
@@ -751,6 +752,8 @@ const updateChapterTimer = (needed: boolean) => {
   }
 };
 
+// an episode's bookmarks are kept by Music Assistant when its podcast is in the library
+usePlayingPodcastLibraryCheck();
 // the playing item takes a new bookmark at its current position
 const canAddBookmark = computed(() => !!newBookmarkOfPlayingItem());
 

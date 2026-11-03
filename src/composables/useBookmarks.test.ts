@@ -14,6 +14,7 @@ import {
   newBookmarkOfPlayingItem,
   useBookmarkActions,
   useBookmarks,
+  usePlayingPodcastLibraryCheck,
 } from "./useBookmarks";
 
 const ABS = "audiobookshelf--1";
@@ -22,6 +23,7 @@ const { apiMock, storeMock, elapsed } = vi.hoisted(() => ({
   apiMock: {
     providers: {} as Record<string, unknown>,
     getBookmarks: vi.fn(),
+    getLibraryItem: vi.fn(),
     setBookmark: vi.fn(),
     subscribe: vi.fn(() => () => {}),
     state: { value: "initialized" },
@@ -41,6 +43,16 @@ vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/helpers/activeElapsedTime", () => ({
   resolveActiveElapsedTime: () => elapsed.value,
 }));
+
+// runs a composable inside a mounted component, as it is used
+const Harness = defineComponent({
+  props: { setup: { type: Function, required: true } },
+  setup(props) {
+    props.setup();
+    return () => null;
+  },
+});
+const mountWith = (setup: () => void) => mount(Harness, { props: { setup } });
 
 function playing(
   media_type: MediaType,
@@ -117,6 +129,42 @@ describe("newBookmarkOfPlayingItem", () => {
     expect(newBookmarkOfPlayingItem()?.start).toBe(0);
   });
 
+  // a queued RSS episode refers to its podcast on the provider, also once it is in the library
+  it.each([
+    ["in the library", { item_id: "7" }, true],
+    ["not in the library", null, false],
+  ])(
+    "looks up whether the episode's podcast is %s",
+    async (_case, libraryPodcast, offered) => {
+      const podcastId = `pod_${offered}`;
+      storeMock.curQueueItem = {
+        media_item: {
+          media_type: MediaType.PODCAST_EPISODE,
+          provider: ABS,
+          provider_mappings: [],
+          podcast: { provider: ABS, item_id: podcastId },
+        },
+        streamdetails: { provider: ABS, item_id: "episode_1" },
+      } as unknown as QueueItem;
+      apiMock.providers = {};
+      apiMock.getLibraryItem.mockResolvedValue(libraryPodcast);
+      mountWith(usePlayingPodcastLibraryCheck);
+      // unknown until the library answers
+      expect(newBookmarkOfPlayingItem()).toBeUndefined();
+
+      await flushPromises();
+
+      expect(apiMock.getLibraryItem).toHaveBeenCalledWith(
+        MediaType.PODCAST,
+        podcastId,
+        ABS,
+      );
+      expect(newBookmarkOfPlayingItem()?.storedIn).toBe(
+        offered ? "Music Assistant" : undefined,
+      );
+    },
+  );
+
   // Music Assistant keeps them for library copies only, the server refuses others
   it("takes none Music Assistant would keep for a copy outside the library", () => {
     playing(MediaType.PODCAST_EPISODE, true, false);
@@ -136,20 +184,15 @@ const bookmark = (name: string) => ({
 describe("useBookmarks", () => {
   function mountBookmarks() {
     let result!: ReturnType<typeof useBookmarks>;
-    mount(
-      defineComponent({
-        setup() {
-          result = useBookmarks(() => ({
-            mediaType: MediaType.AUDIOBOOK,
-            itemId: "1",
-            provider: "library",
-            uri: "library://audiobook/1",
-            copyUris: [`${ABS}://audiobook/book_1`],
-          }));
-          return () => null;
-        },
-      }),
-    );
+    mountWith(() => {
+      result = useBookmarks(() => ({
+        mediaType: MediaType.AUDIOBOOK,
+        itemId: "1",
+        provider: "library",
+        uri: "library://audiobook/1",
+        copyUris: [`${ABS}://audiobook/book_1`],
+      }));
+    });
     return result;
   }
 

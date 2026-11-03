@@ -15,7 +15,14 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { toast } from "vue-sonner";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from "vue";
 
 // the provider feature to edit bookmarks, per media type that has bookmarks
 export const BOOKMARK_EDIT_FEATURES: Partial<
@@ -48,6 +55,52 @@ export function bookmarkStoreName(
     : (api.providers[providerInstanceId]?.name ?? providerInstanceId);
 }
 
+// whether the podcast of a provider copy is in the library, by "provider/item id";
+// a queued episode refers to its podcast on the provider even when it is in the library
+const podcastInLibrary = reactive(new Map<string, boolean>());
+
+// the provider copy of the podcast the playing episode belongs to
+const playingPodcastKey = function (): string | undefined {
+  const media = store.curQueueItem?.media_item;
+  if (
+    media?.media_type !== MediaType.PODCAST_EPISODE ||
+    !("podcast" in media)
+  ) {
+    return undefined;
+  }
+  const podcast = media.podcast;
+  if (!podcast || podcast.provider === "library") return undefined;
+  return `${podcast.provider}/${podcast.item_id}`;
+};
+
+/**
+ * Look up whether the playing episode's podcast is in the library, once per
+ * podcast, so a bookmark Music Assistant would keep can be offered for it.
+ */
+export function usePlayingPodcastLibraryCheck() {
+  watch(
+    playingPodcastKey,
+    async (key) => {
+      if (!key || podcastInLibrary.has(key)) return;
+      const [provider, itemId] = [
+        key.slice(0, key.indexOf("/")),
+        key.slice(key.indexOf("/") + 1),
+      ];
+      try {
+        const libraryItem = await api.getLibraryItem(
+          MediaType.PODCAST,
+          itemId,
+          provider,
+        );
+        podcastInLibrary.set(key, !!libraryItem);
+      } catch {
+        // left unknown, so the next episode of the podcast asks again
+      }
+    },
+    { immediate: true },
+  );
+}
+
 /**
  * Whether Music Assistant keeps bookmarks of the playing copy, which it does for
  * library copies only: the audiobook's own, or the podcast of an episode.
@@ -57,7 +110,13 @@ export function musicAssistantStoresBookmarks(
   streamdetails: StreamDetails,
 ): boolean {
   if (media.media_type === MediaType.PODCAST_EPISODE) {
-    return "podcast" in media && media.podcast?.provider === "library";
+    if (!("podcast" in media) || !media.podcast) return false;
+    if (media.podcast.provider === "library") return true;
+    return (
+      podcastInLibrary.get(
+        `${media.podcast.provider}/${media.podcast.item_id}`,
+      ) === true
+    );
   }
   return (
     media.provider === "library" &&
