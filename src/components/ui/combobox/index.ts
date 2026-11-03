@@ -1,3 +1,6 @@
+import { createContext } from "reka-ui";
+import type { Ref } from "vue";
+
 export { default as Combobox } from "./Combobox.vue";
 export { default as ComboboxAnchor } from "./ComboboxAnchor.vue";
 export { default as ComboboxCancel } from "./ComboboxCancel.vue";
@@ -9,3 +12,6 @@ export { default as ComboboxItemIndicator } from "./ComboboxItemIndicator.vue";
 export { default as ComboboxList } from "./ComboboxList.vue";
 export { default as ComboboxSeparator } from "./ComboboxSeparator.vue";
 export { default as ComboboxTrigger } from "./ComboboxTrigger.vue";
+
+export const [useComboboxFreeText, provideComboboxFreeText] =
+  createContext<Ref<boolean>>("Combobox");
