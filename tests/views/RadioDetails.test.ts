@@ -25,7 +25,10 @@ const {
   mockGetRadioVersions: vi.fn<MusicAssistantApi["getRadioVersions"]>(),
   mockSubscribe: vi.fn<MusicAssistantApi["subscribe"]>(() => () => {}),
   mockStore: {
-    currentUser: null as { preferences?: Record<string, unknown> } | null,
+    currentUser: null as {
+      user_id?: string;
+      preferences?: Record<string, unknown>;
+    } | null,
   },
   mockSetUserPreference: vi.fn(),
 }));
@@ -253,49 +256,144 @@ describe("RadioDetails", () => {
     ).toEqual(station);
   });
 
-  it("keeps a mapped library update when the initial radio request finishes later", async () => {
-    vi.useFakeTimers();
-    const station = radio({
-      item_id: "provider-radio",
-      provider: "radio-provider",
-      is_dynamic: true,
-    });
-    const libraryStation = radio({
-      item_id: "42",
-      is_dynamic: true,
-      provider_mappings: [
-        providerMapping({
-          item_id: station.item_id,
-          provider_instance: station.provider,
-        }),
-      ],
-    });
+  it.each([true, false, null])(
+    "keeps newer radio metadata and reconciles the loaded favorite (%s)",
+    async (favorite) => {
+      vi.useFakeTimers();
+      const station = radio({
+        item_id: "provider-radio",
+        provider: "radio-provider",
+        is_dynamic: true,
+        favorite,
+      });
+      const libraryStation = radio({
+        item_id: "42",
+        is_dynamic: true,
+        provider_mappings: [
+          providerMapping({
+            item_id: station.item_id,
+            provider_instance: station.provider,
+          }),
+        ],
+      });
+      const pending = Promise.withResolvers<Radio>();
+      mockGetRadio.mockReturnValue(pending.promise);
+      const wrapper = mount(RadioDetails, {
+        props: { itemId: station.item_id, provider: station.provider },
+        global: { mocks: { $t: (key: string) => key } },
+      });
+      const subscription = mockSubscribe.mock.calls.find(
+        ([event]) => event === EventType.MEDIA_ITEM_UPDATED,
+      );
+      expect(subscription).toBeDefined();
+      subscription![1]({
+        event: EventType.MEDIA_ITEM_UPDATED,
+        object_id: libraryStation.uri,
+        data: libraryStation,
+      });
+      await vi.advanceTimersByTimeAsync(2000);
+      await flushPromises();
+      expect(
+        wrapper.findComponent({ name: "RadioHero" }).props("item"),
+      ).toEqual(libraryStation);
+
+      pending.resolve(station);
+      await flushPromises();
+
+      expect(
+        wrapper.findComponent({ name: "RadioHero" }).props("item"),
+      ).toEqual({ ...libraryStation, favorite });
+    },
+  );
+
+  it.each([
+    { favorite: true, ownEvent: false },
+    { favorite: false, ownEvent: false },
+    { favorite: null, ownEvent: false },
+    { favorite: null, ownEvent: true },
+    { favorite: true, ownEvent: true },
+    { favorite: false, ownEvent: true },
+  ])(
+    "keeps a later own favorite change (%j) when the response arrives",
+    async ({ favorite, ownEvent }) => {
+      vi.useFakeTimers();
+      mockStore.currentUser = { user_id: "me", preferences: {} };
+      const station = radio({
+        provider: "builtin",
+        item_id: "stream",
+        favorite: true,
+      });
+      const updated = radio({
+        item_id: "42",
+        name: "New metadata",
+        favorite: null,
+        provider_mappings: [
+          providerMapping({
+            item_id: station.item_id,
+            provider_instance: station.provider,
+          }),
+        ],
+      });
+      const pending = Promise.withResolvers<Radio>();
+      mockGetRadio.mockReturnValue(pending.promise);
+      const wrapper = mount(RadioDetails, {
+        props: { itemId: station.item_id, provider: station.provider },
+        global: { mocks: { $t: (key: string) => key } },
+      });
+      const itemSubscription = mockSubscribe.mock.calls.find(
+        ([event]) => event === EventType.MEDIA_ITEM_UPDATED,
+      )!;
+      itemSubscription[1]({
+        event: EventType.MEDIA_ITEM_UPDATED,
+        data: updated,
+      });
+      await vi.advanceTimersByTimeAsync(2000);
+      await flushPromises();
+
+      if (ownEvent) {
+        const favoriteSubscription = mockSubscribe.mock.calls.find(
+          ([event]) => event === EventType.FAVORITE_UPDATED,
+        )!;
+        favoriteSubscription[1]({
+          event: EventType.FAVORITE_UPDATED,
+          data: { uri: updated.uri, user_id: "me", favorite },
+        });
+      } else {
+        if (favorite === null) {
+          wrapper.findComponent({ name: "RadioHero" }).props("item").favorite =
+            true;
+        }
+        wrapper.findComponent({ name: "RadioHero" }).props("item").favorite =
+          favorite;
+      }
+      pending.resolve(station);
+      await flushPromises();
+
+      expect(
+        wrapper.findComponent({ name: "RadioHero" }).props("item"),
+      ).toEqual({ ...updated, favorite });
+    },
+  );
+
+  it("does not merge a previous route's favorite into the current radio", async () => {
+    const previous = radio({ item_id: "previous", favorite: true });
+    const current = radio({ item_id: "current", favorite: false });
     const pending = Promise.withResolvers<Radio>();
-    mockGetRadio.mockReturnValue(pending.promise);
+    mockGetRadio
+      .mockReturnValueOnce(pending.promise)
+      .mockResolvedValueOnce(current);
     const wrapper = mount(RadioDetails, {
-      props: { itemId: station.item_id, provider: station.provider },
+      props: { itemId: previous.item_id, provider: previous.provider },
       global: { mocks: { $t: (key: string) => key } },
     });
-    const subscription = mockSubscribe.mock.calls.find(
-      ([event]) => event === EventType.MEDIA_ITEM_UPDATED,
-    );
-    expect(subscription).toBeDefined();
-    subscription![1]({
-      event: EventType.MEDIA_ITEM_UPDATED,
-      object_id: libraryStation.uri,
-      data: libraryStation,
-    });
-    await vi.advanceTimersByTimeAsync(2000);
-    await flushPromises();
-    expect(wrapper.findComponent({ name: "RadioHero" }).props("item")).toEqual(
-      libraryStation,
-    );
 
-    pending.resolve(station);
+    await wrapper.setProps({ itemId: current.item_id });
+    await flushPromises();
+    pending.resolve(previous);
     await flushPromises();
 
     expect(wrapper.findComponent({ name: "RadioHero" }).props("item")).toEqual(
-      libraryStation,
+      current,
     );
   });
 
