@@ -70,17 +70,3 @@ export function episodeReleaseDate(episode: PodcastEpisode): string {
     ? released.toLocaleDateString(undefined, { dateStyle: "medium" })
     : "";
 }
-
-/**
- * The episodes to offer beside the one shown: those after it in the given
- * order, then the ones before it, so the next one to hear comes first. None
- * while the list does not hold it yet, e.g. still the previous podcast's.
- */
-export function otherEpisodes(
-  ordered: PodcastEpisode[],
-  current: PodcastEpisode,
-): PodcastEpisode[] {
-  const index = ordered.findIndex((x) => x.item_id === current.item_id);
-  if (index < 0) return [];
-  return [...ordered.slice(index + 1), ...ordered.slice(0, index)];
-}

@@ -26,17 +26,29 @@
     <!-- episode chapters, with the user's bookmarks inside them -->
     <Chapters v-if="itemDetails" :item-details="itemDetails" />
 
-    <!-- a few to go on with; the podcast page lists them all -->
-    <MediaRowList
-      v-if="itemDetails && otherEpisodeItems.length"
-      :title="$t('other_episodes')"
-      :items="otherEpisodeItems"
-      :limit="OTHER_EPISODES_LIMIT"
-      :view-all-to="podcastRoute"
+    <!-- keyed per episode: a listing already loading drops a reload request, so
+    clicking through episodes quickly would leave the previous episode's list.
+    it waits for the podcast lookup so it opens with that podcast's settings -->
+    <ItemsListing
+      v-if="itemDetails && podcastChecked"
+      :key="episodeKey"
+      itemtype="podcastepisodes"
       :parent-item="episodePodcast"
-    >
-      <template #subtitle="{ item }">{{ episodeSubtitle(item) }}</template>
-    </MediaRowList>
+      :refresh-on-parent-update="true"
+      :show-provider="false"
+      :show-favorites-only-filter="false"
+      :show-hide-fully-played-filter="true"
+      :show-track-number="true"
+      :show-refresh-button="false"
+      :sort-listing="ListingType.PODCAST_EPISODES"
+      :load-paged-data="loadOtherEpisodes"
+      :title="$t('other_episodes')"
+      detail-row
+      :hide-on-empty="true"
+      :allow-collapse="true"
+      :path="`podcast.${podcastKey}`"
+      :restore-state="false"
+    />
 
     <Dialog v-model:open="showTranscript">
       <DialogContent class="sm:max-w-[640px]">
@@ -65,14 +77,11 @@
 <script setup lang="ts">
 import Chapters from "@/components/Chapters.vue";
 import DetailTextRow from "@/components/details/DetailTextRow.vue";
-import MediaRowList, {
-  type RowItem,
-} from "@/components/details/MediaRowList.vue";
+import ItemsListing, {
+  type LoadDataParams,
+} from "@/components/ItemsListing.vue";
 import {
-  episodeReleaseDate,
-  otherEpisodes,
   podcastEpisodeBackdrop,
-  podcastEpisodeNumber,
   type PodcastEpisodeBackdrop,
 } from "@/components/podcast/podcastEpisodeData";
 import PodcastEpisodeHero from "@/components/podcast/PodcastEpisodeHero.vue";
@@ -89,6 +98,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/plugins/api";
 import {
   EventType,
+  ListingType,
   type EventMessage,
   type PlaylogUpdate,
   type Podcast,
@@ -106,17 +116,22 @@ const props = defineProps<Props>();
 
 const router = useRouter();
 
+const episodeKey = computed(() => `${props.provider}.${props.itemId}`);
+
 const itemDetails = ref<PodcastEpisode>();
 // all episodes of the podcast, in its own order, for the steppers
 const siblings = ref<PodcastEpisode[]>([]);
-// the podcast itself, which the episode rows need for their play actions
+// the podcast itself, which the listing rows need for their play actions
 const parentPodcast = ref<Podcast>();
+// the episode whose podcast lookup has finished
+const checkedEpisodeKey = ref<string>();
 const showTranscript = ref(false);
 const transcript = ref<string | null>(null);
 const transcriptLoaded = ref(false);
 const transcriptLoading = ref(false);
 
-// the latest details request, so answers for an episode stepped away from are dropped
+// the episodes listing reloads as soon as the route changes, a moment before
+// the new details arrive; sharing the request keeps the two on one episode
 let detailsRequest: Promise<PodcastEpisode> | undefined;
 
 // A provider that cannot tell reports null, in which case the transcript is
@@ -125,8 +140,20 @@ const showTranscriptButton = computed(
   () => itemDetails.value?.metadata.has_transcript !== false,
 );
 
-// newest first, as the podcast page lists them, so the right arrow and the
-// first of the other episodes both lead to the one below this
+// the sort and view choices belong to the podcast, so every episode of it opens
+// the listing the same way as the podcast page's own episode listing
+const podcastKey = computed(() => {
+  const podcast = episodePodcast.value ?? itemDetails.value?.podcast;
+  return podcast ? `${podcast.item_id}.${podcast.provider}` : "";
+});
+
+const podcastChecked = computed(
+  () => checkedEpisodeKey.value === episodeKey.value,
+);
+
+// the listing opens newest first, so the steppers follow that same order and the
+// right arrow always lands on the row below. changing the sort in the listing
+// moves it away from the steppers, which stay on the podcast's own order
 const orderedSiblings = computed(() =>
   [...siblings.value].sort((a, b) => b.position - a.position),
 );
@@ -177,31 +204,23 @@ const openEpisode = function (episode?: PodcastEpisode) {
   });
 };
 
-const OTHER_EPISODES_LIMIT = 5;
-
-const otherEpisodeItems = computed(() =>
-  itemDetails.value
-    ? otherEpisodes(orderedSiblings.value, itemDetails.value)
-    : [],
-);
-
-// "View all" opens the podcast with its full episode listing
-const podcastRoute = computed(() => {
-  const podcast = episodePodcast.value ?? itemDetails.value?.podcast;
-  return podcast
-    ? {
-        name: "podcast",
-        params: { itemId: podcast.item_id, provider: podcast.provider },
-      }
-    : undefined;
-});
-
-// e.g. "S1 E53 · 22 Oct 2026"
-const episodeSubtitle = function (item: RowItem): string {
-  if (!("podcast" in item)) return "";
-  return [podcastEpisodeNumber(item)?.short, episodeReleaseDate(item)]
-    .filter(Boolean)
-    .join(" · ");
+const loadOtherEpisodes = async function (
+  params: LoadDataParams,
+): Promise<PodcastEpisode[]> {
+  const requested = detailsRequest;
+  const episode = await requested?.catch(() => undefined);
+  if (!episode || requested !== detailsRequest) return [];
+  return await api.getPodcastEpisodes(
+    episode.podcast.item_id,
+    episode.podcast.provider,
+    params.hideFullyPlayed ? false : undefined,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+    episode.item_id,
+  );
 };
 
 const openTranscript = async function () {
@@ -234,6 +253,7 @@ watch(
     transcriptLoaded.value = false;
     transcriptLoading.value = false;
     showTranscript.value = false;
+    checkedEpisodeKey.value = undefined;
     const details = (detailsRequest = api.getPodcastEpisode(itemId, provider));
     const episodes = details
       .then((episode) =>
@@ -272,6 +292,7 @@ watch(
     if (details !== detailsRequest) return;
     siblings.value = siblingEpisodes;
     parentPodcast.value = podcast;
+    checkedEpisodeKey.value = episodeKey.value;
   },
   { immediate: true },
 );

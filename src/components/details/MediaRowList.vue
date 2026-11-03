@@ -127,7 +127,7 @@ import { EllipsisVertical } from "@lucide/vue";
 import { computed } from "vue";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 
-export type RowItem = MediaItemType | ItemMapping;
+type RowItem = MediaItemType | ItemMapping;
 
 export interface Props {
   title: string;
@@ -336,9 +336,8 @@ function itemDuration(item: RowItem): number | undefined {
   font-weight: 500;
   white-space: nowrap;
 }
-/* a minimum, so an hours-long episode still fits */
 .media-rows__duration {
-  min-width: 44px;
+  width: 44px;
   flex: none;
   text-align: right;
   font-size: 13px;
