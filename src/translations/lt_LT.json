@@ -534,7 +534,6 @@
     "view": {
         "list": "Sąrašo rodinys",
         "panel": "Nykščių rodinys",
-        "panel_compact": "Kompaktiškas nykščių rodinys",
         "discovery": "Atradimas"
     },
     "play_replace": "Leisti dabar (išvalyti eilę)",
