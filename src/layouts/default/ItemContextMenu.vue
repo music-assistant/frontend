@@ -391,6 +391,7 @@ import {
   canSavePlaylistMoves,
   isPlaylistEditPending,
   sendPlaylistEdit,
+  untilTaskEnds,
 } from "@/composables/usePlaylistTrackReorder";
 import {
   ArrowDown,
@@ -1076,18 +1077,22 @@ export const getContextMenuItems = async function (
         firstItem.media_type === MediaType.RADIO ||
         firstItem.media_type === MediaType.PODCAST_EPISODE ||
         firstItem.media_type === MediaType.AUDIOBOOK) &&
-      canEditPlaylistItems(playlist, store.currentUser, managesLibrary) &&
-      canEditOrder()
+      canEditPlaylistItems(playlist, store.currentUser, managesLibrary)
     ) {
       contextMenuItems.push({
         label: "remove_playlist",
         labelArgs: [],
+        disabled: !canEditOrder(),
         action: () => {
           if (!canEditOrder()) return;
-          void sendPlaylistEdit(playlist.item_id, () =>
-            api.removePlaylistTracks(
-              playlist.item_id,
-              items.map((x) => ("position" in x ? x.position : 0) as number),
+          // the removal runs as a background task; the positions hold until
+          // it is done and read back
+          void sendPlaylistEdit(playlist.item_id, async () =>
+            untilTaskEnds(
+              await api.removePlaylistTracks(
+                playlist.item_id,
+                items.map((x) => ("position" in x ? x.position : 0) as number),
+              ),
             ),
           );
         },
@@ -1104,7 +1109,6 @@ export const getContextMenuItems = async function (
       .every((position, index) => position === index + 1);
     if (
       positions.every((position) => position > 0) &&
-      canEditOrder() &&
       canReorderPlaylistItems(
         playlist,
         store.currentUser,
@@ -1116,11 +1120,14 @@ export const getContextMenuItems = async function (
         contextMenuItems.push({
           label: "playlist_move_to_top",
           labelArgs: [],
+          disabled: !canEditOrder(),
           action: () => {
             if (!canEditOrder()) return;
             void sendPlaylistEdit(playlist.item_id, () =>
               api.movePlaylistTracks(playlist.item_id, positions, 1),
-            );
+            ).then((moved) => {
+              if (moved) toast.success($t("playlist_moved_to_top"));
+            });
             eventbus.emit("clearSelection");
           },
           icon: ArrowUpToLine,
@@ -1129,11 +1136,14 @@ export const getContextMenuItems = async function (
       contextMenuItems.push({
         label: "playlist_move_to_bottom",
         labelArgs: [],
+        disabled: !canEditOrder(),
         action: () => {
           if (!canEditOrder()) return;
           void sendPlaylistEdit(playlist.item_id, () =>
             api.movePlaylistTracks(playlist.item_id, positions),
-          );
+          ).then((moved) => {
+            if (moved) toast.success($t("playlist_moved_to_bottom"));
+          });
           eventbus.emit("clearSelection");
         },
         icon: ArrowDownToLine,

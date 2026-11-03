@@ -1,9 +1,15 @@
 import {
   isPlaylistEditPending,
   sendPlaylistEdit,
+  untilTaskEnds,
   usePlaylistTrackReorder,
 } from "@/composables/usePlaylistTrackReorder";
-import type { MediaItemType } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  TaskStatus,
+  type BackgroundTask,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, ref, toRaw } from "vue";
@@ -14,6 +20,7 @@ const { apiMock } = vi.hoisted(() => ({
     movePlaylistTrack: vi.fn<() => Promise<void>>(),
     movePlaylistTracks: vi.fn<() => Promise<void>>(),
     subscribe: vi.fn(),
+    getTasks: vi.fn<() => Promise<BackgroundTask[]>>(),
     state: { value: "initialized" } as { value: string },
   },
 }));
@@ -173,6 +180,23 @@ describe("usePlaylistTrackReorder", () => {
     expect(reorder.saving.value).toBe(false);
   });
 
+  it("matches a failed move's rows back to their places when a track is listed twice", async () => {
+    apiMock.movePlaylistTrack.mockRejectedValue(new Error("failed"));
+    const { items, selection, reload, onReloaded, reorder } = setup(
+      ["A", "B", "A", "C"],
+      [2],
+    );
+    reload.mockImplementation(async () => {
+      items.value = listing("A", "B", "A", "C");
+    });
+
+    await reorder.moveRows([2], 0);
+
+    const locate = onReloaded.mock.lastCall![0];
+    // the second A was selected and moved, so it is the second A again
+    expect(locate(selection.value[0])).toBe(toRaw(items.value)[2]);
+  });
+
   it("moves the selected block by keyboard and says where the row went", () => {
     apiMock.movePlaylistTracks.mockResolvedValue();
     const { items, reorder } = setup(["A", "B", "C", "D", "E"], [1, 3]);
@@ -270,11 +294,12 @@ describe("usePlaylistTrackReorder", () => {
   it("reads the order back when the server turns a menu edit away", async () => {
     const { reload, reorder } = setup(["A", "B", "C"], []);
 
-    await sendPlaylistEdit("1", async () => {
+    const made = await sendPlaylistEdit("1", async () => {
       throw new Error("Another edit of this playlist is running");
     });
     await flushPromises();
 
+    expect(made).toBe(false);
     expect(reload).toHaveBeenCalledOnce();
     expect(reorder.saving.value).toBe(false);
     expect(isPlaylistEditPending("1")).toBe(false);
@@ -342,5 +367,64 @@ describe("usePlaylistTrackReorder", () => {
     expect(ids(items.value)).toEqual(["A", "B", "C"]);
     expect(apiMock.movePlaylistTrack).not.toHaveBeenCalled();
     expect(apiMock.movePlaylistTracks).not.toHaveBeenCalled();
+  });
+});
+
+describe("untilTaskEnds", () => {
+  const task = (status: TaskStatus) => ({ id: "t1", status }) as BackgroundTask;
+  let report: (event: { data: BackgroundTask[] }) => void = () => {};
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    apiMock.state = { value: "initialized" };
+  });
+
+  const waitFor = (status: TaskStatus) => {
+    apiMock.subscribe.mockImplementation((event, callback) => {
+      if (event === EventType.TASKS_UPDATED) report = callback;
+      return vi.fn();
+    });
+    let ended = false;
+    void untilTaskEnds(task(status)).then(() => (ended = true));
+    return () => ended;
+  };
+
+  it("resolves once the task is reported finished", async () => {
+    const ended = waitFor(TaskStatus.PENDING);
+
+    report({ data: [task(TaskStatus.RUNNING)] });
+    await flushPromises();
+    expect(ended()).toBe(false);
+    report({ data: [task(TaskStatus.FAILED)] });
+    await flushPromises();
+    expect(ended()).toBe(true);
+  });
+
+  it("resolves once the task is no longer listed", async () => {
+    const ended = waitFor(TaskStatus.RUNNING);
+
+    report({ data: [] });
+    await flushPromises();
+    expect(ended()).toBe(true);
+  });
+
+  it("looks the task up again once the server is reached again", async () => {
+    const state = ref("initialized");
+    apiMock.state = state;
+    const ended = waitFor(TaskStatus.RUNNING);
+
+    state.value = "reconnecting";
+    await flushPromises();
+    apiMock.getTasks.mockResolvedValue([task(TaskStatus.RUNNING)]);
+    state.value = "initialized";
+    await flushPromises();
+    expect(ended()).toBe(false);
+
+    state.value = "reconnecting";
+    await flushPromises();
+    apiMock.getTasks.mockResolvedValue([]);
+    state.value = "initialized";
+    await flushPromises();
+    expect(ended()).toBe(true);
   });
 });

@@ -2,12 +2,11 @@
 // reorder to the listing's selection, keeps the keyboard focus on a moved
 // track, and styles the rows while one is dragged.
 import { usePlaylistTrackReorder } from "@/composables/usePlaylistTrackReorder";
-import { nearestIndexOf } from "@/helpers/playlist_reorder";
 import type {
   MediaItemType,
   MediaItemTypeOrItemMapping,
 } from "@/plugins/api/interfaces";
-import { Ref, computed, nextTick, onBeforeUnmount, watch } from "vue";
+import { Ref, computed, nextTick, onBeforeUnmount, toRaw, watch } from "vue";
 
 // frames to wait for the virtual scroller to render a row scrolled into view
 const FOCUS_RENDER_FRAMES = 10;
@@ -40,17 +39,34 @@ export function useTrackReorderRows(options: TrackReorderRowsOptions) {
       ? items.value.flatMap((item, index) => (isSelected(item) ? [index] : []))
       : [];
 
-  // rows read again are new objects, so the selection moves to the rows that
-  // hold the same items
-  const reselectReloadedRows = () => {
-    if (!selected.value.length) return;
-    const key = (item: MediaItemTypeOrItemMapping) =>
-      `${item.uri}#${"position" in item ? item.position : ""}`;
-    const rows = new Map(items.value.map((row) => [key(row), row]));
-    selected.value = selected.value.flatMap((item) => {
-      const row = rows.get(key(item));
-      return row ? [row] : [];
-    });
+  // the row moved by keyboard and where it went, for the focus to follow it
+  // until the order is read back
+  let followed: { row: MediaItemType; index: number } | undefined;
+
+  // rows read again are new objects, so the selection and the focus move to
+  // the rows that stand for the same items
+  const onReloaded = (
+    locate: (row: MediaItemType) => MediaItemType | undefined,
+  ) => {
+    if (selected.value.length) {
+      selected.value = selected.value.flatMap((item) => {
+        const row = locate(item as MediaItemType);
+        return row ? [row] : [];
+      });
+    }
+    if (!followed) return;
+    const row = locate(followed.row);
+    const index = row ? toRaw(items.value).indexOf(row) : -1;
+    if (!row || index === -1) {
+      followed = undefined;
+      return;
+    }
+    const wasAt = followed.index;
+    followed = { row, index };
+    // a failed move reads the old order back; only while the focus is still
+    // on the rows
+    if (index !== wasAt && listEl.value?.contains(document.activeElement))
+      void nextTick(() => focusHandle(index));
   };
 
   const reorder = usePlaylistTrackReorder({
@@ -61,7 +77,7 @@ export function useTrackReorderRows(options: TrackReorderRowsOptions) {
     selectedIndices,
     rowHeight,
     reload: options.reload,
-    onReloaded: reselectReloadedRows,
+    onReloaded,
     // the selection follows the moved tracks to their new places
     onRowsReplaced: (replacement) => {
       selected.value = selected.value.flatMap((item) => {
@@ -72,7 +88,9 @@ export function useTrackReorderRows(options: TrackReorderRowsOptions) {
   });
   const { draggingIndex, isDragging, rowOffset, saving } = reorder;
 
-  let stopFollowingMovedTrack: (() => void) | undefined;
+  watch(saving, (isSaving) => {
+    if (!isSaving) followed = undefined;
+  });
   let focusFrame: number | undefined;
 
   // scroll a row's place into view, rendered or not, as the rows are
@@ -114,24 +132,10 @@ export function useTrackReorderRows(options: TrackReorderRowsOptions) {
   // the track to the row it moved to, and to where it is once the order is
   // read back
   const moveBy = (index: number, delta: number) => {
-    const uri = items.value[index]?.uri;
     const movedTo = reorder.moveBy(index, delta);
     if (movedTo === undefined) return;
+    followed = { row: toRaw(items.value)[movedTo], index: movedTo };
     void nextTick(() => focusHandle(movedTo));
-    stopFollowingMovedTrack?.();
-    const stop = watch(saving, (isSaving) => {
-      if (isSaving) return;
-      stop();
-      // a failed move reads the old order back; the track nearest to where it
-      // was moved is the one moved, as a playlist can hold a track twice
-      if (uri === undefined || items.value[movedTo]?.uri === uri) return;
-      const found = nearestIndexOf(items.value, uri, movedTo);
-      // only while the focus is still on the rows
-      if (found === -1 || !listEl.value?.contains(document.activeElement))
-        return;
-      void nextTick(() => focusHandle(found));
-    });
-    stopFollowingMovedTrack = stop;
   };
 
   const draggedTrack = computed(() =>
@@ -155,7 +159,6 @@ export function useTrackReorderRows(options: TrackReorderRowsOptions) {
   };
 
   onBeforeUnmount(() => {
-    stopFollowingMovedTrack?.();
     if (focusFrame !== undefined) cancelAnimationFrame(focusFrame);
   });
 

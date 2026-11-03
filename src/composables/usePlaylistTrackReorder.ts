@@ -8,10 +8,65 @@ import {
   movedOrder,
   moveListedItems,
   playlistPosition,
+  reloadedRowLocator,
+  type UndoneMove,
 } from "@/helpers/playlist_reorder";
 import { api, ConnectionState } from "@/plugins/api";
-import type { MediaItemType } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  TaskStatus,
+  type BackgroundTask,
+  type EventMessage,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { Ref, computed, reactive, toRaw, watch } from "vue";
+
+const FINISHED_TASK_STATUSES = new Set([
+  TaskStatus.SUCCESS,
+  TaskStatus.PARTIAL_SUCCESS,
+  TaskStatus.FAILED,
+  TaskStatus.CANCELLED,
+]);
+
+/**
+ * Resolves once a background task, such as a removal of playlist tracks, has
+ * finished or is no longer listed. A report sent while disconnected is lost,
+ * so the tasks are listed again once the server is reached.
+ */
+export const untilTaskEnds = (task: BackgroundTask) =>
+  new Promise<void>((resolve) => {
+    if (FINISHED_TASK_STATUSES.has(task.status)) {
+      resolve();
+      return;
+    }
+    let ended = false;
+    const end = (current: BackgroundTask | undefined) => {
+      if (ended || (current && !FINISHED_TASK_STATUSES.has(current.status)))
+        return;
+      ended = true;
+      // the api is still calling its listeners, which unsubscribing now
+      // would cut short
+      queueMicrotask(unsubscribe);
+      stopWatchingConnection();
+      resolve();
+    };
+    const unsubscribe = api.subscribe(
+      EventType.TASKS_UPDATED,
+      (event: EventMessage) =>
+        end((event.data as BackgroundTask[]).find(({ id }) => id === task.id)),
+    ) as () => void;
+    const stopWatchingConnection = watch(
+      () => api.state.value,
+      async (state) => {
+        if (state !== ConnectionState.INITIALIZED) return;
+        try {
+          end((await api.getTasks()).find(({ id }) => id === task.id));
+        } catch {
+          // listed again on the next connection
+        }
+      },
+    );
+  });
 
 // Counts per playlist id, for edits on their way from outside the playlist's
 // listing (such as the track menu), and for every edit that is saving or
@@ -37,22 +92,25 @@ export const isPlaylistEditPending = (id: string) => pendingEdits.has(id);
 /**
  * Send an edit of the playlist's order from outside its listing, such as a
  * move or removal from the track menu; the listing reads its rows back once
- * it is done and holds back its own moves until then.
+ * it is done and holds back its own moves until then. Resolves whether the
+ * edit was made.
  */
 export const sendPlaylistEdit = async function (
   id: string,
   edit: () => Promise<unknown>,
 ) {
   // an edit sent while reconnecting fails, and its rows could not be read back
-  if (!canSavePlaylistMoves()) return;
+  if (!canSavePlaylistMoves()) return false;
   hold(outsideEdits, id);
   hold(pendingEdits, id);
   try {
     await edit();
+    return true;
   } catch {
     // the api already reports the failure to the user, such as the server
     // turning the edit away while another one is running; the listing reads
     // the order back all the same
+    return false;
   } finally {
     // the listing takes over the hold before this one ends
     release(outsideEdits, id);
@@ -76,8 +134,11 @@ interface PlaylistTrackReorderOptions {
   rowHeight: number;
   // Re-reads the listed rows from the provider.
   reload: () => Promise<void>;
-  // Called each time the rows were read back.
-  onReloaded?: () => void;
+  // Called each time the rows were read back, with the row read back that
+  // stands for one listed before, when it can be told.
+  onReloaded?: (
+    locate: (row: MediaItemType) => MediaItemType | undefined,
+  ) => void;
   // Called when a move replaced rows by copies at their new places, with the
   // row that now stands for an old one.
   onRowsReplaced?: (
@@ -101,8 +162,12 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
   let changedMeanwhile = false;
 
   // Saves a move, if any, and reads the rows back while holding off other
-  // edits; a change reported meanwhile is read back as well.
-  const settle = async function (save?: () => Promise<void>) {
+  // edits; a change reported meanwhile is read back as well. `undo` holds the
+  // order from before the move, to match the rows back to when it fails.
+  const settle = async function (
+    save?: () => Promise<void>,
+    undo?: UndoneMove,
+  ) {
     if (settling) {
       changedMeanwhile = true;
       return;
@@ -111,16 +176,20 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     settling = true;
     if (id !== undefined) hold(pendingEdits, id);
     try {
+      let undone: UndoneMove | undefined;
       try {
         await save?.();
       } catch {
         // the api already reports the failure to the user; the provider may
         // have stored part of the move, so its order is read back all the same
+        undone = undo;
       }
       do {
         changedMeanwhile = false;
         await reload();
-        options.onReloaded?.();
+        const locate = reloadedRowLocator(toRaw(items.value), undone);
+        undone = undefined;
+        options.onReloaded?.((row) => locate(toRaw(row)));
       } while (changedMeanwhile);
     } finally {
       settling = false;
@@ -178,10 +247,15 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
       order.map((from, index) => [before[from], after[index]]),
     );
     options.onRowsReplaced?.((row) => pairs.get(toRaw(row)));
-    await settle(() =>
-      positions.length === 1
-        ? api.movePlaylistTrack(id, positions[0]!, toIndex + 1)
-        : api.movePlaylistTracks(id, positions as number[], toIndex + 1),
+    const indexBefore = new Map(
+      order.map((from, index) => [after[index], from]),
+    );
+    await settle(
+      () =>
+        positions.length === 1
+          ? api.movePlaylistTrack(id, positions[0]!, toIndex + 1)
+          : api.movePlaylistTracks(id, positions as number[], toIndex + 1),
+      { before, indexBefore },
     );
   };
 

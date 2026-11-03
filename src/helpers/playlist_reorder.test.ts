@@ -6,8 +6,8 @@ import {
   listsPlaylistFromStart,
   movedOrder,
   moveListedItems,
-  nearestIndexOf,
   playlistPosition,
+  reloadedRowLocator,
 } from "./playlist_reorder";
 
 const listing = (count: number): MediaItemType[] =>
@@ -120,18 +120,55 @@ describe("movedOrder", () => {
   });
 });
 
-describe("nearestIndexOf", () => {
-  const rows = ["A", "B", "A", "C"].map((name, index) =>
-    track({ item_id: `${index}`, uri: `library://track/${name}` }),
-  );
+describe("reloadedRowLocator", () => {
+  // the tracks named, at positions 1, 2, ...
+  const rows = (...names: string[]) =>
+    names.map((name, index) =>
+      track({
+        item_id: name,
+        uri: `library://track/${name}`,
+        position: index + 1,
+      }),
+    );
+  // the second A of A/B/A/C moved to the top, as listed before saving
+  const moved = () => {
+    const before = rows("A", "B", "A", "C");
+    const after = moveListedItems(before, [2], 0);
+    const indexBefore = new Map(
+      movedOrder(before.length, [2], 0).map((from, index) => [
+        after[index],
+        from,
+      ]),
+    );
+    return { before, after, indexBefore };
+  };
 
-  it("finds the row holding the track nearest to the given index", () => {
-    expect(nearestIndexOf(rows, "library://track/A", 3)).toBe(2);
-    expect(nearestIndexOf(rows, "library://track/A", 0)).toBe(0);
-    expect(nearestIndexOf(rows, "library://track/C", 0)).toBe(3);
+  it("matches a row by track and position", () => {
+    const { after } = moved();
+    const reloaded = rows("A", "A", "B", "C");
+    const locate = reloadedRowLocator(reloaded);
+
+    expect(after.map(locate)).toEqual(reloaded);
   });
 
-  it("finds nothing when no row holds the track", () => {
-    expect(nearestIndexOf(rows, "library://track/D", 1)).toBe(-1);
+  it("puts the rows of a failed move back where they were", () => {
+    const { before, after, indexBefore } = moved();
+    const reloaded = rows("A", "B", "A", "C");
+    const locate = reloadedRowLocator(reloaded, { before, indexBefore });
+
+    // the moved A is the second one again, not the first
+    expect(locate(after[0])).toBe(reloaded[2]);
+    expect(locate(after[1])).toBe(reloaded[0]);
+    expect(locate(after[2])).toBe(reloaded[1]);
+  });
+
+  it("only finds a track listed once when a failed move left another order", () => {
+    const { before, after, indexBefore } = moved();
+    const reloaded = rows("B", "A", "C", "A");
+    const locate = reloadedRowLocator(reloaded, { before, indexBefore });
+
+    expect(locate(after[0])).toBeUndefined();
+    expect(locate(after[2])).toBe(reloaded[0]);
+    expect(locate(after[3])).toBe(reloaded[2]);
   });
 });
