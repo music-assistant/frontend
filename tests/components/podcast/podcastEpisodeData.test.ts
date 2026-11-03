@@ -14,6 +14,8 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 import {
+  episodeReleaseDate,
+  otherEpisodes,
   podcastEpisodeBackdrop,
   podcastEpisodeNumber,
 } from "@/components/podcast/podcastEpisodeData";
@@ -100,6 +102,43 @@ describe("podcastEpisodeData", () => {
     it("gives nothing without an episode number", () => {
       expect(podcastEpisodeNumber(podcastEpisode({ season: 2 }))).toBe(
         undefined,
+      );
+    });
+  });
+
+  describe("episodeReleaseDate", () => {
+    it.each([
+      [undefined, ""],
+      ["not a date", ""],
+      [
+        "2026-10-22T08:00:00Z",
+        new Date("2026-10-22T08:00:00Z").toLocaleDateString(undefined, {
+          dateStyle: "medium",
+        }),
+      ],
+    ])("shows %s as %j", (release_date, expected) => {
+      const episode = podcastEpisode({ metadata: { release_date } });
+      expect(episodeReleaseDate(episode)).toBe(expected);
+    });
+  });
+
+  describe("otherEpisodes", () => {
+    const episodes = ["1", "2", "3", "4"].map((item_id) =>
+      podcastEpisode({ item_id }),
+    );
+    const ids = (list: { item_id: string }[]) => list.map((x) => x.item_id);
+
+    it("puts the episodes after the current one first", () => {
+      expect(ids(otherEpisodes(episodes, episodes[1]))).toEqual([
+        "3",
+        "4",
+        "1",
+      ]);
+    });
+
+    it("offers none from a list without the current one", () => {
+      expect(otherEpisodes(episodes, podcastEpisode({ item_id: "9" }))).toEqual(
+        [],
       );
     });
   });

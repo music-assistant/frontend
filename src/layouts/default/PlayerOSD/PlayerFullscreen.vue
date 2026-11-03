@@ -382,12 +382,20 @@
                         chapterClicked(row.item.media_item, bookmark)
                       "
                     >
-                      <!-- no time: the chapters beside it show durations, not positions -->
                       <span class="flex min-w-0 items-center gap-1.5">
-                        <BookmarkIcon :size="14" class="shrink-0 opacity-60" />
+                        <BookmarkIcon
+                          :size="14"
+                          class="shrink-0 fill-primary text-primary"
+                        />
                         <span class="queue-chapter__name">{{
                           bookmark.name
                         }}</span>
+                      </span>
+                      <!-- a position, so it is tinted apart from the chapter durations -->
+                      <span
+                        class="shrink-0 rounded bg-primary/12 px-1.5 text-[0.72rem] font-medium tabular-nums"
+                      >
+                        {{ formatDuration(bookmark.start) }}
                       </span>
                     </button>
                   </template>

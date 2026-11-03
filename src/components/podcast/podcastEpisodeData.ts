@@ -61,3 +61,26 @@ export function podcastEpisodeNumber(
     label: $t("season_episode_number", [season, number]),
   };
 }
+
+/** The episode's publish date for display, empty when it has no valid one. */
+export function episodeReleaseDate(episode: PodcastEpisode): string {
+  const value = episode.metadata?.release_date;
+  const released = value ? new Date(value) : undefined;
+  return released && !isNaN(released.getTime())
+    ? released.toLocaleDateString(undefined, { dateStyle: "medium" })
+    : "";
+}
+
+/**
+ * The episodes to offer beside the one shown: those after it in the given
+ * order, then the ones before it, so the next one to hear comes first. None
+ * while the list does not hold it yet, e.g. still the previous podcast's.
+ */
+export function otherEpisodes(
+  ordered: PodcastEpisode[],
+  current: PodcastEpisode,
+): PodcastEpisode[] {
+  const index = ordered.findIndex((x) => x.item_id === current.item_id);
+  if (index < 0) return [];
+  return [...ordered.slice(index + 1), ...ordered.slice(0, index)];
+}

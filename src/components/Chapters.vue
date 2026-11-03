@@ -1,106 +1,63 @@
 <template>
-  <section v-if="titleKey" style="margin-bottom: 10px">
-    <Toolbar
-      :title="$t(titleKey)"
-      :menu-items="toolbarMenuItems"
-      @title-clicked="toggleExpand"
-    />
-    <v-divider />
-    <!-- a single tab says no more than the header -->
-    <div v-if="expanded && tabs.length > 1" class="chapter-tabs">
+  <!-- laid out as the rows of the other detail pages -->
+  <section v-if="titleKey" class="px-7 pt-[26px]">
+    <div class="mb-2 flex flex-wrap items-center justify-between gap-2.5">
+      <DetailSectionTitle :title="$t(titleKey)" />
+      <!-- a single tab says no more than the title -->
       <Tabs
+        v-if="tabs.length > 1"
         :model-value="shownTab"
         @update:model-value="(v) => (activeTab = v as ChapterTab)"
       >
-        <TabsList variant="line">
+        <TabsList>
           <TabsTrigger v-for="tab in tabs" :key="tab.id" :value="tab.id">
             {{ $t(tab.labelKey) }}
           </TabsTrigger>
         </TabsList>
       </Tabs>
     </div>
-    <div v-if="expanded" class="p-2.5">
-      <v-list>
-        <template v-for="row in rows" :key="row.key">
-          <v-list-item
-            v-if="row.chapter"
-            :disabled="!itemIsAvailable(itemDetails)"
-            @click="chapterClicked(row.chapter)"
+    <!-- the hover area reaches past the text, so the rows line up with the title -->
+    <div class="-mx-2 divide-y divide-[rgba(var(--v-theme-on-surface),0.08)]">
+      <template v-for="row in rows" :key="row.key">
+        <button
+          v-if="row.chapter"
+          type="button"
+          class="flex h-14 w-full items-center gap-3 rounded-lg px-2 text-left hover:bg-[rgba(var(--v-theme-on-surface),0.05)] disabled:opacity-50"
+          :disabled="!itemIsAvailable(itemDetails)"
+          data-testid="chapter-row"
+          @click="chapterClicked(row.chapter)"
+        >
+          <span
+            class="flex size-10 shrink-0 items-center justify-center rounded-md bg-[rgba(var(--v-theme-on-surface),0.08)] text-[13px] font-medium tabular-nums"
           >
-            <template #prepend>
-              <div style="width: 50px">
-                <v-chip>
-                  {{ row.chapter.position }}
-                </v-chip>
-              </div>
-            </template>
-            <template #title>
-              <div>{{ row.chapter.name }}</div>
-            </template>
-            <template #append>
-              <span v-if="row.chapter.end" class="text-caption"
-                >{{ formatDuration(row.chapter.end - row.chapter.start) }}
-              </span>
-            </template>
-          </v-list-item>
-          <v-list-item
-            v-else-if="row.bookmark"
-            :class="{ 'bookmark--in-chapter': row.inChapter }"
-            :disabled="!itemIsAvailable(itemDetails)"
-            @click="bookmarkClicked(row.bookmark)"
+            {{ row.chapter.position }}
+          </span>
+          <span
+            class="min-w-0 flex-1 truncate text-[15px] font-medium"
+            data-testid="chapter-name"
           >
-            <!-- where the bookmark is kept: its provider, or Music Assistant -->
-            <template #prepend>
-              <div style="width: 50px">
-                <img
-                  v-if="row.bookmark.stored_by_music_assistant"
-                  src="@/assets/icon.svg"
-                  alt="Music Assistant"
-                  title="Music Assistant"
-                  width="20"
-                  height="20"
-                />
-                <ProviderIcon
-                  v-else
-                  :domain="providerDomain(row.bookmark)"
-                  :size="20"
-                />
-              </div>
-            </template>
-            <template #title>
-              <div class="d-flex align-center ga-2">
-                <span class="text-truncate">{{ row.bookmark.name }}</span>
-                <template v-if="isEditable(row.bookmark)">
-                  <v-btn
-                    icon
-                    variant="text"
-                    size="x-small"
-                    :title="$t('rename_bookmark')"
-                    @click.stop="renameClicked(row.bookmark)"
-                  >
-                    <Pencil :size="16" />
-                  </v-btn>
-                  <v-btn
-                    icon
-                    variant="text"
-                    size="x-small"
-                    :title="$t('delete')"
-                    @click.stop="removeClicked(row.bookmark)"
-                  >
-                    <Trash2 :size="16" />
-                  </v-btn>
-                </template>
-              </div>
-            </template>
-            <!-- a position only where no chapter durations share the column -->
-            <template v-if="shownTab === 'bookmarks'" #append>
-              <span class="text-caption">{{
-                formatDuration(row.bookmark.start)
-              }}</span>
-            </template>
-          </v-list-item>
-        </template>
-      </v-list>
+            {{ row.chapter.name }}
+          </span>
+          <span
+            v-if="row.chapter.end"
+            class="min-w-11 shrink-0 text-right text-[13px] text-[rgba(var(--v-theme-on-surface),0.6)] tabular-nums"
+            data-testid="chapter-duration"
+          >
+            {{ formatDuration(row.chapter.end - row.chapter.start) }}
+          </span>
+          <!-- where the bookmarks have their menu, so the times line up -->
+          <span class="w-7 shrink-0"></span>
+        </button>
+        <BookmarkRow
+          v-else-if="row.bookmark"
+          :bookmark="row.bookmark"
+          :editable="isEditable(row.bookmark)"
+          :disabled="!itemIsAvailable(itemDetails)"
+          @play="bookmarkClicked(row.bookmark)"
+          @rename="renameClicked(row.bookmark)"
+          @remove="removeClicked(row.bookmark)"
+        />
+      </template>
     </div>
     <BookmarkDialog
       v-model:open="renameDialogOpen"
@@ -113,10 +70,9 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, ChevronUp, Pencil, Trash2 } from "@lucide/vue";
 import BookmarkDialog from "@/components/BookmarkDialog.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
-import Toolbar from "@/components/Toolbar.vue";
+import BookmarkRow from "@/components/BookmarkRow.vue";
+import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   providerEditsBookmarks,
@@ -145,7 +101,6 @@ export interface Props {
 }
 const props = defineProps<Props>();
 
-const expanded = ref(true);
 const { bookmarks } = useBookmarks(() => {
   const item = props.itemDetails;
   return {
@@ -161,24 +116,6 @@ const { bookmarks } = useBookmarks(() => {
       ),
     ],
   };
-});
-const renameDialogOpen = ref(false);
-const renamedBookmark = ref<MediaItemBookmark>();
-
-const toggleExpand = function () {
-  expanded.value = !expanded.value;
-};
-
-const toolbarMenuItems = computed(() => {
-  return [
-    // toggle expand
-    {
-      label: "tooltip.collapse_expand",
-      icon: expanded.value ? ChevronUp : ChevronDown,
-      action: toggleExpand,
-      overflowAllowed: false,
-    },
-  ];
 });
 
 type ChapterTab = "chapters" | "bookmarks" | "all";
@@ -214,7 +151,6 @@ interface ChapterRow {
   key: string;
   chapter?: MediaItemChapter;
   bookmark?: MediaItemBookmark;
-  inChapter?: boolean;
 }
 
 const bookmarkKey = (bookmark: MediaItemBookmark) =>
@@ -244,7 +180,6 @@ const rows = computed<ChapterRow[]>(() => {
     ...group.bookmarks.map((bookmark) => ({
       key: bookmarkKey(bookmark),
       bookmark,
-      inChapter: !!group.chapter,
     })),
   ]);
 });
@@ -261,13 +196,7 @@ const chapterClicked = function (chapter: MediaItemChapter) {
   );
 };
 
-const providerDomain = function (bookmark: MediaItemBookmark) {
-  return (
-    api.providers[bookmark.provider_instance]?.domain ??
-    bookmark.provider_instance
-  );
-};
-
+// the provider, or Music Assistant, that keeps the bookmark
 const storeName = function (bookmark: MediaItemBookmark) {
   return bookmark.stored_by_music_assistant
     ? "Music Assistant"
@@ -292,6 +221,9 @@ const bookmarkClicked = function (bookmark: MediaItemBookmark) {
     { start_position: bookmark.start },
   );
 };
+
+const renameDialogOpen = ref(false);
+const renamedBookmark = ref<MediaItemBookmark>();
 
 const renameClicked = function (bookmark: MediaItemBookmark) {
   renamedBookmark.value = bookmark;
@@ -328,17 +260,3 @@ const removeClicked = function (bookmark: MediaItemBookmark) {
   });
 };
 </script>
-
-<style scoped>
-.bookmark--in-chapter {
-  padding-left: 40px !important;
-}
-
-/* as the tabs of the item listings */
-.chapter-tabs {
-  padding: 10px 16px 0;
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-</style>

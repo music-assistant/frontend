@@ -1,12 +1,5 @@
 import type { MusicAssistantApi } from "@/plugins/api";
-import type { LoadDataParams } from "@/composables/useItemsListing";
-import {
-  ListingType,
-  SortDirection,
-  SortField,
-  type Podcast,
-  type PodcastEpisode,
-} from "@/plugins/api/interfaces";
+import type { Podcast, PodcastEpisode } from "@/plugins/api/interfaces";
 import PodcastEpisodeDetails from "@/views/PodcastEpisodeDetails.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -59,10 +52,10 @@ vi.mock("@/components/Chapters.vue", () => ({
 vi.mock("@/components/details/DetailTextRow.vue", () => ({
   default: { name: "DetailTextRow", template: "<div />" },
 }));
-vi.mock("@/components/ItemsListing.vue", () => ({
+vi.mock("@/components/details/MediaRowList.vue", () => ({
   default: {
-    name: "ItemsListing",
-    props: ["parentItem", "loadPagedData", "path", "sortListing"],
+    name: "MediaRowList",
+    props: ["items", "limit", "viewAllTo", "parentItem"],
     template: "<div data-listing />",
   },
 }));
@@ -113,8 +106,16 @@ function hero(wrapper: VueWrapper) {
 }
 
 function listing(wrapper: VueWrapper) {
-  return wrapper.findComponent({ name: "ItemsListing" });
+  return wrapper.findComponent({ name: "MediaRowList" });
 }
+
+const listedIds = (wrapper: VueWrapper) =>
+  (listing(wrapper).props("items") as PodcastEpisode[]).map((x) => x.item_id);
+
+const podcastRoute = (itemId: string, provider: string) => ({
+  name: "podcast",
+  params: { itemId, provider },
+});
 
 describe("PodcastEpisodeDetails", () => {
   beforeEach(() => {
@@ -154,99 +155,67 @@ describe("PodcastEpisodeDetails", () => {
     expect(hero(wrapper).props("hasNext")).toBe(true);
   });
 
+  // the next one to hear first, the newer ones after it
   it("lists the other episodes with the episode's own podcast", async () => {
     const wrapper = await mountDetails(EPISODES[1]);
 
+    expect(listedIds(wrapper)).toEqual(["ep1", "ep3"]);
     expect(listing(wrapper).props("parentItem")).toEqual(SHOW);
-    mockGetPodcastEpisodes.mockImplementation(async (...args) =>
-      EPISODES.filter((episode) => episode.item_id !== args[8]),
-    );
-    const params: LoadDataParams = {
-      offset: 0,
-      limit: 50,
-      sortBy: "position:desc",
-      sortField: SortField.POSITION,
-      sortDirection: SortDirection.DESC,
-      search: "",
-    };
-    const loadPagedData = listing(wrapper).props("loadPagedData") as (
-      params: LoadDataParams,
-    ) => Promise<PodcastEpisode[]>;
-    const others = await loadPagedData(params);
-    expect(others.map((episode: PodcastEpisode) => episode.item_id)).toEqual([
-      "ep1",
-      "ep3",
-    ]);
-    expect(listing(wrapper).props("sortListing")).toBe(
-      ListingType.PODCAST_EPISODES,
-    );
-    expect(mockGetPodcastEpisodes).toHaveBeenLastCalledWith(
-      SHOW.item_id,
-      SHOW.provider,
-      undefined,
-      "",
-      50,
-      0,
-      SortField.POSITION,
-      SortDirection.DESC,
-      "ep2",
+    expect(listing(wrapper).props("viewAllTo")).toEqual(
+      podcastRoute("pod1", "rss"),
     );
   });
 
-  it("shares the list settings of a library podcast with its podcast page", async () => {
+  it("opens the library podcast for all its episodes", async () => {
     mockGetPodcast.mockResolvedValue(LIBRARY_SHOW);
 
     const wrapper = await mountDetails(EPISODES[1]);
 
     expect(listing(wrapper).props("parentItem")).toEqual(LIBRARY_SHOW);
-    expect(listing(wrapper).props("path")).toBe("podcast.7.library");
-  });
-
-  it("waits for the podcast before showing the list", async () => {
-    let resolvePodcast!: (value: Podcast) => void;
-    mockGetPodcast.mockReturnValue(
-      new Promise((resolve) => (resolvePodcast = resolve)),
+    expect(listing(wrapper).props("viewAllTo")).toEqual(
+      podcastRoute("7", "library"),
     );
-
-    const wrapper = await mountDetails(EPISODES[1]);
-    expect(listing(wrapper).exists()).toBe(false);
-
-    resolvePodcast(LIBRARY_SHOW);
-    await flushPromises();
-    expect(listing(wrapper).props("path")).toBe("podcast.7.library");
   });
 
   it("hides the list while an episode of another podcast loads", async () => {
     const otherShow = podcast({ item_id: "pod2", provider: "rss" });
-    const otherEpisode = podcastEpisode({
-      item_id: "other1",
-      provider: "rss",
-      podcast: otherShow,
-    });
+    const others = ["other1", "other2"].map((item_id) =>
+      podcastEpisode({ item_id, provider: "rss", podcast: otherShow }),
+    );
     const wrapper = await mountDetails(EPISODES[1]);
     let resolvePodcast!: (value: Podcast) => void;
-    mockGetPodcastEpisode.mockResolvedValue(otherEpisode);
-    mockGetPodcastEpisodes.mockResolvedValue([otherEpisode]);
+    mockGetPodcastEpisode.mockResolvedValue(others[0]);
+    mockGetPodcastEpisodes.mockResolvedValue(others);
     mockGetPodcast.mockReturnValue(
       new Promise((resolve) => (resolvePodcast = resolve)),
     );
 
     await wrapper.setProps({ itemId: "other1" });
-    expect(listing(wrapper).exists()).toBe(false);
     await flushPromises();
     expect(listing(wrapper).exists()).toBe(false);
 
     resolvePodcast(otherShow);
     await flushPromises();
-    expect(listing(wrapper).props("path")).toBe("podcast.pod2.rss");
+    expect(listedIds(wrapper)).toEqual(["other2"]);
   });
 
-  it("lists the episodes under the episode's podcast when that cannot be loaded", async () => {
+  it("goes to the episode's podcast when that cannot be loaded", async () => {
     mockGetPodcast.mockRejectedValue(new Error("gone"));
 
     const wrapper = await mountDetails(EPISODES[1]);
 
-    expect(listing(wrapper).props("path")).toBe("podcast.pod1.rss");
+    expect(listing(wrapper).props("parentItem")).toBeUndefined();
+    expect(listing(wrapper).props("viewAllTo")).toEqual(
+      podcastRoute("pod1", "rss"),
+    );
+  });
+
+  it("has no list for a podcast with only this episode", async () => {
+    mockGetPodcastEpisodes.mockResolvedValue([EPISODES[1]]);
+
+    const wrapper = await mountDetails(EPISODES[1]);
+
+    expect(listing(wrapper).exists()).toBe(false);
   });
 
   it("shows no episode when it fails to load", async () => {

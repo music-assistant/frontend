@@ -32,6 +32,7 @@ const { apiMock } = vi.hoisted(() => ({
     providers: {} as Record<string, unknown>,
     getBookmarks: vi.fn(),
     removeBookmark: vi.fn(),
+    setBookmark: vi.fn(),
     playMedia: vi.fn(),
     subscribe: vi.fn(
       (_event: EventType, _callback: (evt: EventMessage) => void) => () => {},
@@ -58,23 +59,36 @@ async function bookmarksUpdated(
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope: vi.fn() } }));
 vi.mock("vue-sonner", () => ({ toast: { success: vi.fn() } }));
-vi.mock("@/components/Toolbar.vue", () => ({
-  default: {
-    name: "Toolbar",
-    props: ["title"],
-    template: '<div class="toolbar">{{ title }}</div>',
-  },
-}));
-vi.mock("@/components/ProviderIcon.vue", () => ({
-  default: {
-    name: "ProviderIcon",
-    props: ["domain"],
-    template: '<span class="provider">{{ domain }}</span>',
-  },
-}));
 vi.mock("@/components/BookmarkDialog.vue", () => ({
-  default: { name: "BookmarkDialog", template: "<div />" },
+  default: {
+    name: "BookmarkDialog",
+    props: ["open", "title", "initialName", "storedIn"],
+    emits: ["save", "update:open"],
+    template: "<div />",
+  },
 }));
+vi.mock("@/components/details/DetailSectionTitle.vue", () => ({
+  default: {
+    name: "DetailSectionTitle",
+    props: ["title"],
+    template: '<h2 class="section-title">{{ title }}</h2>',
+  },
+}));
+// the row menu rendered in place, so its items can be clicked
+vi.mock("@/components/ui/dropdown-menu", () => {
+  const passthrough = { template: "<div><slot /></div>" };
+  return {
+    DropdownMenu: passthrough,
+    DropdownMenuTrigger: passthrough,
+    DropdownMenuContent: passthrough,
+    DropdownMenuSeparator: passthrough,
+    DropdownMenuItem: {
+      emits: ["click"],
+      template:
+        '<button type="button" @click="$emit(\'click\')"><slot /></button>',
+    },
+  };
+});
 
 const book = {
   item_id: "1",
@@ -137,15 +151,28 @@ async function showTab(wrapper: VueWrapper, label: string) {
   await flushPromises();
 }
 
+// chapters and bookmarks in the order they show
+const listRows = (wrapper: VueWrapper) =>
+  wrapper.findAll('[data-testid="chapter-row"], [data-testid="bookmark-row"]');
+
+const isBookmark = (row: ReturnType<typeof listRows>[number]) =>
+  row.attributes("data-testid") === "bookmark-row";
+
+// a chapter with its duration, a bookmark with its position
 const rowTexts = (wrapper: VueWrapper) =>
-  wrapper
-    .findAll(".v-list-item")
-    .map((row) => [
-      row.get(".v-list-item-title").text(),
-      row.find(".v-list-item__append").exists()
-        ? row.get(".v-list-item__append").text()
-        : null,
-    ]);
+  listRows(wrapper).map((row) =>
+    isBookmark(row)
+      ? [
+          row.get('[data-testid="bookmark-name"]').text(),
+          row.get('[data-testid="bookmark-position"]').text(),
+        ]
+      : [
+          row.get('[data-testid="chapter-name"]').text(),
+          row.find('[data-testid="chapter-duration"]').exists()
+            ? row.get('[data-testid="chapter-duration"]').text()
+            : null,
+        ],
+  );
 
 describe("Chapters", () => {
   beforeEach(() => {
@@ -194,14 +221,13 @@ describe("Chapters", () => {
     async (item, bookmarks, title, tabs) => {
       const wrapper = await mountChapters(bookmarks, item as Audiobook);
 
-      expect(wrapper.get(".toolbar").text()).toBe(title);
+      expect(wrapper.get(".section-title").text()).toBe(title);
       expect(wrapper.findAll('[role="tab"]').map((x) => x.text())).toEqual(
         tabs,
       );
     },
   );
 
-  // a position shows only where no chapter durations share the column
   it("lists the chapters first and the bookmarks with their position apart", async () => {
     const wrapper = await mountChapters([
       bookmark(LOCAL, "Later", 754, true),
@@ -225,7 +251,7 @@ describe("Chapters", () => {
     [BUILTIN_ROLE_SCOPES.user, 2],
     [BUILTIN_ROLE_SCOPES.guest, 0],
   ])(
-    "lists each bookmark under its chapter with where it is kept",
+    "lists each bookmark under its chapter, editable where it is kept",
     async (scopes, editButtons) => {
       vi.mocked(authManager.hasScope).mockImplementation(scopeChecker(scopes));
       const wrapper = await mountChapters([
@@ -237,26 +263,24 @@ describe("Chapters", () => {
       await showTab(wrapper, "All");
 
       expect(
-        wrapper.findAll(".v-list-item").map((row) => [
-          row.get(".v-list-item-title").text(),
-          row.find(".provider").exists()
-            ? row.get(".provider").text()
-            : row.find("img").exists()
-              ? row.get("img").attributes("alt")
-              : null,
-          row.findAll(".v-list-item-title button").length,
-          // a chapter shows its duration, a bookmark no time at all
-          row.find(".v-list-item__append").exists()
-            ? row.get(".v-list-item__append").text()
-            : null,
-        ]),
+        listRows(wrapper).map((row) =>
+          isBookmark(row)
+            ? [
+                row.get('[data-testid="bookmark-name"]').text(),
+                row.findAll(
+                  '[data-testid="bookmark-rename"], [data-testid="bookmark-delete"]',
+                ).length,
+                row.get('[data-testid="bookmark-position"]').text(),
+              ]
+            : [row.get('[data-testid="chapter-name"]').text(), 0, null],
+        ),
       ).toEqual([
-        ["First", null, 0, "01:00"],
-        ["On the provider", "audiobookshelf", editButtons, null],
-        ["Second", null, 0, "01:00"],
-        ["Read only", "audible", 0, null],
-        ["Kept by MA", "Music Assistant", editButtons, null],
-        ["Local file", "Music Assistant", editButtons, null],
+        ["First", 0, null],
+        ["On the provider", editButtons, "00:30"],
+        ["Second", 0, null],
+        ["Read only", 0, "01:30"],
+        ["Kept by MA", editButtons, "01:35"],
+        ["Local file", editButtons, "01:40"],
       ]);
     },
   );
@@ -278,8 +302,8 @@ describe("Chapters", () => {
       );
       await showTab(wrapper, "All");
 
-      await wrapper.findAll(".v-list-item")[1].trigger("click");
-      await wrapper.findAll(".v-list-item")[2].trigger("click");
+      await wrapper.get('[data-testid="bookmark-play"]').trigger("click");
+      await wrapper.findAll('[data-testid="chapter-row"]')[1].trigger("click");
 
       expect(apiMock.getBookmarks).toHaveBeenCalledWith(
         item.media_type,
@@ -303,7 +327,7 @@ describe("Chapters", () => {
     eventbus.on("deleteConfirmationDialog", onConfirmation);
     await showTab(wrapper, "Bookmarks");
 
-    await wrapper.findAll(".v-list-item-title button")[1].trigger("click");
+    await wrapper.get('[data-testid="bookmark-delete"]').trigger("click");
     expect(apiMock.removeBookmark).not.toHaveBeenCalled();
 
     apiMock.getBookmarks.mockResolvedValue([]);
@@ -335,6 +359,34 @@ describe("Chapters", () => {
 
     eventbus.off("deleteConfirmationDialog", onConfirmation);
     wrapper.unmount();
+  });
+
+  it("renames a bookmark in a dialog that says where it is kept", async () => {
+    const wrapper = await mountChapters([
+      bookmark(ABS, "On the provider", 30, false),
+    ]);
+    await showTab(wrapper, "Bookmarks");
+    const dialog = () => wrapper.findComponent({ name: "BookmarkDialog" });
+    expect(dialog().props("open")).toBe(false);
+
+    await wrapper.get('[data-testid="bookmark-rename"]').trigger("click");
+    expect(dialog().props()).toMatchObject({
+      open: true,
+      initialName: "On the provider",
+      // the provider's name, as the user knows it
+      storedIn: (apiMock.providers[ABS] as { name: string }).name,
+    });
+
+    dialog().vm.$emit("save", "Renamed");
+    await flushPromises();
+    expect(apiMock.setBookmark).toHaveBeenCalledWith(
+      MediaType.AUDIOBOOK,
+      ABS,
+      "book1",
+      30,
+      "Renamed",
+    );
+    expect(toast.success).toHaveBeenCalledWith("Bookmark renamed");
   });
 
   // the episode page steps to the next item while the last one may still load

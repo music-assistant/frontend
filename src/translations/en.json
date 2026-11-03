@@ -1210,6 +1210,7 @@
     "delete_bookmark_confirm": "Delete the bookmark \"{name}\"?",
     "bookmark_name": "Name",
     "bookmark_saved_in": "Saved in {name}",
+    "play_from_position": "Play from {time}",
     "bookmark_added": "Bookmark added",
     "bookmark_renamed": "Bookmark renamed",
     "bookmark_deleted": "Bookmark deleted",
