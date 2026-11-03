@@ -1269,12 +1269,14 @@ export class MusicAssistantApi {
   public removePlaylistTracks(
     db_playlist_id: string | number,
     positions_to_remove: number[],
+    uris?: string[],
   ): Promise<BackgroundTask> {
     return this.sendCommand<BackgroundTask>(
       "music/playlists/remove_playlist_tracks",
       {
         db_playlist_id,
         positions_to_remove,
+        uris,
       },
     ).then((task) => {
       this._notifyBackgroundTaskStarted(task);
@@ -1286,11 +1288,13 @@ export class MusicAssistantApi {
     db_playlist_id: string | number,
     from_position: number,
     to_position: number,
+    uri?: string,
   ): Promise<void> {
     return this.sendCommand("music/playlists/move_playlist_track", {
       db_playlist_id,
       from_position,
       to_position,
+      uri,
     });
   }
 
@@ -1298,11 +1302,13 @@ export class MusicAssistantApi {
     db_playlist_id: string | number,
     positions: number[],
     to_position?: number,
+    uris?: string[],
   ): Promise<void> {
     return this.sendCommand("music/playlists/move_playlist_tracks", {
       db_playlist_id,
       positions,
       to_position,
+      uris,
     });
   }
 

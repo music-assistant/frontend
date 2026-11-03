@@ -13,45 +13,13 @@ export const playlistPosition = (item: MediaItemType): number | undefined =>
 export const listsPlaylistFromStart = (items: readonly MediaItemType[]) =>
   items.every((item, index) => playlistPosition(item) === index + 1);
 
-/** The listed order from before a failed move, to match rows back to it. */
-export interface UndoneMove {
-  // the rows as listed before the move
-  before: readonly MediaItemType[];
-  // the index each row listed after the move had before it
-  indexBefore: ReadonlyMap<MediaItemType, number>;
-}
-
-/**
- * Finds the row read back that stands for a row listed before, by track and
- * position. After a failed move a playlist holding a track twice can't be
- * matched that way: when the order from before the move was read back, a row
- * goes back to its old place; otherwise only a track listed once is found.
- */
+/** Finds the row read back that stands for a row listed before, by track and position. */
 export const reloadedRowLocator = (
   reloaded: readonly MediaItemType[],
-  undone?: UndoneMove,
 ): ((row: MediaItemType) => MediaItemType | undefined) => {
-  if (!undone) {
-    const key = (row: MediaItemType) => `${row.uri}#${playlistPosition(row)}`;
-    const rows = new Map(reloaded.map((row) => [key(row), row]));
-    return (row) => rows.get(key(row));
-  }
-  const restored =
-    undone.before.length === reloaded.length &&
-    undone.before.every((row, index) => row.uri === reloaded[index].uri);
-  if (restored) {
-    return (row) => {
-      const index = undone.indexBefore.get(row);
-      return index === undefined ? undefined : reloaded[index];
-    };
-  }
-  const counts = new Map<string, number>();
-  for (const row of reloaded)
-    counts.set(row.uri, (counts.get(row.uri) ?? 0) + 1);
-  return (row) =>
-    counts.get(row.uri) === 1
-      ? reloaded.find((listed) => listed.uri === row.uri)
-      : undefined;
+  const key = (row: MediaItemType) => `${row.uri}#${playlistPosition(row)}`;
+  const rows = new Map(reloaded.map((row) => [key(row), row]));
+  return (row) => rows.get(key(row));
 };
 
 /**

@@ -29,14 +29,10 @@ interface ListDragReorderOptions {
   onDragStart?: () => void;
   // Layout of the row at an index, for lists that don't render every row.
   rowBox?: (index: number) => ListRowBox | undefined;
-  // Whether a drag that ends back where the row started still commits, e.g.
-  // because it moves other rows along.
-  commitsInPlace?: (source: number) => boolean;
 }
 
 export function useListDragReorder(options: ListDragReorderOptions) {
-  const { listEl, count, onCommit, onDragStart, rowBox, commitsInPlace } =
-    options;
+  const { listEl, count, onCommit, onDragStart, rowBox } = options;
 
   // Index of the row being dragged (null when idle) and the index the item
   // would be inserted *before* on drop.
@@ -248,7 +244,7 @@ export function useListDragReorder(options: ListDragReorderOptions) {
     // Removing the source first shifts everything after it down by one, so the
     // final resting index is one lower when dropping below the original spot.
     const finalIndex = drop > source ? drop - 1 : drop;
-    if (finalIndex === source && !commitsInPlace?.(source)) return;
+    if (finalIndex === source) return;
     onCommit(source, finalIndex);
   };
 
