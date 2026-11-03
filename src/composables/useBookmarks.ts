@@ -1,4 +1,5 @@
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
+import { errorMessage } from "@/helpers/ai_radio";
 import api, { ConnectionState } from "@/plugins/api";
 import {
   EventType,
@@ -78,27 +79,48 @@ const playingPodcastKey = function (): string | undefined {
  * podcast, so a bookmark Music Assistant would keep can be offered for it.
  */
 export function usePlayingPodcastLibraryCheck() {
-  watch(
-    playingPodcastKey,
-    async (key) => {
-      if (!key || podcastInLibrary.has(key)) return;
-      const [provider, itemId] = [
-        key.slice(0, key.indexOf("/")),
-        key.slice(key.indexOf("/") + 1),
-      ];
-      try {
-        const libraryItem = await api.getLibraryItem(
-          MediaType.PODCAST,
-          itemId,
-          provider,
-        );
-        podcastInLibrary.set(key, !!libraryItem);
-      } catch {
-        // left unknown, so the next episode of the podcast asks again
-      }
-    },
-    { immediate: true },
-  );
+  const check = async function (key: string | undefined) {
+    if (!key || podcastInLibrary.has(key)) return;
+    const [provider, itemId] = [
+      key.slice(0, key.indexOf("/")),
+      key.slice(key.indexOf("/") + 1),
+    ];
+    try {
+      const libraryItem = await api.getLibraryItem(
+        MediaType.PODCAST,
+        itemId,
+        provider,
+      );
+      podcastInLibrary.set(key, !!libraryItem);
+    } catch {
+      // left unknown, so the next episode of the podcast asks again
+    }
+  };
+
+  watch(playingPodcastKey, check, { immediate: true });
+
+  // a podcast added to or removed from the library, one by one or by a sync
+  onMounted(() => {
+    const recheck = function () {
+      podcastInLibrary.clear();
+      check(playingPodcastKey());
+    };
+    const unsubs = [
+      api.subscribe_multi(
+        [
+          EventType.MEDIA_ITEM_ADDED,
+          EventType.MEDIA_ITEM_UPDATED,
+          EventType.MEDIA_ITEM_DELETED,
+        ],
+        (evt: EventMessage) => {
+          const media = evt.data as { media_type?: MediaType } | null;
+          if (media?.media_type === MediaType.PODCAST) recheck();
+        },
+      ),
+      api.subscribe(EventType.MUSIC_SYNC_COMPLETED, recheck),
+    ];
+    onBeforeUnmount(() => unsubs.forEach((unsub) => unsub()));
+  });
 }
 
 /**
@@ -188,8 +210,11 @@ export async function saveNewBookmark(bookmark: NewBookmark, name: string) {
       name,
     );
     toast.success($t("bookmark_added"));
-  } catch {
-    toast.error($t("bookmark_add_failed"));
+  } catch (error) {
+    // e.g. a shared account only its owner may write to: the server says why
+    toast.error($t("bookmark_add_failed"), {
+      description: errorMessage(error),
+    });
   }
 }
 
@@ -306,8 +331,10 @@ export function useBookmarkActions(mediaType: () => MediaType | undefined) {
         name,
       );
       toast.success($t("bookmark_renamed"));
-    } catch {
-      toast.error($t("bookmark_rename_failed"));
+    } catch (error) {
+      toast.error($t("bookmark_rename_failed"), {
+        description: errorMessage(error),
+      });
     }
   };
 
@@ -327,8 +354,10 @@ export function useBookmarkActions(mediaType: () => MediaType | undefined) {
             bookmark.start,
           );
           toast.success($t("bookmark_deleted"));
-        } catch {
-          toast.error($t("bookmark_delete_failed"));
+        } catch (error) {
+          toast.error($t("bookmark_delete_failed"), {
+            description: errorMessage(error),
+          });
         }
       },
     });

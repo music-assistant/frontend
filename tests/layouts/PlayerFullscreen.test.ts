@@ -30,6 +30,7 @@ vi.mock("@/plugins/api", async () => {
     // the menu's ai dj entry derives availability from the provider list
     providers: {},
     subscribe: vi.fn(() => vi.fn()),
+    subscribe_multi: vi.fn(() => vi.fn()),
     getTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
     getPodcastEpisodeTranscript:
       vi.fn<MusicAssistantApi["getPodcastEpisodeTranscript"]>(),

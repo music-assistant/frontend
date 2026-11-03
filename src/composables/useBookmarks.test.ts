@@ -26,6 +26,7 @@ const { apiMock, storeMock, elapsed } = vi.hoisted(() => ({
     getLibraryItem: vi.fn(),
     setBookmark: vi.fn(),
     subscribe: vi.fn(() => () => {}),
+    subscribe_multi: vi.fn(() => () => {}),
     state: { value: "initialized" },
   },
   storeMock: { curQueueItem: undefined as unknown },
@@ -165,6 +166,33 @@ describe("newBookmarkOfPlayingItem", () => {
     },
   );
 
+  // the answer is kept per podcast, until the library changes
+  it("asks again once a podcast is added to the library", async () => {
+    storeMock.curQueueItem = {
+      media_item: {
+        media_type: MediaType.PODCAST_EPISODE,
+        provider: ABS,
+        provider_mappings: [],
+        podcast: { provider: ABS, item_id: "pod_added" },
+      },
+      streamdetails: { provider: ABS, item_id: "episode_1" },
+    } as unknown as QueueItem;
+    apiMock.providers = {};
+    apiMock.subscribe_multi.mockClear();
+    apiMock.getLibraryItem.mockResolvedValue(null);
+    mountWith(usePlayingPodcastLibraryCheck);
+    await flushPromises();
+    expect(newBookmarkOfPlayingItem()).toBeUndefined();
+
+    apiMock.getLibraryItem.mockResolvedValue({ item_id: "8" });
+    const [, onLibraryChange] = apiMock.subscribe_multi.mock
+      .calls[0] as unknown as [unknown, (evt: { data: unknown }) => void];
+    onLibraryChange({ data: { media_type: MediaType.PODCAST } });
+    await flushPromises();
+
+    expect(newBookmarkOfPlayingItem()?.storedIn).toBe("Music Assistant");
+  });
+
   // Music Assistant keeps them for library copies only, the server refuses others
   it("takes none Music Assistant would keep for a copy outside the library", () => {
     playing(MediaType.PODCAST_EPISODE, true, false);
@@ -258,13 +286,16 @@ describe("useBookmarkActions", () => {
     );
   });
 
-  it("says so when the rename fails", async () => {
+  it("says so, and why, when the rename fails", async () => {
     apiMock.setBookmark.mockRejectedValue(new Error("offline"));
     const actions = useBookmarkActions(() => MediaType.AUDIOBOOK);
 
     actions.renameClicked(bookmark("Old name"));
     await actions.renameSaved("New name");
 
-    expect(toast.error).toHaveBeenCalledWith("Could not rename the bookmark");
+    // with the server's reason, e.g. an account only its owner may write to
+    expect(toast.error).toHaveBeenCalledWith("Could not rename the bookmark", {
+      description: "offline",
+    });
   });
 });
