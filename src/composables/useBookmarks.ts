@@ -1,5 +1,5 @@
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
-import api from "@/plugins/api";
+import api, { ConnectionState } from "@/plugins/api";
 import {
   EventType,
   MediaType,
@@ -7,6 +7,8 @@ import {
   Scope,
   type EventMessage,
   type MediaItemBookmark,
+  type PlayableMediaItemType,
+  type StreamDetails,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
@@ -46,6 +48,27 @@ export function bookmarkStoreName(
     : (api.providers[providerInstanceId]?.name ?? providerInstanceId);
 }
 
+/**
+ * Whether Music Assistant keeps bookmarks of the playing copy, which it does for
+ * library copies only: the audiobook's own, or the podcast of an episode.
+ */
+export function musicAssistantStoresBookmarks(
+  media: PlayableMediaItemType,
+  streamdetails: StreamDetails,
+): boolean {
+  if (media.media_type === MediaType.PODCAST_EPISODE) {
+    return "podcast" in media && media.podcast?.provider === "library";
+  }
+  return (
+    media.provider === "library" &&
+    !!media.provider_mappings?.some(
+      (x) =>
+        x.provider_instance === streamdetails.provider &&
+        x.item_id === streamdetails.item_id,
+    )
+  );
+}
+
 export interface NewBookmark {
   mediaType: MediaType;
   providerInstanceId: string;
@@ -57,17 +80,31 @@ export interface NewBookmark {
 
 /**
  * A bookmark at the current position of the active player's item, on the copy
- * it plays; undefined when that item has no bookmarks or no copy chosen yet
+ * it plays; undefined when that item has no bookmarks, no copy chosen yet, no
+ * known position, or no store that takes it
  */
 export function newBookmarkOfPlayingItem(): NewBookmark | undefined {
   const queueItem = store.curQueueItem;
   const media = queueItem?.media_item;
   const streamdetails = queueItem?.streamdetails;
+  const elapsed = resolveActiveElapsedTime();
   if (
     !media ||
     !(media.media_type in BOOKMARK_EDIT_FEATURES) ||
     !streamdetails ||
+    elapsed === undefined ||
     !authManager.hasScope(Scope.LIBRARY_WRITE)
+  ) {
+    return undefined;
+  }
+  const providerKeepsThem = providerEditsBookmarks(
+    streamdetails.provider,
+    media.media_type,
+  );
+  // the server refuses one Music Assistant would keep for a copy outside the library
+  if (
+    !providerKeepsThem &&
+    !musicAssistantStoresBookmarks(media, streamdetails)
   ) {
     return undefined;
   }
@@ -75,13 +112,26 @@ export function newBookmarkOfPlayingItem(): NewBookmark | undefined {
     mediaType: media.media_type,
     providerInstanceId: streamdetails.provider,
     providerItemId: streamdetails.item_id,
-    storedIn: bookmarkStoreName(
-      streamdetails.provider,
-      !providerEditsBookmarks(streamdetails.provider, media.media_type),
-    ),
+    storedIn: bookmarkStoreName(streamdetails.provider, !providerKeepsThem),
     // whole seconds, as the Audiobookshelf web client sets them
-    start: Math.floor(resolveActiveElapsedTime() ?? 0),
+    start: Math.floor(elapsed),
   };
+}
+
+/** Save a new bookmark under the name, with a toast either way. */
+export async function saveNewBookmark(bookmark: NewBookmark, name: string) {
+  try {
+    await api.setBookmark(
+      bookmark.mediaType,
+      bookmark.providerInstanceId,
+      bookmark.providerItemId,
+      bookmark.start,
+      name,
+    );
+    toast.success($t("bookmark_added"));
+  } catch {
+    toast.error($t("bookmark_add_failed"));
+  }
 }
 
 export interface BookmarkedItem {
@@ -100,8 +150,11 @@ export interface BookmarkedItem {
 export function useBookmarks(item: () => BookmarkedItem | undefined) {
   const bookmarks = ref<MediaItemBookmark[]>([]);
   const wanted = computed(item);
+  // only the latest load applies, so an older answer cannot undo a newer one
+  let generation = 0;
 
   const load = async function () {
+    const current = ++generation;
     const requested = wanted.value;
     if (!requested) {
       bookmarks.value = [];
@@ -112,8 +165,7 @@ export function useBookmarks(item: () => BookmarkedItem | undefined) {
       requested.itemId,
       requested.provider,
     );
-    // stepping to another item while this was in flight leaves it for that item's load
-    if (wanted.value?.uri === requested.uri) bookmarks.value = loaded;
+    if (current === generation) bookmarks.value = loaded;
   };
 
   watch(
@@ -123,6 +175,14 @@ export function useBookmarks(item: () => BookmarkedItem | undefined) {
       load();
     },
     { immediate: true },
+  );
+
+  // changes made while the connection was down arrive with the next sync
+  watch(
+    () => api.state?.value,
+    (state, previous) => {
+      if (state === ConnectionState.INITIALIZED && previous !== state) load();
+    },
   );
 
   // a change made here, in the player or on another device
@@ -148,6 +208,8 @@ export function useBookmarks(item: () => BookmarkedItem | undefined) {
 export function useBookmarkActions(mediaType: () => MediaType | undefined) {
   const renameDialogOpen = ref(false);
   const renamedBookmark = ref<MediaItemBookmark>();
+  // the type when the dialog opened: the playing item may change while it is open
+  let renamedType: MediaType | undefined;
 
   // where somebody can make edits, on a copy that takes them
   const isEditable = function (bookmark: MediaItemBookmark) {
@@ -168,21 +230,26 @@ export function useBookmarkActions(mediaType: () => MediaType | undefined) {
 
   const renameClicked = function (bookmark: MediaItemBookmark) {
     renamedBookmark.value = bookmark;
+    renamedType = mediaType();
     renameDialogOpen.value = true;
   };
 
   const renameSaved = async function (name: string) {
     const bookmark = renamedBookmark.value;
-    const type = mediaType();
+    const type = renamedType;
     if (!bookmark || !type) return;
-    await api.setBookmark(
-      type,
-      bookmark.provider_instance,
-      bookmark.item_id,
-      bookmark.start,
-      name,
-    );
-    toast.success($t("bookmark_renamed"));
+    try {
+      await api.setBookmark(
+        type,
+        bookmark.provider_instance,
+        bookmark.item_id,
+        bookmark.start,
+        name,
+      );
+      toast.success($t("bookmark_renamed"));
+    } catch {
+      toast.error($t("bookmark_rename_failed"));
+    }
   };
 
   const removeClicked = function (bookmark: MediaItemBookmark) {
@@ -193,13 +260,17 @@ export function useBookmarkActions(mediaType: () => MediaType | undefined) {
       message: $t("delete_bookmark_confirm", { name: bookmark.name }),
       confirmLabel: $t("delete"),
       onConfirm: async () => {
-        await api.removeBookmark(
-          type,
-          bookmark.provider_instance,
-          bookmark.item_id,
-          bookmark.start,
-        );
-        toast.success($t("bookmark_deleted"));
+        try {
+          await api.removeBookmark(
+            type,
+            bookmark.provider_instance,
+            bookmark.item_id,
+            bookmark.start,
+          );
+          toast.success($t("bookmark_deleted"));
+        } catch {
+          toast.error($t("bookmark_delete_failed"));
+        }
       },
     });
   };

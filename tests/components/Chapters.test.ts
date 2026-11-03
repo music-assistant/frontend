@@ -95,7 +95,11 @@ const book = {
   provider: "library",
   media_type: MediaType.AUDIOBOOK,
   uri: "library://audiobook/1",
-  provider_mappings: [providerMapping({ provider_instance: LOCAL })],
+  provider_mappings: [
+    providerMapping({ provider_instance: LOCAL }),
+    // the copy the provider's bookmarks are made on
+    providerMapping({ provider_instance: ABS, item_id: "book1" }),
+  ],
   metadata: {
     chapters: [
       { position: 1, name: "First", start: 0, end: 60 },

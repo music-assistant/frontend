@@ -58,7 +58,7 @@
           v-else-if="row.bookmark"
           :bookmark="row.bookmark"
           :editable="isEditable(row.bookmark)"
-          :disabled="!itemIsAvailable(itemDetails)"
+          :disabled="!bookmarkPlayable(row.bookmark)"
           @play="bookmarkClicked(row.bookmark)"
           @rename="renameClicked(row.bookmark)"
           @remove="removeClicked(row.bookmark)"
@@ -205,8 +205,18 @@ const chapterClicked = function (chapter: MediaItemChapter) {
   );
 };
 
+// a bookmark plays its own copy, so that copy has to be available
+const bookmarkPlayable = (bookmark: MediaItemBookmark) =>
+  itemIsAvailable(props.itemDetails) &&
+  props.itemDetails.provider_mappings.some(
+    (x) =>
+      x.provider_instance === bookmark.provider_instance &&
+      x.item_id === bookmark.item_id &&
+      x.available,
+  );
+
 const bookmarkClicked = function (bookmark: MediaItemBookmark) {
-  if (!itemIsAvailable(props.itemDetails)) return;
+  if (!bookmarkPlayable(bookmark)) return;
   // play the copy the bookmark was made on, its position may not fit another one
   api.playMedia(
     `${bookmark.provider_instance}://${props.itemDetails.media_type}/${bookmark.item_id}`,

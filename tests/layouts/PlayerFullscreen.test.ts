@@ -425,6 +425,14 @@ describe("PlayerFullscreen chapter queue", () => {
       const queueItem = (store as unknown as TestStore).curQueueItem!;
       queueItem.media_item!.item_id = "1";
       queueItem.media_item!.provider = "library";
+      // the library copy holds the copy that plays, so Music Assistant can keep its bookmarks
+      (
+        queueItem.media_item as unknown as {
+          provider_mappings: { provider_instance: string; item_id: string }[];
+        }
+      ).provider_mappings = [
+        { provider_instance: "audiobookshelf--1", item_id: "book1" },
+      ];
       queueItem.streamdetails = {
         provider: "audiobookshelf--1",
         item_id: "book1",

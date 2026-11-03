@@ -1444,13 +1444,18 @@ export class MusicAssistantApi {
     start: number,
     name: string,
   ): Promise<void> {
-    return this.sendCommand("music/set_bookmark", {
-      media_type,
-      provider_instance_id,
-      provider_item_id,
-      start,
-      name,
-    });
+    return this.sendCommand(
+      "music/set_bookmark",
+      {
+        media_type,
+        provider_instance_id,
+        provider_item_id,
+        start,
+        name,
+      },
+      // the bookmark actions show their own toasts
+      { suppressGlobalError: true },
+    );
   }
 
   public removeBookmark(
@@ -1459,12 +1464,17 @@ export class MusicAssistantApi {
     provider_item_id: string,
     start: number,
   ): Promise<void> {
-    return this.sendCommand("music/remove_bookmark", {
-      media_type,
-      provider_instance_id,
-      provider_item_id,
-      start,
-    });
+    return this.sendCommand(
+      "music/remove_bookmark",
+      {
+        media_type,
+        provider_instance_id,
+        provider_item_id,
+        start,
+      },
+      // the bookmark actions show their own toasts
+      { suppressGlobalError: true },
+    );
   }
 
   // Podcast related endpoints

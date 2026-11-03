@@ -630,6 +630,7 @@ import { useSkipControls } from "@/composables/useSkipControls";
 import {
   BOOKMARK_EDIT_FEATURES,
   newBookmarkOfPlayingItem,
+  saveNewBookmark,
   useBookmarkActions,
   useBookmarks,
   type NewBookmark,
@@ -768,15 +769,7 @@ const addBookmarkClicked = function () {
 };
 
 const bookmarkSaved = async function (name: string) {
-  if (!newBookmark.value) return;
-  await api.setBookmark(
-    newBookmark.value.mediaType,
-    newBookmark.value.providerInstanceId,
-    newBookmark.value.providerItemId,
-    newBookmark.value.start,
-    name,
-  );
-  toast.success($t("bookmark_added"));
+  if (newBookmark.value) await saveNewBookmark(newBookmark.value, name);
 };
 
 const chapterTimerNeeded = computed(

@@ -4,28 +4,57 @@ import {
   type QueueItem,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { defineComponent, nextTick, ref } from "vue";
+import { toast } from "vue-sonner";
 import { providerInstance } from "../../tests/fixtures/providerInstance";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../tests/fixtures/scopes";
-import { newBookmarkOfPlayingItem } from "./useBookmarks";
+import {
+  newBookmarkOfPlayingItem,
+  useBookmarkActions,
+  useBookmarks,
+} from "./useBookmarks";
 
 const ABS = "audiobookshelf--1";
 
-const { apiMock, storeMock } = vi.hoisted(() => ({
-  apiMock: { providers: {} as Record<string, unknown> },
+const { apiMock, storeMock, elapsed } = vi.hoisted(() => ({
+  apiMock: {
+    providers: {} as Record<string, unknown>,
+    getBookmarks: vi.fn(),
+    setBookmark: vi.fn(),
+    subscribe: vi.fn(() => () => {}),
+    state: { value: "initialized" },
+  },
   storeMock: { curQueueItem: undefined as unknown },
+  elapsed: { value: 754.6 as number | undefined },
 }));
 
-vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+vi.mock("@/plugins/api", () => ({
+  api: apiMock,
+  default: apiMock,
+  ConnectionState: { INITIALIZED: "initialized" },
+}));
+vi.mock("vue-sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope: vi.fn() } }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/helpers/activeElapsedTime", () => ({
-  resolveActiveElapsedTime: () => 754.6,
+  resolveActiveElapsedTime: () => elapsed.value,
 }));
 
-function playing(media_type: MediaType, streamdetails = true) {
+function playing(
+  media_type: MediaType,
+  streamdetails = true,
+  inLibrary = true,
+) {
   storeMock.curQueueItem = {
-    media_item: { media_type },
+    // in the library, where Music Assistant keeps the bookmarks the provider does not
+    media_item: {
+      media_type,
+      provider: inLibrary ? "library" : ABS,
+      provider_mappings: [{ provider_instance: ABS, item_id: "book_1" }],
+      podcast: { provider: inLibrary ? "library" : ABS },
+    },
     streamdetails: streamdetails
       ? { provider: ABS, item_id: "book_1" }
       : undefined,
@@ -34,6 +63,7 @@ function playing(media_type: MediaType, streamdetails = true) {
 
 describe("newBookmarkOfPlayingItem", () => {
   beforeEach(() => {
+    elapsed.value = 754.6;
     vi.mocked(authManager.hasScope).mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.user),
     );
@@ -76,5 +106,122 @@ describe("newBookmarkOfPlayingItem", () => {
     playing(mediaType, streamdetails);
 
     expect(newBookmarkOfPlayingItem()).toBeUndefined();
+  });
+
+  it("takes none before the position is known, but one at zero", () => {
+    playing(MediaType.AUDIOBOOK);
+
+    elapsed.value = undefined;
+    expect(newBookmarkOfPlayingItem()).toBeUndefined();
+    elapsed.value = 0;
+    expect(newBookmarkOfPlayingItem()?.start).toBe(0);
+  });
+
+  // Music Assistant keeps them for library copies only, the server refuses others
+  it("takes none Music Assistant would keep for a copy outside the library", () => {
+    playing(MediaType.PODCAST_EPISODE, true, false);
+
+    expect(newBookmarkOfPlayingItem()).toBeUndefined();
+  });
+});
+
+const bookmark = (name: string) => ({
+  name,
+  start: 30,
+  provider_instance: ABS,
+  item_id: "book_1",
+  stored_by_music_assistant: false,
+});
+
+describe("useBookmarks", () => {
+  function mountBookmarks() {
+    let result!: ReturnType<typeof useBookmarks>;
+    mount(
+      defineComponent({
+        setup() {
+          result = useBookmarks(() => ({
+            mediaType: MediaType.AUDIOBOOK,
+            itemId: "1",
+            provider: "library",
+            uri: "library://audiobook/1",
+            copyUris: [`${ABS}://audiobook/book_1`],
+          }));
+          return () => null;
+        },
+      }),
+    );
+    return result;
+  }
+
+  beforeEach(() => {
+    apiMock.getBookmarks.mockReset();
+    apiMock.subscribe.mockReset().mockReturnValue(() => {});
+  });
+
+  // e.g. the first load still in flight when a rename elsewhere reloads them
+  it("keeps the newest answer when an older one arrives last", async () => {
+    const answers: ((value: unknown) => void)[] = [];
+    apiMock.getBookmarks.mockImplementation(
+      () => new Promise((resolve) => answers.push(resolve)),
+    );
+    const { bookmarks } = mountBookmarks();
+    const [, onUpdated] = apiMock.subscribe.mock.calls[0] as unknown as [
+      unknown,
+      (evt: { object_id: string }) => void,
+    ];
+    onUpdated({ object_id: `${ABS}://audiobook/book_1` });
+
+    answers[1]([bookmark("Renamed")]);
+    answers[0]([bookmark("Old name")]);
+    await flushPromises();
+
+    expect(bookmarks.value.map((x) => x.name)).toEqual(["Renamed"]);
+  });
+
+  it("reloads them once the connection is back", async () => {
+    const state = ref("initialized");
+    apiMock.state = state;
+    apiMock.getBookmarks.mockResolvedValue([]);
+    mountBookmarks();
+    await flushPromises();
+    expect(apiMock.getBookmarks).toHaveBeenCalledTimes(1);
+
+    state.value = "disconnected";
+    await nextTick();
+    state.value = "initialized";
+    await flushPromises();
+
+    expect(apiMock.getBookmarks).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("useBookmarkActions", () => {
+  // the full screen queue may move to another item while the dialog is open
+  it("renames with the media type of when the dialog opened", async () => {
+    apiMock.setBookmark.mockResolvedValue(undefined);
+    let mediaType = MediaType.AUDIOBOOK;
+    const actions = useBookmarkActions(() => mediaType);
+
+    actions.renameClicked(bookmark("Old name"));
+    mediaType = MediaType.TRACK;
+    await actions.renameSaved("New name");
+
+    expect(apiMock.setBookmark).toHaveBeenCalledWith(
+      MediaType.AUDIOBOOK,
+      ABS,
+      "book_1",
+      30,
+      "New name",
+    );
+  });
+
+  it("says so when the rename fails", async () => {
+    apiMock.setBookmark.mockRejectedValue(new Error("offline"));
+    const actions = useBookmarkActions(() => MediaType.AUDIOBOOK);
+
+    actions.renameClicked(bookmark("Old name"));
+    await actions.renameSaved("New name");
+
+    expect(toast.error).toHaveBeenCalledWith("Could not rename the bookmark");
   });
 });
