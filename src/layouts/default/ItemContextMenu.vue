@@ -1095,6 +1095,9 @@ export const getContextMenuItems = async function (
               ),
             ),
           );
+          // the rows read back after it would select the tracks taking the
+          // removed ones' places
+          eventbus.emit("clearSelection");
         },
         icon: MinusCircle,
       });

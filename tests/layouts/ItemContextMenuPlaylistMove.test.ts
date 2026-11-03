@@ -174,6 +174,8 @@ describe("move playlist items context menu actions", () => {
     await flushPromises();
 
     expect(apiMock.removePlaylistTracks).toHaveBeenCalledWith("42", [2]);
+    // tracks taking the removed ones' places would stay selected
+    expect(mockEventbusEmit).toHaveBeenCalledWith("clearSelection");
     expect(await editStates()).toEqual(ALL_DISABLED);
     report({ data: [{ ...task, status: TaskStatus.RUNNING }] });
     await flushPromises();
