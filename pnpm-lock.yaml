@@ -18,8 +18,8 @@ importers:
         specifier: 11.2.5
         version: 11.2.5(@vue/compiler-dom@3.5.44)(eslint@10.13.0(jiti@2.7.0))(rollup@4.62.2)(typescript@6.0.3)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.105.0)(terser@5.48.0)(yaml@2.9.1))(vue-i18n@11.4.16(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
       '@lucide/vue':
-        specifier: ^1.61.0
-        version: 1.61.0(vue@3.5.44(typescript@6.0.3))
+        specifier: ^1.66.0
+        version: 1.66.0(vue@3.5.44(typescript@6.0.3))
       '@mdi/font':
         specifier: 7.4.47
         version: 7.4.47
@@ -1377,8 +1377,8 @@ packages:
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
 
-  '@lucide/vue@1.61.0':
-    resolution: {integrity: sha512-XYclbwUQ6Mvf0UskBG9gJH91BdF3VK4Tt6Pv8PSntwPwNnf357PCQnma4TrzOEdwD49UYCtsTafpfytRIxm1cQ==}
+  '@lucide/vue@1.66.0':
+    resolution: {integrity: sha512-cyALYgAzCD2uZ557pM5I/dmFAyTKqtwY7PrdU67gzITkTH+V635u7Uv7VBpQ5hqvmlGqRtbqSDx08LCJHU+GAw==}
     peerDependencies:
       vue: '>=3.0.1'
 
@@ -6358,7 +6358,7 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@lucide/vue@1.61.0(vue@3.5.44(typescript@6.0.3))':
+  '@lucide/vue@1.66.0(vue@3.5.44(typescript@6.0.3))':
     dependencies:
       vue: 3.5.44(typescript@6.0.3)
 
