@@ -24,6 +24,7 @@
           <ComboboxCancel
             v-if="selectedAlias || aliasSearch"
             :aria-label="$t('clear')"
+            @click="aliasSearch = ''"
           />
           <ComboboxTrigger :aria-label="$t('tooltip.open_options')" />
         </ComboboxAnchor>
@@ -121,6 +122,7 @@ watch(
     if (!search) {
       aliasOptions.value = [];
       aliasLoading.value = false;
+      selectedAlias.value = null;
       return;
     }
     aliasLoading.value = true;
