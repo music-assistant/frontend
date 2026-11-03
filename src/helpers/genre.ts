@@ -27,6 +27,41 @@ export function mappedAliases(genre: Genre): string[] {
   );
 }
 
+const compactAliasText = (text: string) =>
+  text
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, "");
+
+const aliasRank = (alias: string, search: string) => {
+  const text = compactAliasText(alias);
+  if (text === search) return 0;
+  if (text.startsWith(search)) return 1;
+  if (text.includes(search)) return 2;
+  return 3;
+};
+
+// Aliases to offer for a search, best matches first. A genre whose name
+// matches offers all its aliases, any other genre only its matching ones.
+// Matching ignores case, accents, spaces and punctuation.
+export function rankedAliases(genres: Genre[], search: string): string[] {
+  const compactSearch = compactAliasText(search);
+  const aliases = new Set<string>();
+  for (const genre of genres) {
+    const nameMatches = compactAliasText(genre.name).includes(compactSearch);
+    for (const alias of genre.genre_aliases || []) {
+      if (nameMatches || compactAliasText(alias).includes(compactSearch)) {
+        aliases.add(alias);
+      }
+    }
+  }
+  return [...aliases].sort(
+    (a, b) =>
+      aliasRank(a, compactSearch) - aliasRank(b, compactSearch) ||
+      a.localeCompare(b),
+  );
+}
+
 // Icon mapping for different media types in genre overview
 export const genreMediaTypeIconMap: Record<MediaType, string | Component> = {
   [MediaType.TRACK]: "mdi-music-note",

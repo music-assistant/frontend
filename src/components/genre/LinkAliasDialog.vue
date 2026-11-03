@@ -11,6 +11,7 @@
       <Combobox
         v-model="selectedAlias"
         open-on-click
+        ignore-filter
         reset-model-value-on-clear
       >
         <ComboboxAnchor>
@@ -74,6 +75,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
+import { rankedAliases } from "@/helpers/genre";
 import { formatAliasName } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { SortField } from "@/plugins/api/interfaces";
@@ -136,13 +138,7 @@ watch(
           summary: false,
         });
         if (search !== aliasSearch.value) return;
-        const allAliases = new Set<string>();
-        for (const genre of genres) {
-          for (const alias of genre.genre_aliases || []) {
-            allAliases.add(alias);
-          }
-        }
-        aliasOptions.value = [...allAliases].sort((a, b) => a.localeCompare(b));
+        aliasOptions.value = rankedAliases(genres, search);
       } finally {
         if (search === aliasSearch.value) aliasLoading.value = false;
       }
