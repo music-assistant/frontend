@@ -15,6 +15,7 @@ import {
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
+import { toast } from "vue-sonner";
 import { providerInstance } from "../fixtures/providerInstance";
 
 // Only the fields the lyrics clock and its gate read are mocked; the elapsed
@@ -151,6 +152,7 @@ vi.mock("vuetify", async () => {
 vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+vi.mock("vue-sonner", () => ({ toast: { success: vi.fn() } }));
 
 vi.mock("@/helpers/players", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/helpers/players")>()),
@@ -440,7 +442,7 @@ describe("PlayerFullscreen chapter queue", () => {
       expect(
         rows.map((x) => [
           x.get(".queue-chapter__name").text(),
-          x.classes().includes("queue-bookmark--in-chapter"),
+          x.attributes("data-in-chapter") === "true",
         ]),
       ).toEqual([
         // a new one goes on the playing copy, at the playing position
@@ -450,9 +452,9 @@ describe("PlayerFullscreen chapter queue", () => {
         ["Second", false],
         ["In the second", true],
       ]);
-      expect(fullscreen.find(".queue-bookmark-add__divider").exists()).toBe(
-        true,
-      );
+      expect(
+        fullscreen.find('[data-testid="add-bookmark-divider"]').exists(),
+      ).toBe(true);
       await rows[4].trigger("click");
       expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 90);
 
@@ -471,6 +473,8 @@ describe("PlayerFullscreen chapter queue", () => {
         10,
         "Arrakis",
       );
+      await vi.advanceTimersByTimeAsync(0);
+      expect(toast.success).toHaveBeenCalledWith("bookmark_added");
       api.providers = {};
     },
   );

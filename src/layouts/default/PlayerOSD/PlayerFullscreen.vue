@@ -312,12 +312,14 @@
                 >
                   <!-- on top, so a long chapter list does not hide it -->
                   <template v-if="canAddBookmark">
+                    <!-- an action, not content: accent colored, without the active chapter's fill -->
                     <button
                       type="button"
-                      class="queue-chapter queue-bookmark-add"
+                      class="queue-chapter text-primary!"
+                      data-testid="add-bookmark"
                       @click.stop="addBookmarkClicked"
                     >
-                      <span class="queue-bookmark__label">
+                      <span class="flex min-w-0 items-center gap-1.5">
                         <BookmarkPlus :size="14" />
                         <span class="queue-chapter__name">{{
                           $t("add_bookmark_at", {
@@ -328,7 +330,8 @@
                     </button>
                     <div
                       v-if="queueChapterGroups.length"
-                      class="queue-bookmark-add__divider"
+                      class="mx-2 my-1 h-px bg-[color-mix(in_srgb,var(--text-color,currentColor)_15%,transparent)]"
+                      data-testid="add-bookmark-divider"
                     ></div>
                   </template>
                   <template
@@ -373,12 +376,15 @@
                       :key="`bookmark-${bookmark.start}`"
                       type="button"
                       class="queue-chapter"
-                      :class="{ 'queue-bookmark--in-chapter': group.chapter }"
-                      @click.stop="bookmarkClicked(bookmark)"
+                      :class="{ 'pl-6!': group.chapter }"
+                      :data-in-chapter="!!group.chapter"
+                      @click.stop="
+                        chapterClicked(row.item.media_item, bookmark)
+                      "
                     >
                       <!-- no time: the chapters beside it show durations, not positions -->
-                      <span class="queue-bookmark__label">
-                        <BookmarkIcon :size="14" class="queue-bookmark__icon" />
+                      <span class="flex min-w-0 items-center gap-1.5">
+                        <BookmarkIcon :size="14" class="shrink-0 opacity-60" />
                         <span class="queue-chapter__name">{{
                           bookmark.name
                         }}</span>
@@ -624,23 +630,21 @@ import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQue
 import { useNowPlayingSource } from "@/composables/nowPlayingSource";
 import { useSkipControls } from "@/composables/useSkipControls";
 import {
+  BOOKMARK_EDIT_FEATURES,
+  newBookmarkOfPlayingItem,
+  useBookmarks,
+  type NewBookmark,
+} from "@/composables/useBookmarks";
+import {
   resolveActiveElapsedTime,
   resolveQueueElapsedTime,
 } from "@/helpers/activeElapsedTime";
-import {
-  BOOKMARK_EDIT_FEATURES,
-  newBookmarkOfPlayingItem,
-  type NewBookmark,
-} from "@/helpers/bookmarks";
 import {
   groupBookmarksByChapter,
   resolveCurrentChapter,
 } from "@/helpers/chapters";
 import api from "@/plugins/api";
 import {
-  EventMessage,
-  EventType,
-  MediaItemBookmark,
   MediaItemChapter,
   MediaType,
   PlaybackState,
@@ -662,6 +666,7 @@ import {
   EllipsisVerticalIcon,
 } from "@lucide/vue";
 import Color from "color";
+import { toast } from "vue-sonner";
 import {
   computed,
   markRaw,
@@ -772,6 +777,7 @@ const bookmarkSaved = async function (name: string) {
     newBookmark.value.start,
     name,
   );
+  toast.success($t("bookmark_added"));
 };
 
 const chapterTimerNeeded = computed(
@@ -1367,68 +1373,37 @@ watch(
   },
 );
 
-// only the copy that is playing: a bookmark's position does not fit another copy
-const playingBookmarks = ref<MediaItemBookmark[]>([]);
-
-const loadPlayingBookmarks = async function () {
-  const queueItem = store.curQueueItem;
-  const media = queueItem?.media_item;
-  const streamdetails = queueItem?.streamdetails;
+const { bookmarks: itemBookmarks } = useBookmarks(() => {
+  const media = store.curQueueItem?.media_item;
+  const streamdetails = store.curQueueItem?.streamdetails;
   if (
     !store.showFullscreenPlayer ||
     !media ||
     !(media.media_type in BOOKMARK_EDIT_FEATURES) ||
     !streamdetails
   ) {
-    playingBookmarks.value = [];
-    return;
+    return undefined;
   }
-  const bookmarks = await api.getBookmarks(
-    media.media_type,
-    media.item_id,
-    media.provider,
-  );
-  // the queue may have moved on while the bookmarks were fetched
-  if (store.curQueueItem?.queue_item_id !== queueItem?.queue_item_id) return;
-  playingBookmarks.value = bookmarks.filter(
-    (x) =>
-      x.provider_instance === streamdetails.provider &&
-      x.item_id === streamdetails.item_id,
-  );
-};
-
-watch(
-  () => [
-    store.showFullscreenPlayer,
-    store.curQueueItem?.queue_item_id,
-    store.curQueueItem?.streamdetails?.item_id,
-  ],
-  () => loadPlayingBookmarks(),
-  { immediate: true },
-);
-
-onMounted(() => {
-  const unsub = api.subscribe(
-    EventType.BOOKMARKS_UPDATED,
-    (evt: EventMessage) => {
-      const streamdetails = store.curQueueItem?.streamdetails;
-      if (
-        streamdetails &&
-        evt.object_id ===
-          `${streamdetails.provider}://${streamdetails.media_type}/${streamdetails.item_id}`
-      ) {
-        loadPlayingBookmarks();
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
+  return {
+    mediaType: media.media_type,
+    itemId: media.item_id,
+    provider: media.provider,
+    uri: media.uri,
+    copyUris: [
+      `${streamdetails.provider}://${media.media_type}/${streamdetails.item_id}`,
+    ],
+  };
 });
 
-const bookmarkClicked = function (bookmark: MediaItemBookmark) {
-  const player = store.activePlayer;
-  if (!player) return;
-  api.playerCommandSeek(player.player_id, bookmark.start);
-};
+// only the copy that is playing: a bookmark's position does not fit another copy
+const playingBookmarks = computed(() => {
+  const streamdetails = store.curQueueItem?.streamdetails;
+  return itemBookmarks.value.filter(
+    (x) =>
+      x.provider_instance === streamdetails?.provider &&
+      x.item_id === streamdetails?.item_id,
+  );
+});
 
 const queueChapterGroups = computed(() =>
   groupBookmarksByChapter(
@@ -1823,37 +1798,6 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   font-size: 0.72rem;
   opacity: 0.6;
-}
-
-.queue-bookmark__label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.queue-bookmark__icon {
-  flex: 0 0 auto;
-  opacity: 0.6;
-}
-
-.queue-bookmark--in-chapter {
-  padding-left: 24px;
-}
-
-/* an action, not content: accent colored, without the active chapter's fill */
-.queue-bookmark-add {
-  color: var(--primary);
-}
-
-.queue-bookmark-add__divider {
-  height: 1px;
-  margin: 4px 8px;
-  background: color-mix(
-    in srgb,
-    var(--text-color, currentColor) 15%,
-    transparent
-  );
 }
 
 .queue-empty {

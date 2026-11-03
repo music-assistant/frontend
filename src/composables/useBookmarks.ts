@@ -1,8 +1,16 @@
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import api from "@/plugins/api";
-import { MediaType, ProviderFeature, Scope } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  MediaType,
+  ProviderFeature,
+  Scope,
+  type EventMessage,
+  type MediaItemBookmark,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // the provider feature to edit bookmarks, per media type that has bookmarks
 export const BOOKMARK_EDIT_FEATURES: Partial<
@@ -60,4 +68,61 @@ export function newBookmarkOfPlayingItem(): NewBookmark | undefined {
     // whole seconds, as the Audiobookshelf web client sets them
     start: Math.floor(resolveActiveElapsedTime() ?? 0),
   };
+}
+
+export interface BookmarkedItem {
+  mediaType: MediaType;
+  itemId: string;
+  provider: string;
+  uri: string;
+  // the copies whose changes reload the bookmarks
+  copyUris: string[];
+}
+
+/**
+ * The user's bookmarks of the item, undefined for none, kept current with the
+ * server's changes.
+ */
+export function useBookmarks(item: () => BookmarkedItem | undefined) {
+  const bookmarks = ref<MediaItemBookmark[]>([]);
+  const wanted = computed(item);
+
+  const load = async function () {
+    const requested = wanted.value;
+    if (!requested) {
+      bookmarks.value = [];
+      return;
+    }
+    const loaded = await api.getBookmarks(
+      requested.mediaType,
+      requested.itemId,
+      requested.provider,
+    );
+    // stepping to another item while this was in flight leaves it for that item's load
+    if (wanted.value?.uri === requested.uri) bookmarks.value = loaded;
+  };
+
+  watch(
+    () => wanted.value && [wanted.value.uri, ...wanted.value.copyUris].join(),
+    () => {
+      bookmarks.value = [];
+      load();
+    },
+    { immediate: true },
+  );
+
+  // a change made here, in the player or on another device
+  onMounted(() => {
+    const unsub = api.subscribe(
+      EventType.BOOKMARKS_UPDATED,
+      (evt: EventMessage) => {
+        if (evt.object_id && wanted.value?.copyUris.includes(evt.object_id)) {
+          load();
+        }
+      },
+    );
+    onBeforeUnmount(unsub);
+  });
+
+  return { bookmarks };
 }

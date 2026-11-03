@@ -12,13 +12,16 @@ import {
   eventbus,
   type DeleteConfirmationDialogEvent,
 } from "@/plugins/eventbus";
+import { authManager } from "@/plugins/auth";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "vue-sonner";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import { providerInstance } from "../fixtures/providerInstance";
 import { providerMapping } from "../fixtures/providerMapping";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 const ABS = "audiobookshelf--1";
 const AUDIBLE = "audible--1";
@@ -53,6 +56,8 @@ async function bookmarksUpdated(
 }
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+vi.mock("@/plugins/auth", () => ({ authManager: { hasScope: vi.fn() } }));
+vi.mock("vue-sonner", () => ({ toast: { success: vi.fn() } }));
 vi.mock("@/components/Toolbar.vue", () => ({
   default: {
     name: "Toolbar",
@@ -145,6 +150,9 @@ const rowTexts = (wrapper: VueWrapper) =>
 describe("Chapters", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
     apiMock.providers = {
       [ABS]: providerInstance({
         domain: "audiobookshelf",
@@ -212,39 +220,46 @@ describe("Chapters", () => {
     ]);
   });
 
-  // edits only where somebody can make them
-  it("lists each bookmark under its chapter with where it is kept", async () => {
-    const wrapper = await mountChapters([
-      bookmark(LOCAL, "Local file", 100, true),
-      bookmark(ABS, "On the provider", 30, false),
-      bookmark(AUDIBLE, "Read only", 90, false),
-      bookmark(AUDIBLE, "Kept by MA", 95, true),
-    ]);
-    await showTab(wrapper, "All");
+  // edits only where somebody can make them, a guest makes none
+  it.each([
+    [BUILTIN_ROLE_SCOPES.user, 2],
+    [BUILTIN_ROLE_SCOPES.guest, 0],
+  ])(
+    "lists each bookmark under its chapter with where it is kept",
+    async (scopes, editButtons) => {
+      vi.mocked(authManager.hasScope).mockImplementation(scopeChecker(scopes));
+      const wrapper = await mountChapters([
+        bookmark(LOCAL, "Local file", 100, true),
+        bookmark(ABS, "On the provider", 30, false),
+        bookmark(AUDIBLE, "Read only", 90, false),
+        bookmark(AUDIBLE, "Kept by MA", 95, true),
+      ]);
+      await showTab(wrapper, "All");
 
-    expect(
-      wrapper.findAll(".v-list-item").map((row) => [
-        row.get(".v-list-item-title").text(),
-        row.find(".provider").exists()
-          ? row.get(".provider").text()
-          : row.find("img").exists()
-            ? row.get("img").attributes("alt")
+      expect(
+        wrapper.findAll(".v-list-item").map((row) => [
+          row.get(".v-list-item-title").text(),
+          row.find(".provider").exists()
+            ? row.get(".provider").text()
+            : row.find("img").exists()
+              ? row.get("img").attributes("alt")
+              : null,
+          row.findAll(".v-list-item-title button").length,
+          // a chapter shows its duration, a bookmark no time at all
+          row.find(".v-list-item__append").exists()
+            ? row.get(".v-list-item__append").text()
             : null,
-        row.findAll(".v-list-item-title button").length,
-        // a chapter shows its duration, a bookmark no time at all
-        row.find(".v-list-item__append").exists()
-          ? row.get(".v-list-item__append").text()
-          : null,
-      ]),
-    ).toEqual([
-      ["First", null, 0, "01:00"],
-      ["On the provider", "audiobookshelf", 2, null],
-      ["Second", null, 0, "01:00"],
-      ["Read only", "audible", 0, null],
-      ["Kept by MA", "Music Assistant", 2, null],
-      ["Local file", "Music Assistant", 2, null],
-    ]);
-  });
+        ]),
+      ).toEqual([
+        ["First", null, 0, "01:00"],
+        ["On the provider", "audiobookshelf", editButtons, null],
+        ["Second", null, 0, "01:00"],
+        ["Read only", "audible", 0, null],
+        ["Kept by MA", "Music Assistant", editButtons, null],
+        ["Local file", "Music Assistant", editButtons, null],
+      ]);
+    },
+  );
 
   // an episode is played on its own, so its chapters start at a position too
   it.each([
@@ -300,6 +315,7 @@ describe("Chapters", () => {
       "book1",
       30,
     );
+    expect(toast.success).toHaveBeenCalledWith("Bookmark deleted");
     // the list follows the server's event, for a copy of this item only
     await bookmarksUpdated(ABS, "other-book");
     expect(rowTexts(wrapper)).toEqual([["Local file", "00:30"]]);

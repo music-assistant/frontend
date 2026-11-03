@@ -118,23 +118,27 @@ import BookmarkDialog from "@/components/BookmarkDialog.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { providerEditsBookmarks } from "@/helpers/bookmarks";
+import {
+  providerEditsBookmarks,
+  useBookmarks,
+} from "@/composables/useBookmarks";
 import { groupBookmarksByChapter } from "@/helpers/chapters";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   MediaType,
+  Scope,
   type Audiobook,
   type MediaItemBookmark,
   type MediaItemChapter,
   type PodcastEpisode,
-  EventType,
-  type EventMessage,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { toast } from "vue-sonner";
+import { computed, ref } from "vue";
 
 export interface Props {
   itemDetails: Audiobook | PodcastEpisode;
@@ -142,7 +146,22 @@ export interface Props {
 const props = defineProps<Props>();
 
 const expanded = ref(true);
-const bookmarks = ref<MediaItemBookmark[]>([]);
+const { bookmarks } = useBookmarks(() => {
+  const item = props.itemDetails;
+  return {
+    mediaType: item.media_type,
+    itemId: item.item_id,
+    provider: item.provider,
+    uri: item.uri,
+    // a change made to any copy of the item
+    copyUris: [
+      item.uri,
+      ...item.provider_mappings.map(
+        (x) => `${x.provider_instance}://${item.media_type}/${x.item_id}`,
+      ),
+    ],
+  };
+});
 const renameDialogOpen = ref(false);
 const renamedBookmark = ref<MediaItemBookmark>();
 
@@ -257,22 +276,12 @@ const storeName = function (bookmark: MediaItemBookmark) {
 };
 
 const isEditable = (bookmark: MediaItemBookmark) =>
-  bookmark.stored_by_music_assistant ||
-  providerEditsBookmarks(
-    bookmark.provider_instance,
-    props.itemDetails.media_type,
-  );
-
-const loadBookmarks = async function () {
-  const item = props.itemDetails;
-  const loaded = await api.getBookmarks(
-    item.media_type,
-    item.item_id,
-    item.provider,
-  );
-  // stepping to another item while this was in flight leaves it for that item's load
-  if (props.itemDetails.uri === item.uri) bookmarks.value = loaded;
-};
+  authManager.hasScope(Scope.LIBRARY_WRITE) &&
+  (bookmark.stored_by_music_assistant ||
+    providerEditsBookmarks(
+      bookmark.provider_instance,
+      props.itemDetails.media_type,
+    ));
 
 const bookmarkClicked = function (bookmark: MediaItemBookmark) {
   if (!itemIsAvailable(props.itemDetails)) return;
@@ -299,6 +308,7 @@ const renameSaved = async function (name: string) {
     bookmark.start,
     name,
   );
+  toast.success($t("bookmark_renamed"));
 };
 
 const removeClicked = function (bookmark: MediaItemBookmark) {
@@ -313,36 +323,10 @@ const removeClicked = function (bookmark: MediaItemBookmark) {
         bookmark.item_id,
         bookmark.start,
       );
+      toast.success($t("bookmark_deleted"));
     },
   });
 };
-
-watch(
-  () => props.itemDetails.uri,
-  () => {
-    bookmarks.value = [];
-    loadBookmarks();
-  },
-  { immediate: true },
-);
-
-// a change made here, in the player or on another device, to any copy of the item
-onMounted(() => {
-  const unsub = api.subscribe(
-    EventType.BOOKMARKS_UPDATED,
-    (evt: EventMessage) => {
-      const item = props.itemDetails;
-      const copies = [
-        item.uri,
-        ...item.provider_mappings.map(
-          (x) => `${x.provider_instance}://${item.media_type}/${x.item_id}`,
-        ),
-      ];
-      if (evt.object_id && copies.includes(evt.object_id)) loadBookmarks();
-    },
-  );
-  onBeforeUnmount(unsub);
-});
 </script>
 
 <style scoped>
