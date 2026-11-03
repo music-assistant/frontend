@@ -305,6 +305,30 @@ describe("usePlaylistTrackReorder", () => {
     expect(isPlaylistEditPending("1")).toBe(false);
   });
 
+  it("reads the order back after a move saved by a listing closed meanwhile", async () => {
+    let finishSave = () => {};
+    apiMock.movePlaylistTrack.mockImplementation(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const closed = setup(["A", "B", "C"], []);
+    const move = closed.reorder.moveRows([0], 2);
+    mounted.shift()!.unmount();
+    // the playlist reopens while the move saves, loading the old order
+    const reopened = setup(["A", "B", "C"], []);
+    expect(reopened.reorder.saving.value).toBe(true);
+
+    finishSave();
+    await move;
+    expect(reopened.reload).toHaveBeenCalledOnce();
+    await flushPromises();
+    expect(reopened.reorder.saving.value).toBe(false);
+
+    // nothing to read back after this listing's own move
+    apiMock.movePlaylistTrack.mockResolvedValue();
+    await reopened.reorder.moveRows([0], 1);
+    expect(reopened.reload).toHaveBeenCalledTimes(2);
+  });
+
   it("reads the order back once an edit from the menu is done", async () => {
     let finishMove = () => {};
     let finishReload = () => {};
@@ -384,6 +408,8 @@ describe("untilTaskEnds", () => {
       if (event === EventType.TASKS_UPDATED) report = callback;
       return vi.fn();
     });
+    // until reported otherwise, the server lists the task as it was sent
+    apiMock.getTasks.mockResolvedValue([task(status)]);
     let ended = false;
     void untilTaskEnds(task(status)).then(() => (ended = true));
     return () => ended;
@@ -396,6 +422,15 @@ describe("untilTaskEnds", () => {
     await flushPromises();
     expect(ended()).toBe(false);
     report({ data: [task(TaskStatus.FAILED)] });
+    await flushPromises();
+    expect(ended()).toBe(true);
+  });
+
+  it("resolves when the task finished before it was listened for", async () => {
+    // the report came in before the removal's reply; the tasks listed show it
+    apiMock.getTasks.mockResolvedValueOnce([task(TaskStatus.SUCCESS)]);
+    const ended = waitFor(TaskStatus.PENDING);
+
     await flushPromises();
     expect(ended()).toBe(true);
   });

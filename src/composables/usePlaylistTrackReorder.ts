@@ -30,8 +30,9 @@ const FINISHED_TASK_STATUSES = new Set([
 
 /**
  * Resolves once a background task, such as a removal of playlist tracks, has
- * finished or is no longer listed. A report sent while disconnected is lost,
- * so the tasks are listed again once the server is reached.
+ * finished or is no longer listed. A report sent before this listens, or
+ * while disconnected, is missed, so the tasks are listed once listening and
+ * again once the server is reached.
  */
 export const untilTaskEnds = (task: BackgroundTask) =>
   new Promise<void>((resolve) => {
@@ -50,22 +51,27 @@ export const untilTaskEnds = (task: BackgroundTask) =>
       stopWatchingConnection();
       resolve();
     };
+    const endFrom = (tasks: BackgroundTask[]) =>
+      end(tasks.find(({ id }) => id === task.id));
+    const listTasks = async () => {
+      try {
+        endFrom(await api.getTasks());
+      } catch {
+        // listed again on the next report or connection
+      }
+    };
     const unsubscribe = api.subscribe(
       EventType.TASKS_UPDATED,
-      (event: EventMessage) =>
-        end((event.data as BackgroundTask[]).find(({ id }) => id === task.id)),
+      (event: EventMessage) => endFrom(event.data as BackgroundTask[]),
     ) as () => void;
     const stopWatchingConnection = watch(
       () => api.state.value,
-      async (state) => {
-        if (state !== ConnectionState.INITIALIZED) return;
-        try {
-          end((await api.getTasks()).find(({ id }) => id === task.id));
-        } catch {
-          // listed again on the next connection
-        }
+      (state) => {
+        if (state === ConnectionState.INITIALIZED) void listTasks();
       },
     );
+    // the task may have finished before this listener was in place
+    void listTasks();
   });
 
 // Counts per playlist id, for edits on their way from outside the playlist's
@@ -73,6 +79,11 @@ export const untilTaskEnds = (task: BackgroundTask) =>
 // being read back; the listed positions are out of date until it is done.
 const outsideEdits = reactive(new Map<string, number>());
 const pendingEdits = reactive(new Map<string, number>());
+
+// Counts per playlist id of the edits sent, so a listing can tell whether it
+// read back the latest one, such as a listing opened while a move saved.
+const sentEdits = new Map<string, number>();
+const editsSent = (id: string) => sentEdits.get(id) ?? 0;
 
 const hold = (counts: Map<string, number>, id: string) =>
   counts.set(id, (counts.get(id) ?? 0) + 1);
@@ -103,6 +114,7 @@ export const sendPlaylistEdit = async function (
   if (!canSavePlaylistMoves()) return false;
   hold(outsideEdits, id);
   hold(pendingEdits, id);
+  sentEdits.set(id, editsSent(id) + 1);
   try {
     await edit();
     return true;
@@ -160,6 +172,13 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
   // this listing is reading its rows back, and the playlist changed meanwhile
   let settling = false;
   let changedMeanwhile = false;
+  // the playlist and its count of sent edits as of this listing's rows; rows
+  // loaded while an edit is held may be from before it
+  const initialId = playlistId();
+  let readBack =
+    initialId === undefined || isPlaylistEditPending(initialId)
+      ? undefined
+      : { id: initialId, edits: editsSent(initialId) };
 
   // Saves a move, if any, and reads the rows back while holding off other
   // edits; a change reported meanwhile is read back as well. `undo` holds the
@@ -186,6 +205,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
       }
       do {
         changedMeanwhile = false;
+        if (id !== undefined) readBack = { id, edits: editsSent(id) };
         await reload();
         const locate = reloadedRowLocator(toRaw(items.value), undone);
         undone = undefined;
@@ -211,6 +231,24 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
       if (!pending && wasPending) void settle();
     },
     // take over the hold before the edit releases it
+    { flush: "sync" },
+  );
+
+  // An edit made elsewhere, such as by a listing of the playlist closed while
+  // its move saved, has finished: read the order back if this listing has
+  // not yet.
+  watch(
+    () => {
+      const id = playlistId();
+      return id !== undefined && isPlaylistEditPending(id);
+    },
+    (pending, wasPending) => {
+      const id = playlistId();
+      if (pending || !wasPending || id === undefined || settling) return;
+      if (readBack?.id !== id || readBack.edits !== editsSent(id))
+        void settle();
+    },
+    // hold the edits before the listing offers them again
     { flush: "sync" },
   );
 
@@ -247,6 +285,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
       order.map((from, index) => [before[from], after[index]]),
     );
     options.onRowsReplaced?.((row) => pairs.get(toRaw(row)));
+    sentEdits.set(id, editsSent(id) + 1);
     const indexBefore = new Map(
       order.map((from, index) => [after[index], from]),
     );
