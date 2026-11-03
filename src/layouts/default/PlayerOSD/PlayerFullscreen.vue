@@ -1782,7 +1782,6 @@ onBeforeUnmount(() => {
 .queue-chapter--active {
   color: var(--primary);
   background: color-mix(in srgb, var(--primary) 14%, transparent);
-  box-shadow: inset 3px 0 0 var(--primary);
   font-weight: 600;
 }
 

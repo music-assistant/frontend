@@ -10,7 +10,13 @@
         @update:model-value="(v) => (activeTab = v as ChapterTab)"
       >
         <TabsList>
-          <TabsTrigger v-for="tab in tabs" :key="tab.id" :value="tab.id">
+          <!-- only the picked tab is raised, the others stay plain text -->
+          <TabsTrigger
+            v-for="tab in tabs"
+            :key="tab.id"
+            :value="tab.id"
+            class="data-[state=inactive]:border-transparent data-[state=inactive]:bg-transparent data-[state=inactive]:shadow-none"
+          >
             {{ $t(tab.labelKey) }}
           </TabsTrigger>
         </TabsList>

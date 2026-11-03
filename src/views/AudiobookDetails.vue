@@ -4,11 +4,14 @@
   <!-- audiobook chapters, with the user's bookmarks inside them -->
   <Chapters v-if="itemDetails" :item-details="itemDetails" />
 
-  <!-- provider mapping details -->
-  <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
+  <!-- provider mapping details, as a card like on the other detail pages -->
+  <DetailAdminCard v-if="itemDetails">
+    <ProviderDetails :item-details="itemDetails" />
+  </DetailAdminCard>
 </template>
 
 <script setup lang="ts">
+import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import Chapters from "@/components/Chapters.vue";
