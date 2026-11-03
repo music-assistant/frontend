@@ -520,8 +520,7 @@
     "create_playlist_on": "Créer une nouvelle liste de lecture sur {0}",
     "view": {
         "list": "Liste",
-        "panel": "Cartes",
-        "panel_compact": "Cartes compactes"
+        "panel": "Cartes"
     },
     "play_replace": "Jouer maintenant (vider la file d'attente)",
     "played": "Jouées",
