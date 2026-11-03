@@ -4,10 +4,11 @@ export default {
 };
 </script>
 
-<script setup lang="ts" generic="TData, TValue">
+<script setup lang="ts">
 import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "@lucide/vue";
-import type { Column } from "@tanstack/vue-table";
+import type { Column, RowData } from "@tanstack/vue-table";
 
+import type { DataTableFeatures } from "@/components/dataTableFeatures";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,8 +19,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
+// only the sorting and visibility methods, so a column of any row type fits
+type SortableColumn = Pick<
+  Column<DataTableFeatures, RowData, unknown>,
+  | "getCanSort"
+  | "getIsSorted"
+  | "toggleSorting"
+  | "getCanHide"
+  | "toggleVisibility"
+>;
+
 defineProps<{
-  column: Column<TData, TValue>;
+  column: SortableColumn;
   title: string;
   align?: "left" | "center" | "right";
 }>();

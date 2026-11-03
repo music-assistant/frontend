@@ -31,25 +31,20 @@ import {
   Search,
 } from "@lucide/vue";
 import type {
-  Column,
   ColumnDef,
   ColumnFiltersState,
+  ColumnVisibilityState,
+  RowSelectionState,
   SortingState,
-  VisibilityState,
 } from "@tanstack/vue-table";
-import {
-  FlexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useVueTable,
-} from "@tanstack/vue-table";
-import { computed, h, ref, watch } from "vue";
+import { FlexRender, useTable } from "@tanstack/vue-table";
+import { computed, h, ref, toRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import DataTableColumnHeader from "@/components/DataTableColumnHeader.vue";
 import DataTableViewOptions from "@/components/DataTableViewOptions.vue";
+import type { DataTableFeatures } from "@/components/dataTableFeatures";
+import { dataTableFeatures } from "@/components/dataTableFeatures";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -126,8 +121,8 @@ const { t } = useI18n();
 
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
-const columnVisibility = ref<VisibilityState>({});
-const rowSelection = ref({});
+const columnVisibility = ref<ColumnVisibilityState>({});
+const rowSelection = ref<RowSelectionState>({});
 
 function formatCount(val: number | null): string {
   if (val === null) return props.countsLoading ? "…" : "—";
@@ -161,14 +156,14 @@ watch(
   () => {
     const relevant =
       MEDIA_TYPES_BY_TAXONOMY[contentType.value] ?? MEDIA_TYPES_BY_TAXONOMY.all;
-    const vis: VisibilityState = { mediatype: showMediaTypeColumn.value };
+    const vis: ColumnVisibilityState = { mediatype: showMediaTypeColumn.value };
     for (const d of mediaTypeDefs) vis[d.id] = relevant.includes(d.key);
     columnVisibility.value = vis;
   },
   { immediate: true },
 );
 
-const columns: ColumnDef<GenreRow>[] = [
+const columns: ColumnDef<DataTableFeatures, GenreRow>[] = [
   {
     id: "select",
     header: ({ table }) =>
@@ -195,8 +190,7 @@ const columns: ColumnDef<GenreRow>[] = [
     accessorKey: "displayName",
     header: ({ column }) =>
       h(DataTableColumnHeader, {
-        // h() can't infer the generic prop, so cast to the widened Column type.
-        column: column as Column<unknown, unknown>,
+        column,
         title: toSentenceCase(t("genre_name")),
       }),
     cell: ({ row }) => {
@@ -235,7 +229,7 @@ const columns: ColumnDef<GenreRow>[] = [
     accessorFn: (row) => genreTaxonomyLabel(row.genre),
     header: ({ column }) =>
       h(DataTableColumnHeader, {
-        column: column as Column<unknown, unknown>,
+        column,
         title: toSentenceCase(t("tooltip.genre_content_type")),
         align: "center",
       }),
@@ -263,8 +257,7 @@ const columns: ColumnDef<GenreRow>[] = [
     accessorKey: "aliasCount",
     header: ({ column }) =>
       h(DataTableColumnHeader, {
-        // h() can't infer the generic prop, so cast to the widened Column type.
-        column: column as Column<unknown, unknown>,
+        column,
         title: toSentenceCase(t("aliases")),
         align: "center",
       }),
@@ -277,27 +270,28 @@ const columns: ColumnDef<GenreRow>[] = [
         ),
       ]),
   },
-  ...mediaTypeDefs.map(({ key, countKey, id }): ColumnDef<GenreRow> => ({
-    id,
-    accessorKey: countKey,
-    header: ({ column }) =>
-      h(DataTableColumnHeader, {
-        // h() can't infer the generic prop, so cast to the widened Column type.
-        column: column as Column<unknown, unknown>,
-        title: toSentenceCase(t(`${key}s`)),
-        align: "center",
-      }),
-    cell: ({ row }) =>
-      h(
-        "div",
-        {
-          class:
-            "cursor-pointer text-center tabular-nums text-muted-foreground hover:text-foreground",
-          onClick: () => emit("navigate-library", row.original.genre, key),
-        },
-        formatCount(row.original[countKey]),
-      ),
-  })),
+  ...mediaTypeDefs.map(
+    ({ key, countKey, id }): ColumnDef<DataTableFeatures, GenreRow> => ({
+      id,
+      accessorKey: countKey,
+      header: ({ column }) =>
+        h(DataTableColumnHeader, {
+          column,
+          title: toSentenceCase(t(`${key}s`)),
+          align: "center",
+        }),
+      cell: ({ row }) =>
+        h(
+          "div",
+          {
+            class:
+              "cursor-pointer text-center tabular-nums text-muted-foreground hover:text-foreground",
+            onClick: () => emit("navigate-library", row.original.genre, key),
+          },
+          formatCount(row.original[countKey]),
+        ),
+    }),
+  ),
   {
     id: "actions",
     cell: ({ row }) =>
@@ -309,15 +303,10 @@ const columns: ColumnDef<GenreRow>[] = [
   },
 ];
 
-const table = useVueTable({
-  get data() {
-    return props.data;
-  },
+const table = useTable({
+  features: dataTableFeatures,
+  data: toRef(props, "data"),
   columns,
-  getCoreRowModel: getCoreRowModel(),
-  getPaginationRowModel: getPaginationRowModel(),
-  getSortedRowModel: getSortedRowModel(),
-  getFilteredRowModel: getFilteredRowModel(),
   onSortingChange: (updaterOrValue) => {
     sorting.value =
       typeof updaterOrValue === "function"
@@ -357,7 +346,7 @@ const table = useVueTable({
     },
   },
   initialState: {
-    pagination: { pageSize: 10 },
+    pagination: { pageIndex: 0, pageSize: 10 },
   },
 });
 </script>
@@ -435,11 +424,7 @@ const table = useVueTable({
                 :col-span="header.colSpan"
                 :class="header.id === 'genre' ? 'pl-6' : ''"
               >
-                <FlexRender
-                  v-if="!header.isPlaceholder"
-                  :render="header.column.columnDef.header"
-                  :props="header.getContext()"
-                />
+                <FlexRender v-if="!header.isPlaceholder" :header="header" />
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -455,10 +440,7 @@ const table = useVueTable({
                   :key="cell.id"
                   :class="cell.column.id === 'genre' ? 'pl-4' : ''"
                 >
-                  <FlexRender
-                    :render="cell.column.columnDef.cell"
-                    :props="cell.getContext()"
-                  />
+                  <FlexRender :cell="cell" />
                 </TableCell>
               </TableRow>
             </template>
@@ -560,7 +542,7 @@ const table = useVueTable({
             {{ $t("settings.genre_table_rows_per_page") }}
           </Label>
           <Select
-            :model-value="`${table.getState().pagination.pageSize}`"
+            :model-value="`${table.atoms.pagination.get().pageSize}`"
             @update:model-value="(value) => table.setPageSize(Number(value))"
           >
             <SelectTrigger
@@ -570,7 +552,7 @@ const table = useVueTable({
               :aria-label="$t('settings.genre_table_rows_per_page')"
             >
               <SelectValue
-                :placeholder="`${table.getState().pagination.pageSize}`"
+                :placeholder="`${table.atoms.pagination.get().pageSize}`"
               />
             </SelectTrigger>
             <SelectContent side="top">
@@ -587,7 +569,7 @@ const table = useVueTable({
         <div class="flex w-fit items-center justify-center text-sm font-medium">
           {{
             $t("settings.genre_table_page_of", [
-              table.getState().pagination.pageIndex + 1,
+              table.atoms.pagination.get().pageIndex + 1,
               table.getPageCount(),
             ])
           }}

@@ -1,8 +1,9 @@
-<script setup lang="ts" generic="TData">
+<script setup lang="ts" generic="TData extends RowData">
 import { Settings2 } from "@lucide/vue";
-import type { Table } from "@tanstack/vue-table";
+import type { RowData, Table } from "@tanstack/vue-table";
 import { computed } from "vue";
 
+import type { DataTableFeatures } from "@/components/dataTableFeatures";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const props = defineProps<{
-  table: Table<TData>;
+  table: Table<DataTableFeatures, TData>;
 }>();
 
 const columns = computed(() =>
