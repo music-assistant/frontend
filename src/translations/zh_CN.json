@@ -637,7 +637,6 @@
     "view": {
         "list": "列表视图",
         "panel": "缩略图视图",
-        "panel_compact": "缩略图视图",
         "discovery": "发现"
     },
     "play_replace": "立即播放(清除播放列表)",

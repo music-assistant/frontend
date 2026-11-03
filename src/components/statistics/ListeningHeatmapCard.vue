@@ -24,7 +24,7 @@
       </div>
     </template>
     <!-- centred when the card stretches to its neighbour in the row -->
-    <div class="my-auto overflow-x-auto">
+    <div class="relative my-auto overflow-x-auto">
       <table
         class="w-full border-separate border-spacing-1 [table-layout:fixed] max-sm:border-spacing-[2px]"
       >
