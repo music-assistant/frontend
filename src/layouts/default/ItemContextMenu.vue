@@ -348,6 +348,7 @@ import {
   canReorderPlaylistItems,
   canSharePlaylist,
 } from "@/helpers/playlist_access";
+import { playlistPosition } from "@/helpers/playlist_reorder";
 import {
   gotoRadio,
   radioActionLabelKey,
@@ -1063,9 +1064,7 @@ export const getContextMenuItems = async function (
   ) {
     const playlist = parentItem as Playlist;
     // the server refuses an edit whose positions no longer hold these items
-    const positions = items.map((x) =>
-      "position" in x && typeof x.position === "number" ? x.position : 0,
-    );
+    const positions = items.map((x) => playlistPosition(x) ?? 0);
     const uris = items.map((x) => x.uri);
     if (
       (firstItem.media_type === MediaType.TRACK ||

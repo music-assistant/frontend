@@ -185,14 +185,6 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     return toIndex + rows.indexOf(source);
   };
 
-  // A drag dropped the row at `source` to rest at `finalIndex`.
-  const dropAt = (source: number, finalIndex: number) => {
-    const rows = rowsMovedBy(source);
-    // the drop slot as an index before the drag lifted the source out
-    const dropBefore = finalIndex > source ? finalIndex + 1 : finalIndex;
-    return moveFrom(source, rows, blockStartIndex(rows, dropBefore));
-  };
-
   let focusFrame: number | undefined;
 
   // scroll a row's place into view, rendered or not, as the rows are
@@ -258,7 +250,10 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     onCommit: (source, finalIndex) => {
       if (toRaw(items.value) !== dragRows) return;
       if (playlistId() !== dragPlaylistId) return;
-      void dropAt(source, finalIndex);
+      const rows = rowsMovedBy(source);
+      // the drop slot as an index before the drag lifted the source out
+      const dropBefore = finalIndex > source ? finalIndex + 1 : finalIndex;
+      moveFrom(source, rows, blockStartIndex(rows, dropBefore));
     },
     rowBox: (index) =>
       index >= 0 && index < items.value.length
