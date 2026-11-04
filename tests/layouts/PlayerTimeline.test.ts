@@ -263,7 +263,7 @@ describe("PlayerTimeline", () => {
     expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 70);
   });
 
-  it("seeks to a chapter start without reloading the media", async () => {
+  it("splits the track into chapters and names the hovered one", async () => {
     store.currentUser = {
       preferences: { audiobook_chapter_progress: false },
     };
@@ -288,17 +288,22 @@ describe("PlayerTimeline", () => {
         queue_item_id: "qi-1",
       },
     };
-    api.playerCommandSeek.mockClear();
-    api.playMedia.mockClear();
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      width: 120,
+    } as DOMRect);
 
     mountTimeline({
-      SliderRoot: { template: "<div><slot /></div>" },
+      SliderRoot: { template: '<div class="slider-root"><slot /></div>' },
       SliderTrack: { template: "<div><slot /></div>" },
     });
-    await wrapper!.find('button[aria-label="Second"]').trigger("click");
+    expect(wrapper!.findAll('[data-testid="chapter-segment"]')).toHaveLength(2);
 
-    expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 60);
-    expect(api.playMedia).not.toHaveBeenCalled();
+    await wrapper!.find(".slider-root").trigger("pointermove", { clientX: 90 });
+
+    expect(wrapper!.find('[data-testid="timeline-hover-label"]').text()).toBe(
+      "01:30 · Second",
+    );
   });
 
   // with chapter progress the track spans the playing chapter only

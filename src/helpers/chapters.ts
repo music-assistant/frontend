@@ -4,9 +4,14 @@ import type {
   ProviderMapping,
 } from "@/plugins/api/interfaces";
 
-export interface ChapterTick extends MediaItemChapter {
-  // position along the track as percentage
-  percent: number;
+export interface ChapterSegment {
+  // undefined for the stretch before the first chapter starts
+  chapter?: MediaItemChapter;
+  start: number;
+  end: number;
+  // placement along the track as percentages
+  startPercent: number;
+  widthPercent: number;
 }
 
 export interface ResolvedChapter {
@@ -67,18 +72,46 @@ export function resolveCurrentChapter(
 }
 
 /**
- * map media chapters to slider ticks, computing each chapter's start as a
- * percentage of the track, percentages are clamped to [0, 100]
+ * split the track into one segment per chapter, each running to the next
+ * chapter's start so the segments cover the whole track without overlaps
  */
-export function computeChapterTicks(
+export function computeChapterSegments(
   chapters: MediaItemChapter[] | null | undefined,
   duration: number | null | undefined,
-): ChapterTick[] {
+): ChapterSegment[] {
   if (!duration || !chapters?.length) return [];
-  return chapters.map((chapter) => ({
-    ...chapter,
-    percent: Math.min(100, Math.max(0, (chapter.start / duration) * 100)),
+  const clamp = (seconds: number) => Math.min(duration, Math.max(0, seconds));
+  const ordered = chapters
+    .filter((chapter) => Number.isFinite(chapter.start))
+    .sort((a, b) => a.start - b.start);
+  if (!ordered.length) return [];
+
+  const ranges: { chapter?: MediaItemChapter; start: number; end: number }[] =
+    [];
+  const firstStart = clamp(ordered[0].start);
+  if (firstStart > 0) ranges.push({ start: 0, end: firstStart });
+  ordered.forEach((chapter, index) => {
+    const start = clamp(chapter.start);
+    const next = ordered[index + 1];
+    const end = next ? clamp(next.start) : duration;
+    if (end > start) ranges.push({ chapter, start, end });
+  });
+  return ranges.map((range) => ({
+    ...range,
+    startPercent: (range.start / duration) * 100,
+    widthPercent: ((range.end - range.start) / duration) * 100,
   }));
+}
+
+/** the segment holding a position in seconds */
+export function segmentAt(
+  segments: ChapterSegment[],
+  seconds: number,
+): ChapterSegment | undefined {
+  return (
+    segments.find((x) => seconds >= x.start && seconds < x.end) ??
+    segments.at(-1)
+  );
 }
 
 export interface ChapterBookmarks {

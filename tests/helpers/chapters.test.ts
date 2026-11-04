@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  computeChapterTicks,
+  computeChapterSegments,
   groupBookmarksByChapter,
   resolveCurrentChapter,
 } from "@/helpers/chapters";
@@ -74,41 +74,39 @@ describe("resolveCurrentChapter", () => {
   });
 });
 
-describe("computeChapterTicks", () => {
-  it("returns [] when duration is missing or zero", () => {
-    expect(computeChapterTicks(chapters, null)).toEqual([]);
-    expect(computeChapterTicks(chapters, undefined)).toEqual([]);
-    expect(computeChapterTicks(chapters, 0)).toEqual([]);
+describe("computeChapterSegments", () => {
+  it("has no segments without a duration or chapters", () => {
+    expect(computeChapterSegments(chapters, 0)).toEqual([]);
+    expect(computeChapterSegments([], 120)).toEqual([]);
   });
 
-  it("returns [] when there are no chapters", () => {
-    expect(computeChapterTicks(null, 120)).toEqual([]);
-    expect(computeChapterTicks(undefined, 120)).toEqual([]);
-    expect(computeChapterTicks([], 120)).toEqual([]);
+  it("runs each chapter to the next one's start", () => {
+    const segments = computeChapterSegments(chapters, 240);
+    expect(
+      segments.map((x) => [x.chapter?.name, x.startPercent, x.widthPercent]),
+    ).toEqual([
+      ["Intro", 0, 25],
+      ["Middle", 25, 25],
+      ["End", 50, 50],
+    ]);
   });
 
-  it("computes each chapter's start as a percentage of the duration", () => {
-    const ticks = computeChapterTicks(chapters, 120);
-    expect(ticks.map((t) => t.percent)).toEqual([0, 50, 100]);
-  });
-
-  it("preserves the original chapter fields", () => {
-    const [first] = computeChapterTicks(chapters, 120);
-    expect(first).toMatchObject({
-      position: 1,
-      name: "Intro",
-      start: 0,
-      end: null,
-    });
-  });
-
-  it("clamps out-of-range chapters to [0, 100]", () => {
-    const stray: MediaItemChapter[] = [
-      { position: 1, name: "before start", start: -30, end: null },
-      { position: 2, name: "past end", start: 240, end: null },
+  it("covers the start before the first chapter and skips chapters past the end", () => {
+    const late: MediaItemChapter[] = [
+      { position: 2, name: "Second", start: 90, end: null },
+      { position: 1, name: "First", start: 30, end: null },
+      { position: 3, name: "past end", start: 240, end: null },
     ];
-    expect(computeChapterTicks(stray, 120).map((t) => t.percent)).toEqual([
-      0, 100,
+    expect(
+      computeChapterSegments(late, 120).map((x) => [
+        x.chapter?.name,
+        x.start,
+        x.end,
+      ]),
+    ).toEqual([
+      [undefined, 0, 30],
+      ["First", 30, 90],
+      ["Second", 90, 120],
     ]);
   });
 });

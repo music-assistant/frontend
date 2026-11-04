@@ -22,13 +22,48 @@
           hoverPercent = null;
         "
       >
+        <!-- the hovered position and its chapter -->
+        <div
+          v-if="hoverLabel"
+          class="pointer-events-none absolute bottom-full mb-2 max-w-[80%] truncate whitespace-nowrap rounded-md bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md"
+          :style="{
+            left: `${hoverLabel.percent}%`,
+            transform: `translateX(-${hoverLabel.percent}%)`,
+          }"
+          data-testid="timeline-hover-label"
+        >
+          {{ hoverLabel.text }}
+        </div>
         <SliderTrack
           data-slot="slider-track"
           class="relative grow rounded-full"
           :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
         >
+          <!-- one segment per chapter, filled as far as playback has reached -->
+          <template v-if="!hasWaveform && chapterSegments.length">
+            <div
+              v-for="segment in chapterSegments"
+              :key="segment.start"
+              class="absolute inset-y-0 overflow-hidden rounded-full transition-transform duration-100"
+              :class="segment === hoveredSegment ? 'scale-y-[2]' : ''"
+              :style="{
+                left: `calc(${segment.startPercent}% + ${SEGMENT_GAP_PX / 2}px)`,
+                width: `calc(${segment.widthPercent}% - ${SEGMENT_GAP_PX}px)`,
+              }"
+              data-testid="chapter-segment"
+            >
+              <div class="absolute inset-0" :style="trackBackgroundStyle"></div>
+              <div
+                class="absolute inset-y-0 left-0"
+                :style="{
+                  width: `${segmentFillPercent(segment)}%`,
+                  backgroundColor: color,
+                }"
+              ></div>
+            </div>
+          </template>
           <div
-            v-if="!hasWaveform"
+            v-else-if="!hasWaveform"
             class="absolute inset-0 rounded-full"
             :style="trackBackgroundStyle"
           ></div>
@@ -44,30 +79,11 @@
                centres via the track box or an explicit transform instead. -->
           <SliderRange
             v-if="!hasWaveform && !hidesRadioPosition"
+            v-show="!chapterSegments.length"
             data-slot="slider-range"
             class="absolute inset-y-0 rounded-full"
             :style="{ 'background-color': color }"
           />
-          <!-- pointerdown.stop prevents reka's slider track tap action -->
-          <button
-            v-for="tick in chapterTicks"
-            :key="tick.position"
-            type="button"
-            class="absolute top-1/2 flex h-4 w-3 items-center justify-center"
-            :style="{
-              left: `${tick.percent}%`,
-              transform: 'translate(-50%, -50%)',
-            }"
-            :aria-label="tick.name"
-            :disabled="!canSeek"
-            @pointerdown.stop
-            @click.stop="chapterClicked(tick)"
-          >
-            <span
-              class="w-1 h-1 rounded-full bg-background"
-              aria-hidden="true"
-            ></span>
-          </button>
           <!-- the bookmark icon, so a bookmark does not read as a chapter tick -->
           <TooltipProvider :delay-duration="150">
             <Tooltip
@@ -119,23 +135,6 @@
             )
           "
         />
-        <!-- chapter labels above the track -->
-        <template
-          v-if="showLabels && !isThumbHidden && chapterTicks.length < 6"
-        >
-          <button
-            v-for="tick in chapterTicks"
-            :key="`label-${tick.position}`"
-            type="button"
-            class="absolute bottom-full mb-1 appearance-none border-0 bg-transparent p-0 text-caption text-inherit cursor-pointer whitespace-nowrap"
-            :style="{ left: `${tick.percent}%`, transform: 'translateX(-50%)' }"
-            :disabled="!canSeek"
-            @pointerdown.stop
-            @click="chapterClicked(tick)"
-          >
-            {{ tick.name }}
-          </button>
-        </template>
       </SliderRoot>
 
       <div v-if="showLabels" class="time-text-row">
@@ -166,14 +165,15 @@ import {
   MediaType,
   PlaybackState,
   type MediaItemBookmark,
-  type MediaItemChapter,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
 import {
   resolveCurrentChapter,
-  computeChapterTicks,
+  computeChapterSegments,
+  segmentAt,
+  type ChapterSegment,
   type ResolvedChapter,
 } from "@/helpers/chapters";
 import { formatDuration } from "@/helpers/utils";
@@ -430,9 +430,12 @@ const playerTotalTimeStr = computed(() => {
 
 const displayedElapsedTime = computed(() => displayedTimelineTime.value);
 
-const chapterTicks = computed(() => {
+// space between two chapter segments
+const SEGMENT_GAP_PX = 2;
+
+const chapterSegments = computed(() => {
   if (currentChapter.value) return [];
-  return computeChapterTicks(
+  return computeChapterSegments(
     store.curQueueItem?.media_item?.metadata.chapters,
     store.activePlayer?.current_media?.duration,
   );
@@ -479,15 +482,49 @@ const progressPercent = computed(() => {
   return (curTimeValue.value / timelineDuration.value) * 100;
 });
 
-// Hover seek-preview position (waveform mode only), as 0-100 percent.
+const segmentFillPercent = (segment: ChapterSegment) =>
+  Math.min(
+    100,
+    Math.max(
+      0,
+      ((progressPercent.value - segment.startPercent) / segment.widthPercent) *
+        100,
+    ),
+  );
+
+// Hover position over a waveform or chapter segments, as 0-100 percent.
 const hoverPercent = ref<number | null>(null);
 
 const onTrackPointerMove = (evt: PointerEvent) => {
-  if (!hasWaveform.value || !canSeek.value) return;
+  if (!(hasWaveform.value || chapterSegments.value.length) || !canSeek.value)
+    return;
   const rect = (evt.currentTarget as HTMLElement).getBoundingClientRect();
   if (!rect.width) return;
-  hoverPercent.value = ((evt.clientX - rect.left) / rect.width) * 100;
+  hoverPercent.value = Math.min(
+    100,
+    Math.max(0, ((evt.clientX - rect.left) / rect.width) * 100),
+  );
 };
+
+const hoveredSegment = computed(() => {
+  if (hoverPercent.value === null || !chapterSegments.value.length)
+    return undefined;
+  const seconds = (hoverPercent.value / 100) * timelineDuration.value;
+  return segmentAt(chapterSegments.value, seconds);
+});
+
+// e.g. "30:49 · Postgres as a data platform", above the pointer
+const hoverLabel = computed(() => {
+  const segment = hoveredSegment.value;
+  if (!segment || hoverPercent.value === null) return undefined;
+  const seconds = (hoverPercent.value / 100) * timelineDuration.value;
+  return {
+    percent: hoverPercent.value,
+    text: [formatDuration(seconds), segment.chapter?.name]
+      .filter(Boolean)
+      .join(" · "),
+  };
+});
 
 //watch
 watch(serverTiming, (timing) => {
@@ -540,11 +577,6 @@ const stopDragging = () => {
   if (store.activePlayer) {
     api.playerCommandSeek(store.activePlayer.player_id, seekPosition);
   }
-};
-
-const chapterClicked = function (chapter: MediaItemChapter) {
-  if (!canSeek.value || !store.activePlayer) return;
-  api.playerCommandSeek(store.activePlayer.player_id, chapter.start);
 };
 
 const bookmarkClicked = function (bookmark: MediaItemBookmark) {
