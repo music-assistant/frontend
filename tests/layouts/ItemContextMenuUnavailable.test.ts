@@ -7,39 +7,56 @@ import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.v
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
+import { playlist } from "../fixtures/playlist";
+import { track } from "../fixtures/track";
 import { providerMapping } from "../fixtures/providerMapping";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
-const { apiMock, emittedMenus, hasScope, storeMock } = vi.hoisted(() => ({
-  emittedMenus: [] as ContextMenuDialogEvent[],
-  apiMock: {
-    getItem: vi.fn(),
-    getLibraryItem: vi.fn(),
-    getProvider: vi.fn(),
-    getCoreConfigValue: vi.fn(),
-    refreshItem: vi.fn(),
-    signalEvent: vi.fn(),
-    playMedia: vi.fn(),
-    providers: {},
-    players: {},
-  },
-  hasScope: vi.fn(),
-  storeMock: {
-    activePlayer: undefined,
-    activePlayerId: undefined,
-    enabledPlugins: new Set<string>(),
-  },
-}));
+const { apiMock, emittedMenus, routerMock, toastMock, hasScope, storeMock } =
+  vi.hoisted(() => ({
+    emittedMenus: [] as ContextMenuDialogEvent[],
+    routerMock: {
+      push: vi.fn(),
+      currentRoute: { value: { fullPath: "/share" } },
+    },
+    toastMock: {
+      error: vi.fn(),
+      loading: vi.fn(() => "search-toast"),
+      dismiss: vi.fn(),
+      success: vi.fn(),
+    },
+    apiMock: {
+      getItem: vi.fn(),
+      getLibraryItem: vi.fn(),
+      getProvider: vi.fn(),
+      getCoreConfigValue: vi.fn(),
+      refreshItem: vi.fn(),
+      signalEvent: vi.fn(),
+      playMedia: vi.fn(),
+      resolveSharedItem: vi.fn(),
+      providers: {},
+      players: {},
+    },
+    hasScope: vi.fn(),
+    storeMock: {
+      activePlayer: undefined,
+      activePlayerId: undefined,
+      enabledPlugins: new Set<string>(),
+    },
+  }));
 
 vi.mock("@/plugins/api", () => ({ default: apiMock, api: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
+vi.mock("@/plugins/router", () => ({ default: routerMock }));
+vi.mock("vue-sonner", () => ({ toast: toastMock }));
 vi.mock("@/plugins/eventbus", () => ({
   eventbus: {
     on: vi.fn(),
     off: vi.fn(),
-    emit: vi.fn((_type: string, payload: ContextMenuDialogEvent) => {
-      emittedMenus.push(payload);
+    emit: vi.fn((type: string, payload: ContextMenuDialogEvent) => {
+      if (type === "contextmenu")
+        emittedMenus.push(payload as ContextMenuDialogEvent);
     }),
   },
 }));
@@ -64,7 +81,9 @@ beforeEach(() => {
   apiMock.getLibraryItem.mockResolvedValue(gone);
   apiMock.refreshItem.mockResolvedValue(undefined);
   hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+  routerMock.currentRoute.value.fullPath = "/share";
   emittedMenus.length = 0;
+  apiMock.resolveSharedItem.mockResolvedValue(null);
 });
 
 describe("the context menu of an unavailable library item", () => {
@@ -103,4 +122,131 @@ describe("the context menu of an unavailable library item", () => {
 
     expect(await offeredLabels()).not.toContain("find_on_music_services");
   });
+});
+
+describe("the context menu of an unresolved shared track", () => {
+  const preview = track({
+    provider: "builtin",
+    item_id: "share-preview://track/encoded",
+    provider_mappings: [],
+  });
+
+  async function searchAction() {
+    await showContextMenuForMediaItem(preview);
+    const menu = emittedMenus[emittedMenus.length - 1];
+    expect(menu.items.map((entry) => entry.label)).toEqual([
+      "share.search_track",
+    ]);
+    return menu.items[0].action;
+  }
+
+  it("searches immediately and opens the matched track with feedback", async () => {
+    const matched = track({ item_id: "matched" });
+    apiMock.resolveSharedItem.mockResolvedValue(matched);
+    const action = await searchAction();
+
+    const request = action?.();
+
+    expect(apiMock.resolveSharedItem).toHaveBeenCalledWith("encoded", true);
+    expect(toastMock.loading).toHaveBeenCalledWith("share.loading", {
+      duration: Infinity,
+    });
+    await request;
+
+    expect(toastMock.dismiss).toHaveBeenCalledWith("search-toast");
+    expect(toastMock.success).toHaveBeenCalledWith("share.resolve_success");
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "track",
+      params: { provider: "library", itemId: "matched" },
+    });
+    expect(apiMock.getLibraryItem).not.toHaveBeenCalled();
+    expect(apiMock.playMedia).not.toHaveBeenCalled();
+  });
+
+  it("only lets the newest overlapping search navigate", async () => {
+    let resolveOlder!: (value: ReturnType<typeof track> | null) => void;
+    let resolveNewer!: (value: ReturnType<typeof track> | null) => void;
+    const olderRequest = new Promise<ReturnType<typeof track> | null>(
+      (resolve) => {
+        resolveOlder = resolve;
+      },
+    );
+    const newerRequest = new Promise<ReturnType<typeof track> | null>(
+      (resolve) => {
+        resolveNewer = resolve;
+      },
+    );
+    apiMock.resolveSharedItem
+      .mockReturnValueOnce(olderRequest)
+      .mockReturnValueOnce(newerRequest);
+    toastMock.loading
+      .mockReturnValueOnce("older-search-toast")
+      .mockReturnValueOnce("newer-search-toast");
+
+    const olderAction = await searchAction();
+    const olderCompletion = olderAction?.();
+    const newerAction = await searchAction();
+    const newerCompletion = newerAction?.();
+
+    resolveOlder(track({ item_id: "older-match" }));
+    await olderCompletion;
+    expect(routerMock.push).not.toHaveBeenCalled();
+    expect(toastMock.dismiss).toHaveBeenCalledWith("older-search-toast");
+
+    resolveNewer(track({ item_id: "newer-match" }));
+    await newerCompletion;
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "track",
+      params: { provider: "library", itemId: "newer-match" },
+    });
+    expect(toastMock.dismiss).toHaveBeenCalledWith("newer-search-toast");
+    expect(toastMock.success).toHaveBeenCalledOnce();
+  });
+
+  it("keeps normal playlist removal for imported unresolved tracks", async () => {
+    const imported = track({
+      provider: "builtin",
+      item_id: "share://track/0",
+      provider_mappings: [],
+    });
+    const parent = playlist({ item_id: "imported", is_editable: true });
+    apiMock.getLibraryItem.mockResolvedValue(imported);
+    await showContextMenuForMediaItem(imported, parent, 0, 0, true, true);
+    const labels = emittedMenus[0].items.map((entry) => entry.label);
+
+    expect(labels).not.toContain("share.search_track");
+    expect(labels).toContain("remove_playlist");
+  });
+
+  it("ignores a late search response after leaving and returning to the same route", async () => {
+    let resolveRequest!: (value: ReturnType<typeof track> | null) => void;
+    const pending = new Promise<ReturnType<typeof track> | null>((resolve) => {
+      resolveRequest = resolve;
+    });
+    apiMock.resolveSharedItem.mockReturnValueOnce(pending);
+    const action = await searchAction();
+    const request = action?.();
+    routerMock.currentRoute.value = { fullPath: "/playlist/other" };
+    routerMock.currentRoute.value = { fullPath: "/share" };
+    resolveRequest(track({ item_id: "matched" }));
+    await request;
+
+    expect(routerMock.push).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+    expect(toastMock.dismiss).toHaveBeenCalledWith("search-toast");
+  });
+
+  it.each([false, true])(
+    "reports failed search without opening details (error: %s)",
+    async (requestFails) => {
+      if (requestFails)
+        apiMock.resolveSharedItem.mockRejectedValue(new Error("offline"));
+      else apiMock.resolveSharedItem.mockResolvedValue(null);
+      const action = await searchAction();
+      await action?.();
+      expect(toastMock.dismiss).toHaveBeenCalledWith("search-toast");
+      expect(toastMock.error).toHaveBeenCalledWith("share.resolve_failed");
+      expect(routerMock.push).not.toHaveBeenCalled();
+    },
+  );
 });

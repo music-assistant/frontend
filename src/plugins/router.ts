@@ -173,6 +173,17 @@ export const routes: RouteRecordRaw[] = [
           import(/* webpackChunkName: "discover" */ "@/views/HomeView.vue"),
       },
       {
+        path: "/share",
+        name: "share",
+        component: () =>
+          import(/* webpackChunkName: "share" */ "@/views/ShareView.vue"),
+        props: (route) => ({
+          payload:
+            typeof route.query.payload === "string" ? route.query.payload : "",
+        }),
+        meta: { requiresScope: Scope.LIBRARY_READ },
+      },
+      {
         path: "/statistics",
         name: "statistics",
         component: () =>

@@ -44,7 +44,7 @@
       </template>
     </Toolbar>
 
-    <div v-if="!item" class="detail-hero__body">
+    <div v-if="!item && !title" class="detail-hero__body">
       <Skeleton class="h-12 w-80 max-w-[60%]" />
     </div>
     <div v-else ref="heroBody" class="detail-hero__body">
@@ -73,7 +73,7 @@
       v-if="isPhone"
       :show="!toolbarInView"
       :show-title="!titleInView"
-      :title="item?.name"
+      :title="item?.name ?? title"
       :menu-items="menuItems"
       @back="backButtonClick"
     >
@@ -104,6 +104,8 @@ import { useRouter } from "vue-router";
 export interface Props {
   // undefined while the page loads: a skeleton stands in and there is no menu
   item?: MediaItemType;
+  // a page title when the hero represents payload data rather than a media item
+  title?: string;
   // the artwork painted behind the text, as an image url
   backdrop?: string;
   // for a backdrop that only stands in for missing wide art, so it reads as
@@ -118,6 +120,7 @@ export interface Props {
 }
 const props = withDefaults(defineProps<Props>(), {
   item: undefined,
+  title: undefined,
   backdrop: undefined,
   blurBackdrop: false,
   softenBackdrop: false,

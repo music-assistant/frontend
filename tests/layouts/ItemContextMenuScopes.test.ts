@@ -23,6 +23,8 @@ import {
   scopeChecker,
 } from "../fixtures/scopes";
 import { track } from "../fixtures/track";
+import { album } from "../fixtures/album";
+import { eventbus } from "@/plugins/eventbus";
 
 const { apiMock, hasScope, storeMock } = vi.hoisted(() => ({
   apiMock: {
@@ -80,6 +82,56 @@ beforeEach(() => {
   // the menu resolves the library counterpart before building its items
   apiMock.getLibraryItem.mockResolvedValue(null);
   storeMock.enabledPlugins.clear();
+});
+
+describe("share links in the item context menu", () => {
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    storeMock.enabledPlugins.add("share_provider");
+  });
+
+  it.each([
+    { kind: "track", makeItem: track },
+    { kind: "album", makeItem: album },
+    { kind: "playlist", makeItem: playlist },
+  ])("does not offer Share for an unavailable $kind", async ({ makeItem }) => {
+    const unavailable = makeItem({
+      provider_mappings: [providerMapping({ available: false })],
+    });
+    expect(await offeredLabels([unavailable])).not.toContain(
+      "share.open_preview",
+    );
+  });
+
+  it("does not offer Share when the provider is unavailable or missing", async () => {
+    const unavailable = track({
+      provider_mappings: [
+        providerMapping({ provider_instance: "removed-provider" }),
+      ],
+    });
+    expect(await offeredLabels([unavailable])).not.toContain(
+      "share.open_preview",
+    );
+  });
+
+  it("continues to offer Share for an available track", async () => {
+    const available = track({ provider_mappings: [providerMapping()] });
+    expect(await offeredLabels([available])).toContain("share.open_preview");
+  });
+
+  it("does not open Share if the item becomes unavailable after opening its menu", async () => {
+    const mapping = providerMapping();
+    const available = track({ provider_mappings: [mapping] });
+    const entries = await getContextMenuItems([available]);
+    const share = entries.find((entry) => entry.label === "share.open_preview");
+    expect(share).toBeDefined();
+    mapping.available = false;
+    await share?.action?.();
+    expect(eventbus.emit).not.toHaveBeenCalledWith(
+      "shareLinkPreview",
+      expect.anything(),
+    );
+  });
 });
 
 describe("library changes in the item context menu", () => {
