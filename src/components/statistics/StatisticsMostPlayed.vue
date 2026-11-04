@@ -26,6 +26,8 @@
         <EditorialMediaCard
           :item="entry.item"
           :is-available="itemIsAvailable(entry.item)"
+          :disabled="!connected"
+          :disable-play-button="playActionInProgress"
         >
           <template #art-overlay>
             <span
@@ -48,6 +50,7 @@
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import { useCanonicalLocale } from "@/composables/useCanonicalLocale";
+import { useMediaPlayState } from "@/composables/useMediaPlayState";
 import { formatCount } from "@/helpers/statistics_format";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import type { StatisticsTopItemResult } from "@/plugins/api/interfaces";
@@ -66,6 +69,7 @@ const props = withDefaults(
 );
 
 const locale = useCanonicalLocale();
+const { connected, playActionInProgress } = useMediaPlayState();
 const shownTracks = computed(() => props.tracks.slice(0, props.limit));
 
 const playsLabel = (count: number): string =>

@@ -13,9 +13,7 @@
           @edit-rows="rowsEditorOpen = true"
         />
         <Chapters
-          v-else-if="
-            rowId === 'chapters' && itemDetails.metadata.chapters?.length
-          "
+          v-else-if="rowId === 'chapters'"
           :key="itemDetails.uri"
           :item-details="itemDetails"
         />

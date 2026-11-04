@@ -1,6 +1,6 @@
 <template>
   <Button
-    variant="ghost"
+    :variant="variant"
     size="icon-lg"
     :aria-label="$t('tooltip.toggle_queue')"
     v-bind="$attrs"
@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonVariants } from "@/components/ui/button";
 import {
   isPlayerQueueControlDisabled,
   togglePlayerQueue,
@@ -30,10 +30,13 @@ import { computed } from "vue";
 
 export interface Props {
   size?: number;
+  /** look of the button */
+  variant?: ButtonVariants["variant"];
 }
 
 withDefaults(defineProps<Props>(), {
   size: 20,
+  variant: "ghost",
 });
 
 const active = computed(

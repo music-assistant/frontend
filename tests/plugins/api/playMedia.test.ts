@@ -6,27 +6,28 @@ import {
   SortField,
 } from "@/plugins/api/interfaces";
 
-describe("playMedia start_from_beginning passthrough", () => {
+describe("playMedia start_position passthrough", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("forwards start_from_beginning in the play_media payload", () => {
+  // 0 plays from the beginning, so it must survive as a value
+  it("forwards a start_position of 0 in the play_media payload", () => {
     const spy = vi
       .spyOn(api, "sendCommand")
       .mockResolvedValue(undefined as never);
 
     api.playMedia("library://podcast_episode/1", QueueOption.PLAY, {
-      start_from_beginning: true,
+      start_position: 0,
     });
 
     expect(spy).toHaveBeenCalledWith(
       "player_queues/play_media",
-      expect.objectContaining({ start_from_beginning: true }),
+      expect.objectContaining({ start_position: 0 }),
     );
   });
 
-  it("omits start_from_beginning as undefined when not requested", () => {
+  it("omits start_position as undefined when not requested", () => {
     const spy = vi
       .spyOn(api, "sendCommand")
       .mockResolvedValue(undefined as never);
@@ -34,7 +35,7 @@ describe("playMedia start_from_beginning passthrough", () => {
     api.playMedia("library://track/1", QueueOption.PLAY);
 
     const payload = spy.mock.calls[0][1] as Record<string, unknown>;
-    expect(payload.start_from_beginning).toBeUndefined();
+    expect(payload.start_position).toBeUndefined();
   });
 
   it("forwards suppressGlobalError to sendCommand as a third argument", () => {

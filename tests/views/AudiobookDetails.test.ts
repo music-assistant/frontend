@@ -144,20 +144,37 @@ describe("AudiobookDetails", () => {
     ]);
   });
 
-  it("omits absent content without removing its rows from the editor", async () => {
-    getAudiobook.mockResolvedValue(audiobook());
+  it("mounts chapters for bookmarks even without chapter metadata", async () => {
+    const bookWithoutChapters = audiobook();
+    getAudiobook.mockResolvedValue(bookWithoutChapters);
     const wrapper = await mountDetails();
-    expect(rows(wrapper)).toEqual(["provider_mappings"]);
+    expect(rows(wrapper)).toEqual(["chapters", "provider_mappings"]);
+    expect(
+      wrapper.findComponent({ name: "Chapters" }).props("itemDetails"),
+    ).toEqual(bookWithoutChapters);
     expect(
       wrapper.findComponent({ name: "RowsEditor" }).props("availableIds"),
     ).toEqual(["about", "chapters", "provider_mappings"]);
+  });
+
+  it("does not mount chapters and bookmarks when their row is hidden", async () => {
+    storeMock.currentUser.preferences["audiobook.rows"] = {
+      hidden: ["chapters"],
+    };
+    const wrapper = await mountDetails();
+    expect(wrapper.findComponent({ name: "Chapters" }).exists()).toBe(false);
+    expect(rows(wrapper)).toEqual(["about", "provider_mappings"]);
   });
 
   it("keeps the existing copyright fallback when no description is available", async () => {
     getAudiobook.mockResolvedValue(
       audiobook({ metadata: { copyright: "Copyright" } }),
     );
-    expect(rows(await mountDetails())).toEqual(["about", "provider_mappings"]);
+    expect(rows(await mountDetails())).toEqual([
+      "about",
+      "chapters",
+      "provider_mappings",
+    ]);
   });
 
   it("opens the editor from the hero and description", async () => {
