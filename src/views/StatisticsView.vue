@@ -134,7 +134,7 @@ import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { ArrowLeft } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { $t } from "@/plugins/i18n";
 
 const props = defineProps<{
@@ -144,9 +144,26 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const route = useRoute();
 const active = ref(true);
 const period = ref<StatisticsPeriod>(props.period);
-const userIds = ref<string[]>(props.userIds ?? []);
+// the period and users live in the url, so back and reload keep them
+watch(
+  () => props.period,
+  (value) => (period.value = value),
+);
+watch(period, (value) => {
+  if (value !== props.period) {
+    void router.replace({ query: { ...route.query, period: value } });
+  }
+});
+const userIds = computed({
+  get: () => props.userIds ?? [],
+  set: (value: string[]) =>
+    void router.replace({
+      query: { ...route.query, users: value.length ? value : undefined },
+    }),
+});
 const canSelectUsers = computed(() =>
   authManager.hasScope(Scope.USERS_IMPERSONATE),
 );
@@ -157,30 +174,6 @@ const shownUserIds = computed(() =>
 const includesOtherUsers = computed(() =>
   shownUserIds.value.some((id) => id !== store.currentUser?.user_id),
 );
-
-// the period and users live in the url, so back and reload keep them
-watch(
-  () => props.period,
-  (value) => (period.value = value),
-);
-watch(
-  () => props.userIds,
-  (value) => (userIds.value = value ?? []),
-);
-watch([period, userIds], ([periodValue, userIdsValue]) => {
-  if (
-    periodValue === props.period &&
-    userIdsValue.join(",") === (props.userIds ?? []).join(",")
-  ) {
-    return;
-  }
-  void router.replace({
-    query: {
-      period: periodValue,
-      ...(userIdsValue.length ? { users: userIdsValue } : {}),
-    },
-  });
-});
 
 const { data, failed, loading } = useStatistics({
   active,

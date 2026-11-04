@@ -31,7 +31,7 @@
           @select="(event: Event) => event.preventDefault()"
           @update:model-value="(checked) => toggle(user.user_id, checked)"
         >
-          {{ user.display_name || user.username }}
+          {{ userName(user) }}
         </DropdownMenuCheckboxItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -53,6 +53,7 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ChevronDown } from "@lucide/vue";
 import { computed, onMounted, shallowRef, useId } from "vue";
+import { toast } from "vue-sonner";
 
 // empty is the current user only, which the statistics commands default to
 const userIds = defineModel<string[]>({ required: true });
@@ -61,8 +62,20 @@ const labelId = useId();
 const buttonId = useId();
 const users = shallowRef<User[]>([]);
 
+const userName = (user: User) => user.display_name || user.username;
+
 onMounted(async () => {
-  users.value = await api.getAllUsers();
+  try {
+    const me = store.currentUser?.user_id;
+    // the current user first, then the others by name
+    users.value = [...(await api.getAllUsers())].sort(
+      (a, b) =>
+        Number(b.user_id === me) - Number(a.user_id === me) ||
+        userName(a).localeCompare(userName(b)),
+    );
+  } catch {
+    toast.error($t("auth.users_load_failed"));
+  }
 });
 
 const allUserIds = computed(() => users.value.map((user) => user.user_id));
@@ -82,7 +95,7 @@ const summary = computed(() => {
   if (allSelected.value) return $t("statistics_users_all");
   if (userIds.value.length === 1) {
     const user = users.value.find((u) => u.user_id === userIds.value[0]);
-    if (user) return user.display_name || user.username;
+    if (user) return userName(user);
   }
   return $t("statistics_users_count", { count: userIds.value.length });
 });
@@ -96,10 +109,7 @@ function toggle(userId: string, checked: boolean | "indeterminate") {
 }
 
 function select(ids: readonly string[]) {
-  // in the order of the user list, so the url stays the same for the same users
-  const ordered = allUserIds.value.filter((id) => ids.includes(id));
-  const onlyMe =
-    ordered.length === 1 && ordered[0] === store.currentUser?.user_id;
-  userIds.value = onlyMe ? [] : ordered;
+  const onlyMe = ids.length === 1 && ids[0] === store.currentUser?.user_id;
+  userIds.value = onlyMe ? [] : [...ids];
 }
 </script>

@@ -65,6 +65,7 @@ vi.mock("vue-router", async (importOriginal) => ({
     push: routerPush,
     options: { history: { state: { back: null } } },
   }),
+  useRoute: () => ({ query: { period: "month" } }),
 }));
 
 enableAutoUnmount(afterEach);
@@ -215,18 +216,22 @@ describe("StatisticsView", () => {
     },
   );
 
-  it("keeps the chosen users in the url", async () => {
+  it.each([
+    {
+      users: ["alice", "bob"],
+      query: { period: "month", users: ["alice", "bob"] },
+    },
+    { users: [], query: { period: "month" } },
+  ])("keeps the chosen users $users in the url", async ({ users, query }) => {
     hasScope.mockReturnValue(true);
-    const wrapper = mountView();
+    const wrapper = mountView(["alice"]);
 
     wrapper
       .findComponent(StatisticsUserSelect)
-      .vm.$emit("update:modelValue", ["alice", "bob"]);
+      .vm.$emit("update:modelValue", users);
     await flushPromises();
 
-    expect(routerReplace).toHaveBeenCalledWith({
-      query: { period: "month", users: ["alice", "bob"] },
-    });
+    expect(routerReplace).toHaveBeenCalledWith({ query });
   });
 
   it("goes back to Discover when opened directly", async () => {

@@ -1,26 +1,32 @@
 import StatisticsUserSelect from "@/components/statistics/StatisticsUserSelect.vue";
 import type { User } from "@/plugins/api/interfaces";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getAllUsers } = vi.hoisted(() => ({ getAllUsers: vi.fn() }));
+const { getAllUsers, toastError } = vi.hoisted(() => ({
+  getAllUsers: vi.fn(),
+  toastError: vi.fn(),
+}));
 
 vi.mock("@/plugins/api", () => ({ default: { getAllUsers } }));
 vi.mock("@/plugins/store", () => ({
   store: { currentUser: { user_id: "self" } },
 }));
+vi.mock("vue-sonner", () => ({ toast: { error: toastError } }));
 
 enableAutoUnmount(afterEach);
 
 const user = (user_id: string, display_name: string | null): User =>
   ({ user_id, username: user_id, display_name }) as User;
 
+// in server order, which the menu does not keep
 const USERS = [
+  user("homeassistant_system", null),
+  user("bob", "Bob"),
   user("self", "Me Myself"),
   user("alice", "Alice"),
-  user("homeassistant_system", null),
 ];
-const ALL = USERS.map((u) => u.user_id);
+const ALL = ["self", "alice", "bob", "homeassistant_system"];
 
 // the menu is rendered inline and open, so its items click like buttons
 const passthrough = { template: "<div><slot /></div>" };
@@ -31,8 +37,12 @@ const CheckboxItemStub = {
     @click="$emit('select', $event); $emit('update:modelValue', !modelValue)"><slot /></button>`,
 };
 
-async function mountSelect(modelValue: string[]) {
+beforeEach(() => {
+  vi.resetAllMocks();
   getAllUsers.mockResolvedValue(USERS);
+});
+
+async function mountSelect(modelValue: string[]) {
   const wrapper = mount(StatisticsUserSelect, {
     props: { modelValue },
     global: {
@@ -55,6 +65,28 @@ const item = (wrapper: Awaited<ReturnType<typeof mountSelect>>, name: string) =>
     .find((entry) => entry.text() === name)!;
 
 describe("StatisticsUserSelect", () => {
+  it("lists all users, then the current user, then the others by name", async () => {
+    const wrapper = await mountSelect([]);
+
+    expect(
+      wrapper.findAll('[role="menuitemcheckbox"]').map((entry) => entry.text()),
+    ).toEqual([
+      "All users",
+      "Me Myself",
+      "Alice",
+      "Bob",
+      "homeassistant_system",
+    ]);
+  });
+
+  it("toasts when the users can not be loaded", async () => {
+    getAllUsers.mockRejectedValue(new Error("offline"));
+    const wrapper = await mountSelect([]);
+
+    expect(toastError).toHaveBeenCalledExactlyOnceWith("Failed to load users");
+    expect(wrapper.findAll('[role="menuitemcheckbox"]')).toHaveLength(1);
+  });
+
   it.each([
     { selected: [], summary: "Only me", checked: ["Me Myself"] },
     { selected: ["alice"], summary: "Alice", checked: ["Alice"] },
@@ -66,7 +98,13 @@ describe("StatisticsUserSelect", () => {
     {
       selected: ALL,
       summary: "All users",
-      checked: ["All users", "Me Myself", "Alice", "homeassistant_system"],
+      checked: [
+        "All users",
+        "Me Myself",
+        "Alice",
+        "Bob",
+        "homeassistant_system",
+      ],
     },
   ])(
     "summarises $selected as $summary",
