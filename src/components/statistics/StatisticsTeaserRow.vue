@@ -32,10 +32,12 @@ import StatisticsHeroCard from "@/components/statistics/StatisticsHeroCard.vue";
 import StatisticsPeriodSelect from "@/components/statistics/StatisticsPeriodSelect.vue";
 import { Button } from "@/components/ui/button";
 import { useStatistics } from "@/composables/useStatistics";
-import { DEFAULT_STATISTICS_PERIOD } from "@/helpers/statistics_period";
+import { setUserPreference } from "@/composables/userPreferences";
+import { parseStatisticsPeriod } from "@/helpers/statistics_period";
 import type { StatisticsPeriod } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { ChevronRight } from "@lucide/vue";
-import { ref, toRef } from "vue";
+import { ref, toRef, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { $t } from "@/plugins/i18n";
 
@@ -44,7 +46,14 @@ const props = defineProps<{
   active: boolean;
 }>();
 
-const period = ref<StatisticsPeriod>(DEFAULT_STATISTICS_PERIOD);
+const PERIOD_PREFERENCE_KEY = "discover.statisticsPeriod";
+
+const period = ref<StatisticsPeriod>(
+  parseStatisticsPeriod(
+    store.currentUser?.preferences?.[PERIOD_PREFERENCE_KEY],
+  ),
+);
+watch(period, (value) => void setUserPreference(PERIOD_PREFERENCE_KEY, value));
 const { data, failed, loading } = useStatistics({
   active: toRef(props, "active"),
   period,

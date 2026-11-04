@@ -37,7 +37,7 @@
           <VisAxis
             type="x"
             :tick-values="AXIS_HOURS"
-            :tick-format="(hour: number) => formatHour(hour, locale)"
+            :tick-format="(hour: number) => formatShortHour(hour, locale)"
             :tick-line="false"
             :domain-line="false"
             :grid-line="false"
@@ -66,7 +66,7 @@ import {
   isHourInWindow,
   peakListeningWindow,
 } from "@/helpers/statistics_activity";
-import { formatHour } from "@/helpers/statistics_format";
+import { formatHour, formatShortHour } from "@/helpers/statistics_format";
 import type { StatisticsHeatmapPoint } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { VisAxis, VisGroupedBar, VisXYContainer } from "@unovis/vue";

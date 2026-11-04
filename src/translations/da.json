@@ -442,7 +442,6 @@
     "view": {
         "list": "Listevisning",
         "panel": "Panelvisning",
-        "panel_compact": "Kompakt panelvisning",
         "discovery": "Udforsk"
     },
     "play_replace": "Afspil nu (ryd køen)",
