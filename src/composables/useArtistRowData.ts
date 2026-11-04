@@ -1,6 +1,5 @@
 import {
   ARTIST_RELEASE_TYPES,
-  artistAlbumsCountBySource,
   isSingleOrEp,
   loadArtistAppearsOn,
   loadArtistAppearsOnCount,
@@ -51,8 +50,6 @@ export function useArtistRowData(
   // a source change in the editor loads the new one. Absent = still loading.
   const albumReleases = ref(new Map<RowSource, Album[]>());
   const singlesReleases = ref(new Map<RowSource, Album[]>());
-  const albumCounts = ref(new Map<RowSource, number | undefined>());
-  const singlesCounts = ref(new Map<RowSource, number | undefined>());
   const topTracks = ref(new Map<RowSource, Track[]>());
   const similarArtists = ref(new Map<RowSource, Artist[]>());
   const artistTracks = ref<Track[]>();
@@ -71,8 +68,6 @@ export function useArtistRowData(
     () => {
       albumReleases.value = new Map();
       singlesReleases.value = new Map();
-      albumCounts.value = new Map();
-      singlesCounts.value = new Map();
       topTracks.value = new Map();
       similarArtists.value = new Map();
       artistTracks.value = undefined;
@@ -89,7 +84,6 @@ export function useArtistRowData(
     {
       [MediaType.ALBUM]: [
         "releases",
-        "release_count:",
         "appears_on",
         "appears_on_count",
         "discography",
@@ -140,8 +134,11 @@ export function useArtistRowData(
   const singleItems = computed(() =>
     singlesSourceReleases.value?.filter(isSingleOrEp),
   );
-  const albumsCount = computed(() =>
-    albumsSource.value ? albumCounts.value.get(albumsSource.value) : undefined,
+  const albumsCount = computed(
+    () =>
+      sourceItems(albumReleases.value, albumsSource.value)?.filter(
+        (album) => !isSingleOrEp(album),
+      ).length,
   );
 
   const albumsMeta = computed(() =>
@@ -150,10 +147,11 @@ export function useArtistRowData(
       : undefined,
   );
 
-  const singlesCount = computed(() =>
-    singlesSource.value
-      ? singlesCounts.value.get(singlesSource.value)
-      : undefined,
+  const singlesCount = computed(
+    () =>
+      sourceItems(singlesReleases.value, singlesSource.value)?.filter(
+        isSingleOrEp,
+      ).length,
   );
 
   const appearsOnItems = computed(() => appearsOn.value);
@@ -215,11 +213,8 @@ export function useArtistRowData(
     if (disposed || !artist.value) return;
     const rows = visibleRows.value;
     if (rows.includes("albums")) fetchReleases("albums", albumsSource.value!);
-    if (rows.includes("albums"))
-      fetchReleaseCount("albums", albumsSource.value!);
     if (rows.includes("singles_eps")) {
       fetchReleases("singles_eps", singlesSource.value!);
-      fetchReleaseCount("singles_eps", singlesSource.value!);
     }
     if (rows.includes("appears_on")) {
       fetchAppearsOn();
@@ -269,20 +264,6 @@ export function useArtistRowData(
         }
         return releases;
       },
-    );
-  }
-
-  function fetchReleaseCount(
-    rowId: "albums" | "singles_eps",
-    source: RowSource,
-  ) {
-    const counts = rowId === "albums" ? albumCounts.value : singlesCounts.value;
-    return fetchOnceValue(
-      `release_count:${rowId}:${source}`,
-      (artist) =>
-        artistAlbumsCountBySource(artist, source, ARTIST_RELEASE_TYPES[rowId]),
-      (count) => counts.set(source, count),
-      undefined,
     );
   }
 

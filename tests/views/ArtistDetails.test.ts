@@ -25,7 +25,6 @@ const {
   mockResolveArtistRows,
   mockArtistRowSources,
   mockLoadArtistReleases,
-  mockArtistAlbumsCountBySource,
   mockLoadArtistDiscography,
   mockLoadArtistDiscographyCount,
   mockLoadArtistTracks,
@@ -42,7 +41,6 @@ const {
   mockResolveArtistRows: vi.fn(),
   mockArtistRowSources: vi.fn(),
   mockLoadArtistReleases: vi.fn(),
-  mockArtistAlbumsCountBySource: vi.fn(),
   mockLoadArtistDiscography: vi.fn(),
   mockLoadArtistDiscographyCount: vi.fn(),
   mockLoadArtistTracks: vi.fn(),
@@ -86,7 +84,6 @@ vi.mock("@/components/artist/artistRows", () => ({
 vi.mock("@/components/artist/artistData", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/artist/artistData")>()),
   loadArtistReleases: mockLoadArtistReleases,
-  artistAlbumsCountBySource: mockArtistAlbumsCountBySource,
   loadArtistDiscography: mockLoadArtistDiscography,
   loadArtistDiscographyCount: mockLoadArtistDiscographyCount,
   loadArtistTracks: mockLoadArtistTracks,
@@ -215,7 +212,6 @@ describe("ArtistDetails", () => {
     // a library artist mapped to a provider that can supply the row
     mockArtistRowSources.mockReset().mockReturnValue(["library", "all"]);
     mockLoadArtistReleases.mockReset().mockResolvedValue(RELEASES);
-    mockArtistAlbumsCountBySource.mockReset().mockResolvedValue(4);
     mockLoadArtistDiscography.mockReset().mockResolvedValue([album()]);
     mockLoadArtistDiscographyCount.mockReset().mockResolvedValue(1);
     mockLoadArtistTracks.mockReset().mockResolvedValue([track()]);

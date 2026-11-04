@@ -85,22 +85,6 @@ export async function artistAlbumsBySource(
   return await getAlbums(target.itemId, target.provider);
 }
 
-export async function artistAlbumsCountBySource(
-  artist: Artist,
-  source: RowSource,
-  albumTypes: AlbumType[],
-): Promise<number> {
-  const target = artistListingSource(artist, source);
-  if (!target) return 0;
-  return await api.getArtistAlbumsCount(
-    target.itemId,
-    target.provider,
-    undefined,
-    undefined,
-    albumTypes,
-  );
-}
-
 /**
  * The artist's discography as MusicBrainz knows it, newest first: the library
  * albums, and the releases outside the library as MusicBrainz items. All of

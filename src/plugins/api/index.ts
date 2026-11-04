@@ -853,24 +853,6 @@ export class MusicAssistantApi {
     });
   }
 
-  public getArtistAlbumsCount(
-    item_id: string,
-    provider_instance_id_or_domain: string,
-    provider_filter?: string,
-    search?: string,
-    album_types?: AlbumType[],
-    favorite?: boolean,
-  ): Promise<number> {
-    return this.sendCommand("music/artists/artist_albums_count", {
-      item_id,
-      provider_instance_id_or_domain,
-      provider_filter,
-      search,
-      album_types,
-      favorite,
-    });
-  }
-
   public getArtistAppearsOn(
     item_id: string,
     provider_instance_id_or_domain: string,
