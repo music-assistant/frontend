@@ -18,7 +18,7 @@ const LIBRARY_CHANGE_DELAY_MS = 2000;
  * `identity` is what the rows are loaded from; when it changes, the requests
  * made so far are forgotten and `onReset` runs so the page can clear its caches
  * and reload. A response that arrives after the identity changed, or after its
- * key was refetched, is dropped.
+ * key was refetched, or after the scope ended, is dropped.
  */
 export function useRowRequests<Item>(
   item: Ref<Item | undefined>,
@@ -28,6 +28,7 @@ export function useRowRequests<Item>(
   // the requests already sent for the item currently shown, each with a token
   // that tells its response apart from one of a later request for the same key
   let requested = new Map<string, object>();
+  onScopeDispose(() => requested.clear());
 
   watch(
     () => item.value && identity(item.value),

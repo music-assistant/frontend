@@ -50,6 +50,22 @@ interface ArtistAlbumsListingOptions {
   favoritesOnly?: boolean;
 }
 
+export async function artistAlbumsCountBySource(
+  artist: Artist,
+  source: RowSource,
+  albumTypes: AlbumType[],
+): Promise<number> {
+  const target = artistListingSource(artist, source);
+  if (!target) return 0;
+  return await api.getArtistAlbumsCount(
+    target.itemId,
+    target.provider,
+    undefined,
+    undefined,
+    albumTypes,
+  );
+}
+
 /**
  * The releases of an artist from one source: the library, or a single
  * provider's own catalog.

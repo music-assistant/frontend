@@ -555,6 +555,32 @@ describe("MusicAssistantApi error handling", () => {
     });
     await expect(tracksRequest).resolves.toBe(12);
 
+    const albumsRequest = api.getArtistAlbumsCount(
+      "artist-1",
+      "library",
+      undefined,
+      "live",
+      [AlbumType.SINGLE, AlbumType.EP],
+      true,
+    );
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/artist_albums_count",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      provider_filter: undefined,
+      search: "live",
+      album_types: [AlbumType.SINGLE, AlbumType.EP],
+      favorite: true,
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: 60,
+      partial: false,
+    });
+    await expect(albumsRequest).resolves.toBe(60);
+
     const appearsOnRequest = api.getArtistAppearsOnCount("artist-1", "library");
     expect(transport.lastCommand.command).toBe(
       "music/artists/artist_appears_on_count",
@@ -788,8 +814,8 @@ describe("MusicAssistantApi error handling", () => {
         "live",
         20,
         40,
-        SortField.NAME,
-        SortDirection.ASC,
+        SortField.RELEASE_DATE,
+        SortDirection.DESC,
         [AlbumType.SINGLE, AlbumType.EP],
         favorite,
       );
@@ -802,8 +828,8 @@ describe("MusicAssistantApi error handling", () => {
         search: "live",
         limit: 20,
         offset: 40,
-        sort_field: SortField.NAME,
-        sort_direction: SortDirection.ASC,
+        sort_field: SortField.RELEASE_DATE,
+        sort_direction: SortDirection.DESC,
         album_types: [AlbumType.SINGLE, AlbumType.EP],
         favorite,
       });

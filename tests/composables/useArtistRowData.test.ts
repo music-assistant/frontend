@@ -30,6 +30,7 @@ import { user } from "../fixtures/user";
 const {
   mockApi,
   mockLoadArtistReleases,
+  mockArtistAlbumsCountBySource,
   mockLoadArtistAppearsOn,
   mockLoadArtistAppearsOnCount,
   mockLoadArtistDiscography,
@@ -49,6 +50,7 @@ const {
   },
   mockLoadArtistReleases:
     vi.fn<(artist: Artist, source: RowSource) => Promise<Album[]>>(),
+  mockArtistAlbumsCountBySource: vi.fn(),
   mockLoadArtistAppearsOn: vi.fn<(artist: Artist) => Promise<Album[]>>(),
   mockLoadArtistAppearsOnCount: vi.fn<(artist: Artist) => Promise<number>>(),
   mockLoadArtistDiscography: vi.fn<(artist: Artist) => Promise<Album[]>>(),
@@ -68,6 +70,7 @@ vi.mock("@/plugins/api", () => ({ api: mockApi, default: mockApi }));
 vi.mock("@/components/artist/artistData", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/artist/artistData")>()),
   loadArtistReleases: mockLoadArtistReleases,
+  artistAlbumsCountBySource: mockArtistAlbumsCountBySource,
   loadArtistAppearsOn: mockLoadArtistAppearsOn,
   loadArtistAppearsOnCount: mockLoadArtistAppearsOnCount,
   loadArtistDiscography: mockLoadArtistDiscography,
@@ -146,6 +149,7 @@ describe("useArtistRowData", () => {
     };
     mockApi.getProvider.mockReset();
     mockLoadArtistReleases.mockReset().mockResolvedValue([]);
+    mockArtistAlbumsCountBySource.mockReset().mockResolvedValue(1);
     mockLoadArtistAppearsOn.mockReset().mockResolvedValue([]);
     mockLoadArtistAppearsOnCount.mockReset().mockResolvedValue(0);
     mockLoadArtistDiscography.mockReset().mockResolvedValue([]);
@@ -175,7 +179,9 @@ describe("useArtistRowData", () => {
       expect.anything(),
       "library",
       expect.objectContaining({
-        limit: 0,
+        limit: 50,
+        sortField: SortField.RELEASE_DATE,
+        sortDirection: SortDirection.DESC,
         albumTypes: [
           AlbumType.ALBUM,
           AlbumType.COMPILATION,
@@ -190,7 +196,9 @@ describe("useArtistRowData", () => {
       expect.anything(),
       "library",
       expect.objectContaining({
-        limit: 0,
+        limit: 50,
+        sortField: SortField.RELEASE_DATE,
+        sortDirection: SortDirection.DESC,
         albumTypes: [AlbumType.SINGLE, AlbumType.EP],
       }),
     );
@@ -198,9 +206,12 @@ describe("useArtistRowData", () => {
     expect(itemIds(page.singleItems.value)).toEqual(["single-1"]);
   });
 
-  it("derives each shelf count from its full type-filtered release list", async () => {
+  it("requests total counts with the same album types as each limited shelf", async () => {
     const page = setupRowData({ rows: ["albums", "singles_eps"] });
     mockLoadArtistReleases.mockResolvedValue(RELEASES);
+    mockArtistAlbumsCountBySource
+      .mockResolvedValueOnce(102)
+      .mockResolvedValueOnce(60);
 
     await showArtist(page, libraryArtist());
 
@@ -210,7 +221,9 @@ describe("useArtistRowData", () => {
       expect.anything(),
       "library",
       {
-        limit: 0,
+        limit: 50,
+        sortField: SortField.RELEASE_DATE,
+        sortDirection: SortDirection.DESC,
         albumTypes: [
           AlbumType.ALBUM,
           AlbumType.COMPILATION,
@@ -220,66 +233,67 @@ describe("useArtistRowData", () => {
         ],
       },
     );
-    expect(page.albumsCount.value).toBe(1);
-    expect(page.singlesCount.value).toBe(1);
+    expect(mockArtistAlbumsCountBySource).toHaveBeenNthCalledWith(
+      1,
+      expect.anything(),
+      "library",
+      [
+        AlbumType.ALBUM,
+        AlbumType.COMPILATION,
+        AlbumType.LIVE,
+        AlbumType.SOUNDTRACK,
+        AlbumType.UNKNOWN,
+      ],
+    );
+    expect(mockArtistAlbumsCountBySource).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      "library",
+      [AlbumType.SINGLE, AlbumType.EP],
+    );
+    expect(page.albumsCount.value).toBe(102);
+    expect(page.singlesCount.value).toBe(60);
   });
 
-  it("sorts the complete release list by release date before showing the newest 50", async () => {
+  it("uses the server's 50 newest releases in response order with an independent total", async () => {
     const page = setupRowData({ rows: ["albums"] });
-    const firstPage = Array.from({ length: 50 }, (_, index) =>
+    const releases = Array.from({ length: 50 }, (_, index) =>
       album({
-        item_id: `first-${index}`,
+        item_id: `release-${index}`,
         year: 2025,
-        metadata: { release_date: "2025-01-01" },
       }),
     );
-    const secondPage = Array.from({ length: 50 }, (_, index) =>
-      album({
-        item_id: `second-${index}`,
-        year: 2025,
-        metadata: { release_date: "2025-06-01" },
-      }),
-    );
-    const latestRelease = album({
-      item_id: "latest-release",
-      year: 2025,
-      metadata: { release_date: "2025-12-31" },
-    });
-    const olderYearRelease = album({
-      item_id: "older-year",
-      year: 2024,
-      metadata: { release_date: "2024-12-31" },
-    });
-    mockLoadArtistReleases.mockResolvedValue([
-      ...firstPage,
-      ...secondPage,
-      latestRelease,
-      olderYearRelease,
-    ]);
+    mockLoadArtistReleases.mockResolvedValue(releases);
+    mockArtistAlbumsCountBySource.mockResolvedValue(102);
 
     await showArtist(page, libraryArtist());
 
     expect(mockLoadArtistReleases).toHaveBeenCalledWith(
       expect.anything(),
       "library",
-      expect.objectContaining({ limit: 0, albumTypes: expect.any(Array) }),
+      expect.objectContaining({
+        limit: 50,
+        albumTypes: expect.any(Array),
+        sortField: SortField.RELEASE_DATE,
+        sortDirection: SortDirection.DESC,
+      }),
     );
     expect(page.albumItems.value).toHaveLength(50);
     expect(page.albumsCount.value).toBe(102);
-    expect(page.albumItems.value?.[0].item_id).toBe("latest-release");
-    expect(itemIds(page.albumItems.value)).not.toContain("older-year");
+    expect(page.albumItems.value).toEqual(releases);
   });
 
-  it("counts all singles and EPs before limiting their shelf to 50", async () => {
+  it("shows a limited singles and EP shelf with the full matching count", async () => {
     const page = setupRowData({ rows: ["singles_eps"] });
     mockLoadArtistReleases.mockResolvedValue(
-      Array.from({ length: 60 }, (_, index) =>
+      Array.from({ length: 50 }, (_, index) =>
         album({
           item_id: `single-${index}`,
           album_type: index % 2 ? AlbumType.SINGLE : AlbumType.EP,
         }),
       ),
     );
+    mockArtistAlbumsCountBySource.mockResolvedValue(60);
 
     await showArtist(page, libraryArtist());
 
@@ -448,8 +462,8 @@ describe("useArtistRowData", () => {
     );
     await flushPromises();
 
-    expect(page.albumItems.value).toEqual([]);
-    expect(page.albumsCount.value).toBe(0);
+    expect(page.albumItems.value).toBeUndefined();
+    expect(page.albumsCount.value).toBe(1);
   });
 
   it.each(["empty", "rejected"] as const)(

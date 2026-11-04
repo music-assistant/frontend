@@ -977,6 +977,7 @@
         "sort_name": "Alphabetically by sort name",
         "track_number": "Track number",
         "year": "Release year",
+        "release_date": "Release date",
         "position_desc": "Position (descending)",
         "album": "Album (alphabetical)",
         "album_name": "Album",
