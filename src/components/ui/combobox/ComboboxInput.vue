@@ -54,7 +54,11 @@ function commitTypedText(input: HTMLInputElement) {
 }
 
 function onKeydownEnter(event: KeyboardEvent) {
-  if (!freeText.value || rootContext.highlightedElement.value?.isConnected)
+  if (
+    !freeText.value ||
+    !typed.value ||
+    rootContext.highlightedElement.value?.isConnected
+  )
     return;
   // Enter that confirms an IME composition, keyCode 229 on webkit
   if (event.isComposing || event.keyCode === 229) return;

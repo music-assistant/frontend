@@ -45,7 +45,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     >
       <ComboboxViewport
         data-slot="combobox-viewport"
-        class="max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto p-1"
+        class="max-h-[min(300px,calc(var(--reka-combobox-content-available-height)_-_2px))] scroll-py-1 overflow-x-hidden overflow-y-auto p-1"
       >
         <slot></slot>
       </ComboboxViewport>

@@ -122,10 +122,12 @@ watch(
   () => aliasSearch.value,
   (search) => {
     clearTimeout(searchThrottle.value);
-    if (!search) {
-      aliasOptions.value = [];
-      aliasLoading.value = false;
+    if (selectedAlias.value && search !== displayAlias(selectedAlias.value)) {
       selectedAlias.value = null;
+    }
+    aliasOptions.value = [];
+    if (!search) {
+      aliasLoading.value = false;
       return;
     }
     aliasLoading.value = true;

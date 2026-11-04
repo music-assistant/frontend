@@ -104,6 +104,21 @@ describe("LinkAliasDialog", () => {
     expect(aliasOptions()).toEqual(["Dark Ambient"]);
   });
 
+  it("drops the picked alias when the search is edited", async () => {
+    apiMock.getLibraryGenres.mockResolvedValue([
+      genre({ name: "Ambient", genre_aliases: ["Dark Ambient"] }),
+    ]);
+    mountLinkAliasDialog();
+    await searchAliases("ambient");
+    document.querySelector<HTMLElement>("[data-slot='combobox-item']")!.click();
+    await flushPromises();
+    expect(linkButton().disabled).toBe(false);
+
+    await searchAliases("jazz");
+
+    expect(linkButton().disabled).toBe(true);
+  });
+
   it("ignores the answer to an older search", async () => {
     let answerOlderSearch: (genres: Genre[]) => void = () => {};
     apiMock.getLibraryGenres
@@ -125,6 +140,12 @@ describe("LinkAliasDialog", () => {
     expect(aliasOptions()).toEqual(["Jazz Fusion"]);
   });
 });
+
+function linkButton() {
+  return [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+    (button) => button.textContent?.trim() === "link_alias",
+  )!;
+}
 
 function mountLinkAliasDialog() {
   return mount(LinkAliasDialog, {

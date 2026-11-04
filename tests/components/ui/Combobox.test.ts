@@ -12,8 +12,8 @@ import { defineComponent, h, ref } from "vue";
 
 enableAutoUnmount(afterEach);
 
-function mountCombobox(multiple = false) {
-  const model = ref<AcceptableValue | undefined>(multiple ? [] : undefined);
+function mountCombobox(multiple = false, initial?: string) {
+  const model = ref<AcceptableValue | undefined>(multiple ? [] : initial);
   const Harness = defineComponent(
     () => () =>
       h(
@@ -27,7 +27,17 @@ function mountCombobox(multiple = false) {
           freeText: true,
         },
         () => [
-          h(ComboboxAnchor, () => h(ComboboxInput)),
+          h(ComboboxAnchor, () =>
+            h(
+              ComboboxInput,
+              multiple
+                ? {}
+                : {
+                    displayValue: (value: string) =>
+                      value === "jazz" ? "Jazz" : value,
+                  },
+            ),
+          ),
           h(ComboboxList, () =>
             h(ComboboxItem, { value: "jazz" }, () => "Jazz"),
           ),
@@ -83,6 +93,20 @@ describe("Combobox free text", () => {
     await flushPromises();
 
     expect(model.value).toBeUndefined();
+  });
+
+  it("keeps an untouched selection on Enter", async () => {
+    const model = mountCombobox(false, "jazz");
+    const input = document.querySelector<HTMLInputElement>(
+      "[data-slot='combobox-input']",
+    )!;
+    input.focus();
+
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+    await flushPromises();
+
+    expect(input.value).toBe("Jazz");
+    expect(model.value).toBe("jazz");
   });
 
   it("commits typed text when leaving the field", async () => {
