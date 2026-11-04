@@ -52,8 +52,11 @@
             :lyrics-active="showLyrics"
             :transcript-sync-enabled="transcriptSyncEnabled"
             :transcript-timed="!!currentLyrics.synced"
+            :chapters-available="hasChapters"
+            :chapters-active="showChapters"
             @toggle-lyrics="toggleLyrics"
             @toggle-transcript-sync="toggleTranscriptSync"
+            @toggle-chapters="toggleChapters"
           />
 
           <Button
@@ -223,6 +226,24 @@
               :lrc-lyrics="currentLyrics.synced"
               :offset="lyricsOffset"
               :sync-disabled="isEpisode && !transcriptSyncEnabled"
+            />
+          </div>
+          <!-- chapters of the playing item -->
+          <div
+            v-else-if="showChapters && store.curQueueItem"
+            ref="chaptersPanelRef"
+            class="h-full overflow-y-auto px-4"
+            :style="`--queue-subtitle-size: ${queueSubtitleFontSize};`"
+          >
+            <QueueChapterList
+              class="!ml-0"
+              :item="store.curQueueItem"
+              :groups="queueChapterGroups"
+              :active-position="panelChapterPosition"
+              :can-add="canAddBookmark"
+              :position="playingPosition"
+              start-times
+              @seek="panelChapterClicked"
             />
           </div>
           <!-- Unified queue list: played → now playing → up next (virtualized) -->
@@ -612,6 +633,27 @@ const showAlbumSubtitle = computed(
 
 const { albumSubtitle } = useNowPlayingSource();
 const { getPreference, setPreference } = useUserPreferences();
+// The chapter list panel, a third option for the right column.
+const showChapters = ref(false);
+const hasChapters = computed(
+  () => !!store.curQueueItem?.media_item?.metadata?.chapters?.length,
+);
+const toggleChapters = () => {
+  showChapters.value = !showChapters.value;
+};
+watch(hasChapters, (available) => {
+  if (!available) showChapters.value = false;
+});
+const chaptersPanelRef = ref<HTMLElement>();
+// open on the playing chapter, a long list would otherwise start far from it
+watch(chaptersPanelRef, async (panel) => {
+  if (!panel) return;
+  await nextTick();
+  panel
+    .querySelector("[aria-current='true']")
+    ?.scrollIntoView({ block: "center" });
+});
+
 const showWaveformPref = computed(() => expertModeSetting("show_waveform"));
 const showChapterProgress = getPreference("audiobook_chapter_progress", true);
 const nowTick = ref(0);
@@ -678,10 +720,26 @@ const playingPosition = computed(() => {
 const chapterTimerNeeded = computed(
   () =>
     store.showFullscreenPlayer &&
-    store.showQueueItems &&
+    (store.showQueueItems || showChapters.value) &&
     store.activePlayer?.playback_state === PlaybackState.PLAYING &&
-    ((!!chapterQueueItem.value && showChapterProgress.value) ||
+    ((!!chapterQueueItem.value &&
+      (showChapterProgress.value || showChapters.value)) ||
       canAddBookmark.value),
+);
+
+const panelChapterClicked = (target: Pick<MediaItemChapter, "start">) => {
+  const media = store.curQueueItem?.media_item;
+  if (media) chapterClicked(media, target);
+};
+
+// the playing chapter for the chapter panel, also without chapter progress
+const panelChapterPosition = computed(
+  () =>
+    resolveCurrentChapter(
+      chapterQueueItem.value?.media_item?.metadata?.chapters,
+      playingPosition.value,
+      store.activePlayer?.current_media?.duration,
+    )?.chapter.position,
 );
 
 watch(chapterTimerNeeded, updateChapterTimer, { immediate: true });
@@ -830,8 +888,15 @@ watch(lyricsState, (state) => {
 // state. Opening lyrics remembers whether the queue was showing so closing them
 // returns there rather than to the bare artwork.
 let queueVisibleBeforeLyrics = false;
+watch(showChapters, (active) => {
+  if (!active) return;
+  queueVisibleBeforeLyrics = false;
+  showLyrics.value = false;
+  store.showQueueItems = false;
+});
 watch(showLyrics, (active) => {
   if (active) {
+    showChapters.value = false;
     queueVisibleBeforeLyrics = store.showQueueItems;
     store.showQueueItems = false;
   } else if (queueVisibleBeforeLyrics) {
@@ -842,14 +907,16 @@ watch(showLyrics, (active) => {
 watch(
   () => store.showQueueItems,
   (active) => {
-    if (active) showLyrics.value = false;
+    if (!active) return;
+    showLyrics.value = false;
+    showChapters.value = false;
   },
 );
 
 // Whether the right-hand column (queue list or lyrics) is visible. Used to
 // collapse the media details column on small/narrow screens.
 const showRightColumn = computed(
-  () => store.showQueueItems || showLyrics.value,
+  () => store.showQueueItems || showLyrics.value || showChapters.value,
 );
 
 // The unified queue list (virtualized rows, paging, now-playing focus and

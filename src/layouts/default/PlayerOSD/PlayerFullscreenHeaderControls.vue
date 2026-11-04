@@ -107,6 +107,28 @@
       </Tooltip>
     </TooltipProvider>
 
+    <!-- chapters: toggles the chapter list panel -->
+    <TooltipProvider v-if="chaptersAvailable" :delay-duration="200">
+      <Tooltip>
+        <TooltipTrigger as-child>
+          <Button
+            variant="overlay"
+            :size="showLabel ? 'default' : 'icon-sm'"
+            :data-active="chaptersActive || undefined"
+            :aria-pressed="chaptersActive"
+            :aria-label="$t('chapters')"
+            @click="emit('toggle-chapters')"
+          >
+            <ListVideo />
+            <span v-if="showLabel">{{ $t("chapters") }}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
+          {{ chaptersActive ? $t("chapters_hide") : $t("chapters_show") }}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+
     <!-- dynamic mode: autoplay is implicitly on and the queue refills itself
          from its sources. Non-interactive indicator; the tooltip names the
          seeds it is based on. -->
@@ -275,7 +297,14 @@ import {
 import { MediaType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { AudioLines, Captions, Link2, MicVocal, Unlink2 } from "@lucide/vue";
+import {
+  AudioLines,
+  Captions,
+  Link2,
+  ListVideo,
+  MicVocal,
+  Unlink2,
+} from "@lucide/vue";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -283,10 +312,13 @@ const props = defineProps<{
   lyricsActive?: boolean;
   transcriptSyncEnabled?: boolean;
   transcriptTimed?: boolean;
+  chaptersAvailable?: boolean;
+  chaptersActive?: boolean;
 }>();
 const emit = defineEmits<{
   (e: "toggle-lyrics"): void;
   (e: "toggle-transcript-sync"): void;
+  (e: "toggle-chapters"): void;
 }>();
 
 // The same panel shows lyrics for a track and a transcript for a podcast episode.

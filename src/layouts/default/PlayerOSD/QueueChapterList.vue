@@ -35,7 +35,10 @@
         @click.stop="emit('seek', group.chapter)"
       >
         <span class="queue-chapter__name">{{ group.chapter.name }}</span>
-        <span v-if="group.chapter.end" class="queue-chapter__time">
+        <span v-if="startTimes" class="queue-chapter__time tabular-nums">
+          {{ formatDuration(group.chapter.start) }}
+        </span>
+        <span v-else-if="group.chapter.end" class="queue-chapter__time">
           {{ formatDuration(group.chapter.end - group.chapter.start) }}
         </span>
       </button>
@@ -107,6 +110,8 @@ export interface Props {
   canAdd: boolean;
   // the playing position, in seconds of the whole item
   position: number;
+  // show where each chapter starts instead of its length
+  startTimes?: boolean;
 }
 const props = defineProps<Props>();
 const emit = defineEmits<{

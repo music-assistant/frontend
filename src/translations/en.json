@@ -1205,6 +1205,8 @@
     "audiobooks": "Audiobooks",
     "chapter": "Chapter",
     "chapters": "Chapters",
+    "chapters_show": "Show the chapters",
+    "chapters_hide": "Hide the chapters",
     "chapters_and_bookmarks": "Chapters & Bookmarks",
     "chapters_and_bookmarks_tab": "All",
     "bookmarks": "Bookmarks",
