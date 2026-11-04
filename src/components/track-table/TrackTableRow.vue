@@ -8,9 +8,29 @@
     @click.right.prevent="onMenu"
   >
     <template v-for="column in columns" :key="column">
+      <!-- drags the row to a new place; the arrow keys move it one place -->
+      <div v-if="column === 'handle'" class="flex justify-center">
+        <button
+          type="button"
+          class="flex h-10 w-5 cursor-grab touch-none items-center justify-center rounded-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 active:cursor-grabbing aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:text-muted-foreground"
+          :aria-disabled="reorderDisabled || undefined"
+          :aria-label="reorderLabel"
+          :title="reorderLabel"
+          :data-reorder-index="index"
+          @pointerdown.stop.prevent="emit('dragStart', $event)"
+          @touchstart.stop
+          @contextmenu.stop.prevent
+          @keydown.up.prevent="emit('moveBy', -1)"
+          @keydown.down.prevent="emit('moveBy', 1)"
+          @click.stop
+        >
+          <GripVertical class="size-4" aria-hidden="true" />
+        </button>
+      </div>
+
       <!-- position, or the selection checkbox -->
       <div
-        v-if="column === 'number'"
+        v-else-if="column === 'number'"
         class="flex text-sm tabular-nums text-muted-foreground"
       >
         <Checkbox
@@ -191,7 +211,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { EllipsisVertical, Play } from "@lucide/vue";
+import { EllipsisVertical, GripVertical, Play } from "@lucide/vue";
 import { useMediaQuery } from "@vueuse/core";
 import { computed } from "vue";
 import TrackTableLinks from "./TrackTableLinks.vue";
@@ -212,6 +232,9 @@ export interface Props {
   isPlaying?: boolean;
   showCheckboxes?: boolean;
   disablePlayButton?: boolean;
+  // the handle stays focusable, so a keyboard move keeps its place while an
+  // edit of the playlist is held
+  reorderDisabled?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
   sortField?: SortField;
@@ -223,6 +246,7 @@ const props = withDefaults(defineProps<Props>(), {
   isPlaying: false,
   showCheckboxes: false,
   disablePlayButton: false,
+  reorderDisabled: false,
   parentItem: undefined,
   sortBy: undefined,
   sortField: undefined,
@@ -231,6 +255,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   select: [item: MediaItemType, selected: boolean];
+  dragStart: [evt: PointerEvent];
+  moveBy: [delta: number];
 }>();
 
 const isTouch = useMediaQuery("(hover: none)");
@@ -280,6 +306,9 @@ const showHoverPlay = computed(
 );
 
 const playButtonLabel = computed(() => `${$t("play")} ${props.item.name}`);
+const reorderLabel = computed(() =>
+  $t("track_table.reorder_track", [props.item.name]),
+);
 const menuButtonLabel = computed(
   () => `${$t("more_options")}: ${props.item.name}`,
 );

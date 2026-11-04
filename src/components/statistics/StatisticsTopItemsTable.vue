@@ -9,8 +9,11 @@
     class="gap-3 px-6 py-5"
   >
     <template #header>
-      <Tabs v-model="activeTab">
-        <TabsList :aria-label="$t('statistics_top_items')">
+      <Tabs v-model="activeTab" class="max-w-full min-w-0">
+        <TabsList
+          class="max-w-full justify-start overflow-x-auto"
+          :aria-label="$t('statistics_top_items')"
+        >
           <!-- Vuetify's own .border colours the trigger's transparent border;
                the state variant outranks it -->
           <TabsTrigger
@@ -24,7 +27,7 @@
         </TabsList>
       </Tabs>
     </template>
-    <Table class="min-w-[480px] text-sm">
+    <Table class="text-sm">
       <TableHeader>
         <TableRow class="hover:bg-transparent">
           <TableHead class="w-9 text-xs text-muted-foreground">
@@ -33,10 +36,12 @@
           <TableHead class="text-xs text-muted-foreground">
             {{ $t("statistics_column_title") }}
           </TableHead>
-          <TableHead class="text-right text-xs text-muted-foreground">
+          <TableHead
+            class="w-px text-right text-xs whitespace-nowrap text-muted-foreground"
+          >
             {{ $t("statistics_plays_label") }}
           </TableHead>
-          <TableHead class="w-40 text-xs text-muted-foreground">
+          <TableHead class="w-40 text-xs text-muted-foreground max-sm:hidden">
             {{ $t("statistics_column_share") }}
           </TableHead>
         </TableRow>
@@ -62,7 +67,7 @@
           <TableCell class="py-2.5 text-right tabular-nums">
             {{ formatCount(entry.play_count, locale) }}
           </TableCell>
-          <TableCell class="py-2.5">
+          <TableCell class="py-2.5 max-sm:hidden">
             <span
               class="block h-1.5 rounded-full bg-muted"
               role="img"
