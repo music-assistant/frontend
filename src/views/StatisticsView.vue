@@ -20,7 +20,13 @@
         <div class="flex flex-[1_1_280px] flex-col gap-0.5">
           <h1 class="m-0 text-[28px] font-bold">{{ $t("statistics") }}</h1>
           <p class="m-0 text-sm text-muted-foreground">
-            {{ $t("statistics_subtitle") }}
+            {{
+              $t(
+                includesOtherUsers
+                  ? "statistics_subtitle_other_users"
+                  : "statistics_subtitle",
+              )
+            }}
           </p>
         </div>
         <StatisticsUserSelect v-if="canSelectUsers" v-model="userIds" />
@@ -33,6 +39,7 @@
         :loading="loading"
         :error="failed.has('playsOverTime')"
         :peak-hour="peakHour"
+        :includes-other-users="includesOtherUsers"
       />
 
       <!-- two by two until all four fit in a row, so none sits alone -->
@@ -45,11 +52,13 @@
           :listening-time="data.listeningTime"
           :loading="loading"
           :error="failed.has('topArtists')"
+          :includes-other-users="includesOtherUsers"
         />
         <StatisticsListeningWindowCard
           :activity="data.listeningActivity"
           :loading="loading"
           :error="failed.has('listeningActivity')"
+          :includes-other-users="includesOtherUsers"
         />
         <StatisticsGenreCard
           :genres="data.genreDistribution"
@@ -75,6 +84,7 @@
           :data="data.listeningActivity"
           :loading="loading"
           :error="failed.has('listeningActivity')"
+          :includes-other-users="includesOtherUsers"
         />
       </div>
 
@@ -142,6 +152,10 @@ const canSelectUsers = computed(() =>
 );
 const shownUserIds = computed(() =>
   canSelectUsers.value ? userIds.value : [],
+);
+// "you" and "your" only fit the current user's own statistics
+const includesOtherUsers = computed(() =>
+  shownUserIds.value.some((id) => id !== store.currentUser?.user_id),
 );
 
 // the period and users live in the url, so back and reload keep them

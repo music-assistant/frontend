@@ -202,7 +202,7 @@ describe("StatisticsTeaserRow", () => {
     // per day of the 7-day period, not per calendar day shown
     expect(wrapper.text()).toContain("2 a day on average.");
     expect(wrapper.text()).toContain(
-      "Wednesday 14 October was the busiest day.",
+      "Wednesday 14 October was your busiest day.",
     );
     expect(wrapper.find('[data-testid="chart"]').exists()).toBe(true);
   });

@@ -196,9 +196,12 @@ describe("StatisticsView", () => {
     expect(routerReplace).toHaveBeenCalledWith({ query: { period: "year" } });
   });
 
-  it.each([true, false])(
-    "shows the users of the route only with the impersonate scope (%s)",
-    (allowed) => {
+  it.each([
+    { allowed: true, subtitle: "What was played on Music Assistant" },
+    { allowed: false, subtitle: "What you played on Music Assistant" },
+  ])(
+    "shows the users of the route only with the impersonate scope ($allowed)",
+    ({ allowed, subtitle }) => {
       hasScope.mockReturnValue(allowed);
       const wrapper = mountView(["alice"]);
 
@@ -208,6 +211,7 @@ describe("StatisticsView", () => {
       expect(useStatistics.mock.calls[0][0].userIds.value).toEqual(
         allowed ? ["alice"] : [],
       );
+      expect(wrapper.text()).toContain(subtitle);
     },
   );
 
