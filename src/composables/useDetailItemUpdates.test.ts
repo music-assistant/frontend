@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { effectScope, ref } from "vue";
 import { artist } from "../../tests/fixtures/artist";
 import { providerMapping } from "../../tests/fixtures/providerMapping";
+import { track } from "../../tests/fixtures/track";
 import { useDetailItemUpdates } from "./useDetailItemUpdates";
 
 const { apiMock, storeMock } = vi.hoisted(() => ({
@@ -78,7 +79,11 @@ describe("useDetailItemUpdates", () => {
 
   it("replaces the item with an update mapped to the provider item it was opened with", () => {
     const { item } = setup(undefined, {
-      providerItem: { itemId: "item-1", provider: "test_provider" },
+      providerItem: {
+        itemId: "item-1",
+        provider: "test_provider",
+        mediaType: MediaType.ARTIST,
+      },
     });
     const added = artist({
       item_id: "7",
@@ -101,6 +106,65 @@ describe("useDetailItemUpdates", () => {
     vi.runAllTimers();
 
     expect(item.value?.item_id).toBe("1");
+  });
+
+  it("ignores a mapped update of another media type while the item loads", () => {
+    const { item } = setup(undefined, {
+      providerItem: {
+        itemId: "item-1",
+        provider: "test_provider",
+        mediaType: MediaType.ARTIST,
+      },
+    });
+
+    emit(
+      EventType.MEDIA_ITEM_UPDATED,
+      track({ provider_mappings: [providerMapping()] }),
+    );
+    vi.runAllTimers();
+
+    expect(item.value).toBeUndefined();
+  });
+
+  it("does not let another media type replace a pending mapped update", () => {
+    const { item } = setup(undefined, {
+      providerItem: {
+        itemId: "item-1",
+        provider: "test_provider",
+        mediaType: MediaType.ARTIST,
+      },
+    });
+    const updated = artist({
+      item_id: "7",
+      provider_mappings: [providerMapping()],
+    });
+
+    emit(EventType.MEDIA_ITEM_UPDATED, updated);
+    emit(
+      EventType.MEDIA_ITEM_UPDATED,
+      track({ provider_mappings: [providerMapping()] }),
+    );
+    vi.runAllTimers();
+
+    expect(item.value?.uri).toBe(updated.uri);
+  });
+
+  it("rechecks the provider route before applying a pending mapped update", () => {
+    const providerItem = {
+      itemId: "item-1",
+      provider: "test_provider",
+      mediaType: MediaType.ARTIST,
+    };
+    const { item } = setup(undefined, { providerItem });
+
+    emit(
+      EventType.MEDIA_ITEM_UPDATED,
+      artist({ provider_mappings: [providerMapping()] }),
+    );
+    providerItem.itemId = "another-item";
+    vi.runAllTimers();
+
+    expect(item.value).toBeUndefined();
   });
 
   it("applies only the last of a burst of updates, once they stop", () => {
