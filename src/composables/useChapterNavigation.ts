@@ -1,6 +1,5 @@
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { resolveCurrentChapter } from "@/helpers/chapters";
-import { useUserPreferences } from "@/composables/userPreferences";
 import {
   MediaItemChapter,
   MediaType,
@@ -17,8 +16,6 @@ export type ChapterNavigationDirection = "previous" | "next";
  * back to the player's normal previous/next command.
  */
 export function useChapterNavigation() {
-  const { getPreference } = useUserPreferences();
-  const showChapterProgress = getPreference("audiobook_chapter_progress", true);
   const nowTick = ref(0);
   let chapterTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -27,7 +24,6 @@ export function useChapterNavigation() {
     const media = player?.current_media;
     const queueItem = store.curQueueItem;
     return (
-      showChapterProgress.value &&
       (media?.media_type === MediaType.AUDIOBOOK ||
         media?.media_type === MediaType.PODCAST_EPISODE) &&
       !!queueItem?.media_item?.metadata?.chapters?.length &&

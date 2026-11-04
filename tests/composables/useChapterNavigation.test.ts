@@ -140,21 +140,26 @@ describe("useChapterNavigation", () => {
     wrapper.unmount();
   });
 
-  it.each([
-    [MediaType.TRACK, "ordinary tracks"],
-    [MediaType.AUDIOBOOK, "the preference is disabled"],
-  ])("does not enter chapter mode for %s", async (mediaType, reason) => {
-    seedPlayingChapterMedia(30, mediaType);
-    if (reason === "the preference is disabled") {
-      store.currentUser = {
-        preferences: { audiobook_chapter_progress: false },
-      };
-    }
+  it("does not enter chapter mode for ordinary tracks", async () => {
+    seedPlayingChapterMedia(30, MediaType.TRACK);
     const wrapper = mount(Consumer);
     await nextTick();
 
     expect(wrapper.vm.previousChapter).toBeUndefined();
     expect(wrapper.vm.nextChapter).toBeUndefined();
+    wrapper.unmount();
+  });
+
+  // the timeline still shows the chapters without chapter progress
+  it("targets chapters with chapter progress disabled", async () => {
+    seedPlayingChapterMedia(30);
+    store.currentUser = {
+      preferences: { audiobook_chapter_progress: false },
+    };
+    const wrapper = mount(Consumer);
+    await nextTick();
+
+    expect(wrapper.vm.nextChapter?.start).toBe(60);
     wrapper.unmount();
   });
 });
