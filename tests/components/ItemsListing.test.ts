@@ -3271,6 +3271,19 @@ describe("ItemsListing library toolbar", () => {
     expect(listing.find('button[aria-label="search"]').exists()).toBe(false);
   });
 
+  it("shows only the expand button while collapsed, with the menu's place kept", async () => {
+    signInWithSavedFilters({ expand: false });
+    const listing = await mountLibraryPage({ allowCollapse: true });
+
+    expect(listing.findComponent(ListingToolbarControls).exists()).toBe(false);
+    expect(menuLabels(listing)).toEqual([]);
+    expect(
+      listing
+        .find('button[aria-label="tooltip.collapse_expand"]')
+        .element.nextElementSibling?.getAttribute("aria-hidden"),
+    ).toBe("true");
+  });
+
   it("keeps an edit that is still being saved when an earlier save lands", async () => {
     let finishSave!: () => void;
     mockSetItemsListingPreference.mockImplementationOnce(

@@ -39,8 +39,27 @@
       </template>
 
       <template #append>
+        <template v-if="collapsed">
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            :title="$t('tooltip.collapse_expand')"
+            :aria-label="$t('tooltip.collapse_expand')"
+            aria-expanded="false"
+            @click="toggleExpand"
+          >
+            <ChevronDown class="size-[22px]" />
+          </Button>
+          <!-- holds the menu's place, so the button stays where it sits when expanded -->
+          <span
+            v-if="hasOverflowMenu"
+            class="size-10"
+            aria-hidden="true"
+          ></span>
+        </template>
         <LibrarySortControls
           v-if="
+            !collapsed &&
             !libraryToolbar &&
             props.sortListing &&
             sortOptionsLoaded &&
@@ -116,7 +135,7 @@
           </div>
         </Transition>
         <ListingToolbarControls
-          v-if="libraryToolbar"
+          v-if="libraryToolbar && !collapsed"
           :sort-options="sortOptionsLoaded ? sortOptions : []"
           :sort-by="params.sortBy"
           :view-mode="viewMode"
@@ -1925,19 +1944,7 @@ const filterMenuItems = function () {
   return items;
 };
 
-const menuItems = computed(() => {
-  // toggle expand
-  if (props.allowCollapse === true && !expanded.value) {
-    return [
-      {
-        label: "tooltip.collapse_expand",
-        icon: ChevronDown,
-        action: toggleExpand,
-        overflowAllowed: false,
-      },
-    ];
-  }
-
+const expandedMenuItems = computed(() => {
   const items: ToolBarMenuItem[] = [];
 
   // toggle select menu item
@@ -2067,6 +2074,21 @@ const menuItems = computed(() => {
 
   return items;
 });
+
+// a collapsed listing shows its expand button alone
+const collapsed = computed(
+  () => props.allowCollapse === true && !expanded.value,
+);
+const menuItems = computed(() =>
+  collapsed.value ? [] : expandedMenuItems.value,
+);
+// whether the expanded title bar has a ⋮ menu: Toolbar's rule for an enforced
+// overflow menu, which ItemsListing always uses
+const hasOverflowMenu = computed(() =>
+  expandedMenuItems.value.some(
+    (item) => !item.hide && item.overflowAllowed !== false,
+  ),
+);
 
 // Re-derive from the current props.path: a listing that stays mounted while
 // its path changes must not read and reset the settings saved for the old path.
