@@ -2,7 +2,10 @@
 <template>
   <section
     v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)"
-    :class="{ 'flex min-h-full flex-1 flex-col': fillsHeight }"
+    :class="{
+      'flex min-h-full flex-1 flex-col': fillsHeight,
+      'ps-[11px] pe-[18px]': detailRow,
+    }"
   >
     <!-- eslint-disable vue/no-template-shadow -->
     <!-- inset so the title lines up with the row artwork and the menu with the rows' menu -->
@@ -20,7 +23,13 @@
       @title-clicked="toggleExpand"
     >
       <template #title>
-        <slot name="title">{{ title }}</slot>
+        <!-- the detail pages' section title -->
+        <span
+          v-if="detailRow"
+          class="ms-0.5 text-[22px] font-bold tracking-[-0.4px] max-[769px]:text-[19px]"
+          >{{ title }}</span
+        >
+        <slot v-else name="title">{{ title }}</slot>
         <span
           v-if="libraryToolbar && listingCount !== undefined"
           class="ms-2 text-base font-normal text-muted-foreground"
@@ -133,7 +142,7 @@
       />
     </div>
 
-    <v-divider />
+    <v-divider v-if="!detailRow" />
 
     <slot name="header"></slot>
 
@@ -614,6 +623,8 @@ export interface Props {
   title?: string;
   subtitle?: string;
   hideOnEmpty?: boolean;
+  // a row of a detail page: on the page's gutter, under a section title
+  detailRow?: boolean;
   // custom message shown when the listing has no items and no active filters
   emptyMessage?: string;
   // the listing is the whole view, so the empty state centres in the page height

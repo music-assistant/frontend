@@ -69,6 +69,7 @@ import {
   EventType,
   ItemMapping,
   ListingType,
+  MediaItemBookmark,
   MediaItemTypeOrItemMapping,
   MediaType,
   PlayableMediaItemType,
@@ -110,7 +111,7 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 96;
+export const MIN_SERVER_SCHEMA_VERSION = 102;
 
 // Server error codes of a missing or rejected sign-in; the login UI reports these itself
 const AUTHENTICATION_REQUIRED_ERROR_CODE = 20;
@@ -123,7 +124,8 @@ export interface PlayMediaOptions {
   sort_direction?: SortDirection;
   /** @deprecated Use sort_field and sort_direction. */
   sort_by?: string;
-  start_from_beginning?: boolean;
+  /** Seconds to start an audiobook or episode at, e.g. a bookmark, instead of its resume position. */
+  start_position?: number;
   /** Set playback order for immediate-play options; omit to let the server decide. */
   shuffle?: boolean;
   /** Keep the global error toast quiet for a caller that reports the failure itself. */
@@ -1447,6 +1449,58 @@ export class MusicAssistantApi {
     });
   }
 
+  public getBookmarks(
+    media_type: MediaType,
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<MediaItemBookmark[]> {
+    return this.sendCommand("music/bookmarks", {
+      media_type,
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public setBookmark(
+    media_type: MediaType,
+    provider_instance_id: string,
+    provider_item_id: string,
+    start: number,
+    name: string,
+  ): Promise<void> {
+    return this.sendCommand(
+      "music/set_bookmark",
+      {
+        media_type,
+        provider_instance_id,
+        provider_item_id,
+        start,
+        name,
+      },
+      // the bookmark actions show their own toasts
+      { suppressGlobalError: true },
+    );
+  }
+
+  public removeBookmark(
+    media_type: MediaType,
+    provider_instance_id: string,
+    provider_item_id: string,
+    start: number,
+  ): Promise<void> {
+    return this.sendCommand(
+      "music/remove_bookmark",
+      {
+        media_type,
+        provider_instance_id,
+        provider_item_id,
+        start,
+      },
+      // the bookmark actions show their own toasts
+      { suppressGlobalError: true },
+    );
+  }
+
   // Podcast related endpoints
   /**
    * Get Podcasts listing from the server.
@@ -2637,8 +2691,8 @@ export class MusicAssistantApi {
       sort_by: options.sort_by,
       sort_field: options.sort_field,
       sort_direction: options.sort_direction,
-      start_from_beginning: options.start_from_beginning,
       shuffle: options.shuffle,
+      start_position: options.start_position,
     };
     return options.suppressGlobalError === undefined
       ? this.sendCommand("player_queues/play_media", payload)

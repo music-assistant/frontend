@@ -53,13 +53,22 @@ vi.mock("@/components/podcast/PodcastEpisodeHero.vue", () => ({
     template: "<div data-hero />",
   },
 }));
+vi.mock("@/components/Chapters.vue", () => ({
+  default: { name: "Chapters", template: "<div />" },
+}));
 vi.mock("@/components/details/DetailTextRow.vue", () => ({
   default: { name: "DetailTextRow", template: "<div />" },
 }));
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["parentItem", "loadPagedData", "path", "sortListing"],
+    props: {
+      parentItem: Object,
+      loadPagedData: Function,
+      path: String,
+      sortListing: String,
+      detailRow: Boolean,
+    },
     template: "<div data-listing />",
   },
 }));
@@ -177,6 +186,8 @@ describe("PodcastEpisodeDetails", () => {
     expect(listing(wrapper).props("sortListing")).toBe(
       ListingType.PODCAST_EPISODES,
     );
+    // on the page's gutter, as the other rows of the episode page
+    expect(listing(wrapper).props("detailRow")).toBe(true);
     expect(mockGetPodcastEpisodes).toHaveBeenLastCalledWith(
       SHOW.item_id,
       SHOW.provider,

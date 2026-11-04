@@ -1201,7 +1201,7 @@ export const getContextMenuItems = async function (
           icon: RotateCcw,
           action: () => {
             api.playMedia(item.uri, QueueOption.PLAY, {
-              start_from_beginning: true,
+              start_position: 0,
             });
           },
           disabled: !store.activePlayer,

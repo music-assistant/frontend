@@ -622,8 +622,7 @@
     "create_playlist_on": "Opprett ny spilleliste på {0}",
     "view": {
         "list": "Listevisning",
-        "panel": "Miniatyrbilde visning",
-        "panel_compact": "Kompakt miniatyrbilde visning"
+        "panel": "Miniatyrbilde visning"
     },
     "play_replace": "Spill nå (tøm køen)",
     "played": "Avspilte",
