@@ -109,6 +109,31 @@ describe("Combobox free text", () => {
     expect(model.value).toBe("jazz");
   });
 
+  it("leaves the pick to an item that takes focus from the field", async () => {
+    const model = mountCombobox();
+    const input = await type("jaz");
+    const item = document.querySelector("[data-slot='combobox-item']")!;
+
+    input.dispatchEvent(new FocusEvent("blur", { relatedTarget: item }));
+    await flushPromises();
+
+    expect(model.value).toBeUndefined();
+  });
+
+  it("keeps the selection when an edit is dismissed with Escape", async () => {
+    const model = mountCombobox(false, "jazz");
+    const input = await type("ambient");
+
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    input.dispatchEvent(new FocusEvent("blur"));
+    await flushPromises();
+
+    expect(model.value).toBe("jazz");
+  });
+
   it("commits typed text when leaving the field", async () => {
     const model = mountCombobox();
     const input = await type("ambient");

@@ -47,7 +47,7 @@
         <Button variant="outline" @click="model = false">
           {{ $t("cancel") }}
         </Button>
-        <Button :disabled="!selectedAlias || loading" @click="linkAlias">
+        <Button :disabled="!canLink || loading" @click="linkAlias">
           {{ $t("link_alias") }}
         </Button>
       </DialogFooter>
@@ -112,6 +112,12 @@ const availableAliases = computed(() => {
   return aliasOptions.value.filter((a) => !current.has(a.toLowerCase()));
 });
 
+const canLink = computed(
+  () =>
+    !!selectedAlias.value &&
+    aliasSearch.value === displayAlias(selectedAlias.value),
+);
+
 const emptyText = computed(() => {
   if (!aliasSearch.value) return t("link_alias_search_hint");
   if (aliasLoading.value) return t("searching");
@@ -122,10 +128,10 @@ watch(
   () => aliasSearch.value,
   (search) => {
     clearTimeout(searchThrottle.value);
-    if (selectedAlias.value) {
-      // picking an alias shows its name in the field, which is no new search
-      if (search === displayAlias(selectedAlias.value)) return;
-      selectedAlias.value = null;
+    // picking an alias shows its name in the field, which is no new search
+    if (selectedAlias.value && search === displayAlias(selectedAlias.value)) {
+      aliasLoading.value = false;
+      return;
     }
     aliasOptions.value = [];
     if (!search) {
@@ -135,13 +141,16 @@ watch(
     aliasLoading.value = true;
     searchThrottle.value = window.setTimeout(async () => {
       try {
-        const genres = await api.getLibraryGenres({
-          search,
-          limit: SEARCH_RESULT_LIMIT,
-          offset: 0,
-          sort_field: SortField.NAME,
-          summary: false,
-        });
+        const genres = await api.getLibraryGenres(
+          {
+            search,
+            limit: SEARCH_RESULT_LIMIT,
+            offset: 0,
+            sort_field: SortField.NAME,
+            summary: false,
+          },
+          { suppressGlobalError: true },
+        );
         if (search !== aliasSearch.value) return;
         aliasOptions.value = rankedAliases(genres, search);
       } catch {
@@ -166,7 +175,7 @@ onBeforeUnmount(() => {
 });
 
 const linkAlias = async () => {
-  if (!selectedAlias.value || loading.value) return;
+  if (!canLink.value || !selectedAlias.value || loading.value) return;
 
   loading.value = true;
   try {

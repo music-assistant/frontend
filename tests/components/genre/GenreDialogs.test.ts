@@ -101,11 +101,12 @@ describe("LinkAliasDialog", () => {
 
     expect(apiMock.getLibraryGenres).toHaveBeenCalledWith(
       expect.objectContaining({ search: "ambient", summary: false }),
+      expect.anything(),
     );
     expect(aliasOptions()).toEqual(["Dark Ambient"]);
   });
 
-  it("drops the picked alias when the search is edited", async () => {
+  it("stops linking the picked alias once the search is edited", async () => {
     apiMock.getLibraryGenres.mockResolvedValue([
       genre({ name: "Ambient", genre_aliases: ["Dark Ambient"] }),
     ]);
@@ -118,6 +119,10 @@ describe("LinkAliasDialog", () => {
     await searchAliases("jazz");
 
     expect(linkButton().disabled).toBe(true);
+    expect(
+      document.querySelector<HTMLInputElement>("[data-slot='combobox-input']")!
+        .value,
+    ).toBe("jazz");
   });
 
   it("shows an error when the search fails", async () => {
@@ -126,7 +131,12 @@ describe("LinkAliasDialog", () => {
 
     await searchAliases("ambient");
 
+    expect(toast.error).toHaveBeenCalledOnce();
     expect(toast.error).toHaveBeenCalledWith("settings.error_loading_genres");
+    // the dialog shows its own error, so the global one is turned off
+    expect(apiMock.getLibraryGenres).toHaveBeenCalledWith(expect.anything(), {
+      suppressGlobalError: true,
+    });
   });
 
   it("forgets the picked alias when the dialog closes", async () => {

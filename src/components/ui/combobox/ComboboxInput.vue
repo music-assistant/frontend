@@ -12,7 +12,7 @@ import {
   useForwardPropsEmits,
 } from "reka-ui";
 import type { HTMLAttributes } from "vue";
-import { ref, watch } from "vue";
+import { onBeforeUnmount, ref, watch } from "vue";
 import { useComboboxFreeText } from ".";
 
 defineOptions({
@@ -32,6 +32,11 @@ const rootContext = injectComboboxRootContext();
 const freeText = useComboboxFreeText();
 // typed since the last commit or selection
 const typed = ref(false);
+
+const resetSearchTerm = rootContext.onResetSearchTerm(() => {
+  typed.value = false;
+});
+onBeforeUnmount(() => resetSearchTerm.off());
 
 watch(rootContext.modelValue, () => {
   typed.value = false;
@@ -70,6 +75,14 @@ function onKeydownEnter(event: KeyboardEvent) {
 
 function onBlur(event: FocusEvent) {
   if (!freeText.value || !typed.value || rootContext.multiple.value) return;
+  // focus moving to an item means the click on it picks the value
+  const next = event.relatedTarget as Node | null;
+  if (
+    next &&
+    (rootContext.parentElement.value?.contains(next) ||
+      document.getElementById(rootContext.contentId)?.contains(next))
+  )
+    return;
   commitTypedText(event.target as HTMLInputElement);
 }
 </script>
