@@ -61,23 +61,25 @@ const aliasRank = (alias: string, search: string) => {
 // Matching ignores case, accents, spaces and punctuation.
 export function rankedAliases(genres: Genre[], search: string): string[] {
   const compactSearch = compactAliasText(search);
-  const aliases = new Set<string>();
+  const aliases = new Map<string, string>();
   for (const genre of genres) {
-    const nameMatches = compactAliasText(genre.name).includes(compactSearch);
-    for (const alias of genre.genre_aliases || []) {
-      if (nameMatches || compactAliasText(alias).includes(compactSearch)) {
-        aliases.add(alias);
+    const all = genre.genre_aliases || [];
+    const matching = all.filter((alias) =>
+      compactAliasText(alias).includes(compactSearch),
+    );
+    // the server also finds a genre through its localized name, which none
+    // of its aliases may contain, so then offer all of them
+    const offered =
+      !matching.length || compactAliasText(genre.name).includes(compactSearch)
+        ? all
+        : matching;
+    for (const alias of offered) {
+      if (!aliases.has(alias.toLowerCase())) {
+        aliases.set(alias.toLowerCase(), alias);
       }
     }
   }
-  // the server also finds a genre through its localized name, which none of
-  // its aliases may contain, so then offer everything it returned
-  if (!aliases.size) {
-    for (const genre of genres) {
-      for (const alias of genre.genre_aliases || []) aliases.add(alias);
-    }
-  }
-  return [...aliases].sort(
+  return [...aliases.values()].sort(
     (a, b) =>
       aliasRank(a, compactSearch) - aliasRank(b, compactSearch) ||
       a.localeCompare(b),

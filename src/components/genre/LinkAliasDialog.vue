@@ -122,7 +122,9 @@ watch(
   () => aliasSearch.value,
   (search) => {
     clearTimeout(searchThrottle.value);
-    if (selectedAlias.value && search !== displayAlias(selectedAlias.value)) {
+    if (selectedAlias.value) {
+      // picking an alias shows its name in the field, which is no new search
+      if (search === displayAlias(selectedAlias.value)) return;
       selectedAlias.value = null;
     }
     aliasOptions.value = [];
@@ -142,12 +144,22 @@ watch(
         });
         if (search !== aliasSearch.value) return;
         aliasOptions.value = rankedAliases(genres, search);
+      } catch {
+        if (search === aliasSearch.value) {
+          toast.error(t("settings.error_loading_genres"));
+        }
       } finally {
         if (search === aliasSearch.value) aliasLoading.value = false;
       }
     }, SEARCH_THROTTLE_MS);
   },
 );
+
+watch(model, (open) => {
+  if (open) return;
+  selectedAlias.value = null;
+  aliasSearch.value = "";
+});
 
 onBeforeUnmount(() => {
   clearTimeout(searchThrottle.value);

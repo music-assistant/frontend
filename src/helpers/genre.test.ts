@@ -74,10 +74,25 @@ describe("rankedAliases", () => {
     ).toEqual(["Hip Hop Soul"]);
   });
 
-  it("offers every alias when the server matched a localized name", () => {
+  it("offers every alias of a genre the server matched by a localized name", () => {
     expect(
-      rankedAliases([genre("Classical", ["Opera", "Baroque"])], "Klassik"),
-    ).toEqual(["Baroque", "Opera"]);
+      rankedAliases(
+        [
+          genre("Classical", ["Opera", "Baroque"]),
+          genre("Electronic", ["Klassik Electro", "Techno"]),
+        ],
+        "Klassik",
+      ),
+    ).toEqual(["Klassik Electro", "Baroque", "Opera"]);
+  });
+
+  it("lists aliases that differ only in case once", () => {
+    expect(
+      rankedAliases(
+        [genre("Rock", ["Hip Hop"]), genre("Pop", ["hip hop"])],
+        "hip hop",
+      ),
+    ).toEqual(["Hip Hop"]);
   });
 
   it("ignores accents and lists an alias shared by two genres once", () => {

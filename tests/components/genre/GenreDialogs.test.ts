@@ -11,6 +11,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Component } from "vue";
 import type { Genre } from "@/plugins/api/interfaces";
+import { toast } from "vue-sonner";
 import { genre } from "../../fixtures/genre";
 
 const { apiMock, storeMock } = vi.hoisted(() => ({
@@ -115,6 +116,31 @@ describe("LinkAliasDialog", () => {
     expect(linkButton().disabled).toBe(false);
 
     await searchAliases("jazz");
+
+    expect(linkButton().disabled).toBe(true);
+  });
+
+  it("shows an error when the search fails", async () => {
+    apiMock.getLibraryGenres.mockRejectedValue(new Error("offline"));
+    mountLinkAliasDialog();
+
+    await searchAliases("ambient");
+
+    expect(toast.error).toHaveBeenCalledWith("settings.error_loading_genres");
+  });
+
+  it("forgets the picked alias when the dialog closes", async () => {
+    apiMock.getLibraryGenres.mockResolvedValue([
+      genre({ name: "Ambient", genre_aliases: ["Dark Ambient"] }),
+    ]);
+    const wrapper = mountLinkAliasDialog();
+    await searchAliases("ambient");
+    document.querySelector<HTMLElement>("[data-slot='combobox-item']")!.click();
+    await flushPromises();
+
+    await wrapper.setProps({ modelValue: false });
+    await wrapper.setProps({ modelValue: true });
+    await flushPromises();
 
     expect(linkButton().disabled).toBe(true);
   });
