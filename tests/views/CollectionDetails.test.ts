@@ -13,8 +13,8 @@ vi.mock("@/plugins/api", () => ({
   api: { getAudiobookCollection },
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
-vi.mock("@/components/InfoHeader.vue", () => ({
-  default: { name: "InfoHeader", props: ["item"], template: "<div />" },
+vi.mock("@/components/collection/CollectionHero.vue", () => ({
+  default: { name: "CollectionHero", props: ["item"], template: "<div />" },
 }));
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
@@ -83,7 +83,7 @@ describe("CollectionDetails", () => {
     });
     await flushPromises();
     expect(
-      wrapper.findComponent({ name: "InfoHeader" }).props("item"),
+      wrapper.findComponent({ name: "CollectionHero" }).props("item"),
     ).toBeDefined();
 
     await wrapper.setProps({ itemId: "audiobook___Second" });
@@ -91,7 +91,7 @@ describe("CollectionDetails", () => {
     const nextListing = wrapper.findComponent({ name: "ItemsListing" });
     expect(nextListing.vm).not.toBe(listing.vm);
     expect(
-      wrapper.findComponent({ name: "InfoHeader" }).props("item"),
+      wrapper.findComponent({ name: "CollectionHero" }).props("item"),
     ).toBeUndefined();
     await nextListing.props("loadPagedData")({
       offset: 0,

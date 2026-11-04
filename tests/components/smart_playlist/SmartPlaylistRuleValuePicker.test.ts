@@ -1,6 +1,14 @@
 import SmartPlaylistRuleValuePicker from "@/components/smart_playlist/SmartPlaylistRuleValuePicker.vue";
+import {
+  folderPath,
+  type RuleValue,
+} from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import api from "@/plugins/api";
-import type { Artist } from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  type Artist,
+  type BrowseFolder,
+} from "@/plugins/api/interfaces";
 import { artist } from "../../fixtures/artist";
 import {
   enableAutoUnmount,
@@ -9,12 +17,39 @@ import {
   type VueWrapper,
 } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "vue-sonner";
 
 vi.mock("@/plugins/api", () => ({
   default: {
     getLibraryArtists: vi.fn(async () => []),
+    browse: vi.fn(async () => []),
+    providers: {
+      "filesystem_local--music": {
+        domain: "filesystem_local",
+        instance_id: "filesystem_local--music",
+        name: "My Music",
+        available: true,
+        supported_features: ["library_tracks"],
+      },
+      "filesystem_local--books": {
+        domain: "filesystem_local",
+        instance_id: "filesystem_local--books",
+        name: "My Audiobooks",
+        available: true,
+        supported_features: ["library_audiobooks"],
+      },
+      "spotify--x": {
+        domain: "spotify",
+        instance_id: "spotify--x",
+        name: "Spotify",
+        available: true,
+        supported_features: ["library_tracks"],
+      },
+    },
   },
 }));
+
+vi.mock("vue-sonner", () => ({ toast: { error: vi.fn() } }));
 
 vi.mock("@/components/MediaItemThumb.vue", () => ({
   default: {
@@ -35,8 +70,9 @@ const ARTISTS = [
 ];
 
 const getLibraryArtists = vi.mocked(api.getLibraryArtists);
+const browse = vi.mocked(api.browse);
 
-const mountPicker = (source: "genre" | "artist" = "genre") =>
+const mountPicker = (source: "genre" | "artist" | "folder" = "genre") =>
   mount(SmartPlaylistRuleValuePicker, {
     props: {
       source,
@@ -118,6 +154,9 @@ const holdTheClosingAnimation = () => {
 // an open popover keeps document-level listeners, so tear it down even when an
 // assertion fails
 enableAutoUnmount(afterEach);
+
+const folder = (name: string, path: string) =>
+  ({ media_type: MediaType.FOLDER, name, path }) as BrowseFolder;
 
 describe("SmartPlaylistRuleValuePicker", () => {
   beforeEach(() => {
@@ -226,5 +265,99 @@ describe("SmartPlaylistRuleValuePicker", () => {
 
     expect(isSpinning(reopened)).toBe(false);
     expect(searchTerm(reopened)).toBe("");
+  });
+
+  it("browses filesystem sources and picks the open folder", async () => {
+    browse.mockImplementation(async (path?: string) =>
+      path === "filesystem_local--music://"
+        ? [
+            folder("..", "root"),
+            folder("Rock", "filesystem_local--music://Rock"),
+          ]
+        : [folder("Classic", "filesystem_local--music://Rock/Classic")],
+    );
+    const wrapper = mountPicker("folder");
+    const content = await openPopover(wrapper);
+
+    // only filesystem sources holding tracks are offered
+    expect(content.textContent).toContain("My Music");
+    expect(content.textContent).not.toContain("Spotify");
+    expect(content.textContent).not.toContain("My Audiobooks");
+
+    rows(content)[0].click();
+    await flushPromises();
+    // the picker reports a failed browse itself
+    expect(browse).toHaveBeenLastCalledWith(
+      "filesystem_local--music://",
+      undefined,
+      { suppressGlobalError: true },
+    );
+    expect(content.textContent).not.toContain("..");
+
+    [...rows(content)].find((b) => b.textContent?.includes("Rock"))!.click();
+    await flushPromises();
+    expect(browse.mock.lastCall?.[0]).toBe("filesystem_local--music://Rock");
+    expect(content.textContent).toContain("Classic");
+
+    [...rows(content)]
+      .find((b) => b.textContent?.includes("Use this folder"))!
+      .click();
+    await flushPromises();
+
+    const [[picked]] = wrapper.emitted("add") as [[RuleValue]];
+    expect(folderPath(picked.id)).toBe("filesystem_local--music://Rock");
+    expect(picked.name).toBe("My Music/Rock");
+  });
+
+  it("reports a folder that cannot be browsed", async () => {
+    browse.mockRejectedValueOnce(new Error("gone"));
+    const content = await openPopover(mountPicker("folder"));
+
+    rows(content)[0].click();
+    await flushPromises();
+
+    expect(toast.error).toHaveBeenCalledWith("Could not open the folder");
+  });
+
+  it("drops the spinner when going back while a folder loads", async () => {
+    browse.mockReturnValueOnce(new Promise(() => {}));
+    const content = await openPopover(mountPicker("folder"));
+
+    rows(content)[0].click();
+    await flushPromises();
+    expect(isSpinning(content)).toBe(true);
+
+    content.querySelector<HTMLButtonElement>("[aria-label='Back']")!.click();
+    await flushPromises();
+
+    expect(isSpinning(content)).toBe(false);
+    expect(content.textContent).toContain("My Music");
+  });
+
+  it("keeps a folder reopened while its first listing loads on the latest one", async () => {
+    let deliverFirst!: (items: BrowseFolder[]) => void;
+    browse
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          deliverFirst = resolve;
+        }),
+      )
+      .mockResolvedValueOnce([folder("New", "filesystem_local--music://New")]);
+    const content = await openPopover(mountPicker("folder"));
+
+    rows(content)[0].click();
+    await flushPromises();
+    content.querySelector<HTMLButtonElement>("[aria-label='Back']")!.click();
+    await flushPromises();
+    rows(content)[0].click();
+    await flushPromises();
+    expect(content.textContent).toContain("New");
+
+    deliverFirst([folder("Old", "filesystem_local--music://Old")]);
+    await flushPromises();
+
+    expect(content.textContent).toContain("New");
+    expect(content.textContent).not.toContain("Old");
+    expect(isSpinning(content)).toBe(false);
   });
 });

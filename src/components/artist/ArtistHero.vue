@@ -38,6 +38,8 @@
           :disabled="!radioSupported(item)"
           @click="gotoRadio(item)"
         />
+        <!-- outside the library the services listed beside already say where it is from -->
+        <DetailHeroSourceBadge :item="item" library-only />
       </div>
     </template>
 
@@ -55,6 +57,7 @@ import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
+import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";

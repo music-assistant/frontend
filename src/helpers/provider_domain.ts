@@ -1,6 +1,9 @@
 /** The domain of the Local files provider, which reads a folder on the server. */
 export const LOCAL_FILES_DOMAIN = "filesystem_local";
 
+/** The domain prefix of the providers that read music files from a folder. */
+export const FILESYSTEM_DOMAIN_PREFIX = "filesystem_";
+
 /**
  * Providers the server has folded into another provider. An instance keeps its id when
  * its provider is converted, because the library refers to it by that id, so the id

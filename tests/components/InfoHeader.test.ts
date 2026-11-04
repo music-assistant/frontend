@@ -53,8 +53,8 @@ vi.mock("@/components/MediaCollectionThumb.vue", () => ({
 vi.mock("@/components/MarqueeText.vue", () => ({
   default: { name: "MarqueeText", template: "<div><slot /></div>" },
 }));
-vi.mock("@/components/ProviderIcon.vue", () => ({
-  default: { name: "ProviderIcon", template: "<div />" },
+vi.mock("@/components/ItemSourceBadge.vue", () => ({
+  default: { name: "ItemSourceBadge", template: "<div />" },
 }));
 vi.mock("@/components/MenuButton.vue", () => ({
   default: { name: "MenuButton", template: "<div />" },

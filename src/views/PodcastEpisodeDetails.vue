@@ -23,6 +23,9 @@
       :lines="4"
     />
 
+    <!-- episode chapters, with the user's bookmarks inside them -->
+    <Chapters v-if="itemDetails" :item-details="itemDetails" />
+
     <!-- keyed per episode: a listing already loading drops a reload request, so
     clicking through episodes quickly would leave the previous episode's list.
     it waits for the podcast lookup so it opens with that podcast's settings -->
@@ -40,6 +43,7 @@
       :sort-listing="ListingType.PODCAST_EPISODES"
       :load-paged-data="loadOtherEpisodes"
       :title="$t('other_episodes')"
+      detail-row
       :hide-on-empty="true"
       :allow-collapse="true"
       :path="`podcast.${podcastKey}`"
@@ -71,6 +75,7 @@
 </template>
 
 <script setup lang="ts">
+import Chapters from "@/components/Chapters.vue";
 import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import ItemsListing, {
   type LoadDataParams,

@@ -216,12 +216,14 @@ import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
+import { isAuthorOrNarrator } from "@/helpers/author_narrator";
 import { useArtistRowData } from "@/composables/useArtistRowData";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
 import {
   ArtistType,
   ListingType,
+  MediaType,
   ProviderFeature,
   Scope,
   type Artist,
@@ -244,10 +246,9 @@ const rowsEditorOpen = ref(false);
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
-const isAudiobookArtist = computed(() => {
-  const artistType = itemDetails.value?.artist_type;
-  return artistType === ArtistType.AUTHOR || artistType === ArtistType.NARRATOR;
-});
+const isAudiobookArtist = computed(
+  () => !!itemDetails.value && isAuthorOrNarrator(itemDetails.value),
+);
 
 // the rows the page can render for this artist; the editor lists the same set
 const availableRows = computed(() =>
@@ -411,7 +412,11 @@ watch(
   },
 );
 
-useDetailItemUpdates(itemDetails, { providerItem: props });
+useDetailItemUpdates(itemDetails, {
+  get providerItem() {
+    return { ...props, mediaType: MediaType.ARTIST };
+  },
+});
 
 const loadArtistAudiobooks = async function (params: LoadDataParams) {
   const artist = itemDetails.value;

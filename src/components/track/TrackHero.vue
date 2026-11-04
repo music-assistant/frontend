@@ -91,13 +91,7 @@
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />
-            <span
-              v-if="!isPhone"
-              class="track-hero__badge"
-              :title="providerBadgeTitle"
-            >
-              <ProviderIcon :domain="providerDomain" :size="20" />
-            </span>
+            <DetailHeroSourceBadge :item="item" />
             <span
               v-if="
                 item.audio_metadata?.bpm || item.audio_metadata?.musical_key
@@ -127,8 +121,8 @@ import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
   audioFormatLabel,
   bestAudioFormat,
@@ -136,11 +130,8 @@ import {
 } from "@/components/track/trackData";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatDuration } from "@/helpers/utils";
-import { api } from "@/plugins/api";
-import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type { Track } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
-import { $t } from "@/plugins/i18n";
 import { Disc, Music, Orbit } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
@@ -165,16 +156,6 @@ const isPhone = computed(() => isPhoneSizedScreen());
 const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
 const releaseYear = computed(() => props.item && trackReleaseYear(props.item));
-
-const providerDomain = computed(() =>
-  props.item ? getProviderIconDomain(props.item) : "",
-);
-
-const providerBadgeTitle = computed(() => {
-  const domain = providerDomain.value;
-  if (domain === "library") return $t("in_library");
-  return api.getProviderManifest(domain)?.name ?? domain;
-});
 
 const qualityLabel = computed(() => {
   const format = props.item && bestAudioFormat(props.item);

@@ -13,6 +13,7 @@ import {
   canAddToPlaylist,
   canEditPlaylistItems,
   canManagePlaylist,
+  canReorderPlaylistItems,
   canSharePlaylist,
   getPlaylistSharingHintTranslationKey,
   isMusicAssistantPlaylist,
@@ -195,6 +196,88 @@ describe("canEditPlaylistItems", () => {
     });
 
     expect(canEditPlaylistItems(item, member, false)).toBe(false);
+  });
+});
+
+describe("canReorderPlaylistItems", () => {
+  const movable = (instance: string) => instance === "tidal--1";
+  const tidalPlaylist = (overrides = {}) =>
+    playlist({
+      is_editable: true,
+      provider_mappings: [
+        providerMapping({
+          provider_domain: "tidal",
+          provider_instance: "tidal--1",
+        }),
+      ],
+      ...overrides,
+    });
+
+  it("lets an editor reorder a playlist on a provider that can move", () => {
+    expect(
+      canReorderPlaylistItems(tidalPlaylist(), owner, false, movable),
+    ).toBe(true);
+  });
+
+  it("does not reorder on a provider that cannot move", () => {
+    expect(
+      canReorderPlaylistItems(spotifyPlaylist(), owner, false, movable),
+    ).toBe(false);
+  });
+
+  it("does not reorder when any available mapping cannot move", () => {
+    const item = tidalPlaylist({
+      provider_mappings: [
+        providerMapping({ provider_instance: "tidal--1" }),
+        providerMapping({ provider_instance: "spotify--1" }),
+      ],
+    });
+
+    expect(canReorderPlaylistItems(item, owner, false, movable)).toBe(false);
+  });
+
+  it("ignores an unavailable mapping", () => {
+    const item = tidalPlaylist({
+      provider_mappings: [
+        providerMapping({ provider_instance: "tidal--1" }),
+        providerMapping({ provider_instance: "spotify--1", available: false }),
+      ],
+    });
+
+    expect(canReorderPlaylistItems(item, owner, false, movable)).toBe(true);
+  });
+
+  it("does not reorder a playlist the user may not edit", () => {
+    expect(
+      canReorderPlaylistItems(
+        tidalPlaylist({ is_editable: false }),
+        owner,
+        true,
+        movable,
+      ),
+    ).toBe(false);
+  });
+
+  it("does not reorder a dynamic playlist", () => {
+    expect(
+      canReorderPlaylistItems(
+        tidalPlaylist({ is_dynamic: true }),
+        owner,
+        false,
+        movable,
+      ),
+    ).toBe(false);
+  });
+
+  it("does not reorder a playlist outside the library", () => {
+    expect(
+      canReorderPlaylistItems(
+        tidalPlaylist({ provider: "tidal--1" }),
+        owner,
+        false,
+        movable,
+      ),
+    ).toBe(false);
   });
 });
 

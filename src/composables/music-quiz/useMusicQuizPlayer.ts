@@ -46,6 +46,10 @@ export interface UseMusicQuizPlayerOptions {
   notifyError: (message: string) => void;
 }
 
+// A full lobby emits a game_updated per join; coalesce that burst into one
+// background info refresh instead of a server round-trip per event.
+const BACKGROUND_INFO_REFRESH_DELAY_MS = 300;
+
 /**
  * Manage Music Quiz participant state, player actions, and reconnection.
  *
@@ -81,6 +85,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   let gameGeneration = 0;
   let autoJoinAttemptedGeneration: number | null = null;
   const activeJoinRequests = new Map<number, number>();
+  let backgroundInfoRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   let unmounted = false;
 
   watch(
@@ -114,10 +119,12 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       : [];
   });
 
-  async function fetchInfo() {
+  async function fetchInfo(options: { background?: boolean } = {}) {
     const requestId = ++loadingRequestId;
     try {
-      loading.value = true;
+      // Background refreshes (driven by player events) must not raise the
+      // full-screen loading state; only the initial/explicit load shows it.
+      if (!options.background) loading.value = true;
       const nextInfo = await getMusicQuizInfo();
       if (unmounted || loadingRequestId !== requestId) return;
       info.value = nextInfo;
@@ -256,6 +263,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     gameGeneration += 1;
     loadingRequestId += 1;
     requestedPlayerStateId = null;
+    cancelBackgroundInfoRefresh();
     stopHeartbeat();
     unsubscribeProviderEvent?.();
   });
@@ -339,6 +347,32 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     return false;
   }
 
+  function scheduleBackgroundInfoRefresh() {
+    if (backgroundInfoRefreshTimer !== null) {
+      clearTimeout(backgroundInfoRefreshTimer);
+    }
+    backgroundInfoRefreshTimer = setTimeout(() => {
+      backgroundInfoRefreshTimer = null;
+      // By the time the burst settles we may have joined (or found a stored
+      // id); the joined flow then owns updates, so skip the info refresh.
+      if (
+        unmounted ||
+        playerId.value ||
+        getStoredMusicQuizPlayerId(participantStorageContext)
+      ) {
+        return;
+      }
+      void fetchInfo({ background: true });
+    }, BACKGROUND_INFO_REFRESH_DELAY_MS);
+  }
+
+  function cancelBackgroundInfoRefresh() {
+    if (backgroundInfoRefreshTimer !== null) {
+      clearTimeout(backgroundInfoRefreshTimer);
+      backgroundInfoRefreshTimer = null;
+    }
+  }
+
   function handleProviderEvent(event: { object_id?: string; data?: unknown }) {
     if (!isMusicQuizProviderEvent(event.data)) return;
     const payload = event.data;
@@ -352,7 +386,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       ) {
         void fetchState();
       } else {
-        void fetchInfo();
+        scheduleBackgroundInfoRefresh();
       }
     } else if (payload.event === "game_removed") {
       const wasJoined = joinedGame || !!playerId.value;
@@ -440,6 +474,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     requestedPlayerStateId = null;
     loadingRequestId += 1;
     loading.value = false;
+    cancelBackgroundInfoRefresh();
     stopHeartbeat();
     clearStoredMusicQuizPlayerId();
   }

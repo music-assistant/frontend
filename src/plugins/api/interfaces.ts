@@ -489,6 +489,8 @@ export enum EventType {
   PLAYLOG_UPDATED = "playlog_updated",
   // a user's like, dislike or unset on an item changed; object_id is the item uri
   FAVORITE_UPDATED = "favorite_updated",
+  // a user's bookmarks of one copy changed; object_id is the copy's uri, data the user id
+  BOOKMARKS_UPDATED = "bookmarks_updated",
   PROVIDERS_UPDATED = "providers_updated",
   TASKS_UPDATED = "tasks_updated",
   MUSIC_SYNC_COMPLETED = "music_sync_completed",
@@ -535,6 +537,11 @@ export enum ProviderFeature {
   ARTIST_TOPALBUMS = "artist_topalbums",
   AUTHOR_AUDIOBOOKS = "author_audiobooks",
   NARRATOR_AUDIOBOOKS = "narrator_audiobooks",
+  // bookmarks of the user per mediatype: read, and add/rename/remove
+  AUDIOBOOK_BOOKMARKS = "audiobook_bookmarks",
+  AUDIOBOOK_BOOKMARKS_EDIT = "audiobook_bookmarks_edit",
+  PODCAST_EPISODE_BOOKMARKS = "podcast_episode_bookmarks",
+  PODCAST_EPISODE_BOOKMARKS_EDIT = "podcast_episode_bookmarks_edit",
   // library edit (=add/remove) feature per mediatype
   LIBRARY_ARTISTS_EDIT = "library_artists_edit",
   LIBRARY_ALBUMS_EDIT = "library_albums_edit",
@@ -549,6 +556,7 @@ export enum ProviderFeature {
   SIMILAR_ARTISTS = "similar_artists",
   // playlist-specific features
   PLAYLIST_TRACKS_EDIT = "playlist_tracks_edit",
+  PLAYLIST_TRACKS_MOVE = "playlist_tracks_move",
   PLAYLIST_CREATE = "playlist_create",
   PLAYLIST_CREATE_TRACKS = "playlist_create_tracks",
   PLAYLIST_CREATE_AUDIOBOOKS = "playlist_create_audiobooks",
@@ -1030,6 +1038,15 @@ export interface MediaItemChapter {
   end: number | null;
 }
 
+// a user's bookmark on one provider copy of a media item
+export interface MediaItemBookmark {
+  name: string;
+  start: number;
+  provider_instance: string;
+  item_id: string;
+  stored_by_music_assistant: boolean;
+}
+
 // a collection groups related items, most commonly an audiobook series
 export interface MediaItemCollection {
   title: string;
@@ -1106,6 +1123,46 @@ export interface ItemMapping extends _MediaItemBase {
   available: boolean;
   image?: MediaItemImage | null;
   year?: number | null;
+}
+
+/** The time window a statistics command covers. */
+export type StatisticsPeriod = "today" | "week" | "month" | "year" | "all_time";
+
+/** The bucket size of `statistics/plays_over_time`. */
+export type StatisticsGranularity = "hour" | "day" | "week" | "month";
+
+/** How `statistics/listening_time` groups its minutes. */
+export type StatisticsGroupBy = "artist" | "genre";
+
+/** A ranked media item and its completed-play count from statistics endpoints. */
+export interface StatisticsTopItemResult {
+  item: ItemMapping;
+  play_count: number;
+}
+
+export interface StatisticsDistributionItem {
+  name: string;
+  value: number;
+}
+
+export interface StatisticsTimeSeriesPoint {
+  timestamp: string;
+  value: number;
+}
+
+/** Plays in one weekday (0 is Monday) and local hour (0-23) cell. */
+export interface StatisticsHeatmapPoint {
+  hour: number;
+  weekday: number;
+  value: number;
+}
+
+/** Minutes of completed plays for one artist or genre. */
+export interface StatisticsListeningTimeItem {
+  name: string;
+  minutes: number;
+  // the artist when grouped by artist, null for a genre
+  item?: ItemMapping | null;
 }
 
 export interface Artist extends MediaItem {
@@ -2127,6 +2184,7 @@ export interface SmartPlaylistRules {
   genre_ids: number[];
   artist_ids: number[];
   album_ids: number[];
+  folder_paths?: string[];
   favorites_only: boolean;
   explicit?: boolean | null;
   seed_track_uris?: string[];
