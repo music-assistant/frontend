@@ -3119,6 +3119,19 @@ describe("ItemsListing library toolbar", () => {
     expect(menuLabels(listing)).not.toContain("grid_size");
   });
 
+  it.each(["panel", "list"] as const)(
+    "keeps the view out of the sort menu when the page sets it to %s",
+    async (forcedViewMode) => {
+      const listing = await mountLibraryPage({ forcedViewMode });
+      const sortMenu = listing.findComponent(ListingSortMenu);
+
+      expect(sortMenu.props("viewMode")).toBe(forcedViewMode);
+      expect(sortMenu.props("fixedView")).toBe(true);
+      expect(sortMenu.props("gridControls")).toBeDefined();
+      expect(menuLabels(listing)).not.toContain("tooltip.view_mode");
+    },
+  );
+
   it("opens the search field from its icon and closes it from inside", async () => {
     const listing = await mountLibraryPage();
     const searchIcon = () => listing.find('button[aria-label="search"]');
