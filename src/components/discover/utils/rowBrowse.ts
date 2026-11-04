@@ -1,9 +1,7 @@
 import type { RecommendationFolder } from "@/plugins/api/interfaces";
 import type { RouteLocationRaw } from "vue-router";
 
-// The server lists every recommendation row, with all of its items, under
-// this browse scheme: discover://<provider>/<item_id>.
-export const DISCOVER_BROWSE_SCHEME = "discover";
+import { DISCOVER_BROWSE_SCHEME } from "@/helpers/discover_browse";
 
 type RowRef = Pick<RecommendationFolder, "provider" | "item_id">;
 

@@ -271,15 +271,10 @@
           >
             <div class="ed-genres__head">
               <h2 class="ed-genres__title">
-                <RouterLink
-                  v-if="!editMode"
-                  :to="{ name: 'genres' }"
-                  class="ed-genres__title-link"
-                >
-                  {{ $t("browse_by_genre") }}
-                  <ChevronRight class="ed-genres__title-chevron" :size="20" />
-                </RouterLink>
-                <template v-else>{{ $t("browse_by_genre") }}</template>
+                <TitleLink
+                  :title="$t('browse_by_genre')"
+                  :to="editMode ? undefined : { name: 'genres' }"
+                />
               </h2>
               <div v-if="editMode" class="ed-edit-controls">
                 <button
@@ -402,6 +397,7 @@ import {
   setDiscoverRowsOrder,
 } from "@/components/discover/utils/discoverRows";
 import { rowBrowseRoute } from "@/components/discover/utils/rowBrowse";
+import TitleLink from "@/components/TitleLink.vue";
 import {
   isRecommendationRowVisible,
   rowIdsNeedingItems,
@@ -434,14 +430,7 @@ import {
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import {
-  ChevronRight,
-  Eye,
-  EyeOff,
-  GripVertical,
-  ListFilter,
-  RefreshCw,
-} from "@lucide/vue";
+import { Eye, EyeOff, GripVertical, ListFilter, RefreshCw } from "@lucide/vue";
 import {
   computed,
   defineAsyncComponent,
@@ -1244,30 +1233,6 @@ onBeforeUnmount(() => {
   font-weight: 700;
   letter-spacing: -0.4px;
   color: rgb(var(--v-theme-on-background));
-}
-.ed-genres__title-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  color: inherit;
-  text-decoration: none;
-}
-.ed-genres__title-chevron {
-  flex-shrink: 0;
-  opacity: 0.45;
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease;
-}
-.ed-genres__title-link:hover .ed-genres__title-chevron,
-.ed-genres__title-link:focus-visible .ed-genres__title-chevron {
-  opacity: 1;
-  transform: translateX(2px);
-}
-.ed-genres__title-link:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
-  border-radius: 4px;
 }
 .ed-genres__grid {
   display: grid;

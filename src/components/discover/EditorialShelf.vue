@@ -10,15 +10,7 @@
         <div class="ed-shelf__titles">
           <div class="ed-shelf__title-row">
             <h2 class="ed-shelf__title">
-              <RouterLink
-                v-if="titleTo"
-                :to="titleTo"
-                class="ed-shelf__title-link"
-              >
-                <span class="ed-shelf__title-text">{{ title }}</span>
-                <ChevronRight class="ed-shelf__title-chevron" :size="20" />
-              </RouterLink>
-              <template v-else>{{ title }}</template>
+              <TitleLink :title="title" :to="titleTo" />
             </h2>
             <slot name="title-append"></slot>
           </div>
@@ -104,6 +96,7 @@ import { useDragScroll } from "@/composables/useDragScroll";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { ChevronLeft, ChevronRight } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import TitleLink from "@/components/TitleLink.vue";
 import type { RouteLocationRaw } from "vue-router";
 
 interface Props {
@@ -319,36 +312,6 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.ed-shelf__title-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  max-width: 100%;
-  color: inherit;
-  text-decoration: none;
-}
-.ed-shelf__title-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ed-shelf__title-chevron {
-  flex-shrink: 0;
-  opacity: 0.45;
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease;
-}
-.ed-shelf__title-link:hover .ed-shelf__title-chevron,
-.ed-shelf__title-link:focus-visible .ed-shelf__title-chevron {
-  opacity: 1;
-  transform: translateX(2px);
-}
-.ed-shelf__title-link:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
-  border-radius: 4px;
 }
 .ed-shelf__subtitle {
   font-size: 13px;
