@@ -99,6 +99,7 @@
             <Tooltip
               v-for="tick in bookmarkTicks"
               :key="`bookmark-${tick.start}`"
+              @update:open="(open) => bookmarkTooltipToggled(tick.start, open)"
             >
               <TooltipTrigger as-child>
                 <button
@@ -528,10 +529,25 @@ const hoveredSegment = computed(() => {
 });
 
 // e.g. "30:49 · Postgres as a data platform", above the pointer
+// a bookmark's own tooltip already names its time and chapter; keyed by start,
+// as the next bookmark's tooltip can open before the previous one closes
+const openBookmarkTooltip = ref<number | null>(null);
+const bookmarkTooltipToggled = (start: number, open: boolean) => {
+  if (open) openBookmarkTooltip.value = start;
+  else if (openBookmarkTooltip.value === start)
+    openBookmarkTooltip.value = null;
+};
+
 const hoverLabel = computed(() => {
   const segment = hoveredSegment.value;
   const point = hoverPoint.value;
-  if (!segment || !point || hoverPercent.value === null) return undefined;
+  if (
+    !segment ||
+    !point ||
+    hoverPercent.value === null ||
+    openBookmarkTooltip.value !== null
+  )
+    return undefined;
   const seconds = (hoverPercent.value / 100) * timelineDuration.value;
   return {
     reference: {
