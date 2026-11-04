@@ -16,18 +16,27 @@ import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ref, shallowRef } from "vue";
 
-const { setUserPreference, statistics, useStatistics } = vi.hoisted(() => ({
-  setUserPreference: vi.fn(),
-  statistics: {} as {
-    data: { value: Partial<StatisticsData> };
-    failed: { value: ReadonlySet<StatisticsSection> };
-    loading: { value: boolean };
-  },
-  useStatistics: vi.fn(),
-}));
+const { setUserPreference, statistics, useStatistics, playback } = vi.hoisted(
+  () => ({
+    playback: {
+      connected: { value: true },
+      playActionInProgress: { value: false },
+    },
+    setUserPreference: vi.fn(),
+    statistics: {} as {
+      data: { value: Partial<StatisticsData> };
+      failed: { value: ReadonlySet<StatisticsSection> };
+      loading: { value: boolean };
+    },
+    useStatistics: vi.fn(),
+  }),
+);
 
 vi.mock("@/composables/useStatistics", () => ({ useStatistics }));
 vi.mock("@/composables/userPreferences", () => ({ setUserPreference }));
+vi.mock("@/composables/useMediaPlayState", () => ({
+  useMediaPlayState: () => playback,
+}));
 vi.mock("@/components/discover/EditorialMediaCard.vue", () => ({
   default: {
     name: "EditorialMediaCard",
@@ -86,6 +95,8 @@ beforeEach(() => {
   setUserPreference.mockResolvedValue(true);
   signInWith({});
   api.state.value = ConnectionState.INITIALIZED;
+  playback.connected = ref(true);
+  playback.playActionInProgress = ref(false);
 });
 
 afterEach(() => {
@@ -110,7 +121,7 @@ function mountTeaser(active = true) {
 }
 
 describe("StatisticsTeaserRow", () => {
-  it("requests the chart and only the top album and track while active", () => {
+  it("requests the chart and top artist, album and track while active", () => {
     mountTeaser(false);
 
     const options = useStatistics.mock.calls[0][0];
@@ -142,9 +153,7 @@ describe("StatisticsTeaserRow", () => {
 
     expect(wrapper.find('[data-slot="skeleton"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="chart"]').exists()).toBe(false);
-    expect(wrapper.find('button[aria-label^="Play: Top"]').exists()).toBe(
-      false,
-    );
+    expect(wrapper.findComponent(EditorialMediaCard).exists()).toBe(false);
   });
 
   it("shows an inline error when the plays could not be loaded", () => {
@@ -233,8 +242,6 @@ describe("StatisticsTeaserRow", () => {
       "Back in BlackTop album",
       "ThunderstruckTop track",
     ]);
-    expect(cards.every((card) => card.props("round") === undefined)).toBe(true);
-    expect(wrapper.find('[class*="--ed-tile-art:80px"]').exists()).toBe(true);
     expect(wrapper.text()).toContain("Back in Black");
     expect(wrapper.text()).toContain("Thunderstruck");
   });
@@ -251,6 +258,7 @@ describe("StatisticsTeaserRow", () => {
       wrapper.findAllComponents(EditorialMediaCard)[0].props("isAvailable"),
     ).toBe(false);
     api.state.value = ConnectionState.RECONNECTING;
+    playback.connected.value = false;
     await flushPromises();
     expect(
       wrapper
@@ -259,7 +267,7 @@ describe("StatisticsTeaserRow", () => {
     ).toBe(true);
   });
 
-  it("reports an individual ranking failure without hiding the other play button", () => {
+  it("reports a ranking failure without hiding the other cards", () => {
     statistics.data.value = {
       playsOverTime: [],
       topAlbums: [],
@@ -269,19 +277,51 @@ describe("StatisticsTeaserRow", () => {
     statistics.failed.value = new Set(["topAlbums"]);
     const wrapper = mountTeaser();
     expect(wrapper.get('[role="alert"]').text()).toContain(
-      "Top album: These statistics could not be loaded.",
+      "These statistics could not be loaded.",
     );
     expect(wrapper.findComponent(EditorialMediaCard).exists()).toBe(true);
   });
 
-  it("does not offer play buttons for an empty period", () => {
+  it("hides the highlights row for an empty period", () => {
     const wrapper = mountTeaser();
-    expect(wrapper.text()).toContain("Top album:");
-    expect(wrapper.text()).toContain("Top track:");
-    expect(wrapper.find('button[aria-label^="Play: Top"]').exists()).toBe(
+    expect(wrapper.findComponent(EditorialMediaCard).exists()).toBe(false);
+    expect(wrapper.find('[data-testid="statistics-highlights"]').exists()).toBe(
       false,
     );
   });
+
+  it("omits empty individual highlights and disables play during a queue command", async () => {
+    statistics.data.value = {
+      playsOverTime: [],
+      topArtists: [],
+      topAlbums: [],
+      topTracks: [rankedItem(MediaType.TRACK, "Track")],
+    };
+    const wrapper = mountTeaser();
+    expect(wrapper.findAllComponents(EditorialMediaCard)).toHaveLength(1);
+    expect(
+      wrapper.findComponent(EditorialMediaCard).props("disablePlayButton"),
+    ).toBe(false);
+    playback.playActionInProgress.value = true;
+    await flushPromises();
+    expect(
+      wrapper.findComponent(EditorialMediaCard).props("disablePlayButton"),
+    ).toBe(true);
+  });
+
+  it.each([false, true])(
+    "announces failed rankings once (hero failed: %s)",
+    (heroFailed) => {
+      statistics.failed.value = new Set<StatisticsSection>(
+        heroFailed
+          ? ["topArtists", "topAlbums", "topTracks", "playsOverTime"]
+          : ["topArtists", "topAlbums", "topTracks"],
+      );
+      const wrapper = mountTeaser();
+      expect(wrapper.findAll('[role="alert"]')).toHaveLength(1);
+      expect(wrapper.findComponent(EditorialMediaCard).exists()).toBe(false);
+    },
+  );
 
   it("opens with the period the user saved", () => {
     signInWith({ [PERIOD_PREFERENCE_KEY]: "month" });

@@ -25,22 +25,24 @@
       :error="failed.has('playsOverTime')"
     >
       <template #highlights>
+        <p
+          v-if="!loading && highlightsFailed && !failed.has('playsOverTime')"
+          role="alert"
+          class="m-0 mt-2.5 text-sm text-muted-foreground"
+        >
+          {{ $t("statistics_section_failed") }}
+        </p>
         <div
+          v-if="loading || visibleHighlights.length"
+          data-testid="statistics-highlights"
           class="ma-scroll mt-2.5 flex min-w-0 gap-2 overflow-x-auto overscroll-x-contain pb-1 [--ed-tile-art:80px]"
         >
           <div
-            v-for="highlight in highlights"
+            v-for="highlight in loading ? highlights : visibleHighlights"
             :key="highlight.section"
             class="w-24 shrink-0"
           >
             <EditorialCardSkeleton v-if="loading" />
-            <p
-              v-else-if="failed.has(highlight.section)"
-              role="alert"
-              class="m-0 text-sm text-muted-foreground"
-            >
-              {{ highlight.label }}: {{ $t("statistics_section_failed") }}
-            </p>
             <EditorialMediaCard
               v-else-if="highlight.item"
               :item="highlight.item"
@@ -50,9 +52,6 @@
             >
               <template #subtitle>{{ highlight.label }}</template>
             </EditorialMediaCard>
-            <p v-else class="m-0 text-sm text-muted-foreground">
-              {{ highlight.label }}: {{ $t("statistics_section_empty") }}
-            </p>
           </div>
         </div>
       </template>
@@ -66,12 +65,15 @@ import StatisticsPeriodSelect from "@/components/statistics/StatisticsPeriodSele
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import { Button } from "@/components/ui/button";
-import { useStatistics } from "@/composables/useStatistics";
+import {
+  useStatistics,
+  type StatisticsSection,
+} from "@/composables/useStatistics";
+import { useMediaPlayState } from "@/composables/useMediaPlayState";
 import { setUserPreference } from "@/composables/userPreferences";
 import { parseStatisticsPeriod } from "@/helpers/statistics_period";
-import api, { ConnectionState } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
-import type { StatisticsPeriod } from "@/plugins/api/interfaces";
+import type { ItemMapping, StatisticsPeriod } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { ChevronRight } from "@lucide/vue";
 import { computed, ref, toRef, watch } from "vue";
@@ -98,36 +100,37 @@ const { data, failed, loading } = useStatistics({
   topItemsLimit: 1,
 });
 
-const highlights = computed(() => [
+interface Highlight {
+  section: Extract<StatisticsSection, "topArtists" | "topAlbums" | "topTracks">;
+  label: string;
+  item?: ItemMapping;
+}
+
+const highlights = computed<Highlight[]>(() => [
   {
-    section: "topArtists" as const,
-    label: $t("statistics_top_artist_short"),
+    section: "topArtists",
+    label: $t("statistics_highlight_artist"),
     item: data.value.topArtists[0]?.item,
   },
   {
-    section: "topAlbums" as const,
-    label: $t("statistics_top_album"),
+    section: "topAlbums",
+    label: $t("statistics_highlight_album"),
     item: data.value.topAlbums[0]?.item,
   },
   {
-    section: "topTracks" as const,
-    label: $t("statistics_top_track"),
+    section: "topTracks",
+    label: $t("statistics_highlight_track"),
     item: data.value.topTracks[0]?.item,
   },
 ]);
 
-const connected = computed(
-  () => api.state.value === ConnectionState.INITIALIZED,
+const visibleHighlights = computed(() =>
+  highlights.value.filter(
+    (highlight) => highlight.item && !failed.value.has(highlight.section),
+  ),
 );
-const playActionInProgress = computed(() => {
-  const player = store.activePlayer;
-  if (!player) return false;
-  const queueId =
-    player.active_source && player.active_source in api.queues
-      ? player.active_source
-      : player.player_id;
-  return (
-    api.queues[queueId]?.extra_attributes?.play_action_in_progress === true
-  );
-});
+const highlightsFailed = computed(() =>
+  highlights.value.some((highlight) => failed.value.has(highlight.section)),
+);
+const { connected, playActionInProgress } = useMediaPlayState();
 </script>

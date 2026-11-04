@@ -64,6 +64,7 @@ const REQUESTS: StatisticsRequests = {
     ),
   topTracks: (period, limit) => api.getTopItems(MediaType.TRACK, period, limit),
   topAlbums: (period, limit) => api.getTopItems(MediaType.ALBUM, period, limit),
+  // The number-one artist card always needs just one, regardless of the listing limit.
   topArtists: (period) =>
     api.getTopItems(MediaType.ARTIST, period, TOP_ARTISTS_LIMIT),
   listeningActivity: (period) => api.getListeningActivity(period),
@@ -174,6 +175,7 @@ interface UseStatisticsOptions {
   period: Readonly<Ref<StatisticsPeriod>>;
   // only these are requested; the rest stay empty
   sections: readonly StatisticsSection[];
+  // Album/track ranking size; defaults to TOP_ITEMS_LIMIT. Artists always use TOP_ARTISTS_LIMIT.
   topItemsLimit?: number;
 }
 

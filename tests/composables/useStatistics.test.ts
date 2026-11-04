@@ -178,9 +178,9 @@ describe("useStatistics", () => {
     expect(api.getListeningActivity).not.toHaveBeenCalled();
   });
 
-  it("loads only one album and track for the teaser and follows its period", async () => {
+  it("loads one artist, album and track for the teaser and follows its period", async () => {
     const statistics = setupStatistics(
-      ["playsOverTime", "topAlbums", "topTracks"],
+      ["playsOverTime", "topArtists", "topAlbums", "topTracks"],
       false,
       1,
     );
@@ -190,11 +190,21 @@ describe("useStatistics", () => {
     await flushPromises();
     expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ALBUM, "week", 1);
     expect(api.getTopItems).toHaveBeenCalledWith(MediaType.TRACK, "week", 1);
-    expect(api.getTopItems).toHaveBeenCalledTimes(2);
+    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ARTIST, "week", 1);
+    expect(api.getTopItems).toHaveBeenCalledTimes(3);
     statistics.period.value = "month";
     await flushPromises();
     expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ALBUM, "month", 1);
     expect(api.getTopItems).toHaveBeenCalledWith(MediaType.TRACK, "month", 1);
+    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ARTIST, "month", 1);
+  });
+
+  it("keeps the number-one artist limit when a larger track/album limit is requested", async () => {
+    setupStatistics(["topArtists", "topAlbums", "topTracks"], true, 5);
+    await flushPromises();
+    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ARTIST, "week", 1);
+    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ALBUM, "week", 5);
+    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.TRACK, "week", 5);
   });
 
   it("sums a long all-time history of plays into years", async () => {
