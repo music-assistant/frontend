@@ -42,10 +42,14 @@
           <!-- one segment per chapter, filled as far as playback has reached -->
           <template v-if="!hasWaveform && chapterSegments.length">
             <div
-              v-for="segment in chapterSegments"
+              v-for="(segment, index) in chapterSegments"
               :key="segment.start"
               class="absolute inset-y-0 overflow-hidden transition-transform duration-100"
-              :class="segment === hoveredSegment ? 'scale-y-[2]' : ''"
+              :class="{
+                'scale-y-[2]': segment === hoveredSegment,
+                'rounded-l-full': index === 0,
+                'rounded-r-full': index === chapterSegments.length - 1,
+              }"
               :style="{
                 left: `calc(${segment.startPercent}% + ${SEGMENT_GAP_PX / 2}px)`,
                 width: `calc(${segment.widthPercent}% - ${SEGMENT_GAP_PX}px)`,
