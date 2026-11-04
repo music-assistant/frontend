@@ -268,6 +268,7 @@ describe("AudiobookDetails", () => {
     const wrapper = await mountDetails();
     vi.useFakeTimers();
     playlog();
+    getAudiobook.mockResolvedValue({ ...book, resume_position_ms: 900000 });
     listeners.get(EventType.MEDIA_ITEM_UPDATED)!({
       data: { ...book, name: "Updated metadata", resume_position_ms: null },
     } as EventMessage);

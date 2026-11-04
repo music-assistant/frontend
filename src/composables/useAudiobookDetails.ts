@@ -9,6 +9,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { onScopeDispose, ref, watch } from "vue";
+import { toast } from "vue-sonner";
 
 export interface AudiobookDetailsRoute {
   itemId: string;
@@ -19,8 +20,10 @@ export interface AudiobookDetailsRoute {
 export function useAudiobookDetails(route: () => AudiobookDetailsRoute) {
   const itemDetails = ref<Audiobook>();
   let loadRequest = 0;
+  let refreshRequest = 0;
+  let playlogRevision = 0;
   let playState:
-    Pick<Audiobook, "uri" | "fully_played" | "resume_position_ms"> | undefined;
+    Pick<Audiobook, "fully_played" | "resume_position_ms"> | undefined;
 
   watch(
     () => [route().itemId, route().provider],
@@ -36,7 +39,12 @@ export function useAudiobookDetails(route: () => AudiobookDetailsRoute) {
     { immediate: true },
   );
 
-  useDetailItemUpdates(itemDetails, { onUpdate: applyPlayState });
+  useDetailItemUpdates(itemDetails, {
+    onUpdate: () => {
+      applyPlayState();
+      void refreshProgress();
+    },
+  });
 
   const unsubPlaylog = api.subscribe(
     EventType.PLAYLOG_UPDATED,
@@ -48,8 +56,8 @@ export function useAudiobookDetails(route: () => AudiobookDetailsRoute) {
       const routeUri = `${provider}://${MediaType.AUDIOBOOK}/${itemId}`;
       if (update.uri !== itemDetails.value?.uri && update.uri !== routeUri)
         return;
+      ++playlogRevision;
       playState = {
-        uri: update.uri,
         fully_played: update.fully_played,
         resume_position_ms: update.seconds_played * 1000,
       };
@@ -65,9 +73,8 @@ export function useAudiobookDetails(route: () => AudiobookDetailsRoute) {
 
   function applyAudiobookResponse(audiobook: Audiobook) {
     itemDetails.value = audiobook;
-    if (playState?.uri !== audiobook.uri) {
+    if (!playState) {
       playState = {
-        uri: audiobook.uri,
         fully_played: audiobook.fully_played,
         resume_position_ms: audiobook.resume_position_ms,
       };
@@ -77,11 +84,38 @@ export function useAudiobookDetails(route: () => AudiobookDetailsRoute) {
 
   function applyPlayState() {
     const audiobook = itemDetails.value;
-    if (!audiobook || playState?.uri !== audiobook.uri) return;
+    if (!audiobook || !playState) return;
     itemDetails.value = {
       ...audiobook,
       fully_played: playState.fully_played,
       resume_position_ms: playState.resume_position_ms,
     };
+  }
+
+  async function refreshProgress() {
+    const audiobook = itemDetails.value;
+    if (!audiobook) return;
+    const request = ++refreshRequest;
+    const routeRequest = loadRequest;
+    const revision = playlogRevision;
+    const isCurrent = () =>
+      request === refreshRequest &&
+      routeRequest === loadRequest &&
+      revision === playlogRevision;
+    try {
+      const refreshed = await api.getAudiobook(
+        audiobook.item_id,
+        audiobook.provider,
+      );
+      if (!isCurrent()) return;
+      playState = {
+        fully_played: refreshed.fully_played,
+        resume_position_ms: refreshed.resume_position_ms,
+      };
+      applyPlayState();
+    } catch (error) {
+      if (!isCurrent()) return;
+      toast.error(String(error));
+    }
   }
 }
