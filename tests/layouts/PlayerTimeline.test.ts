@@ -288,10 +288,9 @@ describe("PlayerTimeline", () => {
         queue_item_id: "qi-1",
       },
     };
-    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
-      left: 0,
-      width: 120,
-    } as DOMRect);
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 0, 120, 8),
+    );
 
     mountTimeline({
       SliderRoot: { template: '<div class="slider-root"><slot /></div>' },
@@ -301,9 +300,11 @@ describe("PlayerTimeline", () => {
 
     await wrapper!.find(".slider-root").trigger("pointermove", { clientX: 90 });
 
-    expect(wrapper!.find('[data-testid="timeline-hover-label"]').text()).toBe(
-      "01:30 · Second",
-    );
+    await nextTick();
+    expect(
+      document.body.querySelector('[data-testid="timeline-hover-label"]')
+        ?.textContent,
+    ).toContain("01:30 · Second");
   });
 
   // with chapter progress the track spans the playing chapter only

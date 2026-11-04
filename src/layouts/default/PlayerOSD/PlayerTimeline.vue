@@ -22,18 +22,24 @@
           hoverPercent = null;
         "
       >
-        <!-- the hovered position and its chapter -->
-        <div
-          v-if="hoverLabel"
-          class="pointer-events-none absolute bottom-full mb-2 max-w-[80%] truncate whitespace-nowrap rounded-md bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md"
-          :style="{
-            left: `${hoverLabel.percent}%`,
-            transform: `translateX(-${hoverLabel.percent}%)`,
-          }"
-          data-testid="timeline-hover-label"
-        >
-          {{ hoverLabel.text }}
-        </div>
+        <!-- the hovered position and its chapter, above the pointer -->
+        <TooltipProvider>
+          <Tooltip :open="!!hoverLabel">
+            <!-- above the full screen dialog -->
+            <TooltipContent
+              v-if="hoverLabel"
+              side="top"
+              :side-offset="HOVER_LABEL_OFFSET_PX"
+              :collision-padding="8"
+              :reference="hoverLabel.reference"
+              hide-arrow
+              class="pointer-events-none z-[100001] max-w-[320px] truncate"
+              data-testid="timeline-hover-label"
+            >
+              {{ hoverLabel.text }}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <SliderTrack
           data-slot="slider-track"
           class="relative grow rounded-full"
@@ -499,15 +505,19 @@ const segmentFillPercent = (segment: ChapterSegment) =>
 // Hover position over a waveform or chapter segments, as 0-100 percent.
 const hoverPercent = ref<number | null>(null);
 
+// the hovered point on the track's center line, where the hover label points to
+const hoverPoint = ref<{ x: number; y: number }>();
+// clears the hovered segment, which grows to twice the track height
+const HOVER_LABEL_OFFSET_PX = 12;
+
 const onTrackPointerMove = (evt: PointerEvent) => {
   if (!(hasWaveform.value || chapterSegments.value.length) || !canSeek.value)
     return;
   const rect = (evt.currentTarget as HTMLElement).getBoundingClientRect();
   if (!rect.width) return;
-  hoverPercent.value = Math.min(
-    100,
-    Math.max(0, ((evt.clientX - rect.left) / rect.width) * 100),
-  );
+  const x = Math.min(rect.right, Math.max(rect.left, evt.clientX));
+  hoverPercent.value = ((x - rect.left) / rect.width) * 100;
+  hoverPoint.value = { x, y: rect.top + rect.height / 2 };
 };
 
 const hoveredSegment = computed(() => {
@@ -520,10 +530,13 @@ const hoveredSegment = computed(() => {
 // e.g. "30:49 · Postgres as a data platform", above the pointer
 const hoverLabel = computed(() => {
   const segment = hoveredSegment.value;
-  if (!segment || hoverPercent.value === null) return undefined;
+  const point = hoverPoint.value;
+  if (!segment || !point || hoverPercent.value === null) return undefined;
   const seconds = (hoverPercent.value / 100) * timelineDuration.value;
   return {
-    percent: hoverPercent.value,
+    reference: {
+      getBoundingClientRect: () => new DOMRect(point.x, point.y, 0, 0),
+    },
     text: [formatDuration(seconds), segment.chapter?.name]
       .filter(Boolean)
       .join(" · "),
