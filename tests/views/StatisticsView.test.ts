@@ -76,6 +76,7 @@ const track = (name: string, plays: number): StatisticsTopItemResult => ({
 const emptyData = (): StatisticsData => ({
   playsOverTime: [],
   topTracks: [],
+  topAlbums: [],
   topArtists: [],
   listeningActivity: [],
   listeningTime: [],

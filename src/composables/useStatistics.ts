@@ -39,6 +39,7 @@ const LOAD_FAILED_TOAST_ID = "statistics-load-failed";
 export interface StatisticsData {
   playsOverTime: StatisticsTimeSeriesPoint[];
   topTracks: StatisticsTopItemResult[];
+  topAlbums: StatisticsTopItemResult[];
   topArtists: StatisticsTopItemResult[];
   listeningActivity: StatisticsHeatmapPoint[];
   listeningTime: StatisticsListeningTimeItem[];
@@ -51,6 +52,7 @@ export type StatisticsSection = keyof StatisticsData;
 type StatisticsRequests = {
   [Section in StatisticsSection]: (
     period: StatisticsPeriod,
+    topItemsLimit: number,
   ) => Promise<StatisticsData[Section]>;
 };
 
@@ -60,8 +62,8 @@ const REQUESTS: StatisticsRequests = {
       await api.getPlaysOverTime(period, getPlaysOverTimeGranularity(period)),
       period,
     ),
-  topTracks: (period) =>
-    api.getTopItems(MediaType.TRACK, period, TOP_ITEMS_LIMIT),
+  topTracks: (period, limit) => api.getTopItems(MediaType.TRACK, period, limit),
+  topAlbums: (period, limit) => api.getTopItems(MediaType.ALBUM, period, limit),
   topArtists: (period) =>
     api.getTopItems(MediaType.ARTIST, period, TOP_ARTISTS_LIMIT),
   listeningActivity: (period) => api.getListeningActivity(period),
@@ -76,6 +78,7 @@ const REQUESTS: StatisticsRequests = {
 const emptyData = (): StatisticsData => ({
   playsOverTime: [],
   topTracks: [],
+  topAlbums: [],
   topArtists: [],
   listeningActivity: [],
   listeningTime: [],
@@ -171,6 +174,7 @@ interface UseStatisticsOptions {
   period: Readonly<Ref<StatisticsPeriod>>;
   // only these are requested; the rest stay empty
   sections: readonly StatisticsSection[];
+  topItemsLimit?: number;
 }
 
 /** The statistics of a period, each section requested in parallel. */
@@ -184,7 +188,10 @@ export function useStatistics(options: UseStatisticsOptions) {
     request: () =>
       Promise.allSettled(
         options.sections.map((section) =>
-          REQUESTS[section](options.period.value),
+          REQUESTS[section](
+            options.period.value,
+            options.topItemsLimit ?? TOP_ITEMS_LIMIT,
+          ),
         ),
       ),
     apply: (results) => {

@@ -63,13 +63,14 @@ const scopes: EffectScope[] = [];
 function setupStatistics(
   sections: StatisticsSection[] = ALL_SECTIONS,
   isActive = true,
+  topItemsLimit?: number,
 ) {
   const active = ref(isActive);
   const period = ref<StatisticsPeriod>("week");
   const scope = effectScope();
   scopes.push(scope);
   const statistics = scope.run(() =>
-    useStatistics({ active, period, sections }),
+    useStatistics({ active, period, sections, topItemsLimit }),
   )!;
   return { active, period, scope, ...statistics };
 }
@@ -175,6 +176,25 @@ describe("useStatistics", () => {
     expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
     expect(api.getTopItems).not.toHaveBeenCalled();
     expect(api.getListeningActivity).not.toHaveBeenCalled();
+  });
+
+  it("loads only one album and track for the teaser and follows its period", async () => {
+    const statistics = setupStatistics(
+      ["playsOverTime", "topAlbums", "topTracks"],
+      false,
+      1,
+    );
+    await flushPromises();
+    expect(api.getTopItems).not.toHaveBeenCalled();
+    statistics.active.value = true;
+    await flushPromises();
+    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ALBUM, "week", 1);
+    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.TRACK, "week", 1);
+    expect(api.getTopItems).toHaveBeenCalledTimes(2);
+    statistics.period.value = "month";
+    await flushPromises();
+    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ALBUM, "month", 1);
+    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.TRACK, "month", 1);
   });
 
   it("sums a long all-time history of plays into years", async () => {
