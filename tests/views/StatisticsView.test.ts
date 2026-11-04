@@ -1,4 +1,5 @@
 import StatisticsPeriodSelect from "@/components/statistics/StatisticsPeriodSelect.vue";
+import StatisticsUserSelect from "@/components/statistics/StatisticsUserSelect.vue";
 import type {
   StatisticsData,
   StatisticsSection,
@@ -13,18 +14,27 @@ import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ref, shallowRef } from "vue";
 
-const { statistics, topItems, useStatistics, routerReplace, routerPush } =
-  vi.hoisted(() => ({
-    statistics: {} as {
-      data: { value: StatisticsData };
-      failed: { value: ReadonlySet<StatisticsSection> };
-      loading: { value: boolean };
-    },
-    topItems: {} as Record<string, { value: unknown }>,
-    useStatistics: vi.fn(),
-    routerReplace: vi.fn(),
-    routerPush: vi.fn(),
-  }));
+const {
+  statistics,
+  topItems,
+  useStatistics,
+  routerReplace,
+  routerPush,
+  hasScope,
+} = vi.hoisted(() => ({
+  statistics: {} as {
+    data: { value: StatisticsData };
+    failed: { value: ReadonlySet<StatisticsSection> };
+    loading: { value: boolean };
+  },
+  topItems: {} as Record<string, { value: unknown }>,
+  useStatistics: vi.fn(),
+  routerReplace: vi.fn(),
+  routerPush: vi.fn(),
+  hasScope: vi.fn(),
+}));
+
+vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
 
 vi.mock("@/composables/useStatistics", () => ({
   useStatistics,
@@ -96,20 +106,24 @@ beforeEach(() => {
   useStatistics.mockReturnValue(statistics);
   routerReplace.mockReset();
   routerPush.mockReset();
+  hasScope.mockReset();
+  hasScope.mockReturnValue(false);
 });
 
 afterEach(() => {
   i18n.global.locale.value = originalLocale;
 });
 
-function mountView() {
+function mountView(userIds: string[] = []) {
   return mount(StatisticsView, {
-    props: { period: "month" },
+    props: { period: "month", userIds },
     global: {
       stubs: {
         // charts draw with Unovis, which needs a real layout engine
         ChartContainer: { template: '<div data-testid="chart" />' },
         StatisticsPlaysChart: { template: '<div data-testid="chart" />' },
+        // it loads the users itself, which is tested on its own
+        StatisticsUserSelect: true,
       },
     },
   });
@@ -180,6 +194,35 @@ describe("StatisticsView", () => {
     await flushPromises();
 
     expect(routerReplace).toHaveBeenCalledWith({ query: { period: "year" } });
+  });
+
+  it.each([true, false])(
+    "shows the users of the route only with the impersonate scope (%s)",
+    (allowed) => {
+      hasScope.mockReturnValue(allowed);
+      const wrapper = mountView(["alice"]);
+
+      expect(wrapper.findComponent(StatisticsUserSelect).exists()).toBe(
+        allowed,
+      );
+      expect(useStatistics.mock.calls[0][0].userIds.value).toEqual(
+        allowed ? ["alice"] : [],
+      );
+    },
+  );
+
+  it("keeps the chosen users in the url", async () => {
+    hasScope.mockReturnValue(true);
+    const wrapper = mountView();
+
+    wrapper
+      .findComponent(StatisticsUserSelect)
+      .vm.$emit("update:modelValue", ["alice", "bob"]);
+    await flushPromises();
+
+    expect(routerReplace).toHaveBeenCalledWith({
+      query: { period: "month", users: ["alice", "bob"] },
+    });
   });
 
   it("goes back to Discover when opened directly", async () => {

@@ -23,6 +23,7 @@
             {{ $t("statistics_subtitle") }}
           </p>
         </div>
+        <StatisticsUserSelect v-if="canSelectUsers" v-model="userIds" />
         <StatisticsPeriodSelect v-model="period" />
       </header>
 
@@ -87,6 +88,7 @@
       <StatisticsTopItemsTable
         :active="active"
         :period="period"
+        :user-ids="shownUserIds"
         :tracks="data.topTracks"
         :tracks-loading="loading"
         :tracks-error="failed.has('topTracks')"
@@ -106,6 +108,7 @@ import StatisticsMostPlayed from "@/components/statistics/StatisticsMostPlayed.v
 import StatisticsPeriodSelect from "@/components/statistics/StatisticsPeriodSelect.vue";
 import StatisticsTopArtistCard from "@/components/statistics/StatisticsTopArtistCard.vue";
 import StatisticsTopItemsTable from "@/components/statistics/StatisticsTopItemsTable.vue";
+import StatisticsUserSelect from "@/components/statistics/StatisticsUserSelect.vue";
 import { Button } from "@/components/ui/button";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { useStatistics } from "@/composables/useStatistics";
@@ -116,7 +119,8 @@ import {
   peakListeningWindow,
 } from "@/helpers/statistics_activity";
 import { summarizePlays } from "@/helpers/statistics_time_series";
-import type { StatisticsPeriod } from "@/plugins/api/interfaces";
+import { Scope, type StatisticsPeriod } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { ArrowLeft } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -125,26 +129,49 @@ import { $t } from "@/plugins/i18n";
 
 const props = defineProps<{
   period: StatisticsPeriod;
+  // empty is the current user only
+  userIds?: string[];
 }>();
 
 const router = useRouter();
 const active = ref(true);
 const period = ref<StatisticsPeriod>(props.period);
+const userIds = ref<string[]>(props.userIds ?? []);
+const canSelectUsers = computed(() =>
+  authManager.hasScope(Scope.USERS_IMPERSONATE),
+);
+const shownUserIds = computed(() =>
+  canSelectUsers.value ? userIds.value : [],
+);
 
-// the period lives in the url, so back and reload keep it
+// the period and users live in the url, so back and reload keep them
 watch(
   () => props.period,
   (value) => (period.value = value),
 );
-watch(period, (value) => {
-  if (value !== props.period) {
-    void router.replace({ query: { period: value } });
+watch(
+  () => props.userIds,
+  (value) => (userIds.value = value ?? []),
+);
+watch([period, userIds], ([periodValue, userIdsValue]) => {
+  if (
+    periodValue === props.period &&
+    userIdsValue.join(",") === (props.userIds ?? []).join(",")
+  ) {
+    return;
   }
+  void router.replace({
+    query: {
+      period: periodValue,
+      ...(userIdsValue.length ? { users: userIdsValue } : {}),
+    },
+  });
 });
 
 const { data, failed, loading } = useStatistics({
   active,
   period,
+  userIds: shownUserIds,
   sections: [
     "playsOverTime",
     "topTracks",

@@ -3,7 +3,7 @@ import type { CommandOptions } from "@/plugins/api/commandOptions";
 import { StatisticsApi } from "@/plugins/api/statistics";
 
 describe("statistics API", () => {
-  it("includes the local timezone and suppresses the global error toast", async () => {
+  it("sends the users and local timezone and suppresses the global error toast", async () => {
     const calls: Array<{
       command: string;
       args?: Record<string, unknown>;
@@ -20,7 +20,7 @@ describe("statistics API", () => {
       },
     );
 
-    await api.getPlaysOverTime("month", "week");
+    await api.getPlaysOverTime("month", "week", ["alice", "bob"]);
 
     expect(calls).toEqual([
       {
@@ -28,6 +28,7 @@ describe("statistics API", () => {
         args: {
           period: "month",
           granularity: "week",
+          user_ids: ["alice", "bob"],
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         },
         options: { suppressGlobalError: true },

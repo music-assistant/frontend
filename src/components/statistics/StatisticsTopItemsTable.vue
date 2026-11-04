@@ -121,6 +121,7 @@ import { $t } from "@/plugins/i18n";
 const props = defineProps<{
   active: boolean;
   period: StatisticsPeriod;
+  userIds?: string[];
   // the page already loads the top tracks, so that tab reuses them
   tracks: StatisticsTopItemResult[];
   tracksLoading?: boolean;
@@ -149,6 +150,7 @@ const otherTab = useStatisticsTopItems({
   active: computed(() => props.active && !isTrackTab.value),
   period: toRef(props, "period"),
   mediaType: activeTab,
+  userIds: computed(() => props.userIds ?? []),
 });
 
 const items = computed(() =>

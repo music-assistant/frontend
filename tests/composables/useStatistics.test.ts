@@ -64,27 +64,30 @@ function setupStatistics(
   sections: StatisticsSection[] = ALL_SECTIONS,
   isActive = true,
   topItemsLimit?: number,
+  selectedUserIds: string[] = [],
 ) {
   const active = ref(isActive);
   const period = ref<StatisticsPeriod>("week");
+  const userIds = ref(selectedUserIds);
   const scope = effectScope();
   scopes.push(scope);
   const statistics = scope.run(() =>
-    useStatistics({ active, period, sections, topItemsLimit }),
+    useStatistics({ active, period, sections, topItemsLimit, userIds }),
   )!;
-  return { active, period, scope, ...statistics };
+  return { active, period, userIds, scope, ...statistics };
 }
 
 function setupTopItems() {
   const active = ref(true);
   const period = ref<StatisticsPeriod>("week");
   const mediaType = ref<TopItemsMediaType>(MediaType.ALBUM);
+  const userIds = ref<string[]>([]);
   const scope = effectScope();
   scopes.push(scope);
   const topItems = scope.run(() =>
-    useStatisticsTopItems({ active, period, mediaType }),
+    useStatisticsTopItems({ active, period, mediaType, userIds }),
   )!;
-  return { active, period, mediaType, ...topItems };
+  return { active, period, mediaType, userIds, ...topItems };
 }
 
 function deferred<T>() {
@@ -146,28 +149,55 @@ describe("useStatistics", () => {
     vi.restoreAllMocks();
   });
 
-  it("loads every requested section of the period in parallel", async () => {
-    const statistics = setupStatistics();
-    expect(statistics.loading.value).toBe(true);
-    await flushPromises();
+  it.each([
+    { userIds: [], sent: undefined },
+    { userIds: ["alice", "bob"], sent: ["alice", "bob"] },
+  ])(
+    "loads every requested section of the period in parallel for users $userIds",
+    async ({ userIds, sent }) => {
+      const statistics = setupStatistics(
+        ALL_SECTIONS,
+        true,
+        undefined,
+        userIds,
+      );
+      expect(statistics.loading.value).toBe(true);
+      await flushPromises();
 
-    expect(api.getPlaysOverTime).toHaveBeenCalledExactlyOnceWith("week", "day");
-    expect(api.getTopItems).toHaveBeenCalledWith(
-      MediaType.TRACK,
-      "week",
-      TOP_ITEMS_LIMIT,
-    );
-    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ARTIST, "week", 1);
-    expect(api.getListeningActivity).toHaveBeenCalledWith("week");
-    expect(api.getListeningTime).toHaveBeenCalledWith("week", "artist", 10);
-    expect(api.getGenreDistribution).toHaveBeenCalledWith(
-      "week",
-      GENRE_DISTRIBUTION_LIMIT,
-    );
-    expect(api.getDecadeDistribution).toHaveBeenCalledWith("week", 10);
-    expect(statistics.loading.value).toBe(false);
-    expect(statistics.failed.value.size).toBe(0);
-  });
+      expect(api.getPlaysOverTime).toHaveBeenCalledExactlyOnceWith(
+        "week",
+        "day",
+        sent,
+      );
+      expect(api.getTopItems).toHaveBeenCalledWith(
+        MediaType.TRACK,
+        "week",
+        TOP_ITEMS_LIMIT,
+        sent,
+      );
+      expect(api.getTopItems).toHaveBeenCalledWith(
+        MediaType.ARTIST,
+        "week",
+        1,
+        sent,
+      );
+      expect(api.getListeningActivity).toHaveBeenCalledWith("week", sent);
+      expect(api.getListeningTime).toHaveBeenCalledWith(
+        "week",
+        "artist",
+        10,
+        sent,
+      );
+      expect(api.getGenreDistribution).toHaveBeenCalledWith(
+        "week",
+        GENRE_DISTRIBUTION_LIMIT,
+        sent,
+      );
+      expect(api.getDecadeDistribution).toHaveBeenCalledWith("week", 10, sent);
+      expect(statistics.loading.value).toBe(false);
+      expect(statistics.failed.value.size).toBe(0);
+    },
+  );
 
   it("requests only the sections asked for", async () => {
     setupStatistics(["playsOverTime"]);
@@ -188,23 +218,68 @@ describe("useStatistics", () => {
     expect(api.getTopItems).not.toHaveBeenCalled();
     statistics.active.value = true;
     await flushPromises();
-    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ALBUM, "week", 1);
-    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.TRACK, "week", 1);
-    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ARTIST, "week", 1);
+    expect(api.getTopItems).toHaveBeenCalledWith(
+      MediaType.ALBUM,
+      "week",
+      1,
+      undefined,
+    );
+    expect(api.getTopItems).toHaveBeenCalledWith(
+      MediaType.TRACK,
+      "week",
+      1,
+      undefined,
+    );
+    expect(api.getTopItems).toHaveBeenCalledWith(
+      MediaType.ARTIST,
+      "week",
+      1,
+      undefined,
+    );
     expect(api.getTopItems).toHaveBeenCalledTimes(3);
     statistics.period.value = "month";
     await flushPromises();
-    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ALBUM, "month", 1);
-    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.TRACK, "month", 1);
-    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ARTIST, "month", 1);
+    expect(api.getTopItems).toHaveBeenCalledWith(
+      MediaType.ALBUM,
+      "month",
+      1,
+      undefined,
+    );
+    expect(api.getTopItems).toHaveBeenCalledWith(
+      MediaType.TRACK,
+      "month",
+      1,
+      undefined,
+    );
+    expect(api.getTopItems).toHaveBeenCalledWith(
+      MediaType.ARTIST,
+      "month",
+      1,
+      undefined,
+    );
   });
 
   it("keeps the number-one artist limit when a larger track/album limit is requested", async () => {
     setupStatistics(["topArtists", "topAlbums", "topTracks"], true, 5);
     await flushPromises();
-    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ARTIST, "week", 1);
-    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.ALBUM, "week", 5);
-    expect(api.getTopItems).toHaveBeenCalledWith(MediaType.TRACK, "week", 5);
+    expect(api.getTopItems).toHaveBeenCalledWith(
+      MediaType.ARTIST,
+      "week",
+      1,
+      undefined,
+    );
+    expect(api.getTopItems).toHaveBeenCalledWith(
+      MediaType.ALBUM,
+      "week",
+      5,
+      undefined,
+    );
+    expect(api.getTopItems).toHaveBeenCalledWith(
+      MediaType.TRACK,
+      "week",
+      5,
+      undefined,
+    );
   });
 
   it("sums a long all-time history of plays into years", async () => {
@@ -218,7 +293,11 @@ describe("useStatistics", () => {
     statistics.period.value = "all_time";
     await flushPromises();
 
-    expect(api.getPlaysOverTime).toHaveBeenLastCalledWith("all_time", "month");
+    expect(api.getPlaysOverTime).toHaveBeenLastCalledWith(
+      "all_time",
+      "month",
+      undefined,
+    );
     expect(statistics.data.value.playsOverTime).toHaveLength(6);
     expect(statistics.data.value.playsOverTime[0]).toEqual({
       timestamp: "2020",
@@ -275,7 +354,11 @@ describe("useStatistics", () => {
     statistics.period.value = "month";
     await flushPromises();
 
-    expect(api.getPlaysOverTime).toHaveBeenLastCalledWith("month", "day");
+    expect(api.getPlaysOverTime).toHaveBeenLastCalledWith(
+      "month",
+      "day",
+      undefined,
+    );
     expect(toastError).toHaveBeenCalledExactlyOnceWith(
       "statistics_load_failed",
       { id: "statistics-load-failed" },
@@ -313,23 +396,29 @@ describe("useStatistics", () => {
     expect(statistics.loading.value).toBe(false);
   });
 
-  it("refreshes once, debounced, when the current user finishes tracks", async () => {
-    vi.useFakeTimers();
-    setupStatistics(["playsOverTime"]);
-    await flushPromises();
-    expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
+  it.each([
+    { userIds: [], shown: "self", other: "someone-else" },
+    { userIds: ["alice", "bob"], shown: "bob", other: "self" },
+  ])(
+    "refreshes once, debounced, when a shown user finishes tracks ($userIds)",
+    async ({ userIds, shown, other }) => {
+      vi.useFakeTimers();
+      setupStatistics(["playsOverTime"], true, undefined, userIds);
+      await flushPromises();
+      expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
 
-    emitPlaylog("self", true);
-    emitPlaylog(null, true);
-    emitPlaylog("self", false);
-    emitPlaylog("someone-else", true);
-    vi.advanceTimersByTime(PLAYLOG_REFRESH_DEBOUNCE_MS - 1);
-    expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
+      emitPlaylog(shown, true);
+      emitPlaylog(null, true);
+      emitPlaylog(shown, false);
+      emitPlaylog(other, true);
+      vi.advanceTimersByTime(PLAYLOG_REFRESH_DEBOUNCE_MS - 1);
+      expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
 
-    vi.advanceTimersByTime(1);
-    await flushPromises();
-    expect(api.getPlaysOverTime).toHaveBeenCalledTimes(2);
-  });
+      vi.advanceTimersByTime(1);
+      await flushPromises();
+      expect(api.getPlaysOverTime).toHaveBeenCalledTimes(2);
+    },
+  );
 
   it("keeps the current data on screen during a background refresh", async () => {
     vi.useFakeTimers();
@@ -390,7 +479,7 @@ describe("useStatisticsTopItems", () => {
     scopes.splice(0).forEach((scope) => scope.stop());
   });
 
-  it("loads the chosen media type and reloads when it changes", async () => {
+  it("loads the chosen media type and users and reloads when they change", async () => {
     api.getTopItems.mockResolvedValueOnce([topItem("album", MediaType.ALBUM)]);
     const topItems = setupTopItems();
     await flushPromises();
@@ -399,6 +488,7 @@ describe("useStatisticsTopItems", () => {
       MediaType.ALBUM,
       "week",
       TOP_ITEMS_LIMIT,
+      undefined,
     );
     expect(topItems.items.value).toEqual([topItem("album", MediaType.ALBUM)]);
 
@@ -408,8 +498,18 @@ describe("useStatisticsTopItems", () => {
       MediaType.PLAYLIST,
       "week",
       TOP_ITEMS_LIMIT,
+      undefined,
     );
-    expect(api.getTopItems).toHaveBeenCalledTimes(2);
+
+    topItems.userIds.value = ["alice"];
+    await flushPromises();
+    expect(api.getTopItems).toHaveBeenLastCalledWith(
+      MediaType.PLAYLIST,
+      "week",
+      TOP_ITEMS_LIMIT,
+      ["alice"],
+    );
+    expect(api.getTopItems).toHaveBeenCalledTimes(3);
   });
 
   it("shows an error and toasts when a tab the user picked fails", async () => {

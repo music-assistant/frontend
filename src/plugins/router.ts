@@ -181,6 +181,9 @@ export const routes: RouteRecordRaw[] = [
           ),
         props: (route: { query: Record<string, unknown> }) => ({
           period: parseStatisticsPeriod(route.query.period),
+          userIds: [route.query.users]
+            .flat()
+            .filter((id): id is string => typeof id === "string" && id !== ""),
         }),
       },
       {

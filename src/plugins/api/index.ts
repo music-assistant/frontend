@@ -2040,43 +2040,54 @@ export class MusicAssistantApi {
     media_type: MediaType,
     period: StatisticsPeriod = "week",
     limit = 50,
+    user_ids?: string[],
   ): Promise<StatisticsTopItemResult[]> {
-    return this.statisticsApi.getTopItems(media_type, period, limit);
+    return this.statisticsApi.getTopItems(media_type, period, limit, user_ids);
   }
 
   public async getPlaysOverTime(
     period: StatisticsPeriod = "week",
     granularity: StatisticsGranularity = "day",
+    user_ids?: string[],
   ): Promise<StatisticsTimeSeriesPoint[]> {
-    return this.statisticsApi.getPlaysOverTime(period, granularity);
+    return this.statisticsApi.getPlaysOverTime(period, granularity, user_ids);
   }
 
   public async getListeningActivity(
     period: StatisticsPeriod = "week",
+    user_ids?: string[],
   ): Promise<StatisticsHeatmapPoint[]> {
-    return this.statisticsApi.getListeningActivity(period);
+    return this.statisticsApi.getListeningActivity(period, user_ids);
   }
 
   public async getListeningTime(
     period: StatisticsPeriod = "week",
     group_by: StatisticsGroupBy = "artist",
     limit = 10,
+    user_ids?: string[],
   ): Promise<StatisticsListeningTimeItem[]> {
-    return this.statisticsApi.getListeningTime(period, group_by, limit);
+    return this.statisticsApi.getListeningTime(
+      period,
+      group_by,
+      limit,
+      user_ids,
+    );
   }
 
   public async getGenreDistribution(
     period: StatisticsPeriod = "week",
     limit = 10,
+    user_ids?: string[],
   ): Promise<StatisticsDistributionItem[]> {
-    return this.statisticsApi.getGenreDistribution(period, limit);
+    return this.statisticsApi.getGenreDistribution(period, limit, user_ids);
   }
 
   public async getDecadeDistribution(
     period: StatisticsPeriod = "all_time",
     limit = 10,
+    user_ids?: string[],
   ): Promise<StatisticsDistributionItem[]> {
-    return this.statisticsApi.getDecadeDistribution(period, limit);
+    return this.statisticsApi.getDecadeDistribution(period, limit, user_ids);
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {
