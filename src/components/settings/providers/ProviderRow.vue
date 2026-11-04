@@ -43,6 +43,9 @@
         >
           {{ stageLabel }}
         </Badge>
+        <Badge v-if="tierLabel" variant="secondary" data-testid="tier-badge">
+          {{ tierLabel }}
+        </Badge>
       </ItemTitle>
       <ItemDescription v-if="isError" class="text-destructive">
         {{ errorText }}
@@ -129,6 +132,9 @@
             data-testid="stage-badge"
           >
             {{ stageLabel }}
+          </Badge>
+          <Badge v-if="tierLabel" variant="secondary" data-testid="tier-badge">
+            {{ tierLabel }}
           </Badge>
         </div>
       </div>
@@ -239,6 +245,8 @@ interface Props {
   errorText?: string;
   // the translated stage label; empty hides the stage badge
   stageLabel?: string;
+  // the translated tier label; empty hides the tier badge (a core provider)
+  tierLabel?: string;
 }
 
 const props = defineProps<Props>();

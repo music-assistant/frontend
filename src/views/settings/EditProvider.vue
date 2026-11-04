@@ -121,6 +121,13 @@
                 ></span>
                 {{ providerStatusLabel }}
               </Badge>
+              <Badge
+                v-if="isCommunityProvider(providerManifest)"
+                variant="secondary"
+                data-testid="tier-badge"
+              >
+                {{ $t("settings.provider_tier_community") }}
+              </Badge>
             </div>
             <CardDescription class="mt-2 max-w-3xl leading-relaxed">
               {{ providerManifest.description }}
@@ -187,6 +194,17 @@
           >
             <CircleAlert class="size-4" />
             {{ $t("settings.known_issues") }}
+          </Button>
+          <Button
+            as="a"
+            data-testid="provider-get-help"
+            variant="outline"
+            :href="helpUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <LifeBuoy class="size-4" />
+            {{ $t("settings.provider_get_help") }}
           </Button>
         </CardContent>
       </Card>
@@ -298,8 +316,10 @@ import { useEditedProviderName } from "@/composables/useEditedProviderName";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import {
+  getProviderHelpUrl,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  isCommunityProvider,
   providerDisplayName,
 } from "@/helpers/provider_config";
 import {
@@ -324,6 +344,7 @@ import { eventbus } from "@/plugins/eventbus";
 import {
   BookOpen,
   CircleAlert,
+  LifeBuoy,
   MoreVertical,
   Pencil,
   RotateCw,
@@ -416,6 +437,10 @@ const providerStatusClass = computed(() =>
 
 const knownIssuesUrl = computed(() =>
   getProviderSupportIssuesUrl(config.value?.domain ?? ""),
+);
+
+const helpUrl = computed(() =>
+  providerManifest.value ? getProviderHelpUrl(providerManifest.value) : "",
 );
 
 const documentationUrl = computed(() => {

@@ -10,6 +10,7 @@ import {
   ProviderFeature,
   ProviderSharing,
   ProviderStatus,
+  ProviderTier,
   ProviderType,
   type ProviderConfig,
   type Scope,
@@ -46,9 +47,12 @@ const {
         credits: [],
         description: "Spotify music provider",
         documentation: "https://example.com/spotify",
+        domain: "spotify",
         has_setup_flow: true,
         name: "Spotify",
         self_service: true,
+        support_url: null as string | null,
+        tier: "core" as ProviderTier,
       },
     },
     providers: {},
@@ -182,6 +186,8 @@ beforeEach(() => {
     "https://example.com/spotify";
   apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.providerManifests.spotify.self_service = true;
+  apiMock.providerManifests.spotify.support_url = null;
+  apiMock.providerManifests.spotify.tier = ProviderTier.CORE;
   apiMock.getAllUsers.mockResolvedValue([]);
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.getShareCandidates.mockResolvedValue([]);
@@ -235,6 +241,43 @@ describe("EditProvider", () => {
       rel: "noopener noreferrer",
       target: "_blank",
     });
+    expect(
+      wrapper.get('[data-testid="provider-get-help"]').attributes(),
+    ).toMatchObject({
+      href: "https://github.com/music-assistant/support/issues/new?template=1_bug_report.yml&labels=triage,spotify",
+      rel: "noopener noreferrer",
+      target: "_blank",
+    });
+    expect(wrapper.find('[data-testid="tier-badge"]').exists()).toBe(false);
+  });
+
+  it("badges a community provider and sends Get help to its maintainer", async () => {
+    apiMock.providerManifests.spotify.tier = ProviderTier.COMMUNITY;
+    apiMock.providerManifests.spotify.support_url =
+      "https://github.com/jane/spotify/issues";
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="tier-badge"]').text()).toBe(
+      "settings.provider_tier_community",
+    );
+    expect(
+      wrapper.get('[data-testid="provider-get-help"]').attributes("href"),
+    ).toBe("https://github.com/jane/spotify/issues");
   });
 
   it("shows the custom name of a source that is not loaded, and hands the settings frame the same one", async () => {

@@ -2,16 +2,20 @@ import {
   type ProviderInstance,
   ProviderStage,
   ProviderStatus,
+  ProviderTier,
 } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { providerConfig } from "../../tests/fixtures/providerConfig";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
 import {
   canReconfigureProvider,
+  getProviderHelpUrl,
+  getProviderMaintainers,
   getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
   isBuiltinProvider,
+  isCommunityProvider,
   providerDisplayName,
   providerRequiresReconfiguration,
   shouldShowStageBadge,
@@ -203,5 +207,71 @@ describe("a provider that ships with the server", () => {
 
   it("claims nothing about a provider whose manifest is missing", () => {
     expect(isBuiltinProvider(undefined)).toBe(false);
+  });
+});
+
+describe("who maintains a provider", () => {
+  it.each([
+    [ProviderTier.COMMUNITY, true],
+    [ProviderTier.CORE, false],
+  ])("reads tier %s as community: %s", (tier, expected) => {
+    expect(isCommunityProvider(providerManifest({ tier }))).toBe(expected);
+  });
+
+  it("counts a manifest without a tier as core", () => {
+    const manifest = providerManifest();
+    delete (manifest as Partial<typeof manifest>).tier;
+    expect(isCommunityProvider(manifest)).toBe(false);
+    expect(isCommunityProvider(undefined)).toBe(false);
+  });
+
+  it("lists the people behind a provider, leaving out the project handle", () => {
+    expect(
+      getProviderMaintainers(
+        providerManifest({
+          codeowners: ["@jane", "@Music-Assistant", "@john"],
+        }),
+      ),
+    ).toEqual(["@jane", "@john"]);
+  });
+
+  it("names nobody for a provider only the project owns", () => {
+    expect(
+      getProviderMaintainers(
+        providerManifest({ codeowners: ["@music-assistant"] }),
+      ),
+    ).toEqual([]);
+  });
+
+  it("sends help to the maintainer's support link", () => {
+    expect(
+      getProviderHelpUrl(
+        providerManifest({
+          domain: "spotify",
+          support_url: "https://github.com/jane/spotify/issues",
+        }),
+      ),
+    ).toBe("https://github.com/jane/spotify/issues");
+  });
+
+  it.each([null, "", "javascript:alert(1)"])(
+    "opens a labelled problem report when the support link is %j",
+    (support_url) => {
+      expect(
+        getProviderHelpUrl(
+          providerManifest({ domain: "ytmusic", support_url }),
+        ),
+      ).toBe(
+        "https://github.com/music-assistant/support/issues/new?template=1_bug_report.yml&labels=triage,youtube_music",
+      );
+    },
+  );
+
+  it("encodes a support label that is not a plain word", () => {
+    expect(
+      getProviderHelpUrl(providerManifest({ domain: "spotify_connect" })),
+    ).toBe(
+      "https://github.com/music-assistant/support/issues/new?template=1_bug_report.yml&labels=triage,Spotify%20Connect",
+    );
   });
 });

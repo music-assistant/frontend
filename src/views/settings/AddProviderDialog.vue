@@ -63,8 +63,22 @@
                 >
                   {{ getStageLabel(provider.stage) }}
                 </Badge>
+                <Badge
+                  v-if="isCommunityProvider(provider)"
+                  variant="secondary"
+                  data-testid="tier-badge"
+                >
+                  {{ $t("settings.provider_tier_community") }}
+                </Badge>
               </ItemTitle>
               <ItemDescription>{{ provider.description }}</ItemDescription>
+              <ItemDescription
+                v-if="getMaintainersLabel(provider)"
+                class="text-xs"
+                data-testid="provider-maintainers"
+              >
+                {{ getMaintainersLabel(provider) }}
+              </ItemDescription>
             </ItemContent>
             <ItemActions>
               <ChevronRight class="text-muted-foreground size-4" />
@@ -116,7 +130,9 @@ import { SearchInput } from "@/components/ui/search-input";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { isSelfServiceProvider } from "@/helpers/provider_access";
 import {
+  getProviderMaintainers,
   getProviderStageTranslationKey,
+  isCommunityProvider,
   shouldShowStageBadge,
 } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
@@ -315,6 +331,17 @@ const addProvider = function (provider: ProviderManifest) {
 const getStageLabel = function (stage?: string) {
   const key = getProviderStageTranslationKey(stage);
   return key ? $t(key) : "";
+};
+
+// only a community provider credits its maintainers; core cards stay as they are
+const getMaintainersLabel = function (provider: ProviderManifest) {
+  if (!isCommunityProvider(provider)) return "";
+  const maintainers = getProviderMaintainers(provider);
+  return maintainers.length
+    ? $t("settings.provider_by_maintainers", {
+        maintainers: maintainers.join(", "),
+      })
+    : "";
 };
 
 const getStageVariant = function (

@@ -234,6 +234,26 @@ describe("ProviderRow", () => {
   );
 
   it.each(VARIANTS)(
+    "shows the tier badge when a tier label is set (%s)",
+    (variant) => {
+      const wrapper = mountRow({ variant, tierLabel: "Community" });
+
+      expect(wrapper.get('[data-testid="tier-badge"]').text()).toBe(
+        "Community",
+      );
+    },
+  );
+
+  it.each(VARIANTS)(
+    "hides the tier badge when the tier label is empty (%s)",
+    (variant) => {
+      const wrapper = mountRow({ variant, tierLabel: "" });
+
+      expect(wrapper.find('[data-testid="tier-badge"]').exists()).toBe(false);
+    },
+  );
+
+  it.each(VARIANTS)(
     "shows the reconfigure action and emits reconfigure when in error and reconfigurable (%s)",
     async (variant) => {
       const wrapper = mountRow({
