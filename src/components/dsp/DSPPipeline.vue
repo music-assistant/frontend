@@ -96,7 +96,14 @@ import {
 import { DSPConfig } from "@/plugins/api/interfaces";
 import { dspFilterIcon, dspFilterTypeLabel } from "@/helpers/audioProcessing";
 import { eventbus } from "@/plugins/eventbus";
-import { AudioLines, Plus, Speaker } from "@lucide/vue";
+import {
+  ArrowDown,
+  ArrowUp,
+  AudioLines,
+  Plus,
+  Speaker,
+  Trash2,
+} from "@lucide/vue";
 
 type SelectionType = number | "input" | "output";
 
@@ -144,7 +151,7 @@ const openFilterContextMenu = function (evt: Event, index: number) {
         moveFilter(index, "up");
       },
       disabled: index === 0,
-      icon: "mdi-arrow-up",
+      icon: ArrowUp,
     },
     {
       label: "settings.dsp.move_down",
@@ -153,7 +160,7 @@ const openFilterContextMenu = function (evt: Event, index: number) {
         moveFilter(index, "down");
       },
       disabled: index === props.dsp.filters.length - 1,
-      icon: "mdi-arrow-down",
+      icon: ArrowDown,
     },
     {
       label: "settings.dsp.delete_filter",
@@ -161,7 +168,7 @@ const openFilterContextMenu = function (evt: Event, index: number) {
       action: () => {
         deleteFilter(index);
       },
-      icon: "mdi-delete",
+      icon: Trash2,
     },
   ];
   const pos = getEventPosition(evt);

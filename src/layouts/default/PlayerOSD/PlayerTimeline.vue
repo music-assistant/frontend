@@ -68,6 +68,44 @@
               aria-hidden="true"
             ></span>
           </button>
+          <!-- the bookmark icon, so a bookmark does not read as a chapter tick -->
+          <TooltipProvider :delay-duration="150">
+            <Tooltip
+              v-for="tick in bookmarkTicks"
+              :key="`bookmark-${tick.start}`"
+            >
+              <TooltipTrigger as-child>
+                <button
+                  type="button"
+                  class="absolute top-1/2 flex h-4 w-4 items-center justify-center"
+                  :style="{
+                    left: `${tick.percent}%`,
+                    transform: 'translate(-50%, -50%)',
+                  }"
+                  :aria-label="`${tick.name}, ${tick.details}`"
+                  :disabled="!canSeek"
+                  data-testid="bookmark-tick"
+                  @pointerdown.stop
+                  @click.stop="bookmarkClicked(tick)"
+                >
+                  <Bookmark
+                    :size="14"
+                    :color="color"
+                    class="fill-background"
+                    aria-hidden="true"
+                  />
+                </button>
+              </TooltipTrigger>
+              <!-- above the full screen dialog -->
+              <TooltipContent
+                side="top"
+                class="z-[100001] flex max-w-[260px] flex-col gap-0.5"
+              >
+                <span class="truncate font-medium">{{ tick.name }}</span>
+                <span class="opacity-80 tabular-nums">{{ tick.details }}</span>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </SliderTrack>
         <SliderThumb
           data-slot="slider-thumb"
@@ -127,6 +165,7 @@ import api from "@/plugins/api";
 import {
   MediaType,
   PlaybackState,
+  type MediaItemBookmark,
   type MediaItemChapter,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -147,6 +186,13 @@ import {
   resolveQueueElapsedTime,
   resolveActiveTiming,
 } from "@/helpers/activeElapsedTime";
+import { Bookmark } from "@lucide/vue";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from "reka-ui";
 import { cn } from "@/lib/utils";
 import WaveformTrack from "./WaveformTrack.vue";
@@ -157,12 +203,15 @@ export interface Props {
   color?: string;
   // Precomputed waveform bins (0.0-1.0); when set, replaces the flat track.
   waveform?: number[] | null;
+  // Bookmarks of the copy that is playing, marked on the track.
+  bookmarks?: MediaItemBookmark[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showLabels: false,
   color: "var(--foreground)",
   waveform: null,
+  bookmarks: () => [],
 });
 
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
@@ -390,6 +439,31 @@ const chapterTicks = computed(() => {
   );
 });
 
+// With chapter progress the track spans the current chapter, so only its own
+// bookmarks fit on it.
+const bookmarkTicks = computed(() => {
+  const chapter = currentChapter.value;
+  const start = chapter?.start ?? 0;
+  const duration =
+    chapter?.duration ?? store.activePlayer?.current_media?.duration;
+  if (!duration) return [];
+  const chapters = store.curQueueItem?.media_item?.metadata.chapters;
+  const mediaDuration = store.activePlayer?.current_media?.duration;
+  return props.bookmarks
+    .filter((x) => x.start >= start && x.start <= start + duration)
+    .map((x) => ({
+      ...x,
+      percent: ((x.start - start) / duration) * 100,
+      // e.g. "35:25 · Chapter 3", for the marker's tooltip
+      details: [
+        formatDuration(x.start),
+        resolveCurrentChapter(chapters, x.start, mediaDuration)?.chapter.name,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    }));
+});
+
 // Waveform bins cover the full audiobook, so they no longer line up with the
 // slider when chapter-relative progress is enabled.
 const hasWaveform = computed(
@@ -472,6 +546,11 @@ const stopDragging = () => {
 const chapterClicked = function (chapter: MediaItemChapter) {
   if (!canSeek.value || !store.activePlayer) return;
   api.playerCommandSeek(store.activePlayer.player_id, chapter.start);
+};
+
+const bookmarkClicked = function (bookmark: MediaItemBookmark) {
+  if (!canSeek.value || !store.activePlayer) return;
+  api.playerCommandSeek(store.activePlayer.player_id, bookmark.start);
 };
 
 const setPendingSeek = (position: number) => {

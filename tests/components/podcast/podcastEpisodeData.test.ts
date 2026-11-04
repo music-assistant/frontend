@@ -14,6 +14,7 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 import {
+  episodeReleaseDate,
   podcastEpisodeBackdrop,
   podcastEpisodeNumber,
 } from "@/components/podcast/podcastEpisodeData";
@@ -101,6 +102,22 @@ describe("podcastEpisodeData", () => {
       expect(podcastEpisodeNumber(podcastEpisode({ season: 2 }))).toBe(
         undefined,
       );
+    });
+  });
+
+  describe("episodeReleaseDate", () => {
+    it.each([
+      [undefined, ""],
+      ["not a date", ""],
+      [
+        "2026-10-22T08:00:00Z",
+        new Date("2026-10-22T08:00:00Z").toLocaleDateString(undefined, {
+          dateStyle: "medium",
+        }),
+      ],
+    ])("shows %s as %j", (release_date, expected) => {
+      const episode = podcastEpisode({ metadata: { release_date } });
+      expect(episodeReleaseDate(episode)).toBe(expected);
     });
   });
 });
