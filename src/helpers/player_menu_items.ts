@@ -259,8 +259,12 @@ export const getPlayerMenuItems = (
               toast.error($t("transfer_queue_no_audio"));
               return;
             }
-            api.queueCommandTransfer(playerQueue!.queue_id, p.player_id);
-            store.activePlayerId = p.player_id;
+            try {
+              api.queueCommandTransfer(playerQueue!.queue_id, p.player_id);
+              store.activePlayerId = p.player_id;
+            } catch {
+              toast.error($t("error_generic"));
+            }
           },
         };
       }),
