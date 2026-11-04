@@ -1,7 +1,13 @@
 <template>
   <StatisticsCard
     prominent
-    :title="$t('statistics_heatmap')"
+    :title="
+      $t(
+        includesOtherUsers
+          ? 'statistics_heatmap_other_users'
+          : 'statistics_heatmap',
+      )
+    "
     :subtitle="$t('statistics_heatmap_subtitle')"
     :loading="loading"
     :error="error"
