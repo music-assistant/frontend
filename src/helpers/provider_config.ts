@@ -16,9 +16,6 @@ const PROVIDER_STATUS_TRANSLATION_KEYS: Record<ProviderStatus, string> = {
   [ProviderStatus.ERROR]: "settings.provider_status_error",
 };
 
-// the organisation handle marks a provider the project owns; it names no maintainer
-const PROJECT_CODEOWNER = "@music-assistant";
-
 const PROVIDER_STAGE_TRANSLATION_KEYS: Record<ProviderStage, string> = {
   [ProviderStage.ALPHA]: "settings.stage.options.alpha",
   [ProviderStage.BETA]: "settings.stage.options.beta",
@@ -27,6 +24,9 @@ const PROVIDER_STAGE_TRANSLATION_KEYS: Record<ProviderStage, string> = {
   [ProviderStage.UNMAINTAINED]: "settings.stage.options.unmaintained",
   [ProviderStage.DEPRECATED]: "settings.stage.options.deprecated",
 };
+
+// the organisation handle marks a provider the project owns; it names no maintainer
+const PROJECT_CODEOWNER = "@music-assistant";
 
 const SUPPORT_ISSUES_URL = "https://github.com/music-assistant/support/issues";
 // the support repository's issue form for problem reports
@@ -122,7 +122,7 @@ export const getProviderMaintainers = (manifest: ProviderManifest): string[] =>
 export const getProviderHelpUrl = (manifest: ProviderManifest): string => {
   if (manifest.support_url?.startsWith("https://")) return manifest.support_url;
   // GitHub only applies the labels parameter for reporters with triage rights;
-  // for everyone else the support repository's triage bot adds the label later
+  // for everyone else the support repository's triage workflow adds the label
   const labels = `triage,${encodeURIComponent(getSupportLabel(manifest.domain))}`;
   return `${SUPPORT_ISSUES_URL}/new?template=${SUPPORT_BUG_REPORT_TEMPLATE}&labels=${labels}`;
 };
