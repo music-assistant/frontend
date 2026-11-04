@@ -108,8 +108,16 @@ const book = {
   },
 } as unknown as Audiobook;
 
-const episode = {
+// a single copy, whose chapters the bookmarks' positions fit
+const singleCopyBook = {
   ...book,
+  provider_mappings: [
+    providerMapping({ provider_instance: ABS, item_id: "book1" }),
+  ],
+} as unknown as Audiobook;
+
+const episode = {
+  ...singleCopyBook,
   item_id: "episode1",
   provider: ABS,
   media_type: MediaType.PODCAST_EPISODE,
@@ -209,10 +217,17 @@ describe("Chapters", () => {
   it.each([
     [book, [], "Chapters", []],
     [
+      singleCopyBook,
+      [bookmark(ABS, "On the provider", 30, false)],
+      "Chapters & Bookmarks",
+      ["Chapters", "Bookmarks", "All"],
+    ],
+    // each copy may have chapters of its own, the item shows those of one
+    [
       book,
       [bookmark(LOCAL, "Local file", 30, true)],
       "Chapters & Bookmarks",
-      ["Chapters", "Bookmarks", "All"],
+      ["Chapters", "Bookmarks"],
     ],
     [
       { ...book, metadata: {} },
@@ -255,7 +270,7 @@ describe("Chapters", () => {
     [BUILTIN_ROLE_SCOPES.user, 2],
     [BUILTIN_ROLE_SCOPES.guest, 0],
   ])(
-    "lists each bookmark under its chapter, editable where it is kept",
+    "lists each bookmark editable where it is kept",
     async (scopes, editButtons) => {
       vi.mocked(authManager.hasScope).mockImplementation(scopeChecker(scopes));
       const wrapper = await mountChapters([
@@ -264,7 +279,7 @@ describe("Chapters", () => {
         bookmark(AUDIBLE, "Read only", 90, false),
         bookmark(AUDIBLE, "Kept by MA", 95, true),
       ]);
-      await showTab(wrapper, "All");
+      await showTab(wrapper, "Bookmarks");
 
       expect(
         listRows(wrapper).map((row) =>
@@ -279,20 +294,37 @@ describe("Chapters", () => {
             : [row.get('[data-testid="chapter-name"]').text(), 0, null],
         ),
       ).toEqual([
-        ["First", 0, null],
-        // within its chapter, beside the chapters' durations
         ["On the provider", editButtons, "00:30"],
-        ["Second", 0, null],
-        ["Read only", 0, "00:30"],
-        ["Kept by MA", editButtons, "00:35"],
-        ["Local file", editButtons, "00:40"],
+        ["Read only", 0, "01:30"],
+        ["Kept by MA", editButtons, "01:35"],
+        ["Local file", editButtons, "01:40"],
       ]);
     },
   );
 
+  it("lists each bookmark under its chapter, at its time within it", async () => {
+    const wrapper = await mountChapters(
+      [bookmark(ABS, "Later", 95, false), bookmark(ABS, "Earlier", 30, false)],
+      singleCopyBook,
+    );
+    await showTab(wrapper, "All");
+
+    // within its chapter, beside the chapters' durations
+    expect(rowTexts(wrapper)).toEqual([
+      ["First", "01:00"],
+      ["Earlier", "00:30"],
+      ["Second", "01:00"],
+      ["Later", "00:35"],
+    ]);
+  });
+
   // an episode is played on its own, so its chapters start at a position too
   it.each([
-    [book, "audiobookshelf--1://audiobook/book1", { start_item: "2" }],
+    [
+      singleCopyBook,
+      "audiobookshelf--1://audiobook/book1",
+      { start_item: "2" },
+    ],
     [
       episode,
       "audiobookshelf--1://podcast_episode/book1",

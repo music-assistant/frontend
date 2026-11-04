@@ -84,6 +84,7 @@ import {
   type NewBookmark,
 } from "@/composables/useBookmarks";
 import {
+  chaptersFitBookmarks,
   resolveCurrentChapter,
   type ChapterBookmarks,
 } from "@/helpers/chapters";
@@ -118,15 +119,19 @@ const bookmarkActions = useBookmarkActions(
   () => props.item.media_item?.media_type,
 );
 
-// where the chapter holding the position starts, 0 without chapters
-const chapterStartAt = (seconds: number) =>
-  resolveCurrentChapter(
-    props.item.media_item?.metadata?.chapters,
-    seconds,
-    props.item.media_item && "duration" in props.item.media_item
-      ? props.item.media_item.duration
-      : undefined,
-  )?.start ?? 0;
+// where the chapter holding the position starts, 0 without chapters that fit
+// the playing copy's positions
+const chapterStartAt = function (seconds: number) {
+  const media = props.item.media_item;
+  if (!media || !chaptersFitBookmarks(media)) return 0;
+  return (
+    resolveCurrentChapter(
+      media.metadata?.chapters,
+      seconds,
+      "duration" in media ? media.duration : undefined,
+    )?.start ?? 0
+  );
+};
 
 const addDialogOpen = ref(false);
 // taken on the click, the position moves on while the name is typed

@@ -555,6 +555,7 @@ import {
   resolveQueueElapsedTime,
 } from "@/helpers/activeElapsedTime";
 import {
+  chaptersFitBookmarks,
   groupBookmarksByChapter,
   resolveCurrentChapter,
 } from "@/helpers/chapters";
@@ -1295,12 +1296,14 @@ const playingBookmarks = computed(() => {
   );
 });
 
-const queueChapterGroups = computed(() =>
-  groupBookmarksByChapter(
-    store.curQueueItem?.media_item?.metadata?.chapters,
+const queueChapterGroups = computed(() => {
+  const media = store.curQueueItem?.media_item;
+  return groupBookmarksByChapter(
+    media?.metadata?.chapters,
     playingBookmarks.value,
-  ),
-);
+    !media || chaptersFitBookmarks(media),
+  );
+});
 
 const speedSupported = computed(() =>
   playbackSpeedSupported(store.curQueueItem),

@@ -1,6 +1,7 @@
 import type {
   MediaItemBookmark,
   MediaItemChapter,
+  ProviderMapping,
 } from "@/plugins/api/interfaces";
 
 export interface ChapterTick extends MediaItemChapter {
@@ -87,16 +88,31 @@ export interface ChapterBookmarks {
 }
 
 /**
+ * whether the item's chapters fit the positions of its bookmarks: each copy may
+ * have chapters of its own, and an item with several copies shows those of one
+ */
+export function chaptersFitBookmarks(item: {
+  provider_mappings: ProviderMapping[];
+}): boolean {
+  return item.provider_mappings.length <= 1;
+}
+
+/**
  * place each bookmark under the last chapter starting at or before it, so it
- * shows where it is in the item; without chapters all bookmarks form one group
+ * shows where it is in the item; without chapters, or with chapters that do not
+ * fit them, all bookmarks form one group after the chapters
  */
 export function groupBookmarksByChapter(
   chapters: MediaItemChapter[] | null | undefined,
   bookmarks: MediaItemBookmark[],
+  chaptersFit = true,
 ): ChapterBookmarks[] {
   const ordered = [...bookmarks].sort((a, b) => a.start - b.start);
-  if (!chapters?.length) {
-    return ordered.length ? [{ bookmarks: ordered }] : [];
+  if (!chapters?.length || !chaptersFit) {
+    return [
+      ...(chapters ?? []).map((chapter) => ({ chapter, bookmarks: [] })),
+      ...(ordered.length ? [{ bookmarks: ordered }] : []),
+    ];
   }
   return chapters.map((chapter, index) => ({
     chapter,

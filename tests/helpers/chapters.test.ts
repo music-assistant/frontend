@@ -143,6 +143,23 @@ describe("groupBookmarksByChapter", () => {
     ).toEqual(expected);
   });
 
+  // e.g. the chapters of another copy of the book
+  it("lists the bookmarks apart from chapters that do not fit them", () => {
+    const groups = groupBookmarksByChapter(
+      chapters,
+      [60, 0].map(bookmark),
+      false,
+    );
+    expect(
+      groups.map((x) => [x.chapter?.name, x.bookmarks.map((b) => b.start)]),
+    ).toEqual([
+      ["Intro", []],
+      ["Middle", []],
+      ["End", []],
+      [undefined, [0, 60]],
+    ]);
+  });
+
   it("has nothing to show for a book without chapters or bookmarks", () => {
     expect(groupBookmarksByChapter(null, [])).toEqual([]);
   });

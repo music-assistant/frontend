@@ -82,7 +82,10 @@ import BookmarkRow from "@/components/BookmarkRow.vue";
 import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBookmarkActions, useBookmarks } from "@/composables/useBookmarks";
-import { groupBookmarksByChapter } from "@/helpers/chapters";
+import {
+  chaptersFitBookmarks,
+  groupBookmarksByChapter,
+} from "@/helpers/chapters";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
@@ -127,7 +130,8 @@ const tabs = computed(() => {
   const result: { id: ChapterTab; labelKey: string }[] = [];
   if (hasChapters) result.push({ id: "chapters", labelKey: "chapters" });
   if (hasBookmarks) result.push({ id: "bookmarks", labelKey: "bookmarks" });
-  if (hasChapters && hasBookmarks) {
+  // the bookmarks of a copy with chapters of its own do not fit the item's ones
+  if (hasChapters && hasBookmarks && chaptersFitBookmarks(props.itemDetails)) {
     result.push({ id: "all", labelKey: "chapters_and_bookmarks_tab" });
   }
   return result;

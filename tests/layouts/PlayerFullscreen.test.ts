@@ -211,6 +211,7 @@ interface TestStore {
       provider?: string;
       media_type: MediaType;
       metadata?: { chapters?: Chapter[]; has_transcript?: boolean | null };
+      provider_mappings?: { provider_instance: string; item_id: string }[];
     };
     streamdetails?: { provider: string; item_id: string };
   };
@@ -273,6 +274,9 @@ async function seedPlayingQueue(): Promise<void> {
           { position: 2, name: "Second", start: 60, end: 120 },
         ],
       },
+      provider_mappings: [
+        { provider_instance: "audiobookshelf--1", item_id: "book1" },
+      ],
     },
   };
   testStore.activePlayerQueue = {
@@ -428,14 +432,6 @@ describe("PlayerFullscreen chapter queue", () => {
       const queueItem = (store as unknown as TestStore).curQueueItem!;
       queueItem.media_item!.item_id = "1";
       queueItem.media_item!.provider = "library";
-      // the library copy holds the copy that plays, so Music Assistant can keep its bookmarks
-      (
-        queueItem.media_item as unknown as {
-          provider_mappings: { provider_instance: string; item_id: string }[];
-        }
-      ).provider_mappings = [
-        { provider_instance: "audiobookshelf--1", item_id: "book1" },
-      ];
       queueItem.streamdetails = {
         provider: "audiobookshelf--1",
         item_id: "book1",
@@ -514,6 +510,52 @@ describe("PlayerFullscreen chapter queue", () => {
       api.providers = {};
     },
   );
+
+  // the chapters shown may be those of another copy, with other boundaries
+  it("lists the bookmarks apart from the chapters of a book with several copies", async () => {
+    const api = (await import("@/plugins/api")).default as unknown as {
+      getBookmarks: ReturnType<typeof vi.fn>;
+    };
+    api.getBookmarks.mockResolvedValue([
+      {
+        name: "Arrakis",
+        start: 90,
+        provider_instance: "audiobookshelf--1",
+        item_id: "book1",
+        stored_by_music_assistant: false,
+      },
+    ]);
+    const fullscreen = await mountChapterQueue();
+    const { store } = await import("@/plugins/store");
+    const queueItem = (store as unknown as TestStore).curQueueItem!;
+    queueItem.media_item!.item_id = "1";
+    queueItem.media_item!.provider = "library";
+    queueItem.media_item!.provider_mappings!.push({
+      provider_instance: "filesystem--1",
+      item_id: "dune.m4b",
+    });
+    queueItem.streamdetails = {
+      provider: "audiobookshelf--1",
+      item_id: "book1",
+    };
+    await vi.advanceTimersByTimeAsync(0);
+    await nextTick();
+
+    expect(fullscreen.findAll(".queue-chapter").length).toBe(3);
+    expect(
+      fullscreen
+        .findAllComponents(QueueBookmarkRow)
+        .map((x) => [x.props("inChapter"), x.props("time")]),
+    ).toEqual([[false, 90]]);
+    // the position it takes, in the whole book as well
+    await vi.advanceTimersByTimeAsync(60_000);
+    await nextTick();
+    expect(
+      fullscreen
+        .get('[data-testid="add-bookmark"] .queue-chapter__time')
+        .text(),
+    ).toBe("01:10");
+  });
 });
 
 describe("PlayerFullscreen lyrics clock", () => {
