@@ -130,6 +130,10 @@
     "refresh_item": "Refresh item",
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
+    "playlist_move_to_top": "Move to top",
+    "playlist_move_to_bottom": "Move to bottom",
+    "playlist_moved_to_top": "Moved to the top of the playlist",
+    "playlist_moved_to_bottom": "Moved to the bottom of the playlist",
     "review": "Review",
     "review_setup": "Review",
     "search": "Search",
@@ -1121,7 +1125,8 @@
         "duration": "Duration",
         "columns": "Columns",
         "choose_columns": "Choose columns",
-        "hidden_at_width": "Hidden at this width"
+        "hidden_at_width": "Hidden at this width",
+        "reorder_track": "Drag or press the arrow keys to move {0}"
     },
     "tracks": "Tracks",
     "search_in": "Search in {0}...",

@@ -345,6 +345,7 @@ import {
   canAddToPlaylist,
   canEditPlaylistItems,
   canManagePlaylist,
+  canReorderPlaylistItems,
   canSharePlaylist,
 } from "@/helpers/playlist_access";
 import {
@@ -360,6 +361,7 @@ import {
   isMusicBrainzItem,
   itemIsAvailable,
   itemSupportsPlayLog,
+  providerSupportsPlaylistMove,
 } from "@/plugins/api/helpers";
 import {
   Album,
@@ -386,9 +388,17 @@ import { toast } from "vue-sonner";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import {
+  canSavePlaylistMoves,
+  isPlaylistEditPending,
+  sendPlaylistEdit,
+  untilTaskEnds,
+} from "@/composables/usePlaylistTrackReorder";
+import {
   ArrowDown,
+  ArrowDownToLine,
   ArrowRightLeft,
   ArrowUp,
+  ArrowUpToLine,
   Disc3,
   Download,
   Folder,
@@ -1058,6 +1068,10 @@ export const getContextMenuItems = async function (
     parentItem.media_type === MediaType.PLAYLIST
   ) {
     const playlist = parentItem as Playlist;
+    // while another edit is pending the listed positions are out of date, and
+    // while reconnecting an edit cannot be sent
+    const canEditOrder = () =>
+      canSavePlaylistMoves() && !isPlaylistEditPending(playlist.item_id);
     if (
       (firstItem.media_type === MediaType.TRACK ||
         firstItem.media_type === MediaType.RADIO ||
@@ -1068,13 +1082,74 @@ export const getContextMenuItems = async function (
       contextMenuItems.push({
         label: "remove_playlist",
         labelArgs: [],
+        disabled: !canEditOrder(),
         action: () => {
-          api.removePlaylistTracks(
-            playlist.item_id,
-            items.map((x) => ("position" in x ? x.position : 0) as number),
+          if (!canEditOrder()) return;
+          // the removal runs as a background task; the positions hold until
+          // it is done and read back
+          void sendPlaylistEdit(playlist.item_id, () =>
+            untilTaskEnds(() =>
+              api.removePlaylistTracks(
+                playlist.item_id,
+                items.map((x) => ("position" in x ? x.position : 0) as number),
+              ),
+            ),
           );
+          // the rows read back after it would select the tracks taking the
+          // removed ones' places
+          eventbus.emit("clearSelection");
         },
         icon: MinusCircle,
+      });
+    }
+    // move to the playlist's top or bottom; the listing reloads once the
+    // playlist reports the change
+    const positions = items.map((x) =>
+      "position" in x && typeof x.position === "number" ? x.position : 0,
+    );
+    const atTop = [...new Set(positions)]
+      .sort((a, b) => a - b)
+      .every((position, index) => position === index + 1);
+    if (
+      positions.every((position) => position > 0) &&
+      canReorderPlaylistItems(
+        playlist,
+        store.currentUser,
+        managesLibrary,
+        providerSupportsPlaylistMove,
+      )
+    ) {
+      if (!atTop) {
+        contextMenuItems.push({
+          label: "playlist_move_to_top",
+          labelArgs: [],
+          disabled: !canEditOrder(),
+          action: () => {
+            if (!canEditOrder()) return;
+            void sendPlaylistEdit(playlist.item_id, () =>
+              api.movePlaylistTracks(playlist.item_id, positions, 1),
+            ).then((moved) => {
+              if (moved) toast.success($t("playlist_moved_to_top"));
+            });
+            eventbus.emit("clearSelection");
+          },
+          icon: ArrowUpToLine,
+        });
+      }
+      contextMenuItems.push({
+        label: "playlist_move_to_bottom",
+        labelArgs: [],
+        disabled: !canEditOrder(),
+        action: () => {
+          if (!canEditOrder()) return;
+          void sendPlaylistEdit(playlist.item_id, () =>
+            api.movePlaylistTracks(playlist.item_id, positions),
+          ).then((moved) => {
+            if (moved) toast.success($t("playlist_moved_to_bottom"));
+          });
+          eventbus.emit("clearSelection");
+        },
+        icon: ArrowDownToLine,
       });
     }
   }
