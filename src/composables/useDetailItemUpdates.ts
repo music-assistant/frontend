@@ -22,8 +22,6 @@ export interface DetailItemUpdatesOptions {
   providerItem?: { itemId: string; provider: string; mediaType: MediaType };
   /** Called after the item was replaced by an update. */
   onUpdate?: () => void;
-  /** Called when the current item receives the signed-in user's favorite update. */
-  onFavoriteUpdate?: () => void;
 }
 
 /**
@@ -71,7 +69,6 @@ export function useDetailItemUpdates<T extends MediaItem>(
   const unsubFavorite = subscribeOwnFavorites((update) => {
     if (item.value?.uri === update.uri) {
       item.value.favorite = update.favorite;
-      options.onFavoriteUpdate?.();
     }
   });
 

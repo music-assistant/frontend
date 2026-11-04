@@ -76,22 +76,6 @@ export interface Props {
 const props = defineProps<Props>();
 const itemDetails = ref<Radio>();
 const rowsEditorOpen = ref(false);
-let activeLoad: { favoriteChanged: boolean } | undefined;
-
-watch(
-  () => [itemDetails.value, itemDetails.value?.favorite] as const,
-  ([item, favorite], [previousItem, previousFavorite]) => {
-    if (
-      activeLoad &&
-      item &&
-      item === previousItem &&
-      favorite !== previousFavorite
-    ) {
-      activeLoad.favoriteChanged = true;
-    }
-  },
-  { flush: "sync" },
-);
 
 const availableRows = computed(() =>
   itemDetails.value ? availableRadioRowIds(itemDetails.value) : [],
@@ -107,29 +91,13 @@ const description = computed(
     undefined,
 );
 
-const applyRadioResponse = function (radio: Radio, favoriteChanged: boolean) {
-  if (itemDetails.value) {
-    if (!favoriteChanged) itemDetails.value.favorite = radio.favorite;
-  } else {
-    itemDetails.value = radio;
-  }
-};
-
 const loadItemDetails = async function () {
   const { itemId, provider } = props;
-  const load = { favoriteChanged: false };
-  activeLoad = load;
   itemDetails.value = undefined;
   rowsEditorOpen.value = false;
   const radio = await api.getRadio(itemId, provider);
-  if (
-    activeLoad !== load ||
-    itemId !== props.itemId ||
-    provider !== props.provider
-  )
-    return;
-  applyRadioResponse(radio, load.favoriteChanged);
-  activeLoad = undefined;
+  if (itemId !== props.itemId || provider !== props.provider) return;
+  itemDetails.value = radio;
 };
 
 watch(
@@ -143,9 +111,6 @@ watch(
 useDetailItemUpdates(itemDetails, {
   get providerItem() {
     return { ...props, mediaType: MediaType.RADIO };
-  },
-  onFavoriteUpdate: () => {
-    if (activeLoad) activeLoad.favoriteChanged = true;
   },
 });
 

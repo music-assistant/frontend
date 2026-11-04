@@ -257,7 +257,7 @@ describe("RadioDetails", () => {
   });
 
   it.each([true, false, null])(
-    "keeps newer radio metadata and reconciles the loaded favorite (%s)",
+    "assigns the loaded radio response after an update during loading (%s)",
     async (favorite) => {
       vi.useFakeTimers();
       const station = radio({
@@ -302,76 +302,7 @@ describe("RadioDetails", () => {
 
       expect(
         wrapper.findComponent({ name: "RadioHero" }).props("item"),
-      ).toEqual({ ...libraryStation, favorite });
-    },
-  );
-
-  it.each([
-    { favorite: true, ownEvent: false },
-    { favorite: false, ownEvent: false },
-    { favorite: null, ownEvent: false },
-    { favorite: null, ownEvent: true },
-    { favorite: true, ownEvent: true },
-    { favorite: false, ownEvent: true },
-  ])(
-    "keeps a later own favorite change (%j) when the response arrives",
-    async ({ favorite, ownEvent }) => {
-      vi.useFakeTimers();
-      mockStore.currentUser = { user_id: "me", preferences: {} };
-      const station = radio({
-        provider: "builtin",
-        item_id: "stream",
-        favorite: true,
-      });
-      const updated = radio({
-        item_id: "42",
-        name: "New metadata",
-        favorite: null,
-        provider_mappings: [
-          providerMapping({
-            item_id: station.item_id,
-            provider_instance: station.provider,
-          }),
-        ],
-      });
-      const pending = Promise.withResolvers<Radio>();
-      mockGetRadio.mockReturnValue(pending.promise);
-      const wrapper = mount(RadioDetails, {
-        props: { itemId: station.item_id, provider: station.provider },
-        global: { mocks: { $t: (key: string) => key } },
-      });
-      const itemSubscription = mockSubscribe.mock.calls.find(
-        ([event]) => event === EventType.MEDIA_ITEM_UPDATED,
-      )!;
-      itemSubscription[1]({
-        event: EventType.MEDIA_ITEM_UPDATED,
-        data: updated,
-      });
-      await vi.advanceTimersByTimeAsync(2000);
-      await flushPromises();
-
-      if (ownEvent) {
-        const favoriteSubscription = mockSubscribe.mock.calls.find(
-          ([event]) => event === EventType.FAVORITE_UPDATED,
-        )!;
-        favoriteSubscription[1]({
-          event: EventType.FAVORITE_UPDATED,
-          data: { uri: updated.uri, user_id: "me", favorite },
-        });
-      } else {
-        if (favorite === null) {
-          wrapper.findComponent({ name: "RadioHero" }).props("item").favorite =
-            true;
-        }
-        wrapper.findComponent({ name: "RadioHero" }).props("item").favorite =
-          favorite;
-      }
-      pending.resolve(station);
-      await flushPromises();
-
-      expect(
-        wrapper.findComponent({ name: "RadioHero" }).props("item"),
-      ).toEqual({ ...updated, favorite });
+      ).toEqual(station);
     },
   );
 

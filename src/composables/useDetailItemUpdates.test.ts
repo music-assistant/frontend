@@ -238,39 +238,6 @@ describe("useDetailItemUpdates", () => {
     expect(unsubscribe).toHaveBeenCalledTimes(2);
   });
 
-  it("reports own favorite events even when neutral stays neutral", () => {
-    const onFavoriteUpdate = vi.fn();
-    const { item } = setup(artist({ favorite: null }), { onFavoriteUpdate });
-
-    emit(EventType.FAVORITE_UPDATED, {
-      uri: item.value!.uri,
-      media_type: MediaType.ARTIST,
-      item_id: "1",
-      favorite: null,
-      user_id: "me",
-    });
-
-    expect(onFavoriteUpdate).toHaveBeenCalledOnce();
-    expect(item.value?.favorite).toBeNull();
-  });
-
-  it("does not report favorites for another item or another user", () => {
-    const onFavoriteUpdate = vi.fn();
-    setup(artist(), { onFavoriteUpdate });
-    emit(EventType.FAVORITE_UPDATED, {
-      uri: artist({ item_id: "2" }).uri,
-      favorite: true,
-      user_id: "me",
-    });
-    emit(EventType.FAVORITE_UPDATED, {
-      uri: artist().uri,
-      favorite: true,
-      user_id: "someone-else",
-    });
-
-    expect(onFavoriteUpdate).not.toHaveBeenCalled();
-  });
-
   it("drops a waiting update when its scope ends", () => {
     const onUpdate = vi.fn();
     const { item, scope } = setup(artist(), { onUpdate });
