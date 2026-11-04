@@ -377,7 +377,9 @@
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
           <div class="media-controls-item favorite-btn-wrapper">
+            <!-- no hover box, like the transport buttons beside them -->
             <FavoriteMenuBtn
+              variant="ghost-icon"
               style="max-height: 30px; min-height: 0; min-width: 0"
               icon-class="size-5.5"
             />
@@ -444,6 +446,7 @@
           </div>
           <div class="media-controls-item queue-btn-wrapper">
             <QueueBtn
+              variant="ghost-icon"
               style="max-height: 30px; min-height: 0; min-width: 0"
               :size="22"
             />
