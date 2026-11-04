@@ -24,6 +24,7 @@ vi.mock("@/composables/guest/useGuestEntryResolver", () => ({
 }));
 
 vi.mock("@/composables/useThemePreference", () => ({
+  isDark: { value: false },
   isThemePreference: (value: unknown) =>
     ["auto", "light", "dark"].includes(String(value)),
   THEME_PREFERENCES: ["auto", "light", "dark"],
@@ -51,12 +52,6 @@ vi.mock("vue-router", () => ({
     },
   }),
   useRouter: () => ({ push: mocks.routerPush }),
-}));
-
-vi.mock("vuetify", () => ({
-  useTheme: () => ({
-    current: ref({ dark: false }),
-  }),
 }));
 
 const passthroughStub = { template: "<div><slot /></div>" };

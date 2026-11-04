@@ -7,6 +7,7 @@
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :sort-listing="ListingType.LIBRARY_ALBUMS"
+    library-toolbar
     :update-available="updateAvailable"
     :title="$t('albums')"
     :allow-key-hooks="true"
@@ -23,6 +24,7 @@
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
+import { useListingTotal } from "@/composables/useListingTotal";
 import api from "@/plugins/api";
 import {
   EventMessage,
@@ -39,7 +41,9 @@ defineOptions({
 });
 
 const updateAvailable = ref<boolean>(false);
-const total = ref(store.libraryAlbumsCount);
+const { total, setTotal, loadTotal } = useListingTotal(
+  store.libraryAlbumsCount,
+);
 
 onMounted(() => {
   // signal if/when items get added within this library
@@ -63,7 +67,9 @@ onMounted(() => {
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
-  setTotals(params);
+  // the count only changes with the filters, and those start over from the
+  // first page: the pages after it keep the count they have
+  if (!params.offset) setTotals(params);
   return await api.getLibraryAlbums(
     params.favoritesOnly || undefined,
     params.search,
@@ -79,18 +85,20 @@ const loadItems = async function (params: LoadDataParams) {
 
 const setTotals = async function (params: LoadDataParams) {
   if (!params.favoritesOnly && !params.albumType && !params.provider) {
-    total.value = store.libraryAlbumsCount;
+    setTotal(store.libraryAlbumsCount);
     return;
   }
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
+    setTotal(undefined);
     return;
   }
-  total.value = await api.getLibraryAlbumsCount(
-    params.favoritesOnly || undefined,
-    params.albumType || undefined,
+  await loadTotal(
+    api.getLibraryAlbumsCount(
+      params.favoritesOnly || undefined,
+      params.albumType || undefined,
+    ),
   );
 };
 </script>

@@ -333,7 +333,9 @@ watch(
 );
 
 useDetailItemUpdates(itemDetails, {
-  providerItem: props,
+  get providerItem() {
+    return { ...props, mediaType: MediaType.ALBUM };
+  },
   // an update can change the tracks the hero counts and times
   onUpdate: () => {
     if (itemDetails.value) loadHeroTracks(itemDetails.value);

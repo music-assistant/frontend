@@ -14,6 +14,8 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 
+export { isPlayerGrouped } from "@/helpers/player_grouping";
+
 /**
  * Check if the player is (or streams to) the built-in player of this device.
  */
@@ -118,7 +120,16 @@ export const playerVisible = function (
   if (isBuiltinPlayer(player)) {
     return true;
   }
-  if (player.hide_in_ui) {
+  // Audio inputs are hidden by default, so keep one that needs setup listed
+  // where its setup can start.
+  if (
+    player.hide_in_ui &&
+    !(
+      player.type === PlayerType.SOURCE &&
+      player.needs_setup &&
+      allowNeedsSetup
+    )
+  ) {
     return false;
   }
   if (
@@ -215,10 +226,4 @@ export const getPlayerGroupMemberCount = function (player: Player): number {
     player.group_members.filter((playerId) => playerId !== player.player_id),
   ).size;
   return player.type === PlayerType.GROUP ? childCount : childCount + 1;
-};
-
-export const isPlayerGrouped = function (player: Player): boolean {
-  return player.type === PlayerType.GROUP
-    ? player.group_members.length > 0
-    : player.group_members.some((playerId) => playerId !== player.player_id);
 };

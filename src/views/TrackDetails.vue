@@ -101,6 +101,7 @@ import { getArtistsString, getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ImageType,
+  MediaType,
   MediaItemType,
   type Artist,
   type ItemMapping,
@@ -218,7 +219,11 @@ watch(
   },
 );
 
-useDetailItemUpdates(itemDetails, { providerItem: props });
+useDetailItemUpdates(itemDetails, {
+  get providerItem() {
+    return { ...props, mediaType: MediaType.TRACK };
+  },
+});
 
 /** Loads the first artist when the track and its album have no wide art of their own. */
 async function loadBackdropArtist() {

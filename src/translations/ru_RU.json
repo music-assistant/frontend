@@ -157,7 +157,12 @@
                 "el_GR": "Греческий",
                 "lt_LT": "Литовский",
                 "lv_LV": "Латышский",
-                "bg_BG": "Болгарский"
+                "bg_BG": "Болгарский",
+                "ca": "Каталанский",
+                "fi_FI": "Финский",
+                "he": "Иврит",
+                "zh_TW": "Китайский (традиционный)",
+                "sk_SK": "Словацкий"
             }
         },
         "dynamic_members": {
@@ -880,7 +885,27 @@
         "library_sync": "Синхронизация библиотеки",
         "library_sync_description": "Обновляет библиотеку с учетом этого источника музыки",
         "storage_location": "Место хранения",
-        "storage_location_description": "Откуда этот музыкальный источник считывает свои файлы"
+        "storage_location_description": "Откуда этот музыкальный источник считывает свои файлы",
+        "server_url": {
+            "title": "Адрес Music Assistant",
+            "description": "Тот, по которому устройства и гости подключаются к Music Assistant. Например, через ссылки в приглашениях на вечеринки и викторины.",
+            "internet": "Интернет",
+            "local_network": "Локальная сеть",
+            "use_remote_access": "Использовать удалённый доступ",
+            "remote_access_description": "Ссылки, отправленные гостям, открываются через удаленный доступ.",
+            "remote_access_hint": "Нет доступа из Интернета? Удаленный доступ работает и без публичного адреса.",
+            "set_up_remote_access": "Настройка удаленного доступа",
+            "automatic": "Автоматически",
+            "detected_after_save": "Обнаружено автоматически после сохранения",
+            "copy_remote": "Скопировать ссылку для удаленного доступа",
+            "copy_detected": "Скопировать адрес локальной сети",
+            "copied": "Адрес скопирован",
+            "copy_failed": "Не удалось скопировать адрес"
+        },
+        "unsupported_install_title": "Неподдерживаемая установка",
+        "unsupported_install_description": "Этот сервер не установлен с помощью одного из инструментов, перечисленных на странице {0}. Некоторые функции могут работать не так, как ожидается, а сообщения о проблемах, поступившие с этого сервера, могут быть закрыты без оказания поддержки.",
+        "unsupported_install_link": "поддерживаемые способы установки",
+        "error_loading_sort_options": "Ошибка при загрузке параметров сортировки."
     },
     "show_info": "Показать информацию",
     "show_select_boxes": "Показать поля выбора",
@@ -917,7 +942,14 @@
         "ascending": "По возрастанию",
         "ascending_abbreviation": "Возр",
         "descending": "По убыванию",
-        "descending_abbreviation": "Убыв"
+        "descending_abbreviation": "Убыв",
+        "favorite_timestamp": "Дата добавления в избранное",
+        "artist_name": "Исполнитель",
+        "random": "Случайный выбор",
+        "random_play_count": "Случайный выбор (начиная с наименее часто используемого варианта)",
+        "album_name": "Альбом",
+        "sort_by": "Сортировка по",
+        "sort_by_current": "Сортировка по: {0}"
     },
     "state": {
         "idle": "ожидание",
@@ -1006,7 +1038,8 @@
         "view_mode_current": "Текущий вид: {0}. Изменить вид",
         "view_mode_switch": "Текущий вид: {0}. Переключить на {1}",
         "mute": "Отключить звук",
-        "unmute": "Включить звук"
+        "unmute": "Включить звук",
+        "view_mode": "Режим просмотра"
     },
     "topresult": "Лучший результат",
     "track": "Трек",
@@ -1037,9 +1070,11 @@
     "view": {
         "list": "Список",
         "panel": "Таблица",
-        "panel_compact": "Компактная таблица",
         "discovery": "Обзор",
-        "card": "Карточки"
+        "card": "Карточки",
+        "view_as": "Просмотреть как",
+        "panel_short": "Значки",
+        "list_short": "Список"
     },
     "play_replace": "Играть сейчас (очистить очередь)",
     "played": "Играло",
@@ -1156,7 +1191,8 @@
                 "smart": "Умный",
                 "standard": "Стандартный",
                 "disabled": "Отключен",
-                "source": "Применяется {0}"
+                "source": "Применяется {0}",
+                "voice_over": "Закадровый голос, музыка приглушена"
             },
             "dsp_state": {
                 "enabled": "DSP включен",
@@ -1192,7 +1228,8 @@
             "mixed_to_mono": "Сведено в моно"
         },
         "processing_header": "Обработка",
-        "more_info_for": "Больше данных о {item}"
+        "more_info_for": "Больше данных о {item}",
+        "open_played_from": "Открыть {0}"
     },
     "select_source": "Выбрать источник",
     "play_replace_next": "Следующим (очистить очередь)",
@@ -1423,7 +1460,6 @@
         "reconnecting": "Восстановление связи",
         "reconnecting_message": "Попытка повторного подключения к серверу...",
         "error_ingress_failed": "Не удалось войти через Home Assistant",
-        "error_invalid_credentials": "Не удалось войти в систему. Пожалуйста, проверьте свое имя пользователя и пароль.",
         "guest_ended_party_title": "Ваша сессия вечеринки завершена",
         "guest_ended_party_message": "Попросите организатора ещё раз дать ссылку на вечеринку или QR-код, чтобы снова присоединиться.",
         "guest_ended_quiz_title": "Ваша сессия викторины завершена",
@@ -1864,12 +1900,14 @@
                 "shuffle_playlist_tracks": "Перемешать треки в плейлисте",
                 "voice": "Голос",
                 "host": "Ведущий",
-                "language": "Язык"
+                "language": "Язык",
+                "allow_post": "Обсуждение поверх вступления"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Максимальное общее время воспроизведения исходной музыки в минутах. Треки воспроизводятся в порядке их показа до достижения лимита. Оставьте значение 0, чтобы ограничение отсутствовало.",
                 "instructions": "Описывает личность ведущего и то, как следует составлять тексты для сегментов. Эта информация отправляется ИИ вместе с каждым сегментом.",
-                "shuffle_playlist_tracks": "Воспроизводить исходный плейлист в случайном порядке. Отключите эту функцию, чтобы воспроизводить плейлист в заданном порядке."
+                "shuffle_playlist_tracks": "Воспроизводить исходный плейлист в случайном порядке. Отключите эту функцию, чтобы воспроизводить плейлист в заданном порядке.",
+                "allow_post": "Конец этого фрагмента звучит одновременно с началом следующей песни, при этом громкость музыки понижается, чтобы не заглушать голос, и затихает непосредственно перед началом пения. Это происходит только в том случае, если Music Assistant знает, где начинается пение, и вступление достаточно длинное. Если несколько фрагментов озвучиваются без перерыва, то для всех них должна быть включена эта функция."
             },
             "web_search": {
                 "disabled": "отключено (веб-инструмент отсутствует)",
@@ -1918,7 +1956,8 @@
                 "station_duplicated": "Станция дублирована",
                 "host_saved": "Ведущий сохранен",
                 "host_deleted": "Ведущий удален",
-                "tts_engines_load_failed": "Не удалось загрузить параметры голоса."
+                "tts_engines_load_failed": "Не удалось загрузить параметры голоса.",
+                "show_stopped": "Шоу остановлено"
             },
             "header": {
                 "subtitle": "Превратите плейлист в радиошоу с ведущим на ИИ."
@@ -2250,7 +2289,10 @@
         "last_played_ago": "назад",
         "op_greater_than": "более чем",
         "op_less_than": "менее чем",
-        "picker_search": "Поиск {label}"
+        "picker_search": "Поиск {label}",
+        "field_folder": "Папка",
+        "field_folder_is": "Папка",
+        "picker_empty_folder_sources": "Источник музыки с папками не настроен."
     },
     "explore": "Основное",
     "shortcuts": "Быстрый доступ",
@@ -2637,7 +2679,8 @@
                 "no_provider_hint": "Добавьте провайдера плееров, и его плееры появятся здесь.",
                 "discovering_hint": "Поиск устройств может занять некоторое время. Убедитесь, что ваши динамики включены и подключены к той же сети, что и Music Assistant.",
                 "add_more": "Добавить больше плееров",
-                "rename": "Переименовать {name}"
+                "rename": "Переименовать {name}",
+                "discovered_by": "Обнаружено через"
             },
             "plugins": {
                 "title": "Добавление плагинов",
@@ -2746,7 +2789,14 @@
         "description": "Настройте Music Assistant шаг за шагом.",
         "step_completed": "{step}, завершено",
         "welcome_description": "Краткий обзор Music Assistant.",
-        "more_count": "+ еще {count}"
+        "more_count": "+ еще {count}",
+        "paused_title": "Настройка приостановлена",
+        "paused_text": "Продолжите с того места, где остановились. Сейчас или позже, в настройках.",
+        "resume": "Продолжить",
+        "pause": "Приостановить настройку",
+        "dismiss": "Отклонить",
+        "music_sources_count": "{count} источник музыки | {count} источников музыки",
+        "plugins_count": "{count} плагин | {count} плагинов"
     },
     "share_playlist": "Совместный доступ к плейлисту",
     "playlist_access": {
@@ -2860,5 +2910,131 @@
     "grid_size": "Размер обложки",
     "grid_size_default": "Размер по умолчанию",
     "grid_size_smaller": "на {count} шаг меньше | на {count} шагов меньше",
-    "grid_size_larger": "на {count} шаг больше | на {count} шагов больше"
+    "grid_size_larger": "на {count} шаг больше | на {count} шагов больше",
+    "episode_number": "Эпизод {0}",
+    "episode_number_short": "Е{0}",
+    "season_episode_number": "Сезон {0}, эпизод {1}",
+    "season_episode_number_short": "S{0} E{1}",
+    "edit_rows_subtitle_podcast": "Применяется ко всем страницам подкаста.",
+    "playlist_radio": "Плейлист «Бесконечный микс»",
+    "edit_rows_subtitle_playlist": "Применяется ко всем страницам плейлиста.",
+    "duration_hours_minutes": "{hours} ч {minutes} мин",
+    "duration_hours": "{hours} ч",
+    "duration_minutes": "{minutes} мин",
+    "tracklist_heading": "Треки",
+    "skip_back_seconds": "Вернуться назад на {0} секунд",
+    "skip_forward_seconds": "Перейти вперёд на {0} секунд",
+    "track_table": {
+        "title": "Название",
+        "track_number": "Номер трека",
+        "year": "Год",
+        "duration": "Продолжительность",
+        "columns": "Столбцы",
+        "choose_columns": "Выбрать столбцы",
+        "hidden_at_width": "Скрыто при такой ширине"
+    },
+    "selection_actions": "Действия по выбору",
+    "n_selected": "{count} выбран | {count} выбрано",
+    "folder": "Папка",
+    "select_all": "Выбрать все",
+    "no_content_filter_hint": "Попробуйте ввести другой запрос или изменить фильтры.",
+    "items_load_failed": "Не удалось загрузить элементы.",
+    "featured_artists": "Избранные исполнители",
+    "review_setup": "Просмотр",
+    "n_audiobooks": "{count} аудиокнига | {count} аудиокниг",
+    "radio_live": "В прямом эфире",
+    "listing_filters": {
+        "title": "Фильтры",
+        "title_active": "Фильтры, {count} активно",
+        "controls": "Элементы управления списками",
+        "clear_all": "Очистить все",
+        "favorites_only": "Только избранное",
+        "album_artists_only": "Только исполнители альбомов",
+        "library_only": "Только в библиотеке",
+        "hide_fully_played": "Скрыть полностью прослушанные",
+        "collapse_collections": "Свернуть коллекции",
+        "genres_shown": "Показывать",
+        "genre": "Жанр",
+        "any_genre": "Любой жанр",
+        "album_type": "Тип альбома",
+        "any_album_type": "Любой тип альбома",
+        "source": "Источник",
+        "any_source": "Любой источник"
+    },
+    "statistics": "Статистика",
+    "statistics_subtitle": "Что вы слушали в Music Assistant",
+    "statistics_period": "Период",
+    "statistics_all": "Вся статистика",
+    "statistics_plays": "{count} прослушивание | {count} прослушиваний",
+    "statistics_plays_label": "Прослушивания",
+    "statistics_plays_over_time": "Прослушивания по времени",
+    "statistics_chart_accessible_summary": "{title}. {values}",
+    "statistics_average_hour": "{average} в час в среднем.",
+    "statistics_average_day": "{average} в день в среднем.",
+    "statistics_average_month": "{average} в месяц в среднем.",
+    "statistics_average_year": "{average} в год в среднем.",
+    "statistics_busiest_sentence_hour": "{label} был самым загруженным часом.",
+    "statistics_busiest_sentence_day": "{label} был самым загруженным днем.",
+    "statistics_busiest_sentence_month": "{label} был самым загруженным месяцем.",
+    "statistics_busiest_sentence_year": "{label} был самым загруженным годом.",
+    "statistics_per_hour": "В час",
+    "statistics_per_day": "В день",
+    "statistics_per_month": "В месяц",
+    "statistics_per_year": "В год",
+    "statistics_busiest_hour": "Самый загруженный час",
+    "statistics_busiest_day": "Самый загруженный день",
+    "statistics_busiest_month": "Самый загруженный месяц",
+    "statistics_busiest_year": "Самый загруженный год",
+    "statistics_peak_hour": "Пиковые часы",
+    "statistics_top_artist": "Ваш любимый исполнитель",
+    "statistics_of_plays": "вашего прослушивания",
+    "statistics_top_artist_accessible": "{name}: {share}% ваших прослушиваний",
+    "statistics_play_item": "Воспроизвести {name}",
+    "statistics_when_you_listen": "Когда вы слушаете",
+    "statistics_profile_early_bird": "Ранняя пташка",
+    "statistics_profile_afternoon": "Дневной слушатель",
+    "statistics_profile_evening": "Вечерний слушатель",
+    "statistics_profile_night_owl": "Ночная сова",
+    "statistics_window_share": "{share}% ваших прослушиваний, начатых в период с {start} по {end}",
+    "statistics_hourly_accessible": "Прослушивания по часам, максимальное значение наблюдается в промежутке между {start} и {end}",
+    "statistics_top_genre": "Любимый жанр",
+    "statistics_genre_other": "Прочее",
+    "statistics_genres_accessible": "Жанры: {values}",
+    "statistics_genre_empty": "За этот период не было обнаружено ни одного прослушивания треков из библиотеки, относящихся к данному жанру.",
+    "statistics_release_years": "Годы выпуска",
+    "statistics_mostly_decade": "В основном {decade}",
+    "statistics_decades_accessible": "Прослушивания по десятилетиям: {values}",
+    "statistics_decade_empty": "В этот период не было обнаружено ни одного прослушивания библиотечных треков, связанных с альбомами, год выпуска которых известен.",
+    "statistics_artist_time": "Топ исполнителей по продолжительности прослушивания",
+    "statistics_artist_time_subtitle": "Минуты полного прослушивания",
+    "statistics_minutes": "{count} мин | {count} мин",
+    "statistics_listening_time_empty": "За этот период не было обнаружено ни одной завершенного прослушивания трека из библиотеки с известной продолжительностью.",
+    "statistics_heatmap": "Ваша неделя по часам",
+    "statistics_heatmap_subtitle": "Прослушиваия по дням недели и часам",
+    "statistics_heatmap_less": "Меньше",
+    "statistics_heatmap_more": "Больше",
+    "statistics_activity_cell": "{weekday} в {hour}: {count} прослушивание | {weekday} в {hour}: {count} прослушиваний",
+    "statistics_most_played": "Чаще всего прослушиваемые треки",
+    "statistics_top_items": "Топ элементов",
+    "statistics_top_tracks": "Топ треков",
+    "statistics_top_albums": "Топ альбомов",
+    "statistics_top_artists": "Топ исполнителей",
+    "statistics_top_playlists": "Топ плейлистов",
+    "statistics_column_rank": "№",
+    "statistics_column_title": "Название",
+    "statistics_column_share": "Доля",
+    "statistics_share_accessible": "{share}% от прослушиваний номера 1",
+    "statistics_section_empty": "В этот период ничего не играло",
+    "statistics_section_failed": "Эти статистические данные не удалось загрузить.",
+    "statistics_load_failed": "Некоторые статистические данные не удалось загрузить.",
+    "no_statistics_data": "История прослушивания пока отсутствует",
+    "period_today": "Сегодня",
+    "period_week": "Последние 7 дней",
+    "period_month": "Последние 30 дней",
+    "period_year": "Последние 365 дней",
+    "period_all_time": "За все время",
+    "show_action_buttons": "Показать кнопки действий",
+    "action_buttons_too_small": "Обложки слишком малы для кнопок действий",
+    "open_item_failed": "Не удалось открыть этот элемент.",
+    "edit_rows_subtitle_genre": "Применяется ко всем страницам жанра"
 }

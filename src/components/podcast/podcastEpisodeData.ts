@@ -61,3 +61,12 @@ export function podcastEpisodeNumber(
     label: $t("season_episode_number", [season, number]),
   };
 }
+
+/** The episode's publish date for display, empty when it has no valid one. */
+export function episodeReleaseDate(episode: PodcastEpisode): string {
+  const value = episode.metadata?.release_date;
+  const released = value ? new Date(value) : undefined;
+  return released && !isNaN(released.getTime())
+    ? released.toLocaleDateString(undefined, { dateStyle: "medium" })
+    : "";
+}

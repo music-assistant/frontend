@@ -294,6 +294,12 @@ export const getCollectionMediaTypeFromItemId = function (itemId: string) {
     : MediaType.UNKNOWN;
 };
 
+/** Whether a provider instance can store a new order for its playlists. */
+export const providerSupportsPlaylistMove = (providerInstance: string) =>
+  !!api.providers[providerInstance]?.supported_features.includes(
+    ProviderFeature.PLAYLIST_TRACKS_MOVE,
+  );
+
 /**
  * Providers that a static library playlist can be migrated to: the builtin
  * provider and streaming providers that can create playlists and edit

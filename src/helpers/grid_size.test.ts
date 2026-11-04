@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  defaultShowActions,
   GRID_SIZE_DEFAULT,
   GRID_SIZE_MAX,
   GRID_SIZE_MIN,
@@ -44,5 +45,26 @@ describe("normalizeGridSize", () => {
     expect(normalizeGridSize(10)).toBe(GRID_SIZE_MAX);
     expect(normalizeGridSize(-10)).toBe(GRID_SIZE_MIN);
     expect(normalizeGridSize(1.4)).toBe(1);
+  });
+});
+
+describe("defaultShowActions", () => {
+  it("shows the buttons for a plain thumbs or list view", () => {
+    expect(defaultShowActions("panel", "albums")).toBe(true);
+    expect(defaultShowActions("list", "genres")).toBe(true);
+    expect(defaultShowActions(undefined, "albums")).toBe(true);
+  });
+
+  it("hides them for a saved compact view", () => {
+    expect(defaultShowActions("panel_compact", "albums")).toBe(false);
+  });
+
+  it("hides them for genres, which opened compact by default", () => {
+    expect(defaultShowActions(undefined, "genres")).toBe(false);
+    expect(defaultShowActions("panel", "genres")).toBe(true);
+  });
+
+  it("hides them when the caller asks", () => {
+    expect(defaultShowActions("panel", "albums", true)).toBe(false);
   });
 });

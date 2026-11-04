@@ -23,8 +23,8 @@ const mocks = vi.hoisted(() => ({
   dark: { value: false },
 }));
 
-vi.mock("vuetify", () => ({
-  useTheme: () => ({ current: { value: { dark: mocks.dark.value } } }),
+vi.mock("@/composables/useThemePreference", () => ({
+  isDark: mocks.dark,
 }));
 
 vi.mock("@/plugins/api", async () => {

@@ -4,6 +4,7 @@
     link
     :show-menu-btn="showMenu"
     :menu-button-label="menuButtonLabel"
+    :aria-busy="resolving || undefined"
     :class="{
       unavailable: !isAvailable && !notInLibrary,
       'not-in-library': notInLibrary,
@@ -71,6 +72,11 @@
                 alt=""
               />
             </div>
+            <ArtworkSpinner
+              v-if="resolving"
+              class="rounded"
+              spinner-class="size-5"
+            />
           </div>
         </template>
         <!-- ===== DESKTOP (hover-capable): blue play reveals on hover ===== -->
@@ -129,6 +135,11 @@
                   alt=""
                 />
               </div>
+              <ArtworkSpinner
+                v-if="resolving"
+                class="rounded"
+                spinner-class="size-5"
+              />
               <span v-if="showPlay" class="listitem-play-blue">
                 <Play
                   :size="16"
@@ -245,7 +256,7 @@
         :src="iconHiRes"
         width="30"
         alt=""
-        :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
+        :class="isDark ? 'hiresicondark' : 'hiresicon'"
       >
         <v-tooltip activator="parent" location="bottom">
           {{ HiResDetails }}
@@ -328,10 +339,13 @@
 </template>
 
 <script setup lang="ts">
+import ArtworkSpinner from "@/components/ArtworkSpinner.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
 import ListItem from "@/components/ListItem.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import { podcastEpisodeNumber } from "@/components/podcast/podcastEpisodeData";
+import { useResolvingItems } from "@/composables/useResolvingItems";
+import { isDark } from "@/composables/useThemePreference";
 import { canHoldFavorite } from "@/helpers/favorites";
 import {
   handleMediaItemClick,
@@ -432,6 +446,9 @@ const compProps = withDefaults(defineProps<Props>(), {
 // a release only MusicBrainz knows: muted rather than shown as unavailable,
 // since it can be opened and added to the library
 const notInLibrary = computed(() => isMusicBrainzItem(compProps.item));
+
+const { isResolving } = useResolvingItems();
+const resolving = computed(() => isResolving(compProps.item.uri));
 
 const episodeNumber = computed(() =>
   compProps.item.media_type === MediaType.PODCAST_EPISODE
