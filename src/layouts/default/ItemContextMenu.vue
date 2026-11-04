@@ -1087,9 +1087,9 @@ export const getContextMenuItems = async function (
           if (!canEditOrder()) return;
           // the removal runs as a background task; the positions hold until
           // it is done and read back
-          void sendPlaylistEdit(playlist.item_id, async () =>
-            untilTaskEnds(
-              await api.removePlaylistTracks(
+          void sendPlaylistEdit(playlist.item_id, () =>
+            untilTaskEnds(() =>
+              api.removePlaylistTracks(
                 playlist.item_id,
                 items.map((x) => ("position" in x ? x.position : 0) as number),
               ),

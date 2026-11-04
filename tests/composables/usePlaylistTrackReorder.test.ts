@@ -10,6 +10,7 @@ import {
   type BackgroundTask,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
+import type { CommandOptions } from "@/plugins/api";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, ref, toRaw } from "vue";
@@ -20,7 +21,7 @@ const { apiMock } = vi.hoisted(() => ({
     movePlaylistTrack: vi.fn<() => Promise<void>>(),
     movePlaylistTracks: vi.fn<() => Promise<void>>(),
     subscribe: vi.fn(),
-    getTasks: vi.fn<() => Promise<BackgroundTask[]>>(),
+    getTasks: vi.fn<(options?: CommandOptions) => Promise<BackgroundTask[]>>(),
     state: { value: "initialized" } as { value: string },
   },
 }));
@@ -403,6 +404,7 @@ describe("untilTaskEnds", () => {
     apiMock.state = { value: "initialized" };
   });
 
+  // waits for the task the reply, once given, tells of
   const waitFor = (status: TaskStatus) => {
     apiMock.subscribe.mockImplementation((event, callback) => {
       if (event === EventType.TASKS_UPDATED) report = callback;
@@ -410,13 +412,26 @@ describe("untilTaskEnds", () => {
     });
     // until reported otherwise, the server lists the task as it was sent
     apiMock.getTasks.mockResolvedValue([task(status)]);
+    let reply = () => {};
     let ended = false;
-    void untilTaskEnds(task(status)).then(() => (ended = true));
-    return () => ended;
+    void untilTaskEnds(
+      () =>
+        new Promise<BackgroundTask>(
+          (resolve) => (reply = () => resolve(task(status))),
+        ),
+    ).then(() => (ended = true));
+    return {
+      ended: () => ended,
+      reply: async () => {
+        reply();
+        await flushPromises();
+      },
+    };
   };
 
   it("resolves once the task is reported finished", async () => {
-    const ended = waitFor(TaskStatus.PENDING);
+    const { ended, reply } = waitFor(TaskStatus.PENDING);
+    await reply();
 
     report({ data: [task(TaskStatus.RUNNING)] });
     await flushPromises();
@@ -426,17 +441,36 @@ describe("untilTaskEnds", () => {
     expect(ended()).toBe(true);
   });
 
-  it("resolves when the task finished before it was listened for", async () => {
-    // the report came in before the removal's reply; the tasks listed show it
-    apiMock.getTasks.mockResolvedValueOnce([task(TaskStatus.SUCCESS)]);
-    const ended = waitFor(TaskStatus.PENDING);
+  it("resolves when the task was reported finished before its reply", async () => {
+    const { ended, reply } = waitFor(TaskStatus.PENDING);
 
+    report({ data: [task(TaskStatus.SUCCESS)] });
     await flushPromises();
+    expect(ended()).toBe(false);
+    await reply();
     expect(ended()).toBe(true);
   });
 
+  it("does not take a list from before its reply for the task's end", async () => {
+    const { ended, reply } = waitFor(TaskStatus.PENDING);
+
+    // sent before the task was created
+    report({ data: [] });
+    await reply();
+    expect(ended()).toBe(false);
+  });
+
+  it("fails when the task could not be sent", async () => {
+    apiMock.subscribe.mockReturnValue(vi.fn());
+
+    await expect(
+      untilTaskEnds(() => Promise.reject(new Error("denied"))),
+    ).rejects.toThrow("denied");
+  });
+
   it("resolves once the task is no longer listed", async () => {
-    const ended = waitFor(TaskStatus.RUNNING);
+    const { ended, reply } = waitFor(TaskStatus.RUNNING);
+    await reply();
 
     report({ data: [] });
     await flushPromises();
@@ -446,7 +480,8 @@ describe("untilTaskEnds", () => {
   it("looks the task up again once the server is reached again", async () => {
     const state = ref("initialized");
     apiMock.state = state;
-    const ended = waitFor(TaskStatus.RUNNING);
+    const { ended, reply } = waitFor(TaskStatus.RUNNING);
+    await reply();
 
     state.value = "reconnecting";
     await flushPromises();
@@ -459,6 +494,27 @@ describe("untilTaskEnds", () => {
     await flushPromises();
     apiMock.getTasks.mockResolvedValue([]);
     state.value = "initialized";
+    await flushPromises();
+    expect(ended()).toBe(true);
+    // an account that may not list the tasks gets no error toast for it
+    expect(apiMock.getTasks).toHaveBeenCalledWith({
+      suppressGlobalError: true,
+    });
+  });
+
+  it("waits for the next report when the tasks cannot be listed", async () => {
+    const state = ref("initialized");
+    apiMock.state = state;
+    const { ended, reply } = waitFor(TaskStatus.RUNNING);
+    await reply();
+    apiMock.getTasks.mockRejectedValue(new Error("missing scope"));
+
+    state.value = "reconnecting";
+    await flushPromises();
+    state.value = "initialized";
+    await flushPromises();
+    expect(ended()).toBe(false);
+    report({ data: [task(TaskStatus.SUCCESS)] });
     await flushPromises();
     expect(ended()).toBe(true);
   });

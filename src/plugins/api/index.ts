@@ -3091,8 +3091,8 @@ export class MusicAssistantApi {
     });
   }
 
-  public getTasks(): Promise<BackgroundTask[]> {
-    return this.sendCommand("tasks/list");
+  public getTasks(options?: CommandOptions): Promise<BackgroundTask[]> {
+    return this.sendCommand("tasks/list", undefined, options);
   }
 
   public runTask(

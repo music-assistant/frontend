@@ -29,35 +29,45 @@ const FINISHED_TASK_STATUSES = new Set([
 ]);
 
 /**
- * Resolves once a background task, such as a removal of playlist tracks, has
- * finished or is no longer listed. A report sent before this listens, or
- * while disconnected, is missed, so the tasks are listed once listening and
- * again once the server is reached.
+ * Sends an edit that runs as a background task, such as a removal of playlist
+ * tracks, and resolves once the task has finished or is no longer listed. The
+ * task may end before its reply arrives, so its reports are listened for
+ * before it is sent. Reports sent while disconnected are missed, so the tasks
+ * are listed again once the server is reached; an account that may not list
+ * them waits for the next report instead.
  */
-export const untilTaskEnds = (task: BackgroundTask) =>
-  new Promise<void>((resolve) => {
-    if (FINISHED_TASK_STATUSES.has(task.status)) {
-      resolve();
-      return;
-    }
+export const untilTaskEnds = (send: () => Promise<BackgroundTask>) =>
+  new Promise<void>((resolve, reject) => {
+    let taskId: string | undefined;
+    // task lists that came before the reply told the task's id
+    const early: BackgroundTask[][] = [];
     let ended = false;
-    const end = (current: BackgroundTask | undefined) => {
-      if (ended || (current && !FINISHED_TASK_STATUSES.has(current.status)))
-        return;
+    const stop = () => {
       ended = true;
       // the api is still calling its listeners, which unsubscribing now
       // would cut short
       queueMicrotask(unsubscribe);
       stopWatchingConnection();
+    };
+    // a list from before the task was created does not hold it, so only one
+    // from after the reply tells that it ended by leaving it out
+    const endFrom = (tasks: BackgroundTask[], afterReply = true) => {
+      if (ended) return;
+      if (taskId === undefined) {
+        early.push(tasks);
+        return;
+      }
+      const current = tasks.find(({ id }) => id === taskId);
+      if (current ? !FINISHED_TASK_STATUSES.has(current.status) : !afterReply)
+        return;
+      stop();
       resolve();
     };
-    const endFrom = (tasks: BackgroundTask[]) =>
-      end(tasks.find(({ id }) => id === task.id));
     const listTasks = async () => {
       try {
-        endFrom(await api.getTasks());
+        endFrom(await api.getTasks({ suppressGlobalError: true }));
       } catch {
-        // listed again on the next report or connection
+        // the next report ends the wait all the same
       }
     };
     const unsubscribe = api.subscribe(
@@ -70,8 +80,17 @@ export const untilTaskEnds = (task: BackgroundTask) =>
         if (state === ConnectionState.INITIALIZED) void listTasks();
       },
     );
-    // the task may have finished before this listener was in place
-    void listTasks();
+    send().then(
+      (task) => {
+        taskId = task.id;
+        for (const tasks of early.splice(0)) endFrom(tasks, false);
+        endFrom([task]);
+      },
+      (error: unknown) => {
+        stop();
+        reject(error);
+      },
+    );
   });
 
 // Counts per playlist id, for edits on their way from outside the playlist's
