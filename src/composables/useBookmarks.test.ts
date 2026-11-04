@@ -14,7 +14,6 @@ import {
   newBookmarkOfPlayingItem,
   useBookmarkActions,
   useBookmarks,
-  usePlayingPodcastLibraryCheck,
 } from "./useBookmarks";
 
 const ABS = "audiobookshelf--1";
@@ -23,10 +22,8 @@ const { apiMock, storeMock, elapsed } = vi.hoisted(() => ({
   apiMock: {
     providers: {} as Record<string, unknown>,
     getBookmarks: vi.fn(),
-    getLibraryItem: vi.fn(),
     setBookmark: vi.fn(),
     subscribe: vi.fn(() => () => {}),
-    subscribe_multi: vi.fn(() => () => {}),
     state: { value: "initialized" },
   },
   storeMock: { curQueueItem: undefined as unknown },
@@ -55,19 +52,9 @@ const Harness = defineComponent({
 });
 const mountWith = (setup: () => void) => mount(Harness, { props: { setup } });
 
-function playing(
-  media_type: MediaType,
-  streamdetails = true,
-  inLibrary = true,
-) {
+function playing(media_type: MediaType, streamdetails = true) {
   storeMock.curQueueItem = {
-    // in the library, where Music Assistant keeps the bookmarks the provider does not
-    media_item: {
-      media_type,
-      provider: inLibrary ? "library" : ABS,
-      provider_mappings: [{ provider_instance: ABS, item_id: "book_1" }],
-      podcast: { provider: inLibrary ? "library" : ABS },
-    },
+    media_item: { media_type },
     streamdetails: streamdetails
       ? { provider: ABS, item_id: "book_1" }
       : undefined,
@@ -128,76 +115,6 @@ describe("newBookmarkOfPlayingItem", () => {
     expect(newBookmarkOfPlayingItem()).toBeUndefined();
     elapsed.value = 0;
     expect(newBookmarkOfPlayingItem()?.start).toBe(0);
-  });
-
-  // a queued RSS episode refers to its podcast on the provider, also once it is in the library
-  it.each([
-    ["in the library", { item_id: "7" }, true],
-    ["not in the library", null, false],
-  ])(
-    "looks up whether the episode's podcast is %s",
-    async (_case, libraryPodcast, offered) => {
-      const podcastId = `pod_${offered}`;
-      storeMock.curQueueItem = {
-        media_item: {
-          media_type: MediaType.PODCAST_EPISODE,
-          provider: ABS,
-          provider_mappings: [],
-          podcast: { provider: ABS, item_id: podcastId },
-        },
-        streamdetails: { provider: ABS, item_id: "episode_1" },
-      } as unknown as QueueItem;
-      apiMock.providers = {};
-      apiMock.getLibraryItem.mockResolvedValue(libraryPodcast);
-      mountWith(usePlayingPodcastLibraryCheck);
-      // unknown until the library answers
-      expect(newBookmarkOfPlayingItem()).toBeUndefined();
-
-      await flushPromises();
-
-      expect(apiMock.getLibraryItem).toHaveBeenCalledWith(
-        MediaType.PODCAST,
-        podcastId,
-        ABS,
-      );
-      expect(newBookmarkOfPlayingItem()?.storedIn).toBe(
-        offered ? "Music Assistant" : undefined,
-      );
-    },
-  );
-
-  // the answer is kept per podcast, until the library changes
-  it("asks again once a podcast is added to the library", async () => {
-    storeMock.curQueueItem = {
-      media_item: {
-        media_type: MediaType.PODCAST_EPISODE,
-        provider: ABS,
-        provider_mappings: [],
-        podcast: { provider: ABS, item_id: "pod_added" },
-      },
-      streamdetails: { provider: ABS, item_id: "episode_1" },
-    } as unknown as QueueItem;
-    apiMock.providers = {};
-    apiMock.subscribe_multi.mockClear();
-    apiMock.getLibraryItem.mockResolvedValue(null);
-    mountWith(usePlayingPodcastLibraryCheck);
-    await flushPromises();
-    expect(newBookmarkOfPlayingItem()).toBeUndefined();
-
-    apiMock.getLibraryItem.mockResolvedValue({ item_id: "8" });
-    const [, onLibraryChange] = apiMock.subscribe_multi.mock
-      .calls[0] as unknown as [unknown, (evt: { data: unknown }) => void];
-    onLibraryChange({ data: { media_type: MediaType.PODCAST } });
-    await flushPromises();
-
-    expect(newBookmarkOfPlayingItem()?.storedIn).toBe("Music Assistant");
-  });
-
-  // Music Assistant keeps them for library copies only, the server refuses others
-  it("takes none Music Assistant would keep for a copy outside the library", () => {
-    playing(MediaType.PODCAST_EPISODE, true, false);
-
-    expect(newBookmarkOfPlayingItem()).toBeUndefined();
   });
 });
 

@@ -300,84 +300,21 @@
                     ></div>
                   </div>
                 </div>
-                <!-- chapters of the current audiobook item, each followed by
-                     the bookmarks inside it -->
-                <div
+                <QueueChapterList
                   v-if="
                     row.state === 'playing' &&
                     row.item?.media_item &&
                     (queueChapterGroups.length || canAddBookmark)
                   "
-                  class="queue-chapters"
-                >
-                  <!-- on top, so a long chapter list does not hide it -->
-                  <button
-                    v-if="canAddBookmark"
-                    type="button"
-                    class="queue-chapter mb-1 font-medium"
-                    data-testid="add-bookmark"
-                    @click.stop="addBookmarkClicked"
-                  >
-                    <span class="flex min-w-0 items-center gap-1.5">
-                      <BookmarkPlus :size="14" class="shrink-0 text-primary" />
-                      <span class="queue-chapter__name">{{
-                        $t("add_bookmark")
-                      }}</span>
-                    </span>
-                    <!-- the position it takes, in the column of the bookmarks' positions -->
-                    <span class="queue-chapter__time tabular-nums">
-                      {{ formatDuration(playingPosition) }}
-                    </span>
-                  </button>
-                  <template
-                    v-for="group in queueChapterGroups"
-                    :key="group.chapter?.position ?? 'bookmarks'"
-                  >
-                    <button
-                      v-if="group.chapter"
-                      type="button"
-                      class="queue-chapter"
-                      :class="{
-                        'queue-chapter--active': isActiveChapter(
-                          row.item,
-                          group.chapter,
-                        ),
-                      }"
-                      :aria-current="
-                        isActiveChapter(row.item, group.chapter)
-                          ? 'true'
-                          : undefined
-                      "
-                      @click.stop="
-                        chapterClicked(row.item.media_item, group.chapter)
-                      "
-                    >
-                      <span class="queue-chapter__name">{{
-                        group.chapter.name
-                      }}</span>
-                      <span
-                        v-if="group.chapter.end"
-                        class="queue-chapter__time"
-                      >
-                        {{
-                          formatDuration(
-                            group.chapter.end - group.chapter.start,
-                          )
-                        }}
-                      </span>
-                    </button>
-                    <QueueBookmarkRow
-                      v-for="bookmark in group.bookmarks"
-                      :key="`bookmark-${bookmark.start}`"
-                      :bookmark="bookmark"
-                      :editable="bookmarkActions.isEditable(bookmark)"
-                      :in-chapter="!!group.chapter"
-                      @seek="chapterClicked(row.item.media_item, bookmark)"
-                      @rename="bookmarkActions.renameClicked(bookmark)"
-                      @remove="bookmarkActions.removeClicked(bookmark)"
-                    />
-                  </template>
-                </div>
+                  :item="row.item"
+                  :groups="queueChapterGroups"
+                  :active-position="activeChapterPosition(row.item)"
+                  :can-add="canAddBookmark"
+                  :position="playingPosition"
+                  @seek="
+                    (target) => chapterClicked(row.item!.media_item!, target)
+                  "
+                />
               </div>
               <!-- floating ghost of the dragged item; tracks the pointer -->
               <div
@@ -560,30 +497,11 @@
       </div>
 
       <PlaybackSpeedDialog v-model:open="playbackSpeedDialogOpen" />
-      <BookmarkDialog
-        v-model:open="bookmarkActions.renameDialogOpen.value"
-        :title="$t('rename_bookmark')"
-        :initial-name="bookmarkActions.renamedBookmark.value?.name ?? ''"
-        :stored-in="
-          bookmarkActions.renamedBookmark.value
-            ? bookmarkActions.storeName(bookmarkActions.renamedBookmark.value)
-            : ''
-        "
-        @save="bookmarkActions.renameSaved"
-      />
-      <BookmarkDialog
-        v-model:open="bookmarkDialogOpen"
-        :title="$t('add_bookmark')"
-        :initial-name="newBookmark ? formatDuration(newBookmark.start) : ''"
-        :stored-in="newBookmark?.storedIn ?? ''"
-        @save="bookmarkSaved"
-      />
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import BookmarkDialog from "@/components/BookmarkDialog.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
@@ -621,7 +539,7 @@ import SkipBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBtn.vue";
 import NowPlayingSourceBadge from "@/layouts/default/PlayerOSD/NowPlayingSourceBadge.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
-import QueueBookmarkRow from "@/layouts/default/PlayerOSD/QueueBookmarkRow.vue";
+import QueueChapterList from "@/layouts/default/PlayerOSD/QueueChapterList.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
@@ -630,11 +548,7 @@ import { useSkipControls } from "@/composables/useSkipControls";
 import {
   BOOKMARK_EDIT_FEATURES,
   newBookmarkOfPlayingItem,
-  saveNewBookmark,
-  useBookmarkActions,
   useBookmarks,
-  usePlayingPodcastLibraryCheck,
-  type NewBookmark,
 } from "@/composables/useBookmarks";
 import {
   resolveActiveElapsedTime,
@@ -660,12 +574,7 @@ import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
-import {
-  BookmarkIcon,
-  BookmarkPlus,
-  ChevronDownIcon,
-  EllipsisVerticalIcon,
-} from "@lucide/vue";
+import { ChevronDownIcon, EllipsisVerticalIcon } from "@lucide/vue";
 import Color from "color";
 import { toast } from "vue-sonner";
 import {
@@ -737,9 +646,11 @@ const currentChapter = computed(() => {
 
 const activeChapter = computed(() => currentChapter.value?.chapter);
 
-const isActiveChapter = (item: QueueItem, chapter: MediaItemChapter) =>
-  item.queue_item_id === chapterQueueItem.value?.queue_item_id &&
-  chapter.position === activeChapter.value?.position;
+// the playing chapter of the item, for its chapter list
+const activeChapterPosition = (item: QueueItem) =>
+  item.queue_item_id === chapterQueueItem.value?.queue_item_id
+    ? activeChapter.value?.position
+    : undefined;
 
 const updateChapterTimer = (needed: boolean) => {
   if (needed && chapterTimer === null) {
@@ -752,8 +663,6 @@ const updateChapterTimer = (needed: boolean) => {
   }
 };
 
-// an episode's bookmarks are kept by Music Assistant when its podcast is in the library
-usePlayingPodcastLibraryCheck();
 // the playing item takes a new bookmark at its current position
 const canAddBookmark = computed(() => !!newBookmarkOfPlayingItem());
 
@@ -761,19 +670,6 @@ const playingPosition = computed(() => {
   void nowTick.value;
   return Math.floor(resolveActiveElapsedTime() ?? 0);
 });
-
-const bookmarkDialogOpen = ref(false);
-// taken on the click, the position moves on while the name is typed
-const newBookmark = ref<NewBookmark>();
-
-const addBookmarkClicked = function () {
-  newBookmark.value = newBookmarkOfPlayingItem();
-  bookmarkDialogOpen.value = !!newBookmark.value;
-};
-
-const bookmarkSaved = async function (name: string) {
-  if (newBookmark.value) await saveNewBookmark(newBookmark.value, name);
-};
 
 const chapterTimerNeeded = computed(
   () =>
@@ -1364,7 +1260,6 @@ watch(
   (open) => {
     if (open) return;
     playbackSpeedDialogOpen.value = false;
-    bookmarkDialogOpen.value = false;
   },
 );
 
@@ -1399,11 +1294,6 @@ const playingBookmarks = computed(() => {
       x.item_id === streamdetails?.item_id,
   );
 });
-
-// rename and delete the playing item's bookmarks from the queue
-const bookmarkActions = useBookmarkActions(
-  () => store.curQueueItem?.media_item?.media_type,
-);
 
 const queueChapterGroups = computed(() =>
   groupBookmarksByChapter(
@@ -1743,60 +1633,6 @@ onBeforeUnmount(() => {
     var(--text-color, currentColor) 18%,
     transparent
   );
-}
-
-/* Audiobook chapters under the current item. */
-.queue-chapters {
-  display: flex;
-  flex-direction: column;
-  margin: 2px 0 6px 60px;
-}
-
-.queue-chapter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  padding: 6px 8px;
-  border-radius: 6px;
-  text-align: left;
-  color: var(--text-color, currentColor);
-  background: transparent;
-  cursor: pointer;
-  transition: background-color 0.12s ease;
-}
-
-.queue-chapter:hover {
-  background: color-mix(
-    in srgb,
-    var(--text-color, currentColor) 8%,
-    transparent
-  );
-}
-
-.queue-chapter--active {
-  color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 14%, transparent);
-  font-weight: 600;
-}
-
-.queue-chapter--active:hover {
-  background: color-mix(in srgb, var(--primary) 20%, transparent);
-}
-
-.queue-chapter__name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--queue-subtitle-size, 0.8rem);
-}
-
-.queue-chapter__time {
-  flex: 0 0 auto;
-  font-size: 0.72rem;
-  opacity: 0.6;
 }
 
 .queue-empty {

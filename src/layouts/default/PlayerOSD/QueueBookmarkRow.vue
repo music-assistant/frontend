@@ -21,7 +21,7 @@
     <span
       class="queue-chapter__time shrink-0 text-[0.72rem] tabular-nums opacity-60"
     >
-      {{ formatDuration(bookmark.start) }}
+      {{ formatDuration(time) }}
     </span>
     <DropdownMenu v-if="editable">
       <DropdownMenuTrigger as-child>
@@ -79,6 +79,8 @@ import type { MediaItemBookmark } from "@/plugins/api/interfaces";
 
 export interface Props {
   bookmark: MediaItemBookmark;
+  // the position shown, e.g. counted from the start of its chapter
+  time: number;
   editable: boolean;
   // indented under the chapter it is in
   inChapter: boolean;

@@ -57,6 +57,7 @@
         <BookmarkRow
           v-else-if="row.bookmark"
           :bookmark="row.bookmark"
+          :time="row.time"
           :editable="isEditable(row.bookmark)"
           :disabled="!bookmarkPlayable(row.bookmark)"
           @play="bookmarkClicked(row.bookmark)"
@@ -160,6 +161,8 @@ interface ChapterRow {
   key: string;
   chapter?: MediaItemChapter;
   bookmark?: MediaItemBookmark;
+  // the time a bookmark shows: within its chapter beside the chapters' durations
+  time?: number;
 }
 
 const bookmarkKey = (bookmark: MediaItemBookmark) =>
@@ -189,6 +192,7 @@ const rows = computed<ChapterRow[]>(() => {
     ...group.bookmarks.map((bookmark) => ({
       key: bookmarkKey(bookmark),
       bookmark,
+      time: bookmark.start - (group.chapter?.start ?? 0),
     })),
   ]);
 });

@@ -280,11 +280,12 @@ describe("Chapters", () => {
         ),
       ).toEqual([
         ["First", 0, null],
+        // within its chapter, beside the chapters' durations
         ["On the provider", editButtons, "00:30"],
         ["Second", 0, null],
-        ["Read only", 0, "01:30"],
-        ["Kept by MA", editButtons, "01:35"],
-        ["Local file", editButtons, "01:40"],
+        ["Read only", 0, "00:30"],
+        ["Kept by MA", editButtons, "00:35"],
+        ["Local file", editButtons, "00:40"],
       ]);
     },
   );
