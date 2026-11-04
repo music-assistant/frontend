@@ -40,6 +40,7 @@
             }"
             role="button"
             tabindex="0"
+            @click.capture="swallowClickAfterTrackHold"
             @click="(e: MouseEvent) => onTrackClick(e, track)"
             @keydown.enter.self="(e: KeyboardEvent) => onTrackClick(e, track)"
             @keydown.space.self.prevent="
@@ -239,7 +240,6 @@ const onTrackClick = function (
   event: MouseEvent | KeyboardEvent,
   track: Track,
 ) {
-  if (swallowClickAfterTrackHold(event)) return;
   const x = "clientX" in event ? event.clientX : 0;
   const y = "clientY" in event ? event.clientY : 0;
   handleMediaItemClick(track, x, y, props.artist);

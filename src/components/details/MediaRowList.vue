@@ -27,6 +27,7 @@
           :class="{ 'media-rows__row--playing': isNowPlaying(item) }"
           role="button"
           tabindex="0"
+          @click.capture="swallowClickAfterItemHold"
           @click="(e: MouseEvent) => onItemClick(e, item)"
           @keydown.enter.self="(e: KeyboardEvent) => onItemClick(e, item)"
           @keydown.space.self.prevent="
@@ -249,7 +250,6 @@ const onItemClick = function (
   event: MouseEvent | KeyboardEvent,
   item: RowItem,
 ) {
-  if (swallowClickAfterItemHold(event)) return;
   const x = "clientX" in event ? event.clientX : 0;
   const y = "clientY" in event ? event.clientY : 0;
   handleMediaItemClick(item, x, y, props.parentItem);

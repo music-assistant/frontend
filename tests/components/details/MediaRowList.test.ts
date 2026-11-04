@@ -99,12 +99,19 @@ const TRACKS = [
 // trigger is the one that tells apart
 const FAVORITE_BUTTONS = "button[aria-haspopup='menu']";
 
+// keeps each row's hold handler, so a test can long-press the row
+const holdStub = {
+  mounted(el: HTMLElement, binding: { value: (evt: Event) => void }) {
+    (el as HTMLElement & { hold?: (evt: Event) => void }).hold = binding.value;
+  },
+};
+
 function mountList(props: Partial<Props> = {}, slots = {}) {
   return mount(MediaRowList, {
     props: { title: "Appears on", ...props },
     slots,
     global: {
-      directives: { hold: () => undefined },
+      directives: { hold: holdStub },
       mocks: { $t: (key: string) => key },
       stubs: { RouterLink: RouterLinkStub },
     },
@@ -345,10 +352,42 @@ describe("MediaRowList", () => {
     };
     const wrapper = mountList({ items: TRACKS.slice(0, 1) });
 
-    const buttons = wrapper.findAll('button[aria-label="play One"]');
-    expect(buttons.every((x) => x.attributes("disabled") !== undefined)).toBe(
-      true,
+    expect(
+      wrapper.get('button[aria-label="play One"]').attributes("disabled"),
+    ).toBeDefined();
+  });
+
+  // nothing hovers there, so the row has a play button of its own
+  it("puts the play button in the row on a touch screen", async () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(hover: none)",
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      })),
     );
+    const wrapper = mountList({ items: TRACKS.slice(0, 1) });
+    await flushPromises();
+
+    const button = wrapper.get('button[aria-label="play One"]');
+    expect(button.element.closest(".media-rows__art")).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  // the finger lifting after a long press must not also play the item
+  it("plays nothing when a long press opened the menu", async () => {
+    const wrapper = mountList({ items: TRACKS.slice(0, 1) });
+    const row = wrapper.get(".media-rows__row[role=button]");
+    await row.trigger("touchstart");
+    (row.element as HTMLElement & { hold: (evt: Event) => void }).hold(
+      new Event("touchstart"),
+    );
+
+    await wrapper.get('button[aria-label="play One"]').trigger("click");
+
+    expect(mockHandleMenuBtnClick).toHaveBeenCalledTimes(1);
+    expect(mockHandlePlayBtnClick).not.toHaveBeenCalled();
   });
 
   it("lets the consumer replace the subtitle and add a tag", () => {

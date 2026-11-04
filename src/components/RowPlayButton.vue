@@ -2,7 +2,7 @@
   <button
     v-if="overlay && !isTouch"
     type="button"
-    class="absolute inset-0 flex items-center justify-center bg-black/55 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+    class="absolute inset-0 flex items-center justify-center bg-black/55 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 disabled:cursor-not-allowed [&:disabled>span]:opacity-50"
     :aria-label="label"
     :disabled="disabled"
     @click.stop="(evt: MouseEvent) => emit('click', evt)"
