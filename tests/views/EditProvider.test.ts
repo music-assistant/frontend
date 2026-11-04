@@ -244,7 +244,7 @@ describe("EditProvider", () => {
     expect(
       wrapper.get('[data-testid="provider-get-help"]').attributes(),
     ).toMatchObject({
-      href: "https://github.com/music-assistant/support/issues/new?template=1_bug_report.yml&labels=triage,spotify",
+      href: "https://github.com/music-assistant/support/issues/new?template=1_bug_report.yml&labels=triage%2Cspotify&title=Spotify%3A+",
       rel: "noopener noreferrer",
       target: "_blank",
     });

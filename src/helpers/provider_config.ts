@@ -121,10 +121,15 @@ export const getProviderMaintainers = (manifest: ProviderManifest): string[] =>
  */
 export const getProviderHelpUrl = (manifest: ProviderManifest): string => {
   if (manifest.support_url?.startsWith("https://")) return manifest.support_url;
-  // GitHub only applies the labels parameter for reporters with triage rights;
-  // for everyone else the support repository's triage workflow adds the label
-  const labels = `triage,${encodeURIComponent(getSupportLabel(manifest.domain))}`;
-  return `${SUPPORT_ISSUES_URL}/new?template=${SUPPORT_BUG_REPORT_TEMPLATE}&labels=${labels}`;
+  // GitHub applies labels only for reporters with triage rights; for everyone
+  // else the support repository's triage workflow labels by the provider named
+  // in the title
+  const params = new URLSearchParams({
+    template: SUPPORT_BUG_REPORT_TEMPLATE,
+    labels: `triage,${getSupportLabel(manifest.domain)}`,
+    title: `${manifest.name}: `,
+  });
+  return `${SUPPORT_ISSUES_URL}/new?${params}`;
 };
 
 /**

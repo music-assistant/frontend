@@ -259,19 +259,28 @@ describe("who maintains a provider", () => {
     (support_url) => {
       expect(
         getProviderHelpUrl(
-          providerManifest({ domain: "ytmusic", support_url }),
+          providerManifest({
+            domain: "ytmusic",
+            name: "YouTube Music",
+            support_url,
+          }),
         ),
       ).toBe(
-        "https://github.com/music-assistant/support/issues/new?template=1_bug_report.yml&labels=triage,youtube_music",
+        "https://github.com/music-assistant/support/issues/new?template=1_bug_report.yml&labels=triage%2Cyoutube_music&title=YouTube+Music%3A+",
       );
     },
   );
 
   it("encodes a support label that is not a plain word", () => {
     expect(
-      getProviderHelpUrl(providerManifest({ domain: "spotify_connect" })),
+      getProviderHelpUrl(
+        providerManifest({
+          domain: "spotify_connect",
+          name: "Spotify Connect",
+        }),
+      ),
     ).toBe(
-      "https://github.com/music-assistant/support/issues/new?template=1_bug_report.yml&labels=triage,Spotify%20Connect",
+      "https://github.com/music-assistant/support/issues/new?template=1_bug_report.yml&labels=triage%2CSpotify+Connect&title=Spotify+Connect%3A+",
     );
   });
 });
