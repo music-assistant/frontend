@@ -527,7 +527,12 @@ const onTrackPointerMove = (evt: PointerEvent) => {
   if (!rect.width) return;
   const x = Math.min(rect.right, Math.max(rect.left, evt.clientX));
   hoverPercent.value = ((x - rect.left) / rect.width) * 100;
-  hoverPoint.value = { x, y: rect.top + rect.height / 2 };
+  // a finger covers the point it drags, so the label stays over the middle
+  const centered = evt.pointerType === "touch";
+  hoverPoint.value = {
+    x: centered ? rect.left + rect.width / 2 : x,
+    y: rect.top + rect.height / 2,
+  };
 };
 
 const hoveredSegment = computed(() => {
