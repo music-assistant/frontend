@@ -44,7 +44,7 @@
             <div
               v-for="segment in chapterSegments"
               :key="segment.start"
-              class="absolute inset-y-0 overflow-hidden rounded-full transition-transform duration-100"
+              class="absolute inset-y-0 overflow-hidden transition-transform duration-100"
               :class="segment === hoveredSegment ? 'scale-y-[2]' : ''"
               :style="{
                 left: `calc(${segment.startPercent}% + ${SEGMENT_GAP_PX / 2}px)`,
