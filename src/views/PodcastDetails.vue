@@ -36,6 +36,7 @@
           :load-paged-data="loadPodcastEpisodes"
           :update-available="updateAvailable"
           :title="$t('podcast_episodes')"
+          detail-row
           :allow-key-hooks="true"
           :path="`podcast.${itemDetails.item_id}.${itemDetails.provider}`"
           :restore-state="true"

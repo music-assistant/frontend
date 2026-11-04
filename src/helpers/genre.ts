@@ -1,4 +1,19 @@
-import { Route } from "@lucide/vue";
+import {
+  AudioLines,
+  AudioWaveform,
+  BookAudio,
+  CircleHelp,
+  Disc3,
+  Folder,
+  Library,
+  ListMusic,
+  Music,
+  Music2,
+  Podcast,
+  Radio,
+  Route,
+  UserRound,
+} from "@lucide/vue";
 import type { Component } from "vue";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
@@ -70,35 +85,37 @@ export function rankedAliases(genres: Genre[], search: string): string[] {
 }
 
 // Icon mapping for different media types in genre overview
-export const genreMediaTypeIconMap: Record<MediaType, string | Component> = {
-  [MediaType.TRACK]: "mdi-music-note",
-  [MediaType.ALBUM]: "mdi-album",
-  [MediaType.ARTIST]: "mdi-account-music",
-  [MediaType.PLAYLIST]: "mdi-playlist-music",
-  [MediaType.RADIO]: "mdi-radio",
-  [MediaType.AUDIO_SOURCE]: "mdi-audio-input-rca",
-  [MediaType.SOUND_EFFECT]: "mdi-waveform",
-  [MediaType.AUDIOBOOK]: "mdi-book-music",
-  [MediaType.PODCAST]: "mdi-podcast",
+export const genreMediaTypeIconMap: Record<MediaType, Component> = {
+  [MediaType.TRACK]: Music2,
+  [MediaType.ALBUM]: Disc3,
+  [MediaType.ARTIST]: UserRound,
+  [MediaType.PLAYLIST]: ListMusic,
+  [MediaType.RADIO]: Radio,
+  [MediaType.AUDIO_SOURCE]: AudioLines,
+  [MediaType.SOUND_EFFECT]: AudioWaveform,
+  [MediaType.AUDIOBOOK]: BookAudio,
+  [MediaType.PODCAST]: Podcast,
   [MediaType.GENRE]: GenreIcon,
   [MediaType.GENRE_ALIAS]: Route,
-  [MediaType.PODCAST_EPISODE]: "mdi-podcast",
-  [MediaType.FOLDER]: "mdi-folder",
-  [MediaType.COLLECTION]: "mdi-note-multiple-outline",
-  [MediaType.UNKNOWN]: "mdi-help-circle-outline",
+  [MediaType.PODCAST_EPISODE]: Podcast,
+  [MediaType.FOLDER]: Folder,
+  [MediaType.COLLECTION]: Library,
+  [MediaType.UNKNOWN]: CircleHelp,
 };
 
 // Icon marking which taxonomy a genre belongs to (null/undefined = music/general).
 // Shown on each genre in the library list so same-named genres across taxonomies
 // (e.g. a music "Comedy" vs a podcast "Comedy") are visually distinguishable.
-export function genreContentTypeIcon(contentType?: MediaType | null): string {
+export function genreContentTypeIcon(
+  contentType?: MediaType | null,
+): Component {
   switch (contentType) {
     case MediaType.AUDIOBOOK:
-      return "mdi-book-music";
+      return BookAudio;
     case MediaType.PODCAST:
-      return "mdi-podcast";
+      return Podcast;
     default:
-      return "mdi-music";
+      return Music;
   }
 }
 

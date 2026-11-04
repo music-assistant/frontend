@@ -3,12 +3,15 @@ import type {
   StatisticsData,
   StatisticsSection,
 } from "@/composables/useStatistics";
+import type { User } from "@/plugins/api/interfaces";
 import { i18n } from "@/plugins/i18n";
-import { enableAutoUnmount, mount } from "@vue/test-utils";
+import { store } from "@/plugins/store";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ref, shallowRef } from "vue";
 
-const { statistics, useStatistics } = vi.hoisted(() => ({
+const { setUserPreference, statistics, useStatistics } = vi.hoisted(() => ({
+  setUserPreference: vi.fn(),
   statistics: {} as {
     data: { value: Partial<StatisticsData> };
     failed: { value: ReadonlySet<StatisticsSection> };
@@ -18,6 +21,14 @@ const { statistics, useStatistics } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/composables/useStatistics", () => ({ useStatistics }));
+vi.mock("@/composables/userPreferences", () => ({ setUserPreference }));
+
+const PERIOD_PREFERENCE_KEY = "discover.statisticsPeriod";
+const originalUser = store.currentUser;
+
+function signInWith(preferences: Record<string, unknown>) {
+  store.currentUser = { user_id: "user-1", preferences } as unknown as User;
+}
 
 enableAutoUnmount(afterEach);
 
@@ -30,10 +41,14 @@ beforeEach(() => {
   statistics.loading = ref(false);
   useStatistics.mockReset();
   useStatistics.mockReturnValue(statistics);
+  setUserPreference.mockReset();
+  setUserPreference.mockResolvedValue(true);
+  signInWith({});
 });
 
 afterEach(() => {
   i18n.global.locale.value = originalLocale;
+  store.currentUser = originalUser;
 });
 
 function mountTeaser(active = true) {
@@ -132,5 +147,36 @@ describe("StatisticsTeaserRow", () => {
 
     expect(mountTeaser().text()).toContain("1 play");
     expect(mountTeaser().text()).not.toContain("1 plays");
+  });
+
+  it("opens with the period the user saved", () => {
+    signInWith({ [PERIOD_PREFERENCE_KEY]: "month" });
+    mountTeaser();
+
+    expect(useStatistics.mock.calls[0][0].period.value).toBe("month");
+  });
+
+  it.each([undefined, "fortnight", 7])(
+    "falls back to the default period for a saved %s",
+    (saved) => {
+      signInWith({ [PERIOD_PREFERENCE_KEY]: saved });
+      mountTeaser();
+
+      expect(useStatistics.mock.calls[0][0].period.value).toBe("week");
+    },
+  );
+
+  it("saves a newly chosen period, and nothing on mount alone", async () => {
+    mountTeaser();
+    await flushPromises();
+    expect(setUserPreference).not.toHaveBeenCalled();
+
+    useStatistics.mock.calls[0][0].period.value = "year";
+    await flushPromises();
+
+    expect(setUserPreference).toHaveBeenCalledExactlyOnceWith(
+      PERIOD_PREFERENCE_KEY,
+      "year",
+    );
   });
 });

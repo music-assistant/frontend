@@ -7,28 +7,40 @@
   >
     <template v-if="topArtist">
       <div class="flex items-center gap-4">
-        <ChartContainer
-          :config="chartConfig"
-          class="aspect-square size-[112px] flex-none"
-          :style="donutStyle"
-          role="img"
-          :aria-label="accessibleLabel"
-        >
-          <VisSingleContainer :data="donutData">
-            <VisDonut
-              :value="(datum: DonutDatum) => datum.value"
-              :color="(datum: DonutDatum) => chartConfig[datum.key].color"
-              :arc-width="DONUT_ARC_WIDTH"
-              :corner-radius="DONUT_CORNER_RADIUS"
-              :central-label="`${share}%`"
-              :central-sub-label="$t('statistics_of_plays')"
-            />
-          </VisSingleContainer>
-        </ChartContainer>
+        <div class="relative size-[112px] flex-none">
+          <ChartContainer
+            :config="chartConfig"
+            class="aspect-square size-full"
+            :style="donutStyle"
+            role="img"
+            :aria-label="accessibleLabel"
+          >
+            <VisSingleContainer :data="donutData">
+              <VisDonut
+                :value="(datum: DonutDatum) => datum.value"
+                :color="(datum: DonutDatum) => chartConfig[datum.key].color"
+                :arc-width="DONUT_ARC_WIDTH"
+                :corner-radius="DONUT_CORNER_RADIUS"
+                :show-background="false"
+              />
+            </VisSingleContainer>
+          </ChartContainer>
+          <div
+            class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"
+            aria-hidden="true"
+          >
+            <span class="text-[22px] leading-tight font-bold text-foreground">
+              {{ share }}%
+            </span>
+            <span class="text-[11px] font-medium text-muted-foreground">
+              {{ $t("statistics_of_plays") }}
+            </span>
+          </div>
+        </div>
         <div class="flex min-w-0 flex-col gap-1">
           <button
             type="button"
-            class="truncate border-0 bg-transparent p-0 text-left text-[22px] font-bold text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+            class="line-clamp-3 border-0 bg-transparent p-0 text-left text-[22px] leading-tight font-bold wrap-anywhere text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-primary"
             @click="openArtist"
           >
             {{ topArtist.item.name }}
@@ -36,9 +48,15 @@
           <span class="text-[13px] text-muted-foreground">{{ detail }}</span>
         </div>
       </div>
-      <Button class="self-start" :disabled="!isAvailable" @click="playArtist">
+      <Button
+        class="max-w-full self-start"
+        :disabled="!isAvailable"
+        @click="playArtist"
+      >
         <Play class="fill-current" aria-hidden="true" />
-        {{ $t("statistics_play_item", { name: topArtist.item.name }) }}
+        <span class="truncate">
+          {{ $t("statistics_play_item", { name: topArtist.item.name }) }}
+        </span>
       </Button>
     </template>
   </StatisticsCard>
@@ -91,11 +109,6 @@ const chartConfig = {
 const donutStyle = {
   // Unovis outlines each segment in white, which shows as lines on a dark card
   "--vis-donut-segment-stroke-width": "0",
-  "--vis-donut-central-label-font-size": "22px",
-  "--vis-donut-central-label-font-weight": "700",
-  "--vis-donut-central-label-text-color": "var(--foreground)",
-  "--vis-donut-central-sub-label-font-size": "11px",
-  "--vis-donut-central-sub-label-text-color": "var(--muted-foreground)",
 };
 
 const locale = useCanonicalLocale();
