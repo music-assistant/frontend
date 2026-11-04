@@ -106,6 +106,7 @@ export function useAudiobookDetails(route: () => AudiobookDetailsRoute) {
       const refreshed = await api.getAudiobook(
         audiobook.item_id,
         audiobook.provider,
+        { suppressGlobalError: true },
       );
       if (!isCurrent()) return;
       playState = {

@@ -52,8 +52,12 @@ function playlog(overrides: Partial<PlaylogUpdate> = {}) {
 
 function deferred() {
   let resolve!: (value: Audiobook) => void;
-  const promise = new Promise<Audiobook>((res) => (resolve = res));
-  return { promise, resolve };
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<Audiobook>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
 }
 
 describe("useAudiobookDetails", () => {
@@ -189,7 +193,9 @@ describe("useAudiobookDetails", () => {
       data: audiobook({ name: "New metadata" }),
     } as EventMessage);
     await vi.advanceTimersByTimeAsync(2000);
-    expect(getAudiobook).toHaveBeenLastCalledWith("1", "library");
+    expect(getAudiobook).toHaveBeenLastCalledWith("1", "library", {
+      suppressGlobalError: true,
+    });
     expect(itemDetails.value).toMatchObject({
       name: "New metadata",
       favorite: true,
@@ -246,8 +252,34 @@ describe("useAudiobookDetails", () => {
     } as EventMessage);
     await vi.advanceTimersByTimeAsync(2000);
     expect(itemDetails.value?.resume_position_ms).toBe(0);
-    expect(toastError).toHaveBeenCalledWith("Error: Refresh failed");
+    expect(getAudiobook).toHaveBeenLastCalledWith("1", "library", {
+      suppressGlobalError: true,
+    });
+    expect(toastError).toHaveBeenCalledExactlyOnceWith("Error: Refresh failed");
   });
+
+  it.each(["navigation", "dispose", "playlog"])(
+    "does not toast a failed refresh after %s",
+    async (change) => {
+      const { route, scope } = setup();
+      await flushPromises();
+      vi.useFakeTimers();
+      const pending = deferred();
+      getAudiobook.mockReturnValueOnce(pending.promise);
+      listeners.get(EventType.MEDIA_ITEM_UPDATED)!({
+        data: audiobook({ name: "Metadata" }),
+      } as EventMessage);
+      await vi.advanceTimersByTimeAsync(2000);
+      if (change === "navigation") {
+        route.itemId = "2";
+        await flushPromises();
+      } else if (change === "dispose") scope.stop();
+      else playlog();
+      pending.reject(new Error("Stale refresh failed"));
+      await flushPromises();
+      expect(toastError).not.toHaveBeenCalled();
+    },
+  );
 
   it("retains shared personal favorite handling", async () => {
     const { itemDetails } = setup();

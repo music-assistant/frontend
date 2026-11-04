@@ -741,6 +741,31 @@ describe("MusicAssistantApi error handling", () => {
     await expect(request).resolves.toEqual([]);
   });
 
+  it.each([false, true])(
+    "lets getAudiobook opt out of global errors (suppressed: %s)",
+    async (suppressed) => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const result = suppressed
+        ? api.getAudiobook("book-1", "library", { suppressGlobalError: true })
+        : api.getAudiobook("book-1", "library");
+      expect(transport.lastCommand.command).toBe(
+        "music/audiobooks/get_audiobook",
+      );
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "book-1",
+        provider_instance_id_or_domain: "library",
+      });
+      const rejection = expect(result).rejects.toMatchObject({
+        message: "Cannot load audiobook",
+      });
+      transport.receive(
+        createErrorResult(transport.lastCommand, "Cannot load audiobook"),
+      );
+      await rejection;
+      expect(mockToastError).toHaveBeenCalledTimes(suppressed ? 0 : 1);
+    },
+  );
+
   it("lets updateUser suppress the global error toast for the caller", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const result = api.updateUser(
