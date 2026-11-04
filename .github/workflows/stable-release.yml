@@ -1,0 +1,35 @@
+name: Release stable backport
+
+# Publishes the .post release when a "[Backport to stable]" PR from
+# backport-to-stable.yml is merged into `stable`.
+
+on:
+  pull_request_target:
+    types: [closed]
+    branches:
+      - stable
+
+permissions:
+  actions: write
+
+jobs:
+  release:
+    name: Dispatch release
+    if: >-
+      github.event.pull_request.merged &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'backport/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch release workflow on stable
+        run: |
+          VERSION="${HEAD_REF#backport/}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.post[0-9]+$ ]]; then
+            echo "::error::$HEAD_REF does not name a .post release."
+            exit 1
+          fi
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref stable -f version="$VERSION"
+          echo "::notice::Dispatched release $VERSION."
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
