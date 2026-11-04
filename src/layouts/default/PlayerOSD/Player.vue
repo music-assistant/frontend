@@ -154,7 +154,6 @@ interface Props {
 }
 const props = defineProps<Props>();
 const showMobileVolumeControls = ref(false);
-
 // The controls beside the queue button reach into the room the actions to their
 // right leave free, so each waits for the width it fits in. Measured, that room
 // clears the 85px countdown on its own from 1100px, and the two of them together

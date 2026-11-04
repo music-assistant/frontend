@@ -26,6 +26,8 @@ import { track } from "../fixtures/track";
 
 const { apiMock, hasScope, storeMock } = vi.hoisted(() => ({
   apiMock: {
+    state: { value: "initialized" },
+    getItemShareInfo: vi.fn(),
     providers: {
       "test_provider--1": { available: true, supported_features: [] },
       builtin: { available: true, supported_features: [] },
@@ -275,5 +277,38 @@ describe("creating an AI Radio show from a playlist", () => {
     hasScope.mockImplementation(scopeChecker(scopes));
 
     expect(await offeredLabels([playlist()])).not.toContain(RUN_WITH);
+  });
+});
+
+describe("item sharing overflow wiring", () => {
+  it("includes a prepared share action for a single readable item", async () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    apiMock.getItemShareInfo.mockResolvedValue({
+      title: "Station",
+      text: "Station",
+      links: [],
+    });
+    const station = radio();
+    const menu = await getContextMenuItems([station], station);
+    const share = menu.find((item) => item.label === "provider_links.share");
+    expect(share).toBeDefined();
+    expect(apiMock.getItemShareInfo).not.toHaveBeenCalled();
+    await share!.prepare!();
+    expect(apiMock.getItemShareInfo).toHaveBeenCalledWith(station.uri);
+    expect(share!.action).toBeTypeOf("function");
+  });
+  it("omits sharing for multiple items or without library read", async () => {
+    hasScope.mockReturnValue(false);
+    expect(
+      (await getContextMenuItems([listedTrack])).some(
+        (item) => item.label === "provider_links.share",
+      ),
+    ).toBe(false);
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    expect(
+      (await getContextMenuItems([listedTrack, listedTrack])).some(
+        (item) => item.label === "provider_links.share",
+      ),
+    ).toBe(false);
   });
 });

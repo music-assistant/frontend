@@ -85,7 +85,7 @@
               >
                 <template
                   v-for="subItem of menuItem.subItems.filter((x) => !x.hide)"
-                  :key="subItem.label"
+                  :key="subItem.label + JSON.stringify(subItem.labelArgs)"
                 >
                   <!-- custom inline control; renders its own row and manages
                        its own interaction without closing the menu -->
@@ -157,7 +157,7 @@ import { Check, EllipsisVertical } from "@lucide/vue";
 import { getBreakpointValue } from "../plugins/breakpoint";
 
 import type { Component } from "vue";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 interface Props {
   color?: string;
@@ -185,6 +185,9 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const overflowMenuOpen = ref(false);
+watch([overflowMenuOpen, () => props.menuItems], async ([open, items]) => {
+  if (open) await Promise.all(items?.map((item) => item.prepare?.()) ?? []);
+});
 
 const directItems = computed(
   () =>

@@ -1,7 +1,7 @@
 import ItemContextMenu from "@/layouts/default/ItemContextMenu.vue";
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
-import { mount } from "@vue/test-utils";
-import { markRaw, nextTick } from "vue";
+import { flushPromises, mount } from "@vue/test-utils";
+import { markRaw, nextTick, reactive } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { eventHandlers, storeMock } = vi.hoisted(() => ({
@@ -57,9 +57,16 @@ function mountContextMenu() {
         $t: (key: string) => key,
       },
       stubs: {
-        DropdownMenu: passthroughStub,
+        DropdownMenu: {
+          name: "DropdownMenu",
+          props: ["open"],
+          template: "<div><slot /></div>",
+        },
         DropdownMenuContent: passthroughStub,
-        DropdownMenuItem: passthroughStub,
+        DropdownMenuItem: {
+          props: ["disabled"],
+          template: `<button :disabled="disabled" @click="$emit('select', $event)"><slot /></button>`,
+        },
         DropdownMenuSeparator: passthroughStub,
         DropdownMenuSub: passthroughStub,
         DropdownMenuSubContent: passthroughStub,
@@ -76,6 +83,107 @@ describe("ItemContextMenu", () => {
     eventHandlers.clear();
     storeMock.dialogActive = false;
     storeMock.showPlayersMenu = true;
+  });
+
+  function pendingShare() {
+    let finish!: () => void;
+    const item = reactive({
+      label: "provider_links.share",
+      disabled: true,
+      prepare: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            finish = () => {
+              item.disabled = false;
+              resolve();
+            };
+          }),
+      ),
+    });
+    return { item, finish: () => finish() };
+  }
+
+  it("opens immediately with Share disabled while other actions remain usable", async () => {
+    const wrapper = mountContextMenu();
+    const share = pendingShare();
+    const action = vi.fn();
+    eventHandlers.get("contextmenu")?.({
+      items: [share.item, { label: "play_now", action }],
+    });
+    await nextTick();
+    await nextTick();
+    expect(share.item.prepare).toHaveBeenCalledOnce();
+    expect(wrapper.getComponent({ name: "DropdownMenu" }).props("open")).toBe(
+      true,
+    );
+    const buttons = wrapper.findAll("button");
+    expect(buttons[0].element.disabled).toBe(true);
+    expect(buttons[1].element.disabled).toBe(false);
+    await buttons[1].trigger("click");
+    expect(action).toHaveBeenCalledOnce();
+    share.finish();
+    await flushPromises();
+    expect(buttons[0].element.disabled).toBe(false);
+    wrapper.unmount();
+  });
+
+  it.each([false, true])(
+    "keeps the latest menu ownership after out-of-order preparation (dismissed: %s)",
+    async (dismiss) => {
+      const wrapper = mountContextMenu();
+      const first = pendingShare();
+      const second = pendingShare();
+      const firstAction = vi.fn();
+      const secondAction = vi.fn();
+      eventHandlers.get("contextmenu")?.({
+        items: [first.item, { label: "rename", action: firstAction }],
+      });
+      await nextTick();
+      eventHandlers.get("contextmenu")?.({
+        items: [second.item, { label: "play_now", action: secondAction }],
+      });
+      await nextTick();
+      await nextTick();
+      second.finish();
+      await flushPromises();
+      const menu = wrapper.getComponent({ name: "DropdownMenu" });
+      expect(menu.props("open")).toBe(true);
+      if (dismiss) {
+        menu.vm.$emit("update:open", false);
+        await nextTick();
+      }
+      first.finish();
+      await flushPromises();
+      expect(menu.props("open")).toBe(!dismiss);
+      expect(storeMock.dialogActive).toBe(!dismiss);
+      expect(wrapper.text()).toContain("Play Now");
+      expect(wrapper.text()).not.toContain("Rename");
+      if (!dismiss) {
+        await wrapper.findAll("button")[1].trigger("click");
+        expect(secondAction).toHaveBeenCalledOnce();
+        expect(firstAction).not.toHaveBeenCalled();
+      }
+      wrapper.unmount();
+    },
+  );
+
+  it("stays dismissed when its pending preparation completes", async () => {
+    const wrapper = mountContextMenu();
+    const share = pendingShare();
+    eventHandlers.get("contextmenu")?.({ items: [share.item] });
+    await nextTick();
+    await nextTick();
+    document.body.dispatchEvent(
+      new PointerEvent("pointerdown", { bubbles: true }),
+    );
+    await nextTick();
+    share.finish();
+    await flushPromises();
+    expect(wrapper.getComponent({ name: "DropdownMenu" }).props("open")).toBe(
+      false,
+    );
+    expect(storeMock.dialogActive).toBe(false);
+    wrapper.unmount();
   });
 
   it("closes on an outside pointer without closing PlayerSelect in the same event", async () => {
