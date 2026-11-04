@@ -60,6 +60,31 @@ describe("Combobox free text", () => {
     expect(model.value).toBe("ambient");
   });
 
+  it("keeps Enter from submitting a surrounding form", async () => {
+    mountCombobox();
+    const input = await type("ambient");
+    const enter = new KeyboardEvent("keydown", {
+      key: "Enter",
+      cancelable: true,
+    });
+
+    input.dispatchEvent(enter);
+
+    expect(enter.defaultPrevented).toBe(true);
+  });
+
+  it("ignores Enter that confirms an IME composition", async () => {
+    const model = mountCombobox();
+    const input = await type("ambient");
+
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", isComposing: true }),
+    );
+    await flushPromises();
+
+    expect(model.value).toBeUndefined();
+  });
+
   it("commits typed text when leaving the field", async () => {
     const model = mountCombobox();
     const input = await type("ambient");

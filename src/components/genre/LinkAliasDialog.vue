@@ -13,6 +13,7 @@
         open-on-click
         ignore-filter
         reset-model-value-on-clear
+        :reset-search-term-on-blur="!!selectedAlias"
       >
         <ComboboxAnchor>
           <ComboboxInput
