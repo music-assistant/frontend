@@ -23,7 +23,7 @@
           v-for="item in shownItems"
           :key="item.uri"
           v-hold="(e: Event) => onItemHold(e, item)"
-          class="media-rows__row"
+          class="media-rows__row group"
           :class="{ 'media-rows__row--playing': isNowPlaying(item) }"
           role="button"
           tabindex="0"
@@ -36,10 +36,17 @@
           @touchstart.passive="onItemTouchStart"
         >
           <span
-            class="media-rows__art"
+            class="media-rows__art relative"
             :class="{ 'media-rows__art--unavailable': !itemIsAvailable(item) }"
           >
             <MediaItemThumb :item="item" :size="40" />
+            <RowPlayButton
+              v-if="canPlay(item)"
+              overlay
+              :label="playLabel(item)"
+              :disabled="playActionInProgress"
+              @click="(e: MouseEvent) => onPlayClick(e, item)"
+            />
           </span>
           <span class="media-rows__text">
             <span class="media-rows__name">
@@ -69,6 +76,12 @@
             size="icon-sm"
             icon-class="size-4.5"
             class="size-7 rounded-full text-muted-foreground data-[active=true]:text-primary"
+          />
+          <RowPlayButton
+            v-if="canPlay(item)"
+            :label="playLabel(item)"
+            :disabled="playActionInProgress"
+            @click="(e: MouseEvent) => onPlayClick(e, item)"
           />
           <button
             type="button"
@@ -101,15 +114,18 @@ import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import FavoriteMenu from "@/components/FavoriteMenu.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import RowPlayButton from "@/components/RowPlayButton.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getEventPosition,
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
+import { usePlayActionInProgress } from "@/composables/usePlayActionInProgress";
 import { canHoldFavorite } from "@/helpers/favorites";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
+  handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
 import { formatDuration, getArtistsString } from "@/helpers/utils";
@@ -187,6 +203,17 @@ const {
   onTouchStart: onItemTouchStart,
   swallowClickAfterHold: swallowClickAfterItemHold,
 } = useHoldToOpenMenu<[RowItem]>((evt, item) => onItemMenu(evt, item));
+
+const playActionInProgress = usePlayActionInProgress();
+
+// an item that is not available has nothing to play, whatever its flag says
+const canPlay = (item: RowItem) => item.is_playable && itemIsAvailable(item);
+
+const playLabel = (item: RowItem) => `${$t("play")} ${item.name}`;
+
+const onPlayClick = function (event: MouseEvent, item: RowItem) {
+  handlePlayBtnClick(item, event.clientX, event.clientY, props.parentItem);
+};
 
 const isNowPlaying = function (item: RowItem): boolean {
   if (store.activePlayer?.playback_state != PlaybackState.PLAYING) return false;

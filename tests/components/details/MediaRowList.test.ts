@@ -10,28 +10,34 @@ import { withoutFavorite } from "../../fixtures/mediaItem";
 import { track } from "../../fixtures/track";
 
 const {
+  apiMock,
   mockHandleMediaItemClick,
   mockHandleMenuBtnClick,
+  mockHandlePlayBtnClick,
   mockItemIsAvailable,
   mockHasScope,
   storeMock,
 } = vi.hoisted(() => ({
+  apiMock: {
+    providers: {},
+    queues: {} as Record<string, unknown>,
+    subscribe: () => () => {},
+  },
   mockHasScope: vi.fn(() => true),
   mockHandleMediaItemClick: vi.fn(),
   mockHandleMenuBtnClick: vi.fn(),
+  mockHandlePlayBtnClick: vi.fn(),
   mockItemIsAvailable: vi.fn<(item: { item_id: string }) => boolean>(
     () => true,
   ),
   storeMock: {
-    activePlayer: undefined as { playback_state: PlaybackState } | undefined,
+    activePlayer: undefined as
+      { playback_state?: PlaybackState; player_id?: string } | undefined,
     curQueueItem: undefined as { media_item: unknown } | undefined,
   },
 }));
 
-vi.mock("@/plugins/api", () => {
-  const api = { providers: {}, subscribe: vi.fn(() => () => {}) };
-  return { api, default: api };
-});
+vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 
 vi.mock("@/plugins/api/helpers", () => ({
   itemIsAvailable: mockItemIsAvailable,
@@ -40,6 +46,7 @@ vi.mock("@/plugins/api/helpers", () => ({
 vi.mock("@/helpers/media_item_actions", () => ({
   handleMediaItemClick: mockHandleMediaItemClick,
   handleMenuBtnClick: mockHandleMenuBtnClick,
+  handlePlayBtnClick: mockHandlePlayBtnClick,
 }));
 
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
@@ -108,6 +115,8 @@ describe("MediaRowList", () => {
   beforeEach(() => {
     mockHandleMediaItemClick.mockClear();
     mockHandleMenuBtnClick.mockClear();
+    mockHandlePlayBtnClick.mockClear();
+    apiMock.queues = {};
     mockItemIsAvailable.mockReset().mockReturnValue(true);
     storeMock.activePlayer = undefined;
     storeMock.curQueueItem = undefined;
@@ -298,6 +307,48 @@ describe("MediaRowList", () => {
     const rows = wrapper.findAll(".media-rows__row[role=button]");
     expect(rows[2].classes()).toContain("media-rows__row--playing");
     expect(rows[0].classes()).not.toContain("media-rows__row--playing");
+  });
+
+  it("plays an item from its play button, without opening it", async () => {
+    const wrapper = mountList({ items: TRACKS, parentItem: PARENT });
+
+    // over the art, on a screen that hovers
+    await wrapper.get('button[aria-label="play One"]').trigger("click");
+
+    expect(mockHandlePlayBtnClick).toHaveBeenCalledWith(
+      TRACKS[0],
+      expect.any(Number),
+      expect.any(Number),
+      PARENT,
+    );
+    expect(mockHandleMediaItemClick).not.toHaveBeenCalled();
+  });
+
+  it("offers no play button for an item it cannot play", () => {
+    mockItemIsAvailable.mockImplementation((item) => item.item_id !== "2");
+    const wrapper = mountList({
+      items: [
+        ...TRACKS.slice(0, 2),
+        track({ item_id: "4", name: "Four", is_playable: false }),
+      ],
+    });
+
+    expect(wrapper.find('button[aria-label="play One"]').exists()).toBe(true);
+    expect(wrapper.find('button[aria-label="play Two"]').exists()).toBe(false);
+    expect(wrapper.find('button[aria-label="play Four"]').exists()).toBe(false);
+  });
+
+  it("holds the play buttons while a play action is still starting", () => {
+    storeMock.activePlayer = { player_id: "player-1" };
+    apiMock.queues = {
+      "player-1": { extra_attributes: { play_action_in_progress: true } },
+    };
+    const wrapper = mountList({ items: TRACKS.slice(0, 1) });
+
+    const buttons = wrapper.findAll('button[aria-label="play One"]');
+    expect(buttons.every((x) => x.attributes("disabled") !== undefined)).toBe(
+      true,
+    );
   });
 
   it("lets the consumer replace the subtitle and add a tag", () => {
