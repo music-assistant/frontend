@@ -13,8 +13,10 @@
         :min="0"
         :max="timelineDuration"
         :step="0.1"
-        :thumb-alignment="hasWaveform ? 'overflow' : 'contain'"
+        thumb-alignment="overflow"
         @value-commit="stopDragging"
+        @pointerdown="pointerFocus = true"
+        @keydown="pointerFocus = false"
         @pointerenter="isThumbHidden = !canSeek"
         @pointermove="onTrackPointerMove"
         @pointerleave="
@@ -134,12 +136,15 @@
             </Tooltip>
           </TooltipProvider>
         </SliderTrack>
+        <!-- drawn above the bookmarks but lets clicks through to them; a drag
+             starts from the track all the same -->
         <SliderThumb
           data-slot="slider-thumb"
           :style="{ 'background-color': color }"
           :class="
             cn(
-              'w-2.5 h-2.5 rounded-full shadow-sm',
+              'pointer-events-none w-2.5 h-2.5 rounded-full shadow-sm',
+              pointerFocus && 'outline-none',
               !hasWaveform && (!isThumbHidden || isDragging)
                 ? 'block'
                 : 'hidden',
@@ -505,6 +510,10 @@ const segmentFillPercent = (segment: ChapterSegment) =>
 
 // Hover position over a waveform or chapter segments, as 0-100 percent.
 const hoverPercent = ref<number | null>(null);
+
+// the slider moves focus to the thumb on a press of the track, which the browser
+// rings like keyboard focus; the ring is only kept for the keyboard
+const pointerFocus = ref(false);
 
 // the hovered point on the track's center line, where the hover label points to
 const hoverPoint = ref<{ x: number; y: number }>();
