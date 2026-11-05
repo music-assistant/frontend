@@ -35,7 +35,7 @@
               :collision-padding="8"
               :reference="hoverLabel.reference"
               hide-arrow
-              class="pointer-events-none z-[100001] max-w-[320px] truncate"
+              class="pointer-events-none z-[100001] max-w-[320px] truncate text-nowrap"
               data-testid="timeline-hover-label"
             >
               {{ hoverLabel.text }}
@@ -43,6 +43,7 @@
           </Tooltip>
         </TooltipProvider>
         <SliderTrack
+          ref="trackRef"
           data-slot="slider-track"
           class="relative grow rounded-full"
           :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
@@ -58,10 +59,7 @@
                 'rounded-l-full': index === 0,
                 'rounded-r-full': index === chapterSegments.length - 1,
               }"
-              :style="{
-                left: `calc(${segment.startPercent}% + ${SEGMENT_GAP_PX / 2}px)`,
-                width: `calc(${segment.widthPercent}% - ${SEGMENT_GAP_PX}px)`,
-              }"
+              :style="segmentStyle(index)"
               data-testid="chapter-segment"
             >
               <div class="absolute inset-0" :style="trackBackgroundStyle"></div>
@@ -203,6 +201,7 @@ import {
   resolveActiveTiming,
 } from "@/helpers/activeElapsedTime";
 import { Bookmark } from "@lucide/vue";
+import { useElementSize } from "@vueuse/core";
 import {
   Tooltip,
   TooltipContent,
@@ -448,6 +447,30 @@ const displayedElapsedTime = computed(() => displayedTimelineTime.value);
 
 // space between two chapter segments
 const SEGMENT_GAP_PX = 2;
+// a narrower segment is drawn without its gap, which would leave nothing of it
+const MIN_SEGMENT_WITH_GAP_PX = 6;
+const trackRef = ref<InstanceType<typeof SliderTrack>>();
+const { width: trackWidth } = useElementSize(trackRef);
+
+const hasRoomForGap = (segment?: ChapterSegment) =>
+  !!segment &&
+  (segment.widthPercent / 100) * trackWidth.value >= MIN_SEGMENT_WITH_GAP_PX;
+
+// a gap only between two segments that both have room for it, so a run of
+// short chapters reads as one stretch of the bar
+const segmentStyle = (index: number) => {
+  const segments = chapterSegments.value;
+  const segment = segments[index];
+  const roomy = hasRoomForGap(segment);
+  const left =
+    roomy && hasRoomForGap(segments[index - 1]) ? SEGMENT_GAP_PX / 2 : 0;
+  const right =
+    roomy && hasRoomForGap(segments[index + 1]) ? SEGMENT_GAP_PX / 2 : 0;
+  return {
+    left: `calc(${segment.startPercent}% + ${left}px)`,
+    width: `calc(${segment.widthPercent}% - ${left + right}px)`,
+  };
+};
 
 const chapterSegments = computed(() => {
   if (currentChapter.value) return [];
