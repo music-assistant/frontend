@@ -170,7 +170,7 @@ const listRows = (wrapper: VueWrapper) =>
 const isBookmark = (row: ReturnType<typeof listRows>[number]) =>
   row.attributes("data-testid") === "bookmark-row";
 
-// a chapter with its duration, a bookmark with its position
+// a chapter with its start, a bookmark with its position
 const rowTexts = (wrapper: VueWrapper) =>
   listRows(wrapper).map((row) =>
     isBookmark(row)
@@ -180,9 +180,7 @@ const rowTexts = (wrapper: VueWrapper) =>
         ]
       : [
           row.get('[data-testid="chapter-name"]').text(),
-          row.find('[data-testid="chapter-duration"]').exists()
-            ? row.get('[data-testid="chapter-duration"]').text()
-            : null,
+          row.get('[data-testid="chapter-start"]').text(),
         ],
   );
 
@@ -220,7 +218,7 @@ describe("Chapters", () => {
       singleCopyBook,
       [bookmark(ABS, "On the provider", 30, false)],
       "Chapters & Bookmarks",
-      ["Chapters", "Bookmarks", "All"],
+      ["All", "Chapters", "Bookmarks"],
     ],
     // each copy may have chapters of its own, the item shows those of one
     [
@@ -253,7 +251,7 @@ describe("Chapters", () => {
       bookmark(ABS, "Earlier", 30, false),
     ]);
     expect(rowTexts(wrapper)).toEqual([
-      ["First", "01:00"],
+      ["First", "00:00"],
       ["Second", "01:00"],
     ]);
 
@@ -302,19 +300,18 @@ describe("Chapters", () => {
     },
   );
 
-  it("lists each bookmark under its chapter, at its time within it", async () => {
+  it("lists each bookmark under its chapter, at its position", async () => {
     const wrapper = await mountChapters(
       [bookmark(ABS, "Later", 95, false), bookmark(ABS, "Earlier", 30, false)],
       singleCopyBook,
     );
-    await showTab(wrapper, "All");
 
-    // within its chapter, beside the chapters' durations
+    // shown first when the chapters and bookmarks fit together
     expect(rowTexts(wrapper)).toEqual([
-      ["First", "01:00"],
+      ["First", "00:00"],
       ["Earlier", "00:30"],
       ["Second", "01:00"],
-      ["Later", "00:35"],
+      ["Later", "01:35"],
     ]);
   });
 
@@ -383,7 +380,7 @@ describe("Chapters", () => {
     await bookmarksUpdated(LOCAL, "item-1");
     // without bookmarks the chapters show, until some are back
     expect(rowTexts(wrapper)).toEqual([
-      ["First", "01:00"],
+      ["First", "00:00"],
       ["Second", "01:00"],
     ]);
 

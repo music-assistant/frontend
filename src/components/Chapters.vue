@@ -45,11 +45,10 @@
             {{ row.chapter.name }}
           </span>
           <span
-            v-if="row.chapter.end"
             class="min-w-11 shrink-0 text-right text-[13px] text-[rgba(var(--v-theme-on-surface),0.6)] tabular-nums"
-            data-testid="chapter-duration"
+            data-testid="chapter-start"
           >
-            {{ formatDuration(row.chapter.end - row.chapter.start) }}
+            {{ formatDuration(row.chapter.start) }}
           </span>
           <!-- where the bookmarks have their menu, so the times line up -->
           <span class="w-7 shrink-0"></span>
@@ -57,7 +56,6 @@
         <BookmarkRow
           v-else-if="row.bookmark"
           :bookmark="row.bookmark"
-          :time="row.time"
           :editable="isEditable(row.bookmark)"
           :disabled="!bookmarkPlayable(row.bookmark)"
           @play="bookmarkClicked(row.bookmark)"
@@ -123,17 +121,17 @@ const { bookmarks } = useBookmarks(() => {
 
 type ChapterTab = "chapters" | "bookmarks" | "all";
 
-// a tab per kind the item has, and the combined one when it has both
+// the combined tab first when the item has both kinds, then a tab per kind
 const tabs = computed(() => {
   const hasChapters = !!props.itemDetails.metadata?.chapters?.length;
   const hasBookmarks = bookmarks.value.length > 0;
   const result: { id: ChapterTab; labelKey: string }[] = [];
-  if (hasChapters) result.push({ id: "chapters", labelKey: "chapters" });
-  if (hasBookmarks) result.push({ id: "bookmarks", labelKey: "bookmarks" });
   // the bookmarks of a copy with chapters of its own do not fit the item's ones
   if (hasChapters && hasBookmarks && chaptersFitBookmarks(props.itemDetails)) {
     result.push({ id: "all", labelKey: "chapters_and_bookmarks_tab" });
   }
+  if (hasChapters) result.push({ id: "chapters", labelKey: "chapters" });
+  if (hasBookmarks) result.push({ id: "bookmarks", labelKey: "bookmarks" });
   return result;
 });
 
@@ -142,7 +140,7 @@ const titleKey = computed(() =>
   tabs.value.length > 1 ? "chapters_and_bookmarks" : tabs.value[0]?.labelKey,
 );
 
-const activeTab = ref<ChapterTab>("chapters");
+const activeTab = ref<ChapterTab>("all");
 
 const {
   renameDialogOpen,
@@ -165,8 +163,6 @@ interface ChapterRow {
   key: string;
   chapter?: MediaItemChapter;
   bookmark?: MediaItemBookmark;
-  // the time a bookmark shows: within its chapter beside the chapters' durations
-  time?: number;
 }
 
 const bookmarkKey = (bookmark: MediaItemBookmark) =>
@@ -199,7 +195,6 @@ const rows = computed<ChapterRow[]>(() => {
     ...group.bookmarks.map((bookmark) => ({
       key: bookmarkKey(bookmark),
       bookmark,
-      time: bookmark.start - (group.chapter?.start ?? 0),
     })),
   ]);
 });
