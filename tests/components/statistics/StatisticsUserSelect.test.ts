@@ -1,32 +1,22 @@
 import StatisticsUserSelect from "@/components/statistics/StatisticsUserSelect.vue";
-import type { User } from "@/plugins/api/interfaces";
-import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { StatisticsUsers, User } from "@/plugins/api/interfaces";
+import { enableAutoUnmount, mount } from "@vue/test-utils";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-const { getAllUsers, toastError } = vi.hoisted(() => ({
-  getAllUsers: vi.fn(),
-  toastError: vi.fn(),
-}));
-
-vi.mock("@/plugins/api", () => ({ default: { getAllUsers } }));
 vi.mock("@/plugins/store", () => ({
   store: { currentUser: { user_id: "self" } },
 }));
-vi.mock("vue-sonner", () => ({ toast: { error: toastError } }));
 
 enableAutoUnmount(afterEach);
 
 const user = (user_id: string, display_name: string | null): User =>
   ({ user_id, username: user_id, display_name }) as User;
 
-// in server order, which the menu does not keep
 const USERS = [
-  user("homeassistant_system", null),
-  user("bob", "Bob"),
   user("self", "Me Myself"),
   user("alice", "Alice"),
+  user("homeassistant_system", null),
 ];
-const ALL = ["self", "alice", "bob", "homeassistant_system"];
 
 // the menu is rendered inline and open, so its items click like buttons
 const passthrough = { template: "<div><slot /></div>" };
@@ -37,14 +27,9 @@ const CheckboxItemStub = {
     @click="$emit('select', $event); $emit('update:modelValue', !modelValue)"><slot /></button>`,
 };
 
-beforeEach(() => {
-  vi.resetAllMocks();
-  getAllUsers.mockResolvedValue(USERS);
-});
-
-async function mountSelect(modelValue: string[]) {
-  const wrapper = mount(StatisticsUserSelect, {
-    props: { modelValue },
+const mountSelect = (modelValue: StatisticsUsers) =>
+  mount(StatisticsUserSelect, {
+    props: { modelValue, users: USERS },
     global: {
       stubs: {
         DropdownMenu: passthrough,
@@ -55,82 +40,57 @@ async function mountSelect(modelValue: string[]) {
       },
     },
   });
-  await flushPromises();
-  return wrapper;
-}
 
-const item = (wrapper: Awaited<ReturnType<typeof mountSelect>>, name: string) =>
+const item = (wrapper: ReturnType<typeof mountSelect>, name: string) =>
   wrapper
     .findAll('[role="menuitemcheckbox"]')
     .find((entry) => entry.text() === name)!;
 
 describe("StatisticsUserSelect", () => {
-  it("lists all users, then the current user, then the others by name", async () => {
-    const wrapper = await mountSelect([]);
-
-    expect(
-      wrapper.findAll('[role="menuitemcheckbox"]').map((entry) => entry.text()),
-    ).toEqual([
-      "All users",
-      "Me Myself",
-      "Alice",
-      "Bob",
-      "homeassistant_system",
-    ]);
-  });
-
-  it("toasts when the users can not be loaded", async () => {
-    getAllUsers.mockRejectedValue(new Error("offline"));
-    const wrapper = await mountSelect([]);
-
-    expect(toastError).toHaveBeenCalledExactlyOnceWith("Failed to load users");
-    expect(wrapper.findAll('[role="menuitemcheckbox"]')).toHaveLength(1);
-  });
-
   it.each([
-    { selected: [], summary: "Only me", checked: ["Me Myself"] },
-    { selected: ["alice"], summary: "Alice", checked: ["Alice"] },
+    { selected: {}, summary: "Only me", checked: ["Me Myself"] },
+    { selected: { users: ["alice"] }, summary: "Alice", checked: ["Alice"] },
     {
-      selected: ["self", "alice"],
+      selected: { users: ["self", "alice"] },
       summary: "2 users",
       checked: ["Me Myself", "Alice"],
     },
     {
-      selected: ALL,
+      selected: { all_users: true },
       summary: "All users",
-      checked: [
-        "All users",
-        "Me Myself",
-        "Alice",
-        "Bob",
-        "homeassistant_system",
-      ],
+      checked: ["All users", "Me Myself", "Alice", "homeassistant_system"],
     },
-  ])(
-    "summarises $selected as $summary",
-    async ({ selected, summary, checked }) => {
-      const wrapper = await mountSelect(selected);
+  ])("summarises $selected as $summary", ({ selected, summary, checked }) => {
+    const wrapper = mountSelect(selected);
 
-      expect(wrapper.get("button:not([role])").text()).toBe(summary);
-      expect(
-        wrapper
-          .findAll('[role="menuitemcheckbox"][aria-checked="true"]')
-          .map((entry) => entry.text()),
-      ).toEqual(checked);
-    },
-  );
+    expect(wrapper.get("button:not([role])").text()).toBe(summary);
+    expect(
+      wrapper
+        .findAll('[role="menuitemcheckbox"][aria-checked="true"]')
+        .map((entry) => entry.text()),
+    ).toEqual(checked);
+  });
 
   it.each([
-    { selected: [], click: "Alice", emitted: ["self", "alice"] },
-    { selected: ["alice", "self"], click: "Alice", emitted: [] },
-    { selected: ["self", "alice"], click: "Me Myself", emitted: ["alice"] },
-    { selected: ["alice"], click: "Alice", emitted: [] },
-    { selected: [], click: "All users", emitted: ALL },
-    { selected: ALL, click: "All users", emitted: [] },
+    { selected: {}, click: "Alice", emitted: { users: ["self", "alice"] } },
+    { selected: { users: ["alice", "self"] }, click: "Alice", emitted: {} },
+    {
+      selected: { users: ["self", "alice"] },
+      click: "Me Myself",
+      emitted: { users: ["alice"] },
+    },
+    { selected: { users: ["alice"] }, click: "Alice", emitted: {} },
+    { selected: {}, click: "All users", emitted: { all_users: true } },
+    { selected: { all_users: true }, click: "All users", emitted: {} },
+    {
+      selected: { all_users: true },
+      click: "Alice",
+      emitted: { users: ["self", "homeassistant_system"] },
+    },
   ])(
     "clicking $click with $selected selects $emitted",
     async ({ selected, click, emitted }) => {
-      const wrapper = await mountSelect(selected);
+      const wrapper = mountSelect(selected);
 
       await item(wrapper, click).trigger("click");
 

@@ -20,7 +20,7 @@ describe("statistics API", () => {
       },
     );
 
-    await api.getPlaysOverTime("month", "week", ["alice", "bob"]);
+    await api.getPlaysOverTime("month", "week", { users: ["alice", "bob"] });
 
     expect(calls).toEqual([
       {

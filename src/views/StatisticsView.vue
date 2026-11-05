@@ -29,7 +29,11 @@
             }}
           </p>
         </div>
-        <StatisticsUserSelect v-if="canSelectUsers" v-model="userIds" />
+        <StatisticsUserSelect
+          v-if="canSelectUsers"
+          v-model="users"
+          :users="allUsers"
+        />
         <StatisticsPeriodSelect v-model="period" />
       </header>
 
@@ -96,9 +100,9 @@
       />
 
       <StatisticsTopItemsTable
-        :active="active"
+        :active="usersReady"
         :period="period"
-        :user-ids="shownUserIds"
+        :users="shownUsers"
         :tracks="data.topTracks"
         :tracks-loading="loading"
         :tracks-error="failed.has('topTracks')"
@@ -121,7 +125,7 @@ import StatisticsTopItemsTable from "@/components/statistics/StatisticsTopItemsT
 import StatisticsUserSelect from "@/components/statistics/StatisticsUserSelect.vue";
 import { Button } from "@/components/ui/button";
 import { useEscapeBack } from "@/composables/useEscapeBack";
-import { useStatistics } from "@/composables/useStatistics";
+import { useStatistics, useStatisticsUsers } from "@/composables/useStatistics";
 import { goBack } from "@/helpers/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -129,23 +133,26 @@ import {
   peakListeningWindow,
 } from "@/helpers/statistics_activity";
 import { summarizePlays } from "@/helpers/statistics_time_series";
-import { Scope, type StatisticsPeriod } from "@/plugins/api/interfaces";
+import {
+  Scope,
+  type StatisticsPeriod,
+  type StatisticsUsers,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { ArrowLeft } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 import { $t } from "@/plugins/i18n";
 
 const props = defineProps<{
   period: StatisticsPeriod;
-  // empty is the current user only
-  userIds?: string[];
+  users?: StatisticsUsers;
 }>();
 
 const router = useRouter();
 const route = useRoute();
-const active = ref(true);
 const period = ref<StatisticsPeriod>(props.period);
 // the period and users live in the url, so back and reload keep them
 watch(
@@ -157,28 +164,76 @@ watch(period, (value) => {
     void router.replace({ query: { ...route.query, period: value } });
   }
 });
-const userIds = computed({
-  get: () => props.userIds ?? [],
-  set: (value: string[]) =>
+const users = computed({
+  get: () => props.users ?? {},
+  set: (value: StatisticsUsers) =>
     void router.replace({
-      query: { ...route.query, users: value.length ? value : undefined },
+      query: {
+        ...route.query,
+        users: value.users?.length ? value.users.join(",") : undefined,
+        all_users: value.all_users ? "true" : undefined,
+      },
     }),
 });
 const canSelectUsers = computed(() =>
   authManager.hasScope(Scope.USERS_IMPERSONATE),
 );
-const shownUserIds = computed(() =>
-  canSelectUsers.value ? userIds.value : [],
-);
+const shownUsers = computed(() => (canSelectUsers.value ? users.value : {}));
 // "you" and "your" only fit the current user's own statistics
-const includesOtherUsers = computed(() =>
-  shownUserIds.value.some((id) => id !== store.currentUser?.user_id),
+const includesOtherUsers = computed(
+  () =>
+    shownUsers.value.all_users === true ||
+    (shownUsers.value.users ?? []).some(
+      (id) => id !== store.currentUser?.user_id,
+    ),
 );
 
-const { data, failed, loading } = useStatistics({
-  active,
+const { users: allUsers, loaded: usersLoaded } =
+  useStatisticsUsers(canSelectUsers);
+const findUser = (reference: string) =>
+  allUsers.value.find(
+    (user) =>
+      user.user_id === reference ||
+      user.username === reference.trim().toLowerCase(),
+  );
+// a link can name users that were deleted since, or name them by username
+watch(
+  [allUsers, () => users.value.users],
+  ([list, references]) => {
+    if (!list.length || !references?.length) return;
+    const known = references.flatMap((reference) => {
+      const user = findUser(reference);
+      return user ? [user.user_id] : [];
+    });
+    if (known.length < references.length) {
+      toast.warning($t("statistics_users_removed"));
+    }
+    if (known.join(",") !== references.join(",")) {
+      users.value = known.length ? { users: known } : {};
+    }
+  },
+  { immediate: true },
+);
+// held back until the users of a link are checked, so an unknown one does not
+// fail every section first
+const usersReady = computed(() => {
+  const references = shownUsers.value.users;
+  if (!references?.length) return true;
+  if (!usersLoaded.value) return false;
+  return (
+    !allUsers.value.length ||
+    references.every((reference) => findUser(reference)?.user_id === reference)
+  );
+});
+
+const {
+  data,
+  failed,
+  loading: statisticsLoading,
+} = useStatistics({
+  active: usersReady,
   period,
-  userIds: shownUserIds,
+  users: shownUsers,
   sections: [
     "playsOverTime",
     "topTracks",
@@ -189,6 +244,7 @@ const { data, failed, loading } = useStatistics({
     "decadeDistribution",
   ],
 });
+const loading = computed(() => statisticsLoading.value || !usersReady.value);
 
 const totalPlays = computed(
   () => summarizePlays(data.value.playsOverTime).total,

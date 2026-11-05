@@ -8,6 +8,7 @@ import type {
   StatisticsPeriod,
   StatisticsTimeSeriesPoint,
   StatisticsTopItemResult,
+  StatisticsUsers,
   MediaType,
 } from "./interfaces";
 
@@ -17,7 +18,6 @@ type SendCommand = <Result>(
   options?: CommandOptions,
 ) => Promise<Result>;
 
-// users (ids or usernames) combines their plays; undefined is the current user
 export class StatisticsApi {
   constructor(private readonly sendCommand: SendCommand) {}
 
@@ -25,35 +25,35 @@ export class StatisticsApi {
     media_type: MediaType,
     period: StatisticsPeriod = "week",
     limit = 50,
-    users?: string[],
+    users: StatisticsUsers = {},
   ): Promise<StatisticsTopItemResult[]> {
     return this.sendStatisticsCommand("statistics/top_items", {
       media_type,
       period,
       limit,
-      users,
+      ...users,
     });
   }
 
   public async getPlaysOverTime(
     period: StatisticsPeriod = "week",
     granularity: StatisticsGranularity = "day",
-    users?: string[],
+    users: StatisticsUsers = {},
   ): Promise<StatisticsTimeSeriesPoint[]> {
     return this.sendStatisticsCommand("statistics/plays_over_time", {
       period,
       granularity,
-      users,
+      ...users,
     });
   }
 
   public async getListeningActivity(
     period: StatisticsPeriod = "week",
-    users?: string[],
+    users: StatisticsUsers = {},
   ): Promise<StatisticsHeatmapPoint[]> {
     return this.sendStatisticsCommand("statistics/listening_activity", {
       period,
-      users,
+      ...users,
     });
   }
 
@@ -61,37 +61,37 @@ export class StatisticsApi {
     period: StatisticsPeriod = "week",
     group_by: StatisticsGroupBy = "artist",
     limit = 10,
-    users?: string[],
+    users: StatisticsUsers = {},
   ): Promise<StatisticsListeningTimeItem[]> {
     return this.sendStatisticsCommand("statistics/listening_time", {
       period,
       group_by,
       limit,
-      users,
+      ...users,
     });
   }
 
   public async getGenreDistribution(
     period: StatisticsPeriod = "week",
     limit = 10,
-    users?: string[],
+    users: StatisticsUsers = {},
   ): Promise<StatisticsDistributionItem[]> {
     return this.sendStatisticsCommand("statistics/genre_distribution", {
       period,
       limit,
-      users,
+      ...users,
     });
   }
 
   public async getDecadeDistribution(
     period: StatisticsPeriod = "all_time",
     limit = 10,
-    users?: string[],
+    users: StatisticsUsers = {},
   ): Promise<StatisticsDistributionItem[]> {
     return this.sendStatisticsCommand("statistics/decade_distribution", {
       period,
       limit,
-      users,
+      ...users,
     });
   }
 

@@ -2492,6 +2492,7 @@
     "statistics_users_me": "Only me",
     "statistics_users_all": "All users",
     "statistics_users_count": "{count} users",
+    "statistics_users_removed": "Some selected users no longer exist and were removed.",
     "statistics_all": "All statistics",
     "statistics_plays": "{count} play | {count} plays",
     "statistics_plays_label": "Plays",

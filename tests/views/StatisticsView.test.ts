@@ -7,6 +7,8 @@ import type {
 import {
   MediaType,
   type StatisticsTopItemResult,
+  type StatisticsUsers,
+  type User,
 } from "@/plugins/api/interfaces";
 import { i18n } from "@/plugins/i18n";
 import StatisticsView from "@/views/StatisticsView.vue";
@@ -17,10 +19,12 @@ import { ref, shallowRef } from "vue";
 const {
   statistics,
   topItems,
+  statisticsUsers,
   useStatistics,
   routerReplace,
   routerPush,
   hasScope,
+  toastWarning,
 } = vi.hoisted(() => ({
   statistics: {} as {
     data: { value: StatisticsData };
@@ -28,17 +32,24 @@ const {
     loading: { value: boolean };
   },
   topItems: {} as Record<string, { value: unknown }>,
+  statisticsUsers: {} as {
+    users: { value: User[] };
+    loaded: { value: boolean };
+  },
   useStatistics: vi.fn(),
   routerReplace: vi.fn(),
   routerPush: vi.fn(),
   hasScope: vi.fn(),
+  toastWarning: vi.fn(),
 }));
 
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
+vi.mock("vue-sonner", () => ({ toast: { warning: toastWarning } }));
 
 vi.mock("@/composables/useStatistics", () => ({
   useStatistics,
   useStatisticsTopItems: () => topItems,
+  useStatisticsUsers: () => statisticsUsers,
 }));
 vi.mock("@/composables/useEscapeBack", () => ({ useEscapeBack: vi.fn() }));
 // the artwork components pull in Vuetify, which is not what is tested here
@@ -103,6 +114,12 @@ beforeEach(() => {
   topItems.items = shallowRef([]);
   topItems.error = ref(false);
   topItems.loading = ref(false);
+  statisticsUsers.users = shallowRef([
+    { user_id: "alice", username: "alice" },
+    { user_id: "bob", username: "bob" },
+  ] as User[]);
+  statisticsUsers.loaded = ref(true);
+  toastWarning.mockReset();
   useStatistics.mockReset();
   useStatistics.mockReturnValue(statistics);
   routerReplace.mockReset();
@@ -115,15 +132,15 @@ afterEach(() => {
   i18n.global.locale.value = originalLocale;
 });
 
-function mountView(userIds: string[] = []) {
+function mountView(users: StatisticsUsers = {}) {
   return mount(StatisticsView, {
-    props: { period: "month", userIds },
+    props: { period: "month", users },
     global: {
       stubs: {
         // charts draw with Unovis, which needs a real layout engine
         ChartContainer: { template: '<div data-testid="chart" />' },
         StatisticsPlaysChart: { template: '<div data-testid="chart" />' },
-        // it loads the users itself, which is tested on its own
+        // tested on its own
         StatisticsUserSelect: true,
       },
     },
@@ -204,13 +221,13 @@ describe("StatisticsView", () => {
     "shows the users of the route only with the impersonate scope ($allowed)",
     ({ allowed, subtitle }) => {
       hasScope.mockReturnValue(allowed);
-      const wrapper = mountView(["alice"]);
+      const wrapper = mountView({ users: ["alice"] });
 
       expect(wrapper.findComponent(StatisticsUserSelect).exists()).toBe(
         allowed,
       );
-      expect(useStatistics.mock.calls[0][0].userIds.value).toEqual(
-        allowed ? ["alice"] : [],
+      expect(useStatistics.mock.calls[0][0].users.value).toEqual(
+        allowed ? { users: ["alice"] } : {},
       );
       expect(wrapper.text()).toContain(subtitle);
     },
@@ -218,13 +235,17 @@ describe("StatisticsView", () => {
 
   it.each([
     {
-      users: ["alice", "bob"],
-      query: { period: "month", users: ["alice", "bob"] },
+      users: { users: ["alice", "bob"] },
+      query: { period: "month", users: "alice,bob" },
     },
-    { users: [], query: { period: "month" } },
+    {
+      users: { all_users: true },
+      query: { period: "month", all_users: "true" },
+    },
+    { users: {}, query: { period: "month" } },
   ])("keeps the chosen users $users in the url", async ({ users, query }) => {
     hasScope.mockReturnValue(true);
-    const wrapper = mountView(["alice"]);
+    const wrapper = mountView({ users: ["alice"] });
 
     wrapper
       .findComponent(StatisticsUserSelect)
@@ -232,6 +253,26 @@ describe("StatisticsView", () => {
     await flushPromises();
 
     expect(routerReplace).toHaveBeenCalledWith({ query });
+  });
+
+  it("holds the statistics until the users of the link are known", async () => {
+    hasScope.mockReturnValue(true);
+    statisticsUsers.loaded.value = false;
+    mountView({ users: ["alice", "gone", "Bob"] });
+    const active = useStatistics.mock.calls[0][0].active;
+    expect(active.value).toBe(false);
+
+    statisticsUsers.loaded.value = true;
+    await flushPromises();
+
+    // the deleted user is dropped and the username replaced by the id
+    expect(toastWarning).toHaveBeenCalledExactlyOnceWith(
+      "Some selected users no longer exist and were removed.",
+    );
+    expect(routerReplace).toHaveBeenCalledWith({
+      query: { period: "month", users: "alice,bob" },
+    });
+    expect(active.value).toBe(false);
   });
 
   it("goes back to Discover when opened directly", async () => {

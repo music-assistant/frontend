@@ -4,6 +4,7 @@ import {
   TOP_ITEMS_LIMIT,
   useStatistics,
   useStatisticsTopItems,
+  useStatisticsUsers,
   type StatisticsSection,
   type TopItemsMediaType,
 } from "@/composables/useStatistics";
@@ -15,6 +16,8 @@ import {
   type StatisticsPeriod,
   type StatisticsTimeSeriesPoint,
   type StatisticsTopItemResult,
+  type StatisticsUsers,
+  type User,
 } from "@/plugins/api/interfaces";
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -29,6 +32,7 @@ const { api, unsubscribe, toastError } = vi.hoisted(() => ({
     getListeningTime: vi.fn(),
     getGenreDistribution: vi.fn(),
     getDecadeDistribution: vi.fn(),
+    getAllUsers: vi.fn(),
     subscribe: vi.fn(),
   },
   unsubscribe: vi.fn(),
@@ -64,30 +68,30 @@ function setupStatistics(
   sections: StatisticsSection[] = ALL_SECTIONS,
   isActive = true,
   topItemsLimit?: number,
-  selectedUserIds: string[] = [],
+  selectedUsers: StatisticsUsers = {},
 ) {
   const active = ref(isActive);
   const period = ref<StatisticsPeriod>("week");
-  const userIds = ref(selectedUserIds);
+  const users = ref(selectedUsers);
   const scope = effectScope();
   scopes.push(scope);
   const statistics = scope.run(() =>
-    useStatistics({ active, period, sections, topItemsLimit, userIds }),
+    useStatistics({ active, period, sections, topItemsLimit, users }),
   )!;
-  return { active, period, userIds, scope, ...statistics };
+  return { active, period, users, scope, ...statistics };
 }
 
 function setupTopItems() {
   const active = ref(true);
   const period = ref<StatisticsPeriod>("week");
   const mediaType = ref<TopItemsMediaType>(MediaType.ALBUM);
-  const userIds = ref<string[]>([]);
+  const users = ref<StatisticsUsers>({});
   const scope = effectScope();
   scopes.push(scope);
   const topItems = scope.run(() =>
-    useStatisticsTopItems({ active, period, mediaType, userIds }),
+    useStatisticsTopItems({ active, period, mediaType, users }),
   )!;
-  return { active, period, mediaType, userIds, ...topItems };
+  return { active, period, mediaType, users, ...topItems };
 }
 
 function deferred<T>() {
@@ -150,17 +154,13 @@ describe("useStatistics", () => {
   });
 
   it.each([
-    { userIds: [], sent: undefined },
-    { userIds: ["alice", "bob"], sent: ["alice", "bob"] },
+    { sent: {} },
+    { sent: { users: ["alice", "bob"] } },
+    { sent: { all_users: true } },
   ])(
-    "loads every requested section of the period in parallel for users $userIds",
-    async ({ userIds, sent }) => {
-      const statistics = setupStatistics(
-        ALL_SECTIONS,
-        true,
-        undefined,
-        userIds,
-      );
+    "loads every requested section of the period in parallel for users $sent",
+    async ({ sent }) => {
+      const statistics = setupStatistics(ALL_SECTIONS, true, undefined, sent);
       expect(statistics.loading.value).toBe(true);
       await flushPromises();
 
@@ -222,19 +222,19 @@ describe("useStatistics", () => {
       MediaType.ALBUM,
       "week",
       1,
-      undefined,
+      {},
     );
     expect(api.getTopItems).toHaveBeenCalledWith(
       MediaType.TRACK,
       "week",
       1,
-      undefined,
+      {},
     );
     expect(api.getTopItems).toHaveBeenCalledWith(
       MediaType.ARTIST,
       "week",
       1,
-      undefined,
+      {},
     );
     expect(api.getTopItems).toHaveBeenCalledTimes(3);
     statistics.period.value = "month";
@@ -243,19 +243,19 @@ describe("useStatistics", () => {
       MediaType.ALBUM,
       "month",
       1,
-      undefined,
+      {},
     );
     expect(api.getTopItems).toHaveBeenCalledWith(
       MediaType.TRACK,
       "month",
       1,
-      undefined,
+      {},
     );
     expect(api.getTopItems).toHaveBeenCalledWith(
       MediaType.ARTIST,
       "month",
       1,
-      undefined,
+      {},
     );
   });
 
@@ -266,19 +266,19 @@ describe("useStatistics", () => {
       MediaType.ARTIST,
       "week",
       1,
-      undefined,
+      {},
     );
     expect(api.getTopItems).toHaveBeenCalledWith(
       MediaType.ALBUM,
       "week",
       5,
-      undefined,
+      {},
     );
     expect(api.getTopItems).toHaveBeenCalledWith(
       MediaType.TRACK,
       "week",
       5,
-      undefined,
+      {},
     );
   });
 
@@ -296,7 +296,7 @@ describe("useStatistics", () => {
     expect(api.getPlaysOverTime).toHaveBeenLastCalledWith(
       "all_time",
       "month",
-      undefined,
+      {},
     );
     expect(statistics.data.value.playsOverTime).toHaveLength(6);
     expect(statistics.data.value.playsOverTime[0]).toEqual({
@@ -354,11 +354,7 @@ describe("useStatistics", () => {
     statistics.period.value = "month";
     await flushPromises();
 
-    expect(api.getPlaysOverTime).toHaveBeenLastCalledWith(
-      "month",
-      "day",
-      undefined,
-    );
+    expect(api.getPlaysOverTime).toHaveBeenLastCalledWith("month", "day", {});
     expect(toastError).toHaveBeenCalledExactlyOnceWith(
       "statistics_load_failed",
       { id: "statistics-load-failed" },
@@ -397,20 +393,21 @@ describe("useStatistics", () => {
   });
 
   it.each([
-    { userIds: [], shown: "self", other: "someone-else" },
-    { userIds: ["alice", "bob"], shown: "bob", other: "self" },
+    { users: {}, shown: "self", other: "someone-else" },
+    { users: { users: ["alice", "bob"] }, shown: "bob", other: "self" },
+    { users: { all_users: true }, shown: "someone-else", other: undefined },
   ])(
-    "refreshes once, debounced, when a shown user finishes tracks ($userIds)",
-    async ({ userIds, shown, other }) => {
+    "refreshes once, debounced, when a shown user finishes tracks ($users)",
+    async ({ users, shown, other }) => {
       vi.useFakeTimers();
-      setupStatistics(["playsOverTime"], true, undefined, userIds);
+      setupStatistics(["playsOverTime"], true, undefined, users);
       await flushPromises();
       expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
 
       emitPlaylog(shown, true);
       emitPlaylog(null, true);
       emitPlaylog(shown, false);
-      emitPlaylog(other, true);
+      if (other) emitPlaylog(other, true);
       vi.advanceTimersByTime(PLAYLOG_REFRESH_DEBOUNCE_MS - 1);
       expect(api.getPlaysOverTime).toHaveBeenCalledTimes(1);
 
@@ -488,7 +485,7 @@ describe("useStatisticsTopItems", () => {
       MediaType.ALBUM,
       "week",
       TOP_ITEMS_LIMIT,
-      undefined,
+      {},
     );
     expect(topItems.items.value).toEqual([topItem("album", MediaType.ALBUM)]);
 
@@ -498,16 +495,16 @@ describe("useStatisticsTopItems", () => {
       MediaType.PLAYLIST,
       "week",
       TOP_ITEMS_LIMIT,
-      undefined,
+      {},
     );
 
-    topItems.userIds.value = ["alice"];
+    topItems.users.value = { all_users: true };
     await flushPromises();
     expect(api.getTopItems).toHaveBeenLastCalledWith(
       MediaType.PLAYLIST,
       "week",
       TOP_ITEMS_LIMIT,
-      ["alice"],
+      { all_users: true },
     );
     expect(api.getTopItems).toHaveBeenCalledTimes(3);
   });
@@ -536,5 +533,61 @@ describe("useStatisticsTopItems", () => {
 
     expect(topItems.error.value).toBe(true);
     expect(toastError).not.toHaveBeenCalled();
+  });
+});
+
+describe("useStatisticsUsers", () => {
+  const user = (user_id: string, display_name: string | null): User =>
+    ({ user_id, username: user_id, display_name }) as User;
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  afterEach(() => {
+    scopes.splice(0).forEach((scope) => scope.stop());
+  });
+
+  function setupUsers() {
+    const enabled = ref(false);
+    const scope = effectScope();
+    scopes.push(scope);
+    return { enabled, ...scope.run(() => useStatisticsUsers(enabled))! };
+  }
+
+  it("loads once enabled, the current user first, then the others by name", async () => {
+    api.getAllUsers.mockResolvedValue([
+      user("homeassistant_system", null),
+      user("bob", "Bob"),
+      user("self", "Me Myself"),
+      user("alice", "Alice"),
+    ]);
+    const statisticsUsers = setupUsers();
+    await flushPromises();
+    expect(api.getAllUsers).not.toHaveBeenCalled();
+
+    statisticsUsers.enabled.value = true;
+    await flushPromises();
+
+    expect(statisticsUsers.users.value.map((u) => u.user_id)).toEqual([
+      "self",
+      "alice",
+      "bob",
+      "homeassistant_system",
+    ]);
+    expect(statisticsUsers.loaded.value).toBe(true);
+  });
+
+  it("toasts and still counts as loaded when the users can not be loaded", async () => {
+    api.getAllUsers.mockRejectedValue(new Error("offline"));
+    const statisticsUsers = setupUsers();
+    statisticsUsers.enabled.value = true;
+    await flushPromises();
+
+    expect(toastError).toHaveBeenCalledExactlyOnceWith(
+      "auth.users_load_failed",
+    );
+    expect(statisticsUsers.users.value).toEqual([]);
+    expect(statisticsUsers.loaded.value).toBe(true);
   });
 });

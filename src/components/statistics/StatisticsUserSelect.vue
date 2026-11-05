@@ -19,7 +19,9 @@
         <DropdownMenuCheckboxItem
           :model-value="allSelected"
           @select="(event: Event) => event.preventDefault()"
-          @update:model-value="(checked) => select(checked ? allUserIds : [])"
+          @update:model-value="
+            (checked) => (selection = checked ? { all_users: true } : {})
+          "
         >
           {{ $t("statistics_users_all") }}
         </DropdownMenuCheckboxItem>
@@ -31,7 +33,7 @@
           @select="(event: Event) => event.preventDefault()"
           @update:model-value="(checked) => toggle(user.user_id, checked)"
         >
-          {{ userName(user) }}
+          {{ statisticsUserName(user) }}
         </DropdownMenuCheckboxItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -47,69 +49,52 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import api from "@/plugins/api";
-import type { User } from "@/plugins/api/interfaces";
+import { statisticsUserName } from "@/composables/useStatistics";
+import type { StatisticsUsers, User } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ChevronDown } from "@lucide/vue";
-import { computed, onMounted, shallowRef, useId } from "vue";
-import { toast } from "vue-sonner";
+import { computed, useId } from "vue";
 
+const props = defineProps<{
+  users: User[];
+}>();
 // empty is the current user only, which the statistics commands default to
-const userIds = defineModel<string[]>({ required: true });
+const selection = defineModel<StatisticsUsers>({ required: true });
 
 const labelId = useId();
 const buttonId = useId();
-const users = shallowRef<User[]>([]);
 
-const userName = (user: User) => user.display_name || user.username;
-
-onMounted(async () => {
-  try {
-    const me = store.currentUser?.user_id;
-    // the current user first, then the others by name
-    users.value = [...(await api.getAllUsers())].sort(
-      (a, b) =>
-        Number(b.user_id === me) - Number(a.user_id === me) ||
-        userName(a).localeCompare(userName(b)),
-    );
-  } catch {
-    toast.error($t("auth.users_load_failed"));
-  }
+const allUserIds = computed(() => props.users.map((user) => user.user_id));
+const selected = computed(() => {
+  if (selection.value.all_users) return allUserIds.value;
+  if (selection.value.users?.length) return selection.value.users;
+  return [store.currentUser?.user_id].filter((id) => id !== undefined);
 });
-
-const allUserIds = computed(() => users.value.map((user) => user.user_id));
-const selected = computed(() =>
-  userIds.value.length
-    ? userIds.value
-    : [store.currentUser?.user_id].filter((id) => id !== undefined),
-);
 const allSelected = computed(
   () =>
-    allUserIds.value.length > 0 &&
-    allUserIds.value.every((id) => selected.value.includes(id)),
+    selection.value.all_users === true ||
+    (allUserIds.value.length > 0 &&
+      allUserIds.value.every((id) => selected.value.includes(id))),
 );
 
 const summary = computed(() => {
-  if (!userIds.value.length) return $t("statistics_users_me");
   if (allSelected.value) return $t("statistics_users_all");
-  if (userIds.value.length === 1) {
-    const user = users.value.find((u) => u.user_id === userIds.value[0]);
-    if (user) return userName(user);
+  const ids = selection.value.users ?? [];
+  if (!ids.length) return $t("statistics_users_me");
+  if (ids.length === 1) {
+    const user = props.users.find((u) => u.user_id === ids[0]);
+    if (user) return statisticsUserName(user);
   }
-  return $t("statistics_users_count", { count: userIds.value.length });
+  return $t("statistics_users_count", { count: ids.length });
 });
 
 function toggle(userId: string, checked: boolean | "indeterminate") {
-  select(
+  const ids =
     checked === true
       ? [...selected.value, userId]
-      : selected.value.filter((id) => id !== userId),
-  );
-}
-
-function select(ids: readonly string[]) {
+      : selected.value.filter((id) => id !== userId);
   const onlyMe = ids.length === 1 && ids[0] === store.currentUser?.user_id;
-  userIds.value = onlyMe ? [] : [...ids];
+  selection.value = onlyMe || !ids.length ? {} : { users: ids };
 }
 </script>

@@ -97,6 +97,7 @@ import {
   SmartPlaylistRules,
   SoundEffect,
   StatisticsTopItemResult,
+  StatisticsUsers,
   SourceFolder,
   StorageInfo,
   StorageLocation,
@@ -2040,7 +2041,7 @@ export class MusicAssistantApi {
     media_type: MediaType,
     period: StatisticsPeriod = "week",
     limit = 50,
-    users?: string[],
+    users?: StatisticsUsers,
   ): Promise<StatisticsTopItemResult[]> {
     return this.statisticsApi.getTopItems(media_type, period, limit, users);
   }
@@ -2048,14 +2049,14 @@ export class MusicAssistantApi {
   public async getPlaysOverTime(
     period: StatisticsPeriod = "week",
     granularity: StatisticsGranularity = "day",
-    users?: string[],
+    users?: StatisticsUsers,
   ): Promise<StatisticsTimeSeriesPoint[]> {
     return this.statisticsApi.getPlaysOverTime(period, granularity, users);
   }
 
   public async getListeningActivity(
     period: StatisticsPeriod = "week",
-    users?: string[],
+    users?: StatisticsUsers,
   ): Promise<StatisticsHeatmapPoint[]> {
     return this.statisticsApi.getListeningActivity(period, users);
   }
@@ -2064,7 +2065,7 @@ export class MusicAssistantApi {
     period: StatisticsPeriod = "week",
     group_by: StatisticsGroupBy = "artist",
     limit = 10,
-    users?: string[],
+    users?: StatisticsUsers,
   ): Promise<StatisticsListeningTimeItem[]> {
     return this.statisticsApi.getListeningTime(period, group_by, limit, users);
   }
@@ -2072,7 +2073,7 @@ export class MusicAssistantApi {
   public async getGenreDistribution(
     period: StatisticsPeriod = "week",
     limit = 10,
-    users?: string[],
+    users?: StatisticsUsers,
   ): Promise<StatisticsDistributionItem[]> {
     return this.statisticsApi.getGenreDistribution(period, limit, users);
   }
@@ -2080,7 +2081,7 @@ export class MusicAssistantApi {
   public async getDecadeDistribution(
     period: StatisticsPeriod = "all_time",
     limit = 10,
-    users?: string[],
+    users?: StatisticsUsers,
   ): Promise<StatisticsDistributionItem[]> {
     return this.statisticsApi.getDecadeDistribution(period, limit, users);
   }
