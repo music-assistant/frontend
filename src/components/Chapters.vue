@@ -175,10 +175,13 @@ const bookmarkKey = (bookmark: MediaItemBookmark) =>
 const rows = computed<ChapterRow[]>(() => {
   const tab = shownTab.value;
   if (tab === "chapters") {
-    return (props.itemDetails.metadata?.chapters ?? []).map((chapter) => ({
-      key: `chapter-${chapter.position}`,
-      chapter,
-    }));
+    // in playing order, as the timeline and the grouped tab show them
+    return [...(props.itemDetails.metadata?.chapters ?? [])]
+      .sort((a, b) => a.start - b.start)
+      .map((chapter) => ({
+        key: `chapter-${chapter.position}`,
+        chapter,
+      }));
   }
   if (tab === "bookmarks") {
     return [...bookmarks.value]
