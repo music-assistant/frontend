@@ -1,4 +1,5 @@
 import EditUserDialog from "@/components/users/EditUserDialog.vue";
+import AllowExplicitSwitch from "@/components/users/AllowExplicitSwitch.vue";
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import { type User, UserRole } from "@/plugins/api/interfaces";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
@@ -141,5 +142,31 @@ describe("EditUserDialog", () => {
     await flushPromises();
 
     expect(wrapper.get("#role").text()).toContain("Household member");
+  });
+
+  it("shows whether the user may get explicit content", async () => {
+    const wrapper = mountDialog(user({ allow_explicit: false }));
+    await flushPromises();
+
+    expect(wrapper.getComponent(AllowExplicitSwitch).props("modelValue")).toBe(
+      false,
+    );
+  });
+
+  it("sends a changed explicit content setting", async () => {
+    apiMock.updateUser.mockClear();
+    const wrapper = mountDialog(user({ user_id: "kid", username: "kid" }));
+
+    wrapper
+      .getComponent(AllowExplicitSwitch)
+      .vm.$emit("update:modelValue", false);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(apiMock.updateUser).toHaveBeenCalledWith(
+      "kid",
+      { allow_explicit: false },
+      { suppressGlobalError: true },
+    );
   });
 });

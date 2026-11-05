@@ -1999,6 +1999,9 @@ export interface User {
   // from the access records of the sources (read-only)
   provider_filter: string[];
   player_filter: string[];
+  // whether the user may see and play content their music sources mark as explicit;
+  // set by an admin, the user can not change it
+  allow_explicit: boolean;
   // Use authManager.isPartyGuest() to check for party sessions.
 }
 

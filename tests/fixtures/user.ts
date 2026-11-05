@@ -20,6 +20,7 @@ export function user(overrides: Partial<User> = {}): User {
     preferences: {},
     provider_filter: [],
     player_filter: [],
+    allow_explicit: true,
     ...overrides,
   };
 }
