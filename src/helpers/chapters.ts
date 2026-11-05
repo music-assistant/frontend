@@ -141,18 +141,23 @@ export function groupBookmarksByChapter(
   chaptersFit = true,
 ): ChapterBookmarks[] {
   const ordered = [...bookmarks].sort((a, b) => a.start - b.start);
-  if (!chapters?.length || !chaptersFit) {
+  // in playing order, as the timeline shows them
+  const orderedChapters = [...(chapters ?? [])].sort(
+    (a, b) => a.start - b.start,
+  );
+  if (!orderedChapters.length || !chaptersFit) {
     return [
-      ...(chapters ?? []).map((chapter) => ({ chapter, bookmarks: [] })),
+      ...orderedChapters.map((chapter) => ({ chapter, bookmarks: [] })),
       ...(ordered.length ? [{ bookmarks: ordered }] : []),
     ];
   }
-  return chapters.map((chapter, index) => ({
+  return orderedChapters.map((chapter, index) => ({
     chapter,
     bookmarks: ordered.filter(
       (x) =>
         (index === 0 || x.start >= chapter.start) &&
-        (index === chapters.length - 1 || x.start < chapters[index + 1].start),
+        (index === orderedChapters.length - 1 ||
+          x.start < orderedChapters[index + 1].start),
     ),
   }));
 }

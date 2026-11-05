@@ -141,6 +141,20 @@ describe("groupBookmarksByChapter", () => {
     ).toEqual(expected);
   });
 
+  it("lists the chapters in playing order", () => {
+    const groups = groupBookmarksByChapter(
+      [chapters[2], chapters[0], chapters[1]],
+      [70].map(bookmark),
+    );
+    expect(
+      groups.map((x) => [x.chapter?.name, x.bookmarks.map((b) => b.start)]),
+    ).toEqual([
+      ["Intro", []],
+      ["Middle", [70]],
+      ["End", []],
+    ]);
+  });
+
   // e.g. the chapters of another copy of the book
   it("lists the bookmarks apart from chapters that do not fit them", () => {
     const groups = groupBookmarksByChapter(
