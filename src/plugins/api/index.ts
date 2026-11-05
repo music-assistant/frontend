@@ -2040,54 +2040,49 @@ export class MusicAssistantApi {
     media_type: MediaType,
     period: StatisticsPeriod = "week",
     limit = 50,
-    user_ids?: string[],
+    users?: string[],
   ): Promise<StatisticsTopItemResult[]> {
-    return this.statisticsApi.getTopItems(media_type, period, limit, user_ids);
+    return this.statisticsApi.getTopItems(media_type, period, limit, users);
   }
 
   public async getPlaysOverTime(
     period: StatisticsPeriod = "week",
     granularity: StatisticsGranularity = "day",
-    user_ids?: string[],
+    users?: string[],
   ): Promise<StatisticsTimeSeriesPoint[]> {
-    return this.statisticsApi.getPlaysOverTime(period, granularity, user_ids);
+    return this.statisticsApi.getPlaysOverTime(period, granularity, users);
   }
 
   public async getListeningActivity(
     period: StatisticsPeriod = "week",
-    user_ids?: string[],
+    users?: string[],
   ): Promise<StatisticsHeatmapPoint[]> {
-    return this.statisticsApi.getListeningActivity(period, user_ids);
+    return this.statisticsApi.getListeningActivity(period, users);
   }
 
   public async getListeningTime(
     period: StatisticsPeriod = "week",
     group_by: StatisticsGroupBy = "artist",
     limit = 10,
-    user_ids?: string[],
+    users?: string[],
   ): Promise<StatisticsListeningTimeItem[]> {
-    return this.statisticsApi.getListeningTime(
-      period,
-      group_by,
-      limit,
-      user_ids,
-    );
+    return this.statisticsApi.getListeningTime(period, group_by, limit, users);
   }
 
   public async getGenreDistribution(
     period: StatisticsPeriod = "week",
     limit = 10,
-    user_ids?: string[],
+    users?: string[],
   ): Promise<StatisticsDistributionItem[]> {
-    return this.statisticsApi.getGenreDistribution(period, limit, user_ids);
+    return this.statisticsApi.getGenreDistribution(period, limit, users);
   }
 
   public async getDecadeDistribution(
     period: StatisticsPeriod = "all_time",
     limit = 10,
-    user_ids?: string[],
+    users?: string[],
   ): Promise<StatisticsDistributionItem[]> {
-    return this.statisticsApi.getDecadeDistribution(period, limit, user_ids);
+    return this.statisticsApi.getDecadeDistribution(period, limit, users);
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {

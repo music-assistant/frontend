@@ -28,7 +28,7 @@ describe("statistics API", () => {
         args: {
           period: "month",
           granularity: "week",
-          user_ids: ["alice", "bob"],
+          users: ["alice", "bob"],
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         },
         options: { suppressGlobalError: true },
