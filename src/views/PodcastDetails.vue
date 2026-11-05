@@ -33,6 +33,8 @@
           :show-track-number="true"
           :show-refresh-button="true"
           :sort-listing="ListingType.PODCAST_EPISODES"
+          library-toolbar
+          :show-count="false"
           :load-paged-data="loadPodcastEpisodes"
           :update-available="updateAvailable"
           :title="$t('podcast_episodes')"

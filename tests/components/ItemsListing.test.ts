@@ -3556,6 +3556,43 @@ describe("ItemsListing library toolbar", () => {
     expect(restored.find(".toolbar-stub").text()).not.toContain("128");
   });
 
+  it("leaves the count out when the page shows it elsewhere", async () => {
+    // a full page, so the listing keeps the total rather than counting its rows
+    const props = {
+      total: 12,
+      limit: 1,
+      loadPagedData: vi.fn().mockResolvedValue([artist()]),
+    };
+    const shown = await mountLibraryPage(props);
+    expect(shown.find(".toolbar-stub").text()).toContain("12");
+    shown.unmount();
+
+    const hidden = await mountLibraryPage({ ...props, showCount: false });
+
+    expect(hidden.find(".toolbar-stub").text()).not.toContain("12");
+  });
+
+  it("gives a detail page's listing its filters in the Filters panel", async () => {
+    const listing = await mountLibraryPage({
+      itemtype: "albumtracks",
+      path: undefined,
+      parentItem: album(),
+      sortListing: ListingType.ALBUM_TRACKS,
+      showAlbumArtistsOnlyFilter: false,
+      showLibraryOnlyFilter: true,
+    });
+
+    expect(listing.find(".listing-sort-chips-row").exists()).toBe(false);
+    expect(
+      (
+        listing
+          .findComponent(ListingToolbarControls)
+          .props("filters") as ListingFilter[]
+      ).map((filter) => filter.id),
+    ).toEqual(["favorites", "library_only"]);
+    expect(menuLabels(listing)).not.toContain("tooltip.filter_favorites");
+  });
+
   // the field's own open and close transition, which the hooks hang off
   const realTransitions = { transition: false };
   const nextFrames = async () => {
