@@ -13,48 +13,51 @@
         <BookmarkPlus :size="14" class="shrink-0 text-primary" />
         <span class="queue-chapter__name">{{ $t("add_bookmark") }}</span>
       </span>
-      <!-- the position it takes, counted like the bookmarks in its chapter -->
+      <!-- the position it takes -->
       <span class="queue-chapter__time tabular-nums">
-        {{ formatDuration(position - chapterStartAt(position)) }}
+        {{ formatDuration(position) }}
       </span>
     </button>
-    <template
-      v-for="group in groups"
-      :key="group.chapter?.position ?? 'bookmarks'"
+    <!-- opens on the playing chapter, scrolled for the rest -->
+    <div
+      ref="scrollBox"
+      class="flex min-h-0 flex-1 flex-col overflow-y-auto"
+      data-testid="chapter-scroll-box"
     >
-      <button
-        v-if="group.chapter"
-        type="button"
-        class="queue-chapter"
-        :class="{
-          'queue-chapter--active': group.chapter.position === activePosition,
-        }"
-        :aria-current="
-          group.chapter.position === activePosition ? 'true' : undefined
-        "
-        @click.stop="emit('seek', group.chapter)"
+      <template
+        v-for="group in groups"
+        :key="group.chapter?.position ?? 'bookmarks'"
       >
-        <span class="queue-chapter__name">{{ group.chapter.name }}</span>
-        <span v-if="startTimes" class="queue-chapter__time tabular-nums">
-          {{ formatDuration(group.chapter.start) }}
-        </span>
-        <span v-else-if="group.chapter.end" class="queue-chapter__time">
-          {{ formatDuration(group.chapter.end - group.chapter.start) }}
-        </span>
-      </button>
-      <!-- a position within the chapter, beside the chapters' durations -->
-      <QueueBookmarkRow
-        v-for="bookmark in group.bookmarks"
-        :key="`bookmark-${bookmark.start}`"
-        :bookmark="bookmark"
-        :time="bookmark.start - (group.chapter?.start ?? 0)"
-        :editable="bookmarkActions.isEditable(bookmark)"
-        :in-chapter="!!group.chapter"
-        @seek="emit('seek', bookmark)"
-        @rename="bookmarkActions.renameClicked(bookmark)"
-        @remove="bookmarkActions.removeClicked(bookmark)"
-      />
-    </template>
+        <button
+          v-if="group.chapter"
+          type="button"
+          class="queue-chapter"
+          :class="{
+            'queue-chapter--active': group.chapter.position === activePosition,
+            'queue-chapter--played': isPlayed(group.chapter),
+          }"
+          :aria-current="
+            group.chapter.position === activePosition ? 'true' : undefined
+          "
+          @click.stop="emit('seek', group.chapter)"
+        >
+          <span class="queue-chapter__name">{{ group.chapter.name }}</span>
+          <span class="queue-chapter__time tabular-nums">
+            {{ formatDuration(group.chapter.start) }}
+          </span>
+        </button>
+        <QueueBookmarkRow
+          v-for="bookmark in group.bookmarks"
+          :key="`bookmark-${bookmark.start}`"
+          :bookmark="bookmark"
+          :editable="bookmarkActions.isEditable(bookmark)"
+          :in-chapter="!!group.chapter"
+          @seek="emit('seek', bookmark)"
+          @rename="bookmarkActions.renameClicked(bookmark)"
+          @remove="bookmarkActions.removeClicked(bookmark)"
+        />
+      </template>
+    </div>
     <BookmarkDialog
       v-model:open="bookmarkActions.renameDialogOpen.value"
       :title="$t('rename_bookmark')"
@@ -78,7 +81,7 @@
 
 <script setup lang="ts">
 import { BookmarkPlus } from "@lucide/vue";
-import { ref, watch } from "vue";
+import { computed, ref, useTemplateRef, watch } from "vue";
 import BookmarkDialog from "@/components/BookmarkDialog.vue";
 import {
   newBookmarkOfPlayingItem,
@@ -86,11 +89,8 @@ import {
   useBookmarkActions,
   type NewBookmark,
 } from "@/composables/useBookmarks";
-import {
-  chaptersFitBookmarks,
-  resolveCurrentChapter,
-  type ChapterBookmarks,
-} from "@/helpers/chapters";
+import { useFollowActiveRow } from "@/composables/useFollowActiveRow";
+import type { ChapterBookmarks } from "@/helpers/chapters";
 import { formatDuration } from "@/helpers/utils";
 import QueueBookmarkRow from "@/layouts/default/PlayerOSD/QueueBookmarkRow.vue";
 import type {
@@ -110,8 +110,6 @@ export interface Props {
   canAdd: boolean;
   // the playing position, in seconds of the whole item
   position: number;
-  // show where each chapter starts instead of its length
-  startTimes?: boolean;
 }
 const props = defineProps<Props>();
 const emit = defineEmits<{
@@ -124,19 +122,22 @@ const bookmarkActions = useBookmarkActions(
   () => props.item.media_item?.media_type,
 );
 
-// where the chapter holding the position starts, 0 without chapters that fit
-// the playing copy's positions
-const chapterStartAt = function (seconds: number) {
-  const media = props.item.media_item;
-  if (!media || !chaptersFitBookmarks(media)) return 0;
-  return (
-    resolveCurrentChapter(
-      media.metadata?.chapters,
-      seconds,
-      "duration" in media ? media.duration : undefined,
-    )?.start ?? 0
-  );
-};
+const activeStart = computed(
+  () =>
+    props.groups.find((x) => x.chapter?.position === props.activePosition)
+      ?.chapter?.start,
+);
+const isPlayed = (chapter: MediaItemChapter) =>
+  activeStart.value !== undefined && chapter.start < activeStart.value;
+
+// played chapters peeking above the playing one
+const ROWS_ABOVE_ACTIVE = 2;
+// the closed player keeps the list mounted, so reopening it scrolls back too
+useFollowActiveRow(
+  useTemplateRef<HTMLElement>("scrollBox"),
+  () => [props.activePosition, store.showFullscreenPlayer],
+  ROWS_ABOVE_ACTIVE,
+);
 
 const addDialogOpen = ref(false);
 // taken on the click, the position moves on while the name is typed
@@ -209,6 +210,15 @@ watch(
     var(--text-color, currentColor) 14%,
     transparent
   );
+}
+
+/* like the played rows of the queue */
+.queue-chapter--played {
+  opacity: 0.5;
+}
+
+.queue-chapter--played:hover {
+  opacity: 0.72;
 }
 
 .queue-chapter__name {

@@ -52,11 +52,8 @@
             :lyrics-active="showLyrics"
             :transcript-sync-enabled="transcriptSyncEnabled"
             :transcript-timed="!!currentLyrics.synced"
-            :chapters-available="hasChapters"
-            :chapters-active="showChapters"
             @toggle-lyrics="toggleLyrics"
             @toggle-transcript-sync="toggleTranscriptSync"
-            @toggle-chapters="toggleChapters"
           />
 
           <Button
@@ -228,24 +225,6 @@
               :sync-disabled="isEpisode && !transcriptSyncEnabled"
             />
           </div>
-          <!-- chapters of the playing item -->
-          <div
-            v-else-if="showChapters && store.curQueueItem"
-            ref="chaptersPanelRef"
-            class="h-full overflow-y-auto px-4"
-            :style="`--queue-subtitle-size: ${queueSubtitleFontSize};`"
-          >
-            <QueueChapterList
-              class="!ml-0"
-              :item="store.curQueueItem"
-              :groups="queueChapterGroups"
-              :active-position="panelChapterPosition"
-              :can-add="canAddBookmark"
-              :position="playingPosition"
-              start-times
-              @seek="panelChapterClicked"
-            />
-          </div>
           <!-- Unified queue list: played → now playing → up next (virtualized) -->
           <div
             v-else
@@ -321,20 +300,20 @@
                     ></div>
                   </div>
                 </div>
+                <!-- the playing item's chapters, a window around the playing one -->
                 <QueueChapterList
                   v-if="
                     row.state === 'playing' &&
                     row.item?.media_item &&
                     (queueChapterGroups.length || canAddBookmark)
                   "
+                  class="max-h-72"
                   :item="row.item"
                   :groups="queueChapterGroups"
-                  :active-position="activeChapterPosition(row.item)"
+                  :active-position="playingChapterPosition"
                   :can-add="canAddBookmark"
                   :position="playingPosition"
-                  @seek="
-                    (target) => chapterClicked(row.item!.media_item!, target)
-                  "
+                  @seek="playingChapterClicked"
                 />
               </div>
               <!-- floating ghost of the dragged item; tracks the pointer -->
@@ -581,6 +560,7 @@ import {
 import {
   chaptersFitBookmarks,
   groupBookmarksByChapter,
+  isChapteredMediaType,
   resolveCurrentChapter,
 } from "@/helpers/chapters";
 import api from "@/plugins/api";
@@ -589,7 +569,6 @@ import {
   MediaType,
   PlaybackState,
   PlayerType,
-  QueueItem,
   Track,
   TranscriptCue,
 } from "@/plugins/api/interfaces";
@@ -633,31 +612,6 @@ const showAlbumSubtitle = computed(
 
 const { albumSubtitle } = useNowPlayingSource();
 const { getPreference, setPreference } = useUserPreferences();
-// The chapter list panel, a third option for the right column.
-const showChapters = ref(false);
-const hasChapters = computed(
-  () => !!store.curQueueItem?.media_item?.metadata?.chapters?.length,
-);
-const toggleChapters = () => {
-  showChapters.value = !showChapters.value;
-};
-watch(hasChapters, (available) => {
-  if (!available) showChapters.value = false;
-});
-const chaptersPanelRef = ref<HTMLElement>();
-// open on the playing chapter, a long list would otherwise start far from it;
-// the dialog keeps the panel mounted, so a reopened player scrolls it again
-watch(
-  [chaptersPanelRef, () => store.showFullscreenPlayer],
-  async ([panel, open]) => {
-    if (!panel || !open) return;
-    await nextTick();
-    panel
-      .querySelector("[aria-current='true']")
-      ?.scrollIntoView({ block: "center" });
-  },
-);
-
 const showWaveformPref = computed(() => expertModeSetting("show_waveform"));
 const showChapterProgress = getPreference("audiobook_chapter_progress", true);
 const nowTick = ref(0);
@@ -682,7 +636,7 @@ const currentChapter = computed(() => {
   const queueItem = chapterQueueItem.value;
   if (
     !showChapterProgress.value ||
-    media?.media_type !== MediaType.AUDIOBOOK ||
+    !isChapteredMediaType(media?.media_type) ||
     !queueItem
   ) {
     return undefined;
@@ -693,14 +647,6 @@ const currentChapter = computed(() => {
     media.duration,
   );
 });
-
-const activeChapter = computed(() => currentChapter.value?.chapter);
-
-// the playing chapter of the item, for its chapter list
-const activeChapterPosition = (item: QueueItem) =>
-  item.queue_item_id === chapterQueueItem.value?.queue_item_id
-    ? activeChapter.value?.position
-    : undefined;
 
 const updateChapterTimer = (needed: boolean) => {
   if (needed && chapterTimer === null) {
@@ -724,20 +670,18 @@ const playingPosition = computed(() => {
 const chapterTimerNeeded = computed(
   () =>
     store.showFullscreenPlayer &&
-    (store.showQueueItems || showChapters.value) &&
+    store.showQueueItems &&
     store.activePlayer?.playback_state === PlaybackState.PLAYING &&
-    ((!!chapterQueueItem.value &&
-      (showChapterProgress.value || showChapters.value)) ||
-      canAddBookmark.value),
+    (!!chapterQueueItem.value || canAddBookmark.value),
 );
 
-const panelChapterClicked = (target: Pick<MediaItemChapter, "start">) => {
+const playingChapterClicked = (target: Pick<MediaItemChapter, "start">) => {
   const media = store.curQueueItem?.media_item;
   if (media) chapterClicked(media, target);
 };
 
-// the playing chapter for the chapter panel, also without chapter progress
-const panelChapterPosition = computed(
+// the playing chapter for the chapter list, also without chapter progress
+const playingChapterPosition = computed(
   () =>
     resolveCurrentChapter(
       chapterQueueItem.value?.media_item?.metadata?.chapters,
@@ -891,28 +835,10 @@ watch(lyricsState, (state) => {
 // so each button visibly swaps the panel instead of silently flipping a hidden
 // state. Opening lyrics remembers whether the queue was showing so closing them
 // returns there rather than to the bare artwork.
-// The chapters panel does the same; switching between the two panels hands the
-// remembered queue over, so the one closing does not bring the queue back.
 let queueVisibleBeforeLyrics = false;
-let queueVisibleBeforeChapters = false;
-watch(showChapters, (active) => {
-  if (active) {
-    queueVisibleBeforeChapters =
-      store.showQueueItems || queueVisibleBeforeLyrics;
-    queueVisibleBeforeLyrics = false;
-    showLyrics.value = false;
-    store.showQueueItems = false;
-  } else if (queueVisibleBeforeChapters) {
-    store.showQueueItems = true;
-    queueVisibleBeforeChapters = false;
-  }
-});
 watch(showLyrics, (active) => {
   if (active) {
-    queueVisibleBeforeLyrics =
-      store.showQueueItems || queueVisibleBeforeChapters;
-    queueVisibleBeforeChapters = false;
-    showChapters.value = false;
+    queueVisibleBeforeLyrics = store.showQueueItems;
     store.showQueueItems = false;
   } else if (queueVisibleBeforeLyrics) {
     store.showQueueItems = true;
@@ -922,16 +848,14 @@ watch(showLyrics, (active) => {
 watch(
   () => store.showQueueItems,
   (active) => {
-    if (!active) return;
-    showLyrics.value = false;
-    showChapters.value = false;
+    if (active) showLyrics.value = false;
   },
 );
 
 // Whether the right-hand column (queue list or lyrics) is visible. Used to
 // collapse the media details column on small/narrow screens.
 const showRightColumn = computed(
-  () => store.showQueueItems || showLyrics.value || showChapters.value,
+  () => store.showQueueItems || showLyrics.value,
 );
 
 // The unified queue list (virtualized rows, paging, now-playing focus and

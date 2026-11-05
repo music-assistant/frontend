@@ -459,16 +459,16 @@ describe("PlayerFullscreen chapter queue", () => {
             : [
                 x.findComponent(QueueBookmarkRow).props("bookmark").name,
                 x.findComponent(QueueBookmarkRow).props("inChapter"),
-                x.findComponent(QueueBookmarkRow).props("time"),
+                x.findComponent(QueueBookmarkRow).props("bookmark").start,
               ],
         ),
       ).toEqual([
         // with the position it takes, and the bookmarks within their chapter
         ["add_bookmark", "00:10"],
-        ["First", "01:00"],
+        ["First", "00:00"],
         ["In the first", true, 30],
         ["Second", "01:00"],
-        ["In the second", true, 30],
+        ["In the second", true, 90],
       ]);
       const bookmarkRows = fullscreen.findAllComponents(QueueBookmarkRow);
       // edits where the provider takes them, or Music Assistant keeps them
@@ -545,7 +545,7 @@ describe("PlayerFullscreen chapter queue", () => {
     expect(
       fullscreen
         .findAllComponents(QueueBookmarkRow)
-        .map((x) => [x.props("inChapter"), x.props("time")]),
+        .map((x) => [x.props("inChapter"), x.props("bookmark").start]),
     ).toEqual([[false, 90]]);
     // the position it takes, in the whole book as well
     await vi.advanceTimersByTimeAsync(60_000);
