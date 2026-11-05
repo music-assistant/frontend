@@ -1,5 +1,8 @@
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
-import { resolveCurrentChapter } from "@/helpers/chapters";
+import {
+  isChapteredMediaType,
+  resolveCurrentChapter,
+} from "@/helpers/chapters";
 import {
   MediaItemChapter,
   MediaType,
@@ -24,8 +27,7 @@ export function useChapterNavigation() {
     const media = player?.current_media;
     const queueItem = store.curQueueItem;
     return (
-      (media?.media_type === MediaType.AUDIOBOOK ||
-        media?.media_type === MediaType.PODCAST_EPISODE) &&
+      isChapteredMediaType(media?.media_type) &&
       !!queueItem?.media_item?.metadata?.chapters?.length &&
       (media.queue_item_id == null ||
         media.queue_item_id === queueItem.queue_item_id)

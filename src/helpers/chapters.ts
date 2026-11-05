@@ -1,8 +1,13 @@
-import type {
-  MediaItemBookmark,
-  MediaItemChapter,
-  ProviderMapping,
+import {
+  MediaType,
+  type MediaItemBookmark,
+  type MediaItemChapter,
+  type ProviderMapping,
 } from "@/plugins/api/interfaces";
+
+// the media types that can have chapters
+export const isChapteredMediaType = (mediaType: MediaType | undefined) =>
+  mediaType === MediaType.AUDIOBOOK || mediaType === MediaType.PODCAST_EPISODE;
 
 export interface ChapterSegment {
   // undefined for the stretch before the first chapter starts

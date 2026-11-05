@@ -198,7 +198,10 @@ import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { getPlayerDisplayName } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
-import { resolveCurrentChapter } from "@/helpers/chapters";
+import {
+  isChapteredMediaType,
+  resolveCurrentChapter,
+} from "@/helpers/chapters";
 import { ImageColorPalette, getMediaImageUrl } from "@/helpers/utils";
 import { MediaType, PlaybackState, PlayerType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -222,7 +225,7 @@ const currentChapter = computed(() => {
   const queueItem = store.curQueueItem;
   if (
     !showChapterProgress.value ||
-    media?.media_type !== MediaType.AUDIOBOOK ||
+    !isChapteredMediaType(media?.media_type) ||
     (media.queue_item_id !== null &&
       media.queue_item_id !== queueItem?.queue_item_id)
   ) {
