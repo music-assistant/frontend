@@ -167,13 +167,25 @@
           {{ playerCurTimeStr }}
         </div>
 
-        <div
-          v-if="playingChapterName"
-          class="text-caption min-w-0 self-start truncate px-3 text-center"
-          data-testid="timeline-chapter-name"
-        >
-          {{ playingChapterName }}
-        </div>
+        <!-- switches between the playing chapter and the whole item -->
+        <TooltipProvider v-if="chapterLabel" :delay-duration="400">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <button
+                type="button"
+                class="text-caption min-w-0 self-start truncate px-3 text-center hover:underline"
+                :aria-label="chapterToggleLabel"
+                data-testid="timeline-chapter-name"
+                @click="toggleChapterProgress"
+              >
+                {{ chapterLabel }}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" class="z-[100001]">
+              {{ chapterToggleLabel }}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         <!-- end time detail -->
         <div class="text-caption time-text-right">
@@ -245,7 +257,7 @@ const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
 const { activeAudioSource } = useActiveAudioSource(
   toRef(store, "activePlayer"),
 );
-const { getPreference } = useUserPreferences();
+const { getPreference, setPreference } = useUserPreferences();
 const showChapterProgress = getPreference("audiobook_chapter_progress", true);
 
 // local refs
@@ -455,16 +467,38 @@ const playerTotalTimeStr = computed(() => {
   return formatDuration(duration);
 });
 
-// stays on the playing chapter while the track is dragged; with chapter
-// progress the full screen player already names it under the title
+// stays on the playing chapter while the track is dragged
 const playingChapterName = computed(() => {
-  if (hidesRadioPosition.value || currentChapter.value) return undefined;
+  if (hidesRadioPosition.value) return undefined;
   return resolveCurrentChapter(
     store.curQueueItem?.media_item?.metadata?.chapters,
     pendingSeek.value?.position ?? absoluteElapsedTime.value,
     store.activePlayer?.current_media?.duration,
   )?.chapter.name;
 });
+
+// with chapter progress the full screen player names the chapter under the
+// title, so this says where it is in the item instead
+const chapterLabel = computed(() => {
+  const chapter = currentChapter.value;
+  if (!chapter) return playingChapterName.value;
+  const starts = (store.curQueueItem?.media_item?.metadata?.chapters ?? [])
+    .map((x) => x.start)
+    .sort((a, b) => a - b);
+  return $t("chapter_of", {
+    current: starts.indexOf(chapter.start) + 1,
+    total: starts.length,
+  });
+});
+const chapterToggleLabel = computed(() => {
+  if (!currentChapter.value) return $t("chapter_progress_show_chapter");
+  return store.activePlayer?.current_media?.media_type ===
+    MediaType.PODCAST_EPISODE
+    ? $t("chapter_progress_show_episode")
+    : $t("chapter_progress_show_audiobook");
+});
+const toggleChapterProgress = () =>
+  setPreference("audiobook_chapter_progress", !showChapterProgress.value);
 
 const displayedElapsedTime = computed(() => displayedTimelineTime.value);
 

@@ -1350,13 +1350,29 @@ const openQueueMenu = function (evt: Event) {
     selected: showWaveformPref.value,
     close_on_click: false,
   };
+  // the bar shows the playing chapter or the whole item
+  const chapterProgressItem = {
+    label: "settings.audiobook_chapter_progress.label",
+    action: () => {
+      void setPreference(
+        "audiobook_chapter_progress",
+        !showChapterProgress.value,
+      );
+    },
+    icon: "mdi-book-open-page-variant-outline",
+    selected: showChapterProgress.value,
+    close_on_click: false,
+  };
+  const displayItems = chapterQueueItem.value
+    ? [chapterProgressItem, waveformItem]
+    : [waveformItem];
   const visualizerEntryIndex = menuItems.findIndex(
     (item) => item.label === "settings.visualizer_enabled.label",
   );
   if (visualizerEntryIndex === -1) {
-    menuItems.push(waveformItem);
+    menuItems.push(...displayItems);
   } else {
-    menuItems.splice(visualizerEntryIndex, 0, waveformItem);
+    menuItems.splice(visualizerEntryIndex, 0, ...displayItems);
   }
   // While lyrics/transcript are open, surface the sync-offset stepper at the
   // top of the overflow menu.

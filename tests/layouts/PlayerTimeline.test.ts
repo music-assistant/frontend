@@ -6,6 +6,19 @@ import { mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 
+const { setPreference } = vi.hoisted(() => ({ setPreference: vi.fn() }));
+vi.mock("@/composables/userPreferences", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/composables/userPreferences")>();
+  return {
+    ...actual,
+    useUserPreferences: () => ({
+      ...actual.useUserPreferences(),
+      setPreference,
+    }),
+  };
+});
+
 // Only the fields the timeline and the elapsed-time resolver read are mocked;
 // both are reactive so a state change is picked up the way the real store's is.
 vi.mock("@/plugins/api", async () => {
@@ -309,6 +322,61 @@ describe("PlayerTimeline", () => {
         ?.textContent,
     ).toContain("01:30 · Second");
   });
+
+  // with chapter progress the full screen player names the chapter elsewhere
+  it.each([
+    [false, "Second"],
+    [true, "Chapter 2 of 2"],
+  ])(
+    "names the playing chapter and switches chapter progress from it, chapter progress %s",
+    async (chapterProgress, label) => {
+      api.queues["q1"] = {
+        queue_id: "q1",
+        state: PlaybackState.PAUSED,
+        active: true,
+        current_item: {},
+      };
+      api.queueElapsedTime["q1"] = {
+        elapsed_time: 75,
+        elapsed_time_last_updated: NOW,
+      };
+      store.currentUser = {
+        preferences: { audiobook_chapter_progress: chapterProgress },
+      };
+      store.curQueueItem = {
+        queue_item_id: "qi-1",
+        media_item: {
+          media_type: MediaType.AUDIOBOOK,
+          metadata: {
+            chapters: [
+              { position: 1, name: "First", start: 0, end: 60 },
+              { position: 2, name: "Second", start: 60, end: 120 },
+            ],
+          },
+        },
+      };
+      store.activePlayer = {
+        player_id: "p1",
+        active_source: "q1",
+        playback_state: PlaybackState.PAUSED,
+        current_media: {
+          duration: 120,
+          media_type: MediaType.AUDIOBOOK,
+          queue_item_id: "qi-1",
+        },
+      };
+      setPreference.mockClear();
+
+      mountTimeline();
+      const name = wrapper!.get('[data-testid="timeline-chapter-name"]');
+      expect(name.text()).toBe(label);
+      await name.trigger("click");
+      expect(setPreference).toHaveBeenCalledWith(
+        "audiobook_chapter_progress",
+        !chapterProgress,
+      );
+    },
+  );
 
   // with chapter progress the track spans the playing chapter only
   it.each([
