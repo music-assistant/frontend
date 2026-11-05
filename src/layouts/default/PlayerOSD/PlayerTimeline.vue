@@ -38,7 +38,10 @@
               class="pointer-events-none z-[100001] max-w-[320px] truncate text-nowrap"
               data-testid="timeline-hover-label"
             >
-              {{ hoverLabel.text }}
+              <span class="opacity-70">{{ hoverLabel.time }}</span>
+              <template v-if="hoverLabel.chapter">
+                · {{ hoverLabel.chapter }}</template
+              >
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -164,6 +167,14 @@
           {{ playerCurTimeStr }}
         </div>
 
+        <div
+          v-if="playingChapterName"
+          class="text-caption min-w-0 self-start truncate px-3 text-center"
+          data-testid="timeline-chapter-name"
+        >
+          {{ playingChapterName }}
+        </div>
+
         <!-- end time detail -->
         <div class="text-caption time-text-right">
           {{ playerTotalTimeStr }}
@@ -184,6 +195,7 @@ import { store } from "@/plugins/store";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
 import {
+  isChapteredMediaType,
   resolveCurrentChapter,
   computeChapterSegments,
   segmentAt,
@@ -363,7 +375,7 @@ const currentChapter = computed(() => {
   const queueItem = store.curQueueItem;
   if (
     !showChapterProgress.value ||
-    media?.media_type !== MediaType.AUDIOBOOK ||
+    !isChapteredMediaType(media?.media_type) ||
     (media.queue_item_id !== null &&
       media.queue_item_id !== queueItem?.queue_item_id)
   ) {
@@ -441,6 +453,17 @@ const playerTotalTimeStr = computed(() => {
   // A stream of unknown duration (most radio) has no end to show
   if (!duration) return "";
   return formatDuration(duration);
+});
+
+// stays on the playing chapter while the track is dragged; with chapter
+// progress the full screen player already names it under the title
+const playingChapterName = computed(() => {
+  if (hidesRadioPosition.value || currentChapter.value) return undefined;
+  return resolveCurrentChapter(
+    store.curQueueItem?.media_item?.metadata?.chapters,
+    pendingSeek.value?.position ?? absoluteElapsedTime.value,
+    store.activePlayer?.current_media?.duration,
+  )?.chapter.name;
 });
 
 const displayedElapsedTime = computed(() => displayedTimelineTime.value);
@@ -580,9 +603,8 @@ const hoverLabel = computed(() => {
     reference: {
       getBoundingClientRect: () => new DOMRect(point.x, point.y, 0, 0),
     },
-    text: [formatDuration(seconds), segment.chapter?.name]
-      .filter(Boolean)
-      .join(" · "),
+    time: formatDuration(seconds),
+    chapter: segment.chapter?.name,
   };
 });
 
@@ -684,7 +706,8 @@ const clearPendingSeek = () => {
   margin-top: -6px;
   margin-bottom: 5px;
 }
-.time-text-row > div {
-  width: calc(100% / 2);
+.time-text-left,
+.time-text-right {
+  flex: 1 0 0;
 }
 </style>

@@ -263,7 +263,7 @@ describe("PlayerTimeline", () => {
     expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 70);
   });
 
-  it("splits the track into chapters and names the hovered one", async () => {
+  it("splits the track into chapters and names the playing and hovered one", async () => {
     store.currentUser = {
       preferences: { audiobook_chapter_progress: false },
     };
@@ -297,6 +297,9 @@ describe("PlayerTimeline", () => {
       SliderTrack: { template: "<div><slot /></div>" },
     });
     expect(wrapper!.findAll('[data-testid="chapter-segment"]')).toHaveLength(2);
+    expect(wrapper!.get('[data-testid="timeline-chapter-name"]').text()).toBe(
+      "First",
+    );
 
     await wrapper!.find(".slider-root").trigger("pointermove", { clientX: 90 });
 
