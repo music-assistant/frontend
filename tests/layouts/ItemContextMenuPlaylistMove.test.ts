@@ -28,6 +28,7 @@ const { apiMock, authMock, storeMock, mockEventbusEmit, toastMock } =
       movePlaylistTracks: vi.fn(),
       removePlaylistTracks: vi.fn(),
       players: {},
+      state: { value: "initialized" } as { value: string },
     },
     toastMock: { success: vi.fn(), error: vi.fn() },
     authMock: {
@@ -40,7 +41,11 @@ const { apiMock, authMock, storeMock, mockEventbusEmit, toastMock } =
     mockEventbusEmit: vi.fn(),
   }));
 
-vi.mock("@/plugins/api", () => ({ default: apiMock, api: apiMock }));
+vi.mock("@/plugins/api", () => ({
+  default: apiMock,
+  api: apiMock,
+  ConnectionState: { INITIALIZED: "initialized" },
+}));
 vi.mock("@/plugins/auth", () => ({ authManager: authMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/eventbus", () => ({
@@ -91,6 +96,7 @@ const moveLabels = async (items = [track({ position: 2 })]) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  apiMock.state.value = "initialized";
   apiMock.getLibraryItem.mockResolvedValue(null);
   apiMock.movePlaylistTracks.mockResolvedValue(undefined);
   apiMock.removePlaylistTracks.mockResolvedValue(undefined);
@@ -186,6 +192,15 @@ describe("move playlist items context menu actions", () => {
     const items = [track({ position: 2 }), track({ position: 1 })];
 
     expect(await moveLabels(items)).toEqual(["playlist_move_to_bottom"]);
+  });
+
+  it("sends no edit of the playlist while reconnecting", async () => {
+    const menu = await getContextMenuItems([track({ position: 2 })], parent);
+    apiMock.state.value = "reconnecting";
+
+    menu.find((item) => item.label === "playlist_move_to_top")?.action?.();
+    expect(apiMock.movePlaylistTracks).not.toHaveBeenCalled();
+    expect(mockEventbusEmit).not.toHaveBeenCalledWith("clearSelection");
   });
 
   it("is not offered on a dynamic playlist", async () => {
