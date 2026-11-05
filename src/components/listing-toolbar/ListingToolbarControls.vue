@@ -6,7 +6,7 @@
     :class="compact ? 'gap-0' : 'mx-2 gap-2'"
   >
     <ListingSortMenu
-      v-if="sortOptions.length || showViewModes"
+      v-if="sortOptions.length || showViewModes || viewMode === 'panel'"
       :compact="compact"
       :options="sortOptions"
       :sort-by="sortBy"
