@@ -10,7 +10,7 @@ import {
   playlistPosition,
   reloadedRowLocator,
 } from "@/helpers/playlist_reorder";
-import { api } from "@/plugins/api";
+import { api, ConnectionState } from "@/plugins/api";
 import type {
   MediaItemType,
   MediaItemTypeOrItemMapping,
@@ -39,6 +39,10 @@ interface PlaylistTrackReorderOptions {
   // Re-reads the listed rows from the provider.
   reload: () => Promise<void>;
 }
+
+// while reconnecting an edit cannot be sent
+export const canSavePlaylistMoves = () =>
+  api.state.value === ConnectionState.INITIALIZED;
 
 export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
   const { listEl, items, playlistId, inOwnOrder, selected, rowHeight, reload } =
@@ -139,7 +143,13 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
     const id = playlistId();
     const before = toRaw(items.value);
     const rows = [...new Set(indices)].sort((a, b) => a - b);
-    if (id === undefined || saving.value || !inOwnOrder() || !rows.length)
+    if (
+      id === undefined ||
+      saving.value ||
+      !canSavePlaylistMoves() ||
+      !inOwnOrder() ||
+      !rows.length
+    )
       return;
     if (rows[0] < 0 || rows[rows.length - 1] >= before.length) return;
     if (toIndex < 0 || toIndex + rows.length > before.length) return;
@@ -265,7 +275,7 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
   const { draggingIndex, isDragging, rowOffset } = drag;
 
   const startDrag = (evt: PointerEvent, index: number) => {
-    if (saving.value) return;
+    if (saving.value || !canSavePlaylistMoves()) return;
     dragRows = toRaw(items.value);
     dragPlaylistId = playlistId();
     drag.startItemDrag(evt, index);

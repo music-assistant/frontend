@@ -9,10 +9,15 @@ const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     movePlaylistTrack: vi.fn<() => Promise<void>>(),
     movePlaylistTracks: vi.fn<() => Promise<void>>(),
+    state: { value: "initialized" },
   },
 }));
 
-vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+vi.mock("@/plugins/api", () => ({
+  api: apiMock,
+  default: apiMock,
+  ConnectionState: { INITIALIZED: "initialized" },
+}));
 
 const pointer = (type: string, y: number) =>
   new MouseEvent(type, { clientX: 10, clientY: y, button: 0, bubbles: true });

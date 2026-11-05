@@ -364,6 +364,7 @@ import {
   canReorderPlaylistItems,
   canSharePlaylist,
 } from "@/helpers/playlist_access";
+import { canSavePlaylistMoves } from "@/composables/usePlaylistTrackReorder";
 import { playlistPosition } from "@/helpers/playlist_reorder";
 import {
   gotoRadio,
@@ -1096,7 +1097,9 @@ export const getContextMenuItems = async function (
       contextMenuItems.push({
         label: "remove_playlist",
         labelArgs: [],
+        disabled: !canSavePlaylistMoves(),
         action: () => {
+          if (!canSavePlaylistMoves()) return;
           api
             .removePlaylistTracks(playlist.item_id, positions, uris)
             .catch(() => {
@@ -1112,6 +1115,7 @@ export const getContextMenuItems = async function (
     // move to the playlist's top or bottom; the listing reloads once the
     // playlist reports the change
     const moveTo = (to: number | undefined, done: string) => {
+      if (!canSavePlaylistMoves()) return;
       api
         .movePlaylistTracks(playlist.item_id, positions, to, uris)
         .then(() => toast.success($t(done)))
@@ -1136,6 +1140,7 @@ export const getContextMenuItems = async function (
         contextMenuItems.push({
           label: "playlist_move_to_top",
           labelArgs: [],
+          disabled: !canSavePlaylistMoves(),
           action: () => moveTo(1, "playlist_moved_to_top"),
           icon: ArrowUpToLine,
         });
@@ -1143,6 +1148,7 @@ export const getContextMenuItems = async function (
       contextMenuItems.push({
         label: "playlist_move_to_bottom",
         labelArgs: [],
+        disabled: !canSavePlaylistMoves(),
         action: () => moveTo(undefined, "playlist_moved_to_bottom"),
         icon: ArrowDownToLine,
       });
