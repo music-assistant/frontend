@@ -367,12 +367,15 @@ describe("MediaRowList", () => {
         removeEventListener: () => {},
       })),
     );
-    const wrapper = mountList({ items: TRACKS.slice(0, 1) });
-    await flushPromises();
+    try {
+      const wrapper = mountList({ items: TRACKS.slice(0, 1) });
+      await flushPromises();
 
-    const button = wrapper.get('button[aria-label="play One"]');
-    expect(button.element.closest(".media-rows__art")).toBeNull();
-    vi.unstubAllGlobals();
+      const button = wrapper.get('button[aria-label="play One"]');
+      expect(button.element.closest(".media-rows__art")).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   // the finger lifting after a long press must not also play the item
