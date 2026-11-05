@@ -81,6 +81,12 @@ describe("StatisticsUserSelect", () => {
     },
     { selected: { users: ["alice"] }, click: "Alice", emitted: {} },
     { selected: {}, click: "All users", emitted: { all_users: true } },
+    // ticking the last missing user is the same as all users
+    {
+      selected: { users: ["self", "alice"] },
+      click: "homeassistant_system",
+      emitted: { all_users: true },
+    },
     { selected: { all_users: true }, click: "All users", emitted: {} },
     {
       selected: { all_users: true },

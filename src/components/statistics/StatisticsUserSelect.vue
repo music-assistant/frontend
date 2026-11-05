@@ -95,6 +95,9 @@ function toggle(userId: string, checked: boolean | "indeterminate") {
       ? [...selected.value, userId]
       : selected.value.filter((id) => id !== userId);
   const onlyMe = ids.length === 1 && ids[0] === store.currentUser?.user_id;
-  selection.value = onlyMe || !ids.length ? {} : { users: ids };
+  if (onlyMe || !ids.length) selection.value = {};
+  else if (allUserIds.value.every((id) => ids.includes(id))) {
+    selection.value = { all_users: true };
+  } else selection.value = { users: ids };
 }
 </script>
