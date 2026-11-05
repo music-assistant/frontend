@@ -542,9 +542,10 @@ const bookmarkTicks = computed(() => {
     .map((x) => ({
       ...x,
       percent: ((x.start - start) / duration) * 100,
-      // e.g. "35:25 · Chapter 3", for the marker's tooltip
+      // e.g. "35:25 · Chapter 3", for the marker's tooltip; counted like the
+      // track's own times, so from the chapter start with chapter progress
       details: [
-        formatDuration(x.start),
+        formatDuration(x.start - start),
         resolveCurrentChapter(chapters, x.start, mediaDuration)?.chapter.name,
       ]
         .filter(Boolean)

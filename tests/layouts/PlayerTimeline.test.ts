@@ -387,7 +387,7 @@ describe("PlayerTimeline", () => {
         ["In the second", "01:30 · Second", "75%"],
       ],
     ],
-    [true, [["In the second", "01:30 · Second", "50%"]]],
+    [true, [["In the second", "00:30 · Second", "50%"]]],
   ])(
     "marks the bookmarks on the track, chapter progress %s",
     async (chapterProgress, expected) => {
