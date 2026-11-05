@@ -645,14 +645,18 @@ watch(hasChapters, (available) => {
   if (!available) showChapters.value = false;
 });
 const chaptersPanelRef = ref<HTMLElement>();
-// open on the playing chapter, a long list would otherwise start far from it
-watch(chaptersPanelRef, async (panel) => {
-  if (!panel) return;
-  await nextTick();
-  panel
-    .querySelector("[aria-current='true']")
-    ?.scrollIntoView({ block: "center" });
-});
+// open on the playing chapter, a long list would otherwise start far from it;
+// the dialog keeps the panel mounted, so a reopened player scrolls it again
+watch(
+  [chaptersPanelRef, () => store.showFullscreenPlayer],
+  async ([panel, open]) => {
+    if (!panel || !open) return;
+    await nextTick();
+    panel
+      .querySelector("[aria-current='true']")
+      ?.scrollIntoView({ block: "center" });
+  },
+);
 
 const showWaveformPref = computed(() => expertModeSetting("show_waveform"));
 const showChapterProgress = getPreference("audiobook_chapter_progress", true);
@@ -887,17 +891,28 @@ watch(lyricsState, (state) => {
 // so each button visibly swaps the panel instead of silently flipping a hidden
 // state. Opening lyrics remembers whether the queue was showing so closing them
 // returns there rather than to the bare artwork.
+// The chapters panel does the same; switching between the two panels hands the
+// remembered queue over, so the one closing does not bring the queue back.
 let queueVisibleBeforeLyrics = false;
+let queueVisibleBeforeChapters = false;
 watch(showChapters, (active) => {
-  if (!active) return;
-  queueVisibleBeforeLyrics = false;
-  showLyrics.value = false;
-  store.showQueueItems = false;
+  if (active) {
+    queueVisibleBeforeChapters =
+      store.showQueueItems || queueVisibleBeforeLyrics;
+    queueVisibleBeforeLyrics = false;
+    showLyrics.value = false;
+    store.showQueueItems = false;
+  } else if (queueVisibleBeforeChapters) {
+    store.showQueueItems = true;
+    queueVisibleBeforeChapters = false;
+  }
 });
 watch(showLyrics, (active) => {
   if (active) {
+    queueVisibleBeforeLyrics =
+      store.showQueueItems || queueVisibleBeforeChapters;
+    queueVisibleBeforeChapters = false;
     showChapters.value = false;
-    queueVisibleBeforeLyrics = store.showQueueItems;
     store.showQueueItems = false;
   } else if (queueVisibleBeforeLyrics) {
     store.showQueueItems = true;
@@ -1585,6 +1600,8 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* a long chapter name truncates instead of widening the column */
+  min-width: 0;
 }
 
 .queue-items-scroll-box {
