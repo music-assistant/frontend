@@ -255,6 +255,8 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
       const dropBefore = finalIndex > source ? finalIndex + 1 : finalIndex;
       moveFrom(source, rows, blockStartIndex(rows, dropBefore));
     },
+    // a scattered block dropped by its grabbed row still gathers there
+    commitsInPlace: (source) => movesBlock(source),
     rowBox: (index) =>
       index >= 0 && index < items.value.length
         ? { top: index * rowHeight, height: rowHeight }
