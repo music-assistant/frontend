@@ -193,14 +193,22 @@ watch(
   );
 }
 
+/* like the playing row of the queue, readable on any artwork color */
 .queue-chapter--active {
-  color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 10%,
+    transparent
+  );
   font-weight: 600;
 }
 
 .queue-chapter--active:hover {
-  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 14%,
+    transparent
+  );
 }
 
 .queue-chapter__name {
