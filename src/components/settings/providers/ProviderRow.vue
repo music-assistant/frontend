@@ -91,8 +91,7 @@
     v-hold="onManageableHold"
     class="provider-card flex h-full min-h-[200px] flex-col gap-3 rounded-(--radius-xl) py-4"
     :class="{
-      'cursor-pointer transition duration-200 hover:-translate-y-0.5 hover:shadow-lg':
-        manageable,
+      'card-hover': manageable,
       'opacity-60': !config.enabled,
     }"
     data-testid="provider-row"

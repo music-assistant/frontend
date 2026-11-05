@@ -396,16 +396,14 @@ describe("ProviderRow", () => {
     const wrapper = mountRow({ variant: "card", manageable: true });
 
     const root = wrapper.get('[data-testid="provider-row"]');
-    expect(root.classes()).toContain("cursor-pointer");
-    expect(root.classes()).toContain("hover:-translate-y-0.5");
+    expect(root.classes()).toContain("card-hover");
   });
 
   it("leaves the card root static when not manageable", () => {
     const wrapper = mountRow({ variant: "card", manageable: false });
 
     const root = wrapper.get('[data-testid="provider-row"]');
-    expect(root.classes()).not.toContain("cursor-pointer");
-    expect(root.classes()).not.toContain("hover:-translate-y-0.5");
+    expect(root.classes()).not.toContain("card-hover");
   });
 });
 
