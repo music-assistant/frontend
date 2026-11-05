@@ -45,6 +45,7 @@
           </div>
         </dl>
       </template>
+      <slot name="highlights"></slot>
     </div>
     <div class="flex min-w-0 flex-[2_1_480px] flex-col">
       <Skeleton v-if="loading" class="h-[190px] w-full bg-primary/20" />
