@@ -6,7 +6,7 @@ import { defineComponent, ref } from "vue";
 const ROW_HEIGHT = 50;
 const mounted: { unmount: () => void }[] = [];
 
-function setup() {
+function setup(commitsInPlace?: (source: number) => boolean) {
   const onCommit = vi.fn();
   let drag!: ReturnType<typeof useListDragReorder>;
   const wrapper = mount(
@@ -17,6 +17,7 @@ function setup() {
           listEl,
           count: () => 3,
           onCommit,
+          commitsInPlace,
           rowBox: (index) =>
             index >= 0 && index < 3
               ? { top: index * ROW_HEIGHT, height: ROW_HEIGHT }
@@ -50,8 +51,18 @@ describe("useListDragReorder", () => {
     mounted.splice(0).forEach((wrapper) => wrapper.unmount());
   });
 
+  it("commits a drag back to its start for a row that commits in place", () => {
+    const { drag, onCommit } = setup(() => true);
+
+    press(drag, 10, 10);
+    window.dispatchEvent(pointer("pointermove", 60, 12));
+    window.dispatchEvent(pointer("pointerup", 60, 12));
+
+    expect(onCommit).toHaveBeenCalledWith(0, 0);
+  });
+
   it("does not commit a press that never moved", () => {
-    const { drag, onCommit } = setup();
+    const { drag, onCommit } = setup(() => true);
 
     press(drag, 10, 10);
     window.dispatchEvent(pointer("pointerup", 11, 10));
