@@ -150,6 +150,20 @@ describe("useChapterNavigation", () => {
     wrapper.unmount();
   });
 
+  it("targets the nearest chapters from a gap between two", async () => {
+    seedPlayingChapterMedia(50);
+    store.curQueueItem!.media_item!.metadata.chapters = [
+      { position: 1, name: "First", start: 0, end: 40 },
+      { position: 2, name: "Second", start: 60, end: 120 },
+    ];
+    const wrapper = mount(Consumer);
+    await nextTick();
+
+    expect(wrapper.vm.previousChapter?.start).toBe(0);
+    expect(wrapper.vm.nextChapter?.start).toBe(60);
+    wrapper.unmount();
+  });
+
   // the timeline still shows the chapters without chapter progress
   it("targets chapters with chapter progress disabled", async () => {
     seedPlayingChapterMedia(30);

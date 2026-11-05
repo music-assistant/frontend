@@ -46,18 +46,21 @@ export function useChapterNavigation() {
 
     const media = store.activePlayer.current_media;
     const chapters = store.curQueueItem?.media_item?.metadata?.chapters;
-    const current = resolveCurrentChapter(
-      chapters,
-      resolveActiveElapsedTime(),
-      media?.duration,
-    );
-    if (!current || !chapters) return undefined;
+    const elapsed = resolveActiveElapsedTime();
+    if (!chapters || elapsed == null) return undefined;
 
     const ordered = chapters
       .map((chapter, index) => ({ chapter, index }))
       .filter(({ chapter }) => Number.isFinite(chapter.start))
       .sort((a, b) => a.chapter.start - b.chapter.start || a.index - b.index)
       .map(({ chapter }) => chapter);
+    const current = resolveCurrentChapter(chapters, elapsed, media?.duration);
+    // before the first chapter or between two, the nearest ones on either side
+    if (!current) {
+      return direction === "next"
+        ? ordered.find((chapter) => chapter.start > elapsed)
+        : ordered.findLast((chapter) => chapter.start < elapsed);
+    }
     const currentIndex = ordered.indexOf(current.chapter);
     if (currentIndex < 0) return undefined;
 
