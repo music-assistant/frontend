@@ -217,7 +217,7 @@ describe("AddProviderDialog", () => {
     expect(document.querySelector("[data-slot='badge']")).toBeNull();
   });
 
-  it("badges a community provider and credits its maintainers", async () => {
+  it("names the maintainers of a community provider under its description", async () => {
     apiMock.providerManifests = {
       soundcloud: providerManifest({
         domain: "soundcloud",
@@ -229,21 +229,18 @@ describe("AddProviderDialog", () => {
 
     await openDialog();
 
+    // a stable provider carries no stage badge, and the community mark is no badge
+    expect(document.querySelector("[data-slot='badge']")).toBeNull();
     expect(
-      document.querySelector("[data-testid='tier-badge']")?.textContent?.trim(),
-    ).toBe("settings.provider_tier_community");
-    expect(
-      document.querySelector("[data-testid='provider-maintainers']"),
+      document.querySelector("[data-testid='community-marker']"),
     ).not.toBeNull();
     expect(i18nMock.t).toHaveBeenCalledWith(
-      "settings.provider_by_maintainers",
-      {
-        maintainers: "@jane, @john",
-      },
+      "settings.provider_community_maintained_by",
+      { maintainers: "@jane, @john" },
     );
   });
 
-  it("credits nobody on a core provider", async () => {
+  it("adds no community line to a core provider", async () => {
     apiMock.providerManifests = {
       spotify: providerManifest({
         domain: "spotify",
@@ -254,9 +251,8 @@ describe("AddProviderDialog", () => {
 
     await openDialog();
 
-    expect(document.querySelector("[data-testid='tier-badge']")).toBeNull();
     expect(
-      document.querySelector("[data-testid='provider-maintainers']"),
+      document.querySelector("[data-testid='community-marker']"),
     ).toBeNull();
   });
 

@@ -28,23 +28,13 @@
           {{ name }}
         </button>
         <span v-else>{{ name }}</span>
+        <CommunityProviderMarker v-if="community" variant="icon" />
         <Badge
           v-if="statusVariant"
           :variant="statusVariant"
           data-testid="provider-status"
         >
           {{ statusLabel }}
-        </Badge>
-        <Badge
-          v-if="stageLabel"
-          variant="outline"
-          class="uppercase"
-          data-testid="stage-badge"
-        >
-          {{ stageLabel }}
-        </Badge>
-        <Badge v-if="tierLabel" variant="secondary" data-testid="tier-badge">
-          {{ tierLabel }}
         </Badge>
       </ItemTitle>
       <ItemDescription v-if="isError" class="text-destructive">
@@ -118,23 +108,13 @@
             {{ name }}
           </button>
           <span v-else class="text-base font-semibold">{{ name }}</span>
+          <CommunityProviderMarker v-if="community" variant="icon" />
           <Badge
             v-if="statusVariant"
             :variant="statusVariant"
             data-testid="provider-status"
           >
             {{ statusLabel }}
-          </Badge>
-          <Badge
-            v-if="stageLabel"
-            variant="outline"
-            class="uppercase"
-            data-testid="stage-badge"
-          >
-            {{ stageLabel }}
-          </Badge>
-          <Badge v-if="tierLabel" variant="secondary" data-testid="tier-badge">
-            {{ tierLabel }}
           </Badge>
         </div>
       </div>
@@ -203,6 +183,7 @@
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import CommunityProviderMarker from "@/components/settings/providers/CommunityProviderMarker.vue";
 import { Badge, type BadgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -243,10 +224,8 @@ interface Props {
   isError?: boolean;
   // the localized error reason
   errorText?: string;
-  // the translated stage label; empty hides the stage badge
-  stageLabel?: string;
-  // the translated tier label; empty hides the tier badge (a core provider)
-  tierLabel?: string;
+  // whether a community member maintains the provider
+  community?: boolean;
 }
 
 const props = defineProps<Props>();

@@ -8,6 +8,7 @@ vi.mock("vue-i18n", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-i18n")>()),
   useI18n: () => ({ t: (key: string) => key }),
 }));
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 enableAutoUnmount(afterEach);
 
@@ -216,42 +217,25 @@ describe("ProviderRow", () => {
   );
 
   it.each(VARIANTS)(
-    "shows the stage badge when a stage label is set (%s)",
+    "marks a community provider with an icon by its name (%s)",
     (variant) => {
-      const wrapper = mountRow({ variant, stageLabel: "Beta" });
+      const wrapper = mountRow({ variant, community: true });
 
-      expect(wrapper.get('[data-testid="stage-badge"]').text()).toBe("Beta");
+      expect(
+        wrapper
+          .get('[data-testid="community-marker"]')
+          .attributes("aria-label"),
+      ).toBe("settings.provider_community_maintained");
     },
   );
 
-  it.each(VARIANTS)(
-    "hides the stage badge when the stage label is empty (%s)",
-    (variant) => {
-      const wrapper = mountRow({ variant, stageLabel: "" });
+  it.each(VARIANTS)("leaves a core provider unmarked (%s)", (variant) => {
+    const wrapper = mountRow({ variant, community: false });
 
-      expect(wrapper.find('[data-testid="stage-badge"]').exists()).toBe(false);
-    },
-  );
-
-  it.each(VARIANTS)(
-    "shows the tier badge when a tier label is set (%s)",
-    (variant) => {
-      const wrapper = mountRow({ variant, tierLabel: "Community" });
-
-      expect(wrapper.get('[data-testid="tier-badge"]').text()).toBe(
-        "Community",
-      );
-    },
-  );
-
-  it.each(VARIANTS)(
-    "hides the tier badge when the tier label is empty (%s)",
-    (variant) => {
-      const wrapper = mountRow({ variant, tierLabel: "" });
-
-      expect(wrapper.find('[data-testid="tier-badge"]').exists()).toBe(false);
-    },
-  );
+    expect(wrapper.find('[data-testid="community-marker"]').exists()).toBe(
+      false,
+    );
+  });
 
   it.each(VARIANTS)(
     "shows the reconfigure action and emits reconfigure when in error and reconfigurable (%s)",

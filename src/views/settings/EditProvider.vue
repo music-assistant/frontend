@@ -121,14 +121,13 @@
                 ></span>
                 {{ providerStatusLabel }}
               </Badge>
-              <Badge
-                v-if="isCommunityProvider(providerManifest)"
-                variant="secondary"
-                data-testid="tier-badge"
-              >
-                {{ $t("settings.provider_tier_community") }}
-              </Badge>
             </div>
+            <CommunityProviderMarker
+              v-if="isCommunityProvider(providerManifest)"
+              variant="line"
+              class="mt-1"
+              :maintainers="getProviderMaintainers(providerManifest)"
+            />
             <CardDescription class="mt-2 max-w-3xl leading-relaxed">
               {{ providerManifest.description }}
             </CardDescription>
@@ -300,6 +299,7 @@
 import MarkdownText from "@/components/MarkdownText.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
+import CommunityProviderMarker from "@/components/settings/providers/CommunityProviderMarker.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
 import ProviderSettingsLinks from "@/components/settings/providers/ProviderSettingsLinks.vue";
 import { Badge } from "@/components/ui/badge";
@@ -317,6 +317,7 @@ import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import {
   getProviderHelpUrl,
+  getProviderMaintainers,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
   isCommunityProvider,

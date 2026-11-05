@@ -1,4 +1,5 @@
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
+import CommunityProviderMarker from "@/components/settings/providers/CommunityProviderMarker.vue";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -43,7 +44,7 @@ const {
       spotify: {
         allow_disable: true,
         builtin: false,
-        codeowners: [],
+        codeowners: [] as string[],
         credits: [],
         description: "Spotify music provider",
         documentation: "https://example.com/spotify",
@@ -182,6 +183,7 @@ beforeEach(() => {
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   store.currentUser = undefined;
   apiMock.providerManifests.spotify.allow_disable = true;
+  apiMock.providerManifests.spotify.codeowners = [];
   apiMock.providerManifests.spotify.documentation =
     "https://example.com/spotify";
   apiMock.providerManifests.spotify.has_setup_flow = true;
@@ -248,11 +250,15 @@ describe("EditProvider", () => {
       rel: "noopener noreferrer",
       target: "_blank",
     });
-    expect(wrapper.find('[data-testid="tier-badge"]').exists()).toBe(false);
+    expect(wrapper.findComponent(CommunityProviderMarker).exists()).toBe(false);
   });
 
-  it("badges a community provider and sends Get help to its maintainer", async () => {
+  it("names a community provider's maintainers and sends Get help to them", async () => {
     apiMock.providerManifests.spotify.tier = ProviderTier.COMMUNITY;
+    apiMock.providerManifests.spotify.codeowners = [
+      "@jane",
+      "@music-assistant",
+    ];
     apiMock.providerManifests.spotify.support_url =
       "https://github.com/jane/spotify/issues";
     apiMock.getProviderConfig.mockResolvedValue(
@@ -272,8 +278,8 @@ describe("EditProvider", () => {
     });
     await flushPromises();
 
-    expect(wrapper.get('[data-testid="tier-badge"]').text()).toBe(
-      "settings.provider_tier_community",
+    expect(wrapper.getComponent(CommunityProviderMarker).props()).toMatchObject(
+      { variant: "line", maintainers: ["@jane"] },
     );
     expect(
       wrapper.get('[data-testid="provider-get-help"]').attributes("href"),

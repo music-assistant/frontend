@@ -63,8 +63,7 @@
             :status-label="statusLabel(item)"
             :is-error="isErrorStatus(item.status)"
             :error-text="getErrorText(item)"
-            :stage-label="stageLabelFor(item)"
-            :tier-label="tierLabelFor(item)"
+            :community="isCommunityProvider(api.providerManifests[item.domain])"
             @open="openProvider(item)"
             @menu="openMenu($event, item)"
             @reconfigure="reconfigureProvider(item)"
@@ -159,12 +158,10 @@ import { useProviderAccess } from "@/composables/settings/providers/useProviderA
 import { useProviderSources } from "@/composables/settings/providers/useProviderSources";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import {
-  getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
   isCommunityProvider,
   providerDisplayName,
   providerRequiresReconfiguration,
-  shouldShowStageBadge,
 } from "@/helpers/provider_config";
 import {
   canConfigureSourceAccess,
@@ -178,7 +175,6 @@ import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_action
 import { api } from "@/plugins/api";
 import {
   type ProviderConfig,
-  ProviderStage,
   ProviderStatus,
   ProviderType,
 } from "@/plugins/api/interfaces";
@@ -264,25 +260,6 @@ const statusLabel = function (item: ProviderConfig) {
 const getErrorText = function (item: ProviderConfig) {
   // the server localizes last_error.message for the connection's locale
   return item.last_error?.message ?? "";
-};
-
-const getStageLabel = function (stage?: ProviderStage) {
-  const key = getProviderStageTranslationKey(stage);
-  return key ? $t(key) : "";
-};
-
-// a stage badge only shows for the stages worth flagging; a healthy stable
-// provider carries none
-const stageLabelFor = function (item: ProviderConfig) {
-  const stage = api.providerManifests[item.domain]?.stage;
-  return shouldShowStageBadge(stage) ? getStageLabel(stage) : "";
-};
-
-// only a community provider carries a tier badge; core is the norm
-const tierLabelFor = function (item: ProviderConfig) {
-  return isCommunityProvider(api.providerManifests[item.domain])
-    ? $t("settings.provider_tier_community")
-    : "";
 };
 
 const {

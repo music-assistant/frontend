@@ -7,6 +7,7 @@ import {
   ProviderSharing,
   ProviderStage,
   ProviderStatus,
+  ProviderTier,
   ProviderType,
   type Scope,
   type User,
@@ -48,6 +49,7 @@ const {
         name: "Spotify",
         self_service: true,
         stage: "stable",
+        tier: "core",
       },
       builtin: {
         allow_disable: false,
@@ -224,7 +226,7 @@ const ProviderRowStub = {
     "statusLabel",
     "isError",
     "errorText",
-    "stageLabel",
+    "community",
   ],
   emits: ["open", "menu", "reconfigure"],
   template: `<div data-testid="provider-row">{{ name }}</div>`,
@@ -244,6 +246,7 @@ beforeEach(() => {
   apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.providerManifests.spotify.self_service = true;
   apiMock.providerManifests.spotify.stage = ProviderStage.STABLE;
+  apiMock.providerManifests.spotify.tier = ProviderTier.CORE;
   apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
@@ -493,20 +496,18 @@ describe("Providers", () => {
     ).not.toContain("settings.reconfigure");
   });
 
-  it("labels the stage badge from the translated stage key", async () => {
-    apiMock.providerManifests.spotify.stage = ProviderStage.DEPRECATED;
+  it("marks a community provider", async () => {
+    apiMock.providerManifests.spotify.tier = ProviderTier.COMMUNITY;
 
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    expect(onlyRow(wrapper).props("stageLabel")).toBe(
-      "settings.stage.options.deprecated",
-    );
+    expect(onlyRow(wrapper).props("community")).toBe(true);
   });
 
-  it("hides the stage badge for a stable provider", async () => {
+  it("leaves a core provider unmarked", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    expect(onlyRow(wrapper).props("stageLabel")).toBe("");
+    expect(onlyRow(wrapper).props("community")).toBe(false);
   });
 
   it("summarizes a music source without an access record as a household one", async () => {
