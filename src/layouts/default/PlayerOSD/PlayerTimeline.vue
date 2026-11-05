@@ -59,7 +59,7 @@
                 'rounded-l-full': index === 0,
                 'rounded-r-full': index === chapterSegments.length - 1,
               }"
-              :style="segmentStyle(index)"
+              :style="segmentStyle(segment)"
               data-testid="chapter-segment"
             >
               <div class="absolute inset-0" :style="trackBackgroundStyle"></div>
@@ -447,28 +447,18 @@ const displayedElapsedTime = computed(() => displayedTimelineTime.value);
 
 // space between two chapter segments
 const SEGMENT_GAP_PX = 2;
-// a narrower segment is drawn without its gap, which would leave nothing of it
-const MIN_SEGMENT_WITH_GAP_PX = 6;
+// a segment gives up half a gap on each side only while it stays visible
+const MIN_SEGMENT_WITH_GAP_PX = 3;
 const trackRef = ref<InstanceType<typeof SliderTrack>>();
 const { width: trackWidth } = useElementSize(trackRef);
 
-const hasRoomForGap = (segment?: ChapterSegment) =>
-  !!segment &&
-  (segment.widthPercent / 100) * trackWidth.value >= MIN_SEGMENT_WITH_GAP_PX;
-
-// a gap only between two segments that both have room for it, so a run of
-// short chapters reads as one stretch of the bar
-const segmentStyle = (index: number) => {
-  const segments = chapterSegments.value;
-  const segment = segments[index];
-  const roomy = hasRoomForGap(segment);
-  const left =
-    roomy && hasRoomForGap(segments[index - 1]) ? SEGMENT_GAP_PX / 2 : 0;
-  const right =
-    roomy && hasRoomForGap(segments[index + 1]) ? SEGMENT_GAP_PX / 2 : 0;
+const segmentStyle = (segment: ChapterSegment) => {
+  const roomy =
+    (segment.widthPercent / 100) * trackWidth.value >= MIN_SEGMENT_WITH_GAP_PX;
+  const half = roomy ? SEGMENT_GAP_PX / 2 : 0;
   return {
-    left: `calc(${segment.startPercent}% + ${left}px)`,
-    width: `calc(${segment.widthPercent}% - ${left + right}px)`,
+    left: `calc(${segment.startPercent}% + ${half}px)`,
+    width: `calc(${segment.widthPercent}% - ${half * 2}px)`,
   };
 };
 
