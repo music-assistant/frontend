@@ -167,13 +167,14 @@
           {{ playerCurTimeStr }}
         </div>
 
-        <!-- switches between the playing chapter and the whole item -->
+        <!-- switches between the playing chapter and the whole item; its tap
+             area reaches into the gap below and over the slider's edge -->
         <TooltipProvider v-if="chapterLabel" :delay-duration="400">
           <Tooltip>
             <TooltipTrigger as-child>
               <button
                 type="button"
-                class="text-caption min-w-0 self-start truncate px-3 text-center hover:underline"
+                class="text-caption relative z-[1] -mb-2.5 min-w-0 self-start truncate px-3 pb-2.5 text-center hover:underline"
                 :aria-label="chapterToggleLabel"
                 data-testid="timeline-chapter-name"
                 @click="toggleChapterProgress"
