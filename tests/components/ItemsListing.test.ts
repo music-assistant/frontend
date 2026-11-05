@@ -3284,6 +3284,45 @@ describe("ItemsListing library toolbar", () => {
     ).toBe("true");
   });
 
+  describe("keyboard focus on the expand button", () => {
+    // a title bar that draws its direct items as buttons after the append
+    // slot, keyed by label like the real one
+    const toolbarWithButtons = {
+      Toolbar: {
+        name: "Toolbar",
+        props: ["menuItems"],
+        template: `<div><slot name="append" /><button
+          v-for="item of menuItems" :key="item.label"
+          :aria-label="item.label" @click="item.action()" /></div>`,
+      },
+    };
+    const expandButton = (listing: ReturnType<typeof mountListingRaw>) =>
+      listing.find('button[aria-label="tooltip.collapse_expand"]');
+
+    it.each([
+      ["collapsed", false],
+      ["open", true],
+    ])(
+      "moves to the replacing button when a %s list is toggled",
+      async (_, expand) => {
+        signInWithSavedFilters({ expand });
+        const listing = await mountLibraryPage(
+          { allowCollapse: true },
+          toolbarWithButtons,
+        );
+        const pressed = expandButton(listing);
+        (pressed.element as HTMLElement).focus();
+
+        await pressed.trigger("click");
+        await flushPromises();
+
+        const replacement = expandButton(listing).element;
+        expect(replacement).not.toBe(pressed.element);
+        expect(document.activeElement).toBe(replacement);
+      },
+    );
+  });
+
   it("keeps an edit that is still being saved when an earlier save lands", async () => {
     let finishSave!: () => void;
     mockSetItemsListingPreference.mockImplementationOnce(

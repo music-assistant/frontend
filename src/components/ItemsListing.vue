@@ -2,6 +2,7 @@
 <template>
   <section
     v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)"
+    ref="sectionEl"
     :class="{
       'flex min-h-full flex-1 flex-col': fillsHeight,
       'ps-[11px] pe-[18px]': detailRow,
@@ -978,6 +979,12 @@ const toggleExpand = function () {
   }
 
   // Otherwise, use the default expand/collapse behavior
+  // the open and collapsed states each draw their own expand button, so the
+  // keyboard focus moves on to the button that replaces the pressed one
+  const expandButton = `button[aria-label=${JSON.stringify(t("tooltip.collapse_expand"))}]`;
+  const active = document.activeElement;
+  const hadFocus =
+    !!active?.matches(expandButton) && !!sectionEl.value?.contains(active);
   expanded.value = !expanded.value;
   setItemsListingPreference(
     props.path || props.itemtype,
@@ -985,6 +992,11 @@ const toggleExpand = function () {
     "expand",
     expanded.value,
   );
+  if (hadFocus) {
+    nextTick(() =>
+      sectionEl.value?.querySelector<HTMLElement>(expandButton)?.focus(),
+    );
+  }
 };
 
 const selectViewMode = function (newMode: string) {
@@ -1016,6 +1028,7 @@ const commitGridSize = function (size: number) {
   );
 };
 
+const sectionEl = useTemplateRef("sectionEl");
 // the cards hide their action row when the covers get too small for it
 const panelRow = useTemplateRef("panelRow");
 const gridActionsFit = ref(true);
