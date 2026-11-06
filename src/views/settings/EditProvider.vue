@@ -121,19 +121,18 @@
                 ></span>
                 {{ providerStatusLabel }}
               </Badge>
+              <CommunityProviderMarker
+                v-if="isCommunityProvider(providerManifest)"
+                variant="icon"
+              />
             </div>
-            <CommunityProviderMarker
-              v-if="isCommunityProvider(providerManifest)"
-              variant="line"
-              class="mt-1"
-              :maintainers="getProviderMaintainers(providerManifest)"
-            />
             <CardDescription class="mt-2 max-w-3xl leading-relaxed">
               {{ providerManifest.description }}
             </CardDescription>
             <!-- eslint-disable vue/no-v-html -- markdownToHtml sanitizes with DOMPurify -->
             <div
-              v-if="providerManifest.codeowners.length"
+              v-if="showCodeowners"
+              data-testid="provider-codeowners"
               class="mt-3 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
               v-html="
                 markdownToHtml(getAuthorsMarkdown(providerManifest.codeowners))
@@ -141,7 +140,8 @@
             ></div>
             <div
               v-if="providerManifest.credits.length"
-              class="mt-1 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
+              class="text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
+              :class="showCodeowners ? 'mt-1' : 'mt-3'"
               v-html="
                 markdownToHtml(getCreditsMarkdown(providerManifest.credits))
               "
@@ -317,7 +317,6 @@ import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import {
   getProviderHelpUrl,
-  getProviderMaintainers,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
   isCommunityProvider,
@@ -442,6 +441,13 @@ const knownIssuesUrl = computed(() =>
 
 const helpUrl = computed(() =>
   providerManifest.value ? getProviderHelpUrl(providerManifest.value) : "",
+);
+
+// a core provider is the project's own, so only a community provider names its maintainers
+const showCodeowners = computed(
+  () =>
+    isCommunityProvider(providerManifest.value) &&
+    !!providerManifest.value?.codeowners.length,
 );
 
 const documentationUrl = computed(() => {

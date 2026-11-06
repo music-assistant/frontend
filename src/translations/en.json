@@ -566,8 +566,9 @@
         "no_group_providers": "You currently do not have any player providers that support creating groups",
         "provider_codeowners": "Contributed\/maintained by",
         "provider_credits": "Made possible by",
+        "provider_community": "Community",
         "provider_community_maintained": "Community maintained",
-        "provider_community_maintained_by": "Community maintained by {maintainers}",
+        "provider_maintained_by": "maintained by {maintainers}",
         "provider_get_help": "Get help",
         "category": {
             "web_player": "Web Player",

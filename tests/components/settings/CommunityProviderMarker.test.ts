@@ -22,31 +22,36 @@ describe("CommunityProviderMarker", () => {
     expect(marker.attributes("aria-label")).toBe(
       "settings.provider_community_maintained",
     );
+    expect(marker.find('[data-slot="badge"]').exists()).toBe(false);
   });
 
-  it("names the maintainers on the line", () => {
+  it("names the maintainers after the badge on the line", () => {
     const wrapper = mount(CommunityProviderMarker, {
       props: { variant: "line", maintainers: ["@jane", "@john"] },
     });
 
-    expect(wrapper.get('[data-testid="community-marker"]').text()).toBe(
-      "settings.provider_community_maintained_by",
+    const marker = wrapper.get('[data-testid="community-marker"]');
+    expect(marker.get('[data-slot="badge"]').text()).toBe(
+      "settings.provider_community",
     );
-    expect(i18nMock.t).toHaveBeenCalledWith(
-      "settings.provider_community_maintained_by",
-      { maintainers: "@jane, @john" },
-    );
+    expect(marker.findAll(":scope > *").map((el) => el.text())).toEqual([
+      "settings.provider_community",
+      "settings.provider_maintained_by",
+    ]);
+    expect(i18nMock.t).toHaveBeenCalledWith("settings.provider_maintained_by", {
+      maintainers: "@jane, @john",
+    });
   });
 
   it.each([[[]], [undefined]])(
-    "falls back to the bare line without maintainers (%j)",
+    "shows only the badge without maintainers (%j)",
     (maintainers) => {
       const wrapper = mount(CommunityProviderMarker, {
         props: { variant: "line", maintainers },
       });
 
       expect(wrapper.get('[data-testid="community-marker"]').text()).toBe(
-        "settings.provider_community_maintained",
+        "settings.provider_community",
       );
     },
   );

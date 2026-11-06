@@ -229,15 +229,18 @@ describe("AddProviderDialog", () => {
 
     await openDialog();
 
-    // a stable provider carries no stage badge, and the community mark is no badge
-    expect(document.querySelector("[data-slot='badge']")).toBeNull();
+    // the title row keeps to the name; the Community badge leads the last line
     expect(
-      document.querySelector("[data-testid='community-marker']"),
-    ).not.toBeNull();
-    expect(i18nMock.t).toHaveBeenCalledWith(
-      "settings.provider_community_maintained_by",
-      { maintainers: "@jane, @john" },
-    );
+      document.querySelector("[data-slot='item-title'] [data-slot='badge']"),
+    ).toBeNull();
+    expect(
+      document
+        .querySelector("[data-testid='community-marker'] [data-slot='badge']")
+        ?.textContent?.trim(),
+    ).toBe("settings.provider_community");
+    expect(i18nMock.t).toHaveBeenCalledWith("settings.provider_maintained_by", {
+      maintainers: "@jane, @john",
+    });
   });
 
   it("adds no community line to a core provider", async () => {

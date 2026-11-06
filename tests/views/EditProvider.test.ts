@@ -253,7 +253,7 @@ describe("EditProvider", () => {
     expect(wrapper.findComponent(CommunityProviderMarker).exists()).toBe(false);
   });
 
-  it("names a community provider's maintainers and sends Get help to them", async () => {
+  it("marks a community provider, names its maintainers and sends Get help to them", async () => {
     apiMock.providerManifests.spotify.tier = ProviderTier.COMMUNITY;
     apiMock.providerManifests.spotify.codeowners = [
       "@jane",
@@ -278,12 +278,39 @@ describe("EditProvider", () => {
     });
     await flushPromises();
 
-    expect(wrapper.getComponent(CommunityProviderMarker).props()).toMatchObject(
-      { variant: "line", maintainers: ["@jane"] },
+    expect(wrapper.getComponent(CommunityProviderMarker).props("variant")).toBe(
+      "icon",
+    );
+    expect(wrapper.find('[data-testid="provider-codeowners"]').exists()).toBe(
+      true,
     );
     expect(
       wrapper.get('[data-testid="provider-get-help"]').attributes("href"),
     ).toBe("https://github.com/jane/spotify/issues");
+  });
+
+  it("names no maintainers for a core provider", async () => {
+    apiMock.providerManifests.spotify.codeowners = ["@music-assistant"];
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="provider-codeowners"]').exists()).toBe(
+      false,
+    );
   });
 
   it("shows the custom name of a source that is not loaded, and hands the settings frame the same one", async () => {
