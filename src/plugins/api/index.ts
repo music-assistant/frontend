@@ -2193,9 +2193,15 @@ export class MusicAssistantApi {
     // Clear all items in the queue.
     this.playerQueueCommand(queueId, "clear");
   }
-  public queueCommandPlayIndex(queueId: string, index: number | string) {
+  public queueCommandPlayIndex(
+    queueId: string,
+    index: number | string,
+  ): Promise<void> {
     // Play item at index (or item_id) X in queue.
-    this.playerQueueCommand(queueId, "play_index", { index });
+    return this.sendCommand("player_queues/play_index", {
+      queue_id: queueId,
+      index,
+    });
   }
   public queueCommandMoveItem(
     queueId: string,
@@ -4032,6 +4038,8 @@ export class MusicAssistantApi {
     if (
       msg.error_code !== PROVIDER_STREAM_HELD_ERROR_CODE ||
       !pending ||
+      // layouts without the dialog, such as the party guest pages, keep the toast
+      !eventbus.all.get("streamHeldDialog")?.length ||
       typeof queue_id !== "string" ||
       typeof player_name !== "string" ||
       typeof provider_instance !== "string"

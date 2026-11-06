@@ -1196,7 +1196,7 @@
     },
     "stream_held": {
         "title": "Play here instead?",
-        "message": "{0} is already playing on {1}. It can play on only one player at a time.",
+        "message": "{0} is already playing on {1}. It can only play on one player at a time.",
         "stop_and_play_here": "Stop there and play here"
     },
     "powered_off_players": "Unpowered players",

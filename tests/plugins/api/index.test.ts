@@ -811,6 +811,7 @@ describe("MusicAssistantApi error handling", () => {
       message_id: transport.lastCommand.message_id!,
       error_code: 1001,
       details: null,
+      data: null,
     });
 
     await expect(command).rejects.toMatchObject({
@@ -1272,6 +1273,47 @@ describe("MusicAssistantApi error handling", () => {
       await expect(retry).resolves.toBeNull();
     });
 
+    it("offers the dialog for a queue item started from the queue", async () => {
+      const command = api.queueCommandPlayIndex("kitchen", "item-1");
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(mockToastError).not.toHaveBeenCalled();
+      dialogEvents[0].retry().catch(() => {});
+      expect(transport.lastCommand.command).toBe("player_queues/play_index");
+      expect(transport.lastCommand.args).toEqual({
+        queue_id: "kitchen",
+        index: "item-1",
+      });
+    });
+
+    it("keeps the toast for a command that waits for no result", () => {
+      api.queueCommandTransfer("living_room", "kitchen", true);
+
+      refuse();
+
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledOnce();
+    });
+
+    it("keeps the toast when no dialog is listening", async () => {
+      eventbus.off("streamHeldDialog", onDialog);
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS);
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledOnce();
+    });
+
     it("leaves a suppressed refusal to its caller", async () => {
       const command = api.sendCommand("player_queues/play_media", PLAY_ARGS, {
         suppressGlobalError: true,
@@ -1552,5 +1594,6 @@ function createErrorResult(
     message_id: command.message_id,
     error_code: 999,
     details,
+    data: null,
   };
 }
