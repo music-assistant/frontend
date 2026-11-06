@@ -1701,6 +1701,132 @@ describe("ItemsListing source selector", () => {
   });
 });
 
+describe("ItemsListing carried album types", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
+    store.prevState = undefined;
+    store.currentUser = undefined;
+    mockSetItemsListingPreference.mockClear();
+  });
+
+  /** Mounts a listing whose album type filter offers albums, EPs and live. */
+  function mountAlbumTypeListing(
+    props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+  ) {
+    const loadItems = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "artistalbums",
+      path: "artistalbums",
+      loadPagedData: loadItems,
+      showAlbumTypeFilter: true,
+      albumTypeFilterOptions: ["album", "ep", "live"],
+      ...props,
+    });
+    return { listing, loadItems };
+  }
+
+  function albumTypeOptions(listing: ReturnType<typeof mountListingRaw>) {
+    const items = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as {
+      label?: string;
+      subItems?: { label?: string; selected?: boolean; action?: () => void }[];
+    }[];
+    return items.find((item) => item.label === "tooltip.album_type")?.subItems;
+  }
+
+  function selectedAlbumTypes(listing: ReturnType<typeof mountListingRaw>) {
+    return albumTypeOptions(listing)
+      ?.filter((option) => option.selected)
+      .map((option) => option.label);
+  }
+
+  // a "view all" link can name the types its shelf was showing, and the
+  // listing opens on them even when the user saved other types here before
+  it("opens on album types carried in by a link, over the saved filter", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const { listing, loadItems } = mountAlbumTypeListing({
+      albumTypeOverride: ["album", "live"],
+    });
+    await flushPromises();
+
+    expect(selectedAlbumTypes(listing)).toEqual([
+      "album_type.album",
+      "album_type.live",
+    ]);
+    // a single load, straight with the carried types
+    expect(loadItems).toHaveBeenCalledTimes(1);
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ albumType: ["album", "live"] }),
+    );
+    // the saved filter is the user's own and stays as it was
+    expect(mockSetItemsListingPreference).not.toHaveBeenCalled();
+  });
+
+  it("stays on the carried album types when another setting is saved", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const { listing, loadItems } = mountAlbumTypeListing({
+      albumTypeOverride: ["album"],
+    });
+    await flushPromises();
+    loadItems.mockClear();
+
+    // every save hands the listing its saved settings again, saved album
+    // types included
+    signInWithSavedSettings({ albumType: ["ep"], viewMode: "list" });
+    await flushPromises();
+
+    expect(selectedAlbumTypes(listing)).toEqual(["album_type.album"]);
+    expect(loadItems).not.toHaveBeenCalled();
+  });
+
+  it("hands over to the album types the user picks", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const { listing, loadItems } = mountAlbumTypeListing({
+      albumTypeOverride: ["album"],
+    });
+    await flushPromises();
+
+    albumTypeOptions(listing)
+      ?.find((option) => option.label === "album_type.live")
+      ?.action?.();
+    await flushPromises();
+
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "artistalbums",
+      "artistalbums",
+      "albumType",
+      ["album", "live"],
+    );
+    expect(loadItems).toHaveBeenLastCalledWith(
+      expect.objectContaining({ albumType: ["album", "live"] }),
+    );
+
+    // from here on the saved pick is what comes back, not the link's types
+    signInWithSavedSettings({ albumType: ["live"] });
+    await flushPromises();
+
+    expect(selectedAlbumTypes(listing)).toEqual(["album_type.live"]);
+  });
+
+  it("keeps the saved filter when no carried album type is offered", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const { listing } = mountAlbumTypeListing({
+      albumTypeOverride: ["soundtrack"],
+    });
+    await flushPromises();
+
+    expect(selectedAlbumTypes(listing)).toEqual(["album_type.ep"]);
+  });
+});
+
 describe("ItemsListing favorite updates", () => {
   beforeEach(() => {
     eventbus.all.clear();
@@ -2056,6 +2182,49 @@ describe("ItemsListing restore state", () => {
     expect(listing.emitted("provider-change")?.at(-1)).toEqual([
       ["spotify--1"],
     ]);
+  });
+
+  // a "view all" link that names album types outranks what the last visit to
+  // this listing left behind
+  it("loads the carried album types instead of restoring other types' albums", async () => {
+    const parent = artist({ item_id: "1" });
+    await cacheArtistAlbums(parent, [album({ item_id: "a1" })], {
+      showAlbumTypeFilter: true,
+    });
+
+    const fromLink = album({ item_id: "a2" });
+    const loadItems = vi.fn<LoadItemsFn>().mockResolvedValue([fromLink]);
+    const listing = mountArtistAlbums(parent, loadItems, {
+      showAlbumTypeFilter: true,
+      albumTypeOverride: ["live"],
+    });
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ albumType: ["live"] }),
+    );
+    expect(shownItems(listing).map((item) => item.uri)).toEqual([fromLink.uri]);
+  });
+
+  it("starts over on the saved filter when a visit on carried album types is reached anew", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const parent = artist({ item_id: "1" });
+    await cacheArtistAlbums(parent, [album({ item_id: "a1" })], {
+      showAlbumTypeFilter: true,
+      albumTypeOverride: ["live"],
+    });
+
+    const saved = album({ item_id: "a2" });
+    const loadItems = vi.fn<LoadItemsFn>().mockResolvedValue([saved]);
+    const listing = mountArtistAlbums(parent, loadItems, {
+      showAlbumTypeFilter: true,
+    });
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ albumType: ["ep"] }),
+    );
+    expect(shownItems(listing).map((item) => item.uri)).toEqual([saved.uri]);
   });
 
   it("restores the cached albums when they came from the carried source", async () => {

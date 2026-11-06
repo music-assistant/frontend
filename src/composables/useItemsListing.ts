@@ -52,8 +52,8 @@ export interface StoredState {
   // artist's albums use "artistalbums"), so the parent's uri scopes the
   // restore to the item that was actually on screen
   parentUri?: string;
-  // the listing was left on a provider carried in by a link, one the user has
-  // not picked: only going back shows that visit again
+  // the listing was left on a provider or album types carried in by a link,
+  // ones the user has not picked: only going back shows that visit again
   carried: boolean;
   scrollPos: number;
   pagedItems: MediaItemType[];
