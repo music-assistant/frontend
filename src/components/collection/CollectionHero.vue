@@ -48,8 +48,9 @@
             <DetailHeroFacts :icon="BookAudio" :facts="facts" />
           </div>
 
-          <div class="flex min-w-0 items-center">
+          <div class="flex min-w-0 items-center gap-2 max-md:gap-2.5">
             <DetailHeroPlayButton :item="item" />
+            <DetailHeroPlayedState v-if="playedState" :item="item" />
           </div>
         </div>
       </div>
@@ -61,8 +62,10 @@
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import DetailHeroPlayedState from "@/components/details/DetailHeroPlayedState.vue";
 import MediaCollectionThumb from "@/components/MediaCollectionThumb.vue";
 import { formatTotalDuration } from "@/helpers/duration";
+import { getPlayedState } from "@/helpers/played_state";
 import {
   getAudiobookCollectionArtists,
   getImageThumbForItem,
@@ -85,16 +88,17 @@ const props = defineProps<Props>();
 // keeps the stacked covers inside the cover's square at any size
 const STACK_OFFSET_RATIO = 0.095;
 
+// no button follows the badge, so an unplayed collection leaves the play button its room
+const playedState = computed(() =>
+  props.item ? getPlayedState(props.item) : undefined,
+);
+
 const coverSize = computed(() => (isPhoneSizedScreen() ? 132 : 200));
 
-// a collection has no artwork of its own, so the first book cover is blurred
-// behind the hero
-const backdrop = computed(() => {
-  const book = props.item?.items.find((item) =>
-    getImageThumbForItem(item, ImageType.THUMB),
-  );
-  return getImageThumbForItem(book, ImageType.THUMB);
-});
+// the first cover of the stack is blurred behind the hero
+const backdrop = computed(() =>
+  getImageThumbForItem(props.item, ImageType.THUMB),
+);
 
 const authors = computed(() =>
   props.item
@@ -111,16 +115,11 @@ const narrators = computed(() =>
 // "Collection · 5 audiobooks · 42 h 10 min", without whatever is unknown
 const facts = computed(() => {
   const parts = [$t("collection")];
-  const books = props.item?.items ?? [];
-  if (books.length) {
-    parts.push(
-      $t("n_audiobooks", books.length, { named: { count: books.length } }),
-    );
+  const count = props.item?.metadata.total_items;
+  if (count) {
+    parts.push($t("n_audiobooks", count, { named: { count } }));
   }
-  const duration = books.reduce(
-    (total, book) => total + (book.duration || 0),
-    0,
-  );
+  const duration = props.item?.metadata.duration;
   if (duration) parts.push(formatTotalDuration(duration));
   return parts;
 });
