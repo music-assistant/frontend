@@ -97,6 +97,7 @@ import {
   SmartPlaylistRules,
   SoundEffect,
   StatisticsTopItemResult,
+  StatisticsUsers,
   SourceFolder,
   StorageInfo,
   StorageLocation,
@@ -111,7 +112,7 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 102;
+export const MIN_SERVER_SCHEMA_VERSION = 103;
 
 // Server error codes of a missing or rejected sign-in; the login UI reports these itself
 const AUTHENTICATION_REQUIRED_ERROR_CODE = 20;
@@ -2040,43 +2041,49 @@ export class MusicAssistantApi {
     media_type: MediaType,
     period: StatisticsPeriod = "week",
     limit = 50,
+    users?: StatisticsUsers,
   ): Promise<StatisticsTopItemResult[]> {
-    return this.statisticsApi.getTopItems(media_type, period, limit);
+    return this.statisticsApi.getTopItems(media_type, period, limit, users);
   }
 
   public async getPlaysOverTime(
     period: StatisticsPeriod = "week",
     granularity: StatisticsGranularity = "day",
+    users?: StatisticsUsers,
   ): Promise<StatisticsTimeSeriesPoint[]> {
-    return this.statisticsApi.getPlaysOverTime(period, granularity);
+    return this.statisticsApi.getPlaysOverTime(period, granularity, users);
   }
 
   public async getListeningActivity(
     period: StatisticsPeriod = "week",
+    users?: StatisticsUsers,
   ): Promise<StatisticsHeatmapPoint[]> {
-    return this.statisticsApi.getListeningActivity(period);
+    return this.statisticsApi.getListeningActivity(period, users);
   }
 
   public async getListeningTime(
     period: StatisticsPeriod = "week",
     group_by: StatisticsGroupBy = "artist",
     limit = 10,
+    users?: StatisticsUsers,
   ): Promise<StatisticsListeningTimeItem[]> {
-    return this.statisticsApi.getListeningTime(period, group_by, limit);
+    return this.statisticsApi.getListeningTime(period, group_by, limit, users);
   }
 
   public async getGenreDistribution(
     period: StatisticsPeriod = "week",
     limit = 10,
+    users?: StatisticsUsers,
   ): Promise<StatisticsDistributionItem[]> {
-    return this.statisticsApi.getGenreDistribution(period, limit);
+    return this.statisticsApi.getGenreDistribution(period, limit, users);
   }
 
   public async getDecadeDistribution(
     period: StatisticsPeriod = "all_time",
     limit = 10,
+    users?: StatisticsUsers,
   ): Promise<StatisticsDistributionItem[]> {
-    return this.statisticsApi.getDecadeDistribution(period, limit);
+    return this.statisticsApi.getDecadeDistribution(period, limit, users);
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {

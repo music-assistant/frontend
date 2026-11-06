@@ -1134,6 +1134,13 @@ export type StatisticsGranularity = "hour" | "day" | "week" | "month";
 /** How `statistics/listening_time` groups its minutes. */
 export type StatisticsGroupBy = "artist" | "genre";
 
+/** Whose plays the statistics commands combine; empty is the current user. */
+export interface StatisticsUsers {
+  // user ids or usernames
+  users?: string[];
+  all_users?: boolean;
+}
+
 /** A ranked media item and its completed-play count from statistics endpoints. */
 export interface StatisticsTopItemResult {
   item: ItemMapping;
