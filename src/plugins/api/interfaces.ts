@@ -1745,6 +1745,10 @@ export interface ProviderManifest {
   // this provider itself, instead of only a user who manages every music source
   self_service: boolean;
   stage: ProviderStage;
+  // tier: who builds and maintains the provider
+  tier: ProviderTier;
+  // support_url: where the maintainer takes reports, null = the project's support repository
+  support_url: string | null;
   // icon: material design icon
   icon: string | null;
   // icon_images: which icon variants this provider supplies as image files.
@@ -1760,6 +1764,11 @@ export enum ProviderStage {
   EXPERIMENTAL = "experimental",
   UNMAINTAINED = "unmaintained",
   DEPRECATED = "deprecated",
+}
+
+export enum ProviderTier {
+  CORE = "core",
+  COMMUNITY = "community",
 }
 
 export enum ProviderStatus {
