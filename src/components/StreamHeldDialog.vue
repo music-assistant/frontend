@@ -85,6 +85,8 @@ async function stopAndPlayHere() {
   loading.value = true;
   try {
     await api.queueCommandStop(current.holderQueueId);
+    // a newer refusal replaced this request while the stop was running
+    if (request.value !== current) return;
     await current.retry();
   } catch (error) {
     // the api already reported a server error, or offered this dialog again
