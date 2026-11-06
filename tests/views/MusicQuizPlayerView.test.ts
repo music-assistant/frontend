@@ -324,7 +324,7 @@ describe("MusicQuizPlayerView routing", () => {
     },
   );
 
-  it("never renders ListenIn in the joined game view, even for reveal-audio Trivia", () => {
+  it("keeps ListenIn in the joined game view for reveal-audio Trivia", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(
       createDefinition(triviaListenInCapability),
     );
@@ -345,11 +345,11 @@ describe("MusicQuizPlayerView routing", () => {
 
     const wrapper = mountView();
 
-    // ListenIn now only ever appears on the pre-game landing; the mode badge
-    // still comes from the session header, unrelated to ListenIn itself.
+    // ListenIn now persists into the joined game so a guest who skipped the
+    // prompt can still start — or stop — listening in mid-game.
     expect(mockGameAdapterSetup).toHaveBeenCalledOnce();
-    expect(mockListenInSetup).not.toHaveBeenCalled();
-    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(false);
+    expect(mockListenInSetup).toHaveBeenCalledOnce();
+    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
     expect(wrapper.text()).toContain("providers.music_quiz.mode_venue");
     expect(mockGetTrackLyrics).not.toHaveBeenCalled();
     wrapper.unmount();
@@ -411,13 +411,13 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
-  it("never renders ListenIn in the joined game view for Guess the Song", () => {
+  it("keeps ListenIn in the joined game view for Guess the Song", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
 
     const wrapper = mountView();
 
-    expect(mockListenInSetup).not.toHaveBeenCalled();
-    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(false);
+    expect(mockListenInSetup).toHaveBeenCalledOnce();
+    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
     wrapper.unmount();
   });
 
@@ -986,6 +986,31 @@ describe("MusicQuizPlayerView routing", () => {
     endedWrapper.unmount();
   });
 
+  it("drops the ListenIn prompt once the game has ended", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref(playerState),
+      playerId: ref("player-id"),
+      landingSeen: ref(true),
+      gameRemoved: ref(true),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(currentRound),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+      markLandingSeen: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(wrapper.text()).toContain("providers.music_quiz.game_ended");
+    expect(mockListenInSetup).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
   it.each([
     ["waiting", false],
     ["ended", true],
@@ -1127,7 +1152,9 @@ describe("MusicQuizPlayerView routing", () => {
 
       expect(mockGameAdapterSetup).toHaveBeenCalledOnce();
       expect(wrapper.findComponent(MusicQuizJoinForm).exists()).toBe(false);
-      expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(false);
+      // The landing's join form is gone, but ListenIn persists into the game so
+      // the guest can still start (or, when active, it hides itself).
+      expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
       wrapper.unmount();
     });
 
