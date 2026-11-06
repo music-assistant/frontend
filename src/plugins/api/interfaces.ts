@@ -691,7 +691,7 @@ export interface ErrorResultMessage extends ResultMessageBase {
   error_code: number;
   details: string | null;
   // context a client can act on without parsing `details`; the keys depend on the error
-  data?: Record<string, unknown> | null;
+  data: Record<string, unknown> | null;
 }
 
 export interface EventMessage {

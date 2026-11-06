@@ -174,6 +174,20 @@ describe("StreamHeldDialog", () => {
     ).toBeUndefined();
   });
 
+  it("stays open while it is busy", async () => {
+    apiMock.queueCommandStop.mockReturnValue(new Promise(() => {}));
+    const wrapper = mountDialog();
+    openDialog();
+    await flushPromises();
+
+    await stopAndPlayHere(wrapper);
+    wrapper.findComponent(DialogStub).vm.$emit("update:open", false);
+    await flushPromises();
+
+    expect(wrapper.find(".stream-held-dialog").exists()).toBe(true);
+    expect(storeMock.dialogActive).toBe(true);
+  });
+
   it("closes on cancel without touching either player", async () => {
     const wrapper = mountDialog();
     const event = openDialog();
