@@ -27,6 +27,7 @@ import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import {
   webPlayer,
+  webPlayerOutput,
   isPlaybackMode,
   registerWebPlayerAudioUnlock,
   clearWebPlayerAudioUnlock,
@@ -36,7 +37,7 @@ import {
   prepareSendspinSession,
   isDirectConnection,
 } from "@/plugins/sendspin-connection";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 
 // Properties
@@ -82,8 +83,9 @@ const primeAudio = () => {
 // Reactive state
 const isPlaying = ref(false);
 // this browser's last volume, so a new session doesn't start at full volume
-const volume = ref(loadSavedVolume());
-const muted = ref(false);
+const volume = toRef(webPlayerOutput, "volume");
+volume.value = loadSavedVolume();
+const muted = toRef(webPlayerOutput, "muted");
 const playerState = ref<"synchronized" | "error">("synchronized");
 
 // Watch for volume/mute changes from UI
@@ -380,6 +382,7 @@ onMounted(() => {
         });
         // set before connecting so the server is told the saved volume, not the default
         player.setVolume(volume.value);
+        player.setMuted(muted.value);
 
         return player.connect().then(registerPairing);
       })

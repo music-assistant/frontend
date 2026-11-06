@@ -27,6 +27,10 @@ export enum WebPlayerMode {
 // The party guest view drives this flag from party/config.
 export const partyListenInEnabled = ref(false);
 
+// This browser's own output level, applied locally by SendspinPlayer.vue so
+// guests can adjust it without player command access.
+export const webPlayerOutput = reactive({ volume: 100, muted: false });
+
 // Helper to check if a mode is a playback mode (handles actual audio)
 export const isPlaybackMode = (mode: WebPlayerMode) =>
   mode === WebPlayerMode.SENDSPIN_ONLY ||
