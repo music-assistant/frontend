@@ -124,28 +124,69 @@ describe("GuessTheSongPlayerRound", () => {
     wrapper.unmount();
   });
 
-  it("flips the Ready label once the player is marked ready", async () => {
+  it.each([
+    {
+      name: "an intermediate round",
+      roundCount: 3,
+      readyLabel: "providers.music_quiz.ready",
+      waitingLabel: "providers.music_quiz.waiting_for_next",
+    },
+    {
+      name: "the final round",
+      roundCount: 1,
+      readyLabel: "providers.music_quiz.ready_last_round",
+      waitingLabel: "providers.music_quiz.waiting_for_final_results",
+    },
+  ])(
+    "flips the Ready label once the player is marked ready in $name",
+    async ({ roundCount, readyLabel, waitingLabel }) => {
+      const state = { ...createState("reveal"), round_count: roundCount };
+      const wrapper = mount(GuessTheSongPlayerRound, {
+        props: {
+          state,
+          currentRound,
+          busy: false,
+        },
+      });
+      const readyButton = wrapper.get('[data-testid="guess-the-song-ready"]');
+
+      expect(readyButton.text()).toBe(readyLabel);
+
+      await wrapper.setProps({
+        state: { ...state, you: { ...state.you, ready: true } },
+      });
+
+      expect(readyButton.text()).toBe(waitingLabel);
+      expect(readyButton.attributes("disabled")).toBeDefined();
+      wrapper.unmount();
+    },
+  );
+
+  it("shows the tap as waiting straight away, before the server confirms", async () => {
+    const state = { ...createState("reveal"), round_count: 3 };
     const wrapper = mount(GuessTheSongPlayerRound, {
       props: {
-        state: createState("reveal"),
+        state,
         currentRound,
         busy: false,
       },
     });
     const readyButton = wrapper.get('[data-testid="guess-the-song-ready"]');
 
-    expect(readyButton.text()).toContain("providers.music_quiz.ready");
+    await readyButton.trigger("click");
+    await readyButton.trigger("click");
 
-    await wrapper.setProps({
-      state: {
-        ...createState("reveal"),
-        you: { ...createState("reveal").you, ready: true },
-      },
-    });
+    expect(wrapper.emitted("ready")).toEqual([[]]);
+    expect(readyButton.text()).toBe("providers.music_quiz.waiting_for_next");
+    expect(readyButton.attributes("disabled")).toBeDefined();
 
-    expect(readyButton.text()).toContain(
-      "providers.music_quiz.waiting_for_next",
-    );
+    // A request that ends without the server marking us ready gives the
+    // button back.
+    await wrapper.setProps({ busy: true });
+    await wrapper.setProps({ busy: false });
+
+    expect(readyButton.text()).toBe("providers.music_quiz.ready");
+    expect(readyButton.attributes("disabled")).toBeUndefined();
     wrapper.unmount();
   });
 });

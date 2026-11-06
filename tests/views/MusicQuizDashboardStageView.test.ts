@@ -383,7 +383,7 @@ describe("MusicQuizDashboardStageView", () => {
     wrapper.unmount();
   });
 
-  it("celebrates the finale with a podium and the winner text", async () => {
+  it("celebrates the finale with a podium and the full leaderboard", async () => {
     dashboardMock.state.value = lobbyState({
       phase: "finished",
       current_round: { ...guessTheSongRound, image_url: null },
@@ -392,13 +392,18 @@ describe("MusicQuizDashboardStageView", () => {
     const wrapper = mountView();
     await flushPromises();
 
-    expect(
-      wrapper.find('[data-testid="music-quiz-dashboard-finished"]').exists(),
-    ).toBe(true);
-    expect(wrapper.get('[data-testid="podium"]').attributes("data-rows")).toBe(
+    const finished = wrapper.get(
+      '[data-testid="music-quiz-dashboard-finished"]',
+    );
+    expect(finished.get('[data-testid="podium"]').attributes("data-rows")).toBe(
       "2",
     );
-    expect(wrapper.text()).toContain("providers.music_quiz.winner_single");
+    // the podium names the winner, so there's no separate winner line, and
+    // the leaderboard shows even when everyone already fits on the podium
+    expect(wrapper.text()).not.toContain("providers.music_quiz.winner_single");
+    expect(
+      finished.get('[data-testid="leaderboard"]').attributes("data-rows"),
+    ).toBe("2");
     expect(mockCelebrate).toHaveBeenCalledOnce();
     wrapper.unmount();
   });

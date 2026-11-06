@@ -313,6 +313,9 @@ export const webPlayer = reactive({
   player_id: null as string | null,
   // Monotonic identity for player recreation, including same-ID sessions.
   player_generation: 0,
+  // True once this tab's player has connected and can play listen-in audio,
+  // so listen buttons can wait for it instead of failing.
+  audio_ready: false,
   // If the user interacted with the frontend, required to avoid autoplay restrictions
   interacted: false,
   // Timestamp from when the last update was sent

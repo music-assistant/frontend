@@ -101,7 +101,6 @@ const gameDefinition = {
   adapters: {
     setup: gameAdapter,
     player: gameAdapter,
-    hostPanel: gameAdapter,
     host: gameAdapter,
     present: gameAdapter,
   },
@@ -190,7 +189,6 @@ describe("Music Quiz shared stages", () => {
         currentRound,
         busy: false,
         leaderboardRows,
-        winnerText: "",
         gameComponent: gameAdapter,
         answerComponent: answerAdapter,
       },
@@ -223,7 +221,6 @@ describe("Music Quiz shared stages", () => {
         currentRound,
         busy: false,
         leaderboardRows,
-        winnerText: "",
         gameComponent: gameAdapter,
         answerComponent: answerAdapter,
       },
@@ -253,7 +250,6 @@ describe("Music Quiz shared stages", () => {
         currentRound: musicTimelineRound,
         busy: false,
         leaderboardRows,
-        winnerText: "",
         gameComponent: gameAdapter,
         answerComponent: timelineAnswerAdapter,
       },
@@ -292,7 +288,6 @@ describe("Music Quiz shared stages", () => {
         currentRound: null,
         busy: false,
         leaderboardRows,
-        winnerText: "Player wins",
         gameComponent: gameAdapter,
         answerComponent: answerAdapter,
       },
@@ -322,7 +317,6 @@ describe("Music Quiz shared stages", () => {
         currentRound: null,
         busy: false,
         leaderboardRows,
-        winnerText: "Player wins",
         gameComponent: gameAdapter,
         answerComponent: answerAdapter,
       },
@@ -361,7 +355,6 @@ describe("Music Quiz shared stages", () => {
         game: gameDefinition,
         currentRound: null,
         leaderboardRows,
-        winnerText: "Player wins",
         phaseLabel: "Finished",
         roundLabel: "",
         joinLink: "https://example.test/join",
@@ -406,11 +399,12 @@ describe("Music Quiz shared stages", () => {
         currentRound: null,
         busy: false,
         leaderboardRows,
-        winnerText: "",
         gameComponent: gameAdapter,
         answerComponent: answerAdapter,
       },
       global: {
+        // MusicQuizYoureIn uses the globally injected $t.
+        mocks: { $t: (key: string) => key },
         stubs: {
           MusicQuizLeaderboard: leaderboardStub,
           MusicQuizPodium: true,
@@ -418,9 +412,16 @@ describe("Music Quiz shared stages", () => {
       },
     });
 
-    expect(wrapper.get('[data-testid="music-quiz-auto-start"]').text()).toBe(
+    // The countdown sits inside the "You're in!" panel.
+    const youreIn = wrapper.get('[data-testid="music-quiz-youre-in"]');
+    expect(youreIn.text()).toContain("providers.music_quiz.youre_in");
+    expect(youreIn.get('[data-testid="music-quiz-auto-start"]').text()).toBe(
       "Game starts in 12s",
     );
+    // Before the game nobody has a rank or a score yet.
+    const players = wrapper.get('[data-testid="leaderboard"]');
+    expect(players.attributes("title")).toBe("providers.music_quiz.players");
+    expect(players.attributes("hide-scores")).toBeDefined();
 
     vi.advanceTimersByTime(12_000);
     await flushPromises();
@@ -437,7 +438,9 @@ describe("Music Quiz shared stages", () => {
     expect(wrapper.find('[data-testid="music-quiz-auto-start"]').exists()).toBe(
       false,
     );
-    expect(wrapper.text()).toContain("providers.music_quiz.waiting_for_start");
+    expect(wrapper.get('[data-testid="music-quiz-youre-in"]').text()).toContain(
+      "providers.music_quiz.waiting_for_start",
+    );
     wrapper.unmount();
   });
 
@@ -456,7 +459,6 @@ describe("Music Quiz shared stages", () => {
         game: gameDefinition,
         currentRound: null,
         leaderboardRows,
-        winnerText: "",
         phaseLabel: "Lobby",
         roundLabel: "",
         joinLink: "https://example.test/join",
@@ -493,7 +495,6 @@ describe("Music Quiz shared stages", () => {
         game: gameDefinition,
         currentRound,
         leaderboardRows,
-        winnerText: "",
         phaseLabel: "Answering",
         roundLabel: "Round 1",
         joinLink: "https://example.test/join",
@@ -539,7 +540,6 @@ describe("Music Quiz shared stages", () => {
         game: gameDefinition,
         currentRound,
         leaderboardRows,
-        winnerText: "",
         phaseLabel: "Reveal",
         roundLabel: "Round 1",
         joinLink: "https://example.test/join",
@@ -575,7 +575,6 @@ describe("Music Quiz shared stages", () => {
           game: triviaGameDefinition,
           currentRound,
           leaderboardRows,
-          winnerText: "",
           phaseLabel: phase,
           roundLabel: "Round 1",
           joinLink: "https://example.test/join",
@@ -617,7 +616,6 @@ describe("Music Quiz shared stages", () => {
         game: gameDefinitionWithPresentBody,
         currentRound,
         leaderboardRows,
-        winnerText: "",
         phaseLabel: "Reveal",
         roundLabel: "Round 1",
         joinLink: "https://example.test/join",
@@ -654,7 +652,6 @@ describe("Music Quiz shared stages", () => {
         game: gameDefinition,
         currentRound: null,
         leaderboardRows,
-        winnerText: "Player wins",
         phaseLabel: "Finished",
         roundLabel: "",
         joinLink: "https://example.test/join",
@@ -678,7 +675,17 @@ describe("Music Quiz shared stages", () => {
     expect(leaderboard.attributes("aria-label")).toBe(
       "providers.music_quiz.leaderboard",
     );
-    expect(wrapper.text()).toContain("Player wins");
+    // The podium names the winner, so there's no title, and the leaderboard
+    // follows it.
+    expect(wrapper.text()).not.toContain(
+      "providers.music_quiz.final_leaderboard",
+    );
+    expect(
+      wrapper
+        .getComponent(MusicQuizPodium)
+        .element.compareDocumentPosition(leaderboard.element) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     const finished = wrapper.get('[data-testid="music-quiz-present-finished"]');
     expect(finished.classes()).toEqual(
       expect.arrayContaining(["min-h-0", "flex-1", "lg:overflow-y-auto"]),

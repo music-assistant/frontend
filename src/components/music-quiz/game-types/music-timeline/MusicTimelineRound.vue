@@ -62,9 +62,12 @@
         >
           <Music2 :class="compact ? 'size-8' : 'size-12'" />
         </div>
+        <!-- Vuetify's own .text-center loads after Tailwind and beats
+             sm:text-left, so wide screens kept the title centred while the
+             year chip moved left. max-sm:text-center has no Vuetify twin. -->
         <div
-          class="flex min-w-0 flex-col text-center sm:text-left"
-          :class="compact ? 'gap-1' : 'gap-2'"
+          class="flex min-w-0 flex-col"
+          :class="[compact ? 'gap-1' : 'gap-2', 'max-sm:text-center']"
         >
           <Badge class="w-fit self-center sm:self-start">
             {{ revealedEntry.release_year }}

@@ -16,6 +16,7 @@
             { 'content-section--mobile': store.mobileLayout },
             { 'content-section--frameless': store.frameless },
             { 'party-view-active': route.meta.partyView === true },
+            { 'content-section--quiz-bar': quizBarReplacesPlayer },
           ]"
         >
           <router-view v-slot="{ Component }">
@@ -75,7 +76,8 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { quizPlayerBarShown } from "@/components/music-quiz/quizPlayerBarShown";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import AudioOverlayDialog from "./AudioOverlayDialog.vue";
@@ -89,6 +91,10 @@ import PlayerSelect from "./PlayerSelect.vue";
 import PlaylistAccessDialog from "./PlaylistAccessDialog.vue";
 
 const route = useRoute();
+// The quiz host page shows its own player bar while that bar is on screen.
+const quizBarReplacesPlayer = computed(
+  () => route?.name === "music-quiz" && quizPlayerBarShown.value,
+);
 
 const showEditItemDialog = ref(false);
 const editItem = ref<Radio | Track | Playlist | undefined>(undefined);
@@ -144,5 +150,15 @@ onMounted(() => {
 
 .content-section--frameless {
   padding-bottom: 0;
+}
+
+/* The quiz host page shows its own bar in place of the player bar, so it
+   doesn't need the room kept for it. */
+.content-section--quiz-bar {
+  padding-bottom: var(--device-inset-bottom);
+}
+
+.content-section--mobile.content-section--quiz-bar {
+  padding-bottom: var(--mobile-navigation-height);
 }
 </style>

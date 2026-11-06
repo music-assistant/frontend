@@ -115,21 +115,24 @@
       </Field>
     </div>
 
-    <slot name="before-sources"></slot>
+    <!-- The step-by-step setup asks for the music on its own step. -->
+    <template v-if="stage !== 'rules'">
+      <slot name="before-sources"></slot>
 
-    <MusicQuizSourceSelector
-      v-model="sourceUris"
-      input-id="trivia-source-search"
-    />
+      <MusicQuizSourceSelector
+        v-model="sourceUris"
+        input-id="trivia-source-search"
+      />
 
-    <Button
-      size="lg"
-      :disabled="busy || !canCreate || !sharedConfigValid"
-      @click="create"
-    >
-      <Plus class="size-4" />
-      {{ $t("create") }}
-    </Button>
+      <Button
+        size="lg"
+        :disabled="busy || !canCreate || !sharedConfigValid"
+        @click="create"
+      >
+        <Plus class="size-4" />
+        {{ $t("create") }}
+      </Button>
+    </template>
   </div>
 </template>
 
@@ -158,6 +161,7 @@ import {
 } from "@/components/ui/number-field";
 import { Switch } from "@/components/ui/switch";
 import type {
+  MusicQuizCreateRequest,
   MusicQuizDifficulty,
   MusicQuizTriviaConfig,
 } from "@/composables/music-quiz/useMusicQuiz";
@@ -202,8 +206,10 @@ const languageLabel = computed(
       ?.label ?? "",
 );
 
-function create() {
-  if (!canCreate.value || !props.sharedConfigValid) return;
+/** These settings as a request; the step-by-step setup brings its own music. */
+function buildRequest(
+  uris: string[] = sourceUris.value,
+): MusicQuizCreateRequest {
   const config: MusicQuizTriviaConfig = {
     language: canonicalizeLocale(language.value),
     play_reveal_audio: playRevealAudio.value,
@@ -211,13 +217,20 @@ function create() {
     suggestion_count: suggestionCount.value,
     answer_duration: answerDuration.value,
     difficulty: difficulty.value,
-    source_uris: sourceUris.value,
+    source_uris: uris,
     include_similar_music: props.includeSimilarMusic,
   };
-  emit("create", {
+  return {
     quiz_type: "trivia",
     answer_type: "multiple_choice",
     config,
-  });
+  };
 }
+
+function create() {
+  if (!canCreate.value || !props.sharedConfigValid) return;
+  emit("create", buildRequest());
+}
+
+defineExpose({ buildRequest });
 </script>

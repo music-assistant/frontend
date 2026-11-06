@@ -45,6 +45,7 @@
           :aria-current="row.name === currentPlayerName ? 'true' : undefined"
         >
           <span
+            v-if="!hideScores"
             class="text-muted-foreground shrink-0 text-center font-bold tabular-nums"
             :class="compact ? 'w-5' : 'w-6'"
           >
@@ -62,7 +63,10 @@
           >
             {{ row.name }}
           </span>
-          <span class="flex shrink-0 items-center gap-1 tabular-nums">
+          <span
+            v-if="!hideScores"
+            class="flex shrink-0 items-center gap-1 tabular-nums"
+          >
             <strong class="leading-none">{{ row.score }}</strong>
             <span
               v-if="row.roundScoreLabel"
@@ -70,6 +74,24 @@
             >
               {{ row.roundScoreLabel }}
             </span>
+          </span>
+          <span
+            v-if="showReady"
+            class="shrink-0"
+            :title="readyText(row.ready)"
+            data-testid="leaderboard-ready"
+          >
+            <CircleCheck
+              v-if="row.ready"
+              class="size-5 text-green-600 dark:text-green-400"
+              aria-hidden="true"
+            />
+            <Hourglass
+              v-else
+              class="text-muted-foreground size-5"
+              aria-hidden="true"
+            />
+            <span class="sr-only">{{ readyText(row.ready) }}</span>
           </span>
         </li>
       </TransitionGroup>
@@ -82,6 +104,7 @@ import MusicQuizAvatar from "@/components/music-quiz/MusicQuizAvatar.vue";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RankedMusicQuizPlayer } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
+import { CircleCheck, Hourglass } from "@lucide/vue";
 
 export type MusicQuizLeaderboardRow = RankedMusicQuizPlayer & {
   roundScoreLabel: string;
@@ -93,7 +116,19 @@ defineProps<{
   title?: string;
   compact?: boolean;
   scrollable?: boolean;
+  /** Mark who has pressed Ready for the next round. */
+  showReady?: boolean;
+  /** Leave out ranks and scores, e.g. in the lobby where they're all 0. */
+  hideScores?: boolean;
 }>();
+
+function readyText(ready: boolean): string {
+  return $t(
+    ready
+      ? "providers.music_quiz.player_ready"
+      : "providers.music_quiz.player_not_ready",
+  );
+}
 </script>
 
 <style scoped>

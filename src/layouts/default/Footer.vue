@@ -1,12 +1,16 @@
 <template>
   <!-- lifts the player off the content by blurring what scrolls under it,
        fading out towards the top so there is no hard edge -->
-  <div v-if="store.mobileLayout" class="player-scrim"></div>
+  <div
+    v-if="store.mobileLayout && !quizBarReplacesPlayer"
+    class="player-scrim"
+  ></div>
 
   <!-- bottom navigation for mobile layout -->
   <BottomNavigation v-if="store.mobileLayout" />
 
   <v-footer
+    v-if="!quizBarReplacesPlayer"
     ref="playerBar"
     app
     color="default"
@@ -28,14 +32,23 @@
 <script setup lang="ts">
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
 import { store } from "@/plugins/store";
+import { quizPlayerBarShown } from "@/components/music-quiz/quizPlayerBarShown";
+import { useRoute } from "vue-router";
 import { useElementSize } from "@vueuse/core";
 import {
+  computed,
   type ComponentPublicInstance,
   onBeforeUnmount,
   ref,
   watchEffect,
 } from "vue";
 import Player from "./PlayerOSD/Player.vue";
+
+// The quiz host page shows its own player bar while that bar is on screen.
+const route = useRoute();
+const quizBarReplacesPlayer = computed(
+  () => route?.name === "music-quiz" && quizPlayerBarShown.value,
+);
 
 const OVERLAY_HEIGHT_PROPERTY = "--player-bar-overlay-height";
 const OVERLAY_MARKER_ATTRIBUTE = "data-player-bar-overlay";

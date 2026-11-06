@@ -377,12 +377,6 @@ describe("Music Quiz registries", () => {
           busy: false,
         },
       }),
-      shallowMount(game.adapters.hostPanel, {
-        props: {
-          state: fixture.hostState,
-          currentRound: fixture.currentRound,
-        },
-      }),
       shallowMount(game.adapters.host, {
         props: {
           state: fixture.hostState,

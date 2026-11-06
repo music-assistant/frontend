@@ -1,4 +1,4 @@
-import MusicTimelineHostPanel from "@/components/music-quiz/game-types/music-timeline/MusicTimelineHostPanel.vue";
+import MusicQuizHostControlStrip from "@/components/music-quiz/MusicQuizHostControlStrip.vue";
 import MusicTimelineHostRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelineHostRound.vue";
 import MusicTimelinePlayerRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePlayerRound.vue";
 import MusicTimelinePresentRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePresentRound.vue";
@@ -336,7 +336,7 @@ describe("Music Timeline game adapters", () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(readyButton.text()).toContain(
-      "providers.music_quiz.ready_for_final_results",
+      "providers.music_quiz.ready_last_round",
     );
 
     await readyButton.trigger("click");
@@ -381,7 +381,7 @@ describe("Music Timeline game adapters", () => {
     ).toBe(true);
   });
 
-  it("keeps protected host round data hidden until reveal", async () => {
+  it("keeps protected host round data out of the control strip until reveal", () => {
     const protectedRound = {
       round_index: 0,
       answer_label: "SECRET ARTIST - SECRET TITLE",
@@ -433,22 +433,16 @@ describe("Music Timeline game adapters", () => {
         venue_player_name: null,
       },
     } satisfies MusicQuizTimelineHostState;
-    const wrapper = mount(MusicTimelineHostPanel, {
+    const wrapper = mount(MusicQuizHostControlStrip, {
       props: {
         state,
         currentRound: answeringRound,
+        busy: false,
+        isLastRound: true,
       },
     });
-    await wrapper
-      .findAll("button")
-      .find((button) =>
-        button.text().includes("providers.music_quiz.now_playing"),
-      )
-      ?.trigger("click");
 
-    expect(wrapper.text()).toContain(
-      "providers.music_quiz.music_timeline_song_hidden",
-    );
+    expect(wrapper.text()).toContain("providers.music_quiz.strip_song_hidden");
     expect(wrapper.text()).not.toContain("SECRET TITLE");
     expect(wrapper.html()).not.toContain("library://track/secret");
   });

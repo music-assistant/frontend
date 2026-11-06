@@ -1,6 +1,9 @@
 import { nextTick, ref, watch } from "vue";
 
-/** Focus each newly available post-placement action. */
+/**
+ * Bring each newly available post-placement action (a bonus question) into
+ * view and focus it.
+ */
 export function useTimelinePostPlacementFocus(
   actionKey: () => string | undefined,
   isBusy: () => boolean,
@@ -25,19 +28,36 @@ export function useTimelinePostPlacementFocus(
     await nextTick();
     const container = postPlacementRef.value;
     if (!container) return;
-    if (typeof container.scrollIntoView === "function") {
-      const reducedMotion =
-        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ??
-        false;
-      container.scrollIntoView({
-        behavior: reducedMotion ? "auto" : "smooth",
-        block: "start",
-      });
-    }
-    const target =
-      container.querySelector<HTMLElement>(
-        'input:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      ) ?? container;
-    target.focus({ preventScroll: true });
+    const reducedMotion =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    const behavior = reducedMotion ? "auto" : "smooth";
+    // scrollIntoView also scrolls the page itself, which slides the top bar
+    // away on phones; scroll only the area the timeline sits in.
+    scrollWithinArea(container, behavior);
+    // Focus the bonus area itself: a text field would pop a phone's keyboard
+    // up, and the first button could be "Skip", which Enter would press.
+    container.focus({ preventScroll: true });
   }
+}
+
+function scrollWithinArea(element: HTMLElement, behavior: ScrollBehavior) {
+  let area = element.parentElement;
+  while (area) {
+    const overflow = getComputedStyle(area).overflowY;
+    if (
+      (overflow === "auto" || overflow === "scroll") &&
+      area.scrollHeight > area.clientHeight
+    ) {
+      break;
+    }
+    area = area.parentElement;
+  }
+  if (!area?.scrollTo) return;
+  const margin = parseFloat(getComputedStyle(element).scrollMarginTop) || 0;
+  const top =
+    element.getBoundingClientRect().top -
+    area.getBoundingClientRect().top +
+    area.scrollTop -
+    margin;
+  area.scrollTo({ top: Math.max(0, top), behavior });
 }

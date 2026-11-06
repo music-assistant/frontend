@@ -1,15 +1,22 @@
 <template>
   <TriviaQuestion :round="currentRound" />
-  <Button
+  <!-- Pinned to the bottom like Guess the Song; order-last + sticky only work
+       as a direct child of the stage's flex section. -->
+  <div
     v-if="state.phase === 'reveal'"
-    size="lg"
-    :disabled="readyDisabled"
-    data-testid="trivia-ready"
-    @click="markReady"
+    class="bg-background sticky bottom-[var(--device-inset-bottom,0px)] order-last z-10 flex justify-center pt-2 pb-1"
   >
-    <Check class="size-4" />
-    {{ readyLabel }}
-  </Button>
+    <Button
+      class="w-full max-w-sm"
+      size="lg"
+      :disabled="readyDisabled"
+      data-testid="trivia-ready"
+      @click="markReady"
+    >
+      <Check class="size-4" />
+      {{ readyLabel }}
+    </Button>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -58,7 +65,7 @@ const readyLabel = computed(() => {
           ? "providers.music_quiz.waiting_for_final_results_countdown"
           : "providers.music_quiz.waiting_for_next_round_countdown"
         : isFinalRound.value
-          ? "providers.music_quiz.ready_for_final_results_countdown"
+          ? "providers.music_quiz.ready_last_round_countdown"
           : "providers.music_quiz.ready_for_next_round_countdown",
       [remainingLabel.value],
     );
@@ -70,7 +77,7 @@ const readyLabel = computed(() => {
         ? "providers.music_quiz.waiting_for_final_results"
         : "providers.music_quiz.waiting_for_next"
       : isFinalRound.value
-        ? "providers.music_quiz.ready_for_final_results"
+        ? "providers.music_quiz.ready_last_round"
         : "providers.music_quiz.ready",
   );
 });

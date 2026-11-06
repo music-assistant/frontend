@@ -383,7 +383,10 @@ onMounted(() => {
         // set before connecting so the server is told the saved volume, not the default
         player.setVolume(volume.value);
 
-        return player.connect().then(registerPairing);
+        return player.connect().then(() => {
+          if (!unmounted) webPlayer.audio_ready = true;
+          return registerPairing();
+        });
       })
       .catch((error) => {
         console.error("Sendspin: Failed to connect", error);
@@ -416,6 +419,7 @@ onMounted(() => {
 // Cleanup on unmount
 onBeforeUnmount(() => {
   unmounted = true;
+  webPlayer.audio_ready = false;
   clearWebPlayerAudioUnlock(primeAudio);
   if (player) {
     // The server holds a player registered for minutes after a "restart"

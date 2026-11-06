@@ -106,6 +106,11 @@
             dashboard
           />
           <template v-else-if="activeState.phase === 'reveal'">
+            <MusicQuizRoundFastest
+              v-if="publicFastest"
+              :fastest="publicFastest"
+              class="text-[clamp(1rem,1.6vw,1.5rem)]"
+            />
             <div
               data-testid="music-quiz-dashboard-reveal-layout"
               class="grid min-h-0 flex-1 gap-[2vh] lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-[2vw]"
@@ -185,16 +190,11 @@
           data-testid="music-quiz-dashboard-finished"
           class="flex min-h-0 flex-1 flex-col items-center justify-center gap-[3vh]"
         >
-          <p
-            class="text-center text-[clamp(1.6rem,3vw,3rem)] font-bold text-foreground/95"
-          >
-            {{ winnerText }}
-          </p>
           <MusicQuizPodium
             v-if="leaderboardRows.length"
             :rows="leaderboardRows"
           />
-          <div v-if="leaderboardRows.length > 3" class="w-full max-w-3xl">
+          <div class="w-full max-w-3xl">
             <MusicQuizLeaderboard :rows="visibleLeaderboardRows" />
           </div>
         </div>
@@ -225,6 +225,7 @@ import MusicQuizPlayerTile from "@/components/music-quiz/MusicQuizPlayerTile.vue
 import MusicQuizPodium from "@/components/music-quiz/MusicQuizPodium.vue";
 import MusicQuizPreparingState from "@/components/music-quiz/MusicQuizPreparingState.vue";
 import MusicQuizQrCard from "@/components/music-quiz/MusicQuizQrCard.vue";
+import MusicQuizRoundFastest from "@/components/music-quiz/MusicQuizRoundFastest.vue";
 import {
   getMusicQuizPhaseLabelKey,
   resolveMusicQuizDefinition,
@@ -237,9 +238,9 @@ import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQui
 import { useMusicQuizCelebration } from "@/composables/music-quiz/useMusicQuizCelebration";
 import { useMusicQuizDashboard } from "@/composables/music-quiz/useMusicQuizDashboard";
 import { useMusicQuizRevealCountdown } from "@/composables/music-quiz/useMusicQuizRevealCountdown";
+import { getPublicRoundFastest } from "@/helpers/music_quiz_stats";
 import {
   getMusicQuizRoundScoreLabel,
-  getMusicQuizWinnerText,
   rankMusicQuizPlayers,
 } from "@/helpers/music_quiz";
 import { getMediaImageUrl } from "@/helpers/utils";
@@ -249,6 +250,13 @@ import { Disc3 } from "@lucide/vue";
 import { computed, watch } from "vue";
 
 const { state, currentRound, joinLink, loading } = useMusicQuizDashboard();
+
+// A TV only has public data: who was fastest, but not how fast.
+const publicFastest = computed(() =>
+  activeState.value?.phase === "reveal"
+    ? getPublicRoundFastest(activeState.value.players)
+    : null,
+);
 
 const resolvedDefinition = computed(() => {
   const currentState = state.value;
@@ -294,8 +302,6 @@ const leaderboardRows = computed<MusicQuizLeaderboardRow[]>(() => {
 const visibleLeaderboardRows = computed(() =>
   leaderboardRows.value.slice(0, 8),
 );
-
-const winnerText = computed(() => getMusicQuizWinnerText(rankedPlayers.value));
 
 const phaseLabel = computed(() => {
   const currentState = activeState.value;

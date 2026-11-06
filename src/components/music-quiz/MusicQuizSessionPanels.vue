@@ -1,6 +1,10 @@
 <template>
   <div v-if="state.phase !== 'finished'" class="grid gap-4">
-    <MusicQuizLeaderboard :rows="leaderboardRows" :title="$t('players')" />
+    <MusicQuizLeaderboard
+      :rows="leaderboardRows"
+      :title="$t('players')"
+      :hide-scores="state.phase === 'lobby'"
+    />
   </div>
 
   <div v-else class="flex flex-col gap-3">

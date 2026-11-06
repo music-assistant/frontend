@@ -23,6 +23,11 @@
     <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
 
     <div class="flex min-h-0 flex-1 flex-col gap-4">
+      <MusicQuizRoundFastest
+        v-if="roundFastest && state.phase === 'reveal' && !state.preparing"
+        :fastest="roundFastest"
+        class="text-lg"
+      />
       <MusicQuizPreparingState v-if="state.preparing" class="min-h-0 flex-1" />
 
       <component
@@ -88,15 +93,14 @@
           data-testid="music-quiz-present-finished"
           class="flex min-h-0 flex-1 flex-col gap-6 lg:overflow-y-auto"
         >
-          <div class="flex flex-col items-center gap-1 text-center">
-            <h2 class="text-2xl font-black sm:text-3xl lg:text-4xl">
-              {{ $t("providers.music_quiz.final_leaderboard") }}
-            </h2>
-            <p class="text-muted-foreground text-lg">{{ winnerText }}</p>
-          </div>
           <MusicQuizPodium
             v-if="leaderboardRows.length"
             :rows="leaderboardRows"
+          />
+          <MusicQuizGameAwards
+            v-if="awards.length"
+            class="mx-auto w-full max-w-4xl"
+            :awards="awards"
           />
           <div class="mx-auto w-full max-w-2xl">
             <MusicQuizLeaderboard :rows="leaderboardRows" />
@@ -157,7 +161,9 @@ import MusicQuizLeaderboard, {
 import MusicQuizPodium from "@/components/music-quiz/MusicQuizPodium.vue";
 import MusicQuizPlayerTile from "@/components/music-quiz/MusicQuizPlayerTile.vue";
 import MusicQuizPreparingState from "@/components/music-quiz/MusicQuizPreparingState.vue";
+import MusicQuizGameAwards from "@/components/music-quiz/MusicQuizGameAwards.vue";
 import MusicQuizQrCard from "@/components/music-quiz/MusicQuizQrCard.vue";
+import MusicQuizRoundFastest from "@/components/music-quiz/MusicQuizRoundFastest.vue";
 import type { MusicQuizGameDefinition } from "@/components/music-quiz/game_types";
 import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
 import { Button } from "@/components/ui/button";
@@ -166,24 +172,32 @@ import type {
   MusicQuizSupportedHostState,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { useMusicQuizCelebration } from "@/composables/music-quiz/useMusicQuizCelebration";
+import type {
+  MusicQuizAward,
+  MusicQuizFastestAnswer,
+} from "@/helpers/music_quiz_stats";
 import { $t } from "@/plugins/i18n";
 import { Minimize2 } from "@lucide/vue";
 import { computed, watch, type Component } from "vue";
 
-const props = defineProps<{
-  state: MusicQuizSupportedHostState;
-  game: MusicQuizGameDefinition;
-  currentRound: MusicQuizCurrentRound | null;
-  leaderboardRows: MusicQuizLeaderboardRow[];
-  winnerText: string;
-  phaseLabel: string;
-  roundLabel: string;
-  joinLink: string;
-  isConnectionDegraded: boolean;
-  listenInEnabled?: boolean;
-  gameComponent: Component;
-  answerComponent: Component;
-}>();
+const props = withDefaults(
+  defineProps<{
+    state: MusicQuizSupportedHostState;
+    game: MusicQuizGameDefinition;
+    currentRound: MusicQuizCurrentRound | null;
+    leaderboardRows: MusicQuizLeaderboardRow[];
+    phaseLabel: string;
+    roundLabel: string;
+    joinLink: string;
+    isConnectionDegraded: boolean;
+    listenInEnabled?: boolean;
+    gameComponent: Component;
+    answerComponent: Component;
+    roundFastest?: MusicQuizFastestAnswer | null;
+    awards?: MusicQuizAward[];
+  }>(),
+  { listenInEnabled: false, roundFastest: null, awards: () => [] },
+);
 const emit = defineEmits<{ exit: [] }>();
 
 const { celebrate } = useMusicQuizCelebration();

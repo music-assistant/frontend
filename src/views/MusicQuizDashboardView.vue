@@ -2,11 +2,11 @@
   <div
     ref="presentRootRef"
     data-testid="music-quiz-dashboard-root"
-    :class="
+    :class="[
       presentMode
         ? 'w-full lg:h-full lg:min-h-0 lg:overflow-hidden'
-        : 'mx-auto flex min-h-full w-full max-w-6xl flex-col p-4 sm:p-5'
-    "
+        : 'mx-auto flex min-h-full w-full max-w-6xl flex-col p-4 sm:p-5',
+    ]"
   >
     <MusicQuizPresentStage
       v-if="presentMode && activeState && resolvedDefinition"
@@ -14,7 +14,6 @@
       :game="resolvedDefinition.game"
       :current-round="currentRound"
       :leaderboard-rows="leaderboardRows"
-      :winner-text="winnerText"
       :phase-label="phaseLabel"
       :round-label="roundLabel"
       :join-link="joinLink"
@@ -22,6 +21,8 @@
       :listen-in-enabled="listenInEnabled"
       :game-component="resolvedDefinition.game.adapters.present"
       :answer-component="resolvedDefinition.answer.adapters.present"
+      :round-fastest="roundFastest"
+      :awards="awards"
       @exit="exitPresentMode"
     />
 
@@ -37,13 +38,16 @@
         </div>
         <div class="flex shrink-0 items-center gap-1">
           <Button
-            v-if="canConfigureMusicQuiz && musicQuizProviderInstanceId"
+            v-if="
+              showGameSettings ||
+              (canConfigureMusicQuiz && musicQuizProviderInstanceId)
+            "
             variant="ghost"
             size="icon"
             data-testid="music-quiz-settings"
-            :aria-label="$t('providers.music_quiz.settings')"
-            :title="$t('providers.music_quiz.settings')"
-            @click="goToMusicQuizSettings"
+            :aria-label="settingsLabel"
+            :title="settingsLabel"
+            @click="openSettings"
           >
             <Settings class="size-5" />
           </Button>
@@ -112,12 +116,24 @@
         <MusicQuizSessionHeader
           :game="resolvedDefinition.game"
           :name="activeState.name"
-          :phase-label="phaseLabel"
+          :phase-label="headerPhaseLabel"
           :round-label="roundLabel"
           :mode="activeState.mode"
-          :listen-in-enabled="listenInEnabled"
+          compact
+          :live-status="phaseLabel"
+          :subtitle="musicHeadline"
         >
           <template #actions>
+            <Button
+              variant="outline"
+              size="sm"
+              class="me-2"
+              data-testid="music-quiz-invite"
+              @click="showInviteDialog = true"
+            >
+              <QrCode class="size-4" aria-hidden="true" />
+              {{ $t("providers.music_quiz.invite_players") }}
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -130,10 +146,10 @@
           </template>
         </MusicQuizSessionHeader>
 
-        <MusicQuizHostPanel
+        <MusicQuizHostControlStrip
           :state="activeState"
+          :current-round="currentRound"
           :busy="busy"
-          :join-link="joinLink"
           :is-last-round="!!isLastRound"
           :reveal-countdown="resolvedDefinition.game.usesRevealCountdown"
           @end-game="showEndGameDialog = true"
@@ -143,17 +159,10 @@
           @next="host.next"
           @reset="handleReplay"
           @set-up-new-game="handleSetUpNewGame"
-        >
-          <template #game>
-            <component
-              :is="resolvedDefinition.game.adapters.hostPanel"
-              :state="activeState"
-              :current-round="currentRound"
-            />
-          </template>
-        </MusicQuizHostPanel>
+        />
 
         <template v-if="isActiveRound && currentRound">
+          <MusicQuizRoundFastest v-if="roundFastest" :fastest="roundFastest" />
           <component
             :is="resolvedDefinition.game.adapters.host"
             :state="activeState"
@@ -168,14 +177,37 @@
               <MusicQuizLeaderboard
                 :rows="leaderboardRows"
                 :title="$t('players')"
+                :show-ready="activeState.phase === 'reveal'"
               />
             </template>
           </component>
         </template>
 
-        <MusicQuizSessionPanels v-else :state="activeState" />
+        <template v-else-if="activeState.phase === 'finished'">
+          <MusicQuizPodium
+            v-if="leaderboardRows.length"
+            :rows="leaderboardRows"
+          />
+          <MusicQuizGameAwards v-if="awards.length" :awards="awards" />
+          <MusicQuizLeaderboard
+            :rows="leaderboardRows"
+            :title="$t('providers.music_quiz.final_leaderboard')"
+          />
+        </template>
+
+        <template v-else>
+          <MusicQuizSessionPanels :state="activeState" />
+          <MusicQuizGameAwards v-if="awards.length" :awards="awards" />
+        </template>
       </div>
     </section>
+
+    <!-- Games with no music (Trivia without revealed songs) have nothing
+         for the quiz bar to say. -->
+    <MusicQuizPlayerBar
+      v-if="!presentMode && activeState && listenInEnabled"
+      :state="activeState"
+    />
 
     <Dialog v-model:open="showSetupDialog">
       <DialogContent
@@ -188,7 +220,7 @@
             {{ $t("providers.music_quiz.create_intro") }}
           </DialogDescription>
         </DialogHeader>
-        <MusicQuizSetupWizard
+        <MusicQuizSteppedSetup
           v-if="showSetupDialog"
           v-model:playback-selection="playbackSelection"
           :busy="busy"
@@ -199,6 +231,36 @@
           @create="handleCreate"
           @retry-playback-options="host.fetchPlaybackOptions"
         />
+      </DialogContent>
+    </Dialog>
+
+    <MusicQuizGameSettingsSheet
+      v-if="activeState && resolvedDefinition"
+      v-model:open="showGameSettingsSheet"
+      :state="activeState"
+      :game="resolvedDefinition.game"
+      :show-plugin-settings="
+        canConfigureMusicQuiz && !!musicQuizProviderInstanceId
+      "
+      @plugin-settings="goToMusicQuizSettings"
+    />
+
+    <Dialog v-model:open="showInviteDialog">
+      <DialogContent data-testid="invite-dialog" class="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{{
+            $t("providers.music_quiz.invite_players")
+          }}</DialogTitle>
+          <DialogDescription class="sr-only">
+            {{ $t("providers.music_quiz.invite_players") }}
+          </DialogDescription>
+        </DialogHeader>
+        <MusicQuizQrCard :join-link="joinLink" />
+        <DialogFooter>
+          <Button class="w-full" @click="showInviteDialog = false">
+            {{ $t("close") }}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
 
@@ -218,15 +280,21 @@ import {
 } from "@/components/music-quiz/game_types";
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
 import MusicQuizEndGameDialog from "@/components/music-quiz/MusicQuizEndGameDialog.vue";
-import MusicQuizHostPanel from "@/components/music-quiz/MusicQuizHostPanel.vue";
 import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import MusicQuizPreparingState from "@/components/music-quiz/MusicQuizPreparingState.vue";
+import MusicQuizGameAwards from "@/components/music-quiz/MusicQuizGameAwards.vue";
+import MusicQuizGameSettingsSheet from "@/components/music-quiz/MusicQuizGameSettingsSheet.vue";
+import MusicQuizHostControlStrip from "@/components/music-quiz/MusicQuizHostControlStrip.vue";
+import MusicQuizPlayerBar from "@/components/music-quiz/MusicQuizPlayerBar.vue";
+import MusicQuizPodium from "@/components/music-quiz/MusicQuizPodium.vue";
 import MusicQuizPresentStage from "@/components/music-quiz/MusicQuizPresentStage.vue";
+import MusicQuizQrCard from "@/components/music-quiz/MusicQuizQrCard.vue";
+import MusicQuizRoundFastest from "@/components/music-quiz/MusicQuizRoundFastest.vue";
 import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
 import MusicQuizSessionPanels from "@/components/music-quiz/MusicQuizSessionPanels.vue";
-import MusicQuizSetupWizard from "@/components/music-quiz/MusicQuizSetupWizard.vue";
+import MusicQuizSteppedSetup from "@/components/music-quiz/MusicQuizSteppedSetup.vue";
 import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
 import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import { Button } from "@/components/ui/button";
@@ -234,6 +302,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -250,9 +319,10 @@ import {
   type MusicQuizCreateRequest,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { useMusicQuizHost } from "@/composables/music-quiz/useMusicQuizHost";
+import { useMusicQuizHostStats } from "@/composables/music-quiz/useMusicQuizHostStats";
+import { getMusicQuizSourceHeadline } from "@/helpers/music_quiz_sources";
 import {
   getMusicQuizRoundScoreLabel,
-  getMusicQuizWinnerText,
   rankMusicQuizPlayers,
 } from "@/helpers/music_quiz";
 import type { MusicQuizPlaybackSelection } from "@/helpers/music_quiz_playback";
@@ -260,7 +330,7 @@ import api, { ConnectionState } from "@/plugins/api";
 import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { Gamepad2, MicVocal, Plus, Settings } from "@lucide/vue";
+import { Gamepad2, MicVocal, Plus, QrCode, Settings } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -324,8 +394,6 @@ const leaderboardRows = computed<MusicQuizLeaderboardRow[]>(() => {
   }));
 });
 
-const winnerText = computed(() => getMusicQuizWinnerText(rankedPlayers.value));
-
 const phaseLabel = computed(() => {
   const currentState = activeState.value;
   const definition = resolvedDefinition.value;
@@ -333,6 +401,69 @@ const phaseLabel = computed(() => {
     ? $t(getMusicQuizPhaseLabelKey(definition.game, currentState.phase))
     : "";
 });
+
+const musicHeadline = computed(() =>
+  getMusicQuizSourceHeadline(activeState.value?.sources ?? []),
+);
+
+// With a game running, Settings shows that game's settings (with the plugin
+// settings one tap further); without one, it goes to the plugin settings.
+const showGameSettingsSheet = ref(false);
+const showGameSettings = computed(() => !!activeState.value);
+const settingsLabel = computed(() =>
+  showGameSettings.value
+    ? $t("providers.music_quiz.game_settings_title")
+    : $t("providers.music_quiz.settings"),
+);
+function openSettings() {
+  if (showGameSettings.value) {
+    showGameSettingsSheet.value = true;
+  } else {
+    goToMusicQuizSettings();
+  }
+}
+const { roundFastest, awards } = useMusicQuizHostStats(activeState);
+
+// The invite popup opens by itself once per game, when it reaches the lobby.
+// Remembered across navigation and reloads, so coming back doesn't reopen it.
+const INVITE_SHOWN_KEY = "music-quiz-invite-shown";
+const showInviteDialog = ref(false);
+function inviteShownFor(createdAt: number): boolean {
+  try {
+    return localStorage.getItem(INVITE_SHOWN_KEY) === String(createdAt);
+  } catch {
+    return false;
+  }
+}
+function rememberInviteShown(createdAt: number): void {
+  try {
+    localStorage.setItem(INVITE_SHOWN_KEY, String(createdAt));
+  } catch {
+    // Without storage it may open once more after a reload.
+  }
+}
+watch(
+  () => [activeState.value?.created_at, activeState.value?.phase] as const,
+  ([createdAt, phase]) => {
+    if (phase !== "lobby" || createdAt == null) return;
+    if (inviteShownFor(createdAt)) return;
+    rememberInviteShown(createdAt);
+    showInviteDialog.value = true;
+  },
+  { immediate: true },
+);
+// The auto-opened popup shouldn't sit over a round that has started.
+watch(
+  () => activeState.value?.phase,
+  (phase, previous) => {
+    if (previous === "lobby" && phase !== "lobby")
+      showInviteDialog.value = false;
+  },
+);
+// The compact header only keeps the lobby's "Waiting for players" status.
+const headerPhaseLabel = computed(() =>
+  activeState.value?.phase !== "lobby" ? "" : phaseLabel.value,
+);
 
 const roundLabel = computed(() => {
   if (!activeState.value || !currentRound.value) return "";

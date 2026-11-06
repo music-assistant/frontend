@@ -78,21 +78,24 @@
       </Field>
     </div>
 
-    <slot name="before-sources"></slot>
+    <!-- The step-by-step setup asks for the music on its own step. -->
+    <template v-if="stage !== 'rules'">
+      <slot name="before-sources"></slot>
 
-    <MusicQuizSourceSelector
-      v-model="sourceUris"
-      input-id="music-timeline-source-search"
-    />
+      <MusicQuizSourceSelector
+        v-model="sourceUris"
+        input-id="music-timeline-source-search"
+      />
 
-    <Button
-      size="lg"
-      :disabled="busy || !canCreate || !sharedConfigValid"
-      @click="create"
-    >
-      <Plus class="size-4" />
-      {{ $t("create") }}
-    </Button>
+      <Button
+        size="lg"
+        :disabled="busy || !canCreate || !sharedConfigValid"
+        @click="create"
+      >
+        <Plus class="size-4" />
+        {{ $t("create") }}
+      </Button>
+    </template>
   </div>
 </template>
 
@@ -120,8 +123,9 @@ import {
   NumberFieldInput,
 } from "@/components/ui/number-field";
 import type {
-  MusicQuizTimelineConfig,
+  MusicQuizCreateRequest,
   MusicQuizTimelineBonusMode,
+  MusicQuizTimelineConfig,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { Plus } from "@lucide/vue";
@@ -165,20 +169,29 @@ function bonusModeLabel(mode: MusicQuizTimelineBonusMode) {
   );
 }
 
-function create() {
-  if (!canCreate.value || !props.sharedConfigValid) return;
+/** These settings as a request; the step-by-step setup brings its own music. */
+function buildRequest(
+  uris: string[] = sourceUris.value,
+): MusicQuizCreateRequest {
   const config: MusicQuizTimelineConfig = {
     round_count: roundCount.value,
     answer_duration: answerDuration.value,
-    source_uris: sourceUris.value,
+    source_uris: uris,
     include_similar_music: props.includeSimilarMusic,
     artist_bonus_mode: artistBonusMode.value,
     title_bonus_mode: titleBonusMode.value,
   };
-  emit("create", {
+  return {
     quiz_type: "music_timeline",
     answer_type: "timeline",
     config,
-  });
+  };
 }
+
+function create() {
+  if (!canCreate.value || !props.sharedConfigValid) return;
+  emit("create", buildRequest());
+}
+
+defineExpose({ buildRequest });
 </script>

@@ -5,7 +5,8 @@
     :aria-busy="loading"
   >
     <div class="flex flex-col gap-1">
-      <h3 class="font-semibold">
+      <!-- The step-by-step setup already heads this step "Plays on". -->
+      <h3 :class="hideTitle ? 'sr-only' : 'font-semibold'">
         {{ $t("providers.music_quiz.playback") }}
       </h3>
       <p class="text-muted-foreground text-sm">
@@ -201,6 +202,7 @@ const props = defineProps<{
   loading: boolean;
   error: boolean;
   disabled: boolean;
+  hideTitle?: boolean;
 }>();
 const emit = defineEmits<{
   "update:modelValue": [selection: MusicQuizPlaybackSelection];

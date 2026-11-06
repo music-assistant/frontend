@@ -1,5 +1,47 @@
 <template>
   <section
+    v-if="compact"
+    data-testid="music-quiz-session-header"
+    class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2"
+  >
+    <h2 class="min-w-0 truncate text-lg font-bold sm:text-xl">
+      {{ name || $t(game.labelKey) }}
+    </h2>
+    <!-- Its own line under the title row, so the chips line up with the title.
+         On a phone it comes before the wrapped buttons, so it stays with the
+         title. -->
+    <p
+      v-if="subtitle"
+      class="text-muted-foreground order-1 -mt-1 basis-full truncate text-sm sm:order-last"
+      data-testid="music-quiz-session-subtitle"
+    >
+      {{ subtitle }}
+    </p>
+    <div class="flex flex-wrap items-center gap-2">
+      <Badge v-if="name" variant="outline">{{ $t(game.labelKey) }}</Badge>
+      <Badge v-if="phaseLabel">
+        {{ phaseLabel }}
+      </Badge>
+      <Badge v-if="roundLabel" variant="outline">{{ roundLabel }}</Badge>
+      <Badge v-if="showMode" data-testid="music-quiz-mode" variant="outline">
+        {{ modeLabel }}
+      </Badge>
+    </div>
+    <!-- The phase chip only shows in the lobby. This region stays on the page
+         so screen readers hear every phase change, the game starting too
+         (a region that appears already filled isn't announced). -->
+    <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+      {{ liveStatus || phaseLabel }}
+    </span>
+    <div
+      v-if="$slots.actions"
+      class="order-2 ms-auto flex shrink-0 sm:order-none"
+    >
+      <slot name="actions"></slot>
+    </div>
+  </section>
+  <section
+    v-else
     data-testid="music-quiz-session-header"
     class="bg-card flex min-w-0 flex-col rounded-xl border shadow-sm sm:flex-row sm:items-center"
     :class="present ? 'gap-2 p-3 sm:p-4' : 'gap-3 p-4'"
@@ -29,6 +71,13 @@
         >
           {{ name || $t(game.labelKey) }}
         </component>
+        <p
+          v-if="subtitle"
+          class="text-muted-foreground truncate text-sm"
+          data-testid="music-quiz-session-subtitle"
+        >
+          {{ subtitle }}
+        </p>
         <div
           class="flex flex-wrap items-center"
           :class="present ? 'mt-0.5 gap-1.5' : 'mt-1 gap-2'"
@@ -69,6 +118,12 @@ const props = withDefaults(
     mode?: MusicQuizMode;
     listenInEnabled?: boolean;
     present?: boolean;
+    /** One line without the card: title with its chips inline. */
+    compact?: boolean;
+    /** A short line under the title, e.g. the music being played. */
+    subtitle?: string;
+    /** Phase announced to screen readers when the phase chip is hidden. */
+    liveStatus?: string;
   }>(),
   {
     name: null,
@@ -76,6 +131,9 @@ const props = withDefaults(
     mode: undefined,
     listenInEnabled: false,
     present: false,
+    compact: false,
+    subtitle: "",
+    liveStatus: "",
   },
 );
 

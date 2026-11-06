@@ -15,6 +15,8 @@ export interface MusicQuizSetupAdapterProps {
   busy: boolean;
   includeSimilarMusic: boolean;
   sharedConfigValid?: boolean;
+  /** "rules": only the game's own settings (the step-by-step setup). */
+  stage?: "all" | "rules";
 }
 
 export interface MusicQuizSetupAdapterEmits {
@@ -37,14 +39,6 @@ export interface MusicQuizPlayerGameAdapterProps<
 
 export interface MusicQuizPlayerGameAdapterEmits {
   ready: [];
-}
-
-export interface MusicQuizHostPanelGameAdapterProps<
-  TState extends MusicQuizSupportedHostState = MusicQuizSupportedHostState,
-  TRound extends MusicQuizRoundBase = MusicQuizSupportedRound,
-> {
-  state: TState;
-  currentRound: TRound | null;
 }
 
 export interface MusicQuizHostGameAdapterProps<
