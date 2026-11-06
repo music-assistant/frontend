@@ -33,6 +33,7 @@
           <delete-genre-dialog />
           <link-genre-dialog />
           <player-group-playback-dialog />
+          <stream-held-dialog />
           <setup-flow-dialog />
           <player-rename-dialog />
           <item-context-menu />
@@ -65,6 +66,7 @@ import AppSidebar from "@/components/navigation/AppSidebar.vue";
 import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
 import PlayerGroupPlaybackDialog from "@/components/PlayerGroupPlaybackDialog.vue";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
+import StreamHeldDialog from "@/components/StreamHeldDialog.vue";
 import TourOverlay from "@/components/tour/TourOverlay.vue";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
