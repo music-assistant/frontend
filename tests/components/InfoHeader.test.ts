@@ -1,4 +1,5 @@
 import InfoHeader from "@/components/InfoHeader.vue";
+import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
 import type { Scope, Track } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -133,4 +134,26 @@ describe("InfoHeader favorite menu", () => {
 
     expect(wrapper.find(".favorite-icon-button").exists()).toBe(false);
   });
+
+  it.each([true, false, undefined])(
+    "shows the shared explicit badge only for explicit content (%s)",
+    (explicit) => {
+      const item = track({ version: "Live" });
+      item.metadata.explicit = explicit;
+      const wrapper = mountHeader(item);
+
+      expect(wrapper.findComponent(ExplicitIcon).exists()).toBe(
+        explicit === true,
+      );
+      if (explicit === true) {
+        const badge = wrapper.getComponent(ExplicitIcon);
+        expect(badge.element.tagName.toLowerCase()).toBe("svg");
+        expect(badge.classes()).toContain("size-6");
+        expect(badge.classes()).toContain("[&_text]:fill-background");
+        expect(badge.attributes("aria-hidden")).toBe("true");
+        expect(badge.attributes("aria-describedby")).toBeTruthy();
+      }
+      expect(wrapper.find(".mdi-alpha-e-box").exists()).toBe(false);
+    },
+  );
 });
