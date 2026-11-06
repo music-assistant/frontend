@@ -137,19 +137,45 @@
               :placeholder="$t('providers.music_quiz.choose_player')"
             >
               {{ venuePlayerName ?? $t("providers.music_quiz.choose_player") }}
+              <PlayerDeviceBadge
+                v-if="
+                  thisDevicePlayerId &&
+                  modelValue.venuePlayerId === thisDevicePlayerId
+                "
+                label
+              />
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem
-              v-for="player in options.venue_players"
+              v-for="player in venuePlayers"
               :key="player.player_id"
               :value="player.player_id"
             >
               {{ player.name }}
+              <PlayerDeviceBadge
+                v-if="player.player_id === thisDevicePlayerId"
+                label
+              />
             </SelectItem>
           </SelectContent>
         </Select>
       </Field>
+
+      <Button
+        v-if="canPlayOnThisDevice"
+        variant="outline"
+        size="sm"
+        type="button"
+        class="self-start"
+        :disabled="disabled || connectingThisDevice"
+        data-testid="music-quiz-play-on-this-device"
+        @click="playOnThisDevice"
+      >
+        <Spinner v-if="connectingThisDevice" aria-hidden="true" />
+        <MonitorSpeaker v-else class="size-4" aria-hidden="true" />
+        {{ $t("play_on_this_device") }}
+      </Button>
 
       <p
         v-if="!hasAvailableMode"
@@ -164,6 +190,7 @@
 </template>
 
 <script setup lang="ts">
+import PlayerDeviceBadge from "@/components/PlayerDeviceBadge.vue";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -184,9 +211,13 @@ import type {
   MusicQuizMode,
   MusicQuizPlaybackOptions,
 } from "@/composables/music-quiz/useMusicQuiz";
-import type { MusicQuizPlaybackSelection } from "@/helpers/music_quiz_playback";
+import { useMusicQuizThisDevice } from "@/composables/music-quiz/useMusicQuizThisDevice";
+import {
+  orderMusicQuizVenuePlayers,
+  type MusicQuizPlaybackSelection,
+} from "@/helpers/music_quiz_playback";
 import { $t } from "@/plugins/i18n";
-import { RefreshCw, TriangleAlert } from "@lucide/vue";
+import { MonitorSpeaker, RefreshCw, TriangleAlert } from "@lucide/vue";
 import type { AcceptableValue } from "reka-ui";
 import { computed } from "vue";
 
@@ -220,6 +251,22 @@ const venueSelectionValid = computed(
     !!props.options?.venue_players.some(
       (player) => player.player_id === props.modelValue.venuePlayerId,
     ),
+);
+const {
+  thisDevicePlayerId,
+  canPlayOnThisDevice,
+  connecting: connectingThisDevice,
+  playOnThisDevice,
+} = useMusicQuizThisDevice(() => props.options, {
+  refresh: () => emit("retry"),
+  select: (playerId) =>
+    emit("update:modelValue", { mode: "venue", venuePlayerId: playerId }),
+});
+const venuePlayers = computed(() =>
+  orderMusicQuizVenuePlayers(
+    props.options?.venue_players ?? [],
+    thisDevicePlayerId.value,
+  ),
 );
 const venuePlayerId = computed({
   get: () => props.modelValue.venuePlayerId ?? undefined,

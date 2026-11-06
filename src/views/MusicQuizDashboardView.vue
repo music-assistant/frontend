@@ -260,6 +260,7 @@ import api, { ConnectionState } from "@/plugins/api";
 import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
+import { webPlayer } from "@/plugins/web_player";
 import { Gamepad2, MicVocal, Plus, Settings } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -406,6 +407,14 @@ function playAlong() {
 }
 
 async function handleCreate(request: MusicQuizCreateRequest) {
+  // the quiz audio starts later, outside this click, so unlock this browser's
+  // audio output now when it is the venue player
+  if (
+    request.playback_mode === "venue" &&
+    request.venue_player_id === webPlayer.player_id
+  ) {
+    webPlayer.primeAudio();
+  }
   if (await host.create(request)) showSetupDialog.value = false;
 }
 

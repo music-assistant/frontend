@@ -5,6 +5,7 @@ import {
   type Scope,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
+import { webPlayer } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -206,6 +207,25 @@ describe("MusicQuizDashboardView", () => {
     expect(wrapper.get('[data-testid="playback-mode"]').text()).toBe("remote");
   });
 
+  it("unlocks the audio of this browser when it creates a game played here", async () => {
+    const primeAudio = vi.spyOn(webPlayer, "primeAudio").mockReturnValue(true);
+    webPlayer.player_id = "laptop";
+    const wrapper = mountDashboard();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="new-game-empty"]').trigger("click");
+    await flushPromises();
+    await wrapper.get('[data-testid="create-on-laptop"]').trigger("click");
+
+    expect(primeAudio).toHaveBeenCalledOnce();
+    expect(mockSendCommand).toHaveBeenCalledWith(
+      "music_quiz/create",
+      expect.objectContaining({ venue_player_id: "laptop" }),
+    );
+    primeAudio.mockRestore();
+    webPlayer.player_id = null;
+  });
+
   it("resolves the admin settings shortcut and routes to its provider config", async () => {
     if (mockAdminState.current) mockAdminState.current.value = true;
     mockGetProviderConfigs.mockResolvedValue([
@@ -358,9 +378,16 @@ function mountDashboard() {
         MusicQuizSessionPanels: true,
         MusicQuizSetupWizard: {
           props: ["playbackSelection"],
-          emits: ["update:playbackSelection"],
+          emits: ["update:playbackSelection", "create"],
+          setup: () => ({
+            laptopRequest: {
+              quiz_type: "guess_the_song",
+              playback_mode: "venue",
+              venue_player_id: "laptop",
+            },
+          }),
           template:
-            '<div data-testid="music-quiz-setup"><span data-testid="playback-mode">{{ playbackSelection.mode }}</span><button data-testid="select-remote-playback" @click="$emit(\'update:playbackSelection\', { mode: \'remote\', venuePlayerId: \'living-room\' })">Remote</button></div>',
+            '<div data-testid="music-quiz-setup"><span data-testid="playback-mode">{{ playbackSelection.mode }}</span><button data-testid="select-remote-playback" @click="$emit(\'update:playbackSelection\', { mode: \'remote\', venuePlayerId: \'living-room\' })">Remote</button><button data-testid="create-on-laptop" @click="$emit(\'create\', laptopRequest)">Create</button></div>',
         },
       },
     },
