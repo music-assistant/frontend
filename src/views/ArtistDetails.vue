@@ -127,6 +127,9 @@
           :show-album-type-filter="false"
           :show-refresh-button="false"
           :sort-listing="ListingType.ARTIST_AUDIOBOOKS"
+          library-toolbar
+          :show-count="false"
+          detail-row
           :load-paged-data="loadArtistAudiobooks"
           :title="$t('audiobooks')"
           :subtitle="$t('in_library')"
@@ -151,6 +154,9 @@
           :provider-filter-options="audiobookSourceProviderIds"
           :show-refresh-button="false"
           :sort-listing="ListingType.ARTIST_AUDIOBOOKS"
+          library-toolbar
+          :show-count="false"
+          detail-row
           :load-paged-data="loadAllAudiobooks"
           :title="$t('artist_all_audiobooks')"
           :subtitle="$t('on_provider', [activeAudiobookProvider])"
