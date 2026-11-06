@@ -285,8 +285,8 @@ export async function createSendspinConnection(): Promise<SendspinWebSocketBridg
 /**
  * WebSocket-like object that sendspin-js talks to.
  *
- * sendspin-js opens its socket with `new WebSocket(baseUrl + "/sendspin")`, which
- * the interceptor routes here. On the initial connect a bridge is pre-staged by
+ * sendspin-js opens its socket with `new WebSocket(url)` on a "/sendspin" URL,
+ * which the interceptor routes here. On the initial connect a bridge is pre-staged by
  * prepareSendspinSession(); on the library's own auto-reconnect no bridge is
  * staged, so this wrapper builds a fresh one on demand. Either way the bridge is
  * attached on a later microtask — after sendspin-js has wired its handlers and
