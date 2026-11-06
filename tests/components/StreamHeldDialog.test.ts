@@ -174,6 +174,26 @@ describe("StreamHeldDialog", () => {
     ).toBeUndefined();
   });
 
+  it("does not play an older request that a newer refusal replaced", async () => {
+    let finishStop: (value: null) => void = () => {};
+    apiMock.queueCommandStop.mockReturnValue(
+      new Promise((resolve) => (finishStop = resolve)),
+    );
+    const wrapper = mountDialog();
+    const older = openDialog();
+    await flushPromises();
+
+    await stopAndPlayHere(wrapper);
+    openDialog({ holderName: "Kitchen" });
+    await flushPromises();
+    await wrapper.get("button").trigger("click");
+    finishStop(null);
+    await flushPromises();
+
+    expect(older.retry).not.toHaveBeenCalled();
+    expect(wrapper.find(".stream-held-dialog").exists()).toBe(false);
+  });
+
   it("stays open while it is busy", async () => {
     apiMock.queueCommandStop.mockReturnValue(new Promise(() => {}));
     const wrapper = mountDialog();
