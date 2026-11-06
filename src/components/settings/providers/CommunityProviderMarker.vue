@@ -1,20 +1,11 @@
 <template>
-  <TooltipProvider v-if="variant === 'icon'" :delay-duration="200">
-    <Tooltip>
-      <TooltipTrigger as-child>
-        <span
-          role="img"
-          tabindex="0"
-          class="text-muted-foreground inline-flex"
-          :aria-label="label"
-          data-testid="community-marker"
-        >
-          <Users class="size-3.5" aria-hidden="true" />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="top">{{ label }}</TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
+  <TooltipIcon
+    v-if="variant === 'icon'"
+    :label="label"
+    data-testid="community-marker"
+  >
+    <Users class="size-3.5" aria-hidden="true" />
+  </TooltipIcon>
   <div
     v-else
     class="text-muted-foreground flex items-center gap-1.5 text-xs"
@@ -26,12 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import TooltipIcon from "@/components/TooltipIcon.vue";
 import { $t } from "@/plugins/i18n";
 import { Users } from "@lucide/vue";
 import { computed } from "vue";

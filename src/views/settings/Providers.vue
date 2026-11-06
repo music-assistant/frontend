@@ -60,6 +60,7 @@
               canConfigureSourceAccess(item) ? accessSummary(item) : null
             "
             :status-variant="statusVariant(item.status)"
+            :status-icon="statusIcon(item.status)"
             :status-label="statusLabel(item)"
             :is-error="isErrorStatus(item.status)"
             :error-text="getErrorText(item)"
@@ -240,11 +241,15 @@ const isErrorStatus = function (status?: ProviderStatus | null) {
   );
 };
 
-// a healthy provider carries no badge, so only the states worth flagging map to one
+// only a status that needs attention carries a badge
 const statusVariant = function (status?: ProviderStatus | null) {
-  if (isErrorStatus(status)) return "destructive" as const;
-  if (status === ProviderStatus.DISABLED || status === ProviderStatus.LOADING)
-    return "secondary" as const;
+  return isErrorStatus(status) ? ("destructive" as const) : undefined;
+};
+
+// the quiet states show as an icon by the name; a healthy provider shows neither
+const statusIcon = function (status?: ProviderStatus | null) {
+  if (status === ProviderStatus.LOADING) return "loading" as const;
+  if (status === ProviderStatus.DISABLED) return "disabled" as const;
   return undefined;
 };
 

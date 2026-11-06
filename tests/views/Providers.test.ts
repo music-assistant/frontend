@@ -223,6 +223,7 @@ const ProviderRowStub = {
     "description",
     "accessSummary",
     "statusVariant",
+    "statusIcon",
     "statusLabel",
     "isError",
     "errorText",
@@ -1088,9 +1089,31 @@ describe("Providers loading", () => {
     const wrapper = await mountProviders(ProviderStatus.AUTH_REQUIRED);
 
     expect(onlyRow(wrapper).props("statusVariant")).toBe("destructive");
+    expect(onlyRow(wrapper).props("statusIcon")).toBeUndefined();
     expect(onlyRow(wrapper).props("statusLabel")).toBe(
       "settings.provider_status_auth_required",
     );
+  });
+
+  it.each([
+    [ProviderStatus.LOADING, "loading", "settings.provider_status_loading"],
+    [ProviderStatus.DISABLED, "disabled", "settings.provider_status_disabled"],
+  ])(
+    "shows a %s source as an icon instead of a badge",
+    async (status, icon, label) => {
+      const wrapper = await mountProviders(status);
+
+      expect(onlyRow(wrapper).props("statusVariant")).toBeUndefined();
+      expect(onlyRow(wrapper).props("statusIcon")).toBe(icon);
+      expect(onlyRow(wrapper).props("statusLabel")).toBe(label);
+    },
+  );
+
+  it("shows a running source without a status", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(onlyRow(wrapper).props("statusVariant")).toBeUndefined();
+    expect(onlyRow(wrapper).props("statusIcon")).toBeUndefined();
   });
 
   it("shows no empty state until the providers are loaded", async () => {

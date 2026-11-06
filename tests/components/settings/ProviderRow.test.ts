@@ -217,6 +217,64 @@ describe("ProviderRow", () => {
   );
 
   it.each(VARIANTS)(
+    "shows a loading source as a spinner by its name (%s)",
+    (variant) => {
+      const wrapper = mountRow({
+        variant,
+        statusIcon: "loading",
+        statusLabel: "Loading",
+      });
+
+      const icon = wrapper.get('[data-testid="provider-status-icon"]');
+      expect(icon.attributes("aria-label")).toBe("Loading");
+      expect(icon.get("svg").classes()).toContain("animate-spin");
+      expect(wrapper.find('[data-testid="provider-status"]').exists()).toBe(
+        false,
+      );
+    },
+  );
+
+  it.each(VARIANTS)(
+    "shows a disabled source as a still icon by its name (%s)",
+    (variant) => {
+      const wrapper = mountRow({
+        variant,
+        statusIcon: "disabled",
+        statusLabel: "Disabled",
+      });
+
+      const icon = wrapper.get('[data-testid="provider-status-icon"]');
+      expect(icon.attributes("aria-label")).toBe("Disabled");
+      expect(icon.get("svg").classes()).not.toContain("animate-spin");
+    },
+  );
+
+  it.each(VARIANTS)("shows no status icon by default (%s)", (variant) => {
+    const wrapper = mountRow({ variant });
+
+    expect(wrapper.find('[data-testid="provider-status-icon"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it.each(VARIANTS)(
+    "puts the community icon after the status icon (%s)",
+    (variant) => {
+      const wrapper = mountRow({
+        variant,
+        statusIcon: "disabled",
+        statusLabel: "Disabled",
+        community: true,
+      });
+
+      const testIds = wrapper
+        .findAll('[data-testid$="-icon"], [data-testid="community-marker"]')
+        .map((el) => el.attributes("data-testid"));
+      expect(testIds).toEqual(["provider-status-icon", "community-marker"]);
+    },
+  );
+
+  it.each(VARIANTS)(
     "marks a community provider with an icon by its name (%s)",
     (variant) => {
       const wrapper = mountRow({ variant, community: true });
