@@ -137,13 +137,7 @@
               :placeholder="$t('providers.music_quiz.choose_player')"
             >
               {{ venuePlayerName ?? $t("providers.music_quiz.choose_player") }}
-              <PlayerDeviceBadge
-                v-if="
-                  thisDevicePlayerId &&
-                  modelValue.venuePlayerId === thisDevicePlayerId
-                "
-                label
-              />
+              <PlayerDeviceBadge v-if="selectedIsThisDevice" label />
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -257,11 +251,17 @@ const {
   canPlayOnThisDevice,
   connecting: connectingThisDevice,
   playOnThisDevice,
+  cancelPlayOnThisDevice,
 } = useMusicQuizThisDevice(() => props.options, {
   refresh: () => emit("retry"),
   select: (playerId) =>
     emit("update:modelValue", { mode: "venue", venuePlayerId: playerId }),
 });
+const selectedIsThisDevice = computed(
+  () =>
+    !!thisDevicePlayerId.value &&
+    props.modelValue.venuePlayerId === thisDevicePlayerId.value,
+);
 const venuePlayers = computed(() =>
   orderMusicQuizVenuePlayers(
     props.options?.venue_players ?? [],
@@ -286,6 +286,7 @@ const venueUnavailableReason = computed(() =>
 
 function updateMode(value: AcceptableValue) {
   if (value !== "venue" && value !== "remote") return;
+  cancelPlayOnThisDevice();
   emit("update:modelValue", {
     ...props.modelValue,
     mode: value,
@@ -293,6 +294,7 @@ function updateMode(value: AcceptableValue) {
 }
 
 function updateVenuePlayer(value: AcceptableValue) {
+  cancelPlayOnThisDevice();
   emit("update:modelValue", {
     ...props.modelValue,
     venuePlayerId: typeof value === "string" && value ? value : null,

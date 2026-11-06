@@ -207,24 +207,41 @@ describe("MusicQuizDashboardView", () => {
     expect(wrapper.get('[data-testid="playback-mode"]').text()).toBe("remote");
   });
 
-  it("unlocks the audio of this browser when it creates a game played here", async () => {
-    const primeAudio = vi.spyOn(webPlayer, "primeAudio").mockReturnValue(true);
-    webPlayer.player_id = "laptop";
-    const wrapper = mountDashboard();
-    await flushPromises();
+  it.each([
+    { webPlayerId: "laptop", primed: true },
+    { webPlayerId: "other-browser", primed: false },
+  ])(
+    "unlocks the audio of this browser only when it creates a game played here ($webPlayerId)",
+    async ({ webPlayerId, primed }) => {
+      const primeAudio = vi
+        .spyOn(webPlayer, "primeAudio")
+        .mockReturnValue(true);
+      webPlayer.player_id = webPlayerId;
+      try {
+        const wrapper = mountDashboard();
+        await flushPromises();
 
-    await wrapper.get('[data-testid="new-game-empty"]').trigger("click");
-    await flushPromises();
-    await wrapper.get('[data-testid="create-on-laptop"]').trigger("click");
+        await wrapper.get('[data-testid="new-game-empty"]').trigger("click");
+        await flushPromises();
+        await wrapper.get('[data-testid="create-on-laptop"]').trigger("click");
 
-    expect(primeAudio).toHaveBeenCalledOnce();
-    expect(mockSendCommand).toHaveBeenCalledWith(
-      "music_quiz/create",
-      expect.objectContaining({ venue_player_id: "laptop" }),
-    );
-    primeAudio.mockRestore();
-    webPlayer.player_id = null;
-  });
+        const createCall = mockSendCommand.mock.calls.findIndex(
+          ([command]) => command === "music_quiz/create",
+        );
+        expect(createCall).toBeGreaterThanOrEqual(0);
+        expect(primeAudio).toHaveBeenCalledTimes(primed ? 1 : 0);
+        if (primed) {
+          // within the click, before the create request goes out
+          expect(primeAudio.mock.invocationCallOrder[0]).toBeLessThan(
+            mockSendCommand.mock.invocationCallOrder[createCall],
+          );
+        }
+      } finally {
+        primeAudio.mockRestore();
+        webPlayer.player_id = null;
+      }
+    },
+  );
 
   it("resolves the admin settings shortcut and routes to its provider config", async () => {
     if (mockAdminState.current) mockAdminState.current.value = true;

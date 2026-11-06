@@ -97,7 +97,14 @@ describe("useMusicQuizThisDevice", () => {
     const { canPlayOnThisDevice } = create([LIVING_ROOM]);
     expect(canPlayOnThisDevice.value).toBe(true);
 
+    webPlayer.mode = WebPlayerMode.SENDSPIN_ONLY;
+    expect(canPlayOnThisDevice.value).toBe(false);
+  });
+
+  it("leaves the companion app's own player alone", () => {
     companionMode.value = true;
+    const { canPlayOnThisDevice } = create([LIVING_ROOM]);
+
     expect(canPlayOnThisDevice.value).toBe(false);
   });
 
@@ -125,7 +132,7 @@ describe("useMusicQuizThisDevice", () => {
   });
 
   it("stops waiting quietly when the web player never becomes a venue player", async () => {
-    const { refresh, select, connecting, playOnThisDevice } = create([
+    const { options, refresh, select, connecting, playOnThisDevice } = create([
       LIVING_ROOM,
     ]);
 
@@ -133,10 +140,33 @@ describe("useMusicQuizThisDevice", () => {
     enableWebPlayer();
     await nextTick();
     vi.runAllTimers();
+    expect(connecting.value).toBe(false);
 
+    options.value = { ...options.value, venue_players: [LIVING_ROOM, LAPTOP] };
+    await nextTick();
     expect(refresh).toHaveBeenCalledOnce();
     expect(select).not.toHaveBeenCalled();
+  });
+
+  it("stops waiting when the host picks another player", async () => {
+    const {
+      options,
+      refresh,
+      select,
+      connecting,
+      playOnThisDevice,
+      cancelPlayOnThisDevice,
+    } = create([LIVING_ROOM]);
+
+    playOnThisDevice();
+    cancelPlayOnThisDevice();
     expect(connecting.value).toBe(false);
+
+    enableWebPlayer();
+    options.value = { ...options.value, venue_players: [LIVING_ROOM, LAPTOP] };
+    await nextTick();
+    expect(refresh).not.toHaveBeenCalled();
+    expect(select).not.toHaveBeenCalled();
   });
 });
 

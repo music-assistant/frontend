@@ -92,5 +92,7 @@ export function useMusicQuizThisDevice(
     canPlayOnThisDevice,
     connecting,
     playOnThisDevice,
+    // lets a player the host picks while waiting win over this device
+    cancelPlayOnThisDevice: finishConnecting,
   };
 }
