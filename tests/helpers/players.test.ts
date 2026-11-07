@@ -3,6 +3,7 @@ import {
   canEditPlayerGroup,
   getPlayerDisplayName,
   getPlayerGroupMemberCount,
+  getPlayerIcon,
   getPlayerName,
   getWebPlayerName,
   groupMemberPickerVisible,
@@ -21,6 +22,7 @@ import {
   type User,
   UserRole,
 } from "@/plugins/api/interfaces";
+import { DEVICE_TYPE_ICONS, getLucideIcon } from "@/helpers/icon";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
@@ -32,7 +34,11 @@ vi.mock("@/plugins/api", () => ({
 }));
 
 vi.mock("@/plugins/store", () => ({
-  store: { companionPlayerId: undefined, currentUser: undefined },
+  store: {
+    companionPlayerId: undefined,
+    currentUser: undefined,
+    deviceType: "phone",
+  },
 }));
 
 vi.mock("@/plugins/web_player", () => ({
@@ -190,6 +196,28 @@ describe("getPlayerDisplayName", () => {
   it("keeps the name of a player of another device", () => {
     expect(getPlayerDisplayName(createPlayer({ name: "Kitchen" }))).toBe(
       "Kitchen",
+    );
+  });
+});
+
+describe("getPlayerIcon", () => {
+  it("shows the device icon for this device with the default icon", () => {
+    const player = createPlayer();
+    webPlayer.player_id = player.player_id;
+
+    expect(getPlayerIcon(player)).toBe(DEVICE_TYPE_ICONS.phone);
+  });
+
+  it("shows the icon the user picked for this device", () => {
+    const player = createPlayer({ icon: "headphones" });
+    webPlayer.player_id = player.player_id;
+
+    expect(getPlayerIcon(player)).toBe(getLucideIcon("headphones"));
+  });
+
+  it("shows the player icon for a player of another device", () => {
+    expect(getPlayerIcon(createPlayer({ icon: "headphones" }))).toBe(
+      getLucideIcon("headphones"),
     );
   });
 });

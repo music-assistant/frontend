@@ -108,6 +108,7 @@
                     }}</span>
                     <Check v-if="subItem.selected" class="ml-auto size-4" />
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator v-if="subItem.separatorAfter" />
                 </template>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
@@ -142,6 +143,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
