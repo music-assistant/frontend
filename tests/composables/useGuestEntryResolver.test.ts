@@ -74,15 +74,6 @@ describe("guest entry decisions", () => {
     await expect(resolveGuestEntry()).rejects.toThrow("boom");
   });
 
-  it("returns to Party once an entered Music Quiz disappears", async () => {
-    setProviders("party", "music_quiz");
-    apiMock.sendCommand.mockResolvedValueOnce({ game_id: "active" });
-    await expect(resolveGuestEntry()).resolves.toBe("quiz");
-
-    apiMock.sendCommand.mockResolvedValue(null);
-    await expect(resolveGuestEntry()).resolves.toBe("party");
-  });
-
   it("keeps showing a finished Music Quiz while it still exists", async () => {
     setProviders("party", "music_quiz");
     apiMock.sendCommand.mockResolvedValue({

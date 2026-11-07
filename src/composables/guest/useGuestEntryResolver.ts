@@ -24,8 +24,8 @@ export const guestEntryStateKey: InjectionKey<Readonly<Ref<GuestEntryState>>> =
   Symbol("guest-entry-state");
 
 /**
- * Pick the experience a guest should see: a Music Quiz game wins over the
- * Party, and without either the placeholder matching the enabled plugins.
+ * Pick the experience a guest should see: an existing Music Quiz game, else
+ * the Party, else a placeholder for the enabled plugins.
  */
 export async function resolveGuestEntry(): Promise<GuestEntryState> {
   if (await getMusicQuizInfo()) return "quiz";
