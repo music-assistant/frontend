@@ -19,6 +19,7 @@ import {
   TaskStatus,
   UserRole,
 } from "@/plugins/api/interfaces";
+import { getIngressClientKey } from "@/helpers/ingress";
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../../fixtures/playlist";
@@ -1345,6 +1346,58 @@ describe("MusicAssistantApi error handling", () => {
     await rejection;
   });
 });
+
+describe("MusicAssistantApi connection over Home Assistant Ingress", () => {
+  const INGRESS_ADDRESS = "http://ha.local:8123/api/hassio_ingress/abc";
+  let openedUrls: string[];
+  let originalUrl: string;
+
+  beforeEach(() => {
+    openedUrls = [];
+    originalUrl = window.location.href;
+    // a socket that never opens shows which URL the api connected to
+    vi.stubGlobal(
+      "WebSocket",
+      class {
+        constructor(url: string) {
+          openedUrls.push(url);
+        }
+      },
+    );
+  });
+
+  afterEach(() => {
+    setUrl(originalUrl);
+    localStorage.clear();
+    vi.unstubAllGlobals();
+  });
+
+  it("identifies this browser on the API connection", () => {
+    setUrl(`${INGRESS_ADDRESS}/`);
+
+    void new MusicAssistantApi().initialize(INGRESS_ADDRESS);
+
+    expect(openedUrls).toEqual([
+      `ws://ha.local:8123/api/hassio_ingress/abc/ws?ingress_client_key=${getIngressClientKey()}`,
+    ]);
+  });
+
+  it("does not identify this browser outside Ingress", () => {
+    void new MusicAssistantApi().initialize("http://ma.local:8095");
+
+    expect(openedUrls).toEqual(["ws://ma.local:8095/ws"]);
+  });
+});
+
+/**
+ * Point the test window at another URL.
+ */
+function setUrl(url: string) {
+  // setURL, as replaceState can not change the origin
+  (
+    window as unknown as { happyDOM: { setURL(url: string): void } }
+  ).happyDOM.setURL(url);
+}
 
 /**
  * Run a task and hand back the options of the toast announcing it.
