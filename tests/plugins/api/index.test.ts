@@ -531,6 +531,85 @@ describe("MusicAssistantApi error handling", () => {
     await expect(request).resolves.toEqual([]);
   });
 
+  it("sends artist listing count filters", async () => {
+    const tracksRequest = api.getArtistTracksCount(
+      "artist-1",
+      "library",
+      "spotify--1",
+      "live",
+      false,
+    );
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/artist_tracks_count",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      provider_filter: "spotify--1",
+      search: "live",
+      favorite: false,
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: 12,
+      partial: false,
+    });
+    await expect(tracksRequest).resolves.toBe(12);
+
+    const albumsRequest = api.getArtistAlbumsCount(
+      "artist-1",
+      "library",
+      undefined,
+      "live",
+      [AlbumType.SINGLE, AlbumType.EP],
+      true,
+    );
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/artist_albums_count",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      provider_filter: undefined,
+      search: "live",
+      album_types: [AlbumType.SINGLE, AlbumType.EP],
+      favorite: true,
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: 60,
+      partial: false,
+    });
+    await expect(albumsRequest).resolves.toBe(60);
+
+    const appearsOnRequest = api.getArtistAppearsOnCount("artist-1", "library");
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/artist_appears_on_count",
+    );
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: 7,
+      partial: false,
+    });
+    await expect(appearsOnRequest).resolves.toBe(7);
+
+    const discographyRequest = api.getArtistDiscographyCount("artist-1");
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/discography_count",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      search: undefined,
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: 20,
+      partial: false,
+    });
+    await expect(discographyRequest).resolves.toBe(20);
+  });
+
   it.each([true, false, undefined])(
     "sends artist track parameters with favorite %s",
     async (favorite) => {
@@ -578,8 +657,8 @@ describe("MusicAssistantApi error handling", () => {
         "live",
         20,
         40,
-        SortField.NAME,
-        SortDirection.ASC,
+        SortField.RELEASE_DATE,
+        SortDirection.DESC,
         [AlbumType.SINGLE, AlbumType.EP],
         favorite,
       );
@@ -592,8 +671,8 @@ describe("MusicAssistantApi error handling", () => {
         search: "live",
         limit: 20,
         offset: 40,
-        sort_field: SortField.NAME,
-        sort_direction: SortDirection.ASC,
+        sort_field: SortField.RELEASE_DATE,
+        sort_direction: SortDirection.DESC,
         album_types: [AlbumType.SINGLE, AlbumType.EP],
         favorite,
       });

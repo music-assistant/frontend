@@ -251,6 +251,7 @@ export enum SortField {
   PROVIDER = "provider",
   FAVORITE_TIMESTAMP = "favorite_timestamp",
   ORIGINAL = "original",
+  RELEASE_DATE = "release_date",
 }
 
 export enum SortDirection {

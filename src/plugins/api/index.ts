@@ -795,6 +795,22 @@ export class MusicAssistantApi {
     });
   }
 
+  public getArtistTracksCount(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+    search?: string,
+    favorite?: boolean,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/artist_tracks_count", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+      search,
+      favorite,
+    });
+  }
+
   public getArtistTopTracks(
     item_id: string,
     provider_instance_id_or_domain: string,
@@ -843,6 +859,24 @@ export class MusicAssistantApi {
     });
   }
 
+  public getArtistAlbumsCount(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+    search?: string,
+    album_types?: AlbumType[],
+    favorite?: boolean,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/artist_albums_count", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+      search,
+      album_types,
+      favorite,
+    });
+  }
+
   public getArtistAppearsOn(
     item_id: string,
     provider_instance_id_or_domain: string,
@@ -862,6 +896,20 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+    });
+  }
+
+  public getArtistAppearsOnCount(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+    search?: string,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/artist_appears_on_count", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+      search,
     });
   }
 
@@ -911,6 +959,17 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+    });
+  }
+
+  public getArtistDiscographyCount(
+    item_id: string,
+    search?: string,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/discography_count", {
+      item_id,
+      provider_instance_id_or_domain: "library",
+      search,
     });
   }
 

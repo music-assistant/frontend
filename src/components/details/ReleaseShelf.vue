@@ -24,9 +24,9 @@
       <RouterLink
         :to="viewAllTo"
         class="release-shelf__more"
-        :aria-label="$t('tooltip.view_all', { name: title })"
+        :aria-label="viewAllAriaLabel"
       >
-        {{ $t("view_all") }}
+        {{ viewAllLabel }}
       </RouterLink>
     </template>
 
@@ -101,6 +101,7 @@ export interface Props {
   // undefined while the row is still loading
   items?: Array<Album | ItemMapping>;
   viewAllTo?: RouteLocationRaw;
+  itemCount?: number;
   // shown in place of the tiles when the row loaded nothing
   emptyMessage?: string;
   parentItem?: MediaItemType;
@@ -113,6 +114,7 @@ const props = withDefaults(defineProps<Props>(), {
   sourceValue: undefined,
   items: undefined,
   viewAllTo: undefined,
+  itemCount: undefined,
   emptyMessage: undefined,
   parentItem: undefined,
 });
@@ -125,6 +127,17 @@ const emit = defineEmits<{
 const SKELETONS = 6;
 
 const tilesPerView = computed(() => shelfTilesPerView());
+const viewAllAriaLabel = computed(() => {
+  const label = $t("tooltip.view_all", { name: props.title });
+  return props.itemCount === undefined
+    ? label
+    : `${label} (${props.itemCount})`;
+});
+const viewAllLabel = computed(() =>
+  props.itemCount === undefined
+    ? $t("view_all")
+    : `${$t("view_all")} (${props.itemCount})`,
+);
 
 // the item's type, so every card says what it is; the year already sits on the
 // artwork, so it isn't repeated here. A release that is not in the library says
