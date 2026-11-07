@@ -51,6 +51,15 @@ vi.mock("@/components/MediaItemThumb.vue", () => ({
   },
 }));
 
+vi.mock("@/components/ProviderIcon.vue", () => ({
+  default: {
+    name: "ProviderIcon",
+    props: ["domain", "size"],
+    template:
+      '<i data-testid="provider-icon" :data-domain="domain" :data-size="size" />',
+  },
+}));
+
 const MUSIC_QUIZ_SOURCE_MEDIA_TYPES = [
   MediaType.TRACK,
   MediaType.PLAYLIST,
@@ -289,6 +298,80 @@ describe("MediaSearch", () => {
     expect(
       rows.filter((row) => row.textContent?.includes("Party")),
     ).toHaveLength(2);
+    vi.useRealTimers();
+  });
+
+  it("keeps equally named artists apart", async () => {
+    mockSearch.mockResolvedValue(
+      searchResults({
+        artists: [
+          artistFixture({ uri: "spotify://artist/1", name: "Genesis" }),
+          artistFixture({ uri: "spotify://artist/2", name: "Genesis" }),
+        ],
+      }),
+    );
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.ARTIST] });
+
+    await wrapper.find("input").setValue("genesis");
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
+
+    expect(
+      resultRows().filter((row) => row.textContent?.includes("Genesis")),
+    ).toHaveLength(2);
+    vi.useRealTimers();
+  });
+
+  it("displays provider icons for track and artist search results", async () => {
+    mockSearch.mockResolvedValue(
+      searchResults({
+        tracks: [
+          trackFixture({
+            uri: "spotify://track/1",
+            name: "Song A",
+            artists: [artistRef("Band")],
+          }),
+          trackFixture({
+            uri: "library://track/2",
+            name: "Song B",
+            artists: [artistRef("Band")],
+          }),
+        ],
+        artists: [
+          artistFixture({ uri: "spotify://artist/1", name: "Artist X" }),
+          artistFixture({ uri: "library://artist/2", name: "Artist Y" }),
+        ],
+      }),
+    );
+    const wrapper = mountSearch({
+      allowedMediaTypes: [MediaType.TRACK, MediaType.ARTIST],
+    });
+
+    await wrapper.find("input").setValue("test");
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
+
+    const rows = resultRows();
+    expect(rows).toHaveLength(4);
+
+    const icons = rows.map((row) =>
+      row.querySelector('[data-testid="provider-icon"]'),
+    );
+    expect(icons.every((icon) => icon !== null)).toBe(true);
+
+    expect(icons.map((icon) => icon?.getAttribute("data-domain"))).toEqual([
+      "spotify",
+      "library",
+      "spotify",
+      "library",
+    ]);
+    expect(icons.map((icon) => icon?.getAttribute("data-size"))).toEqual([
+      "18",
+      "18",
+      "18",
+      "18",
+    ]);
+
     vi.useRealTimers();
   });
 

@@ -1200,6 +1200,42 @@ describe("MusicQuizPlayerView routing", () => {
       ).toBe(false);
       wrapper.unmount();
     });
+
+    it("shows the loading state instead of a stale landing while a foreground refetch is in flight", async () => {
+      // `resetToJoinInfo` clears the player but leaves the previous game's
+      // `info` populated while `fetchInfo` runs in the foreground; the landing
+      // must not render that stale info (or accept a join against it).
+      mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+      mockUseMusicQuizPlayer.mockReturnValue({
+        info: ref({
+          quiz_type: "guess_the_song",
+          answer_type: "multiple_choice",
+          phase: "lobby",
+          name: "Quiz",
+          player_count: 1,
+          round_count: 5,
+          mode: "venue",
+        }),
+        state: ref(null),
+        playerId: ref(null),
+        rememberedName: ref(""),
+        landingSeen: ref(false),
+        gameRemoved: ref(false),
+        busy: ref(false),
+        loading: ref(true),
+        currentRound: ref(null),
+        join: vi.fn(),
+        submitAnswer: vi.fn(),
+        ready: vi.fn(),
+        markLandingSeen: vi.fn(),
+      });
+
+      const wrapper = mountView();
+
+      expect(wrapper.find("#music-quiz-player-name").exists()).toBe(false);
+      expect(wrapper.text()).toContain("providers.music_quiz.loading");
+      wrapper.unmount();
+    });
   });
 });
 

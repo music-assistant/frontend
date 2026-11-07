@@ -1,44 +1,75 @@
 <template>
-  <section>
-    <InfoHeader :item="itemDetails" />
-    <!-- tracklisted station (dynamic or finite): show its tracks instead of "other versions" -->
-    <DynamicItemSample
-      v-if="
-        itemDetails &&
-        (itemDetails.is_dynamic || itemDetails.is_endless === false)
-      "
-      :item-details="itemDetails"
-      :provider="props.provider"
-    />
-    <ItemsListing
-      v-else-if="itemDetails"
-      itemtype="radioversions"
-      :parent-item="itemDetails"
-      :show-provider="true"
-      :show-favorites-only-filter="false"
-      :show-library="false"
-      :show-radio-number="false"
-      :show-duration="false"
-      :sort-listing="ListingType.VERSIONS"
-      :load-paged-data="loadRadioVersions"
-      :title="$t('other_versions')"
-      :hide-on-empty="true"
+  <section class="radio-details">
+    <RadioHero :item="itemDetails" @edit-rows="rowsEditorOpen = true" />
+
+    <template v-if="itemDetails">
+      <template v-for="rowId in visibleRows" :key="rowId">
+        <DetailTextRow
+          v-if="rowId === 'description' && description"
+          :title="$t('description')"
+          :text="description"
+          :dialog-title="itemDetails.name"
+          markdown
+          @edit-rows="rowsEditorOpen = true"
+        />
+
+        <DynamicItemSample
+          v-else-if="rowId === 'dynamic_sample' || rowId === 'tracklist'"
+          :item-details="itemDetails"
+          :provider="itemDetails.provider"
+        />
+
+        <ItemsListing
+          v-else-if="rowId === 'other_versions'"
+          itemtype="radioversions"
+          :parent-item="itemDetails"
+          :show-provider="true"
+          :show-favorites-only-filter="false"
+          :show-library="false"
+          :show-radio-number="false"
+          :show-duration="false"
+          :sort-listing="ListingType.VERSIONS"
+          library-toolbar
+          :show-count="false"
+          :load-paged-data="loadRadioVersions"
+          :title="$t('other_versions')"
+          :hide-on-empty="true"
+        />
+
+        <DetailAdminCard v-else-if="rowId === 'provider_mappings'">
+          <ProviderDetails :item-details="itemDetails" />
+        </DetailAdminCard>
+      </template>
+    </template>
+
+    <RowsEditor
+      v-if="itemDetails"
+      v-model:open="rowsEditorOpen"
+      :item="itemDetails"
+      :registry="radioRows"
+      :available-ids="availableRows"
+      :subtitle="$t('edit_rows_subtitle_radio')"
     />
     <br />
-    <!-- provider mapping details -->
-    <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
   </section>
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
-import InfoHeader from "@/components/InfoHeader.vue";
+import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
+import DetailTextRow from "@/components/details/DetailTextRow.vue";
+import RowsEditor from "@/components/details/RowsEditor.vue";
 import DynamicItemSample from "@/components/DynamicItemSample.vue";
-import { ref, watch } from "vue";
-import { ListingType, type Radio } from "@/plugins/api/interfaces";
+import ItemsListing, {
+  type LoadDataParams,
+} from "@/components/ItemsListing.vue";
+import { availableRadioRowIds, radioRows } from "@/components/radio/radioRows";
+import RadioHero from "@/components/radio/RadioHero.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
+import { ListingType, MediaType, type Radio } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+import { computed, ref, watch } from "vue";
 
 export interface Props {
   itemId: string;
@@ -46,20 +77,44 @@ export interface Props {
 }
 const props = defineProps<Props>();
 const itemDetails = ref<Radio>();
+const rowsEditorOpen = ref(false);
+
+const availableRows = computed(() =>
+  itemDetails.value ? availableRadioRowIds(itemDetails.value) : [],
+);
+const visibleRows = computed(() => {
+  const { order, hidden } = radioRows.resolve(availableRows.value);
+  return order.filter((rowId) => !hidden.has(rowId));
+});
+const description = computed(
+  () =>
+    itemDetails.value?.metadata?.description ||
+    itemDetails.value?.metadata?.copyright ||
+    undefined,
+);
 
 const loadItemDetails = async function () {
-  itemDetails.value = await api.getRadio(props.itemId, props.provider);
+  const { itemId, provider } = props;
+  itemDetails.value = undefined;
+  rowsEditorOpen.value = false;
+  const radio = await api.getRadio(itemId, provider);
+  if (itemId !== props.itemId || provider !== props.provider) return;
+  itemDetails.value = radio;
 };
 
 watch(
-  () => props.itemId,
-  (val) => {
-    if (val) loadItemDetails();
+  () => [props.itemId, props.provider],
+  ([itemId]) => {
+    if (itemId) loadItemDetails();
   },
   { immediate: true },
 );
 
-useDetailItemUpdates(itemDetails);
+useDetailItemUpdates(itemDetails, {
+  get providerItem() {
+    return { ...props, mediaType: MediaType.RADIO };
+  },
+});
 
 const loadRadioVersions = async function (params: LoadDataParams) {
   const radio = itemDetails.value;

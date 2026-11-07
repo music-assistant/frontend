@@ -3,7 +3,6 @@
  * Handles token storage, JWT claims, and authentication state
  */
 
-import { clearGuestQuizAffinity } from "@/helpers/guest_quiz_affinity";
 import {
   clearGuestSessionEnded,
   clearGuestSessionStorage,
@@ -115,7 +114,6 @@ export class AuthManager {
    * Automatically decodes JWT claims for frontend use
    */
   setToken(token: string, connectionIdentity?: ConnectionIdentity): void {
-    const previousIdentity = this.claims?.jti;
     this.token = token;
     this.claims = this.decodeJWT(token);
     if (this.isGuestAccessSession() || this.isDashboardViewer()) {
@@ -131,10 +129,6 @@ export class AuthManager {
       } else {
         localStorage.removeItem(TOKEN_CONNECTION_STORAGE_KEY);
       }
-    }
-    const nextIdentity = this.claims?.jti;
-    if (!nextIdentity || previousIdentity !== nextIdentity) {
-      clearGuestQuizAffinity();
     }
   }
 
@@ -226,7 +220,6 @@ export class AuthManager {
 
     this.restorePersistentToken();
     store.currentUser = undefined;
-    clearGuestQuizAffinity();
   }
 
   /**
@@ -287,7 +280,6 @@ export class AuthManager {
     this.token = null;
     this.claims = null;
     store.currentUser = undefined;
-    clearGuestQuizAffinity();
     clearGuestSessionStorage();
     clearGuestSessionEnded();
     localStorage.removeItem(TOKEN_STORAGE_KEY);

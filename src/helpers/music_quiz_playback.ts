@@ -8,6 +8,8 @@ export interface MusicQuizPlaybackSelection {
   venuePlayerId: string | null;
 }
 
+type MusicQuizVenuePlayer = MusicQuizPlaybackOptions["venue_players"][number];
+
 export type MusicQuizExplicitPlaybackCreateFields =
   | {
       playback_mode: "venue";
@@ -81,6 +83,21 @@ export function isMusicQuizPlaybackSelectionValid(
   options: MusicQuizPlaybackOptions,
 ) {
   return getMusicQuizPlaybackCreateFields(selection, options) !== null;
+}
+
+/**
+ * Return the venue players with this device's own player listed first.
+ */
+export function orderMusicQuizVenuePlayers(
+  players: MusicQuizVenuePlayer[],
+  thisDevicePlayerId: string | null,
+): MusicQuizVenuePlayer[] {
+  const thisDevice = players.find(
+    (player) => player.player_id === thisDevicePlayerId,
+  );
+  return thisDevice
+    ? [thisDevice, ...players.filter((player) => player !== thisDevice)]
+    : players;
 }
 
 function isPlaybackModeAvailable(

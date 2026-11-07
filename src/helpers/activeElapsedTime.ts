@@ -15,7 +15,12 @@ import { computeElapsedTime, queueItemPlaybackSpeed } from "@/helpers/elapsed";
 import api from "@/plugins/api";
 import { resolvePlayerQueue } from "@/plugins/api/helpers";
 import { store } from "@/plugins/store";
-import { PlaybackState, Player, QueueItem } from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  PlaybackState,
+  Player,
+  QueueItem,
+} from "@/plugins/api/interfaces";
 
 export interface ActiveTiming {
   elapsedTime: number;
@@ -37,6 +42,11 @@ export interface ActiveTiming {
 export function resolveActiveTiming(
   player_id?: string,
 ): ActiveTiming | undefined {
+  // A radio stream that knows its song reports where in that song it is, while
+  // the queue only knows how long the station has played.
+  const songTiming = resolveRadioSongTiming(player_id);
+  if (songTiming) return songTiming;
+
   // Prefer the active queue's own elapsed_time when it reports one.
   const queueTiming = resolveQueueTiming(player_id);
   if (queueTiming) return queueTiming;
@@ -146,6 +156,62 @@ export function toElapsedTime(
     timing.playbackState,
     timing.playbackSpeed,
   );
+}
+
+/**
+ * Whether the player plays a radio stream that reports where in its song it is.
+ */
+export function hasRadioSongTiming(player_id?: string): boolean {
+  return resolveRadioSongTiming(player_id) !== undefined;
+}
+
+/**
+ * The position within the song a radio stream plays, or undefined when the
+ * stream does not report its songs' durations.
+ *
+ * It advances with the queue playing the stream, or with the player when no
+ * queue is active.
+ */
+function resolveRadioSongTiming(player_id?: string): ActiveTiming | undefined {
+  const player = resolvePlayer(player_id);
+  const media = player?.current_media;
+  if (
+    media?.media_type !== MediaType.RADIO ||
+    !media.duration ||
+    media.elapsed_time == null ||
+    media.elapsed_time_last_updated == null
+  ) {
+    return undefined;
+  }
+  const queue = resolvePlayerQueue(player);
+  const playbackState = queue?.active
+    ? queue.state
+    : (player?.playback_state ?? PlaybackState.IDLE);
+  if (playbackState === PlaybackState.PLAYING) {
+    return {
+      elapsedTime: media.elapsed_time,
+      lastUpdated: media.elapsed_time_last_updated,
+      playbackState,
+      playbackSpeed: 1,
+    };
+  }
+
+  // The stream only reports a position when its song changes, so a stopped or
+  // paused stream holds the one from when the song started or was tuned in. The
+  // source's own last update marks when it stopped; the song ran until then.
+  const stoppedAt = queue?.active
+    ? api.queueElapsedTime[queue.queue_id]?.elapsed_time_last_updated
+    : player?.elapsed_time_last_updated;
+  const ranFor =
+    stoppedAt == null
+      ? 0
+      : Math.max(0, stoppedAt - media.elapsed_time_last_updated);
+  return {
+    elapsedTime: Math.min(media.duration, media.elapsed_time + ranFor),
+    lastUpdated: stoppedAt ?? media.elapsed_time_last_updated,
+    playbackState,
+    playbackSpeed: 1,
+  };
 }
 
 function resolvePlayer(player_id?: string): Player | undefined {

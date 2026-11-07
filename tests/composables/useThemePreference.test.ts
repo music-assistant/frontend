@@ -180,6 +180,22 @@ describe("useThemePreference", () => {
     expect(mocks.changeTheme).toHaveBeenLastCalledWith("dark");
   });
 
+  it("exposes the resolved theme as isDark, also when the system scheme changes", async () => {
+    const media = createMediaQueryMock(false);
+    stubMatchMedia(media);
+    vi.resetModules();
+    const { isDark, useThemePreference: freshUseThemePreference } =
+      await import("@/composables/useThemePreference");
+
+    freshUseThemePreference().applyThemePreference();
+    expect(isDark.value).toBe(false);
+
+    media.matches = true;
+    media.dispatch();
+
+    expect(isDark.value).toBe(true);
+  });
+
   it("stops following the system scheme once a fixed theme is chosen", async () => {
     const media = createMediaQueryMock(false);
     stubMatchMedia(media);
