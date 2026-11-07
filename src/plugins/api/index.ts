@@ -3,6 +3,10 @@ import { store } from "../store";
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
 import { resolveActiveSourceId } from "@/composables/activeSource";
+import {
+  getIngressClientKey,
+  hasHomeAssistantIngressPath,
+} from "@/helpers/ingress";
 import { resolveProviderDomain } from "@/helpers/provider_domain";
 import {
   resetServerTime,
@@ -258,6 +262,11 @@ export class MusicAssistantApi {
 
       if (!wsUrl.endsWith("/ws")) {
         wsUrl += "/ws";
+      }
+
+      // lets the server link the web player of this browser to this connection
+      if (hasHomeAssistantIngressPath()) {
+        wsUrl += `?${new URLSearchParams({ ingress_client_key: getIngressClientKey() })}`;
       }
 
       transport = new WebSocketTransport({ url: wsUrl });
