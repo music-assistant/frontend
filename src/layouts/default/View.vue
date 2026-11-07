@@ -33,14 +33,14 @@
           <delete-genre-dialog />
           <link-genre-dialog />
           <player-group-playback-dialog />
-          <stream-held-dialog />
           <setup-flow-dialog />
           <player-rename-dialog />
           <item-context-menu />
           <command-center />
-          <!-- kept last so it portals after the other dialogs, which share
-               its z-index, and a confirmation asked from one of them (e.g.
+          <!-- kept last so they portal after the other dialogs, which share
+               their z-index, and a confirmation asked from one of them (e.g.
                the search popup) appears on top -->
+          <stream-held-dialog />
           <dialog-delete-confirmation />
           <AddManualLink
             v-model="showEditItemDialog"

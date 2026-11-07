@@ -65,8 +65,12 @@ const message = computed(() =>
     : "",
 );
 
+// the dialog can open on top of another one that stays open behind it (such as
+// the search popup), so closing it restores the flag rather than clearing it
+let dialogActiveBeforeOpen = false;
+
 watch(open, (value) => {
-  store.dialogActive = value;
+  store.dialogActive = value || (dialogActiveBeforeOpen && store.dialogActive);
 });
 
 onMounted(() => {
@@ -110,6 +114,7 @@ function close() {
 }
 
 function onStreamHeld(evt: StreamHeldDialogEvent) {
+  if (!open.value) dialogActiveBeforeOpen = store.dialogActive;
   request.value = evt;
   loading.value = false;
   open.value = true;

@@ -208,6 +208,19 @@ describe("StreamHeldDialog", () => {
     expect(storeMock.dialogActive).toBe(true);
   });
 
+  it("keeps a dialog it opened over marked as active when it closes", async () => {
+    storeMock.dialogActive = true;
+    const wrapper = mountDialog();
+    openDialog();
+    await flushPromises();
+
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find(".stream-held-dialog").exists()).toBe(false);
+    expect(storeMock.dialogActive).toBe(true);
+  });
+
   it("closes on cancel without touching either player", async () => {
     const wrapper = mountDialog();
     const event = openDialog();
