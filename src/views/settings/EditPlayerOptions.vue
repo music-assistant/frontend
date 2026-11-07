@@ -1,133 +1,81 @@
 <template>
-  <!-- Header -->
-  <v-container>
-    <div v-if="props.playerId">
-      <!-- Settable options -->
-      <div v-if="playerOptionsSettable.length > 0">
-        <v-card
-          class="mx-auto my-8"
-          elevation="2"
-          min-width="100%"
-          :title="$t('player_options.settable', [playerName])"
-        >
-          <div style="padding: 0px 20px 20px 20px">
-            <div v-for="option in playerOptionsSettable" :key="option.key">
-              <PlayerOptionField
-                :player-option="option"
-                :player-id="props.playerId"
-              />
-            </div>
-          </div>
-        </v-card>
-      </div>
-
-      <!-- Read-only options -->
-      <div v-if="playerOptionsReadOnly.length > 0">
-        <v-card
-          class="mx-auto my-8"
-          elevation="2"
-          min-width="100%"
-          :title="$t('player_options.read_only', [playerName])"
-        >
-          <div style="padding: 0px 20px 20px 20px">
-            <div v-for="option in playerOptionsReadOnly" :key="option.key">
-              <PlayerOptionField
-                :player-option="option"
-                :player-id="props.playerId"
-              />
-            </div>
-          </div>
-        </v-card>
+  <section class="space-y-4 p-4">
+    <div
+      v-if="settableOptions.length"
+      class="bg-card overflow-hidden rounded-xl border shadow-sm"
+    >
+      <h2 class="border-b px-6 py-4 text-base font-medium">
+        {{ $t("player_options.controls") }}
+      </h2>
+      <div class="divide-y">
+        <PlayerOptionField
+          v-for="option in settableOptions"
+          :key="option.key"
+          :player-option="option"
+          :player-id="playerId"
+        />
       </div>
     </div>
-  </v-container>
+
+    <div
+      v-if="readOnlyOptions.length"
+      class="bg-card overflow-hidden rounded-xl border shadow-sm"
+    >
+      <h2 class="border-b px-6 py-4 text-base font-medium">
+        {{ $t("player_options.status") }}
+      </h2>
+      <dl class="divide-y">
+        <div
+          v-for="option in readOnlyOptions"
+          :key="option.key"
+          class="flex items-center justify-between gap-6 px-6 py-4 text-sm"
+        >
+          <dt class="font-medium">{{ option.name }}</dt>
+          <dd class="text-muted-foreground text-right">
+            {{ formatValue(option) }}
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    <p
+      v-if="!settableOptions.length && !readOnlyOptions.length"
+      class="text-muted-foreground px-2 text-sm"
+    >
+      {{ $t("player_options.none") }}
+    </p>
+  </section>
 </template>
 
 <script setup lang="ts">
-import api from "@/plugins/api";
 import {
-  EventType,
-  PlayerOption,
-  PlayerOptionType,
-} from "@/plugins/api/interfaces";
-import { onBeforeUnmount, computed, ref, watch } from "vue";
-import PlayerOptionField from "./PlayerOptionField.vue";
+  formatPlayerOptionValue,
+  sortPlayerOptions,
+} from "@/helpers/player_options";
+import api from "@/plugins/api";
+import { PlayerOption } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { computed } from "vue";
+import PlayerOptionField from "./PlayerOptionField.vue";
 
-// props
 const props = defineProps<{
-  playerId?: string;
+  playerId: string;
 }>();
 
-// global refs
-const playerName = ref<string>();
-const playerOptions = ref<PlayerOption[]>([]);
-const playerOptionsSettable = computed(() => {
-  return playerOptions.value.filter((x) => !x.read_only);
-});
-const playerOptionsReadOnly = computed(() => {
-  return playerOptions.value.filter((x) => x.read_only);
-});
-
-// Full load on entry
-watch(
-  () => props.playerId,
-  async (val) => {
-    if (val) {
-      const player = await api.getPlayer(val);
-      playerName.value = player.name;
-
-      // sort for more consistency in UI experience
-      const arrBool: PlayerOption[] = [];
-      const arrNumber: PlayerOption[] = [];
-      const arrString: PlayerOption[] = [];
-      const arrSelect: PlayerOption[] = [];
-      const arrSensor: PlayerOption[] = [];
-
-      player.options.forEach((option) => {
-        if (option.read_only) {
-          arrSensor.push(option);
-        } else if (option.options && option.options.length > 0) {
-          arrSelect.push(option);
-        } else if (option.type === PlayerOptionType.STRING) {
-          arrString.push(option);
-        } else if (option.type === PlayerOptionType.BOOLEAN) {
-          arrBool.push(option);
-        } else {
-          arrNumber.push(option);
-        }
-      });
-
-      playerOptions.value = [
-        arrBool.sort((a, b) => a.key.localeCompare(b.key)),
-        arrNumber.sort((a, b) => a.key.localeCompare(b.key)),
-        arrString.sort((a, b) => a.key.localeCompare(b.key)),
-        arrSelect.sort((a, b) => a.key.localeCompare(b.key)),
-        arrSensor.sort((a, b) => a.key.localeCompare(b.key)),
-      ].flat();
-    }
-  },
-  { immediate: true },
+const options = computed(() =>
+  sortPlayerOptions(api.players[props.playerId]?.options ?? []),
+);
+const settableOptions = computed(() =>
+  options.value.filter((x) => !x.read_only),
+);
+const readOnlyOptions = computed(() =>
+  options.value.filter((x) => x.read_only),
 );
 
-// subscribe to option updates
-const unsub = api.subscribe(
-  EventType.PLAYER_OPTIONS_UPDATED,
-  // data: [old , new ]
-  (evt: { data: [PlayerOption[], PlayerOption[]] }) => {
-    evt.data[1].forEach((updatedOption) => {
-      const optionIndex = playerOptions.value.findIndex(
-        (prevOption) => prevOption.key === updatedOption.key,
-      );
-      if (optionIndex === -1) {
-        // option not yet present
-        playerOptions.value.push(updatedOption);
-        return;
-      }
-      playerOptions.value[optionIndex] = updatedOption;
-    });
-  },
-  props.playerId,
-);
-onBeforeUnmount(unsub);
+function formatValue(option: PlayerOption) {
+  if (typeof option.value === "boolean") {
+    return option.value ? $t("on") : $t("off");
+  }
+  return formatPlayerOptionValue(option);
+}
 </script>
