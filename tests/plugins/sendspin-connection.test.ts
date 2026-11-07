@@ -32,7 +32,7 @@ const { FakeWebSocket, mockStore } = vi.hoisted(() => {
 
 vi.mock("@/plugins/api", () => ({
   default: {
-    baseUrl: "http://ha.local:8123/api/hassio_ingress/abc",
+    baseUrl: "http://ma.local:8095",
     isRemoteConnection: { value: false },
   },
 }));

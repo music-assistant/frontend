@@ -2,7 +2,7 @@ import type { ServerInfoMessage } from "@/plugins/api/interfaces";
 
 type IngressServerInfo = Pick<ServerInfoMessage, "homeassistant_addon">;
 
-const INGRESS_CLIENT_KEY_STORAGE_KEY = "ingress_client_key";
+const INGRESS_CLIENT_KEY_STORAGE_KEY = "ma_ingress_client_key";
 const INGRESS_CLIENT_KEY_BYTES = 16;
 
 export function hasHomeAssistantIngressPath(): boolean {

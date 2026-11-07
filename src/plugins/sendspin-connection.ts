@@ -64,18 +64,15 @@ function createProxyWebSocket(): Promise<WebSocket | null> {
     ws.onopen = () => {
       const clientId =
         window.localStorage.getItem("sendspin_webplayer_id") || "";
+      const auth = isIngress
+        ? {
+            type: "auth",
+            client_id: clientId,
+            ingress_client_key: getIngressClientKey(),
+          }
+        : { type: "auth", token, client_id: clientId };
       console.debug("[Sendspin] Sending auth to proxy");
-      ws.send(
-        JSON.stringify(
-          isIngress
-            ? {
-                type: "auth",
-                client_id: clientId,
-                ingress_client_key: getIngressClientKey(),
-              }
-            : { type: "auth", token, client_id: clientId },
-        ),
-      );
+      ws.send(JSON.stringify(auth));
     };
 
     ws.onmessage = () => {
