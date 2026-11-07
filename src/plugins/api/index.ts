@@ -1572,9 +1572,11 @@ export class MusicAssistantApi {
       hide_empty?: boolean | null;
       media_type?: MediaType;
       content_type?: MediaType | "music";
+      summary?: boolean;
     } = {},
+    options?: CommandOptions,
   ): Promise<Genre[]> {
-    return this.sendCommand("music/genres/library_items", opts);
+    return this.sendCommand("music/genres/library_items", opts, options);
   }
 
   public getGenre(

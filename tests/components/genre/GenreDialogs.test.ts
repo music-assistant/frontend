@@ -1,3 +1,4 @@
+import LinkAliasDialog from "@/components/genre/LinkAliasDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import { eventbus } from "@/plugins/eventbus";
@@ -9,6 +10,8 @@ import {
 } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Component } from "vue";
+import type { Genre } from "@/plugins/api/interfaces";
+import { toast } from "vue-sonner";
 import { genre } from "../../fixtures/genre";
 
 const { apiMock, storeMock } = vi.hoisted(() => ({
@@ -86,6 +89,125 @@ describe.each(dialogs)("%s", (_name, component, open) => {
     expect(document.activeElement).toBe(genreList());
   });
 });
+
+describe("LinkAliasDialog", () => {
+  it("searches full genres so their aliases are listed", async () => {
+    apiMock.getLibraryGenres.mockResolvedValue([
+      genre({ name: "Ambient", genre_aliases: ["Dark Ambient"] }),
+    ]);
+    mountLinkAliasDialog();
+
+    await searchAliases("ambient");
+
+    expect(apiMock.getLibraryGenres).toHaveBeenCalledWith(
+      expect.objectContaining({ search: "ambient", summary: false }),
+      expect.anything(),
+    );
+    expect(aliasOptions()).toEqual(["Dark Ambient"]);
+  });
+
+  it("stops linking the picked alias once the search is edited", async () => {
+    apiMock.getLibraryGenres.mockResolvedValue([
+      genre({ name: "Ambient", genre_aliases: ["Dark Ambient"] }),
+    ]);
+    mountLinkAliasDialog();
+    await searchAliases("ambient");
+    document.querySelector<HTMLElement>("[data-slot='combobox-item']")!.click();
+    await flushPromises();
+    expect(linkButton().disabled).toBe(false);
+
+    await searchAliases("jazz");
+
+    expect(linkButton().disabled).toBe(true);
+    expect(
+      document.querySelector<HTMLInputElement>("[data-slot='combobox-input']")!
+        .value,
+    ).toBe("jazz");
+  });
+
+  it("shows an error when the search fails", async () => {
+    apiMock.getLibraryGenres.mockRejectedValue(new Error("offline"));
+    mountLinkAliasDialog();
+
+    await searchAliases("ambient");
+
+    expect(toast.error).toHaveBeenCalledOnce();
+    expect(toast.error).toHaveBeenCalledWith("settings.error_loading_genres");
+    // the dialog shows its own error, so the global one is turned off
+    expect(apiMock.getLibraryGenres).toHaveBeenCalledWith(expect.anything(), {
+      suppressGlobalError: true,
+    });
+  });
+
+  it("forgets the picked alias when the dialog closes", async () => {
+    apiMock.getLibraryGenres.mockResolvedValue([
+      genre({ name: "Ambient", genre_aliases: ["Dark Ambient"] }),
+    ]);
+    const wrapper = mountLinkAliasDialog();
+    await searchAliases("ambient");
+    document.querySelector<HTMLElement>("[data-slot='combobox-item']")!.click();
+    await flushPromises();
+
+    await wrapper.setProps({ modelValue: false });
+    await wrapper.setProps({ modelValue: true });
+    await flushPromises();
+
+    expect(linkButton().disabled).toBe(true);
+  });
+
+  it("ignores the answer to an older search", async () => {
+    let answerOlderSearch: (genres: Genre[]) => void = () => {};
+    apiMock.getLibraryGenres
+      .mockReturnValueOnce(
+        new Promise<Genre[]>((resolve) => (answerOlderSearch = resolve)),
+      )
+      .mockResolvedValueOnce([
+        genre({ name: "Jazz", genre_aliases: ["Jazz Fusion"] }),
+      ]);
+    mountLinkAliasDialog();
+
+    await searchAliases("ambient");
+    await searchAliases("jazz");
+    answerOlderSearch([
+      genre({ name: "Ambient", genre_aliases: ["Dark Ambient"] }),
+    ]);
+    await flushPromises();
+
+    expect(aliasOptions()).toEqual(["Jazz Fusion"]);
+  });
+});
+
+function linkButton() {
+  return [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+    (button) => button.textContent?.trim() === "link_alias",
+  )!;
+}
+
+function mountLinkAliasDialog() {
+  return mount(LinkAliasDialog, {
+    attachTo: document.body,
+    props: { modelValue: true, genreItemId: "9", currentAliases: [] },
+    global: { mocks: { $t: (key: string) => key } },
+  });
+}
+
+async function searchAliases(text: string) {
+  await flushPromises();
+  const input = document.querySelector<HTMLInputElement>(
+    "[data-slot='combobox-input']",
+  )!;
+  input.value = text;
+  input.dispatchEvent(new Event("input"));
+  // past the dialog's search throttle
+  await new Promise((resolve) => setTimeout(resolve, 450));
+  await flushPromises();
+}
+
+function aliasOptions() {
+  return [...document.querySelectorAll("[data-slot='combobox-item']")].map(
+    (item) => item.textContent?.trim(),
+  );
+}
 
 function searchField() {
   return document.querySelector("[data-slot='command-input']");

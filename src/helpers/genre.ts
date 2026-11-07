@@ -42,6 +42,50 @@ export function mappedAliases(genre: Genre): string[] {
   );
 }
 
+const compactAliasText = (text: string) =>
+  text
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, "");
+
+const aliasRank = (alias: string, search: string) => {
+  const text = compactAliasText(alias);
+  if (text === search) return 0;
+  if (text.startsWith(search)) return 1;
+  if (text.includes(search)) return 2;
+  return 3;
+};
+
+// Aliases to offer for a search, best matches first. A genre whose name
+// matches offers all its aliases, any other genre only its matching ones.
+// Matching ignores case, accents, spaces and punctuation.
+export function rankedAliases(genres: Genre[], search: string): string[] {
+  const compactSearch = compactAliasText(search);
+  const aliases = new Map<string, string>();
+  for (const genre of genres) {
+    const all = genre.genre_aliases || [];
+    const matching = all.filter((alias) =>
+      compactAliasText(alias).includes(compactSearch),
+    );
+    // the server also finds a genre through its localized name, which none
+    // of its aliases may contain, so then offer all of them
+    const offered =
+      !matching.length || compactAliasText(genre.name).includes(compactSearch)
+        ? all
+        : matching;
+    for (const alias of offered) {
+      if (!aliases.has(alias.toLowerCase())) {
+        aliases.set(alias.toLowerCase(), alias);
+      }
+    }
+  }
+  return [...aliases.values()].sort(
+    (a, b) =>
+      aliasRank(a, compactSearch) - aliasRank(b, compactSearch) ||
+      a.localeCompare(b),
+  );
+}
+
 // Icon mapping for different media types in genre overview
 export const genreMediaTypeIconMap: Record<MediaType, Component> = {
   [MediaType.TRACK]: Music2,
