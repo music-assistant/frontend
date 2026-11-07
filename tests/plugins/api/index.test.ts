@@ -10,6 +10,7 @@ import {
   MediaType,
   type Player,
   PlaylistMatchPolicy,
+  type ProviderInstance,
   RepeatMode,
   SortDirection,
   SortField,
@@ -20,6 +21,7 @@ import {
   UserRole,
 } from "@/plugins/api/interfaces";
 import { getIngressClientKey } from "@/helpers/ingress";
+import { eventbus, type StreamHeldDialogEvent } from "@/plugins/eventbus";
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../../fixtures/playlist";
@@ -809,6 +811,7 @@ describe("MusicAssistantApi error handling", () => {
       message_id: transport.lastCommand.message_id!,
       error_code: 1001,
       details: null,
+      data: null,
     });
 
     await expect(command).rejects.toMatchObject({
@@ -1177,6 +1180,171 @@ describe("MusicAssistantApi error handling", () => {
     expect(api["commands"].size).toBe(0);
   });
 
+  it("stops a queue and resolves once the server answers", async () => {
+    const stop = api.queueCommandStop("living_room");
+
+    expect(transport.lastCommand.command).toBe("player_queues/stop");
+    expect(transport.lastCommand.args).toEqual({ queue_id: "living_room" });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: null,
+      partial: false,
+    });
+    await expect(stop).resolves.toBeNull();
+  });
+
+  describe("a playback refused over a held stream", () => {
+    const HOLDER = {
+      queue_id: "living_room",
+      player_name: "Living room",
+      provider_instance: "spotify--abc",
+    };
+    const PLAY_ARGS = {
+      queue_id: "kitchen",
+      media: ["spotify--abc://track/1"],
+      option: "play",
+    };
+    let dialogEvents: StreamHeldDialogEvent[];
+    const onDialog = (evt: StreamHeldDialogEvent) => dialogEvents.push(evt);
+
+    beforeEach(() => {
+      dialogEvents = [];
+      eventbus.on("streamHeldDialog", onDialog);
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(console, "debug").mockImplementation(() => {});
+      api.providers["spotify--abc"] = {
+        instance_id: "spotify--abc",
+        domain: "spotify",
+        name: "Spotify [marcel]",
+      } as ProviderInstance;
+    });
+
+    afterEach(() => {
+      eventbus.off("streamHeldDialog", onDialog);
+      delete api.providers["spotify--abc"];
+    });
+
+    function refuse(data: Record<string, unknown> | null = HOLDER) {
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        error_code: 29,
+        details:
+          "Spotify [marcel] is already playing on Living room. Stop playback there first.",
+        data,
+      });
+    }
+
+    it("offers the dialog instead of a toast and still rejects the caller", async () => {
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS);
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+        data: HOLDER,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(mockToastError).not.toHaveBeenCalled();
+      expect(dialogEvents).toEqual([
+        {
+          holderQueueId: "living_room",
+          holderName: "Living room",
+          providerName: "Spotify [marcel]",
+          retry: expect.any(Function),
+        },
+      ]);
+    });
+
+    it("sends the refused command again on retry", async () => {
+      api.sendCommand("player_queues/play_media", PLAY_ARGS).catch(() => {});
+      const refused = transport.lastCommand;
+      refuse();
+
+      const retry = dialogEvents[0].retry();
+
+      expect(transport.lastCommand.command).toBe("player_queues/play_media");
+      expect(transport.lastCommand.args).toEqual(PLAY_ARGS);
+      expect(transport.lastCommand.message_id).not.toBe(refused.message_id);
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: null,
+        partial: false,
+      });
+      await expect(retry).resolves.toBeNull();
+    });
+
+    it("offers the dialog for a queue item started from the queue", async () => {
+      const command = api.queueCommandPlayIndex("kitchen", "item-1");
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(mockToastError).not.toHaveBeenCalled();
+      dialogEvents[0].retry().catch(() => {});
+      expect(transport.lastCommand.command).toBe("player_queues/play_index");
+      expect(transport.lastCommand.args).toEqual({
+        queue_id: "kitchen",
+        index: "item-1",
+      });
+    });
+
+    it("keeps the toast for a command that waits for no result", () => {
+      api.queueCommandTransfer("living_room", "kitchen", true);
+
+      refuse();
+
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledOnce();
+    });
+
+    it("keeps the toast when no dialog is listening", async () => {
+      eventbus.off("streamHeldDialog", onDialog);
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS);
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledOnce();
+    });
+
+    it("leaves a suppressed refusal to its caller", async () => {
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS, {
+        suppressGlobalError: true,
+      });
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).not.toHaveBeenCalled();
+    });
+
+    it("keeps the toast when the refusal does not name the holder", async () => {
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS);
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse(null);
+
+      await rejection;
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledWith(
+        "Spotify [marcel] is already playing on Living room. Stop playback there first.",
+      );
+    });
+  });
+
   it("imports a playlist with the chosen match policy", async () => {
     const result = api.importPlaylist(
       "#EXTM3U",
@@ -1426,5 +1594,6 @@ function createErrorResult(
     message_id: command.message_id,
     error_code: 999,
     details,
+    data: null,
   };
 }
