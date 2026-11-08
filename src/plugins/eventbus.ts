@@ -68,6 +68,16 @@ export type PlayerGroupPlaybackDialogEvent = {
   onStopAndUngroup: () => void | Promise<void>;
 };
 
+// Playback was refused because another player is playing from the only stream of a
+// provider, such as a Spotify account
+export type StreamHeldDialogEvent = {
+  holderQueueId: string;
+  holderName: string;
+  providerName: string;
+  // sends the refused command again
+  retry: () => Promise<unknown>;
+};
+
 export type ImportPlaylistEvent = {
   m3uData: string;
   playlistName: string;
@@ -132,6 +142,7 @@ export type Events = {
   deleteGenreDialog: DeleteGenreDialogEvent;
   deleteConfirmationDialog: DeleteConfirmationDialogEvent;
   playerGroupPlaybackDialog: PlayerGroupPlaybackDialogEvent;
+  streamHeldDialog: StreamHeldDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
   migratePlaylistDialog: MigratePlaylistDialogEvent;

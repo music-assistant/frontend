@@ -16,7 +16,6 @@ const {
   mockGetStoredPlayerName,
   mockClearStoredPlayerId,
   mockGetMusicQuizErrorMessage,
-  mockMarkJoinedGameEnded,
   mockWaitForApiInitialization,
   mockHasSeenMusicQuizLanding,
   mockStoreMusicQuizLandingSeen,
@@ -41,7 +40,6 @@ const {
   mockGetStoredPlayerName: vi.fn(),
   mockClearStoredPlayerId: vi.fn(),
   mockGetMusicQuizErrorMessage: vi.fn(),
-  mockMarkJoinedGameEnded: vi.fn(),
   mockWaitForApiInitialization: vi.fn(),
   mockHasSeenMusicQuizLanding: vi.fn(),
   mockStoreMusicQuizLandingSeen: vi.fn(),
@@ -141,10 +139,6 @@ vi.mock("@/helpers/music_quiz", () => ({
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
-}));
-
-vi.mock("@/helpers/music_quiz_guest_state", () => ({
-  markMusicQuizJoinedGameEnded: mockMarkJoinedGameEnded,
 }));
 
 import { EventType } from "@/plugins/api/interfaces";
@@ -379,7 +373,6 @@ describe("useMusicQuizPlayer", () => {
     mockGetStoredPlayerName.mockReset();
     mockClearStoredPlayerId.mockReset();
     mockGetMusicQuizErrorMessage.mockReset();
-    mockMarkJoinedGameEnded.mockReset();
     mockWaitForApiInitialization.mockReset();
     mockWaitForApiInitialization.mockResolvedValue(undefined);
     mockHasSeenMusicQuizLanding.mockReset();
@@ -750,7 +743,6 @@ describe("useMusicQuizPlayer", () => {
     await flushPromises();
 
     expect(player.gameRemoved.value).toBe(true);
-    expect(mockMarkJoinedGameEnded).toHaveBeenCalledOnce();
     expect(player.info.value).toBeNull();
     expect(player.playerId.value).toBeNull();
     expect(player.state.value).toBeNull();
@@ -851,7 +843,6 @@ describe("useMusicQuizPlayer", () => {
       data: { event: "game_removed" },
     });
     expect(player.gameRemoved.value).toBe(true);
-    expect(mockMarkJoinedGameEnded).toHaveBeenCalledOnce();
 
     providerHandlers[0]({
       object_id: "quiz-instance",
@@ -868,7 +859,6 @@ describe("useMusicQuizPlayer", () => {
     });
 
     expect(player.gameRemoved.value).toBe(false);
-    expect(mockMarkJoinedGameEnded).toHaveBeenCalledOnce();
   });
 
   it("only handles provider events from the active quiz instance", async () => {

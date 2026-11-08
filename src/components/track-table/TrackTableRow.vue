@@ -66,20 +66,13 @@
             :item="isAvailable ? item : undefined"
             alt=""
           />
-          <button
+          <RowPlayButton
             v-if="showHoverPlay"
-            type="button"
-            class="absolute inset-0 flex items-center justify-center bg-black/55 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-            :aria-label="playButtonLabel"
+            overlay
+            :label="playButtonLabel"
             :disabled="disablePlayButton"
-            @click.stop="onPlayClick"
-          >
-            <span
-              class="flex size-7 items-center justify-center rounded-full bg-primary text-white"
-            >
-              <Play :size="13" fill="currentColor" :stroke-width="0" />
-            </span>
-          </button>
+            @click="onPlayClick"
+          />
         </div>
         <div class="min-w-0">
           <div
@@ -158,20 +151,12 @@
       </div>
 
       <div v-else-if="column === 'play'" class="flex justify-center">
-        <button
+        <RowPlayButton
           v-if="showPlay"
-          type="button"
-          class="flex size-7 items-center justify-center rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50"
-          :aria-label="playButtonLabel"
+          :label="playButtonLabel"
           :disabled="disablePlayButton"
-          @click.stop="onPlayClick"
-        >
-          <span
-            class="flex size-[22px] items-center justify-center rounded-full bg-primary text-white"
-          >
-            <Play :size="11" fill="currentColor" :stroke-width="0" />
-          </span>
-        </button>
+          @click="onPlayClick"
+        />
       </div>
 
       <div v-else-if="column === 'menu'" class="flex justify-center">
@@ -193,6 +178,7 @@
 import FavoriteButton from "@/components/FavoriteButton.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import RowPlayButton from "@/components/RowPlayButton.vue";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { canHoldFavorite, favoriteState } from "@/helpers/favorites";
@@ -211,7 +197,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { EllipsisVertical, GripVertical, Play } from "@lucide/vue";
+import { EllipsisVertical, GripVertical } from "@lucide/vue";
 import { useMediaQuery } from "@vueuse/core";
 import { computed } from "vue";
 import TrackTableLinks from "./TrackTableLinks.vue";
