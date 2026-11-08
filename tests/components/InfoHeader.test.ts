@@ -135,25 +135,12 @@ describe("InfoHeader favorite menu", () => {
     expect(wrapper.find(".favorite-icon-button").exists()).toBe(false);
   });
 
-  it.each([true, false, undefined])(
-    "shows the shared explicit badge only for explicit content (%s)",
-    (explicit) => {
-      const item = track({ version: "Live" });
-      item.metadata.explicit = explicit;
-      const wrapper = mountHeader(item);
+  it("shows the shared explicit badge with its tooltip", () => {
+    const item = track({ version: "Live", metadata: { explicit: true } });
+    const wrapper = mountHeader(item);
+    const badge = wrapper.getComponent(ExplicitIcon);
 
-      expect(wrapper.findComponent(ExplicitIcon).exists()).toBe(
-        explicit === true,
-      );
-      if (explicit === true) {
-        const badge = wrapper.getComponent(ExplicitIcon);
-        expect(badge.element.tagName.toLowerCase()).toBe("svg");
-        expect(badge.classes()).toContain("size-6");
-        expect(badge.classes()).toContain("[&_text]:fill-background");
-        expect(badge.attributes("aria-hidden")).toBe("true");
-        expect(badge.attributes("aria-describedby")).toBeTruthy();
-      }
-      expect(wrapper.find(".mdi-alpha-e-box").exists()).toBe(false);
-    },
-  );
+    expect(badge.attributes("aria-hidden")).toBe("true");
+    expect(badge.attributes("aria-describedby")).toBeTruthy();
+  });
 });

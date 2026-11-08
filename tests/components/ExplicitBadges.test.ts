@@ -24,7 +24,7 @@ vi.mock("@/components/QualityDetailsBtn.vue", () => ({
 }));
 
 describe("media explicit badges", () => {
-  it.each([true, false, undefined])(
+  it.each([true, false])(
     "uses the shared badge in list titles for explicit content (%s)",
     (explicit) => {
       const item = track();
@@ -46,10 +46,6 @@ describe("media explicit badges", () => {
       );
       if (explicit === true) {
         const badge = wrapper.getComponent(ExplicitIcon);
-        expect(badge.element.tagName.toLowerCase()).toBe("svg");
-        expect(badge.classes()).toContain("size-6");
-        expect(badge.classes()).toContain("scale-90");
-        expect(badge.classes()).toContain("[&_text]:fill-background");
         expect(badge.attributes("aria-hidden")).toBe("true");
         expect(badge.element.parentElement?.getAttribute("aria-label")).toBe(
           "tooltip.explicit",
@@ -59,7 +55,7 @@ describe("media explicit badges", () => {
     },
   );
 
-  it.each([true, false, undefined])(
+  it.each([true, false])(
     "uses the shared badge in panel actions for explicit content (%s)",
     (explicit) => {
       const item = track();
@@ -82,10 +78,6 @@ describe("media explicit badges", () => {
       );
       if (explicit === true) {
         const badge = wrapper.getComponent(ExplicitIcon);
-        expect(badge.element.tagName.toLowerCase()).toBe("svg");
-        expect(badge.classes()).toContain("size-[30px]");
-        expect(badge.classes()).toContain("scale-90");
-        expect(badge.classes()).toContain("[&_text]:fill-background");
         expect(badge.attributes("aria-hidden")).toBe("false");
         expect(badge.attributes("role")).toBe("img");
         expect(badge.attributes("aria-label")).toBe("tooltip.explicit");

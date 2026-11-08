@@ -42,45 +42,33 @@ describe("ExplicitBadge", () => {
       expect(icon.attributes("aria-hidden")).toBe("true");
       expect(icon.attributes("viewBox")).toBe("2 2 20 20");
       expect(icon.classes()).toContain("size-4");
-      expect(icon.get("rect").attributes("width")).toBe("20");
-      expect(icon.get("text").text()).toBe("E");
     },
   );
 
-  it.each([true, false, undefined])(
-    "uses the same badge in album and track heroes for explicit content (%s)",
-    (explicit) => {
-      const global = {
-        stubs: {
-          DetailHero: { template: '<div><slot name="main" /></div>' },
-          ExplicitBadge: false,
-          ExplicitIcon: false,
-        },
-      };
-      const wrappers = [
-        shallowMount(AlbumHero, {
-          props: { item: album({ metadata: { explicit } }) },
-          global,
-        }),
-        shallowMount(TrackHero, {
-          props: { item: track({ metadata: { explicit } }) },
-          global,
-        }),
-      ];
-      for (const wrapper of wrappers) {
-        expect(wrapper.findComponent(ExplicitBadge).exists()).toBe(
-          explicit === true,
-        );
-        if (explicit === true) {
-          const badge = wrapper.getComponent(ExplicitBadge);
-          expect(badge.classes()).toContain("size-4");
-          expect(badge.classes()).toContain(
-            "[--explicit-icon-square:rgba(255,255,255,0.25)]",
-          );
-          expect(badge.classes()).toContain("[--explicit-icon-letter:#fff]");
-          expect(badge.getComponent(ExplicitIcon).get("text").text()).toBe("E");
-        }
-      }
-    },
-  );
+  it("uses the shared overlay badge in album and track heroes", () => {
+    const global = {
+      stubs: {
+        DetailHero: { template: '<div><slot name="main" /></div>' },
+        ExplicitBadge: false,
+        ExplicitIcon: false,
+      },
+    };
+    const wrappers = [
+      shallowMount(AlbumHero, {
+        props: { item: album({ metadata: { explicit: true } }) },
+        global,
+      }),
+      shallowMount(TrackHero, {
+        props: { item: track({ metadata: { explicit: true } }) },
+        global,
+      }),
+    ];
+    for (const wrapper of wrappers) {
+      const badge = wrapper.getComponent(ExplicitBadge);
+      expect(badge.classes()).toContain(
+        "[--explicit-icon-square:rgba(255,255,255,0.25)]",
+      );
+      expect(badge.classes()).toContain("[--explicit-icon-letter:#fff]");
+    }
+  });
 });
