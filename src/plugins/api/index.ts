@@ -552,6 +552,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Track[]> {
     return this.sendCommand("music/tracks/library_items", {
       favorite,
@@ -562,6 +563,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -750,6 +752,7 @@ export class MusicAssistantApi {
     provider?: string | string[],
     genre?: number | number[],
     artist_type?: ArtistType,
+    random_seed?: number,
   ): Promise<Artist[]> {
     return this.sendCommand("music/artists/library_items", {
       favorite,
@@ -762,6 +765,7 @@ export class MusicAssistantApi {
       provider,
       genre,
       artist_type,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -996,6 +1000,7 @@ export class MusicAssistantApi {
     album_types?: Array<AlbumType | string>,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Album[]> {
     return this.sendCommand("music/albums/library_items", {
       favorite,
@@ -1007,6 +1012,7 @@ export class MusicAssistantApi {
       album_types,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1084,6 +1090,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Playlist[]> {
     return this.sendCommand("music/playlists/library_items", {
       favorite,
@@ -1094,6 +1101,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1330,6 +1338,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Radio[]> {
     return this.sendCommand("music/radios/library_items", {
       favorite,
@@ -1340,6 +1349,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1405,6 +1415,7 @@ export class MusicAssistantApi {
     provider?: string | string[],
     genre?: number | number[],
     collapse_collections?: boolean,
+    random_seed?: number,
   ): Promise<(Audiobook | MediaCollection<Audiobook>)[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
@@ -1416,6 +1427,7 @@ export class MusicAssistantApi {
       provider,
       genre,
       collapse_collections,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1538,6 +1550,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Podcast[]> {
     return this.sendCommand("music/podcasts/library_items", {
       favorite,
@@ -1548,6 +1561,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1578,6 +1592,7 @@ export class MusicAssistantApi {
       hide_empty?: boolean | null;
       media_type?: MediaType;
       content_type?: MediaType | "music";
+      random_seed?: number;
     } = {},
   ): Promise<Genre[]> {
     return this.sendCommand("music/genres/library_items", opts);
