@@ -60,10 +60,11 @@
               canConfigureSourceAccess(item) ? accessSummary(item) : null
             "
             :status-variant="statusVariant(item.status)"
+            :status-icon="statusIcon(item.status)"
             :status-label="statusLabel(item)"
             :is-error="isErrorStatus(item.status)"
             :error-text="getErrorText(item)"
-            :stage-label="stageLabelFor(item)"
+            :community="isCommunityProvider(api.providerManifests[item.domain])"
             @open="openProvider(item)"
             @menu="openMenu($event, item)"
             @reconfigure="reconfigureProvider(item)"
@@ -158,11 +159,10 @@ import { useProviderAccess } from "@/composables/settings/providers/useProviderA
 import { useProviderSources } from "@/composables/settings/providers/useProviderSources";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import {
-  getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
+  isCommunityProvider,
   providerDisplayName,
   providerRequiresReconfiguration,
-  shouldShowStageBadge,
 } from "@/helpers/provider_config";
 import {
   canConfigureSourceAccess,
@@ -176,7 +176,6 @@ import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_action
 import { api } from "@/plugins/api";
 import {
   type ProviderConfig,
-  ProviderStage,
   ProviderStatus,
   ProviderType,
 } from "@/plugins/api/interfaces";
@@ -242,11 +241,15 @@ const isErrorStatus = function (status?: ProviderStatus | null) {
   );
 };
 
-// a healthy provider carries no badge, so only the states worth flagging map to one
+// only a status that needs attention carries a badge
 const statusVariant = function (status?: ProviderStatus | null) {
-  if (isErrorStatus(status)) return "destructive" as const;
-  if (status === ProviderStatus.DISABLED || status === ProviderStatus.LOADING)
-    return "secondary" as const;
+  return isErrorStatus(status) ? ("destructive" as const) : undefined;
+};
+
+// the quiet states show as an icon by the name; a healthy provider shows neither
+const statusIcon = function (status?: ProviderStatus | null) {
+  if (status === ProviderStatus.LOADING) return "loading" as const;
+  if (status === ProviderStatus.DISABLED) return "disabled" as const;
   return undefined;
 };
 
@@ -262,18 +265,6 @@ const statusLabel = function (item: ProviderConfig) {
 const getErrorText = function (item: ProviderConfig) {
   // the server localizes last_error.message for the connection's locale
   return item.last_error?.message ?? "";
-};
-
-const getStageLabel = function (stage?: ProviderStage) {
-  const key = getProviderStageTranslationKey(stage);
-  return key ? $t(key) : "";
-};
-
-// a stage badge only shows for the stages worth flagging; a healthy stable
-// provider carries none
-const stageLabelFor = function (item: ProviderConfig) {
-  const stage = api.providerManifests[item.domain]?.stage;
-  return shouldShowStageBadge(stage) ? getStageLabel(stage) : "";
 };
 
 const {

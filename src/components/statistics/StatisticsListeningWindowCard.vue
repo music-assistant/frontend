@@ -1,6 +1,12 @@
 <template>
   <StatisticsCard
-    :title="$t('statistics_when_you_listen')"
+    :title="
+      $t(
+        includesOtherUsers
+          ? 'statistics_when_you_listen_other_users'
+          : 'statistics_when_you_listen',
+      )
+    "
     :loading="loading"
     :error="error"
     :empty="!peakWindow"
@@ -12,11 +18,16 @@
         </span>
         <span class="text-[13px] text-muted-foreground">
           {{
-            $t("statistics_window_share", {
-              share: peakWindow.share,
-              start: windowStart,
-              end: windowEnd,
-            })
+            $t(
+              includesOtherUsers
+                ? "statistics_window_share_other_users"
+                : "statistics_window_share",
+              {
+                share: peakWindow.share,
+                start: windowStart,
+                end: windowEnd,
+              },
+            )
           }}
         </span>
       </div>
@@ -76,6 +87,7 @@ const props = defineProps<{
   activity: StatisticsHeatmapPoint[];
   loading?: boolean;
   error?: boolean;
+  includesOtherUsers?: boolean;
 }>();
 
 interface HourDatum {

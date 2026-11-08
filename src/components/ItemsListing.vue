@@ -31,7 +31,7 @@
         >
         <slot v-else name="title">{{ title }}</slot>
         <span
-          v-if="libraryToolbar && listingCount !== undefined"
+          v-if="libraryToolbar && showCount && listingCount !== undefined"
           class="ms-2 text-base font-normal text-muted-foreground"
         >
           {{ listingCount }}
@@ -77,9 +77,9 @@
           @after-leave="onSearchSlotLeft"
         >
           <!-- the input follows the slot's edge as it opens, and the padding
-               keeps its 3px focus ring inside the clipped area. On a library
-               page it grows out of the search icon's width and shrinks back
-               to it, so the controls beside it do not jump -->
+               keeps its 3px focus ring inside the clipped area. With the title
+               bar controls it grows out of the search icon's width and shrinks
+               back to it, so the controls beside it do not jump -->
           <div
             v-if="showSearchInput"
             class="listing-search-slot -m-[3px] box-content p-[3px]"
@@ -657,9 +657,11 @@ export interface Props {
   // the track table rows can be dragged to a new place in the parent playlist,
   // while the listing shows the playlist's own order
   reorderable?: boolean;
-  // a library page: search, sort, view and filters sit in the title bar, and
-  // the active filters show as chips below it
+  // search, sort, view and filters sit in the title bar, and the active
+  // filters show as chips below it
   libraryToolbar?: boolean;
+  // the number of items beside the title, with the title bar controls
+  showCount?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortListing: undefined,
@@ -711,6 +713,7 @@ const props = withDefaults(defineProps<Props>(), {
   trackTable: false,
   reorderable: false,
   libraryToolbar: false,
+  showCount: true,
 });
 
 const emit = defineEmits<{
@@ -761,8 +764,8 @@ const loadPending = computed(
   () => loading.value || (!!props.sortListing && !sortOptionsLoaded.value),
 );
 // the desktop row of quick sorts keeps its height while the sort options load,
-// so the items do not shift; a listing without quick sorts has no row, and a
-// library page sorts from its title bar
+// so the items do not shift; a listing without quick sorts has no row, and one
+// with the title bar controls sorts from there
 const showSortChipsRow = computed(
   () =>
     !!props.sortListing &&
@@ -1710,7 +1713,7 @@ const singleProviderSelect = computed(
   () => props.singleProviderFilter || props.requireProviderSelection,
 );
 
-// the sources a library page's Filters panel offers, each marked by its icon
+// the sources the Filters panel offers, each marked by its icon
 const sourceFilterOptions = computed(() => {
   if (props.requireProviderSelection || props.showProviderFilter === false) {
     return [];
@@ -1957,7 +1960,7 @@ const menuItems = computed(() => {
       overflowAllowed: true,
     });
   }
-  // the filters; a library page has them in its Filters panel instead
+  // the filters; the title bar controls have them in the Filters panel
   if (!props.libraryToolbar) items.push(...filterMenuItems());
 
   // refresh action
@@ -1977,7 +1980,8 @@ const menuItems = computed(() => {
     });
   }
 
-  // toggle search (auto-hidden for small listings); a library page has its own
+  // toggle search (auto-hidden for small listings); the title bar controls
+  // have their own
   if (searchAvailable.value && !props.libraryToolbar) {
     items.push({
       label: searchButtonCloses.value
@@ -2008,8 +2012,8 @@ const menuItems = computed(() => {
     });
   }
 
-  // a library page picks its view and cover size from its sort menu; when
-  // the view is controlled externally only the thumbs controls stay
+  // the title bar controls pick the view and cover size from the sort menu;
+  // when the view is controlled externally only the thumbs controls stay
   if (!props.libraryToolbar && props.forcedViewMode !== "list")
     items.push({
       label: "tooltip.view_mode",

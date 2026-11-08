@@ -28,6 +28,18 @@
           {{ name }}
         </button>
         <span v-else>{{ name }}</span>
+        <TooltipIcon
+          v-if="statusIcon"
+          :label="statusLabel ?? ''"
+          data-testid="provider-status-icon"
+        >
+          <Spinner
+            v-if="statusIcon === 'loading'"
+            class="size-3.5"
+            aria-hidden="true"
+          />
+          <Ban v-else class="size-3.5" aria-hidden="true" />
+        </TooltipIcon>
         <Badge
           v-if="statusVariant"
           :variant="statusVariant"
@@ -35,14 +47,7 @@
         >
           {{ statusLabel }}
         </Badge>
-        <Badge
-          v-if="stageLabel"
-          variant="outline"
-          class="uppercase"
-          data-testid="stage-badge"
-        >
-          {{ stageLabel }}
-        </Badge>
+        <CommunityProviderMarker v-if="community" variant="icon" />
       </ItemTitle>
       <ItemDescription v-if="isError" class="text-destructive">
         {{ errorText }}
@@ -115,6 +120,18 @@
             {{ name }}
           </button>
           <span v-else class="text-base font-semibold">{{ name }}</span>
+          <TooltipIcon
+            v-if="statusIcon"
+            :label="statusLabel ?? ''"
+            data-testid="provider-status-icon"
+          >
+            <Spinner
+              v-if="statusIcon === 'loading'"
+              class="size-3.5"
+              aria-hidden="true"
+            />
+            <Ban v-else class="size-3.5" aria-hidden="true" />
+          </TooltipIcon>
           <Badge
             v-if="statusVariant"
             :variant="statusVariant"
@@ -122,14 +139,7 @@
           >
             {{ statusLabel }}
           </Badge>
-          <Badge
-            v-if="stageLabel"
-            variant="outline"
-            class="uppercase"
-            data-testid="stage-badge"
-          >
-            {{ stageLabel }}
-          </Badge>
+          <CommunityProviderMarker v-if="community" variant="icon" />
         </div>
       </div>
       <div class="flex shrink-0 items-center gap-1">
@@ -197,6 +207,8 @@
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import CommunityProviderMarker from "@/components/settings/providers/CommunityProviderMarker.vue";
+import TooltipIcon from "@/components/TooltipIcon.vue";
 import { Badge, type BadgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -208,9 +220,10 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
+import { Spinner } from "@/components/ui/spinner";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import type { ProviderConfig } from "@/plugins/api/interfaces";
-import { MoreVertical, RefreshCw, TriangleAlert } from "@lucide/vue";
+import { Ban, MoreVertical, RefreshCw, TriangleAlert } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -231,14 +244,16 @@ interface Props {
   accessSummary?: string | null;
   // the status badge variant; omitted hides the badge (a healthy source)
   statusVariant?: BadgeVariants["variant"];
+  // a quiet status shown as an icon by the name instead of a badge
+  statusIcon?: "loading" | "disabled";
   // the translated status label
   statusLabel?: string;
   // whether the status needs attention (auth required, incompatible or error)
   isError?: boolean;
   // the localized error reason
   errorText?: string;
-  // the translated stage label; empty hides the stage badge
-  stageLabel?: string;
+  // whether a community member maintains the provider
+  community?: boolean;
 }
 
 const props = defineProps<Props>();
