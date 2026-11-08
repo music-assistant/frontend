@@ -533,6 +533,164 @@ describe("MusicAssistantApi error handling", () => {
     await expect(request).resolves.toEqual([]);
   });
 
+  it("sends a random seed with library track listings", async () => {
+    const request = api.getLibraryTracks(
+      undefined,
+      undefined,
+      20,
+      40,
+      SortField.RANDOM,
+      undefined,
+      undefined,
+      undefined,
+      1234,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/tracks/library_items");
+    expect(transport.lastCommand.args).toEqual({
+      favorite: undefined,
+      search: undefined,
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.RANDOM,
+      sort_direction: undefined,
+      provider: undefined,
+      genre: undefined,
+      random_seed: 1234,
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends random seeds with every random-capable library listing", async () => {
+    const seed = 1234;
+    const requests: Array<{
+      command: string;
+      request: () => Promise<unknown>;
+    }> = [
+      {
+        command: "music/artists/library_items",
+        request: () =>
+          api.getLibraryArtists(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/albums/library_items",
+        request: () =>
+          api.getLibraryAlbums(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/playlists/library_items",
+        request: () =>
+          api.getLibraryPlaylists(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/radios/library_items",
+        request: () =>
+          api.getLibraryRadios(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/audiobooks/library_items",
+        request: () =>
+          api.getLibraryAudiobooks(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/podcasts/library_items",
+        request: () =>
+          api.getLibraryPodcasts(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/genres/library_items",
+        request: () =>
+          api.getLibraryGenres({
+            limit: 20,
+            offset: 40,
+            sort_field: SortField.RANDOM,
+            random_seed: seed,
+          }),
+      },
+    ];
+
+    for (const testCase of requests) {
+      const request = testCase.request();
+      expect(transport.lastCommand.command).toBe(testCase.command);
+      expect(transport.lastCommand.args).toMatchObject({ random_seed: seed });
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    }
+  });
+
   it.each([true, false, undefined])(
     "sends artist track parameters with favorite %s",
     async (favorite) => {
