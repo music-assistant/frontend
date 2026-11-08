@@ -138,7 +138,7 @@
           :reveal-countdown="resolvedDefinition.game.usesRevealCountdown"
           @end-game="showEndGameDialog = true"
           @present="enterPresentMode"
-          @start="host.start"
+          @start="handleStart"
           @reveal="host.reveal"
           @next="host.next"
           @reset="handleReplay"
@@ -248,6 +248,7 @@ import {
 import {
   isSupportedMusicQuiz,
   type MusicQuizCreateRequest,
+  type MusicQuizMode,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { useMusicQuizHost } from "@/composables/music-quiz/useMusicQuizHost";
 import {
@@ -260,6 +261,7 @@ import api, { ConnectionState } from "@/plugins/api";
 import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
+import { webPlayer } from "@/plugins/web_player";
 import { Gamepad2, MicVocal, Plus, Settings } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -406,7 +408,14 @@ function playAlong() {
 }
 
 async function handleCreate(request: MusicQuizCreateRequest) {
+  primeVenueAudio(request.playback_mode, request.venue_player_id);
   if (await host.create(request)) showSetupDialog.value = false;
+}
+
+async function handleStart() {
+  const playback = activeState.value?.playback;
+  if (playback) primeVenueAudio(playback.mode, playback.venue_player_id);
+  await host.start();
 }
 
 async function handleReplay() {
@@ -477,6 +486,17 @@ async function resolveMusicQuizProviderInstance() {
   } catch (error) {
     musicQuizProviderInstanceId.value = null;
     console.error("Failed to load Music Quiz settings:", error);
+  }
+}
+
+// the quiz audio starts after the host's click, so unlock this browser's audio
+// output within the click when it is the venue player
+function primeVenueAudio(
+  mode: MusicQuizMode | null | undefined,
+  venuePlayerId: string | null | undefined,
+) {
+  if (mode === "venue" && venuePlayerId === webPlayer.player_id) {
+    webPlayer.primeAudio();
   }
 }
 </script>
