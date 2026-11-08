@@ -15,6 +15,8 @@ import {
 export type PlaylistDialogEvent = {
   items: MediaItemType[];
   parentItem?: MediaItemType;
+  // add the items of this queue instead of items
+  queueId?: string;
 };
 
 export type ContextMenuDialogEvent = {
@@ -25,7 +27,6 @@ export type ContextMenuDialogEvent = {
 };
 
 export type CreatePlaylistEvent = {
-  queueId?: string;
   providerId?: string;
 };
 
