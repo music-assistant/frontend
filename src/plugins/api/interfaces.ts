@@ -691,6 +691,8 @@ export interface ErrorResultMessage extends ResultMessageBase {
 
   error_code: number;
   details: string | null;
+  // context a client can act on without parsing `details`; the keys depend on the error
+  data: Record<string, unknown> | null;
 }
 
 export interface EventMessage {
@@ -1134,6 +1136,13 @@ export type StatisticsGranularity = "hour" | "day" | "week" | "month";
 
 /** How `statistics/listening_time` groups its minutes. */
 export type StatisticsGroupBy = "artist" | "genre";
+
+/** Whose plays the statistics commands combine; empty is the current user. */
+export interface StatisticsUsers {
+  // user ids or usernames
+  users?: string[];
+  all_users?: boolean;
+}
 
 /** A ranked media item and its completed-play count from statistics endpoints. */
 export interface StatisticsTopItemResult {
@@ -1746,6 +1755,10 @@ export interface ProviderManifest {
   // this provider itself, instead of only a user who manages every music source
   self_service: boolean;
   stage: ProviderStage;
+  // tier: who builds and maintains the provider
+  tier: ProviderTier;
+  // support_url: where the maintainer takes reports, null = the project's support repository
+  support_url: string | null;
   // icon: material design icon
   icon: string | null;
   // icon_images: which icon variants this provider supplies as image files.
@@ -1761,6 +1774,11 @@ export enum ProviderStage {
   EXPERIMENTAL = "experimental",
   UNMAINTAINED = "unmaintained",
   DEPRECATED = "deprecated",
+}
+
+export enum ProviderTier {
+  CORE = "core",
+  COMMUNITY = "community",
 }
 
 export enum ProviderStatus {

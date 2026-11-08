@@ -1,6 +1,12 @@
 <template>
   <StatisticsCard
-    :title="$t('statistics_top_artist')"
+    :title="
+      $t(
+        includesOtherUsers
+          ? 'statistics_top_artist_other_users'
+          : 'statistics_top_artist',
+      )
+    "
     :loading="loading"
     :error="error"
     :empty="!topArtist"
@@ -90,6 +96,7 @@ const props = defineProps<{
   listeningTime: StatisticsListeningTimeItem[];
   loading?: boolean;
   error?: boolean;
+  includesOtherUsers?: boolean;
 }>();
 
 interface DonutDatum {
@@ -124,10 +131,12 @@ const donutData = computed<DonutDatum[]>(() => [
   { key: "rest", value: PERCENT - share.value },
 ]);
 const accessibleLabel = computed(() =>
-  $t("statistics_top_artist_accessible", {
-    name: topArtist.value?.item.name ?? "",
-    share: share.value,
-  }),
+  $t(
+    props.includesOtherUsers
+      ? "statistics_top_artist_accessible_other_users"
+      : "statistics_top_artist_accessible",
+    { name: topArtist.value?.item.name ?? "", share: share.value },
+  ),
 );
 const detail = computed(() => {
   if (!topArtist.value) return "";

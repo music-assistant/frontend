@@ -34,12 +34,13 @@
             v-for="(track, index) in shownTracks"
             :key="track.uri"
             v-hold="(e: Event) => onTrackHold(e, track)"
-            class="artist-top-tracks__track"
+            class="artist-top-tracks__track group"
             :class="{
               'artist-top-tracks__track--playing': isNowPlaying(track),
             }"
             role="button"
             tabindex="0"
+            @click.capture="swallowClickAfterTrackHold"
             @click="(e: MouseEvent) => onTrackClick(e, track)"
             @keydown.enter.self="(e: KeyboardEvent) => onTrackClick(e, track)"
             @keydown.space.self.prevent="
@@ -57,8 +58,15 @@
               />
               <template v-else>{{ index + 1 }}</template>
             </span>
-            <span class="artist-top-tracks__art">
+            <span class="artist-top-tracks__art relative">
               <MediaItemThumb :item="track" :size="40" />
+              <RowPlayButton
+                v-if="canPlay(track)"
+                overlay
+                :label="playLabel(track)"
+                :disabled="playActionInProgress"
+                @click="(e: MouseEvent) => onPlayClick(e, track)"
+              />
             </span>
             <span class="artist-top-tracks__text">
               <span class="artist-top-tracks__name">{{ track.name }}</span>
@@ -73,6 +81,12 @@
             <span v-if="track.duration" class="artist-top-tracks__duration">{{
               formatDuration(track.duration)
             }}</span>
+            <RowPlayButton
+              v-if="canPlay(track)"
+              :label="playLabel(track)"
+              :disabled="playActionInProgress"
+              @click="(e: MouseEvent) => onPlayClick(e, track)"
+            />
             <button
               type="button"
               class="artist-top-tracks__menu"
@@ -111,14 +125,17 @@ import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
 import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import RowPlayButton from "@/components/RowPlayButton.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getEventPosition,
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
+import { usePlayActionInProgress } from "@/composables/usePlayActionInProgress";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
+  handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
 import { formatDuration } from "@/helpers/utils";
@@ -129,6 +146,7 @@ import {
   type ItemMapping,
   type Track,
 } from "@/plugins/api/interfaces";
+import { itemIsAvailable } from "@/plugins/api/helpers";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -195,6 +213,13 @@ const {
   swallowClickAfterHold: swallowClickAfterTrackHold,
 } = useHoldToOpenMenu<[Track]>((evt, track) => onTrackMenu(evt, track));
 
+const playActionInProgress = usePlayActionInProgress();
+
+// a track that is not available has nothing to play, whatever its flag says
+const canPlay = (track: Track) => track.is_playable && itemIsAvailable(track);
+
+const playLabel = (track: Track) => `${$t("play")} ${track.name}`;
+
 const isNowPlaying = function (track: Track): boolean {
   if (store.activePlayer?.playback_state != PlaybackState.PLAYING) return false;
   const current = store.curQueueItem?.media_item;
@@ -215,10 +240,13 @@ const onTrackClick = function (
   event: MouseEvent | KeyboardEvent,
   track: Track,
 ) {
-  if (swallowClickAfterTrackHold(event)) return;
   const x = "clientX" in event ? event.clientX : 0;
   const y = "clientY" in event ? event.clientY : 0;
   handleMediaItemClick(track, x, y, props.artist);
+};
+
+const onPlayClick = function (event: MouseEvent, track: Track) {
+  handlePlayBtnClick(track, event.clientX, event.clientY, props.artist);
 };
 
 const onTrackMenu = function (event: Event, track: Track) {

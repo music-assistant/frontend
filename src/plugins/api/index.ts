@@ -3,6 +3,10 @@ import { store } from "../store";
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
 import { resolveActiveSourceId } from "@/composables/activeSource";
+import {
+  getIngressClientKey,
+  hasHomeAssistantIngressPath,
+} from "@/helpers/ingress";
 import { resolveProviderDomain } from "@/helpers/provider_domain";
 import {
   resetServerTime,
@@ -17,6 +21,7 @@ import { AccountApi } from "./account";
 import type { CommandOptions } from "./commandOptions";
 export type { CommandOptions } from "./commandOptions";
 import { ApiCommandError } from "./errors";
+import { eventbus } from "../eventbus";
 import { getDeviceName, itemSupportsPlayLog } from "./helpers";
 import { StatisticsApi } from "./statistics";
 import {
@@ -97,6 +102,7 @@ import {
   SmartPlaylistRules,
   SoundEffect,
   StatisticsTopItemResult,
+  StatisticsUsers,
   SourceFolder,
   StorageInfo,
   StorageLocation,
@@ -111,11 +117,14 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 102;
+export const MIN_SERVER_SCHEMA_VERSION = 103;
 
 // Server error codes of a missing or rejected sign-in; the login UI reports these itself
 const AUTHENTICATION_REQUIRED_ERROR_CODE = 20;
 const AUTHENTICATION_FAILED_ERROR_CODE = 21;
+// Server error code of a playback refused because another player's playback holds the
+// only stream of a provider; answered with the stream held dialog instead of a toast
+const PROVIDER_STREAM_HELD_ERROR_CODE = 29;
 
 export interface PlayMediaOptions {
   start_item?: PlayableMediaItemType | string;
@@ -194,6 +203,8 @@ export class MusicAssistantApi {
   private commands: Map<
     string,
     {
+      command: string;
+      args?: Record<string, unknown>;
       resolve: (result: unknown) => void;
       reject: (err: unknown) => void;
       suppressGlobalError?: CommandOptions["suppressGlobalError"];
@@ -257,6 +268,11 @@ export class MusicAssistantApi {
 
       if (!wsUrl.endsWith("/ws")) {
         wsUrl += "/ws";
+      }
+
+      // lets the server link the web player of this browser to this connection
+      if (hasHomeAssistantIngressPath()) {
+        wsUrl += `?${new URLSearchParams({ ingress_client_key: getIngressClientKey() })}`;
       }
 
       transport = new WebSocketTransport({ url: wsUrl });
@@ -536,6 +552,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Track[]> {
     return this.sendCommand("music/tracks/library_items", {
       favorite,
@@ -546,6 +563,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -734,6 +752,7 @@ export class MusicAssistantApi {
     provider?: string | string[],
     genre?: number | number[],
     artist_type?: ArtistType,
+    random_seed?: number,
   ): Promise<Artist[]> {
     return this.sendCommand("music/artists/library_items", {
       favorite,
@@ -746,6 +765,7 @@ export class MusicAssistantApi {
       provider,
       genre,
       artist_type,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1039,6 +1059,7 @@ export class MusicAssistantApi {
     album_types?: Array<AlbumType | string>,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Album[]> {
     return this.sendCommand("music/albums/library_items", {
       favorite,
@@ -1050,6 +1071,7 @@ export class MusicAssistantApi {
       album_types,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1127,6 +1149,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Playlist[]> {
     return this.sendCommand("music/playlists/library_items", {
       favorite,
@@ -1137,6 +1160,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1373,6 +1397,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Radio[]> {
     return this.sendCommand("music/radios/library_items", {
       favorite,
@@ -1383,6 +1408,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1448,6 +1474,7 @@ export class MusicAssistantApi {
     provider?: string | string[],
     genre?: number | number[],
     collapse_collections?: boolean,
+    random_seed?: number,
   ): Promise<(Audiobook | MediaCollection<Audiobook>)[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
@@ -1459,6 +1486,7 @@ export class MusicAssistantApi {
       provider,
       genre,
       collapse_collections,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1581,6 +1609,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Podcast[]> {
     return this.sendCommand("music/podcasts/library_items", {
       favorite,
@@ -1591,6 +1620,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1621,6 +1651,7 @@ export class MusicAssistantApi {
       hide_empty?: boolean | null;
       media_type?: MediaType;
       content_type?: MediaType | "music";
+      random_seed?: number;
     } = {},
   ): Promise<Genre[]> {
     return this.sendCommand("music/genres/library_items", opts);
@@ -2099,43 +2130,49 @@ export class MusicAssistantApi {
     media_type: MediaType,
     period: StatisticsPeriod = "week",
     limit = 50,
+    users?: StatisticsUsers,
   ): Promise<StatisticsTopItemResult[]> {
-    return this.statisticsApi.getTopItems(media_type, period, limit);
+    return this.statisticsApi.getTopItems(media_type, period, limit, users);
   }
 
   public async getPlaysOverTime(
     period: StatisticsPeriod = "week",
     granularity: StatisticsGranularity = "day",
+    users?: StatisticsUsers,
   ): Promise<StatisticsTimeSeriesPoint[]> {
-    return this.statisticsApi.getPlaysOverTime(period, granularity);
+    return this.statisticsApi.getPlaysOverTime(period, granularity, users);
   }
 
   public async getListeningActivity(
     period: StatisticsPeriod = "week",
+    users?: StatisticsUsers,
   ): Promise<StatisticsHeatmapPoint[]> {
-    return this.statisticsApi.getListeningActivity(period);
+    return this.statisticsApi.getListeningActivity(period, users);
   }
 
   public async getListeningTime(
     period: StatisticsPeriod = "week",
     group_by: StatisticsGroupBy = "artist",
     limit = 10,
+    users?: StatisticsUsers,
   ): Promise<StatisticsListeningTimeItem[]> {
-    return this.statisticsApi.getListeningTime(period, group_by, limit);
+    return this.statisticsApi.getListeningTime(period, group_by, limit, users);
   }
 
   public async getGenreDistribution(
     period: StatisticsPeriod = "week",
     limit = 10,
+    users?: StatisticsUsers,
   ): Promise<StatisticsDistributionItem[]> {
-    return this.statisticsApi.getGenreDistribution(period, limit);
+    return this.statisticsApi.getGenreDistribution(period, limit, users);
   }
 
   public async getDecadeDistribution(
     period: StatisticsPeriod = "all_time",
     limit = 10,
+    users?: StatisticsUsers,
   ): Promise<StatisticsDistributionItem[]> {
-    return this.statisticsApi.getDecadeDistribution(period, limit);
+    return this.statisticsApi.getDecadeDistribution(period, limit, users);
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {
@@ -2230,9 +2267,15 @@ export class MusicAssistantApi {
     // Clear all items in the queue.
     this.playerQueueCommand(queueId, "clear");
   }
-  public queueCommandPlayIndex(queueId: string, index: number | string) {
+  public queueCommandPlayIndex(
+    queueId: string,
+    index: number | string,
+  ): Promise<void> {
     // Play item at index (or item_id) X in queue.
-    this.playerQueueCommand(queueId, "play_index", { index });
+    return this.sendCommand("player_queues/play_index", {
+      queue_id: queueId,
+      index,
+    });
   }
   public queueCommandMoveItem(
     queueId: string,
@@ -2346,6 +2389,10 @@ export class MusicAssistantApi {
       queue_id,
       ...args,
     });
+  }
+  public queueCommandStop(queueId: string): Promise<void> {
+    // Stop the queue; resolves once the server has stopped it.
+    return this.sendCommand("player_queues/stop", { queue_id: queueId });
   }
   public queueCommandTransfer(
     sourceQueue: string,
@@ -3527,7 +3574,7 @@ export class MusicAssistantApi {
           msg.error_code === AUTHENTICATION_REQUIRED_ERROR_CODE ||
           msg.error_code === AUTHENTICATION_FAILED_ERROR_CODE;
 
-        if (!isAuthError) {
+        if (!isAuthError && !this.offerStreamHeldDialog(msg, resultPromise)) {
           toast.error(msg.details || String(msg.error_code));
         }
       }
@@ -3560,6 +3607,7 @@ export class MusicAssistantApi {
           msg.details || String(msg.error_code),
           msg.error_code,
           msg.details || undefined,
+          msg.data || undefined,
         ),
       );
     } else {
@@ -3921,6 +3969,8 @@ export class MusicAssistantApi {
     const cmdId = this._genCmdId();
     return new Promise((resolve, reject) => {
       this.commands.set(cmdId, {
+        command,
+        args,
         resolve: resolve as (result: unknown) => void,
         reject,
         suppressGlobalError: options?.suppressGlobalError,
@@ -4047,6 +4097,36 @@ export class MusicAssistantApi {
       console.error("[resultMessage] suppression check failed", err);
       return false;
     }
+  }
+
+  /**
+   * Offer to stop the player holding a provider's only stream and run the command again.
+   *
+   * Returns whether the error is a refusal the dialog can act on, and so needs no toast.
+   */
+  private offerStreamHeldDialog(
+    msg: ErrorResultMessage,
+    pending?: { command: string; args?: Record<string, unknown> },
+  ): boolean {
+    const { queue_id, player_name, provider_instance } = msg.data ?? {};
+    if (
+      msg.error_code !== PROVIDER_STREAM_HELD_ERROR_CODE ||
+      !pending ||
+      // layouts without the dialog, such as the party guest pages, keep the toast
+      !eventbus.all.get("streamHeldDialog")?.length ||
+      typeof queue_id !== "string" ||
+      typeof player_name !== "string" ||
+      typeof provider_instance !== "string"
+    ) {
+      return false;
+    }
+    eventbus.emit("streamHeldDialog", {
+      holderQueueId: queue_id,
+      holderName: player_name,
+      providerName: this.getProviderName(provider_instance),
+      retry: () => this.sendCommand(pending.command, pending.args),
+    });
+    return true;
   }
 
   /**
