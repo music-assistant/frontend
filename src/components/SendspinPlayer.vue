@@ -323,7 +323,7 @@ onMounted(() => {
         // Use a placeholder URL - the WebSocket interceptor will route through WebRTC
         // The URL just needs to be valid and contain "/sendspin" for the interceptor
         player = new SendspinPlayer({
-          baseUrl: "http://sendspin.local",
+          url: "ws://sendspin.local/sendspin",
           audioElement,
           // Shared guest accounts have no person to name the device after
           clientName: getWebPlayerName(
@@ -332,6 +332,8 @@ onMounted(() => {
               ? undefined
               : store.currentUser,
           ),
+          manufacturer: navigator.vendor || "Unknown",
+          softwareVersion: navigator.userAgent || "Unknown",
           // How the server recognizes us as its built-in player rather than a
           // third-party client that has to be paired by hand.
           productName: "Web Player",
@@ -420,9 +422,7 @@ onBeforeUnmount(() => {
     // goodbye, which is what a hand-over to another tab needs. Once this
     // browser wants no player at all, say so instead, or it stays targetable
     // while nothing is listening.
-    player.disconnect(
-      isPlaybackMode(webPlayer.mode) ? "restart" : "user_request",
-    );
+    player.destroy(isPlaybackMode(webPlayer.mode) ? "restart" : "user_request");
     player = null;
   }
   if (unsubMetadata) unsubMetadata();
