@@ -1085,20 +1085,40 @@ const showLetterBar = computed(
   () => letterEntries.value.length > 1 && pagedItems.value.length > 0,
 );
 const scroller = () => document.querySelector<HTMLElement>(".content-section");
+// the rendered element of the loaded item at this index
+const rowElement = function (index: number) {
+  // the list view's rows include its disc headers
+  const position =
+    viewMode.value === "list"
+      ? listDisplayItems.value.indexOf(pagedItems.value[index])
+      : index;
+  return (
+    listContainer.value?.querySelector<HTMLElement>(
+      `[data-listing-index="${position}"]`,
+    ) ?? null
+  );
+};
+
 // the bar marks the letter of the row at the top of the screen; while the row
-// a jump went to is still in the top grid row, that is the letter jumped to,
-// even when its items share the grid row with the next letter's
+// a jump went to is still on screen below it, that is the letter jumped to:
+// its items may share the top grid row with the next letter's, or sit too
+// near the end of the list to reach the top
 const { topIndex } = useTopListingRow(scroller, listContainer, showLetterBar);
 const jumpedRow = ref<number>();
+const jumpedRowOnScreen = function (jumped: number, topRow: number) {
+  if (jumped < topRow) return false;
+  const el = rowElement(jumped - baseOffset.value);
+  const bottom = scroller()?.getBoundingClientRect().bottom;
+  return (
+    !!el && bottom !== undefined && el.getBoundingClientRect().top < bottom
+  );
+};
 const currentLetter = computed(() => {
   if (topIndex.value === undefined) return null;
-  const columns = viewMode.value === "panel" ? gridColumnCount.value : 1;
   const topRow = baseOffset.value + topIndex.value;
   const jumped = jumpedRow.value;
   const row =
-    jumped !== undefined && jumped >= topRow && jumped < topRow + columns
-      ? jumped
-      : topRow;
+    jumped !== undefined && jumpedRowOnScreen(jumped, topRow) ? jumped : topRow;
   return letterAt(row) ?? null;
 });
 // changes to the library move the letters' rows
@@ -1110,18 +1130,7 @@ const topSentinel = useTemplateRef<HTMLElement>("topSentinel");
 const { jumpToRow, loadAllAbove } = useListingWindow({
   scroller,
   topSentinel,
-  rowElement: (index) => {
-    // the list view's rows include its disc headers
-    const position =
-      viewMode.value === "list"
-        ? listDisplayItems.value.indexOf(pagedItems.value[index])
-        : index;
-    return (
-      listContainer.value?.querySelector<HTMLElement>(
-        `[data-listing-index="${position}"]`,
-      ) ?? null
-    );
-  },
+  rowElement,
   margin: INFINITE_SCROLL_MARGIN,
   listing: { baseOffset, loading, isDisposed, loadRow, loadPreviousPage },
 });
