@@ -302,13 +302,12 @@
         <v-row v-if="viewMode == 'panel'" ref="panelRow">
           <!-- keeps each card in the column of its listing row, so rows loaded
                above add whole grid rows and the cards on screen stay put -->
-          <v-col
+          <div
             v-for="n in baseOffset % gridColumnCount"
             :key="'spacer-' + n"
-            cols="12"
             :class="`col-${gridColumnCount}`"
             aria-hidden="true"
-          />
+          ></div>
           <v-col
             v-for="(item, index) in pagedItems"
             :key="item.uri"
@@ -1094,11 +1093,7 @@ const { jumpToRow, loadAllAbove } = useListingWindow({
     );
   },
   margin: INFINITE_SCROLL_MARGIN,
-  baseOffset,
-  loading,
-  isDisposed,
-  loadRow,
-  loadPreviousPage,
+  listing: { baseOffset, loading, isDisposed, loadRow, loadPreviousPage },
 });
 
 const jumpToLetter = async function (label: string) {

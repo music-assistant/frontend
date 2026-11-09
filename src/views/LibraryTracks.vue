@@ -116,14 +116,14 @@ const loadItems = async function (params: LoadDataParams) {
 };
 
 const loadLetterIndex = function (params: LoadDataParams) {
-  return api.getLibraryTracksLetterIndex(
-    params.favoritesOnly || undefined,
-    params.search,
-    params.sortField,
-    params.sortDirection,
-    params.provider && params.provider.length > 0 ? params.provider : undefined,
-    params.genreIds,
-  );
+  return api.getLibraryLetterIndex("tracks", {
+    favorite: params.favoritesOnly || undefined,
+    search: params.search,
+    sort_field: params.sortField,
+    sort_direction: params.sortDirection,
+    provider: params.provider?.length ? params.provider : undefined,
+    genre: params.genreIds,
+  });
 };
 
 const setTotals = async function (params: LoadDataParams) {

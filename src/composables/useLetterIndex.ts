@@ -59,7 +59,7 @@ export function useLetterIndex(
       const result = await loadIndex({ ...p });
       if (current === latest) entries.value = result;
     } catch {
-      // a server without the index shows no letters
+      // the api already reports the failure to the user
     }
   }
 

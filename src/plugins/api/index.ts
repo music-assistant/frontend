@@ -143,6 +143,18 @@ export interface PlayMediaOptions {
   suppressGlobalError?: CommandOptions["suppressGlobalError"];
 }
 
+export interface LetterIndexFilters {
+  favorite?: boolean;
+  search?: string;
+  sort_field?: SortField;
+  sort_direction?: SortDirection;
+  provider?: string | string[];
+  genre?: number | number[];
+  album_artists_only?: boolean;
+  album_types?: Array<AlbumType | string>;
+  artist_type?: ArtistType;
+}
+
 export enum ConnectionState {
   DISCONNECTED = "disconnected", // Not connected
   CONNECTING = "connecting", // Establishing connection
@@ -680,80 +692,14 @@ export class MusicAssistantApi {
   }
 
   /**
-   * The first row of each letter in the library artists sorted by name, for
-   * the same filters as getLibraryArtists. Empty for any other sort or a search.
+   * The first row of each letter in the library listing sorted by name, for
+   * the same filters as its listing. Empty for any other sort or a search.
    */
-  public getLibraryArtistsLetterIndex(
-    favorite?: boolean,
-    search?: string,
-    sort_field?: SortField,
-    sort_direction?: SortDirection,
-    album_artists_only?: boolean,
-    provider?: string | string[],
-    genre?: number | number[],
-    artist_type?: ArtistType,
+  public getLibraryLetterIndex(
+    media: "artists" | "albums" | "tracks",
+    filters: LetterIndexFilters,
   ): Promise<LetterIndexEntry[]> {
-    return this.sendCommand(
-      "music/artists/letter_index",
-      {
-        favorite,
-        search,
-        sort_field,
-        sort_direction,
-        album_artists_only,
-        provider,
-        genre,
-        artist_type,
-      },
-      { suppressGlobalError: true },
-    );
-  }
-
-  /**
-   * The first row of each letter in the library albums sorted by name, for
-   * the same filters as getLibraryAlbums. Empty for any other sort or a search.
-   */
-  public getLibraryAlbumsLetterIndex(
-    favorite?: boolean,
-    search?: string,
-    sort_field?: SortField,
-    sort_direction?: SortDirection,
-    album_types?: Array<AlbumType | string>,
-    provider?: string | string[],
-    genre?: number | number[],
-  ): Promise<LetterIndexEntry[]> {
-    return this.sendCommand(
-      "music/albums/letter_index",
-      {
-        favorite,
-        search,
-        sort_field,
-        sort_direction,
-        album_types,
-        provider,
-        genre,
-      },
-      { suppressGlobalError: true },
-    );
-  }
-
-  /**
-   * The first row of each letter in the library tracks sorted by name, for
-   * the same filters as getLibraryTracks. Empty for any other sort or a search.
-   */
-  public getLibraryTracksLetterIndex(
-    favorite?: boolean,
-    search?: string,
-    sort_field?: SortField,
-    sort_direction?: SortDirection,
-    provider?: string | string[],
-    genre?: number | number[],
-  ): Promise<LetterIndexEntry[]> {
-    return this.sendCommand(
-      "music/tracks/letter_index",
-      { favorite, search, sort_field, sort_direction, provider, genre },
-      { suppressGlobalError: true },
-    );
+    return this.sendCommand(`music/${media}/letter_index`, { ...filters });
   }
 
   public getSortOptions(listing: ListingType): Promise<SortOptionInfo[]> {

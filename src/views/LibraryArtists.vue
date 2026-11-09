@@ -65,16 +65,16 @@ const loadItems = async function (params: LoadDataParams) {
 };
 
 const loadLetterIndex = function (params: LoadDataParams) {
-  return api.getLibraryArtistsLetterIndex(
-    params.favoritesOnly || undefined,
-    params.search,
-    params.sortField,
-    params.sortDirection,
-    params.albumArtistsFilter,
-    params.provider && params.provider.length > 0 ? params.provider : undefined,
-    params.genreIds,
-    ArtistType.SINGER,
-  );
+  return api.getLibraryLetterIndex("artists", {
+    favorite: params.favoritesOnly || undefined,
+    search: params.search,
+    sort_field: params.sortField,
+    sort_direction: params.sortDirection,
+    album_artists_only: params.albumArtistsFilter,
+    provider: params.provider?.length ? params.provider : undefined,
+    genre: params.genreIds,
+    artist_type: ArtistType.SINGER,
+  });
 };
 
 const setTotals = async function (params: LoadDataParams) {

@@ -1,7 +1,11 @@
 <template>
+  <!-- fixed so the bar stays pinned to the right edge while the list scrolls
+       (.content-section is the scroll container); it ends just above the bars
+       pinned to the bottom of the screen, and its letters size to its height -->
   <div
-    ref="barEl"
-    class="alphabet-index-bar"
+    ref="bar"
+    class="fixed right-[2px] bottom-[calc(var(--bottom-obscured-height,0px)+8px)] z-4 flex flex-col items-center justify-between px-[2px] touch-none select-none"
+    :class="{ invisible: tooShort }"
     :style="barStyle"
     role="navigation"
     :aria-label="$t('alphabet_jump')"
@@ -11,11 +15,7 @@
       v-for="letter in letters"
       :key="letter.label"
       type="button"
-      class="alphabet-index-letter"
-      :class="{
-        'alphabet-index-letter--active': activeLabel === letter.label,
-        'alphabet-index-letter--empty': !letter.available,
-      }"
+      :class="letterClass(letter)"
       :aria-label="letter.label"
       @pointerdown.prevent="onActivate(letter.label)"
       @pointerenter="onPointerEnter($event, letter.label)"
@@ -27,7 +27,8 @@
 
 <script setup lang="ts">
 import type { IndexLetter } from "@/composables/useLetterIndex";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useElementBounding, useElementSize } from "@vueuse/core";
+import { computed, ref, useTemplateRef } from "vue";
 
 interface Props {
   // every letter in listing order; one without items is dimmed but can still
@@ -42,6 +43,12 @@ const emit = defineEmits<{
 
 const activeLabel = ref<string | null>(null);
 
+// Each letter takes an equal share of the bar height, giving full-height tap
+// targets and an even spread regardless of how many letters there are.
+const LETTER_BASE_CLASS =
+  "flex min-h-0 w-full flex-[1_1_0] cursor-pointer items-center justify-center rounded-[6px] border-none text-[length:min(0.95rem,var(--letter-size,0.95rem))] leading-none font-semibold text-primary hover:bg-primary/18 hover:opacity-100";
+const LETTER_ACTIVE_CLASS = "bg-primary/18 opacity-100";
+
 const onActivate = function (label: string) {
   activeLabel.value = label;
   emit("jump", label);
@@ -55,83 +62,40 @@ const onPointerEnter = function (evt: PointerEvent, label: string) {
   onActivate(label);
 };
 
-// Size the bar to the available vertical space of the scroll viewport, so the
-// letters spread out to fill the height instead of clustering in the middle.
-// Clear the listing toolbar at the top and the player bar (the scroll area's
-// padding-bottom) at the bottom.
-const TOOLBAR_CLEARANCE = 56;
-const barEl = ref<HTMLElement | null>(null);
-const barStyle = ref<Record<string, string>>({});
-
-const updateSize = function () {
-  const content = document.querySelector(
-    ".content-section",
-  ) as HTMLElement | null;
-  if (!content) return;
-  const rect = content.getBoundingClientRect();
-  const padBottom = parseFloat(getComputedStyle(content).paddingBottom) || 0;
-  const margin = 8;
-  const top = rect.top + TOOLBAR_CLEARANCE;
-  const height = rect.height - TOOLBAR_CLEARANCE - padBottom - margin;
-  barStyle.value = {
-    top: `${Math.round(top)}px`,
-    height: `${Math.max(0, Math.round(height))}px`,
-    transform: "none",
-  };
+// Exactly one background and opacity class per state, since all utilities are
+// !important; hover beats both through its higher specificity, so hovering a
+// dimmed letter still shows it at full opacity.
+const letterClass = function (letter: IndexLetter) {
+  if (activeLabel.value === letter.label) {
+    return [LETTER_BASE_CLASS, LETTER_ACTIVE_CLASS];
+  }
+  return [
+    LETTER_BASE_CLASS,
+    "bg-transparent",
+    letter.available ? "opacity-75" : "opacity-30",
+  ];
 };
 
-onMounted(() => {
-  updateSize();
-  window.addEventListener("resize", updateSize);
-});
-onBeforeUnmount(() => window.removeEventListener("resize", updateSize));
+// The bar starts below the listing toolbar at the top of the scroll area, so
+// the letters spread over the height instead of clustering in the middle.
+const TOOLBAR_CLEARANCE = 56;
+const { top: contentTop } = useElementBounding(() =>
+  document.querySelector<HTMLElement>(".content-section"),
+);
+// a letter's size as a share of the bar height, so all letters fit a short bar
+const LETTER_SIZE_SHARE = 0.03;
+// below this letter size in pixels the bar is too short to use, so it hides
+const MIN_LETTER_SIZE = 9;
+const { height: barHeight } = useElementSize(useTemplateRef("bar"));
+const barStyle = computed(() => ({
+  top: `${Math.round(contentTop.value + TOOLBAR_CLEARANCE)}px`,
+  "--letter-size": barHeight.value
+    ? `${barHeight.value * LETTER_SIZE_SHARE}px`
+    : undefined,
+}));
+const tooShort = computed(
+  () =>
+    barHeight.value > 0 &&
+    barHeight.value * LETTER_SIZE_SHARE < MIN_LETTER_SIZE,
+);
 </script>
-
-<style scoped>
-.alphabet-index-bar {
-  /* fixed so the bar stays pinned to the right edge while the list scrolls
-     (the surrounding .content-section is the scroll container). top/height are
-     set dynamically so the letters fill the available vertical space. */
-  position: fixed;
-  right: 2px;
-  z-index: 4;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 2px;
-  touch-action: none;
-  user-select: none;
-}
-
-.alphabet-index-letter {
-  /* each letter takes an equal share of the bar height, giving full-height tap
-     targets and an even distribution regardless of how many letters there are */
-  flex: 1 1 0;
-  width: 100%;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: clamp(0.7rem, 1.6vh, 0.95rem);
-  line-height: 1;
-  font-weight: 600;
-  color: rgb(var(--v-theme-primary));
-  opacity: 0.75;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.alphabet-index-letter--empty {
-  /* letters with no items are dimmed but still clickable (snap to nearest) */
-  opacity: 0.3;
-}
-
-.alphabet-index-letter:hover,
-.alphabet-index-letter--active {
-  opacity: 1;
-  background: rgba(var(--v-theme-primary), 0.18);
-}
-</style>

@@ -1,3 +1,4 @@
+import type { useItemsListing } from "@/composables/useItemsListing";
 import { until, useIntersectionObserver } from "@vueuse/core";
 import { nextTick, type Ref } from "vue";
 
@@ -10,11 +11,11 @@ interface ListingWindowOptions {
   rowElement: (index: number) => HTMLElement | null;
   // how far above the visible area the rows above start loading
   margin: number;
-  baseOffset: Ref<number>;
-  loading: Ref<boolean>;
-  isDisposed: () => boolean;
-  loadRow: (row: number) => Promise<boolean>;
-  loadPreviousPage: (onPrepend: () => void) => Promise<boolean>;
+  // the paged listing whose rows are loaded
+  listing: Pick<
+    ReturnType<typeof useItemsListing>,
+    "baseOffset" | "loading" | "isDisposed" | "loadRow" | "loadPreviousPage"
+  >;
 }
 
 /**
@@ -22,6 +23,7 @@ interface ListingWindowOptions {
  * list scrolls up from there, while the rows on screen stay where they are.
  */
 export function useListingWindow(options: ListingWindowOptions) {
+  const { listing } = options;
   let jumping = false;
   let jumpId = 0;
   let filling = false;
@@ -45,9 +47,9 @@ export function useListingWindow(options: ListingWindowOptions) {
     const id = ++jumpId;
     jumping = true;
     try {
-      const loaded = await options.loadRow(row);
-      if (!loaded || id !== jumpId || options.isDisposed()) return;
-      await scrollToIndex(row - options.baseOffset.value);
+      const loaded = await listing.loadRow(row);
+      if (!loaded || id !== jumpId || listing.isDisposed()) return;
+      await scrollToIndex(row - listing.baseOffset.value);
     } finally {
       if (id === jumpId) jumping = false;
     }
@@ -55,14 +57,8 @@ export function useListingWindow(options: ListingWindowOptions) {
   }
 
   /** Load every row above the loaded ones, keeping the rows on screen. */
-  async function loadAllAbove() {
-    while (options.baseOffset.value > 0 && !options.isDisposed()) {
-      if (options.loading.value) {
-        await until(options.loading).toBe(false);
-      } else if (!(await prependPage())) {
-        return;
-      }
-    }
+  function loadAllAbove() {
+    return loadAbove(() => true);
   }
 
   return { jumpToRow, loadAllAbove };
@@ -70,16 +66,16 @@ export function useListingWindow(options: ListingWindowOptions) {
   async function scrollToIndex(index: number) {
     const scroller = options.scroller();
     if (!scroller) return;
+    await nextTick();
     // the virtual list may render the new rows a frame after the update
     for (let attempt = 0; attempt < 3; attempt++) {
-      await nextTick();
       const el = options.rowElement(index);
       if (el) {
         scroller.scrollTop +=
           el.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
         return;
       }
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await nextFrame();
     }
   }
 
@@ -88,7 +84,7 @@ export function useListingWindow(options: ListingWindowOptions) {
   async function prependPage() {
     const scroller = options.scroller();
     let kept: Promise<void> | undefined;
-    const added = await options.loadPreviousPage(() => {
+    const added = await listing.loadPreviousPage(() => {
       if (!scroller) return;
       // the page still shows the rows from before
       const top = scroller.scrollTop;
@@ -114,20 +110,24 @@ export function useListingWindow(options: ListingWindowOptions) {
     if (filling) return;
     filling = true;
     try {
-      while (
-        options.baseOffset.value > 0 &&
-        !jumping &&
-        !options.isDisposed() &&
-        sentinelNearTop()
-      ) {
-        if (options.loading.value) {
-          await until(options.loading).toBe(false);
-        } else if (!(await prependPage())) {
-          return;
-        }
-      }
+      await loadAbove(() => !jumping && sentinelNearTop());
     } finally {
       filling = false;
+    }
+  }
+
+  // loads pages above the rows while keepGoing allows it
+  async function loadAbove(keepGoing: () => boolean) {
+    while (
+      listing.baseOffset.value > 0 &&
+      !listing.isDisposed() &&
+      keepGoing()
+    ) {
+      if (listing.loading.value) {
+        await until(listing.loading).toBe(false);
+      } else if (!(await prependPage())) {
+        return;
+      }
     }
   }
 
