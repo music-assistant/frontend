@@ -26,6 +26,8 @@
       :show-track-number="config.showTrackNumber"
       :show-refresh-button="false"
       :sort-listing="config.sortListing"
+      library-toolbar
+      :show-count="false"
       :load-paged-data="config.loadPagedData"
       :empty-message="config.emptyMessage"
       :restore-state="true"

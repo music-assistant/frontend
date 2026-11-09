@@ -3282,6 +3282,19 @@ describe("ItemsListing library toolbar", () => {
     expect(menuLabels(listing)).not.toContain("grid_size");
   });
 
+  it.each(["panel", "list"] as const)(
+    "keeps the view out of the sort menu when the page sets it to %s",
+    async (forcedViewMode) => {
+      const listing = await mountLibraryPage({ forcedViewMode });
+      const sortMenu = listing.findComponent(ListingSortMenu);
+
+      expect(sortMenu.props("viewMode")).toBe(forcedViewMode);
+      expect(sortMenu.props("fixedView")).toBe(true);
+      expect(sortMenu.props("gridControls")).toBeDefined();
+      expect(menuLabels(listing)).not.toContain("tooltip.view_mode");
+    },
+  );
+
   it("opens the search field from its icon and closes it from inside", async () => {
     const listing = await mountLibraryPage();
     const searchIcon = () => listing.find('button[aria-label="search"]');
@@ -3419,6 +3432,58 @@ describe("ItemsListing library toolbar", () => {
     const listing = await mountLibraryPage({ allowCollapse: true });
 
     expect(listing.find('button[aria-label="search"]').exists()).toBe(false);
+  });
+
+  it("shows only the expand button while collapsed, with the menu's place kept", async () => {
+    signInWithSavedFilters({ expand: false });
+    const listing = await mountLibraryPage({ allowCollapse: true });
+
+    expect(listing.findComponent(ListingToolbarControls).exists()).toBe(false);
+    expect(menuLabels(listing)).toEqual([]);
+    expect(
+      listing
+        .find('button[aria-label="tooltip.collapse_expand"]')
+        .element.nextElementSibling?.getAttribute("aria-hidden"),
+    ).toBe("true");
+  });
+
+  describe("keyboard focus on the expand button", () => {
+    // a title bar that draws its direct items as buttons after the append
+    // slot, keyed by label like the real one
+    const toolbarWithButtons = {
+      Toolbar: {
+        name: "Toolbar",
+        props: ["menuItems"],
+        template: `<div><slot name="append" /><button
+          v-for="item of menuItems" :key="item.label"
+          :aria-label="item.label" @click="item.action()" /></div>`,
+      },
+    };
+    const expandButton = (listing: ReturnType<typeof mountListingRaw>) =>
+      listing.find('button[aria-label="tooltip.collapse_expand"]');
+
+    it.each([
+      ["collapsed", false],
+      ["open", true],
+    ])(
+      "moves to the replacing button when a %s list is toggled",
+      async (_, expand) => {
+        signInWithSavedFilters({ expand });
+        const listing = await mountLibraryPage(
+          { allowCollapse: true },
+          toolbarWithButtons,
+        );
+        const pressed = expandButton(listing);
+        (pressed.element as HTMLElement).focus();
+
+        await pressed.trigger("click");
+        await flushPromises();
+
+        const replacement = expandButton(listing).element;
+        expect(replacement).not.toBe(pressed.element);
+        expect(document.activeElement).toBe(replacement);
+      },
+    );
   });
 
   it("keeps an edit that is still being saved when an earlier save lands", async () => {

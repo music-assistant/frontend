@@ -70,6 +70,8 @@
           :itemtype="rowId"
           :load-paged-data="genreListingLoaders[rowId]"
           :sort-listing="genreListingSorts[rowId]"
+          library-toolbar
+          :show-count="false"
           :allow-collapse="true"
           :show-favorites-only-filter="true"
           :show-track-number="rowId !== 'tracks'"
