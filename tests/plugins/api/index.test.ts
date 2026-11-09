@@ -595,7 +595,11 @@ describe("MusicAssistantApi error handling", () => {
     });
     await expect(appearsOnRequest).resolves.toBe(7);
 
-    const discographyRequest = api.getArtistDiscographyCount("artist-1");
+    const discographyRequest = api.getArtistDiscographyCount(
+      "artist-1",
+      undefined,
+      [AlbumType.ALBUM, AlbumType.LIVE],
+    );
     expect(transport.lastCommand.command).toBe(
       "music/artists/discography_count",
     );
@@ -603,6 +607,7 @@ describe("MusicAssistantApi error handling", () => {
       item_id: "artist-1",
       provider_instance_id_or_domain: "library",
       search: undefined,
+      album_types: [AlbumType.ALBUM, AlbumType.LIVE],
     });
     transport.receive({
       message_id: transport.lastCommand.message_id!,
@@ -1251,6 +1256,24 @@ describe("MusicAssistantApi error handling", () => {
     expect(transport.lastCommand.args).toEqual({
       item_id: "artist-1",
       provider_instance_id_or_domain: "library",
+    });
+  });
+
+  it("asks for the discography releases of the given types", () => {
+    api.getArtistDiscography(
+      "artist-1",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      [AlbumType.ALBUM, AlbumType.LIVE],
+    );
+
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      album_types: [AlbumType.ALBUM, AlbumType.LIVE],
     });
   });
 

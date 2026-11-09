@@ -6,6 +6,7 @@ const { apiMock } = vi.hoisted(() => ({
     getArtistAlbumsCount: vi.fn().mockResolvedValue(0),
     getArtistAppearsOn: vi.fn().mockResolvedValue([]),
     getArtistDiscography: vi.fn().mockResolvedValue([]),
+    getArtistDiscographyCount: vi.fn().mockResolvedValue(123),
     getArtistTracks: vi.fn().mockResolvedValue([]),
     getArtistTopTracks: vi.fn().mockResolvedValue([]),
     getSimilarArtists: vi.fn().mockResolvedValue([]),
@@ -26,6 +27,7 @@ import {
   isSingleOrEp,
   loadArtistAppearsOn,
   loadArtistDiscography,
+  loadArtistDiscographyCount,
   loadArtistReleases,
   loadArtistTopTracks,
   loadArtistTracks,
@@ -72,6 +74,19 @@ function albumMapping(overrides: Partial<ItemMapping> = {}): ItemMapping {
 }
 
 describe("artistData", () => {
+  it("counts only the discography row's selected types", async () => {
+    await expect(
+      loadArtistDiscographyCount(LIBRARY_ARTIST, [
+        AlbumType.ALBUM,
+        AlbumType.LIVE,
+      ]),
+    ).resolves.toBe(123);
+    expect(apiMock.getArtistDiscographyCount).toHaveBeenLastCalledWith(
+      "1",
+      undefined,
+      [AlbumType.ALBUM, AlbumType.LIVE],
+    );
+  });
   beforeEach(() => {
     apiMock.getArtistAlbums.mockClear();
     apiMock.getArtistTopTracks.mockClear();
@@ -181,9 +196,10 @@ describe("artistData", () => {
         undefined,
         undefined,
         undefined,
+        undefined,
       );
 
-      await loadArtistDiscography(LIBRARY_ARTIST, "live", 20, 40);
+      await loadArtistDiscography(LIBRARY_ARTIST, undefined, "live", 20, 40);
       expect(apiMock.getArtistDiscography).toHaveBeenLastCalledWith(
         "1",
         "live",
@@ -191,6 +207,23 @@ describe("artistData", () => {
         40,
         undefined,
         undefined,
+        undefined,
+      );
+    });
+
+    it("asks for the given release types only", async () => {
+      await loadArtistDiscography(LIBRARY_ARTIST, [
+        AlbumType.ALBUM,
+        AlbumType.LIVE,
+      ]);
+      expect(apiMock.getArtistDiscography).toHaveBeenLastCalledWith(
+        "1",
+        undefined,
+        0,
+        undefined,
+        undefined,
+        undefined,
+        [AlbumType.ALBUM, AlbumType.LIVE],
       );
     });
   });

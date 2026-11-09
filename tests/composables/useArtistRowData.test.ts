@@ -2,6 +2,7 @@ import {
   ARTIST_ROW_SOURCES_PREFERENCE_KEY,
   type ArtistRowId,
 } from "@/components/artist/artistRows";
+import { DISCOGRAPHY_TYPES_PREFERENCE_KEY } from "@/components/artist/discographyRows";
 import type { RowSource } from "@/components/details/rowRegistry";
 import { useArtistRowData } from "@/composables/useArtistRowData";
 import {
@@ -53,8 +54,12 @@ const {
   mockArtistAlbumsCountBySource: vi.fn(),
   mockLoadArtistAppearsOn: vi.fn<(artist: Artist) => Promise<Album[]>>(),
   mockLoadArtistAppearsOnCount: vi.fn<(artist: Artist) => Promise<number>>(),
-  mockLoadArtistDiscography: vi.fn<(artist: Artist) => Promise<Album[]>>(),
-  mockLoadArtistDiscographyCount: vi.fn<(artist: Artist) => Promise<number>>(),
+  mockLoadArtistDiscography:
+    vi.fn<
+      typeof import("@/components/artist/artistData").loadArtistDiscography
+    >(),
+  mockLoadArtistDiscographyCount:
+    vi.fn<(artist: Artist, albumTypes?: AlbumType[]) => Promise<number>>(),
   mockLoadArtistTracks: vi.fn<(artist: Artist) => Promise<Track[]>>(),
   mockLoadArtistTracksCount: vi.fn<(artist: Artist) => Promise<number>>(),
   mockLoadArtistTopTracks:
@@ -128,6 +133,11 @@ function saveRowSources(sources: Partial<Record<ArtistRowId, RowSource>>) {
 /** The source of every release request that was issued, in order. */
 function releaseSources(): RowSource[] {
   return mockLoadArtistReleases.mock.calls.map(([, source]) => source);
+}
+
+/** The release types of every discography request that was issued, in order. */
+function discographyTypeRequests(): Array<AlbumType[] | undefined> {
+  return mockLoadArtistDiscography.mock.calls.map(([, types]) => types);
 }
 
 function itemIds(items?: Array<{ item_id: string }>): string[] | undefined {
@@ -671,6 +681,93 @@ describe("useArtistRowData", () => {
     await flushPromises();
 
     expect(itemIds(page.discographyItems.value)).toEqual(["release-2"]);
+  });
+
+  it("requests each discography row's own release types", async () => {
+    const page = setupRowData({ rows: ["discography", "discography_second"] });
+    mockLoadArtistDiscography.mockImplementation(async (_artist, types) => [
+      album({ item_id: types!.join(",") }),
+    ]);
+    mockLoadArtistDiscographyCount.mockImplementation(async (_artist, types) =>
+      types?.includes(AlbumType.LIVE) ? 17 : 123,
+    );
+
+    await showArtist(page, libraryArtist());
+
+    expect(discographyTypeRequests()).toEqual([
+      [AlbumType.ALBUM],
+      [AlbumType.LIVE],
+    ]);
+    expect(itemIds(page.discographyItems.value)).toEqual(["album"]);
+    expect(itemIds(page.discographySecondItems.value)).toEqual(["live"]);
+    expect(page.discographyCount.value).toBe(123);
+    expect(page.discographySecondCount.value).toBe(17);
+    expect(
+      mockLoadArtistDiscographyCount.mock.calls.map(([, types]) => types),
+    ).toEqual([[AlbumType.ALBUM], [AlbumType.LIVE]]);
+    for (const [
+      ,
+      types,
+      search,
+      limit,
+      offset,
+      sortField,
+      sortDirection,
+    ] of mockLoadArtistDiscography.mock.calls) {
+      expect(types).toBeDefined();
+      expect(search).toBeUndefined();
+      expect(limit).toBe(50);
+      expect(offset).toBeUndefined();
+      expect(sortField).toBe(SortField.RELEASE_DATE);
+      expect(sortDirection).toBe(SortDirection.DESC);
+    }
+  });
+
+  it("shares one request between discography rows showing the same types", async () => {
+    store.currentUser = user({
+      preferences: {
+        [DISCOGRAPHY_TYPES_PREFERENCE_KEY]: {
+          discography_second: [AlbumType.ALBUM],
+        },
+      },
+    });
+    const page = setupRowData({ rows: ["discography", "discography_second"] });
+
+    await showArtist(page, libraryArtist());
+
+    expect(discographyTypeRequests()).toEqual([[AlbumType.ALBUM]]);
+    expect(mockLoadArtistDiscographyCount).toHaveBeenCalledTimes(1);
+  });
+
+  it("requests a discography row again when its types change", async () => {
+    const page = setupRowData({ rows: ["discography"] });
+    mockLoadArtistDiscographyCount.mockResolvedValueOnce(123);
+    await showArtist(page, libraryArtist());
+    let resolveCount!: (count: number) => void;
+    mockLoadArtistDiscographyCount.mockImplementationOnce(
+      () =>
+        new Promise<number>((resolve) => {
+          resolveCount = resolve;
+        }),
+    );
+
+    store.currentUser = user({
+      preferences: {
+        [DISCOGRAPHY_TYPES_PREFERENCE_KEY]: {
+          discography: [AlbumType.ALBUM, AlbumType.EP],
+        },
+      },
+    });
+    await flushPromises();
+    expect(page.discographyCount.value).toBeUndefined();
+    resolveCount(145);
+    await flushPromises();
+    expect(page.discographyCount.value).toBe(145);
+
+    expect(discographyTypeRequests()).toEqual([
+      [AlbumType.ALBUM],
+      [AlbumType.ALBUM, AlbumType.EP],
+    ]);
   });
 
   it("requests nothing for the rows of an audiobook artist", async () => {
