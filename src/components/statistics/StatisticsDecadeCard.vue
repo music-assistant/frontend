@@ -6,6 +6,12 @@
     :empty="!topDecade"
     :empty-text="$t('statistics_decade_empty')"
   >
+    <template #title-info>
+      <StatisticsLibraryInfo
+        :statistic="$t('statistics_release_years')"
+        :explanation="$t('statistics_library_based_decades')"
+      />
+    </template>
     <span class="text-[22px] font-bold">
       {{ $t("statistics_mostly_decade", { decade: topDecade?.name ?? "" }) }}
     </span>
@@ -41,6 +47,7 @@
 
 <script setup lang="ts">
 import StatisticsCard from "@/components/statistics/StatisticsCard.vue";
+import StatisticsLibraryInfo from "@/components/statistics/StatisticsLibraryInfo.vue";
 import {
   ChartContainer,
   ChartCrosshair,

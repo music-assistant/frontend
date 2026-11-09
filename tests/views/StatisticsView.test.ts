@@ -1,5 +1,7 @@
 import StatisticsPeriodSelect from "@/components/statistics/StatisticsPeriodSelect.vue";
+import StatisticsLibraryInfo from "@/components/statistics/StatisticsLibraryInfo.vue";
 import StatisticsUserSelect from "@/components/statistics/StatisticsUserSelect.vue";
+import { Tabs } from "@/components/ui/tabs";
 import type {
   StatisticsData,
   StatisticsSection,
@@ -148,6 +150,72 @@ function mountView(users: StatisticsUsers = {}) {
 }
 
 describe("StatisticsView", () => {
+  it.each([
+    { loading: false, failed: new Set<StatisticsSection>() },
+    {
+      loading: false,
+      failed: new Set<StatisticsSection>([
+        "genreDistribution",
+        "decadeDistribution",
+        "listeningTime",
+      ]),
+    },
+    { loading: true, failed: new Set<StatisticsSection>() },
+  ])(
+    "labels only library-dependent cards, including empty, failed and loading states ($loading)",
+    async ({ loading, failed }) => {
+      statistics.loading.value = loading;
+      statistics.failed.value = failed;
+      const wrapper = mountView();
+
+      const explanations = () =>
+        wrapper.findAllComponents(StatisticsLibraryInfo).map((badge) => ({
+          statistic: badge.props("statistic"),
+          explanation: badge.props("explanation"),
+        }));
+      const baseExplanations = [
+        {
+          statistic: "Top genre",
+          explanation:
+            "Includes plays linked to library tracks with genre information. Other plays may be missing.",
+        },
+        {
+          statistic: "Release years",
+          explanation:
+            "Includes plays linked to library tracks with an album release year. Other plays may be missing.",
+        },
+        {
+          statistic: "Top artists by listening time",
+          explanation:
+            "Calculated from completed plays linked to library tracks with a known duration. Other plays may be missing.",
+        },
+      ];
+      expect(explanations()).toEqual(baseExplanations);
+
+      const tabs = wrapper.getComponent(Tabs);
+      tabs.vm.$emit("update:modelValue", MediaType.ALBUM);
+      await flushPromises();
+      expect(explanations()).toEqual([
+        ...baseExplanations,
+        {
+          statistic: "Top albums",
+          explanation:
+            "Includes plays linked to library tracks with album information. Other plays may be missing.",
+        },
+      ]);
+
+      for (const mediaType of [
+        MediaType.ARTIST,
+        MediaType.PLAYLIST,
+        MediaType.TRACK,
+      ]) {
+        tabs.vm.$emit("update:modelValue", mediaType);
+        await flushPromises();
+        expect(explanations()).toEqual(baseExplanations);
+      }
+    },
+  );
+
   it("loads every section for the period from the route", () => {
     mountView();
 

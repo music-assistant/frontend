@@ -13,15 +13,18 @@
       class="flex flex-wrap items-end justify-between gap-2"
     >
       <div class="flex min-w-0 flex-col gap-1">
-        <h2
-          :class="
-            prominent
-              ? 'm-0 text-base font-semibold'
-              : 'm-0 text-[13px] font-normal text-muted-foreground'
-          "
-        >
-          {{ title }}
-        </h2>
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <h2
+            :class="
+              prominent
+                ? 'm-0 text-base font-semibold'
+                : 'm-0 text-[13px] font-normal text-muted-foreground'
+            "
+          >
+            {{ title }}
+          </h2>
+          <slot name="title-info"></slot>
+        </div>
         <p v-if="subtitle" class="m-0 text-[13px] text-muted-foreground">
           {{ subtitle }}
         </p>

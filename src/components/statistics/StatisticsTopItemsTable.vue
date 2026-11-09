@@ -8,6 +8,13 @@
     min-height-class="min-h-[240px]"
     class="gap-3 px-6 py-5"
   >
+    <template #title-info>
+      <StatisticsLibraryInfo
+        v-if="activeTab === MediaType.ALBUM"
+        :statistic="$t('statistics_top_albums')"
+        :explanation="$t('statistics_library_based_albums')"
+      />
+    </template>
     <template #header>
       <Tabs v-model="activeTab" class="max-w-full min-w-0">
         <TabsList
@@ -92,6 +99,7 @@
 <script setup lang="ts">
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import StatisticsCard from "@/components/statistics/StatisticsCard.vue";
+import StatisticsLibraryInfo from "@/components/statistics/StatisticsLibraryInfo.vue";
 import {
   Table,
   TableBody,
