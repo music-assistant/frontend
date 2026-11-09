@@ -718,8 +718,8 @@ describe("useArtistRowData", () => {
       expect(search).toBeUndefined();
       expect(limit).toBe(50);
       expect(offset).toBeUndefined();
-      expect(sortField).toBe(SortField.RELEASE_DATE);
-      expect(sortDirection).toBe(SortDirection.DESC);
+      expect(sortField).toBeUndefined();
+      expect(sortDirection).toBeUndefined();
     }
   });
 

@@ -31,7 +31,7 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { computed, onScopeDispose, ref, watch, type Ref } from "vue";
+import { computed, ref, watch, type Ref } from "vue";
 
 const ARTIST_SHELF_LIMIT = 50;
 
@@ -47,11 +47,6 @@ export function useArtistRowData(
   artist: Ref<Artist | undefined>,
   visibleRows: Ref<ArtistRowId[]>,
 ) {
-  let disposed = false;
-  onScopeDispose(() => {
-    disposed = true;
-  });
-
   // Row data per source: two rows fed by the same source share one request and
   // a source change in the editor loads the new one. Absent = still loading.
   const albumReleases = ref(new Map<RowSource, Album[]>());
@@ -221,9 +216,22 @@ export function useArtistRowData(
     () => loadRowData(),
   );
 
+  watch(
+    [
+      visibleRows,
+      topTracksSource,
+      () => sourceItems(topTracks.value, topTracksSource.value),
+    ],
+    ([rows, , tracks]) => {
+      if (rows.includes("top_tracks") && tracks?.length === 0) {
+        fetchArtistTracks();
+      }
+    },
+  );
+
   /** Request what the visible rows need, skipping what is already on its way. */
   function loadRowData() {
-    if (disposed || !artist.value) return;
+    if (!artist.value) return;
     const rows = visibleRows.value;
     if (rows.includes("albums")) {
       fetchReleases("albums", albumsSource.value!);
@@ -247,14 +255,7 @@ export function useArtistRowData(
     }
     if (rows.includes("top_tracks")) {
       fetchArtistTracksCount();
-      const source = topTracksSource.value!;
-      fetchTopTracks(source);
-      if (
-        topTracks.value.get(source)?.length === 0 &&
-        artistTracks.value === undefined
-      ) {
-        fetchArtistTracks();
-      }
+      fetchTopTracks(topTracksSource.value!);
     }
     if (rows.includes("similar_artists")) {
       fetchSimilarArtists(similarArtistsSource.value!);
@@ -297,29 +298,7 @@ export function useArtistRowData(
       "top_tracks",
       source,
       topTracks.value,
-      async (requestedArtist, rowSource) => {
-        const requestArtistIdentity = mappingsIdentity(requestedArtist);
-        const requestIsCurrent = () => {
-          const currentArtist = artist.value;
-          return (
-            !disposed &&
-            !!currentArtist &&
-            mappingsIdentity(currentArtist) === requestArtistIdentity &&
-            visibleRows.value.includes("top_tracks") &&
-            topTracksSource.value === rowSource
-          );
-        };
-        try {
-          const tracks = await loadArtistTopTracks(requestedArtist, rowSource);
-          if (tracks.length === 0 && requestIsCurrent()) {
-            await fetchArtistTracks();
-          }
-          return tracks;
-        } catch (error) {
-          if (requestIsCurrent()) await fetchArtistTracks();
-          throw error;
-        }
-      },
+      loadArtistTopTracks,
     );
   }
 
@@ -347,15 +326,7 @@ export function useArtistRowData(
     return fetchOnce(
       `discography:${key}`,
       (artist) =>
-        loadArtistDiscography(
-          artist,
-          types,
-          undefined,
-          ARTIST_SHELF_LIMIT,
-          undefined,
-          SortField.RELEASE_DATE,
-          SortDirection.DESC,
-        ),
+        loadArtistDiscography(artist, types, undefined, ARTIST_SHELF_LIMIT),
       (items) => discography.value.set(key, items),
     );
   }
