@@ -6,6 +6,7 @@
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
+    :load-letter-index="loadLetterIndex"
     :sort-listing="ListingType.LIBRARY_ALBUMS"
     library-toolbar
     :update-available="updateAvailable"
@@ -81,6 +82,18 @@ const loadItems = async function (params: LoadDataParams) {
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
     params.randomSeed,
+  );
+};
+
+const loadLetterIndex = function (params: LoadDataParams) {
+  return api.getLibraryAlbumsLetterIndex(
+    params.favoritesOnly || undefined,
+    params.search,
+    params.sortField,
+    params.sortDirection,
+    params.albumType,
+    params.provider && params.provider.length > 0 ? params.provider : undefined,
+    params.genreIds,
   );
 };
 

@@ -55,6 +55,7 @@ import {
   type SetupFlowStep,
   type SuccessResultMessage,
   type TaskSchedule,
+  type LetterIndexEntry,
   type Track,
   type SortOptionInfo,
   type User,
@@ -676,6 +677,83 @@ export class MusicAssistantApi {
     favorite_only: boolean = false,
   ): Promise<number> {
     return this.sendCommand("music/tracks/count", { favorite_only });
+  }
+
+  /**
+   * The first row of each letter in the library artists sorted by name, for
+   * the same filters as getLibraryArtists. Empty for any other sort or a search.
+   */
+  public getLibraryArtistsLetterIndex(
+    favorite?: boolean,
+    search?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    album_artists_only?: boolean,
+    provider?: string | string[],
+    genre?: number | number[],
+    artist_type?: ArtistType,
+  ): Promise<LetterIndexEntry[]> {
+    return this.sendCommand(
+      "music/artists/letter_index",
+      {
+        favorite,
+        search,
+        sort_field,
+        sort_direction,
+        album_artists_only,
+        provider,
+        genre,
+        artist_type,
+      },
+      { suppressGlobalError: true },
+    );
+  }
+
+  /**
+   * The first row of each letter in the library albums sorted by name, for
+   * the same filters as getLibraryAlbums. Empty for any other sort or a search.
+   */
+  public getLibraryAlbumsLetterIndex(
+    favorite?: boolean,
+    search?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    album_types?: Array<AlbumType | string>,
+    provider?: string | string[],
+    genre?: number | number[],
+  ): Promise<LetterIndexEntry[]> {
+    return this.sendCommand(
+      "music/albums/letter_index",
+      {
+        favorite,
+        search,
+        sort_field,
+        sort_direction,
+        album_types,
+        provider,
+        genre,
+      },
+      { suppressGlobalError: true },
+    );
+  }
+
+  /**
+   * The first row of each letter in the library tracks sorted by name, for
+   * the same filters as getLibraryTracks. Empty for any other sort or a search.
+   */
+  public getLibraryTracksLetterIndex(
+    favorite?: boolean,
+    search?: string,
+    sort_field?: SortField,
+    sort_direction?: SortDirection,
+    provider?: string | string[],
+    genre?: number | number[],
+  ): Promise<LetterIndexEntry[]> {
+    return this.sendCommand(
+      "music/tracks/letter_index",
+      { favorite, search, sort_field, sort_direction, provider, genre },
+      { suppressGlobalError: true },
+    );
   }
 
   public getSortOptions(listing: ListingType): Promise<SortOptionInfo[]> {

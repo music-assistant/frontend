@@ -8,6 +8,7 @@
     :show-favorites-only-filter="true"
     :show-track-number="false"
     :load-paged-data="loadItems"
+    :load-letter-index="loadLetterIndex"
     :sort-listing="ListingType.LIBRARY_TRACKS"
     library-toolbar
     :show-album="true"
@@ -111,6 +112,17 @@ const loadItems = async function (params: LoadDataParams) {
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
     params.randomSeed,
+  );
+};
+
+const loadLetterIndex = function (params: LoadDataParams) {
+  return api.getLibraryTracksLetterIndex(
+    params.favoritesOnly || undefined,
+    params.search,
+    params.sortField,
+    params.sortDirection,
+    params.provider && params.provider.length > 0 ? params.provider : undefined,
+    params.genreIds,
   );
 };
 

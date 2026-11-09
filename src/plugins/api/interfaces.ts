@@ -265,6 +265,13 @@ export interface SortOptionInfo {
   label_key: string | null;
 }
 
+// where a letter starts in a library listing sorted by name: the letter ("#"
+// for numbers and symbols) and the row of its first item in the listing order
+export interface LetterIndexEntry {
+  letter: string;
+  offset: number;
+}
+
 export enum LinkType {
   WEBSITE = "website",
   FACEBOOK = "facebook",
