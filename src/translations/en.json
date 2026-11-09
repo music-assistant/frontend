@@ -1194,6 +1194,11 @@
         "remove_message_this_device": "Playback is active on this device. Removing it from the group will move the playback session to the remaining players.",
         "power_off_message_this_device": "Playback is active on this device. Powering it off will move the playback session to the remaining players."
     },
+    "stream_held": {
+        "title": "Play here instead?",
+        "message": "{0} is already playing on {1}. It can only play on one player at a time.",
+        "stop_and_play_here": "Stop there and play here"
+    },
     "powered_off_players": "Unpowered players",
     "sync_player_with": "Synchronize with another player",
     "select_repeat_mode": "Select repeat mode",
@@ -2618,6 +2623,17 @@
     "appears_on_hint": "Credited on a track, not as the album artist",
     "discography": "Discography",
     "discography_hint": "From MusicBrainz",
+    "discography_first_row": "Discography (first row)",
+    "discography_second_row": "Discography (second row)",
+    "discography_types_summary": "{first} +{count}",
+    "album_type_plural": {
+        "album": "Albums",
+        "single": "Singles",
+        "ep": "EPs",
+        "compilation": "Compilations",
+        "live": "Live",
+        "soundtrack": "Soundtracks"
+    },
     "not_in_library": "Not in your library",
     "find_on_music_services": "Find on your music services",
     "edit_rows": "Edit rows",

@@ -1,7 +1,11 @@
-import { setUserPreference } from "@/composables/userPreferences";
+import {
+  setUserPreference,
+  setUserPreferences,
+} from "@/composables/userPreferences";
 import {
   readRowsConfig,
   resolveRowsConfig,
+  storedRowsConfig,
   withRowHidden,
   withRowsOrder,
   writeRowsConfig,
@@ -21,6 +25,8 @@ export interface RowDefinition<Id extends string> {
   adminOnly?: boolean;
   // gets a "Source" picker in Edit rows
   supportsSource?: boolean;
+  // hidden while this other row is, until the user shows or hides this one
+  hiddenWith?: Id;
 }
 
 export interface RowRegistryConfig<Id extends string, Item> {
@@ -30,6 +36,9 @@ export interface RowRegistryConfig<Id extends string, Item> {
   // the user preference holding the per-row sources, e.g. "artist.rowSources";
   // absent when no row has a source picker
   sourcesPreferenceKey?: string;
+  // other user preferences the page keeps for its rows, e.g. per-row settings;
+  // reset clears them too
+  extraPreferenceKeys?: readonly string[];
   // the sources a row of this item could be fed from, in the order a picker lists them;
   // [] when the item leaves no choice (default: () => [])
   sourceCandidates?: (id: Id, item: Item) => RowSource[];
@@ -55,7 +64,7 @@ export interface RowRegistry<Id extends string, Item> {
    * don't apply to this item keep their slots.
    */
   setOrder(orderedIds: Id[], availableIds: Id[]): Promise<void>;
-  /** Clears both preferences (order/visibility and sources). */
+  /** Clears every preference of the rows: order/visibility, sources and the extra ones. */
   reset(): Promise<void>;
   /** The user's saved source for a row, if any. */
   getSource(id: Id): RowSource | undefined;
@@ -76,7 +85,12 @@ export interface RowRegistry<Id extends string, Item> {
 export function createRowRegistry<Id extends string, Item>(
   config: RowRegistryConfig<Id, Item>,
 ): RowRegistry<Id, Item> {
-  const { rows, preferenceKey, sourcesPreferenceKey } = config;
+  const {
+    rows,
+    preferenceKey,
+    sourcesPreferenceKey,
+    extraPreferenceKeys = [],
+  } = config;
   const sourceCandidates = config.sourceCandidates ?? (() => []);
   const defaultSource =
     config.defaultSource ??
@@ -105,9 +119,14 @@ export function createRowRegistry<Id extends string, Item>(
     sourcesPreferenceKey,
     definition: (id) => byId[id],
     resolve(availableIds) {
+      const cfg = readRowsConfig(preferenceKey);
+      const followingHidden = rows
+        .filter((row) => row.hiddenWith && cfg.hidden?.includes(row.hiddenWith))
+        .map((row) => row.id);
       const { order, hidden } = resolveRowsConfig(
-        readRowsConfig(preferenceKey),
+        cfg,
         availableIds,
+        followingHidden,
       );
       return { order: order as Id[], hidden: hidden as Set<Id> };
     },
@@ -127,9 +146,12 @@ export function createRowRegistry<Id extends string, Item>(
       await writeRowsConfig(preferenceKey, cfg);
     },
     async reset() {
-      await writeRowsConfig(preferenceKey, {});
-      if (sourcesPreferenceKey)
-        await setUserPreference(sourcesPreferenceKey, {});
+      const cleared: Record<string, unknown> = {
+        [preferenceKey]: storedRowsConfig({}),
+      };
+      if (sourcesPreferenceKey) cleared[sourcesPreferenceKey] = {};
+      for (const key of extraPreferenceKeys) cleared[key] = null;
+      await setUserPreferences(cleared);
     },
     getSource,
     async setSource(id, source) {

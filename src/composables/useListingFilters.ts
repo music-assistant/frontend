@@ -48,6 +48,8 @@ interface ListingFilterFlags {
   showHideEmptyFilter?: boolean;
   showGenreFilter?: boolean;
   showAlbumTypeFilter?: boolean;
+  // the album types the album type filter offers (default: every type)
+  albumTypeFilterOptions?: string[];
 }
 
 interface ListingFilterState {
@@ -195,10 +197,12 @@ export function useListingFilters(
         label: t("listing_filters.album_type"),
         placeholder: t("listing_filters.any_album_type"),
         layout: "dropdown",
-        options: ALBUM_TYPE_FILTER_KEYS.map((key) => ({
-          label: t(`album_type.${key}`),
-          value: key,
-        })),
+        options: (flags.albumTypeFilterOptions ?? ALBUM_TYPE_FILTER_KEYS).map(
+          (key) => ({
+            label: t(`album_type.${key}`),
+            value: key,
+          }),
+        ),
         selected: params.albumType ?? [],
         toggle: actions.toggleAlbumType,
         set: actions.setAlbumTypes,

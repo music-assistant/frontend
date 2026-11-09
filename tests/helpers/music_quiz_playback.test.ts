@@ -1,5 +1,6 @@
 import type { MusicQuizPlaybackOptions } from "@/composables/music-quiz/useMusicQuiz";
 import {
+  orderMusicQuizVenuePlayers,
   reconcileMusicQuizPlaybackSelection,
   type MusicQuizPlaybackSelection,
 } from "@/helpers/music_quiz_playback";
@@ -83,6 +84,24 @@ describe("reconcileMusicQuizPlaybackSelection", () => {
     };
 
     expect(reconcile(selection)).toBe(selection);
+  });
+});
+
+describe("orderMusicQuizVenuePlayers", () => {
+  const players = PLAYBACK_OPTIONS.venue_players;
+
+  it("lists this device first and keeps the others in order", () => {
+    expect(
+      orderMusicQuizVenuePlayers(
+        [...players, { player_id: "laptop", name: "Laptop" }],
+        "laptop",
+      ).map((player) => player.player_id),
+    ).toEqual(["laptop", "living-room", "kitchen"]);
+  });
+
+  it("keeps the order when this device is not a venue player", () => {
+    expect(orderMusicQuizVenuePlayers(players, "laptop")).toBe(players);
+    expect(orderMusicQuizVenuePlayers(players, null)).toBe(players);
   });
 });
 
