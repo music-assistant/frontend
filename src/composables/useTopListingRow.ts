@@ -3,6 +3,7 @@ import {
   useEventListener,
   useRafFn,
   useResizeObserver,
+  useTimeoutFn,
 } from "@vueuse/core";
 import { ref, shallowRef, type MaybeRefOrGetter, toValue, watch } from "vue";
 
@@ -11,6 +12,8 @@ import { ref, shallowRef, type MaybeRefOrGetter, toValue, watch } from "vue";
 // case the first point falls in a gap between rows
 const SAMPLE_X = 40;
 const SAMPLE_YS = [60, 90, 120];
+// how soon to look again while something covers the list
+const COVERED_RETRY_MS = 250;
 
 /**
  * The loaded index (data-listing-index) of the row at the top of the visible
@@ -31,19 +34,32 @@ export function useTopListingRow(
 
   function measure() {
     const el = scrollerEl.value;
-    if (!el) return;
+    const rows = toValue(content);
+    if (!el || !rows) return;
     const rect = el.getBoundingClientRect();
     let index: number | undefined;
     for (const y of SAMPLE_YS) {
-      const hit = document
-        .elementFromPoint(rect.left + SAMPLE_X, rect.top + y)
-        ?.closest<HTMLElement>("[data-listing-index]");
+      const under = document.elementFromPoint(
+        rect.left + SAMPLE_X,
+        rect.top + y,
+      );
+      // something over the list, such as a menu backdrop, hides what is there:
+      // the last row seen stays, and the list is looked at again once it shows
+      if (under && !rows.contains(under)) {
+        retryWhenUncovered.start();
+        return;
+      }
+      const hit = under?.closest<HTMLElement>("[data-listing-index]");
       if (!hit) continue;
       index = Number(hit.dataset.listingIndex);
       break;
     }
     topIndex.value = Number.isFinite(index) ? index : undefined;
   }
+
+  const retryWhenUncovered = useTimeoutFn(() => resume(), COVERED_RETRY_MS, {
+    immediate: false,
+  });
 
   // one measurement per frame, however many scroll events arrive
   const { resume, pause } = useRafFn(

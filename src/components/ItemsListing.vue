@@ -453,6 +453,7 @@
 
       <AlphabetIndexBar
         v-if="showLetterBar"
+        ref="letterBar"
         :letters="indexLetters"
         :current="currentLetter"
         :jump="jumpToLetter"
@@ -1104,21 +1105,29 @@ const rowElement = function (index: number) {
 // its items may share the top grid row with the next letter's, or sit too
 // near the end of the list to reach the top
 const { topIndex } = useTopListingRow(scroller, listContainer, showLetterBar);
+const letterBar =
+  useTemplateRef<InstanceType<typeof AlphabetIndexBar>>("letterBar");
 const jumpedRow = ref<number>();
-const jumpedRowOnScreen = function (jumped: number, topRow: number) {
-  if (jumped < topRow) return false;
+// a new index comes with a new order, in which the row means something else
+watch(letterEntries, () => {
+  jumpedRow.value = undefined;
+});
+// the bar spans the part of the scroller not under the bars at the bottom
+const jumpedRowOnScreen = function (jumped: number) {
   const el = rowElement(jumped - baseOffset.value);
-  const bottom = scroller()?.getBoundingClientRect().bottom;
-  return (
-    !!el && bottom !== undefined && el.getBoundingClientRect().top < bottom
-  );
+  const area = scroller()?.getBoundingClientRect();
+  const bar = letterBar.value?.$el as HTMLElement | undefined;
+  if (!el || !area) return false;
+  const bottom = bar?.getBoundingClientRect().bottom ?? area.bottom;
+  const rect = el.getBoundingClientRect();
+  return rect.bottom > area.top && rect.top < bottom;
 };
 const currentLetter = computed(() => {
   if (topIndex.value === undefined) return null;
   const topRow = baseOffset.value + topIndex.value;
   const jumped = jumpedRow.value;
   const row =
-    jumped !== undefined && jumpedRowOnScreen(jumped, topRow) ? jumped : topRow;
+    jumped !== undefined && jumpedRowOnScreen(jumped) ? jumped : topRow;
   return letterAt(row) ?? null;
 });
 // changes to the library move the letters' rows

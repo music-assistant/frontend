@@ -79,15 +79,15 @@ const LETTER_BASE_CLASS =
   "flex min-h-0 w-full flex-[1_1_0] cursor-pointer items-center justify-center rounded-full border-none text-[length:min(0.75rem,var(--letter-size,0.75rem))] leading-none font-semibold";
 const LETTER_ACTIVE_CLASS = "bg-primary text-primary-foreground";
 
-// Exactly one background and colour class per state, since all utilities are
-// !important.
+// Exactly one colour class per state, since all utilities are !important; a
+// letter not active has no background class, as Vuetify's bg-transparent
+// would also force its text colour.
 const letterClass = function (letter: IndexLetter) {
   if (letter.label === shownLabel.value) {
     return [LETTER_BASE_CLASS, LETTER_ACTIVE_CLASS];
   }
   return [
     LETTER_BASE_CLASS,
-    "bg-transparent",
     letter.available ? "text-primary" : "text-muted-foreground/40",
   ];
 };

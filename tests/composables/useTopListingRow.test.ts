@@ -4,15 +4,17 @@ import { effectScope, ref, type EffectScope } from "vue";
 
 const scopes: EffectScope[] = [];
 
+const scroller = document.createElement("div");
+
 // the row under the sample point, as the browser would report it
 function rowAtTop(index: number | undefined) {
   const row = document.createElement("div");
   if (index !== undefined) row.dataset.listingIndex = String(index);
+  scroller.appendChild(row);
   document.elementFromPoint = vi.fn(() => (index === undefined ? null : row));
 }
 
 function setupTracker(enabled = ref(true)) {
-  const scroller = document.createElement("div");
   document.body.appendChild(scroller);
   const scope = effectScope();
   scopes.push(scope);
@@ -36,6 +38,7 @@ describe("useTopListingRow", () => {
     scopes.splice(0).forEach((scope) => scope.stop());
     vi.unstubAllGlobals();
     document.body.innerHTML = "";
+    scroller.innerHTML = "";
   });
 
   it("reports the row at the top once the list scrolls", async () => {
@@ -66,16 +69,37 @@ describe("useTopListingRow", () => {
   });
 
   it("looks further down when the first point falls between rows", async () => {
+    const gap = document.createElement("div");
     const row = document.createElement("div");
     row.dataset.listingIndex = "0";
+    scroller.append(gap, row);
     document.elementFromPoint = vi
       .fn()
-      .mockReturnValueOnce(document.body)
+      .mockReturnValueOnce(gap)
       .mockReturnValue(row);
     const { topIndex } = setupTracker();
     await frame();
 
     expect(topIndex.value).toBe(0);
+  });
+
+  it("keeps the last row while something covers the list", async () => {
+    rowAtTop(4);
+    const { scroller, topIndex } = setupTracker();
+    await frame();
+    const backdrop = document.createElement("div");
+    document.body.appendChild(backdrop);
+    document.elementFromPoint = vi.fn(() => backdrop);
+
+    scroller.dispatchEvent(new Event("scroll"));
+    await frame();
+    expect(topIndex.value).toBe(4);
+
+    // once uncovered, the list is looked at again without a scroll
+    rowAtTop(9);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    expect(topIndex.value).toBe(9);
   });
 
   it("forgets the row when tracking is turned off", async () => {
