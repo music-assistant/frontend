@@ -5,7 +5,6 @@ import {
   type ProviderMapping,
 } from "@/plugins/api/interfaces";
 
-// the media types that can have chapters
 export const isChapteredMediaType = (mediaType: MediaType | undefined) =>
   mediaType === MediaType.AUDIOBOOK || mediaType === MediaType.PODCAST_EPISODE;
 
@@ -14,7 +13,6 @@ export interface ChapterSegment {
   chapter?: MediaItemChapter;
   start: number;
   end: number;
-  // placement along the track as percentages
   startPercent: number;
   widthPercent: number;
 }
@@ -76,10 +74,7 @@ export function resolveCurrentChapter(
   return undefined;
 }
 
-/**
- * split the track into one segment per chapter, each running to the next
- * chapter's start so the segments cover the whole track without overlaps
- */
+/** one segment per chapter, each running to the next chapter's start */
 export function computeChapterSegments(
   chapters: MediaItemChapter[] | null | undefined,
   duration: number | null | undefined,
@@ -108,7 +103,6 @@ export function computeChapterSegments(
   }));
 }
 
-/** the segment holding a position in seconds */
 export function segmentAt(
   segments: ChapterSegment[],
   seconds: number,
@@ -146,7 +140,6 @@ export function groupBookmarksByChapter(
   chaptersFit = true,
 ): ChapterBookmarks[] {
   const ordered = [...bookmarks].sort((a, b) => a.start - b.start);
-  // in playing order, as the timeline shows them
   const orderedChapters = [...(chapters ?? [])].sort(
     (a, b) => a.start - b.start,
   );

@@ -15,22 +15,16 @@ defineOptions({
 });
 
 const props = withDefaults(
-  defineProps<
-    TooltipContentProps & {
-      class?: HTMLAttributes["class"];
-      hideArrow?: boolean;
-    }
-  >(),
+  defineProps<TooltipContentProps & { class?: HTMLAttributes["class"] }>(),
   {
     sideOffset: 4,
     class: undefined,
-    hideArrow: false,
   },
 );
 
 const emits = defineEmits<TooltipContentEmits>();
 
-const delegatedProps = reactiveOmit(props, "class", "hideArrow");
+const delegatedProps = reactiveOmit(props, "class");
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
 </script>
 
@@ -49,7 +43,6 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
       <slot></slot>
 
       <TooltipArrow
-        v-if="!hideArrow"
         class="bg-foreground fill-foreground z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]"
       />
     </TooltipContent>

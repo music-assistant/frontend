@@ -300,7 +300,6 @@
                     ></div>
                   </div>
                 </div>
-                <!-- the playing item's chapters, a window around the playing one -->
                 <QueueChapterList
                   v-if="
                     row.state === 'playing' &&
@@ -680,7 +679,6 @@ const playingChapterClicked = (target: Pick<MediaItemChapter, "start">) => {
   if (media) chapterClicked(media, target);
 };
 
-// the playing chapter for the chapter list, also without chapter progress
 const playingChapterPosition = computed(
   () =>
     resolveCurrentChapter(
@@ -1350,7 +1348,6 @@ const openQueueMenu = function (evt: Event) {
     selected: showWaveformPref.value,
     close_on_click: false,
   };
-  // the bar shows the playing chapter or the whole item
   const chapterProgressItem = {
     label: "settings.audiobook_chapter_progress.label",
     action: () => {
@@ -1540,7 +1537,6 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  /* a long chapter name truncates instead of widening the column */
   min-width: 0;
 }
 

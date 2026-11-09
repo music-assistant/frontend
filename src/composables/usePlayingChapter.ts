@@ -32,7 +32,6 @@ export function usePlayingChapter(
     ) {
       return false;
     }
-    // the player may play any copy of the item
     const uris = [
       current.uri,
       ...current.provider_mappings.map(

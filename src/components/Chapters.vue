@@ -38,7 +38,6 @@
             class="flex size-10 shrink-0 items-center justify-center rounded-md bg-[rgba(var(--v-theme-on-surface),0.08)] text-[13px] font-medium tabular-nums"
             :class="{ 'bg-primary/12 text-primary': isPlaying(row.chapter) }"
           >
-            <!-- the number turns into a play icon on hover -->
             <Play
               v-if="playable"
               :size="16"

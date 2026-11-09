@@ -24,17 +24,14 @@
           hoverPercent = null;
         "
       >
-        <!-- the hovered position and its chapter, above the pointer -->
         <TooltipProvider>
           <Tooltip :open="!!hoverLabel">
-            <!-- above the full screen dialog -->
             <TooltipContent
               v-if="hoverLabel"
               side="top"
               :side-offset="HOVER_LABEL_OFFSET_PX"
               :collision-padding="8"
               :reference="hoverLabel.reference"
-              hide-arrow
               class="pointer-events-none z-[100001] max-w-[320px] truncate text-nowrap"
               data-testid="timeline-hover-label"
             >
@@ -51,7 +48,6 @@
           class="relative grow rounded-full"
           :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
         >
-          <!-- one segment per chapter, filled as far as playback has reached -->
           <template v-if="!hasWaveform && chapterSegments.length">
             <div
               v-for="(segment, index) in chapterSegments"
@@ -137,8 +133,7 @@
             </Tooltip>
           </TooltipProvider>
         </SliderTrack>
-        <!-- drawn above the bookmarks but lets clicks through to them; a drag
-             starts from the track all the same -->
+        <!-- lets clicks through to the bookmarks below -->
         <SliderThumb
           data-slot="slider-thumb"
           :style="{ 'background-color': color }"
@@ -167,8 +162,6 @@
           {{ playerCurTimeStr }}
         </div>
 
-        <!-- switches between the playing chapter and the whole item; its tap
-             area reaches into the gap below and over the slider's edge -->
         <TooltipProvider v-if="chapterLabel" :delay-duration="400">
           <Tooltip>
             <TooltipTrigger as-child>
@@ -468,7 +461,6 @@ const playerTotalTimeStr = computed(() => {
   return formatDuration(duration);
 });
 
-// stays on the playing chapter while the track is dragged
 const playingChapterName = computed(() => {
   if (hidesRadioPosition.value) return undefined;
   return resolveCurrentChapter(
@@ -478,8 +470,6 @@ const playingChapterName = computed(() => {
   )?.chapter.name;
 });
 
-// with chapter progress the full screen player names the chapter under the
-// title, so this says where it is in the item instead
 const chapterLabel = computed(() => {
   const chapter = currentChapter.value;
   if (!chapter) return playingChapterName.value;
@@ -503,9 +493,8 @@ const toggleChapterProgress = () =>
 
 const displayedElapsedTime = computed(() => displayedTimelineTime.value);
 
-// space between two chapter segments
 const SEGMENT_GAP_PX = 2;
-// a segment gives up half a gap on each side only while it stays visible
+// tiny segments keep their full width instead of a gap
 const MIN_SEGMENT_WITH_GAP_PX = 3;
 const trackRef = ref<InstanceType<typeof SliderTrack>>();
 const { width: trackWidth } = useElementSize(trackRef);
@@ -543,8 +532,7 @@ const bookmarkTicks = computed(() => {
     .map((x) => ({
       ...x,
       percent: ((x.start - start) / duration) * 100,
-      // e.g. "35:25 · Chapter 3", for the marker's tooltip; counted like the
-      // track's own times, so from the chapter start with chapter progress
+      // e.g. "35:25 · Chapter 3", for the marker's tooltip
       details: [
         formatDuration(x.start - start),
         resolveCurrentChapter(chapters, x.start, mediaDuration)?.chapter.name,
@@ -583,13 +571,10 @@ const segmentFillPercent = (segment: ChapterSegment) =>
 // Hover position over a waveform or chapter segments, as 0-100 percent.
 const hoverPercent = ref<number | null>(null);
 
-// the slider moves focus to the thumb on a press of the track, which the browser
-// rings like keyboard focus; the ring is only kept for the keyboard
+// the focus ring is only for keyboard focus
 const pointerFocus = ref(false);
 
-// the hovered point on the track's center line, where the hover label points to
 const hoverPoint = ref<{ x: number; y: number }>();
-// clears the hovered segment, which grows to twice the track height
 const HOVER_LABEL_OFFSET_PX = 12;
 
 const onTrackPointerMove = (evt: PointerEvent) => {
@@ -614,9 +599,7 @@ const hoveredSegment = computed(() => {
   return segmentAt(chapterSegments.value, seconds);
 });
 
-// e.g. "30:49 · Postgres as a data platform", above the pointer
-// a bookmark's own tooltip already names its time and chapter; keyed by start,
-// as the next bookmark's tooltip can open before the previous one closes
+// keyed by start, as the next tooltip can open before the previous one closes
 const openBookmarkTooltip = ref<number | null>(null);
 const bookmarkTooltipToggled = (start: number, open: boolean) => {
   if (open) openBookmarkTooltip.value = start;
@@ -678,6 +661,7 @@ watch(
     clearPendingSeek();
     dragChapter.value = null;
     hoverPercent.value = null;
+    openBookmarkTooltip.value = null;
   },
 );
 

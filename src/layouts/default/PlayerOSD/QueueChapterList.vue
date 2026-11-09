@@ -18,7 +18,6 @@
         {{ formatDuration(position) }}
       </span>
     </button>
-    <!-- opens on the playing chapter, scrolled for the rest -->
     <div
       ref="scrollBox"
       class="flex min-h-0 flex-1 flex-col overflow-y-auto"
@@ -130,7 +129,6 @@ const activeStart = computed(
 const isPlayed = (chapter: MediaItemChapter) =>
   activeStart.value !== undefined && chapter.start < activeStart.value;
 
-// played chapters peeking above the playing one
 const ROWS_ABOVE_ACTIVE = 2;
 // the closed player keeps the list mounted, so reopening it scrolls back too
 useFollowActiveRow(
@@ -194,7 +192,7 @@ watch(
   );
 }
 
-/* like the playing row of the queue, readable on any artwork color */
+/* like the playing row of the queue */
 .queue-chapter--active {
   background: color-mix(
     in srgb,

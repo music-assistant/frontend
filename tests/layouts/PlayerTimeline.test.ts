@@ -230,41 +230,7 @@ describe("PlayerTimeline", () => {
   });
 
   it("seeks from a chapter-relative position to the absolute media position", async () => {
-    api.queues["q1"] = {
-      queue_id: "q1",
-      state: PlaybackState.PAUSED,
-      active: true,
-      current_item: {},
-    };
-    api.queueElapsedTime["q1"] = {
-      elapsed_time: 75,
-      elapsed_time_last_updated: NOW,
-    };
-    store.currentUser = {
-      preferences: { audiobook_chapter_progress: true },
-    };
-    store.curQueueItem = {
-      queue_item_id: "qi-1",
-      media_item: {
-        media_type: MediaType.AUDIOBOOK,
-        metadata: {
-          chapters: [
-            { position: 1, name: "First", start: 0, end: 60 },
-            { position: 2, name: "Second", start: 60, end: 120 },
-          ],
-        },
-      },
-    };
-    store.activePlayer = {
-      player_id: "p1",
-      active_source: "q1",
-      playback_state: PlaybackState.PAUSED,
-      current_media: {
-        duration: 120,
-        media_type: MediaType.AUDIOBOOK,
-        queue_item_id: "qi-1",
-      },
-    };
+    playTwoChapterBook(true, 75);
 
     mountTimeline({
       SliderRoot: {
@@ -277,30 +243,7 @@ describe("PlayerTimeline", () => {
   });
 
   it("splits the track into chapters and names the playing and hovered one", async () => {
-    store.currentUser = {
-      preferences: { audiobook_chapter_progress: false },
-    };
-    store.curQueueItem = {
-      queue_item_id: "qi-1",
-      media_item: {
-        media_type: MediaType.AUDIOBOOK,
-        metadata: {
-          chapters: [
-            { position: 1, name: "First", start: 0, end: 60 },
-            { position: 2, name: "Second", start: 60, end: 120 },
-          ],
-        },
-      },
-    };
-    store.activePlayer = {
-      player_id: "p1",
-      playback_state: PlaybackState.PAUSED,
-      current_media: {
-        duration: 120,
-        media_type: MediaType.AUDIOBOOK,
-        queue_item_id: "qi-1",
-      },
-    };
+    playTwoChapterBook(false, 0);
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
       new DOMRect(0, 0, 120, 8),
     );
@@ -330,41 +273,7 @@ describe("PlayerTimeline", () => {
   ])(
     "names the playing chapter and switches chapter progress from it, chapter progress %s",
     async (chapterProgress, label) => {
-      api.queues["q1"] = {
-        queue_id: "q1",
-        state: PlaybackState.PAUSED,
-        active: true,
-        current_item: {},
-      };
-      api.queueElapsedTime["q1"] = {
-        elapsed_time: 75,
-        elapsed_time_last_updated: NOW,
-      };
-      store.currentUser = {
-        preferences: { audiobook_chapter_progress: chapterProgress },
-      };
-      store.curQueueItem = {
-        queue_item_id: "qi-1",
-        media_item: {
-          media_type: MediaType.AUDIOBOOK,
-          metadata: {
-            chapters: [
-              { position: 1, name: "First", start: 0, end: 60 },
-              { position: 2, name: "Second", start: 60, end: 120 },
-            ],
-          },
-        },
-      };
-      store.activePlayer = {
-        player_id: "p1",
-        active_source: "q1",
-        playback_state: PlaybackState.PAUSED,
-        current_media: {
-          duration: 120,
-          media_type: MediaType.AUDIOBOOK,
-          queue_item_id: "qi-1",
-        },
-      };
+      playTwoChapterBook(chapterProgress, 75);
       setPreference.mockClear();
 
       mountTimeline();
@@ -391,41 +300,7 @@ describe("PlayerTimeline", () => {
   ])(
     "marks the bookmarks on the track, chapter progress %s",
     async (chapterProgress, expected) => {
-      api.queues["q1"] = {
-        queue_id: "q1",
-        state: PlaybackState.PAUSED,
-        active: true,
-        current_item: {},
-      };
-      api.queueElapsedTime["q1"] = {
-        elapsed_time: 75,
-        elapsed_time_last_updated: NOW,
-      };
-      store.currentUser = {
-        preferences: { audiobook_chapter_progress: chapterProgress },
-      };
-      store.curQueueItem = {
-        queue_item_id: "qi-1",
-        media_item: {
-          media_type: MediaType.AUDIOBOOK,
-          metadata: {
-            chapters: [
-              { position: 1, name: "First", start: 0, end: 60 },
-              { position: 2, name: "Second", start: 60, end: 120 },
-            ],
-          },
-        },
-      };
-      store.activePlayer = {
-        player_id: "p1",
-        active_source: "q1",
-        playback_state: PlaybackState.PAUSED,
-        current_media: {
-          duration: 120,
-          media_type: MediaType.AUDIOBOOK,
-          queue_item_id: "qi-1",
-        },
-      };
+      playTwoChapterBook(chapterProgress, 75);
       api.playerCommandSeek.mockClear();
 
       mountTimeline({
@@ -458,41 +333,7 @@ describe("PlayerTimeline", () => {
   );
 
   it("keeps the final chapter-relative position at exact media completion", async () => {
-    api.queues["q1"] = {
-      queue_id: "q1",
-      state: PlaybackState.PAUSED,
-      active: true,
-      current_item: {},
-    };
-    api.queueElapsedTime["q1"] = {
-      elapsed_time: 120,
-      elapsed_time_last_updated: NOW,
-    };
-    store.currentUser = {
-      preferences: { audiobook_chapter_progress: true },
-    };
-    store.curQueueItem = {
-      queue_item_id: "qi-1",
-      media_item: {
-        media_type: MediaType.AUDIOBOOK,
-        metadata: {
-          chapters: [
-            { position: 1, name: "First", start: 0, end: 60 },
-            { position: 2, name: "Second", start: 60, end: 120 },
-          ],
-        },
-      },
-    };
-    store.activePlayer = {
-      player_id: "p1",
-      active_source: "q1",
-      playback_state: PlaybackState.PAUSED,
-      current_media: {
-        duration: 120,
-        media_type: MediaType.AUDIOBOOK,
-        queue_item_id: "qi-1",
-      },
-    };
+    playTwoChapterBook(true, 120);
 
     mountTimeline();
     expect(elapsedLabel()).toBe("01:00");
@@ -784,6 +625,45 @@ describe("PlayerTimeline", () => {
     expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 153);
   });
 });
+
+// a paused two-chapter audiobook of 120 seconds at the given position
+function playTwoChapterBook(chapterProgress: boolean, elapsed: number) {
+  api.queues["q1"] = {
+    queue_id: "q1",
+    state: PlaybackState.PAUSED,
+    active: true,
+    current_item: {},
+  };
+  api.queueElapsedTime["q1"] = {
+    elapsed_time: elapsed,
+    elapsed_time_last_updated: NOW,
+  };
+  store.currentUser = {
+    preferences: { audiobook_chapter_progress: chapterProgress },
+  };
+  store.curQueueItem = {
+    queue_item_id: "qi-1",
+    media_item: {
+      media_type: MediaType.AUDIOBOOK,
+      metadata: {
+        chapters: [
+          { position: 1, name: "First", start: 0, end: 60 },
+          { position: 2, name: "Second", start: 60, end: 120 },
+        ],
+      },
+    },
+  };
+  store.activePlayer = {
+    player_id: "p1",
+    active_source: "q1",
+    playback_state: PlaybackState.PAUSED,
+    current_media: {
+      duration: 120,
+      media_type: MediaType.AUDIOBOOK,
+      queue_item_id: "qi-1",
+    },
+  };
+}
 
 function mountTimeline(extraStubs: Record<string, unknown> = {}) {
   wrapper = mount(PlayerTimeline, {
