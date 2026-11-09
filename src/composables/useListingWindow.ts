@@ -87,17 +87,25 @@ export function useListingWindow(options: ListingWindowOptions) {
   // height above them
   async function prependPage() {
     const scroller = options.scroller();
+    let kept: Promise<void> | undefined;
     const added = await options.loadPreviousPage(() => {
       if (!scroller) return;
       // the page still shows the rows from before
       const top = scroller.scrollTop;
       const height = scroller.scrollHeight;
-      nextTick(() => {
+      kept = nextFrame().then(() => {
         scroller.scrollTop = top + scroller.scrollHeight - height;
       });
     });
-    await nextTick();
+    await kept;
     return added;
+  }
+
+  // the list view draws rows for changed items in the next animation frame,
+  // which still runs before the page is painted
+  async function nextFrame() {
+    await nextTick();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
   }
 
   // loads pages above while the top of the rows is near the visible area;

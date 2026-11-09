@@ -341,10 +341,13 @@
           class="relative h-full"
           :aria-busy="reorderSaving || undefined"
         >
+          <!-- rows loaded above a letter jump would shift every row's position,
+               so those listings tie each row to its item instead -->
           <v-virtual-scroll
             :item-height="showTrackTable ? TRACK_ROW_HEIGHT : 70"
             height="100%"
             :items="listDisplayItems"
+            :item-key="loadLetterIndex ? 'uri' : undefined"
             style="height: 100%; overflow: hidden"
           >
             <template #default="{ item, index }">
