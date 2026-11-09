@@ -28,18 +28,40 @@
         <button
           v-if="row.chapter"
           type="button"
-          class="flex h-14 w-full items-center gap-3 rounded-lg px-2 text-left hover:bg-[rgba(var(--v-theme-on-surface),0.05)] disabled:opacity-50"
-          :disabled="!itemIsAvailable(itemDetails)"
+          class="group flex h-14 w-full items-center gap-3 rounded-lg px-2 text-left hover:bg-[rgba(var(--v-theme-on-surface),0.05)] disabled:opacity-50"
+          :disabled="!playable"
+          :aria-current="isPlaying(row.chapter) ? 'true' : undefined"
           data-testid="chapter-row"
           @click="chapterClicked(row.chapter)"
         >
           <span
             class="flex size-10 shrink-0 items-center justify-center rounded-md bg-[rgba(var(--v-theme-on-surface),0.08)] text-[13px] font-medium tabular-nums"
+            :class="{ 'bg-primary/12 text-primary': isPlaying(row.chapter) }"
           >
-            {{ row.chapter.position }}
+            <!-- the number turns into a play icon on hover -->
+            <Play
+              v-if="playable"
+              :size="16"
+              class="hidden fill-current group-hover:block group-focus-visible:block"
+              aria-hidden="true"
+            />
+            <span
+              :class="{
+                'group-hover:hidden group-focus-visible:hidden': playable,
+              }"
+            >
+              <AudioLines
+                v-if="isPlaying(row.chapter)"
+                :size="18"
+                aria-hidden="true"
+                data-testid="chapter-playing"
+              />
+              <template v-else>{{ row.chapter.position }}</template>
+            </span>
           </span>
           <span
             class="min-w-0 flex-1 truncate text-[15px] font-medium"
+            :class="{ 'text-primary': isPlaying(row.chapter) }"
             data-testid="chapter-name"
           >
             {{ row.chapter.name }}
@@ -80,10 +102,12 @@ import BookmarkRow from "@/components/BookmarkRow.vue";
 import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBookmarkActions, useBookmarks } from "@/composables/useBookmarks";
+import { usePlayingChapter } from "@/composables/usePlayingChapter";
 import {
   chaptersFitBookmarks,
   groupBookmarksByChapter,
 } from "@/helpers/chapters";
+import { AudioLines, Play } from "@lucide/vue";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
@@ -199,8 +223,14 @@ const rows = computed<ChapterRow[]>(() => {
   ]);
 });
 
+const playable = computed(() => itemIsAvailable(props.itemDetails));
+
+const playingPosition = usePlayingChapter(() => props.itemDetails);
+const isPlaying = (chapter: MediaItemChapter) =>
+  chapter.position === playingPosition.value;
+
 const chapterClicked = function (chapter: MediaItemChapter) {
-  if (!props.itemDetails || !itemIsAvailable(props.itemDetails)) return;
+  if (!playable.value) return;
   // an episode is played on its own, so it starts at a position, not a chapter
   api.playMedia(
     props.itemDetails.uri,

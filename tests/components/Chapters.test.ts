@@ -27,7 +27,11 @@ const ABS = "audiobookshelf--1";
 const AUDIBLE = "audible--1";
 const LOCAL = "filesystem_local--1";
 
-const { apiMock } = vi.hoisted(() => ({
+const { apiMock, storeMock } = vi.hoisted(() => ({
+  storeMock: {
+    curQueueItem: undefined as unknown,
+    activePlayer: undefined as unknown,
+  },
   apiMock: {
     providers: {} as Record<string, unknown>,
     getBookmarks: vi.fn(),
@@ -57,6 +61,13 @@ async function bookmarksUpdated(
 }
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+vi.mock("@/plugins/store", async () => {
+  const { reactive } = await import("vue");
+  return { store: reactive(storeMock) };
+});
+vi.mock("@/helpers/activeElapsedTime", () => ({
+  resolveActiveElapsedTime: () => 75,
+}));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope: vi.fn() } }));
 vi.mock("vue-sonner", () => ({ toast: { success: vi.fn() } }));
 vi.mock("@/components/BookmarkDialog.vue", () => ({
@@ -244,6 +255,25 @@ describe("Chapters", () => {
       );
     },
   );
+
+  it("marks the playing chapter", async () => {
+    storeMock.curQueueItem = {
+      queue_item_id: "q1",
+      media_item: { uri: "audiobookshelf--1://audiobook/book1" },
+    };
+    storeMock.activePlayer = {
+      current_media: { queue_item_id: "q1", duration: 150 },
+    };
+    const wrapper = await mountChapters([], book);
+
+    const rows = wrapper.findAll('[data-testid="chapter-row"]');
+    expect(rows.map((x) => x.attributes("aria-current"))).toEqual([
+      undefined,
+      "true",
+    ]);
+    storeMock.curQueueItem = undefined;
+    storeMock.activePlayer = undefined;
+  });
 
   it("lists the chapters first and the bookmarks with their position apart", async () => {
     const wrapper = await mountChapters([
