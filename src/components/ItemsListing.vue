@@ -5,7 +5,7 @@
     ref="sectionEl"
     :class="{
       'flex min-h-full flex-1 flex-col': fillsHeight,
-      'ps-[11px] pe-[18px]': detailRow,
+      'ps-[11px] pe-[18px] max-[769px]:ps-0 max-[769px]:pe-[6px]': detailRow,
     }"
   >
     <!-- eslint-disable vue/no-template-shadow -->
