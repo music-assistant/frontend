@@ -96,6 +96,7 @@ import {
   Scope,
   NetworkShareSettings,
   SearchResults,
+  SleepTimerMode,
   ShareType,
   SortDirection,
   SortField,
@@ -117,7 +118,7 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 103;
+export const MIN_SERVER_SCHEMA_VERSION = 105;
 
 // Server error codes of a missing or rejected sign-in; the login UI reports these itself
 const AUTHENTICATION_REQUIRED_ERROR_CODE = 20;
@@ -2635,14 +2636,20 @@ export class MusicAssistantApi {
     });
   }
 
-  public setSleepTimer(playerId: string, seconds: number): Promise<number> {
+  public setSleepTimer(
+    playerId: string,
+    seconds?: number,
+    mode?: SleepTimerMode,
+  ): Promise<number | null> {
     /*
-      Set a sleep timer that stops playback after the given number of seconds.
-      Returns the expiry (unix utc timestamp).
+      Set a sleep timer that stops playback after the given number of seconds, or
+      at the end of the current queue item or chapter (mode).
+      Returns the (estimated) expiry (unix utc timestamp), null while paused.
     */
     return this.sendCommand("players/sleep_timer/set", {
       player_id: playerId,
       seconds,
+      mode,
     });
   }
 
