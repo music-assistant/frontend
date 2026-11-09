@@ -2,6 +2,7 @@
 <template>
   <section
     v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)"
+    ref="sectionEl"
     :class="{
       'flex min-h-full flex-1 flex-col': fillsHeight,
       'ps-[11px] pe-[18px]': detailRow,
@@ -31,7 +32,7 @@
         >
         <slot v-else name="title">{{ title }}</slot>
         <span
-          v-if="libraryToolbar && listingCount !== undefined"
+          v-if="libraryToolbar && showCount && listingCount !== undefined"
           class="ms-2 text-base font-normal text-muted-foreground"
         >
           {{ listingCount }}
@@ -39,8 +40,27 @@
       </template>
 
       <template #append>
+        <template v-if="collapsed">
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            :title="$t('tooltip.collapse_expand')"
+            :aria-label="$t('tooltip.collapse_expand')"
+            aria-expanded="false"
+            @click="toggleExpand"
+          >
+            <ChevronDown class="size-[22px]" />
+          </Button>
+          <!-- holds the menu's place, so the button stays where it sits when expanded -->
+          <span
+            v-if="hasOverflowMenu"
+            class="size-10"
+            aria-hidden="true"
+          ></span>
+        </template>
         <LibrarySortControls
           v-if="
+            !collapsed &&
             !libraryToolbar &&
             props.sortListing &&
             sortOptionsLoaded &&
@@ -77,9 +97,9 @@
           @after-leave="onSearchSlotLeft"
         >
           <!-- the input follows the slot's edge as it opens, and the padding
-               keeps its 3px focus ring inside the clipped area. On a library
-               page it grows out of the search icon's width and shrinks back
-               to it, so the controls beside it do not jump -->
+               keeps its 3px focus ring inside the clipped area. With the title
+               bar controls it grows out of the search icon's width and shrinks
+               back to it, so the controls beside it do not jump -->
           <div
             v-if="showSearchInput"
             class="listing-search-slot -m-[3px] box-content p-[3px]"
@@ -116,7 +136,7 @@
           </div>
         </Transition>
         <ListingToolbarControls
-          v-if="libraryToolbar"
+          v-if="libraryToolbar && !collapsed"
           :sort-options="sortOptionsLoaded ? sortOptions : []"
           :sort-by="params.sortBy"
           :view-mode="viewMode"
@@ -597,6 +617,11 @@ export interface Props {
   showRefreshButton?: boolean;
   showSelectButton?: boolean;
   showAlbumTypeFilter?: boolean;
+  // the album types the album type filter offers (default: every type)
+  albumTypeFilterOptions?: string[];
+  // album types carried in by a link: selected instead of the saved filter on
+  // this visit. Nothing is saved until the user changes the album type filter.
+  albumTypeOverride?: string[];
   showProviderFilter?: boolean;
   showCollapseCollections?: boolean;
   // when set, the provider filter allows only a single selection at a time
@@ -657,9 +682,11 @@ export interface Props {
   // the track table rows can be dragged to a new place in the parent playlist,
   // while the listing shows the playlist's own order
   reorderable?: boolean;
-  // a library page: search, sort, view and filters sit in the title bar, and
-  // the active filters show as chips below it
+  // search, sort, view and filters sit in the title bar, and the active
+  // filters show as chips below it
   libraryToolbar?: boolean;
+  // the number of items beside the title, with the title bar controls
+  showCount?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortListing: undefined,
@@ -678,6 +705,8 @@ const props = withDefaults(defineProps<Props>(), {
   showRefreshButton: undefined,
   showSelectButton: undefined,
   showAlbumTypeFilter: undefined,
+  albumTypeFilterOptions: () => ALBUM_TYPE_FILTER_KEYS,
+  albumTypeOverride: undefined,
   showProviderFilter: undefined,
   showCollapseCollections: undefined,
   singleProviderFilter: false,
@@ -711,6 +740,7 @@ const props = withDefaults(defineProps<Props>(), {
   trackTable: false,
   reorderable: false,
   libraryToolbar: false,
+  showCount: true,
 });
 
 const emit = defineEmits<{
@@ -761,8 +791,8 @@ const loadPending = computed(
   () => loading.value || (!!props.sortListing && !sortOptionsLoaded.value),
 );
 // the desktop row of quick sorts keeps its height while the sort options load,
-// so the items do not shift; a listing without quick sorts has no row, and a
-// library page sorts from its title bar
+// so the items do not shift; a listing without quick sorts has no row, and one
+// with the title bar controls sorts from there
 const showSortChipsRow = computed(
   () =>
     !!props.sortListing &&
@@ -956,6 +986,12 @@ const toggleExpand = function () {
   }
 
   // Otherwise, use the default expand/collapse behavior
+  // the open and collapsed states each draw their own expand button, so the
+  // keyboard focus moves on to the button that replaces the pressed one
+  const expandButton = `button[aria-label=${JSON.stringify(t("tooltip.collapse_expand"))}]`;
+  const active = document.activeElement;
+  const hadFocus =
+    !!active?.matches(expandButton) && !!sectionEl.value?.contains(active);
   expanded.value = !expanded.value;
   setItemsListingPreference(
     props.path || props.itemtype,
@@ -963,6 +999,11 @@ const toggleExpand = function () {
     "expand",
     expanded.value,
   );
+  if (hadFocus) {
+    nextTick(() =>
+      sectionEl.value?.querySelector<HTMLElement>(expandButton)?.focus(),
+    );
+  }
 };
 
 const selectViewMode = function (newMode: string) {
@@ -994,6 +1035,7 @@ const commitGridSize = function (size: number) {
   );
 };
 
+const sectionEl = useTemplateRef("sectionEl");
 // the cards hide their action row when the covers get too small for it
 const panelRow = useTemplateRef("panelRow");
 const gridActionsFit = ref(true);
@@ -1307,6 +1349,8 @@ const changeAlbumTypeFilter = function (albumType: string) {
 // the whole album type selection at once, with a single save and reload
 const setAlbumTypeFilter = function (albumTypes: string[]) {
   params.value.albumType = albumTypes;
+  // the user's own pick is what gets saved and shown from here on
+  carriedAlbumTypes = undefined;
   setItemsListingPreference(
     props.path || props.itemtype,
     props.itemtype,
@@ -1327,13 +1371,27 @@ const offeredCarriedProvider = () =>
     ? carriedProvider
     : undefined;
 
-// a cached visit that was on a carried-in provider is only returned to by
+// the album types carried in by a link, kept until the user changes the album
+// type filter, the same way as the carried provider. Those not offered here
+// are ignored.
+let carriedAlbumTypes = props.albumTypeOverride;
+const offeredCarriedAlbumTypes = () => {
+  if (props.showAlbumTypeFilter !== true || !carriedAlbumTypes) return;
+  const offered = carriedAlbumTypes.filter((type) =>
+    props.albumTypeFilterOptions.includes(type),
+  );
+  return offered.length ? offered : undefined;
+};
+
+const carriesFilters = () =>
+  offeredCarriedProvider() !== undefined ||
+  offeredCarriedAlbumTypes() !== undefined;
+
+// a cached visit that was on a carried-in filter is only returned to by
 // going back; reached any other way, the listing starts over on the saved
 // filter, or on what is carried in now
 const cachedVisitApplies = () =>
-  !store.prevState?.carried ||
-  offeredCarriedProvider() !== undefined ||
-  returnedByHistory(router);
+  !store.prevState?.carried || carriesFilters() || returnedByHistory(router);
 
 const changeProviderFilter = function (providerId: string) {
   if (props.requireProviderSelection) {
@@ -1710,19 +1768,22 @@ const singleProviderSelect = computed(
   () => props.singleProviderFilter || props.requireProviderSelection,
 );
 
-// the sources a library page's Filters panel offers, each marked by its icon
+// the sources the Filters panel offers, each marked by its icon: a required
+// pick of one, or a narrowing to any of them
 const sourceFilterOptions = computed(() => {
-  if (props.requireProviderSelection || props.showProviderFilter === false) {
-    return [];
-  }
+  if (props.showProviderFilter === false) return [];
   // a source picked while there were more stays on offer, and clearable,
-  // once it is the only one left
-  if (!providerFilterAvailable.value && !params.value.provider?.length) {
+  // once it is the only one left; a required pick of the only one is no choice
+  if (
+    !providerFilterAvailable.value &&
+    (props.requireProviderSelection || !params.value.provider?.length)
+  ) {
     return [];
   }
   return musicProviders.value.map((provider) => ({
     ...provider,
     domain: api.providers[provider.value]?.domain,
+    icon: provider.value === "library" ? LibraryBig : undefined,
   }));
 });
 
@@ -1753,6 +1814,7 @@ const clearFilters = function () {
   const cleared = clearedFilters(offered);
   Object.assign(p, cleared.params);
   if (offered.has("provider")) carriedProvider = undefined;
+  if (offered.has("album_type")) carriedAlbumTypes = undefined;
   setItemsListingPreferences(
     props.path || props.itemtype,
     props.itemtype,
@@ -1892,7 +1954,7 @@ const filterMenuItems = function () {
       active: params.value.albumType && params.value.albumType.length > 0,
       closeOnContentClick: false,
       overflowAllowed: true,
-      subItems: ALBUM_TYPE_FILTER_KEYS.map((key) => {
+      subItems: props.albumTypeFilterOptions.map((key) => {
         return {
           label: `album_type.${key}`,
           selected: params.value.albumType?.includes(key),
@@ -1922,19 +1984,7 @@ const filterMenuItems = function () {
   return items;
 };
 
-const menuItems = computed(() => {
-  // toggle expand
-  if (props.allowCollapse === true && !expanded.value) {
-    return [
-      {
-        label: "tooltip.collapse_expand",
-        icon: ChevronDown,
-        action: toggleExpand,
-        overflowAllowed: false,
-      },
-    ];
-  }
-
+const expandedMenuItems = computed(() => {
   const items: ToolBarMenuItem[] = [];
 
   // toggle select menu item
@@ -1957,7 +2007,7 @@ const menuItems = computed(() => {
       overflowAllowed: true,
     });
   }
-  // the filters; a library page has them in its Filters panel instead
+  // the filters; the title bar controls have them in the Filters panel
   if (!props.libraryToolbar) items.push(...filterMenuItems());
 
   // refresh action
@@ -1977,7 +2027,8 @@ const menuItems = computed(() => {
     });
   }
 
-  // toggle search (auto-hidden for small listings); a library page has its own
+  // toggle search (auto-hidden for small listings); the title bar controls
+  // have their own
   if (searchAvailable.value && !props.libraryToolbar) {
     items.push({
       label: searchButtonCloses.value
@@ -1995,8 +2046,13 @@ const menuItems = computed(() => {
 
   // provider selector — a required single selection shown as a dedicated button
   // beside search (like the conditional search button). It always has a provider
-  // chosen, so it is not a filter and never shows the active dot.
-  if (providerFilterAvailable.value && props.requireProviderSelection) {
+  // chosen, so it is not a filter and never shows the active dot. The title bar
+  // controls have it in the Filters panel.
+  if (
+    providerFilterAvailable.value &&
+    props.requireProviderSelection &&
+    !props.libraryToolbar
+  ) {
     items.push({
       label: "tooltip.select_provider",
       icon: Package,
@@ -2008,8 +2064,8 @@ const menuItems = computed(() => {
     });
   }
 
-  // a library page picks its view and cover size from its sort menu; when
-  // the view is controlled externally only the thumbs controls stay
+  // the title bar controls pick the view and cover size from the sort menu;
+  // when the view is controlled externally only the thumbs controls stay
   if (!props.libraryToolbar && props.forcedViewMode !== "list")
     items.push({
       label: "tooltip.view_mode",
@@ -2063,6 +2119,21 @@ const menuItems = computed(() => {
 
   return items;
 });
+
+// a collapsed listing shows its expand button alone
+const collapsed = computed(
+  () => props.allowCollapse === true && !expanded.value,
+);
+const menuItems = computed(() =>
+  collapsed.value ? [] : expandedMenuItems.value,
+);
+// whether the expanded title bar has a ⋮ menu: Toolbar's rule for an enforced
+// overflow menu, which ItemsListing always uses
+const hasOverflowMenu = computed(() =>
+  expandedMenuItems.value.some(
+    (item) => !item.hide && item.overflowAllowed !== false,
+  ),
+);
 
 // Re-derive from the current props.path: a listing that stays mounted while
 // its path changes must not read and reset the settings saved for the old path.
@@ -2172,6 +2243,10 @@ const restoreSettings = async function () {
     params.value.albumType = prefs.albumType;
   }
 
+  // the carried-in album types outrank the saved filter, on every restore
+  const carriedTypes = offeredCarriedAlbumTypes();
+  if (carriedTypes) params.value.albumType = carriedTypes;
+
   // get stored/default provider filter for this itemtype
   // only apply stored filter if there are multiple providers available
   // with a single provider, any stored filter is either redundant or stale
@@ -2276,7 +2351,7 @@ if (props.restoreState) {
     store.prevState = {
       path: key,
       parentUri: props.parentItem?.uri,
-      carried: offeredCarriedProvider() !== undefined,
+      carried: carriesFilters(),
       scrollPos: el?.scrollTop || 0,
       pagedItems: pagedItems.value,
       allItemsReceived: allItemsReceived.value,
@@ -2502,14 +2577,19 @@ onMounted(async () => {
     if (props.sortListing) {
       params.value.sortBy = librarySorting.normalizeSortBy(params.value.sortBy);
     }
-    // what the last visit left behind gives way to a provider carried in by a
-    // link, unless it already came from there
+    // what the last visit left behind gives way to a provider or album types
+    // carried in by a link, unless it already came from there
     const carried = offeredCarriedProvider();
     const switchProvider =
       carried !== undefined && params.value.provider?.[0] !== carried;
-    if (switchProvider) {
-      params.value.provider = [carried];
-    } else {
+    if (switchProvider) params.value.provider = [carried];
+    const carriedTypes = offeredCarriedAlbumTypes();
+    const switchAlbumTypes =
+      carriedTypes !== undefined &&
+      !sameAlbumTypes(params.value.albumType, carriedTypes);
+    if (switchAlbumTypes) params.value.albumType = carriedTypes;
+    const switchFilters = switchProvider || switchAlbumTypes;
+    if (!switchFilters) {
       // scroll the main listing back to its previous scroll position
       nextTick(() => {
         const el = document.querySelector(".content-section") as HTMLElement;
@@ -2520,7 +2600,7 @@ onMounted(async () => {
       });
     }
     loading.value = false;
-    if (applyQueryGenreFilter() || switchProvider) {
+    if (applyQueryGenreFilter() || switchFilters) {
       loadData(true, undefined, true);
     }
   } else {
@@ -2632,6 +2712,14 @@ async function selectEveryItem() {
   await loadAllItems();
   selectedItems.value = pagedItems.value.filter((x) => !isParentDirItem(x));
   showCheckboxes.value = true;
+}
+
+/** Whether both selections hold the same album types, in any order. */
+function sameAlbumTypes(current: string[] | undefined, other: string[]) {
+  return (
+    current?.length === other.length &&
+    other.every((type) => current.includes(type))
+  );
 }
 </script>
 

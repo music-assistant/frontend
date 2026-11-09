@@ -1,4 +1,5 @@
 import InfoHeader from "@/components/InfoHeader.vue";
+import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
 import type { Scope, Track } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -132,5 +133,14 @@ describe("InfoHeader favorite menu", () => {
     const wrapper = mountHeader(track({ favorite: null }));
 
     expect(wrapper.find(".favorite-icon-button").exists()).toBe(false);
+  });
+
+  it("shows the shared explicit badge with its tooltip", () => {
+    const item = track({ version: "Live", metadata: { explicit: true } });
+    const wrapper = mountHeader(item);
+    const badge = wrapper.getComponent(ExplicitIcon);
+
+    expect(badge.attributes("aria-hidden")).toBe("true");
+    expect(badge.attributes("aria-describedby")).toBeTruthy();
   });
 });

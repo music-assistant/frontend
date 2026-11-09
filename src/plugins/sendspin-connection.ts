@@ -6,6 +6,7 @@
  * 2. Falls back to authenticated proxy WebSocket through the webserver
  */
 
+import { getIngressClientKey } from "@/helpers/ingress";
 import api from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
@@ -25,8 +26,9 @@ function getSendspinProxyUrl(): string {
 
 /**
  * Create a proxy WebSocket connection.
- * In ingress mode, no auth message is needed (HA handles auth via headers).
- * Otherwise, sends auth message with token and client_id.
+ * Sends an auth message with token and client_id and waits for the reply.
+ * In ingress mode HA handles auth via headers, so the auth message carries the
+ * Ingress client key instead of a token.
  */
 function createProxyWebSocket(): Promise<WebSocket | null> {
   const url = getSendspinProxyUrl();
@@ -60,22 +62,21 @@ function createProxyWebSocket(): Promise<WebSocket | null> {
     let ready = false;
 
     ws.onopen = () => {
-      if (isIngress) {
-        // In ingress mode, no auth message needed - connection is ready immediately
-        console.debug("[Sendspin] Proxy WebSocket connected (ingress mode)");
-        ready = true;
-        resolve(ws);
-      } else {
-        // Send auth message with token
-        const clientId =
-          window.localStorage.getItem("sendspin_webplayer_id") || "";
-        console.debug("[Sendspin] Sending auth to proxy");
-        ws.send(JSON.stringify({ type: "auth", token, client_id: clientId }));
-      }
+      const clientId =
+        window.localStorage.getItem("sendspin_webplayer_id") || "";
+      const auth = isIngress
+        ? {
+            type: "auth",
+            client_id: clientId,
+            ingress_client_key: getIngressClientKey(),
+          }
+        : { type: "auth", token, client_id: clientId };
+      console.debug("[Sendspin] Sending auth to proxy");
+      ws.send(JSON.stringify(auth));
     };
 
     ws.onmessage = () => {
-      if (!ready && !isIngress) {
+      if (!ready) {
         ready = true;
         console.debug("[Sendspin] Proxy WebSocket authenticated and ready");
         resolve(ws);
@@ -285,8 +286,8 @@ export async function createSendspinConnection(): Promise<SendspinWebSocketBridg
 /**
  * WebSocket-like object that sendspin-js talks to.
  *
- * sendspin-js opens its socket with `new WebSocket(baseUrl + "/sendspin")`, which
- * the interceptor routes here. On the initial connect a bridge is pre-staged by
+ * sendspin-js opens its socket with `new WebSocket(url)` on a "/sendspin" URL,
+ * which the interceptor routes here. On the initial connect a bridge is pre-staged by
  * prepareSendspinSession(); on the library's own auto-reconnect no bridge is
  * staged, so this wrapper builds a fresh one on demand. Either way the bridge is
  * attached on a later microtask — after sendspin-js has wired its handlers and

@@ -68,7 +68,7 @@ const {
   mockRegisterWebPlayerAudioUnlock,
   mockSendCommand,
   mockSendspinConnect,
-  mockSendspinDisconnect,
+  mockSendspinDestroy,
   mockSendspinSetVolume,
   mockSendspinUnlock,
   mockUseMediaBrowserMetaData,
@@ -118,7 +118,7 @@ const {
     mockRegisterWebPlayerAudioUnlock: vi.fn<(handler: () => boolean) => void>(),
     mockSendCommand,
     mockSendspinConnect: vi.fn<() => Promise<void>>(),
-    mockSendspinDisconnect: vi.fn<(reason?: string) => void>(),
+    mockSendspinDestroy: vi.fn<(reason?: string) => void>(),
     mockSendspinSetVolume: vi.fn<(volume: number) => void>(),
     mockSendspinUnlock: vi.fn<() => Promise<void>>(),
     sendspinState: {
@@ -212,7 +212,7 @@ vi.mock("@sendspin/sendspin-js", () => ({
     get pairingToken() {
       return sendspinState.pairingToken;
     }
-    disconnect = mockSendspinDisconnect;
+    destroy = mockSendspinDestroy;
     setCorrectionMode = vi.fn();
     setMuted = vi.fn();
     setVolume = mockSendspinSetVolume;
@@ -272,7 +272,7 @@ describe("SendspinPlayer MediaSession", () => {
     mockSendCommand.mockResolvedValue(undefined);
     mockSendspinConnect.mockReset();
     mockSendspinConnect.mockResolvedValue(undefined);
-    mockSendspinDisconnect.mockReset();
+    mockSendspinDestroy.mockReset();
     mockSendspinSetVolume.mockReset();
     sendspinState.pairingToken = "SP:0TESTTOKEN";
     sendspinState.lastOptions = null;
@@ -448,7 +448,7 @@ describe("SendspinPlayer MediaSession", () => {
     webPlayer.tabMode = WebPlayerMode.CONTROLS_ONLY;
     wrapper.unmount();
 
-    expect(mockSendspinDisconnect).toHaveBeenCalledWith("restart");
+    expect(mockSendspinDestroy).toHaveBeenCalledWith("restart");
   });
 
   it("unregisters the player once this browser wants none", async () => {
@@ -462,7 +462,7 @@ describe("SendspinPlayer MediaSession", () => {
     webPlayer.tabMode = WebPlayerMode.CONTROLS_ONLY;
     wrapper.unmount();
 
-    expect(mockSendspinDisconnect).toHaveBeenCalledWith("user_request");
+    expect(mockSendspinDestroy).toHaveBeenCalledWith("user_request");
   });
 
   it("does not connect a player when unmounted while the session is prepared", async () => {
