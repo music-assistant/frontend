@@ -620,7 +620,7 @@ describe("useItemsListing", () => {
     it("marks the end of the listing when the rows below run out", async () => {
       const loadPagedData = vi
         .fn<LoadPagedDataFn>()
-        .mockResolvedValue(tracks(30));
+        .mockResolvedValue(tracks(60));
       const listing = setupItemsListing({ limit: 50, loadPagedData });
 
       await listing.loadRow(100);
@@ -669,6 +669,21 @@ describe("useItemsListing", () => {
       expect(listing.baseOffset.value).toBe(0);
       expect(listing.params.value.offset).toBe(0);
       expect(listing.loading.value).toBe(false);
+    });
+
+    it("keeps the loaded rows when the row is past the end", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData
+        .mockResolvedValueOnce(tracks(2))
+        .mockResolvedValueOnce(tracks(1, "short-"));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+
+      await expect(listing.loadRow(10)).resolves.toBe(false);
+
+      expect(ids(listing.pagedItems.value)).toEqual(ids(tracks(2)));
+      expect(listing.baseOffset.value).toBe(0);
+      expect(listing.params.value.offset).toBe(0);
     });
   });
 
