@@ -379,15 +379,17 @@ export function useItemsListing(
         limit,
         refresh: false,
       });
-      pagedItems.value = items;
-      baseOffset.value = start;
-      // the next page follows the rows loaded here
-      params.value.offset = row;
-      displayedSort.value = requestedSort;
-      allItemsReceived.value = isLastPage(items.length, limit);
-      loadError.value = false;
-      retryFromStart = false;
-      loaded = true;
+      if (row < start + items.length) {
+        pagedItems.value = items;
+        baseOffset.value = start;
+        // the next page follows the rows loaded here
+        params.value.offset = row;
+        displayedSort.value = requestedSort;
+        allItemsReceived.value = isLastPage(items.length, limit);
+        loadError.value = false;
+        retryFromStart = false;
+        loaded = true;
+      }
     } catch {
       // the api already reports the failure to the user; the rows stay
     } finally {
