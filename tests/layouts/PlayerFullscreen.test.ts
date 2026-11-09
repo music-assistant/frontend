@@ -335,12 +335,12 @@ describe("PlayerFullscreen chapter queue", () => {
     vi.useRealTimers();
   });
 
-  async function mountChapterQueue(): Promise<VueWrapper> {
+  async function mountChapterQueue(showQueueItems = true): Promise<VueWrapper> {
     await seedPlayingQueue();
     const { store } = await import("@/plugins/store");
     const testStore = store as unknown as TestStore;
     testStore.showFullscreenPlayer = true;
-    testStore.showQueueItems = true;
+    testStore.showQueueItems = showQueueItems;
     wrapper = shallowMount(PlayerFullscreen, {
       props: { colorPalette: EMPTY_COLOR_PALETTE },
       global: {
@@ -350,6 +350,8 @@ describe("PlayerFullscreen chapter queue", () => {
           "v-card": { template: "<div><slot /></div>" },
           // rendered, so its chapter and bookmark rows can be checked here
           QueueChapterList: false,
+          "v-card-subtitle": { template: "<div><slot /></div>" },
+          MarqueeText: { template: "<span><slot /></span>" },
         },
       },
     });
@@ -373,6 +375,15 @@ describe("PlayerFullscreen chapter queue", () => {
     expect(
       fullscreen.findAll(".queue-chapter")[0].attributes("aria-current"),
     ).toBeUndefined();
+  });
+
+  it("names the next chapter under the title with the queue hidden", async () => {
+    const fullscreen = await mountChapterQueue(false);
+    expect(fullscreen.html()).toContain("First");
+
+    await vi.advanceTimersByTimeAsync(51_000);
+    await nextTick();
+    expect(fullscreen.html()).toContain("Second");
   });
 
   it("seeks to a chapter start without reloading the media", async () => {

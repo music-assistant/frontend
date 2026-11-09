@@ -669,9 +669,9 @@ const playingPosition = computed(() => {
 const chapterTimerNeeded = computed(
   () =>
     store.showFullscreenPlayer &&
-    store.showQueueItems &&
     store.activePlayer?.playback_state === PlaybackState.PLAYING &&
-    (!!chapterQueueItem.value || canAddBookmark.value),
+    (!!chapterQueueItem.value ||
+      (store.showQueueItems && canAddBookmark.value)),
 );
 
 const playingChapterClicked = (target: Pick<MediaItemChapter, "start">) => {
