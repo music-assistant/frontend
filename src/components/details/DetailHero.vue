@@ -214,6 +214,39 @@ async function buildMenu(item?: MediaItemType) {
 </script>
 
 <style scoped>
+/* The detail pages share the same identity/statistics row and full-width actions. */
+.detail-hero :deep(.detail-hero-listening-layout) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 1fr);
+  align-items: center;
+  gap: 16px 24px;
+  width: 100%;
+}
+:deep(.detail-hero-listening-identity) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+:deep(.detail-hero-listening-layout > :last-child) {
+  grid-column: 1 / -1;
+}
+.detail-hero
+  :deep(.detail-hero-listening-layout:not(:has(.detail-hero-listening))) {
+  grid-template-columns: minmax(0, 1fr);
+}
+@container detail-hero (max-width: 850px) {
+  .detail-hero :deep(.detail-hero-listening-layout) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .detail-hero :deep(.detail-hero-listening-layout) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+
 .detail-hero {
   position: relative;
   display: flex;

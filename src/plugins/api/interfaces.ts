@@ -1127,6 +1127,18 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number | null;
 }
 
+export interface PlayHistoryItem extends ItemMapping {
+  event_id: number;
+  played_at: number;
+  artists: ItemMapping[];
+}
+
+export interface StatisticsItemFilter {
+  item_id: string;
+  provider: string;
+  media_type: MediaType.TRACK | MediaType.ALBUM | MediaType.ARTIST;
+}
+
 /** The time window a statistics command covers. */
 export type StatisticsPeriod = "today" | "week" | "month" | "year" | "all_time";
 

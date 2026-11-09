@@ -73,6 +73,8 @@ import {
   DSPIRMetadata,
   EventType,
   ItemMapping,
+  PlayHistoryItem,
+  StatisticsItemFilter,
   ListingType,
   MediaItemBookmark,
   MediaItemTypeOrItemMapping,
@@ -2080,8 +2082,27 @@ export class MusicAssistantApi {
     period: StatisticsPeriod = "week",
     granularity: StatisticsGranularity = "day",
     users?: StatisticsUsers,
+    item?: StatisticsItemFilter,
   ): Promise<StatisticsTimeSeriesPoint[]> {
-    return this.statisticsApi.getPlaysOverTime(period, granularity, users);
+    return this.statisticsApi.getPlaysOverTime(
+      period,
+      granularity,
+      users,
+      item,
+    );
+  }
+
+  public async getPlayHistory(
+    item: StatisticsItemFilter,
+    period: StatisticsPeriod = "all_time",
+    limit = 50,
+    offset = 0,
+  ): Promise<PlayHistoryItem[]> {
+    return this.statisticsApi.getPlayHistory(item, period, limit, offset);
+  }
+
+  public async getPlayCount(item: StatisticsItemFilter): Promise<number> {
+    return this.statisticsApi.getPlayCount(item);
   }
 
   public async getListeningActivity(

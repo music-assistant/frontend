@@ -19,65 +19,69 @@
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
 
-        <div class="track-hero__text">
-          <h1 class="track-hero__name">
-            {{ item.name }}
-            <span v-if="item.version" class="track-hero__version">
-              ({{ item.version }})
-            </span>
-            <ExplicitBadge
-              v-if="item.metadata?.explicit"
-              class="track-hero__explicit [--explicit-icon-square:rgba(255,255,255,0.25)] [--explicit-icon-letter:#fff]"
-            />
-          </h1>
+        <div class="track-hero__text detail-hero-listening-layout">
+          <div class="detail-hero-listening-identity">
+            <h1 class="track-hero__name">
+              {{ item.name }}
+              <span v-if="item.version" class="track-hero__version">
+                ({{ item.version }})
+              </span>
+              <ExplicitBadge
+                v-if="item.metadata?.explicit"
+                class="track-hero__explicit [--explicit-icon-square:rgba(255,255,255,0.25)] [--explicit-icon-letter:#fff]"
+              />
+            </h1>
 
-          <div class="track-hero__meta">
-            <div v-if="item.artists.length" class="track-hero__line">
-              <Music :size="16" class="track-hero__icon" />
-              <span class="track-hero__line-text">
-                <template
-                  v-for="(artist, index) in item.artists"
-                  :key="artist.uri"
-                >
-                  <span v-if="index > 0">,&nbsp;</span>
+            <div class="track-hero__meta">
+              <div v-if="item.artists.length" class="track-hero__line">
+                <Music :size="16" class="track-hero__icon" />
+                <span class="track-hero__line-text">
+                  <template
+                    v-for="(artist, index) in item.artists"
+                    :key="artist.uri"
+                  >
+                    <span v-if="index > 0">,&nbsp;</span>
+                    <button
+                      type="button"
+                      class="track-hero__link"
+                      @click="gotoItem('artist', artist)"
+                    >
+                      {{ artist.name }}
+                    </button>
+                  </template>
+                </span>
+              </div>
+              <div
+                v-if="item.album || releaseYear || item.duration"
+                class="track-hero__line"
+              >
+                <Disc :size="16" class="track-hero__icon" />
+                <span class="track-hero__line-text">
                   <button
+                    v-if="item.album"
                     type="button"
                     class="track-hero__link"
-                    @click="gotoItem('artist', artist)"
+                    @click="gotoItem('album', item.album)"
                   >
-                    {{ artist.name }}
+                    {{ item.album.name }}
                   </button>
-                </template>
-              </span>
-            </div>
-            <div
-              v-if="item.album || releaseYear || item.duration"
-              class="track-hero__line"
-            >
-              <Disc :size="16" class="track-hero__icon" />
-              <span class="track-hero__line-text">
-                <button
-                  v-if="item.album"
-                  type="button"
-                  class="track-hero__link"
-                  @click="gotoItem('album', item.album)"
-                >
-                  {{ item.album.name }}
-                </button>
-                <template v-if="releaseYear">
-                  <span v-if="item.album" class="track-hero__sep">·</span>
-                  {{ releaseYear }}
-                </template>
-                <template v-if="item.duration">
-                  <span v-if="item.album || releaseYear" class="track-hero__sep"
-                    >·</span
-                  >
-                  {{ formatDuration(item.duration) }}
-                </template>
-              </span>
+                  <template v-if="releaseYear">
+                    <span v-if="item.album" class="track-hero__sep">·</span>
+                    {{ releaseYear }}
+                  </template>
+                  <template v-if="item.duration">
+                    <span
+                      v-if="item.album || releaseYear"
+                      class="track-hero__sep"
+                      >·</span
+                    >
+                    {{ formatDuration(item.duration) }}
+                  </template>
+                </span>
+              </div>
             </div>
           </div>
-
+          <DetailHeroListeningStats :item="item" />
           <div class="track-hero__actions">
             <DetailHeroPlayButton :item="item" />
             <DetailHeroButton
@@ -116,6 +120,7 @@ import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
+import DetailHeroListeningStats from "@/components/details/DetailHeroListeningStats.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";

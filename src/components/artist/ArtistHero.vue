@@ -13,33 +13,37 @@
     </template>
 
     <template v-if="item" #main>
-      <img
-        v-if="artistLogo"
-        class="artist-hero__logo"
-        :src="artistLogo"
-        alt=""
-      />
-      <h1 :class="artistLogo ? 'sr-only' : 'artist-hero__name'">
-        {{ item.name }}
-      </h1>
-
-      <div class="artist-hero__actions">
-        <DetailHeroPlayButton :item="item" />
-        <DetailHeroButton
-          :icon="Shuffle"
-          :label="$t('shuffle')"
-          :disabled="!store.activePlayer"
-          @click="api.playMedia(item, undefined, { shuffle: true })"
-        />
-        <DetailHeroButton
-          v-if="radioRelevant(item)"
-          :icon="Orbit"
-          :label="$t('artist_radio')"
-          :disabled="!radioSupported(item)"
-          @click="gotoRadio(item)"
-        />
-        <!-- outside the library the services listed beside already say where it is from -->
-        <DetailHeroSourceBadge :item="item" library-only />
+      <div class="detail-hero-listening-layout">
+        <div class="detail-hero-listening-identity">
+          <img
+            v-if="artistLogo"
+            class="artist-hero__logo"
+            :src="artistLogo"
+            alt=""
+          />
+          <h1 :class="artistLogo ? 'sr-only' : 'artist-hero__name'">
+            {{ item.name }}
+          </h1>
+        </div>
+        <DetailHeroListeningStats :item="item" />
+        <div class="artist-hero__actions">
+          <DetailHeroPlayButton :item="item" />
+          <DetailHeroButton
+            :icon="Shuffle"
+            :label="$t('shuffle')"
+            :disabled="!store.activePlayer"
+            @click="api.playMedia(item, undefined, { shuffle: true })"
+          />
+          <DetailHeroButton
+            v-if="radioRelevant(item)"
+            :icon="Orbit"
+            :label="$t('artist_radio')"
+            :disabled="!radioSupported(item)"
+            @click="gotoRadio(item)"
+          />
+          <!-- outside the library the services listed beside already say where it is from -->
+          <DetailHeroSourceBadge :item="item" library-only />
+        </div>
       </div>
     </template>
 
@@ -55,6 +59,7 @@ import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
+import DetailHeroListeningStats from "@/components/details/DetailHeroListeningStats.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";

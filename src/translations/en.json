@@ -1,4 +1,20 @@
 {
+    "listening_history": {
+        "title": "Your listening history",
+        "completed_plays": "Completed track plays",
+        "all_recorded": "All recorded history",
+        "your_plays": "{count} play by you | {count} plays by you",
+        "your_track_plays": "{count} track play by you | {count} track plays by you",
+        "period_count": "{count} play in this period | {count} plays in this period",
+        "empty": "No recorded plays in this period.",
+        "load_failed": "Your listening history could not be loaded.",
+        "retry": "Try again",
+        "load_more": "Load more",
+        "preferences_title": "Personal listening statistics",
+        "preferences_description": "Show your play count and listening history on detail pages. Hiding these statistics does not stop recording plays or change the Statistics page. Album and artist counts represent completed track plays.",
+        "preferences_saved": "Listening statistics preference saved.",
+        "preferences_failed": "The listening statistics preference could not be saved."
+    },
     "about_episode": "About this episode",
     "about_podcast": "About this podcast",
     "actions": "Actions",

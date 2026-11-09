@@ -12,6 +12,14 @@ export function formatCount(value: number, locale: string): string {
   return new Intl.NumberFormat(locale).format(value);
 }
 
+/** The local date and time of a completed play, stored as a Unix timestamp. */
+export function formatHistoryTimestamp(value: number, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value * 1000));
+}
+
 /** An average with one decimal below 10, so 4.25 reads as 4.3 and 43.4 as 43. */
 export function formatAverage(value: number, locale: string): string {
   return new Intl.NumberFormat(locale, {

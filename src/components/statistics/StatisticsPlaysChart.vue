@@ -1,7 +1,8 @@
 <template>
   <ChartContainer
     :config="chartConfig"
-    class="aspect-auto h-[190px]"
+    class="aspect-auto"
+    :class="compact ? 'h-[48px] w-full' : 'h-[190px]'"
     role="img"
     :aria-label="accessibleLabel"
   >
@@ -12,8 +13,14 @@
       :padding="{ top: 8 }"
     >
       <VisArea :x="x" :y="y" :color="`url(#${gradientId})`" />
-      <VisLine :x="x" :y="y" :color="chartConfig.plays.color" :line-width="3" />
+      <VisLine
+        :x="x"
+        :y="y"
+        :color="chartConfig.plays.color"
+        :line-width="compact ? 2 : 3"
+      />
       <VisAxis
+        v-if="!compact"
         type="x"
         :x="x"
         :tick-values="tickValues"
@@ -22,8 +29,9 @@
         :domain-line="false"
         :grid-line="false"
       />
-      <ChartTooltip />
+      <ChartTooltip v-if="!compact" />
       <ChartCrosshair
+        v-if="!compact"
         :template="tooltipTemplate"
         :color="chartConfig.plays.color"
       />
@@ -57,6 +65,7 @@ export interface PlaysChartDatum {
 
 const props = defineProps<{
   data: PlaysChartDatum[];
+  compact?: boolean;
 }>();
 
 // the 8 days of the rolling week, so each of them gets a label
