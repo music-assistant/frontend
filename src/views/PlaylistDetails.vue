@@ -42,6 +42,8 @@
             :show-refresh-button="true"
             :refresh-on-parent-update="true"
             :sort-listing="ListingType.PLAYLIST_TRACKS"
+            library-toolbar
+            :show-count="false"
             :load-paged-data="loadPlaylistTracks"
             :update-available="updateAvailable"
             :track-table="true"

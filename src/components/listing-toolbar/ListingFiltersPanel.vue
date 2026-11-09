@@ -1,6 +1,7 @@
 <template>
   <section class="flex flex-col gap-4" :aria-labelledby="titleId">
-    <div class="flex items-center justify-between">
+    <!-- as tall as "Clear all", so it showing up doesn't move the filters -->
+    <div class="flex min-h-8 items-center justify-between">
       <h2 :id="titleId" class="text-base font-semibold">
         {{ $t("listing_filters.title") }}
       </h2>
@@ -48,15 +49,18 @@
           :model-value="filter.selected"
           :aria-labelledby="controlId(filter.id)"
           class="gap-0.5"
-          @update:model-value="(value) => filter.select(String(value))"
         >
           <Label
             v-for="option in filter.options"
             :key="option.value"
             class="h-9 cursor-pointer gap-2.5 rounded-md px-1 font-normal hover:bg-accent/50"
           >
-            <RadioGroupItem :value="option.value" />
-            {{ option.label }}
+            <RadioGroupItem
+              :value="option.value"
+              @select="filter.select(option.value)"
+            />
+            <ListingFilterOptionIcon :option="option" />
+            <span class="min-w-0 truncate">{{ option.label }}</span>
           </Label>
         </RadioGroup>
       </div>
@@ -79,6 +83,7 @@ import type {
 import { computed, useId } from "vue";
 import ListingMultiFilterField from "./ListingMultiFilterField.vue";
 import { SECTION_LABEL_CLASS } from "./constants";
+import ListingFilterOptionIcon from "./ListingFilterOptionIcon.vue";
 
 const props = defineProps<{
   filters: ListingFilter[];

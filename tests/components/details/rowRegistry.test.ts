@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   storeMock,
   mockSetUserPreference,
+  mockSetUserPreferences,
   mockGetProvider,
   providersMock,
   manifestsMock,
@@ -11,6 +12,7 @@ const {
     currentUser: null as { preferences?: Record<string, unknown> } | null,
   },
   mockSetUserPreference: vi.fn(),
+  mockSetUserPreferences: vi.fn(),
   mockGetProvider: vi.fn(),
   providersMock: {} as Record<
     string,
@@ -34,6 +36,7 @@ vi.mock("@/plugins/api", () => {
 
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: mockSetUserPreference,
+  setUserPreferences: mockSetUserPreferences,
 }));
 
 import {
@@ -43,7 +46,7 @@ import {
   type RowSource,
 } from "@/components/details/rowRegistry";
 
-type RowId = "with_picker" | "plain" | "admin";
+type RowId = "with_picker" | "plain" | "admin" | "follower";
 
 // the item decides what a row can be fed from
 interface Item {
@@ -58,6 +61,7 @@ const registry = createRowRegistry<RowId, Item>({
     { id: "with_picker", labelKey: "with_picker", supportsSource: true },
     { id: "plain", labelKey: "plain" },
     { id: "admin", labelKey: "admin", adminOnly: true },
+    { id: "follower", labelKey: "follower", hiddenWith: "plain" },
   ],
   preferenceKey: ROWS_KEY,
   sourcesPreferenceKey: SOURCES_KEY,
@@ -80,6 +84,7 @@ function setPreferences(preferences: Record<string, unknown>) {
 describe("rowRegistry", () => {
   beforeEach(() => {
     mockSetUserPreference.mockReset();
+    mockSetUserPreferences.mockReset();
     mockGetProvider.mockReset();
     for (const key of Object.keys(providersMock)) delete providersMock[key];
     for (const key of Object.keys(manifestsMock)) delete manifestsMock[key];
@@ -91,6 +96,7 @@ describe("rowRegistry", () => {
       "with_picker",
       "plain",
       "admin",
+      "follower",
     ]);
     expect(registry.preferenceKey).toBe(ROWS_KEY);
     expect(registry.sourcesPreferenceKey).toBe(SOURCES_KEY);
@@ -174,6 +180,21 @@ describe("rowRegistry", () => {
     expect(hidden).toEqual(new Set(["plain"]));
   });
 
+  it("hides a row along with the row it follows until it is set itself", () => {
+    const available: RowId[] = ["plain", "follower"];
+
+    setPreferences({ [ROWS_KEY]: { hidden: ["plain"] } });
+    expect(registry.resolve(available).hidden).toEqual(
+      new Set(["plain", "follower"]),
+    );
+
+    setPreferences({ [ROWS_KEY]: { hidden: ["plain"], shown: ["follower"] } });
+    expect(registry.resolve(available).hidden).toEqual(new Set(["plain"]));
+
+    setPreferences({ [ROWS_KEY]: { hidden: ["follower"] } });
+    expect(registry.resolve(available).hidden).toEqual(new Set(["follower"]));
+  });
+
   it("writes a row's visibility, order and source", async () => {
     await registry.setHidden("plain", true);
     expect(mockSetUserPreference).toHaveBeenLastCalledWith(
@@ -193,14 +214,27 @@ describe("rowRegistry", () => {
     });
   });
 
-  it("clears both preferences on reset", async () => {
+  it("clears both preferences on reset, in one write", async () => {
     await registry.reset();
-    expect(mockSetUserPreference).toHaveBeenCalledWith(ROWS_KEY, {
-      hidden: [],
-      shown: [],
-      order: [],
+    expect(mockSetUserPreferences).toHaveBeenCalledOnce();
+    expect(mockSetUserPreferences).toHaveBeenCalledWith({
+      [ROWS_KEY]: { hidden: [], shown: [], order: [] },
+      [SOURCES_KEY]: {},
     });
-    expect(mockSetUserPreference).toHaveBeenLastCalledWith(SOURCES_KEY, {});
+  });
+
+  it("clears the extra preferences on reset too", async () => {
+    const withExtras = createRowRegistry<"plain", Item>({
+      rows: [{ id: "plain", labelKey: "plain" }],
+      preferenceKey: ROWS_KEY,
+      extraPreferenceKeys: ["test.rowTypes"],
+    });
+    await withExtras.reset();
+    expect(mockSetUserPreferences).toHaveBeenCalledOnce();
+    expect(mockSetUserPreferences).toHaveBeenCalledWith({
+      [ROWS_KEY]: { hidden: [], shown: [], order: [] },
+      "test.rowTypes": null,
+    });
   });
 
   it("keeps only the row preference when no row has a source picker", async () => {
@@ -210,11 +244,10 @@ describe("rowRegistry", () => {
     });
     await plain.setSource("plain", "spotify--abc");
     await plain.reset();
-    expect(mockSetUserPreference).toHaveBeenCalledTimes(1);
-    expect(mockSetUserPreference).toHaveBeenCalledWith(ROWS_KEY, {
-      hidden: [],
-      shown: [],
-      order: [],
+    expect(mockSetUserPreference).not.toHaveBeenCalled();
+    expect(mockSetUserPreferences).toHaveBeenCalledOnce();
+    expect(mockSetUserPreferences).toHaveBeenCalledWith({
+      [ROWS_KEY]: { hidden: [], shown: [], order: [] },
     });
   });
 

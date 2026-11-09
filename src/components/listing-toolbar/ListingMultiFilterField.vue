@@ -32,7 +32,7 @@
         :model-value="filter.selected.includes(option.value)"
         @update:model-value="filter.toggle(option.value)"
       />
-      <ProviderIcon v-if="option.domain" :domain="option.domain" :size="20" />
+      <ListingFilterOptionIcon :option="option" />
       <span class="min-w-0 truncate">{{ option.label }}</span>
     </Label>
   </fieldset>
@@ -40,7 +40,6 @@
 
 <script setup lang="ts">
 import FacetedFilter from "@/components/FacetedFilter.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -50,6 +49,7 @@ import { ChevronDown } from "@lucide/vue";
 import { computed, useId } from "vue";
 import { useI18n } from "vue-i18n";
 import { SECTION_LABEL_CLASS } from "./constants";
+import ListingFilterOptionIcon from "./ListingFilterOptionIcon.vue";
 
 // beyond this many picks the trigger counts them instead of naming them
 const MAX_NAMED_PICKS = 2;
