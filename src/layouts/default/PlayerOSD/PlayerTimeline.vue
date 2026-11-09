@@ -575,7 +575,7 @@ const hoverPercent = ref<number | null>(null);
 const pointerFocus = ref(false);
 
 const hoverPoint = ref<{ x: number; y: number }>();
-const HOVER_LABEL_OFFSET_PX = 12;
+const HOVER_LABEL_OFFSET_PX = 3;
 
 const onTrackPointerMove = (evt: PointerEvent) => {
   if (!(hasWaveform.value || chapterSegments.value.length) || !canSeek.value)
