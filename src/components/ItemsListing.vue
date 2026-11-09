@@ -617,6 +617,11 @@ export interface Props {
   showRefreshButton?: boolean;
   showSelectButton?: boolean;
   showAlbumTypeFilter?: boolean;
+  // the album types the album type filter offers (default: every type)
+  albumTypeFilterOptions?: string[];
+  // album types carried in by a link: selected instead of the saved filter on
+  // this visit. Nothing is saved until the user changes the album type filter.
+  albumTypeOverride?: string[];
   showProviderFilter?: boolean;
   showCollapseCollections?: boolean;
   // when set, the provider filter allows only a single selection at a time
@@ -700,6 +705,8 @@ const props = withDefaults(defineProps<Props>(), {
   showRefreshButton: undefined,
   showSelectButton: undefined,
   showAlbumTypeFilter: undefined,
+  albumTypeFilterOptions: () => ALBUM_TYPE_FILTER_KEYS,
+  albumTypeOverride: undefined,
   showProviderFilter: undefined,
   showCollapseCollections: undefined,
   singleProviderFilter: false,
@@ -1342,6 +1349,8 @@ const changeAlbumTypeFilter = function (albumType: string) {
 // the whole album type selection at once, with a single save and reload
 const setAlbumTypeFilter = function (albumTypes: string[]) {
   params.value.albumType = albumTypes;
+  // the user's own pick is what gets saved and shown from here on
+  carriedAlbumTypes = undefined;
   setItemsListingPreference(
     props.path || props.itemtype,
     props.itemtype,
@@ -1362,13 +1371,27 @@ const offeredCarriedProvider = () =>
     ? carriedProvider
     : undefined;
 
-// a cached visit that was on a carried-in provider is only returned to by
+// the album types carried in by a link, kept until the user changes the album
+// type filter, the same way as the carried provider. Those not offered here
+// are ignored.
+let carriedAlbumTypes = props.albumTypeOverride;
+const offeredCarriedAlbumTypes = () => {
+  if (props.showAlbumTypeFilter !== true || !carriedAlbumTypes) return;
+  const offered = carriedAlbumTypes.filter((type) =>
+    props.albumTypeFilterOptions.includes(type),
+  );
+  return offered.length ? offered : undefined;
+};
+
+const carriesFilters = () =>
+  offeredCarriedProvider() !== undefined ||
+  offeredCarriedAlbumTypes() !== undefined;
+
+// a cached visit that was on a carried-in filter is only returned to by
 // going back; reached any other way, the listing starts over on the saved
 // filter, or on what is carried in now
 const cachedVisitApplies = () =>
-  !store.prevState?.carried ||
-  offeredCarriedProvider() !== undefined ||
-  returnedByHistory(router);
+  !store.prevState?.carried || carriesFilters() || returnedByHistory(router);
 
 const changeProviderFilter = function (providerId: string) {
   if (props.requireProviderSelection) {
@@ -1788,6 +1811,7 @@ const clearFilters = function () {
   const cleared = clearedFilters(offered);
   Object.assign(p, cleared.params);
   if (offered.has("provider")) carriedProvider = undefined;
+  if (offered.has("album_type")) carriedAlbumTypes = undefined;
   setItemsListingPreferences(
     props.path || props.itemtype,
     props.itemtype,
@@ -1927,7 +1951,7 @@ const filterMenuItems = function () {
       active: params.value.albumType && params.value.albumType.length > 0,
       closeOnContentClick: false,
       overflowAllowed: true,
-      subItems: ALBUM_TYPE_FILTER_KEYS.map((key) => {
+      subItems: props.albumTypeFilterOptions.map((key) => {
         return {
           label: `album_type.${key}`,
           selected: params.value.albumType?.includes(key),
@@ -2211,6 +2235,10 @@ const restoreSettings = async function () {
     params.value.albumType = prefs.albumType;
   }
 
+  // the carried-in album types outrank the saved filter, on every restore
+  const carriedTypes = offeredCarriedAlbumTypes();
+  if (carriedTypes) params.value.albumType = carriedTypes;
+
   // get stored/default provider filter for this itemtype
   // only apply stored filter if there are multiple providers available
   // with a single provider, any stored filter is either redundant or stale
@@ -2315,7 +2343,7 @@ if (props.restoreState) {
     store.prevState = {
       path: key,
       parentUri: props.parentItem?.uri,
-      carried: offeredCarriedProvider() !== undefined,
+      carried: carriesFilters(),
       scrollPos: el?.scrollTop || 0,
       pagedItems: pagedItems.value,
       allItemsReceived: allItemsReceived.value,
@@ -2541,14 +2569,19 @@ onMounted(async () => {
     if (props.sortListing) {
       params.value.sortBy = librarySorting.normalizeSortBy(params.value.sortBy);
     }
-    // what the last visit left behind gives way to a provider carried in by a
-    // link, unless it already came from there
+    // what the last visit left behind gives way to a provider or album types
+    // carried in by a link, unless it already came from there
     const carried = offeredCarriedProvider();
     const switchProvider =
       carried !== undefined && params.value.provider?.[0] !== carried;
-    if (switchProvider) {
-      params.value.provider = [carried];
-    } else {
+    if (switchProvider) params.value.provider = [carried];
+    const carriedTypes = offeredCarriedAlbumTypes();
+    const switchAlbumTypes =
+      carriedTypes !== undefined &&
+      !sameAlbumTypes(params.value.albumType, carriedTypes);
+    if (switchAlbumTypes) params.value.albumType = carriedTypes;
+    const switchFilters = switchProvider || switchAlbumTypes;
+    if (!switchFilters) {
       // scroll the main listing back to its previous scroll position
       nextTick(() => {
         const el = document.querySelector(".content-section") as HTMLElement;
@@ -2559,7 +2592,7 @@ onMounted(async () => {
       });
     }
     loading.value = false;
-    if (applyQueryGenreFilter() || switchProvider) {
+    if (applyQueryGenreFilter() || switchFilters) {
       loadData(true, undefined, true);
     }
   } else {
@@ -2671,6 +2704,14 @@ async function selectEveryItem() {
   await loadAllItems();
   selectedItems.value = pagedItems.value.filter((x) => !isParentDirItem(x));
   showCheckboxes.value = true;
+}
+
+/** Whether both selections hold the same album types, in any order. */
+function sameAlbumTypes(current: string[] | undefined, other: string[]) {
+  return (
+    current?.length === other.length &&
+    other.every((type) => current.includes(type))
+  );
 }
 </script>
 

@@ -10,6 +10,7 @@ import {
   MediaType,
   type Player,
   PlaylistMatchPolicy,
+  type ProviderInstance,
   RepeatMode,
   SortDirection,
   SortField,
@@ -19,6 +20,8 @@ import {
   TaskStatus,
   UserRole,
 } from "@/plugins/api/interfaces";
+import { getIngressClientKey } from "@/helpers/ingress";
+import { eventbus, type StreamHeldDialogEvent } from "@/plugins/eventbus";
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../../fixtures/playlist";
@@ -530,6 +533,164 @@ describe("MusicAssistantApi error handling", () => {
     await expect(request).resolves.toEqual([]);
   });
 
+  it("sends a random seed with library track listings", async () => {
+    const request = api.getLibraryTracks(
+      undefined,
+      undefined,
+      20,
+      40,
+      SortField.RANDOM,
+      undefined,
+      undefined,
+      undefined,
+      1234,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/tracks/library_items");
+    expect(transport.lastCommand.args).toEqual({
+      favorite: undefined,
+      search: undefined,
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.RANDOM,
+      sort_direction: undefined,
+      provider: undefined,
+      genre: undefined,
+      random_seed: 1234,
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends random seeds with every random-capable library listing", async () => {
+    const seed = 1234;
+    const requests: Array<{
+      command: string;
+      request: () => Promise<unknown>;
+    }> = [
+      {
+        command: "music/artists/library_items",
+        request: () =>
+          api.getLibraryArtists(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/albums/library_items",
+        request: () =>
+          api.getLibraryAlbums(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/playlists/library_items",
+        request: () =>
+          api.getLibraryPlaylists(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/radios/library_items",
+        request: () =>
+          api.getLibraryRadios(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/audiobooks/library_items",
+        request: () =>
+          api.getLibraryAudiobooks(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/podcasts/library_items",
+        request: () =>
+          api.getLibraryPodcasts(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/genres/library_items",
+        request: () =>
+          api.getLibraryGenres({
+            limit: 20,
+            offset: 40,
+            sort_field: SortField.RANDOM,
+            random_seed: seed,
+          }),
+      },
+    ];
+
+    for (const testCase of requests) {
+      const request = testCase.request();
+      expect(transport.lastCommand.command).toBe(testCase.command);
+      expect(transport.lastCommand.args).toMatchObject({ random_seed: seed });
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    }
+  });
+
   it.each([true, false, undefined])(
     "sends artist track parameters with favorite %s",
     async (favorite) => {
@@ -808,6 +969,7 @@ describe("MusicAssistantApi error handling", () => {
       message_id: transport.lastCommand.message_id!,
       error_code: 1001,
       details: null,
+      data: null,
     });
 
     await expect(command).rejects.toMatchObject({
@@ -1013,6 +1175,24 @@ describe("MusicAssistantApi error handling", () => {
     });
   });
 
+  it("asks for the discography releases of the given types", () => {
+    api.getArtistDiscography(
+      "artist-1",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      [AlbumType.ALBUM, AlbumType.LIVE],
+    );
+
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      album_types: [AlbumType.ALBUM, AlbumType.LIVE],
+    });
+  });
+
   it("asks the library for the albums an artist appears on", () => {
     api.getArtistAppearsOn(
       "artist-1",
@@ -1174,6 +1354,171 @@ describe("MusicAssistantApi error handling", () => {
       expect.any(Error),
     );
     expect(api["commands"].size).toBe(0);
+  });
+
+  it("stops a queue and resolves once the server answers", async () => {
+    const stop = api.queueCommandStop("living_room");
+
+    expect(transport.lastCommand.command).toBe("player_queues/stop");
+    expect(transport.lastCommand.args).toEqual({ queue_id: "living_room" });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: null,
+      partial: false,
+    });
+    await expect(stop).resolves.toBeNull();
+  });
+
+  describe("a playback refused over a held stream", () => {
+    const HOLDER = {
+      queue_id: "living_room",
+      player_name: "Living room",
+      provider_instance: "spotify--abc",
+    };
+    const PLAY_ARGS = {
+      queue_id: "kitchen",
+      media: ["spotify--abc://track/1"],
+      option: "play",
+    };
+    let dialogEvents: StreamHeldDialogEvent[];
+    const onDialog = (evt: StreamHeldDialogEvent) => dialogEvents.push(evt);
+
+    beforeEach(() => {
+      dialogEvents = [];
+      eventbus.on("streamHeldDialog", onDialog);
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(console, "debug").mockImplementation(() => {});
+      api.providers["spotify--abc"] = {
+        instance_id: "spotify--abc",
+        domain: "spotify",
+        name: "Spotify [marcel]",
+      } as ProviderInstance;
+    });
+
+    afterEach(() => {
+      eventbus.off("streamHeldDialog", onDialog);
+      delete api.providers["spotify--abc"];
+    });
+
+    function refuse(data: Record<string, unknown> | null = HOLDER) {
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        error_code: 29,
+        details:
+          "Spotify [marcel] is already playing on Living room. Stop playback there first.",
+        data,
+      });
+    }
+
+    it("offers the dialog instead of a toast and still rejects the caller", async () => {
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS);
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+        data: HOLDER,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(mockToastError).not.toHaveBeenCalled();
+      expect(dialogEvents).toEqual([
+        {
+          holderQueueId: "living_room",
+          holderName: "Living room",
+          providerName: "Spotify [marcel]",
+          retry: expect.any(Function),
+        },
+      ]);
+    });
+
+    it("sends the refused command again on retry", async () => {
+      api.sendCommand("player_queues/play_media", PLAY_ARGS).catch(() => {});
+      const refused = transport.lastCommand;
+      refuse();
+
+      const retry = dialogEvents[0].retry();
+
+      expect(transport.lastCommand.command).toBe("player_queues/play_media");
+      expect(transport.lastCommand.args).toEqual(PLAY_ARGS);
+      expect(transport.lastCommand.message_id).not.toBe(refused.message_id);
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: null,
+        partial: false,
+      });
+      await expect(retry).resolves.toBeNull();
+    });
+
+    it("offers the dialog for a queue item started from the queue", async () => {
+      const command = api.queueCommandPlayIndex("kitchen", "item-1");
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(mockToastError).not.toHaveBeenCalled();
+      dialogEvents[0].retry().catch(() => {});
+      expect(transport.lastCommand.command).toBe("player_queues/play_index");
+      expect(transport.lastCommand.args).toEqual({
+        queue_id: "kitchen",
+        index: "item-1",
+      });
+    });
+
+    it("keeps the toast for a command that waits for no result", () => {
+      api.queueCommandTransfer("living_room", "kitchen", true);
+
+      refuse();
+
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledOnce();
+    });
+
+    it("keeps the toast when no dialog is listening", async () => {
+      eventbus.off("streamHeldDialog", onDialog);
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS);
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledOnce();
+    });
+
+    it("leaves a suppressed refusal to its caller", async () => {
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS, {
+        suppressGlobalError: true,
+      });
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).not.toHaveBeenCalled();
+    });
+
+    it("keeps the toast when the refusal does not name the holder", async () => {
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS);
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse(null);
+
+      await rejection;
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledWith(
+        "Spotify [marcel] is already playing on Living room. Stop playback there first.",
+      );
+    });
   });
 
   it("imports a playlist with the chosen match policy", async () => {
@@ -1346,6 +1691,58 @@ describe("MusicAssistantApi error handling", () => {
   });
 });
 
+describe("MusicAssistantApi connection over Home Assistant Ingress", () => {
+  const INGRESS_ADDRESS = "http://ha.local:8123/api/hassio_ingress/abc";
+  let openedUrls: string[];
+  let originalUrl: string;
+
+  beforeEach(() => {
+    openedUrls = [];
+    originalUrl = window.location.href;
+    // a socket that never opens shows which URL the api connected to
+    vi.stubGlobal(
+      "WebSocket",
+      class {
+        constructor(url: string) {
+          openedUrls.push(url);
+        }
+      },
+    );
+  });
+
+  afterEach(() => {
+    setUrl(originalUrl);
+    localStorage.clear();
+    vi.unstubAllGlobals();
+  });
+
+  it("identifies this browser on the API connection", () => {
+    setUrl(`${INGRESS_ADDRESS}/`);
+
+    void new MusicAssistantApi().initialize(INGRESS_ADDRESS);
+
+    expect(openedUrls).toEqual([
+      `ws://ha.local:8123/api/hassio_ingress/abc/ws?ingress_client_key=${getIngressClientKey()}`,
+    ]);
+  });
+
+  it("does not identify this browser outside Ingress", () => {
+    void new MusicAssistantApi().initialize("http://ma.local:8095");
+
+    expect(openedUrls).toEqual(["ws://ma.local:8095/ws"]);
+  });
+});
+
+/**
+ * Point the test window at another URL.
+ */
+function setUrl(url: string) {
+  // setURL, as replaceState can not change the origin
+  (
+    window as unknown as { happyDOM: { setURL(url: string): void } }
+  ).happyDOM.setURL(url);
+}
+
 /**
  * Run a task and hand back the options of the toast announcing it.
  */
@@ -1373,5 +1770,6 @@ function createErrorResult(
     message_id: command.message_id,
     error_code: 999,
     details,
+    data: null,
   };
 }
