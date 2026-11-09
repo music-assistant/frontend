@@ -63,14 +63,15 @@
           </template>
         </DropdownMenuRadioItem>
       </DropdownMenuRadioGroup>
-      <template v-if="viewMode !== undefined">
+      <template v-if="showViewSection">
         <DropdownMenuSeparator />
         <ListingViewModeRow
+          v-if="!fixedView"
           :model-value="viewMode"
           @update:model-value="(value) => emit('view-mode', value)"
         />
         <GridSizeSlider
-          v-if="gridControls && viewMode === 'panel'"
+          v-if="gridControls && showGridControls"
           v-bind="gridControls"
         />
       </template>
@@ -105,13 +106,14 @@ import ListingViewModeRow from "./ListingViewModeRow.vue";
 
 /**
  * A library page's sort menu: picking the sort it is on flips its order, and
- * with a view given, the menu picks that too.
+ * unless the page fixes the view, the menu picks that too.
  */
 const props = defineProps<{
   options: SortOptionInfo[];
   sortBy: string;
-  // off where the page picks the view itself
-  viewMode?: string;
+  viewMode: string;
+  // the page picks the view itself: only the thumbs view's controls show
+  fixedView?: boolean;
   // the cover size and action buttons, shown under the thumbs view
   gridControls?: GridSizeControls;
   // a phone has room for the icon only
@@ -151,16 +153,26 @@ const triggerLabel = computed(() =>
     : currentLabel.value,
 );
 
+const showGridControls = computed(
+  () => !!props.gridControls && props.viewMode === "panel",
+);
+
+const showViewSection = computed(
+  () => !props.fixedView || showGridControls.value,
+);
+
 const hasMenu = computed(
-  () => props.options.length > 0 || props.viewMode !== undefined,
+  () => props.options.length > 0 || showViewSection.value,
 );
 
 // with more than the sort in it, or opened from the field, each part gets a title
-const titled = computed(() => !props.compact || props.viewMode !== undefined);
+const titled = computed(() => !props.compact || showViewSection.value);
 
-// the field shows the view the listing is in beside the sort
+// the field shows the view the listing is in beside the sort, when it can be picked
 const currentView = computed(() =>
-  VIEW_MODES.find((view) => view.value === props.viewMode),
+  props.fixedView
+    ? undefined
+    : VIEW_MODES.find((view) => view.value === props.viewMode),
 );
 
 const pickSortOption = (event: Event, option: SortOptionInfo) => {
