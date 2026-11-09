@@ -3,42 +3,25 @@ import {
   useGuestEntryResolver,
   type GuestEntryState,
 } from "@/composables/guest/useGuestEntryResolver";
-import { markMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
 import { EventType } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { defineComponent, h, type DeepReadonly, type Ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const {
-  apiMock,
-  authManagerMock,
-  guestIdentity,
-  routeState,
-  routerReplace,
-  storeMock,
-} = vi.hoisted(() => {
+const { apiMock, routeState, routerReplace, storeMock } = vi.hoisted(() => {
   const routeState = { current: undefined as { path: string } | undefined };
-  const guestIdentity = { value: "guest-token-1" as string | undefined };
   return {
     apiMock: {
-      baseUrl: "http://music-assistant:8095",
-      isRemoteConnection: { value: false },
       providers: {} as Record<string, { domain: string }>,
       sendCommand: vi.fn(),
       state: { value: "initialized" },
       subscribe: vi.fn(),
     },
-    authManagerMock: {
-      getClaim: vi.fn(() => guestIdentity.value),
-      isGuestAccessSession: vi.fn(() => true),
-    },
-    guestIdentity,
     routeState,
     routerReplace: vi.fn(async (path: string) => {
       setRoutePath(path);
     }),
     storeMock: {
-      currentUser: undefined as { user_id: string } | undefined,
       enabledPlugins: new Set<string>(),
     },
   };
@@ -47,16 +30,6 @@ const {
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
   ConnectionState: { INITIALIZED: "initialized" },
-}));
-
-vi.mock("@/plugins/auth", () => ({
-  authManager: authManagerMock,
-}));
-
-vi.mock("@/plugins/remote", () => ({
-  remoteConnectionManager: {
-    currentRemoteId: { value: null },
-  },
 }));
 
 vi.mock("@/plugins/store", () => ({
@@ -72,11 +45,6 @@ vi.mock("vue-router", async () => {
   };
 });
 
-afterEach(() => {
-  vi.unstubAllGlobals();
-  vi.restoreAllMocks();
-});
-
 describe("guest entry decisions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -84,12 +52,6 @@ describe("guest entry decisions", () => {
     storeMock.enabledPlugins = new Set();
     apiMock.sendCommand.mockResolvedValue(null);
     apiMock.subscribe.mockImplementation(() => () => {});
-    authManagerMock.getClaim.mockImplementation(() => guestIdentity.value);
-    authManagerMock.isGuestAccessSession.mockReturnValue(true);
-    guestIdentity.value = "guest-token-1";
-    vi.stubGlobal("localStorage", createStorage());
-    vi.stubGlobal("sessionStorage", createStorage());
-    storeMock.currentUser = undefined;
     setRoutePath("/guest");
   });
 
@@ -103,11 +65,6 @@ describe("guest entry decisions", () => {
       undefined,
       { suppressGlobalError: true },
     );
-    expect(getStoredAffinity()).toEqual({
-      version: 2,
-      connectionIdentity: "local:http://music-assistant:8095",
-      participantIdentity: "guest-token-1",
-    });
   });
 
   it("propagates a music quiz info failure", async () => {
@@ -115,15 +72,6 @@ describe("guest entry decisions", () => {
     apiMock.sendCommand.mockRejectedValue(new Error("boom"));
 
     await expect(resolveGuestEntry()).rejects.toThrow("boom");
-  });
-
-  it("keeps an entered Music Quiz ahead of Party after it disappears", async () => {
-    setProviders("party", "music_quiz");
-    apiMock.sendCommand.mockResolvedValueOnce({ game_id: "active" });
-    await expect(resolveGuestEntry()).resolves.toBe("quiz");
-
-    apiMock.sendCommand.mockResolvedValue(null);
-    await expect(resolveGuestEntry()).resolves.toBe("quiz-inactive");
   });
 
   it("keeps showing a finished Music Quiz while it still exists", async () => {
@@ -170,30 +118,6 @@ describe("guest entry decisions", () => {
     await expect(resolveGuestEntry()).resolves.toBe("inactive");
     expect(apiMock.sendCommand).not.toHaveBeenCalled();
   });
-
-  it("does not restore Quiz affinity for a different guest identity", async () => {
-    setProviders("party", "music_quiz");
-    apiMock.sendCommand.mockResolvedValueOnce({ game_id: "active" });
-    await expect(resolveGuestEntry()).resolves.toBe("quiz");
-
-    guestIdentity.value = "guest-token-2";
-    apiMock.sendCommand.mockResolvedValue(null);
-    await expect(resolveGuestEntry()).resolves.toBe("party");
-    expect(getStoredAffinity()).toBeNull();
-  });
-
-  it("ignores corrupt affinity without misrouting a Party guest", async () => {
-    setProviders("party", "music_quiz");
-    sessionStorage.setItem("music_quiz_guest_affinity", "{broken");
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    await expect(resolveGuestEntry()).resolves.toBe("party");
-    expect(getStoredAffinity()).toBeNull();
-    expect(warn).toHaveBeenCalledWith(
-      "Ignoring corrupt Music Quiz participant affinity.",
-      expect.any(SyntaxError),
-    );
-  });
 });
 
 describe("guest entry transitions", () => {
@@ -207,12 +131,6 @@ describe("guest entry transitions", () => {
     apiMock.state.value = "initialized";
     apiMock.sendCommand.mockResolvedValue(null);
     apiMock.subscribe.mockImplementation(() => () => {});
-    authManagerMock.getClaim.mockImplementation(() => guestIdentity.value);
-    authManagerMock.isGuestAccessSession.mockReturnValue(true);
-    guestIdentity.value = "guest-token-1";
-    vi.stubGlobal("localStorage", createStorage());
-    vi.stubGlobal("sessionStorage", createStorage());
-    storeMock.currentUser = undefined;
     setRoutePath("/guest");
   });
 
@@ -282,7 +200,7 @@ describe("guest entry transitions", () => {
     expect(apiMock.sendCommand).not.toHaveBeenCalled();
   });
 
-  it("keeps a Party guest in Quiz context and returns to the next game", async () => {
+  it("moves a Party guest into each new Quiz and back when it is removed", async () => {
     setProviders("party", "music_quiz");
     wrapper = mountResolver((state) => {
       resolverState = state;
@@ -294,10 +212,9 @@ describe("guest entry transitions", () => {
     await expectState("quiz");
 
     apiMock.sendCommand.mockResolvedValue(null);
-    markMusicQuizJoinedGameEnded();
     signalProviderEvent({ event: "game_removed" });
-    await expectState("quiz-inactive");
-    expect(getRoutePath()).toBe("/guest");
+    await expectState("party");
+    expect(getRoutePath()).toBe("/guest/party");
 
     apiMock.sendCommand.mockResolvedValue({ game_id: "next" });
     signalProviderEvent({ event: "game_updated", state: {} });
@@ -306,73 +223,96 @@ describe("guest entry transitions", () => {
     expect(routerReplace.mock.calls.map(([path]) => path)).toEqual([
       "/guest/party",
       "/guest/quiz",
-      "/guest",
+      "/guest/party",
       "/guest/quiz",
     ]);
   });
 
-  it("restores Quiz affinity when the resolver is recreated", async () => {
-    setProviders("party", "music_quiz");
-    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
-    wrapper = mountResolver((state) => {
-      resolverState = state;
-    });
-
-    await expectState("quiz");
-
-    wrapper.unmount();
-    wrapper = undefined;
-    setRoutePath("/guest");
-    apiMock.sendCommand.mockResolvedValue(null);
-    wrapper = mountResolver((state) => {
-      resolverState = state;
-    });
-
-    await expectState("quiz-inactive");
-    expect(getRoutePath()).toBe("/guest");
-  });
-
-  it("restores Quiz affinity for a regular authenticated user", async () => {
-    guestIdentity.value = undefined;
-    storeMock.currentUser = { user_id: "regular-user" };
-    setProviders("party", "music_quiz");
+  it("returns a Quiz guest to the Party when the game is removed", async () => {
+    setProviders("music_quiz", "party");
     apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
     wrapper = mountResolver((state) => {
       resolverState = state;
     });
     await expectState("quiz");
 
-    wrapper.unmount();
-    wrapper = undefined;
-    setRoutePath("/guest");
     apiMock.sendCommand.mockResolvedValue(null);
-    wrapper = mountResolver((state) => {
-      resolverState = state;
-    });
-
-    await expectState("quiz-inactive");
-    expect(getStoredAffinity()).toEqual({
-      version: 2,
-      connectionIdentity: "local:http://music-assistant:8095",
-      participantIdentity: "regular-user",
-    });
-  });
-
-  it("drops live affinity when the guest identity changes", async () => {
-    setProviders("party", "music_quiz");
-    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
-    wrapper = mountResolver((state) => {
-      resolverState = state;
-    });
-    await expectState("quiz");
-
-    guestIdentity.value = "guest-token-2";
-    apiMock.sendCommand.mockResolvedValue(null);
-    signalProviderEvent({ event: "game_updated", state: {} });
-
+    signalProviderEvent({ event: "game_removed" });
     await expectState("party");
+
     expect(getRoutePath()).toBe("/guest/party");
-    expect(getStoredAffinity()).toBeNull();
+  });
+
+  it("shows the no-active Quiz state when the game is removed without a Party", async () => {
+    setProviders("music_quiz");
+    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
+    wrapper = mountResolver((state) => {
+      resolverState = state;
+    });
+    await expectState("quiz");
+
+    apiMock.sendCommand.mockResolvedValue(null);
+    signalProviderEvent({ event: "game_removed" });
+    await expectState("quiz-inactive");
+
+    expect(getRoutePath()).toBe("/guest");
+    expect(apiMock.sendCommand).toHaveBeenCalledTimes(2);
+  });
+
+  it("resolves again when the game is removed during a refresh", async () => {
+    setProviders("music_quiz");
+    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
+    wrapper = mountResolver((state) => {
+      resolverState = state;
+    });
+    await expectState("quiz");
+
+    let resolveRefresh!: (value: null) => void;
+    apiMock.sendCommand
+      .mockImplementationOnce(
+        () =>
+          new Promise<null>((resolve) => {
+            resolveRefresh = resolve;
+          }),
+      )
+      .mockResolvedValue(null);
+    signalProviderEvent({ event: "game_updated", state: {} });
+    await flushPromises();
+    expect(apiMock.sendCommand).toHaveBeenCalledTimes(2);
+
+    signalProviderEvent({ event: "game_removed" });
+    resolveRefresh(null);
+    await expectState("quiz-inactive");
+
+    expect(getRoutePath()).toBe("/guest");
+    expect(apiMock.sendCommand).toHaveBeenCalledTimes(3);
+  });
+
+  it("leaves the Quiz route when the game is removed while still loading", async () => {
+    setProviders("music_quiz");
+    setRoutePath("/guest/quiz");
+    let resolveInitialRequest!: (value: null) => void;
+    apiMock.sendCommand
+      .mockImplementationOnce(
+        () =>
+          new Promise<null>((resolve) => {
+            resolveInitialRequest = resolve;
+          }),
+      )
+      .mockResolvedValue(null);
+    wrapper = mountResolver((state) => {
+      resolverState = state;
+    });
+    await flushPromises();
+    expect(apiMock.sendCommand).toHaveBeenCalledOnce();
+    expect(resolverState.value).toBe("loading");
+
+    signalProviderEvent({ event: "game_removed" });
+    resolveInitialRequest(null);
+    await expectState("quiz-inactive");
+
+    expect(getRoutePath()).toBe("/guest");
+    expect(apiMock.sendCommand).toHaveBeenCalledTimes(2);
   });
 
   it("does not let a stale resolution override a newer game event", async () => {
@@ -404,7 +344,7 @@ describe("guest entry transitions", () => {
     expect(routerReplace).toHaveBeenCalledWith("/guest/quiz");
   });
 
-  it("does not record affinity from a stale active Quiz result", async () => {
+  it("does not let a stale active Quiz result override a newer game event", async () => {
     setProviders("party", "music_quiz");
     let resolveFirstRequest!: (value: { game_id: string }) => void;
     apiMock.sendCommand
@@ -426,129 +366,8 @@ describe("guest entry transitions", () => {
     resolveFirstRequest({ game_id: "stale" });
 
     await expectState("party");
-    expect(getStoredAffinity()).toBeNull();
     expect(routerReplace).toHaveBeenCalledOnce();
     expect(routerReplace).toHaveBeenCalledWith("/guest/party");
-  });
-
-  it("shows the no-active Quiz state when a joined game ends", async () => {
-    setProviders("music_quiz");
-    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
-    wrapper = mountResolver((state) => {
-      resolverState = state;
-    });
-    await expectState("quiz");
-
-    markMusicQuizJoinedGameEnded();
-    apiMock.sendCommand.mockResolvedValue(null);
-    signalProviderEvent({ event: "game_removed" });
-    await expectState("quiz-inactive");
-
-    expect(getRoutePath()).toBe("/guest");
-    expect(apiMock.sendCommand).toHaveBeenCalledTimes(2);
-  });
-
-  it("does not route an ended Quiz guest to an available Party", async () => {
-    setProviders("music_quiz", "party");
-    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
-    wrapper = mountResolver((state) => {
-      resolverState = state;
-    });
-    await expectState("quiz");
-
-    markMusicQuizJoinedGameEnded();
-    apiMock.sendCommand.mockResolvedValue(null);
-    signalProviderEvent({ event: "game_removed" });
-    await expectState("quiz-inactive");
-
-    expect(getRoutePath()).toBe("/guest");
-  });
-
-  it("does not let an in-flight refresh overwrite the ended state", async () => {
-    setProviders("music_quiz");
-    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
-    wrapper = mountResolver((state) => {
-      resolverState = state;
-    });
-    await expectState("quiz");
-
-    let resolveRefresh!: (value: null) => void;
-    apiMock.sendCommand
-      .mockImplementationOnce(
-        () =>
-          new Promise<null>((resolve) => {
-            resolveRefresh = resolve;
-          }),
-      )
-      .mockResolvedValue(null);
-    signalProviderEvent({ event: "game_updated", state: {} });
-    await flushPromises();
-    expect(apiMock.sendCommand).toHaveBeenCalledTimes(2);
-
-    markMusicQuizJoinedGameEnded();
-    signalProviderEvent({ event: "game_removed" });
-    resolveRefresh(null);
-    await expectState("quiz-inactive");
-
-    expect(getRoutePath()).toBe("/guest");
-    expect(apiMock.sendCommand).toHaveBeenCalledTimes(3);
-  });
-
-  it("restores the no-active state while the guest route is loading", async () => {
-    setProviders("music_quiz");
-    setRoutePath("/guest/quiz");
-    storeAffinity("guest-token-1");
-    let resolveInitialRequest!: (value: null) => void;
-    apiMock.sendCommand
-      .mockImplementationOnce(
-        () =>
-          new Promise<null>((resolve) => {
-            resolveInitialRequest = resolve;
-          }),
-      )
-      .mockResolvedValue(null);
-    wrapper = mountResolver((state) => {
-      resolverState = state;
-    });
-    await flushPromises();
-    expect(apiMock.sendCommand).toHaveBeenCalledOnce();
-    expect(resolverState.value).toBe("loading");
-
-    markMusicQuizJoinedGameEnded();
-    signalProviderEvent({ event: "game_removed" });
-    resolveInitialRequest(null);
-    await expectState("quiz-inactive");
-
-    expect(getRoutePath()).toBe("/guest");
-    expect(apiMock.sendCommand).toHaveBeenCalledTimes(2);
-  });
-
-  it("keeps live affinity when persistent storage is unavailable", async () => {
-    const storageError = new DOMException("Storage denied", "SecurityError");
-    vi.stubGlobal("sessionStorage", {
-      getItem: vi.fn(() => {
-        throw storageError;
-      }),
-      removeItem: vi.fn(() => {
-        throw storageError;
-      }),
-      setItem: vi.fn(() => {
-        throw storageError;
-      }),
-    });
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    setProviders("party", "music_quiz");
-    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
-    wrapper = mountResolver((state) => {
-      resolverState = state;
-    });
-    await expectState("quiz");
-
-    apiMock.sendCommand.mockResolvedValue(null);
-    signalProviderEvent({ event: "game_removed" });
-    await expectState("quiz-inactive");
-
-    expect(getRoutePath()).toBe("/guest");
   });
 
   it("ignores a provider event from an unrelated instance once scoped", async () => {
@@ -650,34 +469,4 @@ function getSubscriber(eventType: EventType) {
   );
   expect(call).toBeDefined();
   return call?.[1] as (event: unknown) => void;
-}
-
-function storeAffinity(guestIdentity: string) {
-  sessionStorage.setItem(
-    "music_quiz_guest_affinity",
-    JSON.stringify({
-      version: 2,
-      connectionIdentity: "local:http://music-assistant:8095",
-      participantIdentity: guestIdentity,
-    }),
-  );
-}
-
-function getStoredAffinity(): unknown {
-  const value = sessionStorage.getItem("music_quiz_guest_affinity");
-  return value === null ? null : JSON.parse(value);
-}
-
-function createStorage() {
-  const values = new Map<string, string>();
-  return {
-    clear: () => values.clear(),
-    getItem: (key: string) => values.get(key) ?? null,
-    removeItem: (key: string) => {
-      values.delete(key);
-    },
-    setItem: (key: string, value: string) => {
-      values.set(key, value);
-    },
-  };
 }

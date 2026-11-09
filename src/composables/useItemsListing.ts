@@ -42,6 +42,7 @@ export interface LoadDataParams {
   hideEmptyFilter?: boolean | null;
   hideFullyPlayed?: boolean;
   refresh?: boolean;
+  randomSeed?: number;
   albumType?: string[];
   provider?: string[];
   collapseCollections?: boolean;
@@ -53,8 +54,8 @@ export interface StoredState {
   // artist's albums use "artistalbums"), so the parent's uri scopes the
   // restore to the item that was actually on screen
   parentUri?: string;
-  // the listing was left on a provider carried in by a link, one the user has
-  // not picked: only going back shows that visit again
+  // the listing was left on a provider or album types carried in by a link,
+  // ones the user has not picked: only going back shows that visit again
   carried: boolean;
   scrollPos: number;
   pagedItems: MediaItemType[];
@@ -101,14 +102,7 @@ export function useItemsListing(
   const sortOptionsLoaded = ref(false);
   const sortOptions = computed(() =>
     serverSortOptions.value.filter(
-      (option) =>
-        !(props.sortOptionExcludeFields ?? []).includes(option.field) &&
-        !(
-          props.sortListing &&
-          props.loadPagedData &&
-          (option.field === SortField.RANDOM ||
-            option.field === SortField.RANDOM_PLAY_COUNT)
-        ),
+      (option) => !(props.sortOptionExcludeFields ?? []).includes(option.field),
     ),
   );
   const librarySorting = useLibrarySorting(
@@ -204,6 +198,18 @@ export function useItemsListing(
       const currentSort = librarySorting.current.value;
       const selectedSortOption = librarySorting.selectedOption.value;
       params.value.sortField = currentSort.field as SortField;
+      if (
+        clear ||
+        refresh ||
+        filterParamsChanged ||
+        params.value.randomSeed === undefined
+      ) {
+        params.value.randomSeed =
+          currentSort.field === SortField.RANDOM ||
+          currentSort.field === SortField.RANDOM_PLAY_COUNT
+            ? Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
+            : undefined;
+      }
       params.value.sortDirection =
         selectedSortOption?.supports_direction === false
           ? undefined

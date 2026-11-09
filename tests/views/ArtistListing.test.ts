@@ -77,6 +77,8 @@ vi.mock("@/components/ItemsListing.vue", () => ({
       "providerFilterOptions",
       "showProviderFilter",
       "showAlbumTypeFilter",
+      "albumTypeFilterOptions",
+      "albumTypeOverride",
       "sortKeys",
     ],
     template:
@@ -465,7 +467,6 @@ describe("ArtistListing", () => {
     expect(listing(wrapper).props("sortListing")).toBe(
       ListingType.ARTIST_DISCOGRAPHY,
     );
-    expect(listing(wrapper).props("showAlbumTypeFilter")).toBe(false);
     expect(mockGetArtistDiscography).toHaveBeenCalledWith(
       "artist-1",
       "jazz",
@@ -473,7 +474,64 @@ describe("ArtistListing", () => {
       40,
       SortField.YEAR,
       SortDirection.DESC,
+      undefined,
     );
+  });
+
+  it("filters the discography by the release types the artist page offers", async () => {
+    const wrapper = await mountListing(
+      "discography",
+      artist({ item_id: "artist-1" }),
+    );
+
+    expect(listing(wrapper).props("showAlbumTypeFilter")).toBe(true);
+    expect(listing(wrapper).props("albumTypeFilterOptions")).toEqual([
+      AlbumType.ALBUM,
+      AlbumType.SINGLE,
+      AlbumType.EP,
+      AlbumType.COMPILATION,
+      AlbumType.LIVE,
+      AlbumType.SOUNDTRACK,
+    ]);
+
+    await listing(wrapper).props("loadPagedData")({
+      offset: 0,
+      limit: 20,
+      sortBy: "year:desc",
+      search: "",
+      albumType: [AlbumType.LIVE, AlbumType.UNKNOWN, AlbumType.ALBUM],
+    });
+
+    expect(mockGetArtistDiscography).toHaveBeenLastCalledWith(
+      "artist-1",
+      "",
+      20,
+      0,
+      undefined,
+      undefined,
+      [AlbumType.ALBUM, AlbumType.LIVE],
+    );
+  });
+
+  it("starts the discography on the types a link carries", async () => {
+    routeQuery.types = "live,album,bogus";
+    routeQuery.other = "kept";
+
+    const wrapper = await mountListing("discography");
+
+    expect(listing(wrapper).props("albumTypeOverride")).toEqual([
+      AlbumType.ALBUM,
+      AlbumType.LIVE,
+    ]);
+    // a reload of, or a return to, this page must not carry them in again
+    expect(mockReplace).toHaveBeenCalledWith({ query: { other: "kept" } });
+  });
+
+  it("carries no album types in without types in the link", async () => {
+    const wrapper = await mountListing("discography");
+
+    expect(listing(wrapper).props("albumTypeOverride")).toBeUndefined();
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it("lists a library artist's appearances as the server sends them", async () => {

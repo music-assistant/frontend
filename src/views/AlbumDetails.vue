@@ -29,6 +29,8 @@
           :allow-key-hooks="true"
           :load-paged-data="loadTracks"
           :sort-listing="ListingType.ALBUM_TRACKS"
+          library-toolbar
+          :show-count="false"
           :title="$t('tracks')"
           :refresh-on-parent-update="true"
         />

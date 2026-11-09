@@ -39,7 +39,12 @@ vi.mock("@/plugins/store", () => ({ store: { activePlayerId: "player" } }));
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["showSelectButton", "loadPagedData", "sortListing"],
+    props: {
+      showSelectButton: Boolean,
+      loadPagedData: Function,
+      sortListing: String,
+      libraryToolbar: Boolean,
+    },
     template: '<div><slot name="title" /><slot name="header" /></div>',
   },
 }));
@@ -274,6 +279,7 @@ describe("BrowseView", () => {
     });
 
     expect(listing.props("sortListing")).toBe(ListingType.BROWSE);
+    expect(listing.props("libraryToolbar")).toBe(true);
     expect(browse).toHaveBeenCalledWith(
       "filesystem://Music",
       "player",

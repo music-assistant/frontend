@@ -121,11 +121,10 @@
               <!-- explicit icon -->
               <v-tooltip location="bottom">
                 <template #activator="{ props }">
-                  <v-icon
+                  <ExplicitIcon
                     v-if="parseBool(item.metadata.explicit || false)"
                     v-bind="props"
-                    icon="mdi-alpha-e-box"
-                    width="35"
+                    class="inline-block size-6 shrink-0 scale-90 align-middle [&_text]:fill-background"
                   />
                 </template>
                 <span>{{ $t("tooltip.explicit") }}</span>
@@ -462,6 +461,7 @@
 
 <script setup lang="ts">
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
+import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
 import FavoriteMenu from "@/components/FavoriteMenu.vue";
 import ItemSourceBadge from "@/components/ItemSourceBadge.vue";
 import MarkdownText from "@/components/MarkdownText.vue";
