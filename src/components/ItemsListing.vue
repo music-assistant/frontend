@@ -300,6 +300,15 @@
         </template>
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'" ref="panelRow">
+          <!-- keeps each card in the column of its listing row, so rows loaded
+               above add whole grid rows and the cards on screen stay put -->
+          <v-col
+            v-for="n in baseOffset % gridColumnCount"
+            :key="'spacer-' + n"
+            cols="12"
+            :class="`col-${gridColumnCount}`"
+            aria-hidden="true"
+          />
           <v-col
             v-for="(item, index) in pagedItems"
             :key="item.uri"
