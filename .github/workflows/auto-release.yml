@@ -103,5 +103,4 @@ jobs:
     with:
       version: ${{ needs.check-and-release.outputs.version }}
     secrets:
-      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
       MUSIC_ASSISTANT_BOT_PRIVATE_KEY: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}
