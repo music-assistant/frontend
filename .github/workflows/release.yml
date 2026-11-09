@@ -494,6 +494,8 @@ jobs:
             echo "branch=dev" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          # Only a successful, empty lookup may fall back to `stable`.
+          set -o pipefail
           BRANCH=$(gh pr list --repo music-assistant/server --base stable --state open \
             --json headRefName,isCrossRepository \
             --jq '.[] | select(.isCrossRepository | not) | .headRefName | select(startswith("backport/"))' |
