@@ -1067,7 +1067,6 @@
     "view": {
         "list": "Zobrazenie zoznamu",
         "panel": "Zobrazenie miniatúr",
-        "panel_compact": "Kompaktné zobrazenie náhľadov",
         "discovery": "Preskúmanie",
         "card": "Zobrazenie kariet"
     },

@@ -225,6 +225,7 @@ import { api } from "@/plugins/api";
 import {
   ArtistType,
   ListingType,
+  MediaType,
   ProviderFeature,
   Scope,
   type Artist,
@@ -411,7 +412,11 @@ watch(
   },
 );
 
-useDetailItemUpdates(itemDetails, { providerItem: props });
+useDetailItemUpdates(itemDetails, {
+  get providerItem() {
+    return { ...props, mediaType: MediaType.ARTIST };
+  },
+});
 
 const loadArtistAudiobooks = async function (params: LoadDataParams) {
   const artist = itemDetails.value;

@@ -352,6 +352,8 @@ const loadGenreArtists = async (params: LoadDataParams) => {
     undefined,
     params.provider?.length ? params.provider : undefined,
     genreId(),
+    undefined,
+    params.randomSeed,
   );
 };
 
@@ -367,6 +369,7 @@ const loadGenreAlbums = async (params: LoadDataParams) => {
     undefined,
     params.provider?.length ? params.provider : undefined,
     genreId(),
+    params.randomSeed,
   );
 };
 
@@ -381,6 +384,7 @@ const loadGenreTracks = async (params: LoadDataParams) => {
     params.sortDirection,
     params.provider?.length ? params.provider : undefined,
     genreId(),
+    params.randomSeed,
   );
 };
 
@@ -395,6 +399,7 @@ const loadGenrePlaylists = async (params: LoadDataParams) => {
     params.sortDirection,
     params.provider?.length ? params.provider : undefined,
     genreId(),
+    params.randomSeed,
   );
 };
 
@@ -409,6 +414,7 @@ const loadGenrePodcasts = async (params: LoadDataParams) => {
     params.sortDirection,
     params.provider?.length ? params.provider : undefined,
     genreId(),
+    params.randomSeed,
   );
 };
 
@@ -423,6 +429,8 @@ const loadGenreAudiobooks = async (params: LoadDataParams) => {
     params.sortDirection,
     params.provider?.length ? params.provider : undefined,
     genreId(),
+    undefined,
+    params.randomSeed,
   );
 };
 

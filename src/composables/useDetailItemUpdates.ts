@@ -2,6 +2,7 @@ import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
 import {
   EventType,
+  type MediaType,
   type EventMessage,
   type MediaItem,
   type MediaItemType,
@@ -15,9 +16,10 @@ const ITEM_UPDATE_DELAY_MS = 2000;
 export interface DetailItemUpdatesOptions {
   /**
    * The provider item the page was opened with; an update to an item mapped to
-   * it also replaces the item, as when a provider item was added to the library.
+   * it with the same media type also replaces the item, as when a provider item
+   * was added to the library.
    */
-  providerItem?: { itemId: string; provider: string };
+  providerItem?: { itemId: string; provider: string; mediaType: MediaType };
   /** Called after the item was replaced by an update. */
   onUpdate?: () => void;
 }
@@ -65,7 +67,9 @@ export function useDetailItemUpdates<T extends MediaItem>(
 
   // the user's own like or dislike, wherever they made it
   const unsubFavorite = subscribeOwnFavorites((update) => {
-    if (item.value?.uri === update.uri) item.value.favorite = update.favorite;
+    if (item.value?.uri === update.uri) {
+      item.value.favorite = update.favorite;
+    }
   });
 
   onScopeDispose(() => {
@@ -79,7 +83,12 @@ function mapsToProviderItem(
   updatedItem: MediaItemType,
   providerItem: DetailItemUpdatesOptions["providerItem"],
 ): boolean {
-  if (!providerItem || !("provider_mappings" in updatedItem)) return false;
+  if (
+    !providerItem ||
+    updatedItem.media_type !== providerItem.mediaType ||
+    !("provider_mappings" in updatedItem)
+  )
+    return false;
   return updatedItem.provider_mappings.some(
     (mapping) =>
       mapping.item_id === providerItem.itemId &&

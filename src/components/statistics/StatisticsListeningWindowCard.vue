@@ -1,6 +1,12 @@
 <template>
   <StatisticsCard
-    :title="$t('statistics_when_you_listen')"
+    :title="
+      $t(
+        includesOtherUsers
+          ? 'statistics_when_you_listen_other_users'
+          : 'statistics_when_you_listen',
+      )
+    "
     :loading="loading"
     :error="error"
     :empty="!peakWindow"
@@ -12,11 +18,16 @@
         </span>
         <span class="text-[13px] text-muted-foreground">
           {{
-            $t("statistics_window_share", {
-              share: peakWindow.share,
-              start: windowStart,
-              end: windowEnd,
-            })
+            $t(
+              includesOtherUsers
+                ? "statistics_window_share_other_users"
+                : "statistics_window_share",
+              {
+                share: peakWindow.share,
+                start: windowStart,
+                end: windowEnd,
+              },
+            )
           }}
         </span>
       </div>
@@ -37,7 +48,7 @@
           <VisAxis
             type="x"
             :tick-values="AXIS_HOURS"
-            :tick-format="(hour: number) => formatHour(hour, locale)"
+            :tick-format="(hour: number) => formatShortHour(hour, locale)"
             :tick-line="false"
             :domain-line="false"
             :grid-line="false"
@@ -66,7 +77,7 @@ import {
   isHourInWindow,
   peakListeningWindow,
 } from "@/helpers/statistics_activity";
-import { formatHour } from "@/helpers/statistics_format";
+import { formatHour, formatShortHour } from "@/helpers/statistics_format";
 import type { StatisticsHeatmapPoint } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { VisAxis, VisGroupedBar, VisXYContainer } from "@unovis/vue";
@@ -76,6 +87,7 @@ const props = defineProps<{
   activity: StatisticsHeatmapPoint[];
   loading?: boolean;
   error?: boolean;
+  includesOtherUsers?: boolean;
 }>();
 
 interface HourDatum {

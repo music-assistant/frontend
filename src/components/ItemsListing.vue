@@ -2,7 +2,10 @@
 <template>
   <section
     v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)"
-    :class="{ 'flex min-h-full flex-1 flex-col': fillsHeight }"
+    :class="{
+      'flex min-h-full flex-1 flex-col': fillsHeight,
+      'ps-[11px] pe-[18px]': detailRow,
+    }"
   >
     <!-- eslint-disable vue/no-template-shadow -->
     <!-- inset so the title lines up with the row artwork and the menu with the rows' menu -->
@@ -20,9 +23,15 @@
       @title-clicked="toggleExpand"
     >
       <template #title>
-        <slot name="title">{{ title }}</slot>
+        <!-- the detail pages' section title -->
         <span
-          v-if="libraryToolbar && listingCount !== undefined"
+          v-if="detailRow"
+          class="ms-0.5 text-[22px] font-bold tracking-[-0.4px] max-[769px]:text-[19px]"
+          >{{ title }}</span
+        >
+        <slot v-else name="title">{{ title }}</slot>
+        <span
+          v-if="libraryToolbar && showCount && listingCount !== undefined"
           class="ms-2 text-base font-normal text-muted-foreground"
         >
           {{ listingCount }}
@@ -68,9 +77,9 @@
           @after-leave="onSearchSlotLeft"
         >
           <!-- the input follows the slot's edge as it opens, and the padding
-               keeps its 3px focus ring inside the clipped area. On a library
-               page it grows out of the search icon's width and shrinks back
-               to it, so the controls beside it do not jump -->
+               keeps its 3px focus ring inside the clipped area. With the title
+               bar controls it grows out of the search icon's width and shrinks
+               back to it, so the controls beside it do not jump -->
           <div
             v-if="showSearchInput"
             class="listing-search-slot -m-[3px] box-content p-[3px]"
@@ -133,7 +142,7 @@
       />
     </div>
 
-    <v-divider />
+    <v-divider v-if="!detailRow" />
 
     <slot name="header"></slot>
 
@@ -192,7 +201,7 @@
     >
       <TrackTableHeader
         v-if="showTrackTable && (loadPending || pagedItems.length)"
-        :columns="trackColumns"
+        :columns="trackRowColumns"
         :enabled="enabledTrackColumns"
         @update:enabled="setEnabledTrackColumns"
       />
@@ -235,6 +244,7 @@
           !(pagedItems.length == 0 && allItemsReceived) &&
           !(loadPending && pagedItems.length === 0)
         "
+        ref="infiniteScrollEl"
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
         :margin="INFINITE_SCROLL_MARGIN"
@@ -286,58 +296,82 @@
         </v-row>
 
         <!-- list view -->
-        <v-virtual-scroll
+        <div
           v-if="viewMode == 'list'"
-          :item-height="showTrackTable ? TRACK_ROW_HEIGHT : 70"
-          height="100%"
-          :items="listDisplayItems"
-          style="height: 100%; overflow: hidden"
+          ref="listRowsEl"
+          class="relative h-full"
+          :aria-busy="reorderSaving || undefined"
         >
-          <template #default="{ item, index }">
-            <div v-if="'isDiscHeader' in item" class="disc-header">
-              {{ $t("disc", { number: item.disc }) }}
-            </div>
-            <TrackTableRow
-              v-else-if="showTrackTable"
-              :item="item"
-              :index="index"
-              :columns="trackColumns"
-              :show-checkboxes="showCheckboxes"
-              :is-selected="isSelected(item)"
-              :is-available="itemIsAvailable(item)"
-              :is-playing="isPlaying(item, itemtype)"
-              :disable-play-button="isPlayActionInProgress"
-              :parent-item="parentItem"
-              :sort-by="props.sortListing ? undefined : params.sortBy"
-              :sort-field="displayedSort.sortField"
-              :sort-direction="displayedSort.sortDirection"
-              @select="onSelect"
-            />
-            <ListviewItem
-              v-else
-              :item="item"
-              :album-track-view="itemtype === 'albumtracks'"
-              :show-track-number="showTrackNumber"
-              :show-disc-number="showTrackNumber"
-              :show-duration="showDuration"
-              :show-favorite="showFavorite ?? showFavoritesOnlyFilter"
-              :show-menu="item.is_playable || isMusicBrainzItem(item)"
-              :show-provider="showProvider"
-              :show-album="showAlbum"
-              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
-              :is-selected="isSelected(item)"
-              :is-available="itemIsAvailable(item)"
-              :is-playing="isPlaying(item, itemtype)"
-              :show-details="itemtype.includes('versions')"
-              :disable-play-button="isPlayActionInProgress"
-              :parent-item="parentItem"
-              :sort-by="props.sortListing ? undefined : params.sortBy"
-              :sort-field="displayedSort.sortField"
-              :sort-direction="displayedSort.sortDirection"
-              @select="onSelect"
-            />
-          </template>
-        </v-virtual-scroll>
+          <v-virtual-scroll
+            :item-height="showTrackTable ? TRACK_ROW_HEIGHT : 70"
+            height="100%"
+            :items="listDisplayItems"
+            style="height: 100%; overflow: hidden"
+          >
+            <template #default="{ item, index }">
+              <div v-if="'isDiscHeader' in item" class="disc-header">
+                {{ $t("disc", { number: item.disc }) }}
+              </div>
+              <TrackTableRow
+                v-else-if="showTrackTable"
+                :item="item"
+                :index="index"
+                :columns="trackRowColumns"
+                :class="[
+                  trackRowDragClass(item, index),
+                  isDragging && 'transition-transform duration-200 ease-out',
+                ]"
+                :style="trackRowDragStyle(index)"
+                :show-checkboxes="showCheckboxes"
+                :is-selected="isSelected(item)"
+                :is-available="itemIsAvailable(item)"
+                :is-playing="isPlaying(item, itemtype)"
+                :disable-play-button="isPlayActionInProgress"
+                :reorder-disabled="reorderSaving"
+                :parent-item="parentItem"
+                :sort-by="props.sortListing ? undefined : params.sortBy"
+                :sort-field="displayedSort.sortField"
+                :sort-direction="displayedSort.sortDirection"
+                @select="onSelect"
+                @drag-start="(evt: PointerEvent) => startTrackDrag(evt, index)"
+                @move-by="(delta: number) => moveTrackBy(index, delta)"
+              />
+              <ListviewItem
+                v-else
+                :item="item"
+                :album-track-view="itemtype === 'albumtracks'"
+                :show-track-number="showTrackNumber"
+                :show-disc-number="showTrackNumber"
+                :show-duration="showDuration"
+                :show-favorite="showFavorite ?? showFavoritesOnlyFilter"
+                :show-menu="item.is_playable || isMusicBrainzItem(item)"
+                :show-provider="showProvider"
+                :show-album="showAlbum"
+                :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
+                :is-selected="isSelected(item)"
+                :is-available="itemIsAvailable(item)"
+                :is-playing="isPlaying(item, itemtype)"
+                :show-details="itemtype.includes('versions')"
+                :disable-play-button="isPlayActionInProgress"
+                :parent-item="parentItem"
+                :sort-by="props.sortListing ? undefined : params.sortBy"
+                :sort-field="displayedSort.sortField"
+                :sort-direction="displayedSort.sortDirection"
+                @select="onSelect"
+              />
+            </template>
+          </v-virtual-scroll>
+          <TrackTableDragGhost
+            v-if="draggedTrack && draggingIndex !== null"
+            :item="draggedTrack"
+            :index="draggingIndex"
+            :columns="trackRowColumns"
+            :count="draggedCount"
+            :top="ghostY"
+            :is-available="itemIsAvailable(draggedTrack)"
+            :parent-item="parentItem"
+          />
+        </div>
       </v-infinite-scroll>
 
       <!-- subtle message shown when there are no items to display -->
@@ -413,9 +447,13 @@ import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import TrackTableDragGhost from "@/components/track-table/TrackTableDragGhost.vue";
 import TrackTableHeader from "@/components/track-table/TrackTableHeader.vue";
 import TrackTableRow from "@/components/track-table/TrackTableRow.vue";
-import { TRACK_ROW_HEIGHT } from "@/components/track-table/trackTableColumns";
+import {
+  TRACK_ROW_HEIGHT,
+  type TrackColumn,
+} from "@/components/track-table/trackTableColumns";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
 import ListingToolbarControls from "@/components/listing-toolbar/ListingToolbarControls.vue";
@@ -441,6 +479,8 @@ import {
 } from "@/composables/useListingFilters";
 import { useListingCount } from "@/composables/useListingCount";
 import { useListingSaves } from "@/composables/useListingSaves";
+import { canSavePlaylistMoves } from "@/composables/usePlaylistTrackReorder";
+import { useTrackReorderRows } from "@/composables/useTrackReorderRows";
 import type {
   LoadDataParams,
   LoadPagedDataFn,
@@ -456,6 +496,7 @@ import {
 } from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import { selectionRange } from "@/helpers/selection_range";
+import { listsPlaylistFromStart } from "@/helpers/playlist_reorder";
 import {
   GRID_SIZE_DEFAULT,
   gridColumns,
@@ -587,6 +628,8 @@ export interface Props {
   title?: string;
   subtitle?: string;
   hideOnEmpty?: boolean;
+  // a row of a detail page: on the page's gutter, under a section title
+  detailRow?: boolean;
   // custom message shown when the listing has no items and no active filters
   emptyMessage?: string;
   // the listing is the whole view, so the empty state centres in the page height
@@ -616,9 +659,14 @@ export interface Props {
   toolBarTabs?: ToolBarTab[];
   // the list view shows tracks as a table with columns
   trackTable?: boolean;
-  // a library page: search, sort, view and filters sit in the title bar, and
-  // the active filters show as chips below it
+  // the track table rows can be dragged to a new place in the parent playlist,
+  // while the listing shows the playlist's own order
+  reorderable?: boolean;
+  // search, sort, view and filters sit in the title bar, and the active
+  // filters show as chips below it
   libraryToolbar?: boolean;
+  // the number of items beside the title, with the title bar controls
+  showCount?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortListing: undefined,
@@ -670,7 +718,9 @@ const props = withDefaults(defineProps<Props>(), {
   hideActionsByDefault: false,
   toolBarTabs: undefined,
   trackTable: false,
+  reorderable: false,
   libraryToolbar: false,
+  showCount: true,
 });
 
 const emit = defineEmits<{
@@ -708,6 +758,7 @@ const {
   newContentAvailable,
   pagedItems,
   params,
+  reloadLoadedItems,
   retryLoad,
   serverSortOptions,
   sortOptions,
@@ -720,8 +771,8 @@ const loadPending = computed(
   () => loading.value || (!!props.sortListing && !sortOptionsLoaded.value),
 );
 // the desktop row of quick sorts keeps its height while the sort options load,
-// so the items do not shift; a listing without quick sorts has no row, and a
-// library page sorts from its title bar
+// so the items do not shift; a listing without quick sorts has no row, and one
+// with the title bar controls sorts from there
 const showSortChipsRow = computed(
   () =>
     !!props.sortListing &&
@@ -1441,6 +1492,63 @@ const hasActiveFilters = computed(() => {
   );
 });
 
+const canDragTracks = computed(
+  () =>
+    props.reorderable &&
+    showTrackTable.value &&
+    displayedSort.value.sortField === SortField.POSITION &&
+    displayedSort.value.sortDirection !== SortDirection.DESC &&
+    !hasActiveFilters.value &&
+    // a move made while reconnecting could not be saved nor read back
+    canSavePlaylistMoves() &&
+    listsPlaylistFromStart(pagedItems.value),
+);
+const trackRowColumns = computed<TrackColumn[]>(() =>
+  canDragTracks.value ? ["handle", ...trackColumns.value] : trackColumns.value,
+);
+const listRowsEl = ref<HTMLElement | null>(null);
+const infiniteScrollEl = ref<{ reset: () => void } | null>(null);
+// a reload that finds the listing grew past its end pages on again; a load
+// that starts over re-creates the scroller instead
+watch(allItemsReceived, (received, wasReceived) => {
+  if (wasReceived && !received && !tempHide.value) {
+    infiniteScrollEl.value?.reset();
+  }
+});
+const {
+  startDrag: startTrackDrag,
+  moveBy: moveTrackBy,
+  refresh: refreshTrackRows,
+  saving: reorderSaving,
+  draggingIndex,
+  isDragging,
+  ghostY,
+  draggedTrack,
+  draggedCount,
+  rowDragStyle: trackRowDragStyle,
+  rowDragClass: trackRowDragClass,
+} = useTrackReorderRows({
+  listEl: listRowsEl,
+  items: pagedItems,
+  // albums re-read their rows the same way, but only a playlist's edits are held
+  playlistId: () =>
+    props.parentItem?.media_type === MediaType.PLAYLIST
+      ? props.parentItem.item_id
+      : undefined,
+  inOwnOrder: () => canDragTracks.value,
+  selected: selectedItems,
+  selecting: () => showCheckboxes.value,
+  rowHeight: TRACK_ROW_HEIGHT,
+  reload: async () => {
+    const failed = loadError.value;
+    await reloadLoadedItems();
+    // rows read again after a failed page let the scroller page on again
+    if (failed && !loadError.value && !tempHide.value) {
+      infiniteScrollEl.value?.reset();
+    }
+  },
+});
+
 // Server-paged listings only know their total when the parent passes it. An
 // unfiltered listing that is loaded to its end, or holds less than a page,
 // counts what it holds: a small listing then keeps search hidden while it
@@ -1628,7 +1736,7 @@ const singleProviderSelect = computed(
   () => props.singleProviderFilter || props.requireProviderSelection,
 );
 
-// the sources a library page's Filters panel offers, each marked by its icon
+// the sources the Filters panel offers, each marked by its icon
 const sourceFilterOptions = computed(() => {
   if (props.requireProviderSelection || props.showProviderFilter === false) {
     return [];
@@ -1876,7 +1984,7 @@ const menuItems = computed(() => {
       overflowAllowed: true,
     });
   }
-  // the filters; a library page has them in its Filters panel instead
+  // the filters; the title bar controls have them in the Filters panel
   if (!props.libraryToolbar) items.push(...filterMenuItems());
 
   // refresh action
@@ -1896,7 +2004,8 @@ const menuItems = computed(() => {
     });
   }
 
-  // toggle search (auto-hidden for small listings); a library page has its own
+  // toggle search (auto-hidden for small listings); the title bar controls
+  // have their own
   if (searchAvailable.value && !props.libraryToolbar) {
     items.push({
       label: searchButtonCloses.value
@@ -1927,8 +2036,8 @@ const menuItems = computed(() => {
     });
   }
 
-  // a library page picks its view and cover size from its sort menu; when
-  // the view is controlled externally only the thumbs controls stay
+  // the title bar controls pick the view and cover size from the sort menu;
+  // when the view is controlled externally only the thumbs controls stay
   if (!props.libraryToolbar && props.forcedViewMode !== "list")
     items.push({
       label: "tooltip.view_mode",
@@ -2188,7 +2297,8 @@ onBeforeUnmount(() => {
 if (props.restoreState) {
   // handle restore state
   onBeforeUnmount(() => {
-    if (loading.value || loadError.value) {
+    // rows of a move that is still saving may not be the order it ends with
+    if (loading.value || loadError.value || reorderSaving.value) {
       store.prevState = undefined;
       return;
     }
@@ -2242,10 +2352,12 @@ watch(
 watch(
   () => props.parentItem,
   () => {
-    if (loading.value == true) return;
     if (props.refreshOnParentUpdate) {
-      loadData(true);
-    } else {
+      // re-read the rows in place, so the list neither collapses nor scrolls;
+      // a move that is saving reads them back once more when it is done
+      if (pagedItems.value.length) void refreshTrackRows();
+      else if (!loading.value) loadData(true);
+    } else if (!loading.value) {
       newContentAvailable.value = true;
     }
   },

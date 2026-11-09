@@ -6,6 +6,7 @@ import {
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
+import { ApiCommandError } from "@/plugins/api/errors";
 import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   BrowseFolder,
@@ -64,7 +65,10 @@ export const handlePlayBtnClick = async function (
   // button appears dead (e.g. while the connection is re-establishing)
   const onPlayError = (err: Error) => {
     console.error("Play action failed:", err);
-    toast.error($t("play_failed"));
+    // a server error with a reason already got its own toast from the api
+    if (!(err instanceof ApiCommandError && err.details)) {
+      toast.error($t("play_failed"));
+    }
   };
   // we show the play menu for the item once (if playerTip has not been dismissed)
   if (!forceMenu && store.activePlayer?.available) {
