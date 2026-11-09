@@ -1082,8 +1082,12 @@ const {
   rowFor,
   letterAt,
 } = useLetterIndex(() => letterIndexLoader.value, params);
+// the mobile search row sits where the bar starts, so the bar waits for it
 const showLetterBar = computed(
-  () => letterEntries.value.length > 1 && pagedItems.value.length > 0,
+  () =>
+    letterEntries.value.length > 1 &&
+    pagedItems.value.length > 0 &&
+    !(showSearchInput.value && store.mobileLayout),
 );
 const scroller = () => document.querySelector<HTMLElement>(".content-section");
 // the rendered element of the loaded item at this index
@@ -1112,22 +1116,37 @@ const jumpedRow = ref<number>();
 watch(letterEntries, () => {
   jumpedRow.value = undefined;
 });
-// the bar spans the part of the scroller not under the bars at the bottom
-const jumpedRowOnScreen = function (jumped: number) {
+// the row a jump went to keeps its letter while it stays where the jump put
+// it: at the top of the screen, within its own height, or anywhere on screen
+// when the list is scrolled to its end and the row could not reach the top.
+// The bar spans the part of the scroller not under the bars at the bottom.
+const jumpedRowInPlace = function (jumped: number) {
   const el = rowElement(jumped - baseOffset.value);
-  const area = scroller()?.getBoundingClientRect();
+  const area = scroller();
   const bar = letterBar.value?.$el as HTMLElement | undefined;
   if (!el || !area) return false;
-  const bottom = bar?.getBoundingClientRect().bottom ?? area.bottom;
+  const top = area.getBoundingClientRect().top;
+  const bottom =
+    bar?.getBoundingClientRect().bottom ?? area.getBoundingClientRect().bottom;
   const rect = el.getBoundingClientRect();
-  return rect.bottom > area.top && rect.top < bottom;
+  if (rect.bottom <= top || rect.top >= bottom) return false;
+  const atEnd = area.scrollTop + area.clientHeight >= area.scrollHeight - 1;
+  return atEnd || rect.top < top + rect.height;
 };
+// once scrolled away from, the jump is over: coming back past the row later
+// does not light its letter again
+watch(topIndex, () => {
+  const jumped = jumpedRow.value;
+  if (jumped !== undefined && !jumpedRowInPlace(jumped)) {
+    jumpedRow.value = undefined;
+  }
+});
 const currentLetter = computed(() => {
   if (topIndex.value === undefined) return null;
   const topRow = baseOffset.value + topIndex.value;
   const jumped = jumpedRow.value;
   const row =
-    jumped !== undefined && jumpedRowOnScreen(jumped) ? jumped : topRow;
+    jumped !== undefined && jumpedRowInPlace(jumped) ? jumped : topRow;
   return letterAt(row) ?? null;
 });
 // changes to the library move the letters' rows

@@ -12,8 +12,9 @@ import { ref, shallowRef, type MaybeRefOrGetter, toValue, watch } from "vue";
 // case the first point falls in a gap between rows
 const SAMPLE_X = 40;
 const SAMPLE_YS = [60, 90, 120];
-// how soon to look again while something covers the list
+// how soon, and how often, to look again while something covers the list
 const COVERED_RETRY_MS = 250;
+const COVERED_RETRIES = 8;
 
 /**
  * The loaded index (data-listing-index) of the row at the top of the visible
@@ -38,25 +39,37 @@ export function useTopListingRow(
     if (!el || !rows) return;
     const rect = el.getBoundingClientRect();
     let index: number | undefined;
+    let covered = false;
     for (const y of SAMPLE_YS) {
       const under = document.elementFromPoint(
         rect.left + SAMPLE_X,
         rect.top + y,
       );
-      // something over the list, such as a menu backdrop, hides what is there:
-      // the last row seen stays, and the list is looked at again once it shows
+      // a point outside the list may be under a header above it, or under
+      // something over the list such as a menu backdrop
       if (under && !rows.contains(under)) {
-        retryWhenUncovered.start();
-        return;
+        covered = true;
+        continue;
       }
       const hit = under?.closest<HTMLElement>("[data-listing-index]");
       if (!hit) continue;
       index = Number(hit.dataset.listingIndex);
       break;
     }
+    // nothing of the list in sight while something is over it: the last row
+    // seen stays, and the list is looked at again for a while
+    if (index === undefined && covered) {
+      if (retries < COVERED_RETRIES) {
+        retries++;
+        retryWhenUncovered.start();
+      }
+      return;
+    }
+    retries = 0;
     topIndex.value = Number.isFinite(index) ? index : undefined;
   }
 
+  let retries = 0;
   const retryWhenUncovered = useTimeoutFn(() => resume(), COVERED_RETRY_MS, {
     immediate: false,
   });

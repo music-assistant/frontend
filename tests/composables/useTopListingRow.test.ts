@@ -83,6 +83,22 @@ describe("useTopListingRow", () => {
     expect(topIndex.value).toBe(0);
   });
 
+  it("looks past a header above the list to the first row", async () => {
+    const header = document.createElement("div");
+    document.body.appendChild(header);
+    const row = document.createElement("div");
+    row.dataset.listingIndex = "0";
+    scroller.appendChild(row);
+    document.elementFromPoint = vi
+      .fn()
+      .mockReturnValueOnce(header)
+      .mockReturnValue(row);
+    const { topIndex } = setupTracker();
+    await frame();
+
+    expect(topIndex.value).toBe(0);
+  });
+
   it("keeps the last row while something covers the list", async () => {
     rowAtTop(4);
     const { scroller, topIndex } = setupTracker();
