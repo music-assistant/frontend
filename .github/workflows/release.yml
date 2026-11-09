@@ -1,14 +1,14 @@
 name: Publish Release
 
 # Builds and tests the package, publishes a fully populated immutable GitHub release,
-# publishes to PyPI, and creates a PR in the server repo
+# and creates a PR in the server repo that pins the release wheel by URL and sha256
 # Can be triggered manually with a version number or called by the auto-release workflow
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version number (e.g., 2.16.7) - Creates release, publishes to PyPI, and updates server repo"
+        description: "Version number (e.g., 2.16.7) - Creates release and updates server repo"
         required: true
         type: string
   workflow_call:
@@ -18,8 +18,6 @@ on:
         required: true
         type: string
     secrets:
-      PYPI_TOKEN:
-        required: true
       MUSIC_ASSISTANT_BOT_PRIVATE_KEY:
         required: true
 
@@ -355,14 +353,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish release to PyPI
-        if: steps.inspect_release.outputs.already_published != 'true'
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
-          skip-existing: true
-
       - name: Publish GitHub release
         if: steps.inspect_release.outputs.already_published != 'true'
         run: |
@@ -462,12 +452,6 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Wait for PyPI availability
-        run: |
-          echo "Waiting 5 minutes for PyPI to propagate music-assistant-frontend $RELEASE_VERSION..."
-          sleep 300
-          echo "Done waiting, proceeding with server repo update"
-
       - name: Get release notes
         id: release_notes
         run: |
@@ -532,14 +516,25 @@ jobs:
 
       - name: Update frontend version
         run: |
-          # Update pyproject.toml
-          sed -i.bak "s/music-assistant-frontend==.*/music-assistant-frontend==$RELEASE_VERSION\",/" pyproject.toml
+          WHEEL="music_assistant_frontend-$RELEASE_VERSION-py3-none-any.whl"
+          DIGEST=$(gh api "repos/music-assistant/frontend/releases/tags/$RELEASE_VERSION" |
+            jq -r --arg name "$WHEEL" '.assets[] | select(.name == $name) | .digest')
+          if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::No sha256 digest for $WHEEL: '$DIGEST'."
+            exit 1
+          fi
+          PIN="music-assistant-frontend @ https://github.com/music-assistant/frontend/releases/download/$RELEASE_VERSION/$WHEEL#sha256=${DIGEST#sha256:}"
 
-          # Update requirements_all.txt
-          sed -i.bak "s/music-assistant-frontend==.*/music-assistant-frontend==$RELEASE_VERSION/" requirements_all.txt
-
-          # Remove backup files
-          rm -f pyproject.toml.bak requirements_all.txt.bak
+          # In-place edit keeps requirements_all.txt in the order the server generates
+          sed -i "s|\"music-assistant-frontend[ =].*|\"$PIN\",|" pyproject.toml
+          sed -i "s|^music-assistant-frontend[ =].*|$PIN|" requirements_all.txt
+          if [[ $(grep -cxF "$PIN" requirements_all.txt) != 1 ]] ||
+            [[ $(grep -cF "\"$PIN\"," pyproject.toml) != 1 ]]; then
+            echo "::error::Could not pin $PIN in the server repository."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Pull Request
         id: create_pr
