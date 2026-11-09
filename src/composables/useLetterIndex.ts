@@ -95,5 +95,16 @@ export function useLetterIndex(
       ?.offset;
   }
 
-  return { entries, letters, load, rowFor };
+  /** The letter whose items the given listing row belongs to. */
+  function letterAt(row: number): string | undefined {
+    let found: LetterIndexEntry | undefined;
+    for (const entry of entries.value) {
+      if (entry.offset <= row && (!found || entry.offset > found.offset)) {
+        found = entry;
+      }
+    }
+    return found?.letter;
+  }
+
+  return { entries, letters, load, rowFor, letterAt };
 }

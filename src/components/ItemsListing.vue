@@ -217,6 +217,7 @@
       :class="{
         'bg-background dark:bg-transparent': viewMode != 'list',
         'flex flex-1 flex-col': fillsHeight,
+        'pr-9 pointer-coarse:pr-10': showLetterBar,
       }"
     >
       <TrackTableHeader
@@ -453,7 +454,8 @@
       <AlphabetIndexBar
         v-if="showLetterBar"
         :letters="indexLetters"
-        @jump="jumpToLetter"
+        :current="currentLetter"
+        :jump="jumpToLetter"
       />
 
       <ListingSelectionBar
@@ -534,6 +536,7 @@ import {
 import { useListingCount } from "@/composables/useListingCount";
 import { useListingSaves } from "@/composables/useListingSaves";
 import { useListingWindow } from "@/composables/useListingWindow";
+import { useTopListingRow } from "@/composables/useTopListingRow";
 import { canSavePlaylistMoves } from "@/composables/usePlaylistTrackReorder";
 import { useTrackReorderRows } from "@/composables/useTrackReorderRows";
 import type {
@@ -1076,10 +1079,28 @@ const {
   letters: indexLetters,
   load: reloadLetterIndex,
   rowFor,
+  letterAt,
 } = useLetterIndex(() => letterIndexLoader.value, params);
 const showLetterBar = computed(
   () => letterEntries.value.length > 1 && pagedItems.value.length > 0,
 );
+const scroller = () => document.querySelector<HTMLElement>(".content-section");
+// the bar marks the letter of the row at the top of the screen; while the row
+// a jump went to is still in the top grid row, that is the letter jumped to,
+// even when its items share the grid row with the next letter's
+const { topIndex } = useTopListingRow(scroller, listContainer, showLetterBar);
+const jumpedRow = ref<number>();
+const currentLetter = computed(() => {
+  if (topIndex.value === undefined) return null;
+  const columns = viewMode.value === "panel" ? gridColumnCount.value : 1;
+  const topRow = baseOffset.value + topIndex.value;
+  const jumped = jumpedRow.value;
+  const row =
+    jumped !== undefined && jumped >= topRow && jumped < topRow + columns
+      ? jumped
+      : topRow;
+  return letterAt(row) ?? null;
+});
 // changes to the library move the letters' rows
 watch(newContentAvailable, (available) => {
   if (available) reloadLetterIndex();
@@ -1087,7 +1108,7 @@ watch(newContentAvailable, (available) => {
 
 const topSentinel = useTemplateRef<HTMLElement>("topSentinel");
 const { jumpToRow, loadAllAbove } = useListingWindow({
-  scroller: () => document.querySelector<HTMLElement>(".content-section"),
+  scroller,
   topSentinel,
   rowElement: (index) => {
     // the list view's rows include its disc headers
@@ -1108,6 +1129,7 @@ const { jumpToRow, loadAllAbove } = useListingWindow({
 const jumpToLetter = async function (label: string) {
   const row = rowFor(label);
   if (row === undefined) return;
+  jumpedRow.value = row;
   const failed = loadError.value;
   await jumpToRow(row);
   // rows loaded after a failed page let the scroller page on again

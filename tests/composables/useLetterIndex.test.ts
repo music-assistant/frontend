@@ -120,6 +120,24 @@ describe("useLetterIndex", () => {
     });
   });
 
+  describe("letterAt", () => {
+    it("gives the letter whose items a row belongs to", async () => {
+      const index = setupLetterIndex(async () => INDEX);
+      await flushPromises();
+
+      expect(index.letterAt(0)).toBe("#");
+      expect(index.letterAt(3)).toBe("B");
+      expect(index.letterAt(6)).toBe("B");
+      expect(index.letterAt(40)).toBe("D");
+    });
+
+    it("gives no letter before the index is loaded", () => {
+      const index = setupLetterIndex(async () => INDEX);
+
+      expect(index.letterAt(3)).toBeUndefined();
+    });
+  });
+
   describe("loading", () => {
     it.each([SortField.NAME, SortField.SORT_NAME])(
       "loads the index for the %s sort with the listing's parameters",
