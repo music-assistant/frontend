@@ -19,7 +19,12 @@ vi.mock("@/components/collection/CollectionHero.vue", () => ({
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["loadPagedData", "parentItem"],
+    props: {
+      loadPagedData: Function,
+      parentItem: Object,
+      libraryToolbar: Boolean,
+      detailRow: Boolean,
+    },
     template: "<div />",
   },
 }));
@@ -69,6 +74,16 @@ describe("CollectionDetails", () => {
     expect(listing.props("parentItem")).toMatchObject({
       item_id: "audiobook___Test Collection",
     });
+  });
+
+  it("sorts and filters the collection from its title bar", async () => {
+    const wrapper = mount(CollectionDetails, {
+      props: { itemId: "audiobook___Test Collection", provider: "library" },
+    });
+    const listing = wrapper.findComponent({ name: "ItemsListing" });
+
+    expect(listing.props("libraryToolbar")).toBe(true);
+    expect(listing.props("detailRow")).toBe(true);
   });
 
   it("remounts the listing and resets its header when the collection changes", async () => {
