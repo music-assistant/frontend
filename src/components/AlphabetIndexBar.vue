@@ -17,8 +17,9 @@
       type="button"
       :class="letterClass(letter)"
       :aria-label="letter.label"
-      @pointerdown.prevent="onActivate(letter.label)"
+      @pointerdown.prevent="onPointerDown($event, letter.label)"
       @pointerenter="onPointerEnter($event, letter.label)"
+      @click="onClick($event, letter.label)"
     >
       {{ letter.label }}
     </button>
@@ -57,6 +58,19 @@ const onActivate = function (label: string) {
 // Support dragging a finger/cursor down the bar to scrub through letters,
 // matching the iOS-style fast-scroller UX. Only react while a pointer button
 // is held down (buttons !== 0) so plain hover doesn't trigger jumps.
+// a touch stays tied to the letter it pressed, so the letters it is dragged
+// onto would not hear of it
+const onPointerDown = function (evt: PointerEvent, label: string) {
+  (evt.currentTarget as Element).releasePointerCapture(evt.pointerId);
+  onActivate(label);
+};
+
+// a mouse or finger press already jumped; a click from the keyboard or a
+// screen reader has no press count
+const onClick = function (evt: MouseEvent, label: string) {
+  if (evt.detail === 0) onActivate(label);
+};
+
 const onPointerEnter = function (evt: PointerEvent, label: string) {
   if (evt.buttons === 0) return;
   onActivate(label);

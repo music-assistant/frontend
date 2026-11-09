@@ -1075,6 +1075,10 @@ const {
 const showLetterBar = computed(
   () => letterEntries.value.length > 1 && pagedItems.value.length > 0,
 );
+// changes to the library move the letters' rows
+watch(newContentAvailable, (available) => {
+  if (available) reloadLetterIndex();
+});
 
 const topSentinel = useTemplateRef<HTMLElement>("topSentinel");
 const { jumpToRow, loadAllAbove } = useListingWindow({

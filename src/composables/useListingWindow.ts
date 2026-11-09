@@ -64,11 +64,13 @@ export function useListingWindow(options: ListingWindowOptions) {
   return { jumpToRow, loadAllAbove };
 
   async function scrollToIndex(index: number) {
+    const id = jumpId;
     const scroller = options.scroller();
     if (!scroller) return;
     await nextTick();
     // the virtual list may render the new rows a frame after the update
     for (let attempt = 0; attempt < 3; attempt++) {
+      if (id !== jumpId || listing.isDisposed()) return;
       const el = options.rowElement(index);
       if (el) {
         scroller.scrollTop +=
