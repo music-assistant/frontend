@@ -4,6 +4,7 @@ import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import ListingSortMenu from "@/components/listing-toolbar/ListingSortMenu.vue";
 import ListingToolbarControls from "@/components/listing-toolbar/ListingToolbarControls.vue";
 import type {
+  ListingChoiceFilter,
   ListingFilter,
   ListingMultiFilter,
   ListingToggleFilter,
@@ -1698,6 +1699,41 @@ describe("ItemsListing source selector", () => {
     await flushPromises();
 
     expect(mockSetItemsListingPreference).not.toHaveBeenCalled();
+  });
+
+  it("moves the source into the Filters panel with the title bar controls", async () => {
+    const { listing, loadItems } = mountSourceListing({
+      providerFilterOptions: ["spotify--1", "tidal--1"],
+      libraryToolbar: true,
+    });
+    await flushPromises();
+    loadItems.mockClear();
+    const controls = () => listing.findComponent(ListingToolbarControls);
+    const sourceFilter = () =>
+      (controls().props("filters") as ListingFilter[]).find(
+        (filter) => filter.id === "required_source",
+      ) as ListingChoiceFilter | undefined;
+
+    expect(sourceOptions(listing)).toBeUndefined();
+    expect(sourceFilter()?.options.map((option) => option.label)).toEqual([
+      "source_library",
+      "Spotify",
+      "Tidal",
+    ]);
+    expect(sourceFilter()?.selected).toBe("library");
+
+    sourceFilter()?.select("tidal--1");
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenLastCalledWith(
+      expect.objectContaining({ provider: ["tidal--1"] }),
+    );
+    expect(sourceFilter()?.selected).toBe("tidal--1");
+    // a required pick is no filter: it is not counted, and Clear all keeps it
+    expect(controls().props("activeFilterCount")).toBe(0);
+    controls().vm.$emit("clear-filters");
+    await flushPromises();
+    expect(sourceFilter()?.selected).toBe("tidal--1");
   });
 });
 
