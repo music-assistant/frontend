@@ -1855,19 +1855,22 @@ const singleProviderSelect = computed(
   () => props.singleProviderFilter || props.requireProviderSelection,
 );
 
-// the sources the Filters panel offers, each marked by its icon
+// the sources the Filters panel offers, each marked by its icon: a required
+// pick of one, or a narrowing to any of them
 const sourceFilterOptions = computed(() => {
-  if (props.requireProviderSelection || props.showProviderFilter === false) {
-    return [];
-  }
+  if (props.showProviderFilter === false) return [];
   // a source picked while there were more stays on offer, and clearable,
-  // once it is the only one left
-  if (!providerFilterAvailable.value && !params.value.provider?.length) {
+  // once it is the only one left; a required pick of the only one is no choice
+  if (
+    !providerFilterAvailable.value &&
+    (props.requireProviderSelection || !params.value.provider?.length)
+  ) {
     return [];
   }
   return musicProviders.value.map((provider) => ({
     ...provider,
     domain: api.providers[provider.value]?.domain,
+    icon: provider.value === "library" ? LibraryBig : undefined,
   }));
 });
 
@@ -2131,8 +2134,13 @@ const expandedMenuItems = computed(() => {
 
   // provider selector — a required single selection shown as a dedicated button
   // beside search (like the conditional search button). It always has a provider
-  // chosen, so it is not a filter and never shows the active dot.
-  if (providerFilterAvailable.value && props.requireProviderSelection) {
+  // chosen, so it is not a filter and never shows the active dot. The title bar
+  // controls have it in the Filters panel.
+  if (
+    providerFilterAvailable.value &&
+    props.requireProviderSelection &&
+    !props.libraryToolbar
+  ) {
     items.push({
       label: "tooltip.select_provider",
       icon: Package,

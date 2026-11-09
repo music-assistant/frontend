@@ -1,5 +1,6 @@
 import { computed, onScopeDispose, ref } from "vue";
 
+import { useCollectionMetadata } from "@/composables/useCollectionMetadata";
 import { useLibrarySorting } from "@/composables/useLibrarySorting";
 import {
   ListingType,
@@ -89,6 +90,7 @@ export function useItemsListing(
     genreIds: undefined,
   });
   const pagedItems = ref<MediaItemType[]>([]);
+  useCollectionMetadata(() => pagedItems.value);
   // the listing row of pagedItems[0]: a jump loads the rows around its
   // target, and the rows above it load as the list scrolls up
   const baseOffset = ref(0);
