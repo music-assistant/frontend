@@ -1175,6 +1175,24 @@ describe("MusicAssistantApi error handling", () => {
     });
   });
 
+  it("asks for the discography releases of the given types", () => {
+    api.getArtistDiscography(
+      "artist-1",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      [AlbumType.ALBUM, AlbumType.LIVE],
+    );
+
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      album_types: [AlbumType.ALBUM, AlbumType.LIVE],
+    });
+  });
+
   it("asks the library for the albums an artist appears on", () => {
     api.getArtistAppearsOn(
       "artist-1",

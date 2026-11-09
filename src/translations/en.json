@@ -2623,6 +2623,17 @@
     "appears_on_hint": "Credited on a track, not as the album artist",
     "discography": "Discography",
     "discography_hint": "From MusicBrainz",
+    "discography_first_row": "Discography (first row)",
+    "discography_second_row": "Discography (second row)",
+    "discography_types_summary": "{first} +{count}",
+    "album_type_plural": {
+        "album": "Albums",
+        "single": "Singles",
+        "ep": "EPs",
+        "compilation": "Compilations",
+        "live": "Live",
+        "soundtrack": "Soundtracks"
+    },
     "not_in_library": "Not in your library",
     "find_on_music_services": "Find on your music services",
     "edit_rows": "Edit rows",
@@ -2705,6 +2716,13 @@
         "45": "45 minutes",
         "60": "1 hour",
         "120": "2 hours"
+    },
+    "sleep_timer_end_of_chapter": "End of chapter",
+    "sleep_timer_end_of_item": {
+        "track": "End of track",
+        "podcast_episode": "End of episode",
+        "audiobook": "End of audiobook",
+        "other": "End of current item"
     },
     "shuffle_smart_active": "Smart shuffle is on. Click to turn it off.",
     "goto_album_radio": "View album endless mix",

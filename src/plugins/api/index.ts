@@ -96,6 +96,7 @@ import {
   Scope,
   NetworkShareSettings,
   SearchResults,
+  SleepTimerMode,
   ShareType,
   SortDirection,
   SortField,
@@ -903,7 +904,8 @@ export class MusicAssistantApi {
    * Only library artists are supported; the list is empty when MusicBrainz doesn't know
    * the artist. The releases that are not in the library come back as MusicBrainz items
    * (provider "musicbrainz", without provider mappings), which the server resolves to a
-   * real album when one is opened or added.
+   * real album when one is opened or added. `album_types` limits the list to
+   * releases of those types.
    */
   public getArtistDiscography(
     item_id: string,
@@ -912,6 +914,7 @@ export class MusicAssistantApi {
     offset?: number,
     sort_field?: SortField,
     sort_direction?: SortDirection,
+    album_types?: AlbumType[],
   ): Promise<Album[]> {
     return this.sendCommand("music/artists/discography", {
       item_id,
@@ -921,6 +924,7 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+      album_types,
     });
   }
 
@@ -2629,14 +2633,20 @@ export class MusicAssistantApi {
     });
   }
 
-  public setSleepTimer(playerId: string, seconds: number): Promise<number> {
+  public setSleepTimer(
+    playerId: string,
+    seconds?: number,
+    mode?: SleepTimerMode,
+  ): Promise<number | null> {
     /*
-      Set a sleep timer that stops playback after the given number of seconds.
-      Returns the expiry (unix utc timestamp).
+      Set a sleep timer that stops playback after the given number of seconds, or
+      at the end of the current queue item or chapter (mode).
+      Returns the (estimated) expiry (unix utc timestamp), null while paused.
     */
     return this.sendCommand("players/sleep_timer/set", {
       player_id: playerId,
       seconds,
+      mode,
     });
   }
 
