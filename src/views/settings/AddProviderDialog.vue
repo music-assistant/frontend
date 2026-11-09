@@ -65,6 +65,11 @@
                 </Badge>
               </ItemTitle>
               <ItemDescription>{{ provider.description }}</ItemDescription>
+              <CommunityProviderMarker
+                v-if="isCommunityProvider(provider)"
+                variant="line"
+                :maintainers="getProviderMaintainers(provider)"
+              />
             </ItemContent>
             <ItemActions>
               <ChevronRight class="text-muted-foreground size-4" />
@@ -89,6 +94,7 @@
 <script setup lang="ts">
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import CommunityProviderMarker from "@/components/settings/providers/CommunityProviderMarker.vue";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -116,7 +122,9 @@ import { SearchInput } from "@/components/ui/search-input";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { isSelfServiceProvider } from "@/helpers/provider_access";
 import {
+  getProviderMaintainers,
   getProviderStageTranslationKey,
+  isCommunityProvider,
   shouldShowStageBadge,
 } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";

@@ -19,6 +19,7 @@ const mountCard = (
     data: StatisticsHeatmapPoint[];
     loading?: boolean;
     error?: boolean;
+    includesOtherUsers?: boolean;
   } = props,
 ) => mount(ListeningHeatmapCard, { props: cardProps });
 
@@ -76,6 +77,25 @@ describe("ListeningHeatmapCard", () => {
       "Sunday at 22:00: 3 plays",
     );
     expect(cells[12].attributes("title")).toBe("Monday at 12:00: 1 play");
+  });
+
+  it.each([
+    {
+      includesOtherUsers: false,
+      shown: "Your week by the hour",
+      hidden: "The week by the hour",
+    },
+    {
+      includesOtherUsers: true,
+      shown: "The week by the hour",
+      hidden: "Your week by the hour",
+    },
+  ])("titles the heatmap $shown", ({ includesOtherUsers, shown, hidden }) => {
+    i18n.global.locale.value = "en_GB";
+    const text = mountCard({ ...props, includesOtherUsers }).text();
+
+    expect(text).toContain(shown);
+    expect(text).not.toContain(hidden);
   });
 
   it("shows the loading, error and empty states instead of the table", () => {

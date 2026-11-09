@@ -13,7 +13,7 @@
       height="20"
       rx="3"
       ry="3"
-      fill="currentColor"
+      fill="var(--explicit-icon-square, currentColor)"
     />
     <text
       x="12"
@@ -22,7 +22,7 @@
       font-family="sans-serif"
       font-size="13"
       font-weight="bold"
-      fill="white"
+      fill="var(--explicit-icon-letter, white)"
     >
       E
     </text>

@@ -14,6 +14,8 @@ import {
   type StatisticsPeriod,
   type StatisticsTimeSeriesPoint,
   type StatisticsTopItemResult,
+  type StatisticsUsers,
+  type User,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -39,6 +41,7 @@ const LOAD_FAILED_TOAST_ID = "statistics-load-failed";
 export interface StatisticsData {
   playsOverTime: StatisticsTimeSeriesPoint[];
   topTracks: StatisticsTopItemResult[];
+  topAlbums: StatisticsTopItemResult[];
   topArtists: StatisticsTopItemResult[];
   listeningActivity: StatisticsHeatmapPoint[];
   listeningTime: StatisticsListeningTimeItem[];
@@ -51,31 +54,45 @@ export type StatisticsSection = keyof StatisticsData;
 type StatisticsRequests = {
   [Section in StatisticsSection]: (
     period: StatisticsPeriod,
+    topItemsLimit: number,
+    users: StatisticsUsers,
   ) => Promise<StatisticsData[Section]>;
 };
 
 const REQUESTS: StatisticsRequests = {
-  playsOverTime: async (period) =>
+  playsOverTime: async (period, _limit, users) =>
     groupLongHistoryByYear(
-      await api.getPlaysOverTime(period, getPlaysOverTimeGranularity(period)),
+      await api.getPlaysOverTime(
+        period,
+        getPlaysOverTimeGranularity(period),
+        users,
+      ),
       period,
     ),
-  topTracks: (period) =>
-    api.getTopItems(MediaType.TRACK, period, TOP_ITEMS_LIMIT),
-  topArtists: (period) =>
-    api.getTopItems(MediaType.ARTIST, period, TOP_ARTISTS_LIMIT),
-  listeningActivity: (period) => api.getListeningActivity(period),
-  listeningTime: (period) =>
-    api.getListeningTime(period, "artist", DISTRIBUTION_LIMIT),
-  genreDistribution: (period) =>
-    api.getGenreDistribution(period, GENRE_DISTRIBUTION_LIMIT),
-  decadeDistribution: (period) =>
-    api.getDecadeDistribution(period, DISTRIBUTION_LIMIT),
+  topTracks: (period, limit, users) =>
+    api.getTopItems(MediaType.TRACK, period, limit, users),
+  topAlbums: (period, limit, users) =>
+    api.getTopItems(MediaType.ALBUM, period, limit, users),
+  // The number-one artist card always needs just one, regardless of the listing limit.
+  topArtists: (period, _limit, users) =>
+    api.getTopItems(MediaType.ARTIST, period, TOP_ARTISTS_LIMIT, users),
+  listeningActivity: (period, _limit, users) =>
+    api.getListeningActivity(period, users),
+  listeningTime: (period, _limit, users) =>
+    api.getListeningTime(period, "artist", DISTRIBUTION_LIMIT, users),
+  genreDistribution: (period, _limit, users) =>
+    api.getGenreDistribution(period, GENRE_DISTRIBUTION_LIMIT, users),
+  decadeDistribution: (period, _limit, users) =>
+    api.getDecadeDistribution(period, DISTRIBUTION_LIMIT, users),
 };
+
+const usersKey = (users: Readonly<Ref<StatisticsUsers>> | undefined) =>
+  JSON.stringify(users?.value ?? {});
 
 const emptyData = (): StatisticsData => ({
   playsOverTime: [],
   topTracks: [],
+  topAlbums: [],
   topArtists: [],
   listeningActivity: [],
   listeningTime: [],
@@ -87,6 +104,8 @@ interface LatestLoadOptions<Result> {
   active: Readonly<Ref<boolean>>;
   // what is loaded; a change is a user's choice, such as a new period
   key: () => string;
+  // whose finished tracks refresh the data; empty is the current user
+  users?: Readonly<Ref<StatisticsUsers>>;
   request: () => Promise<Result>;
   // stores a result and tells whether any part of it failed
   apply: (result: Result) => boolean;
@@ -94,7 +113,7 @@ interface LatestLoadOptions<Result> {
 
 /**
  * Loads statistics while `active` and connected, again when the key changes
- * and, debounced, when the current user finishes a track. Only the latest
+ * and, debounced, when a shown user finishes a track. Only the latest
  * request is applied. `loading` is only set for the first load and for a
  * change of key; any other reload keeps the current data on screen until the
  * new data arrives. A failure toasts only when the user changed the key;
@@ -147,7 +166,11 @@ function useLatestLoad<Result>(options: LatestLoadOptions<Result>) {
     (event: EventMessage) => {
       const update = event.data as PlaylogUpdate | undefined;
       if (!update?.fully_played) return;
-      if (update.userid && update.userid !== store.currentUser?.user_id) return;
+      const { users, all_users } = options.users?.value ?? {};
+      const watched = users?.length ? users : [store.currentUser?.user_id];
+      if (update.userid && !all_users && !watched.includes(update.userid)) {
+        return;
+      }
       clearTimeout(refreshTimer);
       refreshTimer = setTimeout(
         () => void load(false),
@@ -171,6 +194,10 @@ interface UseStatisticsOptions {
   period: Readonly<Ref<StatisticsPeriod>>;
   // only these are requested; the rest stay empty
   sections: readonly StatisticsSection[];
+  // Album/track ranking size; defaults to TOP_ITEMS_LIMIT. Artists always use TOP_ARTISTS_LIMIT.
+  topItemsLimit?: number;
+  // whose plays are combined; omitted is the current user
+  users?: Readonly<Ref<StatisticsUsers>>;
 }
 
 /** The statistics of a period, each section requested in parallel. */
@@ -180,11 +207,16 @@ export function useStatistics(options: UseStatisticsOptions) {
 
   const { loading, refresh } = useLatestLoad({
     active: options.active,
-    key: () => options.period.value,
+    key: () => `${options.period.value}:${usersKey(options.users)}`,
+    users: options.users,
     request: () =>
       Promise.allSettled(
         options.sections.map((section) =>
-          REQUESTS[section](options.period.value),
+          REQUESTS[section](
+            options.period.value,
+            options.topItemsLimit ?? TOP_ITEMS_LIMIT,
+            options.users?.value ?? {},
+          ),
         ),
       ),
     apply: (results) => {
@@ -213,6 +245,8 @@ interface UseStatisticsTopItemsOptions {
   active: Readonly<Ref<boolean>>;
   period: Readonly<Ref<StatisticsPeriod>>;
   mediaType: Readonly<Ref<TopItemsMediaType>>;
+  // whose plays are combined; omitted is the current user
+  users?: Readonly<Ref<StatisticsUsers>>;
 }
 
 interface TopItemsResult {
@@ -227,13 +261,16 @@ export function useStatisticsTopItems(options: UseStatisticsTopItemsOptions) {
 
   const { loading, refresh } = useLatestLoad({
     active: options.active,
-    key: () => `${options.period.value}:${options.mediaType.value}`,
+    key: () =>
+      `${options.period.value}:${options.mediaType.value}:${usersKey(options.users)}`,
+    users: options.users,
     request: (): Promise<TopItemsResult> =>
       api
         .getTopItems(
           options.mediaType.value,
           options.period.value,
           TOP_ITEMS_LIMIT,
+          options.users?.value ?? {},
         )
         .then(
           (result) => ({ items: result, error: false }),
@@ -248,3 +285,38 @@ export function useStatisticsTopItems(options: UseStatisticsTopItemsOptions) {
 
   return { items, error, loading, refresh };
 }
+
+/**
+ * Every user, the current one first and the others by name, loaded once
+ * `enabled`. `loaded` is also set when loading failed.
+ */
+export function useStatisticsUsers(enabled: Readonly<Ref<boolean>>) {
+  const users = shallowRef<User[]>([]);
+  const loaded = ref(false);
+
+  watch(
+    enabled,
+    async (isEnabled) => {
+      if (!isEnabled || loaded.value) return;
+      try {
+        const me = store.currentUser?.user_id;
+        users.value = [...(await api.getAllUsers())].sort(
+          (a, b) =>
+            Number(b.user_id === me) - Number(a.user_id === me) ||
+            statisticsUserName(a).localeCompare(statisticsUserName(b)),
+        );
+      } catch {
+        toast.error($t("auth.users_load_failed"));
+      } finally {
+        loaded.value = true;
+      }
+    },
+    { immediate: true },
+  );
+
+  return { users, loaded };
+}
+
+/** The name a user is shown with in statistics. */
+export const statisticsUserName = (user: User) =>
+  user.display_name || user.username;

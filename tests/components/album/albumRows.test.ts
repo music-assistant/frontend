@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { storeMock, mockSetUserPreference, providersMock } = vi.hoisted(() => ({
+const {
+  storeMock,
+  mockSetUserPreference,
+  mockSetUserPreferences,
+  providersMock,
+} = vi.hoisted(() => ({
   storeMock: {
     currentUser: null as { preferences?: Record<string, unknown> } | null,
   },
   mockSetUserPreference: vi.fn(),
+  mockSetUserPreferences: vi.fn(),
   providersMock: {} as Record<string, unknown>,
 }));
 
@@ -12,6 +18,7 @@ vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/api", () => ({ api: { providers: providersMock } }));
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: mockSetUserPreference,
+  setUserPreferences: mockSetUserPreferences,
 }));
 
 import {
@@ -97,6 +104,7 @@ describe("albumRows", () => {
   beforeEach(() => {
     storeMock.currentUser = null;
     mockSetUserPreference.mockReset();
+    mockSetUserPreferences.mockReset();
     for (const key of Object.keys(providersMock)) delete providersMock[key];
   });
 
@@ -253,10 +261,10 @@ describe("albumRows", () => {
 
     it("clears both preferences on reset", async () => {
       await albumRows.reset();
-      expect(mockSetUserPreference).toHaveBeenLastCalledWith(
-        ALBUM_ROW_SOURCES_PREFERENCE_KEY,
-        {},
-      );
+      expect(mockSetUserPreferences).toHaveBeenCalledWith({
+        [ALBUM_ROWS_PREFERENCE_KEY]: { hidden: [], shown: [], order: [] },
+        [ALBUM_ROW_SOURCES_PREFERENCE_KEY]: {},
+      });
     });
   });
 });

@@ -6,20 +6,29 @@ import {
   type VueWrapper,
 } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ProviderStage, ProviderType } from "@/plugins/api/interfaces";
+import {
+  ProviderStage,
+  ProviderTier,
+  ProviderType,
+} from "@/plugins/api/interfaces";
 import {
   eventbus,
   type DeleteConfirmationDialogEvent,
 } from "@/plugins/eventbus";
 import { providerManifest } from "../fixtures/providerManifest";
 
-const { apiMock, routeMock, storeMock } = vi.hoisted(() => ({
+const { apiMock, i18nMock, routeMock, storeMock } = vi.hoisted(() => ({
   apiMock: {
     providerManifests: {} as Record<string, unknown>,
     providers: {},
     getProviderConfigs: vi.fn(),
     getProvider: vi.fn(),
     getProviderName: vi.fn(),
+  },
+  // a spy that returns the key, so the interpolation arguments a message is
+  // given stay assertable
+  i18nMock: {
+    t: vi.fn((key: string) => key),
   },
   routeMock: {
     query: {} as Record<string, string>,
@@ -32,7 +41,7 @@ const { apiMock, routeMock, storeMock } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+vi.mock("@/plugins/i18n", () => ({ $t: i18nMock.t }));
 vi.mock("vue-router", () => ({ useRoute: () => routeMock }));
 
 // an open dialog keeps document-level focus trap listeners, so tear it down
@@ -206,6 +215,48 @@ describe("AddProviderDialog", () => {
     await openDialog();
 
     expect(document.querySelector("[data-slot='badge']")).toBeNull();
+  });
+
+  it("names the maintainers of a community provider under its description", async () => {
+    apiMock.providerManifests = {
+      soundcloud: providerManifest({
+        domain: "soundcloud",
+        name: "SoundCloud",
+        tier: ProviderTier.COMMUNITY,
+        codeowners: ["@jane", "@music-assistant", "@john"],
+      }),
+    };
+
+    await openDialog();
+
+    // the title row keeps to the name; the Community badge leads the last line
+    expect(
+      document.querySelector("[data-slot='item-title'] [data-slot='badge']"),
+    ).toBeNull();
+    expect(
+      document
+        .querySelector("[data-testid='community-marker'] [data-slot='badge']")
+        ?.textContent?.trim(),
+    ).toBe("settings.provider_community");
+    expect(i18nMock.t).toHaveBeenCalledWith("settings.provider_maintained_by", {
+      maintainers: "@jane, @john",
+    });
+  });
+
+  it("adds no community line to a core provider", async () => {
+    apiMock.providerManifests = {
+      spotify: providerManifest({
+        domain: "spotify",
+        name: "Spotify",
+        codeowners: ["@music-assistant", "@jane"],
+      }),
+    };
+
+    await openDialog();
+
+    expect(
+      document.querySelector("[data-testid='community-marker']"),
+    ).toBeNull();
   });
 
   it("prefers the provider type prop over the route query", async () => {

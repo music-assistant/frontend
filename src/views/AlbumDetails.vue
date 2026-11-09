@@ -29,6 +29,8 @@
           :allow-key-hooks="true"
           :load-paged-data="loadTracks"
           :sort-listing="ListingType.ALBUM_TRACKS"
+          library-toolbar
+          :show-count="false"
           :title="$t('tracks')"
           :refresh-on-parent-update="true"
         />
@@ -333,7 +335,9 @@ watch(
 );
 
 useDetailItemUpdates(itemDetails, {
-  providerItem: props,
+  get providerItem() {
+    return { ...props, mediaType: MediaType.ALBUM };
+  },
   // an update can change the tracks the hero counts and times
   onUpdate: () => {
     if (itemDetails.value) loadHeroTracks(itemDetails.value);

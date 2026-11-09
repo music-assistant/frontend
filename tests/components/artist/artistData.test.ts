@@ -153,9 +153,10 @@ describe("artistData", () => {
         undefined,
         undefined,
         undefined,
+        undefined,
       );
 
-      await loadArtistDiscography(LIBRARY_ARTIST, "live", 20, 40);
+      await loadArtistDiscography(LIBRARY_ARTIST, undefined, "live", 20, 40);
       expect(apiMock.getArtistDiscography).toHaveBeenLastCalledWith(
         "1",
         "live",
@@ -163,6 +164,23 @@ describe("artistData", () => {
         40,
         undefined,
         undefined,
+        undefined,
+      );
+    });
+
+    it("asks for the given release types only", async () => {
+      await loadArtistDiscography(LIBRARY_ARTIST, [
+        AlbumType.ALBUM,
+        AlbumType.LIVE,
+      ]);
+      expect(apiMock.getArtistDiscography).toHaveBeenLastCalledWith(
+        "1",
+        undefined,
+        0,
+        undefined,
+        undefined,
+        undefined,
+        [AlbumType.ALBUM, AlbumType.LIVE],
       );
     });
   });
