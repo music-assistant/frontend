@@ -242,7 +242,7 @@ describe("PlayerTimeline", () => {
     expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 70);
   });
 
-  it("splits the track into chapters and names the playing and hovered one", async () => {
+  it("splits the track into chapters and names the hovered one", async () => {
     playTwoChapterBook(false, 0);
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
       new DOMRect(0, 0, 120, 8),
@@ -254,7 +254,7 @@ describe("PlayerTimeline", () => {
     });
     expect(wrapper!.findAll('[data-testid="chapter-segment"]')).toHaveLength(2);
     expect(wrapper!.get('[data-testid="timeline-chapter-name"]').text()).toBe(
-      "First",
+      "Chapter 1 of 2",
     );
 
     await wrapper!.find(".slider-root").trigger("pointermove", { clientX: 90 });
@@ -266,19 +266,15 @@ describe("PlayerTimeline", () => {
     ).toContain("01:30 · Second");
   });
 
-  // with chapter progress the full screen player names the chapter elsewhere
-  it.each([
-    [false, "Second"],
-    [true, "Chapter 2 of 2"],
-  ])(
-    "names the playing chapter and switches chapter progress from it, chapter progress %s",
-    async (chapterProgress, label) => {
+  it.each([false, true])(
+    "counts the playing chapter and switches chapter progress from it, chapter progress %s",
+    async (chapterProgress) => {
       playTwoChapterBook(chapterProgress, 75);
       setPreference.mockClear();
 
       mountTimeline();
       const name = wrapper!.get('[data-testid="timeline-chapter-name"]');
-      expect(name.text()).toBe(label);
+      expect(name.text()).toBe("Chapter 2 of 2");
       await name.trigger("click");
       expect(setPreference).toHaveBeenCalledWith(
         "audiobook_chapter_progress",

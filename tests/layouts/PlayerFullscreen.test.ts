@@ -261,6 +261,7 @@ async function seedPlayingQueue(): Promise<void> {
     playback_state: PlaybackState.PLAYING,
     current_media: {
       media_type: MediaType.AUDIOBOOK,
+      title: "Book",
       queue_item_id: "item-1",
     },
   };
@@ -350,7 +351,10 @@ describe("PlayerFullscreen chapter queue", () => {
           "v-card": { template: "<div><slot /></div>" },
           // rendered, so its chapter and bookmark rows can be checked here
           QueueChapterList: false,
-          "v-card-subtitle": { template: "<div><slot /></div>" },
+          "v-card-title": { template: '<div class="title"><slot /></div>' },
+          "v-card-subtitle": {
+            template: '<div class="subtitle"><slot /></div>',
+          },
           MarqueeText: { template: "<span><slot /></span>" },
         },
       },
@@ -377,13 +381,14 @@ describe("PlayerFullscreen chapter queue", () => {
     ).toBeUndefined();
   });
 
-  it("names the next chapter under the title with the queue hidden", async () => {
+  it("titles the playing chapter above the book with the queue hidden", async () => {
     const fullscreen = await mountChapterQueue(false);
-    expect(fullscreen.html()).toContain("First");
+    expect(fullscreen.get(".title").text()).toBe("First");
+    expect(fullscreen.get(".subtitle").text()).toBe("Book");
 
     await vi.advanceTimersByTimeAsync(51_000);
     await nextTick();
-    expect(fullscreen.html()).toContain("Second");
+    expect(fullscreen.get(".title").text()).toBe("Second");
   });
 
   it("seeks to a chapter start without reloading the media", async () => {

@@ -116,14 +116,17 @@
                   : ""
               }}
             </v-card-title>
-            <!-- current media title -->
+            <!-- the playing chapter, or the media title -->
             <v-card-title
               v-else-if="store.activePlayer?.current_media?.title"
               :style="`font-size: ${titleFontSize};font-weight:600;cursor:pointer;`"
               @click="openCurrentTrackDetails"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer.current_media.title }}
+                {{
+                  playingChapter?.chapter.name ??
+                  store.activePlayer.current_media.title
+                }}
               </MarqueeText>
             </v-card-title>
             <!-- no player selected message -->
@@ -151,27 +154,26 @@
               {{ $t("off") }}
             </v-card-subtitle>
 
-            <!-- subtitle: album; placeholder when empty so the artwork
-                 above keeps a constant size -->
+            <!-- subtitle: the book or episode under its chapter, else the album;
+                 placeholder when empty so the artwork above keeps a constant size -->
             <v-card-subtitle
-              v-else-if="store.activePlayer?.current_media && showAlbumSubtitle"
+              v-else-if="
+                store.activePlayer?.current_media &&
+                (playingChapter || showAlbumSubtitle)
+              "
               :style="`font-size: ${subTitleFontSize};${
-                albumSubtitle ? 'cursor:pointer;' : ''
+                playingChapter || albumSubtitle ? 'cursor:pointer;' : ''
               }`"
-              @click="onAlbumClick"
+              @click="
+                playingChapter ? openCurrentTrackDetails() : onAlbumClick()
+              "
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ albumSubtitle || " " }}
-              </MarqueeText>
-            </v-card-subtitle>
-
-            <!-- subtitle: current chapter, followed by the author line -->
-            <v-card-subtitle
-              v-if="currentChapter"
-              :style="`font-size: ${subTitleFontSize};`"
-            >
-              <MarqueeText :sync="playerMarqueeSync">
-                {{ currentChapter.chapter.name }}
+                {{
+                  playingChapter
+                    ? store.activePlayer.current_media.title
+                    : albumSubtitle || " "
+                }}
               </MarqueeText>
             </v-card-subtitle>
 
@@ -629,15 +631,11 @@ const chapterQueueItem = computed(() => {
   return queueItem;
 });
 
-const currentChapter = computed(() => {
+const playingChapter = computed(() => {
   void nowTick.value;
   const media = store.activePlayer?.current_media;
   const queueItem = chapterQueueItem.value;
-  if (
-    !showChapterProgress.value ||
-    !isChapteredMediaType(media?.media_type) ||
-    !queueItem
-  ) {
+  if (!isChapteredMediaType(media?.media_type) || !queueItem) {
     return undefined;
   }
   return resolveCurrentChapter(

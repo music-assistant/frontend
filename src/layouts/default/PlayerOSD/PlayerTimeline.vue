@@ -461,18 +461,18 @@ const playerTotalTimeStr = computed(() => {
   return formatDuration(duration);
 });
 
-const playingChapterName = computed(() => {
+const playingChapter = computed(() => {
   if (hidesRadioPosition.value) return undefined;
   return resolveCurrentChapter(
     store.curQueueItem?.media_item?.metadata?.chapters,
     pendingSeek.value?.position ?? absoluteElapsedTime.value,
     store.activePlayer?.current_media?.duration,
-  )?.chapter.name;
+  );
 });
 
 const chapterLabel = computed(() => {
-  const chapter = currentChapter.value;
-  if (!chapter) return playingChapterName.value;
+  const chapter = currentChapter.value ?? playingChapter.value;
+  if (!chapter) return undefined;
   const starts = (store.curQueueItem?.media_item?.metadata?.chapters ?? [])
     .map((x) => x.start)
     .sort((a, b) => a - b);
