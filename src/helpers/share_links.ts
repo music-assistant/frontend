@@ -1,11 +1,3 @@
-import {
-  MediaType,
-  type MediaItemTypeOrItemMapping,
-} from "@/plugins/api/interfaces";
-
-export const SHARE_PREVIEW_TRACK_PREFIX = "share-preview://track/";
-export const IMPORTED_SHARE_TRACK_PREFIX = "share://track/";
-
 const PROVIDER_HOSTS: Record<string, readonly string[]> = {
   spotify: ["open.spotify.com"],
   tidal: ["tidal.com", "www.tidal.com"],
@@ -84,7 +76,7 @@ export interface SharedTrack {
 }
 
 export interface DecodedSharePayload {
-  type: "track" | "album" | "artist" | "playlist";
+  type: "track" | "album" | "artist";
   title: string;
   artist?: string;
   artists?: string[];
@@ -93,7 +85,6 @@ export interface DecodedSharePayload {
   duration?: number;
   art_ref?: string;
   provider_refs?: unknown;
-  tracks: SharedTrack[];
 }
 
 export function encodeSharedTrack(track: SharedTrack): string {
@@ -149,9 +140,7 @@ export function decodeSharePayload(encoded: string): DecodedSharePayload {
   if (!value || typeof value !== "object") throw new Error("Invalid payload");
   const candidate = value as Record<string, unknown>;
   if (
-    !["track", "album", "artist", "playlist"].includes(
-      String(candidate.type),
-    ) ||
+    !["track", "album", "artist"].includes(String(candidate.type)) ||
     typeof candidate.title !== "string" ||
     !candidate.title.trim()
   ) {
@@ -174,27 +163,6 @@ export function decodeSharePayload(encoded: string): DecodedSharePayload {
   ) {
     throw new Error("Invalid artist credits");
   }
-  if (
-    candidate.type === "playlist" &&
-    (!Array.isArray(candidate.tracks) ||
-      candidate.tracks.some(
-        (track) =>
-          !track ||
-          typeof track.title !== "string" ||
-          (track.duration !== undefined &&
-            (typeof track.duration !== "number" ||
-              !Number.isInteger(track.duration) ||
-              track.duration < 0)) ||
-          (track.artists !== undefined &&
-            (!Array.isArray(track.artists) ||
-              track.artists.some(
-                (artist: unknown) =>
-                  typeof artist !== "string" || !artist.trim(),
-              ))),
-      ))
-  ) {
-    throw new Error("Invalid playlist payload");
-  }
   return {
     type: candidate.type as DecodedSharePayload["type"],
     title: candidate.title,
@@ -210,19 +178,7 @@ export function decodeSharePayload(encoded: string): DecodedSharePayload {
     art_ref:
       typeof candidate.art_ref === "string" ? candidate.art_ref : undefined,
     provider_refs: candidate.provider_refs,
-    tracks: (candidate.tracks ?? []) as SharedTrack[],
   };
-}
-
-export function isUnresolvedSharedTrack(
-  item: MediaItemTypeOrItemMapping,
-): boolean {
-  return (
-    item.media_type === MediaType.TRACK &&
-    item.provider === "builtin" &&
-    (item.item_id.startsWith(SHARE_PREVIEW_TRACK_PREFIX) ||
-      item.item_id.startsWith(IMPORTED_SHARE_TRACK_PREFIX))
-  );
 }
 
 export function isSafeProviderUrl(domain: string, value: string): boolean {

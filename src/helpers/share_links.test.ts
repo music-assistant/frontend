@@ -5,13 +5,9 @@ import {
   encodeSharedTrack,
   expandShareArtworkRef,
   expandShareProviderRefs,
-  IMPORTED_SHARE_TRACK_PREFIX,
-  isUnresolvedSharedTrack,
   isSafeArtworkUrl,
   isSafeProviderUrl,
-  SHARE_PREVIEW_TRACK_PREFIX,
 } from "./share_links";
-import { track } from "../../tests/fixtures/track";
 
 describe("encodeSharedTrack", () => {
   it("preserves Unicode metadata, version, and external IDs", () => {
@@ -186,7 +182,7 @@ describe("decodeSharePayload", () => {
     },
   );
 
-  it("decodes a playlist once for both preview and page rendering", () => {
+  it("rejects playlist payloads", () => {
     const encoded = btoa(
       JSON.stringify({
         type: "playlist",
@@ -198,40 +194,6 @@ describe("decodeSharePayload", () => {
       .replace(/\+/g, "-")
       .replace(/\//g, "_");
 
-    expect(decodeSharePayload(encoded)).toEqual({
-      type: "playlist",
-      title: "Shared list",
-      artist: undefined,
-      album: undefined,
-      version: undefined,
-      duration: undefined,
-      art_ref: undefined,
-      provider_refs: undefined,
-      tracks: [{ title: "Track" }],
-    });
-  });
-});
-
-describe("isUnresolvedSharedTrack", () => {
-  it.each([SHARE_PREVIEW_TRACK_PREFIX, IMPORTED_SHARE_TRACK_PREFIX])(
-    "recognizes the builtin placeholder prefix %s",
-    (prefix) => {
-      expect(
-        isUnresolvedSharedTrack(
-          track({ provider: "builtin", item_id: `${prefix}payload` }),
-        ),
-      ).toBe(true);
-    },
-  );
-
-  it("does not match the same ID prefix from a real provider", () => {
-    expect(
-      isUnresolvedSharedTrack(
-        track({
-          provider: "tidal--1",
-          item_id: `${SHARE_PREVIEW_TRACK_PREFIX}payload`,
-        }),
-      ),
-    ).toBe(false);
+    expect(() => decodeSharePayload(encoded)).toThrow("Invalid payload");
   });
 });

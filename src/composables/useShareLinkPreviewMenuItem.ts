@@ -14,7 +14,6 @@ const SHAREABLE_MEDIA_TYPES: MediaType[] = [
   MediaType.TRACK,
   MediaType.ALBUM,
   MediaType.ARTIST,
-  MediaType.PLAYLIST,
 ];
 
 export function useShareLinkPreviewMenuItem(

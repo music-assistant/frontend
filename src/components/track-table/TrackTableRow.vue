@@ -82,13 +82,11 @@
             {{ item.name }}
           </div>
           <div class="truncate text-sm text-muted-foreground">
-            <span v-if="isUnresolvedSharedTrack">{{ artistNames }}</span>
-            <TrackTableLinks v-else :targets="artists" route-name="artist" />
+            <TrackTableLinks :targets="artists" route-name="artist" />
             <!-- the album moves under the title when its own column is hidden -->
             <template v-if="albumInSubtitle">
               <span v-if="artists.length"> • </span>
-              <span v-if="isUnresolvedSharedTrack">{{ album!.name }}</span>
-              <TrackTableLinks v-else :targets="[album!]" route-name="album" />
+              <TrackTableLinks :targets="[album!]" route-name="album" />
             </template>
           </div>
         </div>
@@ -99,8 +97,7 @@
         class="truncate text-sm text-muted-foreground"
       >
         <template v-if="album">
-          <span v-if="isUnresolvedSharedTrack">{{ album.name }}</span>
-          <TrackTableLinks v-else :targets="[album]" route-name="album" />
+          <TrackTableLinks :targets="[album]" route-name="album" />
         </template>
       </div>
 
@@ -187,7 +184,6 @@ import RowPlayButton from "@/components/RowPlayButton.vue";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { canHoldFavorite, favoriteState } from "@/helpers/favorites";
-import { isUnresolvedSharedTrack as isUnresolvedShareTrack } from "@/helpers/share_links";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
@@ -279,17 +275,8 @@ const artists = computed(() =>
   "artists" in props.item ? props.item.artists : [],
 );
 
-const artistNames = computed(() =>
-  artists.value.map((artist) => artist.name).join(", "),
-);
-
 const albumInSubtitle = computed(
   () => !!album.value && !props.columns.includes("album"),
-);
-
-// Share placeholders contain display names without resolvable artist or album IDs.
-const isUnresolvedSharedTrack = computed(() =>
-  isUnresolvedShareTrack(props.item),
 );
 
 // favouring an item changes the library

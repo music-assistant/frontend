@@ -1283,26 +1283,6 @@ export class MusicAssistantApi {
     );
   }
 
-  public importSharedPlaylist(encoded: string): Promise<Playlist> {
-    return this.sendCommand(
-      "share/import_playlist",
-      { encoded },
-      { suppressGlobalError: true },
-    );
-  }
-
-  public previewSharedPlaylist(
-    encoded: string,
-    offset: number,
-    limit: number,
-  ): Promise<MediaItemType[]> {
-    return this.sendCommand(
-      "share/preview_playlist",
-      { encoded, offset, limit },
-      { suppressGlobalError: true },
-    );
-  }
-
   public migratePlaylist(
     db_playlist_id: string | number,
     destination_provider: string,

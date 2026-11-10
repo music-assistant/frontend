@@ -44,17 +44,7 @@ const itemMapping: ItemMapping = {
   available: true,
 };
 
-describe("share preview favorite state", () => {
-  it.each(["share-preview://track/encoded", "share://track/0"])(
-    "does not allow unresolved shared tracks to hold favorites: %s",
-    (itemId) => {
-      const sharedTrack = track({ provider: "builtin", item_id: itemId });
-      expect(canHoldFavorite(sharedTrack)).toBe(false);
-      setFavoriteState(sharedTrack, true);
-      expect(sharedTrack.favorite).toBeNull();
-    },
-  );
-
+describe("favorite state", () => {
   it("still allows a normal unavailable library track to hold its favorite state", () => {
     expect(canHoldFavorite(track({ provider_mappings: [] }))).toBe(true);
   });

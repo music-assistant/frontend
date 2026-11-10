@@ -46,41 +46,7 @@ function mountTrackRow(item: ReturnType<typeof track>, columns: TrackColumn[]) {
   });
 }
 
-describe("TrackTableRow shared preview album metadata", () => {
-  it.each([
-    {
-      itemId: "share-preview://track/encoded",
-      columns: ["title"] as TrackColumn[],
-    },
-    {
-      itemId: "share-preview://track/encoded",
-      columns: ["title", "album"] as TrackColumn[],
-    },
-    { itemId: "share://track/0", columns: ["title"] as TrackColumn[] },
-    {
-      itemId: "share://track/0",
-      columns: ["title", "album"] as TrackColumn[],
-    },
-  ])(
-    "renders unresolved share artists and albums as text for $itemId in $columns",
-    ({ itemId, columns }) => {
-      const item = track({
-        provider: "builtin",
-        item_id: itemId,
-        artists: [
-          artist({ item_id: "artist", provider: "builtin", name: "Artist" }),
-        ],
-        album: album({ item_id: "Album", provider: "builtin", name: "Album" }),
-      });
-      const wrapper = mountTrackRow(item, columns);
-
-      expect(wrapper.text()).toContain("Artist");
-      expect(wrapper.text()).toContain("Album");
-      expect(wrapper.find('[data-route="artist"]').exists()).toBe(false);
-      expect(wrapper.find('[data-route="album"]').exists()).toBe(false);
-    },
-  );
-
+describe("TrackTableRow track metadata", () => {
   it.each([
     { columns: ["title"] as TrackColumn[] },
     { columns: ["title", "album"] as TrackColumn[] },
