@@ -186,6 +186,29 @@ describe("getPlayerSettingsMenuItems actions", () => {
     });
   });
 
+  it("keeps the confirmation open until the player is disabled", async () => {
+    let finishSave!: () => void;
+    apiMock.savePlayerConfig.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishSave = resolve;
+      }),
+    );
+    const menuItems = getPlayerSettingsMenuItems(playerConfig());
+    menuItem(menuItems, "settings.disable").action?.();
+
+    let confirmed = false;
+    const confirming = Promise.resolve(confirmation().onConfirm()).then(() => {
+      confirmed = true;
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(confirmed).toBe(false);
+
+    finishSave();
+    await confirming;
+    expect(confirmed).toBe(true);
+  });
+
   it("enables a player without asking", () => {
     const menuItems = getPlayerSettingsMenuItems(
       playerConfig({ enabled: false }),

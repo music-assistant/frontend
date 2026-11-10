@@ -140,7 +140,9 @@ export const getPlayerSettingsMenuItems = (
           ]),
           message: $t("player_select.disable_player_confirmation"),
           confirmLabel: $t("settings.disable"),
-          onConfirm: () => void setPlayerEnabled(playerId, false),
+          onConfirm: async () => {
+            await setPlayerEnabled(playerId, false);
+          },
         });
       },
       icon: markRaw(config.enabled ? CircleOff : Power),
