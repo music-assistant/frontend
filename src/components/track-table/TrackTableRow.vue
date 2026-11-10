@@ -96,9 +96,7 @@
         v-else-if="column === 'album'"
         class="truncate text-sm text-muted-foreground"
       >
-        <template v-if="album">
-          <TrackTableLinks :targets="[album]" route-name="album" />
-        </template>
+        <TrackTableLinks v-if="album" :targets="[album]" route-name="album" />
       </div>
 
       <div
