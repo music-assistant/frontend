@@ -759,31 +759,9 @@ router.beforeEach(async (to) => {
   }
 });
 
-router.afterEach((to, from) => {
+router.afterEach((to) => {
   if (store.isIngressSession) {
     notifyHARouteChange(to.fullPath);
-  }
-
-  // Clean up onboard parameter from URL if present
-  if (store.isOnboarding && to.path === "/settings") {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("onboard")) {
-      urlParams.delete("onboard");
-      const cleanUrl =
-        window.location.pathname +
-        (urlParams.toString() ? "?" + urlParams.toString() : "") +
-        window.location.hash;
-      window.history.replaceState({}, "", cleanUrl);
-    }
-  }
-
-  // Reset onboarding flag when navigating away from settings
-  if (
-    store.isOnboarding &&
-    from.path === "/settings" &&
-    to.path !== "/settings"
-  ) {
-    store.isOnboarding = false;
   }
 });
 

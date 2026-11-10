@@ -463,6 +463,7 @@ function playerConfig({
     enabled,
     name: "Kitchen",
     default_name: "Chromecast",
+    player_type: PlayerType.PLAYER,
     values: {
       volume_normalization: {
         key: "volume_normalization",

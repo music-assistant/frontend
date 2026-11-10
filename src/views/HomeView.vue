@@ -58,7 +58,12 @@
     <!-- Newly discovered devices that still need setup; Review opens the
          players list filtered down to them. -->
     <Alert
-      v-if="isAdmin && showSetupPrompt && playersNeedingSetup.length > 0"
+      v-if="
+        isAdmin &&
+        showSetupPrompt &&
+        !onboardingActive &&
+        playersNeedingSetup.length > 0
+      "
       variant="warning"
       class="mx-7 mb-6 mt-4 flex w-auto items-center gap-3 py-3 pl-4 pr-3 [&>svg]:translate-y-0"
     >
@@ -109,6 +114,7 @@ import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useOnboarding } from "@/composables/useOnboarding";
 import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import {
@@ -130,6 +136,7 @@ const showProviderWarning = ref(true);
 const erroredProviderType = ref<string | null>(null);
 const isAdmin = ref(false);
 const showSetupPrompt = ref(true);
+const { active: onboardingActive } = useOnboarding();
 
 const playersNeedingSetup = computed(() =>
   Object.values(api.players).filter(

@@ -25,6 +25,7 @@ const {
   haStateMock,
   mockInitializeCompanionIntegration,
   mockInitializeWebPlayerModeSync,
+  mockOnboardingOpen,
   mockSubscribeToHAProperties,
   mockGetKioskModePreference,
   mockProxyEnsureReady,
@@ -33,6 +34,7 @@ const {
   mockRememberCurrentRemoteConnection,
   mockRouterPush,
   mockSetPreference,
+  onboardingPaused,
   proxyState,
   routeState,
   storeMock,
@@ -79,6 +81,7 @@ const {
     endRejectedGuestSession: vi.fn(),
     getToken: vi.fn(),
     guestSessionKind: vi.fn(),
+    isAdmin: vi.fn(),
     isDashboardViewer: vi.fn(),
     isGuestAccessSession: vi.fn(),
     isMusicQuizGuest: vi.fn(),
@@ -102,6 +105,7 @@ const {
     haStateMock: { isSubscribed: false, kioskModeEnabled: false },
     mockInitializeCompanionIntegration: vi.fn(),
     mockInitializeWebPlayerModeSync: vi.fn(),
+    mockOnboardingOpen: vi.fn(),
     mockSubscribeToHAProperties: vi.fn(),
     mockGetKioskModePreference: vi.fn(() => true),
     mockProxyEnsureReady: vi.fn(),
@@ -110,6 +114,7 @@ const {
     mockRememberCurrentRemoteConnection: vi.fn(),
     mockRouterPush: vi.fn(),
     mockSetPreference: vi.fn(),
+    onboardingPaused: { value: false },
     proxyState: { isReady: { value: true } },
     routeState: {
       current: null as { meta: Record<string, unknown> } | null,
@@ -126,7 +131,6 @@ const {
       enabledPlugins: new Set<string>(),
       forceMobileLayout: false,
       isIngressSession: false,
-      isOnboarding: false,
       serverInfo: undefined as unknown,
     },
     webPlayerMock: {
@@ -182,6 +186,13 @@ vi.mock("@/composables/userPreferences", () => ({
 
 vi.mock("@/composables/useShortcuts", () => ({
   initGlobalShortcutsSync: vi.fn(),
+}));
+
+vi.mock("@/composables/useOnboarding", () => ({
+  useOnboarding: () => ({
+    open: mockOnboardingOpen,
+    paused: onboardingPaused,
+  }),
 }));
 
 vi.mock("@/plugins/web_player", () => ({
@@ -350,7 +361,7 @@ describe("App initialization", () => {
     storeMock.currentUser = undefined;
     storeMock.enabledPlugins = new Set<string>();
     storeMock.isIngressSession = false;
-    storeMock.isOnboarding = false;
+    onboardingPaused.value = false;
     webPlayerMock.audioSource = "disabled";
     webPlayerMock.browserControlsMode = "active_player";
     webPlayerMock.interacted = false;
@@ -361,6 +372,9 @@ describe("App initialization", () => {
     vi.stubGlobal("sessionStorage", createStorage());
     authManagerMock.getToken.mockReturnValue(null);
     authManagerMock.guestSessionKind.mockImplementation(() => guestType.value);
+    authManagerMock.isAdmin.mockImplementation(
+      () => storeMock.currentUser?.role === UserRole.ADMIN,
+    );
     authManagerMock.isDashboardViewer.mockReturnValue(false);
     authManagerMock.isGuestAccessSession.mockImplementation(
       () => guestType.value !== null,
@@ -447,6 +461,98 @@ describe("App initialization", () => {
 
     saveDeviceSetting("force_mobile_layout", null);
     expect(storeMock.forceMobileLayout).toBe(false);
+  });
+
+  describe("onboarding", () => {
+    let originalUrl: string;
+
+    beforeEach(() => {
+      originalUrl = window.location.href;
+    });
+
+    // the trigger rewrites the address bar, so hand it back as it was found
+    afterEach(() => {
+      window.history.replaceState({}, "", originalUrl);
+    });
+
+    const asAdmin = () => {
+      apiMock.getCurrentUserInfo.mockResolvedValue(
+        user({
+          role: UserRole.ADMIN,
+          user_id: "admin-id",
+          username: "admin",
+        }),
+      );
+    };
+
+    it("opens the wizard for an admin on a server that has not been set up", async () => {
+      asAdmin();
+      apiMock.serverInfo.value.onboard_done = false;
+
+      wrapper = await mountApp();
+
+      expect(mockOnboardingOpen).toHaveBeenCalled();
+      expect(mockRouterPush).not.toHaveBeenCalled();
+    });
+
+    it.each([UserRole.USER, UserRole.GUEST])(
+      "leaves a %s alone on a server that has not been set up",
+      async (role) => {
+        apiMock.getCurrentUserInfo.mockResolvedValue(user({ role }));
+        apiMock.serverInfo.value.onboard_done = false;
+
+        wrapper = await mountApp();
+
+        expect(mockOnboardingOpen).not.toHaveBeenCalled();
+      },
+    );
+
+    it("keeps a guest session on its own page on a server that has not been set up", async () => {
+      guestType.value = "party";
+      apiMock.serverInfo.value.onboard_done = false;
+
+      wrapper = await mountApp();
+
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
+      expect(mockRouterPush).toHaveBeenCalledWith("/guest");
+    });
+
+    it("leaves a setup the admin paused alone when it runs again", async () => {
+      asAdmin();
+      apiMock.serverInfo.value.onboard_done = false;
+      onboardingPaused.value = true;
+
+      wrapper = await mountApp();
+
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
+    });
+
+    it("stays out of the way once the server is set up", async () => {
+      asAdmin();
+
+      wrapper = await mountApp();
+
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
+    });
+
+    it("opens the wizard when the server's setup flow asks for it, and drops the parameter", async () => {
+      asAdmin();
+      window.history.replaceState({}, "", "/?onboard=true");
+
+      wrapper = await mountApp();
+
+      expect(mockOnboardingOpen).toHaveBeenCalled();
+      expect(window.location.search).not.toContain("onboard");
+    });
+
+    it("drops the parameter for someone the wizard is not for", async () => {
+      window.history.replaceState({}, "", "/?onboard=true");
+
+      wrapper = await mountApp();
+
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
+      expect(window.location.search).not.toContain("onboard");
+    });
   });
 
   it("keeps full initialization and plugin discovery for regular users", async () => {
