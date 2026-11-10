@@ -110,6 +110,8 @@ import { useRoute } from "vue-router";
 
 const props = defineProps<{
   show?: boolean;
+  // the type to offer, for a caller whose route carries no types query
+  providerType?: ProviderType;
 }>();
 
 const POPULAR_PROVIDERS = [
@@ -132,7 +134,9 @@ const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref("");
 const selectedProviderStages = ref<string[]>([]);
 
-const activeTypeFilter = computed(() => (route.query.types as string) || null);
+const activeTypeFilter = computed(
+  () => props.providerType ?? ((route.query.types as string) || null),
+);
 
 const dialogTitle = computed(() =>
   match(activeTypeFilter.value)

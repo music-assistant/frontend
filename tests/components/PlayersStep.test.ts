@@ -386,6 +386,25 @@ describe("PlayersStep", () => {
       wrapper.unmount();
     });
 
+    it("keeps escape in the rename field, away from the dialog around it", async () => {
+      addPlayer({ player_id: "kitchen" });
+      const onWindowKeydown = vi.fn();
+      window.addEventListener("keydown", onWindowKeydown);
+      try {
+        const wrapper = mount(PlayersStep, {
+          attachTo: document.body,
+          global: { mocks: { $t: (key: string) => key } },
+        });
+        const input = await startRename(wrapper);
+        await input.trigger("keydown.esc");
+
+        expect(onWindowKeydown).not.toHaveBeenCalled();
+        wrapper.unmount();
+      } finally {
+        window.removeEventListener("keydown", onWindowKeydown);
+      }
+    });
+
     it("drops what was typed when the user presses escape", async () => {
       addPlayer({ player_id: "kitchen" });
 
