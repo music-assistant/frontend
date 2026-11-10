@@ -16,7 +16,6 @@ import {
   EventType,
   ListingType,
   MediaType,
-  PlaybackState,
   SortDirection,
   SortField,
   type Album,
@@ -191,9 +190,9 @@ vi.mock("@/components/track-table/TrackTableHeader.vue", () =>
 vi.mock("@/components/track-table/TrackTableRow.vue", () => ({
   default: {
     name: "TrackTableRow",
-    props: ["index", "reorderDisabled", "item", "isPlaying"],
+    props: ["index", "reorderDisabled"],
     template:
-      '<div data-testid="track-row" :data-is-playing="String(isPlaying)"><button :data-reorder-index="index" :aria-disabled="reorderDisabled || undefined" /></div>',
+      '<div><button :data-reorder-index="index" :aria-disabled="reorderDisabled || undefined" /></div>',
   },
 }));
 vi.mock("@/composables/useTrackTableColumns", async () => {

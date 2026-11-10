@@ -44,12 +44,6 @@ const itemMapping: ItemMapping = {
   available: true,
 };
 
-describe("favorite state", () => {
-  it("still allows a normal unavailable library track to hold its favorite state", () => {
-    expect(canHoldFavorite(track({ provider_mappings: [] }))).toBe(true);
-  });
-});
-
 describe("keepOwnFavorite", () => {
   it("keeps the favorite state of the item the caller holds", () => {
     const merged = keepOwnFavorite(

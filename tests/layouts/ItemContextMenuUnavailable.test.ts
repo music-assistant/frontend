@@ -7,52 +7,39 @@ import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.v
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
-import { track } from "../fixtures/track";
 import { providerMapping } from "../fixtures/providerMapping";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
-const { apiMock, emittedMenus, routerMock, toastMock, hasScope, storeMock } =
-  vi.hoisted(() => ({
-    emittedMenus: [] as ContextMenuDialogEvent[],
-    routerMock: {
-      push: vi.fn(),
-      currentRoute: { value: { fullPath: "/share" } },
-    },
-    toastMock: {
-      error: vi.fn(),
-      success: vi.fn(),
-    },
-    apiMock: {
-      getItem: vi.fn(),
-      getLibraryItem: vi.fn(),
-      getProvider: vi.fn(),
-      getCoreConfigValue: vi.fn(),
-      refreshItem: vi.fn(),
-      signalEvent: vi.fn(),
-      playMedia: vi.fn(),
-      providers: {},
-      players: {},
-    },
-    hasScope: vi.fn(),
-    storeMock: {
-      activePlayer: undefined,
-      activePlayerId: undefined,
-      enabledPlugins: new Set<string>(),
-    },
-  }));
+const { apiMock, emittedMenus, hasScope, storeMock } = vi.hoisted(() => ({
+  emittedMenus: [] as ContextMenuDialogEvent[],
+  apiMock: {
+    getItem: vi.fn(),
+    getLibraryItem: vi.fn(),
+    getProvider: vi.fn(),
+    getCoreConfigValue: vi.fn(),
+    refreshItem: vi.fn(),
+    signalEvent: vi.fn(),
+    playMedia: vi.fn(),
+    providers: {},
+    players: {},
+  },
+  hasScope: vi.fn(),
+  storeMock: {
+    activePlayer: undefined,
+    activePlayerId: undefined,
+    enabledPlugins: new Set<string>(),
+  },
+}));
 
 vi.mock("@/plugins/api", () => ({ default: apiMock, api: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
-vi.mock("@/plugins/router", () => ({ default: routerMock }));
-vi.mock("vue-sonner", () => ({ toast: toastMock }));
 vi.mock("@/plugins/eventbus", () => ({
   eventbus: {
     on: vi.fn(),
     off: vi.fn(),
-    emit: vi.fn((type: string, payload: ContextMenuDialogEvent) => {
-      if (type === "contextmenu")
-        emittedMenus.push(payload as ContextMenuDialogEvent);
+    emit: vi.fn((_type: string, payload: ContextMenuDialogEvent) => {
+      emittedMenus.push(payload);
     }),
   },
 }));
@@ -77,7 +64,6 @@ beforeEach(() => {
   apiMock.getLibraryItem.mockResolvedValue(gone);
   apiMock.refreshItem.mockResolvedValue(undefined);
   hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
-  routerMock.currentRoute.value.fullPath = "/share";
   emittedMenus.length = 0;
 });
 
