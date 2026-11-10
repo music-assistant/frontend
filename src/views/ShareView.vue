@@ -53,12 +53,14 @@ watch(
     loading.value = true;
 
     try {
-      decodeSharePayload(encoded);
+      await decodeSharePayload(encoded);
     } catch {
+      if (!active) return;
       errorKey.value = "share.invalid_link";
       loading.value = false;
       return;
     }
+    if (!active) return;
 
     if (!store.enabledPlugins.has("share_provider")) {
       errorKey.value = "share.plugin_unavailable";

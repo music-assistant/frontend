@@ -1,6 +1,8 @@
 import ShareView from "@/views/ShareView.vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { deflateRawSync } from "node:zlib";
+import * as shareLinks from "@/helpers/share_links";
 
 const { apiMock, routerMock, storeMock } = vi.hoisted(() => ({
   apiMock: {
@@ -18,10 +20,7 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("vue-router", () => ({ useRouter: () => routerMock }));
 
 function encode(payload: object): string {
-  return btoa(JSON.stringify(payload))
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
+  return `1${deflateRawSync(Buffer.from(JSON.stringify(payload))).toString("base64url")}`;
 }
 
 function deferred<T>() {
@@ -31,6 +30,7 @@ function deferred<T>() {
 }
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   apiMock.resolveSharedItem.mockReset();
   storeMock.enabledPlugins = new Set(["share_provider"]);
@@ -49,7 +49,9 @@ describe("ShareView", () => {
     });
     await flushPromises();
 
-    expect(wrapper.text()).toContain("share.invalid_link");
+    await vi.waitFor(() =>
+      expect(wrapper.text()).toContain("share.invalid_link"),
+    );
     expect(apiMock.resolveSharedItem).not.toHaveBeenCalled();
     wrapper.unmount();
   });
@@ -61,7 +63,9 @@ describe("ShareView", () => {
     });
     await flushPromises();
 
-    expect(wrapper.text()).toContain("share.plugin_unavailable");
+    await vi.waitFor(() =>
+      expect(wrapper.text()).toContain("share.plugin_unavailable"),
+    );
     expect(apiMock.resolveSharedItem).not.toHaveBeenCalled();
     wrapper.unmount();
   });
@@ -84,10 +88,12 @@ describe("ShareView", () => {
       });
       await flushPromises();
 
-      expect(routerMock.replace).toHaveBeenCalledWith({
-        name: route,
-        params: { provider: "library", itemId: `${type}-id` },
-      });
+      await vi.waitFor(() =>
+        expect(routerMock.replace).toHaveBeenCalledWith({
+          name: route,
+          params: { provider: "library", itemId: `${type}-id` },
+        }),
+      );
       wrapper.unmount();
     },
   );
@@ -109,6 +115,9 @@ describe("ShareView", () => {
     const wrapper = mount(ShareView, {
       props: { payload: encode({ type: "track", title: "Old track" }) },
     });
+    await vi.waitFor(() =>
+      expect(apiMock.resolveSharedItem).toHaveBeenCalledOnce(),
+    );
 
     await wrapper.setProps({
       payload: encode({ type: "album", title: "New album" }),
@@ -121,11 +130,13 @@ describe("ShareView", () => {
     });
     await flushPromises();
 
+    await vi.waitFor(() =>
+      expect(routerMock.replace).toHaveBeenCalledWith({
+        name: "album",
+        params: { provider: "library", itemId: "new-album" },
+      }),
+    );
     expect(routerMock.replace).toHaveBeenCalledTimes(1);
-    expect(routerMock.replace).toHaveBeenCalledWith({
-      name: "album",
-      params: { provider: "library", itemId: "new-album" },
-    });
     wrapper.unmount();
   });
 
@@ -139,6 +150,9 @@ describe("ShareView", () => {
     const wrapper = mount(ShareView, {
       props: { payload: encode({ type: "track", title: "Track" }) },
     });
+    await vi.waitFor(() =>
+      expect(apiMock.resolveSharedItem).toHaveBeenCalledOnce(),
+    );
 
     wrapper.unmount();
     pending.resolve({
@@ -148,6 +162,41 @@ describe("ShareView", () => {
     });
     await flushPromises();
 
+    expect(routerMock.replace).not.toHaveBeenCalled();
+  });
+
+  it("does not resolve a stale decode after the payload changes", async () => {
+    const pending = deferred<shareLinks.DecodedSharePayload>();
+    vi.spyOn(shareLinks, "decodeSharePayload")
+      .mockReturnValueOnce(pending.promise)
+      .mockResolvedValueOnce({ type: "album", title: "New" });
+    apiMock.resolveSharedItem.mockResolvedValue({
+      media_type: "album",
+      provider: "library",
+      item_id: "new",
+    });
+    const wrapper = mount(ShareView, { props: { payload: "old" } });
+    await wrapper.setProps({ payload: "new" });
+    await flushPromises();
+    pending.resolve({ type: "track", title: "Old" });
+    await flushPromises();
+    expect(apiMock.resolveSharedItem).toHaveBeenCalledExactlyOnceWith("new");
+    expect(routerMock.replace).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
+  it("ignores a decode failure after the view unmounts", async () => {
+    let reject!: (error: Error) => void;
+    vi.spyOn(shareLinks, "decodeSharePayload").mockReturnValueOnce(
+      new Promise((_resolve, fail) => {
+        reject = fail;
+      }),
+    );
+    const wrapper = mount(ShareView, { props: { payload: "pending" } });
+    wrapper.unmount();
+    reject(new Error("Invalid"));
+    await flushPromises();
+    expect(apiMock.resolveSharedItem).not.toHaveBeenCalled();
     expect(routerMock.replace).not.toHaveBeenCalled();
   });
 });

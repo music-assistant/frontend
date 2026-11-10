@@ -111,10 +111,12 @@ async function loadSharePreview(uri: string): Promise<void> {
   try {
     const url = await api.generateShareLink(uri);
     if (currentRequest !== requestId) return;
-    shareUrl.value = url;
-    preview.value = decodeSharePreview(url, (domain) =>
+    const decoded = await decodeSharePreview(url, (domain) =>
       api.getProviderName(domain),
     );
+    if (currentRequest !== requestId) return;
+    shareUrl.value = url;
+    preview.value = decoded;
   } catch (error) {
     if (currentRequest === requestId) {
       showDialog.value = false;

@@ -1,18 +1,13 @@
+const MAX_PAYLOAD_LENGTH = 65_536;
+const MAX_DECOMPRESSED_BYTES = 65_536;
+const PAYLOAD_PREFIX = "1";
 const PROVIDER_HOSTS: Record<string, readonly string[]> = {
   spotify: ["open.spotify.com"],
   tidal: ["tidal.com", "www.tidal.com"],
-  qobuz: ["open.qobuz.com"],
-  ytmusic: ["music.youtube.com"],
+  qobuz: ["open.qobuz.com", "www.qobuz.com", "qobuz.com"],
+  ytmusic: ["music.youtube.com", "www.youtube.com", "youtube.com", "youtu.be"],
   deezer: ["deezer.com", "www.deezer.com"],
   apple_music: ["music.apple.com"],
-};
-const PROVIDER_BASE_URLS: Record<string, string> = {
-  spotify: "https://open.spotify.com",
-  tidal: "https://tidal.com",
-  qobuz: "https://open.qobuz.com",
-  ytmusic: "https://music.youtube.com",
-  deezer: "https://www.deezer.com",
-  apple_music: "https://music.apple.com",
 };
 const ARTWORK_HOST_SUFFIXES = [
   "mzstatic.com",
@@ -31,23 +26,6 @@ const ARTWORK_HOST_SUFFIXES = [
   "lastfm.freetls.fastly.net",
   "ssl-images-amazon.com",
 ];
-const ARTWORK_SUFFIXES: Record<string, string> = {
-  m: "mzstatic.com",
-  s: "scdn.co",
-  t: "tidal.com",
-  q: "qobuz.com",
-  d: "dzcdn.net",
-  b: "bcbits.com",
-  g: "googleusercontent.com",
-  y: "ytimg.com",
-  c: "coverartarchive.org",
-  a: "archive.org",
-  u: "theaudiodb.com",
-  f: "fanart.tv",
-  l: "last.fm",
-  L: "lastfm.freetls.fastly.net",
-  z: "ssl-images-amazon.com",
-};
 
 export interface ShareProviderLink {
   domain: string;
@@ -63,18 +41,6 @@ export interface SharePreview {
   links: ShareProviderLink[];
 }
 
-export interface SharedTrack {
-  title: string;
-  artist?: string | null;
-  artists?: string[] | null;
-  version?: string | null;
-  album?: string | null;
-  isrc?: string | null;
-  mbid?: string | null;
-  mb_track?: string | null;
-  duration?: number | null;
-}
-
 export interface DecodedSharePayload {
   type: "track" | "album" | "artist";
   title: string;
@@ -83,68 +49,123 @@ export interface DecodedSharePayload {
   album?: string;
   version?: string;
   duration?: number;
-  art_ref?: string;
-  provider_refs?: unknown;
+  isrc?: string;
+  mbid?: string;
+  mb_track?: string;
+  art_url?: string;
+  provider_urls?: Record<string, string>;
 }
 
-export function encodeSharedTrack(track: SharedTrack): string {
-  const bytes = new TextEncoder().encode(
-    JSON.stringify({
-      type: "track",
-      title: track.title,
-      artist: track.artist,
-      artists: track.artists,
-      version: track.version,
-      album: track.album,
-      isrc: track.isrc,
-      mbid: track.mbid,
-      mb_track: track.mb_track,
-      duration: track.duration,
-    }),
-  );
-  return btoa(Array.from(bytes, (byte) => String.fromCharCode(byte)).join(""))
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/, "");
-}
-
-export function decodeSharePreview(
+export async function decodeSharePreview(
   value: string,
   getProviderName: (domain: string) => string,
-): SharePreview {
-  const payload = decodeSharePayload(new URL(value).hash.slice(1));
-  const links = Object.entries(
-    expandShareProviderRefs(payload.provider_refs),
-  ).map(([domain, url]) => ({
-    domain,
-    name: getProviderName(domain),
-    url,
-  }));
+): Promise<SharePreview> {
+  const payload = await decodeSharePayload(new URL(value).hash.slice(1));
+  const links = Object.entries(payload.provider_urls ?? {})
+    .filter(([domain, url]) => isSafeProviderUrl(domain, url))
+    .map(([domain, url]) => ({
+      domain,
+      name: getProviderName(domain),
+      url,
+    }));
   return {
     title: payload.title,
     artist: payload.artist,
     album: payload.album,
-    art: expandShareArtworkRef(payload.art_ref),
+    art:
+      payload.art_url && isSafeArtworkUrl(payload.art_url)
+        ? payload.art_url
+        : undefined,
     links,
   };
 }
 
-export function decodeSharePayload(encoded: string): DecodedSharePayload {
+export async function decodeSharePayload(
+  encoded: string,
+): Promise<DecodedSharePayload> {
   if (!encoded) throw new Error("Missing payload");
-  const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
-  const bytes = Uint8Array.from(
-    atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")),
-    (character) => character.charCodeAt(0),
+  if (encoded.length > MAX_PAYLOAD_LENGTH) throw new Error("Payload too large");
+  if (encoded[0] !== PAYLOAD_PREFIX)
+    throw new Error("Unsupported payload version");
+  const base64 = encoded.slice(PAYLOAD_PREFIX.length);
+  if (!/^[A-Za-z0-9_-]+$/.test(base64) || base64.length % 4 === 1) {
+    throw new Error("Invalid payload encoding");
+  }
+  const normalized = base64.replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(
+    normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "="),
   );
-  const value: unknown = JSON.parse(new TextDecoder().decode(bytes));
-  if (!value || typeof value !== "object") throw new Error("Invalid payload");
+  if (btoa(binary).replace(/=+$/, "") !== normalized) {
+    throw new Error("Invalid payload encoding");
+  }
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  const reader = new Blob([bytes])
+    .stream()
+    .pipeThrough(new DecompressionStream("deflate-raw"))
+    .getReader();
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      length += value.byteLength;
+      if (length > MAX_DECOMPRESSED_BYTES) {
+        await reader.cancel();
+        throw new Error("Payload too large");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const decompressed = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    decompressed.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  const value: unknown = JSON.parse(
+    new TextDecoder("utf-8", { fatal: true }).decode(decompressed),
+  );
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Invalid payload");
+  }
   const candidate = value as Record<string, unknown>;
   if (
-    !["track", "album", "artist"].includes(String(candidate.type)) ||
+    typeof candidate.type !== "string" ||
+    !["track", "album", "artist"].includes(candidate.type) ||
     typeof candidate.title !== "string" ||
     !candidate.title.trim()
   ) {
     throw new Error("Invalid payload");
+  }
+  for (const field of [
+    "artist",
+    "album",
+    "version",
+    "isrc",
+    "mbid",
+    "mb_track",
+    "art_url",
+  ]) {
+    if (
+      candidate[field] !== undefined &&
+      typeof candidate[field] !== "string"
+    ) {
+      throw new Error("Invalid payload");
+    }
+  }
+  if (
+    candidate.provider_urls !== undefined &&
+    (!candidate.provider_urls ||
+      typeof candidate.provider_urls !== "object" ||
+      Array.isArray(candidate.provider_urls) ||
+      Object.values(candidate.provider_urls).some(
+        (url) => typeof url !== "string",
+      ))
+  ) {
+    throw new Error("Invalid provider URLs");
   }
   if (
     candidate.duration !== undefined &&
@@ -175,14 +196,20 @@ export function decodeSharePayload(encoded: string): DecodedSharePayload {
       typeof candidate.version === "string" ? candidate.version : undefined,
     duration:
       typeof candidate.duration === "number" ? candidate.duration : undefined,
-    art_ref:
-      typeof candidate.art_ref === "string" ? candidate.art_ref : undefined,
-    provider_refs: candidate.provider_refs,
+    isrc: candidate.isrc as string | undefined,
+    mbid: candidate.mbid as string | undefined,
+    mb_track: candidate.mb_track as string | undefined,
+    art_url: candidate.art_url as string | undefined,
+    provider_urls: candidate.provider_urls as
+      Record<string, string> | undefined,
   };
 }
 
 export function isSafeProviderUrl(domain: string, value: string): boolean {
-  const hosts = PROVIDER_HOSTS[domain];
+  if (!/^https:\/\/[^/\s\\][^\s\\]*$/i.test(value)) return false;
+  const hosts = Object.hasOwn(PROVIDER_HOSTS, domain)
+    ? PROVIDER_HOSTS[domain]
+    : undefined;
   if (!hosts) return false;
   try {
     const url = new URL(value);
@@ -198,6 +225,7 @@ export function isSafeProviderUrl(domain: string, value: string): boolean {
 }
 
 export function isSafeArtworkUrl(value: string): boolean {
+  if (!/^https:\/\/[^/\s\\][^\s\\]*$/i.test(value)) return false;
   try {
     const url = new URL(value);
     const hostname = url.hostname.toLowerCase();
@@ -212,56 +240,4 @@ export function isSafeArtworkUrl(value: string): boolean {
   } catch {
     return false;
   }
-}
-
-export function expandShareProviderRefs(
-  value: unknown,
-): Record<string, string> {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  return Object.fromEntries(
-    Object.entries(value).flatMap(([domain, ref]) => {
-      if (
-        typeof ref !== "string" ||
-        !Object.prototype.hasOwnProperty.call(PROVIDER_BASE_URLS, domain) ||
-        !ref.startsWith("/") ||
-        ref.startsWith("//") ||
-        ref.includes("\\")
-      ) {
-        return [];
-      }
-      try {
-        const url = new URL(ref, PROVIDER_BASE_URLS[domain]);
-        return isSafeProviderUrl(domain, url.href) ? [[domain, url.href]] : [];
-      } catch {
-        return [];
-      }
-    }),
-  );
-}
-
-export function expandShareArtworkRef(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined;
-  const separator = value.indexOf(":");
-  if (separator <= 0) return undefined;
-  const code = value.slice(0, separator);
-  const hostAndPath = value.slice(separator + 1);
-  const suffix = ARTWORK_SUFFIXES[code];
-  if (!suffix) return undefined;
-  let subdomain = "";
-  let path = hostAndPath;
-  if (!hostAndPath.startsWith("/")) {
-    const subdomainEnd = hostAndPath.indexOf(":/");
-    if (subdomainEnd <= 0) return undefined;
-    subdomain = hostAndPath.slice(0, subdomainEnd);
-    path = hostAndPath.slice(subdomainEnd + 1);
-  }
-  if (
-    !path.startsWith("/") ||
-    (subdomain &&
-      !subdomain.split(".").every((part) => /^[a-z0-9-]+$/i.test(part)))
-  ) {
-    return undefined;
-  }
-  const url = `https://${subdomain ? `${subdomain}.` : ""}${suffix}${path}`;
-  return isSafeArtworkUrl(url) ? new URL(url).href : undefined;
 }

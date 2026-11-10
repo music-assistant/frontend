@@ -2,6 +2,8 @@ import ShareLinkDialog from "@/layouts/default/ShareLinkDialog.vue";
 import { eventbus } from "@/plugins/eventbus";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { deflateRawSync } from "node:zlib";
+import * as shareLinks from "@/helpers/share_links";
 
 const { apiMock, copyToClipboardMock, storeMock, toastError, toastSuccess } =
   vi.hoisted(() => ({
@@ -49,10 +51,7 @@ function deferred<T>() {
 }
 
 function shareUrl(title: string): string {
-  const encoded = btoa(JSON.stringify({ type: "track", title }))
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
+  const encoded = `1${deflateRawSync(Buffer.from(JSON.stringify({ type: "track", title }))).toString("base64url")}`;
   return `https://share.music-assistant.io/#${encoded}`;
 }
 
@@ -83,9 +82,10 @@ function mountDialog() {
             '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
         },
         ShareArtworkPreview: {
+          props: ["title"],
           emits: ["copy-share-link"],
           template:
-            '<button data-testid="copy-share" @click="$emit(\'copy-share-link\')">Copy</button>',
+            '<button data-testid="copy-share" :data-title="title" @click="$emit(\'copy-share-link\')">Copy</button>',
         },
         ShareProviderLinkList: { template: "<div />" },
         Copy: true,
@@ -96,6 +96,7 @@ function mountDialog() {
 }
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   storeMock.dialogActive = false;
   apiMock.generateShareLink.mockResolvedValue(shareUrl("Track"));
@@ -111,6 +112,7 @@ describe("ShareLinkDialog clipboard request state", () => {
     const dialogContent = wrapper.get('[data-testid="dialog-content"]');
     expect(dialogContent.classes()).toContain("z-[100001]");
     expect(dialogContent.attributes("data-overlay-class")).toBe("z-[100001]");
+    wrapper.unmount();
   });
 
   it.each(["resolve", "reject"] as const)(
@@ -164,12 +166,16 @@ describe("ShareLinkDialog clipboard request state", () => {
       copyToClipboardMock.mockReturnValueOnce(pending.promise);
       const wrapper = mountDialog();
       openPreview("old-uri");
-      await flushPromises();
+      await vi.waitFor(() =>
+        expect(wrapper.find('[data-testid="copy-share"]').exists()).toBe(true),
+      );
       await wrapper.get('[data-testid="copy-share"]').trigger("click");
       await wrapper.get('[data-testid="close-dialog"]').trigger("click");
 
       openPreview("new-uri");
-      await flushPromises();
+      await vi.waitFor(() =>
+        expect(wrapper.find('[data-testid="copy-share"]').exists()).toBe(true),
+      );
       if (outcome === "resolve") pending.resolve(true);
       else pending.reject(new Error("clipboard failed"));
       await flushPromises();
@@ -178,6 +184,55 @@ describe("ShareLinkDialog clipboard request state", () => {
       expect(toastSuccess).not.toHaveBeenCalled();
       expect(toastError).not.toHaveBeenCalled();
       wrapper.unmount();
+    },
+  );
+
+  it.each(["resolve", "reject"] as const)(
+    "ignores a stale preview decode %s after a newer preview opens",
+    async (outcome) => {
+      const pending = deferred<shareLinks.SharePreview>();
+      apiMock.generateShareLink
+        .mockResolvedValueOnce(shareUrl("Old"))
+        .mockResolvedValueOnce(shareUrl("New"));
+      vi.spyOn(shareLinks, "decodeSharePreview")
+        .mockReturnValueOnce(pending.promise)
+        .mockResolvedValueOnce({ title: "New", links: [] });
+      const wrapper = mountDialog();
+      openPreview("old-uri");
+      await flushPromises();
+      openPreview("new-uri");
+      await flushPromises();
+      if (outcome === "resolve") pending.resolve({ title: "Old", links: [] });
+      else pending.reject(new Error("Invalid"));
+      await flushPromises();
+      expect(wrapper.find('[data-testid="copy-share"]').exists()).toBe(true);
+      expect(
+        wrapper.get('[data-testid="copy-share"]').attributes("data-title"),
+      ).toBe("New");
+      expect(toastError).not.toHaveBeenCalled();
+      await wrapper.get('[data-testid="copy-share"]').trigger("click");
+      expect(copyToClipboardMock).toHaveBeenCalledWith(shareUrl("New"));
+      wrapper.unmount();
+    },
+  );
+
+  it.each(["close", "unmount"] as const)(
+    "ignores a preview decode after %s",
+    async (action) => {
+      const pending = deferred<shareLinks.SharePreview>();
+      vi.spyOn(shareLinks, "decodeSharePreview").mockReturnValueOnce(
+        pending.promise,
+      );
+      const wrapper = mountDialog();
+      openPreview("uri");
+      await flushPromises();
+      if (action === "close")
+        await wrapper.get('[data-testid="close-dialog"]').trigger("click");
+      else wrapper.unmount();
+      pending.reject(new Error("Invalid"));
+      await flushPromises();
+      expect(toastError).not.toHaveBeenCalled();
+      if (action === "close") wrapper.unmount();
     },
   );
 });
