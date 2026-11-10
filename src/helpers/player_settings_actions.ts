@@ -131,7 +131,7 @@ export const getPlayerSettingsMenuItems = (
       label: config.enabled ? "settings.disable" : "settings.enable",
       action: () => {
         if (!config.enabled) {
-          void setPlayerEnabled(config, true);
+          void setPlayerEnabled(playerId, true);
           return;
         }
         eventbus.emit("deleteConfirmationDialog", {
@@ -140,7 +140,9 @@ export const getPlayerSettingsMenuItems = (
           ]),
           message: $t("player_select.disable_player_confirmation"),
           confirmLabel: $t("settings.disable"),
-          onConfirm: () => setPlayerEnabled(config, false),
+          onConfirm: async () => {
+            await setPlayerEnabled(playerId, false);
+          },
         });
       },
       icon: markRaw(config.enabled ? CircleOff : Power),
@@ -184,15 +186,42 @@ export const playerCanBeDeleted = (playerId: string): boolean => {
     ?.supported_features.includes(feature);
 };
 
-async function setPlayerEnabled(config: PlayerConfig, enabled: boolean) {
+/**
+ * Switch a player on or off, and say whether the change landed. Switching off
+ * the player the player bar points at hands the bar to another player.
+ */
+export const setPlayerEnabled = async (
+  playerId: string,
+  enabled: boolean,
+): Promise<boolean> => {
   try {
-    await api.savePlayerConfig(config.player_id, { enabled });
-    if (!enabled) selectFallbackPlayer(config.player_id);
+    await api.savePlayerConfig(playerId, { enabled });
+    if (!enabled) selectFallbackPlayer(playerId);
     toast.success($t("settings.player_saved"));
+    return true;
   } catch {
     // a failed command is already reported by the api layer
+    return false;
   }
-}
+};
+
+/**
+ * Give a player a name of its own, or hand it back to the name its provider
+ * reports by clearing the name, and say whether the change landed.
+ */
+export const renamePlayer = async (
+  playerId: string,
+  name: string | null,
+): Promise<boolean> => {
+  try {
+    await api.savePlayerConfig(playerId, { name });
+    toast.success($t("settings.player_saved"));
+    return true;
+  } catch {
+    // a failed command is already reported by the api layer
+    return false;
+  }
+};
 
 async function deletePlayer(playerId: string, onDeleted?: () => void) {
   try {

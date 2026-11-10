@@ -1,4 +1,4 @@
-import { computed, ComputedRef } from "vue";
+import { computed, ComputedRef, toRaw } from "vue";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 
@@ -21,14 +21,15 @@ export interface ItemsListingPreferences {
 /**
  * Standalone helper — usable outside Vue component setup (e.g. composables).
  * Sets a single user preference key, deep-clones the value, and persists to the server.
+ * Says whether the server took it.
  */
 export async function setUserPreference(
   key: string,
   value: unknown,
-): Promise<void> {
+): Promise<boolean> {
   if (!store.currentUser) {
     console.warn("Cannot set preference: no user logged in");
-    return;
+    return false;
   }
 
   if (!store.currentUser.preferences) {
@@ -37,6 +38,7 @@ export async function setUserPreference(
 
   const plainValue = JSON.parse(JSON.stringify(value));
 
+  const previousPreferences = store.currentUser.preferences;
   const updatedPreferences = {
     ...store.currentUser.preferences,
     [key]: plainValue,
@@ -48,8 +50,19 @@ export async function setUserPreference(
     await api.updateUser(store.currentUser.user_id, {
       preferences: updatedPreferences,
     });
+    return true;
   } catch (error) {
     console.error("Failed to update user preferences:", error);
+    // put back what the account had: a value the server would not take must
+    // not sit there looking saved, nor ride along on the next write. Unless
+    // something has been written since, which is nobody's to undo
+    const latest = store.currentUser;
+    // the store hands the preferences back as a reactive proxy, so the write
+    // is told apart from a later one by the object underneath it
+    if (latest && toRaw(latest.preferences) === updatedPreferences) {
+      latest.preferences = previousPreferences;
+    }
+    return false;
   }
 }
 

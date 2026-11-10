@@ -84,19 +84,23 @@
 
     <div
       v-if="!disabled"
-      :class="[
-        'floating-save',
-        {
-          'floating-save--mobile': store.mobileLayout,
-          'floating-save--frameless': store.frameless,
-        },
-      ]"
+      :class="
+        inlineSave
+          ? 'mt-4 flex justify-end'
+          : [
+              'floating-save',
+              {
+                'floating-save--mobile': store.mobileLayout,
+                'floating-save--frameless': store.frameless,
+              },
+            ]
+      "
     >
       <Button
         data-testid="config-save"
         type="button"
         size="lg"
-        class="shadow-lg"
+        :class="{ 'shadow-lg': !inlineSave }"
         :disabled="!requiredValuesPresent || !hasUnsavedChanges"
         @click="submit"
       >
@@ -218,6 +222,9 @@ export interface Props {
   // Domain of the provider being configured; lets a field recognise the entries of the
   // provider it belongs to. Omitted for player/core configs.
   providerDomain?: string;
+  // Keep the Save button in the flow of the form instead of floating over the page:
+  // inside a dialog, a fixed position is measured from the dialog rather than the screen.
+  inlineSave?: boolean;
 }
 
 const emit = defineEmits<{
@@ -425,6 +432,24 @@ const saveFailed = function () {
 };
 
 /**
+ * Reports a save that landed, for a form that stays on screen afterwards: the
+ * values that went to the server are what is stored now, so they stop counting
+ * as unsaved. Only those — the form stays open while a save is on its way, so
+ * anything typed in the meantime is still an edit nobody saved. Leaving guards
+ * the values again as well: `submit` let the save through, and the next edit
+ * has to be asked about like any other.
+ */
+const saveSucceeded = function (values: Record<string, ConfigValueType>) {
+  for (const [key, value] of Object.entries(values)) {
+    oldValues.value[key] =
+      typeof value === "object" && value !== null
+        ? JSON.parse(JSON.stringify(value))
+        : value;
+  }
+  allowNavigation.value = false;
+};
+
+/**
  * Stops guarding the pending edits, for when what they belong to is gone and
  * there is nothing left to save them to.
  */
@@ -432,7 +457,14 @@ const discardChanges = function () {
   allowNavigation.value = true;
 };
 
-defineExpose({ resetToDefaults, saveFailed, discardChanges });
+defineExpose({
+  resetToDefaults,
+  saveFailed,
+  saveSucceeded,
+  discardChanges,
+  hasUnsavedChanges,
+  submit,
+});
 
 const confirmDiscard = function () {
   showUnsavedDialog.value = false;

@@ -70,6 +70,7 @@ import {
   SearchResults,
   SmartPlaylistRules,
   SoundEffect,
+  StreamServerInfo,
   UserRole,
   MediaCollection,
   ArtistType,
@@ -3402,6 +3403,19 @@ export class MusicAssistantApi {
     return this.sendCommand<RemoteAccessInfo>("remote_access/configure", {
       enabled,
     });
+  }
+
+  // Stream server methods
+
+  public async getStreamServerInfo(
+    options?: CommandOptions,
+  ): Promise<StreamServerInfo> {
+    // Get the address the stream server hands to players
+    return this.sendCommand<StreamServerInfo>(
+      "streams/info",
+      undefined,
+      options,
+    );
   }
 
   public sendCommand<Result>(

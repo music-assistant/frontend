@@ -1,5 +1,9 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
-import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import {
+  getPlayerSettingsMenuItems,
+  renamePlayer,
+  setPlayerEnabled,
+} from "@/helpers/player_settings_actions";
 import {
   PlayerType,
   ProviderFeature,
@@ -182,6 +186,29 @@ describe("getPlayerSettingsMenuItems actions", () => {
     });
   });
 
+  it("keeps the confirmation open until the player is disabled", async () => {
+    let finishSave!: () => void;
+    apiMock.savePlayerConfig.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishSave = resolve;
+      }),
+    );
+    const menuItems = getPlayerSettingsMenuItems(playerConfig());
+    menuItem(menuItems, "settings.disable").action?.();
+
+    let confirmed = false;
+    const confirming = Promise.resolve(confirmation().onConfirm()).then(() => {
+      confirmed = true;
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(confirmed).toBe(false);
+
+    finishSave();
+    await confirming;
+    expect(confirmed).toBe(true);
+  });
+
   it("enables a player without asking", () => {
     const menuItems = getPlayerSettingsMenuItems(
       playerConfig({ enabled: false }),
@@ -285,6 +312,44 @@ describe("getPlayerSettingsMenuItems actions", () => {
   });
 });
 
+describe("changing a player directly", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMock.savePlayerConfig.mockResolvedValue({});
+  });
+
+  it("renames a player and says the change landed", async () => {
+    expect(await renamePlayer("kitchen", "Lounge")).toBe(true);
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      name: "Lounge",
+    });
+    expect(toastMock.success).toHaveBeenCalledWith("settings.player_saved");
+  });
+
+  it("hands a player back to its provider's name when the name is cleared", async () => {
+    await renamePlayer("kitchen", null);
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      name: null,
+    });
+  });
+
+  it.each([
+    ["renaming", () => renamePlayer("kitchen", "Lounge")],
+    ["switching", () => setPlayerEnabled("kitchen", false)],
+  ])("says a %s the server refused did not land", async (_action, change) => {
+    apiMock.savePlayerConfig.mockRejectedValue(new Error("refused"));
+    expect(await change()).toBe(false);
+    expect(toastMock.success).not.toHaveBeenCalled();
+  });
+
+  it("says a switch that went through landed", async () => {
+    expect(await setPlayerEnabled("kitchen", true)).toBe(true);
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("kitchen", {
+      enabled: true,
+    });
+  });
+});
+
 /**
  * The labels a user actually sees, so an entry the menu hides counts as absent.
  */
@@ -349,6 +414,7 @@ function playerConfig(overrides: Partial<PlayerConfig> = {}): PlayerConfig {
     enabled: true,
     name: null,
     default_name: "Chromecast",
+    player_type: PlayerType.PLAYER,
     values: {},
     ...overrides,
   };

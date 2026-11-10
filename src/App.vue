@@ -13,6 +13,10 @@
   <!-- Main app (when authenticated and service worker ready for remote) -->
   <router-view v-else-if="showMainApp" />
 
+  <!-- Onboarding opens as a modal over whichever layout is showing, so a fresh
+       admin is met by it wherever the app lands them -->
+  <OnboardingDialog v-if="showMainApp" />
+
   <!-- Kiosk mode leaves Home Assistant no chrome of its own, and this screen
        carries none of ours: a server that is away or restarting would strand
        the panel on a spinner with nowhere to go. -->
@@ -88,9 +92,14 @@ import {
   WebPlayerMode,
 } from "./plugins/web_player";
 import Login from "./views/Login.vue";
+import OnboardingDialog from "@/components/onboarding/OnboardingDialog.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { useOnboarding } from "@/composables/useOnboarding";
 
 const router = useRouter();
+// the setup wizard opens as a modal over the app; opened here, before the app
+// is shown, so a fresh sign-in never flashes the app behind it first
+const { open: openOnboarding, paused: setupPaused } = useOnboarding();
 const route = useRoute();
 const { applyThemePreference: setTheme } = useThemePreference();
 const mediaSessionDisabled = computed(() =>
@@ -288,6 +297,20 @@ async function migrateLocalStorageToUserPreferences() {
 }
 
 const completeInitialization = async () => {
+  // Read the onboarding request before anything can return early: the server's
+  // setup flow appends ?onboard=true, and dropping it right away keeps a reload
+  // from sending the user back into the wizard.
+  const urlParams = new URLSearchParams(window.location.search);
+  const onboardRequested = urlParams.get("onboard") === "true";
+  if (onboardRequested) {
+    urlParams.delete("onboard");
+    const cleanUrl =
+      window.location.pathname +
+      (urlParams.toString() ? "?" + urlParams.toString() : "") +
+      window.location.hash;
+    window.history.replaceState({}, "", cleanUrl);
+  }
+
   // Guard against multiple initializations
   if (initializationCompleted) {
     return;
@@ -363,14 +386,13 @@ const completeInitialization = async () => {
     await api.fetchProviders();
   }
 
-  const urlParams = new URLSearchParams(window.location.search);
   if (
-    (urlParams.get("onboard") === "true" ||
-      serverInfo.onboard_done === false) &&
-    userInfo.role === "admin"
+    // a setup the admin paused stays paused when a reconnect runs this again
+    (onboardRequested ||
+      (serverInfo.onboard_done === false && !setupPaused.value)) &&
+    authManager.isAdmin()
   ) {
-    store.isOnboarding = true;
-    router.push("/settings");
+    openOnboarding();
   } else if (isGuestAccessSession) {
     router.push("/guest");
   } else if (isDashboardViewer) {

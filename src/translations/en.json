@@ -429,7 +429,6 @@
         "players_description": "Configure and manage your audio output devices",
         "frontend_description": "Customize the user interface theme and appearance",
         "provider_type": "Type",
-        "onboarding_title": "Welcome to Music Assistant!",
         "profile_description": "Manage your personal account settings and preferences",
         "users": "Users",
         "users_description": "Manage user accounts, roles, and permissions",
@@ -541,14 +540,6 @@
             "dsp": "DSP",
             "audiobooks": "Audiobooks"
         },
-        "onboarding_subtitle": "Let's get you started by connecting your music sources and audio devices.",
-        "onboarding_music_title": "Music",
-        "onboarding_music_desc": "Connect your streaming services like Spotify, Tidal, or your local music library.",
-        "onboarding_add_music": "Add Music",
-        "onboarding_player_title": "Players",
-        "onboarding_player_desc": "Connect your speakers and devices like Sonos, Chromecast, or AirPlay.",
-        "onboarding_add_player": "Add Players",
-        "onboarding_footer": "You can always add more providers later from this settings page.",
         "remote_access_qr_code": "QR Code",
         "remote_access_qr_code_description": "Scan with your phone camera to connect instantly.",
         "reset_to_defaults": "Reset to defaults",
@@ -1170,6 +1161,7 @@
     "homescreen_edit_disable": "Leave edit mode",
     "lyrics_will_appear_soon": "Lyrics will appear when the song begins...",
     "optional": "Optional",
+    "recommended": "Recommended",
     "created": "Created",
     "last_used": "Last used",
     "create": "Create",
@@ -2408,5 +2400,103 @@
     "command_center_navigate": "navigate",
     "command_center_open": "open",
     "command_center_keep_typing": "Keep typing to search...",
+    "onboarding": {
+        "title": "Set up Music Assistant",
+        "description": "Set up Music Assistant, one step at a time.",
+        "step_counter": "Step {current} of {total}",
+        "step_completed": "{step}, completed",
+        "next": "Next",
+        "skip": "Skip for now",
+        "finish": "Finish",
+        "finish_failed": "Could not finish. Please try again.",
+        "nothing_configured": "Nothing set up yet",
+        "needs_attention": "Needs attention",
+        "set_up": "Done",
+        "still_to_do": "Still to do",
+        "all_done": "Everything on the list is set up.",
+        "players_count": "{count} player | {count} players",
+        "music_sources_count": "{count} music source | {count} music sources",
+        "plugins_count": "{count} plugin | {count} plugins",
+        "run_again": "Run the setup wizard again",
+        "paused_title": "Setup paused",
+        "paused_text": "Pick up where you left off, now or later from the settings.",
+        "resume": "Resume",
+        "pause": "Pause setup",
+        "dismiss": "Dismiss",
+        "steps": {
+            "intent": {
+                "title": "Choose how you want to use Music Assistant",
+                "description": "This sets what Music Assistant does first. Everything stays available, whichever you pick.",
+                "phone_apps": {
+                    "label": "From the apps on my phone",
+                    "description": "Stream from Spotify, AirPlay and other apps to the speakers in your home."
+                },
+                "music_hub": {
+                    "label": "As my music hub",
+                    "description": "Bring your streaming services and local music together in one library."
+                },
+                "settings_note": "You can change this later from the settings."
+            },
+            "music_sources": {
+                "title": "Add your music sources",
+                "description": "Connect a streaming service or your local music files, so Music Assistant has something to play."
+            },
+            "players": {
+                "title": "Add your players",
+                "description": "The players Music Assistant already found. Switch off any you do not want to use, and rename them as you like.",
+                "description_empty": "Music Assistant finds your speakers through player providers, such as Sonos, Chromecast or AirPlay.",
+                "empty": "No players found yet",
+                "no_provider_hint": "Add a player provider and its players show up here.",
+                "discovering_hint": "Finding players can take a moment. Make sure your speakers are switched on and on the same network as Music Assistant.",
+                "add_more": "Add more players",
+                "discovered_by": "Discovered by",
+                "rename": "Rename {name}"
+            },
+            "plugins": {
+                "title": "Add plugins",
+                "description": "Plugins add extra features on top of Music Assistant, such as Party, Spotify Connect and an AirPlay receiver. You can always add them later."
+            },
+            "core_settings": {
+                "title": "Check your server settings",
+                "intro": "The addresses Music Assistant is using right now. They are worked out automatically and are normally right, so you can simply move on.",
+                "internal_address": "Internal address",
+                "internal_address_hint": "Where the apps and devices in your home reach Music Assistant.",
+                "stream_address": "Stream server address",
+                "stream_address_hint": "Where your players fetch the audio from.",
+                "address_unknown": "Not available",
+                "check": {
+                    "checking": "Checking...",
+                    "reachable": "Reachable from this device",
+                    "unreachable": "Not reachable from this device",
+                    "unchecked": "Could not check from this device"
+                },
+                "unreachable_hint": "An address that does not answer here may not answer for your players either. If playback fails, set it under the advanced settings.",
+                "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {system}, in {webserver} and {streams}.",
+                "remote": {
+                    "title": "Listen from outside your home",
+                    "description": "Two ways to reach Music Assistant when you are away. Both can also be set up later.",
+                    "builtin": {
+                        "title": "Built-in remote access",
+                        "easiest": "Easiest",
+                        "description": "Secure and encrypted, with no port forwarding or VPN. Turn it on and connect from anywhere with your remote access ID.",
+                        "switch": "Remote access",
+                        "id": "Your remote access ID",
+                        "copy": "Copy the remote access ID",
+                        "hint": "Use it in the Music Assistant app or at app.music-assistant.io. The QR code is under Settings › {remote_access}."
+                    },
+                    "proxy": {
+                        "title": "Your own reverse proxy",
+                        "description": "Run a reverse proxy in front of the server and enter the address it is reached on from outside as the external address.",
+                        "set_external": "Set the external address"
+                    }
+                },
+                "load_failed": "The server settings could not be loaded. You can change them later from the settings."
+            },
+            "finish": {
+                "title": "Finish setup",
+                "description": "Nice work setting things up. Here's a quick recap, and you can change any of this later from the settings."
+            }
+        }
+    },
     "screens": "Screens"
 }

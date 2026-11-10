@@ -1,7 +1,11 @@
 import Players from "@/views/settings/Players.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
-import { ProviderType, type PlayerConfig } from "@/plugins/api/interfaces";
+import {
+  PlayerType,
+  ProviderType,
+  type PlayerConfig,
+} from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -71,6 +75,7 @@ const playerConfig = {
   default_name: null,
   player_id: "kitchen",
   provider: "test",
+  player_type: PlayerType.PLAYER,
   values: {},
 };
 
