@@ -3,6 +3,7 @@ import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { returnedByHistory } from "@/helpers/navigation";
 import { parseStatisticsPeriod } from "@/helpers/statistics_period";
+import { ROTATION_PROVIDER_DOMAIN } from "@/components/rotation/constants";
 import { $t } from "@/plugins/i18n";
 import { nextTick, watch } from "vue";
 import {
@@ -31,6 +32,33 @@ const paramsAndQueryProps = (route: {
   params: Record<string, string | string[]>;
   query: Record<string, string | (string | null)[] | null | undefined>;
 }) => ({ ...route.params, ...route.query });
+
+const requireRotationPlugin = async () => {
+  if (api.state.value !== ConnectionState.INITIALIZED) {
+    // Wait for the connection, but never block navigation forever.
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => {
+        unwatch();
+        resolve();
+      }, 10000);
+      const unwatch = watch(
+        () => api.state.value,
+        (newState) => {
+          if (newState === ConnectionState.INITIALIZED) {
+            clearTimeout(timeout);
+            unwatch();
+            resolve();
+          }
+        },
+        { immediate: true },
+      );
+    });
+  }
+  if (!store.enabledPlugins.has(ROTATION_PROVIDER_DOMAIN)) {
+    toast.error($t("rotation.plugin_disabled"));
+    return { name: "playlists" };
+  }
+};
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -220,6 +248,27 @@ export const routes: RouteRecordRaw[] = [
             return { name: "discover" };
           }
         },
+      },
+      {
+        path: "/rotations/new",
+        name: "rotation-new",
+        component: () =>
+          import(
+            /* webpackChunkName: "rotation-editor" */ "@/views/RotationEditor.vue"
+          ),
+        beforeEnter: requireRotationPlugin,
+        meta: { requiresScope: Scope.LIBRARY_WRITE },
+      },
+      {
+        path: "/rotations/:rotationId/edit",
+        name: "rotation-edit",
+        component: () =>
+          import(
+            /* webpackChunkName: "rotation-editor" */ "@/views/RotationEditor.vue"
+          ),
+        props: true,
+        beforeEnter: requireRotationPlugin,
+        meta: { requiresScope: Scope.LIBRARY_WRITE },
       },
       {
         path: "/visualizer",

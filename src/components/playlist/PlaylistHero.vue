@@ -23,6 +23,18 @@
         <Settings2 class="size-5" />
       </Button>
       <Button
+        v-if="canEditRotation"
+        type="button"
+        variant="ghost-icon"
+        size="icon-lg"
+        class="mr-2 rounded-lg bg-black/35 hover:bg-black/45"
+        :aria-label="$t('rotation.edit')"
+        :title="$t('rotation.edit')"
+        @click="emit('edit-rotation')"
+      >
+        <RotationIcon class="size-5" />
+      </Button>
+      <Button
         v-if="canShare"
         type="button"
         variant="ghost-icon"
@@ -124,6 +136,7 @@ import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue"
 import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import PlaylistAccessSummary from "@/components/PlaylistAccessSummary.vue";
+import RotationIcon from "@/components/rotation/RotationIcon.vue";
 import { Button } from "@/components/ui/button";
 import { isMusicAssistantPlaylist } from "@/helpers/playlist_access";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
@@ -163,6 +176,8 @@ export interface Props {
   // a smart playlist whose rules could be loaded
   hasRules?: boolean;
   canEditRules?: boolean;
+  // a Rotation the user may open in its editor
+  canEditRotation?: boolean;
   canShare?: boolean;
 }
 const props = defineProps<Props>();
@@ -171,6 +186,7 @@ const emit = defineEmits<{
   (e: "edit-rows"): void;
   (e: "show-rules"): void;
   (e: "edit-rules"): void;
+  (e: "edit-rotation"): void;
   (e: "share"): void;
 }>();
 

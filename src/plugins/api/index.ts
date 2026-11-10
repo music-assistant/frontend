@@ -101,6 +101,14 @@ import {
   SortDirection,
   SortField,
   SmartPlaylistRules,
+  RotationDescribe,
+  RotationInfo,
+  RotationListEntry,
+  RotationMediaType,
+  RotationPreview,
+  RotationRecipe,
+  RotationStep,
+  RotationStepError,
   SoundEffect,
   StatisticsTopItemResult,
   StatisticsUsers,
@@ -1320,6 +1328,77 @@ export class MusicAssistantApi {
     rules: SmartPlaylistRules,
   ): Promise<{ count: number; duration_seconds: number }> {
     return this.sendCommand("smart_playlists/count_tracks", { rules });
+  }
+
+  public createRotation(
+    name: string,
+    steps: RotationStep[],
+  ): Promise<Playlist> {
+    return this.sendCommand("rotations/create", { name, steps });
+  }
+
+  public updateRotation(
+    rotationId: string,
+    name?: string,
+    steps?: RotationStep[],
+  ): Promise<Playlist> {
+    return this.sendCommand("rotations/update", {
+      rotation_id: rotationId,
+      ...(name !== undefined && { name }),
+      ...(steps !== undefined && { steps }),
+    });
+  }
+
+  public deleteRotation(rotationId: string): Promise<void> {
+    return this.sendCommand("rotations/delete", { rotation_id: rotationId });
+  }
+
+  public getRotation(rotationId: string): Promise<RotationInfo> {
+    return this.sendCommand("rotations/get", { rotation_id: rotationId });
+  }
+
+  public listRotations(): Promise<RotationListEntry[]> {
+    return this.sendCommand("rotations/list");
+  }
+
+  public validateRotation(steps: RotationStep[]): Promise<RotationStepError[]> {
+    return this.sendCommand("rotations/validate", { steps });
+  }
+
+  public previewRotation(
+    steps: RotationStep[],
+    limit: number,
+    includeRemoved: boolean = false,
+    seed?: number,
+  ): Promise<RotationPreview> {
+    return this.sendCommand("rotations/preview", {
+      steps,
+      limit,
+      include_removed: includeRemoved,
+      ...(seed !== undefined && { seed }),
+    });
+  }
+
+  public explainRotation(steps: RotationStep[]): Promise<string[]> {
+    return this.sendCommand("rotations/explain", { steps });
+  }
+
+  public describeRotationSteps(
+    mediaType?: RotationMediaType,
+  ): Promise<RotationDescribe> {
+    return this.sendCommand("rotations/describe_steps", {
+      ...(mediaType !== undefined && { media_type: mediaType }),
+    });
+  }
+
+  public getRotationRecipes(): Promise<RotationRecipe[]> {
+    return this.sendCommand("rotations/recipes");
+  }
+
+  public resetRotationRound(rotationId: string): Promise<void> {
+    return this.sendCommand("rotations/reset_round", {
+      rotation_id: rotationId,
+    });
   }
 
   /**

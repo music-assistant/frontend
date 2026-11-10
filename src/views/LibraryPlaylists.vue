@@ -26,6 +26,8 @@
 
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import RotationIcon from "@/components/rotation/RotationIcon.vue";
+import { ROTATION_PROVIDER_DOMAIN } from "@/components/rotation/constants";
 import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
@@ -46,12 +48,14 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { Import, ListMusic, ListPlus, WandSparkles } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
 defineOptions({
   name: "Playlists",
 });
 
+const router = useRouter();
 const updateAvailable = ref(false);
 const { total, setTotal, loadTotal } = useListingTotal(
   store.libraryPlaylistsCount,
@@ -126,6 +130,16 @@ onMounted(() => {
         eventbus.emit("createSmartPlaylist", {});
       },
       icon: WandSparkles,
+      overflowAllowed: true,
+    });
+  }
+  if (canEditLibrary && store.enabledPlugins.has(ROTATION_PROVIDER_DOMAIN)) {
+    playListCreateItems.push({
+      label: "rotation.create",
+      action: () => {
+        router.push({ name: "rotation-new" });
+      },
+      icon: RotationIcon,
       overflowAllowed: true,
     });
   }

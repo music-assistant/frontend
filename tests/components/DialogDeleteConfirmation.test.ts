@@ -142,4 +142,37 @@ describe("DialogDeleteConfirmation", () => {
         .attributes("disabled"),
     ).toBeDefined();
   });
+
+  it("calls onCancel when closed without confirming", async () => {
+    const wrapper = mountDialog();
+    const event = await openDialog({ onCancel: vi.fn() });
+
+    await wrapper.get("button:not([data-testid])").trigger("click");
+    await flushPromises();
+
+    expect(event.onCancel).toHaveBeenCalledOnce();
+    expect(event.onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("does not call onCancel after a confirmation", async () => {
+    const wrapper = mountDialog();
+    const event = await openDialog({ onCancel: vi.fn() });
+
+    await wrapper
+      .get('[data-testid="delete-confirmation-confirm"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(event.onConfirm).toHaveBeenCalledOnce();
+    expect(event.onCancel).not.toHaveBeenCalled();
+  });
+
+  it("cancels an open confirmation that a later one replaces", async () => {
+    mountDialog();
+    const first = await openDialog({ onCancel: vi.fn() });
+    const second = await openDialog({ onCancel: vi.fn() });
+
+    expect(first.onCancel).toHaveBeenCalledOnce();
+    expect(second.onCancel).not.toHaveBeenCalled();
+  });
 });
