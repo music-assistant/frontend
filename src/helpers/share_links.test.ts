@@ -4,8 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   decodeSharePayload,
   decodeSharePreview,
-  isSafeArtworkUrl,
-  isSafeProviderUrl,
+  isSafeShareUrl,
 } from "./share_links";
 
 function wire(bytes: Uint8Array): string {
@@ -37,24 +36,43 @@ describe("decodeSharePayload", () => {
     });
   });
 
-  it("decodes version-prefixed raw DEFLATE with Unicode and existing metadata", async () => {
+  it("decodes only preview fields from version-prefixed raw DEFLATE with Unicode", async () => {
     const payload = {
       type: "track",
       title: "Musik überall 🎵",
       artist: "Björk",
+      album: "Album",
+      art_url: "https://is1-ssl.mzstatic.com/image/cover.jpg",
+      provider_urls: { spotify: "https://open.spotify.com/track/123" },
+    };
+    const encoded = encode({
+      ...payload,
       artists: ["Björk", "Featured Artist"],
       version: "Live",
-      album: "Album",
       isrc: "USRC17607839",
       mbid: "recording-id",
       mb_track: "release-track-id",
       duration: 218,
-      art_url: "https://is1-ssl.mzstatic.com/image/cover.jpg",
-      provider_urls: { spotify: "https://open.spotify.com/track/123" },
-    };
-    const encoded = encode(payload);
+    });
     expect(encoded).toMatch(/^1[A-Za-z0-9_-]+$/);
     expect(await decodeSharePayload(encoded)).toEqual(payload);
+  });
+
+  it("does not validate metadata unused by the preview", async () => {
+    expect(
+      await decodeSharePayload(
+        encode({
+          type: "track",
+          title: "Title",
+          artists: null,
+          version: 42,
+          duration: -1,
+          isrc: [],
+          mbid: false,
+          mb_track: {},
+        }),
+      ),
+    ).toMatchObject({ type: "track", title: "Title" });
   });
 
   it.each(["track", "album", "artist"])("accepts %s payloads", async (type) => {
@@ -75,29 +93,15 @@ describe("decodeSharePayload", () => {
     { type: "track", title: " " },
     { type: ["track"], title: "Title" },
     { type: "track", title: 1 },
-    ...[
-      "artist",
-      "album",
-      "version",
-      "isrc",
-      "mbid",
-      "mb_track",
-      "art_url",
-    ].map((field) => ({ type: "track", title: "Title", [field]: 42 })),
+    ...["artist", "album", "art_url"].map((field) => ({
+      type: "track",
+      title: "Title",
+      [field]: 42,
+    })),
     ...[null, [], "url", { spotify: 1 }].map((provider_urls) => ({
       type: "track",
       title: "Title",
       provider_urls,
-    })),
-    ...[null, true, -1, "218", 1.5].map((duration) => ({
-      type: "track",
-      title: "Title",
-      duration,
-    })),
-    ...[null, "Artist", [1], [" "]].map((artists) => ({
-      type: "track",
-      title: "Title",
-      artists,
     })),
   ])("rejects invalid payload %j", async (payload) => {
     await expect(decodeSharePayload(encode(payload))).rejects.toThrow();
@@ -126,17 +130,40 @@ describe("decodeSharePayload", () => {
     await expect(decodeSharePayload(wire(deflateSync(json)))).rejects.toThrow();
   });
 
-  it("rejects malformed JSON, UTF-8, compressed bytes, truncation and trailing garbage", async () => {
-    const compressed = deflateRawSync(
-      Buffer.from('{"type":"track","title":"Title"}'),
-    );
-    for (const bytes of [
-      deflateRawSync(Buffer.from("{")),
-      deflateRawSync(Buffer.from([0xff])),
-      Buffer.from([0xff, 0xff]),
-      compressed.subarray(0, -1),
-      Buffer.concat([compressed, Buffer.from("garbage")]),
-    ]) {
+  it.each([
+    ["malformed JSON", deflateRawSync(Buffer.from("{"))],
+    ["invalid UTF-8", deflateRawSync(Buffer.from([0xff]))],
+    ["invalid compressed bytes", Buffer.from([0xff, 0xff])],
+    [
+      "truncated compressed bytes",
+      deflateRawSync(Buffer.from('{"type":"track","title":"Title"}')).subarray(
+        0,
+        -1,
+      ),
+    ],
+  ])("rejects %s", async (_description, bytes) => {
+    await expect(decodeSharePayload(wire(bytes))).rejects.toThrow();
+  });
+
+  it("delegates trailing compressed bytes validation to DecompressionStream", async () => {
+    const payload = { type: "track", title: "Title" };
+    const compressed = deflateRawSync(Buffer.from(JSON.stringify(payload)));
+    const bytes = Buffer.concat([compressed, Buffer.from("garbage")]);
+    // WHATWG requires rejection after BFINAL; Node 22 accepts trailing bytes,
+    // unlike browsers and newer Node. The native API exposes no consumed count.
+    const nativeAcceptsTrailingBytes = await new Response(
+      new Blob([bytes])
+        .stream()
+        .pipeThrough(new DecompressionStream("deflate-raw")),
+    )
+      .text()
+      .then(
+        () => true,
+        () => false,
+      );
+    if (nativeAcceptsTrailingBytes) {
+      expect(await decodeSharePayload(wire(bytes))).toMatchObject(payload);
+    } else {
       await expect(decodeSharePayload(wire(bytes))).rejects.toThrow();
     }
   });
@@ -212,10 +239,12 @@ describe("decodeSharePreview", () => {
       type: "album",
       title: "Outlaw Gentlemen & Shady Ladies",
       artist: "Volbeat",
-      art_url: "https://is1-ssl.mzstatic.com/image/test.jpg",
+      art_url: "https://new-artwork.example/image/test.jpg",
       provider_urls: {
         apple_music: "https://music.apple.com/de/album/1442624385",
         qobuz: "https://www.qobuz.com/de-de/album/title/id?foo=bar",
+        tidal: "https://listen.tidal.com/album/123",
+        new_provider: "https://new-provider.example/album/123",
       },
     };
     expect(
@@ -244,8 +273,8 @@ describe("decodeSharePreview", () => {
         art_url: "m:is1-ssl:/image/test.jpg",
         provider_urls: {
           spotify: "/track/123",
-          apple_music: "https://evil.example/album/123",
-          unknown: "https://example.com/album/123",
+          apple_music: "https://user@music.apple.com/album/123",
+          unknown: "javascript:alert(1)",
         },
       })}`,
       (domain) => domain,
@@ -255,7 +284,7 @@ describe("decodeSharePreview", () => {
   });
 });
 
-describe("isSafeProviderUrl", () => {
+describe("isSafeShareUrl", () => {
   it.each([
     ["apple_music", "https://music.apple.com/us/album/1"],
     ["spotify", "https://open.spotify.com/track/1"],
@@ -264,16 +293,16 @@ describe("isSafeProviderUrl", () => {
     ["tidal", "https://www.tidal.com/browse/track/1"],
     ["ytmusic", "https://music.youtube.com/watch?v=1"],
     ["deezer", "https://www.deezer.com/track/1"],
-  ])("accepts approved %s host %s", (domain, url) => {
-    expect(isSafeProviderUrl(domain, url)).toBe(true);
+    ["tidal", "https://listen.tidal.com/track/1"],
+    ["new_provider", "https://new-provider.example/album/1"],
+    ["artwork", "https://is1-ssl.mzstatic.com/image.jpg"],
+    ["artwork", "https://new-artwork.example/image.jpg"],
+  ])("accepts %s HTTPS URLs without a host policy: %s", (_domain, url) => {
+    expect(isSafeShareUrl(url)).toBe(true);
   });
 
   it.each([
-    ["unknown", "https://example.com"],
-    ["toString", "https://example.com"],
     ["spotify", "http://open.spotify.com/track/1"],
-    ["spotify", "https://open.spotify.com.evil.example/track/1"],
-    ["spotify", "https://evil.example/open.spotify.com"],
     ["spotify", "https://user:pass@open.spotify.com/track/1"],
     ["spotify", "/track/1"],
     ["spotify", "https:open.spotify.com/track/1"],
@@ -281,33 +310,13 @@ describe("isSafeProviderUrl", () => {
     ["spotify", " https://open.spotify.com/track/1"],
     ["spotify", "https://open.spotify.com\\track\\1"],
     ["spotify", "javascript:alert(1)"],
-  ])("rejects unsafe %s URL %s", (domain, url) => {
-    expect(isSafeProviderUrl(domain, url)).toBe(false);
-  });
-});
-
-describe("isSafeArtworkUrl", () => {
-  it("accepts public HTTPS artwork hosts", () => {
-    expect(isSafeArtworkUrl("https://is1-ssl.mzstatic.com/image.jpg")).toBe(
-      true,
-    );
-  });
-
-  it.each([
-    "https://localhost/image.jpg",
-    "https://127.0.0.1/image.jpg",
-    "https://nas.internal/image.jpg",
-    "https://router.home.arpa/image.jpg",
-    "https://evil.example/image.jpg",
-    "https://notmzstatic.com/image.jpg",
-    "https://mzstatic.com.evil.example/image.jpg",
-    "https://user@is1-ssl.mzstatic.com/image.jpg",
-    "http://is1-ssl.mzstatic.com/image.jpg",
-    "data:image/svg+xml,<svg/>",
-    "/image.jpg",
-    "https:is1-ssl.mzstatic.com/image.jpg",
-    " https://is1-ssl.mzstatic.com/image.jpg",
-  ])("rejects unsafe artwork %s", (url) => {
-    expect(isSafeArtworkUrl(url)).toBe(false);
+    ["artwork", "https://"],
+    ["artwork", "https://[invalid]/image.jpg"],
+    ["artwork", "https://user@is1-ssl.mzstatic.com/image.jpg"],
+    ["artwork", "https://:password@is1-ssl.mzstatic.com/image.jpg"],
+    ["artwork", "data:image/svg+xml,<svg/>"],
+    ["spotify", "https://open.spotify.com/\ntrack/1"],
+  ])("rejects unsafe %s URL %s", (_domain, url) => {
+    expect(isSafeShareUrl(url)).toBe(false);
   });
 });
