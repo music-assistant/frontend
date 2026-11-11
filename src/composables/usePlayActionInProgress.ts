@@ -3,20 +3,18 @@ import { store } from "@/plugins/store";
 import { computed } from "vue";
 
 /**
- * Whether the active player's queue is still starting an earlier play action,
- * so a play button can wait for it. The queue is resolved directly, since
- * activePlayerQueue is undefined while an external source is active.
+ * Whether a play action of the active player is still running, so a play button
+ * can wait for it. A grouped or synced player's play request runs on its own queue
+ * or on the queue it plays from, so both count.
  */
 export function usePlayActionInProgress() {
   return computed(() => {
     const player = store.activePlayer;
     if (!player) return false;
-    const queueId =
-      player.active_source && player.active_source in api.queues
-        ? player.active_source
-        : player.player_id;
-    return (
-      api.queues[queueId]?.extra_attributes?.play_action_in_progress === true
+    return [player.player_id, player.active_source].some(
+      (queueId) =>
+        !!queueId &&
+        api.queues[queueId]?.extra_attributes?.play_action_in_progress === true,
     );
   });
 }
