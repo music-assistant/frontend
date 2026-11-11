@@ -147,6 +147,21 @@ describe("GenreImageDialog", () => {
 
     expect(findButton("remove_custom_image")).toBeUndefined();
   });
+
+  it("stays open on Escape while a request is in flight", async () => {
+    apiMock.setGenreImage.mockReturnValue(new Promise(() => {}));
+    await openDialog(genre());
+    await pickFile(new File(["x"], "cover.png"));
+    await findButton("settings.save")!.click();
+    await flushPromises();
+
+    dialog()!.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    );
+    await flushPromises();
+
+    expect(dialog()).not.toBeNull();
+  });
 });
 
 function oversizedFile(): File {

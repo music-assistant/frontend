@@ -6,14 +6,11 @@ import {
 } from "@/plugins/api/interfaces";
 import { describe, expect, it, vi } from "vitest";
 
-// An image only resolves when its provider is loaded, so builtin must count.
 vi.mock("@/plugins/api", () => ({
   api: {
     baseUrl: "http://server",
     providers: {},
     serverInfo: { value: { schema_version: 31 } },
-    getProvider: (id: string) =>
-      id === "builtin" ? { available: true } : undefined,
   },
 }));
 

@@ -23,8 +23,10 @@
 </template>
 
 <script setup lang="ts">
-import { itemArtwork } from "@/components/discover/editorialArtwork";
-import { getCustomImage } from "@/helpers/customImage";
+import {
+  itemArtwork,
+  usesGenreIconTreatment,
+} from "@/components/discover/editorialArtwork";
 import { handleMediaItemClick } from "@/helpers/media_item_actions";
 import type { Genre } from "@/plugins/api/interfaces";
 import { computed } from "vue";
@@ -40,7 +42,7 @@ const genreBanner = new URL("@/assets/logo/banner-no-logo.png", import.meta.url)
 const iconImage = computed(() => itemArtwork(props.item, 320).image);
 // a user-uploaded custom image is real cover art: use it as the tile
 // background instead of overlaying it white-tinted like the builtin icons
-const hasCustomImage = computed(() => !!getCustomImage(props.item));
+const hasCustomImage = computed(() => !usesGenreIconTreatment(props.item));
 const backgroundImage = computed(() =>
   hasCustomImage.value ? (iconImage.value ?? genreBanner) : genreBanner,
 );

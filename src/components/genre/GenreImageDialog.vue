@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model:open="open">
+  <Dialog :open="open" @update:open="onOpenChange">
     <DialogContent class="sm:max-w-[480px]">
       <DialogHeader class="text-left">
         <DialogTitle>{{ $t("custom_image") }}</DialogTitle>
@@ -107,6 +107,11 @@ const hasCustomImage = computed(
   () => !!genre.value && !!getCustomImage(genre.value),
 );
 
+const onOpenChange = (isOpen: boolean) => {
+  if (!isOpen && uploading.value) return;
+  open.value = isOpen;
+};
+
 const pickFile = () => {
   fileInputRef.value?.click();
 };
@@ -137,7 +142,7 @@ const upload = async () => {
   uploadError.value = "";
   try {
     const data = await readFileAsBase64(file);
-    genre.value = await api.setGenreImage(genre.value.item_id, data, file.name);
+    await api.setGenreImage(genre.value.item_id, data, file.name);
     toast.success(t("custom_image_updated"));
     open.value = false;
   } catch (error) {
@@ -156,7 +161,7 @@ const removeImage = async () => {
   if (!genre.value || uploading.value) return;
   uploading.value = true;
   try {
-    genre.value = await api.removeGenreImage(genre.value.item_id);
+    await api.removeGenreImage(genre.value.item_id);
     toast.success(t("custom_image_removed"));
     open.value = false;
   } finally {
