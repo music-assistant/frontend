@@ -53,6 +53,18 @@ const STABLE_CONNECTION_THRESHOLD_MS = 5000;
 // payloads don't hold up API messages.
 const HTTP_PROXY_CHANNEL_LABEL = "http_proxy";
 
+// Must match the server gateway (remote_access/gateway.py), which shares this frame format.
+const DATA_CHANNEL_CHUNK_SIZE = 64 * 1024;
+const DATA_CHANNEL_CHUNK_OVERHEAD = 128;
+const CHUNK_FRAME_TYPE = "__chunk__";
+// The gateway closes the session on a message of this size or more, so refuse it here.
+const DATA_CHANNEL_INBOUND_MAX_BYTES = 4 * 1024 * 1024;
+// Base64 encodes every 3 bytes as 4 characters.
+const BASE64_BYTES_PER_GROUP = 3;
+const BASE64_CHARS_PER_GROUP = 4;
+// JavaScriptCore caps a call at about 64K arguments, so bytes are spread in slices.
+const FROM_CHAR_CODE_SLICE = 8192;
+
 export class WebRTCTransport extends BaseTransport {
   private options: Required<WebRTCTransportOptions>;
   private signaling: SignalingClient;
@@ -87,6 +99,7 @@ export class WebRTCTransport extends BaseTransport {
     number,
     { count: number; parts: string[]; received: number }
   >();
+  private chunkGroupSeq = 0;
   // Response being reassembled on the proxy channel: its header, then raw body frames.
   private pendingProxyBody: {
     id: string;
@@ -188,7 +201,55 @@ export class WebRTCTransport extends BaseTransport {
     if (!this.dataChannel || this.dataChannel.readyState !== "open") {
       throw new Error("DataChannel is not open");
     }
-    this.dataChannel.send(data);
+    const bytes = new TextEncoder().encode(data);
+    if (bytes.length >= DATA_CHANNEL_INBOUND_MAX_BYTES) {
+      throw new Error("Message exceeds the remote access size limit");
+    }
+    // Chunk only what cannot go whole: an older gateway closes the session on a chunk frame.
+    const limit =
+      this.peerConnection?.sctp?.maxMessageSize ?? DATA_CHANNEL_CHUNK_SIZE;
+    if (bytes.length <= limit) {
+      this.dataChannel.send(data);
+      return;
+    }
+    for (const frame of this.buildChunkFrames(bytes, limit)) {
+      this.dataChannel.send(frame);
+    }
+  }
+
+  private buildChunkFrames(bytes: Uint8Array, limit: number): string[] {
+    const pieceSize = Math.min(
+      DATA_CHANNEL_CHUNK_SIZE,
+      Math.floor(
+        (limit - DATA_CHANNEL_CHUNK_OVERHEAD) / BASE64_CHARS_PER_GROUP,
+      ) * BASE64_BYTES_PER_GROUP,
+    );
+    const id = ++this.chunkGroupSeq;
+    const count = Math.ceil(bytes.length / pieceSize);
+    const frames: string[] = [];
+    for (let seq = 0; seq < count; seq++) {
+      const piece = bytes.subarray(seq * pieceSize, (seq + 1) * pieceSize);
+      frames.push(
+        JSON.stringify({
+          type: CHUNK_FRAME_TYPE,
+          id,
+          seq,
+          count,
+          b64: this.bytesToBase64(piece),
+        }),
+      );
+    }
+    return frames;
+  }
+
+  private bytesToBase64(bytes: Uint8Array): string {
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += FROM_CHAR_CODE_SLICE) {
+      binary += String.fromCharCode(
+        ...bytes.subarray(i, i + FROM_CHAR_CODE_SLICE),
+      );
+    }
+    return btoa(binary);
   }
 
   private setupSignalingHandlers(): void {
@@ -279,7 +340,7 @@ export class WebRTCTransport extends BaseTransport {
       if (typeof event.data === "string") {
         try {
           const frame = JSON.parse(event.data);
-          if (frame.type === "__chunk__") {
+          if (frame.type === CHUNK_FRAME_TYPE) {
             this.handleChunk(frame);
             return;
           }
