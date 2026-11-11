@@ -1,14 +1,14 @@
 name: Publish Release
 
 # Builds and tests the package, publishes a fully populated immutable GitHub release,
-# publishes to PyPI, and creates a PR in the server repo
+# and creates a PR in the server repo that pins the release wheel by URL and sha256
 # Can be triggered manually with a version number or called by the auto-release workflow
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version number (e.g., 2.16.7) - Creates release, publishes to PyPI, and updates server repo"
+        description: "Version number (e.g., 2.16.7) - Creates release and updates server repo"
         required: true
         type: string
   workflow_call:
@@ -18,8 +18,6 @@ on:
         required: true
         type: string
     secrets:
-      PYPI_TOKEN:
-        required: true
       MUSIC_ASSISTANT_BOT_PRIVATE_KEY:
         required: true
 
@@ -52,6 +50,25 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+
+      - name: Verify the release branch
+        run: |
+          # Stable patch builds (.post releases) are cut from `stable` on top of the
+          # version they patch, every other release from main.
+          if [[ "$RELEASE_VERSION" =~ ^([0-9]+\.[0-9]+\.[0-9]+)\.post[0-9]+$ ]]; then
+            BASE="${BASH_REMATCH[1]}"
+            if [[ "$GITHUB_REF" != "refs/heads/stable" ]]; then
+              echo "::error::Release $RELEASE_VERSION must run on stable, not $GITHUB_REF."
+              exit 1
+            fi
+            if ! git merge-base --is-ancestor "refs/tags/$BASE" HEAD; then
+              echo "::error::stable is not based on $BASE, so it cannot release $RELEASE_VERSION."
+              exit 1
+            fi
+          elif [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Release $RELEASE_VERSION must run on main, not $GITHUB_REF."
+            exit 1
+          fi
 
       - name: Create immutable settings token
         id: immutable_settings_token
@@ -135,7 +152,7 @@ jobs:
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -156,7 +173,7 @@ jobs:
         if: steps.inspect_release.outputs.already_published != 'true'
         run: |
           pnpm install --frozen-lockfile
-          python3 -m pip install build tomli tomli-w
+          python3 -m pip install build pyyaml tomli tomli-w
 
       - name: Set Python project version
         if: steps.inspect_release.outputs.already_published != 'true'
@@ -214,7 +231,7 @@ jobs:
 
       - name: Generate release notes with Release Drafter
         id: release_drafter
-        if: steps.inspect_release.outputs.already_published != 'true'
+        if: steps.inspect_release.outputs.already_published != 'true' && !contains(inputs.version, '.post')
         uses: release-drafter/release-drafter@978bb0b30c5ee8cdd332ced253758157150d43f0 # v7.10.0
         with:
           config-name: release-drafter.yml
@@ -226,6 +243,19 @@ jobs:
           commitish: ${{ steps.inspect_release.outputs.target_sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Release Drafter only sees the backport PR, not the PRs cherry-picked in it.
+      - name: Generate stable release notes
+        id: stable_notes
+        if: steps.inspect_release.outputs.already_published != 'true' && contains(inputs.version, '.post')
+        run: |
+          {
+            echo 'body<<RELEASE_NOTES_EOF'
+            python3 .github/scripts/stable_release_notes.py "$RELEASE_VERSION"
+            echo 'RELEASE_NOTES_EOF'
+          } >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create or update draft release
         id: prepare_draft
@@ -268,7 +298,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_NAME: ${{ steps.release_drafter.outputs.name }}
-          RELEASE_NOTES: ${{ steps.release_drafter.outputs.body }}
+          RELEASE_NOTES: ${{ steps.release_drafter.outputs.body || steps.stable_notes.outputs.body }}
 
       - name: Upload draft release assets
         if: steps.inspect_release.outputs.already_published != 'true'
@@ -323,14 +353,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish release to PyPI
-        if: steps.inspect_release.outputs.already_published != 'true'
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
-          skip-existing: true
-
       - name: Publish GitHub release
         if: steps.inspect_release.outputs.already_published != 'true'
         run: |
@@ -344,10 +366,12 @@ jobs:
           gh api --method PATCH \
             "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
             -F draft=false \
-            -f make_latest=true \
+            -f make_latest="$MAKE_LATEST" \
             --jq '.html_url'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # A stable patch build is older than the latest main release.
+          MAKE_LATEST: ${{ contains(inputs.version, '.post') && 'false' || 'true' }}
 
   verify-release:
     name: Verify Immutable Release
@@ -428,23 +452,6 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Determine server target branch
-        id: target
-        run: |
-          # Stable patch builds (PEP 440 .post releases) bump the server `stable`
-          # branch; regular releases bump the default (dev) branch.
-          if [[ "$RELEASE_VERSION" == *.post* ]]; then
-            echo "branch=stable" >> $GITHUB_OUTPUT
-          else
-            echo "branch=dev" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Wait for PyPI availability
-        run: |
-          echo "Waiting 5 minutes for PyPI to propagate music-assistant-frontend $RELEASE_VERSION..."
-          sleep 300
-          echo "Done waiting, proceeding with server repo update"
-
       - name: Get release notes
         id: release_notes
         run: |
@@ -477,6 +484,27 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
 
+      - name: Determine server target branch
+        id: target
+        run: |
+          # Regular releases bump the default (dev) branch. Stable patch builds
+          # (PEP 440 .post releases) go into the open server backport branch, so
+          # they ship with the next server patch release, or else into `stable`.
+          if [[ "$RELEASE_VERSION" != *.post* ]]; then
+            echo "branch=dev" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Only a successful, empty lookup may fall back to `stable`.
+          set -o pipefail
+          BRANCH=$(gh pr list --repo music-assistant/server --base stable --state open \
+            --json headRefName,isCrossRepository \
+            --jq '.[] | select(.isCrossRepository | not) | .headRefName | select(startswith("backport/"))' |
+            sort -V | tail -1)
+          echo "Server target branch: ${BRANCH:-stable}"
+          echo "branch=${BRANCH:-stable}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.server_repo_token.outputs.token }}
+
       - name: Checkout server repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -488,18 +516,29 @@ jobs:
 
       - name: Update frontend version
         run: |
-          # Update pyproject.toml
-          sed -i.bak "s/music-assistant-frontend==.*/music-assistant-frontend==$RELEASE_VERSION\",/" pyproject.toml
+          WHEEL="music_assistant_frontend-$RELEASE_VERSION-py3-none-any.whl"
+          DIGEST=$(gh api "repos/music-assistant/frontend/releases/tags/$RELEASE_VERSION" |
+            jq -r --arg name "$WHEEL" '.assets[] | select(.name == $name) | .digest')
+          if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::No sha256 digest for $WHEEL: '$DIGEST'."
+            exit 1
+          fi
+          PIN="music-assistant-frontend @ https://github.com/music-assistant/frontend/releases/download/$RELEASE_VERSION/$WHEEL#sha256=${DIGEST#sha256:}"
 
-          # Update requirements_all.txt
-          sed -i.bak "s/music-assistant-frontend==.*/music-assistant-frontend==$RELEASE_VERSION/" requirements_all.txt
-
-          # Remove backup files
-          rm -f pyproject.toml.bak requirements_all.txt.bak
+          # In-place edit keeps requirements_all.txt in the order the server generates
+          sed -i "s|\"music-assistant-frontend[ =].*|\"$PIN\",|" pyproject.toml
+          sed -i "s|^music-assistant-frontend[ =].*|$PIN|" requirements_all.txt
+          if [[ $(grep -cxF "$PIN" requirements_all.txt) != 1 ]] ||
+            [[ $(grep -cF "\"$PIN\"," pyproject.toml) != 1 ]]; then
+            echo "::error::Could not pin $PIN in the server repository."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Pull Request
         id: create_pr
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        uses: peter-evans/create-pull-request@15733dbdfeedb4f7fdb73d13c6f5ac83b710fab8 # v8.1.2
         with:
           token: ${{ steps.server_repo_token.outputs.token }}
           commit-message: "⬆️ Update music-assistant-frontend to ${{ inputs.version }}"

@@ -80,12 +80,13 @@ export async function artistAlbumsBySource(
 /**
  * The artist's discography as MusicBrainz knows it, newest first: the library
  * albums, and the releases outside the library as MusicBrainz items. All of
- * them, or one page when a limit is given.
+ * them, or one page when a limit is given, narrowed to `albumTypes` when given.
  *
  * Only ever called for a library artist, the only kind the server lists.
  */
 export async function loadArtistDiscography(
   artist: Artist,
+  albumTypes?: AlbumType[],
   search?: string,
   limit?: number,
   offset?: number,
@@ -99,6 +100,7 @@ export async function loadArtistDiscography(
     offset,
     sortField,
     sortDirection,
+    albumTypes,
   );
 }
 

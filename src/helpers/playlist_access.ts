@@ -75,6 +75,26 @@ export const canEditPlaylistItems = (
   );
 };
 
+/**
+ * Whether the user may change the order of the playlist's items: a library
+ * playlist the user may edit, on a provider that can store a new order. The
+ * server picks one of the available mappings, so every one of them must.
+ */
+export const canReorderPlaylistItems = (
+  playlist: Playlist,
+  user: User | undefined,
+  managesLibrary: boolean,
+  supportsMove: (providerInstance: string) => boolean,
+) => {
+  if (playlist.provider !== "library" || playlist.is_dynamic) return false;
+  if (!canEditPlaylistItems(playlist, user, managesLibrary)) return false;
+  const mappings = playlist.provider_mappings.filter((m) => m.available);
+  return (
+    mappings.length > 0 &&
+    mappings.every((m) => supportsMove(m.provider_instance))
+  );
+};
+
 // the media types a playlist can hold
 const PLAYLIST_ITEM_TYPES = [
   MediaType.TRACK,

@@ -268,7 +268,9 @@ function confirmDisablePlayer(playerId: string, playerName: string) {
     title: $t("player_select.disable_player_title", [playerName]),
     message: $t("player_select.disable_player_confirmation"),
     confirmLabel: $t("settings.disable"),
-    onConfirm: () => void setPlayerEnabled(playerId, false),
+    onConfirm: async () => {
+      await setPlayerEnabled(playerId, false);
+    },
   });
 }
 

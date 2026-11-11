@@ -1,11 +1,14 @@
 import SleepTimerBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SleepTimerBtn.vue";
-import type { Player as PlayerModel } from "@/plugins/api/interfaces";
+import {
+  SleepTimerMode,
+  type Player as PlayerModel,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/api", () => {
-  const api = { setSleepTimer: vi.fn(), clearSleepTimer: vi.fn() };
+  const api = { setSleepTimer: vi.fn(), clearSleepTimer: vi.fn(), queues: {} };
   return { api, default: api };
 });
 
@@ -48,6 +51,18 @@ describe("SleepTimerBtn", () => {
     mockStore.activePlayer = playerWithSleepTimer(testCase.secondsLeft);
 
     expect(mount(SleepTimerBtn).find("button").exists()).toBe(testCase.shown);
+  });
+
+  it("shows the chapter end a paused chapter timer waits for", () => {
+    mockStore.activePlayer = {
+      player_id: "p1",
+      sleep_timer_expires_at: null,
+      sleep_timer_mode: SleepTimerMode.END_OF_CHAPTER,
+    } as PlayerModel;
+
+    const button = mount(SleepTimerBtn);
+
+    expect(button.get("button").text()).toBe("sleep_timer_end_of_chapter");
   });
 
   it("shows nothing without an active player", () => {

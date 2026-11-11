@@ -1,4 +1,10 @@
 import DetailHero from "@/components/details/DetailHero.vue";
+import Toolbar from "@/components/Toolbar.vue";
+import {
+  MediaType,
+  type MediaCollection,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
@@ -14,7 +20,7 @@ vi.mock("@/composables/userPreferences", () => ({
 vi.mock("@/composables/useEscapeBack", () => ({ useEscapeBack: vi.fn() }));
 vi.mock("vue-router", () => ({ useRouter: () => ({ back: vi.fn() }) }));
 vi.mock("@/components/Toolbar.vue", () => ({
-  default: { template: "<div />" },
+  default: { props: ["menuItems"], template: "<div />" },
 }));
 // only the item named "With art" has artwork of its own
 vi.mock("@/helpers/utils", async (importOriginal) => ({
@@ -155,15 +161,15 @@ describe("DetailHero on a phone", () => {
     vi.unstubAllGlobals();
   });
 
-  const heroFor = (name: string) =>
+  const heroFor = (item: MediaItemType) =>
     mount(DetailHero, {
-      props: { item: track({ name }), backdrop: "fanart.jpg" },
+      props: { item, backdrop: "fanart.jpg" },
       slots: { main: '<div class="detail-hero-cover" /><h1>{{ name }}</h1>' },
       global: { mocks: { $t: (key: string) => key } },
     });
 
   it("lays the item's own artwork across the top, in place of its cover", () => {
-    const hero = heroFor("With art");
+    const hero = heroFor(track({ name: "With art" }));
     const backdrop = hero.get(".detail-hero__backdrop");
 
     expect(backdrop.attributes("style")).toContain("cover.jpg");
@@ -173,8 +179,19 @@ describe("DetailHero on a phone", () => {
     );
   });
 
-  it("keeps the usual backdrop for an item without artwork", () => {
-    const hero = heroFor("No art");
+  it.each([
+    ["an item without artwork", track({ name: "No art" })],
+    // its images are the covers of the stack it shows in place of artwork
+    [
+      "a collection",
+      {
+        media_type: MediaType.COLLECTION,
+        name: "With art",
+        items: [],
+      } as unknown as MediaCollection<MediaItemType>,
+    ],
+  ])("keeps the usual backdrop for %s", (_, item) => {
+    const hero = heroFor(item);
     const backdrop = hero.get(".detail-hero__backdrop");
 
     expect(backdrop.attributes("style")).toContain("fanart.jpg");
@@ -182,5 +199,36 @@ describe("DetailHero on a phone", () => {
     expect(hero.get(".detail-hero__main").classes()).not.toContain(
       "[&_.detail-hero-cover]:hidden",
     );
+  });
+});
+
+describe("DetailHero menu", () => {
+  beforeEach(() => {
+    vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.body.innerHTML = "";
+  });
+
+  const menuLabels = (wrapper: ReturnType<typeof mount>) =>
+    (
+      wrapper.findComponent(Toolbar).props("menuItems") as Array<{
+        label: string;
+      }>
+    ).map((item) => item.label);
+
+  it("adds Edit rows once the page becomes editable", async () => {
+    const wrapper = mount(DetailHero, {
+      props: { item: track({ name: "Happy Hits" }), editableRows: false },
+      global: { mocks: { $t: (key: string) => key } },
+    });
+    await flushPromises();
+    expect(menuLabels(wrapper)).not.toContain("edit_rows");
+
+    await wrapper.setProps({ editableRows: true });
+    await flushPromises();
+    expect(menuLabels(wrapper)).toContain("edit_rows");
   });
 });

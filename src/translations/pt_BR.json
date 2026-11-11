@@ -371,8 +371,7 @@
     "create_playlist_on": "Criar nova lista de reprodução em {0}",
     "view": {
         "list": "Visualização em lista",
-        "panel": "Visualização de miniaturas",
-        "panel_compact": "Visão compacta dos thumbs"
+        "panel": "Visualização de miniaturas"
     },
     "play_replace": "Reproduzir agora (limpar fila)",
     "played": "Reproduzido",

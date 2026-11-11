@@ -18,7 +18,7 @@
         class="background-image"
         :src="fanartImage"
         :gradient="
-          $vuetify.theme.current.dark
+          isDark
             ? 'to bottom, rgba(0,0,0,.90), rgba(0,0,0,.75)'
             : 'to bottom, rgba(255,255,255,.90), rgba(255,255,255,.75)'
         "
@@ -121,11 +121,10 @@
               <!-- explicit icon -->
               <v-tooltip location="bottom">
                 <template #activator="{ props }">
-                  <v-icon
+                  <ExplicitIcon
                     v-if="parseBool(item.metadata.explicit || false)"
                     v-bind="props"
-                    icon="mdi-alpha-e-box"
-                    width="35"
+                    class="inline-block size-6 shrink-0 scale-90 align-middle [&_text]:fill-background"
                   />
                 </template>
                 <span>{{ $t("tooltip.explicit") }}</span>
@@ -386,31 +385,6 @@
               />
               <!-- slot for extra action buttons (e.g. smart playlist edit) -->
               <slot name="append-actions"></slot>
-              <!-- merge genre button (admin only) -->
-              <Button
-                v-if="canManageGenre"
-                type="button"
-                variant="ghost-icon"
-                size="icon-xs"
-                :aria-label="$t('merge_into')"
-                :title="$t('merge_into')"
-                @click="mergeGenre"
-              >
-                <Merge class="size-5.5" />
-              </Button>
-              <!-- delete genre button (admin only) -->
-              <Button
-                v-if="canManageGenre"
-                type="button"
-                variant="ghost-icon"
-                size="icon-xs"
-                class="ml-2"
-                :aria-label="$t('delete_genre')"
-                :title="$t('delete_genre')"
-                @click="deleteGenre"
-              >
-                <Trash2 class="size-5.5" />
-              </Button>
             </div>
           </div>
           <div
@@ -487,6 +461,7 @@
 
 <script setup lang="ts">
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
+import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
 import FavoriteMenu from "@/components/FavoriteMenu.vue";
 import ItemSourceBadge from "@/components/ItemSourceBadge.vue";
 import MarkdownText from "@/components/MarkdownText.vue";
@@ -503,6 +478,7 @@ import {
   getEventPosition,
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
+import { isDark } from "@/composables/useThemePreference";
 import { useUserPreferences } from "@/composables/userPreferences";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
@@ -541,7 +517,7 @@ import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
+import { ArrowLeft } from "@lucide/vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -757,31 +733,6 @@ const artistLogo = computed(() => {
 const canManageLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_MANAGE),
 );
-// merging and deleting a genre is limited to library genres and library managers
-const canManageGenre = computed(
-  () =>
-    compProps.item?.media_type === MediaType.GENRE &&
-    compProps.item.provider === "library" &&
-    canManageLibrary.value,
-);
-
-const mergeGenre = () => {
-  if (!compProps.item) return;
-  eventbus.emit("mergeGenreDialog", {
-    genreIds: [compProps.item.item_id],
-    genreNames: [compProps.item.name],
-    genreContentTypes: [(compProps.item as Genre).content_type],
-  });
-};
-
-const deleteGenre = () => {
-  if (!compProps.item) return;
-  eventbus.emit("deleteGenreDialog", {
-    genreIds: [compProps.item.item_id],
-    navigateBack: true,
-  });
-};
-
 const collectionMediaType = computed(() => {
   if (compProps.item?.media_type != MediaType.COLLECTION)
     return MediaType.UNKNOWN;

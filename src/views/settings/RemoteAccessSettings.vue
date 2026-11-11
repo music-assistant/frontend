@@ -1,5 +1,5 @@
 <template>
-  <Container>
+  <div class="p-2.5">
     <div v-if="loading" class="loading-wrapper">
       <v-progress-circular indeterminate size="64" color="primary" />
     </div>
@@ -126,7 +126,7 @@
 
       <!-- Two-card layout for ID and QR code -->
       <div
-        v-if="remoteAccessInfo.enabled && remoteAccessInfo.remote_id"
+        v-if="remoteAccessInfo?.enabled && remoteAccessInfo.remote_id"
         class="remote-id-grid mb-6"
       >
         <!-- Text ID Card -->
@@ -194,7 +194,7 @@
       </div>
 
       <v-card
-        v-if="remoteAccessInfo.enabled && remoteAccessInfo.remote_id"
+        v-if="remoteAccessInfo?.enabled && remoteAccessInfo.remote_id"
         class="usage-card mb-6"
         elevation="0"
         rounded="lg"
@@ -241,7 +241,7 @@
 
       <!-- Technical Details -->
       <v-expansion-panels
-        v-if="remoteAccessInfo.enabled"
+        v-if="remoteAccessInfo?.enabled"
         class="technical-panels"
       >
         <v-expansion-panel>
@@ -300,7 +300,7 @@
                     {{ $t("settings.remote_access_protocol") }}
                   </div>
                   <div class="spec-description">
-                    <span v-if="remoteAccessInfo.using_ha_cloud">
+                    <span v-if="remoteAccessInfo?.using_ha_cloud">
                       {{ $t("settings.remote_access_protocol_optimized") }}
                     </span>
                     <span v-else>
@@ -337,12 +337,11 @@
     <v-alert v-else type="error" variant="tonal" class="error-alert">
       {{ $t("settings.remote_access_error_loading") }}
     </v-alert>
-  </Container>
+  </div>
 </template>
 
 <script setup lang="ts">
 import remoteAccessDiagram from "@/assets/remote-access-diagram.svg";
-import Container from "@/components/Container.vue";
 import SegmentedCodeInput from "@/components/SegmentedCodeInput.vue";
 import { REMOTE_ID_GROUPS, splitCode } from "@/helpers/segmented_code";
 import { copyToClipboard } from "@/helpers/utils";

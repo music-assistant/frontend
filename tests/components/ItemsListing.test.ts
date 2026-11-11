@@ -1,8 +1,16 @@
 import ItemsListing from "@/components/ItemsListing.vue";
 import ListingSelectionBar from "@/components/ListingSelectionBar.vue";
 import LibrarySortControls from "@/components/LibrarySortControls.vue";
+import ListingSortMenu from "@/components/listing-toolbar/ListingSortMenu.vue";
+import ListingToolbarControls from "@/components/listing-toolbar/ListingToolbarControls.vue";
+import type {
+  ListingChoiceFilter,
+  ListingFilter,
+  ListingMultiFilter,
+  ListingToggleFilter,
+} from "@/helpers/listing_filters";
 import { useEscapeBack } from "@/composables/useEscapeBack";
-import { defineComponent, h, type SetupContext } from "vue";
+import { defineComponent, h, nextTick, ref, type SetupContext } from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   EventType,
@@ -27,6 +35,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
 import { genre } from "../fixtures/genre";
+import { playlist } from "../fixtures/playlist";
 import { track } from "../fixtures/track";
 import { user } from "../fixtures/user";
 
@@ -55,6 +64,7 @@ const mockGetSortOptions = vi.hoisted(() => vi.fn());
 const mockToastError = vi.hoisted(() => vi.fn());
 const mockSubscribeMulti = vi.hoisted(() => vi.fn());
 const mockSubscribe = vi.hoisted(() => vi.fn());
+const mockMovePlaylistTrack = vi.hoisted(() => vi.fn());
 
 vi.mock("@/plugins/api", () => {
   const api = {
@@ -64,8 +74,14 @@ vi.mock("@/plugins/api", () => {
     getSortOptions: mockGetSortOptions,
     subscribe_multi: mockSubscribeMulti,
     subscribe: mockSubscribe,
+    movePlaylistTrack: mockMovePlaylistTrack,
+    state: { value: "initialized" },
   };
-  return { api, default: api };
+  return {
+    api,
+    default: api,
+    ConnectionState: { INITIALIZED: "initialized" },
+  };
 });
 
 vi.mock("@/plugins/store", async () => {
@@ -85,6 +101,7 @@ vi.mock("@/plugins/store", async () => {
 });
 
 const mockSetItemsListingPreference = vi.hoisted(() => vi.fn());
+const mockSetItemsListingPreferences = vi.hoisted(() => vi.fn());
 
 // reads the saved listing settings off the signed-in user the way the real
 // composable does, so a test can seed them and replace them to stand in for a
@@ -102,6 +119,7 @@ vi.mock("@/composables/userPreferences", async () => {
             ] ?? {},
         ),
       setItemsListingPreference: mockSetItemsListingPreference,
+      setItemsListingPreferences: mockSetItemsListingPreferences,
     }),
   };
 });
@@ -156,10 +174,6 @@ vi.mock("@/components/Toolbar.vue", () => ({
       '<div class="toolbar-stub"><slot name="title" /><slot name="append" /></div>',
   },
 }));
-// renders what it holds, so the grid inside it can be looked at
-vi.mock("@/components/Container.vue", () => ({
-  default: { name: "Container", template: "<div><slot /></div>" },
-}));
 vi.mock("@/components/icons/GenreIcon.vue", () => stubComponent("GenreIcon"));
 vi.mock("@/components/skeletons/ListViewSkeleton.vue", () =>
   stubComponent("ListViewSkeleton"),
@@ -169,15 +183,18 @@ vi.mock("@/components/skeletons/PanelViewSkeleton.vue", () =>
 );
 vi.mock("@/components/ListviewItem.vue", () => stubComponent("ListviewItem"));
 vi.mock("@/components/PanelviewItem.vue", () => stubComponent("PanelviewItem"));
-vi.mock("@/components/PanelviewItemCompact.vue", () =>
-  stubComponent("PanelviewItemCompact"),
-);
 vi.mock("@/components/track-table/TrackTableHeader.vue", () =>
   stubComponent("TrackTableHeader"),
 );
-vi.mock("@/components/track-table/TrackTableRow.vue", () =>
-  stubComponent("TrackTableRow"),
-);
+// a row with its reorder handle, so a test can see which row holds the focus
+vi.mock("@/components/track-table/TrackTableRow.vue", () => ({
+  default: {
+    name: "TrackTableRow",
+    props: ["index", "reorderDisabled"],
+    template:
+      '<div><button :data-reorder-index="index" :aria-disabled="reorderDisabled || undefined" /></div>',
+  },
+}));
 vi.mock("@/composables/useTrackTableColumns", async () => {
   const { ref } = await import("vue");
   return {
@@ -268,8 +285,9 @@ describe("ItemsListing unmount cleanup", () => {
     await flushPromises();
 
     expect(clearSelectionHandlers()).toBe(1);
-    // the media item events and the user's own favorite changes
-    expect(events.listeners).toHaveLength(2);
+    // the media item events, the user's own favorite changes and the played
+    // state of the listed collections
+    expect(events.listeners).toHaveLength(3);
 
     listing.unmount();
 
@@ -763,6 +781,126 @@ describe("ItemsListing select all", () => {
   });
 });
 
+describe("ItemsListing shift-click range", () => {
+  const items = ["A", "B", "C", "D", "E"].map((name) =>
+    track({ item_id: name, name, uri: `library://track/${name}` }),
+  );
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
+    store.prevState = undefined;
+    store.currentUser = undefined;
+  });
+
+  afterEach(() => {
+    holdShift(false);
+  });
+
+  /** A tracks grid of A to E, so each item is a row that can be clicked. */
+  async function mountGrid() {
+    const listing = mountListingRaw({
+      forcedViewMode: "panel",
+      loadPagedData: vi.fn().mockResolvedValue(items),
+    });
+    await flushPromises();
+    return listing;
+  }
+
+  function holdShift(held: boolean) {
+    document.dispatchEvent(
+      new KeyboardEvent(held ? "keydown" : "keyup", {
+        key: "Shift",
+        shiftKey: held,
+      }),
+    );
+  }
+
+  /** Ticks or unticks the item's checkbox, with Shift held or not. */
+  async function click(
+    listing: ReturnType<typeof mountListingRaw>,
+    name: string,
+    { selected = true, shift = false } = {},
+  ) {
+    holdShift(shift);
+    const index = items.findIndex((item) => item.name === name);
+    const row = listing.findAllComponents({ name: "PanelviewItem" })[index];
+    row.vm.$emit("select", rows(listing)[index], selected);
+    await flushPromises();
+  }
+
+  function selectedNames(listing: ReturnType<typeof mountListingRaw>) {
+    return selection(listing).map((item) => item.name);
+  }
+
+  it("selects everything between the last click and a shift-click", async () => {
+    const listing = await mountGrid();
+
+    await click(listing, "B");
+    await click(listing, "D", { shift: true });
+
+    expect(selectedNames(listing)).toEqual(["B", "C", "D"]);
+  });
+
+  it("keeps a range picked upwards in listing order", async () => {
+    const listing = await mountGrid();
+
+    await click(listing, "E");
+    await click(listing, "D");
+    await click(listing, "A", { shift: true });
+
+    // E was picked outside the range and keeps its place ahead of it
+    expect(selectedNames(listing)).toEqual(["E", "A", "B", "C", "D"]);
+  });
+
+  it("clears a range with a shift-click that unticks", async () => {
+    const listing = await mountGrid();
+    await click(listing, "A");
+    await click(listing, "E", { shift: true });
+
+    await click(listing, "B", { selected: false });
+    await click(listing, "D", { selected: false, shift: true });
+
+    expect(selectedNames(listing)).toEqual(["A", "E"]);
+  });
+
+  it("changes only the clicked item without Shift", async () => {
+    const listing = await mountGrid();
+
+    await click(listing, "B");
+    await click(listing, "D");
+
+    expect(selectedNames(listing)).toEqual(["B", "D"]);
+  });
+
+  it("starts no range after the selection was cleared", async () => {
+    const listing = await mountGrid();
+    await click(listing, "A");
+
+    eventbus.emit("clearSelection");
+    await click(listing, "C", { shift: true });
+
+    expect(selectedNames(listing)).toEqual(["C"]);
+  });
+
+  it("starts no range after moving to another folder", async () => {
+    const listing = await mountGrid();
+    await click(listing, "A");
+
+    await listing.setProps({ path: "otherfolder" });
+    await flushPromises();
+    await click(listing, "C", { shift: true });
+
+    expect(selectedNames(listing)).toEqual(["C"]);
+  });
+});
+
 describe("ItemsListing failed load", () => {
   type LoadStatus = "ok" | "empty" | "loading" | "error";
   type LoadPagedData = NonNullable<
@@ -803,6 +941,15 @@ describe("ItemsListing failed load", () => {
     mockSubscribe.mockImplementation(events.subscribe);
     store.prevState = undefined;
     store.currentUser = undefined;
+  });
+
+  // the scroller with the reset that lets it page on after it stopped
+  const resettableScroller = (reset: () => void) => ({
+    ...InfiniteScrollStub,
+    setup(props: { onLoad?: OnLoad }, context: SetupContext) {
+      context.expose({ reset });
+      return InfiniteScrollStub.setup(props, context);
+    },
   });
 
   function mountFailingListing(loadPagedData: LoadPagedData) {
@@ -891,6 +1038,71 @@ describe("ItemsListing failed load", () => {
     expect(await scrollerLoads(listing)).toHaveBeenCalledWith("empty");
   });
 
+  it("lets the scroller page on when a fully loaded playlist grew", async () => {
+    const reset = vi.fn();
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
+      .mockResolvedValueOnce([track({ item_id: "0" })])
+      .mockResolvedValueOnce(
+        Array.from({ length: 15 }, (_, index) =>
+          track({ item_id: `${index}` }),
+        ),
+      );
+    const listing = mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.library",
+        showGenreFilter: false,
+        loadPagedData,
+        limit: 20,
+        parentItem: playlist({ item_id: "1" }),
+        refreshOnParentUpdate: true,
+      },
+      { VInfiniteScroll: resettableScroller(reset) },
+    );
+    await flushPromises();
+    expect(reset).not.toHaveBeenCalled();
+
+    // tracks were added elsewhere, so the playlist may hold more than a page
+    await listing.setProps({ parentItem: playlist({ item_id: "1" }) });
+    await flushPromises();
+
+    expect(rows(listing)).toHaveLength(15);
+    expect(reset).toHaveBeenCalledOnce();
+  });
+
+  it("lets the scroller page on once a playlist update read the rows again", async () => {
+    const reset = vi.fn();
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
+      .mockResolvedValueOnce([track({ item_id: "1" }), track({ item_id: "2" })])
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce([
+        track({ item_id: "1" }),
+        track({ item_id: "2" }),
+      ]);
+    const listing = mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.library",
+        showGenreFilter: false,
+        loadPagedData,
+        limit: 2,
+        parentItem: playlist({ item_id: "1" }),
+        refreshOnParentUpdate: true,
+      },
+      { VInfiniteScroll: resettableScroller(reset) },
+    );
+    await flushPromises();
+    expect(await scrollerLoads(listing)).toHaveBeenCalledWith("error");
+
+    await listing.setProps({ parentItem: playlist({ item_id: "1" }) });
+    await flushPromises();
+
+    expect(loadPagedData.mock.calls[2][0]).toMatchObject({ offset: 0 });
+    expect(reset).toHaveBeenCalledOnce();
+  });
+
   it("remounts an errored scroller after retrying a failed first-page reload", async () => {
     const loadPagedData = vi
       .fn<LoadPagedData>()
@@ -965,6 +1177,57 @@ describe("ItemsListing failed load", () => {
   });
 });
 
+describe("ItemsListing load more indicator", () => {
+  // in intersect mode the scroller shows its loading slot, or its own spinner,
+  // until a load reports there is nothing more, which a list shorter than its
+  // margin never does
+  const InfiniteScrollStub = {
+    name: "VInfiniteScroll",
+    setup(_: unknown, { slots }: SetupContext) {
+      return () =>
+        h("div", [
+          slots.default?.(),
+          slots.loading?.() ?? h("div", { role: "status" }),
+        ]);
+    },
+  };
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    store.prevState = undefined;
+    store.currentUser = undefined;
+  });
+
+  function mountWithItems(count: number) {
+    return mountListingRaw(
+      {
+        loadPagedData: vi
+          .fn()
+          .mockResolvedValue(
+            Array.from({ length: count }, (_, i) =>
+              track({ item_id: `track-${i}` }),
+            ),
+          ),
+      },
+      { VInfiniteScroll: InfiniteScrollStub },
+    );
+  }
+
+  it("stops spinning once every item is loaded", async () => {
+    const listing = mountWithItems(2);
+    await flushPromises();
+
+    expect(listing.find('[role="status"]').exists()).toBe(false);
+  });
+
+  it("spins while more items can follow", async () => {
+    const listing = mountWithItems(50);
+    await flushPromises();
+
+    expect(listing.find('[role="status"]').exists()).toBe(true);
+  });
+});
+
 describe("ItemsListing cover size", () => {
   beforeEach(() => {
     eventbus.all.clear();
@@ -991,12 +1254,21 @@ describe("ItemsListing cover size", () => {
 
   /** An albums grid, whose window width alone would give it two columns. */
   async function mountGrid() {
-    const listing = mountListingRaw({
-      itemtype: "albums",
-      path: "libraryalbums",
-      showGenreFilter: false,
-      loadPagedData: vi.fn().mockResolvedValue([album()]),
-    });
+    const listing = mountListingRaw(
+      {
+        itemtype: "albums",
+        path: "libraryalbums",
+        showGenreFilter: false,
+        loadPagedData: vi.fn().mockResolvedValue([album()]),
+      },
+      {
+        PanelviewItem: {
+          name: "PanelviewItem",
+          props: ["showActions"],
+          template: '<div class="ed-card__art" />',
+        },
+      },
+    );
     await flushPromises();
     return listing;
   }
@@ -1009,15 +1281,19 @@ describe("ItemsListing cover size", () => {
       .find((name) => /^col-\d+$/.test(name));
   }
 
-  type SliderItem = {
+  interface SliderItem {
     label?: string;
     hide?: boolean;
     componentProps?: {
       size: number;
+      showActions: boolean;
+      actionsFit: boolean;
+      supportsActions: boolean;
       onChange: (size: number) => void;
       onCommit: (size: number) => void;
+      onToggleActions: (show: boolean) => void;
     };
-  };
+  }
 
   function slider(listing: ReturnType<typeof mountListingRaw>) {
     const items = listing
@@ -1068,6 +1344,58 @@ describe("ItemsListing cover size", () => {
     const listing = await mountGrid();
 
     expect(slider(listing)?.hide).toBe(true);
+  });
+
+  it("shows the thumbs view without actions for a saved compact thumbs view", async () => {
+    signInWithSavedGrid({ viewMode: "panel_compact" });
+    const listing = await mountGrid();
+
+    expect(columns(listing)).toBe("col-2");
+    expect(slider(listing)?.componentProps?.showActions).toBe(false);
+  });
+
+  it("keeps captured menu props live across size and fit changes", async () => {
+    signInWithSavedGrid({ viewMode: "panel" });
+    const listing = await mountGrid();
+    const captured = slider(listing)!.componentProps!;
+    const cover = listing.get(".ed-card__art").element;
+    const measure = vi.spyOn(cover, "getBoundingClientRect");
+    try {
+      for (const [size, width, fits] of [
+        [-1, 149.75, false],
+        [0, 150, true],
+        [-1, 149, false],
+      ] as const) {
+        measure.mockReturnValue(new DOMRect(0, 0, width, width));
+        captured.onChange(size);
+        await flushPromises();
+        expect(captured.size).toBe(size);
+        expect(captured.actionsFit).toBe(fits);
+        expect(slider(listing)?.componentProps).toBe(captured);
+      }
+    } finally {
+      measure.mockRestore();
+    }
+  });
+
+  it("updates the cards and captured menu props and saves the action toggle", async () => {
+    signInWithSavedGrid({ viewMode: "panel" });
+    const listing = await mountGrid();
+    const captured = slider(listing)!.componentProps!;
+
+    captured.onToggleActions(false);
+    await flushPromises();
+
+    expect(captured.showActions).toBe(false);
+    expect(
+      listing.findComponent({ name: "PanelviewItem" }).props("showActions"),
+    ).toBe(false);
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "libraryalbums",
+      "albums",
+      "showActions",
+      false,
+    );
   });
 });
 
@@ -1373,6 +1701,167 @@ describe("ItemsListing source selector", () => {
 
     expect(mockSetItemsListingPreference).not.toHaveBeenCalled();
   });
+
+  it("moves the source into the Filters panel with the title bar controls", async () => {
+    const { listing, loadItems } = mountSourceListing({
+      providerFilterOptions: ["spotify--1", "tidal--1"],
+      libraryToolbar: true,
+    });
+    await flushPromises();
+    loadItems.mockClear();
+    const controls = () => listing.findComponent(ListingToolbarControls);
+    const sourceFilter = () =>
+      (controls().props("filters") as ListingFilter[]).find(
+        (filter) => filter.id === "required_source",
+      ) as ListingChoiceFilter | undefined;
+
+    expect(sourceOptions(listing)).toBeUndefined();
+    expect(sourceFilter()?.options.map((option) => option.label)).toEqual([
+      "source_library",
+      "Spotify",
+      "Tidal",
+    ]);
+    expect(sourceFilter()?.selected).toBe("library");
+
+    sourceFilter()?.select("tidal--1");
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenLastCalledWith(
+      expect.objectContaining({ provider: ["tidal--1"] }),
+    );
+    expect(sourceFilter()?.selected).toBe("tidal--1");
+    // a required pick is no filter: it is not counted, and Clear all keeps it
+    expect(controls().props("activeFilterCount")).toBe(0);
+    controls().vm.$emit("clear-filters");
+    await flushPromises();
+    expect(sourceFilter()?.selected).toBe("tidal--1");
+  });
+});
+
+describe("ItemsListing carried album types", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
+    store.prevState = undefined;
+    store.currentUser = undefined;
+    mockSetItemsListingPreference.mockClear();
+  });
+
+  /** Mounts a listing whose album type filter offers albums, EPs and live. */
+  function mountAlbumTypeListing(
+    props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+  ) {
+    const loadItems = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "artistalbums",
+      path: "artistalbums",
+      loadPagedData: loadItems,
+      showAlbumTypeFilter: true,
+      albumTypeFilterOptions: ["album", "ep", "live"],
+      ...props,
+    });
+    return { listing, loadItems };
+  }
+
+  function albumTypeOptions(listing: ReturnType<typeof mountListingRaw>) {
+    const items = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as {
+      label?: string;
+      subItems?: { label?: string; selected?: boolean; action?: () => void }[];
+    }[];
+    return items.find((item) => item.label === "tooltip.album_type")?.subItems;
+  }
+
+  function selectedAlbumTypes(listing: ReturnType<typeof mountListingRaw>) {
+    return albumTypeOptions(listing)
+      ?.filter((option) => option.selected)
+      .map((option) => option.label);
+  }
+
+  // a "view all" link can name the types its shelf was showing, and the
+  // listing opens on them even when the user saved other types here before
+  it("opens on album types carried in by a link, over the saved filter", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const { listing, loadItems } = mountAlbumTypeListing({
+      albumTypeOverride: ["album", "live"],
+    });
+    await flushPromises();
+
+    expect(selectedAlbumTypes(listing)).toEqual([
+      "album_type.album",
+      "album_type.live",
+    ]);
+    // a single load, straight with the carried types
+    expect(loadItems).toHaveBeenCalledTimes(1);
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ albumType: ["album", "live"] }),
+    );
+    // the saved filter is the user's own and stays as it was
+    expect(mockSetItemsListingPreference).not.toHaveBeenCalled();
+  });
+
+  it("stays on the carried album types when another setting is saved", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const { listing, loadItems } = mountAlbumTypeListing({
+      albumTypeOverride: ["album"],
+    });
+    await flushPromises();
+    loadItems.mockClear();
+
+    // every save hands the listing its saved settings again, saved album
+    // types included
+    signInWithSavedSettings({ albumType: ["ep"], viewMode: "list" });
+    await flushPromises();
+
+    expect(selectedAlbumTypes(listing)).toEqual(["album_type.album"]);
+    expect(loadItems).not.toHaveBeenCalled();
+  });
+
+  it("hands over to the album types the user picks", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const { listing, loadItems } = mountAlbumTypeListing({
+      albumTypeOverride: ["album"],
+    });
+    await flushPromises();
+
+    albumTypeOptions(listing)
+      ?.find((option) => option.label === "album_type.live")
+      ?.action?.();
+    await flushPromises();
+
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "artistalbums",
+      "artistalbums",
+      "albumType",
+      ["album", "live"],
+    );
+    expect(loadItems).toHaveBeenLastCalledWith(
+      expect.objectContaining({ albumType: ["album", "live"] }),
+    );
+
+    // from here on the saved pick is what comes back, not the link's types
+    signInWithSavedSettings({ albumType: ["live"] });
+    await flushPromises();
+
+    expect(selectedAlbumTypes(listing)).toEqual(["album_type.live"]);
+  });
+
+  it("keeps the saved filter when no carried album type is offered", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const { listing } = mountAlbumTypeListing({
+      albumTypeOverride: ["soundtrack"],
+    });
+    await flushPromises();
+
+    expect(selectedAlbumTypes(listing)).toEqual(["album_type.ep"]);
+  });
 });
 
 describe("ItemsListing favorite updates", () => {
@@ -1474,9 +1963,6 @@ describe("ItemsListing empty-state source shortcuts", () => {
           $vuetify: { display: { width: 1280 } },
         },
         stubs: {
-          // the shared Container stub drops its slot; render it so the empty
-          // state inside it shows, while the list chrome stays stubbed
-          Container: { template: "<div><slot /></div>" },
           "v-infinite-scroll": true,
           "v-virtual-scroll": true,
           Tabs: true,
@@ -1735,6 +2221,49 @@ describe("ItemsListing restore state", () => {
     ]);
   });
 
+  // a "view all" link that names album types outranks what the last visit to
+  // this listing left behind
+  it("loads the carried album types instead of restoring other types' albums", async () => {
+    const parent = artist({ item_id: "1" });
+    await cacheArtistAlbums(parent, [album({ item_id: "a1" })], {
+      showAlbumTypeFilter: true,
+    });
+
+    const fromLink = album({ item_id: "a2" });
+    const loadItems = vi.fn<LoadItemsFn>().mockResolvedValue([fromLink]);
+    const listing = mountArtistAlbums(parent, loadItems, {
+      showAlbumTypeFilter: true,
+      albumTypeOverride: ["live"],
+    });
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ albumType: ["live"] }),
+    );
+    expect(shownItems(listing).map((item) => item.uri)).toEqual([fromLink.uri]);
+  });
+
+  it("starts over on the saved filter when a visit on carried album types is reached anew", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const parent = artist({ item_id: "1" });
+    await cacheArtistAlbums(parent, [album({ item_id: "a1" })], {
+      showAlbumTypeFilter: true,
+      albumTypeOverride: ["live"],
+    });
+
+    const saved = album({ item_id: "a2" });
+    const loadItems = vi.fn<LoadItemsFn>().mockResolvedValue([saved]);
+    const listing = mountArtistAlbums(parent, loadItems, {
+      showAlbumTypeFilter: true,
+    });
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ albumType: ["ep"] }),
+    );
+    expect(shownItems(listing).map((item) => item.uri)).toEqual([saved.uri]);
+  });
+
   it("restores the cached albums when they came from the carried source", async () => {
     const parent = artist({ item_id: "1" });
     const cached = album({ item_id: "a1" });
@@ -1867,7 +2396,7 @@ describe("ItemsListing server sort options", () => {
     store.mobileLayout = false;
   });
 
-  it("loads server options, migrates saved sorts, and toggles a quick sort direction", async () => {
+  it("shows server random options, migrates saved sorts, and toggles quick sorts", async () => {
     store.currentUser = user({
       preferences: {
         "itemsListing.librarytracks.tracks": { sortBy: "name_desc" },
@@ -1891,21 +2420,15 @@ describe("ItemsListing server sort options", () => {
     const visibleFields = (
       sortControls.props("options") as SortOptionInfo[]
     ).map((option) => option.field);
-    expect(visibleFields).not.toContain(SortField.RANDOM);
-    expect(visibleFields).not.toContain(SortField.RANDOM_PLAY_COUNT);
+    expect(visibleFields).toContain(SortField.RANDOM);
+    expect(visibleFields).toContain(SortField.RANDOM_PLAY_COUNT);
 
     const sortMenu = listing.findComponent(LibrarySortControls);
     await sortMenu.find("button").trigger("click");
     await flushPromises();
     expect(
       document.body.querySelectorAll('[role="menuitemradio"]'),
-    ).toHaveLength(
-      sortOptions.filter(
-        (option) =>
-          option.field !== SortField.RANDOM &&
-          option.field !== SortField.RANDOM_PLAY_COUNT,
-      ).length + 2,
-    );
+    ).toHaveLength(sortOptions.length + 2);
     expect(
       document.body.querySelectorAll(
         '[role="menuitemradio"][aria-checked="true"]',
@@ -2432,5 +2955,989 @@ describe("ItemsListing server sort options", () => {
         sortDirection: SortDirection.ASC,
       }),
     );
+  });
+});
+
+describe("ItemsListing playlist reorder", () => {
+  type LoadPagedData = NonNullable<
+    InstanceType<typeof ItemsListing>["$props"]["loadPagedData"]
+  >;
+  const RowsScrollerStub = {
+    props: ["items"],
+    template:
+      '<div><slot v-for="(item, index) in items" :key="index" :item="item" :index="index" /></div>',
+  };
+  const playlistRows = () =>
+    ["A", "B", "C"].map((name, index) =>
+      track({
+        item_id: name,
+        name,
+        uri: `library://track/${name}`,
+        position: index + 1,
+      }),
+    );
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
+    mockMovePlaylistTrack.mockReset();
+    // the rows show the playlist's own order, so they can be moved
+    mockGetSortOptions.mockReset().mockResolvedValue([
+      {
+        field: SortField.POSITION,
+        supports_direction: true,
+        default_direction: SortDirection.ASC,
+        label_key: "position",
+      },
+    ]);
+    store.prevState = undefined;
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.playlist.1.library.playlisttracks": {
+          sortBy: "position",
+        },
+      },
+    });
+  });
+
+  function mountPlaylist(
+    loadPagedData: LoadPagedData,
+    props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+  ) {
+    return mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.library",
+        showGenreFilter: false,
+        forcedViewMode: "list",
+        trackTable: true,
+        reorderable: true,
+        sortListing: ListingType.PLAYLIST_TRACKS,
+        parentItem: playlist({ item_id: "1" }),
+        loadPagedData,
+        ...props,
+      },
+      { VVirtualScroll: RowsScrollerStub },
+    );
+  }
+
+  function handle(listing: ReturnType<typeof mountListingRaw>, index: number) {
+    return listing.find(`[data-reorder-index="${index}"]`)
+      .element as HTMLElement;
+  }
+
+  it("keeps the focus on a track whose keyboard move failed", async () => {
+    mockMovePlaylistTrack.mockRejectedValue(new Error("refused"));
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
+      .mockImplementation(async () => playlistRows());
+    const listing = mountPlaylist(loadPagedData);
+    await flushPromises();
+    handle(listing, 0).focus();
+
+    listing
+      .findAllComponents({ name: "TrackTableRow" })[0]
+      .vm.$emit("moveBy", 1);
+    await nextTick();
+    // the focus follows the track to the row it moved to
+    expect(document.activeElement).toBe(handle(listing, 1));
+    await flushPromises();
+
+    // the provider kept the old order, so the track is back in the first row
+    expect(rows(listing).map((item) => item.name)).toEqual(["A", "B", "C"]);
+    expect(document.activeElement).toBe(handle(listing, 0));
+  });
+
+  it("marks the handles disabled, keeping their focus, while a move saves", async () => {
+    let finishMove = () => {};
+    mockMovePlaylistTrack.mockImplementation(
+      () => new Promise<void>((resolve) => (finishMove = resolve)),
+    );
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
+      .mockImplementation(async () => playlistRows());
+    const listing = mountPlaylist(loadPagedData);
+    await flushPromises();
+    expect(handle(listing, 0).getAttribute("aria-disabled")).toBeNull();
+    handle(listing, 0).focus();
+
+    listing
+      .findAllComponents({ name: "TrackTableRow" })[0]
+      .vm.$emit("moveBy", 1);
+    await nextTick();
+
+    expect(handle(listing, 0).getAttribute("aria-disabled")).toBe("true");
+    expect(handle(listing, 1).getAttribute("aria-disabled")).toBe("true");
+    expect(document.activeElement).toBe(handle(listing, 1));
+    finishMove();
+    await flushPromises();
+    expect(handle(listing, 0).getAttribute("aria-disabled")).toBeNull();
+  });
+
+  it("scrolls a track moved out of the rendered rows into view and focuses it", async () => {
+    // the scroller renders the first two rows until the rest scroll into view
+    const rendered = ref(2);
+    const WindowedScrollerStub = {
+      props: ["items"],
+      setup: () => ({ rendered }),
+      template:
+        '<div><template v-for="(item, index) in items" :key="index"><slot v-if="index < rendered" :item="item" :index="index" /></template></div>',
+    };
+    const scrollIntoView = vi
+      .spyOn(HTMLElement.prototype, "scrollIntoView")
+      .mockImplementation(() => {
+        rendered.value = 3;
+      });
+    let finishSave = () => {};
+    mockMovePlaylistTrack.mockReturnValue(
+      new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const listing = mountListingRaw(
+      {
+        itemtype: "playlisttracks",
+        path: "playlist.1.library",
+        showGenreFilter: false,
+        forcedViewMode: "list",
+        trackTable: true,
+        reorderable: true,
+        sortListing: ListingType.PLAYLIST_TRACKS,
+        parentItem: playlist({ item_id: "1" }),
+        loadPagedData: vi
+          .fn<LoadPagedData>()
+          .mockImplementation(async () => playlistRows()),
+      },
+      { VVirtualScroll: WindowedScrollerStub },
+    );
+    await flushPromises();
+    handle(listing, 1).focus();
+
+    listing
+      .findAllComponents({ name: "TrackTableRow" })[1]
+      .vm.$emit("moveBy", 1);
+
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(handle(listing, 2)),
+    );
+    expect(scrollIntoView).toHaveBeenCalled();
+    finishSave();
+    await flushPromises();
+    scrollIntoView.mockRestore();
+    listing.unmount();
+  });
+
+  it("does not keep the rows of a move that is saving when the page closes", async () => {
+    let finishSave = () => {};
+    mockMovePlaylistTrack.mockReturnValue(
+      new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const first = mountPlaylist(
+      vi.fn<LoadPagedData>().mockImplementation(async () => playlistRows()),
+      { restoreState: true },
+    );
+    await flushPromises();
+    first.findAllComponents({ name: "TrackTableRow" })[0].vm.$emit("moveBy", 1);
+    await flushPromises();
+    first.unmount();
+
+    const loadPagedData = vi
+      .fn<LoadPagedData>()
+      .mockImplementation(async () => playlistRows());
+    mountPlaylist(loadPagedData, { restoreState: true });
+    await flushPromises();
+
+    // the unsaved order is read from the provider instead of restored
+    expect(loadPagedData).toHaveBeenCalled();
+    finishSave();
+    await flushPromises();
+  });
+});
+
+describe("ItemsListing library toolbar", () => {
+  const sortOptions: SortOptionInfo[] = [
+    {
+      field: SortField.SORT_NAME,
+      supports_direction: true,
+      default_direction: SortDirection.ASC,
+      label_key: "sort_name",
+    },
+    {
+      field: SortField.TIMESTAMP_ADDED,
+      supports_direction: true,
+      default_direction: SortDirection.DESC,
+      label_key: "timestamp_added",
+    },
+  ];
+
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset().mockResolvedValue([]);
+    mockGetSortOptions.mockReset().mockResolvedValue(sortOptions);
+    mockSubscribeMulti.mockReset().mockImplementation(events.subscribeMulti);
+    mockSetItemsListingPreference.mockClear();
+    store.prevState = undefined;
+    store.currentUser = undefined;
+    store.mobileLayout = false;
+  });
+
+  afterEach(() => {
+    store.currentUser = undefined;
+    store.mobileLayout = false;
+  });
+
+  /** Signs in a user who saved these settings for the artists page. */
+  function signInWithSavedFilters(settings: Record<string, unknown>) {
+    store.currentUser = user({
+      preferences: { "itemsListing.libraryartists.artists": settings },
+    });
+  }
+
+  async function mountLibraryPage(
+    props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+    stubs: Record<string, unknown> = {},
+  ) {
+    const listing = mountListingRaw(
+      {
+        itemtype: "artists",
+        path: "libraryartists",
+        sortListing: ListingType.LIBRARY_ARTISTS,
+        libraryToolbar: true,
+        showGenreFilter: false,
+        showFavoritesOnlyFilter: true,
+        showAlbumArtistsOnlyFilter: true,
+        showSearchButton: true,
+        ...props,
+      },
+      // its tooltip needs the provider the app's sidebar gives
+      { GridSizeSlider: true, ...stubs },
+    );
+    await flushPromises();
+    return listing;
+  }
+
+  function menuLabels(listing: ReturnType<typeof mountListingRaw>) {
+    return (
+      listing.findComponent({ name: "Toolbar" }).props("menuItems") as {
+        label?: string;
+      }[]
+    ).map((item) => item.label);
+  }
+
+  it("sorts from the title bar instead of a row of chips", async () => {
+    const listing = await mountLibraryPage();
+
+    expect(listing.find(".listing-sort-chips-row").exists()).toBe(false);
+    expect(listing.findComponent(LibrarySortControls).exists()).toBe(false);
+    expect(listing.findComponent(ListingSortMenu).props("compact")).toBe(false);
+  });
+
+  it("flips the sort it is on when picked again, with the menu left open", async () => {
+    mockGetSortOptions.mockResolvedValueOnce([
+      { field: SortField.SORT_NAME, supports_direction: true },
+      { field: SortField.TIMESTAMP_ADDED, supports_direction: true },
+    ] as SortOptionInfo[]);
+    signInWithSavedFilters({ sortBy: "sort_name:asc" });
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({ loadPagedData });
+
+    await listing
+      .findComponent(ListingSortMenu)
+      .find("button")
+      .trigger("click");
+    await flushPromises();
+    const checked = () =>
+      document.body.querySelector<HTMLElement>(
+        '[role="menuitemradio"][aria-checked="true"]',
+      );
+    // the sort it is on is shown in blue with its arrow, without a check mark
+    expect(checked()?.querySelector("svg.lucide-check")).toBeNull();
+    expect(checked()?.querySelector("svg.lucide-arrow-up")).not.toBeNull();
+
+    checked()?.click();
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "sort_name:desc" }),
+    );
+    expect(
+      document.body.querySelectorAll('[role="menuitemradio"]').length,
+    ).toBeGreaterThan(0);
+    listing.unmount();
+  });
+
+  it("sorts from an icon on a phone", async () => {
+    store.mobileLayout = true;
+    const listing = await mountLibraryPage();
+
+    expect(listing.findComponent(ListingSortMenu).props("compact")).toBe(true);
+  });
+
+  it("keeps search and the filters out of the overflow menu", async () => {
+    const listing = await mountLibraryPage();
+
+    expect(menuLabels(listing)).not.toContain("tooltip.search");
+    expect(menuLabels(listing)).not.toContain("tooltip.filter_favorites");
+    expect(menuLabels(listing)).not.toContain("tooltip.album_artist_filter");
+    expect(menuLabels(listing)).not.toContain("tooltip.view_mode_current");
+  });
+
+  it("picks the view and cover size in the sort menu", async () => {
+    signInWithSavedFilters({ viewMode: "panel", gridSize: -1 });
+    const listing = await mountLibraryPage();
+    const sortMenu = listing.findComponent(ListingSortMenu);
+
+    expect(sortMenu.props("viewMode")).toBe("panel");
+    expect(sortMenu.props("gridControls")?.size).toBe(-1);
+    expect(menuLabels(listing)).not.toContain("grid_size");
+
+    sortMenu.vm.$emit("view-mode", "list");
+    await flushPromises();
+
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "libraryartists",
+      "artists",
+      "viewMode",
+      "list",
+    );
+  });
+
+  it("picks the view in the sort menu on a phone too", async () => {
+    store.mobileLayout = true;
+    signInWithSavedFilters({ viewMode: "panel" });
+    const listing = await mountLibraryPage();
+
+    expect(listing.findComponent(ListingSortMenu).props("viewMode")).toBe(
+      "panel",
+    );
+    expect(menuLabels(listing)).not.toContain("tooltip.view_mode_current");
+    expect(menuLabels(listing)).not.toContain("grid_size");
+  });
+
+  it.each(["panel", "list"] as const)(
+    "keeps the view out of the sort menu when the page sets it to %s",
+    async (forcedViewMode) => {
+      const listing = await mountLibraryPage({ forcedViewMode });
+      const sortMenu = listing.findComponent(ListingSortMenu);
+
+      expect(sortMenu.props("viewMode")).toBe(forcedViewMode);
+      expect(sortMenu.props("fixedView")).toBe(true);
+      expect(sortMenu.props("gridControls")).toBeDefined();
+      expect(menuLabels(listing)).not.toContain("tooltip.view_mode");
+    },
+  );
+
+  it("opens the search field from its icon and closes it from inside", async () => {
+    const listing = await mountLibraryPage();
+    const searchIcon = () => listing.find('button[aria-label="search"]');
+
+    await searchIcon().trigger("click");
+    await flushPromises();
+
+    expect(searchIcon().exists()).toBe(false);
+    expect(listing.find("input").exists()).toBe(true);
+
+    await listing.find('button[aria-label="close"]').trigger("click");
+    await flushPromises();
+
+    expect(searchIcon().exists()).toBe(true);
+  });
+
+  it("counts every active filter on the Filters button", async () => {
+    signInWithSavedFilters({ favoriteFilter: true, albumArtistsFilter: true });
+    const listing = await mountLibraryPage();
+
+    expect(
+      listing.findComponent(ListingToolbarControls).props("activeFilterCount"),
+    ).toBe(2);
+  });
+
+  it("clears every filter at once, in a single save", async () => {
+    signInWithSavedFilters({ favoriteFilter: true, albumArtistsFilter: true });
+    const listing = await mountLibraryPage();
+    mockSetItemsListingPreferences.mockClear();
+
+    listing.findComponent(ListingToolbarControls).vm.$emit("clear-filters");
+    await flushPromises();
+
+    expect(mockSetItemsListingPreferences).toHaveBeenCalledOnce();
+    expect(mockSetItemsListingPreferences).toHaveBeenCalledWith(
+      "libraryartists",
+      "artists",
+      { favoriteFilter: false, albumArtistsFilter: false },
+    );
+    expect(
+      listing.findComponent(ListingToolbarControls).props("activeFilterCount"),
+    ).toBe(0);
+  });
+
+  it("keeps a cached visit's count while scrolling to its next page", async () => {
+    signInWithSavedFilters({ favoriteFilter: true });
+    const scroller = {
+      name: "VInfiniteScroll",
+      props: { onLoad: { type: Function, default: undefined } },
+      template: "<div><slot /></div>",
+    };
+    // a full page, so there is a next one to scroll to
+    const props = {
+      total: 12,
+      limit: 1,
+      restoreState: true,
+      loadPagedData: vi.fn().mockResolvedValue([artist()]),
+    };
+    const listing = await mountLibraryPage(props, {
+      VInfiniteScroll: scroller,
+    });
+    listing.unmount();
+
+    // the page starts over from the whole library's count
+    const restored = await mountLibraryPage(
+      { ...props, total: 128 },
+      { VInfiniteScroll: scroller },
+    );
+    const onLoad = restored
+      .findComponent({ name: "VInfiniteScroll" })
+      .props("onLoad") as (options: {
+      side: string;
+      done: () => void;
+    }) => Promise<void>;
+    await onLoad({ side: "end", done: () => {} });
+    await flushPromises();
+
+    expect(props.loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ offset: 1 }),
+    );
+    expect(restored.find(".toolbar-stub").text()).toContain("12");
+    expect(restored.find(".toolbar-stub").text()).not.toContain("128");
+  });
+
+  it("drops a cached visit's count when a filter changes while a page loads", async () => {
+    signInWithSavedFilters({ favoriteFilter: true });
+    const scroller = {
+      name: "VInfiniteScroll",
+      props: { onLoad: { type: Function, default: undefined } },
+      template: "<div><slot /></div>",
+    };
+    const loadPagedData = vi.fn().mockResolvedValue([artist()]);
+    const props = { total: 12, limit: 1, restoreState: true, loadPagedData };
+    const listing = await mountLibraryPage(props, {
+      VInfiniteScroll: scroller,
+    });
+    listing.unmount();
+    const restored = await mountLibraryPage(
+      { ...props, total: 128 },
+      { VInfiniteScroll: scroller },
+    );
+
+    // the next page is still on its way when Favorites is turned off
+    let finishPage!: (items: unknown[]) => void;
+    loadPagedData.mockImplementationOnce(
+      () => new Promise((resolve) => (finishPage = resolve)),
+    );
+    const onLoad = restored
+      .findComponent({ name: "VInfiniteScroll" })
+      .props("onLoad") as (options: {
+      side: string;
+      done: () => void;
+    }) => Promise<void>;
+    void onLoad({ side: "end", done: () => {} });
+    await flushPromises();
+    (
+      (
+        restored
+          .findComponent(ListingToolbarControls)
+          .props("filters") as ListingFilter[]
+      ).find((filter) => filter.id === "favorites") as ListingToggleFilter
+    ).toggle();
+    await flushPromises();
+    finishPage([artist()]);
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ offset: 0, favoritesOnly: false }),
+    );
+    expect(restored.find(".toolbar-stub").text()).toContain("128");
+  });
+
+  it("hides the search icon while the section is collapsed", async () => {
+    signInWithSavedFilters({ expand: false });
+    const listing = await mountLibraryPage({ allowCollapse: true });
+
+    expect(listing.find('button[aria-label="search"]').exists()).toBe(false);
+  });
+
+  it("shows only the expand button while collapsed, with the menu's place kept", async () => {
+    signInWithSavedFilters({ expand: false });
+    const listing = await mountLibraryPage({ allowCollapse: true });
+
+    expect(listing.findComponent(ListingToolbarControls).exists()).toBe(false);
+    expect(menuLabels(listing)).toEqual([]);
+    expect(
+      listing
+        .find('button[aria-label="tooltip.collapse_expand"]')
+        .element.nextElementSibling?.getAttribute("aria-hidden"),
+    ).toBe("true");
+  });
+
+  describe("keyboard focus on the expand button", () => {
+    // a title bar that draws its direct items as buttons after the append
+    // slot, keyed by label like the real one
+    const toolbarWithButtons = {
+      Toolbar: {
+        name: "Toolbar",
+        props: ["menuItems"],
+        template: `<div><slot name="append" /><button
+          v-for="item of menuItems" :key="item.label"
+          :aria-label="item.label" @click="item.action()" /></div>`,
+      },
+    };
+    const expandButton = (listing: ReturnType<typeof mountListingRaw>) =>
+      listing.find('button[aria-label="tooltip.collapse_expand"]');
+
+    it.each([
+      ["collapsed", false],
+      ["open", true],
+    ])(
+      "moves to the replacing button when a %s list is toggled",
+      async (_, expand) => {
+        signInWithSavedFilters({ expand });
+        const listing = await mountLibraryPage(
+          { allowCollapse: true },
+          toolbarWithButtons,
+        );
+        const pressed = expandButton(listing);
+        (pressed.element as HTMLElement).focus();
+
+        await pressed.trigger("click");
+        await flushPromises();
+
+        const replacement = expandButton(listing).element;
+        expect(replacement).not.toBe(pressed.element);
+        expect(document.activeElement).toBe(replacement);
+      },
+    );
+  });
+
+  it("keeps an edit that is still being saved when an earlier save lands", async () => {
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({ loadPagedData });
+    const favorites = (
+      listing
+        .findComponent(ListingToolbarControls)
+        .props("filters") as ListingFilter[]
+    ).find((filter) => filter.id === "favorites") as ListingToggleFilter;
+
+    favorites.toggle();
+    await flushPromises();
+    // an earlier sort save lands, from before Favorites was turned on
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.libraryartists.artists": { sortBy: "name_desc" },
+      },
+    });
+    await flushPromises();
+    // then the Favorites save itself, merged onto it
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.libraryartists.artists": {
+          sortBy: "name_desc",
+          favoriteFilter: true,
+        },
+      },
+    });
+    await flushPromises();
+    finishSave();
+    await flushPromises();
+
+    expect(
+      listing.findComponent(ListingToolbarControls).props("activeFilterCount"),
+    ).toBe(1);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ favoritesOnly: true }),
+    );
+  });
+
+  it("goes back to the saved settings after a save fails", async () => {
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({ loadPagedData });
+    const favorites = (
+      listing
+        .findComponent(ListingToolbarControls)
+        .props("filters") as ListingFilter[]
+    ).find((filter) => filter.id === "favorites") as ListingToggleFilter;
+
+    favorites.toggle();
+    await flushPromises();
+    // the server would not take it, so the account's settings are put back
+    store.currentUser = user({
+      preferences: { "itemsListing.libraryartists.artists": {} },
+    });
+    await flushPromises();
+    finishSave();
+    await flushPromises();
+
+    expect(
+      listing.findComponent(ListingToolbarControls).props("activeFilterCount"),
+    ).toBe(0);
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ favoritesOnly: false }),
+    );
+  });
+
+  it("leaves a listing that was left alone when its failed save settles", async () => {
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({ loadPagedData });
+    const favorites = (
+      listing
+        .findComponent(ListingToolbarControls)
+        .props("filters") as ListingFilter[]
+    ).find((filter) => filter.id === "favorites") as ListingToggleFilter;
+
+    favorites.toggle();
+    await flushPromises();
+    store.currentUser = user({
+      preferences: { "itemsListing.libraryartists.artists": {} },
+    });
+    await flushPromises();
+    listing.unmount();
+    loadPagedData.mockClear();
+    finishSave();
+    await flushPromises();
+
+    expect(loadPagedData).not.toHaveBeenCalled();
+  });
+
+  it("turns album artists back off when its first save fails", async () => {
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const listing = await mountLibraryPage();
+    const albumArtists = (
+      listing
+        .findComponent(ListingToolbarControls)
+        .props("filters") as ListingFilter[]
+    ).find((filter) => filter.id === "album_artists") as ListingToggleFilter;
+
+    albumArtists.toggle();
+    await flushPromises();
+    // never saved before, so the account goes back to holding nothing for it
+    store.currentUser = user({
+      preferences: { "itemsListing.libraryartists.artists": {} },
+    });
+    await flushPromises();
+    finishSave();
+    await flushPromises();
+
+    expect(
+      listing.findComponent(ListingToolbarControls).props("activeFilterCount"),
+    ).toBe(0);
+  });
+
+  it("keeps a picked source on offer once it is the only one left", async () => {
+    for (const [instanceId, name] of [
+      ["spotify--1", "Spotify"],
+      ["tidal--1", "Tidal"],
+    ]) {
+      api.providers[instanceId] = {
+        instance_id: instanceId,
+        name,
+        domain: name.toLowerCase(),
+      } as ProviderInstance;
+    }
+    try {
+      const listing = await mountLibraryPage({
+        providerFilterOptions: ["spotify--1", "tidal--1"],
+      });
+      const controls = () => listing.findComponent(ListingToolbarControls);
+      const source = () =>
+        (controls().props("filters") as ListingFilter[]).find(
+          (filter) => filter.id === "provider",
+        ) as ListingMultiFilter | undefined;
+
+      source()?.toggle("spotify--1");
+      await flushPromises();
+      // the other source goes away while Spotify is picked
+      await listing.setProps({ providerFilterOptions: ["spotify--1"] });
+      await flushPromises();
+
+      expect(source()?.selected).toEqual(["spotify--1"]);
+      expect(controls().props("activeFilterCount")).toBe(1);
+    } finally {
+      delete api.providers["spotify--1"];
+      delete api.providers["tidal--1"];
+    }
+  });
+
+  it("reloads once when a failed save brings back another search", async () => {
+    signInWithSavedFilters({ search: "adele" });
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({
+      loadPagedData,
+      restoreState: true,
+    });
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    await listing.find("input").setValue("beatles");
+    await flushPromises();
+    // the server would not take it, so the saved search is put back
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.libraryartists.artists": { search: "adele" },
+      },
+    });
+    await flushPromises();
+    loadPagedData.mockClear();
+    finishSave();
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenCalledOnce();
+    expect(loadPagedData).toHaveBeenCalledWith(
+      expect.objectContaining({ search: "adele" }),
+    );
+  });
+
+  it("clears a search that failed to save when none was saved before", async () => {
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({
+      loadPagedData,
+      restoreState: true,
+    });
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    await listing.find('button[aria-label="search"]').trigger("click");
+    await listing.find("input").setValue("beatles");
+    await flushPromises();
+    // the server would not take it, so the account holds no search again
+    store.currentUser = user({
+      preferences: { "itemsListing.libraryartists.artists": {} },
+    });
+    await flushPromises();
+    finishSave();
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ search: "" }),
+    );
+  });
+
+  it("reloads the saved tab's rows after a tab save fails", async () => {
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.libraryaudiobooks.audiobooks": { activeTab: "books" },
+      },
+    });
+    const books = vi.fn().mockResolvedValue([]);
+    const authors = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "audiobooks",
+      path: "libraryaudiobooks",
+      libraryToolbar: true,
+      showGenreFilter: false,
+      toolBarTabs: [
+        { id: "books", label: "books", loadPagedData: books },
+        { id: "authors", label: "authors", loadPagedData: authors },
+      ],
+    });
+    await flushPromises();
+    let finishSave!: () => void;
+    mockSetItemsListingPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+
+    listing
+      .findComponent({ name: "Tabs" })
+      .vm.$emit("update:modelValue", "authors");
+    await flushPromises();
+    expect(authors).toHaveBeenCalled();
+    // the server would not take it, so the account is back on Books
+    store.currentUser = user({
+      preferences: {
+        "itemsListing.libraryaudiobooks.audiobooks": { activeTab: "books" },
+      },
+    });
+    await flushPromises();
+    books.mockClear();
+    finishSave();
+    await flushPromises();
+
+    expect(books).toHaveBeenCalledOnce();
+  });
+
+  it("turns a filter off when the saved settings later leave it off", async () => {
+    signInWithSavedFilters({ favoriteFilter: true });
+    const listing = await mountLibraryPage();
+    const filterCount = () =>
+      listing.findComponent(ListingToolbarControls).props("activeFilterCount");
+    expect(filterCount()).toBe(1);
+
+    // a save queued behind an earlier one lands, and clears what that restored
+    store.currentUser!.preferences = {
+      "itemsListing.libraryartists.artists": { favoriteFilter: false },
+    };
+    await flushPromises();
+
+    expect(filterCount()).toBe(0);
+  });
+
+  it("comes back to a cached visit with the count it showed", async () => {
+    signInWithSavedFilters({ favoriteFilter: true });
+    // a full page, so the listing does not know it holds everything
+    const props = {
+      total: 12,
+      limit: 1,
+      restoreState: true,
+      loadPagedData: vi.fn().mockResolvedValue([artist()]),
+    };
+    const listing = await mountLibraryPage(props);
+    expect(listing.find(".toolbar-stub").text()).toContain("12");
+    listing.unmount();
+
+    // the page starts over from the whole library's count
+    const restored = await mountLibraryPage({ ...props, total: 128 });
+
+    expect(restored.find(".toolbar-stub").text()).toContain("12");
+    expect(restored.find(".toolbar-stub").text()).not.toContain("128");
+  });
+
+  it("leaves the count out when the page shows it elsewhere", async () => {
+    // a full page, so the listing keeps the total rather than counting its rows
+    const props = {
+      total: 12,
+      limit: 1,
+      loadPagedData: vi.fn().mockResolvedValue([artist()]),
+    };
+    const shown = await mountLibraryPage(props);
+    expect(shown.find(".toolbar-stub").text()).toContain("12");
+    shown.unmount();
+
+    const hidden = await mountLibraryPage({ ...props, showCount: false });
+
+    expect(hidden.find(".toolbar-stub").text()).not.toContain("12");
+  });
+
+  it("gives a detail page's listing its filters in the Filters panel", async () => {
+    const listing = await mountLibraryPage({
+      itemtype: "albumtracks",
+      path: undefined,
+      parentItem: album(),
+      sortListing: ListingType.ALBUM_TRACKS,
+      showAlbumArtistsOnlyFilter: false,
+      showLibraryOnlyFilter: true,
+    });
+
+    expect(listing.find(".listing-sort-chips-row").exists()).toBe(false);
+    expect(
+      (
+        listing
+          .findComponent(ListingToolbarControls)
+          .props("filters") as ListingFilter[]
+      ).map((filter) => filter.id),
+    ).toEqual(["favorites", "library_only"]);
+    expect(menuLabels(listing)).not.toContain("tooltip.filter_favorites");
+  });
+
+  // the field's own open and close transition, which the hooks hang off
+  const realTransitions = { transition: false };
+  const nextFrames = async () => {
+    for (let i = 0; i < 3; i++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await flushPromises();
+    }
+  };
+
+  it("gives focus back to the search icon when the field closes", async () => {
+    const listing = await mountLibraryPage({}, realTransitions);
+    await listing.find('button[aria-label="search"]').trigger("click");
+    await nextFrames();
+    const close = listing.find('button[aria-label="close"]');
+    (close.element as HTMLElement).focus();
+
+    await close.trigger("click");
+    await nextFrames();
+
+    expect(document.activeElement).toBe(
+      listing.find('button[aria-label="search"]').element,
+    );
+  });
+
+  it("brings the search icon back after the search moved to a phone", async () => {
+    const listing = await mountLibraryPage({}, realTransitions);
+    await listing.find('button[aria-label="search"]').trigger("click");
+    await nextFrames();
+
+    store.mobileLayout = true;
+    await nextFrames();
+    await listing.find('button[aria-label="close"]').trigger("click");
+    await nextFrames();
+
+    expect(listing.find('button[aria-label="search"]').exists()).toBe(true);
+  });
+
+  it("takes a new album type selection with one save and one reload", async () => {
+    signInWithSavedFilters({ albumType: ["album", "single"] });
+    const loadPagedData = vi.fn().mockResolvedValue([]);
+    const listing = await mountLibraryPage({
+      showAlbumTypeFilter: true,
+      loadPagedData,
+    });
+    mockSetItemsListingPreference.mockClear();
+    loadPagedData.mockClear();
+
+    const albumTypes = (
+      listing
+        .findComponent(ListingToolbarControls)
+        .props("filters") as ListingFilter[]
+    ).find((filter) => filter.id === "album_type") as ListingMultiFilter;
+    albumTypes.set?.([]);
+    await flushPromises();
+
+    expect(mockSetItemsListingPreference).toHaveBeenCalledOnce();
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "libraryartists",
+      "artists",
+      "albumType",
+      [],
+    );
+    expect(loadPagedData).toHaveBeenCalledOnce();
+  });
+
+  it("counts the items only while the page's total covers the filters", async () => {
+    // a full page, so the listing does not know it holds everything
+    const listing = await mountLibraryPage({
+      total: 128,
+      limit: 1,
+      loadPagedData: vi.fn().mockResolvedValue([artist()]),
+    });
+
+    expect(listing.find(".toolbar-stub").text()).toContain("128");
+
+    // the page's count request is not told about a search
+    await listing.find('button[aria-label="search"]').trigger("click");
+    await listing.find("input").setValue("be");
+    await flushPromises();
+
+    expect(listing.find(".toolbar-stub").text()).not.toContain("128");
   });
 });

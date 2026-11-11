@@ -2,13 +2,10 @@
   <section class="artist-top-tracks">
     <div class="artist-top-tracks__main">
       <div class="artist-top-tracks__head">
-        <div
-          v-hold="onHold"
-          class="artist-top-tracks__titles"
-          @touchstart.passive="onTouchStart"
-          @click.capture="swallowClickAfterHold"
+        <DetailSectionTitle
+          :title="$t('artist_toptracks')"
+          @edit-rows="emit('edit-rows')"
         >
-          <h2 class="artist-top-tracks__title">{{ $t("artist_toptracks") }}</h2>
           <RowSourceBadge
             v-if="sourceLabel"
             :label="sourceLabel"
@@ -17,7 +14,7 @@
             :selected="sourceValue"
             @select="(source) => emit('select-source', source)"
           />
-        </div>
+        </DetailSectionTitle>
         <RouterLink
           v-if="artistTrackCount"
           :to="allTracksRoute"
@@ -37,12 +34,13 @@
             v-for="(track, index) in shownTracks"
             :key="track.uri"
             v-hold="(e: Event) => onTrackHold(e, track)"
-            class="artist-top-tracks__track"
+            class="artist-top-tracks__track group"
             :class="{
               'artist-top-tracks__track--playing': isNowPlaying(track),
             }"
             role="button"
             tabindex="0"
+            @click.capture="swallowClickAfterTrackHold"
             @click="(e: MouseEvent) => onTrackClick(e, track)"
             @keydown.enter.self="(e: KeyboardEvent) => onTrackClick(e, track)"
             @keydown.space.self.prevent="
@@ -60,8 +58,15 @@
               />
               <template v-else>{{ index + 1 }}</template>
             </span>
-            <span class="artist-top-tracks__art">
+            <span class="artist-top-tracks__art relative">
               <MediaItemThumb :item="track" :size="40" />
+              <RowPlayButton
+                v-if="canPlay(track)"
+                overlay
+                :label="playLabel(track)"
+                :disabled="playActionInProgress"
+                @click="(e: MouseEvent) => onPlayClick(e, track)"
+              />
             </span>
             <span class="artist-top-tracks__text">
               <span class="artist-top-tracks__name">{{ track.name }}</span>
@@ -76,6 +81,12 @@
             <span v-if="track.duration" class="artist-top-tracks__duration">{{
               formatDuration(track.duration)
             }}</span>
+            <RowPlayButton
+              v-if="canPlay(track)"
+              :label="playLabel(track)"
+              :disabled="playActionInProgress"
+              @click="(e: MouseEvent) => onPlayClick(e, track)"
+            />
             <button
               type="button"
               class="artist-top-tracks__menu"
@@ -109,18 +120,22 @@
 </template>
 
 <script setup lang="ts">
+import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
 import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import RowPlayButton from "@/components/RowPlayButton.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getEventPosition,
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
+import { usePlayActionInProgress } from "@/composables/usePlayActionInProgress";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
+  handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
 import { formatDuration } from "@/helpers/utils";
@@ -131,6 +146,7 @@ import {
   type ItemMapping,
   type Track,
 } from "@/plugins/api/interfaces";
+import { itemIsAvailable } from "@/plugins/api/helpers";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -191,15 +207,18 @@ const allTracksRoute = computed<RouteLocationRaw>(() => ({
   },
 }));
 
-const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
-  emit("edit-rows"),
-);
-
 const {
   onHold: onTrackHold,
   onTouchStart: onTrackTouchStart,
   swallowClickAfterHold: swallowClickAfterTrackHold,
 } = useHoldToOpenMenu<[Track]>((evt, track) => onTrackMenu(evt, track));
+
+const playActionInProgress = usePlayActionInProgress();
+
+// a track that is not available has nothing to play, whatever its flag says
+const canPlay = (track: Track) => track.is_playable && itemIsAvailable(track);
+
+const playLabel = (track: Track) => `${$t("play")} ${track.name}`;
 
 const isNowPlaying = function (track: Track): boolean {
   if (store.activePlayer?.playback_state != PlaybackState.PLAYING) return false;
@@ -221,10 +240,13 @@ const onTrackClick = function (
   event: MouseEvent | KeyboardEvent,
   track: Track,
 ) {
-  if (swallowClickAfterTrackHold(event)) return;
   const x = "clientX" in event ? event.clientX : 0;
   const y = "clientY" in event ? event.clientY : 0;
   handleMediaItemClick(track, x, y, props.artist);
+};
+
+const onPlayClick = function (event: MouseEvent, track: Track) {
+  handlePlayBtnClick(track, event.clientX, event.clientY, props.artist);
 };
 
 const onTrackMenu = function (event: Event, track: Track) {
@@ -252,22 +274,6 @@ function releaseYear(album?: Album | ItemMapping | null): number | undefined {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 14px;
-}
-.artist-top-tracks__titles {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-.artist-top-tracks__title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-  color: rgb(var(--v-theme-on-background));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .artist-top-tracks__more {
   flex: none;
@@ -389,9 +395,6 @@ function releaseYear(album?: Album | ItemMapping | null): number | undefined {
   }
   .artist-top-tracks__head {
     margin-bottom: 8px;
-  }
-  .artist-top-tracks__title {
-    font-size: 19px;
   }
   .artist-top-tracks__grid {
     grid-template-columns: minmax(0, 1fr);

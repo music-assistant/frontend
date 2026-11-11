@@ -79,14 +79,17 @@
           @edit-rows="rowsEditorOpen = true"
         />
 
-        <!-- discography (every release MusicBrainz lists, in the library or not) -->
-        <ReleaseShelf
-          v-else-if="rowId === 'discography' && showRow(discographyItems)"
-          :title="$t('discography')"
-          :meta="isPhone ? undefined : $t('discography_hint')"
-          :items="discographyShelfItems"
-          :view-all-to="listingRoute('discography')"
-          :parent-item="itemDetails"
+        <!-- discography (every release MusicBrainz lists, in the library or
+             not), in two rows each showing the release types the user picked -->
+        <ArtistDiscographyRow
+          v-else-if="isDiscographyRow(rowId) && isDiscographyRowShown(rowId)"
+          :row-id="rowId"
+          :artist="itemDetails"
+          :items="discographyRowItems[rowId]"
+          :show-heading="showsDiscographyHeading(rowId)"
+          :class="{
+            'mb-[16px] max-[600px]:mb-[8px]': discographyContinuesBelow(rowId),
+          }"
           @edit-rows="rowsEditorOpen = true"
         />
 
@@ -127,6 +130,9 @@
           :show-album-type-filter="false"
           :show-refresh-button="false"
           :sort-listing="ListingType.ARTIST_AUDIOBOOKS"
+          library-toolbar
+          :show-count="false"
+          detail-row
           :load-paged-data="loadArtistAudiobooks"
           :title="$t('audiobooks')"
           :subtitle="$t('in_library')"
@@ -151,6 +157,9 @@
           :provider-filter-options="audiobookSourceProviderIds"
           :show-refresh-button="false"
           :sort-listing="ListingType.ARTIST_AUDIOBOOKS"
+          library-toolbar
+          :show-count="false"
+          detail-row
           :load-paged-data="loadAllAudiobooks"
           :title="$t('artist_all_audiobooks')"
           :subtitle="$t('on_provider', [activeAudiobookProvider])"
@@ -192,6 +201,7 @@
 </template>
 
 <script setup lang="ts">
+import ArtistDiscographyRow from "@/components/artist/ArtistDiscographyRow.vue";
 import ArtistHero from "@/components/artist/ArtistHero.vue";
 import {
   artistRows,
@@ -200,6 +210,7 @@ import {
 } from "@/components/artist/artistRows";
 import ArtistSimilarShelf from "@/components/artist/ArtistSimilarShelf.vue";
 import ArtistTopTracksRow from "@/components/artist/ArtistTopTracksRow.vue";
+import { isDiscographyRow } from "@/components/artist/discographyRows";
 import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
 import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import ReleaseShelf from "@/components/details/ReleaseShelf.vue";
@@ -212,12 +223,15 @@ import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
+import { isAuthorOrNarrator } from "@/helpers/author_narrator";
 import { useArtistRowData } from "@/composables/useArtistRowData";
+import { useDiscographyRows } from "@/composables/useDiscographyRows";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { api } from "@/plugins/api";
 import {
   ArtistType,
   ListingType,
+  MediaType,
   ProviderFeature,
   Scope,
   type Artist,
@@ -240,10 +254,9 @@ const rowsEditorOpen = ref(false);
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
-const isAudiobookArtist = computed(() => {
-  const artistType = itemDetails.value?.artist_type;
-  return artistType === ArtistType.AUTHOR || artistType === ArtistType.NARRATOR;
-});
+const isAudiobookArtist = computed(
+  () => !!itemDetails.value && isAuthorOrNarrator(itemDetails.value),
+);
 
 // the rows the page can render for this artist; the editor lists the same set
 const availableRows = computed(() =>
@@ -266,6 +279,7 @@ const {
   singleItems,
   appearsOnItems,
   discographyItems,
+  discographySecondItems,
   similarArtistItems,
   albumsMeta,
   albumsSource,
@@ -290,12 +304,16 @@ function selectRowSource(rowId: ArtistRowId, source: RowSource) {
   artistRows.setSource(rowId, source);
 }
 
-// a prolific artist's discography runs to hundreds of releases: the shelf
-// shows the newest, "View all" has them all
-const DISCOGRAPHY_SHELF_LIMIT = 50;
-const discographyShelfItems = computed(() =>
-  discographyItems.value?.slice(0, DISCOGRAPHY_SHELF_LIMIT),
-);
+const {
+  rowItems: discographyRowItems,
+  isShown: isDiscographyRowShown,
+  showsHeading: showsDiscographyHeading,
+  continuesBelow: discographyContinuesBelow,
+  meta: discographyMeta,
+} = useDiscographyRows(visibleRows, {
+  discography: discographyItems,
+  discography_second: discographySecondItems,
+});
 
 // an empty release row explains the library case; from a provider source the
 // badge already names it, so a neutral line is enough
@@ -321,9 +339,8 @@ const rowMeta = computed<Partial<Record<ArtistRowId, string>>>(() => ({
     ? String(singleItems.value.length)
     : undefined,
   appears_on: $t("appears_on_hint"),
-  discography: discographyItems.value?.length
-    ? String(discographyItems.value.length)
-    : undefined,
+  discography: discographyMeta("discography"),
+  discography_second: discographyMeta("discography_second"),
 }));
 
 // library audiobooks can be filtered to the providers the artist is mapped to
@@ -401,7 +418,11 @@ watch(
   },
 );
 
-useDetailItemUpdates(itemDetails, { providerItem: props });
+useDetailItemUpdates(itemDetails, {
+  get providerItem() {
+    return { ...props, mediaType: MediaType.ARTIST };
+  },
+});
 
 const loadArtistAudiobooks = async function (params: LoadDataParams) {
   const artist = itemDetails.value;
@@ -465,6 +486,7 @@ function rowApplies(rowId: ArtistRowId): boolean {
     case "audiobooks":
       return isLibraryItem;
     case "discography":
+    case "discography_second":
       return isLibraryItem;
     case "audiobooks_all":
       return audiobookSourceProviderIds.value.length > 0;

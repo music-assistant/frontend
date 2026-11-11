@@ -426,6 +426,7 @@ const completeInitialization = async () => {
     await api.fetchState();
   } else {
     console.debug("[App] Guest user - skipping regular user initialization");
+    await api.fetchProviderManifests();
     await api.fetchProviders();
   }
 
