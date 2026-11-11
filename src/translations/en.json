@@ -1675,6 +1675,7 @@
     "custom_image_updated": "Custom image updated",
     "custom_image_removed": "Custom image removed",
     "custom_image_upload_failed": "Failed to upload image",
+    "custom_image_remove_failed": "Failed to remove image",
     "remove_custom_image": "Remove custom image",
     "merge_into": "Merge into existing genre",
     "merge_genres": "Merge Genres",

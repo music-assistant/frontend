@@ -164,6 +164,8 @@ const removeImage = async () => {
     await api.removeGenreImage(genre.value.item_id);
     toast.success(t("custom_image_removed"));
     open.value = false;
+  } catch {
+    toast.error(t("custom_image_remove_failed"));
   } finally {
     uploading.value = false;
   }

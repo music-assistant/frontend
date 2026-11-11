@@ -142,6 +142,32 @@ describe("GenreImageDialog", () => {
     expect(toast.success).toHaveBeenCalledWith("custom_image_removed");
   });
 
+  it("reports a failed remove", async () => {
+    apiMock.removeGenreImage.mockRejectedValue(new Error("connection lost"));
+    await openDialog(
+      genre({
+        item_id: "5",
+        metadata: {
+          images: [
+            {
+              provider: "builtin",
+              path: "custom_images/genre.1.x.png",
+              type: ImageType.THUMB,
+              remotely_accessible: false,
+            },
+          ],
+        },
+      }),
+    );
+
+    const remove = findButton("remove_custom_image");
+    expect(remove).toBeDefined();
+    await remove!.click();
+    await flushPromises();
+
+    expect(toast.error).toHaveBeenCalledWith("custom_image_remove_failed");
+  });
+
   it("offers no remove button for a genre without a custom image", async () => {
     await openDialog(genre());
 
