@@ -608,6 +608,7 @@ function providerInstance(
     available: true,
     is_streaming_provider: null,
     supported_features: [ProviderFeature.REMOVE_PLAYER],
+    supported_artist_types: [],
     ...overrides,
   };
 }

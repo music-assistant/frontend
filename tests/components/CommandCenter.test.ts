@@ -1,7 +1,7 @@
 import CommandCenter from "@/components/CommandCenter.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import type { SearchTarget } from "@/composables/useProgressiveSearch";
-import { MediaType, type Player } from "@/plugins/api/interfaces";
+import { ArtistType, MediaType, type Player } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Ref } from "vue";
@@ -15,6 +15,7 @@ const state = vi.hoisted(() => ({
   providersRef: undefined as Ref<string[]> | undefined,
   providerTargets: { value: [] as SearchTarget[] },
   players: [] as unknown[],
+  providers: {} as Record<string, { supported_artist_types: string[] }>,
   prefs: {} as Record<string, unknown>,
   searchSpy: vi.fn(),
   setPreferenceSpy: vi.fn(),
@@ -50,7 +51,7 @@ vi.mock("vue-router", async () => {
 });
 
 vi.mock("@/plugins/api", () => {
-  const apiMock = { players: {} };
+  const apiMock = { players: {}, providers: state.providers };
   return { api: apiMock, default: apiMock };
 });
 
@@ -376,6 +377,7 @@ beforeEach(() => {
   state.providersRef = undefined;
   state.providerTargets.value = [SPOTIFY_TARGET, FILES_TARGET];
   state.players = [];
+  for (const id of Object.keys(state.providers)) delete state.providers[id];
   state.prefs = {};
   state.loading.value = false;
   state.storeMock.dialogActive = false;
@@ -751,6 +753,94 @@ describe("CommandCenter", () => {
     // clicking the active chip again restores the full view
     await artistChip!.trigger("click");
     expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    wrapper.unmount();
+  });
+
+  it.each([
+    [[], []],
+    [[ArtistType.AUTHOR], ["authors"]],
+    [
+      [ArtistType.AUTHOR, ArtistType.NARRATOR],
+      ["authors", "narrators"],
+    ],
+  ])(
+    "offers chips for the supported artist types %j",
+    async (supported, chips) => {
+      state.providers.audiobookshelf = { supported_artist_types: supported };
+      const wrapper = mountPalette();
+      useCommandCenter().open();
+      await flushPromises();
+
+      const chipTexts = wrapper
+        .findAll("button.command-center-chip")
+        .map((chip) => chip.text());
+      expect(
+        chipTexts.filter((text) => ["authors", "narrators"].includes(text)),
+      ).toEqual(chips);
+
+      wrapper.unmount();
+    },
+  );
+
+  it("lists authors and narrators under their own heading and chip", async () => {
+    state.providers.audiobookshelf = {
+      supported_artist_types: [ArtistType.AUTHOR, ArtistType.NARRATOR],
+    };
+    const artist = (itemId: string, name: string, artistType: ArtistType) => ({
+      item_id: itemId,
+      provider: "library",
+      name,
+      media_type: MediaType.ARTIST,
+      uri: `library://artist/${itemId}`,
+      artist_type: artistType,
+    });
+    state.resultsByType[MediaType.ARTIST] = [
+      artist("a1", "Conni", ArtistType.SINGER),
+      ...Array.from({ length: 7 }, (_, i) =>
+        artist(`w${i}`, `Conni Writer ${i}`, ArtistType.AUTHOR),
+      ),
+      artist("r1", "Conni Reader", ArtistType.NARRATOR),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    const section = (heading: string) =>
+      wrapper
+        .findAll("section")
+        .find((candidate) => candidate.find("h3").text() === heading)!;
+    const rows = (heading: string) =>
+      section(heading).findAll('[data-testid="palette-item"]');
+    const chip = (text: string) =>
+      wrapper
+        .findAll("button.command-center-chip")
+        .find((candidate) => candidate.text() === text)!;
+
+    await typeQuery(wrapper, "conni");
+    expect(groupHeadings(wrapper)).toEqual(["artists", "authors", "narrators"]);
+    expect(rows("authors")[0]!.text()).toContain("author");
+
+    // each section reveals its own rows
+    expect(rows("authors")).toHaveLength(5);
+    await section("authors").get("button.command-center-more").trigger("click");
+    expect(rows("authors")).toHaveLength(7);
+    expect(rows("artists")).toHaveLength(1);
+
+    await chip("authors").trigger("click");
+    expect(groupHeadings(wrapper)).toEqual(["authors"]);
+    expect(wrapper.text()).not.toContain("Conni Reader");
+
+    await chip("narrators").trigger("click");
+    expect(groupHeadings(wrapper)).toEqual(["narrators"]);
+    expect(wrapper.text()).not.toContain("Conni Writer");
+
+    // the active chip goes back to all results
+    await chip("narrators").trigger("click");
+    expect(groupHeadings(wrapper)).toEqual(["artists", "authors", "narrators"]);
+
+    await chip("artists").trigger("click");
+    expect(groupHeadings(wrapper)).toEqual(["artists"]);
 
     wrapper.unmount();
   });

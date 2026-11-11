@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getItemTypeLabelKey, isAuthorOrNarrator } from "./author_narrator";
+import { isAuthorOrNarrator } from "./author_narrator";
 import {
   ArtistType,
   MediaType,
@@ -24,17 +24,5 @@ describe("isAuthorOrNarrator", () => {
     [MediaType.ALBUM, undefined, false],
   ])("%s of type %s is %s", (mediaType, artistType, expected) => {
     expect(isAuthorOrNarrator(item(mediaType, artistType))).toBe(expected);
-  });
-});
-
-describe("getItemTypeLabelKey", () => {
-  it.each([
-    [MediaType.ARTIST, ArtistType.AUTHOR, "author"],
-    [MediaType.ARTIST, ArtistType.NARRATOR, "narrator"],
-    [MediaType.ARTIST, ArtistType.SINGER, "artist"],
-    [MediaType.ARTIST, undefined, "artist"],
-    [MediaType.AUDIOBOOK, undefined, "audiobook"],
-  ])("%s of type %s reads as %s", (mediaType, artistType, expected) => {
-    expect(getItemTypeLabelKey(item(mediaType, artistType))).toBe(expected);
   });
 });
