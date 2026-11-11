@@ -13,7 +13,6 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 vi.mock("@/helpers/utils", () => ({
-  getAvatarImage: () => "",
   getMediaImageUrl: (url: string) => url,
 }));
 
@@ -73,6 +72,8 @@ const state = {
   answer_type: "timeline",
   phase: "reveal",
   name: "Music Timeline",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 12,
   answer_duration: 30,
   artist_bonus_mode: "free_text",
@@ -84,6 +85,7 @@ const state = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizTimelineHostState;
 const leaderboardRows = players.map((player, index) => ({
   ...player,

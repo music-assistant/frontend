@@ -18,18 +18,28 @@ import {
 } from "@/plugins/api/interfaces";
 import EditConfig from "@/views/settings/EditConfig.vue";
 
-const { apiMock, routerMock, storeMock } = vi.hoisted(() => ({
-  apiMock: {
-    players: {},
-    providers: {},
-  },
-  routerMock: {
-    push: vi.fn(),
-  },
-  storeMock: {
-    frameless: false,
-    mobileLayout: false,
-  },
+const { apiMock, routerMock, setUserPreference, storeMock } = vi.hoisted(
+  () => ({
+    apiMock: {
+      players: {},
+      providers: {},
+    },
+    routerMock: {
+      push: vi.fn(),
+    },
+    setUserPreference: vi.fn(async () => true),
+    storeMock: {
+      frameless: false,
+      mobileLayout: false,
+      currentUser: undefined as
+        { preferences: Record<string, unknown> } | undefined,
+    },
+  }),
+);
+
+vi.mock("@/composables/userPreferences", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/composables/userPreferences")>()),
+  setUserPreference,
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -59,6 +69,8 @@ describe("EditConfig", () => {
   beforeEach(() => {
     storeMock.frameless = false;
     storeMock.mobileLayout = false;
+    storeMock.currentUser = undefined;
+    setUserPreference.mockClear();
   });
 
   it.each([
@@ -276,7 +288,7 @@ describe("EditConfig", () => {
     expect(saveDisabled(wrapper)).toBe(true);
   });
 
-  it("leaves the form-wide controls to the settings screen around it", async () => {
+  it("leaves resetting to defaults to the settings screen around it", async () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING }),
     ]);
@@ -287,7 +299,6 @@ describe("EditConfig", () => {
     expect(wrapper.get('[data-testid="config-save"]').text()).toContain(
       "settings.save",
     );
-    expect(wrapper.text()).not.toContain("settings.show_advanced_settings");
     expect(wrapper.text()).not.toContain("settings.reset_to_defaults");
   });
 
@@ -417,6 +428,213 @@ describe("EditConfig", () => {
     expect(wrapper.find(".floating-save").exists()).toBe(false);
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(true);
   });
+
+  it.each([
+    { advanced: true, disabled: false, offered: true },
+    { advanced: false, disabled: false, offered: false },
+    { advanced: true, disabled: true, offered: false },
+  ])(
+    "offers the advanced toggle for advanced entries: $advanced, disabled: $disabled",
+    ({ advanced, disabled, offered }) => {
+      const wrapper = mountEntries(
+        [
+          entry({ key: "server", type: ConfigEntryType.STRING }),
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced }),
+        ],
+        disabled,
+      );
+
+      expect(wrapper.text()).toContain("settings.options");
+      expect(advancedToggle(wrapper).exists()).toBe(offered);
+    },
+  );
+
+  it("keeps the card with its toggle for a config holding only advanced entries", () => {
+    const wrapper = mountEntries([
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual([]);
+    expect(advancedToggle(wrapper).exists()).toBe(true);
+  });
+
+  it("offers saving an advanced-only config once its entries show", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+    const save = () => wrapper.find('[data-testid="config-save"]');
+    expect(save().exists()).toBe(false);
+
+    await wrapper.setProps({ showAdvancedSettings: true });
+    expect(save().exists()).toBe(true);
+
+    // an edit hidden again by the toggle can still be saved
+    edit(wrapper, 0, 9000);
+    await wrapper.setProps({ showAdvancedSettings: false });
+    expect(renderedKeys(wrapper)).toEqual([]);
+    expect(save().exists()).toBe(true);
+  });
+
+  it("reveals the advanced entries from its own toggle and remembers the choice", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+    expect(renderedKeys(wrapper)).toEqual(["server"]);
+
+    advancedToggle(wrapper).vm.$emit("update:showAdvancedSettings", true);
+    await nextTick();
+
+    expect(renderedKeys(wrapper)).toEqual(["server", "port"]);
+    expect(setUserPreference).toHaveBeenCalledWith(
+      "settings.showAdvancedSettings",
+      true,
+    );
+  });
+
+  it("shows the advanced entries the user chose to see before", () => {
+    storeMock.currentUser = {
+      preferences: { "settings.showAdvancedSettings": true },
+    };
+
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["server", "port"]);
+    expect(advancedToggle(wrapper).props("showAdvancedSettings")).toBe(true);
+  });
+
+  it("keeps the choice made here when the profile keeps the old one", async () => {
+    // the profile could not be updated, so it still says to hide them
+    setUserPreference.mockResolvedValueOnce(false);
+    const wrapper = mountEntries([
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+
+    advancedToggle(wrapper).vm.$emit("update:showAdvancedSettings", true);
+    await flushPromises();
+
+    expect(renderedKeys(wrapper)).toEqual(["port"]);
+  });
+
+  it("lets the host decide over the user's choice", () => {
+    storeMock.currentUser = {
+      preferences: { "settings.showAdvancedSettings": true },
+    };
+
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "server", type: ConfigEntryType.STRING }),
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        showAdvancedSettings: false,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(renderedKeys(wrapper)).toEqual(["server"]);
+  });
+
+  it("offers no toggle when the host decides what shows", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        showAdvancedSettings: true,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(advancedToggle(wrapper).exists()).toBe(false);
+    expect(renderedKeys(wrapper)).toEqual(["port"]);
+  });
+
+  it("leaves out its header when the host asks", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        hideHeader: true,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(wrapper.text()).not.toContain("settings.options");
+    expect(advancedToggle(wrapper).exists()).toBe(false);
+  });
+
+  it("leaves out the card when the host hides the header and every entry is advanced", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        hideHeader: true,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(wrapper.findComponent({ name: "Card" }).exists()).toBe(false);
+  });
+
+  it("offers no save action on a form holding only actions", () => {
+    const wrapper = mountEntries([
+      entry({ key: "clear_cache", type: ConfigEntryType.ACTION }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["clear_cache"]);
+    expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
+    // nothing floats, so no room is kept for it either
+    expect(wrapper.get("v-form-stub").classes()).not.toContain(
+      "floating-save-clearance",
+    );
+  });
+
+  it("leaves out the card and its save action for a config with nothing to show", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING, hidden: true }),
+    ]);
+
+    expect(wrapper.findComponent({ name: "Card" }).exists()).toBe(false);
+    expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
+  });
+
+  it("leaves room below the last row for the floating save action", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+    ]);
+
+    expect(wrapper.get("v-form-stub").classes()).toContain(
+      "floating-save-clearance",
+    );
+  });
+
+  it.each([
+    ["disabled", true, false],
+    ["inline save", false, true],
+  ] as const)(
+    "leaves no room for a save action that does not float (%s)",
+    (_, disabled, inlineSave) => {
+      const wrapper = mountEntries(
+        [entry({ key: "server", type: ConfigEntryType.STRING })],
+        disabled,
+        inlineSave,
+      );
+
+      expect(wrapper.get("v-form-stub").classes()).not.toContain(
+        "floating-save-clearance",
+      );
+    },
+  );
 });
 
 describe("EditConfig unsaved changes", () => {
@@ -595,6 +813,10 @@ function mountEntries(
     props: { configEntries, disabled, inlineSave },
     global: { renderStubDefaultSlot: true },
   });
+}
+
+function advancedToggle(wrapper: VueWrapper) {
+  return wrapper.findComponent({ name: "AdvancedSettingsToggle" });
 }
 
 function renderedKeys(wrapper: VueWrapper) {

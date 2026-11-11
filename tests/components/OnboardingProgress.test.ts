@@ -21,7 +21,7 @@ function stepButtons(wrapper: ReturnType<typeof mountProgress>) {
 }
 
 describe("OnboardingProgress", () => {
-  it("makes only completed steps behind the current one clickable", () => {
+  it("makes only the steps behind the current one clickable", () => {
     // on "players": the two completed steps before it are the way back, it and
     // the one ahead are not
     const buttons = stepButtons(mountProgress(2));
@@ -33,18 +33,12 @@ describe("OnboardingProgress", () => {
     expect(buttons[3].attributes("disabled")).toBeDefined();
   });
 
-  it("does not offer a step still to do as a jump target", () => {
-    // on "plugins" (index 3): the players step behind it was never completed,
-    // so it is reached with Back, not clicked
+  it("jumps back to a step behind the current one that is still to do", async () => {
     const wrapper = mountProgress(3);
-    const buttons = stepButtons(wrapper);
 
-    expect(buttons[0].attributes("disabled")).toBeUndefined();
-    expect(buttons[1].attributes("disabled")).toBeUndefined();
-    expect(buttons[2].attributes("disabled")).toBeDefined();
+    await stepButtons(wrapper)[2].trigger("click");
 
-    void buttons[2].trigger("click");
-    expect(wrapper.emitted("navigate")).toBeUndefined();
+    expect(wrapper.emitted("navigate")).toEqual([["players"]]);
   });
 
   it("marks the current step for a screen reader", () => {

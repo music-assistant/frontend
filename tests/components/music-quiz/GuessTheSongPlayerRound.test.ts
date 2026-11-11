@@ -158,6 +158,8 @@ function createState(
     answer_type: "multiple_choice",
     phase,
     name: "Quiz",
+    include_similar_music: false,
+    auto_start_at: null,
     round_count: 1,
     suggestion_count: 2,
     answer_duration: 30,

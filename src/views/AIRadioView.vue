@@ -218,11 +218,11 @@ const {
   shows,
   loadingShows,
   loadingSections,
-  loadingStatus,
   loadingPlaylists,
+  loadingDjStatus,
   loadShows,
   loadSections,
-  loadStatus,
+  refreshDjStatus,
   loadPlaylists,
   noAiProviderAlert,
   dismissNoAiProviderAlert,
@@ -248,8 +248,8 @@ const isRefreshing = computed(
     loadingHosts.value ||
     loadingShows.value ||
     loadingSections.value ||
-    loadingStatus.value ||
-    loadingPlaylists.value,
+    loadingPlaylists.value ||
+    loadingDjStatus.value,
 );
 const showEmptyState = computed(
   () => !loadingShows.value && shows.value.length === 0,
@@ -343,7 +343,7 @@ async function handleRefresh() {
       ...(canEdit.value ? [loadHosts()] : []),
       loadShows(),
       loadSections(),
-      loadStatus(),
+      refreshDjStatus(),
       loadPlaylists(),
     ]);
   } catch (error) {
@@ -361,7 +361,7 @@ onMounted(async () => {
       ...(canEdit.value ? [loadHosts()] : []),
       loadShows(),
       loadSections(),
-      loadStatus(),
+      refreshDjStatus(),
       loadPlaylists(),
     ]);
   } catch (error) {

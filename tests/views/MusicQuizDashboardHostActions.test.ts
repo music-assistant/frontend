@@ -4,6 +4,7 @@ import type {
   MusicQuizSupportedHostState,
   MusicQuizTriviaHostState,
 } from "@/composables/music-quiz/useMusicQuiz";
+import { webPlayer } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick, ref, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -95,6 +96,8 @@ const HOST_STATE = {
   answer_type: "multiple_choice",
   phase: "finished",
   name: "Quiz",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   suggestion_count: 4,
   answer_duration: 30,
@@ -105,6 +108,7 @@ const HOST_STATE = {
   join_url: "http://join",
   rounds: [],
   current_round: null,
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizSupportedHostState;
 const TRIVIA_HOST_STATE = {
   ...HOST_STATE,
@@ -148,7 +152,6 @@ describe("MusicQuizDashboardView host actions", () => {
       loading: ref(false),
       playbackOptions: ref(null),
       playbackOptionsLoading: ref(false),
-      playbackOptionsLegacy: ref(false),
       playbackOptionsError: ref(false),
       next: vi.fn(),
       replay: mockReplay,
@@ -212,6 +215,33 @@ describe("MusicQuizDashboardView host actions", () => {
     await wrapper.get('[data-testid="start-now"]').trigger("click");
 
     expect(mockStart).toHaveBeenCalledOnce();
+  });
+
+  it("unlocks the audio of this browser when it starts a game played here", async () => {
+    const primeAudio = vi.spyOn(webPlayer, "primeAudio").mockReturnValue(true);
+    webPlayer.player_id = "laptop";
+    state.value = {
+      ...HOST_STATE,
+      phase: "lobby",
+      playback: {
+        mode: "venue",
+        venue_player_id: "laptop",
+        venue_player_name: "Laptop",
+      },
+    };
+    try {
+      const wrapper = mountDashboard();
+
+      await wrapper.get('[data-testid="start-now"]').trigger("click");
+
+      expect(primeAudio).toHaveBeenCalledOnce();
+      expect(primeAudio.mock.invocationCallOrder[0]).toBeLessThan(
+        mockStart.mock.invocationCallOrder[0],
+      );
+    } finally {
+      primeAudio.mockRestore();
+      webPlayer.player_id = null;
+    }
   });
 
   it("shows preparation progress while the game starts", async () => {
@@ -376,18 +406,6 @@ describe("MusicQuizDashboardView host actions", () => {
         .get('[data-testid="session-header"]')
         .attributes("data-listen-in-enabled"),
     ).toBe("true");
-
-    state.value = {
-      ...TRIVIA_HOST_STATE,
-      play_reveal_audio: undefined,
-    };
-    await nextTick();
-
-    expect(
-      wrapper
-        .get('[data-testid="session-header"]')
-        .attributes("data-listen-in-enabled"),
-    ).toBe("false");
   });
 
   it("returns to the compact empty state when the host state is cleared", async () => {

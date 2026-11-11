@@ -32,6 +32,8 @@ const playerState = {
   answer_type: "multiple_choice",
   phase: "answering",
   name: "Quiz",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   suggestion_count: 2,
   answer_duration: 30,
@@ -162,6 +164,11 @@ describe("multiple-choice adapters", () => {
       sources: [],
       join_url: "https://example.test/join",
       rounds: [currentRound],
+      playback: {
+        mode: "venue",
+        venue_player_id: null,
+        venue_player_name: null,
+      },
     } satisfies MusicQuizGuessTheSongHostState;
 
     const wrappers = [

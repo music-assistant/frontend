@@ -99,37 +99,6 @@ export const itemSupportsPlayLog = function (
 };
 
 /**
- * Check if the connected server meets a minimum version requirement.
- * Returns true if server version >= the required version, or if the server
- * reports version 0.0.0 (development builds).
- */
-export function requireServerVersion(minVersion: string): boolean {
-  const serverVersion = api.serverInfo.value?.server_version;
-  if (!serverVersion) return false;
-
-  const parseVersion = (v: string): number[] => {
-    // Strip any suffix like "beta1", "b2", "dev", etc.
-    return v
-      .replace(/[-].*/g, "")
-      .split(".")
-      .map((n) => parseInt(n, 10) || 0);
-  };
-
-  const server = parseVersion(serverVersion);
-  // Development builds (0.0.0) always pass
-  if (server[0] === 0 && server[1] === 0 && server[2] === 0) return true;
-
-  const required = parseVersion(minVersion);
-  for (let i = 0; i < Math.max(server.length, required.length); i++) {
-    const s = server[i] || 0;
-    const r = required[i] || 0;
-    if (s > r) return true;
-    if (s < r) return false;
-  }
-  return true; // equal
-}
-
-/**
  * Whether the item is a member of the user's library.
  *
  * Membership is derived from the per-provider-mapping in_library flag, NOT from
@@ -324,6 +293,12 @@ export const getCollectionMediaTypeFromItemId = function (itemId: string) {
     ? (itemIdType as MediaType)
     : MediaType.UNKNOWN;
 };
+
+/** Whether a provider instance can store a new order for its playlists. */
+export const providerSupportsPlaylistMove = (providerInstance: string) =>
+  !!api.providers[providerInstance]?.supported_features.includes(
+    ProviderFeature.PLAYLIST_TRACKS_MOVE,
+  );
 
 /**
  * Providers that a static library playlist can be migrated to: the builtin

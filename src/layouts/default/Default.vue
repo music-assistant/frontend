@@ -6,12 +6,14 @@
     <Footer v-if="!store.frameless" />
   </v-app>
   <reload-prompt />
+  <SetupPausedBanner v-if="!store.frameless" />
 </template>
 
 <script lang="ts" setup>
 import MainView from "./View.vue";
 import Footer from "./Footer.vue";
 import ReloadPrompt from "./ReloadPrompt.vue";
+import SetupPausedBanner from "@/components/onboarding/SetupPausedBanner.vue";
 import { usePlayPauseShortcut } from "@/composables/usePlayPauseShortcut";
 import { store } from "@/plugins/store";
 import { watch } from "vue";

@@ -23,7 +23,11 @@
 import ChoiceCards, {
   type ChoiceCardOption,
 } from "@/components/onboarding/ChoiceCards.vue";
-import type { OnboardingIntent, OnboardingStepId } from "@/helpers/onboarding";
+import type {
+  OnboardingIntent,
+  OnboardingStepId,
+  StepLeaveOptions,
+} from "@/helpers/onboarding";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { Library, Smartphone } from "@lucide/vue";
 import { computed, markRaw, ref } from "vue";
@@ -102,9 +106,12 @@ const select = async function (value: OnboardingIntent) {
  * pick the account did not take before. An answer that did not land keeps the
  * wizard here, so the question is never left behind unanswered.
  */
-const beforeLeave = async function (): Promise<boolean> {
+const beforeLeave = async function (
+  options?: StepLeaveOptions,
+): Promise<boolean> {
   if (pendingSave) return await pendingSave;
-  if (shown.value === intent.value) return true;
+  // pausing is not walking past the question, so it answers nothing
+  if (options?.pausing || shown.value === intent.value) return true;
   pendingSave = save(shown.value);
   return await pendingSave;
 };

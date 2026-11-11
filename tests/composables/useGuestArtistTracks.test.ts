@@ -48,7 +48,13 @@ describe("useGuestArtistTracks", () => {
 
     expect(loadingArtistTracks.value).toBe(false);
     expect(selectedArtist.value).toStrictEqual(libraryArtist);
-    expect(mockGetArtistTracks).toHaveBeenCalledWith("artist-id", "library");
+    expect(mockGetArtistTracks).toHaveBeenCalledWith(
+      "artist-id",
+      "library",
+      undefined,
+      undefined,
+      0,
+    );
     expect(artistTracks.value).toEqual(tracks);
   });
 

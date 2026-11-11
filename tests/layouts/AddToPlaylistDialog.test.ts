@@ -8,6 +8,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../fixtures/playlist";
+import { providerMapping } from "../fixtures/providerMapping";
 import { track } from "../fixtures/track";
 
 const { apiMock, storeMock } = vi.hoisted(() => ({
@@ -107,6 +108,46 @@ describe("AddToPlaylistDialog creating a playlist", () => {
   });
 });
 
+describe("AddToPlaylistDialog search", () => {
+  beforeEach(() => {
+    apiMock.getLibraryPlaylists.mockResolvedValue([
+      targetPlaylist("1", "Road trip", "Alice"),
+      targetPlaylist("2", "Workout", "Bob"),
+      targetPlaylist("3", "Chill", "alice"),
+    ]);
+  });
+
+  it("narrows the list by playlist name or owner", async () => {
+    const wrapper = await openSheet();
+
+    await searchInput(wrapper).setValue("alice");
+    expect(rowTitles(wrapper)).toEqual(["Road trip", "Chill", "new_playlist"]);
+
+    await searchInput(wrapper).setValue("WORK");
+    expect(rowTitles(wrapper)).toEqual(["Workout", "new_playlist"]);
+  });
+
+  it("says so when nothing matches but still offers a new playlist", async () => {
+    const wrapper = await openSheet();
+
+    await searchInput(wrapper).setValue("jazz");
+
+    expect(rowTitles(wrapper)).toEqual(["new_playlist"]);
+    expect(wrapper.text()).toContain("no_content_filter");
+  });
+
+  it("starts with an empty search each time it opens", async () => {
+    const wrapper = await openSheet();
+    await searchInput(wrapper).setValue("work");
+
+    eventbus.emit("playlistdialog", { items: [track({ item_id: "1" })] });
+    await flushPromises();
+
+    expect((searchInput(wrapper).element as HTMLInputElement).value).toBe("");
+    expect(rowTitles(wrapper)).toHaveLength(4);
+  });
+});
+
 const passthroughStub = { template: "<div><slot /></div>" };
 // the real dialog and sheet only mount their content while they are open, so
 // the stubs do too
@@ -134,6 +175,12 @@ async function openSheet() {
             '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
         },
         ScrollArea: passthroughStub,
+        SearchInput: {
+          props: ["modelValue"],
+          emits: ["update:modelValue"],
+          template:
+            '<input class="search-input" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+        },
         Separator: true,
         Sheet: openOnlyStub("playlist-sheet"),
         SheetContent: passthroughStub,
@@ -152,4 +199,29 @@ function createButton(wrapper: Awaited<ReturnType<typeof openSheet>>) {
   return wrapper
     .findAll(".name-dialog button")
     .find((button) => button.text() === "create");
+}
+
+function targetPlaylist(item_id: string, name: string, owner: string) {
+  return playlist({
+    item_id,
+    name,
+    owner,
+    is_editable: true,
+    provider_mappings: [
+      providerMapping({
+        provider_domain: "builtin",
+        provider_instance: "builtin--1",
+      }),
+    ],
+  });
+}
+
+function searchInput(wrapper: Awaited<ReturnType<typeof openSheet>>) {
+  return wrapper.get(".playlist-sheet .search-input");
+}
+
+function rowTitles(wrapper: Awaited<ReturnType<typeof openSheet>>) {
+  return wrapper
+    .findAll(".playlist-list button .font-medium")
+    .map((title) => title.text());
 }

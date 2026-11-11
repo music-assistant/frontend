@@ -394,6 +394,8 @@ describe("useMusicQuiz commands", () => {
       answer_type: "multiple_choice",
       phase: "lobby",
       name: "Quiz",
+      include_similar_music: false,
+      auto_start_at: null,
       round_count: 5,
       suggestion_count: 4,
       answer_duration: 30,
@@ -405,18 +407,24 @@ describe("useMusicQuiz commands", () => {
       answer_type: "multiple_choice",
       phase: "lobby",
       name: "Future Quiz",
+      include_similar_music: false,
+      auto_start_at: null,
     } satisfies MusicQuizPublicState;
     const unsupportedAnswer = {
       quiz_type: "guess_the_song",
       answer_type: unsupportedAnswerType("future_answer"),
       phase: "lobby",
       name: "Future Quiz",
+      include_similar_music: false,
+      auto_start_at: null,
     } satisfies MusicQuizPublicState;
     const musicTimeline = {
       quiz_type: "music_timeline",
       answer_type: "timeline",
       phase: "lobby",
       name: null,
+      include_similar_music: false,
+      auto_start_at: null,
       round_count: 5,
       answer_duration: 30,
       artist_bonus_mode: "off",
@@ -429,8 +437,11 @@ describe("useMusicQuiz commands", () => {
       quiz_type: "trivia",
       answer_type: "multiple_choice",
       language: "pt-BR",
+      play_reveal_audio: true,
       phase: "lobby",
       name: "Trivia",
+      include_similar_music: false,
+      auto_start_at: null,
       round_count: 5,
       suggestion_count: 4,
       answer_duration: 30,
@@ -443,6 +454,8 @@ describe("useMusicQuiz commands", () => {
       answer_type: "timeline",
       phase: "lobby",
       name: "Mismatched Quiz",
+      include_similar_music: false,
+      auto_start_at: null,
     } satisfies MusicQuizPublicState;
 
     expect(isSupportedMusicQuiz(known)).toBe(true);
@@ -454,7 +467,7 @@ describe("useMusicQuiz commands", () => {
     expect(isSupportedMusicQuiz(mismatched)).toBe(false);
   });
 
-  it("types Trivia reveal audio in state and info while allowing legacy payloads", () => {
+  it("types Trivia reveal audio in state and info", () => {
     const state = {
       quiz_type: "trivia",
       answer_type: "multiple_choice",
@@ -462,19 +475,8 @@ describe("useMusicQuiz commands", () => {
       play_reveal_audio: true,
       phase: "lobby",
       name: "Trivia",
-      round_count: 5,
-      suggestion_count: 4,
-      answer_duration: 30,
-      mode: "venue",
-      players: [],
-      current_round: null,
-    } satisfies MusicQuizPublicState;
-    const legacyState = {
-      quiz_type: "trivia",
-      answer_type: "multiple_choice",
-      language: "en",
-      phase: "lobby",
-      name: "Trivia",
+      include_similar_music: false,
+      auto_start_at: null,
       round_count: 5,
       suggestion_count: 4,
       answer_duration: 30,
@@ -489,34 +491,24 @@ describe("useMusicQuiz commands", () => {
       play_reveal_audio: false,
       phase: "lobby",
       name: "Trivia",
+      include_similar_music: false,
+      auto_start_at: null,
       player_count: 2,
       round_count: 5,
       mode: "venue",
     } satisfies MusicQuizTriviaInfo;
-    const legacyInfo = {
-      quiz_type: "trivia",
-      answer_type: "multiple_choice",
-      language: "en",
-      phase: "lobby",
-      name: "Trivia",
-      player_count: 2,
-      round_count: 5,
-      mode: "venue",
-    } satisfies MusicQuizTriviaInfo;
-
     expect(state.play_reveal_audio).toBe(true);
-    expect("play_reveal_audio" in legacyState).toBe(false);
     expect(info.play_reveal_audio).toBe(false);
-    expect("play_reveal_audio" in legacyInfo).toBe(false);
   });
 
-  it("types similar music across server state while allowing legacy payloads", () => {
+  it("types similar music across server state and info", () => {
     const publicState = {
       quiz_type: "guess_the_song",
       answer_type: "multiple_choice",
       phase: "lobby",
       name: "Quiz",
       include_similar_music: true,
+      auto_start_at: null,
       round_count: 5,
       suggestion_count: 4,
       answer_duration: 30,
@@ -551,15 +543,7 @@ describe("useMusicQuiz commands", () => {
       phase: "lobby",
       name: "Quiz",
       include_similar_music: false,
-      player_count: 1,
-      round_count: 5,
-      mode: "venue",
-    } satisfies MusicQuizInfo;
-    const legacyInfo = {
-      quiz_type: "guess_the_song",
-      answer_type: "multiple_choice",
-      phase: "lobby",
-      name: "Quiz",
+      auto_start_at: null,
       player_count: 1,
       round_count: 5,
       mode: "venue",
@@ -570,7 +554,6 @@ describe("useMusicQuiz commands", () => {
     expect(hostState.include_similar_music).toBe(true);
     expect(hostState.playback.venue_player_name).toBe("Living Room");
     expect(info.include_similar_music).toBe(false);
-    expect("include_similar_music" in legacyInfo).toBe(false);
   });
 
   it("preserves nullable server fields in supported state", () => {
@@ -579,6 +562,7 @@ describe("useMusicQuiz commands", () => {
       answer_type: "multiple_choice",
       phase: "reveal",
       name: null,
+      include_similar_music: false,
       auto_start_at: null,
       round_count: 1,
       suggestion_count: 2,
@@ -610,6 +594,8 @@ describe("useMusicQuiz commands", () => {
       answer_type: "timeline",
       phase: "answering",
       name: null,
+      include_similar_music: false,
+      auto_start_at: null,
       round_count: 1,
       answer_duration: 30,
       artist_bonus_mode: "off",
@@ -639,6 +625,8 @@ describe("useMusicQuiz commands", () => {
         answer_type: "multiple_choice",
         phase: "lobby",
         name: "Future Quiz",
+        include_similar_music: false,
+        auto_start_at: null,
       },
     } satisfies MusicQuizProviderEvent;
 

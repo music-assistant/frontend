@@ -5,7 +5,7 @@ import { BrowserMediaControlsMode } from "@/helpers/device_settings";
 import { ConfigEntryType } from "@/plugins/api/interfaces";
 
 const { apiMock, routerMock, storeMock, setPreference } = vi.hoisted(() => ({
-  apiMock: { players: {}, providers: {} },
+  apiMock: { players: {}, providers: {}, serverInfo: { value: undefined } },
   routerMock: { push: vi.fn(() => Promise.resolve()) },
   storeMock: {
     isIngressSession: false,
@@ -158,5 +158,15 @@ describe("FrontendConfig save", () => {
       BrowserMediaControlsMode.WEB_PLAYER,
       BrowserMediaControlsMode.DISABLED,
     ]);
+  });
+
+  it("links the user interface documentation", async () => {
+    const wrapper = await mountPage();
+
+    expect(
+      wrapper
+        .findComponent({ name: "SettingsHeaderCard" })
+        .props("documentationUrl"),
+    ).toBe("https://music-assistant.io/settings/user-interface/");
   });
 });

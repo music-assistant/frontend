@@ -121,12 +121,18 @@
                 ></span>
                 {{ providerStatusLabel }}
               </Badge>
+              <CommunityProviderMarker
+                v-if="isCommunityProvider(providerManifest)"
+                variant="icon"
+              />
             </div>
             <CardDescription class="mt-2 max-w-3xl leading-relaxed">
               {{ providerManifest.description }}
             </CardDescription>
+            <!-- eslint-disable vue/no-v-html -- markdownToHtml sanitizes with DOMPurify -->
             <div
-              v-if="providerManifest.codeowners.length"
+              v-if="showCodeowners"
+              data-testid="provider-codeowners"
               class="mt-3 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
               v-html="
                 markdownToHtml(getAuthorsMarkdown(providerManifest.codeowners))
@@ -134,11 +140,13 @@
             ></div>
             <div
               v-if="providerManifest.credits.length"
-              class="mt-1 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
+              class="text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
+              :class="showCodeowners ? 'mt-1' : 'mt-3'"
               v-html="
                 markdownToHtml(getCreditsMarkdown(providerManifest.credits))
               "
             ></div>
+            <!-- eslint-enable vue/no-v-html -->
           </div>
           <Button
             data-testid="provider-menu"
@@ -186,11 +194,17 @@
             <CircleAlert class="size-4" />
             {{ $t("settings.known_issues") }}
           </Button>
-          <AdvancedSettingsToggle
-            v-if="config.enabled && hasAdvancedEntries(allConfigEntries)"
-            v-model:show-advanced-settings="showAdvancedSettings"
-            test-id="provider-advanced-settings"
-          />
+          <Button
+            as="a"
+            data-testid="provider-get-help"
+            variant="outline"
+            :href="helpUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <LifeBuoy class="size-4" />
+            {{ $t("settings.provider_get_help") }}
+          </Button>
         </CardContent>
       </Card>
 
@@ -210,7 +224,6 @@
     <edit-config
       v-if="config"
       ref="editConfig"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :config-entries="allConfigEntries"
       :disabled="!config.enabled"
       :provider-domain="config.domain"
@@ -286,6 +299,7 @@
 import MarkdownText from "@/components/MarkdownText.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
+import CommunityProviderMarker from "@/components/settings/providers/CommunityProviderMarker.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
 import ProviderSettingsLinks from "@/components/settings/providers/ProviderSettingsLinks.vue";
 import { Badge } from "@/components/ui/badge";
@@ -300,13 +314,12 @@ import { useProviderAccess } from "@/composables/settings/providers/useProviderA
 import { useConfigAction } from "@/composables/useConfigAction";
 import { useEditedProviderName } from "@/composables/useEditedProviderName";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
+import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import {
-  hasAdvancedEntries,
-  mergeConfigEntries,
-} from "@/helpers/config_entry_ui";
-import {
+  getProviderHelpUrl,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  isCommunityProvider,
   providerDisplayName,
 } from "@/helpers/provider_config";
 import {
@@ -331,6 +344,7 @@ import { eventbus } from "@/plugins/eventbus";
 import {
   BookOpen,
   CircleAlert,
+  LifeBuoy,
   MoreVertical,
   Pencil,
   RotateCw,
@@ -343,7 +357,6 @@ import { computed, markRaw, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
-import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 import AmbientSoundsCustomSounds from "./AmbientSoundsCustomSounds.vue";
 import EditConfig from "./EditConfig.vue";
 
@@ -353,7 +366,6 @@ const { t } = useI18n();
 const config = ref<ProviderConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
-const showAdvancedSettings = ref(false);
 const toggleLoading = ref(false);
 const showRenameDialog = ref(false);
 const renameLoading = ref(false);
@@ -425,6 +437,17 @@ const providerStatusClass = computed(() =>
 
 const knownIssuesUrl = computed(() =>
   getProviderSupportIssuesUrl(config.value?.domain ?? ""),
+);
+
+const helpUrl = computed(() =>
+  providerManifest.value ? getProviderHelpUrl(providerManifest.value) : "",
+);
+
+// a core provider is the project's own, so only a community provider names its maintainers
+const showCodeowners = computed(
+  () =>
+    isCommunityProvider(providerManifest.value) &&
+    !!providerManifest.value?.codeowners.length,
 );
 
 const documentationUrl = computed(() => {
@@ -604,8 +627,14 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   loading.value = true;
   lastSubmitValues.value = values;
   values["enabled"] = config.value!.enabled;
+  // the save error dialog shows the server's reason, so skip the global toast
   api
-    .saveProviderConfig(config.value!.domain, values, config.value!.instance_id)
+    .saveProviderConfig(
+      config.value!.domain,
+      values,
+      config.value!.instance_id,
+      { suppressGlobalError: true },
+    )
     .then(() => {
       toast.success(t("settings.provider_saved"));
       router.push({
@@ -693,9 +722,9 @@ const saveRename = async function () {
     // was typed
     renamedConfig.name = savedConfig.name;
     toast.success(t("settings.provider_saved"));
-  } catch (err) {
+  } catch {
+    // the api reports the failure itself
     renamedConfig.name = previousName;
-    toast.error(String(err));
   } finally {
     renameLoading.value = false;
     showRenameDialog.value = false;

@@ -7,13 +7,11 @@ import type {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // `getProvider` decides whether an image is considered fetchable: an
-// unloaded/disabled provider is absent from the map entirely. `schema_version`
-// picks the imageproxy dialect, 31 and up serve the opaque id form only.
+// unloaded/disabled provider is absent from the map entirely.
 vi.mock("@/plugins/api", () => ({
   api: {
     baseUrl: "http://server",
     providers: {},
-    serverInfo: { value: { schema_version: 31 } },
     getProvider: (id: string) =>
       id === "filesystem--loaded" ? { available: true } : undefined,
   },
@@ -61,7 +59,7 @@ describe("getMediaItemImage", () => {
 
   it("applies the same rule to the single image on a summary item", () => {
     // summary/playlog items carry one image only, so a discarded image leaves
-    // no second candidate and the item falls back to a generated avatar
+    // no second candidate and the item falls back to its media type icon
     const img = image("theaudiodb", true, "https://r2.theaudiodb.com/a.jpg");
     const summaryItem = { name: "Berserker", image: img } as MediaItemType;
     expect(getMediaItemImage(summaryItem)).toEqual(img);

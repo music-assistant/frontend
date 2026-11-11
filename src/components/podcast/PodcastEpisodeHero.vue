@@ -10,7 +10,7 @@
   >
     <template v-if="item" #main>
       <div class="podcast-episode-hero__main">
-        <div class="podcast-episode-hero__cover">
+        <div class="podcast-episode-hero__cover detail-hero-cover">
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
 
@@ -54,11 +54,7 @@
           </div>
 
           <div class="podcast-episode-hero__actions">
-            <DetailHeroPlayButton
-              class="podcast-episode-hero__play"
-              :item="item"
-              :parent-item="parentPodcast"
-            />
+            <DetailHeroPlayButton :item="item" :parent-item="parentPodcast" />
             <template v-if="showSteppers">
               <DetailHeroButton
                 :icon="ChevronLeft"
@@ -127,7 +123,10 @@ import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import { podcastEpisodeNumber } from "@/components/podcast/podcastEpisodeData";
+import {
+  episodeReleaseDate,
+  podcastEpisodeNumber,
+} from "@/components/podcast/podcastEpisodeData";
 import { formatDuration } from "@/helpers/utils";
 import type { Podcast, PodcastEpisode } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
@@ -174,13 +173,9 @@ const isPhone = computed(() => isPhoneSizedScreen());
 const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
 // empty when the episode has no (valid) publish date
-const releaseDate = computed(() => {
-  const value = props.item?.metadata?.release_date;
-  const released = value ? new Date(value) : undefined;
-  return released && !isNaN(released.getTime())
-    ? released.toLocaleDateString(undefined, { dateStyle: "medium" })
-    : "";
-});
+const releaseDate = computed(() =>
+  props.item ? episodeReleaseDate(props.item) : "",
+);
 
 const episodeNumber = computed(() =>
   props.item ? podcastEpisodeNumber(props.item) : undefined,
@@ -226,7 +221,7 @@ const gotoPodcast = function () {
   font-size: 44px;
   font-weight: 500;
   letter-spacing: -1.1px;
-  line-height: 1.05;
+  line-height: 1.2;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -323,16 +318,12 @@ const gotoPodcast = function () {
   .podcast-episode-hero__name {
     font-size: 30px;
     letter-spacing: -0.7px;
-    line-height: 1.1;
   }
   .podcast-episode-hero__meta {
     font-size: 14px;
   }
   .podcast-episode-hero__actions {
     gap: 10px;
-  }
-  .podcast-episode-hero__actions .podcast-episode-hero__play {
-    flex: 1;
   }
   .podcast-episode-hero__badge {
     width: 44px;

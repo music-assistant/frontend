@@ -22,14 +22,10 @@ const ALL_SECTIONS = [
   "about",
 ];
 
-function sectionNames(
-  scopes: readonly Scope[],
-  serverVersionAtLeast: (version: string) => boolean = () => true,
-): string[] {
-  return availableSettingsSections(
-    scopeChecker(scopes),
-    serverVersionAtLeast,
-  ).map((section) => section.name);
+function sectionNames(scopes: readonly Scope[]): string[] {
+  return availableSettingsSections(scopeChecker(scopes)).map(
+    (section) => section.name,
+  );
 }
 
 describe("availableSettingsSections", () => {
@@ -73,11 +69,5 @@ describe("availableSettingsSections", () => {
     expect(
       sectionNames([...BUILTIN_ROLE_SCOPES.guest, Scope.USERS_READ]),
     ).toContain("users");
-  });
-
-  it("leaves out a section the server is too old for", () => {
-    expect(
-      sectionNames(BUILTIN_ROLE_SCOPES.admin, (version) => version !== "2.9.0"),
-    ).not.toContain("audio_analysis_providers");
   });
 });

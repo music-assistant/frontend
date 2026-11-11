@@ -205,6 +205,66 @@ export enum MediaType {
   UNKNOWN = "unknown",
 }
 
+export enum ListingType {
+  LIBRARY_ARTISTS = "library_artists",
+  LIBRARY_ALBUMS = "library_albums",
+  LIBRARY_TRACKS = "library_tracks",
+  LIBRARY_PLAYLISTS = "library_playlists",
+  LIBRARY_RADIOS = "library_radios",
+  LIBRARY_AUDIOBOOKS = "library_audiobooks",
+  LIBRARY_PODCASTS = "library_podcasts",
+  LIBRARY_GENRES = "library_genres",
+  ALBUM_TRACKS = "album_tracks",
+  ARTIST_ALBUMS = "artist_albums",
+  ARTIST_TRACKS = "artist_tracks",
+  ARTIST_APPEARS_ON = "artist_appears_on",
+  ARTIST_DISCOGRAPHY = "artist_discography",
+  ARTIST_TOP_TRACKS = "artist_top_tracks",
+  ARTIST_TOP_ALBUMS = "artist_top_albums",
+  ARTIST_AUDIOBOOKS = "artist_audiobooks",
+  SIMILAR_ARTISTS = "similar_artists",
+  SIMILAR_TRACKS = "similar_tracks",
+  TRACK_ALBUMS = "track_albums",
+  VERSIONS = "versions",
+  PLAYLIST_TRACKS = "playlist_tracks",
+  PODCAST_EPISODES = "podcast_episodes",
+  GENRE_TRACKS = "genre_tracks",
+  GENRE_ALBUMS = "genre_albums",
+  BROWSE = "browse",
+}
+
+export enum SortField {
+  NAME = "name",
+  SORT_NAME = "sort_name",
+  TIMESTAMP_ADDED = "timestamp_added",
+  TIMESTAMP_MODIFIED = "timestamp_modified",
+  LAST_PLAYED = "last_played",
+  PLAY_COUNT = "play_count",
+  DURATION = "duration",
+  YEAR = "year",
+  POSITION = "position",
+  ARTIST_NAME = "artist_name",
+  RANDOM = "random",
+  RANDOM_PLAY_COUNT = "random_play_count",
+  TRACK_NUMBER = "track_number",
+  ALBUM_NAME = "album_name",
+  PROVIDER = "provider",
+  FAVORITE_TIMESTAMP = "favorite_timestamp",
+  ORIGINAL = "original",
+}
+
+export enum SortDirection {
+  ASC = "asc",
+  DESC = "desc",
+}
+
+export interface SortOptionInfo {
+  field: SortField;
+  supports_direction: boolean;
+  default_direction: SortDirection | null;
+  label_key: string | null;
+}
+
 export enum LinkType {
   WEBSITE = "website",
   FACEBOOK = "facebook",
@@ -363,6 +423,12 @@ export enum PlaybackState {
   PLAYING = "playing",
 }
 
+export enum SleepTimerMode {
+  DURATION = "duration",
+  END_OF_ITEM = "end_of_item",
+  END_OF_CHAPTER = "end_of_chapter",
+}
+
 export enum PlayerType {
   PLAYER = "player", // A regular player.
   STEREO_PAIR = "stereo_pair",
@@ -429,6 +495,8 @@ export enum EventType {
   PLAYLOG_UPDATED = "playlog_updated",
   // a user's like, dislike or unset on an item changed; object_id is the item uri
   FAVORITE_UPDATED = "favorite_updated",
+  // a user's bookmarks of one copy changed; object_id is the copy's uri, data the user id
+  BOOKMARKS_UPDATED = "bookmarks_updated",
   PROVIDERS_UPDATED = "providers_updated",
   TASKS_UPDATED = "tasks_updated",
   MUSIC_SYNC_COMPLETED = "music_sync_completed",
@@ -475,6 +543,11 @@ export enum ProviderFeature {
   ARTIST_TOPALBUMS = "artist_topalbums",
   AUTHOR_AUDIOBOOKS = "author_audiobooks",
   NARRATOR_AUDIOBOOKS = "narrator_audiobooks",
+  // bookmarks of the user per mediatype: read, and add/rename/remove
+  AUDIOBOOK_BOOKMARKS = "audiobook_bookmarks",
+  AUDIOBOOK_BOOKMARKS_EDIT = "audiobook_bookmarks_edit",
+  PODCAST_EPISODE_BOOKMARKS = "podcast_episode_bookmarks",
+  PODCAST_EPISODE_BOOKMARKS_EDIT = "podcast_episode_bookmarks_edit",
   // library edit (=add/remove) feature per mediatype
   LIBRARY_ARTISTS_EDIT = "library_artists_edit",
   LIBRARY_ALBUMS_EDIT = "library_albums_edit",
@@ -489,6 +562,7 @@ export enum ProviderFeature {
   SIMILAR_ARTISTS = "similar_artists",
   // playlist-specific features
   PLAYLIST_TRACKS_EDIT = "playlist_tracks_edit",
+  PLAYLIST_TRACKS_MOVE = "playlist_tracks_move",
   PLAYLIST_CREATE = "playlist_create",
   PLAYLIST_CREATE_TRACKS = "playlist_create_tracks",
   PLAYLIST_CREATE_AUDIOBOOKS = "playlist_create_audiobooks",
@@ -553,6 +627,8 @@ export enum VolumeNormalizationMode {
 export enum CrossfadeMode {
   SMART_CROSSFADE = "smart_crossfade",
   STANDARD_CROSSFADE = "standard_crossfade",
+  // a spoken tail mixed over the next track's start, with the track ducked under it
+  VOICE_OVER = "voice_over",
   DISABLED = "disabled",
   // the source crossfades its own playback, so the server does not
   SOURCE = "source",
@@ -620,6 +696,8 @@ export interface ErrorResultMessage extends ResultMessageBase {
 
   error_code: number;
   details: string | null;
+  // context a client can act on without parsing `details`; the keys depend on the error
+  data: Record<string, unknown> | null;
 }
 
 export interface EventMessage {
@@ -666,10 +744,11 @@ export interface ServerInfoMessage {
   onboard_done: boolean;
   name: string | null;
   status: CoreState;
-  // internal_url supersedes base_url; older servers only send base_url
+  // internal_url supersedes base_url
   internal_url: string | null;
   external_url: string | null;
   has_remote_access: boolean;
+  unsupported_install: boolean;
 }
 
 export type MessageType =
@@ -829,6 +908,8 @@ export interface SetupFlowStep {
   last_step?: boolean | null;
   // url [EXTERNAL]: url the user must open (e.g. an OAuth authorize url)
   url?: string | null;
+  // copy_text [FORM, EXTERNAL]: optional value the user can copy to the clipboard
+  copy_text?: string | null;
   // progress_text [PROGRESS]: localized status message
   progress_text?: string | null;
   // progress [PROGRESS]: optional completion fraction between 0 and 1
@@ -956,8 +1037,7 @@ export interface MediaItemImage {
   provider: string;
   remotely_accessible: boolean;
   // Opaque sha256(provider+path) id used to address the image via the
-  // canonical /imageproxy/<proxy_id> endpoint. Injected by the server on
-  // schema_version >= 31; null when it issues no id, absent on older servers.
+  // canonical /imageproxy/<proxy_id> endpoint; null when the server issues no id.
   proxy_id?: string | null;
 }
 
@@ -966,6 +1046,15 @@ export interface MediaItemChapter {
   name: string;
   start: number;
   end: number | null;
+}
+
+// a user's bookmark on one provider copy of a media item
+export interface MediaItemBookmark {
+  name: string;
+  start: number;
+  provider_instance: string;
+  item_id: string;
+  stored_by_music_assistant: boolean;
 }
 
 // a collection groups related items, most commonly an audiobook series
@@ -1046,6 +1135,53 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number | null;
 }
 
+/** The time window a statistics command covers. */
+export type StatisticsPeriod = "today" | "week" | "month" | "year" | "all_time";
+
+/** The bucket size of `statistics/plays_over_time`. */
+export type StatisticsGranularity = "hour" | "day" | "week" | "month";
+
+/** How `statistics/listening_time` groups its minutes. */
+export type StatisticsGroupBy = "artist" | "genre";
+
+/** Whose plays the statistics commands combine; empty is the current user. */
+export interface StatisticsUsers {
+  // user ids or usernames
+  users?: string[];
+  all_users?: boolean;
+}
+
+/** A ranked media item and its completed-play count from statistics endpoints. */
+export interface StatisticsTopItemResult {
+  item: ItemMapping;
+  play_count: number;
+}
+
+export interface StatisticsDistributionItem {
+  name: string;
+  value: number;
+}
+
+export interface StatisticsTimeSeriesPoint {
+  timestamp: string;
+  value: number;
+}
+
+/** Plays in one weekday (0 is Monday) and local hour (0-23) cell. */
+export interface StatisticsHeatmapPoint {
+  hour: number;
+  weekday: number;
+  value: number;
+}
+
+/** Minutes of completed plays for one artist or genre. */
+export interface StatisticsListeningTimeItem {
+  name: string;
+  minutes: number;
+  // the artist when grouped by artist, null for a genre
+  item?: ItemMapping | null;
+}
+
 export interface Artist extends MediaItem {
   artist_type: ArtistType;
 }
@@ -1060,6 +1196,8 @@ export interface AudioMetadata {
   // Audio analysis details (e.g. bpm, musical key).
   bpm: number | null;
   musical_key: string | null;
+  // Camelot wheel notation of musical_key, e.g. "11A"
+  camelot_key: string | null;
 }
 
 export interface Track extends MediaItem {
@@ -1097,6 +1235,9 @@ export enum PlaylistMatchPolicy {
 
 export interface Radio extends MediaItem {
   is_dynamic: boolean;
+  // false: the station is finite (an AI Radio show) and the queue plays it out and
+  // ends, instead of streaming or refilling forever
+  is_endless?: boolean;
 }
 
 export interface SoundEffect extends MediaItem {
@@ -1193,8 +1334,17 @@ export interface RecommendationFolder extends BrowseFolder {
   supports_provider_filter: boolean;
 }
 
+// computed over all items of a collection, also when it holds a filtered subset
+export interface MediaCollectionMetadata extends MediaItemMetadata {
+  total_items: number | null;
+  duration: number | null;
+  fully_played: boolean | null;
+  in_progress: boolean | null;
+}
+
 export interface MediaCollection<M extends MediaItemType> extends MediaItem {
   items: M[];
+  metadata: MediaCollectionMetadata;
 }
 
 // unlike the server alias of the same name this includes BrowseFolder, because
@@ -1320,6 +1470,14 @@ export interface StreamDetails {
 
 // queue_item
 
+export interface QueueItemOrigin {
+  // the album, playlist, folder or other item the queue item was played from
+  container: ItemMapping | null;
+  // the copy of the item in the container's listing, if known
+  provider_instance: string | null;
+  item_id: string | null;
+}
+
 export interface QueueItem {
   queue_id: string;
   queue_item_id: string;
@@ -1331,6 +1489,8 @@ export interface QueueItem {
   media_item: PlayableMediaItemType | null;
   image: MediaItemImage | null;
   available: boolean;
+  // where the item was played from, null when not recorded
+  origin: QueueItemOrigin | null;
   // Party: extra_attributes for guest-added items
   extra_attributes?: {
     party_guest?: boolean; // true if added by party guest
@@ -1574,10 +1734,15 @@ export interface Player {
   // will stop playback, or null when no sleep timer is set.
   sleep_timer_expires_at: number | null;
 
+  // sleep_timer_mode: the point at which the active sleep timer stops playback, or
+  // null when no sleep timer is set. For END_OF_ITEM/END_OF_CHAPTER,
+  // sleep_timer_expires_at is an estimate while playing and null while paused.
+  sleep_timer_mode: SleepTimerMode | null;
+
   // active_source_audio: audio-path snapshot for a live external source (e.g.
   // Spotify Connect) playing on active_source; null while a queue item is
-  // playing instead, or while nothing is known yet. Absent on older servers.
-  active_source_audio?: ActiveSourceAudioDetails | null;
+  // playing instead, or while nothing is known yet.
+  active_source_audio: ActiveSourceAudioDetails | null;
 }
 
 // provider
@@ -1608,10 +1773,13 @@ export interface ProviderManifest {
   // has_setup_flow: whether setup can be run again to reconfigure the provider
   has_setup_flow: boolean;
   // self_service: whether a member may set up (and reconfigure) a music source of
-  // this provider itself, instead of only a user who manages every music source;
-  // an older server does not send it and lets a member set up any provider
-  self_service?: boolean;
+  // this provider itself, instead of only a user who manages every music source
+  self_service: boolean;
   stage: ProviderStage;
+  // tier: who builds and maintains the provider
+  tier: ProviderTier;
+  // support_url: where the maintainer takes reports, null = the project's support repository
+  support_url: string | null;
   // icon: material design icon
   icon: string | null;
   // icon_images: which icon variants this provider supplies as image files.
@@ -1627,6 +1795,11 @@ export enum ProviderStage {
   EXPERIMENTAL = "experimental",
   UNMAINTAINED = "unmaintained",
   DEPRECATED = "deprecated",
+}
+
+export enum ProviderTier {
+  CORE = "core",
+  COMMUNITY = "community",
 }
 
 export enum ProviderStatus {
@@ -1854,6 +2027,24 @@ export interface AuthProvider {
   provider_id: string;
   provider_type: AuthProviderType;
   requires_redirect: boolean;
+  // whether a sign-in can return to the remote app; servers before schema 87 omit it
+  supports_remote_app?: boolean;
+}
+
+export interface AuthorizationStart {
+  // null when the server refused to start the sign-in, with the reason in error
+  authorization_url: string | null;
+  // servers before schema 87 omit state and expires_at
+  state?: string;
+  expires_at?: string;
+  error?: string;
+}
+
+export interface AuthExchangeResult {
+  success: boolean;
+  access_token?: string;
+  error?: string;
+  translation_key?: string;
 }
 
 export interface LoginCredentials {
@@ -1979,6 +2170,15 @@ export interface StorageInfo {
   can_add_local_folder: boolean;
 }
 
+/** The folder a Local files source reads its music from. */
+export interface SourceFolder {
+  // absolute path inside the server process
+  path: string;
+  // innermost storage location holding the folder, as last known; null when there is
+  // none or the caller may not see it
+  location: StorageLocation | null;
+}
+
 /** The connection settings of a network share, as the add and update commands take them. */
 export interface NetworkShareSettings {
   server: string;
@@ -2024,6 +2224,7 @@ export interface SmartPlaylistRules {
   genre_ids: number[];
   artist_ids: number[];
   album_ids: number[];
+  folder_paths?: string[];
   favorites_only: boolean;
   explicit?: boolean | null;
   seed_track_uris?: string[];
@@ -2076,6 +2277,8 @@ export interface AIRadioSection {
   web_search?: AIRadioWebSearchMode;
   constraints?: AIRadioSectionConstraints;
   cover_image?: string;
+  /** Whether this segment may carry over the next track's intro. */
+  allow_post?: boolean;
 }
 
 export interface AIRadioOptionalGuards {
@@ -2131,6 +2334,9 @@ export interface AIRadioHost {
   section_ids: string[];
   section_order: AIRadioSectionOrderRule[];
   merge_section_id: string;
+  // set on an untouched copy of a bundled preset, which the server keeps in sync
+  preset_id?: string;
+  preset_hash?: string;
 }
 
 export interface AIRadioStation {
@@ -2144,37 +2350,18 @@ export interface AIRadioStation {
   host_id: string;
 }
 
-export interface AIRadioSession {
-  session_id: string;
-  station_id: string;
-  queue_id: string | null;
-  status: "running" | "completed" | "failed" | "stopped";
-  created_at: string;
-  started_at: string | null;
-  ended_at: string | null;
-  error: string | null;
-  skipped_sections?: number;
-  last_render_error: string | null;
-  progress?: {
-    phase?: string;
-    [key: string]: unknown;
-  };
-  result?: {
-    queue_entries?: number;
-    planned_sections?: number;
-    skipped_sections?: number;
-    [key: string]: unknown;
-  };
-}
-
-export interface AIRadioStatus {
-  sessions: AIRadioSession[];
-}
+/**
+ * Per-queue AI DJ state. `station_id` is "" for a manually armed DJ and the
+ * show's id when the DJ was auto-armed by playing that show (i.e. it's on air).
+ */
+export type AIRadioQueueDJStatus = Record<
+  string,
+  { host_id: string; station_id: string }
+>;
 
 /** Refetch hints the ai_radio plugin broadcasts as PROVIDER_EVENT payloads; they carry no state. */
 export type AIRadioEventName =
   | "hosts_updated"
   | "stations_updated"
   | "sections_updated"
-  | "queue_dj_updated"
-  | "sessions_updated";
+  | "queue_dj_updated";

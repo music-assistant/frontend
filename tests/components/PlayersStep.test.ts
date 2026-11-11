@@ -64,6 +64,7 @@ function addProvider(overrides: Partial<ConfiguredProvider> = {}) {
     name: "Sonos",
     domain: "sonos",
     needsAttention: false,
+    status: null,
     ...overrides,
   });
 }
@@ -414,6 +415,25 @@ describe("PlayersStep", () => {
       wrapper.unmount();
     });
 
+    it("keeps escape in the rename field, away from the dialog around it", async () => {
+      addPlayer({ player_id: "kitchen" });
+      const onWindowKeydown = vi.fn();
+      window.addEventListener("keydown", onWindowKeydown);
+      try {
+        const wrapper = mount(PlayersStep, {
+          attachTo: document.body,
+          global: { mocks: { $t: (key: string) => key } },
+        });
+        const input = await startRename(wrapper);
+        await input.trigger("keydown.esc");
+
+        expect(onWindowKeydown).not.toHaveBeenCalled();
+        wrapper.unmount();
+      } finally {
+        window.removeEventListener("keydown", onWindowKeydown);
+      }
+    });
+
     it("drops what was typed when the user presses escape", async () => {
       addPlayer({ player_id: "kitchen" });
 
@@ -452,14 +472,14 @@ describe("PlayersStep", () => {
   });
 
   describe("what a row says about a player", () => {
-    it("says a player still has to be set up", () => {
+    it("offers to set up a player that still has to be set up", () => {
       addPlayer({ needsSetup: true, available: false });
 
       const wrapper = mountStep();
 
       // its setup is why it is not reachable, so that is what the row says
       expect(
-        wrapper.find("[aria-label=settings\\.player_needs_setup]").exists(),
+        wrapper.find("[data-testid=onboarding-player-setup]").exists(),
       ).toBe(true);
       expect(
         wrapper.find("[aria-label=settings\\.player_not_available]").exists(),

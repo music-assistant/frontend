@@ -1,6 +1,6 @@
 <template>
   <!-- streaming quality details -->
-  <Popover v-if="activeAudioPath">
+  <Popover v-if="activeAudioPath" v-model:open="open">
     <!-- quality pill/chip trigger; pill = overlay to match the fullscreen
          header controls. A single clean PopoverTrigger so it opens reliably
          inside the fullscreen v-dialog (a Tooltip wrapper here blocked it). -->
@@ -41,6 +41,9 @@
           :chain="activeAudioPath.audioProcessing"
           :stream-details="activeAudioPath.streamDetails"
           :crossfade-intent="activeAudioPath.crossfadeIntent"
+          :queue-id="activeAudioPath.queueId"
+          :container="activeAudioPath.container"
+          @navigate="open = false"
         />
       </div>
     </PopoverContent>
@@ -92,6 +95,7 @@ const qualityDetailsLabel = computed(() =>
     : $t("show_audio_chain_details"),
 );
 const popoverFocusTarget = ref<HTMLElement>();
+const open = ref(false);
 
 // disable the trigger when there is no active queue with items; a live
 // source has no queue to check and is gated by the popover's own v-if instead
@@ -119,7 +123,6 @@ export const imgCoverLight = new URL(
   "@/assets/cover_light.png",
   import.meta.url,
 ).href;
-export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
 </script>
 
 <style>

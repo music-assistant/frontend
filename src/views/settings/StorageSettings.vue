@@ -178,6 +178,7 @@ import {
 import { ItemGroup } from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
 import { useStorageInfo } from "@/composables/useStorageInfo";
+import { LOCAL_FILES_DOMAIN } from "@/helpers/provider_domain";
 import {
   canHoldNewSource,
   isManagedShare,
@@ -195,7 +196,6 @@ import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
 const DOCKER_DOCS_URL = "https://music-assistant.io/installation/#with-docker";
-const LOCAL_FILES_DOMAIN = "filesystem_local";
 const STORAGE_DOCS_URL = "https://music-assistant.io/settings/storage/";
 
 const { t } = useI18n();

@@ -1,7 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockMappedServices } = vi.hoisted(() => ({
+const { mockMappedServices, screen } = vi.hoisted(() => ({
   mockMappedServices: vi.fn(),
+  screen: { isPhone: false },
+}));
+
+vi.mock("@/plugins/breakpoint", () => ({
+  isPhoneSizedScreen: () => screen.isPhone,
 }));
 
 vi.mock("@/plugins/api/helpers", () => ({
@@ -31,6 +36,10 @@ function mountProviders(services: Array<{ domain: string; name: string }>) {
 }
 
 describe("DetailHeroProviders", () => {
+  beforeEach(() => {
+    screen.isPhone = false;
+  });
+
   it("shows a name and an icon per service, separated only between them", () => {
     const wrapper = mountProviders([
       { domain: "tidal", name: "Tidal" },
@@ -49,5 +58,12 @@ describe("DetailHeroProviders", () => {
     const wrapper = mountProviders([]);
 
     expect(wrapper.find(".detail-hero-providers").exists()).toBe(false);
+  });
+
+  it("leaves the services out of a phone's header", () => {
+    screen.isPhone = true;
+    const wrapper = mountProviders([{ domain: "tidal", name: "Tidal" }]);
+
+    expect(wrapper.find(".provider-icon-stub").exists()).toBe(false);
   });
 });

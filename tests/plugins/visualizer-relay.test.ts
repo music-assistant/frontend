@@ -131,17 +131,4 @@ describe("VisualizerRelayClient color handling", () => {
 
     expect(onColor).toHaveBeenCalledTimes(1);
   });
-
-  it("keeps the palette on a stream/start without advertised types", () => {
-    // Older servers don't send the visualizer types; absence of the list must
-    // not read as "color unsupported".
-    const onColor = vi.fn();
-    let receive: (message: object) => void;
-    ({ client, receive } = connectClient(onColor));
-
-    receive({ type: "color", payload: { on_dark: [1, 2, 3] } });
-    receive({ type: "stream/start" });
-
-    expect(onColor).toHaveBeenCalledTimes(1);
-  });
 });

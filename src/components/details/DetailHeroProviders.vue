@@ -1,5 +1,6 @@
 <template>
-  <div v-if="providers.length" class="detail-hero-providers">
+  <!-- a phone header keeps to the item and how to play it -->
+  <div v-if="providers.length && !isPhone" class="detail-hero-providers">
     <span class="detail-hero-providers__pill">
       <template v-for="(provider, index) in providers" :key="provider.domain">
         <span v-if="index > 0" class="detail-hero-providers__sep">·</span>
@@ -14,6 +15,7 @@
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { mappedServices } from "@/plugins/api/helpers";
 import type { MediaItem } from "@/plugins/api/interfaces";
+import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { computed } from "vue";
 
 export interface Props {
@@ -23,6 +25,8 @@ const props = defineProps<Props>();
 
 // one entry per music service, however many accounts of it hold the item
 const providers = computed(() => mappedServices(props.item));
+
+const isPhone = computed(() => isPhoneSizedScreen());
 </script>
 
 <style scoped>

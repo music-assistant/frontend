@@ -19,7 +19,7 @@
       <span class="text-muted-foreground text-sm">
         {{
           $t(
-            state.play_reveal_audio === true
+            state.play_reveal_audio
               ? "providers.music_quiz.reveal_audio_on"
               : "providers.music_quiz.reveal_audio_off",
           )

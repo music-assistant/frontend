@@ -1,15 +1,12 @@
 <template>
   <section class="media-rows">
     <div class="media-rows__head">
-      <div
-        v-hold="onHold"
-        class="media-rows__titles"
-        @touchstart.passive="onTouchStart"
-        @click.capture="swallowClickAfterHold"
-      >
-        <h2 class="media-rows__title">{{ title }}</h2>
-        <span v-if="meta" class="media-rows__meta">{{ meta }}</span>
-      </div>
+      <DetailSectionTitle
+        :title="title"
+        :meta="meta"
+        align="baseline"
+        @edit-rows="emit('edit-rows')"
+      />
       <RouterLink
         v-if="viewAllTo"
         :to="viewAllTo"
@@ -26,10 +23,11 @@
           v-for="item in shownItems"
           :key="item.uri"
           v-hold="(e: Event) => onItemHold(e, item)"
-          class="media-rows__row"
+          class="media-rows__row group"
           :class="{ 'media-rows__row--playing': isNowPlaying(item) }"
           role="button"
           tabindex="0"
+          @click.capture="swallowClickAfterItemHold"
           @click="(e: MouseEvent) => onItemClick(e, item)"
           @keydown.enter.self="(e: KeyboardEvent) => onItemClick(e, item)"
           @keydown.space.self.prevent="
@@ -39,10 +37,17 @@
           @touchstart.passive="onItemTouchStart"
         >
           <span
-            class="media-rows__art"
+            class="media-rows__art relative"
             :class="{ 'media-rows__art--unavailable': !itemIsAvailable(item) }"
           >
             <MediaItemThumb :item="item" :size="40" />
+            <RowPlayButton
+              v-if="canPlay(item)"
+              overlay
+              :label="playLabel(item)"
+              :disabled="playActionInProgress"
+              @click="(e: MouseEvent) => onPlayClick(e, item)"
+            />
           </span>
           <span class="media-rows__text">
             <span class="media-rows__name">
@@ -73,6 +78,12 @@
             icon-class="size-4.5"
             class="size-7 rounded-full text-muted-foreground data-[active=true]:text-primary"
           />
+          <RowPlayButton
+            v-if="canPlay(item)"
+            :label="playLabel(item)"
+            :disabled="playActionInProgress"
+            @click="(e: MouseEvent) => onPlayClick(e, item)"
+          />
           <button
             type="button"
             class="media-rows__button"
@@ -99,19 +110,23 @@
 </template>
 
 <script setup lang="ts">
+import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import FavoriteMenu from "@/components/FavoriteMenu.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import RowPlayButton from "@/components/RowPlayButton.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getEventPosition,
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
+import { usePlayActionInProgress } from "@/composables/usePlayActionInProgress";
 import { canHoldFavorite } from "@/helpers/favorites";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
+  handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
 import { formatDuration, getArtistsString } from "@/helpers/utils";
@@ -184,15 +199,22 @@ function sourceName(item: RowItem): string {
   );
 }
 
-const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
-  emit("edit-rows"),
-);
-
 const {
   onHold: onItemHold,
   onTouchStart: onItemTouchStart,
   swallowClickAfterHold: swallowClickAfterItemHold,
 } = useHoldToOpenMenu<[RowItem]>((evt, item) => onItemMenu(evt, item));
+
+const playActionInProgress = usePlayActionInProgress();
+
+// an item that is not available has nothing to play, whatever its flag says
+const canPlay = (item: RowItem) => item.is_playable && itemIsAvailable(item);
+
+const playLabel = (item: RowItem) => `${$t("play")} ${item.name}`;
+
+const onPlayClick = function (event: MouseEvent, item: RowItem) {
+  handlePlayBtnClick(item, event.clientX, event.clientY, props.parentItem);
+};
 
 const isNowPlaying = function (item: RowItem): boolean {
   if (store.activePlayer?.playback_state != PlaybackState.PLAYING) return false;
@@ -228,7 +250,6 @@ const onItemClick = function (
   event: MouseEvent | KeyboardEvent,
   item: RowItem,
 ) {
-  if (swallowClickAfterItemHold(event)) return;
   const x = "clientX" in event ? event.clientX : 0;
   const y = "clientY" in event ? event.clientY : 0;
   handleMediaItemClick(item, x, y, props.parentItem);
@@ -255,27 +276,6 @@ function itemDuration(item: RowItem): number | undefined {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 8px;
-}
-.media-rows__titles {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  min-width: 0;
-}
-.media-rows__title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-  color: rgb(var(--v-theme-on-background));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.media-rows__meta {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  white-space: nowrap;
 }
 .media-rows__more {
   flex: none;
@@ -395,9 +395,6 @@ function itemDuration(item: RowItem): number | undefined {
 @media (max-width: 768px) {
   .media-rows {
     padding: 20px 16px 0;
-  }
-  .media-rows__title {
-    font-size: 19px;
   }
   .media-rows__list {
     margin: 0;

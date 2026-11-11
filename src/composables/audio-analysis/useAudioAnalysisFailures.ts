@@ -66,15 +66,6 @@ interface ServerFailure {
 const DEFAULT_PAGE_SIZE = 25;
 
 /**
- * The api client rejects command promises with the server's error details
- * string; servers without failure tracking report
- * "Invalid command: audio_analysis/failures".
- */
-function isUnknownCommandError(error: unknown): boolean {
-  return String(error).toLowerCase().includes("invalid command");
-}
-
-/**
  * Name-resolution cache key. The resolved track name is the same regardless of
  * which AA provider failed it, so this intentionally omits the AA domain.
  */
@@ -187,20 +178,10 @@ export function useAudioAnalysisFailures(options?: { pageSize?: number }): {
       error.value = null;
       await resolveCurrentPage();
     } catch (err) {
-      if (isUnknownCommandError(err)) {
-        // The `audio_analysis/failures` command is absent on servers without
-        // failure tracking (version skew), so degrade to an empty list rather
-        // than throwing and breaking the rest of the settings page.
-        failures.value = [];
-        pageRows.value = [];
-        page.value = 1;
-        error.value = null;
-      } else {
-        // Keep whatever rows we already have; stale data beats an empty table
-        // wrongly claiming there are no failures.
-        console.error("Failed to load audio analysis failures:", err);
-        error.value = String(err);
-      }
+      // Keep whatever rows we already have; stale data beats an empty table
+      // wrongly claiming there are no failures.
+      console.error("Failed to load audio analysis failures:", err);
+      error.value = String(err);
     } finally {
       loading.value = false;
     }

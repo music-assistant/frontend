@@ -5,6 +5,7 @@
     :item="item"
     :backdrop="backdrop"
     :blur-backdrop="blurBackdrop"
+    soften-backdrop
     :height="400"
     :phone-height="360"
     @edit-rows="emit('edit-rows')"
@@ -15,7 +16,7 @@
 
     <template v-if="item" #main>
       <div class="album-hero__main">
-        <div class="album-hero__cover">
+        <div class="album-hero__cover detail-hero-cover">
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
 
@@ -25,14 +26,10 @@
             <span v-if="item.version" class="album-hero__version">
               ({{ item.version }})
             </span>
-            <span
+            <ExplicitBadge
               v-if="item.metadata?.explicit"
-              class="album-hero__explicit"
-              role="img"
-              :title="$t('tooltip.explicit')"
-              :aria-label="$t('tooltip.explicit')"
-              >E</span
-            >
+              class="album-hero__explicit [--explicit-icon-square:rgba(255,255,255,0.25)] [--explicit-icon-letter:#fff]"
+            />
           </h1>
 
           <div class="album-hero__meta">
@@ -54,25 +51,16 @@
                 </template>
               </span>
             </div>
-            <div v-if="facts.length" class="album-hero__line">
-              <Disc :size="16" class="album-hero__icon" />
-              <span class="album-hero__line-text">
-                <template v-for="(fact, index) in facts" :key="fact">
-                  <span v-if="index > 0" class="album-hero__sep">·</span>
-                  {{ fact }}
-                </template>
-              </span>
-            </div>
+            <DetailHeroFacts v-if="facts.length" :icon="Disc" :facts="facts" />
           </div>
 
           <div class="album-hero__actions">
             <DetailHeroPlayButton
-              class="album-hero__play"
-              shrink-label
               :item="item"
+              :tracks-sort-field="tracksSortField"
+              :tracks-sort-direction="tracksSortDirection"
             />
             <DetailHeroButton
-              v-if="api.supportsPlayMediaShuffle"
               :icon="Shuffle"
               :label="$t('shuffle')"
               :disabled="!store.activePlayer"
@@ -85,6 +73,8 @@
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />
+            <!-- outside the library the services listed beside already say where it is from -->
+            <DetailHeroSourceBadge :item="item" library-only />
           </div>
         </div>
       </div>
@@ -100,19 +90,24 @@
 <script setup lang="ts">
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
+import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
+import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
+import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
-import { formatDuration } from "@/helpers/utils";
+import { formatTotalDuration } from "@/helpers/duration";
 import { api } from "@/plugins/api";
 import {
   AlbumType,
   type Album,
   type Artist,
   type ItemMapping,
+  type SortDirection,
+  type SortField,
 } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
@@ -131,6 +126,9 @@ export interface Props {
   trackCount?: number;
   // their total playing time in seconds, once they are known
   duration?: number;
+  // the order the tracks are listed in below, which the play button follows
+  tracksSortField?: SortField;
+  tracksSortDirection?: SortDirection;
 }
 const props = defineProps<Props>();
 
@@ -140,11 +138,17 @@ const emit = defineEmits<{
 
 const router = useRouter();
 
+// px, matching .album-hero__cover
+const COVER_SIZE = 280;
+const PHONE_COVER_SIZE = 180;
+
 const isPhone = computed(() => isPhoneSizedScreen());
 
-const coverSize = computed(() => (isPhone.value ? 132 : 200));
+const coverSize = computed(() =>
+  isPhone.value ? PHONE_COVER_SIZE : COVER_SIZE,
+);
 
-// "Album · 2011 · 12 tracks · 48:21", without whatever the album does not have
+// "Album · 2011 · 12 tracks · 48 min", without whatever the album does not have
 const facts = computed(() => {
   const album = props.item;
   if (!album) return [];
@@ -158,7 +162,7 @@ const facts = computed(() => {
       $t("n_tracks", props.trackCount, { named: { count: props.trackCount } }),
     );
   }
-  if (props.duration) parts.push(formatDuration(props.duration));
+  if (props.duration) parts.push(formatTotalDuration(props.duration));
   return parts;
 });
 
@@ -179,8 +183,8 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   min-width: 0;
 }
 .album-hero__cover {
-  width: 200px;
-  height: 200px;
+  width: 280px;
+  height: 280px;
   flex: none;
   border-radius: 8px;
   overflow: hidden;
@@ -200,7 +204,7 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   font-size: 44px;
   font-weight: 500;
   letter-spacing: -1.1px;
-  line-height: 1.05;
+  line-height: 1.2;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -214,19 +218,7 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   color: rgba(255, 255, 255, 0.7);
 }
 .album-hero__explicit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
   margin-left: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.25);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1;
-  text-shadow: none;
   vertical-align: middle;
 }
 
@@ -272,20 +264,12 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   outline-offset: 2px;
   border-radius: 4px;
 }
-.album-hero__sep {
-  margin: 0 4px;
-  opacity: 0.5;
-}
 
 .album-hero__actions {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
   gap: 8px;
-  min-width: 0;
-}
-/* the play button gives way so Shuffle and Endless keep their place on the row */
-.album-hero__play {
   min-width: 0;
 }
 
@@ -296,22 +280,18 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
     gap: 12px;
   }
   .album-hero__cover {
-    width: 132px;
-    height: 132px;
+    width: 180px;
+    height: 180px;
   }
   .album-hero__name {
     font-size: 30px;
     letter-spacing: -0.7px;
-    line-height: 1.1;
   }
   .album-hero__meta {
     font-size: 14px;
   }
   .album-hero__actions {
     gap: 10px;
-  }
-  .album-hero__actions .album-hero__play {
-    flex: 1;
   }
 }
 </style>

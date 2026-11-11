@@ -1,13 +1,15 @@
 <template>
   <ItemsListing
     ref="itemsListing"
+    fill-height
     itemtype="tracks"
     path="librarytracks"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :show-track-number="false"
     :load-paged-data="loadItems"
-    :sort-keys="sortKeys"
+    :sort-listing="ListingType.LIBRARY_TRACKS"
+    library-toolbar
     :show-album="true"
     :update-available="updateAvailable"
     :title="$t('tracks')"
@@ -32,10 +34,12 @@ import AddManualLink from "@/components/AddManualLink.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
+import { useListingTotal } from "@/composables/useListingTotal";
 import api from "@/plugins/api";
 import {
   EventMessage,
   EventType,
+  ListingType,
   MediaType,
   Scope,
 } from "@/plugins/api/interfaces";
@@ -49,7 +53,9 @@ defineOptions({
 });
 
 const updateAvailable = ref<boolean>(false);
-const total = ref(store.libraryTracksCount);
+const { total, setTotal, loadTotal } = useListingTotal(
+  store.libraryTracksCount,
+);
 const showAddEditDialog = ref(false);
 const itemsListing = ref<InstanceType<typeof ItemsListing>>();
 
@@ -68,23 +74,6 @@ const extraMenuItems = computed<ToolBarMenuItem[]>(() =>
       ]
     : [],
 );
-
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "track_artist_name",
-  "track_artist_name_desc",
-  "duration",
-  "duration_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
 
 onMounted(() => {
   // signal if/when items get added within this library
@@ -109,29 +98,33 @@ onMounted(() => {
 const loadItems = async function (params: LoadDataParams) {
   params.favoritesOnly = params.favoritesOnly || undefined;
   updateAvailable.value = false;
-  setTotals(params);
+  // the count only changes with the filters, and those start over from the
+  // first page: the pages after it keep the count they have
+  if (!params.offset) setTotals(params);
   return await api.getLibraryTracks(
     params.favoritesOnly,
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sortField,
+    params.sortDirection,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
+    params.randomSeed,
   );
 };
 
 const setTotals = async function (params: LoadDataParams) {
   if (!params.favoritesOnly && !params.provider) {
-    total.value = store.libraryTracksCount;
+    setTotal(store.libraryTracksCount);
     return;
   }
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
+    setTotal(undefined);
     return;
   }
-  total.value = await api.getLibraryTracksCount(params.favoritesOnly || false);
+  await loadTotal(api.getLibraryTracksCount(params.favoritesOnly || false));
 };
 </script>

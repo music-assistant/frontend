@@ -1,8 +1,8 @@
-import { canOpenAIRadio } from "@/helpers/ai_radio_access";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { returnedByHistory } from "@/helpers/navigation";
+import { parseStatisticsPeriod } from "@/helpers/statistics_period";
 import { $t } from "@/plugins/i18n";
 import { nextTick, watch } from "vue";
 import {
@@ -173,6 +173,23 @@ export const routes: RouteRecordRaw[] = [
           import(/* webpackChunkName: "discover" */ "@/views/HomeView.vue"),
       },
       {
+        path: "/statistics",
+        name: "statistics",
+        component: () =>
+          import(
+            /* webpackChunkName: "statistics" */ "@/views/StatisticsView.vue"
+          ),
+        props: (route: { query: Record<string, unknown> }) => ({
+          period: parseStatisticsPeriod(route.query.period),
+          users:
+            route.query.all_users === "true"
+              ? { all_users: true }
+              : typeof route.query.users === "string" && route.query.users
+                ? { users: route.query.users.split(",") }
+                : {},
+        }),
+      },
+      {
         path: "/ai-radio",
         name: "ai-radio",
         component: () =>
@@ -198,7 +215,7 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
-          if (!store.enabledPlugins.has("ai_radio") || !canOpenAIRadio()) {
+          if (!store.enabledPlugins.has("ai_radio")) {
             toast.error($t("providers.ai_radio.toast.unavailable"));
             return { name: "discover" };
           }

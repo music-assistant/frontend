@@ -90,7 +90,7 @@ import MarqueeText from "@/components/MarqueeText.vue";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
-import { getMediaItemImageUrl } from "@/helpers/utils";
+import { getImageThumbForItem } from "@/helpers/utils";
 import type { Artist, Track } from "@/plugins/api/interfaces";
 import { MediaType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -140,10 +140,7 @@ const onItemClick = () => {
   }
 };
 
-const imageUrl = computed(() => {
-  const img = props.item.metadata?.images?.[0];
-  return img ? getMediaItemImageUrl(img) : "";
-});
+const imageUrl = computed(() => getImageThumbForItem(props.item) ?? "");
 
 const artistName = computed(() => {
   if (props.item.media_type === MediaType.ARTIST) {

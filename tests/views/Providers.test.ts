@@ -7,6 +7,7 @@ import {
   ProviderSharing,
   ProviderStage,
   ProviderStatus,
+  ProviderTier,
   ProviderType,
   type Scope,
   type User,
@@ -48,6 +49,7 @@ const {
         name: "Spotify",
         self_service: true,
         stage: "stable",
+        tier: "core",
       },
       builtin: {
         allow_disable: false,
@@ -66,7 +68,6 @@ const {
     saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
     startSync: vi.fn<MusicAssistantApi["startSync"]>(),
     subscribe: vi.fn(),
-    supportsShareCandidates: true,
   },
   authMock: {
     hasScope: vi.fn<(scope: Scope) => boolean>(),
@@ -222,10 +223,11 @@ const ProviderRowStub = {
     "description",
     "accessSummary",
     "statusVariant",
+    "statusIcon",
     "statusLabel",
     "isError",
     "errorText",
-    "stageLabel",
+    "community",
   ],
   emits: ["open", "menu", "reconfigure"],
   template: `<div data-testid="provider-row">{{ name }}</div>`,
@@ -245,9 +247,9 @@ beforeEach(() => {
   apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.providerManifests.spotify.self_service = true;
   apiMock.providerManifests.spotify.stage = ProviderStage.STABLE;
+  apiMock.providerManifests.spotify.tier = ProviderTier.CORE;
   apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
-  apiMock.supportsShareCandidates = true;
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   routeMock.query.types = "music";
   storeMock.currentUser = owner;
@@ -495,20 +497,18 @@ describe("Providers", () => {
     ).not.toContain("settings.reconfigure");
   });
 
-  it("labels the stage badge from the translated stage key", async () => {
-    apiMock.providerManifests.spotify.stage = ProviderStage.DEPRECATED;
+  it("marks a community provider", async () => {
+    apiMock.providerManifests.spotify.tier = ProviderTier.COMMUNITY;
 
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    expect(onlyRow(wrapper).props("stageLabel")).toBe(
-      "settings.stage.options.deprecated",
-    );
+    expect(onlyRow(wrapper).props("community")).toBe(true);
   });
 
-  it("hides the stage badge for a stable provider", async () => {
+  it("leaves a core provider unmarked", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    expect(onlyRow(wrapper).props("stageLabel")).toBe("");
+    expect(onlyRow(wrapper).props("community")).toBe(false);
   });
 
   it("summarizes a music source without an access record as a household one", async () => {
@@ -733,7 +733,9 @@ describe("Providers", () => {
     expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
       false,
     );
-    expect(wrapper.get(".empty-state").text()).toContain("no_content");
+    expect(wrapper.get("[data-testid=providers-empty]").text()).toContain(
+      "no_content",
+    );
     expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(true);
   });
 
@@ -935,19 +937,6 @@ describe("Providers for a member", () => {
     expect(apiMock.getAllUsers).not.toHaveBeenCalled();
   });
 
-  it("does not ask an older server who it may share with", async () => {
-    apiMock.supportsShareCandidates = false;
-
-    const wrapper = await mountWithConfigs([ownSource()]);
-
-    expect(apiMock.getShareCandidates).not.toHaveBeenCalled();
-    expect(
-      wrapper
-        .get('[data-testid="access-dialog"]')
-        .attributes("data-share-candidates"),
-    ).toBe("none");
-  });
-
   it("reports a failing lookup of the members it may share with", async () => {
     apiMock.getShareCandidates.mockRejectedValue(new Error("refused"));
 
@@ -1060,7 +1049,7 @@ describe("Providers for a member that may not add sources", () => {
       false,
     );
     expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(false);
-    expect(wrapper.find(".empty-state").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=providers-empty]").exists()).toBe(false);
   });
 });
 
@@ -1100,9 +1089,31 @@ describe("Providers loading", () => {
     const wrapper = await mountProviders(ProviderStatus.AUTH_REQUIRED);
 
     expect(onlyRow(wrapper).props("statusVariant")).toBe("destructive");
+    expect(onlyRow(wrapper).props("statusIcon")).toBeUndefined();
     expect(onlyRow(wrapper).props("statusLabel")).toBe(
       "settings.provider_status_auth_required",
     );
+  });
+
+  it.each([
+    [ProviderStatus.LOADING, "loading", "settings.provider_status_loading"],
+    [ProviderStatus.DISABLED, "disabled", "settings.provider_status_disabled"],
+  ])(
+    "shows a %s source as an icon instead of a badge",
+    async (status, icon, label) => {
+      const wrapper = await mountProviders(status);
+
+      expect(onlyRow(wrapper).props("statusVariant")).toBeUndefined();
+      expect(onlyRow(wrapper).props("statusIcon")).toBe(icon);
+      expect(onlyRow(wrapper).props("statusLabel")).toBe(label);
+    },
+  );
+
+  it("shows a running source without a status", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(onlyRow(wrapper).props("statusVariant")).toBeUndefined();
+    expect(onlyRow(wrapper).props("statusIcon")).toBeUndefined();
   });
 
   it("shows no empty state until the providers are loaded", async () => {
@@ -1111,7 +1122,7 @@ describe("Providers loading", () => {
     expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
       false,
     );
-    expect(wrapper.find(".empty-state").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=providers-empty]").exists()).toBe(false);
     expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(true);
   });
 });
@@ -1164,7 +1175,7 @@ describe("Providers search", () => {
     expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
       false,
     );
-    expect(wrapper.find(".empty-state").exists()).toBe(true);
+    expect(wrapper.find("[data-testid=providers-empty]").exists()).toBe(true);
   });
 });
 
@@ -1291,8 +1302,10 @@ async function mountWithConfigs(
         Empty: SlotStub,
         EmptyContent: SlotStub,
         EmptyDescription: SlotStub,
+        EmptyHeader: SlotStub,
         EmptyMedia: SlotStub,
         EmptyTitle: SlotStub,
+        FilterEmptyState: false,
         ItemGroup: SlotStub,
         ProviderAccessDialog: AccessDialogStub,
         ProviderRow: ProviderRowStub,

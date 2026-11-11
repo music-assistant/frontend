@@ -1,5 +1,5 @@
-import { computed, ComputedRef, Ref } from "vue";
-import { Player, PlayerSource } from "@/plugins/api/interfaces";
+import { computed, ComputedRef, Ref, unref } from "vue";
+import { PlaybackState, Player, PlayerSource } from "@/plugins/api/interfaces";
 
 /**
  * The id of the source a player is playing, as the server resolves it.
@@ -35,5 +35,17 @@ export function useActiveSource(
     return playerObj.source_list.find((source) => source.id === activeSourceId);
   });
 
-  return { activeSource };
+  // The server selects a stopped selectable source again on play, even one that can't pause.
+  // The player's own queue is listed too, but has nothing to restart when it can't play.
+  const canRestartSource = computed(() => {
+    const playerObj = unref(player);
+    const source = activeSource.value;
+    if (!playerObj || !source || source.passive) return false;
+    if (source.id === playerObj.player_id) return false;
+    return ![PlaybackState.PLAYING, PlaybackState.PAUSED].includes(
+      playerObj.playback_state,
+    );
+  });
+
+  return { activeSource, canRestartSource };
 }

@@ -1,7 +1,10 @@
 <template>
   <header
     class="detail-hero"
-    :class="{ 'detail-hero--phone': isPhone }"
+    :class="{
+      'detail-hero--phone': isPhone,
+      'min-h-[calc(100vw+8rem)] bg-black': artworkLayout,
+    }"
     :style="{
       '--detail-hero-height': `${height}px`,
       '--detail-hero-phone-height': `${phoneHeight}px`,
@@ -10,13 +13,25 @@
     <Transition name="detail-hero-backdrop">
       <div
         v-if="backdropStyle"
-        :key="backdrop"
+        :key="shownBackdrop"
         class="detail-hero__backdrop"
-        :class="{ 'detail-hero__backdrop--blurred': blurBackdrop }"
+        :class="
+          artworkLayout
+            ? 'bottom-auto aspect-square bg-top [mask-image:linear-gradient(to_bottom,black_70%,transparent)]'
+            : [
+                { 'detail-hero__backdrop--blurred': blurBackdrop },
+                { 'scale-[1.04] blur-[6px]': softenBackdrop && !blurBackdrop },
+              ]
+        "
         :style="backdropStyle"
       ></div>
     </Transition>
     <div class="detail-hero__scrim"></div>
+    <!-- marks where the toolbar sits, to know when it has scrolled away -->
+    <div
+      ref="toolbarSentinel"
+      class="pointer-events-none absolute inset-x-0 top-0 h-16"
+    ></div>
     <Toolbar
       class="detail-hero__toolbar"
       :icon="ArrowLeft"
@@ -32,18 +47,45 @@
     <div v-if="!item" class="detail-hero__body">
       <Skeleton class="h-12 w-80 max-w-[60%]" />
     </div>
-    <div v-else class="detail-hero__body">
-      <div class="detail-hero__main">
+    <div v-else ref="heroBody" class="detail-hero__body">
+      <!-- over full-width artwork the page's own cover goes, and the rest is
+           centred beneath it -->
+      <div
+        class="detail-hero__main"
+        :class="{
+          'items-center text-center [&_*]:justify-center [&_.detail-hero-cover]:hidden':
+            artworkLayout,
+        }"
+      >
         <slot name="main"></slot>
       </div>
-      <div v-if="$slots.aside" class="detail-hero__aside">
+      <div
+        v-if="$slots.aside"
+        class="detail-hero__aside"
+        :class="{ 'items-center text-center': artworkLayout }"
+      >
         <slot name="aside"></slot>
       </div>
     </div>
+
+    <!-- on a phone the back button and menu stay in reach while scrolling -->
+    <DetailHeroStickyBar
+      v-if="isPhone"
+      :show="!toolbarInView"
+      :show-title="!titleInView"
+      :title="item?.name"
+      :menu-items="menuItems"
+      @back="backButtonClick"
+    >
+      <template #append>
+        <slot name="toolbar-append"></slot>
+      </template>
+    </DetailHeroStickyBar>
   </header>
 </template>
 
 <script setup lang="ts">
+import DetailHeroStickyBar from "@/components/details/DetailHeroStickyBar.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserPreferences } from "@/composables/userPreferences";
@@ -51,9 +93,15 @@ import { useEscapeBack } from "@/composables/useEscapeBack";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
-import type { MediaItemType } from "@/plugins/api/interfaces";
+import { getImageThumbForItem } from "@/helpers/utils";
+import {
+  ImageType,
+  MediaType,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { ArrowLeft, Rows3 } from "@lucide/vue";
+import { useIntersectionObserver } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -65,6 +113,8 @@ export interface Props {
   // for a backdrop that only stands in for missing wide art, so it reads as
   // colour rather than a picture
   blurBackdrop?: boolean;
+  // a light blur for a real picture, so the artwork and text in front stand out
+  softenBackdrop?: boolean;
   height?: number;
   phoneHeight?: number;
   // off for a page with a fixed layout, which leaves "Edit rows" out of the menu
@@ -74,6 +124,7 @@ const props = withDefaults(defineProps<Props>(), {
   item: undefined,
   backdrop: undefined,
   blurBackdrop: false,
+  softenBackdrop: false,
   height: 440,
   phoneHeight: 340,
   editableRows: true,
@@ -83,16 +134,62 @@ const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
 
+// px, the pinned bar's h-14
+const STICKY_BAR_HEIGHT = 56;
+
 const router = useRouter();
 const menuItems = ref<ContextMenuItem[]>([]);
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
+const toolbarSentinel = ref<HTMLElement>();
+const heroBody = ref<HTMLElement>();
+const toolbarInView = ref(true);
+const titleInView = ref(true);
+// every hero puts its item name in the one h1 of its body
+const heroTitle = computed(
+  () => heroBody.value?.querySelector<HTMLElement>("h1") ?? undefined,
+);
+
+useIntersectionObserver(toolbarSentinel, ([entry]) => {
+  toolbarInView.value = entry?.isIntersecting ?? true;
+});
+// the page scroller starts below the safe area, as the pinned bar's content
+// does, so the title counts as gone once it is under the bar
+const pageScroller = computed(
+  () => heroBody.value?.closest<HTMLElement>(".content-section") ?? undefined,
+);
+useIntersectionObserver(
+  heroTitle,
+  ([entry]) => {
+    titleInView.value = entry?.isIntersecting ?? true;
+  },
+  { root: pageScroller, rootMargin: `-${STICKY_BAR_HEIGHT}px 0px 0px 0px` },
+);
+
+// a phone shows the item's own artwork across the top, fading into black just
+// above the title in both themes; a collection's images are the covers of its
+// stack, which it shows instead
+const phoneArtwork = computed(() =>
+  isPhone.value && props.item?.media_type !== MediaType.COLLECTION
+    ? getImageThumbForItem(props.item, ImageType.THUMB)
+    : undefined,
+);
+const artworkLayout = computed(() => !!phoneArtwork.value);
+
+const shownBackdrop = computed(() => phoneArtwork.value ?? props.backdrop);
+
 const backdropStyle = computed(() =>
-  props.backdrop ? { backgroundImage: `url("${props.backdrop}")` } : undefined,
+  shownBackdrop.value
+    ? { backgroundImage: `url("${shownBackdrop.value}")` }
+    : undefined,
 );
 
 watch(() => props.item, buildMenu, { immediate: true });
+watch(
+  () => props.editableRows,
+  () => buildMenu(props.item),
+);
 
 // pinning or unpinning the item in the sidebar changes its menu entry
 const { getPreference } = useUserPreferences();
@@ -202,8 +299,8 @@ async function buildMenu(item?: MediaItemType) {
 
 /* the toolbar controls sit on the artwork, so they get their own backdrop
    instead of the toolbar's transparent one */
-.detail-hero :deep(.v-toolbar__prepend .v-btn),
-.detail-hero :deep(.v-toolbar__append > button) {
+.detail-hero__toolbar :deep(.v-toolbar__prepend .v-btn),
+.detail-hero__toolbar :deep(.v-toolbar__append > button) {
   background-color: rgba(0, 0, 0, 0.35);
   border-radius: 8px;
   opacity: 1;
@@ -245,8 +342,9 @@ async function buildMenu(item?: MediaItemType) {
   display: none;
 }
 
+/* the bottom margin clears the strip where the hero fades into the page */
 .detail-hero--phone .detail-hero__body {
-  margin: auto 16px 16px;
+  margin: auto 16px 28px;
   flex-direction: column;
   align-items: stretch;
   gap: 12px;

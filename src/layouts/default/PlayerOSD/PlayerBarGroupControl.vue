@@ -187,8 +187,7 @@ const groupCandidates = computed(() => {
         candidate.active_group === player.value?.player_id) &&
       (memberIds.has(candidate.player_id) ||
         (candidate.player_id !== player.value?.player_id &&
-          (player.value?.can_group_with.includes(candidate.player_id) ||
-            player.value?.can_group_with.includes(candidate.provider)))),
+          player.value?.can_group_with.includes(candidate.player_id))),
   );
 });
 

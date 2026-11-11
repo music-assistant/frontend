@@ -76,10 +76,8 @@ export function useConfigAction<T extends Config>({
           config.value!.values[key] = entry;
         }
       }
-    } catch (err) {
-      // the api rejects with a plain string, but a dropped connection rejects
-      // with an Error whose name would otherwise be prefixed onto the toast
-      toast.error(err instanceof Error ? err.message : String(err));
+    } catch {
+      // the api reports the failure itself
     } finally {
       loading.value = false;
     }

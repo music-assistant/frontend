@@ -1,5 +1,5 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
-import { nextTick, type Ref } from "vue";
+import { nextTick, reactive, type Ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   DSPConfig,
@@ -26,6 +26,12 @@ const apiMock = vi.hoisted(() => ({
   subscribe: vi.fn(),
   unsubscribe: vi.fn(),
 }));
+const routeMock = vi.hoisted(() => ({
+  route: undefined as
+    | { params: Record<string, string>; query: Record<string, string> }
+    | undefined,
+  replace: vi.fn(),
+}));
 const registryMock = vi.hoisted(() => ({
   presets: undefined as Ref<DSPConfigPreset[]> | undefined,
 }));
@@ -45,6 +51,10 @@ vi.mock("@/composables/useDSPPresets", async () => {
     }),
   };
 });
+vi.mock("vue-router", () => ({
+  useRoute: () => routeMock.route,
+  useRouter: () => ({ replace: routeMock.replace }),
+}));
 // The view uses only truncateString from @/helpers/utils.
 vi.mock("@/helpers/utils", () => ({
   truncateString: (str: string) => str,
@@ -83,6 +93,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   apiMock.playerDSPCallback = undefined;
   apiMock.players = { "player-1": {} };
+  routeMock.route = reactive({ params: { playerId: "player-1" }, query: {} });
+  routeMock.replace.mockImplementation(
+    ({ query }: { query: Record<string, string> }) => {
+      routeMock.route!.query = query;
+    },
+  );
   apiMock.getDSPConfig.mockResolvedValue(makeConfig());
   apiMock.applyDSPPreset.mockResolvedValue(
     makeConfig({ preset_id: "preset-1" }),
@@ -197,7 +213,7 @@ describe("EditPlayerDsp preset identity", () => {
     );
   });
 
-  it("clears preset identity immediately on a top-level manual edit", async () => {
+  it("keeps preset identity when DSP is switched off and on", async () => {
     apiMock.getDSPConfig.mockResolvedValue(
       makeConfig({ preset_id: "preset-1" }),
     );
@@ -207,12 +223,48 @@ describe("EditPlayerDsp preset identity", () => {
     await wrapper.get(".dsp-switch").trigger("click");
     await nextTick();
 
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(apiMock.saveDSPConfig).toHaveBeenLastCalledWith(
+      "player-1",
+      expect.objectContaining({
+        enabled: false,
+        preset_id: "preset-1",
+      }),
+    );
+
+    await wrapper.get(".dsp-switch").trigger("click");
+    await nextTick();
+
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(apiMock.saveDSPConfig).toHaveBeenLastCalledWith(
+      "player-1",
+      expect.objectContaining({
+        enabled: true,
+        preset_id: "preset-1",
+      }),
+    );
+  });
+
+  it("clears preset identity immediately on a top-level manual edit", async () => {
+    apiMock.getDSPConfig.mockResolvedValue(
+      makeConfig({ preset_id: "preset-1" }),
+    );
+    const wrapper = await mountEditor();
+
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+    wrapper
+      .findAllComponents({ name: "DSPSlider" })[0]
+      .vm.$emit("update:modelValue", -3);
+    await nextTick();
+
     expect(selectedPresetBadge(wrapper)).toBeUndefined();
     await vi.advanceTimersByTimeAsync(2100);
     expect(apiMock.saveDSPConfig).toHaveBeenCalledWith(
       "player-1",
       expect.objectContaining({
-        enabled: false,
+        input_gain: -3,
         preset_id: null,
       }),
     );
@@ -671,6 +723,29 @@ describe("EditPlayerDsp preset removal", () => {
   });
 });
 
+describe("EditPlayerDsp stage link", () => {
+  it("opens the stage the link asks for and drops it from the address", async () => {
+    routeMock.route!.query = { stage: "output" };
+    const wrapper = await mountEditor();
+
+    expect(stageHeading(wrapper)).toBe("settings.dsp.output");
+    expect(routeMock.route!.query).toEqual({});
+  });
+
+  it("opens the stage once a newly linked player has loaded", async () => {
+    const wrapper = await mountEditor();
+
+    routeMock.route!.params = { playerId: "player-2" };
+    routeMock.route!.query = { stage: "output" };
+    await nextTick();
+    await wrapper.setProps({ playerId: "player-2" });
+    await flushPromises();
+
+    expect(stageHeading(wrapper)).toBe("settings.dsp.output");
+    expect(routeMock.route!.query).toEqual({});
+  });
+});
+
 function confirmationRequest() {
   // the emitter types its payload per event, which a call list cannot express
   const calls = vi.mocked(eventbus.emit).mock.calls as unknown as [
@@ -714,6 +789,12 @@ function selectedPresetBadge(
 ): string | undefined {
   const badge = wrapper.find('[data-testid="selected-dsp-preset"]');
   return badge.exists() ? badge.text() : undefined;
+}
+
+function stageHeading(
+  wrapper: Awaited<ReturnType<typeof mountEditor>>,
+): string {
+  return wrapper.get("h3").text();
 }
 
 function emitPlayerDSPUpdate(config: DSPConfig): void {

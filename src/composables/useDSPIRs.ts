@@ -38,8 +38,7 @@ const addIR = (ir: DSPIRMetadata): void => {
   available.value = true;
 };
 
-// The event carries the new library. Older servers never emit it, leaving the
-// fetch on mount as the only refresh.
+// The event carries the new library.
 const subscribe = (): void => {
   if (subscribed) return;
   subscribed = true;

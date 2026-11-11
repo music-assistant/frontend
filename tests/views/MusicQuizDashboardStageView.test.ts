@@ -111,6 +111,8 @@ function lobbyState(
     answer_type: "multiple_choice",
     phase: "lobby",
     name: "Friday Quiz",
+    include_similar_music: false,
+    auto_start_at: null,
     round_count: 10,
     suggestion_count: 4,
     answer_duration: 30,

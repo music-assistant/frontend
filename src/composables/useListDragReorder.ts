@@ -9,7 +9,15 @@
 //   position math) and each row must carry `data-drag-index="<index>"`.
 // - The drag handle should have `touch-action: none` so touch drags don't
 //   scroll the page.
+// - A virtualized list passes `rowBox`, since rows scrolled out of view have no
+//   element to measure; the rows then need no `data-drag-index`.
 import { Ref, computed, onBeforeUnmount, ref } from "vue";
+
+export interface ListRowBox {
+  // Y of the row's top within listEl, in px.
+  top: number;
+  height: number;
+}
 
 interface ListDragReorderOptions {
   // Container element holding the rows (rows tagged with data-drag-index).
@@ -19,10 +27,16 @@ interface ListDragReorderOptions {
   // Called on drop with the source index and the final resting index.
   onCommit: (fromIndex: number, toIndex: number) => void;
   onDragStart?: () => void;
+  // Layout of the row at an index, for lists that don't render every row.
+  rowBox?: (index: number) => ListRowBox | undefined;
+  // Whether a drag that ends back where the row started still commits, e.g.
+  // because it moves other rows along.
+  commitsInPlace?: (source: number) => boolean;
 }
 
 export function useListDragReorder(options: ListDragReorderOptions) {
-  const { listEl, count, onCommit, onDragStart } = options;
+  const { listEl, count, onCommit, onDragStart, rowBox, commitsInPlace } =
+    options;
 
   // Index of the row being dragged (null when idle) and the index the item
   // would be inserted *before* on drop.
@@ -45,6 +59,13 @@ export function useListDragReorder(options: ListDragReorderOptions) {
   let autoScrollRaf = 0;
   // Lets cleanup detach every drag listener at once.
   let dragAbort: AbortController | null = null;
+  // Where the pointer went down, and whether it has left that spot since; the
+  // click that ends a drag which moved is not a click on the row.
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragMoved = false;
+  // Pointer travel (px) after which a press counts as a drag.
+  const CLICK_SLOP = 4;
 
   const findScrollParent = (el: HTMLElement | null): HTMLElement | null => {
     let node = el?.parentElement ?? null;
@@ -75,6 +96,21 @@ export function useListDragReorder(options: ListDragReorderOptions) {
     return y;
   };
 
+  // Layout of every row, read from the rendered rows unless the consumer
+  // provides it.
+  const measureRows = (): ((index: number) => ListRowBox | undefined) => {
+    if (rowBox) return rowBox;
+    const rows = new Map<number, ListRowBox>();
+    const el = listEl.value;
+    if (!el) return () => undefined;
+    for (const row of el.querySelectorAll<HTMLElement>("[data-drag-index]")) {
+      const index = Number(row.dataset.dragIndex);
+      if (Number.isNaN(index)) continue;
+      rows.set(index, { top: rowTopWithinList(row), height: row.offsetHeight });
+    }
+    return (index) => rows.get(index);
+  };
+
   // The pointer must cross a slot boundary by this margin before the drop
   // target flips, so the gap doesn't flap when the pointer rests near one.
   const DROP_HYSTERESIS = 12;
@@ -93,22 +129,17 @@ export function useListDragReorder(options: ListDragReorderOptions) {
     if (!el || source == null) return current;
     const listTop = el.getBoundingClientRect().top;
 
-    const rows = new Map<number, { top: number; height: number }>();
-    for (const row of el.querySelectorAll<HTMLElement>("[data-drag-index]")) {
-      const index = Number(row.dataset.dragIndex);
-      if (Number.isNaN(index)) continue;
-      rows.set(index, { top: rowTopWithinList(row), height: row.offsetHeight });
-    }
-    const sourceRow = rows.get(source);
+    const rowAt = measureRows();
+    const sourceRow = rowAt(source);
     if (!sourceRow) return current;
     // Full span the source occupies, inter-row gap included (rows below
     // shift up by this much once it is lifted out).
-    const nextRow = rows.get(source + 1);
+    const nextRow = rowAt(source + 1);
     const sourceSpan = nextRow ? nextRow.top - sourceRow.top : sourceRow.height;
 
     const scan = (y: number): number => {
       for (let index = 0; index < count(); index++) {
-        const row = rows.get(index);
+        const row = rowAt(index);
         if (!row) continue;
         const top = index > source ? row.top - sourceSpan : row.top;
         if (y < listTop + top + row.height / 2) return index;
@@ -170,6 +201,12 @@ export function useListDragReorder(options: ListDragReorderOptions) {
   const onDragPointerMove = (evt: PointerEvent) => {
     if (dragSourceIndex.value == null) return;
     evt.preventDefault();
+    if (
+      Math.hypot(evt.clientX - dragStartX, evt.clientY - dragStartY) >
+      CLICK_SLOP
+    ) {
+      dragMoved = true;
+    }
     updateAutoScroll(evt.clientY);
     updateDragPositions(evt.clientY);
   };
@@ -187,15 +224,31 @@ export function useListDragReorder(options: ListDragReorderOptions) {
     dragGrabOffset = 0;
   };
 
+  // Swallow the click the browser sends after the pointer is released; it is
+  // sent in the same task, so the listener goes again right after.
+  const suppressNextClick = () => {
+    const swallow = (evt: MouseEvent) => {
+      evt.stopPropagation();
+      evt.preventDefault();
+    };
+    window.addEventListener("click", swallow, { capture: true, once: true });
+    setTimeout(() =>
+      window.removeEventListener("click", swallow, { capture: true }),
+    );
+  };
+
   const finishDrag = (commit: boolean) => {
     const source = dragSourceIndex.value;
     const drop = dragDropIndex.value;
+    const moved = dragMoved;
+    if (moved) suppressNextClick();
     cleanupDrag();
-    if (!commit || source == null || drop == null) return;
+    // a press that barely moved is a click, even when it crossed a row edge
+    if (!commit || !moved || source == null || drop == null) return;
     // Removing the source first shifts everything after it down by one, so the
     // final resting index is one lower when dropping below the original spot.
     const finalIndex = drop > source ? drop - 1 : drop;
-    if (finalIndex === source) return;
+    if (finalIndex === source && !commitsInPlace?.(source)) return;
     onCommit(source, finalIndex);
   };
 
@@ -206,18 +259,21 @@ export function useListDragReorder(options: ListDragReorderOptions) {
     const el = listEl.value;
     if (!el || index < 0 || index >= count()) return;
 
-    const rowEl = el.querySelector<HTMLElement>(`[data-drag-index="${index}"]`);
-    if (!rowEl) return;
+    const row = measureRows()(index);
+    if (!row) return;
 
     const listTop = el.getBoundingClientRect().top;
-    const rowTop = rowTopWithinList(rowEl);
-    dragRowHeight.value = rowEl.offsetHeight;
+    const rowTop = row.top;
+    dragRowHeight.value = row.height;
     dragGrabOffset = evt.clientY - listTop - rowTop;
     ghostY.value = rowTop;
 
     dragSourceIndex.value = index;
     dragDropIndex.value = index;
     dragPointerY = evt.clientY;
+    dragStartX = evt.clientX;
+    dragStartY = evt.clientY;
+    dragMoved = false;
     scrollParent = findScrollParent(el);
     autoScrollSpeed = 0;
     onDragStart?.();

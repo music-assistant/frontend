@@ -1,12 +1,16 @@
 <template>
-  <span class="party-badge">
-    <v-icon size="x-small">{{ icon }}</v-icon>
+  <span
+    class="mr-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.5px] text-primary-foreground"
+    :style="{ background: props.badgeColor }"
+  >
+    <component :is="icon" :size="12" aria-hidden="true" />
     {{ label }}
   </span>
 </template>
 
 <script setup lang="ts">
 import { $t } from "@/plugins/i18n";
+import { Rocket, UserRound } from "@lucide/vue";
 import { computed } from "vue";
 
 interface Props {
@@ -16,9 +20,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const icon = computed(() =>
-  props.type === "boost" ? "mdi-rocket-launch" : "mdi-account-music",
-);
+const icon = computed(() => (props.type === "boost" ? Rocket : UserRound));
 
 const label = computed(() =>
   props.type === "boost"
@@ -26,20 +28,3 @@ const label = computed(() =>
     : $t("providers.party.request"),
 );
 </script>
-
-<style scoped>
-.party-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: v-bind("props.badgeColor");
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 0.55rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: rgb(var(--v-theme-on-primary));
-  margin-right: 0.5rem;
-}
-</style>

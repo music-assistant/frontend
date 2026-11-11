@@ -1,9 +1,18 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { markRaw, nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AudioProcessingStage from "@/components/AudioProcessingStage.vue";
 import type { AudioProcessingDisplayStage } from "@/composables/useAudioProcessingDetails";
 import { i18n } from "@/plugins/i18n";
+
+const routerMock = vi.hoisted(() => ({ push: vi.fn() }));
+const storeMock = vi.hoisted(() => ({
+  showFullscreenPlayer: true,
+  showPlayersMenu: true,
+}));
+
+vi.mock("@/plugins/router", () => ({ default: routerMock }));
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
 
 vi.mock("@/components/ProviderIcon.vue", () => ({
   default: {
@@ -20,6 +29,9 @@ const TestIcon = markRaw({
 
 beforeEach(() => {
   i18n.global.locale.value = "en";
+  routerMock.push.mockClear();
+  storeMock.showFullscreenPlayer = true;
+  storeMock.showPlayersMenu = true;
 });
 
 describe("AudioProcessingStage", () => {
@@ -163,6 +175,87 @@ describe("AudioProcessingStage", () => {
       "audio-processing-stage-detail-content",
     );
     wrapper.unmount();
+  });
+});
+
+describe("AudioProcessingStage settings link", () => {
+  it("renders a plain title without a link", () => {
+    const wrapper = mountStage({
+      key: "dsp-state-0",
+      icon: TestIcon,
+      title: "DSP active",
+    });
+
+    expect(wrapper.find(".audio-processing-stage-link").exists()).toBe(false);
+    expect(wrapper.find(".audio-processing-stage-title").element.tagName).toBe(
+      "SPAN",
+    );
+  });
+
+  it("opens the linked settings page from the title", async () => {
+    const to = { name: "editplayerdsp", params: { playerId: "kitchen" } };
+    const wrapper = mountStage({
+      key: "dsp-state-0",
+      icon: TestIcon,
+      title: "DSP active",
+      link: { to, label: "Open DSP settings" },
+    });
+    const link = wrapper.get("button.audio-processing-stage-link");
+
+    expect(link.text()).toBe("DSP active");
+    expect(link.attributes("aria-label")).toBe("DSP active, Open DSP settings");
+
+    await link.trigger("click");
+
+    expect(storeMock.showFullscreenPlayer).toBe(false);
+    expect(storeMock.showPlayersMenu).toBe(false);
+    expect(routerMock.push).toHaveBeenCalledWith(to);
+    expect(wrapper.emitted("navigate")).toHaveLength(1);
+  });
+
+  it("opens the exact page a link works out when clicked", async () => {
+    const to = { name: "editplayerdsp", params: { playerId: "kitchen" } };
+    const exact = { ...to, query: { stage: "2" } };
+    const wrapper = mountStage({
+      key: "dsp-filter-0-0",
+      icon: TestIcon,
+      title: "Parametric EQ",
+      link: { to, label: "Open DSP settings", resolve: async () => exact },
+    });
+
+    await wrapper.get("button.audio-processing-stage-link").trigger("click");
+    await flushPromises();
+
+    expect(routerMock.push).toHaveBeenCalledWith(exact);
+  });
+});
+
+describe("AudioProcessingStage subtitle link", () => {
+  it("opens the page of the item the subtitle names", async () => {
+    const to = { name: "album", params: { provider: "library", itemId: "3" } };
+    const wrapper = mountStage({
+      key: "provider",
+      providerIconDomain: "filesystem--music",
+      title: "Local files",
+      subtitleParts: ["Playing from Midnight Avenue", "Album"],
+      subtitleLink: { to, label: "Open Midnight Avenue" },
+    });
+    const link = wrapper.get(
+      ".audio-processing-stage-subtitle button.audio-processing-stage-link",
+    );
+
+    expect(link.text()).toBe("Playing from Midnight Avenue · Album");
+    expect(link.attributes("title")).toBe("Open Midnight Avenue");
+    expect(wrapper.find(".audio-processing-stage-title").element.tagName).toBe(
+      "SPAN",
+    );
+
+    await link.trigger("click");
+
+    expect(storeMock.showFullscreenPlayer).toBe(false);
+    expect(storeMock.showPlayersMenu).toBe(false);
+    expect(routerMock.push).toHaveBeenCalledWith(to);
+    expect(wrapper.emitted("navigate")).toHaveLength(1);
   });
 });
 

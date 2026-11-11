@@ -24,13 +24,8 @@
       </h1>
 
       <div class="artist-hero__actions">
-        <DetailHeroPlayButton
-          class="artist-hero__play"
-          shrink-label
-          :item="item"
-        />
+        <DetailHeroPlayButton :item="item" />
         <DetailHeroButton
-          v-if="api.supportsPlayMediaShuffle"
           :icon="Shuffle"
           :label="$t('shuffle')"
           :disabled="!store.activePlayer"
@@ -43,6 +38,8 @@
           :disabled="!radioSupported(item)"
           @click="gotoRadio(item)"
         />
+        <!-- outside the library the services listed beside already say where it is from -->
+        <DetailHeroSourceBadge :item="item" library-only />
       </div>
     </template>
 
@@ -60,6 +57,7 @@ import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
+import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -110,7 +108,7 @@ const artistLogo = computed(() =>
   font-size: 48px;
   font-weight: 500;
   letter-spacing: -1.2px;
-  line-height: 1.05;
+  line-height: 1.2;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -128,10 +126,6 @@ const artistLogo = computed(() =>
   align-self: stretch;
   min-width: 0;
 }
-/* the play button gives way so Shuffle and Endless keep their place on the row */
-.artist-hero__play {
-  min-width: 0;
-}
 
 .artist-hero--phone .artist-hero__name {
   font-size: 34px;
@@ -142,8 +136,5 @@ const artistLogo = computed(() =>
 }
 .artist-hero--phone .artist-hero__actions {
   gap: 10px;
-}
-.artist-hero--phone .artist-hero__play {
-  flex: 1;
 }
 </style>

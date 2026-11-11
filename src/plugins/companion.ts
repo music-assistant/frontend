@@ -24,9 +24,15 @@ import {
   resolveActiveTiming,
   toElapsedTime,
 } from "@/helpers/activeElapsedTime";
+import { isPlayerGrouped } from "@/helpers/player_grouping";
 import { getMediaImageUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { PlaybackState, Player, PlayerSource } from "@/plugins/api/interfaces";
+import {
+  PlaybackState,
+  Player,
+  PlayerFeature,
+  PlayerSource,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { ref, watch } from "vue";
@@ -41,6 +47,11 @@ declare global {
       invoke?: CompanionInvoke;
     };
     __COMPANION_PLAYER_COMMAND__?: (command: string) => Promise<void>;
+    __COMPANION_VOLUME_COMMAND__?: (
+      requestId: string,
+      operation: "get" | "set" | "up" | "down",
+      value?: number,
+    ) => Promise<void>;
   }
 }
 
@@ -316,6 +327,80 @@ const handlePlayerCommand = async (command: string): Promise<void> => {
   }
 };
 
+export type CompanionVolumeOperation = "get" | "set" | "up" | "down";
+
+/** Execute a volume request against the player selected when this call begins. */
+export const executeCompanionVolume = async (
+  operation: CompanionVolumeOperation,
+  value?: number,
+): Promise<number | null> => {
+  const player = store.activePlayer;
+  if (!player) throw new Error("No selected player");
+  if (
+    !player.available ||
+    player.powered === false ||
+    !player.supported_features.includes(PlayerFeature.VOLUME_SET)
+  ) {
+    throw new Error("Selected player does not support volume control");
+  }
+  const playerId = player.player_id;
+  const grouped = isPlayerGrouped(player);
+  if (operation === "set") {
+    if (!Number.isInteger(value) || value! < 0 || value! > 100)
+      throw new Error("Volume must be an integer from 0 to 100");
+    if (grouped) {
+      await api.playerCommandGroupVolume(playerId, value!);
+    } else {
+      await api.playerCommandVolumeSet(playerId, value!);
+    }
+    return null;
+  }
+  if (value !== undefined) throw new Error("Unexpected volume value");
+  if (operation === "up") {
+    if (grouped) {
+      await api.playerCommandGroupVolumeUp(playerId);
+    } else {
+      await api.playerCommandVolumeUp(playerId);
+    }
+    return null;
+  }
+  if (operation === "down") {
+    if (grouped) {
+      await api.playerCommandGroupVolumeDown(playerId);
+    } else {
+      await api.playerCommandVolumeDown(playerId);
+    }
+    return null;
+  }
+  if (operation !== "get") throw new Error("Unknown volume operation");
+  const current = await api.getPlayer(playerId);
+  const volume = current
+    ? isPlayerGrouped(current)
+      ? current.group_volume
+      : current.volume_level
+    : undefined;
+  if (!Number.isInteger(volume) || volume == null || volume < 0 || volume > 100)
+    throw new Error("Selected player has no available volume");
+  return volume;
+};
+
+const handleCompanionVolume = async (
+  requestId: string,
+  operation: CompanionVolumeOperation,
+  value?: number,
+): Promise<void> => {
+  const invoke = getCompanionInvoke();
+  if (!invoke) return;
+  let volume: number | null = null;
+  let error: string | null = null;
+  try {
+    volume = await executeCompanionVolume(operation, value);
+  } catch (cause) {
+    error = cause instanceof Error ? cause.message : "Volume command failed";
+  }
+  await invoke("complete_applescript_volume", { requestId, volume, error });
+};
+
 /**
  * Register the global player command handler
  */
@@ -324,6 +409,7 @@ const registerPlayerCommandHandler = (): void => {
 
   // Expose the handler as a global function that Rust can call via eval
   window.__COMPANION_PLAYER_COMMAND__ = handlePlayerCommand;
+  window.__COMPANION_VOLUME_COMMAND__ = handleCompanionVolume;
   console.log("[Companion] Registered player command handler");
 };
 
@@ -334,6 +420,7 @@ const unregisterPlayerCommandHandler = (): void => {
   if (typeof window === "undefined") return;
 
   delete window.__COMPANION_PLAYER_COMMAND__;
+  delete window.__COMPANION_VOLUME_COMMAND__;
 };
 
 /**

@@ -6,8 +6,8 @@ import {
   errorMessage,
   GENERIC_SEGMENT_TEMPLATES,
   MERGE_SECTION_PROMPT,
-  relativeTimeFromIso,
   slugify,
+  resolveShowPlayerId,
 } from "@/helpers/ai_radio";
 import type { HostDraft, ShowDraft } from "@/helpers/ai_radio";
 import type {
@@ -77,26 +77,6 @@ describe("errorMessage", () => {
     expect(errorMessage({ detail: "not found" })).toBe("not found");
     expect(errorMessage("plain")).toBe("plain");
     expect(errorMessage({ code: 42 })).toBe('{"code":42}');
-  });
-});
-
-describe("relativeTimeFromIso", () => {
-  const NOW = Date.parse("2026-07-16T12:00:00Z");
-  const at = (iso: string) => relativeTimeFromIso(iso, NOW);
-
-  it("returns empty for missing or invalid input", () => {
-    expect(relativeTimeFromIso(undefined, NOW)).toBe("");
-    expect(relativeTimeFromIso("not-a-date", NOW)).toBe("");
-  });
-
-  it("formats sub-minute differences as now", () => {
-    expect(at("2026-07-16T11:59:30Z")).toBe("now");
-  });
-
-  it("formats minutes, hours and days ago", () => {
-    expect(at("2026-07-16T11:45:00Z")).toBe("15m ago");
-    expect(at("2026-07-16T10:00:00Z")).toBe("2h ago");
-    expect(at("2026-07-13T12:00:00Z")).toBe("3d ago");
   });
 });
 
@@ -334,6 +314,7 @@ describe("decompileHost", () => {
         name: legacySection.name,
         prompt: legacySection.prompt,
         webSearch: "allow",
+        allowPost: false,
         maxChars: 500,
         plays: { kind: "every_n_songs", n: 3 },
       },
@@ -360,5 +341,77 @@ describe("decompileHost", () => {
     expect(
       item && "OPTIONAL" in item ? item.OPTIONAL.chance : undefined,
     ).toBeCloseTo(2 / 3);
+  });
+});
+
+describe("allowPost", () => {
+  const makeHostDraft = (allowPost: boolean): HostDraft => ({
+    id: "rick",
+    name: "Rick",
+    instructions: "Persona.",
+    ttsEngine: "",
+    language: "",
+    options: {},
+    segments: [{ ...artistFactTemplate, allowPost }],
+  });
+
+  it("compiles each segment's switch into allow_post on its section", () => {
+    const { sections } = compileHost(makeHostDraft(true));
+    expect(sections.find((s) => s.id === "rick_artist_fact")?.allow_post).toBe(
+      true,
+    );
+  });
+
+  it("drops the switch for a closing segment, which has nothing to talk over", () => {
+    const draft = makeHostDraft(true);
+    draft.segments[0] = { ...draft.segments[0], plays: { kind: "end" } };
+    const { sections } = compileHost(draft);
+    expect(sections.find((s) => s.id === "rick_artist_fact")?.allow_post).toBe(
+      false,
+    );
+  });
+
+  it("decompiles a section the server stored without allow_post as off", () => {
+    // the server only stores the key when it is on
+    const { host, sections } = compileHost(makeHostDraft(false));
+    const stored = sections.map(({ allow_post: _dropped, ...rest }) => rest);
+    const round = decompileHost(host, stored);
+    expect(round.segments[0].allowPost).toBe(false);
+  });
+
+  it("keeps the switch on across a save and reload", () => {
+    const { host, sections } = compileHost(makeHostDraft(true));
+    const round = decompileHost(host, sections);
+    expect(round.segments[0].allowPost).toBe(true);
+    const recompiled = compileHost(round);
+    expect(recompiled.sections[0].allow_post).toBe(true);
+  });
+});
+
+describe("resolveShowPlayerId", () => {
+  const players = { kitchen: { available: true }, bath: { available: false } };
+
+  it("prefers the show's default device while it is available", () => {
+    expect(
+      resolveShowPlayerId({ default_player_id: "kitchen" }, "living", players),
+    ).toBe("kitchen");
+  });
+
+  it("falls back to the selected player when the default device is unavailable or unknown", () => {
+    expect(
+      resolveShowPlayerId({ default_player_id: "bath" }, "living", players),
+    ).toBe("living");
+    expect(
+      resolveShowPlayerId({ default_player_id: "gone" }, "living", players),
+    ).toBe("living");
+  });
+
+  it("uses the selected player when no default device is set", () => {
+    expect(
+      resolveShowPlayerId({ default_player_id: "" }, "living", players),
+    ).toBe("living");
+    expect(
+      resolveShowPlayerId({ default_player_id: "" }, undefined, players),
+    ).toBe("");
   });
 });

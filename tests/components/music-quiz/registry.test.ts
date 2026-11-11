@@ -44,7 +44,6 @@ vi.mock("@/plugins/i18n", () => ({
 
 vi.mock("@/helpers/utils", () => ({
   copyToClipboard: vi.fn(),
-  getAvatarImage: () => "",
   getImageThumbForItem: () => "",
   getMediaImageUrl: (url: string) => url,
 }));
@@ -74,6 +73,8 @@ const playerState = {
   answer_type: "multiple_choice",
   phase: "answering",
   name: "Quiz",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   suggestion_count: 2,
   answer_duration: 30,
@@ -93,6 +94,8 @@ const hostState = {
   answer_type: "multiple_choice",
   phase: "answering",
   name: "Quiz",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   suggestion_count: 2,
   answer_duration: 30,
@@ -103,6 +106,7 @@ const hostState = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [currentRound],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizGuessTheSongHostState;
 
 const musicTimelineRound = {
@@ -130,6 +134,8 @@ const musicTimelinePlayerState = {
   answer_type: "timeline",
   phase: "answering",
   name: "Music Timeline",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   answer_duration: 30,
   artist_bonus_mode: "off",
@@ -150,6 +156,8 @@ const musicTimelineHostState = {
   answer_type: "timeline",
   phase: "answering",
   name: "Music Timeline",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   answer_duration: 30,
   artist_bonus_mode: "off",
@@ -161,6 +169,7 @@ const musicTimelineHostState = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizTimelineHostState;
 
 const triviaRound = {
@@ -182,6 +191,8 @@ const triviaPlayerState = {
   play_reveal_audio: true,
   phase: "answering",
   name: "Trivia",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 5,
   suggestion_count: 2,
   answer_duration: 30,
@@ -202,6 +213,7 @@ const triviaHostState = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizTriviaHostState;
 
 interface GameMountFixture {
@@ -306,11 +318,6 @@ describe("Music Quiz registries", () => {
         play_reveal_audio: false,
       }),
     ).toBe(false);
-    const legacyTriviaState = {
-      ...triviaPlayerState,
-      play_reveal_audio: undefined,
-    };
-    expect(supportsMusicQuizListenIn(trivia, legacyTriviaState)).toBe(false);
     expect(supportsMusicQuizListenIn(trivia)).toBe(false);
     expect(
       supportsMusicQuizListenIn(

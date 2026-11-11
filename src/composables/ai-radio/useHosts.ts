@@ -2,7 +2,11 @@ import { useShows } from "@/composables/ai-radio/useShows";
 import { canUseQueueDj } from "@/helpers/ai_radio_access";
 import { trackAIRadioCache } from "@/helpers/ai_radio_events";
 import api from "@/plugins/api";
-import type { AIRadioHost, AIRadioSection } from "@/plugins/api/interfaces";
+import type {
+  AIRadioHost,
+  AIRadioQueueDJStatus,
+  AIRadioSection,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -23,33 +27,20 @@ export interface AIRadioHostPreset {
 const hosts = ref<AIRadioHost[]>([]);
 const ttsEngines = ref<AIRadioTtsEngine[]>([]);
 const presets = ref<AIRadioHostPreset[]>([]);
-// queue_id -> host_id, for queues that currently have a DJ host assigned.
-const queueDjStatus = ref<Record<string, string>>({});
+// Shared with useShows, which owns the cache and keeps it fresh from provider events.
+const { djStatus: queueDjStatus } = useShows();
 
 const loadingHosts = ref(false);
 const loadingTtsEngines = ref(false);
 const loadingPresets = ref(false);
-const loadingQueueDjStatus = ref(false);
 const savingHost = ref(false);
 // Host id currently being deleted, so only that row reflects it.
 const deletingHostId = ref("");
 
-let queueDjStatePrefetched = false;
+let hostsPrefetched = false;
 
 // Submenu only shown when the ai_radio provider is loaded.
 const aiRadioAvailable = computed(() => store.enabledPlugins.has("ai_radio"));
-
-// Prefetch as soon as the provider is there, including when it already is, for
-// the roles that get the queue DJ menu.
-watch(
-  () => aiRadioAvailable.value && canUseQueueDj(),
-  (ready) => {
-    // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
-    if (ready && authManager.guestSessionKind() === null)
-      prefetchQueueDjState();
-  },
-  { immediate: true },
-);
 
 const sortByName = <T extends { name: string }>(items: T[]): T[] => {
   return [...items].sort((a, b) => a.name.localeCompare(b.name));
@@ -139,45 +130,30 @@ async function loadPresets(): Promise<AIRadioHostPreset[]> {
   }
 }
 
-/** Assigns (or, with hostId null, clears) the DJ host for a queue; returns the updated queue_id -> host_id map. */
+/** Assigns (or, with hostId null, clears) the DJ host for a queue; returns the updated per-queue DJ status. */
 async function setQueueDj(
   queueId: string,
   hostId: string | null,
-): Promise<Record<string, string>> {
-  const result = await api.sendCommand<Record<string, string>>(
+): Promise<AIRadioQueueDJStatus> {
+  const result = await api.sendCommand<AIRadioQueueDJStatus>(
     "ai_radio/queue_dj/set",
     { queue_id: queueId, host_id: hostId },
   );
   queueDjStatus.value = result || {};
-  trackAIRadioCache("queue_dj_updated", loadQueueDjStatus);
   return queueDjStatus.value;
 }
 
 /**
- * Warms the AI DJ submenu's caches. It's handed to the eventbus as a plain
- * array, so without this the first open shows no hosts and a wrong "Off" check.
+ * Warms the AI DJ submenu's hosts cache. It's handed to the eventbus as a
+ * plain array, so without this the first open shows no hosts.
  */
-function prefetchQueueDjState(): void {
-  if (queueDjStatePrefetched) return;
-  queueDjStatePrefetched = true;
-  Promise.all([loadHosts(), loadQueueDjStatus()]).catch(() => {
+function prefetchHosts(): void {
+  if (hostsPrefetched) return;
+  hostsPrefetched = true;
+  loadHosts().catch(() => {
     // Best effort: allow a later availability flip to try again.
-    queueDjStatePrefetched = false;
+    hostsPrefetched = false;
   });
-}
-
-async function loadQueueDjStatus(): Promise<Record<string, string>> {
-  loadingQueueDjStatus.value = true;
-  try {
-    const result = await api.sendCommand<Record<string, string>>(
-      "ai_radio/queue_dj/status",
-    );
-    queueDjStatus.value = result || {};
-    trackAIRadioCache("queue_dj_updated", loadQueueDjStatus);
-    return queueDjStatus.value;
-  } finally {
-    loadingQueueDjStatus.value = false;
-  }
 }
 
 export function useHosts() {
@@ -190,7 +166,6 @@ export function useHosts() {
     loadingHosts,
     loadingTtsEngines,
     loadingPresets,
-    loadingQueueDjStatus,
     savingHost,
     deletingHostId,
     loadHosts,
@@ -202,6 +177,17 @@ export function useHosts() {
     loadTtsEngines,
     loadPresets,
     setQueueDj,
-    loadQueueDjStatus,
   };
 }
+
+// Prefetch as soon as the provider is there, including when it already is, for
+// the roles that get the queue DJ menu. Registered last: the immediate callback
+// reaches everything above.
+watch(
+  () => aiRadioAvailable.value && canUseQueueDj(),
+  (ready) => {
+    // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
+    if (ready && authManager.guestSessionKind() === null) prefetchHosts();
+  },
+  { immediate: true },
+);

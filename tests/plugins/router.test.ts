@@ -36,7 +36,6 @@ const mocks = vi.hoisted(() => ({
     enabledPlugins: new Set<string>(),
     frameless: false,
   },
-  supportsAIRadioPlaybackScopes: true,
   toastError: vi.fn(),
 }));
 
@@ -48,9 +47,6 @@ vi.mock("@/plugins/api", async () => {
   return {
     api: {
       state: mocks.apiState,
-      get supportsAIRadioPlaybackScopes() {
-        return mocks.supportsAIRadioPlaybackScopes;
-      },
     },
     ConnectionState: {
       AUTHENTICATED: "authenticated",
@@ -144,7 +140,6 @@ beforeEach(() => {
   mocks.store.currentUser = undefined;
   mocks.store.enabledPlugins = new Set<string>();
   mocks.store.frameless = false;
-  mocks.supportsAIRadioPlaybackScopes = true;
   sessionStorage.clear();
 });
 
@@ -277,46 +272,6 @@ describe("AI Radio guard", () => {
     ).resolves.toBeUndefined();
     expect(mocks.toastError).not.toHaveBeenCalled();
   });
-
-  it("keeps a member on API schema 74, where only admins play AI Radio, out with a toast", async () => {
-    mocks.store.enabledPlugins = new Set(["ai_radio"]);
-    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
-    mocks.supportsAIRadioPlaybackScopes = false;
-
-    await expect(
-      invokeGuard(aiRadioGuard, resolveRoute("/ai-radio")),
-    ).resolves.toEqual({ name: "discover" });
-    expect(mocks.toastError).toHaveBeenCalledWith(
-      "providers.ai_radio.toast.unavailable",
-    );
-  });
-
-  it.each([
-    {
-      role: "a member",
-      scopes: BUILTIN_ROLE_SCOPES.user,
-      schema: 75,
-      playbackScopes: true,
-    },
-    {
-      role: "an admin",
-      scopes: BUILTIN_ROLE_SCOPES.admin,
-      schema: 74,
-      playbackScopes: false,
-    },
-  ])(
-    "lets $role on API schema $schema into AI Radio",
-    async ({ scopes, playbackScopes }) => {
-      mocks.store.enabledPlugins = new Set(["ai_radio"]);
-      mocks.hasScope.mockImplementation(scopeChecker(scopes));
-      mocks.supportsAIRadioPlaybackScopes = playbackScopes;
-
-      await expect(
-        invokeGuard(aiRadioGuard, resolveRoute("/ai-radio")),
-      ).resolves.toBeUndefined();
-      expect(mocks.toastError).not.toHaveBeenCalled();
-    },
-  );
 
   it("drops the fallback timeout once the server connection is ready", async () => {
     vi.useFakeTimers();

@@ -255,10 +255,6 @@ const draggedItem = computed(() =>
   text-decoration: none !important;
 }
 
-:deep(a:visited) {
-  color: inherit !important;
-}
-
 :deep([data-sidebar="menu-button"] > svg),
 :deep([data-sidebar="menu-button"] svg),
 :deep([data-sidebar="menu-button"] [class*="lucide"]) {

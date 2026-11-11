@@ -1,18 +1,27 @@
 import {
   type BackgroundTask,
+  AlbumType,
+  ArtistType,
   type CommandMessage,
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
+  ListingType,
+  MediaType,
   type Player,
   PlaylistMatchPolicy,
+  type ProviderInstance,
   RepeatMode,
+  SortDirection,
+  SortField,
   type Scope,
   type ServerInfoMessage,
   type SuccessResultMessage,
   TaskStatus,
   UserRole,
 } from "@/plugins/api/interfaces";
+import { getIngressClientKey } from "@/helpers/ingress";
+import { eventbus, type StreamHeldDialogEvent } from "@/plugins/eventbus";
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../../fixtures/playlist";
@@ -53,6 +62,7 @@ import {
   ApiCommandError,
   ConnectionLostError,
   ConnectionState,
+  MIN_SERVER_SCHEMA_VERSION,
   MusicAssistantApi,
 } from "@/plugins/api";
 
@@ -69,6 +79,7 @@ const SERVER_INFO: ServerInfoMessage = {
   internal_url: "http://test.local",
   external_url: null,
   has_remote_access: false,
+  unsupported_install: false,
 };
 
 class TestTransport extends BaseTransport {
@@ -122,6 +133,14 @@ describe("MusicAssistantApi error handling", () => {
     transport.receive(SERVER_INFO);
     await initialization;
     expect(api.state.value).toBe(ConnectionState.CONNECTED);
+    // answer what the api sends on connect, so no command is left in flight
+    for (const command of transport.sentCommands) {
+      transport.receive({
+        message_id: command.message_id!,
+        result: null,
+        partial: false,
+      });
+    }
   });
 
   afterEach(() => {
@@ -175,6 +194,712 @@ describe("MusicAssistantApi error handling", () => {
     expect(consoleError).toHaveBeenCalledWith("[resultMessage]", error);
     expect(mockToastError).toHaveBeenCalledWith("Visible failure");
     expect(consoleDebug).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "top_items",
+    "plays_over_time",
+    "listening_activity",
+    "listening_time",
+    "genre_distribution",
+    "decade_distribution",
+  ])("sends the browser IANA timezone for statistics/%s", async (command) => {
+    const resolvedOptions = Intl.DateTimeFormat().resolvedOptions();
+    vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
+      ...resolvedOptions,
+      timeZone: "Europe/Berlin",
+    });
+    const calls: Record<string, () => Promise<unknown>> = {
+      top_items: () => api.getTopItems(MediaType.TRACK),
+      plays_over_time: () => api.getPlaysOverTime(),
+      listening_activity: () => api.getListeningActivity(),
+      listening_time: () => api.getListeningTime(),
+      genre_distribution: () => api.getGenreDistribution(),
+      decade_distribution: () => api.getDecadeDistribution(),
+    };
+
+    const request = calls[command]();
+
+    expect(transport.lastCommand.command).toBe(`statistics/${command}`);
+    expect(transport.lastCommand.args).toEqual(
+      expect.objectContaining({ timezone: "Europe/Berlin" }),
+    );
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("caches sort options per listing until disconnect", async () => {
+    const firstRequest = api.getSortOptions(ListingType.LIBRARY_GENRES);
+    const concurrentRequest = api.getSortOptions(ListingType.LIBRARY_GENRES);
+    const sortOptionsRequests = () =>
+      transport.sentCommands.filter(
+        (command) => command.command === "music/sort_options",
+      );
+
+    expect(sortOptionsRequests()).toHaveLength(1);
+    expect(transport.lastCommand.command).toBe("music/sort_options");
+    expect(transport.lastCommand.args).toEqual({ listing: "library_genres" });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(
+      Promise.all([firstRequest, concurrentRequest]),
+    ).resolves.toEqual([[], []]);
+
+    await expect(
+      api.getSortOptions(ListingType.LIBRARY_GENRES),
+    ).resolves.toEqual([]);
+    expect(sortOptionsRequests()).toHaveLength(1);
+
+    api.disconnect();
+    const reconnectTransport = new TestTransport();
+    const initialization = api.initialize(reconnectTransport);
+    reconnectTransport.receive(SERVER_INFO);
+    await initialization;
+
+    const afterDisconnect = api.getSortOptions(ListingType.LIBRARY_GENRES);
+    expect(
+      reconnectTransport.sentCommands.filter(
+        (command) => command.command === "music/sort_options",
+      ),
+    ).toHaveLength(1);
+    reconnectTransport.receive({
+      message_id: reconnectTransport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(afterDisconnect).resolves.toEqual([]);
+  });
+
+  it.each([
+    [ListingType.LIBRARY_ARTISTS, "library_artists"],
+    [ListingType.LIBRARY_ALBUMS, "library_albums"],
+    [ListingType.LIBRARY_TRACKS, "library_tracks"],
+    [ListingType.LIBRARY_PLAYLISTS, "library_playlists"],
+    [ListingType.LIBRARY_RADIOS, "library_radios"],
+    [ListingType.LIBRARY_AUDIOBOOKS, "library_audiobooks"],
+    [ListingType.LIBRARY_PODCASTS, "library_podcasts"],
+    [ListingType.LIBRARY_GENRES, "library_genres"],
+  ] as const)(
+    "requests sort options for %s using listing %s",
+    async (listingType, listing) => {
+      const request = api.getSortOptions(listingType);
+
+      expect(transport.lastCommand.command).toBe("music/sort_options");
+      expect(transport.lastCommand.args).toEqual({ listing });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it("sends typed sort fields for library listings", async () => {
+    const sortedRequest = api.getLibraryTracks(
+      false,
+      undefined,
+      20,
+      10,
+      SortField.NAME,
+      SortDirection.DESC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/tracks/library_items");
+    expect(transport.lastCommand.args).toMatchObject({
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.DESC,
+    });
+    expect(transport.lastCommand.args).not.toHaveProperty("order_by");
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(sortedRequest).resolves.toEqual([]);
+  });
+
+  it.each([true, false, undefined])(
+    "sends album track parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getAlbumTracks(
+        "album-1",
+        "spotify",
+        true,
+        "live",
+        20,
+        40,
+        SortField.DURATION,
+        SortDirection.DESC,
+        favorite,
+      );
+
+      expect(transport.lastCommand.command).toBe("music/albums/album_tracks");
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "album-1",
+        provider_instance_id_or_domain: "spotify",
+        in_library_only: true,
+        search: "live",
+        sort_field: SortField.DURATION,
+        sort_direction: SortDirection.DESC,
+        limit: 20,
+        offset: 40,
+        favorite,
+      });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it("sends typed paging parameters for playlist tracks", async () => {
+    const request = api.getPlaylistTracks(
+      "playlist-1",
+      "spotify",
+      true,
+      true,
+      "live",
+      20,
+      40,
+      SortField.POSITION,
+      SortDirection.ASC,
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/playlists/playlist_tracks",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "playlist-1",
+      provider_instance_id_or_domain: "spotify",
+      force_refresh: true,
+      favorite: true,
+      search: "live",
+      sort_field: SortField.POSITION,
+      sort_direction: SortDirection.ASC,
+      limit: 20,
+      offset: 40,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for podcast episodes", async () => {
+    const request = api.getPodcastEpisodes(
+      "podcast-1",
+      "rss",
+      false,
+      "interview",
+      20,
+      40,
+      SortField.POSITION,
+      SortDirection.DESC,
+      "episode-current",
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/podcasts/podcast_episodes",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "podcast-1",
+      provider_instance_id_or_domain: "rss",
+      fully_played: false,
+      search: "interview",
+      sort_field: SortField.POSITION,
+      sort_direction: SortDirection.DESC,
+      limit: 20,
+      offset: 40,
+      exclude_item_id: "episode-current",
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for similar tracks", async () => {
+    const request = api.getSimilarTracks(
+      "track-1",
+      "spotify",
+      20,
+      "live",
+      40,
+      SortField.NAME,
+      SortDirection.ASC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/tracks/similar_tracks");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "track-1",
+      provider_instance_id_or_domain: "spotify",
+      limit: 20,
+      search: "live",
+      offset: 40,
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.ASC,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for browse", async () => {
+    const request = api.browse(
+      "spotify://albums",
+      "player-1",
+      undefined,
+      "live",
+      20,
+      40,
+      SortField.NAME,
+      SortDirection.DESC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/browse");
+    expect(transport.lastCommand.args).toEqual({
+      path: "spotify://albums",
+      player_id: "player-1",
+      search: "live",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.DESC,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for artist appearances", async () => {
+    const request = api.getArtistAppearsOn(
+      "artist-1",
+      "library",
+      undefined,
+      "live",
+      20,
+      40,
+      SortField.ORIGINAL,
+      undefined,
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/artist_appears_on",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      provider_filter: undefined,
+      search: "live",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.ORIGINAL,
+      sort_direction: undefined,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends a random seed with library track listings", async () => {
+    const request = api.getLibraryTracks(
+      undefined,
+      undefined,
+      20,
+      40,
+      SortField.RANDOM,
+      undefined,
+      undefined,
+      undefined,
+      1234,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/tracks/library_items");
+    expect(transport.lastCommand.args).toEqual({
+      favorite: undefined,
+      search: undefined,
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.RANDOM,
+      sort_direction: undefined,
+      provider: undefined,
+      genre: undefined,
+      random_seed: 1234,
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends random seeds with every random-capable library listing", async () => {
+    const seed = 1234;
+    const requests: Array<{
+      command: string;
+      request: () => Promise<unknown>;
+    }> = [
+      {
+        command: "music/artists/library_items",
+        request: () =>
+          api.getLibraryArtists(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/albums/library_items",
+        request: () =>
+          api.getLibraryAlbums(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/playlists/library_items",
+        request: () =>
+          api.getLibraryPlaylists(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/radios/library_items",
+        request: () =>
+          api.getLibraryRadios(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/audiobooks/library_items",
+        request: () =>
+          api.getLibraryAudiobooks(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/podcasts/library_items",
+        request: () =>
+          api.getLibraryPodcasts(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/genres/library_items",
+        request: () =>
+          api.getLibraryGenres({
+            limit: 20,
+            offset: 40,
+            sort_field: SortField.RANDOM,
+            random_seed: seed,
+          }),
+      },
+    ];
+
+    for (const testCase of requests) {
+      const request = testCase.request();
+      expect(transport.lastCommand.command).toBe(testCase.command);
+      expect(transport.lastCommand.args).toMatchObject({ random_seed: seed });
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    }
+  });
+
+  it.each([true, false, undefined])(
+    "sends artist track parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getArtistTracks(
+        "artist-1",
+        "library",
+        "spotify--1",
+        "live",
+        20,
+        40,
+        SortField.DURATION,
+        SortDirection.DESC,
+        favorite,
+      );
+
+      expect(transport.lastCommand.command).toBe("music/artists/artist_tracks");
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "artist-1",
+        provider_instance_id_or_domain: "library",
+        provider_filter: "spotify--1",
+        search: "live",
+        limit: 20,
+        offset: 40,
+        sort_field: SortField.DURATION,
+        sort_direction: SortDirection.DESC,
+        favorite,
+      });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it.each([true, false, undefined])(
+    "sends artist album parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getArtistAlbums(
+        "artist-1",
+        "library",
+        undefined,
+        "live",
+        20,
+        40,
+        SortField.NAME,
+        SortDirection.ASC,
+        [AlbumType.SINGLE, AlbumType.EP],
+        favorite,
+      );
+
+      expect(transport.lastCommand.command).toBe("music/artists/artist_albums");
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "artist-1",
+        provider_instance_id_or_domain: "library",
+        provider_filter: undefined,
+        search: "live",
+        limit: 20,
+        offset: 40,
+        sort_field: SortField.NAME,
+        sort_direction: SortDirection.ASC,
+        album_types: [AlbumType.SINGLE, AlbumType.EP],
+        favorite,
+      });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it.each([true, false, undefined])(
+    "sends collection parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getAudiobookCollection(
+        "collection-1",
+        "chapter 2",
+        20,
+        40,
+        favorite,
+      );
+
+      expect(transport.lastCommand.command).toBe(
+        "music/audiobooks/get_collection",
+      );
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "collection-1",
+        search: "chapter 2",
+        limit: 20,
+        offset: 40,
+        favorite,
+      });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: {
+          item_id: "collection-1",
+          name: "Collection",
+          provider: "library",
+          items: [],
+        },
+        partial: false,
+      });
+      await expect(request).resolves.toMatchObject({ items: [] });
+    },
+  );
+
+  it("sends typed paging parameters for artist audiobooks", async () => {
+    const request = api.getArtistAudiobooks(
+      "artist-1",
+      "library",
+      ArtistType.AUTHOR,
+      true,
+      true,
+      "story",
+      20,
+      40,
+      SortField.NAME,
+      SortDirection.ASC,
+      "qobuz_1",
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/artist_audiobooks",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      artist_type: ArtistType.AUTHOR,
+      in_library_only: true,
+      collapse_collections: true,
+      search: "story",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.ASC,
+      provider_filter: "qobuz_1",
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for radio versions", async () => {
+    const request = api.getRadioVersions(
+      "radio-1",
+      "library",
+      "jazz",
+      20,
+      40,
+      SortField.PROVIDER,
+      SortDirection.ASC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/radios/radio_versions");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "radio-1",
+      provider_instance_id_or_domain: "library",
+      search: "jazz",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.PROVIDER,
+      sort_direction: SortDirection.ASC,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for artist discography", async () => {
+    const request = api.getArtistDiscography(
+      "artist-1",
+      "jazz",
+      20,
+      40,
+      SortField.YEAR,
+      SortDirection.DESC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/artists/discography");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      search: "jazz",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.YEAR,
+      sort_direction: SortDirection.DESC,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
   });
 
   it("lets updateUser suppress the global error toast for the caller", async () => {
@@ -244,6 +969,7 @@ describe("MusicAssistantApi error handling", () => {
       message_id: transport.lastCommand.message_id!,
       error_code: 1001,
       details: null,
+      data: null,
     });
 
     await expect(command).rejects.toMatchObject({
@@ -345,24 +1071,25 @@ describe("MusicAssistantApi error handling", () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
-  it("lists the share candidates from schema 72 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 71 };
-    expect(api.supportsShareCandidates).toBe(false);
+  it("flags a server below the minimum schema version as outdated", () => {
+    // before server_info arrives there is nothing to judge yet
+    api.serverInfo.value = undefined;
+    expect(api.serverOutdated).toBe(false);
 
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 72 };
-    expect(api.supportsShareCandidates).toBe(true);
-  });
+    api.serverInfo.value = {
+      ...SERVER_INFO,
+      schema_version: MIN_SERVER_SCHEMA_VERSION - 1,
+    };
+    expect(api.serverOutdated).toBe(true);
 
-  it("lists the roles from schema 74 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 73 };
-    expect(api.supportsRoles).toBe(false);
-
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
-    expect(api.supportsRoles).toBe(true);
+    api.serverInfo.value = {
+      ...SERVER_INFO,
+      schema_version: MIN_SERVER_SCHEMA_VERSION,
+    };
+    expect(api.serverOutdated).toBe(false);
   });
 
   it("loads the roles the server lists", async () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
     const roles = [
       {
         role_id: UserRole.ADMIN,
@@ -381,32 +1108,6 @@ describe("MusicAssistantApi error handling", () => {
       partial: false,
     });
     await expect(result).resolves.toEqual(roles);
-  });
-
-  it("builds the builtin roles from their scopes on an older server", async () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 73 };
-    const result = api.getRoles();
-
-    expect(transport.lastCommand.command).toBe("auth/scopes");
-    transport.receive({
-      message_id: transport.lastCommand.message_id!,
-      result: { [UserRole.ADMIN]: ["*"], [UserRole.GUEST]: ["library.read"] },
-      partial: false,
-    });
-    await expect(result).resolves.toEqual([
-      {
-        role_id: UserRole.ADMIN,
-        name: UserRole.ADMIN,
-        scopes: ["*"],
-        builtin: true,
-      },
-      {
-        role_id: UserRole.GUEST,
-        name: UserRole.GUEST,
-        scopes: ["library.read"],
-        builtin: true,
-      },
-    ]);
   });
 
   it("sends the role commands and leaves their errors to the caller", async () => {
@@ -457,16 +1158,15 @@ describe("MusicAssistantApi error handling", () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
-  it("lets a role with queues.control play AI Radio from schema 75 on", () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
-    expect(api.supportsAIRadioPlaybackScopes).toBe(false);
-
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 75 };
-    expect(api.supportsAIRadioPlaybackScopes).toBe(true);
-  });
-
   it("asks the library for an artist's discography", () => {
-    api.getArtistDiscography("artist-1");
+    api.getArtistDiscography(
+      "artist-1",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    );
 
     expect(transport.lastCommand.command).toBe("music/artists/discography");
     expect(transport.lastCommand.args).toEqual({
@@ -475,8 +1175,35 @@ describe("MusicAssistantApi error handling", () => {
     });
   });
 
+  it("asks for the discography releases of the given types", () => {
+    api.getArtistDiscography(
+      "artist-1",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      [AlbumType.ALBUM, AlbumType.LIVE],
+    );
+
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      album_types: [AlbumType.ALBUM, AlbumType.LIVE],
+    });
+  });
+
   it("asks the library for the albums an artist appears on", () => {
-    api.getArtistAppearsOn("artist-1", "library", "spotify--abc");
+    api.getArtistAppearsOn(
+      "artist-1",
+      "library",
+      "spotify--abc",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    );
 
     expect(transport.lastCommand.command).toBe(
       "music/artists/artist_appears_on",
@@ -627,6 +1354,171 @@ describe("MusicAssistantApi error handling", () => {
       expect.any(Error),
     );
     expect(api["commands"].size).toBe(0);
+  });
+
+  it("stops a queue and resolves once the server answers", async () => {
+    const stop = api.queueCommandStop("living_room");
+
+    expect(transport.lastCommand.command).toBe("player_queues/stop");
+    expect(transport.lastCommand.args).toEqual({ queue_id: "living_room" });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: null,
+      partial: false,
+    });
+    await expect(stop).resolves.toBeNull();
+  });
+
+  describe("a playback refused over a held stream", () => {
+    const HOLDER = {
+      queue_id: "living_room",
+      player_name: "Living room",
+      provider_instance: "spotify--abc",
+    };
+    const PLAY_ARGS = {
+      queue_id: "kitchen",
+      media: ["spotify--abc://track/1"],
+      option: "play",
+    };
+    let dialogEvents: StreamHeldDialogEvent[];
+    const onDialog = (evt: StreamHeldDialogEvent) => dialogEvents.push(evt);
+
+    beforeEach(() => {
+      dialogEvents = [];
+      eventbus.on("streamHeldDialog", onDialog);
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(console, "debug").mockImplementation(() => {});
+      api.providers["spotify--abc"] = {
+        instance_id: "spotify--abc",
+        domain: "spotify",
+        name: "Spotify [marcel]",
+      } as ProviderInstance;
+    });
+
+    afterEach(() => {
+      eventbus.off("streamHeldDialog", onDialog);
+      delete api.providers["spotify--abc"];
+    });
+
+    function refuse(data: Record<string, unknown> | null = HOLDER) {
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        error_code: 29,
+        details:
+          "Spotify [marcel] is already playing on Living room. Stop playback there first.",
+        data,
+      });
+    }
+
+    it("offers the dialog instead of a toast and still rejects the caller", async () => {
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS);
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+        data: HOLDER,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(mockToastError).not.toHaveBeenCalled();
+      expect(dialogEvents).toEqual([
+        {
+          holderQueueId: "living_room",
+          holderName: "Living room",
+          providerName: "Spotify [marcel]",
+          retry: expect.any(Function),
+        },
+      ]);
+    });
+
+    it("sends the refused command again on retry", async () => {
+      api.sendCommand("player_queues/play_media", PLAY_ARGS).catch(() => {});
+      const refused = transport.lastCommand;
+      refuse();
+
+      const retry = dialogEvents[0].retry();
+
+      expect(transport.lastCommand.command).toBe("player_queues/play_media");
+      expect(transport.lastCommand.args).toEqual(PLAY_ARGS);
+      expect(transport.lastCommand.message_id).not.toBe(refused.message_id);
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: null,
+        partial: false,
+      });
+      await expect(retry).resolves.toBeNull();
+    });
+
+    it("offers the dialog for a queue item started from the queue", async () => {
+      const command = api.queueCommandPlayIndex("kitchen", "item-1");
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(mockToastError).not.toHaveBeenCalled();
+      dialogEvents[0].retry().catch(() => {});
+      expect(transport.lastCommand.command).toBe("player_queues/play_index");
+      expect(transport.lastCommand.args).toEqual({
+        queue_id: "kitchen",
+        index: "item-1",
+      });
+    });
+
+    it("keeps the toast for a command that waits for no result", () => {
+      api.queueCommandTransfer("living_room", "kitchen", true);
+
+      refuse();
+
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledOnce();
+    });
+
+    it("keeps the toast when no dialog is listening", async () => {
+      eventbus.off("streamHeldDialog", onDialog);
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS);
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledOnce();
+    });
+
+    it("leaves a suppressed refusal to its caller", async () => {
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS, {
+        suppressGlobalError: true,
+      });
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).not.toHaveBeenCalled();
+    });
+
+    it("keeps the toast when the refusal does not name the holder", async () => {
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS);
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse(null);
+
+      await rejection;
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledWith(
+        "Spotify [marcel] is already playing on Living room. Stop playback there first.",
+      );
+    });
   });
 
   it("imports a playlist with the chosen match policy", async () => {
@@ -799,6 +1691,58 @@ describe("MusicAssistantApi error handling", () => {
   });
 });
 
+describe("MusicAssistantApi connection over Home Assistant Ingress", () => {
+  const INGRESS_ADDRESS = "http://ha.local:8123/api/hassio_ingress/abc";
+  let openedUrls: string[];
+  let originalUrl: string;
+
+  beforeEach(() => {
+    openedUrls = [];
+    originalUrl = window.location.href;
+    // a socket that never opens shows which URL the api connected to
+    vi.stubGlobal(
+      "WebSocket",
+      class {
+        constructor(url: string) {
+          openedUrls.push(url);
+        }
+      },
+    );
+  });
+
+  afterEach(() => {
+    setUrl(originalUrl);
+    localStorage.clear();
+    vi.unstubAllGlobals();
+  });
+
+  it("identifies this browser on the API connection", () => {
+    setUrl(`${INGRESS_ADDRESS}/`);
+
+    void new MusicAssistantApi().initialize(INGRESS_ADDRESS);
+
+    expect(openedUrls).toEqual([
+      `ws://ha.local:8123/api/hassio_ingress/abc/ws?ingress_client_key=${getIngressClientKey()}`,
+    ]);
+  });
+
+  it("does not identify this browser outside Ingress", () => {
+    void new MusicAssistantApi().initialize("http://ma.local:8095");
+
+    expect(openedUrls).toEqual(["ws://ma.local:8095/ws"]);
+  });
+});
+
+/**
+ * Point the test window at another URL.
+ */
+function setUrl(url: string) {
+  // setURL, as replaceState can not change the origin
+  (
+    window as unknown as { happyDOM: { setURL(url: string): void } }
+  ).happyDOM.setURL(url);
+}
+
 /**
  * Run a task and hand back the options of the toast announcing it.
  */
@@ -826,5 +1770,6 @@ function createErrorResult(
     message_id: command.message_id,
     error_code: 999,
     details,
+    data: null,
   };
 }

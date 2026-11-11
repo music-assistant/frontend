@@ -4,6 +4,7 @@
     class="ed-card ma-tap"
     role="button"
     tabindex="0"
+    :aria-busy="resolving || undefined"
     :class="{
       'ed-card--unavailable': !isAvailable && !notInLibrary,
       'ed-card--not-in-library': notInLibrary,
@@ -35,9 +36,16 @@
         :item="props.item as MediaCollection<MediaItemType>"
         :thumb-offset="22"
       />
-      <span v-else-if="art.initials" class="ed-card__initials">{{
-        art.initials
-      }}</span>
+      <span
+        v-else-if="art.placeholderIcon"
+        class="ed-card__placeholder absolute inset-0 flex items-center justify-center"
+        aria-hidden="true"
+      >
+        <component
+          :is="art.placeholderIcon"
+          class="size-[40%] text-white/55 drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
+        />
+      </span>
       <ProviderIcon
         v-if="providerDomain"
         class="ed-card__provider"
@@ -57,10 +65,11 @@
         :title="playedStateLabel"
         :aria-label="playedStateLabel"
       >
-        <Check v-if="isFullyPlayed" :size="16" />
+        <Check v-if="playedState === 'fully_played'" :size="16" />
         <ClockFading v-else :size="16" />
       </span>
       <slot name="art-overlay"></slot>
+      <ArtworkSpinner v-if="resolving" spinner-class="size-8" />
       <div
         v-if="showCheckboxes"
         class="ed-card__select"
@@ -101,6 +110,7 @@
 </template>
 
 <script setup lang="ts">
+import ArtworkSpinner from "@/components/ArtworkSpinner.vue";
 import {
   itemArtwork,
   placeholderArtwork,
@@ -110,11 +120,13 @@ import { getCustomImage } from "@/helpers/customImage";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { useProviderIcon } from "@/composables/useProviderIcon";
+import { useResolvingItems } from "@/composables/useResolvingItems";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
+import { getPlayedState } from "@/helpers/played_state";
 import {
   getArtistsString,
   getAuthorsNarratorsArray,
@@ -124,7 +136,6 @@ import {
   getListItemProviderIconDomain,
   getProviderRootDomain,
   isMusicBrainzItem,
-  itemSupportsPlayLog,
 } from "@/plugins/api/helpers";
 import {
   type Album,
@@ -134,6 +145,8 @@ import {
   MediaType,
   type MediaCollection,
   type PodcastEpisode,
+  SortDirection,
+  SortField,
   type Track,
 } from "@/plugins/api/interfaces";
 import { Check, ClockFading, Play } from "@lucide/vue";
@@ -155,6 +168,8 @@ interface Props {
   round?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
 }
 const props = withDefaults(defineProps<Props>(), {
   showProviderOnCover: false,
@@ -168,6 +183,8 @@ const props = withDefaults(defineProps<Props>(), {
   round: false,
   parentItem: undefined,
   sortBy: undefined,
+  sortField: undefined,
+  sortDirection: undefined,
 });
 
 const emit = defineEmits<{
@@ -203,6 +220,9 @@ const isGenre = computed(
 // since it can be opened and added to the library
 const notInLibrary = computed(() => isMusicBrainzItem(props.item));
 
+const { isResolving } = useResolvingItems();
+const resolving = computed(() => isResolving(props.item.uri));
+
 // provider entries in the browse root show the provider icon
 const { iconDataUri: providerRootIcon } = useProviderIcon(() =>
   getProviderRootDomain(props.item),
@@ -237,16 +257,11 @@ const providerDomain = computed<string | undefined>(() => {
   return getListItemProviderIconDomain(it);
 });
 
-const isFullyPlayed = computed(
-  () => itemSupportsPlayLog(props.item) && !!props.item.fully_played,
-);
-const isInProgress = computed(
-  () => itemSupportsPlayLog(props.item) && !!props.item.resume_position_ms,
-);
+const playedState = computed(() => getPlayedState(props.item));
 // undefined while unplayed, when the cover shows no played state
 const playedStateLabel = computed(() => {
-  if (isFullyPlayed.value) return t("item_fully_played");
-  return isInProgress.value ? t("item_in_progress") : undefined;
+  if (playedState.value === "fully_played") return t("item_fully_played");
+  return playedState.value ? t("item_in_progress") : undefined;
 });
 
 const displayName = computed(() => {
@@ -311,6 +326,8 @@ const onHold = (e: TouchEvent) => {
     props.parentItem,
     true,
     props.sortBy,
+    props.sortField,
+    props.sortDirection,
   );
 };
 const onPlay = (e: MouseEvent) => {
@@ -322,6 +339,9 @@ const onPlay = (e: MouseEvent) => {
     props.parentItem,
     undefined,
     props.sortBy,
+    undefined,
+    props.sortField,
+    props.sortDirection,
   );
 };
 const onMenu = (e: MouseEvent) => {
@@ -333,6 +353,8 @@ const onMenu = (e: MouseEvent) => {
     props.parentItem,
     true,
     props.sortBy,
+    props.sortField,
+    props.sortDirection,
   );
 };
 </script>
@@ -393,19 +415,6 @@ const onMenu = (e: MouseEvent) => {
 }
 .ed-card--round .ed-card__art {
   border-radius: 999px;
-}
-.ed-card__initials {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 34cqw;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  user-select: none;
 }
 .ed-card__provider {
   position: absolute;

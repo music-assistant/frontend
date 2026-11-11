@@ -14,7 +14,6 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 vi.mock("@/helpers/utils", () => ({
-  getAvatarImage: () => "",
   getMediaImageUrl: (url: string) => url,
 }));
 
@@ -76,6 +75,8 @@ const hostState = {
   answer_type: "timeline",
   phase: "answering",
   name: "Music Timeline",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 1,
   answer_duration: 30,
   artist_bonus_mode: "free_text",
@@ -118,6 +119,7 @@ const hostState = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [protectedHostRound],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizTimelineHostState;
 
 describe("timeline host and present answers", () => {
@@ -229,6 +231,11 @@ describe("timeline host and present answers", () => {
           },
         },
       ],
+      playback: {
+        mode: "venue",
+        venue_player_id: null,
+        venue_player_name: null,
+      },
     } satisfies MusicQuizTimelineHostState;
     const wrapper = mount(TimelineAudienceAnswer, {
       props: {
