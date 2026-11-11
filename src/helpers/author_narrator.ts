@@ -14,3 +14,10 @@ export function isAuthorOrNarrator(item: MediaItemTypeOrItemMapping): boolean {
     AUDIOBOOK_ARTIST_TYPES.includes(item.artist_type)
   );
 }
+
+// translation key naming what the item is, so an author reads as such
+export function getItemTypeLabelKey(item: MediaItemTypeOrItemMapping): string {
+  return isAuthorOrNarrator(item) && "artist_type" in item
+    ? item.artist_type
+    : item.media_type;
+}

@@ -107,6 +107,7 @@ import {
   SEARCHABLE_MEDIA_TYPES,
   useProgressiveSearch,
 } from "@/composables/useProgressiveSearch";
+import { getItemTypeLabelKey } from "@/helpers/author_narrator";
 import { getArtistsString } from "@/helpers/utils";
 import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
@@ -270,7 +271,7 @@ const flatResults = computed<MediaItemTypeOrItemMapping[]>(() => {
 });
 
 const itemSubtitle = function (item: MediaItemTypeOrItemMapping) {
-  const label = $t(item.media_type);
+  const label = $t(getItemTypeLabelKey(item));
   const artists =
     "artists" in item && item.artists.length
       ? getArtistsString(item.artists)

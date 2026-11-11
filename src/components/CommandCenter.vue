@@ -351,6 +351,7 @@ import {
   useProgressiveSearch,
 } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { getItemTypeLabelKey } from "@/helpers/author_narrator";
 import {
   handleMenuBtnClick,
   handlePlayBtnClick,
@@ -680,7 +681,7 @@ const showInputSpinner = computed(
 );
 
 const itemSubtitle = function (item: MediaItemTypeOrItemMapping) {
-  const label = $t(item.media_type);
+  const label = $t(getItemTypeLabelKey(item));
   const artists =
     "artists" in item && item.artists.length
       ? getArtistsString(item.artists)
