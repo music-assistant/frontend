@@ -2735,18 +2735,10 @@ export class MusicAssistantApi {
     option?: QueueOption,
     options: PlayMediaOptions = {},
   ): Promise<void> {
-    let queue_id = options.queue_id;
-    if (
-      !queue_id &&
-      store.activePlayer?.active_source &&
-      store.activePlayer.active_source in this.queues
-    ) {
-      queue_id = store.activePlayer.active_source;
-    } else if (!queue_id) {
-      queue_id = store.activePlayer?.player_id;
-    }
     const payload = {
-      queue_id,
+      // a player's own queue id is its player id; the server routes a grouped
+      // or synced player's request to the queue that should handle it
+      queue_id: options.queue_id ?? store.activePlayer?.player_id,
       media,
       option,
       start_item: options.start_item,

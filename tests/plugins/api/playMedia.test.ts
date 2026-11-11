@@ -1,10 +1,13 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { api } from "@/plugins/api";
 import {
   QueueOption,
   SortDirection,
   SortField,
+  type Player,
+  type PlayerQueue,
 } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 
 describe("playMedia start_position passthrough", () => {
   afterEach(() => {
@@ -98,6 +101,92 @@ describe("playMedia typed sort passthrough", () => {
     expect(spy).toHaveBeenCalledWith(
       "player_queues/play_media",
       expect.objectContaining({ sort_by: "duration_desc" }),
+    );
+  });
+});
+
+describe("playMedia target queue", () => {
+  beforeEach(() => {
+    for (const id of ["grouped", "group", "solo"]) {
+      api.queues[id] = { queue_id: id } as PlayerQueue;
+    }
+    api.players["grouped"] = {
+      player_id: "grouped",
+      active_source: "group",
+    } as Player;
+    api.players["solo"] = {
+      player_id: "solo",
+      active_source: "solo",
+    } as Player;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    store.activePlayerId = undefined;
+    for (const id of ["grouped", "group", "solo"]) {
+      delete api.queues[id];
+      delete api.players[id];
+    }
+  });
+
+  // the server decides where a grouped player's request goes, so the client
+  // never swaps in the group's queue
+  it.each([
+    QueueOption.PLAY,
+    QueueOption.REPLACE,
+    QueueOption.ADD,
+    QueueOption.NEXT,
+    undefined,
+  ])(
+    "sends the picked player's own id for a grouped player (option %s)",
+    (option) => {
+      store.activePlayerId = "grouped";
+      const spy = vi
+        .spyOn(api, "sendCommand")
+        .mockResolvedValue(undefined as never);
+
+      api.playMedia("library://track/1", option);
+
+      expect(spy).toHaveBeenCalledWith(
+        "player_queues/play_media",
+        expect.objectContaining({ queue_id: "grouped", option }),
+      );
+    },
+  );
+
+  it.each([
+    QueueOption.PLAY,
+    QueueOption.REPLACE,
+    QueueOption.ADD,
+    QueueOption.NEXT,
+  ])(
+    "sends the player's own id for an ungrouped player (option %s)",
+    (option) => {
+      store.activePlayerId = "solo";
+      const spy = vi
+        .spyOn(api, "sendCommand")
+        .mockResolvedValue(undefined as never);
+
+      api.playMedia("library://track/1", option);
+
+      expect(spy).toHaveBeenCalledWith(
+        "player_queues/play_media",
+        expect.objectContaining({ queue_id: "solo", option }),
+      );
+    },
+  );
+
+  it("keeps an explicitly passed queue id", () => {
+    store.activePlayerId = "grouped";
+    const spy = vi
+      .spyOn(api, "sendCommand")
+      .mockResolvedValue(undefined as never);
+
+    api.playMedia("library://track/1", QueueOption.ADD, { queue_id: "solo" });
+
+    expect(spy).toHaveBeenCalledWith(
+      "player_queues/play_media",
+      expect.objectContaining({ queue_id: "solo" }),
     );
   });
 });

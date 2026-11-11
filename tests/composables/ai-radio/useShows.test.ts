@@ -66,13 +66,12 @@ describe("useShows startShow", () => {
     });
   });
 
-  // a synced child plays from its leader's queue; the server does not redirect
-  // an explicit queue_id, so the client resolves it the way api.playMedia does
-  it("routes a synced player's show to its group leader's queue", async () => {
+  // the server decides whether a synced player plays the show alone or on its group
+  it("plays a synced player's show on the picked player", async () => {
     await useShows().startShow("show-1", "bedroom");
 
     expect(playMedia).toHaveBeenCalledWith(showUri("show-1"), undefined, {
-      queue_id: "livingroom",
+      queue_id: "bedroom",
       suppressGlobalError: true,
     });
   });
