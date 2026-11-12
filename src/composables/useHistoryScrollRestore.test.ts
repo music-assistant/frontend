@@ -54,6 +54,7 @@ describe("useHistoryScrollRestore", () => {
     scopes = [];
     scroller.remove();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   function mount() {
@@ -121,6 +122,23 @@ describe("useHistoryScrollRestore", () => {
     document.body.dispatchEvent(
       new KeyboardEvent("keydown", { bubbles: true }),
     );
+    setContentHeight(2000);
+    resize();
+    expect(scroller.scrollTop).toBe(0);
+  });
+
+  it("leaves the page alone when the content never gets tall enough", async () => {
+    vi.useFakeTimers();
+    leaveAt(1200);
+    historyMock.returned = true;
+    setContentHeight(800);
+    mount();
+    await nextTick();
+
+    vi.runAllTimers();
+    expect(scroller.scrollTop).toBe(0);
+
+    // the restore has given up, so content that grows later no longer moves the page
     setContentHeight(2000);
     resize();
     expect(scroller.scrollTop).toBe(0);

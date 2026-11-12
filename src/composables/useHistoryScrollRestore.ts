@@ -72,10 +72,7 @@ export function useHistoryScrollRestore(content: Ref<HTMLElement | undefined>) {
       },
       { immediate: true },
     );
-    const timeout = setTimeout(() => {
-      scroller.scrollTop = top;
-      stopRestore?.();
-    }, RESTORE_TIMEOUT_MS);
+    const timeout = setTimeout(() => stopRestore?.(), RESTORE_TIMEOUT_MS);
     // the user scrolling on their own wins over the restore; pointerdown
     // covers touch and dragging the scrollbar
     const userEvents = ["wheel", "pointerdown"] as const;
