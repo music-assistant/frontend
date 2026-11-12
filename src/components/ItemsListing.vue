@@ -499,8 +499,7 @@ import {
 } from "@/composables/useListingFilters";
 import { useListingCount } from "@/composables/useListingCount";
 import { useListingSaves } from "@/composables/useListingSaves";
-import { canSavePlaylistMoves } from "@/composables/usePlaylistTrackReorder";
-import { useTrackReorderRows } from "@/composables/useTrackReorderRows";
+import { usePlaylistTrackReorder } from "@/composables/usePlaylistTrackReorder";
 import type {
   LoadDataParams,
   LoadPagedDataFn,
@@ -1531,8 +1530,6 @@ const canDragTracks = computed(
     displayedSort.value.sortField === SortField.POSITION &&
     displayedSort.value.sortDirection !== SortDirection.DESC &&
     !hasActiveFilters.value &&
-    // a move made while reconnecting could not be saved nor read back
-    canSavePlaylistMoves() &&
     listsPlaylistFromStart(pagedItems.value),
 );
 const trackRowColumns = computed<TrackColumn[]>(() =>
@@ -1559,7 +1556,7 @@ const {
   draggedCount,
   rowDragStyle: trackRowDragStyle,
   rowDragClass: trackRowDragClass,
-} = useTrackReorderRows({
+} = usePlaylistTrackReorder({
   listEl: listRowsEl,
   items: pagedItems,
   // albums re-read their rows the same way, but only a playlist's edits are held

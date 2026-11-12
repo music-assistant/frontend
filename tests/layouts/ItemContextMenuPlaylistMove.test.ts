@@ -4,14 +4,10 @@
  * may edit, on a provider that can store a new order, and save the move
  * straight away.
  */
-import { sendPlaylistEdit } from "@/composables/usePlaylistTrackReorder";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import {
-  EventType,
   ProviderFeature,
   ProviderType,
-  TaskStatus,
-  type BackgroundTask,
   type Scope,
   type User,
 } from "@/plugins/api/interfaces";
@@ -31,10 +27,8 @@ const { apiMock, authMock, storeMock, mockEventbusEmit, toastMock } =
       getLibraryItem: vi.fn(),
       movePlaylistTracks: vi.fn(),
       removePlaylistTracks: vi.fn(),
-      subscribe: vi.fn(),
-      getTasks: vi.fn(),
       players: {},
-      state: { value: "initialized" },
+      state: { value: "initialized" } as { value: string },
     },
     toastMock: { success: vi.fn(), error: vi.fn() },
     authMock: {
@@ -100,23 +94,14 @@ const moveLabels = async (items = [track({ position: 2 })]) =>
     .map((item) => item.label)
     .filter((label) => MOVE_LABELS.includes(label));
 
-// the playlist edits offered for a track, and whether each can be used now
-const EDIT_LABELS = ["remove_playlist", ...MOVE_LABELS];
-const editStates = async () =>
-  Object.fromEntries(
-    (await getContextMenuItems([track({ position: 2 })], parent))
-      .filter((item) => EDIT_LABELS.includes(item.label))
-      .map((item) => [item.label, item.disabled !== true]),
-  );
-const ALL_ENABLED = Object.fromEntries(EDIT_LABELS.map((l) => [l, true]));
-const ALL_DISABLED = Object.fromEntries(EDIT_LABELS.map((l) => [l, false]));
-
 beforeEach(() => {
   vi.clearAllMocks();
+  apiMock.state.value = "initialized";
   apiMock.getLibraryItem.mockResolvedValue(null);
+  apiMock.movePlaylistTracks.mockResolvedValue(undefined);
+  apiMock.removePlaylistTracks.mockResolvedValue(undefined);
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
   storeMock.currentUser = user({ user_id: "me" });
-  apiMock.state.value = "initialized";
   setMoveSupport(true);
   apiMock.getProvider.mockImplementation((id: string) => apiMock.providers[id]);
 });
@@ -132,7 +117,12 @@ describe("move playlist items context menu actions", () => {
 
     menu.find((item) => item.label === "playlist_move_to_top")?.action?.();
 
-    expect(apiMock.movePlaylistTracks).toHaveBeenCalledWith("42", [5, 2], 1);
+    expect(apiMock.movePlaylistTracks).toHaveBeenCalledWith(
+      "42",
+      [5, 2],
+      1,
+      items.map((item) => item.uri),
+    );
     expect(mockEventbusEmit).toHaveBeenCalledWith("clearSelection");
     await flushPromises();
     expect(toastMock.success).toHaveBeenCalledWith("playlist_moved_to_top");
@@ -154,35 +144,30 @@ describe("move playlist items context menu actions", () => {
 
     menu.find((item) => item.label === "playlist_move_to_bottom")?.action?.();
 
-    expect(apiMock.movePlaylistTracks).toHaveBeenCalledWith("42", [5, 2]);
+    expect(apiMock.movePlaylistTracks).toHaveBeenCalledWith(
+      "42",
+      [5, 2],
+      undefined,
+      items.map((item) => item.uri),
+    );
     expect(mockEventbusEmit).toHaveBeenCalledWith("clearSelection");
     await flushPromises();
     expect(toastMock.success).toHaveBeenCalledWith("playlist_moved_to_bottom");
   });
 
-  it("holds the playlist's edits until a removal's task has ended", async () => {
-    let report: (event: { data: BackgroundTask[] }) => void = () => {};
-    apiMock.subscribe.mockImplementation((event, callback) => {
-      if (event === EventType.TASKS_UPDATED) report = callback;
-      return vi.fn();
-    });
-    const task = { id: "t1", status: TaskStatus.PENDING } as BackgroundTask;
-    apiMock.removePlaylistTracks.mockResolvedValue(task);
-    const menu = await getContextMenuItems([track({ position: 2 })], parent);
+  it("removes by position, naming the items it expects there", async () => {
+    const items = [track({ position: 2 })];
+    const menu = await getContextMenuItems(items, parent);
 
     menu.find((item) => item.label === "remove_playlist")?.action?.();
-    await flushPromises();
 
-    expect(apiMock.removePlaylistTracks).toHaveBeenCalledWith("42", [2]);
+    expect(apiMock.removePlaylistTracks).toHaveBeenCalledWith(
+      "42",
+      [2],
+      [items[0].uri],
+    );
     // tracks taking the removed ones' places would stay selected
     expect(mockEventbusEmit).toHaveBeenCalledWith("clearSelection");
-    expect(await editStates()).toEqual(ALL_DISABLED);
-    report({ data: [{ ...task, status: TaskStatus.RUNNING }] });
-    await flushPromises();
-    expect(await editStates()).toEqual(ALL_DISABLED);
-    report({ data: [{ ...task, status: TaskStatus.SUCCESS }] });
-    await flushPromises();
-    expect(await editStates()).toEqual(ALL_ENABLED);
   });
 
   it("is not offered on a provider that cannot reorder", async () => {
@@ -209,31 +194,13 @@ describe("move playlist items context menu actions", () => {
     expect(await moveLabels(items)).toEqual(["playlist_move_to_bottom"]);
   });
 
-  it("disables the playlist's edits while another edit of it saves", async () => {
-    expect(await editStates()).toEqual(ALL_ENABLED);
-    let finishMove = () => {};
-    const sent = sendPlaylistEdit(
-      "42",
-      () => new Promise<void>((resolve) => (finishMove = resolve)),
-    );
-
-    expect(await editStates()).toEqual(ALL_DISABLED);
-    finishMove();
-    await sent;
-    expect(await editStates()).toEqual(ALL_ENABLED);
-  });
-
-  it("offers no edits of the playlist while reconnecting", async () => {
-    const items = [track({ position: 2 })];
-    const menu = await getContextMenuItems(items, parent);
+  it("sends no edit of the playlist while reconnecting", async () => {
+    const menu = await getContextMenuItems([track({ position: 2 })], parent);
     apiMock.state.value = "reconnecting";
 
-    // a menu opened before the connection dropped keeps the selection
     menu.find((item) => item.label === "playlist_move_to_top")?.action?.();
     expect(apiMock.movePlaylistTracks).not.toHaveBeenCalled();
     expect(mockEventbusEmit).not.toHaveBeenCalledWith("clearSelection");
-
-    expect(await editStates()).toEqual(ALL_DISABLED);
   });
 
   it("is not offered on a dynamic playlist", async () => {
