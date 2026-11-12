@@ -908,6 +908,8 @@ export interface SetupFlowStep {
   last_step?: boolean | null;
   // url [EXTERNAL]: url the user must open (e.g. an OAuth authorize url)
   url?: string | null;
+  // copy_text [FORM, EXTERNAL]: optional value the user can copy to the clipboard
+  copy_text?: string | null;
   // progress_text [PROGRESS]: localized status message
   progress_text?: string | null;
   // progress [PROGRESS]: optional completion fraction between 0 and 1
@@ -2224,6 +2226,7 @@ export interface SmartPlaylistRules {
   album_ids: number[];
   folder_paths?: string[];
   favorites_only: boolean;
+  exclude_favorites?: boolean;
   explicit?: boolean | null;
   seed_track_uris?: string[];
   seed_artist_uris?: string[];

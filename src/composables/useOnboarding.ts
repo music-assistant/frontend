@@ -629,10 +629,11 @@ async function markWelcomed(options?: CommandOptions): Promise<boolean> {
   return await write;
 }
 
-// InvalidDataError: the server is still registering the command but has already
-// completed onboarding itself.
+// InvalidDataError: the command is still registered, but onboarding was already
+// completed, by another session for instance.
 const INVALID_DATA_ERROR_CODE = 3;
-// InvalidCommand: the server dropped the command when it completed onboarding.
+// InvalidCommand: a server restarted after onboarding completed no longer
+// registers the command.
 const INVALID_COMMAND_ERROR_CODE = 12;
 
 /**
@@ -654,8 +655,7 @@ function isAlreadyCompletedError(error: unknown): boolean {
  * the admin's setup, and all the welcome leaves behind is the marker on the
  * member's own account.
  *
- * On the admin track the server completes onboarding by itself as soon as the
- * first provider is added, so the command is skipped once it says so and an
+ * A server that already says onboarding is done is not asked again, and an
  * answer that only repeats that is not worth a word. Any other failure leaves
  * onboarding open on the server, so the wizard stays put with the error on
  * screen rather than handing the user back an app that will drop them in here
