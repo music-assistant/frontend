@@ -2930,5 +2930,13 @@
     "no_content_filter_hint": "Skúste iné vyhľadávanie alebo upravte filtre.",
     "items_load_failed": "Nepodarilo sa načítať položky.",
     "featured_artists": "Vybraní interpreti",
-    "n_audiobooks": "{count} audiokniha | {count} audioknihy | {count} audiokníh"
+    "n_audiobooks": "{count} audiokniha | {count} audioknihy | {count} audiokníh",
+    "period_today": "Dnes",
+    "bookmarks": "Záložky",
+    "add_bookmark": "Pridať záložku",
+    "discography_types_summary": "{first} +{count}",
+    "album_type_plural": {
+        "album": "Albumy",
+        "single": "Single"
+    }
 }

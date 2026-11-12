@@ -4,6 +4,7 @@ import LibrarySortControls from "@/components/LibrarySortControls.vue";
 import ListingSortMenu from "@/components/listing-toolbar/ListingSortMenu.vue";
 import ListingToolbarControls from "@/components/listing-toolbar/ListingToolbarControls.vue";
 import type {
+  ListingChoiceFilter,
   ListingFilter,
   ListingMultiFilter,
   ListingToggleFilter,
@@ -284,8 +285,9 @@ describe("ItemsListing unmount cleanup", () => {
     await flushPromises();
 
     expect(clearSelectionHandlers()).toBe(1);
-    // the media item events and the user's own favorite changes
-    expect(events.listeners).toHaveLength(2);
+    // the media item events, the user's own favorite changes and the played
+    // state of the listed collections
+    expect(events.listeners).toHaveLength(3);
 
     listing.unmount();
 
@@ -1699,6 +1701,167 @@ describe("ItemsListing source selector", () => {
 
     expect(mockSetItemsListingPreference).not.toHaveBeenCalled();
   });
+
+  it("moves the source into the Filters panel with the title bar controls", async () => {
+    const { listing, loadItems } = mountSourceListing({
+      providerFilterOptions: ["spotify--1", "tidal--1"],
+      libraryToolbar: true,
+    });
+    await flushPromises();
+    loadItems.mockClear();
+    const controls = () => listing.findComponent(ListingToolbarControls);
+    const sourceFilter = () =>
+      (controls().props("filters") as ListingFilter[]).find(
+        (filter) => filter.id === "required_source",
+      ) as ListingChoiceFilter | undefined;
+
+    expect(sourceOptions(listing)).toBeUndefined();
+    expect(sourceFilter()?.options.map((option) => option.label)).toEqual([
+      "source_library",
+      "Spotify",
+      "Tidal",
+    ]);
+    expect(sourceFilter()?.selected).toBe("library");
+
+    sourceFilter()?.select("tidal--1");
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenLastCalledWith(
+      expect.objectContaining({ provider: ["tidal--1"] }),
+    );
+    expect(sourceFilter()?.selected).toBe("tidal--1");
+    // a required pick is no filter: it is not counted, and Clear all keeps it
+    expect(controls().props("activeFilterCount")).toBe(0);
+    controls().vm.$emit("clear-filters");
+    await flushPromises();
+    expect(sourceFilter()?.selected).toBe("tidal--1");
+  });
+});
+
+describe("ItemsListing carried album types", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(events.subscribe);
+    store.prevState = undefined;
+    store.currentUser = undefined;
+    mockSetItemsListingPreference.mockClear();
+  });
+
+  /** Mounts a listing whose album type filter offers albums, EPs and live. */
+  function mountAlbumTypeListing(
+    props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+  ) {
+    const loadItems = vi.fn().mockResolvedValue([]);
+    const listing = mountListingRaw({
+      itemtype: "artistalbums",
+      path: "artistalbums",
+      loadPagedData: loadItems,
+      showAlbumTypeFilter: true,
+      albumTypeFilterOptions: ["album", "ep", "live"],
+      ...props,
+    });
+    return { listing, loadItems };
+  }
+
+  function albumTypeOptions(listing: ReturnType<typeof mountListingRaw>) {
+    const items = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as {
+      label?: string;
+      subItems?: { label?: string; selected?: boolean; action?: () => void }[];
+    }[];
+    return items.find((item) => item.label === "tooltip.album_type")?.subItems;
+  }
+
+  function selectedAlbumTypes(listing: ReturnType<typeof mountListingRaw>) {
+    return albumTypeOptions(listing)
+      ?.filter((option) => option.selected)
+      .map((option) => option.label);
+  }
+
+  // a "view all" link can name the types its shelf was showing, and the
+  // listing opens on them even when the user saved other types here before
+  it("opens on album types carried in by a link, over the saved filter", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const { listing, loadItems } = mountAlbumTypeListing({
+      albumTypeOverride: ["album", "live"],
+    });
+    await flushPromises();
+
+    expect(selectedAlbumTypes(listing)).toEqual([
+      "album_type.album",
+      "album_type.live",
+    ]);
+    // a single load, straight with the carried types
+    expect(loadItems).toHaveBeenCalledTimes(1);
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ albumType: ["album", "live"] }),
+    );
+    // the saved filter is the user's own and stays as it was
+    expect(mockSetItemsListingPreference).not.toHaveBeenCalled();
+  });
+
+  it("stays on the carried album types when another setting is saved", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const { listing, loadItems } = mountAlbumTypeListing({
+      albumTypeOverride: ["album"],
+    });
+    await flushPromises();
+    loadItems.mockClear();
+
+    // every save hands the listing its saved settings again, saved album
+    // types included
+    signInWithSavedSettings({ albumType: ["ep"], viewMode: "list" });
+    await flushPromises();
+
+    expect(selectedAlbumTypes(listing)).toEqual(["album_type.album"]);
+    expect(loadItems).not.toHaveBeenCalled();
+  });
+
+  it("hands over to the album types the user picks", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const { listing, loadItems } = mountAlbumTypeListing({
+      albumTypeOverride: ["album"],
+    });
+    await flushPromises();
+
+    albumTypeOptions(listing)
+      ?.find((option) => option.label === "album_type.live")
+      ?.action?.();
+    await flushPromises();
+
+    expect(mockSetItemsListingPreference).toHaveBeenCalledWith(
+      "artistalbums",
+      "artistalbums",
+      "albumType",
+      ["album", "live"],
+    );
+    expect(loadItems).toHaveBeenLastCalledWith(
+      expect.objectContaining({ albumType: ["album", "live"] }),
+    );
+
+    // from here on the saved pick is what comes back, not the link's types
+    signInWithSavedSettings({ albumType: ["live"] });
+    await flushPromises();
+
+    expect(selectedAlbumTypes(listing)).toEqual(["album_type.live"]);
+  });
+
+  it("keeps the saved filter when no carried album type is offered", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const { listing } = mountAlbumTypeListing({
+      albumTypeOverride: ["soundtrack"],
+    });
+    await flushPromises();
+
+    expect(selectedAlbumTypes(listing)).toEqual(["album_type.ep"]);
+  });
 });
 
 describe("ItemsListing favorite updates", () => {
@@ -2056,6 +2219,49 @@ describe("ItemsListing restore state", () => {
     expect(listing.emitted("provider-change")?.at(-1)).toEqual([
       ["spotify--1"],
     ]);
+  });
+
+  // a "view all" link that names album types outranks what the last visit to
+  // this listing left behind
+  it("loads the carried album types instead of restoring other types' albums", async () => {
+    const parent = artist({ item_id: "1" });
+    await cacheArtistAlbums(parent, [album({ item_id: "a1" })], {
+      showAlbumTypeFilter: true,
+    });
+
+    const fromLink = album({ item_id: "a2" });
+    const loadItems = vi.fn<LoadItemsFn>().mockResolvedValue([fromLink]);
+    const listing = mountArtistAlbums(parent, loadItems, {
+      showAlbumTypeFilter: true,
+      albumTypeOverride: ["live"],
+    });
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ albumType: ["live"] }),
+    );
+    expect(shownItems(listing).map((item) => item.uri)).toEqual([fromLink.uri]);
+  });
+
+  it("starts over on the saved filter when a visit on carried album types is reached anew", async () => {
+    signInWithSavedSettings({ albumType: ["ep"] });
+    const parent = artist({ item_id: "1" });
+    await cacheArtistAlbums(parent, [album({ item_id: "a1" })], {
+      showAlbumTypeFilter: true,
+      albumTypeOverride: ["live"],
+    });
+
+    const saved = album({ item_id: "a2" });
+    const loadItems = vi.fn<LoadItemsFn>().mockResolvedValue([saved]);
+    const listing = mountArtistAlbums(parent, loadItems, {
+      showAlbumTypeFilter: true,
+    });
+    await flushPromises();
+
+    expect(loadItems).toHaveBeenCalledWith(
+      expect.objectContaining({ albumType: ["ep"] }),
+    );
+    expect(shownItems(listing).map((item) => item.uri)).toEqual([saved.uri]);
   });
 
   it("restores the cached albums when they came from the carried source", async () => {
@@ -3113,6 +3319,19 @@ describe("ItemsListing library toolbar", () => {
     expect(menuLabels(listing)).not.toContain("grid_size");
   });
 
+  it.each(["panel", "list"] as const)(
+    "keeps the view out of the sort menu when the page sets it to %s",
+    async (forcedViewMode) => {
+      const listing = await mountLibraryPage({ forcedViewMode });
+      const sortMenu = listing.findComponent(ListingSortMenu);
+
+      expect(sortMenu.props("viewMode")).toBe(forcedViewMode);
+      expect(sortMenu.props("fixedView")).toBe(true);
+      expect(sortMenu.props("gridControls")).toBeDefined();
+      expect(menuLabels(listing)).not.toContain("tooltip.view_mode");
+    },
+  );
+
   it("opens the search field from its icon and closes it from inside", async () => {
     const listing = await mountLibraryPage();
     const searchIcon = () => listing.find('button[aria-label="search"]');
@@ -3250,6 +3469,58 @@ describe("ItemsListing library toolbar", () => {
     const listing = await mountLibraryPage({ allowCollapse: true });
 
     expect(listing.find('button[aria-label="search"]').exists()).toBe(false);
+  });
+
+  it("shows only the expand button while collapsed, with the menu's place kept", async () => {
+    signInWithSavedFilters({ expand: false });
+    const listing = await mountLibraryPage({ allowCollapse: true });
+
+    expect(listing.findComponent(ListingToolbarControls).exists()).toBe(false);
+    expect(menuLabels(listing)).toEqual([]);
+    expect(
+      listing
+        .find('button[aria-label="tooltip.collapse_expand"]')
+        .element.nextElementSibling?.getAttribute("aria-hidden"),
+    ).toBe("true");
+  });
+
+  describe("keyboard focus on the expand button", () => {
+    // a title bar that draws its direct items as buttons after the append
+    // slot, keyed by label like the real one
+    const toolbarWithButtons = {
+      Toolbar: {
+        name: "Toolbar",
+        props: ["menuItems"],
+        template: `<div><slot name="append" /><button
+          v-for="item of menuItems" :key="item.label"
+          :aria-label="item.label" @click="item.action()" /></div>`,
+      },
+    };
+    const expandButton = (listing: ReturnType<typeof mountListingRaw>) =>
+      listing.find('button[aria-label="tooltip.collapse_expand"]');
+
+    it.each([
+      ["collapsed", false],
+      ["open", true],
+    ])(
+      "moves to the replacing button when a %s list is toggled",
+      async (_, expand) => {
+        signInWithSavedFilters({ expand });
+        const listing = await mountLibraryPage(
+          { allowCollapse: true },
+          toolbarWithButtons,
+        );
+        const pressed = expandButton(listing);
+        (pressed.element as HTMLElement).focus();
+
+        await pressed.trigger("click");
+        await flushPromises();
+
+        const replacement = expandButton(listing).element;
+        expect(replacement).not.toBe(pressed.element);
+        expect(document.activeElement).toBe(replacement);
+      },
+    );
   });
 
   it("keeps an edit that is still being saved when an earlier save lands", async () => {
