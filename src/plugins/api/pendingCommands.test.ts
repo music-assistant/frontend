@@ -116,7 +116,7 @@ describe("commands in flight when the connection drops", () => {
     });
 
     await expect(
-      api.sendCommand("config/dsp/impulse_responses/upload"),
+      api.sendCommand("config/dsp_irs/upload"),
     ).rejects.toBeInstanceOf(MessageTooLargeError);
     expect(api["commands"].size).toBe(0);
   });

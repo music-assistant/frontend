@@ -95,6 +95,7 @@ import { useI18n } from "vue-i18n";
 import { FileMusic, Trash2 } from "@lucide/vue";
 import { api } from "@/plugins/api";
 import { eventbus } from "@/plugins/eventbus";
+import { MessageTooLargeError } from "@/plugins/remote/transport";
 import type { DSPIRMetadata } from "@/plugins/api/interfaces";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -176,6 +177,10 @@ const upload = async () => {
     resetUpload();
     emit("uploaded", ir);
   } catch (error) {
+    if (error instanceof MessageTooLargeError) {
+      uploadError.value = t("settings.dsp.convolution.too_large_remote");
+      return;
+    }
     // The server explains why (size, invalid base64, not valid audio), and
     // that message is more useful than anything we could write here.
     uploadError.value =
