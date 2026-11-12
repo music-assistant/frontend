@@ -154,7 +154,7 @@ export function useSmartPlaylistRulesForm(
       row.lastPlayedBeforeUnit = undefined;
       list.push(row);
     } else if (field === "favorite") {
-      list.push(newRule("favorite", "is"));
+      list.push(newRule("favorite", mode.value === "seed" ? "is_not" : "is"));
     } else if (field === "explicit") {
       list.push(newRule("explicit", "is_not"));
     } else {
@@ -303,6 +303,9 @@ export function useSmartPlaylistRulesForm(
       if (initial.favorites_only) {
         fresh.push(newRule("favorite", "is"));
       }
+    }
+    if (initial.exclude_favorites) {
+      fresh.push(newRule("favorite", "is_not"));
     }
 
     if (initial.explicit === true) {
@@ -492,7 +495,7 @@ export function useSmartPlaylistRulesForm(
     const albumTypeInclude = pickRuleValues("album_type", "is");
     const albumTypeExclude = pickRuleValues("album_type", "is_not");
     const yr = yearRule();
-    const fav = !isSeed && !!favoriteRule();
+    const fav = favoriteRule();
     const explRule = explicitRule();
     const explicit =
       explRule === undefined
@@ -508,7 +511,8 @@ export function useSmartPlaylistRulesForm(
       artist_ids: artistInclude.map((v) => v.id),
       album_ids: albumInclude.map((v) => v.id),
       folder_paths: folderInclude.map((v) => folderPath(v.id)),
-      favorites_only: fav,
+      favorites_only: !isSeed && fav?.operator === "is",
+      exclude_favorites: fav?.operator === "is_not",
       excluded_genre_ids: genreExclude.map((v) => v.id),
       excluded_artist_ids: artistExclude.map((v) => v.id),
       excluded_album_ids: albumExclude.map((v) => v.id),
@@ -585,6 +589,7 @@ export function useSmartPlaylistRulesForm(
         [
           "genre",
           "album_type",
+          "favorite",
           "explicit",
           "year",
           "duration",

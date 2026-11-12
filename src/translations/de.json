@@ -905,7 +905,11 @@
         "unsupported_install_title": "Nicht unterstützte Installation",
         "unsupported_install_description": "Dieser Server wurde nicht über eine der {0} installiert. Einige Funktionen funktionieren möglicherweise nicht wie erwartet, und von diesem Server gemeldete Probleme werden möglicherweise ohne Support geschlossen.",
         "unsupported_install_link": "Unterstützte Installationsmethoden",
-        "error_loading_sort_options": "Fehler beim Laden der Sortieroptionen"
+        "error_loading_sort_options": "Fehler beim Laden der Sortieroptionen",
+        "provider_community": "Community",
+        "provider_community_maintained": "Von der Community gepflegt",
+        "provider_maintained_by": "betreut von {maintainers}",
+        "provider_get_help": "Hilfe erhalten"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -1799,7 +1803,7 @@
             "artist_count": "{0} Interpret",
             "artists_count": "{0} Interpreten",
             "game_type_trivia": "Musik-Trivia",
-            "game_type_trivia_description": "Beantworte AI-generierte Musikfragen basierend auf deiner ausgewählten Bibliothek.",
+            "game_type_trivia_description": "Beantworte KI-generierte Musikfragen basierend auf deiner ausgewählten Bibliothek.",
             "phase_answer_revealed": "Die Antwort ist enthüllt!",
             "error_load_game_types": "Die verfügbaren Quiztypen konnten nicht geladen werden.",
             "game_ended_wait": "Bitte den Spielleiter, ein neues Spiel zu starten, wenn alle bereit sind.",
@@ -1878,9 +1882,9 @@
             "round_result_answer": "Antwort"
         },
         "ai_radio": {
-            "title": "AI-Radio",
+            "title": "KI-Radio",
             "context": {
-                "run_with": "Als AI-Radio abspielen"
+                "run_with": "Als KI-Radio abspielen"
             },
             "actions": {
                 "discard": "Verwerfen",
@@ -1905,7 +1909,7 @@
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximale Gesamtspielzeit der Hintergrundmusik in Minuten. Die Titel werden in der Reihenfolge abgespielt, in der sie in der Sendung vorkommen, bis die Obergrenze erreicht ist. Für keine Begrenzung den Wert auf 0 setzen.",
-                "instructions": "Beschreibt die Persönlichkeit des Moderators und wie die Beiträge verfasst werden sollen. Diese Beschreibung wird zusammen mit jedem Beitrag an die AI gesendet.",
+                "instructions": "Beschreibt die Persönlichkeit des Moderators und wie die Beiträge verfasst werden sollen. Diese Beschreibung wird zusammen mit jedem Beitrag an die KI gesendet.",
                 "shuffle_playlist_tracks": "Die Quell-Wiedergabeliste wird in zufälliger Reihenfolge abgespielt. Deaktiviere diese Option, um die Reihenfolge der Wiedergabeliste beizubehalten.",
                 "allow_post": "Das Ende dieses Segments wird über den Anfang des nächsten Songs gelegt, wobei die Musik unter der Stimme leiser gestellt wird und kurz vor Beginn des Gesangs endet. Dies geschieht nur, wenn Music Assistant weiß, wo der Gesang beginnt, und das Intro lang genug ist. Wenn mehrere Segmente als eine Pause gesprochen werden, muss diese Funktion bei allen aktiviert sein."
             },
@@ -1924,7 +1928,7 @@
                 "occasionally": "Gelegentlich ({0}%)"
             },
             "validation": {
-                "invalid_import_file": "Die Datei ist kein gültiger AI Radio-Export.",
+                "invalid_import_file": "Die Datei ist kein gültiger KI Radio-Export.",
                 "station_name_required": "Der Name der Station ist erforderlich",
                 "station_source_playlist_required": "Eine Wiedergabeliste der Senderquelle ist erforderlich",
                 "select_section": "Wähle mindestens einen Abschnitt aus.",
@@ -1949,7 +1953,7 @@
             },
             "toast": {
                 "playlists_truncated": "Es wurden nur die ersten {0} Wiedergabelisten geladen.",
-                "unavailable": "AI-Radio ist nicht aktiviert.",
+                "unavailable": "KI-Radio ist nicht aktiviert.",
                 "live_starting": "Live-Radio gestartet",
                 "station_saved": "Station gespeichert",
                 "station_deleted": "Station gelöscht",
@@ -1960,11 +1964,11 @@
                 "show_stopped": "Die Show wurde abgebrochen"
             },
             "header": {
-                "subtitle": "Verwandle eine Wiedergabeliste in eine Radiosendung mit einem AI-Moderator."
+                "subtitle": "Verwandle eine Wiedergabeliste in eine Radiosendung mit einem KI-Moderator."
             },
             "gallery": {
                 "empty_title": "Erstelle deine erste Sendung",
-                "empty_description": "AI Radio verwandelt eine deiner Wiedergabelisten in eine Radiosendung mit einem KI-Moderator. AI Radio benötigt einen KI-fähigen Anbieter (z.B. Home Assistant), um den Moderator zu generieren – konfiguriere einen unter Einstellungen → Plugins.",
+                "empty_description": "KI Radio verwandelt eine deiner Wiedergabelisten in eine Radiosendung mit einem KI-Moderator. KI Radio benötigt einen KI-fähigen Anbieter (z.B. Home Assistant), um den Moderator zu generieren – konfiguriere einen unter Einstellungen → Plugins.",
                 "create_cta": "Sendung erstellen",
                 "new_show": "Neue Sendung",
                 "refresh": "Aktualisieren",
@@ -2003,8 +2007,8 @@
                 "playlist_search": "Wiedergabelisten durchsuchen"
             },
             "prereq": {
-                "title": "AI-Anbieter benötigt",
-                "description": "AI Radio benötigt einen AI-fähigen Anbieter (z. B. Home Assistant), um den Host zu generieren.",
+                "title": "KI-Anbieter benötigt",
+                "description": "KI Radio benötigt einen KI-fähigen Anbieter (z. B. Home Assistant), um den Host zu generieren.",
                 "action": "Gehe zu Einstellungen → Plugins"
             },
             "customize": {
@@ -2481,7 +2485,7 @@
         "credits_milkdrop": "MilkDrop wurde ursprünglich von Ryan Geiss als Visualizer für Winamp entwickelt. Die Voreinstellungen stammen aus der MilkDrop-Voreinstellungs-Community und werden über „butterchurn-presets“ gebündelt.",
         "enabled": "Aktiviert"
     },
-    "ai_dj": "AI Radio DJ aktivieren",
+    "ai_dj": "KI Radio DJ aktivieren",
     "ai_dj_off": "Aus",
     "ai_dj_show_on_air": "Auf Sendung: {0}",
     "ai_dj_show_on_air_unknown": "Eine Sendung wird gerade ausgestrahlt",
@@ -2735,7 +2739,7 @@
                 "title": "Fühl dich wie zu Hause",
                 "description": "Hallo {name}, hier ist die Musik in deinem Zuhause zu Hause. Wähle aus, wie viel du sehen möchtest, während etwas abgespielt wird.",
                 "defaults_hint": "Damit werden lediglich einige Standardeinstellungen festgelegt. Du kanst jede Einstellung nach Belieben ändern.",
-                "save_failed": "Ihre Auswahl konnte nicht gespeichert werden. Bitte versuche es erneut.",
+                "save_failed": "Deine Auswahl konnte nicht gespeichert werden. Bitte versuche es erneut.",
                 "standard": {
                     "label": "Standard",
                     "description": "Eine übersichtliche Benutzeroberfläche, die sich auf das Wesentliche beschränkt."
@@ -2931,7 +2935,8 @@
         "duration": "Dauer",
         "columns": "Spalten",
         "choose_columns": "Spalten auswählen",
-        "hidden_at_width": "Bei dieser Breite ausgeblendet"
+        "hidden_at_width": "Bei dieser Breite ausgeblendet",
+        "reorder_track": "Zum Bewegen ziehen oder die Pfeiltasten drücken {0}"
     },
     "selection_actions": "Auswahlaktionen",
     "n_selected": "{count} ausgewählt | {count} ausgewählt",
@@ -2975,7 +2980,7 @@
     "statistics_average_year": "{average} im Durchschnitt pro Jahr.",
     "statistics_busiest_sentence_hour": "{label} war deine geschäftigste Stunde.",
     "statistics_busiest_sentence_day": "{label} war dein geschäftigster Tag.",
-    "statistics_busiest_sentence_month": "{label} war Ihr geschäftigster Monat.",
+    "statistics_busiest_sentence_month": "{label} war dein geschäftigster Monat.",
     "statistics_busiest_sentence_year": "{label} war dein geschäftigstes Jahr.",
     "statistics_per_hour": "Pro Stunde",
     "statistics_per_day": "Pro Tag",
@@ -3019,7 +3024,7 @@
     "statistics_top_tracks": "Top-Titel",
     "statistics_top_albums": "Top-Alben",
     "statistics_top_artists": "Top-Interpreten",
-    "statistics_top_playlists": "Top-Playlists",
+    "statistics_top_playlists": "Top-Wiedergabelisten",
     "statistics_column_rank": "#",
     "statistics_column_title": "Titel",
     "statistics_column_share": "Teilen",
@@ -3036,5 +3041,69 @@
     "show_action_buttons": "Aktionstasten anzeigen",
     "action_buttons_too_small": "Die Cover sind zu klein für die Aktionstasten",
     "open_item_failed": "Dieser Eintrag konnte nicht geöffnet werden.",
-    "edit_rows_subtitle_genre": "Gilt für jede Genre-Seite"
+    "edit_rows_subtitle_genre": "Gilt für jede Genre-Seite",
+    "chapters_and_bookmarks": "Kapitel & Lesezeichen",
+    "chapters_and_bookmarks_tab": "Alle",
+    "bookmarks": "Lesezeichen",
+    "add_bookmark": "Lesezeichen hinzufügen",
+    "add_bookmark_at": "Lesezeichen hinzufügen bei {time}",
+    "rename_bookmark": "Lesezeichen umbenennen",
+    "delete_bookmark": "Lesezeichen löschen",
+    "delete_bookmark_confirm": "Das Lesezeichen „{name}“ löschen?",
+    "bookmark_name": "Name",
+    "bookmark_saved_in": "Gespeichert unter {name}",
+    "play_from_position": "Abspielen von {time}",
+    "bookmark_added": "Lesezeichen hinzugefügt",
+    "bookmark_renamed": "Lesezeichen umbenannt",
+    "bookmark_deleted": "Lesezeichen gelöscht",
+    "bookmark_add_failed": "Das Lesezeichen konnte nicht hinzugefügt werden",
+    "bookmark_rename_failed": "Das Lesezeichen konnte nicht umbenannt werden",
+    "bookmark_delete_failed": "Das Lesezeichen konnte nicht gelöscht werden",
+    "playlist_move_to_top": "Nach oben schieben",
+    "playlist_move_to_bottom": "Nach unten schieben",
+    "playlist_moved_to_top": "An den Anfang der Wiedergabeliste verschoben",
+    "playlist_moved_to_bottom": "Ans Ende der Wiedergabeliste verschoben",
+    "statistics_highlight_track": "Top-Titel",
+    "statistics_highlight_artist": "Top-Interpret",
+    "statistics_highlight_album": "Top-Album",
+    "edit_rows_subtitle_radio": "Gilt für jede Radioseite",
+    "statistics_subtitle_other_users": "Was wurde auf Music Assistant abgespielt?",
+    "statistics_users": "Benutzer",
+    "statistics_users_me": "Nur ich",
+    "statistics_users_all": "Alle Benutzer",
+    "statistics_users_count": "{count} Benutzer",
+    "statistics_users_removed": "Einige ausgewählte Benutzer existieren nicht mehr und wurden entfernt.",
+    "statistics_busiest_sentence_hour_other_users": "{label} war die geschäftigste Stunde.",
+    "statistics_busiest_sentence_day_other_users": "{label} war der geschäftigste Tag.",
+    "statistics_busiest_sentence_month_other_users": "{label} war der geschäftigste Monat.",
+    "statistics_busiest_sentence_year_other_users": "{label} war das geschäftigste Jahr.",
+    "statistics_top_artist_other_users": "Künstler Nummer eins",
+    "statistics_top_artist_accessible_other_users": "{name}: {share}% der Wiedergaben",
+    "statistics_when_you_listen_other_users": "Hörzeiten",
+    "statistics_window_share_other_users": "{share}% der Wiedergaben begannen zwischen {start} und {end}",
+    "statistics_heatmap_other_users": "Die Woche im Stundentakt",
+    "stream_held": {
+        "title": "Stattdessen hier abspielen?",
+        "message": "{0} wird bereits auf {1} abgespielt. Es kann jeweils nur von einem Wiedergabegerät gleichzeitig abgespielt werden.",
+        "stop_and_play_here": "Halte dort an und spiele hier ab"
+    },
+    "discography_first_row": "Diskografie (erste Reihe)",
+    "discography_second_row": "Diskografie (zweite Reihe)",
+    "discography_types_summary": "{first} +{count}",
+    "album_type_plural": {
+        "album": "Alben",
+        "single": "Singles",
+        "ep": "EPs",
+        "compilation": "Zusammenstellungen",
+        "live": "Live",
+        "soundtrack": "Soundtracks"
+    },
+    "sleep_timer_end_of_chapter": "Ende des Kapitels",
+    "sleep_timer_end_of_item": {
+        "track": "Ende des Titels",
+        "podcast_episode": "Ende der Folge",
+        "audiobook": "Ende des Hörbuchs",
+        "other": "Ende des aktuellen Eintrags"
+    },
+    "collection_refresh_failed": "Der Wiedergabestatus der Sammlung konnte nicht aktualisiert werden"
 }
